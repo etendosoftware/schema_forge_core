@@ -1,48 +1,64 @@
 # Purchase Invoice
 
-This guide complements [app-shell-functional-flows.md](app-shell-functional-flows.md). It stays focused on purchase-invoice-specific behavior and does not repeat shared shell concerns such as authentication, generic route protection, embedded mode, or common `useEntity` loading semantics.
+## Intent
 
-- Purpose / surface: Register supplier invoices, edit invoice lines, inspect payment state, and jump between the invoice, its purchase order, receipts, and payments.
-- Route: `/purchase-invoice`, `/purchase-invoice/:recordId`
-- Visibility: Visible in the Purchases menu.
-- Implementation: Custom window override in `tools/app-shell/src/windows/registry.js`.
+Use this window to register supplier invoices, keep the payable document aligned with its invoice lines, and understand what is still owed before or after payments are registered. The current UI is oriented around three linked concerns: the invoice header, the invoice lines that build the commercial amount, and the payable state exposed through outstanding amounts, schedules, and related payment-out records.
 
-## Key functional cues
+## What this window should allow
 
-- The contract defines a default-layout invoice header on `C_Invoice`, marks the window as `relatedDocuments: true`, and exposes several child datasets: `lines`, `intrastat`, `paymentPlan`, and `paymentDetails`.
-- The main invoice detail remains header-plus-lines, but the custom UI deliberately reshapes how users consume it:
-  - the list view uses a compact custom table with document number, invoice date, business partner, status, and gross total
-  - clicking a list row opens a preview modal instead of immediately navigating away
-  - the detail route uses a custom topbar, bottom panel, custom related-documents tab, and a narrowed line table
-- The list accepts two meaningful entry filters:
-  - `?DocStatus=<status>` pre-filters the list by document status.
-  - `?filter=overdue` activates the custom quick filter that keeps only invoices with a remaining outstanding amount.
-- The preview modal is a notable custom surface. It includes **General**, **Messages**, and **History** tabs, exposes edit/send/download actions, fetches payment-plan and invoice-payment data, and shows invoice totals plus payment progress without leaving the list route.
-- In the current implementation, **Messages** and **History** are placeholder empty states rather than backed conversation or audit feeds.
-- The detail route uses a custom line table with product, invoiced quantity, net unit price, tax, and line gross amount.
-- New lines are guarded until the invoice has a business partner (`addLineGuard`).
-- The detail topbar exposes two notable custom behaviors:
-  - **Clone** on record pages
-  - a payment-status pill on completed invoices; clicking it opens the payment modal
-- The bottom panel combines three functional surfaces in one place: related-document chips, inline notes editing, and subtotal/tax/total rollups.
-- The custom related-documents component links to the source purchase order, sibling goods receipts, and payment-out records.
-- The contract exposes payment-plan and payment-detail datasets, and the custom UI uses those datasets to power payment summaries and payment dialogs instead of relying on generic secondary tabs.
+- Create and edit a purchase invoice header with the supplier, invoice dates, payment terms, payment method, purchase order reference, and other payable-identifying fields.
+- Add and review invoice lines so the document reflects what the supplier billed, including product, quantity, unit price, tax, and line gross amount.
+- Review invoice totals at document level, including net amount, gross amount, paid amount, and outstanding amount when those values are available from the header or payment schedule data.
+- Inspect the invoice from the list without immediately leaving the list route, then move into full edit mode when needed.
+- Understand the payable relationship to the originating purchase order, related goods receipts, and downstream payment-out records.
+- Open payment detail flows when the invoice is completed and still has an amount pending.
+
+## Interaction model
+
+- Route: `/purchase-invoice` for the list and `/purchase-invoice/:recordId` for create/edit detail.
+- Visibility: visible from the Purchases menu.
+- Implementation type: custom window override registered in `tools/app-shell/src/windows/registry.js`, combining generated header/detail scaffolding with custom list preview, topbar, line table, bottom panel, and related-documents behavior.
+- Window shape: master-child. The master record is the invoice header and the main child dataset is invoice lines; the detail page also surfaces a custom related-documents tab instead of relying on the generated payment secondary tabs.
+- List interaction: the list uses a narrowed header table. Selecting a row opens a preview modal instead of navigating directly to the detail route.
+- Detail interaction: the record page uses the generated header page with a custom lines table, a custom topbar, summary amounts, notes editing, footer totals, and related-document chips.
+
+## Reactive behavior and dependencies
+
+- Header defaults are visible in the contract for invoice date and accounting date (`@#Date@`), document status (`DR`), currency, and zeroed payable amounts such as total paid and outstanding amount. These defaults matter because a new payable document starts as draft and incomplete before lines and payment activity exist.
+- Partner address is a dependent selector filtered by the selected business partner. The business partner also drives header callouts, and the custom page blocks line creation until a business partner is present.
+- The purchase order reference is part of the header contract and is used by the custom related-documents surface to show the linked purchase order and to fetch related goods receipts for the same order.
+- The detail bottom panel reacts to summary values by showing subtotal, inferred tax, and total. In the current implementation, tax is not read from a dedicated displayed tax row; it is derived as `grand total - summed lines` in the footer.
+- The preview modal and the detail topbar both treat the invoice as a payable document. They read payment-plan and payment/payment-history data to show paid versus outstanding state, and they expose payment actions only when the invoice is completed and still has an outstanding balance.
+- The detail topbar shows a payment-status pill only for completed invoices. The pill label and amount react to whether the invoice is fully paid or still pending, and clicking it opens the shared invoice payment modal.
+- Related payment records are downstream dependencies, not free-form links. The custom related-documents component resolves payment-out documents through payment-plan and payment-detail relationships, then links users to `/payment-out/:id`.
+- The preview modal has General, Messages, and History tabs, but only the General tab is backed by invoice/payment data in current evidence. Messages and History are present as empty states.
+- The preview modal also includes a document upload/drop area for purchase invoices, but the current evidence shows only local file preview behavior in the browser; no persisted attachment workflow is visible here.
+
+## Gap assessment
+
+- The UI clearly presents payable amounts and payment registration entry points, but the exact accounting consequences of adding or updating payments are not documented in this window evidence. Treat downstream posting semantics as backend behavior, not confirmed UI behavior here.
+- The footer shows tax by subtracting subtotal from total. That is a useful display shortcut, but it is not proof that invoice tax rows, discounts, withholding, or other tax adjustments are fully represented in this custom surface, even though the contract exposes tax-related entities.
+- Payment-plan and payment-detail entities exist in the contract and power the custom payment views, but this window does not expose those datasets as first-class editable tabs. If users need schedule editing beyond the modal flows, that remains an open UX gap in current evidence.
+- Messages, History, and email history are placeholders today. The business intent suggests traceability around supplier communications and payable events, but the current implementation does not show persisted conversation or activity feeds.
+- The purchase-invoice preview supports local document upload/preview, but there is no visible evidence that uploaded files are saved, classified, or linked back to the invoice record.
+- No dedicated purchase-invoice automated UI test was found, so the payable flow is code-backed but still relies on manual verification for end-to-end confidence.
 
 ## Manual verification
 
-1. Open `/purchase-invoice` and click a row. Confirm a preview modal opens from the list view instead of immediately navigating to the detail route.
-2. In that preview modal, switch between **General**, **Messages**, and **History** and confirm only the General tab is data-backed today while the other two remain placeholder states.
-3. Open `/purchase-invoice?filter=overdue` and confirm the quick filter keeps invoices with an outstanding balance.
-4. From the preview modal, choose **Edit** and confirm the browser navigates to `/purchase-invoice/:recordId`.
-5. On the detail route, confirm the line table uses the custom invoice columns and that adding a line is blocked until a business partner is selected.
-6. On a completed invoice, click the payment-status pill and confirm the payment modal opens with invoice-specific payment context.
-7. In the detail footer or related-documents tab, confirm linked chips route to the source purchase order, related goods receipts, and payment-out records.
+1. Open `/purchase-invoice` and confirm the list shows purchase invoices with document number, invoice date, supplier, status, and gross total.
+2. Click a list row and confirm the preview modal opens instead of immediate navigation.
+3. In the preview modal, verify the General tab shows total, due/payable state, and payment history, while Messages and History remain placeholder states.
+4. Open `/purchase-invoice?filter=overdue` and confirm the quick filter keeps invoices with an outstanding amount.
+5. Open a draft invoice detail and confirm adding a line is blocked until a business partner is selected.
+6. On the detail page, confirm the custom lines table shows product, invoiced quantity, net unit price, tax, and line gross amount, and that the footer shows subtotal, inferred tax, and total.
+7. Open a completed invoice with pending balance and confirm the topbar payment-status pill appears, opens the payment modal, and reflects the invoice as pending or paid based on outstanding amount.
+8. From the detail footer or related-documents tab, confirm links are available to the source purchase order, related goods receipts, and downstream payment-out records when those relationships exist.
 
 ## Automated evidence
 
-- No dedicated purchase-invoice UI test was found in `tools/app-shell`.
-- Shared route/loading coverage and generic entity behavior are documented in [app-shell-functional-flows.md](app-shell-functional-flows.md).
-- Evidence sources:
+- No dedicated purchase-invoice UI test was found under `tools/app-shell`.
+- Shared shell and entity-loading behavior is documented in `docs/generated-custom-windows/app-shell-functional-flows.md`.
+- Contract and UI evidence reviewed for this rewrite:
   - `tools/app-shell/src/menu.json`
   - `tools/app-shell/src/windows/registry.js`
   - `artifacts/purchase-invoice/contract.json`
@@ -50,4 +66,6 @@ This guide complements [app-shell-functional-flows.md](app-shell-functional-flow
   - `tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceTopbar.jsx`
   - `tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceBottomPanel.jsx`
   - `tools/app-shell/src/windows/custom/purchase-invoice/InvoicePreviewModal.jsx`
+  - `tools/app-shell/src/windows/custom/purchase-invoice/InvoiceLineTableCustom.jsx`
   - `tools/app-shell/src/windows/custom/purchase-invoice/RelatedDocuments.jsx`
+  - `tools/app-shell/src/windows/custom/shared/InvoicePaymentModal.jsx`

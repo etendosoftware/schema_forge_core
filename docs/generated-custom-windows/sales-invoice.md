@@ -1,26 +1,79 @@
 # Sales Invoice
 
-This guide complements [app-shell-functional-flows.md](app-shell-functional-flows.md) with window-specific notes for Sales Invoice.
+## Intent
 
-- Purpose and surface: Issue customer invoices, review totals, monitor payment collection, and navigate back to the originating commercial flow. The header emphasizes business partner, invoice date, billing address, payment terms, payment method, status, and gross totals; child lines cover product, invoiced quantity, unit price, gross amount, and tax. A second child tab exposes the payment plan.
-- Route: `/sales-invoice` and `/sales-invoice/:recordId`
-- Visibility: Visible in the Sales menu. Not hidden.
-- Implementation: Custom window wrapper over the generated invoice page.
-- Key functional cues:
-  - Contract layout type is `default`, with primary entity `header`, child entity `lines`, and child entity `paymentPlan`.
-  - Related documents are enabled. The detail page renders a related-documents tab plus a bottom panel that combines notes, related-document chips, and totals.
-  - The list view adds an overdue quick filter, lateral preview flow, and clone support.
-  - The detail top bar adds cloning plus an installment-aware payment-status badge that summarizes the payment plan and opens the payment modal.
-  - Related documents can point back to a quotation or sales order, linked shipments, and, for credit notes, original invoices from the same order.
-  - Menu actions include **Duplicate** and **Cancel**.
+This window should let a user issue and follow customer invoices as billing documents that sit between upstream commercial documents and downstream collection activity. From one place, the user should be able to review invoice content, confirm commercial totals, understand whether the invoice is unpaid, partially paid, overdue, or fully paid, and move to the order, shipment, quotation, or original invoice records that explain how this invoice exists.
+
+The current evidence shows a sales-invoice-specific workspace rather than a plain generated form. It keeps the invoice header and line editing flow, then adds invoice-oriented preview, payment-state, related-document, totals, note, and shipment-import behaviors around it.
+
+## What this window should allow
+
+A user should be able to:
+- browse sales invoices by document number, invoice date, business partner, status, and gross total;
+- open an invoice from the list into a lateral preview, then move into full record editing when needed;
+- create or update a draft invoice header with at least business partner, partner address, invoice date, payment method, and payment terms;
+- add invoice lines with product, invoiced quantity, net unit price, discount, tax, and resulting amounts, or import eligible lines from completed shipments for the same customer;
+- review subtotal, derived tax, and total amounts from the invoice itself;
+- inspect installment-level payment-plan data and open payment details from the payment-status badge or preview;
+- register or review downstream customer payment activity from the invoice payment modal when payment actions are available;
+- clone an invoice and navigate to the new invoice record;
+- open upstream or downstream related documents, especially the originating quotation or sales order, linked shipments, and, for credit-note scenarios, the original invoices from the same order.
+
+## Interaction model
+
+- Route: `/sales-invoice` for the list and `/sales-invoice/:recordId` for record detail.
+- Visibility: visible from the `Sales` menu group in `tools/app-shell/src/menu.json`; not hidden.
+- Implementation type: custom window wrapper in `tools/app-shell/src/windows/custom/sales-invoice/index.jsx` over the generated `sales-invoice` list/detail page, with a shared invoice preview modal reused from the purchase-invoice flow.
+- Window shape: master-child. The primary entity is the invoice `header`, with editable `lines` plus an additional `paymentPlan` child surface.
+- List behavior: the custom list uses a narrowed invoice table, opens rows into a lateral preview modal instead of immediately navigating away, supports cloning from the grid, accepts `?DocStatus=<status>` as a column pre-filter, and accepts `?filter=overdue` as a quick filter for invoices with remaining outstanding amount.
+- Detail behavior: the detail route keeps the generated invoice page, adds a custom top bar, custom bottom totals/documents panel, a `Related Documents` tab, a business-partner guard before adding lines, and invoice-specific extra actions such as shipment import and clone.
+
+## Reactive behavior and dependencies
+
+- Header-to-line relationship: the record works as one invoice header with editable child lines. The detail route explicitly prevents adding lines until a business partner is present, and the line editor is the place where quantity, price, discount, and tax values feed the invoice amounts.
+- Dependent selectors: `partnerAddress` is a dependent selector filtered by `businessPartner`, so billing-location choices react to the selected customer. The line import flow also depends on the chosen business partner because shipment import is only offered when the invoice is draft and already tied to a customer.
+- Pricing, tax, and total reactions: the contract assigns the `SL_Invoice_Amt` callout to invoice-line quantity, net unit price, discount-related amount fields, and tax, which is direct evidence that changing those values is intended to recalculate line and invoice monetary values. The visible UI evidence is the bottom panel that derives `Tax` as `total - subtotal` and renders subtotal and total from the invoice summary fields.
+- Defaulting: the header defaults `invoiceDate` to the current date and `documentStatus` to draft. New line quantity defaults to `1`, and several monetary fields default to `0`. Currency is present in the summary/payment context but is read-only in the header contract.
+- Payment-plan reactions: the custom top bar fetches `paymentPlan` installments and classifies the invoice as paid, partial, overdue, or pending based on installment `paidAmount`, `outstandingAmount`, and `daysOverdue`. The badge label changes from total paid to outstanding balance depending on installment state, and clicking the badge is the entry point to the payment modal.
+- Payment-state and payment registration dependencies: the shared invoice payment modal fetches both installment schedules and recorded payments. For sales invoices, payment registration uses `registerPayment` and available `invoiceAccounts` actions under the invoice header, so the invoice view depends on those backend actions to turn an outstanding installment into an actual `payment-in` event.
+- Upstream/downstream document dependencies: the related-documents tab resolves the linked quotation or sales order from `salesOrder`, fetches shipments by the same order id, and, for credit notes, fetches sibling/original invoices from that same order so the user can move across the document chain.
+- Shipment import dependency: the import-from-shipment modal loads completed goods shipments, existing invoice lines, invoice header data, and selector pricing data in parallel. It only keeps shipments for the same business partner that are not fully invoiced, then lets the user select shipment lines and quantities to create invoice lines.
+- Preview behavior: list preview for sales invoices uses a shared invoice preview modal with `General`, `Messages`, and `History` tabs. The General tab is evidence-backed and includes payment-plan plus payment-history fetching; Messages and History currently remain placeholder states.
+
+## Gap assessment
+
+- The contract and callouts strongly suggest invoice totals, tax, and line amounts should recalculate after line edits or shipment import, but the current repo evidence does not provide browser-level proof of exactly when the user sees those recalculations. Treat real-time monetary refresh as intended behavior, not fully verified behavior.
+- The generated detail page advertises a `Cancel` menu action when the invoice status is `CO`, but the generated wiring currently uses an empty `onClick`. The action is visible in configuration, yet an actual cancellation flow is not evidenced here.
+- The payment-plan entity exposes backend actions such as `updatePaymentPlan` and APRM payment-plan modification processes, but the current user-facing evidence does not clearly show how or whether those actions are surfaced to users in this window. Installment visibility is proven; installment maintenance is still an open ambiguity.
+- The related-documents flow for original invoices is explicitly conditional on the current document looking like a credit note. If users expect every sales invoice to expose upstream invoice relationships, that broader behavior is not supported by the current evidence.
+- The preview modal includes `Messages` and `History` tabs, but the shared invoice-preview implementation renders them as empty states today. If invoice communication history or audit history is expected here, that is a current functional gap.
+- No dedicated browser E2E test was found for the sales-invoice-specific flow. Confidence is therefore high for route wiring and source-level component behavior, but lower for end-to-end invoice management semantics in a live browser session.
 
 ## Manual verification
 
-1. Open `/sales-invoice?filter=overdue` and confirm the list starts in the overdue-only view.
-2. Open an invoice detail record and verify the bottom section shows notes, totals, and related-document chips in the same screen.
-3. Open the payment-status badge in the top bar and confirm the modal reflects the payment-plan installments rather than only a header total.
-4. Open the **Payment Plan** child tab and verify installment records, payment method, currency, amounts, and overdue indicators are present for invoices that have them.
-5. Use the clone action from either the list or the detail top bar and confirm the app navigates to a new sales-invoice record.
-6. Open **Related Documents** and verify navigation back to the originating quotation or order and linked shipments; for credit notes, also verify the original invoice chips appear when applicable.
+1. Open `/sales-invoice` and confirm the list shows document number, invoice date, business partner, document status, and total gross amount.
+2. Open `/sales-invoice?filter=overdue` and confirm the list starts in the overdue-only quick filter.
+3. Click a row from the list and confirm a lateral invoice preview opens instead of immediately navigating to `/sales-invoice/:recordId`. In that preview, confirm `General` is data-backed while `Messages` and `History` remain placeholder states.
+4. From the preview, choose **Edit** and confirm navigation to `/sales-invoice/:recordId`.
+5. Start or reopen a draft invoice and confirm a business partner is required before adding lines, partner address reacts to the chosen customer, and the line area offers manual entry plus shipment import when a customer is already selected.
+6. Add or modify at least one line and confirm the line editor exposes invoiced quantity, net unit price, discount/tax-related inputs, and invoice summary amounts. Verify whether subtotal, tax, and total visibly refresh after saving; if they do not, record that as current behavior.
+7. Open the payment-status badge on a completed invoice and confirm the modal reflects installment-level payment-plan context rather than only the header total. If possible, register a payment and confirm the invoice payment summary updates.
+8. Open the `Payment Plan` child surface and confirm due date, expected date, amount, paid amount, outstanding amount, currency, last payment date, days overdue, and number of payments are present for invoices that have installment data.
+9. Use clone from either the grid or the detail top bar and confirm the app navigates to the new sales-invoice record.
+10. Open `Related Documents` on an invoice tied to a commercial chain and confirm the user can navigate to the originating quotation or sales order, related goods shipments, and, for credit notes, the original invoice records when present.
+11. If the `Cancel` action appears on a completed invoice, verify whether it performs a real cancellation flow; if it only renders without effect, treat that as a product gap.
 
-- Automated evidence: No dedicated browser automation observed. The repo includes custom invoice components, but current confidence for routing and common data behavior still depends on the shared app-shell guide.
+## Automated evidence
+
+- `tools/app-shell/src/menu.json` shows `sales-invoice` is visible in the `Sales` menu.
+- `tools/app-shell/src/windows/registry.js` registers `sales-invoice` as a custom app-shell window override.
+- `tools/app-shell/src/windows/custom/sales-invoice/index.jsx` proves the custom list/detail wrapper, overdue quick filter, lateral preview modal, clone-from-grid flow, related-documents tab wiring, add-line guard, and detail route composition.
+- `tools/app-shell/src/windows/custom/sales-invoice/SalesInvoiceTopbar.jsx` proves clone-from-detail behavior and the use of the custom payment-status topbar component.
+- `tools/app-shell/src/windows/custom/purchase-invoice/InvoicePreviewModal.jsx` proves that sales invoices reuse the shared invoice preview modal with a PDF preview, `General | Messages | History` tabs, payment-plan fetching, payment-history fetching, edit/send actions, and placeholder `Messages`/`History` states.
+- `artifacts/sales-invoice/contract.json` proves the default-layout invoice contract, `relatedDocuments: true`, required header fields, dependent `partnerAddress`, default values, summary fields, line-level `SL_Invoice_Amt` callouts, and the presence of the `paymentPlan` child entity plus payment-plan action endpoints.
+- `artifacts/sales-invoice/custom/InvoiceBottomPanel.jsx` proves the combined docs/notes/totals footer, derived tax display, and shipment-import affordances on draft invoices.
+- `artifacts/sales-invoice/custom/InvoiceTopbarExtra.jsx` proves installment-aware payment-status classification and the badge-to-payment-modal entry flow.
+- `artifacts/sales-invoice/custom/RelatedDocuments.jsx` proves related-document resolution for quotation or sales order, linked shipments, and original invoices for credit-note scenarios.
+- `artifacts/sales-invoice/custom/ImportFromShipmentModal.jsx` proves shipment-based line import limited to completed, same-customer, not-fully-invoiced shipments.
+- `artifacts/sales-invoice/custom/__tests__/ImportFromShipmentModal.test.js` provides source-level coverage for shipment fetching, same-customer filtering, duplicate-line avoidance, shipment-line expansion, and invoice-line POST creation.
+- Shared automated evidence exists for app-shell window registration and generic entity behavior, but not for this window specifically: `tools/app-shell/src/windows/__tests__/registry.test.js`, `tools/app-shell/src/hooks/__tests__/useEntity-defaults.test.js`, and `tools/app-shell/src/hooks/__tests__/useEntity-pagination.test.js`.
