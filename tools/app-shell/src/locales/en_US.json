@@ -16159,9 +16159,6 @@
     "Goods Receipt": {
       "label": "Goods Receipt"
     },
-    "HR": {
-      "label": "HR"
-    },
     "Home": {
       "label": "Home"
     },
@@ -16423,7 +16420,9 @@
     "enterAtLeastOneValueUpdatePricing": "Enter at least one value to update pricing.",
     "pricingCreatedUsingDefaultValues": "Pricing created using default values.",
     "unableToSavePricing": "Unable to save pricing.",
-    "addEntity": "+ Add {label}",
+    "addEntity": "Add {label}",
+    "addLine": "Add line",
+    "noAdditionalActions": "No additional actions",
     "entityDetail": "{label} Detail",
     "saveHeaderFirst": "Save the header first to add lines.",
     "documentStatus": "Document Status",
@@ -18515,6 +18514,15 @@
     "Reports": {
       "label": "Reports"
     },
+    "Purchases Reports": {
+      "label": "Purchases Reports"
+    },
+    "Inventory Reports": {
+      "label": "Inventory Reports"
+    },
+    "Finance Reports": {
+      "label": "Finance Reports"
+    },
     "Production Management": {
       "label": "Production Management"
     },
@@ -18688,6 +18696,30 @@
     },
     "Intrastat File Configuration": {
       "label": "Intrastat File Configuration"
+    },
+    "Order": {
+      "label": "Order"
+    },
+    "Invoice": {
+      "label": "Invoice"
+    },
+    "Quotation": {
+      "label": "Quotation"
+    },
+    "Shipment": {
+      "label": "Shipment"
+    },
+    "Receipt": {
+      "label": "Receipt"
+    },
+    "Return": {
+      "label": "Return"
+    },
+    "Return Receipt": {
+      "label": "Return Receipt"
+    },
+    "Return Shipment": {
+      "label": "Return Shipment"
     }
   },
   "statuses": {
