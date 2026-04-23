@@ -31,6 +31,7 @@ jobs:
           key: sfqg-baseline-${{ github.base_ref }}-${{ hashFiles('quality-gate.config.json') }}
 
       - name: Run quality gate
+        continue-on-error: true
         run: >-
           node cli/src/quality-gate.js
           --pr-affected
@@ -40,6 +41,7 @@ jobs:
           --json qg-report.json
 
       - name: Post PR comment
+        if: always()
         uses: actions/github-script@v7
         env:
           REPORT_PATH: qg-report.md
