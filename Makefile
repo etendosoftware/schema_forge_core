@@ -1,4 +1,4 @@
-.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate dev build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview
+.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate dev dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview
 
 # --- Testing ---
 
@@ -41,6 +41,9 @@ generate: ## Generate frontend from Sales Order contract
 
 dev: ## Start app-shell dev server (http://localhost:3100)
 	cd tools/app-shell && npm run dev
+
+dev-mock: ## Start app-shell dev server with mock data (http://localhost:3100) — required for E2E tests
+	cd tools/app-shell && npm run dev:mock
 
 build: ## Build app-shell for production
 	cd tools/app-shell && npm run build
