@@ -6,20 +6,41 @@ function pluralize(count, singular, plural = `${singular}s`) {
   return `${count} ${count === 1 ? singular : plural}`;
 }
 
-function baselineScoreMap(baselineResult) {
+function isFailureStatus(status) {
+  return status === 'fail' || status === 'error';
+}
+
+function baselineWindowMap(baselineResult) {
   const map = new Map();
   for (const window of baselineResult?.windows ?? []) {
-    map.set(window.window, window.score ?? null);
+    map.set(window.window, window);
   }
   return map;
 }
-function renderFailures(window) {
-  const failingChecks = window.checks.filter((check) => check.status === 'fail' || check.status === 'error');
-  if (failingChecks.length === 0) {
-    return '';
+
+function summarizeRegressionChecks(windows) {
+  const counts = new Map();
+  for (const window of windows) {
+    for (const check of window.introducedFailures) {
+      counts.set(check.check, (counts.get(check.check) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .map(([check, count]) => `${check} (${count})`);
+}
+
+function renderRegressionDetails(window) {
+  if (window.introducedFailures.length === 0) {
+    return [
+      `### ${window.window} — score regression`,
+      '',
+      `- Score regressed from ${scoreText(window.baseline)} to ${scoreText(window.score)}.`,
+      '',
+    ].join('\n');
   }
 
-  return failingChecks.map((check) => {
+  return window.introducedFailures.map((check) => {
     return [
       `### ${window.window} — ${check.check}`,
       '',
@@ -30,25 +51,13 @@ function renderFailures(window) {
   }).join('\n');
 }
 
-function summarizeFailingChecks(windows) {
-  const counts = new Map();
-  for (const window of windows) {
-    for (const check of window.checks.filter((entry) => entry.status === 'fail' || entry.status === 'error')) {
-      counts.set(check.check, (counts.get(check.check) ?? 0) + 1);
-    }
-  }
-  return [...counts.entries()]
-    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
-    .map(([check, count]) => `${check} (${count})`);
-}
-
-function renderNextActions({ gateVerdict, baselineRef, failingWindows, regressionWindows, failingChecks }) {
+function renderNextActions({ gateVerdict, baselineRef, regressionWindows, regressionChecks }) {
   if (gateVerdict !== 'FAIL') {
     return [
       '### What to do next',
       '',
-      '- No blocker or regression failures detected.',
-      '- Merge or continue review as usual.',
+      '- No regressions were introduced by this PR compared with baseline.',
+      '- Existing baseline debt in affected windows is intentionally omitted from this comment.',
       '',
     ].join('\n');
   }
@@ -56,19 +65,21 @@ function renderNextActions({ gateVerdict, baselineRef, failingWindows, regressio
   const lines = [
     '### What to do next',
     '',
-    `- Fix the blocker failures in ${pluralize(failingWindows.length, 'window')}.`,
+    `- Fix the regressions introduced in ${pluralize(regressionWindows.length, 'window')}.`,
   ];
 
-  if (failingChecks.length > 0) {
-    lines.push(`- Start with the failing checks that hit the most windows: ${failingChecks.join(', ')}.`);
+  if (regressionChecks.length > 0) {
+    lines.push(`- Start with the new blocker checks that hit the most windows: ${regressionChecks.join(', ')}.`);
   }
-  if (regressionWindows.length > 0) {
-    lines.push(`- Recover the windows that regressed below baseline: ${regressionWindows.map((window) => window.window).join(', ')}.`);
+
+  const scoreOnlyWindows = regressionWindows.filter((window) => window.scoreRegression && window.introducedFailures.length === 0);
+  if (scoreOnlyWindows.length > 0) {
+    lines.push(`- Investigate score-only regressions in: ${scoreOnlyWindows.map((window) => window.window).join(', ')}.`);
   }
 
   lines.push(
     `- Re-run \`node cli/src/quality-gate.js --pr-affected --baseline-ref ${baselineRef}\` locally before pushing.`,
-    '- Use the detailed sections below to jump directly to the failing files and invariants.',
+    '- Use the regression details below to jump directly to the failing files or score drops introduced by this PR.',
     '',
   );
 
@@ -76,31 +87,42 @@ function renderNextActions({ gateVerdict, baselineRef, failingWindows, regressio
 }
 
 export function buildQualityGateReport({ baselineRef, baselineSha, headResult, baselineResult, baselineWarning = null }) {
-  const baselineByWindow = baselineScoreMap(baselineResult);
+  const baselineByWindow = baselineWindowMap(baselineResult);
   const windows = headResult.windows.map((window) => {
-    const baseline = baselineByWindow.get(window.window) ?? null;
+    const baselineWindow = baselineByWindow.get(window.window) ?? null;
+    const baseline = baselineWindow?.score ?? null;
+    const baselineChecks = new Map((baselineWindow?.checks ?? []).map((check) => [check.check, check]));
+    const introducedFailures = window.checks.filter((check) => {
+      if (!isFailureStatus(check.status)) {
+        return false;
+      }
+      const baselineCheck = baselineChecks.get(check.check);
+      return !baselineCheck || !isFailureStatus(baselineCheck.status);
+    });
     const delta = baseline ? window.score.passed - baseline.passed : 0;
+    const scoreRegression = Boolean(baseline) && delta < 0 && window.verdict !== 'NO-OP';
     return {
       ...window,
       baseline,
       delta,
+      introducedFailures,
+      introducedFailureChecks: introducedFailures.map((check) => check.check),
+      scoreRegression,
     };
   });
 
-  const regressionWindows = windows.filter((window) => window.baseline && window.delta < 0 && window.verdict !== 'NO-OP');
-  const gateVerdict = headResult.summary.gateVerdict === 'FAIL' || regressionWindows.length > 0 ? 'FAIL' : 'PASS';
-
-  const failingWindows = windows.filter((window) => window.verdict === 'FAIL');
-  const failingChecks = summarizeFailingChecks(failingWindows);
+  const regressionWindows = windows.filter((window) => window.introducedFailures.length > 0 || window.scoreRegression);
+  const gateVerdict = regressionWindows.length > 0 ? 'FAIL' : 'PASS';
+  const regressionChecks = summarizeRegressionChecks(regressionWindows);
 
   const summary = {
     gateVerdict,
     baselineRef,
     baselineSha,
     affectedWindows: headResult.summary.affectedWindows,
-    failingWindows: failingWindows.length,
+    regressionWindows: regressionWindows.length,
     regressionFailures: regressionWindows.map((window) => window.window),
-    failingChecks,
+    regressionChecks,
     windows: windows.map((window) => ({
       window: window.window,
       verdict: window.verdict,
@@ -108,6 +130,8 @@ export function buildQualityGateReport({ baselineRef, baselineSha, headResult, b
       baseline: window.baseline,
       delta: window.delta,
       blockerFailures: window.blockerFailures,
+      introducedFailureChecks: window.introducedFailureChecks,
+      scoreRegression: window.scoreRegression,
     })),
   };
 
@@ -115,45 +139,46 @@ export function buildQualityGateReport({ baselineRef, baselineSha, headResult, b
     '<!-- sfqg-report -->',
     '## Schema Forge Quality Gate',
     '',
+    'This comment lists only regressions introduced by this PR compared with the baseline branch.',
+    '',
     `Baseline: ${baselineRef}${baselineSha ? ` @ ${baselineSha}` : ''}`,
     `Affected windows: ${summary.affectedWindows}`,
-    `Failing windows: ${summary.failingWindows}`,
+    `Regressing windows: ${summary.regressionWindows}`,
     `Gate verdict: ${summary.gateVerdict}`,
   ];
 
   if (baselineWarning) {
     lines.push('', `Warning: ${baselineWarning}`);
   }
-  if (summary.regressionFailures.length > 0) {
-    lines.push('', `Regression failures: ${summary.regressionFailures.join(', ')}`);
-  }
-  if (summary.failingChecks.length > 0) {
-    lines.push('', `Failing checks: ${summary.failingChecks.join(', ')}`);
+  if (summary.regressionChecks.length > 0) {
+    lines.push('', `Regressing checks: ${summary.regressionChecks.join(', ')}`);
   }
 
   lines.push('', renderNextActions({
     gateVerdict,
     baselineRef,
-    failingWindows,
     regressionWindows,
-    failingChecks,
+    regressionChecks,
   }));
 
-  lines.push(
-    '',
-    '| Window | Score | Baseline | Delta | Blockers failed |',
-    '|---|---:|---:|---:|---|',
-    ...windows.map((window) => {
-      const baseline = window.baseline ? scoreText(window.baseline) : '—';
-      const blockerFailures = window.blockerFailures.length > 0 ? window.blockerFailures.join(', ') : '—';
-      return `| ${window.window} | ${scoreText(window.score)} | ${baseline} | ${window.delta} | ${blockerFailures} |`;
-    }),
-    '',
-  );
-
-  const failureSections = windows.map(renderFailures).filter(Boolean);
-  if (failureSections.length > 0) {
-    lines.push(...failureSections);
+  if (regressionWindows.length > 0) {
+    lines.push(
+      '<details>',
+      '<summary>Regression details</summary>',
+      '',
+      '| Window | PR score | Baseline | Delta | New blockers |',
+      '|---|---:|---:|---:|---|',
+      ...regressionWindows.map((window) => {
+        const blockers = window.introducedFailureChecks.length > 0
+          ? window.introducedFailureChecks.join(', ')
+          : 'score regression';
+        return `| ${window.window} | ${scoreText(window.score)} | ${window.baseline ? scoreText(window.baseline) : '—'} | ${window.delta} | ${blockers} |`;
+      }),
+      '',
+      ...regressionWindows.map(renderRegressionDetails).filter(Boolean),
+      '</details>',
+      '',
+    );
   }
 
   return {
@@ -162,6 +187,7 @@ export function buildQualityGateReport({ baselineRef, baselineSha, headResult, b
     json: {
       summary,
       windows,
+      regressionWindows,
       baselineWarning,
     },
   };

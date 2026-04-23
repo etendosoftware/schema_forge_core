@@ -101,6 +101,10 @@ describe('buildQualityGateReport', () => {
           {
             window: 'internal-consumption',
             score: { passed: 2, total: 2 },
+            checks: [
+              { check: 'parse', severity: 'blocker', status: 'pass', detail: 'ok' },
+              { check: 'imports', severity: 'blocker', status: 'pass', detail: 'ok' },
+            ],
           },
         ],
       },
@@ -109,11 +113,12 @@ describe('buildQualityGateReport', () => {
     assert.equal(report.summary.gateVerdict, 'FAIL');
     assert.equal(report.summary.windows[0].delta, -1);
     assert.match(report.markdown, /Schema Forge Quality Gate/);
-    assert.match(report.markdown, /Failing windows: 1/);
-    assert.match(report.markdown, /Failing checks: imports \(1\)/);
+    assert.match(report.markdown, /This comment lists only regressions introduced by this PR/);
+    assert.match(report.markdown, /Regressing windows: 1/);
+    assert.match(report.markdown, /Regressing checks: imports \(1\)/);
     assert.match(report.markdown, /What to do next/);
     assert.match(report.markdown, /--baseline-ref origin\/main/);
-    assert.match(report.markdown, /internal-consumption/);
+    assert.match(report.markdown, /<details>/);
     assert.match(report.markdown, /Broken relative import/);
     assert.match(report.markdown, /<!-- sfqg-report -->/);
   });
@@ -141,13 +146,56 @@ describe('buildQualityGateReport', () => {
         windows: [
           {
             window: 'sales-order',
-            score: { passed: 2, total: 2 }
-          }
-        ]
+            score: { passed: 2, total: 2 },
+            checks: [
+              { check: 'parse', severity: 'blocker', status: 'pass', detail: 'ok' },
+              { check: 'imports', severity: 'blocker', status: 'pass', detail: 'ok' },
+            ],
+          },
+        ],
       }
     });
 
     assert.equal(report.summary.gateVerdict, 'FAIL');
     assert.equal(report.summary.windows[0].delta, -1);
+  });
+
+  it('ignores failures that already existed on the baseline', () => {
+    const report = buildQualityGateReport({
+      baselineRef: 'origin/main',
+      baselineSha: 'abc1234',
+      headResult: {
+        summary: { gateVerdict: 'FAIL' },
+        windows: [
+          {
+            window: 'contacts',
+            verdict: 'FAIL',
+            score: { passed: 4, total: 5 },
+            blockerFailures: ['i18n'],
+            checks: [
+              { check: 'parse', severity: 'blocker', status: 'pass', detail: 'ok' },
+              { check: 'i18n', severity: 'blocker', status: 'fail', detail: 'Hardcoded Close label' },
+            ],
+          },
+        ],
+      },
+      baselineResult: {
+        windows: [
+          {
+            window: 'contacts',
+            score: { passed: 4, total: 5 },
+            checks: [
+              { check: 'parse', severity: 'blocker', status: 'pass', detail: 'ok' },
+              { check: 'i18n', severity: 'blocker', status: 'fail', detail: 'Hardcoded Close label' },
+            ],
+          },
+        ],
+      },
+    });
+
+    assert.equal(report.summary.gateVerdict, 'PASS');
+    assert.equal(report.summary.regressionWindows, 0);
+    assert.doesNotMatch(report.markdown, /Hardcoded Close label/);
+    assert.match(report.markdown, /No regressions were introduced by this PR/);
   });
 });

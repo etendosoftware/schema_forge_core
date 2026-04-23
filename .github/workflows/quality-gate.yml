@@ -31,7 +31,6 @@ jobs:
           key: sfqg-baseline-${{ github.base_ref }}-${{ hashFiles('quality-gate.config.json') }}
 
       - name: Run quality gate
-        continue-on-error: true
         run: >-
           node cli/src/quality-gate.js
           --pr-affected
