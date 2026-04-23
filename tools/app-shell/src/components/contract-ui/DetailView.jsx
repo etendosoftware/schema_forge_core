@@ -11,6 +11,7 @@ import { useEntity } from '@/hooks/useEntity';
 import { useCatalogs } from '@/hooks/useCatalogs';
 import { useDisplayLogic } from '@/hooks/useDisplayLogic';
 import { useCallout } from '@/hooks/useCallout';
+import { useDocumentAction } from '@/hooks/useDocumentAction';
 import { useMenuLabel, useUI, useLocale } from '@/i18n';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
@@ -207,6 +208,8 @@ export function DetailView({
   const { catalogs, catalogsLoaded } = useCatalogs(api, token, apiBaseUrl, staticCatalogs);
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
+  const docAction = useDocumentAction({ apiBaseUrl, entity, token });
+  const [actionFeedback, setActionFeedback] = useState(null); // { type: 'error'|'success', message }
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -1093,8 +1096,24 @@ export function DetailView({
                         <button
                           key={action.key || i}
                           type="button"
-                          onClick={() => {
+                          disabled={docAction.loading}
+                          onClick={async () => {
                             setShowMoreMenu(false);
+                            if (action.documentAction) {
+                              setActionFeedback(null);
+                              const currentId = data?.id || recordId;
+                              try {
+                                await docAction.execute(currentId, action.documentAction);
+                                setActionFeedback({
+                                  type: 'success',
+                                  message: (action.successKey ? ui(action.successKey) : action.successMessage) || ui('actionCompleted'),
+                                });
+                                hook.fetchById?.(currentId);
+                              } catch (err) {
+                                setActionFeedback({ type: 'error', message: err.message });
+                              }
+                              return;
+                            }
                             if (action.columnName) {
                               hook.handleProcess?.({ columnName: action.columnName, name: action.key });
                             } else if (action.onClick) {
@@ -1104,9 +1123,9 @@ export function DetailView({
                           className={`w-full text-left px-3 py-1.5 text-[13px] transition-colors ${action.destructive
                               ? 'text-red-600 hover:bg-red-50'
                               : 'text-foreground hover:bg-secondary'
-                            }`}
+                            } ${docAction.loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
-                          {action.label}
+                          {action.labelKey ? ui(action.labelKey) : action.label}
                         </button>
                       ))}
                       {customMenuContent && (() => {
@@ -1251,6 +1270,28 @@ export function DetailView({
             ))}
           </div>
         </div>
+        )}
+
+        {/* Menu action feedback (from documentAction items) */}
+        {actionFeedback && (
+          <div
+            role="alert"
+            className={`mx-6 my-2 px-3 py-2 text-xs rounded-md border flex items-start justify-between gap-3 ${
+              actionFeedback.type === 'error'
+                ? 'bg-red-50 border-red-200 text-red-700'
+                : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+            }`}
+          >
+            <span className="flex-1">{actionFeedback.message}</span>
+            <button
+              type="button"
+              onClick={() => setActionFeedback(null)}
+              className="text-xs font-medium opacity-60 hover:opacity-100"
+              aria-label="Dismiss"
+            >
+              &times;
+            </button>
+          </div>
         )}
 
         {/* Primary tab bar (General / Additional Info / etc.) */}

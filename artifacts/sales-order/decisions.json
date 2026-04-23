@@ -12,14 +12,24 @@
       {
         "key": "cancel",
         "label": "Cancel",
+        "labelKey": "cancel",
         "destructive": true,
         "visibleWhenStatus": "CO"
+      },
+      {
+        "key": "reactivate",
+        "label": "Reactivate",
+        "labelKey": "reactivate",
+        "visibleWhenStatus": "CO",
+        "documentAction": "RE",
+        "successKey": "actionCompleted"
       }
     ],
     "processOverrides": {},
     "customComponents": {
       "topbarRight": "OrderCreateInvoice",
-      "topbarExtra": "OrderDraftChips"
+      "topbarExtra": "OrderDraftChips",
+      "bulkActions": "OrderReactivateBulkAction"
     },
     "labelOverrides": {
       "es_ES": {

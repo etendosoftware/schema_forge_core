@@ -41,6 +41,7 @@ This window should let a user create, review, confirm, and manage sales orders f
 - The confirm-and-create flow proves shipment and invoice creation endpoints are used, but there is no browser-level evidence that taxes, discounts, net totals, and gross totals visibly recalculate in real time after line edits. The contract strongly suggests that behavior; the repo does not currently prove it end to end.
 - Completed-order management uses delivered quantities from order lines and invoice totals from related invoices, but there is no explicit browser proof for partial shipments, partial invoicing, or mixed draft/completed downstream document scenarios.
 - The menu action shows `Cancel` only when status is `CO`, but the current generated page wires it with an empty `onClick`. The action is visible in configuration, yet its actual user-facing cancellation behavior is not evidenced here.
+- The menu action exposes `Reactivate Order` only when status is `CO`. Clicking it calls the standard `documentAction` endpoint on the header with `docAction=RE`, which Etendo core's `C_Order_Post` procedure handles. The procedure itself blocks reactivation when the order has linked invoices and returns an error message that the UI surfaces inline. Bulk reactivation is available from the list selection bar via `OrderReactivateBulkAction`, visible only when every selected row is in `CO`.
 - Related documents cover quotation, shipment, invoice, and payment navigation, but there is no evidence that replacement orders, reserved stock, related products, or related services are surfaced to users even though contracts exist for those entities.
 
 ## Manual verification
@@ -53,6 +54,8 @@ This window should let a user create, review, confirm, and manage sales orders f
 6. Open a completed order with remaining fulfillment or invoicing work and verify the top-bar management action opens shipment/invoice handling rather than a generic process entry screen.
 7. On a completed order with related records, open `Related Documents` and confirm quotation, shipment, invoice, and payment chips navigate to the expected records.
 8. On a completed order, verify whether the `Cancel` menu action performs a real cancellation flow; if it only renders without action, record that as a product gap.
+9. On a completed order, open the three-dot menu and confirm `Reactivate Order` appears. Click it and verify the order transitions back to `DR`, editable fields become writable, and an inline success banner briefly appears. Run the same action on an order with a linked invoice and verify the inline error banner surfaces the backend message without mutating the order.
+10. In the list view, select two or more completed orders and verify the `Reactivate` bulk button appears in the selection bar. Mix one draft row into the selection and verify the button disappears. Trigger the bulk action with one valid and one invoice-linked order and verify the failure summary lists the rejected document while the valid one reactivates.
 
 ## Automated evidence
 
