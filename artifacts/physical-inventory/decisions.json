@@ -68,6 +68,7 @@
     },
     "lines": {
       "name": "inventoryLine",
+      "javaQualifier": "inventoryLine",
       "fields": {
         "storageBin": {
           "form": false,

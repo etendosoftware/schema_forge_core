@@ -187,6 +187,29 @@ catalogs['PriceList'] = [
   }
 ];
 
+catalogs['Currency'] = [
+  {
+    "id": "USD",
+    "name": "US Dollar",
+    "symbol": "$"
+  },
+  {
+    "id": "EUR",
+    "name": "Euro",
+    "symbol": "EUR"
+  },
+  {
+    "id": "GBP",
+    "name": "Pound Sterling",
+    "symbol": "GBP"
+  },
+  {
+    "id": "ARS",
+    "name": "Argentine Peso",
+    "symbol": "ARS"
+  }
+];
+
 catalogs['Product'] = [
   {
     "id": "prod-001",

@@ -173,7 +173,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
 
   const status = displayInvoice.documentStatus;
   const badgeProps = getStatusBadgeProps(status);
-  const label = statusLabel(status);
+  const label = statusLabel(status, null, ui);
   const partnerName = displayInvoice.businessPartner$_identifier || displayInvoice.businessPartner || '—';
 
   // paymentDetails records use `amount` (applied amount)
@@ -310,26 +310,23 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                     onClick={() => fileInputRef.current?.click()}
                     className={`w-full h-full max-h-[420px] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-4 cursor-pointer transition-colors ${
                       isDragOver
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-blue-300 bg-white hover:border-blue-400 hover:bg-blue-50/30'
+                        ? 'border-gray-400 bg-gray-100'
+                        : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100/60'
                     }`}
                   >
                     {/* Document illustration */}
                     <div className="relative">
-                      <div className="w-16 h-20 bg-gray-100 rounded-lg border border-gray-200 flex items-end justify-center pb-2 shadow-sm">
-                        <div className="w-10 h-1.5 bg-blue-300 rounded mb-1" />
-                      </div>
-                      <div className="absolute -right-3 -bottom-2 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center shadow">
-                        <Upload size={13} className="text-white" />
+                      <div className="w-16 h-20 bg-white rounded-lg border border-gray-200 flex items-center justify-center shadow-sm">
+                        <Upload size={20} className="text-gray-400" />
                       </div>
                     </div>
                     {isDragOver ? (
-                      <p className="text-sm font-medium text-blue-600">{ui('invoicePreviewDropFileHere')}</p>
+                      <p className="text-sm font-medium text-gray-700">{ui('invoicePreviewDropFileHere')}</p>
                     ) : (
                       <>
-                        <p className="text-sm font-medium text-gray-600 mt-1">{ui('invoicePreviewUploadYourDocument')}</p>
+                        <p className="text-sm text-gray-600 mt-1">{ui('invoicePreviewUploadYourDocument')}</p>
                         <button
-                          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                          className="px-4 py-2 text-sm font-medium text-gray-900 bg-transparent border border-gray-900 rounded-lg hover:bg-gray-900 hover:text-white transition-colors"
                           onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
                         >
                           {ui('invoicePreviewClickHereToUploadYourFile')}
@@ -366,25 +363,29 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
               <div className="px-4 pt-4 pb-3 border-b border-gray-200 shrink-0">
                 {/* Title + client row */}
                 <div className="pr-8 mb-3">
-                  <span className="font-semibold text-gray-900 text-base leading-tight block">
+                  <span className="font-bold text-gray-900 text-lg leading-tight block">
                     {tMenu(specName === 'purchase-invoice' ? 'Purchase Invoice' : 'Sales Invoice')} {displayInvoice.documentNo}
                   </span>
+                  {partnerName && partnerName !== '—' && (
+                    <span className="text-xs text-gray-500 mt-0.5 block">
+                      {ui('invoicePreviewClient')} {partnerName}
+                    </span>
+                  )}
                 </div>
 
                 {/* Action buttons row */}
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  {/* Enviar — sales invoice only */}
-                  {isSalesInvoice && (
-                    <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8" onClick={openEmailModal}>
-                      <Send size={12} />
-                      {ui('invoicePreviewSend')}
-                    </Button>
-                  )}
+                  {/* Enviar */}
+                  <Button size="sm" className="gap-1.5 text-xs h-8 bg-gray-900 hover:bg-gray-800 text-white" onClick={openEmailModal}>
+                    <Send size={12} />
+                    {ui('invoicePreviewSend')}
+                  </Button>
 
                   {/* Add Payment */}
                   <Button
                     size="sm"
-                    className="gap-1.5 text-xs h-8 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    variant="outline"
+                    className="gap-1.5 text-xs h-8 border-gray-300 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
                     disabled={!canAddPayment}
                     onClick={canAddPayment ? () => setShowPaymentModal(true) : undefined}
                   >
@@ -397,7 +398,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                     <Button
                       size="sm"
                       variant="outline"
-                      className="gap-1.5 text-xs h-8"
+                      className="gap-1.5 text-xs h-8 border-gray-300 text-gray-700"
                       onClick={handleDownloadPdf}
                       disabled={!pdfUrl}
                     >
@@ -407,13 +408,13 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                   )}
 
                   {/* Edit */}
-                  <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8" onClick={handleEdit}>
+                  <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8 border-gray-300 text-gray-700" onClick={handleEdit}>
                     <Edit2 size={12} />
                     {ui('invoicePreviewEdit')}
                   </Button>
 
                   {/* More options */}
-                  <button className="p-1.5 h-8 w-8 flex items-center justify-center text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg transition-colors">
+                  <button className="p-1.5 h-8 w-8 flex items-center justify-center text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg transition-colors">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
                   </button>
                 </div>
@@ -427,7 +428,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                     onClick={() => setActiveTab(tab.key)}
                     className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                       activeTab === tab.key
-                        ? 'bg-blue-50 text-blue-600 font-medium'
+                        ? 'bg-gray-100 text-gray-900 font-medium'
                         : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                     }`}
                   >
@@ -452,6 +453,8 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                     isDraft={isDraft}
                     isFullyPaid={isFullyPaid}
                     specName={specName}
+                    apiBaseUrl={apiBaseUrl}
+                    token={token}
                     onAddPayment={() => setShowPaymentModal(true)}
                     onSend={openEmailModal}
                   />
@@ -505,24 +508,43 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
 
 // ── Stats panel: Total + Payments + Files sections ──
 
-function SectionCard({ title, titleRight, done, noPadding, children }) {
-  return (
-    <div className="mx-4 mt-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <span className="font-semibold text-gray-800 text-sm">{title}</span>
-        {titleRight ?? (done ? <Check size={15} className="text-green-500" /> : null)}
+/**
+ * SectionCard — two variants:
+ *   summary=true  → title bold INSIDE the card with border-bottom (used for Total)
+ *   summary=false → title uppercase gray ABOVE the card, titleRight as dark underlined link
+ */
+function SectionCard({ title, titleRight, done, noPadding, summary, children }) {
+  if (summary) {
+    return (
+      <div className="mx-4 mt-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+          <span className="font-bold text-gray-900 text-sm">{title}</span>
+          {titleRight ?? (done ? <Check size={15} className="text-green-500" /> : null)}
+        </div>
+        <div className={noPadding ? '' : 'px-4 py-2'}>{children}</div>
       </div>
-      <div className={noPadding ? '' : 'px-4 py-3'}>{children}</div>
+    );
+  }
+
+  return (
+    <div className="mx-4 mt-5">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</span>
+        {titleRight ?? (done ? <Check size={13} className="text-green-500" /> : null)}
+      </div>
+      <div className={`bg-white rounded-xl border border-gray-200 overflow-hidden ${noPadding ? '' : 'px-4 py-2'}`}>
+        {children}
+      </div>
     </div>
   );
 }
 
-function InfoRow({ label, value, link }) {
+function InfoRow({ label, value, link, underline }) {
   return (
     <div className="flex justify-between items-center py-1.5 text-sm">
-      <span className="text-gray-500">{label}</span>
-      {link
-        ? <span className="text-blue-600 font-medium text-right max-w-[55%] truncate">{value ?? '—'}</span>
+      <span className="text-gray-400">{label}</span>
+      {(link || underline)
+        ? <span className="text-gray-900 font-medium text-right max-w-[55%] truncate underline decoration-gray-400">{value ?? '—'}</span>
         : <span className="text-gray-900 font-medium text-right max-w-[55%] truncate">{value ?? '—'}</span>
       }
     </div>
@@ -538,8 +560,10 @@ function fmtPayDate(raw) {
 
 const PAID_STATUSES = new Set(['RPR', 'RPPC', 'RDNC', 'PPM']);
 
-function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, installments, payments, loadingPayments, totalOutstanding, canAddPayment, isDraft, isFullyPaid, specName, onAddPayment, onSend }) {
+function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, installments, payments, loadingPayments, totalOutstanding, canAddPayment, isDraft, isFullyPaid, specName, apiBaseUrl, token, onAddPayment, onSend }) {
   const ui = useUI();
+  const [accountingAccount, setAccountingAccount] = useState(null);
+
   const invoiceDate = invoice.invoiceDate
     ? new Date(invoice.invoiceDate).toLocaleDateString('en-GB')
     : '—';
@@ -550,27 +574,43 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, install
 
   const payPrefix = specName === 'purchase-invoice' ? 'payment-out' : 'payment-in';
 
+  useEffect(() => {
+    if (!invoice?.id || !apiBaseUrl || !token) return;
+    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+    fetch(`${apiBaseUrl}/lines?parentId=${invoice.id}&_startRow=0&_endRow=1`, { headers })
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((d) => {
+        const lines = d?.response?.data ?? [];
+        const name = lines[0]?.['account$_identifier'] || null;
+        setAccountingAccount(name);
+      })
+      .catch(() => {});
+  }, [invoice?.id, apiBaseUrl, token]);
+
+  const currencyCode = installments[0]?.['currency$_identifier'] || '';
+
   return (
     <div className="pb-4">
-      {/* Total — amount in header, key fields in body */}
+      {/* Total — summary variant: title bold inside card */}
       <SectionCard
+        summary
         title={ui('invoicePreviewTotal')}
         titleRight={
-          <span className="font-semibold text-sm tabular-nums text-gray-900">
-            {formatAmount(invoice.grandTotalAmount)}
+          <span className="font-bold text-base tabular-nums text-gray-900">
+            {currencyCode} {formatAmount(invoice.grandTotalAmount)}
           </span>
         }
       >
-        <InfoRow label={ui('invoicePreviewContact')} value={partnerName} link />
+        <InfoRow label={ui('invoicePreviewContact')} value={partnerName} underline />
         <InfoRow label={ui('invoicePreviewDate')} value={invoiceDate} />
-        <InfoRow label={ui('invoicePreviewDueDate')} value={dueDate} />
+        <InfoRow label={ui('invoicePreviewDueDate')} value={dueDate} underline />
         <div className="flex justify-between items-center py-1.5 text-sm">
-          <span className="text-gray-500">{ui('invoicePreviewStatus')}</span>
+          <span className="text-gray-400">{ui('invoicePreviewStatus')}</span>
           <Badge {...badgeProps}>{sl}</Badge>
         </div>
       </SectionCard>
 
-      {/* Payments — flat list of registered payments, max ~3 visible */}
+      {/* Payments — title above card, dark underline titleRight */}
       <SectionCard
         title={ui('invoicePreviewPayments')}
         noPadding
@@ -578,42 +618,48 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, install
           canAddPayment ? (
             <button
               onClick={onAddPayment}
-              className="text-xs font-medium text-blue-600 hover:underline transition-colors"
+              className="text-xs font-medium text-gray-900 underline decoration-gray-600 hover:decoration-gray-900 transition-colors"
             >
               {ui('invoicePreviewAddPayment')}
             </button>
           ) : isFullyPaid ? (
-            <Check size={15} className="text-green-500" />
+            <Check size={13} className="text-green-500" />
           ) : null
         }
       >
         {loadingPayments ? (
           <p className="text-xs text-gray-400 py-4 text-center">{ui('loading')}</p>
+        ) : payments.length === 0 && totalOutstanding > 0 ? (
+          /* Pending installment — amber row */
+          <div className="flex justify-between items-center px-4 py-3">
+            <span className="text-sm font-medium text-amber-600">{ui('invoicePendingPayment')}</span>
+            <span className="text-sm font-semibold tabular-nums text-amber-600">
+              {currencyCode} {formatAmount(totalOutstanding)}
+            </span>
+          </div>
         ) : payments.length === 0 ? (
           <p className="text-xs text-gray-400 py-4 text-center">{ui('invoicePreviewNoPaymentsRecorded')}</p>
         ) : (
           <div className="overflow-y-auto divide-y divide-gray-100" style={{ maxHeight: '180px' }}>
             {payments.map((p) => {
               const isPaid = PAID_STATUSES.has(p.status);
-              const payBadge = isPaid ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700';
               const acctLabel = [p.accountName, p.accountCurrency].filter(Boolean).join(' · ');
-              const currencyCode = installments[0]?.['currency$_identifier'] || '';
 
               return (
                 <div key={p.id} className="px-4 py-3 bg-white">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-semibold tabular-nums text-gray-900">
+                      <span className={`text-sm font-semibold tabular-nums ${isPaid ? 'text-gray-900' : 'text-amber-600'}`}>
                         {currencyCode} {formatAmount(p.amount)}
                       </span>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${payBadge}`}>
+                      <span className={`text-xs font-medium ${isPaid ? 'text-green-600' : 'text-amber-600'}`}>
                         {isPaid ? ui('statusPaid') : ui('statusPending')}
                       </span>
-                      <span className="text-xs text-gray-500 tabular-nums">{fmtPayDate(p.paymentDate)}</span>
+                      <span className="text-xs text-gray-400 tabular-nums">{fmtPayDate(p.paymentDate)}</span>
                     </div>
                     <button
                       onClick={() => { window.location.href = `/${payPrefix}/${p.id}`; }}
-                      className="text-xs font-medium text-blue-600 hover:underline shrink-0 ml-2"
+                      className="text-xs font-medium text-gray-500 hover:text-gray-700 underline shrink-0 ml-2"
                     >
                       View →
                     </button>
@@ -630,24 +676,24 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, install
         )}
       </SectionCard>
 
-      {/* Emails */}
+      {/* Emails — title above card */}
       <SectionCard
         title={ui('invoicePreviewEmails')}
         titleRight={
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="2" y="4" width="20" height="16" rx="2"/>
-            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
-          </svg>
+          <button
+            onClick={onSend}
+            className="text-xs font-medium text-gray-900 underline decoration-gray-600 hover:decoration-gray-900 transition-colors"
+          >
+            {ui('invoicePreviewSendEmail')}
+          </button>
         }
       >
-        <Button
-          type="button"
-          onClick={onSend}
-          className="w-full gap-1.5 text-xs h-8 bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          <Send size={12} />
-          {ui('invoicePreviewSendEmail')}
-        </Button>
+        <p className="text-xs text-gray-400 py-2 text-center">{ui('invoicePreviewNoEmailHistory')}</p>
+      </SectionCard>
+
+      {/* Categorización — title above card */}
+      <SectionCard title={ui('invoicePreviewCategorization')}>
+        <InfoRow label={ui('invoicePreviewAccountingAccount')} value={accountingAccount} />
       </SectionCard>
     </div>
   );

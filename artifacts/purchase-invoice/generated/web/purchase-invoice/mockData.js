@@ -14,7 +14,6 @@ export const header = [
     "paymentMethod": "Sample paymentMethod",
     "description": "Standard order for Q1 delivery",
     "salesOrder": "Sample salesOrder",
-    "orderReference": "Sample orderReference",
     "documentStatus": "DR",
     "grandTotalAmount": 38907,
     "summedLineAmount": 38907,
@@ -27,7 +26,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 38907,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 38907
   },
@@ -44,7 +42,6 @@ export const header = [
     "paymentMethod": "Sample paymentMethod",
     "description": "Rush order - priority shipping required",
     "salesOrder": "Sample salesOrder",
-    "orderReference": "Sample orderReference",
     "documentStatus": "CO",
     "grandTotalAmount": 9306,
     "summedLineAmount": 9306,
@@ -57,7 +54,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 9306,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 9306
   },
@@ -74,7 +70,6 @@ export const header = [
     "paymentMethod": "Sample paymentMethod",
     "description": "Bulk purchase for warehouse restocking",
     "salesOrder": "Sample salesOrder",
-    "orderReference": "Sample orderReference",
     "documentStatus": "VO",
     "grandTotalAmount": 11544,
     "summedLineAmount": 11544,
@@ -87,7 +82,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 11544,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 11544
   },
@@ -104,7 +98,6 @@ export const header = [
     "paymentMethod": "Sample paymentMethod",
     "description": "Sample order for client evaluation",
     "salesOrder": "Sample salesOrder",
-    "orderReference": "Sample orderReference",
     "documentStatus": "IP",
     "grandTotalAmount": 11872,
     "summedLineAmount": 11872,
@@ -117,7 +110,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 11872,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 11872
   },
@@ -134,7 +126,6 @@ export const header = [
     "paymentMethod": "Sample paymentMethod",
     "description": "Recurring monthly supply order",
     "salesOrder": "Sample salesOrder",
-    "orderReference": "Sample orderReference",
     "documentStatus": "DR",
     "grandTotalAmount": 48460,
     "summedLineAmount": 48460,
@@ -147,7 +138,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 48460,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 48460
   },
@@ -164,7 +154,6 @@ export const header = [
     "paymentMethod": "Sample paymentMethod",
     "description": "Special pricing agreement applies",
     "salesOrder": "Sample salesOrder",
-    "orderReference": "Sample orderReference",
     "documentStatus": "CO",
     "grandTotalAmount": 45418,
     "summedLineAmount": 45418,
@@ -177,7 +166,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 45418,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 45418
   },
@@ -194,7 +182,6 @@ export const header = [
     "paymentMethod": "Sample paymentMethod",
     "description": "Consolidated order from multiple requests",
     "salesOrder": "Sample salesOrder",
-    "orderReference": "Sample orderReference",
     "documentStatus": "VO",
     "grandTotalAmount": 33840,
     "summedLineAmount": 33840,
@@ -207,7 +194,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 33840,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 33840
   },
@@ -224,7 +210,6 @@ export const header = [
     "paymentMethod": "Sample paymentMethod",
     "description": "Trial order for new product line",
     "salesOrder": "Sample salesOrder",
-    "orderReference": "Sample orderReference",
     "documentStatus": "IP",
     "grandTotalAmount": 25716,
     "summedLineAmount": 25716,
@@ -237,7 +222,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 25716,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 25716
   },
@@ -254,7 +238,6 @@ export const header = [
     "paymentMethod": "Sample paymentMethod",
     "description": "Replacement for damaged goods",
     "salesOrder": "Sample salesOrder",
-    "orderReference": "Sample orderReference",
     "documentStatus": "DR",
     "grandTotalAmount": 44780,
     "summedLineAmount": 44780,
@@ -267,7 +250,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 44780,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 44780
   },
@@ -284,7 +266,6 @@ export const header = [
     "paymentMethod": "Sample paymentMethod",
     "description": "Pre-season inventory build-up",
     "salesOrder": "Sample salesOrder",
-    "orderReference": "Sample orderReference",
     "documentStatus": "CO",
     "grandTotalAmount": 12483,
     "summedLineAmount": 12483,
@@ -297,7 +278,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 12483,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 12483
   },
@@ -314,7 +294,6 @@ export const header = [
     "paymentMethod": "Sample paymentMethod",
     "description": "Customer-specific configuration",
     "salesOrder": "Sample salesOrder",
-    "orderReference": "Sample orderReference",
     "documentStatus": "VO",
     "grandTotalAmount": 46022,
     "summedLineAmount": 46022,
@@ -327,7 +306,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 46022,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 46022
   },
@@ -344,7 +322,6 @@ export const header = [
     "paymentMethod": "Sample paymentMethod",
     "description": "Government contract fulfillment",
     "salesOrder": "Sample salesOrder",
-    "orderReference": "Sample orderReference",
     "documentStatus": "IP",
     "grandTotalAmount": 38634,
     "summedLineAmount": 38634,
@@ -357,7 +334,6 @@ export const header = [
     "salesRepresentative": "Sample salesRepresentative",
     "chargeAmount": 38634,
     "charge": "Sample charge",
-    "cashVAT": "Sample cashVAT",
     "project": "Sample project",
     "prepaymentAmount": 38634
   }
@@ -669,8 +645,8 @@ export const intrastat = [
     "netMassKg": 99.44,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 38907,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 38907,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-001"
   },
   {
@@ -687,8 +663,8 @@ export const intrastat = [
     "netMassKg": 96.94,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 9306,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 9306,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-002"
   },
   {
@@ -705,8 +681,8 @@ export const intrastat = [
     "netMassKg": 12.48,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 11544,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 11544,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-003"
   },
   {
@@ -723,8 +699,8 @@ export const intrastat = [
     "netMassKg": 96.31,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 11872,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 11872,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-004"
   },
   {
@@ -741,8 +717,8 @@ export const intrastat = [
     "netMassKg": 31.27,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 48460,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 48460,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-005"
   },
   {
@@ -759,8 +735,8 @@ export const intrastat = [
     "netMassKg": 76.52,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 45418,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 45418,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-006"
   },
   {
@@ -777,8 +753,8 @@ export const intrastat = [
     "netMassKg": 2.66,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 33840,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 33840,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-007"
   },
   {
@@ -795,8 +771,8 @@ export const intrastat = [
     "netMassKg": 10.03,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 25716,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 25716,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-008"
   },
   {
@@ -813,8 +789,8 @@ export const intrastat = [
     "netMassKg": 93.97,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 44780,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 44780,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-009"
   },
   {
@@ -831,8 +807,8 @@ export const intrastat = [
     "netMassKg": 1.1,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 12483,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 12483,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-010"
   },
   {
@@ -849,8 +825,8 @@ export const intrastat = [
     "netMassKg": 79.99,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 46022,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 46022,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-011"
   },
   {
@@ -867,8 +843,8 @@ export const intrastat = [
     "netMassKg": 53.61,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 38634,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 38634,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-012"
   }
 ];
@@ -968,93 +944,6 @@ export const tax = [
     "tax": "Exempt",
     "taxAmount": "Exempt",
     "taxableAmount": "Exempt",
-    "headerId": "mock-header-012"
-  }
-];
-
-export const basicDiscounts = [
-  {
-    "id": "mock-basicDiscounts-001",
-    "lineNo": 10,
-    "discount": 6,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-001"
-  },
-  {
-    "id": "mock-basicDiscounts-002",
-    "lineNo": 20,
-    "discount": 21,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-002"
-  },
-  {
-    "id": "mock-basicDiscounts-003",
-    "lineNo": 30,
-    "discount": 0,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-003"
-  },
-  {
-    "id": "mock-basicDiscounts-004",
-    "lineNo": 40,
-    "discount": 6,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-004"
-  },
-  {
-    "id": "mock-basicDiscounts-005",
-    "lineNo": 50,
-    "discount": 14,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-005"
-  },
-  {
-    "id": "mock-basicDiscounts-006",
-    "lineNo": 60,
-    "discount": 4,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-006"
-  },
-  {
-    "id": "mock-basicDiscounts-007",
-    "lineNo": 70,
-    "discount": 6,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-007"
-  },
-  {
-    "id": "mock-basicDiscounts-008",
-    "lineNo": 80,
-    "discount": 10,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-008"
-  },
-  {
-    "id": "mock-basicDiscounts-009",
-    "lineNo": 90,
-    "discount": 17,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-009"
-  },
-  {
-    "id": "mock-basicDiscounts-010",
-    "lineNo": 100,
-    "discount": 14,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-010"
-  },
-  {
-    "id": "mock-basicDiscounts-011",
-    "lineNo": 110,
-    "discount": 19,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-011"
-  },
-  {
-    "id": "mock-basicDiscounts-012",
-    "lineNo": 120,
-    "discount": 12,
-    "cascade": "Sample cascade",
     "headerId": "mock-header-012"
   }
 ];
@@ -1214,6 +1103,93 @@ export const cashVat = [
     "status": "IP",
     "isManualSettlement": "Sample isManualSettlement",
     "accountingDate": "2026-01-26",
+    "headerId": "mock-header-012"
+  }
+];
+
+export const basicDiscounts = [
+  {
+    "id": "mock-basicDiscounts-001",
+    "lineNo": 10,
+    "discount": 6,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-001"
+  },
+  {
+    "id": "mock-basicDiscounts-002",
+    "lineNo": 20,
+    "discount": 21,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-002"
+  },
+  {
+    "id": "mock-basicDiscounts-003",
+    "lineNo": 30,
+    "discount": 0,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-003"
+  },
+  {
+    "id": "mock-basicDiscounts-004",
+    "lineNo": 40,
+    "discount": 6,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-004"
+  },
+  {
+    "id": "mock-basicDiscounts-005",
+    "lineNo": 50,
+    "discount": 14,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-005"
+  },
+  {
+    "id": "mock-basicDiscounts-006",
+    "lineNo": 60,
+    "discount": 4,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-006"
+  },
+  {
+    "id": "mock-basicDiscounts-007",
+    "lineNo": 70,
+    "discount": 6,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-007"
+  },
+  {
+    "id": "mock-basicDiscounts-008",
+    "lineNo": 80,
+    "discount": 10,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-008"
+  },
+  {
+    "id": "mock-basicDiscounts-009",
+    "lineNo": 90,
+    "discount": 17,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-009"
+  },
+  {
+    "id": "mock-basicDiscounts-010",
+    "lineNo": 100,
+    "discount": 14,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-010"
+  },
+  {
+    "id": "mock-basicDiscounts-011",
+    "lineNo": 110,
+    "discount": 19,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-011"
+  },
+  {
+    "id": "mock-basicDiscounts-012",
+    "lineNo": 120,
+    "discount": 12,
+    "cascade": "Sample cascade",
     "headerId": "mock-header-012"
   }
 ];

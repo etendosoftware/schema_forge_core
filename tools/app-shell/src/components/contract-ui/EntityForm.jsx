@@ -10,6 +10,7 @@ import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { ImageField } from './ImageField.jsx';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
+import { CreateContactContext } from './CreateContactContext.js';
 
 function buildSelectPlaceholder(ui, label) {
   return `${ui('selectLabelPrefix')} ${label}...`;
@@ -67,6 +68,10 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
   // Tracks whether the user is actively typing so the sync effect doesn't fight keystrokes.
   const isEditingRef = useRef(false);
   const debounceRef = useRef(null);
+
+  // Optional "Create contact" capability injected by custom windows via context.
+  const createCtx = React.useContext(CreateContactContext);
+  const canCreate = !!createCtx && createCtx.fieldKey === field.key;
 
   React.useEffect(() => {
     // Only sync from outside when the user is NOT actively editing.
@@ -163,6 +168,17 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
   // If field is mandatory but value is empty, or if we have a value, don't show clear unless value exists
   const hasSelection = value != null && value !== '';
 
+  const createBtn = canCreate ? (
+    <button
+      type="button"
+      className="w-full text-left px-3 py-2 text-sm font-medium hover:bg-blue-50 border-b border-border/40 transition-colors"
+      style={{ color: '#202452' }}
+      onMouseDown={e => { e.preventDefault(); setOpen(false); createCtx.onOpen(query, handleSelect); }}
+    >
+      + {ui('createContact')}
+    </button>
+  ) : null;
+
   return (
     <div className="relative">
       <div className="relative">
@@ -213,8 +229,9 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
           </button>
         )}
       </div>
-      {open && filtered.length > 0 && (
+      {open && (canCreate || filtered.length > 0) && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
+          {createBtn}
           {filtered.map(opt => (
             <button
               key={opt.id}
@@ -235,9 +252,15 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
       )}
       {open && query.length > 0 && !fetching && filtered.length === 0 && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
+          {createBtn}
           <div className="px-3 py-2 text-xs text-muted-foreground">
-            {ui('noResultsFor')} "{query}"
+            {ui('noResultsFor')} &ldquo;{query}&rdquo;
           </div>
+        </div>
+      )}
+      {open && !query && !fetching && canCreate && filtered.length === 0 && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg">
+          {createBtn}
         </div>
       )}
     </div>
@@ -546,7 +569,12 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       || f.readOnly
       || displayLogic?.readOnly?.[f.key] === true
       || (typeof f.readOnlyLogic === 'function' && !!f.readOnlyLogic(data ?? {}));
-    const displayValue = resolveIdentifier(data, f.key) ?? data?.[f.key] ?? '';
+    const rawDisplayValue = resolveIdentifier(data, f.key) ?? data?.[f.key] ?? '';
+    // Strip floating-point noise (e.g. 243.20999999999998 → 243.21) for read-only number fields.
+    // toFixed(10) preserves up to 10 significant decimal places while eliminating IEEE 754 drift.
+    const displayValue = f.type === 'number' && isReadOnly && Number.isFinite(Number(rawDisplayValue))
+      ? parseFloat(Number(rawDisplayValue).toFixed(10))
+      : rawDisplayValue;
     // Shared read-only rendering for FK-style fields (dependent, selector, search)
     const renderReadOnlyFk = () => (
       <div key={f.key} className="space-y-1.5">
@@ -685,11 +713,17 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
         onChange?.(f.key, val, f.column);
         if (lbl) onChange?.(f.key + '$_identifier', lbl);
         if (auxData) {
+          const isGross = auxData.isTaxIncluded !== false;
           for (const [suffix, auxVal] of Object.entries(auxData)) {
-            // Gross price from price list — map directly to grossUnitPrice so the DB trigger
-            // can derive priceActual (net). Do NOT set unitPrice/priceActual from the frontend.
+            // Price from the document's price list. Mapping depends on price list type:
+            //   - Gross list (isTaxIncluded=true): standardPrice is the gross price → grossUnitPrice
+            //   - Net list   (isTaxIncluded=false): standardPrice is the net price   → unitPrice
             if (suffix === 'standardPrice' && auxVal != null) {
-              onChange?.('grossUnitPrice', auxVal);
+              if (isGross) {
+                onChange?.('grossUnitPrice', auxVal);
+              } else {
+                onChange?.('unitPrice', auxVal);
+              }
             } else if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
               for (const [auxSuffix, auxSuffixVal] of Object.entries(auxVal)) {
                 onChange?.(f.key + auxSuffix, auxSuffixVal);

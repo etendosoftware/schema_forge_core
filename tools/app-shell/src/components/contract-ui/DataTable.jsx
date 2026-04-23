@@ -11,7 +11,10 @@ import { useLabel, useUI, useLocale, useMenuLabel, useLocaleSwitch } from '@/i18
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { getStatusDotColor, getStatusGridPillClass, getStatusPillClass, statusLabel } from '@/lib/statusBadge.js';
+import { StatusTag } from '@/components/ui/status-tag';
+import { Tag } from '@/components/ui/tag';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
+import { resolveColumnLabel } from '@/lib/resolveColumnLabel.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import InternalConsumptionProductSearchDrawer from './InternalConsumptionProductSearchDrawer.jsx';
@@ -216,19 +219,6 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
   );
 }
 
-/**
- * Return a colored dot class based on whether a date is past, future, or today.
- * Green = future (not yet due), Red = past (overdue), null = today or empty.
- */
-function getDateDotColor(dateValue) {
-  if (!dateValue) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const d = new Date(dateValue);
-  d.setHours(0, 0, 0, 0);
-  if (d.getTime() === today.getTime()) return null;
-  return d > today ? 'bg-emerald-500' : 'bg-red-500';
-}
 
 function isTruthyBoolean(value) {
   return value === true || value === 'Y' || value === 'true';
@@ -400,13 +390,28 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
         if (topField === 'id' || topField === '_aux' || topField === 'label'
             || topField === 'name' || topField === 'searchKey'
             || typeof topVal === 'object' || topVal === null) continue;
-        // Gross price from price list — map directly to grossUnitPrice so the DB trigger
-        // can derive priceActual (net). Do NOT set unitPrice/priceActual from the frontend.
+        // Price from the document's price list. Mapping depends on price list type:
+        //   - Gross list (isTaxIncluded=true): standardPrice is the gross price → grossUnitPrice
+        //   - Net list   (isTaxIncluded=false): standardPrice is the net price   → unitPrice
+        // Mark the target field as touched so the callout does not overwrite it (some callouts
+        // look up the price themselves and may return a different value from another price list).
         if (topField === 'standardPrice' && topVal != null) {
-          snapshot['grossUnitPrice'] = topVal;
-          handleChange('grossUnitPrice', topVal);
-          snapshot['grossListPrice'] = topVal;
-          handleChange('grossListPrice', topVal);
+          const isGross = selectedItem?.isTaxIncluded !== false;
+          if (isGross) {
+            snapshot['grossUnitPrice'] = topVal;
+            handleChange('grossUnitPrice', topVal);
+            snapshot['grossListPrice'] = topVal;
+            handleChange('grossListPrice', topVal);
+            touchedFieldsRef.current.add('grossUnitPrice');
+            touchedFieldsRef.current.add('grossListPrice');
+          } else {
+            snapshot['unitPrice'] = topVal;
+            handleChange('unitPrice', topVal);
+            snapshot['listPrice'] = topVal;
+            handleChange('listPrice', topVal);
+            touchedFieldsRef.current.add('unitPrice');
+            touchedFieldsRef.current.add('listPrice');
+          }
           continue;
         }
         const ctxKey = `${key}_${topField}`;
@@ -472,10 +477,11 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
           // Prefer $_identifier (human-readable) over raw ID for FK fields.
           const rawVal = values[col.key];
           const identVal = values[col.key + '$_identifier'];
+          const isNumericDerived = NUMERIC_FIELD_TYPES.has(col.type);
           const displayVal = identVal || rawVal;
           return (
-            <TableCell key={col.key} className="text-muted-foreground text-sm">
-              {displayVal != null && displayVal !== '' ? displayVal : '\u2014'}
+            <TableCell key={col.key} className={`text-muted-foreground text-sm${isNumericDerived ? ' text-right tabular-nums' : ''}`}>
+              {displayVal != null && displayVal !== '' ? displayVal : '—'}
             </TableCell>
           );
         }
@@ -569,11 +575,35 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
           );
         }
 
-        // Selector fields render as native <select> dropdowns (few options)
+        // Selector fields render as native <select> dropdowns (few options).
+        // When catalog options are not pre-loaded, fall back to InlineSearchCombo
+        // which loads options dynamically from the selector URL.
         if (field.type === 'selector') {
           const options = getCatalogOptions(catalogs, entity, field);
           if (options.length === 0) {
-            return <TableCell key={col.key} className="py-1 px-2" />;
+            const selectorUrl = apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${field.column}` : null;
+            if (!selectorUrl) return <TableCell key={col.key} className="py-1 px-2" />;
+            return (
+              <TableCell key={col.key} className="py-1 px-2">
+                <InlineSearchCombo
+                  field={{ ...field, type: 'search' }}
+                  value={values[field.key] ?? ''}
+                  displayLabel={values[field.key + '$_identifier'] || ''}
+                  options={[]}
+                  inputRef={isFirst ? firstInputRef : undefined}
+                  placeholder={fieldLabel}
+                  onChange={(id, label, selectedItem) => {
+                    touchedFieldsRef.current.add(field.key);
+                    handleChange(field.key + '$_identifier', label);
+                    handleFieldChange(field.key, id, selectedItem);
+                  }}
+                  onKeyDown={handleKeyDown}
+                  selectorUrl={selectorUrl}
+                  selectorContext={selectorContext}
+                  token={token}
+                />
+              </TableCell>
+            );
           }
           return (
             <TableCell key={col.key} className="py-1 px-2">
@@ -601,28 +631,27 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
           );
         }
 
+        const isNumeric = NUMERIC_FIELD_TYPES.has(field.type);
         return (
           <TableCell key={col.key} className="py-1 px-2">
             <input
               ref={isFirst ? firstInputRef : undefined}
-              type={NUMERIC_FIELD_TYPES.has(field.type) ? 'number' : 'text'}
+              type={isNumeric ? 'number' : 'text'}
               inputMode={field.inputMode}
               value={values[field.key] ?? ''}
               onChange={(e) => {
                 const raw = e.target.value;
-                const isNumericType = NUMERIC_FIELD_TYPES.has(field.type);
-                touchedFieldsRef.current.add(field.key);
-                if (isNumericType && raw !== '' && raw !== '-') {
+                if (isNumeric && raw !== '' && raw !== '-') {
                   const parsed = field.type === 'integer' ? parseInt(raw, 10) : parseFloat(raw);
-                  handleChange(field.key, isNaN(parsed) ? raw : parsed);
+                  handleFieldChange(field.key, isNaN(parsed) ? raw : parsed);
                 } else {
-                  handleChange(field.key, raw);
+                  handleFieldChange(field.key, raw);
                 }
               }}
               onKeyDown={handleKeyDown}
               placeholder={fieldLabel}
               required={field.required}
-              className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+              className={`w-full h-8 text-sm rounded-md border border-input bg-background px-2 focus:ring-2 focus:ring-primary focus:outline-none${isNumeric ? ' text-right tabular-nums' : ''}`}
             />
           </TableCell>
         );
@@ -740,6 +769,10 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
   const ui = useUI();
   const dictionary = useLocale();
   const { locale } = useLocaleSwitch();
+  const dateFormatter = useMemo(
+    () => new Intl.DateTimeFormat(locale.replace('_', '-'), { year: 'numeric', month: '2-digit', day: '2-digit' }),
+    [locale]
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [columnFilters, setColumnFilters] = useState(initialColumnFilters ?? {});
   const [selectedRows, setSelectedRows] = useState(new Set());
@@ -872,13 +905,12 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
         if (warehouseLabel) display = warehouseLabel;
       }
     }
-    // Link styling on first string column
     if (col === columns[0] && col.type === 'string') {
       const pill = col.pill;
       const pillLabel = pill && pill.when(row) ? pill.label : null;
       return (
         <span className="inline-flex items-center gap-2">
-          <span className="font-medium text-blue-600">{display}</span>
+          <span>{display}</span>
           {pillLabel && (
             <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${pill.className || 'bg-gray-50 text-gray-600 border-gray-200'}`} style={{ borderWidth: '0.5px' }}>
               {pillLabel}
@@ -899,7 +931,11 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           </span>
         );
       }
-      return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusGridPillClass(raw)}`}>{label}</span>;
+      if (col.enumVariants) {
+        const variant = col.enumVariants[raw] ?? 'neutral';
+        return <Tag variant={variant} label={label} />;
+      }
+      return <span>{label}</span>;
     }
     if (col.type === 'status') {
       const raw = row[col.key];
@@ -913,7 +949,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           </span>
         );
       }
-      return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusGridPillClass(raw)}`}>{label}</span>;
+      return <StatusTag status={raw} label={label} />;
     }
     if (col.type === 'percent') {
       const val = Number(row[col.key]);
@@ -946,7 +982,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
               onCheckedChange={(nextChecked) => {
                 void handleInlineToggle(row, col, nextChecked);
               }}
-              aria-label={col.labels?.[locale] ?? col.labels?.en_US ?? t(col.column) ?? col.label ?? col.key}
+              aria-label={resolveColumnLabel(col, locale, t)}
             />
           </div>
         );
@@ -958,35 +994,36 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
         };
         const trueLabel  = resolveBadgeLabel(col.badgeLabels?.true,  ui('statusComplete'));
         const falseLabel = resolveBadgeLabel(col.badgeLabels?.false, ui('statusInProcess'));
-        const trueColor  = col.badgeColors?.true  ?? 'bg-emerald-100 text-emerald-800';
-        const falseColor = col.badgeColors?.false ?? 'bg-amber-100 text-amber-700';
-        if (isTruthyBoolean(val)) return (
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${trueColor}`}>
-            {trueLabel}
-          </span>
-        );
-        if (isFalsyBoolean(val)) return (
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${falseColor}`}>
-            {falseLabel}
-          </span>
-        );
+        if (!col.badgeColors) {
+          const trueVariant = col.badgeVariants?.true ?? 'green';
+          const falseVariant = col.badgeVariants?.false ?? 'neutral';
+          if (isTruthyBoolean(val)) return <Tag variant={trueVariant} label={trueLabel} />;
+          if (isFalsyBoolean(val)) return <Tag variant={falseVariant} label={falseLabel} />;
+        } else {
+          const trueColor  = col.badgeColors.true  ?? 'bg-emerald-100 text-emerald-800';
+          const falseColor = col.badgeColors.false ?? 'bg-amber-100 text-amber-700';
+          if (isTruthyBoolean(val)) return (
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${trueColor}`}>
+              {trueLabel}
+            </span>
+          );
+          if (isFalsyBoolean(val)) return (
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${falseColor}`}>
+              {falseLabel}
+            </span>
+          );
+        }
       }
       if (isTruthyBoolean(val)) return <span className="text-emerald-600">{ui('yes')}</span>;
       if (isFalsyBoolean(val)) return <span className="text-slate-400">{ui('no')}</span>;
       return <span className="text-slate-300">&mdash;</span>;
     }
     if (col.type === 'date') {
-      const dotColor = getDateDotColor(row[col.key]);
       const raw = row[col.key];
       // Parse date-only strings (yyyy-MM-dd) as local to avoid timezone shift
       const parsed = raw ? (/^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(raw + 'T00:00:00') : new Date(raw)) : null;
-      const formatted = parsed && !isNaN(parsed) ? parsed.toLocaleDateString() : '\u2014';
-      return (
-        <span className="inline-flex items-center gap-1.5">
-          {formatted}
-          {dotColor && <span className={`inline-block h-2 w-2 rounded-full ${dotColor}`} />}
-        </span>
-      );
+      const formatted = parsed && !isNaN(parsed) ? dateFormatter.format(parsed) : '\u2014';
+      return <span>{formatted}</span>;
     }
     if (col.type === 'amount') {
       return <span className="tabular-nums">{formatAmount(row[col.key], row['currency$_identifier'])}</span>;
@@ -1068,9 +1105,9 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                 </TableHead>
               )}
               {columns.map(col => {
-                const colLabel = col.labels?.[locale] ?? col.labels?.en_US ?? col.label ?? t(col.column) ?? col.key;
+                const colLabel = resolveColumnLabel(col, locale, t);
                 const isSorted = sortColumn === col.key;
-                const isRight = col.type === 'amount';
+                const isNumeric = NUMERIC_FIELD_TYPES.has(col.type);
                 return (
                   <TableHead key={col.key} className="align-top">
                     <div className="flex flex-col gap-1.5 pb-2">
@@ -1106,7 +1143,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                             columnFilters[col.key]
                               ? 'border-primary/40 bg-primary/5 pr-6'
                               : 'border-border/35',
-                            isRight ? 'text-right' : '',
+                            isNumeric ? 'text-right' : '',
                           ].filter(Boolean).join(' ')}
                         />
                         {columnFilters[col.key] && (
@@ -1172,7 +1209,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                       );
                     })()}
                     {columns.map(col => (
-                      <TableCell key={col.key} className={col.type === 'amount' ? 'text-right' : ''}>
+                      <TableCell key={col.key} className={NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right tabular-nums' : ''}>
                         {renderCellValue(row, col)}
                       </TableCell>
                     ))}

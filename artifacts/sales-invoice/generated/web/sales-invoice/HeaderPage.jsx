@@ -30,15 +30,17 @@ const extraBadges = [];
 // @sf-generated-end extraBadges:header
 
 // @sf-generated-start processes:header
-const processes = [];
+const processes = [
+
+];
 // @sf-generated-end processes:header
 
 // @sf-generated-start draftMode:header
 const draftMode = {
-  enabled: true,
-  processField: 'documentAction',
-  processValue: 'CO',
-  label: 'Confirm',
+  "enabled": true,
+  "processField": "documentAction",
+  "processValue": "CO",
+  "label": "Confirm"
 };
 // @sf-generated-end draftMode:header
 
@@ -48,14 +50,14 @@ const addLineFields = {
     { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
     { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity', defaultValue: 1 },
     { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector' },
+    { key: 'tax', column: 'C_Tax_ID', type: 'search', label: 'Tax', reference: 'Tax', inputMode: 'search' },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
 
   ],
   hidden: [
-
+    { key: 'grossUnitPrice', value: '0' },
   ],
 };
 // @sf-generated-end addLineFields:lines
@@ -112,7 +114,7 @@ const api = {
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
       "inputMode": "search",
-      "url": "/sws/neo/sales-invoice/header/selectors/C_BPartner_ID?isCustomer=Y"
+      "url": "/sws/neo/sales-invoice/header/selectors/businessPartner"
     },
     {
       "entity": "header",
@@ -152,7 +154,7 @@ const api = {
       "column": "M_PriceList_ID",
       "reference": "PriceList",
       "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/header/selectors/M_PriceList_ID?isSOTrx=Y"
+      "url": "/sws/neo/sales-invoice/header/selectors/priceList"
     },
     {
       "entity": "lines",
@@ -167,7 +169,7 @@ const api = {
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
-      "inputMode": "selector",
+      "inputMode": "search",
       "url": "/sws/neo/sales-invoice/lines/selectors/tax"
     },
     {
@@ -272,14 +274,6 @@ const api = {
       "column": "EM_Tbai_Xmlgenerator",
       "url": "/sws/neo/sales-invoice/header/{id}/action/tbaiXmlgenerator",
       "processId": "BE2486102F2C41779B760609FD69A225",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
-      "field": "eTBLKCBulkcompletion",
-      "column": "EM_Etblkc_Bulkcompletion",
-      "url": "/sws/neo/sales-invoice/header/{id}/action/eTBLKCBulkcompletion",
-      "processId": "272C8D38EF3245BF882E623CE92AB4E7",
       "processType": "obuiapp"
     },
     {
@@ -397,12 +391,14 @@ const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "sales"
   }
 };
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -415,7 +411,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         statusField={statusField}
         extraBadges={extraBadges}
         processes={processes}
-        draftMode={draftMode}
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Header"
@@ -434,6 +429,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
         ]}
+        draftMode={draftMode}
         salesTheme
         {...props}
       />

@@ -5,6 +5,7 @@ import AppLayout from './layout/AppLayout.jsx';
 import WindowLoader from './windows/WindowLoader.jsx';
 import PreviewPage from './preview/PreviewPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
+import FirstStepsPage from './pages/FirstStepsPage.jsx';
 import SalesPage from './pages/SalesPage.jsx';
 import InventoryPage from './pages/InventoryPage.jsx';
 import PurchasesPage from './pages/PurchasesPage.jsx';
@@ -19,6 +20,7 @@ import { createMockFetch } from './lib/mockFetch.js';
 import { LocaleProvider } from './i18n/index.js';
 import { useLocaleState } from './i18n/useLocaleState.js';
 import { useServiceWorker } from './hooks/useServiceWorker.js';
+import { CurrencyProvider } from './hooks/useCurrency.jsx';
 
 import ArtifactViewerPage from './pages/ArtifactViewerPage.jsx';
 
@@ -147,6 +149,7 @@ function AppRoutes({ menuGroups, windowMap }) {
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage apiBaseUrl={API_BASE_URL} />} />
+        <Route path="first-steps" element={<FirstStepsPage />} />
         <Route path="preview" element={<PreviewPage />} />
         <Route path="sales" element={<SalesPage />} />
         <Route path="inventory" element={<InventoryPage />} />
@@ -214,7 +217,9 @@ export default function App() {
       <ServiceWorkerManager />
       <LocaleProvider locale={locale} setLocale={setLocale}>
         <AuthProvider>
-          <AppRoutes menuGroups={menuGroups} windowMap={windowMap} />
+          <CurrencyProvider>
+            <AppRoutes menuGroups={menuGroups} windowMap={windowMap} />
+          </CurrencyProvider>
         </AuthProvider>
       </LocaleProvider>
     </BrowserRouter>

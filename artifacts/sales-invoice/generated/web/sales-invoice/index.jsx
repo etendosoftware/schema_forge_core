@@ -69,7 +69,7 @@ const api = {
       "field": "paymentTerms",
       "column": "C_PaymentTerm_ID",
       "reference": "PaymentTerm",
-      "inputMode": "search",
+      "inputMode": "selector",
       "url": "/sws/neo/sales-invoice/header/selectors/paymentTerms"
     },
     {
@@ -89,6 +89,14 @@ const api = {
       "url": "/sws/neo/sales-invoice/header/selectors/currency"
     },
     {
+      "entity": "header",
+      "field": "priceList",
+      "column": "M_PriceList_ID",
+      "reference": "PriceList",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/header/selectors/priceList"
+    },
+    {
       "entity": "lines",
       "field": "product",
       "column": "M_Product_ID",
@@ -101,7 +109,7 @@ const api = {
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
-      "inputMode": "selector",
+      "inputMode": "search",
       "url": "/sws/neo/sales-invoice/lines/selectors/tax"
     },
     {
@@ -206,14 +214,6 @@ const api = {
       "column": "EM_Tbai_Xmlgenerator",
       "url": "/sws/neo/sales-invoice/header/{id}/action/tbaiXmlgenerator",
       "processId": "BE2486102F2C41779B760609FD69A225",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
-      "field": "eTBLKCBulkcompletion",
-      "column": "EM_Etblkc_Bulkcompletion",
-      "url": "/sws/neo/sales-invoice/header/{id}/action/eTBLKCBulkcompletion",
-      "processId": "272C8D38EF3245BF882E623CE92AB4E7",
       "processType": "obuiapp"
     },
     {
@@ -331,6 +331,9 @@ const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "sales"
   }
 };
 

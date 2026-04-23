@@ -46,7 +46,13 @@
           "inputMode": "selector",
           "section": "principal",
           "displayLogic": null,
-          "seq": 4
+          "seq": 4,
+          "enumVariants": {
+            "I": "blue",
+            "S": "purple",
+            "R": "teal",
+            "E": "orange"
+          }
         },
         "productCategory": {
           "grid": true,

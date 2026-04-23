@@ -78,8 +78,8 @@ export default function QuotationConfirmModal({
     setError(null);
 
     try {
-      // Step 1: Process DocAction=CO (skip if already confirmed)
-      if (!alreadyProcessed) {
+      // Step 1: Process DocAction=CO (only for order path — invoice path reads lines directly)
+      if (selected === 'order' && !alreadyProcessed) {
         const processRes = await fetch(
           `${entityUrl}/${quotationId}/action/DocAction`,
           { method: 'POST', headers, body: JSON.stringify({ fieldValues: {} }) },
@@ -143,19 +143,24 @@ export default function QuotationConfirmModal({
         setCreatedDoc({ type: 'order', id: null, documentNo: '?', total: '', status: 'Draft' });
 
       } else {
-        // TODO: The createDraftInvoice endpoint for quotations may not exist yet.
         const res = await fetch(
           `${entityUrl}/${quotationId}/action/createDraftInvoice`,
-          { method: 'POST', headers, body: JSON.stringify({ fieldValues: {} }) },
+          { method: 'POST', headers, body: JSON.stringify({}) },
         );
         if (!res.ok) {
           const err = await res.json().catch(() => null);
           throw new Error(
-            ui('sqOrderConfirmedInvoiceError')
-            + (err?.response?.message || err?.message || `Error (${res.status})`)
+            err?.response?.message || err?.message || `Error (${res.status})`
           );
         }
-        setCreatedDoc({ type: 'invoice', id: null, documentNo: '?', total: '', status: '' });
+        const doc = (await res.json())?.response?.data;
+        setCreatedDoc({
+          type: 'invoice',
+          id: doc?.id ?? null,
+          documentNo: doc?.documentNo ?? '',
+          total: fmtNum(doc?.grandTotalAmount ?? grandTotal),
+          status: 'Draft',
+        });
       }
     } catch (err) {
       setError(err.message || ui('soErrorOccurred'));
@@ -285,12 +290,11 @@ export default function QuotationConfirmModal({
             subtitle={ui('sqCreateOrderDesc')}
           />
           <OptionCard
-            selected={false}
-            onClick={() => {}}
+            selected={selected === 'invoice'}
+            onClick={() => setSelected('invoice')}
             icon={<FileText size={16} />}
             title={ui('soInvoiceDirectly')}
             subtitle={ui('sqInvoiceDirectlyDesc')}
-            disabled
           />
         </div>
 
