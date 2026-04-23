@@ -112,7 +112,7 @@
           "section": "principal"
         },
         "paymentTerms": {
-          "visibility": "system"
+          "section": "principal"
         },
         "warehouse": {
           "inputMode": "search",
