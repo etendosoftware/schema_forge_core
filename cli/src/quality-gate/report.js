@@ -18,6 +18,13 @@ function baselineWindowMap(baselineResult) {
   return map;
 }
 
+function comparableBaselineWindow(baselineWindow) {
+  if (!baselineWindow || baselineWindow.verdict === 'NO-OP') {
+    return false;
+  }
+  return (baselineWindow.checks ?? []).some((check) => check.status !== 'skip');
+}
+
 function summarizeRegressionChecks(windows) {
   const counts = new Map();
   for (const window of windows) {
@@ -86,32 +93,50 @@ function renderNextActions({ gateVerdict, baselineRef, regressionWindows, regres
   return lines.join('\n');
 }
 
-export function buildQualityGateReport({ baselineRef, baselineSha, headResult, baselineResult, baselineWarning = null }) {
+export function buildQualityGateReport({
+  baselineRef,
+  baselineSha,
+  headResult,
+  baselineResult,
+  baselineWarning = null,
+  affectedWindowMetadata = [],
+}) {
   const baselineByWindow = baselineWindowMap(baselineResult);
+  const affectedByWindow = new Map(affectedWindowMetadata.map((entry) => [entry.window, entry]));
   const windows = headResult.windows.map((window) => {
     const baselineWindow = baselineByWindow.get(window.window) ?? null;
     const baseline = baselineWindow?.score ?? null;
     const baselineChecks = new Map((baselineWindow?.checks ?? []).map((check) => [check.check, check]));
+    const hasComparableBaseline = comparableBaselineWindow(baselineWindow);
+    const source = affectedByWindow.get(window.window)?.source ?? 'direct';
     const introducedFailures = window.checks.filter((check) => {
       if (!isFailureStatus(check.status)) {
         return false;
       }
+      if (!hasComparableBaseline) {
+        return source === 'direct';
+      }
       const baselineCheck = baselineChecks.get(check.check);
       return !baselineCheck || !isFailureStatus(baselineCheck.status);
     });
-    const delta = baseline ? window.score.passed - baseline.passed : 0;
-    const scoreRegression = Boolean(baseline) && delta < 0 && window.verdict !== 'NO-OP';
+    const delta = hasComparableBaseline && baseline ? window.score.passed - baseline.passed : 0;
+    const scoreRegression = hasComparableBaseline && Boolean(baseline) && delta < 0 && window.verdict !== 'NO-OP';
+    const omittedBecauseNoBaseline = !hasComparableBaseline && source !== 'direct';
     return {
       ...window,
       baseline,
       delta,
+      source,
+      hasComparableBaseline,
       introducedFailures,
       introducedFailureChecks: introducedFailures.map((check) => check.check),
       scoreRegression,
+      omittedBecauseNoBaseline,
     };
   });
 
   const regressionWindows = windows.filter((window) => window.introducedFailures.length > 0 || window.scoreRegression);
+  const omittedWindows = windows.filter((window) => window.omittedBecauseNoBaseline);
   const gateVerdict = regressionWindows.length > 0 ? 'FAIL' : 'PASS';
   const regressionChecks = summarizeRegressionChecks(regressionWindows);
 
@@ -121,6 +146,7 @@ export function buildQualityGateReport({ baselineRef, baselineSha, headResult, b
     baselineSha,
     affectedWindows: headResult.summary.affectedWindows,
     regressionWindows: regressionWindows.length,
+    omittedWindows: omittedWindows.length,
     regressionFailures: regressionWindows.map((window) => window.window),
     regressionChecks,
     windows: windows.map((window) => ({
@@ -132,6 +158,9 @@ export function buildQualityGateReport({ baselineRef, baselineSha, headResult, b
       blockerFailures: window.blockerFailures,
       introducedFailureChecks: window.introducedFailureChecks,
       scoreRegression: window.scoreRegression,
+      source: window.source,
+      hasComparableBaseline: window.hasComparableBaseline,
+      omittedBecauseNoBaseline: window.omittedBecauseNoBaseline,
     })),
   };
 
@@ -144,6 +173,7 @@ export function buildQualityGateReport({ baselineRef, baselineSha, headResult, b
     `Baseline: ${baselineRef}${baselineSha ? ` @ ${baselineSha}` : ''}`,
     `Affected windows: ${summary.affectedWindows}`,
     `Regressing windows: ${summary.regressionWindows}`,
+    `Omitted windows without comparable baseline: ${summary.omittedWindows}`,
     `Gate verdict: ${summary.gateVerdict}`,
   ];
 
@@ -160,6 +190,16 @@ export function buildQualityGateReport({ baselineRef, baselineSha, headResult, b
     regressionWindows,
     regressionChecks,
   }));
+
+  if (omittedWindows.length > 0) {
+    lines.push(
+      '### Windows omitted from commit verdict',
+      '',
+      '- These windows were pulled in by shared/global blast-radius rules, but the baseline branch has no comparable scored result for them yet.',
+      `- Omitted windows: ${omittedWindows.map((window) => window.window).join(', ')}`,
+      '',
+    );
+  }
 
   if (regressionWindows.length > 0) {
     lines.push(
@@ -188,6 +228,7 @@ export function buildQualityGateReport({ baselineRef, baselineSha, headResult, b
       summary,
       windows,
       regressionWindows,
+      omittedWindows,
       baselineWarning,
     },
   };

@@ -94,7 +94,16 @@ describe('runQualityGateCli', () => {
           resolveBaseline: async () => ({
             source: 'cache',
             baselineSha: 'abc1234',
-            data: { windows: [{ window: 'sales-order', score: { passed: 2, total: 2 } }] },
+            data: {
+              windows: [{
+                window: 'sales-order',
+                score: { passed: 2, total: 2 },
+                checks: [
+                  { check: 'parse', severity: 'blocker', status: 'pass', detail: 'ok' },
+                  { check: 'imports', severity: 'blocker', status: 'pass', detail: 'ok' },
+                ],
+              }],
+            },
           }),
         },
       });

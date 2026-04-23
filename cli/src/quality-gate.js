@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveBaseline } from './quality-gate/baseline.js';
 import { loadQualityGateConfig, QualityGateConfigError } from './quality-gate/config.js';
-import { collectDecisionWindows, detectAffectedWindows, getChangedFiles, resolveGitRef } from './quality-gate/detect.js';
+import { collectDecisionWindows, detectAffectedWindows, detectAffectedWindowsDetailed, getChangedFiles, resolveGitRef } from './quality-gate/detect.js';
 import { runQualityGate } from './quality-gate/runner.js';
 import { buildQualityGateAnalysisBundle, buildQualityGateReport } from './quality-gate/report.js';
 import { QUALITY_GATE_CHECKS } from './quality-gate/checks/index.js';
@@ -135,6 +135,7 @@ export async function runQualityGateCli({ args = process.argv.slice(2), rootDir 
   const loadConfig = deps.loadConfig ?? loadQualityGateConfig;
   const collectWindows = deps.collectDecisionWindows ?? collectDecisionWindows;
   const detectWindows = deps.detectAffectedWindows ?? detectAffectedWindows;
+  const detectWindowsDetailed = deps.detectAffectedWindowsDetailed ?? detectAffectedWindowsDetailed;
   const changedFilesForPr = deps.getChangedFiles ?? getChangedFiles;
   const qualityRunner = deps.runQualityGate ?? ((params) => runQualityGate({ ...params, checkers: QUALITY_GATE_CHECKS }));
   const config = await loadConfig(rootDir);
@@ -144,12 +145,26 @@ export async function runQualityGateCli({ args = process.argv.slice(2), rootDir 
     ? [options.windowName]
     : collectWindows(rootDir);
 
+  const changedFiles = options.mode === 'pr-affected'
+    ? await changedFilesForPr({ rootDir, baselineRef, headRef: 'HEAD' })
+    : [];
+
+  const affectedWindowMetadata = options.mode === 'window'
+    ? [{ window: options.windowName, source: 'direct' }]
+    : options.mode === 'all'
+      ? availableWindows.map((window) => ({ window, source: 'direct' }))
+      : detectWindowsDetailed({
+          changedFiles,
+          blastRadius: config.blastRadius ?? [],
+          availableWindows,
+        });
+
   const windowNames = options.mode === 'window'
     ? [options.windowName]
     : options.mode === 'all'
       ? availableWindows
       : detectWindows({
-          changedFiles: await changedFilesForPr({ rootDir, baselineRef, headRef: 'HEAD' }),
+          changedFiles,
           blastRadius: config.blastRadius ?? [],
           availableWindows,
         });
@@ -191,6 +206,7 @@ export async function runQualityGateCli({ args = process.argv.slice(2), rootDir 
     headResult,
     baselineResult: baselineResult?.data ?? null,
     baselineWarning: baselineResult?.warning ?? null,
+    affectedWindowMetadata,
   });
 
   const analysisDir = options.analysisDir ?? (options.mode === 'all'

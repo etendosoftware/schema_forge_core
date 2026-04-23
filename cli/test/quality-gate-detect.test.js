@@ -3,7 +3,7 @@ import { strict as assert } from 'node:assert';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { collectDecisionWindows, detectAffectedWindows } from '../src/quality-gate/detect.js';
+import { collectDecisionWindows, detectAffectedWindows, detectAffectedWindowsDetailed } from '../src/quality-gate/detect.js';
 
 const SAMPLE_CONFIG = {
   blastRadius: [
@@ -159,5 +159,32 @@ describe('detectAffectedWindows', () => {
     });
 
     assert.deepEqual(affected, []);
+  });
+});
+
+describe('detectAffectedWindowsDetailed', () => {
+  it('marks artifact-local changes as direct', () => {
+    const affected = detectAffectedWindowsDetailed({
+      changedFiles: ['artifacts/purchase-order/custom/Sidebar.jsx'],
+      blastRadius: SAMPLE_CONFIG.blastRadius,
+      availableWindows: ['purchase-order', 'sales-order'],
+    });
+
+    assert.deepEqual(affected, [
+      { window: 'purchase-order', source: 'direct' },
+    ]);
+  });
+
+  it('marks shared blast radius changes as global', () => {
+    const affected = detectAffectedWindowsDetailed({
+      changedFiles: ['cli/src/generate-frontend.js'],
+      blastRadius: SAMPLE_CONFIG.blastRadius,
+      availableWindows: ['purchase-order', 'sales-order'],
+    });
+
+    assert.deepEqual(affected, [
+      { window: 'purchase-order', source: 'global' },
+      { window: 'sales-order', source: 'global' },
+    ]);
   });
 });

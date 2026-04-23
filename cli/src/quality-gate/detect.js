@@ -56,8 +56,8 @@ export function collectDecisionWindows(rootDir) {
     .sort((left, right) => left.localeCompare(right));
 }
 
-export function detectAffectedWindows({ changedFiles, blastRadius, availableWindows }) {
-  const affected = new Set();
+export function detectAffectedWindowsDetailed({ changedFiles, blastRadius, availableWindows }) {
+  const affected = new Map();
   const allWindows = [...availableWindows].sort((left, right) => left.localeCompare(right));
 
   for (const changedFile of changedFiles) {
@@ -67,19 +67,30 @@ export function detectAffectedWindows({ changedFiles, blastRadius, availableWind
       }
 
       if (rule.scope === 'all-windows') {
-        allWindows.forEach((windowName) => affected.add(windowName));
+        for (const windowName of allWindows) {
+          if (!affected.has(windowName)) {
+            affected.set(windowName, 'global');
+          }
+        }
         continue;
       }
 
       if (rule.scope === 'touched-window') {
         for (const windowName of resolveTouchedWindows(changedFile, allWindows)) {
-          affected.add(windowName);
+          affected.set(windowName, 'direct');
         }
       }
     }
   }
 
-  return [...affected].sort((left, right) => left.localeCompare(right));
+  return [...affected.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([window, source]) => ({ window, source }));
+}
+
+export function detectAffectedWindows({ changedFiles, blastRadius, availableWindows }) {
+  return detectAffectedWindowsDetailed({ changedFiles, blastRadius, availableWindows })
+    .map((entry) => entry.window);
 }
 
 export function resolveGitRef(rootDir, ref) {
