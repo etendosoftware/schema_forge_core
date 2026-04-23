@@ -6,7 +6,7 @@ import { useEntity } from '@/hooks/useEntity';
 import { useMenuLabel, useLabel, useUI } from '@/i18n';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
-import { Search, ArrowUpDown, SlidersHorizontal, ChevronDown, MoreVertical, Plus, CalendarDays, Link2, Printer, LayoutGrid, LayoutList, RefreshCw, Eye } from 'lucide-react';
+import { Search, ArrowUpDown, SlidersHorizontal, ChevronDown, MoreVertical, Plus, CalendarDays, Link2, Printer, LayoutGrid, LayoutList, RefreshCw, Eye, Copy } from 'lucide-react';
 import ReportDrawer from './ReportDrawer.jsx';
 import DocumentPrintDrawer, { printDocuments } from './DocumentPrintDrawer.jsx';
 import {
@@ -70,7 +70,7 @@ export function ListView({
     title: label,
     breadcrumb: fullBreadcrumb,
     recordCount: hook.items.length,
-    onAddToFavorites: favKey ? () => toggleFavorite(favKey, label) : undefined,
+    onAddToFavorites: favKey ? () => toggleFavorite(favKey, entityLabel || entity) : undefined,
     isFavorite: favActive,
   }, [favActive, hook.items.length]);
   const [selectedRows, setSelectedRows] = useState([]);
@@ -170,6 +170,17 @@ export function ListView({
                 <Printer className="h-3.5 w-3.5" />
                 {ui('print')} ({selectedRows.length})
               </Button>
+              {onCloneRow && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => onCloneRow(selectedRows)}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  {ui('cloneOrderBtn')} ({selectedRows.length})
+                </Button>
+              )}
               {bulkActions && bulkActions({ selectedRows, clearSelection: () => setSelectedRows([]), token, apiBaseUrl, windowName, api })}
               <Button variant="outline" size="sm" className="text-muted-foreground" onClick={() => setSelectedRows([])}>
                 {ui('clear')}

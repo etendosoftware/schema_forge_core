@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
@@ -42,9 +42,8 @@ function CustomLinesTable(props) {
 
 export default function PurchaseOrderWindow(props) {
   const { recordId, windowName, token, apiBaseUrl } = props;
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [cloneTarget, setCloneTarget] = useState(null);
+  const [cloneTargets, setCloneTargets] = useState(null);
 
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
     useCreateContactModal({ apiBaseUrl, token });
@@ -92,23 +91,19 @@ export default function PurchaseOrderWindow(props) {
         entityLabel="Purchase Order"
         windowName={windowName}
         breadcrumb="Purchases / Purchase Order"
-        onCloneRow={(row) => setCloneTarget(row)}
+        onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
         initialColumnFilters={initialColumnFilters}
         quickFilters={QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}
         {...props}
       />
-      {cloneTarget && createPortal(
+      {cloneTargets && createPortal(
         <CloneOrderModal
-          orderId={cloneTarget.id}
-          data={cloneTarget}
+          records={cloneTargets}
           apiBaseUrl={apiBaseUrl}
           headers={headers}
-          onClose={() => setCloneTarget(null)}
-          onCloned={(newId) => {
-            setCloneTarget(null);
-            navigate(`/purchase-order/${newId}`);
-          }}
+          routePrefix="/purchase-order/"
+          onClose={() => setCloneTargets(null)}
         />,
         document.body,
       )}

@@ -1,15 +1,19 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-04-06T16:32:15.020Z",
-  "checksum": "8606887cb9919ee7",
+  "generatedAt": "2026-04-22T19:00:03.492Z",
+  "checksum": "062c0fa712108842",
   "frontendContract": {
     "window": {
       "id": "140",
       "name": "Product",
       "primaryEntity": "product",
-      "category": "reference",
+      "category": "inventory",
       "layoutType": "gallery",
       "sidebarLayout": true,
+      "hidePrint": true,
+      "hideMoreMenu": true,
+      "contentBg": "bg-slate-50",
+      "breadcrumb": "Inventory / Product",
       "secondaryTabs": {},
       "detailEntity": null,
       "headerExtra": {
@@ -25,11 +29,7 @@
           "label": "Additional Info",
           "panel": "ProductAdditionalInfoPanel"
         }
-      ],
-      "breadcrumb": "Inventory / Product",
-      "hidePrint": true,
-      "hideMoreMenu": true,
-      "contentBg": "bg-slate-50"
+      ]
     },
     "entities": {
       "product": {
@@ -111,7 +111,12 @@
             "inputMode": "selector",
             "defaultValue": "@SQL=SELECT MAX(M_PRODUCT_CATEGORY_ID) FROM M_PRODUCT_CATEGORY WHERE AD_ISORGINCLUDED(@AD_ORG_ID@, AD_ORG_ID, @#AD_CLIENT_ID@) <> -1 AND ISDEFAULT = 'Y' AND AD_CLIENT_ID = @#AD_CLIENT_ID@ AND ISSUMMARY='N'",
             "section": "principal",
-            "seq": 5
+            "seq": 5,
+            "validationRule": {
+              "code": "Issummary='N'",
+              "contextParams": [],
+              "cascadeParams": []
+            }
           },
           {
             "name": "taxCategory",
@@ -202,6 +207,12 @@
             "defaultValue": "I",
             "section": "principal",
             "seq": 4,
+            "enumVariants": {
+              "I": "blue",
+              "S": "purple",
+              "R": "teal",
+              "E": "orange"
+            },
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Product_Type"
             }
@@ -218,7 +229,12 @@
             "grid": false,
             "form": true,
             "defaultValue": "Y",
-            "section": "other"
+            "section": "other",
+            "readOnlyLogic": {
+              "raw": "@ProductType@='R' | @ProductType@='E' | @ProductType@='O'",
+              "evaluable": true,
+              "js": "record['productType'] === 'R' || record['productType'] === 'E' || record['productType'] === 'O'"
+            }
           },
           {
             "name": "weight",
@@ -399,7 +415,14 @@
             "grid": true,
             "form": true,
             "reference": "PriceListVersion",
-            "inputMode": "selector"
+            "inputMode": "selector",
+            "validationRule": {
+              "code": "EXISTS (SELECT 1 \n        FROM AD_ROLE_ORGACCESS A_R_O\n        INNER JOIN ad_role r ON (A_R_O.AD_ROLE_ID = r.AD_ROLE_ID)\n        WHERE A_R_O.ISACTIVE = 'Y'\n        AND r.ISACTIVE = 'Y'\n        and r.ad_role_id = @#AD_Role_ID@\n        AND (A_R_O.AD_ORG_ID = td0.AD_Org_ID \n             OR (SUBSTR(TO_CHAR(r.USERLEVEL), 2, 1) = 'C' AND td0.AD_ORG_ID = '0')\n             )\n        )",
+              "contextParams": [
+                "AD_Role_ID"
+              ],
+              "cascadeParams": []
+            }
           },
           {
             "name": "standardPrice",
@@ -1368,7 +1391,12 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "readOnlyLogic": {
+              "raw": "@EXISTS_CONVERSION@='Y'",
+              "evaluable": true,
+              "js": "record['eXISTS_CONVERSION'] === 'Y'"
+            }
           },
           {
             "name": "gtin",
@@ -1499,9 +1527,13 @@
       "id": "140",
       "name": "Product",
       "primaryEntity": "product",
-      "category": "reference",
+      "category": "inventory",
       "layoutType": "gallery",
       "sidebarLayout": true,
+      "hidePrint": true,
+      "hideMoreMenu": true,
+      "contentBg": "bg-slate-50",
+      "breadcrumb": "Inventory / Product",
       "secondaryTabs": {},
       "detailEntity": null,
       "headerExtra": {
@@ -4646,6 +4678,9 @@
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
+    },
+    "window": {
+      "category": "inventory"
     }
   },
   "testManifest": {
@@ -5003,6 +5038,14 @@
       },
       {
         "id": "t-45",
+        "category": "readonlylogic-valid",
+        "entity": "product",
+        "field": "stocked",
+        "runner": "node",
+        "description": "Read-only logic for 'stocked' in product should be valid JS"
+      },
+      {
+        "id": "t-46",
         "category": "displaylogic-evaluable",
         "entity": "product",
         "field": "weight",
@@ -5010,7 +5053,7 @@
         "description": "Display logic for 'weight' in product should have evaluable flag"
       },
       {
-        "id": "t-46",
+        "id": "t-47",
         "category": "displaylogic-evaluable",
         "entity": "product",
         "field": "uOMForWeight",
@@ -5018,7 +5061,15 @@
         "description": "Display logic for 'uOMForWeight' in product should have evaluable flag"
       },
       {
-        "id": "t-47",
+        "id": "t-48",
+        "category": "readonlylogic-evaluable",
+        "entity": "product",
+        "field": "stocked",
+        "runner": "node",
+        "description": "Read-only logic for 'stocked' in product should have evaluable flag"
+      },
+      {
+        "id": "t-49",
         "category": "default-value-type",
         "entity": "product",
         "field": "productCategory",
@@ -5026,7 +5077,7 @@
         "description": "Default value for 'productCategory' in product should be a string"
       },
       {
-        "id": "t-48",
+        "id": "t-50",
         "category": "default-value-type",
         "entity": "product",
         "field": "purchase",
@@ -5034,7 +5085,7 @@
         "description": "Default value for 'purchase' in product should be a string"
       },
       {
-        "id": "t-49",
+        "id": "t-51",
         "category": "default-value-type",
         "entity": "product",
         "field": "sale",
@@ -5042,7 +5093,7 @@
         "description": "Default value for 'sale' in product should be a string"
       },
       {
-        "id": "t-50",
+        "id": "t-52",
         "category": "default-value-type",
         "entity": "product",
         "field": "productType",
@@ -5050,7 +5101,7 @@
         "description": "Default value for 'productType' in product should be a string"
       },
       {
-        "id": "t-51",
+        "id": "t-53",
         "category": "default-value-type",
         "entity": "product",
         "field": "stocked",
@@ -5058,7 +5109,7 @@
         "description": "Default value for 'stocked' in product should be a string"
       },
       {
-        "id": "t-52",
+        "id": "t-54",
         "category": "default-value-type",
         "entity": "product",
         "field": "returnable",
@@ -5066,7 +5117,7 @@
         "description": "Default value for 'returnable' in product should be a string"
       },
       {
-        "id": "t-53",
+        "id": "t-55",
         "category": "field-presence",
         "entity": "price",
         "field": "priceListVersion",
@@ -5074,7 +5125,7 @@
         "description": "Field 'priceListVersion' should be present in price"
       },
       {
-        "id": "t-54",
+        "id": "t-56",
         "category": "field-presence",
         "entity": "price",
         "field": "standardPrice",
@@ -5082,7 +5133,7 @@
         "description": "Field 'standardPrice' should be present in price"
       },
       {
-        "id": "t-55",
+        "id": "t-57",
         "category": "field-presence",
         "entity": "price",
         "field": "listPrice",
@@ -5090,7 +5141,7 @@
         "description": "Field 'listPrice' should be present in price"
       },
       {
-        "id": "t-56",
+        "id": "t-58",
         "category": "field-presence",
         "entity": "price",
         "field": "cost",
@@ -5098,7 +5149,7 @@
         "description": "Field 'cost' should be present in price"
       },
       {
-        "id": "t-57",
+        "id": "t-59",
         "category": "field-type",
         "entity": "price",
         "field": "priceListVersion",
@@ -5106,7 +5157,7 @@
         "description": "Field 'priceListVersion' should have type 'string' in price"
       },
       {
-        "id": "t-58",
+        "id": "t-60",
         "category": "field-type",
         "entity": "price",
         "field": "standardPrice",
@@ -5114,7 +5165,7 @@
         "description": "Field 'standardPrice' should have type 'number' in price"
       },
       {
-        "id": "t-59",
+        "id": "t-61",
         "category": "field-type",
         "entity": "price",
         "field": "listPrice",
@@ -5122,7 +5173,7 @@
         "description": "Field 'listPrice' should have type 'number' in price"
       },
       {
-        "id": "t-60",
+        "id": "t-62",
         "category": "field-type",
         "entity": "price",
         "field": "cost",
@@ -5130,14 +5181,14 @@
         "description": "Field 'cost' should have type 'string' in price"
       },
       {
-        "id": "t-61",
+        "id": "t-63",
         "category": "visibility",
         "entity": "price",
         "runner": "node",
         "description": "Entity 'price' should only expose visible fields in frontend"
       },
       {
-        "id": "t-62",
+        "id": "t-64",
         "category": "default-value-type",
         "entity": "price",
         "field": "cost",
@@ -5145,7 +5196,7 @@
         "description": "Default value for 'cost' in price should be a string"
       },
       {
-        "id": "t-63",
+        "id": "t-65",
         "category": "field-presence",
         "entity": "priceRuleVersion",
         "field": "active",
@@ -5153,7 +5204,7 @@
         "description": "Field 'active' should be present in priceRuleVersion"
       },
       {
-        "id": "t-64",
+        "id": "t-66",
         "category": "field-presence",
         "entity": "priceRuleVersion",
         "field": "validFromDate",
@@ -5161,7 +5212,7 @@
         "description": "Field 'validFromDate' should be present in priceRuleVersion"
       },
       {
-        "id": "t-65",
+        "id": "t-67",
         "category": "field-presence",
         "entity": "priceRuleVersion",
         "field": "servicePriceRule",
@@ -5169,7 +5220,7 @@
         "description": "Field 'servicePriceRule' should be present in priceRuleVersion"
       },
       {
-        "id": "t-66",
+        "id": "t-68",
         "category": "field-type",
         "entity": "priceRuleVersion",
         "field": "active",
@@ -5177,7 +5228,7 @@
         "description": "Field 'active' should have type 'boolean' in priceRuleVersion"
       },
       {
-        "id": "t-67",
+        "id": "t-69",
         "category": "field-type",
         "entity": "priceRuleVersion",
         "field": "validFromDate",
@@ -5185,7 +5236,7 @@
         "description": "Field 'validFromDate' should have type 'string' in priceRuleVersion"
       },
       {
-        "id": "t-68",
+        "id": "t-70",
         "category": "field-type",
         "entity": "priceRuleVersion",
         "field": "servicePriceRule",
@@ -5193,14 +5244,14 @@
         "description": "Field 'servicePriceRule' should have type 'string' in priceRuleVersion"
       },
       {
-        "id": "t-69",
+        "id": "t-71",
         "category": "visibility",
         "entity": "priceRuleVersion",
         "runner": "node",
         "description": "Entity 'priceRuleVersion' should only expose visible fields in frontend"
       },
       {
-        "id": "t-70",
+        "id": "t-72",
         "category": "default-value-type",
         "entity": "priceRuleVersion",
         "field": "active",
@@ -5208,7 +5259,7 @@
         "description": "Default value for 'active' in priceRuleVersion should be a string"
       },
       {
-        "id": "t-71",
+        "id": "t-73",
         "category": "field-presence",
         "entity": "billOfMaterials",
         "field": "lineNo",
@@ -5216,7 +5267,7 @@
         "description": "Field 'lineNo' should be present in billOfMaterials"
       },
       {
-        "id": "t-72",
+        "id": "t-74",
         "category": "field-presence",
         "entity": "billOfMaterials",
         "field": "bOMProduct",
@@ -5224,7 +5275,7 @@
         "description": "Field 'bOMProduct' should be present in billOfMaterials"
       },
       {
-        "id": "t-73",
+        "id": "t-75",
         "category": "field-presence",
         "entity": "billOfMaterials",
         "field": "bOMQuantity",
@@ -5232,7 +5283,7 @@
         "description": "Field 'bOMQuantity' should be present in billOfMaterials"
       },
       {
-        "id": "t-74",
+        "id": "t-76",
         "category": "field-presence",
         "entity": "billOfMaterials",
         "field": "bomprice",
@@ -5240,7 +5291,7 @@
         "description": "Field 'bomprice' should be present in billOfMaterials"
       },
       {
-        "id": "t-75",
+        "id": "t-77",
         "category": "field-presence",
         "entity": "billOfMaterials",
         "field": "description",
@@ -5248,7 +5299,7 @@
         "description": "Field 'description' should be present in billOfMaterials"
       },
       {
-        "id": "t-76",
+        "id": "t-78",
         "category": "field-type",
         "entity": "billOfMaterials",
         "field": "lineNo",
@@ -5256,7 +5307,7 @@
         "description": "Field 'lineNo' should have type 'number' in billOfMaterials"
       },
       {
-        "id": "t-77",
+        "id": "t-79",
         "category": "field-type",
         "entity": "billOfMaterials",
         "field": "bOMProduct",
@@ -5264,7 +5315,7 @@
         "description": "Field 'bOMProduct' should have type 'string' in billOfMaterials"
       },
       {
-        "id": "t-78",
+        "id": "t-80",
         "category": "field-type",
         "entity": "billOfMaterials",
         "field": "bOMQuantity",
@@ -5272,7 +5323,7 @@
         "description": "Field 'bOMQuantity' should have type 'number' in billOfMaterials"
       },
       {
-        "id": "t-79",
+        "id": "t-81",
         "category": "field-type",
         "entity": "billOfMaterials",
         "field": "bomprice",
@@ -5280,7 +5331,7 @@
         "description": "Field 'bomprice' should have type 'number' in billOfMaterials"
       },
       {
-        "id": "t-80",
+        "id": "t-82",
         "category": "field-type",
         "entity": "billOfMaterials",
         "field": "description",
@@ -5288,14 +5339,14 @@
         "description": "Field 'description' should have type 'string' in billOfMaterials"
       },
       {
-        "id": "t-81",
+        "id": "t-83",
         "category": "visibility",
         "entity": "billOfMaterials",
         "runner": "node",
         "description": "Entity 'billOfMaterials' should only expose visible fields in frontend"
       },
       {
-        "id": "t-82",
+        "id": "t-84",
         "category": "default-value-type",
         "entity": "billOfMaterials",
         "field": "lineNo",
@@ -5303,7 +5354,7 @@
         "description": "Default value for 'lineNo' in billOfMaterials should be a string"
       },
       {
-        "id": "t-83",
+        "id": "t-85",
         "category": "default-value-type",
         "entity": "billOfMaterials",
         "field": "bOMQuantity",
@@ -5311,7 +5362,7 @@
         "description": "Default value for 'bOMQuantity' in billOfMaterials should be a string"
       },
       {
-        "id": "t-84",
+        "id": "t-86",
         "category": "field-presence",
         "entity": "costing",
         "field": "costType",
@@ -5319,7 +5370,7 @@
         "description": "Field 'costType' should be present in costing"
       },
       {
-        "id": "t-85",
+        "id": "t-87",
         "category": "field-presence",
         "entity": "costing",
         "field": "cost",
@@ -5327,7 +5378,7 @@
         "description": "Field 'cost' should be present in costing"
       },
       {
-        "id": "t-86",
+        "id": "t-88",
         "category": "field-presence",
         "entity": "costing",
         "field": "startingDate",
@@ -5335,7 +5386,7 @@
         "description": "Field 'startingDate' should be present in costing"
       },
       {
-        "id": "t-87",
+        "id": "t-89",
         "category": "field-presence",
         "entity": "costing",
         "field": "endingDate",
@@ -5343,7 +5394,7 @@
         "description": "Field 'endingDate' should be present in costing"
       },
       {
-        "id": "t-88",
+        "id": "t-90",
         "category": "field-presence",
         "entity": "costing",
         "field": "quantity",
@@ -5351,7 +5402,7 @@
         "description": "Field 'quantity' should be present in costing"
       },
       {
-        "id": "t-89",
+        "id": "t-91",
         "category": "field-presence",
         "entity": "costing",
         "field": "warehouse",
@@ -5359,7 +5410,7 @@
         "description": "Field 'warehouse' should be present in costing"
       },
       {
-        "id": "t-90",
+        "id": "t-92",
         "category": "field-presence",
         "entity": "costing",
         "field": "cCurrencyID",
@@ -5367,7 +5418,7 @@
         "description": "Field 'cCurrencyID' should be present in costing"
       },
       {
-        "id": "t-91",
+        "id": "t-93",
         "category": "field-presence",
         "entity": "costing",
         "field": "originalCost",
@@ -5375,7 +5426,7 @@
         "description": "Field 'originalCost' should be present in costing"
       },
       {
-        "id": "t-92",
+        "id": "t-94",
         "category": "field-type",
         "entity": "costing",
         "field": "costType",
@@ -5383,7 +5434,7 @@
         "description": "Field 'costType' should have type 'string' in costing"
       },
       {
-        "id": "t-93",
+        "id": "t-95",
         "category": "field-type",
         "entity": "costing",
         "field": "cost",
@@ -5391,7 +5442,7 @@
         "description": "Field 'cost' should have type 'number' in costing"
       },
       {
-        "id": "t-94",
+        "id": "t-96",
         "category": "field-type",
         "entity": "costing",
         "field": "startingDate",
@@ -5399,7 +5450,7 @@
         "description": "Field 'startingDate' should have type 'string' in costing"
       },
       {
-        "id": "t-95",
+        "id": "t-97",
         "category": "field-type",
         "entity": "costing",
         "field": "endingDate",
@@ -5407,7 +5458,7 @@
         "description": "Field 'endingDate' should have type 'string' in costing"
       },
       {
-        "id": "t-96",
+        "id": "t-98",
         "category": "field-type",
         "entity": "costing",
         "field": "quantity",
@@ -5415,7 +5466,7 @@
         "description": "Field 'quantity' should have type 'number' in costing"
       },
       {
-        "id": "t-97",
+        "id": "t-99",
         "category": "field-type",
         "entity": "costing",
         "field": "warehouse",
@@ -5423,7 +5474,7 @@
         "description": "Field 'warehouse' should have type 'string' in costing"
       },
       {
-        "id": "t-98",
+        "id": "t-100",
         "category": "field-type",
         "entity": "costing",
         "field": "cCurrencyID",
@@ -5431,7 +5482,7 @@
         "description": "Field 'cCurrencyID' should have type 'string' in costing"
       },
       {
-        "id": "t-99",
+        "id": "t-101",
         "category": "field-type",
         "entity": "costing",
         "field": "originalCost",
@@ -5439,14 +5490,14 @@
         "description": "Field 'originalCost' should have type 'number' in costing"
       },
       {
-        "id": "t-100",
+        "id": "t-102",
         "category": "visibility",
         "entity": "costing",
         "runner": "node",
         "description": "Entity 'costing' should only expose visible fields in frontend"
       },
       {
-        "id": "t-101",
+        "id": "t-103",
         "category": "default-value-type",
         "entity": "costing",
         "field": "cCurrencyID",
@@ -5454,7 +5505,7 @@
         "description": "Default value for 'cCurrencyID' in costing should be a string"
       },
       {
-        "id": "t-102",
+        "id": "t-104",
         "category": "field-presence",
         "entity": "transactionAdjustments",
         "field": "costDate",
@@ -5462,7 +5513,7 @@
         "description": "Field 'costDate' should be present in transactionAdjustments"
       },
       {
-        "id": "t-103",
+        "id": "t-105",
         "category": "field-presence",
         "entity": "transactionAdjustments",
         "field": "cost",
@@ -5470,7 +5521,7 @@
         "description": "Field 'cost' should be present in transactionAdjustments"
       },
       {
-        "id": "t-104",
+        "id": "t-106",
         "category": "field-presence",
         "entity": "transactionAdjustments",
         "field": "cCurrencyID",
@@ -5478,7 +5529,7 @@
         "description": "Field 'cCurrencyID' should be present in transactionAdjustments"
       },
       {
-        "id": "t-105",
+        "id": "t-107",
         "category": "field-presence",
         "entity": "transactionAdjustments",
         "field": "costAdjustmentLine",
@@ -5486,7 +5537,7 @@
         "description": "Field 'costAdjustmentLine' should be present in transactionAdjustments"
       },
       {
-        "id": "t-106",
+        "id": "t-108",
         "category": "field-presence",
         "entity": "transactionAdjustments",
         "field": "unitCost",
@@ -5494,7 +5545,7 @@
         "description": "Field 'unitCost' should be present in transactionAdjustments"
       },
       {
-        "id": "t-107",
+        "id": "t-109",
         "category": "field-presence",
         "entity": "transactionAdjustments",
         "field": "accountingDate",
@@ -5502,7 +5553,7 @@
         "description": "Field 'accountingDate' should be present in transactionAdjustments"
       },
       {
-        "id": "t-108",
+        "id": "t-110",
         "category": "field-type",
         "entity": "transactionAdjustments",
         "field": "costDate",
@@ -5510,7 +5561,7 @@
         "description": "Field 'costDate' should have type 'string' in transactionAdjustments"
       },
       {
-        "id": "t-109",
+        "id": "t-111",
         "category": "field-type",
         "entity": "transactionAdjustments",
         "field": "cost",
@@ -5518,7 +5569,7 @@
         "description": "Field 'cost' should have type 'number' in transactionAdjustments"
       },
       {
-        "id": "t-110",
+        "id": "t-112",
         "category": "field-type",
         "entity": "transactionAdjustments",
         "field": "cCurrencyID",
@@ -5526,7 +5577,7 @@
         "description": "Field 'cCurrencyID' should have type 'string' in transactionAdjustments"
       },
       {
-        "id": "t-111",
+        "id": "t-113",
         "category": "field-type",
         "entity": "transactionAdjustments",
         "field": "costAdjustmentLine",
@@ -5534,7 +5585,7 @@
         "description": "Field 'costAdjustmentLine' should have type 'string' in transactionAdjustments"
       },
       {
-        "id": "t-112",
+        "id": "t-114",
         "category": "field-type",
         "entity": "transactionAdjustments",
         "field": "unitCost",
@@ -5542,7 +5593,7 @@
         "description": "Field 'unitCost' should have type 'boolean' in transactionAdjustments"
       },
       {
-        "id": "t-113",
+        "id": "t-115",
         "category": "field-type",
         "entity": "transactionAdjustments",
         "field": "accountingDate",
@@ -5550,14 +5601,14 @@
         "description": "Field 'accountingDate' should have type 'string' in transactionAdjustments"
       },
       {
-        "id": "t-114",
+        "id": "t-116",
         "category": "visibility",
         "entity": "transactionAdjustments",
         "runner": "node",
         "description": "Entity 'transactionAdjustments' should only expose visible fields in frontend"
       },
       {
-        "id": "t-115",
+        "id": "t-117",
         "category": "default-value-type",
         "entity": "transactionAdjustments",
         "field": "unitCost",
@@ -5565,7 +5616,7 @@
         "description": "Default value for 'unitCost' in transactionAdjustments should be a string"
       },
       {
-        "id": "t-116",
+        "id": "t-118",
         "category": "field-presence",
         "entity": "transactions",
         "field": "organization",
@@ -5573,7 +5624,7 @@
         "description": "Field 'organization' should be present in transactions"
       },
       {
-        "id": "t-117",
+        "id": "t-119",
         "category": "field-presence",
         "entity": "transactions",
         "field": "storageBin",
@@ -5581,7 +5632,7 @@
         "description": "Field 'storageBin' should be present in transactions"
       },
       {
-        "id": "t-118",
+        "id": "t-120",
         "category": "field-presence",
         "entity": "transactions",
         "field": "movementQuantity",
@@ -5589,7 +5640,7 @@
         "description": "Field 'movementQuantity' should be present in transactions"
       },
       {
-        "id": "t-119",
+        "id": "t-121",
         "category": "field-presence",
         "entity": "transactions",
         "field": "movementDate",
@@ -5597,7 +5648,7 @@
         "description": "Field 'movementDate' should be present in transactions"
       },
       {
-        "id": "t-120",
+        "id": "t-122",
         "category": "field-presence",
         "entity": "transactions",
         "field": "movementType",
@@ -5605,7 +5656,7 @@
         "description": "Field 'movementType' should be present in transactions"
       },
       {
-        "id": "t-121",
+        "id": "t-123",
         "category": "field-presence",
         "entity": "transactions",
         "field": "totalCost",
@@ -5613,7 +5664,7 @@
         "description": "Field 'totalCost' should be present in transactions"
       },
       {
-        "id": "t-122",
+        "id": "t-124",
         "category": "field-presence",
         "entity": "transactions",
         "field": "uOM",
@@ -5621,7 +5672,7 @@
         "description": "Field 'uOM' should be present in transactions"
       },
       {
-        "id": "t-123",
+        "id": "t-125",
         "category": "field-type",
         "entity": "transactions",
         "field": "organization",
@@ -5629,7 +5680,7 @@
         "description": "Field 'organization' should have type 'string' in transactions"
       },
       {
-        "id": "t-124",
+        "id": "t-126",
         "category": "field-type",
         "entity": "transactions",
         "field": "storageBin",
@@ -5637,7 +5688,7 @@
         "description": "Field 'storageBin' should have type 'string' in transactions"
       },
       {
-        "id": "t-125",
+        "id": "t-127",
         "category": "field-type",
         "entity": "transactions",
         "field": "movementQuantity",
@@ -5645,7 +5696,7 @@
         "description": "Field 'movementQuantity' should have type 'number' in transactions"
       },
       {
-        "id": "t-126",
+        "id": "t-128",
         "category": "field-type",
         "entity": "transactions",
         "field": "movementDate",
@@ -5653,7 +5704,7 @@
         "description": "Field 'movementDate' should have type 'string' in transactions"
       },
       {
-        "id": "t-127",
+        "id": "t-129",
         "category": "field-type",
         "entity": "transactions",
         "field": "movementType",
@@ -5661,7 +5712,7 @@
         "description": "Field 'movementType' should have type 'string' in transactions"
       },
       {
-        "id": "t-128",
+        "id": "t-130",
         "category": "field-type",
         "entity": "transactions",
         "field": "totalCost",
@@ -5669,7 +5720,7 @@
         "description": "Field 'totalCost' should have type 'number' in transactions"
       },
       {
-        "id": "t-129",
+        "id": "t-131",
         "category": "field-type",
         "entity": "transactions",
         "field": "uOM",
@@ -5677,14 +5728,14 @@
         "description": "Field 'uOM' should have type 'string' in transactions"
       },
       {
-        "id": "t-130",
+        "id": "t-132",
         "category": "visibility",
         "entity": "transactions",
         "runner": "node",
         "description": "Entity 'transactions' should only expose visible fields in frontend"
       },
       {
-        "id": "t-131",
+        "id": "t-133",
         "category": "displaylogic-valid",
         "entity": "transactions",
         "field": "totalCost",
@@ -5692,7 +5743,7 @@
         "description": "Display logic for 'totalCost' in transactions should be valid JS"
       },
       {
-        "id": "t-132",
+        "id": "t-134",
         "category": "displaylogic-evaluable",
         "entity": "transactions",
         "field": "totalCost",
@@ -5700,7 +5751,7 @@
         "description": "Display logic for 'totalCost' in transactions should have evaluable flag"
       },
       {
-        "id": "t-133",
+        "id": "t-135",
         "category": "default-value-type",
         "entity": "transactions",
         "field": "organization",
@@ -5708,7 +5759,7 @@
         "description": "Default value for 'organization' in transactions should be a string"
       },
       {
-        "id": "t-134",
+        "id": "t-136",
         "category": "field-presence",
         "entity": "productCharacteristic",
         "field": "sequenceNumber",
@@ -5716,7 +5767,7 @@
         "description": "Field 'sequenceNumber' should be present in productCharacteristic"
       },
       {
-        "id": "t-135",
+        "id": "t-137",
         "category": "field-presence",
         "entity": "productCharacteristic",
         "field": "characteristic",
@@ -5724,7 +5775,7 @@
         "description": "Field 'characteristic' should be present in productCharacteristic"
       },
       {
-        "id": "t-136",
+        "id": "t-138",
         "category": "field-presence",
         "entity": "productCharacteristic",
         "field": "variant",
@@ -5732,7 +5783,7 @@
         "description": "Field 'variant' should be present in productCharacteristic"
       },
       {
-        "id": "t-137",
+        "id": "t-139",
         "category": "field-presence",
         "entity": "productCharacteristic",
         "field": "explodeConfigurationTab",
@@ -5740,7 +5791,7 @@
         "description": "Field 'explodeConfigurationTab' should be present in productCharacteristic"
       },
       {
-        "id": "t-138",
+        "id": "t-140",
         "category": "field-presence",
         "entity": "productCharacteristic",
         "field": "definesPrice",
@@ -5748,7 +5799,7 @@
         "description": "Field 'definesPrice' should be present in productCharacteristic"
       },
       {
-        "id": "t-139",
+        "id": "t-141",
         "category": "field-presence",
         "entity": "productCharacteristic",
         "field": "priceListType",
@@ -5756,7 +5807,7 @@
         "description": "Field 'priceListType' should be present in productCharacteristic"
       },
       {
-        "id": "t-140",
+        "id": "t-142",
         "category": "field-presence",
         "entity": "productCharacteristic",
         "field": "definesImage",
@@ -5764,7 +5815,7 @@
         "description": "Field 'definesImage' should be present in productCharacteristic"
       },
       {
-        "id": "t-141",
+        "id": "t-143",
         "category": "field-presence",
         "entity": "productCharacteristic",
         "field": "characteristicSubset",
@@ -5772,7 +5823,7 @@
         "description": "Field 'characteristicSubset' should be present in productCharacteristic"
       },
       {
-        "id": "t-142",
+        "id": "t-144",
         "category": "field-presence",
         "entity": "productCharacteristic",
         "field": "active",
@@ -5780,7 +5831,7 @@
         "description": "Field 'active' should be present in productCharacteristic"
       },
       {
-        "id": "t-143",
+        "id": "t-145",
         "category": "field-type",
         "entity": "productCharacteristic",
         "field": "sequenceNumber",
@@ -5788,7 +5839,7 @@
         "description": "Field 'sequenceNumber' should have type 'number' in productCharacteristic"
       },
       {
-        "id": "t-144",
+        "id": "t-146",
         "category": "field-type",
         "entity": "productCharacteristic",
         "field": "characteristic",
@@ -5796,7 +5847,7 @@
         "description": "Field 'characteristic' should have type 'string' in productCharacteristic"
       },
       {
-        "id": "t-145",
+        "id": "t-147",
         "category": "field-type",
         "entity": "productCharacteristic",
         "field": "variant",
@@ -5804,7 +5855,7 @@
         "description": "Field 'variant' should have type 'boolean' in productCharacteristic"
       },
       {
-        "id": "t-146",
+        "id": "t-148",
         "category": "field-type",
         "entity": "productCharacteristic",
         "field": "explodeConfigurationTab",
@@ -5812,7 +5863,7 @@
         "description": "Field 'explodeConfigurationTab' should have type 'boolean' in productCharacteristic"
       },
       {
-        "id": "t-147",
+        "id": "t-149",
         "category": "field-type",
         "entity": "productCharacteristic",
         "field": "definesPrice",
@@ -5820,7 +5871,7 @@
         "description": "Field 'definesPrice' should have type 'boolean' in productCharacteristic"
       },
       {
-        "id": "t-148",
+        "id": "t-150",
         "category": "field-type",
         "entity": "productCharacteristic",
         "field": "priceListType",
@@ -5828,7 +5879,7 @@
         "description": "Field 'priceListType' should have type 'string' in productCharacteristic"
       },
       {
-        "id": "t-149",
+        "id": "t-151",
         "category": "field-type",
         "entity": "productCharacteristic",
         "field": "definesImage",
@@ -5836,7 +5887,7 @@
         "description": "Field 'definesImage' should have type 'boolean' in productCharacteristic"
       },
       {
-        "id": "t-150",
+        "id": "t-152",
         "category": "field-type",
         "entity": "productCharacteristic",
         "field": "characteristicSubset",
@@ -5844,7 +5895,7 @@
         "description": "Field 'characteristicSubset' should have type 'string' in productCharacteristic"
       },
       {
-        "id": "t-151",
+        "id": "t-153",
         "category": "field-type",
         "entity": "productCharacteristic",
         "field": "active",
@@ -5852,14 +5903,14 @@
         "description": "Field 'active' should have type 'boolean' in productCharacteristic"
       },
       {
-        "id": "t-152",
+        "id": "t-154",
         "category": "visibility",
         "entity": "productCharacteristic",
         "runner": "node",
         "description": "Entity 'productCharacteristic' should only expose visible fields in frontend"
       },
       {
-        "id": "t-153",
+        "id": "t-155",
         "category": "displaylogic-valid",
         "entity": "productCharacteristic",
         "field": "explodeConfigurationTab",
@@ -5867,7 +5918,7 @@
         "description": "Display logic for 'explodeConfigurationTab' in productCharacteristic should be valid JS"
       },
       {
-        "id": "t-154",
+        "id": "t-156",
         "category": "displaylogic-valid",
         "entity": "productCharacteristic",
         "field": "priceListType",
@@ -5875,7 +5926,7 @@
         "description": "Display logic for 'priceListType' in productCharacteristic should be valid JS"
       },
       {
-        "id": "t-155",
+        "id": "t-157",
         "category": "displaylogic-evaluable",
         "entity": "productCharacteristic",
         "field": "explodeConfigurationTab",
@@ -5883,7 +5934,7 @@
         "description": "Display logic for 'explodeConfigurationTab' in productCharacteristic should have evaluable flag"
       },
       {
-        "id": "t-156",
+        "id": "t-158",
         "category": "displaylogic-evaluable",
         "entity": "productCharacteristic",
         "field": "priceListType",
@@ -5891,7 +5942,7 @@
         "description": "Display logic for 'priceListType' in productCharacteristic should have evaluable flag"
       },
       {
-        "id": "t-157",
+        "id": "t-159",
         "category": "default-value-type",
         "entity": "productCharacteristic",
         "field": "sequenceNumber",
@@ -5899,7 +5950,7 @@
         "description": "Default value for 'sequenceNumber' in productCharacteristic should be a string"
       },
       {
-        "id": "t-158",
+        "id": "t-160",
         "category": "default-value-type",
         "entity": "productCharacteristic",
         "field": "variant",
@@ -5907,7 +5958,7 @@
         "description": "Default value for 'variant' in productCharacteristic should be a string"
       },
       {
-        "id": "t-159",
+        "id": "t-161",
         "category": "default-value-type",
         "entity": "productCharacteristic",
         "field": "explodeConfigurationTab",
@@ -5915,7 +5966,7 @@
         "description": "Default value for 'explodeConfigurationTab' in productCharacteristic should be a string"
       },
       {
-        "id": "t-160",
+        "id": "t-162",
         "category": "default-value-type",
         "entity": "productCharacteristic",
         "field": "definesPrice",
@@ -5923,7 +5974,7 @@
         "description": "Default value for 'definesPrice' in productCharacteristic should be a string"
       },
       {
-        "id": "t-161",
+        "id": "t-163",
         "category": "default-value-type",
         "entity": "productCharacteristic",
         "field": "priceListType",
@@ -5931,7 +5982,7 @@
         "description": "Default value for 'priceListType' in productCharacteristic should be a string"
       },
       {
-        "id": "t-162",
+        "id": "t-164",
         "category": "default-value-type",
         "entity": "productCharacteristic",
         "field": "definesImage",
@@ -5939,7 +5990,7 @@
         "description": "Default value for 'definesImage' in productCharacteristic should be a string"
       },
       {
-        "id": "t-163",
+        "id": "t-165",
         "category": "default-value-type",
         "entity": "productCharacteristic",
         "field": "active",
@@ -5947,7 +5998,7 @@
         "description": "Default value for 'active' in productCharacteristic should be a string"
       },
       {
-        "id": "t-164",
+        "id": "t-166",
         "category": "field-presence",
         "entity": "stock",
         "field": "storageBin",
@@ -5955,7 +6006,7 @@
         "description": "Field 'storageBin' should be present in stock"
       },
       {
-        "id": "t-165",
+        "id": "t-167",
         "category": "field-presence",
         "entity": "stock",
         "field": "attributeSetValue",
@@ -5963,7 +6014,7 @@
         "description": "Field 'attributeSetValue' should be present in stock"
       },
       {
-        "id": "t-166",
+        "id": "t-168",
         "category": "field-presence",
         "entity": "stock",
         "field": "uOM",
@@ -5971,7 +6022,7 @@
         "description": "Field 'uOM' should be present in stock"
       },
       {
-        "id": "t-167",
+        "id": "t-169",
         "category": "field-presence",
         "entity": "stock",
         "field": "quantityOnHand",
@@ -5979,7 +6030,7 @@
         "description": "Field 'quantityOnHand' should be present in stock"
       },
       {
-        "id": "t-168",
+        "id": "t-170",
         "category": "field-presence",
         "entity": "stock",
         "field": "reservedQty",
@@ -5987,7 +6038,7 @@
         "description": "Field 'reservedQty' should be present in stock"
       },
       {
-        "id": "t-169",
+        "id": "t-171",
         "category": "field-presence",
         "entity": "stock",
         "field": "allocatedQuantity",
@@ -5995,7 +6046,7 @@
         "description": "Field 'allocatedQuantity' should be present in stock"
       },
       {
-        "id": "t-170",
+        "id": "t-172",
         "category": "field-type",
         "entity": "stock",
         "field": "storageBin",
@@ -6003,7 +6054,7 @@
         "description": "Field 'storageBin' should have type 'string' in stock"
       },
       {
-        "id": "t-171",
+        "id": "t-173",
         "category": "field-type",
         "entity": "stock",
         "field": "attributeSetValue",
@@ -6011,7 +6062,7 @@
         "description": "Field 'attributeSetValue' should have type 'string' in stock"
       },
       {
-        "id": "t-172",
+        "id": "t-174",
         "category": "field-type",
         "entity": "stock",
         "field": "uOM",
@@ -6019,7 +6070,7 @@
         "description": "Field 'uOM' should have type 'string' in stock"
       },
       {
-        "id": "t-173",
+        "id": "t-175",
         "category": "field-type",
         "entity": "stock",
         "field": "quantityOnHand",
@@ -6027,7 +6078,7 @@
         "description": "Field 'quantityOnHand' should have type 'number' in stock"
       },
       {
-        "id": "t-174",
+        "id": "t-176",
         "category": "field-type",
         "entity": "stock",
         "field": "reservedQty",
@@ -6035,7 +6086,7 @@
         "description": "Field 'reservedQty' should have type 'number' in stock"
       },
       {
-        "id": "t-175",
+        "id": "t-177",
         "category": "field-type",
         "entity": "stock",
         "field": "allocatedQuantity",
@@ -6043,14 +6094,14 @@
         "description": "Field 'allocatedQuantity' should have type 'number' in stock"
       },
       {
-        "id": "t-176",
+        "id": "t-178",
         "category": "visibility",
         "entity": "stock",
         "runner": "node",
         "description": "Entity 'stock' should only expose visible fields in frontend"
       },
       {
-        "id": "t-177",
+        "id": "t-179",
         "category": "default-value-type",
         "entity": "stock",
         "field": "reservedQty",
@@ -6058,7 +6109,7 @@
         "description": "Default value for 'reservedQty' in stock should be a string"
       },
       {
-        "id": "t-178",
+        "id": "t-180",
         "category": "default-value-type",
         "entity": "stock",
         "field": "allocatedQuantity",
@@ -6066,7 +6117,7 @@
         "description": "Default value for 'allocatedQuantity' in stock should be a string"
       },
       {
-        "id": "t-179",
+        "id": "t-181",
         "category": "field-presence",
         "entity": "categoryPriceRuleVersion",
         "field": "active",
@@ -6074,7 +6125,7 @@
         "description": "Field 'active' should be present in categoryPriceRuleVersion"
       },
       {
-        "id": "t-180",
+        "id": "t-182",
         "category": "field-presence",
         "entity": "categoryPriceRuleVersion",
         "field": "validFromDate",
@@ -6082,7 +6133,7 @@
         "description": "Field 'validFromDate' should be present in categoryPriceRuleVersion"
       },
       {
-        "id": "t-181",
+        "id": "t-183",
         "category": "field-presence",
         "entity": "categoryPriceRuleVersion",
         "field": "servicePriceRule",
@@ -6090,7 +6141,7 @@
         "description": "Field 'servicePriceRule' should be present in categoryPriceRuleVersion"
       },
       {
-        "id": "t-182",
+        "id": "t-184",
         "category": "field-type",
         "entity": "categoryPriceRuleVersion",
         "field": "active",
@@ -6098,7 +6149,7 @@
         "description": "Field 'active' should have type 'boolean' in categoryPriceRuleVersion"
       },
       {
-        "id": "t-183",
+        "id": "t-185",
         "category": "field-type",
         "entity": "categoryPriceRuleVersion",
         "field": "validFromDate",
@@ -6106,7 +6157,7 @@
         "description": "Field 'validFromDate' should have type 'string' in categoryPriceRuleVersion"
       },
       {
-        "id": "t-184",
+        "id": "t-186",
         "category": "field-type",
         "entity": "categoryPriceRuleVersion",
         "field": "servicePriceRule",
@@ -6114,14 +6165,14 @@
         "description": "Field 'servicePriceRule' should have type 'string' in categoryPriceRuleVersion"
       },
       {
-        "id": "t-185",
+        "id": "t-187",
         "category": "visibility",
         "entity": "categoryPriceRuleVersion",
         "runner": "node",
         "description": "Entity 'categoryPriceRuleVersion' should only expose visible fields in frontend"
       },
       {
-        "id": "t-186",
+        "id": "t-188",
         "category": "default-value-type",
         "entity": "categoryPriceRuleVersion",
         "field": "active",
@@ -6129,7 +6180,7 @@
         "description": "Default value for 'active' in categoryPriceRuleVersion should be a string"
       },
       {
-        "id": "t-187",
+        "id": "t-189",
         "category": "field-presence",
         "entity": "alternateUom",
         "field": "uOM",
@@ -6137,7 +6188,7 @@
         "description": "Field 'uOM' should be present in alternateUom"
       },
       {
-        "id": "t-188",
+        "id": "t-190",
         "category": "field-presence",
         "entity": "alternateUom",
         "field": "conversionRate",
@@ -6145,7 +6196,7 @@
         "description": "Field 'conversionRate' should be present in alternateUom"
       },
       {
-        "id": "t-189",
+        "id": "t-191",
         "category": "field-presence",
         "entity": "alternateUom",
         "field": "gtin",
@@ -6153,7 +6204,7 @@
         "description": "Field 'gtin' should be present in alternateUom"
       },
       {
-        "id": "t-190",
+        "id": "t-192",
         "category": "field-presence",
         "entity": "alternateUom",
         "field": "sales",
@@ -6161,7 +6212,7 @@
         "description": "Field 'sales' should be present in alternateUom"
       },
       {
-        "id": "t-191",
+        "id": "t-193",
         "category": "field-presence",
         "entity": "alternateUom",
         "field": "purchase",
@@ -6169,7 +6220,7 @@
         "description": "Field 'purchase' should be present in alternateUom"
       },
       {
-        "id": "t-192",
+        "id": "t-194",
         "category": "field-presence",
         "entity": "alternateUom",
         "field": "logistics",
@@ -6177,7 +6228,7 @@
         "description": "Field 'logistics' should be present in alternateUom"
       },
       {
-        "id": "t-193",
+        "id": "t-195",
         "category": "field-type",
         "entity": "alternateUom",
         "field": "uOM",
@@ -6185,7 +6236,7 @@
         "description": "Field 'uOM' should have type 'string' in alternateUom"
       },
       {
-        "id": "t-194",
+        "id": "t-196",
         "category": "field-type",
         "entity": "alternateUom",
         "field": "conversionRate",
@@ -6193,7 +6244,7 @@
         "description": "Field 'conversionRate' should have type 'number' in alternateUom"
       },
       {
-        "id": "t-195",
+        "id": "t-197",
         "category": "field-type",
         "entity": "alternateUom",
         "field": "gtin",
@@ -6201,7 +6252,7 @@
         "description": "Field 'gtin' should have type 'string' in alternateUom"
       },
       {
-        "id": "t-196",
+        "id": "t-198",
         "category": "field-type",
         "entity": "alternateUom",
         "field": "sales",
@@ -6209,7 +6260,7 @@
         "description": "Field 'sales' should have type 'string' in alternateUom"
       },
       {
-        "id": "t-197",
+        "id": "t-199",
         "category": "field-type",
         "entity": "alternateUom",
         "field": "purchase",
@@ -6217,7 +6268,7 @@
         "description": "Field 'purchase' should have type 'string' in alternateUom"
       },
       {
-        "id": "t-198",
+        "id": "t-200",
         "category": "field-type",
         "entity": "alternateUom",
         "field": "logistics",
@@ -6225,14 +6276,30 @@
         "description": "Field 'logistics' should have type 'string' in alternateUom"
       },
       {
-        "id": "t-199",
+        "id": "t-201",
         "category": "visibility",
         "entity": "alternateUom",
         "runner": "node",
         "description": "Entity 'alternateUom' should only expose visible fields in frontend"
       },
       {
-        "id": "t-200",
+        "id": "t-202",
+        "category": "readonlylogic-valid",
+        "entity": "alternateUom",
+        "field": "conversionRate",
+        "runner": "node",
+        "description": "Read-only logic for 'conversionRate' in alternateUom should be valid JS"
+      },
+      {
+        "id": "t-203",
+        "category": "readonlylogic-evaluable",
+        "entity": "alternateUom",
+        "field": "conversionRate",
+        "runner": "node",
+        "description": "Read-only logic for 'conversionRate' in alternateUom should have evaluable flag"
+      },
+      {
+        "id": "t-204",
         "category": "default-value-type",
         "entity": "alternateUom",
         "field": "sales",
@@ -6240,7 +6307,7 @@
         "description": "Default value for 'sales' in alternateUom should be a string"
       },
       {
-        "id": "t-201",
+        "id": "t-205",
         "category": "default-value-type",
         "entity": "alternateUom",
         "field": "purchase",
@@ -6248,7 +6315,7 @@
         "description": "Default value for 'purchase' in alternateUom should be a string"
       },
       {
-        "id": "t-202",
+        "id": "t-206",
         "category": "default-value-type",
         "entity": "alternateUom",
         "field": "logistics",
@@ -6256,7 +6323,7 @@
         "description": "Default value for 'logistics' in alternateUom should be a string"
       },
       {
-        "id": "t-203",
+        "id": "t-207",
         "category": "system-field",
         "entity": "product",
         "field": "manageVariants",
@@ -6264,7 +6331,7 @@
         "description": "System field 'manageVariants' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-204",
+        "id": "t-208",
         "category": "system-field",
         "entity": "product",
         "field": "organization",
@@ -6272,7 +6339,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-205",
+        "id": "t-209",
         "category": "system-field",
         "entity": "product",
         "field": "isGeneric",
@@ -6280,7 +6347,7 @@
         "description": "System field 'isGeneric' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-206",
+        "id": "t-210",
         "category": "system-field",
         "entity": "product",
         "field": "genericProduct",
@@ -6288,7 +6355,7 @@
         "description": "System field 'genericProduct' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-207",
+        "id": "t-211",
         "category": "system-field",
         "entity": "product",
         "field": "useAttributeSetValueAs",
@@ -6296,7 +6363,7 @@
         "description": "System field 'useAttributeSetValueAs' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-208",
+        "id": "t-212",
         "category": "system-field",
         "entity": "product",
         "field": "attributeSetValue",
@@ -6304,7 +6371,7 @@
         "description": "System field 'attributeSetValue' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-209",
+        "id": "t-213",
         "category": "system-field",
         "entity": "product",
         "field": "active",
@@ -6312,7 +6379,7 @@
         "description": "System field 'active' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-210",
+        "id": "t-214",
         "category": "system-field",
         "entity": "product",
         "field": "salesRepresentative",
@@ -6320,7 +6387,7 @@
         "description": "System field 'salesRepresentative' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-211",
+        "id": "t-215",
         "category": "system-field",
         "entity": "product",
         "field": "businessPartner",
@@ -6328,7 +6395,7 @@
         "description": "System field 'businessPartner' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-212",
+        "id": "t-216",
         "category": "system-field",
         "entity": "product",
         "field": "imageURL",
@@ -6336,7 +6403,7 @@
         "description": "System field 'imageURL' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-213",
+        "id": "t-217",
         "category": "system-field",
         "entity": "product",
         "field": "descriptionURL",
@@ -6344,7 +6411,7 @@
         "description": "System field 'descriptionURL' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-214",
+        "id": "t-218",
         "category": "system-field",
         "entity": "product",
         "field": "production",
@@ -6352,7 +6419,7 @@
         "description": "System field 'production' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-215",
+        "id": "t-219",
         "category": "system-field",
         "entity": "product",
         "field": "processPlan",
@@ -6360,7 +6427,7 @@
         "description": "System field 'processPlan' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-216",
+        "id": "t-220",
         "category": "system-field",
         "entity": "product",
         "field": "summaryLevel",
@@ -6368,7 +6435,7 @@
         "description": "System field 'summaryLevel' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-217",
+        "id": "t-221",
         "category": "system-field",
         "entity": "product",
         "field": "storageBin",
@@ -6376,7 +6443,7 @@
         "description": "System field 'storageBin' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-218",
+        "id": "t-222",
         "category": "system-field",
         "entity": "product",
         "field": "volume",
@@ -6384,7 +6451,7 @@
         "description": "System field 'volume' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-219",
+        "id": "t-223",
         "category": "system-field",
         "entity": "product",
         "field": "shelfWidth",
@@ -6392,7 +6459,7 @@
         "description": "System field 'shelfWidth' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-220",
+        "id": "t-224",
         "category": "system-field",
         "entity": "product",
         "field": "shelfHeight",
@@ -6400,7 +6467,7 @@
         "description": "System field 'shelfHeight' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-221",
+        "id": "t-225",
         "category": "system-field",
         "entity": "product",
         "field": "shelfDepth",
@@ -6408,7 +6475,7 @@
         "description": "System field 'shelfDepth' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-222",
+        "id": "t-226",
         "category": "system-field",
         "entity": "product",
         "field": "unitsPerPallet",
@@ -6416,7 +6483,7 @@
         "description": "System field 'unitsPerPallet' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-223",
+        "id": "t-227",
         "category": "system-field",
         "entity": "product",
         "field": "discontinued",
@@ -6424,7 +6491,7 @@
         "description": "System field 'discontinued' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-224",
+        "id": "t-228",
         "category": "system-field",
         "entity": "product",
         "field": "discontinuedBy",
@@ -6432,7 +6499,7 @@
         "description": "System field 'discontinuedBy' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-225",
+        "id": "t-229",
         "category": "system-field",
         "entity": "product",
         "field": "billOfMaterials",
@@ -6440,7 +6507,7 @@
         "description": "System field 'billOfMaterials' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-226",
+        "id": "t-230",
         "category": "system-field",
         "entity": "product",
         "field": "printDetailsOnInvoice",
@@ -6448,7 +6515,7 @@
         "description": "System field 'printDetailsOnInvoice' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-227",
+        "id": "t-231",
         "category": "system-field",
         "entity": "product",
         "field": "printDetailsOnPickList",
@@ -6456,7 +6523,7 @@
         "description": "System field 'printDetailsOnPickList' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-228",
+        "id": "t-232",
         "category": "system-field",
         "entity": "product",
         "field": "bOMVerified",
@@ -6464,7 +6531,7 @@
         "description": "System field 'bOMVerified' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-229",
+        "id": "t-233",
         "category": "system-field",
         "entity": "product",
         "field": "processNow",
@@ -6472,7 +6539,7 @@
         "description": "System field 'processNow' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-230",
+        "id": "t-234",
         "category": "system-field",
         "entity": "product",
         "field": "expenseType",
@@ -6480,7 +6547,7 @@
         "description": "System field 'expenseType' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-231",
+        "id": "t-235",
         "category": "system-field",
         "entity": "product",
         "field": "isquantityvariable",
@@ -6488,7 +6555,7 @@
         "description": "System field 'isquantityvariable' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-232",
+        "id": "t-236",
         "category": "system-field",
         "entity": "product",
         "field": "resource",
@@ -6496,7 +6563,7 @@
         "description": "System field 'resource' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-233",
+        "id": "t-237",
         "category": "system-field",
         "entity": "product",
         "field": "overdueReturnDays",
@@ -6504,7 +6571,7 @@
         "description": "System field 'overdueReturnDays' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-234",
+        "id": "t-238",
         "category": "system-field",
         "entity": "product",
         "field": "deferredRevenue",
@@ -6512,7 +6579,7 @@
         "description": "System field 'deferredRevenue' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-235",
+        "id": "t-239",
         "category": "system-field",
         "entity": "product",
         "field": "isdeferredexpense",
@@ -6520,7 +6587,7 @@
         "description": "System field 'isdeferredexpense' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-236",
+        "id": "t-240",
         "category": "system-field",
         "entity": "product",
         "field": "bookUsingPurchaseOrderPrice",
@@ -6528,7 +6595,7 @@
         "description": "System field 'bookUsingPurchaseOrderPrice' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-237",
+        "id": "t-241",
         "category": "system-field",
         "entity": "product",
         "field": "characteristicDescription",
@@ -6536,7 +6603,7 @@
         "description": "System field 'characteristicDescription' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-238",
+        "id": "t-242",
         "category": "system-field",
         "entity": "product",
         "field": "revenuePlanType",
@@ -6544,7 +6611,7 @@
         "description": "System field 'revenuePlanType' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-239",
+        "id": "t-243",
         "category": "system-field",
         "entity": "product",
         "field": "periodNumber",
@@ -6552,7 +6619,7 @@
         "description": "System field 'periodNumber' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-240",
+        "id": "t-244",
         "category": "system-field",
         "entity": "product",
         "field": "defaultPeriod",
@@ -6560,7 +6627,7 @@
         "description": "System field 'defaultPeriod' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-241",
+        "id": "t-245",
         "category": "system-field",
         "entity": "product",
         "field": "expplantype",
@@ -6568,7 +6635,7 @@
         "description": "System field 'expplantype' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-242",
+        "id": "t-246",
         "category": "system-field",
         "entity": "product",
         "field": "periodnumberExp",
@@ -6576,7 +6643,7 @@
         "description": "System field 'periodnumberExp' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-243",
+        "id": "t-247",
         "category": "system-field",
         "entity": "product",
         "field": "defaultPeriodExpense",
@@ -6584,7 +6651,7 @@
         "description": "System field 'defaultPeriodExpense' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-244",
+        "id": "t-248",
         "category": "system-field",
         "entity": "product",
         "field": "calculated",
@@ -6592,7 +6659,7 @@
         "description": "System field 'calculated' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-245",
+        "id": "t-249",
         "category": "system-field",
         "entity": "product",
         "field": "capacity",
@@ -6600,7 +6667,7 @@
         "description": "System field 'capacity' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-246",
+        "id": "t-250",
         "category": "system-field",
         "entity": "product",
         "field": "minimumLeadTime",
@@ -6608,7 +6675,7 @@
         "description": "System field 'minimumLeadTime' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-247",
+        "id": "t-251",
         "category": "system-field",
         "entity": "product",
         "field": "planner",
@@ -6616,7 +6683,7 @@
         "description": "System field 'planner' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-248",
+        "id": "t-252",
         "category": "system-field",
         "entity": "product",
         "field": "planningMethod",
@@ -6624,7 +6691,7 @@
         "description": "System field 'planningMethod' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-249",
+        "id": "t-253",
         "category": "system-field",
         "entity": "product",
         "field": "maxQuantity",
@@ -6632,7 +6699,7 @@
         "description": "System field 'maxQuantity' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-250",
+        "id": "t-254",
         "category": "system-field",
         "entity": "product",
         "field": "minQuantity",
@@ -6640,7 +6707,7 @@
         "description": "System field 'minQuantity' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-251",
+        "id": "t-255",
         "category": "system-field",
         "entity": "product",
         "field": "standardQuantity",
@@ -6648,7 +6715,7 @@
         "description": "System field 'standardQuantity' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-252",
+        "id": "t-256",
         "category": "system-field",
         "entity": "product",
         "field": "quantityType",
@@ -6656,7 +6723,7 @@
         "description": "System field 'quantityType' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-253",
+        "id": "t-257",
         "category": "system-field",
         "entity": "product",
         "field": "safetyStock",
@@ -6664,7 +6731,7 @@
         "description": "System field 'safetyStock' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-254",
+        "id": "t-258",
         "category": "system-field",
         "entity": "product",
         "field": "createVariants",
@@ -6672,7 +6739,7 @@
         "description": "System field 'createVariants' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-255",
+        "id": "t-259",
         "category": "system-field",
         "entity": "product",
         "field": "updateInvariants",
@@ -6680,7 +6747,7 @@
         "description": "System field 'updateInvariants' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-256",
+        "id": "t-260",
         "category": "system-field",
         "entity": "product",
         "field": "linkedToProduct",
@@ -6688,7 +6755,7 @@
         "description": "System field 'linkedToProduct' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-257",
+        "id": "t-261",
         "category": "system-field",
         "entity": "product",
         "field": "includedProductCategories",
@@ -6696,7 +6763,7 @@
         "description": "System field 'includedProductCategories' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-258",
+        "id": "t-262",
         "category": "system-field",
         "entity": "product",
         "field": "includedProducts",
@@ -6704,7 +6771,7 @@
         "description": "System field 'includedProducts' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-259",
+        "id": "t-263",
         "category": "system-field",
         "entity": "product",
         "field": "ispricerulebased",
@@ -6712,7 +6779,7 @@
         "description": "System field 'ispricerulebased' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-260",
+        "id": "t-264",
         "category": "system-field",
         "entity": "product",
         "field": "quantityRule",
@@ -6720,7 +6787,7 @@
         "description": "System field 'quantityRule' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-261",
+        "id": "t-265",
         "category": "system-field",
         "entity": "product",
         "field": "uniquePerDocument",
@@ -6728,7 +6795,7 @@
         "description": "System field 'uniquePerDocument' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-262",
+        "id": "t-266",
         "category": "system-field",
         "entity": "product",
         "field": "printDescription",
@@ -6736,7 +6803,7 @@
         "description": "System field 'printDescription' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-263",
+        "id": "t-267",
         "category": "system-field",
         "entity": "product",
         "field": "modifyTax",
@@ -6744,7 +6811,7 @@
         "description": "System field 'modifyTax' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-264",
+        "id": "t-268",
         "category": "system-field",
         "entity": "product",
         "field": "relateprodcattoservice",
@@ -6752,7 +6819,7 @@
         "description": "System field 'relateprodcattoservice' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-265",
+        "id": "t-269",
         "category": "system-field",
         "entity": "product",
         "field": "relateprodtoservice",
@@ -6760,7 +6827,7 @@
         "description": "System field 'relateprodtoservice' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-266",
+        "id": "t-270",
         "category": "system-field",
         "entity": "product",
         "field": "allowDeferredSell",
@@ -6768,7 +6835,7 @@
         "description": "System field 'allowDeferredSell' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-267",
+        "id": "t-271",
         "category": "system-field",
         "entity": "product",
         "field": "deferredSellMaxDays",
@@ -6776,7 +6843,7 @@
         "description": "System field 'deferredSellMaxDays' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-268",
+        "id": "t-272",
         "category": "system-field",
         "entity": "product",
         "field": "relateprodcattaxtoservice",
@@ -6784,7 +6851,7 @@
         "description": "System field 'relateprodcattaxtoservice' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-269",
+        "id": "t-273",
         "category": "system-field",
         "entity": "product",
         "field": "copyservicemodifytaxconfig",
@@ -6792,7 +6859,7 @@
         "description": "System field 'copyservicemodifytaxconfig' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-270",
+        "id": "t-274",
         "category": "system-field",
         "entity": "product",
         "field": "enforceAttribute",
@@ -6800,7 +6867,7 @@
         "description": "System field 'enforceAttribute' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-271",
+        "id": "t-275",
         "category": "system-field",
         "entity": "product",
         "field": "minimumStock",
@@ -6808,7 +6875,7 @@
         "description": "System field 'minimumStock' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-272",
+        "id": "t-276",
         "category": "system-field",
         "entity": "product",
         "field": "id",
@@ -6816,7 +6883,7 @@
         "description": "System field 'id' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-273",
+        "id": "t-277",
         "category": "system-field",
         "entity": "product",
         "field": "helpComment",
@@ -6824,7 +6891,7 @@
         "description": "System field 'helpComment' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-274",
+        "id": "t-278",
         "category": "system-field",
         "entity": "product",
         "field": "comments",
@@ -6832,7 +6899,7 @@
         "description": "System field 'comments' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-275",
+        "id": "t-279",
         "category": "system-field",
         "entity": "product",
         "field": "versionNo",
@@ -6840,7 +6907,7 @@
         "description": "System field 'versionNo' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-276",
+        "id": "t-280",
         "category": "system-field",
         "entity": "product",
         "field": "guaranteedDays",
@@ -6848,7 +6915,7 @@
         "description": "System field 'guaranteedDays' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-277",
+        "id": "t-281",
         "category": "system-field",
         "entity": "product",
         "field": "classification",
@@ -6856,7 +6923,7 @@
         "description": "System field 'classification' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-278",
+        "id": "t-282",
         "category": "system-field",
         "entity": "product",
         "field": "sKU",
@@ -6864,7 +6931,7 @@
         "description": "System field 'sKU' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-279",
+        "id": "t-283",
         "category": "system-field",
         "entity": "product",
         "field": "downloadURL",
@@ -6872,7 +6939,7 @@
         "description": "System field 'downloadURL' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-280",
+        "id": "t-284",
         "category": "system-field",
         "entity": "product",
         "field": "freightCategory",
@@ -6880,7 +6947,7 @@
         "description": "System field 'freightCategory' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-281",
+        "id": "t-285",
         "category": "system-field",
         "entity": "product",
         "field": "client",
@@ -6888,7 +6955,7 @@
         "description": "System field 'client' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-282",
+        "id": "t-286",
         "category": "system-field",
         "entity": "product",
         "field": "printPrice",
@@ -6896,7 +6963,7 @@
         "description": "System field 'printPrice' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-283",
+        "id": "t-287",
         "category": "system-field",
         "entity": "product",
         "field": "name2",
@@ -6904,7 +6971,7 @@
         "description": "System field 'name2' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-284",
+        "id": "t-288",
         "category": "system-field",
         "entity": "product",
         "field": "creationDate",
@@ -6912,7 +6979,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-285",
+        "id": "t-289",
         "category": "system-field",
         "entity": "product",
         "field": "createdBy",
@@ -6920,7 +6987,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-286",
+        "id": "t-290",
         "category": "system-field",
         "entity": "product",
         "field": "updated",
@@ -6928,7 +6995,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-287",
+        "id": "t-291",
         "category": "system-field",
         "entity": "product",
         "field": "updatedBy",
@@ -6936,7 +7003,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for product"
       },
       {
-        "id": "t-288",
+        "id": "t-292",
         "category": "system-field",
         "entity": "price",
         "field": "priceLimit",
@@ -6944,7 +7011,7 @@
         "description": "System field 'priceLimit' should exist in backend but not frontend for price"
       },
       {
-        "id": "t-289",
+        "id": "t-293",
         "category": "system-field",
         "entity": "price",
         "field": "active",
@@ -6952,7 +7019,7 @@
         "description": "System field 'active' should exist in backend but not frontend for price"
       },
       {
-        "id": "t-290",
+        "id": "t-294",
         "category": "system-field",
         "entity": "price",
         "field": "client",
@@ -6960,7 +7027,7 @@
         "description": "System field 'client' should exist in backend but not frontend for price"
       },
       {
-        "id": "t-291",
+        "id": "t-295",
         "category": "system-field",
         "entity": "price",
         "field": "product",
@@ -6968,7 +7035,7 @@
         "description": "System field 'product' should exist in backend but not frontend for price"
       },
       {
-        "id": "t-292",
+        "id": "t-296",
         "category": "system-field",
         "entity": "price",
         "field": "id",
@@ -6976,7 +7043,7 @@
         "description": "System field 'id' should exist in backend but not frontend for price"
       },
       {
-        "id": "t-293",
+        "id": "t-297",
         "category": "system-field",
         "entity": "price",
         "field": "organization",
@@ -6984,7 +7051,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for price"
       },
       {
-        "id": "t-294",
+        "id": "t-298",
         "category": "system-field",
         "entity": "price",
         "field": "algorithm",
@@ -6992,7 +7059,7 @@
         "description": "System field 'algorithm' should exist in backend but not frontend for price"
       },
       {
-        "id": "t-295",
+        "id": "t-299",
         "category": "system-field",
         "entity": "price",
         "field": "creationDate",
@@ -7000,7 +7067,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for price"
       },
       {
-        "id": "t-296",
+        "id": "t-300",
         "category": "system-field",
         "entity": "price",
         "field": "createdBy",
@@ -7008,7 +7075,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for price"
       },
       {
-        "id": "t-297",
+        "id": "t-301",
         "category": "system-field",
         "entity": "price",
         "field": "updated",
@@ -7016,7 +7083,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for price"
       },
       {
-        "id": "t-298",
+        "id": "t-302",
         "category": "system-field",
         "entity": "price",
         "field": "updatedBy",
@@ -7024,7 +7091,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for price"
       },
       {
-        "id": "t-299",
+        "id": "t-303",
         "category": "system-field",
         "entity": "priceRuleVersion",
         "field": "organization",
@@ -7032,7 +7099,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for priceRuleVersion"
       },
       {
-        "id": "t-300",
+        "id": "t-304",
         "category": "system-field",
         "entity": "priceRuleVersion",
         "field": "product",
@@ -7040,7 +7107,7 @@
         "description": "System field 'product' should exist in backend but not frontend for priceRuleVersion"
       },
       {
-        "id": "t-301",
+        "id": "t-305",
         "category": "system-field",
         "entity": "priceRuleVersion",
         "field": "client",
@@ -7048,7 +7115,7 @@
         "description": "System field 'client' should exist in backend but not frontend for priceRuleVersion"
       },
       {
-        "id": "t-302",
+        "id": "t-306",
         "category": "system-field",
         "entity": "priceRuleVersion",
         "field": "mServicepriceruleVersionID",
@@ -7056,7 +7123,7 @@
         "description": "System field 'mServicepriceruleVersionID' should exist in backend but not frontend for priceRuleVersion"
       },
       {
-        "id": "t-303",
+        "id": "t-307",
         "category": "system-field",
         "entity": "priceRuleVersion",
         "field": "creationDate",
@@ -7064,7 +7131,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for priceRuleVersion"
       },
       {
-        "id": "t-304",
+        "id": "t-308",
         "category": "system-field",
         "entity": "priceRuleVersion",
         "field": "createdBy",
@@ -7072,7 +7139,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for priceRuleVersion"
       },
       {
-        "id": "t-305",
+        "id": "t-309",
         "category": "system-field",
         "entity": "priceRuleVersion",
         "field": "relatedProductCategory",
@@ -7080,7 +7147,7 @@
         "description": "System field 'relatedProductCategory' should exist in backend but not frontend for priceRuleVersion"
       },
       {
-        "id": "t-306",
+        "id": "t-310",
         "category": "system-field",
         "entity": "priceRuleVersion",
         "field": "relatedProduct",
@@ -7088,7 +7155,7 @@
         "description": "System field 'relatedProduct' should exist in backend but not frontend for priceRuleVersion"
       },
       {
-        "id": "t-307",
+        "id": "t-311",
         "category": "system-field",
         "entity": "priceRuleVersion",
         "field": "updated",
@@ -7096,7 +7163,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for priceRuleVersion"
       },
       {
-        "id": "t-308",
+        "id": "t-312",
         "category": "system-field",
         "entity": "priceRuleVersion",
         "field": "updatedBy",
@@ -7104,7 +7171,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for priceRuleVersion"
       },
       {
-        "id": "t-309",
+        "id": "t-313",
         "category": "system-field",
         "entity": "billOfMaterials",
         "field": "bOMType",
@@ -7112,7 +7179,7 @@
         "description": "System field 'bOMType' should exist in backend but not frontend for billOfMaterials"
       },
       {
-        "id": "t-310",
+        "id": "t-314",
         "category": "system-field",
         "entity": "billOfMaterials",
         "field": "active",
@@ -7120,7 +7187,7 @@
         "description": "System field 'active' should exist in backend but not frontend for billOfMaterials"
       },
       {
-        "id": "t-311",
+        "id": "t-315",
         "category": "system-field",
         "entity": "billOfMaterials",
         "field": "product",
@@ -7128,7 +7195,7 @@
         "description": "System field 'product' should exist in backend but not frontend for billOfMaterials"
       },
       {
-        "id": "t-312",
+        "id": "t-316",
         "category": "system-field",
         "entity": "billOfMaterials",
         "field": "id",
@@ -7136,7 +7203,7 @@
         "description": "System field 'id' should exist in backend but not frontend for billOfMaterials"
       },
       {
-        "id": "t-313",
+        "id": "t-317",
         "category": "system-field",
         "entity": "billOfMaterials",
         "field": "client",
@@ -7144,7 +7211,7 @@
         "description": "System field 'client' should exist in backend but not frontend for billOfMaterials"
       },
       {
-        "id": "t-314",
+        "id": "t-318",
         "category": "system-field",
         "entity": "billOfMaterials",
         "field": "organization",
@@ -7152,7 +7219,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for billOfMaterials"
       },
       {
-        "id": "t-315",
+        "id": "t-319",
         "category": "system-field",
         "entity": "billOfMaterials",
         "field": "creationDate",
@@ -7160,7 +7227,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for billOfMaterials"
       },
       {
-        "id": "t-316",
+        "id": "t-320",
         "category": "system-field",
         "entity": "billOfMaterials",
         "field": "createdBy",
@@ -7168,7 +7235,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for billOfMaterials"
       },
       {
-        "id": "t-317",
+        "id": "t-321",
         "category": "system-field",
         "entity": "billOfMaterials",
         "field": "updated",
@@ -7176,7 +7243,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for billOfMaterials"
       },
       {
-        "id": "t-318",
+        "id": "t-322",
         "category": "system-field",
         "entity": "billOfMaterials",
         "field": "updatedBy",
@@ -7184,7 +7251,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for billOfMaterials"
       },
       {
-        "id": "t-319",
+        "id": "t-323",
         "category": "system-field",
         "entity": "costing",
         "field": "organization",
@@ -7192,7 +7259,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for costing"
       },
       {
-        "id": "t-320",
+        "id": "t-324",
         "category": "system-field",
         "entity": "costing",
         "field": "inventoryTransaction",
@@ -7200,7 +7267,7 @@
         "description": "System field 'inventoryTransaction' should exist in backend but not frontend for costing"
       },
       {
-        "id": "t-321",
+        "id": "t-325",
         "category": "system-field",
         "entity": "costing",
         "field": "price",
@@ -7208,7 +7275,7 @@
         "description": "System field 'price' should exist in backend but not frontend for costing"
       },
       {
-        "id": "t-322",
+        "id": "t-326",
         "category": "system-field",
         "entity": "costing",
         "field": "totalMovementQuantity",
@@ -7216,7 +7283,7 @@
         "description": "System field 'totalMovementQuantity' should exist in backend but not frontend for costing"
       },
       {
-        "id": "t-323",
+        "id": "t-327",
         "category": "system-field",
         "entity": "costing",
         "field": "manual",
@@ -7224,7 +7291,7 @@
         "description": "System field 'manual' should exist in backend but not frontend for costing"
       },
       {
-        "id": "t-324",
+        "id": "t-328",
         "category": "system-field",
         "entity": "costing",
         "field": "permanent",
@@ -7232,7 +7299,7 @@
         "description": "System field 'permanent' should exist in backend but not frontend for costing"
       },
       {
-        "id": "t-325",
+        "id": "t-329",
         "category": "system-field",
         "entity": "costing",
         "field": "totalStockValuation",
@@ -7240,7 +7307,7 @@
         "description": "System field 'totalStockValuation' should exist in backend but not frontend for costing"
       },
       {
-        "id": "t-326",
+        "id": "t-330",
         "category": "system-field",
         "entity": "costing",
         "field": "production",
@@ -7248,7 +7315,7 @@
         "description": "System field 'production' should exist in backend but not frontend for costing"
       },
       {
-        "id": "t-327",
+        "id": "t-331",
         "category": "system-field",
         "entity": "costing",
         "field": "id",
@@ -7256,7 +7323,7 @@
         "description": "System field 'id' should exist in backend but not frontend for costing"
       },
       {
-        "id": "t-328",
+        "id": "t-332",
         "category": "system-field",
         "entity": "costing",
         "field": "product",
@@ -7264,7 +7331,7 @@
         "description": "System field 'product' should exist in backend but not frontend for costing"
       },
       {
-        "id": "t-329",
+        "id": "t-333",
         "category": "system-field",
         "entity": "costing",
         "field": "invoiceLine",
@@ -7272,7 +7339,7 @@
         "description": "System field 'invoiceLine' should exist in backend but not frontend for costing"
       },
       {
-        "id": "t-330",
+        "id": "t-334",
         "category": "system-field",
         "entity": "costing",
         "field": "client",
@@ -7280,7 +7347,7 @@
         "description": "System field 'client' should exist in backend but not frontend for costing"
       },
       {
-        "id": "t-331",
+        "id": "t-335",
         "category": "system-field",
         "entity": "costing",
         "field": "active",
@@ -7288,7 +7355,7 @@
         "description": "System field 'active' should exist in backend but not frontend for costing"
       },
       {
-        "id": "t-332",
+        "id": "t-336",
         "category": "system-field",
         "entity": "costing",
         "field": "creationDate",
@@ -7296,7 +7363,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for costing"
       },
       {
-        "id": "t-333",
+        "id": "t-337",
         "category": "system-field",
         "entity": "costing",
         "field": "createdBy",
@@ -7304,7 +7371,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for costing"
       },
       {
-        "id": "t-334",
+        "id": "t-338",
         "category": "system-field",
         "entity": "costing",
         "field": "updated",
@@ -7312,7 +7379,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for costing"
       },
       {
-        "id": "t-335",
+        "id": "t-339",
         "category": "system-field",
         "entity": "costing",
         "field": "updatedBy",
@@ -7320,7 +7387,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for costing"
       },
       {
-        "id": "t-336",
+        "id": "t-340",
         "category": "system-field",
         "entity": "transactionAdjustments",
         "field": "organization",
@@ -7328,7 +7395,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for transactionAdjustments"
       },
       {
-        "id": "t-337",
+        "id": "t-341",
         "category": "system-field",
         "entity": "transactionAdjustments",
         "field": "inventoryTransaction",
@@ -7336,7 +7403,7 @@
         "description": "System field 'inventoryTransaction' should exist in backend but not frontend for transactionAdjustments"
       },
       {
-        "id": "t-338",
+        "id": "t-342",
         "category": "system-field",
         "entity": "transactionAdjustments",
         "field": "client",
@@ -7344,7 +7411,7 @@
         "description": "System field 'client' should exist in backend but not frontend for transactionAdjustments"
       },
       {
-        "id": "t-339",
+        "id": "t-343",
         "category": "system-field",
         "entity": "transactionAdjustments",
         "field": "active",
@@ -7352,7 +7419,7 @@
         "description": "System field 'active' should exist in backend but not frontend for transactionAdjustments"
       },
       {
-        "id": "t-340",
+        "id": "t-344",
         "category": "system-field",
         "entity": "transactionAdjustments",
         "field": "id",
@@ -7360,7 +7427,7 @@
         "description": "System field 'id' should exist in backend but not frontend for transactionAdjustments"
       },
       {
-        "id": "t-341",
+        "id": "t-345",
         "category": "system-field",
         "entity": "transactionAdjustments",
         "field": "creationDate",
@@ -7368,7 +7435,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for transactionAdjustments"
       },
       {
-        "id": "t-342",
+        "id": "t-346",
         "category": "system-field",
         "entity": "transactionAdjustments",
         "field": "createdBy",
@@ -7376,7 +7443,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for transactionAdjustments"
       },
       {
-        "id": "t-343",
+        "id": "t-347",
         "category": "system-field",
         "entity": "transactionAdjustments",
         "field": "updated",
@@ -7384,7 +7451,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for transactionAdjustments"
       },
       {
-        "id": "t-344",
+        "id": "t-348",
         "category": "system-field",
         "entity": "transactionAdjustments",
         "field": "updatedBy",
@@ -7392,7 +7459,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for transactionAdjustments"
       },
       {
-        "id": "t-345",
+        "id": "t-349",
         "category": "system-field",
         "entity": "transactions",
         "field": "attributeSetValue",
@@ -7400,7 +7467,7 @@
         "description": "System field 'attributeSetValue' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-346",
+        "id": "t-350",
         "category": "system-field",
         "entity": "transactions",
         "field": "active",
@@ -7408,7 +7475,7 @@
         "description": "System field 'active' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-347",
+        "id": "t-351",
         "category": "system-field",
         "entity": "transactions",
         "field": "transactionProcessDate",
@@ -7416,7 +7483,7 @@
         "description": "System field 'transactionProcessDate' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-348",
+        "id": "t-352",
         "category": "system-field",
         "entity": "transactions",
         "field": "goodsShipmentLine",
@@ -7424,7 +7491,7 @@
         "description": "System field 'goodsShipmentLine' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-349",
+        "id": "t-353",
         "category": "system-field",
         "entity": "transactions",
         "field": "physicalInventoryLine",
@@ -7432,7 +7499,7 @@
         "description": "System field 'physicalInventoryLine' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-350",
+        "id": "t-354",
         "category": "system-field",
         "entity": "transactions",
         "field": "movementLine",
@@ -7440,7 +7507,7 @@
         "description": "System field 'movementLine' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-351",
+        "id": "t-355",
         "category": "system-field",
         "entity": "transactions",
         "field": "productionLine",
@@ -7448,7 +7515,7 @@
         "description": "System field 'productionLine' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-352",
+        "id": "t-356",
         "category": "system-field",
         "entity": "transactions",
         "field": "projectIssue",
@@ -7456,7 +7523,7 @@
         "description": "System field 'projectIssue' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-353",
+        "id": "t-357",
         "category": "system-field",
         "entity": "transactions",
         "field": "isCostCalculated",
@@ -7464,7 +7531,7 @@
         "description": "System field 'isCostCalculated' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-354",
+        "id": "t-358",
         "category": "system-field",
         "entity": "transactions",
         "field": "costingStatus",
@@ -7472,7 +7539,7 @@
         "description": "System field 'costingStatus' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-355",
+        "id": "t-359",
         "category": "system-field",
         "entity": "transactions",
         "field": "transactionCost",
@@ -7480,7 +7547,7 @@
         "description": "System field 'transactionCost' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-356",
+        "id": "t-360",
         "category": "system-field",
         "entity": "transactions",
         "field": "unitCost",
@@ -7488,7 +7555,7 @@
         "description": "System field 'unitCost' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-357",
+        "id": "t-361",
         "category": "system-field",
         "entity": "transactions",
         "field": "isCostPermanent",
@@ -7496,7 +7563,7 @@
         "description": "System field 'isCostPermanent' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-358",
+        "id": "t-362",
         "category": "system-field",
         "entity": "transactions",
         "field": "cCurrencyID",
@@ -7504,7 +7571,7 @@
         "description": "System field 'cCurrencyID' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-359",
+        "id": "t-363",
         "category": "system-field",
         "entity": "transactions",
         "field": "isProcessed",
@@ -7512,7 +7579,7 @@
         "description": "System field 'isProcessed' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-360",
+        "id": "t-364",
         "category": "system-field",
         "entity": "transactions",
         "field": "manualcostadjustment",
@@ -7520,7 +7587,7 @@
         "description": "System field 'manualcostadjustment' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-361",
+        "id": "t-365",
         "category": "system-field",
         "entity": "transactions",
         "field": "id",
@@ -7528,7 +7595,7 @@
         "description": "System field 'id' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-362",
+        "id": "t-366",
         "category": "system-field",
         "entity": "transactions",
         "field": "product",
@@ -7536,7 +7603,7 @@
         "description": "System field 'product' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-363",
+        "id": "t-367",
         "category": "system-field",
         "entity": "transactions",
         "field": "costingAlgorithm",
@@ -7544,7 +7611,7 @@
         "description": "System field 'costingAlgorithm' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-364",
+        "id": "t-368",
         "category": "system-field",
         "entity": "transactions",
         "field": "client",
@@ -7552,7 +7619,7 @@
         "description": "System field 'client' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-365",
+        "id": "t-369",
         "category": "system-field",
         "entity": "transactions",
         "field": "checkpricedifference",
@@ -7560,7 +7627,7 @@
         "description": "System field 'checkpricedifference' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-366",
+        "id": "t-370",
         "category": "system-field",
         "entity": "transactions",
         "field": "checkReservedQuantity",
@@ -7568,7 +7635,7 @@
         "description": "System field 'checkReservedQuantity' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-367",
+        "id": "t-371",
         "category": "system-field",
         "entity": "transactions",
         "field": "creationDate",
@@ -7576,7 +7643,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-368",
+        "id": "t-372",
         "category": "system-field",
         "entity": "transactions",
         "field": "createdBy",
@@ -7584,7 +7651,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-369",
+        "id": "t-373",
         "category": "system-field",
         "entity": "transactions",
         "field": "internalConsumptionLine",
@@ -7592,7 +7659,7 @@
         "description": "System field 'internalConsumptionLine' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-370",
+        "id": "t-374",
         "category": "system-field",
         "entity": "transactions",
         "field": "orderUOM",
@@ -7600,7 +7667,7 @@
         "description": "System field 'orderUOM' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-371",
+        "id": "t-375",
         "category": "system-field",
         "entity": "transactions",
         "field": "orderQuantity",
@@ -7608,7 +7675,7 @@
         "description": "System field 'orderQuantity' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-372",
+        "id": "t-376",
         "category": "system-field",
         "entity": "transactions",
         "field": "updated",
@@ -7616,7 +7683,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-373",
+        "id": "t-377",
         "category": "system-field",
         "entity": "transactions",
         "field": "updatedBy",
@@ -7624,7 +7691,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for transactions"
       },
       {
-        "id": "t-374",
+        "id": "t-378",
         "category": "system-field",
         "entity": "productCharacteristic",
         "field": "organization",
@@ -7632,7 +7699,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for productCharacteristic"
       },
       {
-        "id": "t-375",
+        "id": "t-379",
         "category": "system-field",
         "entity": "productCharacteristic",
         "field": "client",
@@ -7640,7 +7707,7 @@
         "description": "System field 'client' should exist in backend but not frontend for productCharacteristic"
       },
       {
-        "id": "t-376",
+        "id": "t-380",
         "category": "system-field",
         "entity": "productCharacteristic",
         "field": "id",
@@ -7648,7 +7715,7 @@
         "description": "System field 'id' should exist in backend but not frontend for productCharacteristic"
       },
       {
-        "id": "t-377",
+        "id": "t-381",
         "category": "system-field",
         "entity": "productCharacteristic",
         "field": "product",
@@ -7656,7 +7723,7 @@
         "description": "System field 'product' should exist in backend but not frontend for productCharacteristic"
       },
       {
-        "id": "t-378",
+        "id": "t-382",
         "category": "system-field",
         "entity": "productCharacteristic",
         "field": "creationDate",
@@ -7664,7 +7731,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for productCharacteristic"
       },
       {
-        "id": "t-379",
+        "id": "t-383",
         "category": "system-field",
         "entity": "productCharacteristic",
         "field": "createdBy",
@@ -7672,7 +7739,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for productCharacteristic"
       },
       {
-        "id": "t-380",
+        "id": "t-384",
         "category": "system-field",
         "entity": "productCharacteristic",
         "field": "updated",
@@ -7680,7 +7747,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for productCharacteristic"
       },
       {
-        "id": "t-381",
+        "id": "t-385",
         "category": "system-field",
         "entity": "productCharacteristic",
         "field": "updatedBy",
@@ -7688,7 +7755,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for productCharacteristic"
       },
       {
-        "id": "t-382",
+        "id": "t-386",
         "category": "system-field",
         "entity": "stock",
         "field": "organization",
@@ -7696,7 +7763,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for stock"
       },
       {
-        "id": "t-383",
+        "id": "t-387",
         "category": "system-field",
         "entity": "stock",
         "field": "product",
@@ -7704,7 +7771,7 @@
         "description": "System field 'product' should exist in backend but not frontend for stock"
       },
       {
-        "id": "t-384",
+        "id": "t-388",
         "category": "system-field",
         "entity": "stock",
         "field": "orderUOM",
@@ -7712,7 +7779,7 @@
         "description": "System field 'orderUOM' should exist in backend but not frontend for stock"
       },
       {
-        "id": "t-385",
+        "id": "t-389",
         "category": "system-field",
         "entity": "stock",
         "field": "onHandOrderQuanity",
@@ -7720,7 +7787,7 @@
         "description": "System field 'onHandOrderQuanity' should exist in backend but not frontend for stock"
       },
       {
-        "id": "t-386",
+        "id": "t-390",
         "category": "system-field",
         "entity": "stock",
         "field": "lastInventoryCountDate",
@@ -7728,7 +7795,7 @@
         "description": "System field 'lastInventoryCountDate' should exist in backend but not frontend for stock"
       },
       {
-        "id": "t-387",
+        "id": "t-391",
         "category": "system-field",
         "entity": "stock",
         "field": "quantityInDraftTransactions",
@@ -7736,7 +7803,7 @@
         "description": "System field 'quantityInDraftTransactions' should exist in backend but not frontend for stock"
       },
       {
-        "id": "t-388",
+        "id": "t-392",
         "category": "system-field",
         "entity": "stock",
         "field": "quantityOrderInDraftTransactions",
@@ -7744,7 +7811,7 @@
         "description": "System field 'quantityOrderInDraftTransactions' should exist in backend but not frontend for stock"
       },
       {
-        "id": "t-389",
+        "id": "t-393",
         "category": "system-field",
         "entity": "stock",
         "field": "active",
@@ -7752,7 +7819,7 @@
         "description": "System field 'active' should exist in backend but not frontend for stock"
       },
       {
-        "id": "t-390",
+        "id": "t-394",
         "category": "system-field",
         "entity": "stock",
         "field": "id",
@@ -7760,7 +7827,7 @@
         "description": "System field 'id' should exist in backend but not frontend for stock"
       },
       {
-        "id": "t-391",
+        "id": "t-395",
         "category": "system-field",
         "entity": "stock",
         "field": "client",
@@ -7768,7 +7835,7 @@
         "description": "System field 'client' should exist in backend but not frontend for stock"
       },
       {
-        "id": "t-392",
+        "id": "t-396",
         "category": "system-field",
         "entity": "stock",
         "field": "creationDate",
@@ -7776,7 +7843,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for stock"
       },
       {
-        "id": "t-393",
+        "id": "t-397",
         "category": "system-field",
         "entity": "stock",
         "field": "createdBy",
@@ -7784,7 +7851,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for stock"
       },
       {
-        "id": "t-394",
+        "id": "t-398",
         "category": "system-field",
         "entity": "stock",
         "field": "referencedInventory",
@@ -7792,7 +7859,7 @@
         "description": "System field 'referencedInventory' should exist in backend but not frontend for stock"
       },
       {
-        "id": "t-395",
+        "id": "t-399",
         "category": "system-field",
         "entity": "stock",
         "field": "updated",
@@ -7800,7 +7867,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for stock"
       },
       {
-        "id": "t-396",
+        "id": "t-400",
         "category": "system-field",
         "entity": "stock",
         "field": "updatedBy",
@@ -7808,7 +7875,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for stock"
       },
       {
-        "id": "t-397",
+        "id": "t-401",
         "category": "system-field",
         "entity": "categoryPriceRuleVersion",
         "field": "organization",
@@ -7816,7 +7883,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for categoryPriceRuleVersion"
       },
       {
-        "id": "t-398",
+        "id": "t-402",
         "category": "system-field",
         "entity": "categoryPriceRuleVersion",
         "field": "product",
@@ -7824,7 +7891,7 @@
         "description": "System field 'product' should exist in backend but not frontend for categoryPriceRuleVersion"
       },
       {
-        "id": "t-399",
+        "id": "t-403",
         "category": "system-field",
         "entity": "categoryPriceRuleVersion",
         "field": "relatedProductCategory",
@@ -7832,7 +7899,7 @@
         "description": "System field 'relatedProductCategory' should exist in backend but not frontend for categoryPriceRuleVersion"
       },
       {
-        "id": "t-400",
+        "id": "t-404",
         "category": "system-field",
         "entity": "categoryPriceRuleVersion",
         "field": "client",
@@ -7840,7 +7907,7 @@
         "description": "System field 'client' should exist in backend but not frontend for categoryPriceRuleVersion"
       },
       {
-        "id": "t-401",
+        "id": "t-405",
         "category": "system-field",
         "entity": "categoryPriceRuleVersion",
         "field": "mServicepriceruleVersionID",
@@ -7848,7 +7915,7 @@
         "description": "System field 'mServicepriceruleVersionID' should exist in backend but not frontend for categoryPriceRuleVersion"
       },
       {
-        "id": "t-402",
+        "id": "t-406",
         "category": "system-field",
         "entity": "categoryPriceRuleVersion",
         "field": "creationDate",
@@ -7856,7 +7923,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for categoryPriceRuleVersion"
       },
       {
-        "id": "t-403",
+        "id": "t-407",
         "category": "system-field",
         "entity": "categoryPriceRuleVersion",
         "field": "createdBy",
@@ -7864,7 +7931,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for categoryPriceRuleVersion"
       },
       {
-        "id": "t-404",
+        "id": "t-408",
         "category": "system-field",
         "entity": "categoryPriceRuleVersion",
         "field": "relatedProduct",
@@ -7872,7 +7939,7 @@
         "description": "System field 'relatedProduct' should exist in backend but not frontend for categoryPriceRuleVersion"
       },
       {
-        "id": "t-405",
+        "id": "t-409",
         "category": "system-field",
         "entity": "categoryPriceRuleVersion",
         "field": "updated",
@@ -7880,7 +7947,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for categoryPriceRuleVersion"
       },
       {
-        "id": "t-406",
+        "id": "t-410",
         "category": "system-field",
         "entity": "categoryPriceRuleVersion",
         "field": "updatedBy",
@@ -7888,7 +7955,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for categoryPriceRuleVersion"
       },
       {
-        "id": "t-407",
+        "id": "t-411",
         "category": "system-field",
         "entity": "alternateUom",
         "field": "organization",
@@ -7896,7 +7963,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for alternateUom"
       },
       {
-        "id": "t-408",
+        "id": "t-412",
         "category": "system-field",
         "entity": "alternateUom",
         "field": "active",
@@ -7904,7 +7971,7 @@
         "description": "System field 'active' should exist in backend but not frontend for alternateUom"
       },
       {
-        "id": "t-409",
+        "id": "t-413",
         "category": "system-field",
         "entity": "alternateUom",
         "field": "product",
@@ -7912,7 +7979,7 @@
         "description": "System field 'product' should exist in backend but not frontend for alternateUom"
       },
       {
-        "id": "t-410",
+        "id": "t-414",
         "category": "system-field",
         "entity": "alternateUom",
         "field": "id",
@@ -7920,7 +7987,7 @@
         "description": "System field 'id' should exist in backend but not frontend for alternateUom"
       },
       {
-        "id": "t-411",
+        "id": "t-415",
         "category": "system-field",
         "entity": "alternateUom",
         "field": "client",
@@ -7928,7 +7995,7 @@
         "description": "System field 'client' should exist in backend but not frontend for alternateUom"
       },
       {
-        "id": "t-412",
+        "id": "t-416",
         "category": "system-field",
         "entity": "alternateUom",
         "field": "creationDate",
@@ -7936,7 +8003,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for alternateUom"
       },
       {
-        "id": "t-413",
+        "id": "t-417",
         "category": "system-field",
         "entity": "alternateUom",
         "field": "createdBy",
@@ -7944,7 +8011,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for alternateUom"
       },
       {
-        "id": "t-414",
+        "id": "t-418",
         "category": "system-field",
         "entity": "alternateUom",
         "field": "updated",
@@ -7952,7 +8019,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for alternateUom"
       },
       {
-        "id": "t-415",
+        "id": "t-419",
         "category": "system-field",
         "entity": "alternateUom",
         "field": "updatedBy",
@@ -7960,265 +8027,265 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for alternateUom"
       },
       {
-        "id": "t-416",
+        "id": "t-420",
         "category": "rule-declared",
         "rule": "SL_Product_Type_ProductType",
         "runner": "node",
         "description": "Rule 'SL_Product_Type_ProductType' (callout) should be declared"
       },
       {
-        "id": "t-417",
+        "id": "t-421",
         "category": "rule-declared",
         "rule": "SL_TaxCategory_Org_AD_Org_ID",
         "runner": "node",
         "description": "Rule 'SL_TaxCategory_Org_AD_Org_ID' (callout) should be declared"
       },
       {
-        "id": "t-418",
+        "id": "t-422",
         "category": "rule-declared",
         "rule": "SL_Costing_Currency_AD_Org_ID",
         "runner": "node",
         "description": "Rule 'SL_Costing_Currency_AD_Org_ID' (callout) should be declared"
       },
       {
-        "id": "t-419",
+        "id": "t-423",
         "category": "rule-declared",
         "rule": "SL_ProductCh_Characteristic_M_Characteristic_ID",
         "runner": "node",
         "description": "Rule 'SL_ProductCh_Characteristic_M_Characteristic_ID' (callout) should be declared"
       },
       {
-        "id": "t-420",
+        "id": "t-424",
         "category": "rule-declared",
         "rule": "AUM_ConversionRate_C_Uom_ID",
         "runner": "node",
         "description": "Rule 'AUM_ConversionRate_C_Uom_ID' (callout) should be declared"
       },
       {
-        "id": "t-421",
+        "id": "t-425",
         "category": "rule-declared",
         "rule": "GtinFormat_Gtin",
         "runner": "node",
         "description": "Rule 'GtinFormat_Gtin' (callout) should be declared"
       },
       {
-        "id": "t-422",
+        "id": "t-426",
         "category": "rule-declared",
         "rule": "M_ProductCategory(Only Leaf)",
         "runner": "node",
         "description": "Rule 'M_ProductCategory(Only Leaf)' (validation) should be declared"
       },
       {
-        "id": "t-423",
+        "id": "t-427",
         "category": "rule-declared",
         "rule": "Records belonging to any org declared in the role",
         "runner": "node",
         "description": "Rule 'Records belonging to any org declared in the role' (validation) should be declared"
       },
       {
-        "id": "t-424",
+        "id": "t-428",
         "category": "rule-declared",
         "rule": "AD_Org In product costing tab",
         "runner": "node",
         "description": "Rule 'AD_Org In product costing tab' (validation) should be declared"
       },
       {
-        "id": "t-425",
+        "id": "t-429",
         "category": "rule-declared",
         "rule": "M_Product_PO of the m_product_id",
         "runner": "node",
         "description": "Rule 'M_Product_PO of the m_product_id' (validation) should be declared"
       },
       {
-        "id": "t-426",
+        "id": "t-430",
         "category": "rule-declared",
         "rule": "AD_Org show product's child organizations",
         "runner": "node",
         "description": "Rule 'AD_Org show product's child organizations' (validation) should be declared"
       },
       {
-        "id": "t-427",
+        "id": "t-431",
         "category": "rule-declared",
         "rule": "AD_Client Security validation",
         "runner": "node",
         "description": "Rule 'AD_Client Security validation' (validation) should be declared"
       },
       {
-        "id": "t-428",
+        "id": "t-432",
         "category": "rule-declared",
         "rule": "M_Ch_Value of a M_Product_CH",
         "runner": "node",
         "description": "Rule 'M_Ch_Value of a M_Product_CH' (validation) should be declared"
       },
       {
-        "id": "t-429",
+        "id": "t-433",
         "category": "rule-declared",
         "rule": "M_Ch_Value of Characteristic",
         "runner": "node",
         "description": "Rule 'M_Ch_Value of Characteristic' (validation) should be declared"
       },
       {
-        "id": "t-430",
+        "id": "t-434",
         "category": "rule-declared",
         "rule": "M_Characteristic in Product",
         "runner": "node",
         "description": "Rule 'M_Characteristic in Product' (validation) should be declared"
       },
       {
-        "id": "t-431",
+        "id": "t-435",
         "category": "rule-declared",
         "rule": "C_Uom not as product_uom",
         "runner": "node",
         "description": "Rule 'C_Uom not as product_uom' (validation) should be declared"
       },
       {
-        "id": "t-432",
+        "id": "t-436",
         "category": "rule-declared",
         "runner": "node",
         "description": "Rule 'undefined' (displayLogic) should be declared"
       },
       {
-        "id": "t-433",
+        "id": "t-437",
         "category": "rule-declared",
         "rule": "Create Variants",
         "runner": "node",
         "description": "Rule 'Create Variants' (process) should be declared"
       },
       {
-        "id": "t-434",
+        "id": "t-438",
         "category": "rule-declared",
         "rule": "Verify BOM",
         "runner": "node",
         "description": "Rule 'Verify BOM' (process) should be declared"
       },
       {
-        "id": "t-435",
+        "id": "t-439",
         "category": "rule-declared",
         "rule": "Copy Service Modify Tax Configuration",
         "runner": "node",
         "description": "Rule 'Copy Service Modify Tax Configuration' (process) should be declared"
       },
       {
-        "id": "t-436",
+        "id": "t-440",
         "category": "rule-declared",
         "rule": "Manage Variants",
         "runner": "node",
         "description": "Rule 'Manage Variants' (process) should be declared"
       },
       {
-        "id": "t-437",
+        "id": "t-441",
         "category": "rule-declared",
         "rule": "Manual Cost Adjustment",
         "runner": "node",
         "description": "Rule 'Manual Cost Adjustment' (process) should be declared"
       },
       {
-        "id": "t-438",
+        "id": "t-442",
         "category": "rule-declared",
         "rule": "Relate Product Cat to a Service Product",
         "runner": "node",
         "description": "Rule 'Relate Product Cat to a Service Product' (process) should be declared"
       },
       {
-        "id": "t-439",
+        "id": "t-443",
         "category": "rule-declared",
         "rule": "Relate Product Category and new tax to a Service Product",
         "runner": "node",
         "description": "Rule 'Relate Product Category and new tax to a Service Product' (process) should be declared"
       },
       {
-        "id": "t-440",
+        "id": "t-444",
         "category": "rule-declared",
         "rule": "Relate Products to a Service Product",
         "runner": "node",
         "description": "Rule 'Relate Products to a Service Product' (process) should be declared"
       },
       {
-        "id": "t-441",
+        "id": "t-445",
         "category": "rule-declared",
         "rule": "UpdateInvariants",
         "runner": "node",
         "description": "Rule 'UpdateInvariants' (process) should be declared"
       },
       {
-        "id": "t-442",
+        "id": "t-446",
         "category": "crud-flags",
         "entity": "product",
         "runner": "node",
         "description": "CRUD flags for 'product' should all be booleans"
       },
       {
-        "id": "t-443",
+        "id": "t-447",
         "category": "crud-flags",
         "entity": "price",
         "runner": "node",
         "description": "CRUD flags for 'price' should all be booleans"
       },
       {
-        "id": "t-444",
+        "id": "t-448",
         "category": "crud-flags",
         "entity": "priceRuleVersion",
         "runner": "node",
         "description": "CRUD flags for 'priceRuleVersion' should all be booleans"
       },
       {
-        "id": "t-445",
+        "id": "t-449",
         "category": "crud-flags",
         "entity": "billOfMaterials",
         "runner": "node",
         "description": "CRUD flags for 'billOfMaterials' should all be booleans"
       },
       {
-        "id": "t-446",
+        "id": "t-450",
         "category": "crud-flags",
         "entity": "costing",
         "runner": "node",
         "description": "CRUD flags for 'costing' should all be booleans"
       },
       {
-        "id": "t-447",
+        "id": "t-451",
         "category": "crud-flags",
         "entity": "transactionAdjustments",
         "runner": "node",
         "description": "CRUD flags for 'transactionAdjustments' should all be booleans"
       },
       {
-        "id": "t-448",
+        "id": "t-452",
         "category": "crud-flags",
         "entity": "transactions",
         "runner": "node",
         "description": "CRUD flags for 'transactions' should all be booleans"
       },
       {
-        "id": "t-449",
+        "id": "t-453",
         "category": "crud-flags",
         "entity": "productCharacteristic",
         "runner": "node",
         "description": "CRUD flags for 'productCharacteristic' should all be booleans"
       },
       {
-        "id": "t-450",
+        "id": "t-454",
         "category": "crud-flags",
         "entity": "stock",
         "runner": "node",
         "description": "CRUD flags for 'stock' should all be booleans"
       },
       {
-        "id": "t-451",
+        "id": "t-455",
         "category": "crud-flags",
         "entity": "categoryPriceRuleVersion",
         "runner": "node",
         "description": "CRUD flags for 'categoryPriceRuleVersion' should all be booleans"
       },
       {
-        "id": "t-452",
+        "id": "t-456",
         "category": "crud-flags",
         "entity": "alternateUom",
         "runner": "node",
         "description": "CRUD flags for 'alternateUom' should all be booleans"
       },
       {
-        "id": "t-453",
+        "id": "t-457",
         "category": "selector-endpoint",
         "entity": "product",
         "field": "uOM",
@@ -8226,7 +8293,7 @@
         "description": "Selector endpoint for 'uOM' in product should exist"
       },
       {
-        "id": "t-454",
+        "id": "t-458",
         "category": "selector-endpoint",
         "entity": "product",
         "field": "productCategory",
@@ -8234,7 +8301,7 @@
         "description": "Selector endpoint for 'productCategory' in product should exist"
       },
       {
-        "id": "t-455",
+        "id": "t-459",
         "category": "selector-endpoint",
         "entity": "product",
         "field": "taxCategory",
@@ -8242,7 +8309,7 @@
         "description": "Selector endpoint for 'taxCategory' in product should exist"
       },
       {
-        "id": "t-456",
+        "id": "t-460",
         "category": "selector-endpoint",
         "entity": "product",
         "field": "uOMForWeight",
@@ -8250,7 +8317,7 @@
         "description": "Selector endpoint for 'uOMForWeight' in product should exist"
       },
       {
-        "id": "t-457",
+        "id": "t-461",
         "category": "selector-endpoint",
         "entity": "product",
         "field": "attributeSet",
@@ -8258,7 +8325,7 @@
         "description": "Selector endpoint for 'attributeSet' in product should exist"
       },
       {
-        "id": "t-458",
+        "id": "t-462",
         "category": "selector-endpoint",
         "entity": "product",
         "field": "brand",
@@ -8266,7 +8333,7 @@
         "description": "Selector endpoint for 'brand' in product should exist"
       },
       {
-        "id": "t-459",
+        "id": "t-463",
         "category": "selector-endpoint",
         "entity": "product",
         "field": "mProductStatusID",
@@ -8274,7 +8341,7 @@
         "description": "Selector endpoint for 'mProductStatusID' in product should exist"
       },
       {
-        "id": "t-460",
+        "id": "t-464",
         "category": "selector-endpoint",
         "entity": "price",
         "field": "priceListVersion",
@@ -8282,7 +8349,7 @@
         "description": "Selector endpoint for 'priceListVersion' in price should exist"
       },
       {
-        "id": "t-461",
+        "id": "t-465",
         "category": "selector-endpoint",
         "entity": "priceRuleVersion",
         "field": "servicePriceRule",
@@ -8290,7 +8357,7 @@
         "description": "Selector endpoint for 'servicePriceRule' in priceRuleVersion should exist"
       },
       {
-        "id": "t-462",
+        "id": "t-466",
         "category": "selector-endpoint",
         "entity": "billOfMaterials",
         "field": "bOMProduct",
@@ -8298,7 +8365,7 @@
         "description": "Selector endpoint for 'bOMProduct' in billOfMaterials should exist"
       },
       {
-        "id": "t-463",
+        "id": "t-467",
         "category": "selector-endpoint",
         "entity": "costing",
         "field": "warehouse",
@@ -8306,7 +8373,7 @@
         "description": "Selector endpoint for 'warehouse' in costing should exist"
       },
       {
-        "id": "t-464",
+        "id": "t-468",
         "category": "selector-endpoint",
         "entity": "costing",
         "field": "cCurrencyID",
@@ -8314,7 +8381,7 @@
         "description": "Selector endpoint for 'cCurrencyID' in costing should exist"
       },
       {
-        "id": "t-465",
+        "id": "t-469",
         "category": "selector-endpoint",
         "entity": "transactionAdjustments",
         "field": "cCurrencyID",
@@ -8322,7 +8389,7 @@
         "description": "Selector endpoint for 'cCurrencyID' in transactionAdjustments should exist"
       },
       {
-        "id": "t-466",
+        "id": "t-470",
         "category": "selector-endpoint",
         "entity": "transactionAdjustments",
         "field": "costAdjustmentLine",
@@ -8330,7 +8397,7 @@
         "description": "Selector endpoint for 'costAdjustmentLine' in transactionAdjustments should exist"
       },
       {
-        "id": "t-467",
+        "id": "t-471",
         "category": "selector-endpoint",
         "entity": "transactions",
         "field": "organization",
@@ -8338,7 +8405,7 @@
         "description": "Selector endpoint for 'organization' in transactions should exist"
       },
       {
-        "id": "t-468",
+        "id": "t-472",
         "category": "selector-endpoint",
         "entity": "transactions",
         "field": "storageBin",
@@ -8346,7 +8413,7 @@
         "description": "Selector endpoint for 'storageBin' in transactions should exist"
       },
       {
-        "id": "t-469",
+        "id": "t-473",
         "category": "selector-endpoint",
         "entity": "transactions",
         "field": "uOM",
@@ -8354,7 +8421,7 @@
         "description": "Selector endpoint for 'uOM' in transactions should exist"
       },
       {
-        "id": "t-470",
+        "id": "t-474",
         "category": "selector-endpoint",
         "entity": "productCharacteristic",
         "field": "characteristic",
@@ -8362,7 +8429,7 @@
         "description": "Selector endpoint for 'characteristic' in productCharacteristic should exist"
       },
       {
-        "id": "t-471",
+        "id": "t-475",
         "category": "selector-endpoint",
         "entity": "productCharacteristic",
         "field": "characteristicSubset",
@@ -8370,7 +8437,7 @@
         "description": "Selector endpoint for 'characteristicSubset' in productCharacteristic should exist"
       },
       {
-        "id": "t-472",
+        "id": "t-476",
         "category": "selector-endpoint",
         "entity": "stock",
         "field": "storageBin",
@@ -8378,7 +8445,7 @@
         "description": "Selector endpoint for 'storageBin' in stock should exist"
       },
       {
-        "id": "t-473",
+        "id": "t-477",
         "category": "selector-endpoint",
         "entity": "stock",
         "field": "uOM",
@@ -8386,7 +8453,7 @@
         "description": "Selector endpoint for 'uOM' in stock should exist"
       },
       {
-        "id": "t-474",
+        "id": "t-478",
         "category": "selector-endpoint",
         "entity": "categoryPriceRuleVersion",
         "field": "servicePriceRule",
@@ -8394,7 +8461,7 @@
         "description": "Selector endpoint for 'servicePriceRule' in categoryPriceRuleVersion should exist"
       },
       {
-        "id": "t-475",
+        "id": "t-479",
         "category": "selector-endpoint",
         "entity": "alternateUom",
         "field": "uOM",
@@ -8402,7 +8469,7 @@
         "description": "Selector endpoint for 'uOM' in alternateUom should exist"
       },
       {
-        "id": "t-476",
+        "id": "t-480",
         "category": "action-endpoint",
         "entity": "product",
         "field": "manageVariants",
@@ -8410,7 +8477,7 @@
         "description": "Action endpoint for 'manageVariants' in product should exist"
       },
       {
-        "id": "t-477",
+        "id": "t-481",
         "category": "action-endpoint",
         "entity": "product",
         "field": "processNow",
@@ -8418,7 +8485,7 @@
         "description": "Action endpoint for 'processNow' in product should exist"
       },
       {
-        "id": "t-478",
+        "id": "t-482",
         "category": "action-endpoint",
         "entity": "product",
         "field": "createVariants",
@@ -8426,7 +8493,7 @@
         "description": "Action endpoint for 'createVariants' in product should exist"
       },
       {
-        "id": "t-479",
+        "id": "t-483",
         "category": "action-endpoint",
         "entity": "product",
         "field": "updateInvariants",
@@ -8434,7 +8501,7 @@
         "description": "Action endpoint for 'updateInvariants' in product should exist"
       },
       {
-        "id": "t-480",
+        "id": "t-484",
         "category": "action-endpoint",
         "entity": "product",
         "field": "relateprodcattoservice",
@@ -8442,7 +8509,7 @@
         "description": "Action endpoint for 'relateprodcattoservice' in product should exist"
       },
       {
-        "id": "t-481",
+        "id": "t-485",
         "category": "action-endpoint",
         "entity": "product",
         "field": "relateprodtoservice",
@@ -8450,7 +8517,7 @@
         "description": "Action endpoint for 'relateprodtoservice' in product should exist"
       },
       {
-        "id": "t-482",
+        "id": "t-486",
         "category": "action-endpoint",
         "entity": "product",
         "field": "relateprodcattaxtoservice",
@@ -8458,7 +8525,7 @@
         "description": "Action endpoint for 'relateprodcattaxtoservice' in product should exist"
       },
       {
-        "id": "t-483",
+        "id": "t-487",
         "category": "action-endpoint",
         "entity": "product",
         "field": "copyservicemodifytaxconfig",
@@ -8466,7 +8533,7 @@
         "description": "Action endpoint for 'copyservicemodifytaxconfig' in product should exist"
       },
       {
-        "id": "t-484",
+        "id": "t-488",
         "category": "action-endpoint",
         "entity": "transactions",
         "field": "manualcostadjustment",
@@ -8475,14 +8542,16 @@
       }
     ],
     "summary": {
-      "total": 484,
+      "total": 488,
       "byCategory": {
         "field-presence": 75,
         "field-type": 75,
         "searchable-filters": 5,
         "visibility": 11,
         "displaylogic-valid": 5,
+        "readonlylogic-valid": 2,
         "displaylogic-evaluable": 5,
+        "readonlylogic-evaluable": 2,
         "default-value-type": 26,
         "system-field": 213,
         "rule-declared": 26,
@@ -8491,7 +8560,7 @@
         "action-endpoint": 9
       },
       "byRunner": {
-        "node": 484,
+        "node": 488,
         "junit": 0
       }
     }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import GeneratedApp from '@generated/sales-order/generated/web/sales-order/index.jsx';
 import HeaderTable from '@generated/sales-order/generated/web/sales-order/HeaderTable';
 import { ListView } from '@/components/contract-ui';
@@ -10,9 +10,8 @@ import { CreateContactContext } from '@/components/contract-ui/CreateContactCont
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 
 export default function SalesOrderWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [cloneTarget, setCloneTarget] = useState(null);
+  const [cloneTargets, setCloneTargets] = useState(null);
 
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
     useCreateContactModal({ apiBaseUrl, token });
@@ -63,7 +62,7 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
         entityLabel="Sales Order"
         windowName={windowName}
         breadcrumb="Sales / Sales Order"
-        onCloneRow={(row) => setCloneTarget(row)}
+        onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
         token={token}
         apiBaseUrl={apiBaseUrl}
         hidePrint
@@ -72,17 +71,13 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
         initialQuickFilterIndex={initialQuickFilterIndex}
         {...rest}
       />
-      {cloneTarget && createPortal(
+      {cloneTargets && createPortal(
         <CloneOrderModal
-          orderId={cloneTarget.id}
-          data={cloneTarget}
+          records={cloneTargets}
           apiBaseUrl={apiBaseUrl}
           headers={headers}
-          onClose={() => setCloneTarget(null)}
-          onCloned={(newId) => {
-            setCloneTarget(null);
-            navigate(`/sales-order/${newId}`);
-          }}
+          routePrefix="/sales-order/"
+          onClose={() => setCloneTargets(null)}
         />,
         document.body,
       )}

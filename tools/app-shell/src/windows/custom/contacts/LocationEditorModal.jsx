@@ -546,7 +546,9 @@ export default function LocationEditorModal({
     }
     setSaving(true);
     try {
-      const name = [form.city, form.address].filter(Boolean).join(', ') || 'Location';
+      const name = [form.city, form.address].filter(Boolean).join(', ')
+        || [form.regionLabel || form.region, form.countryLabel || form.country].filter(Boolean).join(', ')
+        || 'Location';
       const payload = {
         name,
         addressLine1: form.address || null,
@@ -589,7 +591,8 @@ export default function LocationEditorModal({
         return;
       }
 
-      onSaved?.();
+      const newRecord = data?.response?.data?.[0] ?? data?.data?.[0] ?? null;
+      onSaved?.(newRecord?.id ?? null, newRecord?.name ?? name);
     } finally {
       setSaving(false);
     }

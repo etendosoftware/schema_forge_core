@@ -413,7 +413,7 @@ export default function InvoicePaymentModal({
                                   </div>
                                   <button type="button" onClick={() => navToPayment(p.id)}
                                     style={{ fontSize: 11, fontWeight: 500, color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                                    View &rarr;
+                                    {ui('viewArrow')}
                                   </button>
                                 </div>
                                 <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

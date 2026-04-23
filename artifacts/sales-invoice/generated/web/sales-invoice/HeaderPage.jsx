@@ -62,7 +62,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:lines
 
-const api = {
+export const api = {
   "specName": "sales-invoice",
   "baseUrl": "/sws/neo/sales-invoice",
   "crud": {
@@ -302,18 +302,18 @@ const api = {
     },
     {
       "entity": "header",
-      "field": "generateTo",
-      "column": "GenerateTo",
-      "url": "/sws/neo/sales-invoice/header/{id}/action/generateTo",
-      "processId": "142",
-      "processType": "classic"
-    },
-    {
-      "entity": "header",
       "field": "processNow",
       "column": "Processing",
       "url": "/sws/neo/sales-invoice/header/{id}/action/processNow",
       "processId": "111",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "generateTo",
+      "column": "GenerateTo",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/generateTo",
+      "processId": "142",
       "processType": "classic"
     },
     {

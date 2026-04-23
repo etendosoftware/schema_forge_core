@@ -16159,9 +16159,6 @@
     "Goods Receipt": {
       "label": "Goods Receipt"
     },
-    "HR": {
-      "label": "HR"
-    },
     "Home": {
       "label": "Home"
     },
@@ -16423,7 +16420,9 @@
     "enterAtLeastOneValueUpdatePricing": "Enter at least one value to update pricing.",
     "pricingCreatedUsingDefaultValues": "Pricing created using default values.",
     "unableToSavePricing": "Unable to save pricing.",
-    "addEntity": "+ Add {label}",
+    "addEntity": "Add {label}",
+    "addLine": "Add line",
+    "noAdditionalActions": "No additional actions",
     "entityDetail": "{label} Detail",
     "saveHeaderFirst": "Save the header first to add lines.",
     "documentStatus": "Document Status",
@@ -16575,6 +16574,7 @@
     "addToFavorites": "Add to favorites",
     "removeFromFavorites": "Remove from favorites",
     "noFavoritesYet": "No favorites yet",
+    "andNMore": "+{n} more",
     "pageHelp": "Page help",
     "configureDashboard": "Configure dashboard",
     "searchInvoices": "Search invoices...",
@@ -16666,6 +16666,7 @@
     "pendingDeliveryOnly": "Pending delivery",
     "clearAllFilters": "Clear all filters",
     "cancelEsc": "Cancel (Esc)",
+    "inlineAddHint": "Enter or click outside to save · Esc to cancel",
     "statusComplete": "Confirmed",
     "statusCompleted": "Confirmed",
     "statusVoid": "Void",
@@ -17165,6 +17166,7 @@
     "selectCountryFirst": "Select a country first",
     "removeLocation": "Remove",
     "addLocation": "+ Add Location",
+    "addAddress": "+ Add address",
     "none": "— None —",
     "soConfirmBtn": "Confirm",
     "soConfirmTitle": "Confirm order #{number}",
@@ -17236,6 +17238,9 @@
     "sqOrderCreated": "Order created",
     "sqViewOrder": "View order →",
     "sqOrderConfirmedError": "Quotation confirmed, but order could not be created. ",
+    "sqSendToEvalTitle": "Send to Under Evaluation?",
+    "sqSendToEvalDesc": "The quotation will be ready to create an order or invoice.",
+    "sqSendToEvalConfirm": "Send to evaluation",
     "sqOrderConfirmedInvoiceError": "Quotation confirmed, but invoice could not be created. ",
     "productPctFree": "{pct}% free",
     "productTotalOnHand": "Total on hand",
@@ -17366,6 +17371,14 @@
     "cloneInvoiceConfirmBody": "A draft copy of this invoice will be created with the same data.",
     "cloneInvoiceAction": "Clone →",
     "cloneInvoiceError": "An error occurred while cloning the invoice",
+    "cloneConfirmTitleOne": "Clone document",
+    "cloneConfirmTitleMany": "Clone {count} documents",
+    "cloneConfirmSubtitleOne": "A draft copy will be created",
+    "cloneConfirmSubtitleMany": "{count} draft copies will be created",
+    "cloneInfoBanner": "Cloned documents will keep all the original data.",
+    "cloneDoneTitleOne": "Document cloned",
+    "cloneDoneTitleMany": "{count} documents cloned",
+    "cloneDoneSubtitle": "Click one to open it",
     "invoiceProcessing": "Processing...",
     "orderStatusDraft": "Draft",
     "orderStatusCompleted": "Completed",
@@ -17409,6 +17422,7 @@
     "profileComplete": "Complete profile",
     "identifier": "Identifier",
     "contactName": "Name",
+    "contactLegalName": "Legal name",
     "taxIDField": "Tax ID",
     "bpGroupField": "Business partner group",
     "taxIdTypeField": "Tax ID country type",
@@ -17434,9 +17448,12 @@
     "vendorBlockField": "Vendor block",
     "saveContact": "Save contact",
     "createContactError": "Error creating contact",
+    "contactPersonNameRequired": "First name or last name is required for person",
     "noFinancialData": "No financial data",
     "customerBlockField": "Customer block",
     "generalTab": "General",
+    "direccionTab": "Address",
+    "masTab": "More",
     "contactPersonTab": "Person",
     "bankTab": "Bank account",
     "addContactPerson": "Add contact person",
@@ -18501,6 +18518,15 @@
     "Reports": {
       "label": "Reports"
     },
+    "Purchases Reports": {
+      "label": "Purchases Reports"
+    },
+    "Inventory Reports": {
+      "label": "Inventory Reports"
+    },
+    "Finance Reports": {
+      "label": "Finance Reports"
+    },
     "Production Management": {
       "label": "Production Management"
     },
@@ -18674,6 +18700,30 @@
     },
     "Intrastat File Configuration": {
       "label": "Intrastat File Configuration"
+    },
+    "Order": {
+      "label": "Order"
+    },
+    "Invoice": {
+      "label": "Invoice"
+    },
+    "Quotation": {
+      "label": "Quotation"
+    },
+    "Shipment": {
+      "label": "Shipment"
+    },
+    "Receipt": {
+      "label": "Receipt"
+    },
+    "Return": {
+      "label": "Return"
+    },
+    "Return Receipt": {
+      "label": "Return Receipt"
+    },
+    "Return Shipment": {
+      "label": "Return Shipment"
     }
   },
   "statuses": {
