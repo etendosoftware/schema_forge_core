@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { StatusTag } from '@/components/ui/status-tag';
 
@@ -154,6 +154,12 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const navigate = useNavigate();
+  // Track the last recordId we actually fetched related docs for. Without this,
+  // the effect re-fires during the /new → /:id transition (because `data` mutates
+  // as the hook primes the saved record) and we issue duplicate goods-shipment,
+  // listInvoices, and Payment Plan requests.
+  // See docs/plans/sales-order-save-performance.md (Etapa 1.3).
+  const lastFetchedIdRef = useRef(null);
 
   // Listen for doc creation events from OrderCreateInvoice
   useEffect(() => {
@@ -162,8 +168,18 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
     return () => window.removeEventListener('sales-order:document-created', handler);
   }, []);
 
+  // Reset the guard on explicit refresh (e.g. OrderCreateInvoice event).
   useEffect(() => {
-    if (!recordId) return;
+    lastFetchedIdRef.current = null;
+  }, [refreshKey]);
+
+  useEffect(() => {
+    if (!recordId || recordId === 'new') {
+      setLoading(false);
+      return;
+    }
+    if (lastFetchedIdRef.current === recordId) return;
+    lastFetchedIdRef.current = recordId;
     setLoading(true);
 
     // Shipments via criteria; invoices via listInvoices action (finds all, even when C_Order_ID is null)

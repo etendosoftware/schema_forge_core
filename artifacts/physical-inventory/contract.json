@@ -1,7 +1,7 @@
 {
   "version": "0.16.2",
-  "generatedAt": "2026-04-22T11:16:14.418Z",
-  "checksum": "93487654081e7e69",
+  "generatedAt": "2026-04-23T11:25:36.627Z",
+  "checksum": "644d7123166367ce",
   "frontendContract": {
     "window": {
       "id": "168",
@@ -253,6 +253,10 @@
             "reference": "Product",
             "inputMode": "search",
             "lookup": true,
+            "forceCalloutFields": [
+              "quantityCount",
+              "bookQuantity"
+            ],
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Inventory_Product"
             },

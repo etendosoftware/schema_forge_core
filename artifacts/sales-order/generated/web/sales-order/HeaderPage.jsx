@@ -65,7 +65,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:lines
 
-const api = {
+export const api = {
   "specName": "sales-order",
   "baseUrl": "/sws/neo/sales-order",
   "crud": {
@@ -131,6 +131,14 @@ const api = {
       "reference": "PaymentMethod",
       "inputMode": "selector",
       "url": "/sws/neo/sales-order/header/selectors/paymentMethod"
+    },
+    {
+      "entity": "header",
+      "field": "paymentTerms",
+      "column": "C_PaymentTerm_ID",
+      "reference": "PaymentTerm",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-order/header/selectors/paymentTerms"
     },
     {
       "entity": "header",
@@ -270,18 +278,18 @@ const api = {
     },
     {
       "entity": "header",
-      "field": "processNow",
-      "column": "Processing",
-      "url": "/sws/neo/sales-order/header/{id}/action/processNow",
-      "processId": "104",
-      "processType": "classic"
-    },
-    {
-      "entity": "header",
       "field": "generateTemplate",
       "column": "Generatetemplate",
       "url": "/sws/neo/sales-order/header/{id}/action/generateTemplate",
       "processId": "800022",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "processNow",
+      "column": "Processing",
+      "url": "/sws/neo/sales-order/header/{id}/action/processNow",
+      "processId": "104",
       "processType": "classic"
     },
     {

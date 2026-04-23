@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# .githooks/pre-commit
+# Validates pipeline completeness for any staged artifact or pipeline files.
+# Skipped automatically when no relevant files are staged (fast path).
+set -e
+
+# Fast-path: only run when staged files touch artifacts or pipeline code.
+if ! git diff --cached --name-only | grep -qE '^(artifacts/|tools/app-shell/src/windows/registry\.js|cli/src/(generate|resolve|push|validate)-)'; then
+  exit 0
+fi
+
+node cli/src/validate-pipeline.js --staged
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ]; then
+  echo ""
+  echo "Tip: 'git commit --no-verify' to bypass (not recommended)."
+fi
+
+exit $EXIT_CODE
