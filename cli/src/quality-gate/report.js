@@ -2,6 +2,10 @@ function scoreText(score) {
   return `${score.passed}/${score.total}`;
 }
 
+function pluralize(count, singular, plural = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
 function baselineScoreMap(baselineResult) {
   const map = new Map();
   for (const window of baselineResult?.windows ?? []) {
@@ -9,7 +13,6 @@ function baselineScoreMap(baselineResult) {
   }
   return map;
 }
-
 function renderFailures(window) {
   const failingChecks = window.checks.filter((check) => check.status === 'fail' || check.status === 'error');
   if (failingChecks.length === 0) {
@@ -27,6 +30,51 @@ function renderFailures(window) {
   }).join('\n');
 }
 
+function summarizeFailingChecks(windows) {
+  const counts = new Map();
+  for (const window of windows) {
+    for (const check of window.checks.filter((entry) => entry.status === 'fail' || entry.status === 'error')) {
+      counts.set(check.check, (counts.get(check.check) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .map(([check, count]) => `${check} (${count})`);
+}
+
+function renderNextActions({ gateVerdict, baselineRef, failingWindows, regressionWindows, failingChecks }) {
+  if (gateVerdict !== 'FAIL') {
+    return [
+      '### What to do next',
+      '',
+      '- No blocker or regression failures detected.',
+      '- Merge or continue review as usual.',
+      '',
+    ].join('\n');
+  }
+
+  const lines = [
+    '### What to do next',
+    '',
+    `- Fix the blocker failures in ${pluralize(failingWindows.length, 'window')}.`,
+  ];
+
+  if (failingChecks.length > 0) {
+    lines.push(`- Start with the failing checks that hit the most windows: ${failingChecks.join(', ')}.`);
+  }
+  if (regressionWindows.length > 0) {
+    lines.push(`- Recover the windows that regressed below baseline: ${regressionWindows.map((window) => window.window).join(', ')}.`);
+  }
+
+  lines.push(
+    `- Re-run \`node cli/src/quality-gate.js --pr-affected --baseline-ref ${baselineRef}\` locally before pushing.`,
+    '- Use the detailed sections below to jump directly to the failing files and invariants.',
+    '',
+  );
+
+  return lines.join('\n');
+}
+
 export function buildQualityGateReport({ baselineRef, baselineSha, headResult, baselineResult, baselineWarning = null }) {
   const baselineByWindow = baselineScoreMap(baselineResult);
   const windows = headResult.windows.map((window) => {
@@ -42,12 +90,17 @@ export function buildQualityGateReport({ baselineRef, baselineSha, headResult, b
   const regressionWindows = windows.filter((window) => window.baseline && window.delta < 0 && window.verdict !== 'NO-OP');
   const gateVerdict = headResult.summary.gateVerdict === 'FAIL' || regressionWindows.length > 0 ? 'FAIL' : 'PASS';
 
+  const failingWindows = windows.filter((window) => window.verdict === 'FAIL');
+  const failingChecks = summarizeFailingChecks(failingWindows);
+
   const summary = {
     gateVerdict,
     baselineRef,
     baselineSha,
     affectedWindows: headResult.summary.affectedWindows,
+    failingWindows: failingWindows.length,
     regressionFailures: regressionWindows.map((window) => window.window),
+    failingChecks,
     windows: windows.map((window) => ({
       window: window.window,
       verdict: window.verdict,
@@ -64,6 +117,7 @@ export function buildQualityGateReport({ baselineRef, baselineSha, headResult, b
     '',
     `Baseline: ${baselineRef}${baselineSha ? ` @ ${baselineSha}` : ''}`,
     `Affected windows: ${summary.affectedWindows}`,
+    `Failing windows: ${summary.failingWindows}`,
     `Gate verdict: ${summary.gateVerdict}`,
   ];
 
@@ -73,6 +127,17 @@ export function buildQualityGateReport({ baselineRef, baselineSha, headResult, b
   if (summary.regressionFailures.length > 0) {
     lines.push('', `Regression failures: ${summary.regressionFailures.join(', ')}`);
   }
+  if (summary.failingChecks.length > 0) {
+    lines.push('', `Failing checks: ${summary.failingChecks.join(', ')}`);
+  }
+
+  lines.push('', renderNextActions({
+    gateVerdict,
+    baselineRef,
+    failingWindows,
+    regressionWindows,
+    failingChecks,
+  }));
 
   lines.push(
     '',

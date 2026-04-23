@@ -109,6 +109,10 @@ describe('buildQualityGateReport', () => {
     assert.equal(report.summary.gateVerdict, 'FAIL');
     assert.equal(report.summary.windows[0].delta, -1);
     assert.match(report.markdown, /Schema Forge Quality Gate/);
+    assert.match(report.markdown, /Failing windows: 1/);
+    assert.match(report.markdown, /Failing checks: imports \(1\)/);
+    assert.match(report.markdown, /What to do next/);
+    assert.match(report.markdown, /--baseline-ref origin\/main/);
     assert.match(report.markdown, /internal-consumption/);
     assert.match(report.markdown, /Broken relative import/);
     assert.match(report.markdown, /<!-- sfqg-report -->/);
