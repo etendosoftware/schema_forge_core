@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { readJson } from './shared.js';
+import { collectSourceFiles, isJavaScriptModule, readJson } from './shared.js';
 
 const NON_EDITABLE_VISIBILITIES = new Set(['discarded', 'system', 'readOnly']);
 const SERVER_DEFAULT_DERIVATIONS = new Set(['sequence', 'fromParent', 'fromConfig']);
@@ -10,10 +10,22 @@ function readContract(windowDir) {
   return existsSync(contractPath) ? readJson(contractPath) : null;
 }
 
-
 function getAddLineFieldsSource(pageSource) {
-  const match = pageSource.match(/const addLineFields = \{([\s\S]*?)\n\};/);
+  const match = pageSource.match(/const addLineFields = \{[\s\S]*?\};/);
   return match ? match[0] : null;
+}
+
+function findAddLineFieldsSource(windowDir, windowName) {
+  const generatedDir = join(windowDir, 'generated', 'web', windowName);
+  const files = collectSourceFiles(generatedDir, isJavaScriptModule);
+  for (const filePath of files) {
+    const source = readFileSync(filePath, 'utf8');
+    const block = getAddLineFieldsSource(source);
+    if (block) {
+      return block;
+    }
+  }
+  return null;
 }
 
 function hasServerDefault(field) {
@@ -37,8 +49,35 @@ function findCustomFormDeclarations(windowConfig) {
 }
 
 function customFormExists(rootDir, windowName, component) {
-  return existsSync(join(rootDir, 'artifacts', windowName, 'custom', `${component}.jsx`))
-    || existsSync(join(rootDir, 'tools', 'app-shell', 'src', 'windows', 'custom', windowName, `${component}.jsx`));
+  const componentName = component.split('/').at(-1);
+  return existsSync(join(rootDir, 'artifacts', windowName, 'custom', `${componentName}.jsx`))
+    || existsSync(join(rootDir, 'tools', 'app-shell', 'src', 'windows', 'custom', windowName, `${componentName}.jsx`));
+}
+
+function findDetailEntityName(entities, primaryEntity) {
+  if (entities.lines) {
+    return 'lines';
+  }
+  return Object.keys(entities).find((entityName) => entityName !== primaryEntity) ?? null;
+}
+
+function hasHiddenKey(addLineFieldsSource, key) {
+  const hiddenMatch = addLineFieldsSource.match(/hidden:\s*\[([\s\S]*?)\]/);
+  if (!hiddenMatch) {
+    return false;
+  }
+  const hiddenSource = hiddenMatch[1];
+  return new RegExp(`['\"]${key}['\"]|key:\s*['\"]${key}['\"]`).test(hiddenSource);
+}
+
+function findQuantityEntrySource(addLineFieldsSource) {
+  const entryMatch = addLineFieldsSource.match(/entry:\s*\[([\s\S]*?)\]/);
+  if (!entryMatch) {
+    return null;
+  }
+  const entrySource = entryMatch[1];
+  const objectMatches = entrySource.match(/\{[\s\S]*?\}/g) ?? [];
+  return objectMatches.find((objectSource) => /key:\s*['"][^'"]*(quantity|qty)[^'"]*['"]/i.test(objectSource)) ?? null;
 }
 
 export async function runInvariantsCheck(windowName, { rootDir, windowDir, config }) {
@@ -74,28 +113,49 @@ export async function runInvariantsCheck(windowName, { rootDir, windowDir, confi
     }
   }
 
-  const generatedPagePath = join(windowDir, 'generated', 'web', windowName, `${windowName.split('-').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join('')}Page.jsx`);
-  if (config?.invariants?.addLineFields && existsSync(generatedPagePath)) {
-    const addLineFieldsSource = getAddLineFieldsSource(readFileSync(generatedPagePath, 'utf8'));
-    if (addLineFieldsSource) {
-      if (config.invariants.addLineFields.requiredProductLookup && !/key:\s*'product'[\s\S]*?lookup:\s*true/.test(addLineFieldsSource)) {
-        violations.push('lines.addLineFields.product must declare lookup: true.');
+  const detailEntityName = findDetailEntityName(entities, primaryEntity);
+  const detailEntity = detailEntityName ? entities[detailEntityName] : null;
+  const detailFieldNames = new Set((detailEntity?.fields ?? []).map((field) => field.name));
+  const addLineFieldsSource = config?.invariants?.addLineFields
+    ? findAddLineFieldsSource(windowDir, windowName)
+    : null;
+
+  if (addLineFieldsSource) {
+    if (
+      config.invariants.addLineFields.requiredProductLookup
+      && detailFieldNames.has('product')
+      && !/key:\s*'product'[\s\S]*?lookup:\s*true/.test(addLineFieldsSource)
+    ) {
+      violations.push('lines.addLineFields.product must declare lookup: true.');
+    }
+
+    if (config.invariants.addLineFields.quantityDefaultOne) {
+      const quantityEntrySource = findQuantityEntrySource(addLineFieldsSource);
+      if (quantityEntrySource && !/defaultValue:\s*1/.test(quantityEntrySource)) {
+        violations.push('lines.addLineFields quantity field must declare defaultValue: 1.');
       }
-      if (config.invariants.addLineFields.quantityDefaultOne && !/key:\s*'quantity'[\s\S]*?defaultValue:\s*1/.test(addLineFieldsSource)) {
-        violations.push('lines.addLineFields.quantity must declare defaultValue: 1.');
+    }
+
+    if (config.invariants.addLineFields.hiddenContainsGrossUnitPriceAndPriceList) {
+      if (detailFieldNames.has('grossUnitPrice') && !hasHiddenKey(addLineFieldsSource, 'grossUnitPrice')) {
+        violations.push("lines.addLineFields.hidden must include 'grossUnitPrice'.");
       }
-      if (config.invariants.addLineFields.hiddenContainsGrossUnitPriceAndPriceList) {
-        if (!/hidden:\s*\[[\s\S]*'grossUnitPrice'/.test(addLineFieldsSource)) {
-          violations.push("lines.addLineFields.hidden must include 'grossUnitPrice'.");
-        }
-        if (!/hidden:\s*\[[\s\S]*'priceList'/.test(addLineFieldsSource)) {
-          violations.push("lines.addLineFields.hidden must include 'priceList'.");
-        }
+      if (detailFieldNames.has('priceList') && !hasHiddenKey(addLineFieldsSource, 'priceList')) {
+        violations.push("lines.addLineFields.hidden must include 'priceList'.");
       }
     }
   }
 
+  const customFormPathRoot = config?.invariants?.customFormPathRoot ?? null;
   for (const declaration of findCustomFormDeclarations(contract.frontendContract.window)) {
+    if (
+      customFormPathRoot
+      && (declaration.component.includes('/') || declaration.component.startsWith('@/'))
+      && !declaration.component.startsWith(customFormPathRoot)
+    ) {
+      violations.push(`${declaration.location} must stay under '${customFormPathRoot}'.`);
+      continue;
+    }
     if (!customFormExists(rootDir, windowName, declaration.component)) {
       violations.push(`${declaration.location} references '${declaration.component}', but no local custom form exists for ${windowName}.`);
     }

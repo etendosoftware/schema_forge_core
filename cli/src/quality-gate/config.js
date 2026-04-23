@@ -18,15 +18,6 @@ function loadJson(path) {
   }
 }
 
-function validateGracePeriods(config) {
-  const today = new Date().toISOString().slice(0, 10);
-  for (const entry of config.gracePeriod ?? []) {
-    if (entry.until && entry.until < today) {
-      throw new QualityGateConfigError(`Expired quality gate grace period: ${JSON.stringify(entry)}`);
-    }
-  }
-}
-
 export function loadQualityGateConfig(rootDir) {
   const configPath = join(rootDir, 'quality-gate.config.json');
   const schemaPath = join(rootDir, 'schemas', 'quality-gate-config.schema.json');
@@ -47,6 +38,5 @@ export function loadQualityGateConfig(rootDir) {
     throw new QualityGateConfigError(ajv.errorsText(validate.errors, { separator: '; ' }));
   }
 
-  validateGracePeriods(config);
   return config;
 }

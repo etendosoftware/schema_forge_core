@@ -5,19 +5,44 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { runInvariantsCheck } from '../src/quality-gate/checks/invariants.js';
 
-function buildFixture({ withViolations = false } = {}) {
+function buildFixture({ withViolations = false, pageName = 'SalesOrderPage.jsx', singleLine = false, quantityKey = 'quantity', includePriceListField = true, includeGrossUnitPriceField = false, customFormValue = null } = {}) {
   const rootDir = mkdtempSync(join(tmpdir(), 'quality-gate-invariants-'));
   const windowDir = join(rootDir, 'artifacts', 'sales-order');
   const generatedDir = join(windowDir, 'generated', 'web', 'sales-order');
   mkdirSync(generatedDir, { recursive: true });
   mkdirSync(join(rootDir, 'tools', 'app-shell', 'src', 'windows', 'custom', 'sales-order'), { recursive: true });
 
+  const detailFields = [
+    {
+      name: 'product',
+      required: true,
+      lookup: withViolations ? false : true,
+      sourceRequired: true,
+    },
+  ];
+
+  if (includePriceListField) {
+    detailFields.push({
+      name: 'priceList',
+      required: withViolations ? false : true,
+      sourceRequired: true,
+      derivation: withViolations ? undefined : { type: 'fromParent', source: 'header.priceList' },
+    });
+  }
+  if (includeGrossUnitPriceField) {
+    detailFields.push({
+      name: 'grossUnitPrice',
+      required: false,
+      sourceRequired: false,
+    });
+  }
+
   const contract = {
     frontendContract: {
       window: {
         primaryEntity: 'header',
         headerExtra: {
-          customForm: withViolations ? 'MissingPanel' : 'ExistingPanel',
+          customForm: customFormValue ?? (withViolations ? 'MissingPanel' : 'ExistingPanel'),
         },
       },
       entities: {
@@ -35,31 +60,25 @@ function buildFixture({ withViolations = false } = {}) {
           ],
         },
         lines: {
-          fields: [
-            {
-              name: 'product',
-              required: true,
-              lookup: withViolations ? false : true,
-              sourceRequired: true,
-            },
-            {
-              name: 'priceList',
-              required: withViolations ? false : true,
-              sourceRequired: true,
-              derivation: withViolations ? undefined : { type: 'fromParent', source: 'header.priceList' },
-            },
-          ],
+          fields: detailFields,
         },
       },
     },
   };
 
-  const addLineFieldsBlock = withViolations
-    ? `const addLineFields = {\n  entry: [\n    { key: 'product', lookup: false },\n    { key: 'quantity' },\n  ],\n  hidden: ['grossUnitPrice'],\n};\n`
-    : `const addLineFields = {\n  entry: [\n    { key: 'product', lookup: true },\n    { key: 'quantity', defaultValue: 1 },\n  ],\n  hidden: ['grossUnitPrice', 'priceList'],\n};\n`;
+  const hiddenEntries = [];
+  if (!withViolations && includeGrossUnitPriceField) hiddenEntries.push("'grossUnitPrice'");
+  if (!withViolations && includePriceListField) hiddenEntries.push("'priceList'");
+  if (withViolations && includeGrossUnitPriceField) hiddenEntries.push("'grossUnitPrice'");
+
+  const addLineFieldsBlock = singleLine
+    ? `const addLineFields = { entry: [{ key: 'product', lookup: true }, { key: '${quantityKey}', defaultValue: 1 }], derived: [], hidden: [${hiddenEntries.join(', ')}] };\n`
+    : withViolations
+      ? `const addLineFields = {\n  entry: [\n    { key: 'product', lookup: false },\n    { key: '${quantityKey}' },\n  ],\n  hidden: [${hiddenEntries.join(', ')}],\n};\n`
+      : `const addLineFields = {\n  entry: [\n    { key: 'product', lookup: true },\n    { key: '${quantityKey}', defaultValue: 1 },\n  ],\n  hidden: [${hiddenEntries.join(', ')}],\n};\n`;
 
   writeFileSync(join(windowDir, 'contract.json'), JSON.stringify(contract, null, 2));
-  writeFileSync(join(generatedDir, 'SalesOrderPage.jsx'), addLineFieldsBlock);
+  writeFileSync(join(generatedDir, pageName), addLineFieldsBlock);
   if (!withViolations) {
     writeFileSync(
       join(rootDir, 'tools', 'app-shell', 'src', 'windows', 'custom', 'sales-order', 'ExistingPanel.jsx'),
@@ -122,9 +141,74 @@ describe('runInvariantsCheck', () => {
       assert.equal(result.status, 'fail');
       assert.match(result.detail, /documentNo/);
       assert.match(result.detail, /product/);
-      assert.match(result.detail, /quantity/);
+      assert.match(result.detail, /quantity field/);
       assert.match(result.detail, /priceList/);
       assert.match(result.detail, /MissingPanel/);
+    } finally {
+      rmSync(rootDir, { recursive: true, force: true });
+    }
+  });
+
+  it('finds addLineFields in non spec-named pages and accepts quantity aliases', async () => {
+    const { rootDir, windowDir } = buildFixture({
+      pageName: 'HeaderPage.jsx',
+      singleLine: true,
+      quantityKey: 'orderedQuantity',
+      includePriceListField: false,
+      includeGrossUnitPriceField: false,
+      customFormValue: '@/windows/custom/sales-order/ExistingPanel',
+    });
+
+    try {
+      const result = await runInvariantsCheck('sales-order', {
+        rootDir,
+        windowDir,
+        config: {
+          invariants: {
+            addLineFields: {
+              requiredProductLookup: true,
+              quantityDefaultOne: true,
+              hiddenContainsGrossUnitPriceAndPriceList: true,
+            },
+            draftModeReadOnlyLogic: true,
+            notNullRequiresRequired: true,
+            customFormPathRoot: '@/windows/custom/',
+          },
+        },
+      });
+
+      assert.deepEqual(result, { status: 'pass', detail: 'All invariants satisfied.' });
+    } finally {
+      rmSync(rootDir, { recursive: true, force: true });
+    }
+  });
+
+  it('requires grossUnitPrice only when the detail entity actually exposes it', async () => {
+    const { rootDir, windowDir } = buildFixture({
+      includePriceListField: false,
+      includeGrossUnitPriceField: true,
+      withViolations: false,
+    });
+
+    try {
+      const result = await runInvariantsCheck('sales-order', {
+        rootDir,
+        windowDir,
+        config: {
+          invariants: {
+            addLineFields: {
+              requiredProductLookup: true,
+              quantityDefaultOne: true,
+              hiddenContainsGrossUnitPriceAndPriceList: true,
+            },
+            draftModeReadOnlyLogic: true,
+            notNullRequiresRequired: true,
+            customFormPathRoot: '@/windows/custom/',
+          },
+        },
+      });
+
+      assert.equal(result.status, 'pass');
     } finally {
       rmSync(rootDir, { recursive: true, force: true });
     }

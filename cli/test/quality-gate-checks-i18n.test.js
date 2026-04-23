@@ -5,11 +5,14 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { runI18nCheck } from '../src/quality-gate/checks/i18n.js';
 
-function makeFixture({ missingColumn = false, hardcoded = false, allowlisted = false } = {}) {
+function makeFixture({ missingColumn = false, hardcoded = false, allowlisted = false, sharedHardcoded = false, aliasHardcoded = false } = {}) {
   const rootDir = mkdtempSync(join(tmpdir(), 'quality-gate-i18n-'));
   const windowDir = join(rootDir, 'artifacts', 'sales-order');
+  const appCustomDir = join(rootDir, 'tools', 'app-shell', 'src', 'windows', 'custom');
   mkdirSync(join(windowDir, 'custom'), { recursive: true });
-  mkdirSync(join(rootDir, 'tools', 'app-shell', 'src', 'windows', 'custom', 'sales-order'), { recursive: true });
+  mkdirSync(join(appCustomDir, 'sales-order'), { recursive: true });
+  mkdirSync(join(appCustomDir, 'shared'), { recursive: true });
+  mkdirSync(join(appCustomDir, 'businessPartner'), { recursive: true });
 
   const contract = {
     frontendContract: {
@@ -35,6 +38,13 @@ function makeFixture({ missingColumn = false, hardcoded = false, allowlisted = f
 
   writeFileSync(join(windowDir, 'contract.json'), JSON.stringify(contract, null, 2));
   writeFileSync(join(windowDir, 'custom', 'Sidebar.jsx'), customComponent);
+
+  if (sharedHardcoded) {
+    writeFileSync(join(appCustomDir, 'shared', 'SharedModal.jsx'), 'export default function SharedModal() { return <span>Shared warning</span>; }');
+  }
+  if (aliasHardcoded) {
+    writeFileSync(join(appCustomDir, 'businessPartner', 'BusinessPartnerSidebar.jsx'), 'export default function BusinessPartnerSidebar() { return <span>Business partner note</span>; }');
+  }
 
   return { rootDir, windowDir };
 }
@@ -80,6 +90,18 @@ describe('runI18nCheck', () => {
       assert.equal(result.status, 'pass');
     } finally {
       rmSync(passing.rootDir, { recursive: true, force: true });
+    }
+  });
+
+  it('scans shared and aliased custom files for contacts', async () => {
+    const fixture = makeFixture({ sharedHardcoded: true, aliasHardcoded: true });
+    try {
+      const result = await runI18nCheck('contacts', { rootDir: fixture.rootDir, windowDir: fixture.windowDir });
+      assert.equal(result.status, 'fail');
+      assert.match(result.detail, /Shared warning/);
+      assert.match(result.detail, /Business partner note/);
+    } finally {
+      rmSync(fixture.rootDir, { recursive: true, force: true });
     }
   });
 });

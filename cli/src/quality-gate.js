@@ -56,12 +56,12 @@ function writeTextFile(path, content) {
   writeFileSync(path, content);
 }
 
-function computeBaselineWithWorktree({ rootDir, baselineRef, baselineSha, windowNames, config, runner }) {
+function computeBaselineWithWorktree({ rootDir, baselineSha, windowNames, config, runner }) {
   const worktreePath = join(rootDir, '.quality-gate-cache', 'worktree', baselineSha.slice(0, 12));
   mkdirSync(dirname(worktreePath), { recursive: true });
 
   try {
-    execFileSync('git', ['worktree', 'add', '--detach', '--force', worktreePath, baselineRef], {
+    execFileSync('git', ['worktree', 'add', '--detach', '--force', worktreePath, baselineSha], {
       cwd: rootDir,
       encoding: 'utf8',
     });
@@ -170,11 +170,19 @@ export async function runQualityGateCli({ args = process.argv.slice(2), rootDir 
         });
 
   if (windowNames.length === 0) {
+    const stdout = 'No windows affected; gate skipped\n';
+    if (options.outputPath) {
+      writeTextFile(options.outputPath, stdout);
+    }
+    if (options.jsonPath) {
+      writeTextFile(options.jsonPath, `${JSON.stringify({ summary: null, windows: [], skipped: true }, null, 2)}\n`);
+    }
     return {
       exitCode: 0,
-      stdout: 'No windows affected; gate skipped\n',
+      stdout,
       summary: null,
       report: null,
+      analysisDir: null,
     };
   }
 
@@ -183,9 +191,8 @@ export async function runQualityGateCli({ args = process.argv.slice(2), rootDir 
     cacheDir: join(rootDir, '.quality-gate-cache'),
     configHash: hashCacheInputs(rootDir, config),
     resolveRefSha: async (ref) => resolveGitRef(rootDir, ref),
-    computeBaseline: async ({ baselineRef: ref, baselineSha }) => computeBaselineWithWorktree({
+    computeBaseline: async ({ baselineSha }) => computeBaselineWithWorktree({
       rootDir,
-      baselineRef: ref,
       baselineSha,
       windowNames,
       config,
