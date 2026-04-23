@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import {
@@ -59,8 +59,9 @@ import {
   FileCode,
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils.js';
-import { useMenuLabel, useUI } from '@/i18n';
+import { useMenuLabel, useUI, useLocaleSwitch } from '@/i18n';
 import { useFavorites } from '@/components/layout/FavoritesContext';
+import menuConfig from '@/menu.json';
 
 const ICON_MAP = {
   ClipboardCheck,
@@ -201,6 +202,17 @@ export default function SideMenu({
   const currentPath = location.pathname.replace(/^\//, '');
   const { favorites } = useFavorites();
 
+  const favNameMap = useMemo(() => {
+    const map = {};
+    for (const g of menuConfig.menu) {
+      if (g.group === 'Favorites') continue;
+      for (const item of g.items || []) {
+        map[item.path || item.name] = item.favname || item.label;
+      }
+    }
+    return map;
+  }, []);
+
   const resolvedMenuGroups = menuGroups.map((g) => {
     if (g.group !== 'Favorites') return g;
     return { ...g, items: favorites };
@@ -209,6 +221,7 @@ export default function SideMenu({
   const activeGroup = findActiveGroup(resolvedMenuGroups, location.pathname, location.search);
   const tMenu = useMenuLabel();
   const ui = useUI();
+  const { locale } = useLocaleSwitch();
 
   const [openGroups, setOpenGroups] = useState(() => {
     const initial = {};
@@ -477,7 +490,7 @@ export default function SideMenu({
                           {isItemActive && (
                             <span className="absolute left-[33px] right-2 top-0 bottom-0 bg-accent-highlight" />
                           )}
-                          <span className="relative z-10">{tMenu(item.label)}</span>
+                          <span className="relative z-10">{g.group === 'Favorites' ? (item.labels?.[locale] || tMenu(favNameMap[item.path || item.name] || item.label)) : tMenu(item.label)}</span>
                         </NavLink>
                       );
                     })}
@@ -492,7 +505,7 @@ export default function SideMenu({
                                 className="relative flex w-full items-center pl-[52px] pr-4 py-1.5 text-sm text-text-primary hover:bg-muted/50 transition-colors"
                               >
                                 <span className="absolute left-[33px] top-0 bottom-0 w-px bg-[#E8EAEF]" />
-                                <span className="relative z-10">{tMenu(item.label)}</span>
+                                <span className="relative z-10">{item.labels?.[locale] || tMenu(favNameMap[itemPath] || item.label)}</span>
                               </NavLink>
                             );
                           })

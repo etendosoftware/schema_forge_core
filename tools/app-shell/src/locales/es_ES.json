@@ -16142,7 +16142,7 @@
       "label": "Albarán de devolución"
     },
     "Purchase Invoice": {
-      "label": "Factura"
+      "label": "Factura de Compra"
     },
     "Warehouses": {
       "label": "Almacenes"
@@ -16232,7 +16232,7 @@
       "label": "General"
     },
     "Goods Receipt": {
-      "label": "Albarán"
+      "label": "Albarán de Compra"
     },
     "Return Shipments": {
       "label": "Envíos de devolución"
@@ -16253,31 +16253,31 @@
       "label": "Facturas recurrentes"
     },
     "Sales Quotation": {
-      "label": "Presupuesto"
+      "label": "Presupuesto de Venta"
     },
     "Sales Order": {
-      "label": "Pedido"
+      "label": "Pedido de Venta"
     },
     "Goods Shipment": {
-      "label": "Albarán"
+      "label": "Albarán de Venta"
     },
     "Sales Invoice": {
-      "label": "Factura"
+      "label": "Factura de Venta"
     },
     "Return from Customer": {
-      "label": "Devolución"
+      "label": "Devolución de Cliente"
     },
     "Return Material Receipt": {
-      "label": "Albarán de devolución"
+      "label": "Recibo de Devolución"
     },
     "Purchase Order": {
-      "label": "Pedido"
+      "label": "Pedido de Compra"
     },
     "Return to Vendor": {
-      "label": "Devolución"
+      "label": "Devolución a Proveedor"
     },
     "Return to Vendor Shipment": {
-      "label": "Albarán de devolución"
+      "label": "Albarán de Devolución a Proveedor"
     },
     "Quotation": {
       "label": "Presupuesto"
@@ -16329,9 +16329,6 @@
     },
     "Leads": {
       "label": "Leads"
-    },
-    "HR": {
-      "label": "RRHH"
     },
     "Employees": {
       "label": "Empleados"
@@ -16654,7 +16651,9 @@
     "enterAtLeastOneValueUpdatePricing": "Introduce al menos un valor para actualizar el precio.",
     "pricingCreatedUsingDefaultValues": "Precio creado usando valores predeterminados.",
     "unableToSavePricing": "No se pudo guardar el precio.",
-    "addEntity": "+ Agregar {label}",
+    "addEntity": "Añadir {label}",
+    "addLine": "Añadir línea",
+    "noAdditionalActions": "No hay acciones adicionales",
     "entityDetail": "Detalle de {label}",
     "saveHeaderFirst": "Guarda el encabezado primero para agregar líneas.",
     "documentStatus": "Estado del documento",
@@ -18116,6 +18115,15 @@
     "Reports": {
       "label": "Informes"
     },
+    "Purchases Reports": {
+      "label": "Informes de Compras"
+    },
+    "Inventory Reports": {
+      "label": "Informes de Inventario"
+    },
+    "Finance Reports": {
+      "label": "Informes de Finanzas"
+    },
     "Payment Tracker": {
       "label": "Seguimiento cobros-pagos"
     },
@@ -18378,7 +18386,7 @@
       "label": "Terceros"
     },
     "Return Material Receipt": {
-      "label": "Recibo devolución de material"
+      "label": "Recibo de Devolución"
     },
     "General Ledger Configuration": {
       "label": "Esquema contable"
@@ -18423,7 +18431,7 @@
       "label": "Transportista"
     },
     "Sales Order": {
-      "label": "Pedido de venta"
+      "label": "Pedido de Venta"
     },
     "Product Category": {
       "label": "Categoría del producto"
@@ -18459,7 +18467,7 @@
       "label": "Informes y procesos"
     },
     "Sales Invoice": {
-      "label": "Factura (Cliente)"
+      "label": "Factura de Venta"
     },
     "Physical Inventory": {
       "label": "Inventario físico"
@@ -18468,7 +18476,7 @@
       "label": "Ajuste de Costes"
     },
     "Goods Shipment": {
-      "label": "Albarán (Cliente)"
+      "label": "Albarán de Venta"
     },
     "Goods Movements": {
       "label": "Movimiento entre almacenes"
@@ -18480,13 +18488,13 @@
       "label": "Entradas de Datos Importados"
     },
     "Purchase Order": {
-      "label": "Pedido de compra"
+      "label": "Pedido de Compra"
     },
     "Purchase Invoice": {
-      "label": "Factura (Proveedor)"
+      "label": "Factura de Compra"
     },
     "Goods Receipt": {
-      "label": "Albarán (Proveedor)"
+      "label": "Albarán de Compra"
     },
     "Form": {
       "label": "Formulario"
@@ -18558,7 +18566,7 @@
       "label": "Rol permisos"
     },
     "Return to Vendor Shipment": {
-      "label": "Devolución a albarán de proveedor"
+      "label": "Albarán de Devolución a Proveedor"
     },
     "Alert": {
       "label": "Alertas"
@@ -18603,7 +18611,7 @@
       "label": "Inventario Referenciado"
     },
     "Sales Quotation": {
-      "label": "Presupuesto de ventas"
+      "label": "Presupuesto de Venta"
     },
     "Costing Algorithm": {
       "label": "Algoritmo de cálculo de costes"
@@ -18813,7 +18821,7 @@
       "label": "Método de Adjuntos"
     },
     "Return to Vendor": {
-      "label": "Devolución a proveedor"
+      "label": "Devolución a Proveedor"
     },
     "Process Group": {
       "label": "Grupo de Procesos"
@@ -18852,7 +18860,7 @@
       "label": "Histórico de auditoría"
     },
     "Return from Customer": {
-      "label": "Devolución de cliente"
+      "label": "Devolución de Cliente"
     },
     "Production Run": {
       "label": "Parte de Fabricación"
@@ -18943,6 +18951,30 @@
     },
     "Depreciation Setup": {
       "label": "Configuración de depreciación"
+    },
+    "Order": {
+      "label": "Pedido"
+    },
+    "Invoice": {
+      "label": "Factura"
+    },
+    "Quotation": {
+      "label": "Presupuesto"
+    },
+    "Shipment": {
+      "label": "Albarán"
+    },
+    "Receipt": {
+      "label": "Albarán"
+    },
+    "Return": {
+      "label": "Devolución"
+    },
+    "Return Receipt": {
+      "label": "Recibo de Devolución"
+    },
+    "Return Shipment": {
+      "label": "Albarán de Devolución"
     }
   },
   "statuses": {

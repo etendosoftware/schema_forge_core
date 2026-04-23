@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
+import { AddLineButton } from '@/components/ui/add-line-button.jsx';
 import { X, MoreVertical, Check, Save, List, Printer, Send, Trash2, Loader2 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
@@ -1601,12 +1602,10 @@ export function DetailView({
                       {hook.editing && !isDocumentReadOnly && (allEntryFields.length > 0 || DetailExtraActions) && canAddLines && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, borderTop: '0.5px solid var(--color-border-tertiary, #e5e7eb)', padding: '10px 16px' }}>
                           {allEntryFields.length > 0 && (
-                            <button
+                            <AddLineButton
                               onClick={handleAddLineClick}
-                              style={{ all: 'unset', fontSize: 13, fontWeight: 500, color: 'var(--color-text-info, #2563eb)', cursor: 'pointer' }}
-                            >
-                              {ui('addEntity', { label: tMenu(detailLabel || 'Lines') })}
-                            </button>
+                              label={ui('addLine')}
+                            />
                           )}
                           {DetailExtraActions && (
                             <DetailExtraActions data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} onRefresh={() => hook.fetchChildren?.(data?.id || recordId)} />
@@ -1935,7 +1934,7 @@ export function DetailView({
                     )}
                     </div>
                     {(st.addLineFields?.entry?.length > 0 || st.customAddModal) && hook.editing && (
-                      <button
+                      <AddLineButton
                         onClick={() => {
                           if (st.customAddModal) {
                             setCustomModalState({ key: st.key, rowId: null });
@@ -1943,10 +1942,8 @@ export function DetailView({
                             void handleSecondaryAddLineToggle(st.key);
                           }
                         }}
-                        className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
-                      >
-                        {ui('addEntity', { label: tMenu(st.label) })}
-                      </button>
+                        label={ui('addEntity', { label: tMenu(st.label) })}
+                      />
                     )}
                     </>
                     )}

@@ -1132,7 +1132,8 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds, catego
   const favActive = isFavorite(favKey);
 
   const favLabel = report.title?.en_US || report.title?.en || report.id;
-  useSetPageMeta({ title, breadcrumb, onBack, onAddToFavorites: () => toggleFavorite(favKey, favLabel), isFavorite: favActive }, [favActive]);
+  const favLabels = report.title && typeof report.title === 'object' ? report.title : undefined;
+  useSetPageMeta({ title, breadcrumb, onBack, onAddToFavorites: () => toggleFavorite(favKey, favLabel, favLabels), isFavorite: favActive }, [favActive]);
 
   const DOWNLOAD_FORMATS = [
     { id: 'html', label: 'preview', icon: Eye },

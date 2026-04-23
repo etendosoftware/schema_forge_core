@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { DataTable } from '@/components/contract-ui';
 import { useLocale } from '@/i18n';
+import { Tag } from '@/components/ui/tag';
 
 const filters = ['searchKey', 'name'];
 
@@ -10,17 +11,13 @@ function TypeBadge({ row, t }) {
   if (isCust && isVend) {
     return (
       <span className="inline-flex items-center gap-1">
-        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">{t('Customer')}</span>
-        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">{t('Vendor')}</span>
+        <Tag variant="blue" label={t('Customer')} />
+        <Tag variant="green" label={t('Vendor')} />
       </span>
     );
   }
-  if (isCust) {
-    return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">{t('Customer')}</span>;
-  }
-  if (isVend) {
-    return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">{t('Vendor')}</span>;
-  }
+  if (isCust) return <Tag variant="blue" label={t('Customer')} />;
+  if (isVend) return <Tag variant="green" label={t('Vendor')} />;
   return '—';
 }
 
