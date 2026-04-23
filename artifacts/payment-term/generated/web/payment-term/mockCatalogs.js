@@ -1,4 +1,4 @@
-// Auto-generated mock catalogs for FK reference data - do not edit manually
+// Auto-generated - intentionally empty. Selector data comes from the real backend.
 
 const catalogs = {};
 

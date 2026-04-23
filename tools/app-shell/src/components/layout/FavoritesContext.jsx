@@ -4,13 +4,16 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { useAuth } from '@/auth/AuthContext.jsx';
+import { buildHeaders, detectBaseUrl } from '@/auth/api.js';
 
 const FavoritesContext = createContext(null);
 
 const STORAGE_PREFIX = 'sf_favorites_';
+const FAVORITES_ENDPOINT = `${detectBaseUrl()}/sws/neo/favorites`;
 
 function storageKey(username) {
   return `${STORAGE_PREFIX}${username || 'anonymous'}`;
@@ -38,51 +41,87 @@ function writeFavorites(username, list) {
 }
 
 export function FavoritesProvider({ children }) {
-  const { username } = useAuth();
+  const { username, token } = useAuth();
   const [favorites, setFavorites] = useState(() => readFavorites(username));
+  const fetchedRef = useRef(false);
 
+  // Reset to localStorage when user changes (login/logout)
   useEffect(() => {
+    fetchedRef.current = false;
     setFavorites(readFavorites(username));
   }, [username]);
 
-  const addFavorite = useCallback(
-    (name, label) => {
-      if (!name) return;
-      setFavorites((prev) => {
-        if (prev.some((f) => f.name === name)) return prev;
-        const next = [...prev, { name, label: label || name }];
-        writeFavorites(username, next);
-        return next;
+  // Fetch from server on login — server wins over localStorage
+  useEffect(() => {
+    if (!token || !username || fetchedRef.current) return;
+    let cancelled = false;
+    fetch(FAVORITES_ENDPOINT, { headers: buildHeaders(token), credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && Array.isArray(data)) {
+          fetchedRef.current = true;
+          writeFavorites(username, data);
+          setFavorites(data);
+        }
+      })
+      .catch(() => {
+        /* localStorage fallback stays active */
       });
+    return () => {
+      cancelled = true;
+    };
+  }, [token, username]);
+
+  const syncToServer = useCallback(
+    (list) => {
+      if (!token) return;
+      fetch(FAVORITES_ENDPOINT, {
+        method: 'PUT',
+        headers: buildHeaders(token),
+        body: JSON.stringify(list),
+        credentials: 'include',
+      }).catch(() => {});
     },
-    [username]
+    [token]
+  );
+
+  const addFavorite = useCallback(
+    (name, label, labels) => {
+      if (!name) return;
+      if (favorites.some((f) => f.name === name)) return;
+      const entry = labels ? { name, label: label || name, labels } : { name, label: label || name };
+      const next = [...favorites, entry];
+      setFavorites(next);
+      writeFavorites(username, next);
+      syncToServer(next);
+    },
+    [favorites, username, syncToServer]
   );
 
   const removeFavorite = useCallback(
     (name) => {
       if (!name) return;
-      setFavorites((prev) => {
-        const next = prev.filter((f) => f.name !== name);
-        writeFavorites(username, next);
-        return next;
-      });
+      const next = favorites.filter((f) => f.name !== name);
+      setFavorites(next);
+      writeFavorites(username, next);
+      syncToServer(next);
     },
-    [username]
+    [favorites, username, syncToServer]
   );
 
   const toggleFavorite = useCallback(
-    (name, label) => {
+    (name, label, labels) => {
       if (!name) return;
-      setFavorites((prev) => {
-        const exists = prev.some((f) => f.name === name);
-        const next = exists
-          ? prev.filter((f) => f.name !== name)
-          : [...prev, { name, label: label || name }];
-        writeFavorites(username, next);
-        return next;
-      });
+      const exists = favorites.some((f) => f.name === name);
+      const entry = labels ? { name, label: label || name, labels } : { name, label: label || name };
+      const next = exists
+        ? favorites.filter((f) => f.name !== name)
+        : [...favorites, entry];
+      setFavorites(next);
+      writeFavorites(username, next);
+      syncToServer(next);
     },
-    [username]
+    [favorites, username, syncToServer]
   );
 
   const isFavorite = useCallback(

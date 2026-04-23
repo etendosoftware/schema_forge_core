@@ -581,6 +581,33 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes("inputMode: 'selector'"));
   });
 
+  it('emits forceCalloutFields as JSON array when declared on entry field', () => {
+    const contract = {
+      ...masterDetailContract,
+      frontendContract: {
+        ...masterDetailContract.frontendContract,
+        entities: {
+          ...masterDetailContract.frontendContract.entities,
+          orderLine: {
+            ...masterDetailContract.frontendContract.entities.orderLine,
+            fields: masterDetailContract.frontendContract.entities.orderLine.fields.map(f =>
+              f.name === 'product'
+                ? { ...f, forceCalloutFields: ['quantity', 'tax'] }
+                : f
+            ),
+          },
+        },
+      },
+    };
+    const code = generatePageComponent('order', 'orderLine', contract);
+    assert.ok(code.includes('forceCalloutFields: ["quantity","tax"]'), `expected forceCalloutFields in generated code, got:\n${code}`);
+  });
+
+  it('omits forceCalloutFields when not declared on entry field', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(!code.includes('forceCalloutFields'));
+  });
+
   it('passes config props to MasterDetailPage', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
     assert.ok(code.includes('entity="order"'));
@@ -670,14 +697,16 @@ describe('generateIndexComponent', () => {
 // ---------------------------------------------------------------------------
 
 describe('generateMockCatalogs', () => {
-  it('generates catalog entries for all FK references in the contract', () => {
+  // The generator used to emit hardcoded fake FK data (e.g. "Acme Corp", "Wire Transfer").
+  // That data leaked into production UIs as a flash of wrong values before real /selector
+  // responses arrived. The generator now emits an empty catalog — selector data always
+  // comes from the backend. The file is kept so the `import catalogs from './mockCatalogs'`
+  // in HeaderPage.jsx keeps resolving.
+
+  it('emits an empty catalogs object (no fake FK data)', () => {
     const code = generateMockCatalogs(masterDetailContract);
-    assert.ok(code.includes("catalogs['BusinessPartner']"));
-    assert.ok(code.includes("catalogs['Warehouse']"));
-    assert.ok(code.includes("catalogs['PriceList']"));
-    assert.ok(code.includes("catalogs['Product']"));
-    assert.ok(code.includes("catalogs['Tax']"));
-    assert.ok(code.includes("catalogs['BusinessPartnerLocation']"));
+    assert.ok(code.includes('const catalogs = {}'));
+    assert.ok(!code.includes("catalogs['"), 'should not emit any hardcoded catalog entries');
   });
 
   it('exports catalogs as default export', () => {
@@ -685,40 +714,19 @@ describe('generateMockCatalogs', () => {
     assert.ok(code.includes('export default catalogs'));
   });
 
-  it('starts with auto-generated comment', () => {
+  it('starts with an explanatory auto-generated comment', () => {
     const code = generateMockCatalogs(masterDetailContract);
-    assert.ok(code.startsWith('// Auto-generated mock catalogs'));
+    assert.ok(code.startsWith('// Auto-generated'));
   });
 
-  it('catalog data contains id and name fields', () => {
+  it('does not leak known legacy fake values', () => {
     const code = generateMockCatalogs(masterDetailContract);
-    assert.ok(code.includes('"id"'));
-    assert.ok(code.includes('"name"'));
+    for (const fake of ['Acme Corp', 'Wire Transfer', 'Laptop Pro 15', 'Main Warehouse']) {
+      assert.ok(!code.includes(fake), `legacy fake "${fake}" should no longer appear`);
+    }
   });
 
-  it('BusinessPartner data has bp- prefix ids', () => {
-    const code = generateMockCatalogs(masterDetailContract);
-    assert.ok(code.includes('"bp-'));
-    assert.ok(code.includes('Acme Corp'));
-  });
-
-  it('BusinessPartnerLocation data has businessPartnerId for dependent filtering', () => {
-    const code = generateMockCatalogs(masterDetailContract);
-    assert.ok(code.includes('"businessPartnerId"'));
-  });
-
-  it('Tax data has rate property', () => {
-    const code = generateMockCatalogs(masterDetailContract);
-    assert.ok(code.includes('"rate"'));
-  });
-
-  it('Product data has price and uomId', () => {
-    const code = generateMockCatalogs(masterDetailContract);
-    assert.ok(code.includes('"price"'));
-    assert.ok(code.includes('"uomId"'));
-  });
-
-  it('handles contract with no FK references', () => {
+  it('emits the same empty output regardless of contract shape', () => {
     const noFkContract = {
       frontendContract: {
         window: { id: '1', name: 'Test', primaryEntity: 'test', category: 'test' },
@@ -732,30 +740,7 @@ describe('generateMockCatalogs', () => {
       },
       backendContract: { processEndpoints: [] },
     };
-    const code = generateMockCatalogs(noFkContract);
-    assert.ok(code.includes('const catalogs = {}'));
-    assert.ok(code.includes('export default catalogs'));
-    // Should not contain any catalog assignments
-    assert.ok(!code.includes("catalogs['"));
-  });
-
-  it('skips references not found in CATALOG_DATA', () => {
-    const unknownRefContract = {
-      frontendContract: {
-        window: { id: '1', name: 'Test', primaryEntity: 'test', category: 'test' },
-        entities: {
-          test: {
-            fields: [{ name: 'custom', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: false, grid: true, form: true, reference: 'UnknownEntity', inputMode: 'search' }],
-            searchableFields: [],
-            computedFields: [],
-          },
-        },
-      },
-      backendContract: { processEndpoints: [] },
-    };
-    const code = generateMockCatalogs(unknownRefContract);
-    assert.ok(!code.includes("catalogs['UnknownEntity']"));
-    assert.ok(code.includes('export default catalogs'));
+    assert.equal(generateMockCatalogs(noFkContract), generateMockCatalogs(masterDetailContract));
   });
 });
 

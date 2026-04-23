@@ -6,6 +6,7 @@ import {
   formatDashboardAmount,
   formatDashboardAxisTick,
   localeFromUi,
+  niceScale,
 } from '@/lib/dashboardNumberFormat.js';
 
 const CHART_W = 869;
@@ -78,22 +79,20 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
   const plotH = CHART_H - PAD_Y - PAD_BOTTOM;
   const baseY = PAD_Y + plotH;
 
-  // Line chart
-  const allVals  = hasExpenses ? [...values, ...normalizedExpenses] : values;
-  const maxVal   = Math.max(...allVals, 0);
-  const minVal   = Math.min(...allVals, 0);
-  const rangeVal = maxVal - minVal || 1;
+  // Y-axis scale (shared between line and bar)
+  const allVals = hasExpenses ? [...values, ...normalizedExpenses] : values;
+  const maxVal  = Math.max(...allVals, 0);
+  const { niceMax, ticks: yTicks } = niceScale(maxVal);
 
   const toPoint = (v, i, len) => ({
     x: PAD_X + (i / Math.max(len - 1, 1)) * plotW,
-    y: PAD_Y + plotH - ((v - minVal) / rangeVal) * plotH,
+    y: PAD_Y + plotH - (Math.max(v, 0) / niceMax) * plotH,
   });
 
   const revPts = values.map((v, i) => toPoint(v, i, values.length));
   const expPts = hasExpenses ? normalizedExpenses.map((v, i) => toPoint(v, i, normalizedExpenses.length)) : [];
 
   // Bar chart
-  const barMax   = Math.max(...(hasExpenses ? [...values, ...normalizedExpenses] : values), 1);
   const slotW    = plotW / (values.length || 1);
   const groupW   = slotW * 0.78;
   const innerGap = hasExpenses ? 4 : 0;
@@ -276,11 +275,10 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
               </defs>
 
               {/* Grid + Y-axis labels */}
-              {[0, 0.25, 0.5, 0.75, 1].map((frac) => {
-                const y   = PAD_Y + plotH - frac * plotH;
-                const val = minVal + frac * rangeVal;
+              {yTicks.map((val) => {
+                const y = PAD_Y + plotH - (val / niceMax) * plotH;
                 return (
-                  <g key={frac}>
+                  <g key={val}>
                     <line x1={PAD_X} y1={y} x2={CHART_W - PAD_X} y2={y} stroke="#E8EAEF" strokeWidth="1" strokeDasharray="4 4" />
                     <text x={PAD_X - 6} y={y + 3} textAnchor="end" fill="#9CA3AF" fontSize="9">
                       {formatDashboardAxisTick(val, numberLocale)}
@@ -331,11 +329,10 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
               role="img"
             >
-              {[0, 0.25, 0.5, 0.75, 1].map((frac) => {
-                const y   = PAD_Y + plotH - frac * plotH;
-                const val = frac * barMax;
+              {yTicks.map((val) => {
+                const y = PAD_Y + plotH - (val / niceMax) * plotH;
                 return (
-                  <g key={frac}>
+                  <g key={val}>
                     <line x1={PAD_X} y1={y} x2={CHART_W - PAD_X} y2={y} stroke="#E8EAEF" strokeWidth="1" strokeDasharray="4 4" />
                     <text x={PAD_X - 6} y={y + 3} textAnchor="end" fill="#9CA3AF" fontSize="9">
                       {formatDashboardAxisTick(val, numberLocale)}
@@ -346,8 +343,8 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
 
               {values.map((v, i) => {
                 const expense  = hasExpenses ? normalizedExpenses[i] : 0;
-                const revH     = Math.max((Math.max(v, 0) / barMax) * plotH, v > 0 ? 3 : 0);
-                const expH     = hasExpenses ? Math.max((Math.max(expense, 0) / barMax) * plotH, expense > 0 ? 3 : 0) : 0;
+                const revH     = Math.max((Math.max(v, 0) / niceMax) * plotH, v > 0 ? 3 : 0);
+                const expH     = hasExpenses ? Math.max((Math.max(expense, 0) / niceMax) * plotH, expense > 0 ? 3 : 0) : 0;
                 const gw       = hasExpenses ? barW * 2 + innerGap : barW;
                 const gx       = PAD_X + i * slotW + (slotW - gw) / 2;
                 const cx       = gx + gw / 2;

@@ -1,4 +1,26 @@
 /**
+ * Map a status code to one of the 4 Figma semantic tones.
+ * Used by StatusTag (grid). Does NOT affect DetailView.
+ */
+export function getStatusTone(status) {
+  const s = String(status ?? '').toLowerCase();
+  if (
+    s === 'co' || s === 'pa' || s === 'rppc' || s === 'ppm' || s === 'pwnc' || s === 'rdnc' ||
+    s === 'completed' || s === 'complete' || s === 'confirmed' || s === 'booked' ||
+    s === 'paid' || s === 'true' || s === 'processed'
+  ) return 'success';
+  if (
+    s === 'ip' || s === 'ue' || s === 'rpae' || s === 'rpap' || s === 'rpr' ||
+    s === 'in process' || s === 'under evaluation'
+  ) return 'warning';
+  if (
+    s === 'vo' || s === 'ca' || s === 'rpvoid' || s === 'rpvd' ||
+    s === 'voided' || s === 'cancelled' || s === 'void'
+  ) return 'destructive';
+  return 'neutral';
+}
+
+/**
  * Map a document status string to Badge component props.
  * Shared between DataTable and DetailView.
  */

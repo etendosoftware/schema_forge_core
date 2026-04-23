@@ -1,4 +1,4 @@
-function detectBaseUrl() {
+export function detectBaseUrl() {
   const path = window.location.pathname;
   const webIdx = path.indexOf('/web/');
   if (webIdx !== -1) return path.substring(0, webIdx);

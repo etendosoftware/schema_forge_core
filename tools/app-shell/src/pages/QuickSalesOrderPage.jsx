@@ -302,7 +302,7 @@ export default function QuickSalesOrderPage({ apiBaseUrl }) {
   useSetPageMeta({
     title: translatedTitle,
     breadcrumb,
-    onAddToFavorites: () => toggleFavorite(favKey, translatedTitle),
+    onAddToFavorites: () => toggleFavorite(favKey, 'Quick Sales Order'),
     isFavorite: isFavorite(favKey),
   }, [isFavorite(favKey)]);
 

@@ -1120,13 +1120,20 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds, catego
     setResetKey(k => k + 1);
   };
 
+  const { toggleFavorite, isFavorite } = useFavorites();
   const title = report.title?.[locale] || report.title?.en_US || report.title?.es_ES || report.id;
   const categoryLabel = categoryFilter && CATEGORY_LABELS[categoryFilter]
     ? tMenu(CATEGORY_LABELS[categoryFilter].en)
     : null;
   const breadcrumb = [categoryLabel, tMenu('Reports'), title].filter(Boolean).join(' / ');
+  const favKey = categoryFilter
+    ? `report-viewer?category=${categoryFilter}&report=${report.id}`
+    : `report-viewer?report=${report.id}`;
+  const favActive = isFavorite(favKey);
 
-  useSetPageMeta({ title, breadcrumb, onBack });
+  const favLabel = report.title?.en_US || report.title?.en || report.id;
+  const favLabels = report.title && typeof report.title === 'object' ? report.title : undefined;
+  useSetPageMeta({ title, breadcrumb, onBack, onAddToFavorites: () => toggleFavorite(favKey, favLabel, favLabels), isFavorite: favActive }, [favActive]);
 
   const DOWNLOAD_FORMATS = [
     { id: 'html', label: 'preview', icon: Eye },
@@ -1301,7 +1308,7 @@ function ReportList({ reports, loading, searchQuery, setSearchQuery, categoryFil
   useSetPageMeta({
     title: tMenu('Reports'),
     breadcrumb,
-    onAddToFavorites: () => toggleFavorite(favKey, tMenu('Reports')),
+    onAddToFavorites: () => toggleFavorite(favKey, 'Reports'),
     isFavorite: favActive,
   }, [favActive]);
 
