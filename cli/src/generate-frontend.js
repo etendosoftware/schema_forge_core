@@ -563,7 +563,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${referencePart}${inputModePart} },`;
   }).join('\n');
 
-  const hiddenDefaultsArray = hiddenDefaultFields.map(f => {
+  const hiddenDefaultsArray = hiddenDefaultFields
+    .filter(f => !String(f.defaultValue).startsWith('@SQL='))
+    .map(f => {
     const rawDefault = String(f.defaultValue);
     const parentColMatch = rawDefault.match(/^@(\w+)@$/);
     if (parentColMatch) {
