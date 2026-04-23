@@ -62,6 +62,7 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 |------|-------------|
 | [generated-custom-windows/INDEX.md](generated-custom-windows/INDEX.md) | Functional docs for generated/custom windows, including the app-shell flows guide |
 
+| [generated-custom-windows/2026-04-23-epic-etp-3504-merge-changelog.md](generated-custom-windows/2026-04-23-epic-etp-3504-merge-changelog.md) | Change log for the `epic/ETP-3504` -> `develop` window-level merge deltas documented in generated/custom windows |
 ## Guides
 
 | File | Description |
