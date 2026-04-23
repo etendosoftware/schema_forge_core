@@ -215,6 +215,31 @@ export function DetailView({
   const dictionary = useLocale();
   const [addingLine, setAddingLine] = useState(false);
   const [addingSecondaryLine, setAddingSecondaryLine] = useState({});
+  // Imperative handles to in-progress inline add rows so we can commit them
+  // before header save (mirrors clicking the green check on an editing line).
+  const primaryAddRowRef = useRef(null);
+  const secondaryAddRowRefs = useRef({});
+  const getSecondaryAddRowRef = useCallback((key) => {
+    if (!secondaryAddRowRefs.current[key]) {
+      secondaryAddRowRefs.current[key] = { current: null };
+    }
+    return secondaryAddRowRefs.current[key];
+  }, []);
+  const flushPendingLines = useCallback(async () => {
+    if (addingLine && primaryAddRowRef.current?.flush) {
+      const ok = await primaryAddRowRef.current.flush({ closeAfterSave: true });
+      if (ok === false) return false;
+    }
+    for (const [tabKey, active] of Object.entries(addingSecondaryLine)) {
+      if (!active) continue;
+      const handle = secondaryAddRowRefs.current[tabKey]?.current;
+      if (handle?.flush) {
+        const ok = await handle.flush({ closeAfterSave: true });
+        if (ok === false) return false;
+      }
+    }
+    return true;
+  }, [addingLine, addingSecondaryLine]);
   const [customModalState, setCustomModalState] = useState({ key: null, rowId: null });
   const [activeTab, setActiveTab] = useState(0);
 
@@ -1142,6 +1167,7 @@ export function DetailView({
               {!hideSaveStatuses.includes(_headerData?.documentStatus) && !isDraftModeCompleted && (draftMode?.enabled ? (
                 <>
                   <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" data-testid="action-save-draft" disabled={hook.isSaving} onClick={async () => {
+                    if (!(await flushPendingLines())) return;
                     const saved = await hook.handleSave(data);
                     if (saved?.id && isNew) {
                       hook.primeSaved?.(saved);
@@ -1152,6 +1178,7 @@ export function DetailView({
                     {ui('save')}
                   </Button>
                   <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
+                    if (!(await flushPendingLines())) return;
                     const saved = await hook.handleSaveAndProcess(draftMode);
                     if (saved) {
                       if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
@@ -1169,6 +1196,7 @@ export function DetailView({
                 </>
               ) : isNew ? (<>
                 <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving} onClick={async () => {
+                  if (!(await flushPendingLines())) return;
                   const saved = await hook.handleSave(data);
                   if (saved?.id && isNew) {
                     hook.primeSaved?.(saved);
@@ -1180,6 +1208,7 @@ export function DetailView({
                 </Button>
                 {!isProcessed && hook.children.length > 0 && (
                 <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
+                  if (!(await flushPendingLines())) return;
                   const saved = await hook.handleSaveAndProcess(draftMode);
                   if (saved) {
                     if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
@@ -1198,6 +1227,7 @@ export function DetailView({
               </>
             ) : (
               <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving} onClick={async () => {
+                if (!(await flushPendingLines())) return;
                 const saved = await hook.handleSave(data);
                 if (saved) {
                   if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
@@ -1442,6 +1472,7 @@ export function DetailView({
                           }
                         } : undefined}
                         addRow={{
+                          ref: primaryAddRowRef,
                           active: addingLine,
                           fields: allEntryFields,
                           onAdd: async (lineData) => {
@@ -1787,6 +1818,7 @@ export function DetailView({
                             : undefined}
                         selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
                         addRow={st.addLineFields?.entry?.length > 0 ? {
+                          ref: getSecondaryAddRowRef(st.key),
                           active: addingSecondaryLine[st.key] ?? false,
                           fields: st.addLineFields.entry,
                           onAdd: async (lineData) => {

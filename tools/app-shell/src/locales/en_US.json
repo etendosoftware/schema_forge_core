@@ -16667,6 +16667,7 @@
     "pendingDeliveryOnly": "Pending delivery",
     "clearAllFilters": "Clear all filters",
     "cancelEsc": "Cancel (Esc)",
+    "inlineAddHint": "Enter or click outside to save · Esc to cancel",
     "statusComplete": "Confirmed",
     "statusCompleted": "Confirmed",
     "statusVoid": "Void",
