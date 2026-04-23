@@ -16,6 +16,7 @@ import { Tag } from '@/components/ui/tag';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { resolveColumnLabel } from '@/lib/resolveColumnLabel.js';
 import { formatAmount } from '@/lib/formatAmount.js';
+import { applyCalloutUpdates } from '@/lib/applyCalloutUpdates.js';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import InternalConsumptionProductSearchDrawer from './InternalConsumptionProductSearchDrawer.jsx';
 
@@ -424,21 +425,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
     }
     // Notify parent for callout execution — pass computed snapshot (not stale React state)
     onFieldChange?.(key, val, snapshot, (updates, forceFields = new Set()) => {
-      // Callback to apply callout results to the inline row.
-      // forceFields: Set of field keys whose callout value always wins over touched state.
-      // Used when a lookup field (e.g., product) fires a callout that should reset
-      // dependent quantity/locator fields regardless of what the user typed before.
-      setValues((prev) => {
-        const next = { ...prev };
-        for (const [field, value] of Object.entries(updates)) {
-          const isTouched = touchedFieldsRef.current.has(field);
-          const hasUserValue = prev[field] !== '' && prev[field] != null;
-          if (!forceFields.has(field) && field !== key && isTouched && hasUserValue) continue;
-          if (!forceFields.has(field) && (value === '' || value == null) && hasUserValue) continue;
-          next[field] = value;
-        }
-        return next;
-      });
+      setValues((prev) => applyCalloutUpdates(prev, updates, forceFields, key, touchedFieldsRef.current));
     });
   }, [handleChange, onFieldChange, values]);
 
