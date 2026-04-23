@@ -16901,6 +16901,7 @@
     "filter": "Filtrar...",
     "clearAllFilters": "Limpiar todos los filtros",
     "cancelEsc": "Cancelar (Esc)",
+    "inlineAddHint": "Enter o clic fuera para guardar · Esc para cancelar",
     "statusComplete": "Confirmado",
     "statusCompleted": "Confirmado",
     "statusVoid": "Anulado",
