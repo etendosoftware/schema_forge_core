@@ -189,6 +189,28 @@ BEFORE:  "I deploy and hope"
 
 ---
 
+## Pre-commit Hook
+
+A local Git hook validates pipeline completeness before every commit that touches artifacts or pipeline code.
+
+**What it checks:** runs `validate-pipeline.js --staged` which applies rules F1–F10 only to
+the artifact directories changed in the current staging area. Incomplete pipeline runs
+(e.g., `decisions.json` edited but `contract.json` not regenerated) are blocked with a
+`BLOCK` violation before the commit lands.
+
+**When it triggers:** the hook uses a fast-path filter. It exits 0 immediately — with zero
+overhead — unless the staged diff includes files under `artifacts/`,
+`tools/app-shell/src/windows/registry.js`, or `cli/src/generate-*` / `resolve-*` / `push-*` / `validate-*`.
+
+**Activation:** `make install` (idempotent — safe to run multiple times) sets
+`git config core.hooksPath .githooks`. New team members get the hook automatically.
+
+**Escape hatch:** `git commit --no-verify` bypasses the hook. Use only when justified
+(e.g., committing a partial WIP that will be fixed before the PR is merged).
+Note: the Etendo Git Police skill logs `--no-verify` use in the audit trail.
+
+---
+
 ## SLIDE 13: FAQ
 
 **Do I still need to know Java?**

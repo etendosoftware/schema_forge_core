@@ -203,6 +203,7 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
     form,
     searchable,
   };
+  if (rawField.mandatory === true) field.sourceRequired = true;
 
   // Section (only for visible fields)
   const section = fieldDecision.section || null;

@@ -1014,6 +1014,9 @@ const uiHintsSchema = {
         precision: 2, isTranslated: true },
       { name: 'plainField', column: 'PlainCol', type: 'string', visibility: 'editable',
         required: false, searchable: false, grid: true, form: true },
+      { name: 'configuredWarehouse', column: 'M_Warehouse_ID', type: 'foreignKey', visibility: 'editable',
+        required: false, searchable: false, grid: false, form: true, sourceRequired: true,
+        derivation: { type: 'fromConfig', source: 'context.defaultWarehouse' } },
     ]
   }]
 };
@@ -1047,6 +1050,18 @@ describe('generateFrontendContract — UI hints', () => {
     const fc = generateFrontendContract(uiHintsSchema);
     const gt = fc.entities.order.fields.find(f => f.name === 'grandTotal');
     assert.equal(gt.isIdentifier, true);
+  });
+
+  it('field with sourceRequired appears in contract', () => {
+    const fc = generateFrontendContract(uiHintsSchema);
+    const configured = fc.entities.order.fields.find(f => f.name === 'configuredWarehouse');
+    assert.equal(configured.sourceRequired, true);
+  });
+
+  it('field with derivation appears in contract', () => {
+    const fc = generateFrontendContract(uiHintsSchema);
+    const configured = fc.entities.order.fields.find(f => f.name === 'configuredWarehouse');
+    assert.deepEqual(configured.derivation, { type: 'fromConfig', source: 'context.defaultWarehouse' });
   });
 
   it('field without hints has no hint keys present', () => {

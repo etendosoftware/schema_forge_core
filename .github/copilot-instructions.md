@@ -17,6 +17,7 @@ Use these repository instructions as the primary context for coding tasks.
 ## Hard Rules
 
 - Never hardcode or guess window/process/menu IDs. Query DB or use `node cli/src/menu-cache.js search "<name>"`.
+- If a task touches a window, first locate its functional guide through `docs/generated-custom-windows/INDEX.md`, then update `docs/generated-custom-windows/<window>.md` in the same change.
 - Never manually edit generated files in `artifacts/*/generated/`.
 - If `push-to-neo.js` runs, remind to execute `./gradlew export.database` in Etendo root.
 - Keep all committed content in English.
