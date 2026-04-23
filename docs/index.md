@@ -55,6 +55,8 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 |------|-------------|
 | [i18n-guide.md](i18n-guide.md) | **i18n reference**: hooks (`useUI`, `useLabel`, `useMenuLabel`), locale JSON structure, rules for adding translations, decision tree |
 
+| [app-shell-functional-flows.md](app-shell-functional-flows.md) | Functional flows and verification points for app-shell routes and data behavior |
+
 ## Guides
 
 | File | Description |
