@@ -147,6 +147,8 @@ export function generateFrontendContract(schema, rules = []) {
         grid: f.grid,
         form: f.form,
       };
+      if (f.sourceRequired === true) mapped.sourceRequired = true;
+      if (f.derivation) mapped.derivation = f.derivation;
       if (f.columnType) mapped.columnType = f.columnType;
       if (f.reference) mapped.reference = f.reference;
       if (f.enumValues) mapped.enumValues = f.enumValues;
@@ -157,7 +159,7 @@ export function generateFrontendContract(schema, rules = []) {
       if (Array.isArray(f.forceCalloutFields) && f.forceCalloutFields.length > 0) mapped.forceCalloutFields = f.forceCalloutFields;
 
       // UI hints
-      if (f.defaultValue) mapped.defaultValue = f.defaultValue;
+      if (f.defaultValue !== undefined) mapped.defaultValue = f.defaultValue;
       if (f.isIdentifier) mapped.isIdentifier = true;
       if (f.help) mapped.help = f.help;
       if (f.fieldGroup) mapped.fieldGroup = f.fieldGroup;

@@ -1,4 +1,4 @@
-.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate dev dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview
+.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate dev dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview quality-gate
 
 # --- Testing ---
 
@@ -9,6 +9,9 @@ test: ## Run all CLI tests and app-shell lib tests
 test-frontend: ## Run only frontend generator tests
 	cd cli && node --test 'test/generate-frontend.test.js'
 
+
+quality-gate: ## Run Schema Forge quality gate for PR-affected windows
+	node cli/src/quality-gate.js --pr-affected --baseline-ref origin/main --format md
 # --- E2E Testing (Playwright) ---
 
 test-e2e: ## Run E2E tests with visible browser
