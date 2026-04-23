@@ -1204,6 +1204,7 @@ export function DetailView({
                   </Button>
                   <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
                     if (!(await flushPendingLines())) return;
+                    if (typeof draftMode.onConfirm === 'function') { draftMode.onConfirm(); return; }
                     const saved = await hook.handleSaveAndProcess(draftMode);
                     if (saved) {
                       if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });

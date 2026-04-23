@@ -45,7 +45,10 @@
     "header": {
       "javaQualifier": "salesOrderHeaderHandler",
       "draftMode": {
-        "enabled": false
+        "enabled": true,
+        "processField": "documentAction",
+        "processValue": "CO",
+        "label": "soConfirmBtn"
       },
       "fields": {
         "documentNo": {

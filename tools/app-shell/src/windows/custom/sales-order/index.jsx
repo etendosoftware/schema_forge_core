@@ -9,6 +9,14 @@ import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 
+const draftModeWithModal = {
+  enabled: true,
+  processField: 'documentAction',
+  processValue: 'CO',
+  label: 'soConfirmBtn',
+  onConfirm: () => window.dispatchEvent(new CustomEvent('sales-order:open-confirm-modal')),
+};
+
 export default function SalesOrderWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
   const [searchParams] = useSearchParams();
   const [cloneTargets, setCloneTargets] = useState(null);
@@ -24,6 +32,7 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
           recordId={recordId}
           token={token}
           apiBaseUrl={apiBaseUrl}
+          draftMode={draftModeWithModal}
           {...rest}
         />
         {createContactState && createPortal(

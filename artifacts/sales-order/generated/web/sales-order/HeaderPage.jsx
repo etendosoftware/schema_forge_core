@@ -45,7 +45,12 @@ const processes = [
 // @sf-generated-end processes:header
 
 // @sf-generated-start draftMode:header
-const draftMode = null;
+const draftMode = {
+  "enabled": true,
+  "processField": "documentAction",
+  "processValue": "CO",
+  "label": "soConfirmBtn"
+};
 // @sf-generated-end draftMode:header
 
 // @sf-generated-start addLineFields:lines
@@ -401,6 +406,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', labelKey: 'cancel', onClick: () => {}, },
           { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
         ]}
+        draftMode={draftMode}
         salesTheme
         labelOverrides={labelOverrides}
         {...props}

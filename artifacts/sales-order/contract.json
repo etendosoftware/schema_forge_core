@@ -1,7 +1,7 @@
 {
   "version": "0.15.0",
-  "generatedAt": "2026-04-23T18:22:34.581Z",
-  "checksum": "988d4f4e9f85e891",
+  "generatedAt": "2026-04-23T18:58:40.456Z",
+  "checksum": "bd0d21443680d7a7",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -465,7 +465,13 @@
             }
           }
         ],
-        "javaQualifier": "salesOrderHeaderHandler"
+        "javaQualifier": "salesOrderHeaderHandler",
+        "draftMode": {
+          "enabled": true,
+          "processField": "documentAction",
+          "processValue": "CO",
+          "label": "soConfirmBtn"
+        }
       },
       "lines": {
         "tableName": "C_OrderLine",
