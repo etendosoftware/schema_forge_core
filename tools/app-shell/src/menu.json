@@ -5,7 +5,11 @@
       "icon": "Home",
       "section": "General",
       "items": [
-        { "name": "dashboard", "label": "Home" }
+        {
+          "name": "dashboard",
+          "label": "Home",
+          "favname": "Home"
+        }
       ]
     },
     {
@@ -19,14 +23,53 @@
       "icon": "Contact2",
       "section": "Commercial",
       "items": [
-        { "name": "contacts", "label": "Contacts" },
-        { "name": "business-partner", "label": "Business Partner", "hidden": true },
-        { "name": "deal", "label": "Deal", "hidden": true },
-        { "name": "activity", "label": "Activity", "hidden": true },
-        { "name": "lead", "label": "Lead", "hidden": true },
-        { "name": "hr", "label": "HR", "hidden": true },
-        { "name": "employee", "label": "Employee", "hidden": true },
-        { "name": "absence", "label": "Absence", "hidden": true }
+        {
+          "name": "contacts",
+          "label": "Contacts",
+          "favname": "Contacts"
+        },
+        {
+          "name": "business-partner",
+          "label": "Business Partner",
+          "favname": "Business Partner",
+          "hidden": true
+        },
+        {
+          "name": "deal",
+          "label": "Deal",
+          "favname": "Deal",
+          "hidden": true
+        },
+        {
+          "name": "activity",
+          "label": "Activity",
+          "favname": "Activity",
+          "hidden": true
+        },
+        {
+          "name": "lead",
+          "label": "Lead",
+          "favname": "Lead",
+          "hidden": true
+        },
+        {
+          "name": "hr",
+          "label": "HR",
+          "favname": "HR",
+          "hidden": true
+        },
+        {
+          "name": "employee",
+          "label": "Employee",
+          "favname": "Employee",
+          "hidden": true
+        },
+        {
+          "name": "absence",
+          "label": "Absence",
+          "favname": "Absence",
+          "hidden": true
+        }
       ]
     },
     {
@@ -34,12 +77,36 @@
       "icon": "TrendingUp",
       "section": "Commercial",
       "items": [
-        { "name": "sales-quotation", "label": "Sales Quotation" },
-        { "name": "sales-order", "label": "Sales Order" },
-        { "name": "goods-shipment", "label": "Goods Shipment" },
-        { "name": "sales-invoice", "label": "Sales Invoice" },
-        { "name": "return-from-customer", "label": "Return from Customer" },
-        { "name": "return-material-receipt", "label": "Return Material Receipt" }
+        {
+          "name": "sales-quotation",
+          "label": "Quotation",
+          "favname": "Sales Quotation"
+        },
+        {
+          "name": "sales-order",
+          "label": "Order",
+          "favname": "Sales Order"
+        },
+        {
+          "name": "goods-shipment",
+          "label": "Shipment",
+          "favname": "Goods Shipment"
+        },
+        {
+          "name": "sales-invoice",
+          "label": "Invoice",
+          "favname": "Sales Invoice"
+        },
+        {
+          "name": "return-from-customer",
+          "label": "Return",
+          "favname": "Return from Customer"
+        },
+        {
+          "name": "return-material-receipt",
+          "label": "Return Receipt",
+          "favname": "Return Material Receipt"
+        }
       ]
     },
     {
@@ -47,12 +114,37 @@
       "icon": "Receipt",
       "section": "Operations",
       "items": [
-        { "name": "purchase-order", "label": "Purchase Order" },
-        { "name": "goods-receipt", "label": "Goods Receipt" },
-        { "name": "purchase-invoice", "label": "Purchase Invoice" },
-        { "name": "return-to-vendor", "label": "Return to Vendor" },
-        { "name": "return-to-vendor-shipment", "label": "Return to Vendor Shipment" },
-        { "name": "report-viewer-purchases", "label": "Reports", "path": "report-viewer?category=purchases" }
+        {
+          "name": "purchase-order",
+          "label": "Order",
+          "favname": "Purchase Order"
+        },
+        {
+          "name": "goods-receipt",
+          "label": "Receipt",
+          "favname": "Goods Receipt"
+        },
+        {
+          "name": "purchase-invoice",
+          "label": "Invoice",
+          "favname": "Purchase Invoice"
+        },
+        {
+          "name": "return-to-vendor",
+          "label": "Return",
+          "favname": "Return to Vendor"
+        },
+        {
+          "name": "return-to-vendor-shipment",
+          "label": "Return Shipment",
+          "favname": "Return to Vendor Shipment"
+        },
+        {
+          "name": "report-viewer-purchases",
+          "label": "Reports",
+          "favname": "Purchases Reports",
+          "path": "report-viewer?category=purchases"
+        }
       ]
     },
     {
@@ -60,14 +152,48 @@
       "icon": "Package",
       "section": "Operations",
       "items": [
-        { "name": "product", "label": "Product" },
-        { "name": "product-category", "label": "Product Category" },
-        { "name": "physical-inventory", "label": "Physical Inventory" },
-        { "name": "goods-movements", "label": "Goods Movement" },
-        { "name": "internal-consumption", "label": "Internal Consumption" },
-        { "name": "warehouse", "label": "Warehouse" },
-        { "name": "report-viewer-inventory", "label": "Reports", "path": "report-viewer?category=inventory" },
-        { "name": "warehouse-storage-bins", "label": "Storage Bin", "hidden": true }
+        {
+          "name": "product",
+          "label": "Product",
+          "favname": "Product"
+        },
+        {
+          "name": "product-category",
+          "label": "Product Category",
+          "favname": "Product Category"
+        },
+        {
+          "name": "physical-inventory",
+          "label": "Physical Inventory",
+          "favname": "Physical Inventory"
+        },
+        {
+          "name": "goods-movements",
+          "label": "Goods Movement",
+          "favname": "Goods Movement"
+        },
+        {
+          "name": "internal-consumption",
+          "label": "Internal Consumption",
+          "favname": "Internal Consumption"
+        },
+        {
+          "name": "warehouse",
+          "label": "Warehouse",
+          "favname": "Warehouse"
+        },
+        {
+          "name": "report-viewer-inventory",
+          "label": "Reports",
+          "favname": "Inventory Reports",
+          "path": "report-viewer?category=inventory"
+        },
+        {
+          "name": "warehouse-storage-bins",
+          "label": "Storage Bin",
+          "favname": "Storage Bin",
+          "hidden": true
+        }
       ]
     },
     {
@@ -76,9 +202,21 @@
       "section": "Operations",
       "hidden": true,
       "items": [
-        { "name": "project", "label": "Project" },
-        { "name": "time-tracking", "label": "Time Tracking" },
-        { "name": "document", "label": "Document" }
+        {
+          "name": "project",
+          "label": "Project",
+          "favname": "Project"
+        },
+        {
+          "name": "time-tracking",
+          "label": "Time Tracking",
+          "favname": "Time Tracking"
+        },
+        {
+          "name": "document",
+          "label": "Document",
+          "favname": "Document"
+        }
       ]
     },
     {
@@ -86,13 +224,43 @@
       "icon": "Building2",
       "section": "Finance",
       "items": [
-        { "name": "payment-in", "label": "Payment In" },
-        { "name": "payment-out", "label": "Payment Out" },
-        { "name": "bank-reconciliation", "label": "Bank Reconciliation" },
-        { "name": "chart-of-accounts", "label": "Chart of Accounts" },
-        { "name": "assets", "label": "Assets" },
-        { "name": "recurring-invoice", "label": "Recurring Invoice", "hidden": true },
-        { "name": "report-viewer-finance", "label": "Reports", "path": "report-viewer?category=finance" }
+        {
+          "name": "payment-in",
+          "label": "Payment In",
+          "favname": "Payment In"
+        },
+        {
+          "name": "payment-out",
+          "label": "Payment Out",
+          "favname": "Payment Out"
+        },
+        {
+          "name": "bank-reconciliation",
+          "label": "Bank Reconciliation",
+          "favname": "Bank Reconciliation"
+        },
+        {
+          "name": "chart-of-accounts",
+          "label": "Chart of Accounts",
+          "favname": "Chart of Accounts"
+        },
+        {
+          "name": "assets",
+          "label": "Assets",
+          "favname": "Assets"
+        },
+        {
+          "name": "recurring-invoice",
+          "label": "Recurring Invoice",
+          "favname": "Recurring Invoice",
+          "hidden": true
+        },
+        {
+          "name": "report-viewer-finance",
+          "label": "Reports",
+          "favname": "Finance Reports",
+          "path": "report-viewer?category=finance"
+        }
       ]
     },
     {
@@ -100,7 +268,11 @@
       "icon": "Plug",
       "section": "System",
       "items": [
-        { "name": "authorize", "label": "Connect with Claude" }
+        {
+          "name": "authorize",
+          "label": "Connect with Claude",
+          "favname": "Connect with Claude"
+        }
       ]
     },
     {
@@ -108,14 +280,47 @@
       "icon": "Settings",
       "section": "System",
       "items": [
-        { "name": "price-list", "label": "Price List" },
-        { "name": "payment-term", "label": "Payment Term" },
-        { "name": "payment-method", "label": "Payment Method" },
-        { "name": "tax", "label": "Tax" },
-        { "name": "unit-of-measure", "label": "Unit of Measure" },
-        { "name": "user", "label": "User" },
-        { "name": "smart-scan", "label": "Smart Scan" },
-        { "name": "oauth2-clients", "label": "OAuth2 Clients", "icon": "Shield" }
+        {
+          "name": "price-list",
+          "label": "Price List",
+          "favname": "Price List"
+        },
+        {
+          "name": "payment-term",
+          "label": "Payment Term",
+          "favname": "Payment Term"
+        },
+        {
+          "name": "payment-method",
+          "label": "Payment Method",
+          "favname": "Payment Method"
+        },
+        {
+          "name": "tax",
+          "label": "Tax",
+          "favname": "Tax"
+        },
+        {
+          "name": "unit-of-measure",
+          "label": "Unit of Measure",
+          "favname": "Unit of Measure"
+        },
+        {
+          "name": "user",
+          "label": "User",
+          "favname": "User"
+        },
+        {
+          "name": "smart-scan",
+          "label": "Smart Scan",
+          "favname": "Smart Scan"
+        },
+        {
+          "name": "oauth2-clients",
+          "label": "OAuth2 Clients",
+          "favname": "OAuth2 Clients",
+          "icon": "Shield"
+        }
       ]
     },
     {
@@ -123,8 +328,16 @@
       "icon": "FlaskConical",
       "section": "System",
       "items": [
-        { "name": "quick-sales-order", "label": "Quick Sales Order" },
-        { "name": "quick-purchase-order", "label": "Quick Purchase Order" }
+        {
+          "name": "quick-sales-order",
+          "label": "Quick Sales Order",
+          "favname": "Quick Sales Order"
+        },
+        {
+          "name": "quick-purchase-order",
+          "label": "Quick Purchase Order",
+          "favname": "Quick Purchase Order"
+        }
       ]
     }
   ]
