@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-04-22T16:03:20.184Z",
-  "checksum": "5704dce5c9190e01",
+  "generatedAt": "2026-04-23T12:16:29.828Z",
+  "checksum": "fedc437b323f6f2f",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -58,11 +58,13 @@
       "summaryFields": [],
       "labelOverrides": {
         "en_US": {
+          "Name": "Legal Name",
           "FIN_Financial_Account_ID": "Account",
           "PO_Financial_Account_ID": "Account",
           "EM_Etgo_Web": "Website"
         },
         "es_ES": {
+          "Name": "Razón Social",
           "EM_Etgo_Identifier": "Identificador",
           "FIN_Financial_Account_ID": "Cuenta",
           "PO_Financial_Account_ID": "Cuenta",
@@ -3485,11 +3487,13 @@
       "summaryFields": [],
       "labelOverrides": {
         "en_US": {
+          "Name": "Legal Name",
           "FIN_Financial_Account_ID": "Account",
           "PO_Financial_Account_ID": "Account",
           "EM_Etgo_Web": "Website"
         },
         "es_ES": {
+          "Name": "Razón Social",
           "EM_Etgo_Identifier": "Identificador",
           "FIN_Financial_Account_ID": "Cuenta",
           "PO_Financial_Account_ID": "Cuenta",
@@ -9792,11 +9796,13 @@
     },
     "labelOverrides": {
       "en_US": {
+        "Name": "Legal Name",
         "FIN_Financial_Account_ID": "Account",
         "PO_Financial_Account_ID": "Account",
         "EM_Etgo_Web": "Website"
       },
       "es_ES": {
+        "Name": "Razón Social",
         "EM_Etgo_Identifier": "Identificador",
         "FIN_Financial_Account_ID": "Cuenta",
         "PO_Financial_Account_ID": "Cuenta",
