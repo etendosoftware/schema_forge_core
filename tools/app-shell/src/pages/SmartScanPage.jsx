@@ -70,7 +70,7 @@ export default function SmartScanPage() {
   useSetPageMeta({
     title: translatedTitle,
     breadcrumb,
-    onAddToFavorites: () => toggleFavorite(favKey, translatedTitle),
+    onAddToFavorites: () => toggleFavorite(favKey, 'Smart Scan'),
     isFavorite: isFavorite(favKey),
   }, [isFavorite(favKey)]);
 

@@ -1,8 +1,7 @@
-import { STATUS_BADGE } from './constants.jsx';
 import { formatAmount } from './helpers.js';
+import { StatusTag } from '@/components/ui/status-tag';
 
 export default function DocChip({ icon, iconColor, title, amount, currency, status, statusLabel, onClick }) {
-  const badgeClass = STATUS_BADGE[status] || 'bg-gray-50 text-gray-600 border-gray-200';
   const Tag = onClick ? 'button' : 'span';
   return (
     <Tag
@@ -16,11 +15,7 @@ export default function DocChip({ icon, iconColor, title, amount, currency, stat
       {amount != null && (
         <span className="text-xs text-muted-foreground tabular-nums">{formatAmount(amount, currency)}</span>
       )}
-      {status && (
-        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${badgeClass}`} style={{ borderWidth: '0.5px' }}>
-          {statusLabel || status}
-        </span>
-      )}
+      {status && <StatusTag status={status} label={statusLabel || status} />}
     </Tag>
   );
 }

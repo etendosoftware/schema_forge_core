@@ -288,7 +288,7 @@ export default function QuickPurchaseOrderPage({ apiBaseUrl }) {
   useSetPageMeta({
     title: translatedTitle,
     breadcrumb,
-    onAddToFavorites: () => toggleFavorite(favKey, translatedTitle),
+    onAddToFavorites: () => toggleFavorite(favKey, 'Quick Purchase Order'),
     isFavorite: isFavorite(favKey),
   }, [isFavorite(favKey)]);
 
