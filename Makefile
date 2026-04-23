@@ -2,8 +2,9 @@
 
 # --- Testing ---
 
-test: ## Run all CLI tests
+test: ## Run all CLI tests and app-shell lib tests
 	cd cli && node --test 'test/*.test.js'
+	node --test tools/app-shell/src/lib/__tests__/*.test.js
 
 test-frontend: ## Run only frontend generator tests
 	cd cli && node --test 'test/generate-frontend.test.js'
