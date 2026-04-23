@@ -1,20 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { StatusTag } from '@/components/ui/status-tag';
 
 const STATUS_LABELS = {
   CO: 'Completed', DR: 'Draft', VO: 'Voided', CL: 'Closed',
   RPPC: 'Received', RPR: 'Received', PWNC: 'Pending', RDNC: 'Deposited',
-};
-
-const STATUS_BADGE = {
-  CO: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  CL: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  RPPC: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  RPR: 'bg-blue-50 text-blue-700 border-blue-200',
-  RDNC: 'bg-blue-50 text-blue-700 border-blue-200',
-  DR: 'bg-gray-50 text-gray-600 border-gray-200',
-  PWNC: 'bg-amber-50 text-amber-700 border-amber-200',
-  VO: 'bg-red-50 text-red-700 border-red-200',
 };
 
 const CHIP_ICONS = {
@@ -141,7 +131,6 @@ function formatAmount(val, currency) {
 }
 
 function DocChip({ icon, iconColor, title, amount, currency, status, onClick }) {
-  const badgeClass = STATUS_BADGE[status] || 'bg-gray-50 text-gray-600 border-gray-200';
   return (
     <button
       type="button"
@@ -154,11 +143,7 @@ function DocChip({ icon, iconColor, title, amount, currency, status, onClick }) 
       {amount != null && (
         <span className="text-xs text-muted-foreground tabular-nums">{formatAmount(amount, currency)}</span>
       )}
-      {status && (
-        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${badgeClass}`} style={{ borderWidth: '0.5px' }}>
-          {STATUS_LABELS[status] || status}
-        </span>
-      )}
+      {status && <StatusTag status={status} label={STATUS_LABELS[status] || status} />}
     </button>
   );
 }

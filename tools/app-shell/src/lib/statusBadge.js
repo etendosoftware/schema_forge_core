@@ -1,4 +1,26 @@
 /**
+ * Map a status code to one of the 4 Figma semantic tones.
+ * Used by StatusTag (grid). Does NOT affect DetailView.
+ */
+export function getStatusTone(status) {
+  const s = String(status ?? '').toLowerCase();
+  if (
+    s === 'co' || s === 'pa' || s === 'rppc' || s === 'ppm' || s === 'pwnc' || s === 'rdnc' ||
+    s === 'completed' || s === 'complete' || s === 'confirmed' || s === 'booked' ||
+    s === 'paid' || s === 'true' || s === 'processed'
+  ) return 'success';
+  if (
+    s === 'ip' || s === 'ue' || s === 'rpae' || s === 'rpap' || s === 'rpr' ||
+    s === 'in process' || s === 'under evaluation'
+  ) return 'warning';
+  if (
+    s === 'vo' || s === 'ca' || s === 'rpvoid' || s === 'rpvd' ||
+    s === 'voided' || s === 'cancelled' || s === 'void'
+  ) return 'destructive';
+  return 'neutral';
+}
+
+/**
  * Map a document status string to Badge component props.
  * Shared between DataTable and DetailView.
  */
@@ -70,7 +92,7 @@ export function getStatusGridPillClass(status) {
   return 'bg-gray-100 text-gray-600 border border-gray-300';
 }
 
-export function statusLabel(status, dictionary) {
+export function statusLabel(status, dictionary, translate) {
   // 1. DB-sourced translation from AD_Ref_List_Trl (via extract-labels.js)
   if (dictionary?.statuses?.[status]?.label) return dictionary.statuses[status].label;
 
@@ -90,6 +112,12 @@ export function statusLabel(status, dictionary) {
   if (!key) return status;
   if (dictionary?.genericLabels?.[key]) return dictionary.genericLabels[key];
 
-  // 3. Last resort: humanize the key name
+  // 3. i18n translate function (e.g. ui() from useUI hook)
+  if (translate) {
+    const translated = translate(key);
+    if (translated && translated !== key) return translated;
+  }
+
+  // 4. Last resort: humanize the key name
   return key.replace('status', '').replace(/([A-Z])/g, ' $1').trim();
 }

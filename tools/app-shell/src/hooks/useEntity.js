@@ -193,7 +193,7 @@ function applyContactsRequiredFields(entity, payload, source = {}) {
 
   if (entity === 'businessPartner' || entity === 'bpartner') {
     if (!payload.name && source.name) payload.name = source.name;
-    if (!payload.searchKey && source.searchKey) payload.searchKey = source.searchKey;
+    if (!payload.searchKey) payload.searchKey = source.searchKey || source.name || payload.name;
   }
 
   return payload;
@@ -260,6 +260,11 @@ export function useEntity(entity, childEntity, {
   const [sortColumn, setSortColumn] = useState('creationDate');
   const [sortDirection, setSortDirection] = useState('desc');
   const startRowRef = useRef(0);
+  const sampleRowRef = useRef(null);
+  // Keys returned by the backend /defaults endpoint for the current new-record session.
+  const backendDefaultKeysRef = useRef(new Set());
+  // Fields explicitly changed by the user (via handleChange) in the current new-record session.
+  const userChangedKeysRef = useRef(new Set());
 
   const headers = buildHeaders(token);
 
@@ -422,6 +427,8 @@ export function useEntity(entity, childEntity, {
   }, [fetchChildren]);
 
   const handleNew = useCallback(async () => {
+    backendDefaultKeysRef.current = new Set();
+    userChangedKeysRef.current = new Set();
     setSelected(null);
     setEditing({}); // Start with empty so UI is responsive
     try {
@@ -433,6 +440,7 @@ export function useEntity(entity, childEntity, {
           // - Dates: dd-MM-yyyy → yyyy-MM-dd (HTML date input)
           // - Booleans: "Y" → true, "N" → false (NEO defaults returns strings, not booleans)
           const { id: _discardId, ...rest } = data.defaults;
+          backendDefaultKeysRef.current = new Set(Object.keys(rest));
           const normalized = { ...rest };
           for (const [key, val] of Object.entries(normalized)) {
             if (typeof val === 'string' && /^\d{2}-\d{2}-\d{4}$/.test(val)) {
@@ -463,6 +471,7 @@ export function useEntity(entity, childEntity, {
   }, [apiBaseUrl, entity, token, headers]);
 
   const handleChange = useCallback((field, value) => {
+    userChangedKeysRef.current.add(field);
     setEditing(prev => ({ ...prev, [field]: value }));
   }, []);
 
@@ -493,6 +502,20 @@ export function useEntity(entity, childEntity, {
       for (const [key, value] of Object.entries(editing)) {
         if (key === 'id' || key.includes('$_identifier') || /^[a-zA-Z]+_[A-Z]{2,4}$/.test(key)) continue;
         if (value === '' || value == null) continue;
+
+        // Skip NEO sequence placeholders (e.g. "<10000000>") — these are display hints
+        // for auto-generated values and must not be sent to the backend on create.
+        if (typeof value === 'string' && /^<\d+>$/.test(value)) continue;
+
+        // Skip short numeric legacy FK IDs that came from backend defaults and were not
+        // explicitly changed by the user (e.g. language: "181"). These are resolved by the
+        // backend automatically; sending them as raw integers causes SmartClient import errors.
+        if (
+          typeof value === 'string'
+          && /^\d{3,9}$/.test(value)
+          && backendDefaultKeysRef.current.has(key)
+          && !userChangedKeysRef.current.has(key)
+        ) continue;
 
         // Contacts (Business Partner): keep create aligned with Classic behavior.
         // Billing preference fields are configured only after header creation.
@@ -586,7 +609,6 @@ export function useEntity(entity, childEntity, {
       // Include parentId in the body — the backend resolves it to the correct FK field name
       // and uses it to load parent record values for @FieldName@ defaults (generic, no hardcoding).
       body.parentId = selected.id;
-      console.log('[POST body]', JSON.stringify(body));
       const res = await fetch(`${apiBaseUrl}/${childEntity}`, {
         method: 'POST',
         headers,

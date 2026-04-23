@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useUI } from '@/i18n';
+import { StatusTag } from '@/components/ui/status-tag';
 
 function fmtAmount(amount, currencyId) {
   const n = typeof amount === 'string' ? Number.parseFloat(amount) : (amount ?? 0);
@@ -25,12 +26,12 @@ function fmtInvoiceDate(raw) {
 }
 
 const STATUS_MAP = {
-  RPPC: { labelKey: 'statusCleared', dot: '#059669', bg: '#d1fae5', color: '#065f46' },
-  RPR:  { labelKey: 'statusReceived', dot: '#059669', bg: '#d1fae5', color: '#065f46' },
-  RPAP: { labelKey: 'statusAwaiting', dot: '#d97706', bg: '#fef3c7', color: '#92400e' },
-  RDNC: { labelKey: 'statusDeposited', dot: '#2563eb', bg: '#dbeafe', color: '#1e40af' },
-  DR:   { labelKey: 'statusDraft', dot: '#9ca3af', bg: '#f3f4f6', color: '#374151' },
-  RPVD: { labelKey: 'statusVoided', dot: '#9ca3af', bg: '#f3f4f6', color: '#6b7280' },
+  RPPC: { labelKey: 'statusCleared' },
+  RPR:  { labelKey: 'statusReceived' },
+  RPAP: { labelKey: 'statusAwaiting' },
+  RDNC: { labelKey: 'statusDeposited' },
+  DR:   { labelKey: 'statusDraft' },
+  RPVD: { labelKey: 'statusVoided' },
 };
 
 function fmtActivityDate(raw) {
@@ -195,10 +196,7 @@ export default function PaymentBottomPanel({
           {documentNo && <div style={{ fontSize: 13, fontWeight: 500, color: '#6B7280', marginBottom: 2 }}>#{documentNo}</div>}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 32, fontWeight: 500, color: '#111827', lineHeight: 1 }}>{fmtAmount(data?.amount, currency)}</span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 9999, backgroundColor: statusInfo.bg, color: statusInfo.color, fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap' }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: statusInfo.dot }} />
-              {ui(statusInfo.labelKey)}
-            </span>
+            <StatusTag status={status} label={ui(statusInfo.labelKey)} />
           </div>
           <div style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>
             {[currency, paymentMethod].filter(Boolean).join(' \u00b7 ')}

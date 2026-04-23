@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button.jsx';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { useEntity } from '@/hooks/useEntity';
 import { useMenuLabel, useLabel, useUI } from '@/i18n';
-import { Search, ArrowUpDown, SlidersHorizontal, ChevronDown, MoreVertical, Plus, CalendarDays, Link2, Sparkles, Bell, Mic, Printer, LayoutGrid, LayoutList, RefreshCw, Eye } from 'lucide-react';
-import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
-import { UserAvatarButton } from '@/components/UserAvatarButton.jsx';
+import { useSetPageMeta } from '@/components/layout/PageMetaContext';
+import { useFavorites } from '@/components/layout/FavoritesContext';
+import { Search, ArrowUpDown, SlidersHorizontal, ChevronDown, MoreVertical, Plus, CalendarDays, Link2, Printer, LayoutGrid, LayoutList, RefreshCw, Eye, Copy } from 'lucide-react';
 import ReportDrawer from './ReportDrawer.jsx';
 import DocumentPrintDrawer, { printDocuments } from './DocumentPrintDrawer.jsx';
 import {
@@ -87,6 +87,19 @@ export function ListView({
   const t = useLabel();
   const ui = useUI();
   const label = tMenu(entityLabel) || entityLabel || entity;
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const favKey = windowName || entity || '';
+  const favActive = isFavorite(favKey);
+  const fullBreadcrumb = breadcrumb
+    ? breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')
+    : label;
+  useSetPageMeta({
+    title: label,
+    breadcrumb: fullBreadcrumb,
+    recordCount: hook.items.length,
+    onAddToFavorites: favKey ? () => toggleFavorite(favKey, entityLabel || entity) : undefined,
+    isFavorite: favActive,
+  }, [favActive, hook.items.length]);
   const [selectedRows, setSelectedRows] = useState([]);
   const [showSortPopover, setShowSortPopover] = useState(false);
   const [showReport, setShowReport] = useState(false);
@@ -156,63 +169,7 @@ export function ListView({
   }, [hook.hasMore, hook.loadingMore, hook.loadMore]);
 
   return (
-    <div className="h-full flex flex-col" data-testid="list-view">
-      {/* Top bar area (gray background, inherited from parent) */}
-      <div className="px-6 pt-3 pb-3">
-        {/* Row 1: Title + Global search + action icons */}
-        <div className="flex items-center gap-4">
-          {/* Left: title + count + menu */}
-          <div className="shrink-0">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-foreground">{label}</h1>
-              {!hideEyeCount && !hook.loading && (
-                <span className="inline-flex items-center justify-center h-6 min-w-[1.5rem] px-2 text-xs font-medium text-muted-foreground bg-white/60 rounded-full">
-                  {hook.items.length}
-                </span>
-              )}
-              {!hideMoreMenu && (
-                <button className="text-muted-foreground hover:text-foreground">
-                  <MoreVertical className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-            {breadcrumb && (
-              <p className="text-sm text-muted-foreground mt-0.5">{breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')}</p>
-            )}
-          </div>
-
-          {/* Center: global search */}
-          <div className="flex-1 flex justify-center">
-            <div className="relative w-full max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder={ui('searchPlaceholder')}
-                readOnly
-                tabIndex={-1}
-                className="w-full h-9 rounded-lg border border-border/50 bg-white/60 pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors cursor-default"
-              />
-              <Mic className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
-            </div>
-          </div>
-
-          {/* Right: action icons */}
-          <div className="flex items-center gap-1 shrink-0">
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-              <Sparkles className="h-4 w-4" />
-            </button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-              <Plus className="h-4 w-4" />
-            </button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-              <Bell className="h-4 w-4" />
-            </button>
-            <LocaleSwitcher />
-            <UserAvatarButton />
-          </div>
-        </div>
-      </div>
-
+    <div className="flex-1 min-h-0 flex flex-col" data-testid="list-view">
       {/* White content card with rounded top-left corner */}
       <div className="flex-1 flex flex-col bg-white rounded-tl-2xl overflow-hidden min-h-0">
         {/* Selection bar or filter bar */}
@@ -239,6 +196,17 @@ export function ListView({
                 <Printer className="h-3.5 w-3.5" />
                 {ui('print')} ({selectedRows.length})
               </Button>
+              {onCloneRow && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => onCloneRow(selectedRows)}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  {ui('cloneOrderBtn')} ({selectedRows.length})
+                </Button>
+              )}
               {bulkActions && bulkActions({ selectedRows, clearSelection: () => setSelectedRows([]), token, apiBaseUrl, windowName, api })}
               <Button variant="outline" size="sm" className="text-muted-foreground" onClick={() => setSelectedRows([])}>
                 {ui('clear')}

@@ -88,7 +88,7 @@
           "visibility": "discarded"
         },
         "priceList": {
-          "section": "collapsed",
+          "section": "principal",
           "reference": "PriceList",
           "inputMode": "selector",
           "readOnlyLogic": "@Processed@='Y'"
@@ -176,7 +176,7 @@
           "grid": true
         },
         "description": {
-          "section": "collapsed"
+          "form": false
         },
         "salesOrder": {
           "section": "other",
@@ -331,15 +331,15 @@
           "displayLogic": null
         },
         "lineNetAmount": {
-          "visibility": "readOnly",
-          "grid": true,
+          "visibility": "system",
+          "grid": false,
           "section": "principal",
           "readOnlyLogic": null
         },
         "tax": {
           "grid": true,
           "section": "principal",
-          "inputMode": "selector",
+          "inputMode": "search",
           "readOnlyLogic": null
         },
         "taxableAmount": {
@@ -392,8 +392,11 @@
         },
         "grossAmount": {
           "visibility": "readOnly",
-          "form": false,
-          "grid": false
+          "grid": true,
+          "gridOrder": 6,
+          "form": true,
+          "section": "principal",
+          "displayLogic": null
         },
         "grossListPrice": {
           "visibility": "discarded",

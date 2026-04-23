@@ -781,7 +781,7 @@ function CloneModal({ orderId, data, apiBaseUrl, headers, onClose, onCloned }) {
     setLoading(true);
     setError(null);
     try {
-      const res  = await fetch(`${apiBaseUrl}/header/${orderId}/action/cloneOrder`, { method: 'POST', headers });
+      const res  = await fetch(`${apiBaseUrl}/header/${orderId}/action/cloneRecord`, { method: 'POST', headers });
       const json = await res.json();
       if (!res.ok) {
         setError(json?.response?.error?.message || ui('cloneOrderError'));

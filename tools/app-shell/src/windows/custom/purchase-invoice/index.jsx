@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
 import { useUI } from '@/i18n';
@@ -9,6 +10,10 @@ import InvoicePreviewModal from './InvoicePreviewModal.jsx';
 import PurchaseInvoiceTopbar from './PurchaseInvoiceTopbar.jsx';
 import PurchaseInvoiceBottomPanel from './PurchaseInvoiceBottomPanel.jsx';
 import RelatedDocuments from './RelatedDocuments.jsx';
+import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
+import CreateContactModal from '@/components/contract-ui/CreateContactModal';
+import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
+import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 
 /* eslint-disable react/prop-types */
 
@@ -50,6 +55,9 @@ export default function PurchaseInvoiceWindow(props) {
   const ui = useUI();
   const [savedRecord, setSavedRecord] = useState(null);
   const [previewRow, setPreviewRow] = useState(null);
+  const [cloneTargets, setCloneTargets] = useState(null);
+  const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
+    useCreateContactModal({ apiBaseUrl, token });
   const breadcrumb = 'Purchases / Purchase Invoice';
   previewRowSetterRef = setPreviewRow;
 
@@ -75,20 +83,36 @@ export default function PurchaseInvoiceWindow(props) {
 
   if (recordId) {
     return (
-      <HeaderPage
-        {...props}
-        DetailTable={InvoiceLineTableCustom}
-        secondaryTabs={[]}
-        summary={summary}
-        extraBadges={[]}
-        topbarRight={PurchaseInvoiceTopbar}
-        bottomSection={PurchaseInvoiceBottomPanel}
-        notesField="description"
-        customTabs={customTabs}
-        breadcrumb={breadcrumb}
-        onAfterSave={true}
-        addLineGuard={(d) => !!d?.businessPartner}
-      />
+      <CreateContactContext.Provider value={createContactCtxValue}>
+        <HeaderPage
+          {...props}
+          DetailTable={InvoiceLineTableCustom}
+          secondaryTabs={[]}
+          summary={summary}
+          extraBadges={[]}
+          topbarRight={PurchaseInvoiceTopbar}
+          bottomSection={PurchaseInvoiceBottomPanel}
+          notesField="description"
+          customTabs={customTabs}
+          breadcrumb={breadcrumb}
+          onAfterSave={true}
+          addLineGuard={(d) => !!d?.businessPartner}
+        />
+        {createContactState && createPortal(
+          <CreateContactModal
+            bpApiBaseUrl={bpApiBaseUrl}
+            headers={headers}
+            initialQuery={createContactState.query}
+            documentType="purchase"
+            onClose={() => setCreateContactState(null)}
+            onCreated={(newBP) => {
+              createContactState.onSelect({ id: newBP.id, name: newBP.name });
+              setCreateContactState(null);
+            }}
+          />,
+          document.body,
+        )}
+      </CreateContactContext.Provider>
     );
   }
 
@@ -113,7 +137,20 @@ export default function PurchaseInvoiceWindow(props) {
         initialColumnFilters={initialColumnFilters}
         quickFilters={INVOICE_QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}
+        onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
       />
+      {cloneTargets && createPortal(
+        <CloneOrderModal
+          records={cloneTargets}
+          apiBaseUrl={apiBaseUrl}
+          headers={headers}
+          routePrefix="/purchase-invoice/"
+          errorKey="cloneInvoiceError"
+          processingKey="invoiceProcessing"
+          onClose={() => setCloneTargets(null)}
+        />,
+        document.body,
+      )}
       {(previewRow || effectiveRecord) && (
         <InvoicePreviewModal
           invoice={previewRow || effectiveRecord}

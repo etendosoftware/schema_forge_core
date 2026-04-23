@@ -238,7 +238,8 @@
         "cashVAT": {
           "visibility": "discarded"
         }
-      }
+      },
+      "javaQualifier": "salesQuotationHeaderHandler"
     },
     "lines": {
       "javaQualifier": "orderLineHandler",
@@ -250,36 +251,49 @@
         "product": {
           "grid": true,
           "searchable": true,
-          "inputMode": "search"
+          "inputMode": "search",
+          "order": 1,
+          "gridOrder": 1
         },
         "orderedQuantity": {
           "grid": true,
-          "inputMode": "number"
+          "inputMode": "number",
+          "order": 3,
+          "gridOrder": 3
         },
         "uOM": {
           "visibility": "system"
         },
         "unitPrice": {
           "grid": true,
-          "inputMode": "number"
+          "form": true,
+          "inputMode": "number",
+          "order": 4,
+          "gridOrder": 4
         },
         "discount": {
           "grid": true,
-          "inputMode": "number"
+          "inputMode": "number",
+          "order": 5,
+          "gridOrder": 5
         },
         "lineNetAmount": {
-          "visibility": "readOnly",
-          "grid": true,
-          "inputMode": "number"
+          "grid": false,
+          "form": false
         },
         "tax": {
           "grid": true,
-          "inputMode": "selector"
+          "form": true,
+          "inputMode": "search",
+          "order": 6,
+          "gridOrder": 6
         },
         "description": {
-          "grid": false,
+          "grid": true,
           "form": true,
-          "inputMode": "textarea"
+          "inputMode": "textarea",
+          "order": 2,
+          "gridOrder": 2
         },
         "client": {
           "visibility": "system"
@@ -339,7 +353,11 @@
           "visibility": "discarded"
         },
         "lineGrossAmount": {
-          "visibility": "discarded"
+          "grid": true,
+          "form": true,
+          "section": "principal",
+          "order": 7,
+          "gridOrder": 7
         },
         "editLineNetAmount": {
           "visibility": "discarded"

@@ -51,17 +51,16 @@ const draftMode = null;
 const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
+    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
     { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity', defaultValue: 1 },
     { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
-    { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', required: true, label: 'Line Net Amount' },
     { key: 'tax', column: 'C_Tax_ID', type: 'search', required: true, label: 'Tax', reference: 'Tax', inputMode: 'search' },
-    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
     { key: 'discount', column: 'Discount', type: 'number', label: 'Discount' },
   ],
   hidden: [
-
+    { key: 'grossUnitPrice', value: '0' },
   ],
 };
 // @sf-generated-end addLineFields:lines
@@ -263,19 +262,19 @@ const api = {
     },
     {
       "entity": "header",
-      "field": "processNow",
-      "column": "Processing",
-      "url": "/sws/neo/sales-order/header/{id}/action/processNow",
-      "processId": "104",
-      "processType": "classic"
-    },
-    {
-      "entity": "header",
       "field": "posted",
       "column": "Posted",
       "url": "/sws/neo/sales-order/header/{id}/action/posted",
       "processId": "57496FB9CF9E4E8F847224017941570E",
       "processType": "obuiapp"
+    },
+    {
+      "entity": "header",
+      "field": "processNow",
+      "column": "Processing",
+      "url": "/sws/neo/sales-order/header/{id}/action/processNow",
+      "processId": "104",
+      "processType": "classic"
     },
     {
       "entity": "header",
@@ -390,7 +389,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         topbarRight={OrderCreateInvoice}
         topbarExtra={OrderDraftChips}
         menuActions={({ status }) => [
-          { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
         ]}
         salesTheme

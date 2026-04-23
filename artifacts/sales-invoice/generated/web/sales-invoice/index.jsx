@@ -109,7 +109,7 @@ const api = {
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
-      "inputMode": "selector",
+      "inputMode": "search",
       "url": "/sws/neo/sales-invoice/lines/selectors/tax"
     },
     {

@@ -6,12 +6,28 @@ import ContactTable from './ContactTable';
 import ContactForm from './ContactForm';
 import BankAccountTable from './BankAccountTable';
 import BankAccountForm from './BankAccountForm';
+import LocationAddressTable from './LocationAddressTable';
+import LocationEditorModal from '@/windows/custom/contacts/LocationEditorModal';
 import ContactsFinancialPanel from '@/windows/custom/contacts/ContactsFinancialPanel';
 import catalogs from './mockCatalogs';
 
-import BusinessPartnerSidebar from '@/windows/custom/businessPartner/BusinessPartnerSidebar';
+import BusinessPartnerSidebar from '@/windows/custom/contacts/BusinessPartnerSidebar';
 
 const breadcrumb = 'Contact';
+
+const labelOverrides = {
+  "en_US": {
+    "FIN_Financial_Account_ID": "Account",
+    "PO_Financial_Account_ID": "Account",
+    "EM_Etgo_Web": "Website"
+  },
+  "es_ES": {
+    "EM_Etgo_Identifier": "Identificador",
+    "FIN_Financial_Account_ID": "Cuenta",
+    "PO_Financial_Account_ID": "Cuenta",
+    "EM_Etgo_Web": "Página web"
+  }
+};
 
 
 // @sf-generated-start summary:businessPartner
@@ -52,7 +68,6 @@ const api = {
       "listUrl": "/sws/neo/contacts/businessPartner",
       "detailUrl": "/sws/neo/contacts/businessPartner/{id}",
       "supportedFilters": [
-        "searchKey",
         "name"
       ]
     },
@@ -606,6 +621,22 @@ const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "contact"
+  },
+  "labelOverrides": {
+    "en_US": {
+      "FIN_Financial_Account_ID": "Account",
+      "PO_Financial_Account_ID": "Account",
+      "EM_Etgo_Web": "Website"
+    },
+    "es_ES": {
+      "EM_Etgo_Identifier": "Identificador",
+      "FIN_Financial_Account_ID": "Cuenta",
+      "PO_Financial_Account_ID": "Cuenta",
+      "EM_Etgo_Web": "Página web"
+    }
   }
 };
 
@@ -640,6 +671,7 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
           { key: 'accountNo', column: 'AccountNo', type: 'text', label: 'Generic Account No.' },
           { key: 'iBAN', column: 'Iban', type: 'text', label: 'IBAN' },
           ], derived: [], hidden: [] }, requireSavedRecord: true },
+          { key: 'locationAddress', label: 'Location', Table: LocationAddressTable, customAddModal: LocationEditorModal, requireSavedRecord: true },
         ]}
         primaryTabs={[
           { key: 'general', label: 'General' },
@@ -647,6 +679,7 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
         ]}
         hidePrint
         hideMoreMenu
+        labelOverrides={labelOverrides}
         {...props}
         sidebarContent={(data) => (
           <BusinessPartnerSidebar
@@ -673,6 +706,7 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
       quickFilters={[{"label":"All","filter":null},{"label":"Customers","filter":"criteria=%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"},{"label":"Vendors","filter":"criteria=%5B%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"}]}
       hidePrint
       hideMoreMenu
+      labelOverrides={labelOverrides}
       {...props}
     />
   );
