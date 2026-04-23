@@ -64,7 +64,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:quotationLine
 
-const api = {
+export const api = {
   "specName": "sales-quotation",
   "baseUrl": "/sws/neo/sales-quotation",
   "crud": {
@@ -131,6 +131,14 @@ const api = {
       "reference": "Paymentmethod",
       "inputMode": "selector",
       "url": "/sws/neo/sales-quotation/quotation/selectors/paymentMethod"
+    },
+    {
+      "entity": "quotation",
+      "field": "paymentTerms",
+      "column": "C_PaymentTerm_ID",
+      "reference": "PaymentTerm",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/paymentTerms"
     },
     {
       "entity": "quotation",
@@ -222,14 +230,6 @@ const api = {
     },
     {
       "entity": "quotation",
-      "field": "generateTemplate",
-      "column": "Generatetemplate",
-      "url": "/sws/neo/sales-quotation/quotation/{id}/action/generateTemplate",
-      "processId": "800022",
-      "processType": "classic"
-    },
-    {
-      "entity": "quotation",
       "field": "processNow",
       "column": "Processing",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/processNow",
@@ -243,6 +243,14 @@ const api = {
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/posted",
       "processId": "57496FB9CF9E4E8F847224017941570E",
       "processType": "obuiapp"
+    },
+    {
+      "entity": "quotation",
+      "field": "generateTemplate",
+      "column": "Generatetemplate",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/generateTemplate",
+      "processId": "800022",
+      "processType": "classic"
     },
     {
       "entity": "quotation",
@@ -381,7 +389,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         topbarRight={QuotationTopbarActions}
         menuActions={({ status }) => [
           { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
-          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
+          { key: 'cancel', label: 'Cancel', destructive: true, visible: ["CO","UE"].includes(status), onClick: () => {}, }
         ]}
         salesTheme
         labelOverrides={labelOverrides}

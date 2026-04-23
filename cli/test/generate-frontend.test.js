@@ -581,6 +581,33 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes("inputMode: 'selector'"));
   });
 
+  it('emits forceCalloutFields as JSON array when declared on entry field', () => {
+    const contract = {
+      ...masterDetailContract,
+      frontendContract: {
+        ...masterDetailContract.frontendContract,
+        entities: {
+          ...masterDetailContract.frontendContract.entities,
+          orderLine: {
+            ...masterDetailContract.frontendContract.entities.orderLine,
+            fields: masterDetailContract.frontendContract.entities.orderLine.fields.map(f =>
+              f.name === 'product'
+                ? { ...f, forceCalloutFields: ['quantity', 'tax'] }
+                : f
+            ),
+          },
+        },
+      },
+    };
+    const code = generatePageComponent('order', 'orderLine', contract);
+    assert.ok(code.includes('forceCalloutFields: ["quantity","tax"]'), `expected forceCalloutFields in generated code, got:\n${code}`);
+  });
+
+  it('omits forceCalloutFields when not declared on entry field', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(!code.includes('forceCalloutFields'));
+  });
+
   it('passes config props to MasterDetailPage', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
     assert.ok(code.includes('entity="order"'));
@@ -1054,10 +1081,10 @@ describe('generatePageComponent - apiPrediction', () => {
 });
 
 describe('generateIndexComponent - apiPrediction', () => {
-  it('emits api const in master-detail index when apiPrediction present', () => {
+  it('imports api from Page component in master-detail index when apiPrediction present', () => {
     const code = generateIndexComponent('order', 'orderLine', contractWithApi);
-    assert.ok(code.includes('const api ='), 'should declare api const');
-    assert.ok(code.includes('"specName": "sales-order"'), 'should include specName');
+    assert.ok(code.includes("import OrderPage, { api } from './OrderPage'"), 'should import api from Page');
+    assert.ok(!code.includes('const api ='), 'should not redefine api const');
   });
 
   it('passes api prop in master-detail index', () => {
@@ -1065,10 +1092,10 @@ describe('generateIndexComponent - apiPrediction', () => {
     assert.ok(code.includes('api={api}'), 'should pass api prop to Page component');
   });
 
-  it('emits api const in single-entity index when apiPrediction present', () => {
+  it('imports api from Page component in single-entity index when apiPrediction present', () => {
     const code = generateIndexComponent('item', null, singleEntityContractWithApi);
-    assert.ok(code.includes('const api ='), 'should declare api const');
-    assert.ok(code.includes('"specName": "simple-item"'), 'should include specName');
+    assert.ok(code.includes("import ItemPage, { api } from './ItemPage'"), 'should import api from Page');
+    assert.ok(!code.includes('const api ='), 'should not redefine api const');
   });
 
   it('passes api prop in single-entity index', () => {

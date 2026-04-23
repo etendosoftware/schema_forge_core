@@ -583,7 +583,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       const numDv = Number(rawDv);
       defaultValuePart = `, defaultValue: ${(!isNaN(numDv) && String(rawDv).trim() !== '') ? numDv : `'${String(rawDv).replace(/'/g, "\\'")}'`}`;
     }
-    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart} },`;
+    const forceCalloutFieldsPart = Array.isArray(f.forceCalloutFields) && f.forceCalloutFields.length > 0
+      ? `, forceCalloutFields: ${JSON.stringify(f.forceCalloutFields)}`
+      : '';
+    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart} },`;
   }).join('\n');
 
   const derivedArray = derivedFields.map(f => {
@@ -613,7 +616,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // API prediction config
   const apiPrediction = contract.apiPrediction;
   const apiBlock = apiPrediction
-    ? `\nconst api = ${JSON.stringify(apiPrediction, null, 2)};\n`
+    ? `\nexport const api = ${JSON.stringify(apiPrediction, null, 2)};\n`
     : '';
   const apiProp = apiPrediction ? '\n      api={api}' : '';
 
@@ -1125,14 +1128,12 @@ export function generateIndexComponent(headerEntity, detailEntity, contract) {
   const windowName = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
   const apiPrediction = contract?.apiPrediction;
 
-  const apiBlock = apiPrediction
-    ? `\nconst api = ${JSON.stringify(apiPrediction, null, 2)};\n`
-    : '';
   const apiProp = apiPrediction ? ' api={api}' : '';
-  return `import ${headerName}Page from './${headerName}Page';
+  const apiImport = apiPrediction ? `, { api }` : '';
+  return `import ${headerName}Page${apiImport} from './${headerName}Page';
 
 const windowMeta = { category: '${category}', name: '${windowName}' };
-${apiBlock}
+
 ${MARKERS.GENERATED_START('component:App')}
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
   return <${headerName}Page windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta}${apiProp} {...rest} />;
