@@ -162,11 +162,16 @@ export function generateTableComponent(entityName, contract) {
     const badgePart = (f.badge && !f.cellType) ? ', badge: true' : '';
     const badgeLabelsPart = f.badgeLabels ? `, badgeLabels: ${JSON.stringify(f.badgeLabels)}` : '';
     const badgeColorsPart = f.badgeColors ? `, badgeColors: ${JSON.stringify(f.badgeColors)}` : '';
+    const badgeVariantsPart = f.badgeVariants ? `, badgeVariants: ${JSON.stringify(f.badgeVariants)}` : '';
+    const enumVariantsPart = f.enumVariants ? `, enumVariants: ${JSON.stringify(f.enumVariants)}` : '';
     const labelsPart = f.labels ? `, labels: ${JSON.stringify(f.labels)}` : '';
     const summablePart = f.summable ? ', summable: true' : '';
     const displayPart = f.display ? `, display: '${f.display}'` : '';
-    const renderPart = f.cellType === 'depreciationProgress' ? ', render: renderDepreciationProgress' : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${summablePart}${displayPart}${renderPart} },`;
+    let renderPart = '';
+    if (f.cellType === 'depreciationProgress') renderPart = ', render: renderDepreciationProgress';
+    else if (f.cellType === 'taxRate') renderPart = ', render: renderTaxRate';
+    else if (f.cellType === 'taxScope') renderPart = ', render: renderTaxScope';
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -190,8 +195,34 @@ function renderDepreciationProgress(row) {
 }
 ` : '';
 
+  const taxRateHelper = neededCellTypes.has('taxRate') ? `
+function renderTaxRate(row) {
+  const val = row?.rate;
+  if (val == null) return '';
+  return <Tag variant="green" label={\`+\${val} %\`} />;
+}
+` : '';
+
+  const taxScopeHelper = neededCellTypes.has('taxScope') ? `
+function renderTaxScope(row) {
+  const value = row?.applicableTo;
+  const showSales    = value === 'B' || value === 'S';
+  const showPurchase = value === 'B' || value === 'P';
+  if (!showSales && !showPurchase) return value ?? '';
+  return (
+    <span className="inline-flex items-center gap-1">
+      {showSales    && <Tag variant="blue"   label="Sales" />}
+      {showPurchase && <Tag variant="purple" label="Purchase" />}
+    </span>
+  );
+}
+` : '';
+
+  const needsTagImport = neededCellTypes.has('taxRate') || neededCellTypes.has('taxScope');
+  const tagImport = needsTagImport ? `import { Tag } from '@/components/ui/tag';\n` : '';
+
   return `import { DataTable } from '@/components/contract-ui';
-${depreciationProgressHelper}
+${tagImport}${depreciationProgressHelper}${taxRateHelper}${taxScopeHelper}
 ${MARKERS.GENERATED_START(`columns:${entityName}`)}
 const columns = [
 ${columnsArray}
