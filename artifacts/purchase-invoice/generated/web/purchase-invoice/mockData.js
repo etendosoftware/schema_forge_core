@@ -348,6 +348,7 @@ export const lines = [
     "invoicedQuantity": 402,
     "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
+    "lineNetAmount": 38907,
     "grossAmount": 38907,
     "description": "Standard order for Q1 delivery",
     "tax": "VAT 21%",
@@ -371,6 +372,7 @@ export const lines = [
     "invoicedQuantity": 54,
     "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
+    "lineNetAmount": 9306,
     "grossAmount": 9306,
     "description": "Rush order - priority shipping required",
     "tax": "VAT 10%",
@@ -394,6 +396,7 @@ export const lines = [
     "invoicedQuantity": 150,
     "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
+    "lineNetAmount": 11544,
     "grossAmount": 11544,
     "description": "Bulk purchase for warehouse restocking",
     "tax": "VAT 0%",
@@ -417,6 +420,7 @@ export const lines = [
     "invoicedQuantity": 97,
     "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
+    "lineNetAmount": 11872,
     "grossAmount": 11872,
     "description": "Sample order for client evaluation",
     "tax": "Sales Tax 8.5%",
@@ -440,6 +444,7 @@ export const lines = [
     "invoicedQuantity": 311,
     "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
+    "lineNetAmount": 48460,
     "grossAmount": 48460,
     "description": "Recurring monthly supply order",
     "tax": "Exempt",
@@ -463,6 +468,7 @@ export const lines = [
     "invoicedQuantity": 451,
     "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
+    "lineNetAmount": 45418,
     "grossAmount": 45418,
     "description": "Special pricing agreement applies",
     "tax": "Reduced Rate 5%",
@@ -486,6 +492,7 @@ export const lines = [
     "invoicedQuantity": 496,
     "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
+    "lineNetAmount": 33840,
     "grossAmount": 33840,
     "description": "Consolidated order from multiple requests",
     "tax": "Standard Rate 20%",
@@ -509,6 +516,7 @@ export const lines = [
     "invoicedQuantity": 284,
     "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
+    "lineNetAmount": 25716,
     "grossAmount": 25716,
     "description": "Trial order for new product line",
     "tax": "VAT 21%",
@@ -532,6 +540,7 @@ export const lines = [
     "invoicedQuantity": 225,
     "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
+    "lineNetAmount": 44780,
     "grossAmount": 44780,
     "description": "Replacement for damaged goods",
     "tax": "VAT 10%",
@@ -555,6 +564,7 @@ export const lines = [
     "invoicedQuantity": 479,
     "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
+    "lineNetAmount": 12483,
     "grossAmount": 12483,
     "description": "Pre-season inventory build-up",
     "tax": "VAT 0%",
@@ -578,6 +588,7 @@ export const lines = [
     "invoicedQuantity": 123,
     "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
+    "lineNetAmount": 46022,
     "grossAmount": 46022,
     "description": "Customer-specific configuration",
     "tax": "Sales Tax 8.5%",
@@ -601,6 +612,7 @@ export const lines = [
     "invoicedQuantity": 337,
     "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
+    "lineNetAmount": 38634,
     "grossAmount": 38634,
     "description": "Government contract fulfillment",
     "tax": "Exempt",
@@ -936,93 +948,6 @@ export const tax = [
   }
 ];
 
-export const basicDiscounts = [
-  {
-    "id": "mock-basicDiscounts-001",
-    "lineNo": 10,
-    "discount": 6,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-001"
-  },
-  {
-    "id": "mock-basicDiscounts-002",
-    "lineNo": 20,
-    "discount": 21,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-002"
-  },
-  {
-    "id": "mock-basicDiscounts-003",
-    "lineNo": 30,
-    "discount": 0,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-003"
-  },
-  {
-    "id": "mock-basicDiscounts-004",
-    "lineNo": 40,
-    "discount": 6,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-004"
-  },
-  {
-    "id": "mock-basicDiscounts-005",
-    "lineNo": 50,
-    "discount": 14,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-005"
-  },
-  {
-    "id": "mock-basicDiscounts-006",
-    "lineNo": 60,
-    "discount": 4,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-006"
-  },
-  {
-    "id": "mock-basicDiscounts-007",
-    "lineNo": 70,
-    "discount": 6,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-007"
-  },
-  {
-    "id": "mock-basicDiscounts-008",
-    "lineNo": 80,
-    "discount": 10,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-008"
-  },
-  {
-    "id": "mock-basicDiscounts-009",
-    "lineNo": 90,
-    "discount": 17,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-009"
-  },
-  {
-    "id": "mock-basicDiscounts-010",
-    "lineNo": 100,
-    "discount": 14,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-010"
-  },
-  {
-    "id": "mock-basicDiscounts-011",
-    "lineNo": 110,
-    "discount": 19,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-011"
-  },
-  {
-    "id": "mock-basicDiscounts-012",
-    "lineNo": 120,
-    "discount": 12,
-    "cascade": "Sample cascade",
-    "headerId": "mock-header-012"
-  }
-];
-
 export const cashVat = [
   {
     "id": "mock-cashVat-001",
@@ -1178,6 +1103,93 @@ export const cashVat = [
     "status": "IP",
     "isManualSettlement": "Sample isManualSettlement",
     "accountingDate": "2026-01-26",
+    "headerId": "mock-header-012"
+  }
+];
+
+export const basicDiscounts = [
+  {
+    "id": "mock-basicDiscounts-001",
+    "lineNo": 10,
+    "discount": 6,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-001"
+  },
+  {
+    "id": "mock-basicDiscounts-002",
+    "lineNo": 20,
+    "discount": 21,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-002"
+  },
+  {
+    "id": "mock-basicDiscounts-003",
+    "lineNo": 30,
+    "discount": 0,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-003"
+  },
+  {
+    "id": "mock-basicDiscounts-004",
+    "lineNo": 40,
+    "discount": 6,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-004"
+  },
+  {
+    "id": "mock-basicDiscounts-005",
+    "lineNo": 50,
+    "discount": 14,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-005"
+  },
+  {
+    "id": "mock-basicDiscounts-006",
+    "lineNo": 60,
+    "discount": 4,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-006"
+  },
+  {
+    "id": "mock-basicDiscounts-007",
+    "lineNo": 70,
+    "discount": 6,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-007"
+  },
+  {
+    "id": "mock-basicDiscounts-008",
+    "lineNo": 80,
+    "discount": 10,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-008"
+  },
+  {
+    "id": "mock-basicDiscounts-009",
+    "lineNo": 90,
+    "discount": 17,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-009"
+  },
+  {
+    "id": "mock-basicDiscounts-010",
+    "lineNo": 100,
+    "discount": 14,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-010"
+  },
+  {
+    "id": "mock-basicDiscounts-011",
+    "lineNo": 110,
+    "discount": 19,
+    "cascade": "Sample cascade",
+    "headerId": "mock-header-011"
+  },
+  {
+    "id": "mock-basicDiscounts-012",
+    "lineNo": 120,
+    "discount": 12,
+    "cascade": "Sample cascade",
     "headerId": "mock-header-012"
   }
 ];
