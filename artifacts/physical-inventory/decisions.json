@@ -77,6 +77,7 @@
         "product": {
           "grid": true,
           "lookup": true,
+          "forceCalloutFields": ["quantityCount", "bookQuantity"],
           "readOnlyLogic": null
         },
         "lineNo": {

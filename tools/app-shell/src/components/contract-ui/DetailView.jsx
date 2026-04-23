@@ -720,7 +720,12 @@ export function DetailView({
           }
         }
       }
-      applyUpdates?.(result);
+      // forceCalloutFields: explicit opt-in list declared per field in decisions.json.
+      // Only those fields bypass the touched-guard when this field triggers a callout.
+      // No other window or field is affected unless it declares forceCalloutFields.
+      const triggerFieldDef = (addLineFields?.entry ?? []).find(f => f.key === field);
+      const forceFields = new Set(triggerFieldDef?.forceCalloutFields ?? []);
+      applyUpdates?.(result, forceFields);
 
       // Cascade to SL_Order_Amt when a price-setting callout (e.g. SL_Order_Product) returned
       // unitPrice or grossUnitPrice but did not compute lineNetAmount.

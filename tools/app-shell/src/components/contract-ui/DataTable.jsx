@@ -423,16 +423,18 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
       }
     }
     // Notify parent for callout execution — pass computed snapshot (not stale React state)
-    onFieldChange?.(key, val, snapshot, (updates) => {
+    onFieldChange?.(key, val, snapshot, (updates, forceFields = new Set()) => {
       // Callback to apply callout results to the inline row.
-      // Never overwrite fields manually set by the user in this add-row session.
+      // forceFields: Set of field keys whose callout value always wins over touched state.
+      // Used when a lookup field (e.g., product) fires a callout that should reset
+      // dependent quantity/locator fields regardless of what the user typed before.
       setValues((prev) => {
         const next = { ...prev };
         for (const [field, value] of Object.entries(updates)) {
           const isTouched = touchedFieldsRef.current.has(field);
           const hasUserValue = prev[field] !== '' && prev[field] != null;
-          if (field !== key && isTouched && hasUserValue) continue;
-          if ((value === '' || value == null) && hasUserValue) continue;
+          if (!forceFields.has(field) && field !== key && isTouched && hasUserValue) continue;
+          if (!forceFields.has(field) && (value === '' || value == null) && hasUserValue) continue;
           next[field] = value;
         }
         return next;

@@ -154,6 +154,7 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.dependsOn) mapped.dependsOn = f.dependsOn;
       if (f.lookup) mapped.lookup = true;
       if (f.popup) mapped.popup = true;
+      if (Array.isArray(f.forceCalloutFields) && f.forceCalloutFields.length > 0) mapped.forceCalloutFields = f.forceCalloutFields;
 
       // UI hints
       if (f.defaultValue) mapped.defaultValue = f.defaultValue;
