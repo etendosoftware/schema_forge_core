@@ -17,6 +17,7 @@ import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { getStatusBadgeProps, getStatusDotColor, getStatusPillClass, statusLabel } from '@/lib/statusBadge.js';
 import { useRegisterWindowContext } from '@/components/CurrentWindowContext';
+import { consumePrefill } from '@/components/copilot/prefillStore';
 
 /**
  * Evaluate a simple Etendo display-logic expression (@Field@='Value') against record data.
@@ -300,6 +301,32 @@ export function DetailView({
       hook.handleNew();
     }
   }, [isNew, hook.editing, hook.handleNew]);
+
+  // Apply copilot-emitted prefill values once the new-record editing state
+  // exists. Consume-on-read so a later unrelated new-record session starts
+  // clean. The copilot may key values by DB column name (e.g. "C_BPartner_ID",
+  // matching resolve_lookup) OR by JSON field name (e.g. "businessPartner",
+  // matching the form state). We translate column → field via api.selectors.
+  const prefillAppliedRef = useRef(false);
+  useEffect(() => {
+    if (!isNew || !hook.editing || prefillAppliedRef.current) return;
+    const values = consumePrefill(windowName);
+    if (!values) return;
+    prefillAppliedRef.current = true;
+    const columnToField = new Map();
+    for (const sel of (api?.selectors || [])) {
+      if (sel?.column && sel?.field) columnToField.set(sel.column, sel.field);
+    }
+    for (const [rawKey, value] of Object.entries(values)) {
+      const key = columnToField.get(rawKey) || rawKey;
+      hook.handleChange(key, value);
+    }
+  }, [isNew, hook.editing, hook.handleChange, windowName, api]);
+
+  // Reset the prefill-applied flag when we leave new-record mode.
+  useEffect(() => {
+    if (!isNew) prefillAppliedRef.current = false;
+  }, [isNew]);
 
   // Auto-open add-line form after header auto-save navigation (openAddLine flag in route state).
   useEffect(() => {

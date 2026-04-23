@@ -1,4 +1,6 @@
 import { useReducer, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { applyUiAction } from './uiActions';
 import {
   getAssistants,
   getLabels,
@@ -305,6 +307,7 @@ function formatTimestamp(date = new Date()) {
  */
 export function useCopilotChat({ token }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const navigate = useNavigate();
 
   // ------------------------------------------------------------------
   // Bootstrap
@@ -488,6 +491,16 @@ export function useCopilotChat({ token }) {
         },
       });
 
+      const uiActions = Array.isArray(response?.ui_actions) ? response.ui_actions : [];
+      // Apply non-navigate actions first so side-state (e.g. form prefill) is
+      // ready before the new route mounts.
+      const sorted = [...uiActions].sort((a, b) => {
+        const an = a?.type === 'navigate' ? 1 : 0;
+        const bn = b?.type === 'navigate' ? 1 : 0;
+        return an - bn;
+      });
+      sorted.forEach((a) => applyUiAction(a, navigate));
+
       // Clear pending file attachments after a successful send.
       dispatch({ type: SET_FILES, files: [], fileIds: [] });
 
@@ -516,7 +529,7 @@ export function useCopilotChat({ token }) {
     } finally {
       dispatch({ type: SET_LOADING, key: 'isSending', value: false });
     }
-  }, [state.selectedAssistant, state.conversationId, state.fileIds, state.files, state.isSending, state.attachments, token]);
+  }, [state.selectedAssistant, state.conversationId, state.fileIds, state.files, state.isSending, state.attachments, token, navigate]);
 
   // ------------------------------------------------------------------
   // Conversation management
