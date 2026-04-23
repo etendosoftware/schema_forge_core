@@ -11,7 +11,7 @@ import menuConfig from '../menu.json' with { type: 'json' };
 const windowLoaders = {
   'sales-order': () => import('@generated/sales-order/generated/web/sales-order/index.jsx'),
   'business-partner': () => import('@generated/business-partner/generated/web/business-partner/index.jsx'),
-  'contacts': () => import('@generated/contacts/generated/web/contacts/index.jsx'),
+  'contacts': () => import('@/windows/custom/contacts/index.jsx'),
   'warehouse': () => import('@generated/warehouse/generated/web/warehouse/index.jsx'),
   'price-list': () => import('@generated/price-list/generated/web/price-list/index.jsx'),
   'payment-term': () => import('@generated/payment-term/generated/web/payment-term/index.jsx'),
@@ -86,6 +86,7 @@ const customLoaders = {
   'payment-out': () => import('./custom/payment-out/index.jsx'),
   'sales-order': () => import('./custom/sales-order/index.jsx'),
   'sales-invoice': () => import('./custom/sales-invoice/index.jsx'),
+  'sales-quotation': () => import('./custom/sales-quotation/index.jsx'),
   'warehouse': () => import('./custom/warehouse/index.jsx'),
 };
 

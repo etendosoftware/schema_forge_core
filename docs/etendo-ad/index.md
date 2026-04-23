@@ -10,3 +10,4 @@ Findings and clarifications about the Etendo AD structure, discovered during Sch
 | [process-mechanisms.md](process-mechanisms.md) | The 3 process mechanisms in Etendo: tab_process, classic_process, obuiapp_process (+ hardcoded) |
 | [display-logic-variables.md](display-logic-variables.md) | The 6 types of variables in DisplayLogic expressions: field columns, auxiliary inputs, session, preferences, acct dimensions, special |
 | [openapi-module.md](openapi-module.md) | `com.etendoerp.openapi` module: CDI plugin architecture, OpenAPIEndpoint interface, flow system (DB tables), SWS integration |
+| [fic-default-values.md](fic-default-values.md) | How `FormInitializationComponent` assigns default values on `MODE=NEW` by reference type: combos preselect row [0], search/selector/tree do not |

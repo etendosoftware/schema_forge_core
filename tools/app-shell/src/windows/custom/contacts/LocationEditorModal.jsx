@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Loader2, Search, ChevronDown, Check } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI, useLabel } from '@/i18n';
 import { toast } from 'sonner';
 
-const EMPTY_FORM = { address: '', address2: '', postalCode: '', city: '', country: '', countryLabel: '', region: '', regionLabel: '' };
+const EMPTY_FORM = { address: '', address2: '', postalCode: '', city: '', country: '', countryLabel: '', region: '', regionLabel: '', shipToAddress: true, invoiceToAddress: true };
 const SELECTOR_PAGE_SIZE = 120;
 
 function normalizeText(value) {
@@ -30,27 +30,31 @@ async function fetchSelectorPage(url, headers) {
  * LocationEditorModal — create or edit a C_BPartner_Location record with its
  * underlying C_Location fields (address lines, city, postal code, country, region).
  *
+ * All CRUD operations go through the contacts/locationAddress endpoint so that
+ * the user only needs AD_Window_Access to the Contacts window (ID 123), replicating
+ * Classic Etendo's child-tab permission model.
+ *
  * Props:
  *   open            — boolean: controls visibility
  *   onClose         — () => void
  *   onSaved         — () => void: called after successful save; caller re-fetches address state
- *   bplId           — string|null: C_BPartner_Location_ID of existing record (null = create)
+ *   rowId           — string|null: C_BPartner_Location_ID of existing record (null = create)
  *   bpId            — string: parent Business Partner ID (required for create)
- *   contactsApiBase — string: e.g. "/sws/neo/contacts"
+ *   apiBase         — string: e.g. "/sws/neo/contacts"
  *   token           — string: JWT bearer token
  */
 export default function LocationEditorModal({
   open,
   onClose,
   onSaved,
-  bplId,
-  bplLinkId,
+  rowId: bplLinkId,
   bpId,
-  contactsApiBase,
+  apiBase: contactsApiBase,
   token,
   selectorContext = {},
 }) {
   const ui = useUI();
+  const t = useLabel();
   const [form, setForm] = useState(EMPTY_FORM);
   const [countries, setCountries] = useState([]);
   const [countrySelectorBase, setCountrySelectorBase] = useState('');
@@ -79,7 +83,6 @@ export default function LocationEditorModal({
   const regionLoadMoreRef = useRef(null);
   const regionLoadingMoreRef = useRef(false);
 
-  const bpLocationBase = contactsApiBase.replace('/contacts', '/bp-location');
   const authHeader = { Authorization: `Bearer ${token}` };
 
   function buildSelectorParams(baseParams = {}) {
@@ -177,10 +180,8 @@ export default function LocationEditorModal({
     const loadCountries = async () => {
       setCountriesLoading(true);
       const selectorBases = [
-        `${bpLocationBase}/bpLocation/selectors/C_Country_ID`,
         `${contactsApiBase}/locationAddress/selectors/C_Country_ID`,
         `${contactsApiBase}/intrastatAdquisitions/selectors/country`,
-        `${bpLocationBase}/bpLocation/selectors/country`,
         `${contactsApiBase}/locationAddress/selectors/country`,
         `${contactsApiBase}/bankAccount/selectors/country`,
         `${contactsApiBase}/intrastatAdquisitions/selectors/C_Country_ID`,
@@ -229,17 +230,15 @@ export default function LocationEditorModal({
     loadCountries();
 
     // Populate form when editing an existing record
-    if (bplId) {
+    if (bplLinkId) {
       setInitialLoading(true);
-      fetch(`${bpLocationBase}/bpLocation/${bplId}`, { headers: authHeader })
+      // ContactsLocationAddressHandler enriches the GET-by-ID response with C_Location fields.
+      fetch(`${contactsApiBase}/locationAddress/${bplLinkId}`, { headers: authHeader })
         .then(r => (r.ok ? r.json() : null))
         .then(d => {
-          // NEO Headless may return { response: { data: [rec] } } or the record directly
           const rec = d?.response?.data?.[0] ?? d;
           if (rec && rec.id) {
             setForm({
-              // bpLocation may serialize using configured names (address/city) or
-              // OB Java property names (addressLine1/cityName) depending on the handler.
               address: rec.address ?? rec.addressLine1 ?? '',
               address2: rec.address2 ?? rec.addressLine2 ?? '',
               postalCode: rec.postalCode ?? '',
@@ -250,6 +249,8 @@ export default function LocationEditorModal({
               countryLabel: rec['country$_identifier'] ?? '',
               region: rec.region ?? '',
               regionLabel: rec['region$_identifier'] ?? '',
+              shipToAddress: rec.shipToAddress === 'Y' || rec.shipToAddress === true,
+              invoiceToAddress: rec.invoiceToAddress === 'Y' || rec.invoiceToAddress === true,
             });
           }
         })
@@ -263,7 +264,7 @@ export default function LocationEditorModal({
       cancelled = true;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, bplId]);
+  }, [open, bplLinkId]);
 
   // Reload region list when country selection changes
   useEffect(() => {
@@ -291,11 +292,9 @@ export default function LocationEditorModal({
       regionLoadingMoreRef.current = false;
 
       const selectorBases = [
-        `${bpLocationBase}/bpLocation/selectors/C_Region_ID`,
         `${contactsApiBase}/locationAddress/selectors/C_Region_ID`,
         `${contactsApiBase}/intrastatAdquisitions/selectors/C_Region_ID`,
         `${contactsApiBase}/bankAccount/selectors/C_Region_ID`,
-        `${bpLocationBase}/bpLocation/selectors/region`,
         `${contactsApiBase}/locationAddress/selectors/region`,
         `${contactsApiBase}/intrastatAdquisitions/selectors/region`,
         `${contactsApiBase}/bankAccount/selectors/region`,
@@ -547,11 +546,9 @@ export default function LocationEditorModal({
     }
     setSaving(true);
     try {
-      const name = [form.city, form.address].filter(Boolean).join(', ') || 'Location';
-      // bpLocation maps to C_Location via Openbravo DAL. The endpoint serialises
-      // using OB Java entity property names for some columns (addressLine1, addressLine2,
-      // cityName) rather than the decisions.json aliases (address, address2, city).
-      // postalCode / country / region happen to match their Java names.
+      const name = [form.city, form.address].filter(Boolean).join(', ')
+        || [form.regionLabel || form.region, form.countryLabel || form.country].filter(Boolean).join(', ')
+        || 'Location';
       const payload = {
         name,
         addressLine1: form.address || null,
@@ -560,12 +557,14 @@ export default function LocationEditorModal({
         cityName: form.city || null,
         country: form.country || null,
         region: form.region || null,
+        shipToAddress: form.shipToAddress ? 'Y' : 'N',
+        invoiceToAddress: form.invoiceToAddress ? 'Y' : 'N',
       };
       const postHeaders = { ...authHeader, 'Content-Type': 'application/json' };
 
-      if (bplId) {
-        // EDIT: update existing C_BPartner_Location (+ underlying C_Location via join) via bp-location
-        const res = await fetch(`${bpLocationBase}/bpLocation/${bplId}`, {
+      if (bplLinkId) {
+        // EDIT: ContactsLocationAddressHandler updates C_Location + C_BPartner_Location atomically
+        const res = await fetch(`${contactsApiBase}/locationAddress/${bplLinkId}`, {
           method: 'PUT',
           headers: postHeaders,
           body: JSON.stringify(payload),
@@ -574,68 +573,26 @@ export default function LocationEditorModal({
         return;
       }
 
-      // CREATE: POST to bp-location (creates C_Location; businessPartner links via C_BPartner_ID)
-      const res = await fetch(`${bpLocationBase}/bpLocation?parentId=${bpId}`, {
+      // CREATE: ContactsLocationAddressHandler creates C_Location + C_BPartner_Location atomically
+      const res = await fetch(`${contactsApiBase}/locationAddress?parentId=${bpId}`, {
         method: 'POST',
         headers: postHeaders,
         body: JSON.stringify({ ...payload, businessPartner: bpId }),
       });
 
       if (!res.ok) {
-        // Most likely cause: role lacks access to BP Location window in AD_WINDOW_ACCESS.
-        // Fix: UPDATE etgo_sf_spec SET adwindow_id = NULL WHERE name = 'bp-location';
-        console.error('[LocationEditorModal] bpLocation POST failed with status', res.status);
+        console.error('[LocationEditorModal] locationAddress POST failed with status', res.status);
         return;
       }
 
       const data = await res.json();
       if ((data?.response?.status ?? 0) !== 0) {
-        console.error('[LocationEditorModal] bpLocation POST returned NEO error:', data?.response);
+        console.error('[LocationEditorModal] locationAddress POST returned NEO error:', data?.response);
         return;
       }
 
-      const newId = data?.response?.data?.[0]?.id ?? data?.id;
-      if (!newId) {
-        console.error('[LocationEditorModal] bpLocation POST: could not extract id from response', data);
-        return;
-      }
-
-      // bpLocation maps to C_Location. After creating the C_Location, check whether a
-      // C_BPartner_Location link (locationAddress) was auto-created via the businessPartner field.
-      // If not, create it explicitly so the contact's address tab reflects the new record.
-      const existingLinks = await fetch(
-        `${contactsApiBase}/locationAddress?parentId=${bpId}&_startRow=0&_endRow=50`,
-        { headers: authHeader },
-      ).then(r => (r.ok ? r.json() : null)).catch(() => null);
-
-      const alreadyLinked = (existingLinks?.response?.data ?? []).some(
-        r => r.id === newId || r.locationAddress === newId,
-      );
-
-      if (!alreadyLinked) {
-        const resLink = await fetch(`${contactsApiBase}/locationAddress?parentId=${bpId}`, {
-          method: 'POST',
-          headers: postHeaders,
-          body: JSON.stringify({
-            name,
-            businessPartner: bpId,
-            locationAddress: newId,
-            shipToAddress: 'Y',
-            invoiceToAddress: 'Y',
-          }),
-        });
-        if (!resLink.ok) {
-          console.error('[LocationEditorModal] locationAddress POST failed with status', resLink.status);
-          return;
-        }
-        const linkData = await resLink.json();
-        if ((linkData?.response?.status ?? 0) !== 0) {
-          console.error('[LocationEditorModal] locationAddress POST returned NEO error:', linkData?.response);
-          return;
-        }
-      }
-
-      onSaved?.();
+      const newRecord = data?.response?.data?.[0] ?? data?.data?.[0] ?? null;
+      onSaved?.(newRecord?.id ?? null, newRecord?.name ?? name);
     } finally {
       setSaving(false);
     }
@@ -760,6 +717,28 @@ export default function LocationEditorModal({
                 </span>
                 <ChevronDown size={16} className="text-gray-500 shrink-0" />
               </button>
+            </div>
+
+            {/* Shipping / Invoicing Address checkboxes */}
+            <div className="flex gap-6 pt-1">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={form.shipToAddress}
+                  onChange={e => setField('shipToAddress', e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">{t('IsShipTo') || 'Shipping Address'}</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={form.invoiceToAddress}
+                  onChange={e => setField('invoiceToAddress', e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">{t('IsBillTo') || 'Invoicing Address'}</span>
+              </label>
             </div>
 
           </div>

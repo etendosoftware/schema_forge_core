@@ -13,6 +13,11 @@ Any change to:
 - **Architecture** (new loops, changed integration points, new external dependencies)
 - **Validator rules** (adding a new rule F11+, changing severity, changing detection signal) in `cli/src/validate-pipeline.js`
 
+## Window-specific rule
+
+If a change touches `artifacts/<window>/...` or `tools/app-shell/src/windows/custom/<window>/...`, update the matching `docs/generated-custom-windows/<window>.md` file in the same change.
+The CI check `.github/workflows/window-doc-freshness.yml` reviews this diff-based rule through `cli/src/check-window-docs.js` and leaves a warning comment on pull requests when the window doc is missing.
+
 ## What must be updated
 
 When a trigger fires, check and update **all** of the following that reference the changed component:
@@ -30,6 +35,7 @@ When a trigger fires, check and update **all** of the following that reference t
 **Check if relevant:**
 | Document | When to check |
 |----------|--------------|
+| `docs/generated-custom-windows/<window>.md` | If a diff changes a specific window surface |
 | `docs/flow-diagram.md` | If pipeline flow changed |
 | `docs/diagrams/complete-pipeline.mmd` | If pipeline steps changed |
 | `docs/diagrams/webhook-config-flow.mmd` | If webhook/config flow changed |
@@ -45,16 +51,19 @@ When a trigger fires, check and update **all** of the following that reference t
 - **Do NOT duplicate information across docs.** Use cross-references (e.g., "See `docs/architecture-overview.md`") instead of copying content that will diverge.
 - **ASCII diagrams must match the code.** If you add a pipeline step, the diagram gets a new box. If you remove a CLI tool, it disappears from the tree.
 
+
 ## Pipeline phase responsibilities
 
 - **DEV phase**: The developer making the change MUST update all affected documentation in the same PR. This is not optional — incomplete docs = incomplete work.
 - **REVIEW phase**: The reviewer MUST verify that documentation was updated. If the PR changes something documented in CLAUDE.md or docs/, and the docs were NOT updated, this is a **rejection reason**.
 - **DOCS phase**: Sage validates that cross-references are consistent, diagrams match reality, and no stale data remains.
 
+
 ## Checklist for PRs that modify pipeline/tools/structure
 
 Before marking a PR as ready:
 - [ ] CLAUDE.md sections updated (Repository Structure, Data Flow, Components)
+- [ ] Matching `docs/generated-custom-windows/<window>.md` updated for every changed window surface
 - [ ] `docs/architecture-overview.md` updated if architecture changed
 - [ ] Mermaid diagrams in `docs/diagrams/` updated if flow changed
 - [ ] `docs/TDD.md` updated if technical design changed

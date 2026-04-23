@@ -162,11 +162,16 @@ export function generateTableComponent(entityName, contract) {
     const badgePart = (f.badge && !f.cellType) ? ', badge: true' : '';
     const badgeLabelsPart = f.badgeLabels ? `, badgeLabels: ${JSON.stringify(f.badgeLabels)}` : '';
     const badgeColorsPart = f.badgeColors ? `, badgeColors: ${JSON.stringify(f.badgeColors)}` : '';
+    const badgeVariantsPart = f.badgeVariants ? `, badgeVariants: ${JSON.stringify(f.badgeVariants)}` : '';
+    const enumVariantsPart = f.enumVariants ? `, enumVariants: ${JSON.stringify(f.enumVariants)}` : '';
     const labelsPart = f.labels ? `, labels: ${JSON.stringify(f.labels)}` : '';
     const summablePart = f.summable ? ', summable: true' : '';
     const displayPart = f.display ? `, display: '${f.display}'` : '';
-    const renderPart = f.cellType === 'depreciationProgress' ? ', render: renderDepreciationProgress' : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${summablePart}${displayPart}${renderPart} },`;
+    let renderPart = '';
+    if (f.cellType === 'depreciationProgress') renderPart = ', render: renderDepreciationProgress';
+    else if (f.cellType === 'taxRate') renderPart = ', render: renderTaxRate';
+    else if (f.cellType === 'taxScope') renderPart = ', render: renderTaxScope';
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -190,8 +195,34 @@ function renderDepreciationProgress(row) {
 }
 ` : '';
 
+  const taxRateHelper = neededCellTypes.has('taxRate') ? `
+function renderTaxRate(row) {
+  const val = row?.rate;
+  if (val == null) return '';
+  return <Tag variant="green" label={\`+\${val} %\`} />;
+}
+` : '';
+
+  const taxScopeHelper = neededCellTypes.has('taxScope') ? `
+function renderTaxScope(row) {
+  const value = row?.applicableTo;
+  const showSales    = value === 'B' || value === 'S';
+  const showPurchase = value === 'B' || value === 'P';
+  if (!showSales && !showPurchase) return value ?? '';
+  return (
+    <span className="inline-flex items-center gap-1">
+      {showSales    && <Tag variant="blue"   label="Sales" />}
+      {showPurchase && <Tag variant="purple" label="Purchase" />}
+    </span>
+  );
+}
+` : '';
+
+  const needsTagImport = neededCellTypes.has('taxRate') || neededCellTypes.has('taxScope');
+  const tagImport = needsTagImport ? `import { Tag } from '@/components/ui/tag';\n` : '';
+
   return `import { DataTable } from '@/components/contract-ui';
-${depreciationProgressHelper}
+${tagImport}${depreciationProgressHelper}${taxRateHelper}${taxScopeHelper}
 ${MARKERS.GENERATED_START(`columns:${entityName}`)}
 const columns = [
 ${columnsArray}
@@ -552,7 +583,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       const numDv = Number(rawDv);
       defaultValuePart = `, defaultValue: ${(!isNaN(numDv) && String(rawDv).trim() !== '') ? numDv : `'${String(rawDv).replace(/'/g, "\\'")}'`}`;
     }
-    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart} },`;
+    const forceCalloutFieldsPart = Array.isArray(f.forceCalloutFields) && f.forceCalloutFields.length > 0
+      ? `, forceCalloutFields: ${JSON.stringify(f.forceCalloutFields)}`
+      : '';
+    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart} },`;
   }).join('\n');
 
   const derivedArray = derivedFields.map(f => {
@@ -563,7 +597,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${referencePart}${inputModePart} },`;
   }).join('\n');
 
-  const hiddenDefaultsArray = hiddenDefaultFields.map(f => {
+  const hiddenDefaultsArray = hiddenDefaultFields
+    .filter(f => !String(f.defaultValue).startsWith('@SQL='))
+    .map(f => {
     const rawDefault = String(f.defaultValue);
     const parentColMatch = rawDefault.match(/^@(\w+)@$/);
     if (parentColMatch) {
@@ -580,7 +616,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // API prediction config
   const apiPrediction = contract.apiPrediction;
   const apiBlock = apiPrediction
-    ? `\nconst api = ${JSON.stringify(apiPrediction, null, 2)};\n`
+    ? `\nexport const api = ${JSON.stringify(apiPrediction, null, 2)};\n`
     : '';
   const apiProp = apiPrediction ? '\n      api={api}' : '';
 
@@ -630,6 +666,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
         const TableName = cfg.customTable ?? `${capitalize(key)}Table`;
         const addLineFieldKeys = cfg.addLineFields ?? [];
         const requireSavedRecord = cfg.requireSavedRecord === true;
+        const customAddModalName = cfg.customAddModal ?? null;
         const entityFields = contract.frontendContract.entities[key]?.fields ?? [];
         const addLineEntries = addLineFieldKeys.map(fk => {
           const f = entityFields.find(ef => ef.name === fk);
@@ -645,7 +682,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
             : '';
           return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart} }`;
         }).filter(Boolean);
-        return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord };
+        return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName };
       });
   } else {
     // Fallback: hardcoded known list + entity inference (backward compat)
@@ -695,10 +732,14 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       const tableImportPath = (t.isCustomTable && specName)
         ? resolveCustomImport(specName, t.TableName).replace(/'/g, '')
         : `./${t.TableName}`;
+      const customModalImport = (t.isCustomAddModal && specName)
+        ? `\nimport ${t.CustomAddModalName} from ${resolveCustomImport(specName, t.CustomAddModalName)};`
+        : '';
       if (t.isFormTab) {
-        return `import ${t.FormName} from '${formImportPath}';`;
+        return `import ${t.FormName} from '${formImportPath}';${customModalImport}`;
       }
-      return `import ${t.TableName} from '${tableImportPath}';\nimport ${t.FormName} from '${formImportPath}';`;
+      const formImport = (t.isCustomAddModal && !t.isCustomForm) ? '' : `\nimport ${t.FormName} from '${formImportPath}';`;
+      return `import ${t.TableName} from '${tableImportPath}';${formImport}${customModalImport}`;
     })
     .join('\n');
 
@@ -713,7 +754,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const addLinePart = t.addLineEntries.length > 0
       ? `, addLineFields: { entry: [\n${t.addLineEntries.join(',\n')},\n          ], derived: [], hidden: [] }`
       : '';
-    return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}, Form: ${t.FormName}${addLinePart}${requireSavedPart} },`;
+    const customAddModalPart = t.CustomAddModalName ? `, customAddModal: ${t.CustomAddModalName}` : '';
+    const formProp = (t.isCustomAddModal && !t.isCustomForm) ? '' : `, Form: ${t.FormName}`;
+    return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart} },`;
   }).join('\n');
 
   const secondaryTabsProp = secondaryTabDefs.length > 0
@@ -1085,14 +1128,12 @@ export function generateIndexComponent(headerEntity, detailEntity, contract) {
   const windowName = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
   const apiPrediction = contract?.apiPrediction;
 
-  const apiBlock = apiPrediction
-    ? `\nconst api = ${JSON.stringify(apiPrediction, null, 2)};\n`
-    : '';
   const apiProp = apiPrediction ? ' api={api}' : '';
-  return `import ${headerName}Page from './${headerName}Page';
+  const apiImport = apiPrediction ? `, { api }` : '';
+  return `import ${headerName}Page${apiImport} from './${headerName}Page';
 
 const windowMeta = { category: '${category}', name: '${windowName}' };
-${apiBlock}
+
 ${MARKERS.GENERATED_START('component:App')}
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
   return <${headerName}Page windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta}${apiProp} {...rest} />;
@@ -1101,129 +1142,24 @@ ${MARKERS.GENERATED_END('component:App')}
 `;
 }
 
-// --- Mock Catalog Data Pools ---
-
-const CATALOG_DATA = {
-  BusinessPartner: Array.from({ length: 15 }, (_, i) => ({
-    id: `bp-${String(i + 1).padStart(3, '0')}`,
-    name: [
-      'Acme Corp', 'TechFlow Inc', 'Global Trade Ltd', 'Summit Industries',
-      'Pacific Partners', 'Alpine Solutions', 'Meridian Group', 'Vertex Systems',
-      'Atlas Manufacturing', 'Nova Enterprises', 'Pinnacle Services', 'Horizon Labs',
-      'Cedar Holdings', 'Sterling & Co', 'Quantum Logistics',
-    ][i],
-  })),
-  Product: Array.from({ length: 20 }, (_, i) => ({
-    id: `prod-${String(i + 1).padStart(3, '0')}`,
-    name: [
-      'Laptop Pro 15', 'USB-C Cable', 'Wireless Mouse', 'Mechanical Keyboard',
-      'Monitor 27"', 'Webcam HD', 'Headset Pro', 'Docking Station',
-      'SSD 1TB', 'RAM 16GB', 'Power Supply 750W', 'Network Switch',
-      'Printer Laser', 'Scanner Flatbed', 'External HDD 2TB', 'Tablet 10"',
-      'Router Pro', 'UPS Battery', 'Graphics Card', 'CPU Cooler',
-    ][i],
-    price: [1299, 15, 29, 89, 549, 79, 149, 199, 109, 65, 95, 45, 299, 189, 79, 449, 129, 159, 699, 49][i],
-    uomId: 'uom-001',
-  })),
-  User: Array.from({ length: 8 }, (_, i) => ({
-    id: `user-${String(i + 1).padStart(3, '0')}`,
-    name: [
-      'Alice Johnson', 'Bob Smith', 'Carol Williams', 'David Brown',
-      'Eva Martinez', 'Frank Lee', 'Grace Kim', 'Henry Davis',
-    ][i],
-  })),
-  Warehouse: Array.from({ length: 5 }, (_, i) => ({
-    id: `wh-${String(i + 1).padStart(3, '0')}`,
-    name: ['Main Warehouse', 'East Distribution Center', 'West Hub', 'North Storage', 'South Logistics'][i],
-  })),
-  Currency: [
-    { id: 'USD', name: 'US Dollar', symbol: '$' },
-    { id: 'EUR', name: 'Euro', symbol: 'EUR' },
-    { id: 'GBP', name: 'Pound Sterling', symbol: 'GBP' },
-    { id: 'ARS', name: 'Argentine Peso', symbol: 'ARS' },
-  ],
-  PriceList: Array.from({ length: 4 }, (_, i) => ({
-    id: `pl-${String(i + 1).padStart(3, '0')}`,
-    name: ['Standard Price List', 'Wholesale Prices', 'Retail Prices', 'VIP Pricing'][i],
-  })),
-  PaymentTerm: Array.from({ length: 5 }, (_, i) => ({
-    id: `pt-${String(i + 1).padStart(3, '0')}`,
-    name: ['Immediate', 'Net 15', 'Net 30', 'Net 60', '2/10 Net 30'][i],
-  })),
-  PaymentMethod: Array.from({ length: 4 }, (_, i) => ({
-    id: `pm-${String(i + 1).padStart(3, '0')}`,
-    name: ['Wire Transfer', 'Credit Card', 'Check', 'Cash'][i],
-  })),
-  Tax: Array.from({ length: 6 }, (_, i) => ({
-    id: `tax-${String(i + 1).padStart(3, '0')}`,
-    name: ['VAT 21%', 'VAT 10%', 'VAT 0%', 'Sales Tax 8.5%', 'Exempt', 'Reduced Rate 5%'][i],
-    rate: [21, 10, 0, 8.5, 0, 5][i],
-  })),
-  UOM: Array.from({ length: 5 }, (_, i) => ({
-    id: `uom-${String(i + 1).padStart(3, '0')}`,
-    name: ['Each', 'Box', 'Kg', 'Meter', 'Liter'][i],
-  })),
-  StorageBin: Array.from({ length: 10 }, (_, i) => ({
-    id: `sb-${String(i + 1).padStart(3, '0')}`,
-    name: ['A-01-01', 'A-01-02', 'A-02-01', 'A-02-02', 'B-01-01', 'B-01-02', 'B-02-01', 'B-02-02', 'C-01-01', 'C-01-02'][i],
-    warehouseId: `wh-${String(Math.floor(i / 2) + 1).padStart(3, '0')}`,
-  })),
-  ProductCategory: Array.from({ length: 9 }, (_, i) => ({
-    id: `cat-${String(i + 1).padStart(3, '0')}`,
-    name: ['Electronics', 'Accessories', 'Peripherals', 'Displays', 'Audio', 'Storage', 'Components', 'Networking', 'Power'][i],
-  })),
-  BusinessPartnerLocation: Array.from({ length: 20 }, (_, i) => ({
-    id: `bploc-${String(i + 1).padStart(3, '0')}`,
-    name: [
-      'HQ - 100 Main St', 'Branch - 200 Oak Ave', 'Warehouse - 300 Elm Dr',
-      'Office - 50 Pine Rd', 'Factory - 400 Maple Ln', 'Store - 150 Cedar Blvd',
-      'Depot - 250 Birch Way', 'Lab - 75 Spruce Ct', 'HQ - 500 Willow St',
-      'Branch - 600 Ash Ave', 'Office - 10 Palm Dr', 'Store - 20 Ivy Rd',
-      'Depot - 30 Fern Ln', 'Lab - 40 Sage Blvd', 'HQ - 55 Rose Way',
-      'Branch - 65 Lily Ct', 'Office - 70 Daisy St', 'Store - 80 Tulip Ave',
-      'Depot - 90 Orchid Dr', 'Lab - 95 Violet Rd',
-    ][i],
-    businessPartnerId: `bp-${String(Math.floor(i / 2) + 1).padStart(3, '0')}`,
-  })),
-};
-
 /**
- * Collect all unique reference names from a contract's frontend entities.
+ * Generate a mockCatalogs.js stub.
+ *
+ * Historically this emitted fake FK reference data (e.g. "Acme Corp", "Wire Transfer")
+ * as a fallback for selector dropdowns. Those fakes leaked into production UIs and
+ * caused a visible "flash of wrong values" when opening a dropdown before the real
+ * `/selector` response arrived. The file is kept (still imported by HeaderPage.jsx)
+ * but now exports an empty catalog — all selector data comes from the real backend.
  */
-function collectReferences(contract) {
-  const refs = new Set();
-  for (const entity of Object.values(contract.frontendContract.entities)) {
-    for (const field of entity.fields) {
-      if (field.reference) refs.add(field.reference);
-    }
-  }
-  return refs;
-}
-
-/**
- * Generate a mockCatalogs.js file with reference data for all FK fields in the contract.
- */
-export function generateMockCatalogs(contract) {
-  const refs = collectReferences(contract);
-  const lines = [
-    '// Auto-generated mock catalogs for FK reference data - do not edit manually',
+export function generateMockCatalogs(_contract) {
+  return [
+    '// Auto-generated - intentionally empty. Selector data comes from the real backend.',
     '',
     'const catalogs = {};',
     '',
-  ];
-
-  for (const ref of refs) {
-    const data = CATALOG_DATA[ref];
-    if (data) {
-      lines.push(`catalogs['${ref}'] = ${JSON.stringify(data, null, 2)};`);
-      lines.push('');
-    }
-  }
-
-  lines.push('export default catalogs;');
-  lines.push('');
-
-  return lines.join('\n');
+    'export default catalogs;',
+    '',
+  ].join('\n');
 }
 
 /**

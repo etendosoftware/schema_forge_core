@@ -1,9 +1,10 @@
-.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate dev build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline
+.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate dev dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate
 
 # --- Testing ---
 
-test: ## Run all CLI tests
+test: ## Run all CLI tests and app-shell lib tests
 	cd cli && node --test 'test/*.test.js'
+	node --test tools/app-shell/src/lib/__tests__/*.test.js
 
 validate-pipeline: ## Validate pipeline completeness across all artifacts
 	node cli/src/validate-pipeline.js --format=text
@@ -11,6 +12,9 @@ validate-pipeline: ## Validate pipeline completeness across all artifacts
 test-frontend: ## Run only frontend generator tests
 	cd cli && node --test 'test/generate-frontend.test.js'
 
+
+quality-gate: ## Run Schema Forge quality gate for PR-affected windows
+	node cli/src/quality-gate.js --pr-affected --baseline-ref origin/main --format md
 # --- E2E Testing (Playwright) ---
 
 test-e2e: ## Run E2E tests with visible browser
@@ -43,6 +47,9 @@ generate: ## Generate frontend from Sales Order contract
 
 dev: ## Start app-shell dev server (http://localhost:3100)
 	cd tools/app-shell && npm run dev
+
+dev-mock: ## Start app-shell dev server with mock data (http://localhost:3100) — required for E2E tests
+	cd tools/app-shell && npm run dev:mock
 
 build: ## Build app-shell for production
 	cd tools/app-shell && npm run build

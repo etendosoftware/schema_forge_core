@@ -3,7 +3,7 @@ import { EntityForm } from '@/components/contract-ui';
 // @sf-generated-start fields:reservedStock
 const fields = [
   { key: 'reservation', column: 'M_Reservation_ID', type: 'search', label: 'Stock Reservation', required: true, readOnly: true, section: 'other', reference: 'Reservation' },
-  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'search', label: 'Customer', readOnly: true, section: 'other', reference: 'BusinessPartner', defaultValue: '@SQL=SELECT C_BPartner_ID AS DefaultValue FROM C_Order WHERE C_Order_ID=@C_Order_ID@' },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'search', label: 'Customer', readOnly: true, section: 'other', reference: 'BusinessPartner', defaultValue: '@SQL=SELECT C_BPartner_ID AS DefaultValue FROM C_Order WHERE C_Order_ID=@C_Order_ID@', readOnlyLogic: (record) => record['posted'] === 'Y' },
   { key: 'storageBin', column: 'M_Locator_ID', type: 'search', label: 'Storage Bin', readOnly: true, section: 'other', reference: 'Locator' },
   { key: 'attributeSetValue', column: 'M_Attributesetinstance_ID', type: 'text', label: 'Attribute Set Value', readOnly: true, section: 'other' },
   { key: 'allocated', column: 'IsAllocated', type: 'checkbox', label: 'Allocated', required: true, readOnly: true, section: 'other', defaultValue: 'N' },

@@ -13,6 +13,15 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Sales Order';
 
+const labelOverrides = {
+  "es_ES": {
+    "C_BPartner_ID": "Contacto"
+  },
+  "en_US": {
+    "C_BPartner_ID": "Contact"
+  }
+};
+
 
 // @sf-generated-start summary:header
 const summary = [
@@ -42,23 +51,21 @@ const draftMode = null;
 const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity' },
-    { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
-    { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', required: true, label: 'Line Net Amount' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'search', required: true, label: 'Tax', reference: 'Tax', inputMode: 'search' },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
+    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity', defaultValue: 1 },
+    { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
+    { key: 'tax', column: 'C_Tax_ID', type: 'search', required: true, label: 'Tax', reference: 'Tax', inputMode: 'search' },
   ],
   derived: [
     { key: 'discount', column: 'Discount', type: 'number', label: 'Discount' },
   ],
   hidden: [
     { key: 'grossUnitPrice', value: '0' },
-    { key: 'priceList', fromParent: 'priceList' },
   ],
 };
 // @sf-generated-end addLineFields:lines
 
-const api = {
+export const api = {
   "specName": "sales-order",
   "baseUrl": "/sws/neo/sales-order",
   "crud": {
@@ -99,7 +106,7 @@ const api = {
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
       "inputMode": "search",
-      "url": "/sws/neo/sales-order/header/selectors/businessPartner?isCustomer=Y"
+      "url": "/sws/neo/sales-order/header/selectors/businessPartner"
     },
     {
       "entity": "header",
@@ -124,6 +131,14 @@ const api = {
       "reference": "PaymentMethod",
       "inputMode": "selector",
       "url": "/sws/neo/sales-order/header/selectors/paymentMethod"
+    },
+    {
+      "entity": "header",
+      "field": "paymentTerms",
+      "column": "C_PaymentTerm_ID",
+      "reference": "PaymentTerm",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-order/header/selectors/paymentTerms"
     },
     {
       "entity": "header",
@@ -263,18 +278,18 @@ const api = {
     },
     {
       "entity": "header",
-      "field": "processNow",
-      "column": "Processing",
-      "url": "/sws/neo/sales-order/header/{id}/action/processNow",
-      "processId": "104",
-      "processType": "classic"
-    },
-    {
-      "entity": "header",
       "field": "generateTemplate",
       "column": "Generatetemplate",
       "url": "/sws/neo/sales-order/header/{id}/action/generateTemplate",
       "processId": "800022",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "processNow",
+      "column": "Processing",
+      "url": "/sws/neo/sales-order/header/{id}/action/processNow",
+      "processId": "104",
       "processType": "classic"
     },
     {
@@ -354,7 +369,6 @@ const api = {
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -383,10 +397,10 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         topbarRight={OrderCreateInvoice}
         topbarExtra={OrderDraftChips}
         menuActions={({ status }) => [
-          { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
         ]}
         salesTheme
+        labelOverrides={labelOverrides}
         {...props}
       />
     );
@@ -401,6 +415,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       hidePrint
+      labelOverrides={labelOverrides}
       {...props}
     />
   );

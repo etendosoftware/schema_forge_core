@@ -1,15 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import { toast } from 'sonner';
 import { ClipboardList, FileText } from 'lucide-react';
 import { useUI } from '@/i18n';
 
 /**
- * Confirmation modal for Sales Quotation.
- *
- * Flow:
- *  1. Modal opens with options (quotation stays in DR).
- *  2. On confirm: DocAction=CO → create document → reactivate to Draft.
- *  3. Shows success state with navigation to created document.
+ * Confirmation modal for Sales Quotation in Under Evaluation (UE) state.
+ * Lets the user create the final Sales Order or Invoice from the quotation.
+ * Assumes the quotation is already UE — the DR → UE transition lives in SendToEvaluationModal.
  */
 export default function QuotationConfirmModal({
   quotationId,
@@ -70,27 +66,12 @@ export default function QuotationConfirmModal({
   const totalLines = d.summedLineAmount ?? d.totalLines ?? grandTotal;
   const currency = d['currency$_identifier'] || '';
 
-  const alreadyProcessed = data?.documentStatus === 'CO';
-
   const handleConfirm = async () => {
     if (loading) return;
     setLoading(true);
     setError(null);
 
     try {
-      // Step 1: Process DocAction=CO (skip if already confirmed)
-      if (!alreadyProcessed) {
-        const processRes = await fetch(
-          `${entityUrl}/${quotationId}/action/DocAction`,
-          { method: 'POST', headers, body: JSON.stringify({ fieldValues: {} }) },
-        );
-        if (!processRes.ok) {
-          const err = await processRes.json().catch(() => null);
-          throw new Error(err?.response?.message || err?.message || `Process failed (${processRes.status})`);
-        }
-      }
-
-      // Step 2: Create the document
       const baseNeoUrl = apiBaseUrl.replace(/\/sales-quotation$/, '');
 
       if (selected === 'order') {
@@ -143,19 +124,24 @@ export default function QuotationConfirmModal({
         setCreatedDoc({ type: 'order', id: null, documentNo: '?', total: '', status: 'Draft' });
 
       } else {
-        // TODO: The createDraftInvoice endpoint for quotations may not exist yet.
         const res = await fetch(
           `${entityUrl}/${quotationId}/action/createDraftInvoice`,
-          { method: 'POST', headers, body: JSON.stringify({ fieldValues: {} }) },
+          { method: 'POST', headers, body: JSON.stringify({}) },
         );
         if (!res.ok) {
           const err = await res.json().catch(() => null);
           throw new Error(
-            ui('sqOrderConfirmedInvoiceError')
-            + (err?.response?.message || err?.message || `Error (${res.status})`)
+            err?.response?.message || err?.message || `Error (${res.status})`
           );
         }
-        setCreatedDoc({ type: 'invoice', id: null, documentNo: '?', total: '', status: '' });
+        const doc = (await res.json())?.response?.data;
+        setCreatedDoc({
+          type: 'invoice',
+          id: doc?.id ?? null,
+          documentNo: doc?.documentNo ?? '',
+          total: fmtNum(doc?.grandTotalAmount ?? grandTotal),
+          status: 'Draft',
+        });
       }
     } catch (err) {
       setError(err.message || ui('soErrorOccurred'));
@@ -285,12 +271,11 @@ export default function QuotationConfirmModal({
             subtitle={ui('sqCreateOrderDesc')}
           />
           <OptionCard
-            selected={false}
-            onClick={() => {}}
+            selected={selected === 'invoice'}
+            onClick={() => setSelected('invoice')}
             icon={<FileText size={16} />}
             title={ui('soInvoiceDirectly')}
             subtitle={ui('sqInvoiceDirectlyDesc')}
-            disabled
           />
         </div>
 

@@ -30,7 +30,22 @@
           "grid": true,
           "form": true,
           "section": "principal",
-          "seq": 4
+          "seq": 4,
+          "columnType": "enum",
+          "enumLabels": {
+            "A": "uomTypeArea",
+            "L": "uomTypeLength",
+            "T": "uomTypeTime",
+            "V": "uomTypeVolume",
+            "W": "uomTypeWeight"
+          },
+          "enumVariants": {
+            "A": "orange",
+            "L": "blue",
+            "T": "purple",
+            "V": "teal",
+            "W": "yellow"
+          }
         },
         "isActive": {
           "grid": false,

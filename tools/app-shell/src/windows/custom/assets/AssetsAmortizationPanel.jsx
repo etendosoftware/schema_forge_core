@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useUI } from '@/i18n';
+import { StatusTag } from '@/components/ui/status-tag';
 
 function fmt(v) {
   if (v == null || v === '') return '—';
@@ -11,12 +12,10 @@ function fmt(v) {
 
 function StatusBadge({ isProcessed, ui }) {
   return (
-    <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-        ${isProcessed ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}
-    >
-      {isProcessed ? ui('assetsStatusProcessed') : ui('assetsStatusPlanned')}
-    </span>
+    <StatusTag
+      status={isProcessed ? 'CO' : 'IP'}
+      label={isProcessed ? ui('assetsStatusProcessed') : ui('assetsStatusPlanned')}
+    />
   );
 }
 

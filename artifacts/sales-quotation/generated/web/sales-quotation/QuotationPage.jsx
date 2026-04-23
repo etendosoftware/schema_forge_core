@@ -12,6 +12,15 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Sales Quotation';
 
+const labelOverrides = {
+  "es_ES": {
+    "C_BPartner_ID": "Contacto"
+  },
+  "en_US": {
+    "C_BPartner_ID": "Contact"
+  }
+};
+
 
 // @sf-generated-start summary:quotation
 const summary = [
@@ -41,10 +50,10 @@ const draftMode = null;
 const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity' },
-    { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, label: 'Tax', reference: 'Tax', inputMode: 'selector' },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
+    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity', defaultValue: 1 },
+    { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
+    { key: 'tax', column: 'C_Tax_ID', type: 'search', required: true, label: 'Tax', reference: 'Tax', inputMode: 'search' },
   ],
   derived: [
     { key: 'discount', column: 'Discount', type: 'number', label: 'Discount' },
@@ -55,7 +64,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:quotationLine
 
-const api = {
+export const api = {
   "specName": "sales-quotation",
   "baseUrl": "/sws/neo/sales-quotation",
   "crud": {
@@ -97,7 +106,7 @@ const api = {
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
       "inputMode": "search",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/businessPartner?isCustomer=Y"
+      "url": "/sws/neo/sales-quotation/quotation/selectors/businessPartner"
     },
     {
       "entity": "quotation",
@@ -125,6 +134,14 @@ const api = {
     },
     {
       "entity": "quotation",
+      "field": "paymentTerms",
+      "column": "C_PaymentTerm_ID",
+      "reference": "PaymentTerm",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/paymentTerms"
+    },
+    {
+      "entity": "quotation",
       "field": "currency",
       "column": "C_Currency_ID",
       "reference": "Currency",
@@ -144,7 +161,7 @@ const api = {
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
-      "inputMode": "selector",
+      "inputMode": "search",
       "url": "/sws/neo/sales-quotation/quotationLine/selectors/tax"
     }
   ],
@@ -213,14 +230,6 @@ const api = {
     },
     {
       "entity": "quotation",
-      "field": "generateTemplate",
-      "column": "Generatetemplate",
-      "url": "/sws/neo/sales-quotation/quotation/{id}/action/generateTemplate",
-      "processId": "800022",
-      "processType": "classic"
-    },
-    {
-      "entity": "quotation",
       "field": "processNow",
       "column": "Processing",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/processNow",
@@ -234,6 +243,14 @@ const api = {
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/posted",
       "processId": "57496FB9CF9E4E8F847224017941570E",
       "processType": "obuiapp"
+    },
+    {
+      "entity": "quotation",
+      "field": "generateTemplate",
+      "column": "Generatetemplate",
+      "url": "/sws/neo/sales-quotation/quotation/{id}/action/generateTemplate",
+      "processId": "800022",
+      "processType": "classic"
     },
     {
       "entity": "quotation",
@@ -344,7 +361,6 @@ const api = {
 
 // @sf-generated-start component:QuotationPage
 export default function QuotationPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -373,9 +389,10 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         topbarRight={QuotationTopbarActions}
         menuActions={({ status }) => [
           { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
-          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
+          { key: 'cancel', label: 'Cancel', destructive: true, visible: ["CO","UE"].includes(status), onClick: () => {}, }
         ]}
         salesTheme
+        labelOverrides={labelOverrides}
         {...props}
       />
     );
@@ -390,6 +407,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       hidePrint
+      labelOverrides={labelOverrides}
       {...props}
     />
   );

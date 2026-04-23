@@ -78,7 +78,7 @@
         },
         "priceList": {
           "visibility": "editable",
-          "section": "collapsed",
+          "section": "principal",
           "reference": "PriceList",
           "inputMode": "selector",
           "readOnlyLogic": "@Processed@='Y'"
@@ -101,7 +101,7 @@
           "visibility": "discarded"
         },
         "documentAction": {
-          "visibility": "discarded"
+          "visibility": "system"
         },
         "createLinesFromOrder": {
           "visibility": "discarded"
@@ -116,9 +116,7 @@
           "visibility": "discarded"
         },
         "orderReference": {
-          "visibility": "editable",
-          "section": "collapsed",
-          "readOnlyLogic": "@Processed@='Y'"
+          "visibility": "discarded"
         },
         "active": {
           "visibility": "discarded",
@@ -136,8 +134,7 @@
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
-          "form": false,
-          "display": "dot"
+          "form": false
         },
         "processed": {
           "visibility": "readOnly",
@@ -278,11 +275,11 @@
         "tax": {
           "grid": true,
           "section": "principal",
-          "inputMode": "selector"
+          "inputMode": "search"
         },
         "lineNetAmount": {
-          "visibility": "readOnly",
-          "grid": true,
+          "visibility": "system",
+          "grid": false,
           "section": "principal"
         },
         "discount": {
@@ -294,7 +291,7 @@
           "visibility": "discarded"
         },
         "description": {
-          "section": "collapsed"
+          "section": "principal"
         },
         "taxAmount": {
           "visibility": "discarded"
@@ -312,8 +309,11 @@
         },
         "grossAmount": {
           "visibility": "readOnly",
-          "form": false,
-          "grid": false
+          "grid": true,
+          "gridOrder": 6,
+          "form": true,
+          "section": "principal",
+          "displayLogic": null
         },
         "grossListPrice": {
           "visibility": "discarded"
@@ -453,7 +453,7 @@
     "ticketbai": {
       "exclude": true
     },
-    "resultadoValidación": {
+    "resultadoValidaci\u00f3n": {
       "exclude": true
     },
     "cashVat": {
