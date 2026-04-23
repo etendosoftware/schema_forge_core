@@ -1,19 +1,22 @@
-import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { createPortal } from 'react-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
-import { Search, Inbox, X, ChevronDown, Check, Trash2, Copy } from 'lucide-react';
+import { Search, Inbox, X, ChevronDown, Trash2, Copy, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLabel, useUI, useLocale, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { getStatusDotColor, getStatusGridPillClass, getStatusPillClass, statusLabel } from '@/lib/statusBadge.js';
+import { StatusTag } from '@/components/ui/status-tag';
+import { Tag } from '@/components/ui/tag';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { resolveColumnLabel } from '@/lib/resolveColumnLabel.js';
 import { formatAmount } from '@/lib/formatAmount.js';
+import { applyCalloutUpdates } from '@/lib/applyCalloutUpdates.js';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import InternalConsumptionProductSearchDrawer from './InternalConsumptionProductSearchDrawer.jsx';
 
@@ -199,6 +202,7 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
           className="bg-white border rounded-md shadow-lg overflow-auto"
           style={dropdownStyle}
           data-open-up={openUp ? 'true' : 'false'}
+          data-inline-add-portal="true"
         >
           {filtered.map(opt => (
             <button
@@ -279,9 +283,8 @@ const NUMERIC_FIELD_TYPES = new Set(['number', 'integer', 'decimal', 'quantity',
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
-function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable, hasDeleteColumn, hasCloneColumn, token, apiBaseUrl, entity, selectorContext }) {
+const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable, hasDeleteColumn, hasCloneColumn, token, apiBaseUrl, entity, selectorContext }, ref) {
   const t = useLabel();
-  const ui = useUI();
   const fieldMap = useMemo(() => {
     const map = {};
     for (const f of fields) map[f.key] = f;
@@ -309,8 +312,11 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
   }, [fields, defaultLineNo]);
 
   const [values, setValues] = useState(buildEmpty);
+  const [isSaving, setIsSaving] = useState(false);
   const firstInputRef = useRef(null);
+  const rowRef = useRef(null);
   const touchedFieldsRef = useRef(new Set());
+  const inflightRef = useRef(null);
 
   // Reset values when fields or data change
   useEffect(() => {
@@ -327,46 +333,108 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
     setValues(prev => ({ ...prev, [key]: val }));
   };
 
-  const handleConfirm = async () => {
-    // Coerce numeric field values to JS numbers right before submission.
-    // This catches race conditions where async callouts may have overwritten
-    // user-typed values with strings.
-    const coercedValues = { ...values };
-    for (const f of fields) {
-      if (NUMERIC_FIELD_TYPES.has(f.type) && coercedValues[f.key] !== '' && coercedValues[f.key] != null) {
-        const raw = String(coercedValues[f.key]);
-        const parsed = f.type === 'integer' ? parseInt(raw, 10) : parseFloat(raw);
-        if (!isNaN(parsed)) coercedValues[f.key] = parsed;
+  const submitLine = useCallback(({ closeAfterSave = false } = {}) => {
+    // Dedupe concurrent submits: outside-click + parent flushPendingLines can fire
+    // in the same tick; both callers must observe the same outcome.
+    if (inflightRef.current) return inflightRef.current;
+    setIsSaving(true);
+    const run = (async () => {
+      try {
+        // Coerce numeric field values to JS numbers right before submission.
+        // This catches race conditions where async callouts may have overwritten
+        // user-typed values with strings.
+        const coercedValues = { ...values };
+        for (const f of fields) {
+          if (NUMERIC_FIELD_TYPES.has(f.type) && coercedValues[f.key] !== '' && coercedValues[f.key] != null) {
+            const raw = String(coercedValues[f.key]);
+            const parsed = f.type === 'integer' ? parseInt(raw, 10) : parseFloat(raw);
+            if (!isNaN(parsed)) coercedValues[f.key] = parsed;
+          }
+        }
+        const result = await onAdd(coercedValues);
+        if (result === false || result == null) {
+          return false;
+        }
+        if (closeAfterSave) {
+          onCancel();
+          return true;
+        }
+        // Reset for next rapid entry — recompute lineNo
+        const nums = [...(data || []).map(r => Number(r.lineNo) || 0), Number(values.lineNo) || 0];
+        const nextLineNo = Math.max(...nums) + 10;
+        const next = {};
+        for (const f of fields) {
+          if (f.key === 'lineNo') {
+            next[f.key] = nextLineNo;
+          } else if (f.defaultValue !== undefined) {
+            next[f.key] = f.defaultValue;
+          } else {
+            next[f.key] = '';
+          }
+        }
+        // Clear any $_identifier companion values
+        for (const key of Object.keys(values)) {
+          if (key.includes('$_identifier') && !(key in next)) {
+            next[key] = '';
+          }
+        }
+        setValues(next);
+        touchedFieldsRef.current = new Set();
+        // Re-focus first input for rapid entry
+        setTimeout(() => firstInputRef.current?.focus(), 0);
+        return true;
+      } finally {
+        inflightRef.current = null;
+        setIsSaving(false);
       }
-    }
-    const result = await onAdd(coercedValues);
-    if (result === false || result == null) {
-      return;
-    }
-    // Reset for next rapid entry — recompute lineNo
-    const nums = [...(data || []).map(r => Number(r.lineNo) || 0), Number(values.lineNo) || 0];
-    const nextLineNo = Math.max(...nums) + 10;
-    const next = {};
-    for (const f of fields) {
-      if (f.key === 'lineNo') {
-        next[f.key] = nextLineNo;
-      } else if (f.defaultValue !== undefined) {
-        next[f.key] = f.defaultValue;
+    })();
+    inflightRef.current = run;
+    return run;
+  }, [data, fields, onAdd, onCancel, values]);
+
+  // Enter → confirm without closing (rapid entry). Outside-click / parent flush close.
+  const handleConfirm = useCallback(() => submitLine({ closeAfterSave: false }), [submitLine]);
+
+  // Expose imperative flush for parent (e.g. auto-commit pending line on header Save).
+  // If no field has been touched, silently cancel. Otherwise confirm and return success.
+  useImperativeHandle(ref, () => ({
+    flush: async ({ closeAfterSave = true } = {}) => {
+      if (inflightRef.current) {
+        return (await inflightRef.current) !== false;
+      }
+      if (touchedFieldsRef.current.size === 0) {
+        onCancel();
+        return true;
+      }
+      const ok = await submitLine({ closeAfterSave });
+      return ok !== false;
+    },
+  }), [onCancel, submitLine]);
+
+  // Auto-commit when the user clicks outside the row (mirrors the green-check behavior).
+  // Skips clicks inside the row itself, inside any open dialog/drawer (role="dialog"),
+  // and inside whitelisted portals (combo dropdown marked with data-inline-add-portal).
+  useEffect(() => {
+    const handler = (e) => {
+      const target = e.target;
+      if (!(target instanceof Node)) return;
+      if (rowRef.current && rowRef.current.contains(target)) return;
+      if (target instanceof Element) {
+        if (target.closest('[role="dialog"]')) return;
+        if (target.closest('[data-inline-add-portal="true"]')) return;
+      }
+      // If a dialog/drawer is currently open anywhere, defer — clicks belong to it.
+      if (document.querySelector('[role="dialog"]')) return;
+      if (inflightRef.current) return;
+      if (touchedFieldsRef.current.size === 0) {
+        onCancel();
       } else {
-        next[f.key] = '';
+        void submitLine({ closeAfterSave: true });
       }
-    }
-    // Clear any $_identifier companion values
-    for (const key of Object.keys(values)) {
-      if (key.includes('$_identifier') && !(key in next)) {
-        next[key] = '';
-      }
-    }
-    setValues(next);
-    touchedFieldsRef.current = new Set();
-    // Re-focus first input for rapid entry
-    setTimeout(() => firstInputRef.current?.focus(), 0);
-  };
+    };
+    document.addEventListener('mousedown', handler, true);
+    return () => document.removeEventListener('mousedown', handler, true);
+  }, [onCancel, submitLine]);
 
   // Wrap handleChange to also notify parent (for callout triggering)
   const handleFieldChange = useCallback((key, val, selectedItem) => {
@@ -388,13 +456,28 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
         if (topField === 'id' || topField === '_aux' || topField === 'label'
             || topField === 'name' || topField === 'searchKey'
             || typeof topVal === 'object' || topVal === null) continue;
-        // Gross price from price list — map directly to grossUnitPrice so the DB trigger
-        // can derive priceActual (net). Do NOT set unitPrice/priceActual from the frontend.
+        // Price from the document's price list. Mapping depends on price list type:
+        //   - Gross list (isTaxIncluded=true): standardPrice is the gross price → grossUnitPrice
+        //   - Net list   (isTaxIncluded=false): standardPrice is the net price   → unitPrice
+        // Mark the target field as touched so the callout does not overwrite it (some callouts
+        // look up the price themselves and may return a different value from another price list).
         if (topField === 'standardPrice' && topVal != null) {
-          snapshot['grossUnitPrice'] = topVal;
-          handleChange('grossUnitPrice', topVal);
-          snapshot['grossListPrice'] = topVal;
-          handleChange('grossListPrice', topVal);
+          const isGross = selectedItem?.isTaxIncluded !== false;
+          if (isGross) {
+            snapshot['grossUnitPrice'] = topVal;
+            handleChange('grossUnitPrice', topVal);
+            snapshot['grossListPrice'] = topVal;
+            handleChange('grossListPrice', topVal);
+            touchedFieldsRef.current.add('grossUnitPrice');
+            touchedFieldsRef.current.add('grossListPrice');
+          } else {
+            snapshot['unitPrice'] = topVal;
+            handleChange('unitPrice', topVal);
+            snapshot['listPrice'] = topVal;
+            handleChange('listPrice', topVal);
+            touchedFieldsRef.current.add('unitPrice');
+            touchedFieldsRef.current.add('listPrice');
+          }
           continue;
         }
         const ctxKey = `${key}_${topField}`;
@@ -406,27 +489,15 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
       }
     }
     // Notify parent for callout execution — pass computed snapshot (not stale React state)
-    onFieldChange?.(key, val, snapshot, (updates) => {
-      // Callback to apply callout results to the inline row.
-      // Never overwrite fields manually set by the user in this add-row session.
-      setValues((prev) => {
-        const next = { ...prev };
-        for (const [field, value] of Object.entries(updates)) {
-          const isTouched = touchedFieldsRef.current.has(field);
-          const hasUserValue = prev[field] !== '' && prev[field] != null;
-          if (field !== key && isTouched && hasUserValue) continue;
-          if ((value === '' || value == null) && hasUserValue) continue;
-          next[field] = value;
-        }
-        return next;
-      });
+    onFieldChange?.(key, val, snapshot, (updates, forceFields = new Set()) => {
+      setValues((prev) => applyCalloutUpdates(prev, updates, forceFields, key, touchedFieldsRef.current));
     });
   }, [handleChange, onFieldChange, values]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      void handleConfirm();
+      handleConfirm();
     } else if (e.key === 'Escape') {
       e.preventDefault();
       onCancel();
@@ -436,19 +507,12 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
   let firstInputAssigned = false;
 
   return (
-    <TableRow className="bg-blue-50/50 border-t-2 border-primary/20">
-      {/* Accept / Cancel buttons */}
+    <TableRow ref={rowRef} className="bg-blue-50/50 border-t-2 border-primary/20">
+      {/* Saving spinner — aligned with selection checkbox column (empty when idle). */}
       {selectable && (
         <TableCell className="w-10 px-1">
-          <div className="flex gap-0.5">
-            <button type="button" onClick={() => { void handleConfirm(); }} title="Add (Enter)"
-              className="h-7 w-7 flex items-center justify-center rounded text-emerald-600 hover:bg-emerald-50">
-              <Check className="h-3.5 w-3.5" />
-            </button>
-            <button type="button" onClick={onCancel} title={ui('cancelEsc')}
-              className="h-7 w-7 flex items-center justify-center rounded text-red-500 hover:bg-red-50">
-              <X className="h-3.5 w-3.5" />
-            </button>
+          <div className="flex items-center justify-center h-7">
+            {isSaving && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-label="Saving line" />}
           </div>
         </TableCell>
       )}
@@ -460,10 +524,11 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
           // Prefer $_identifier (human-readable) over raw ID for FK fields.
           const rawVal = values[col.key];
           const identVal = values[col.key + '$_identifier'];
+          const isNumericDerived = NUMERIC_FIELD_TYPES.has(col.type);
           const displayVal = identVal || rawVal;
           return (
-            <TableCell key={col.key} className="text-muted-foreground text-sm">
-              {displayVal != null && displayVal !== '' ? displayVal : '\u2014'}
+            <TableCell key={col.key} className={`text-muted-foreground text-sm${isNumericDerived ? ' text-right tabular-nums' : ''}`}>
+              {displayVal != null && displayVal !== '' ? displayVal : '—'}
             </TableCell>
           );
         }
@@ -613,28 +678,27 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
           );
         }
 
+        const isNumeric = NUMERIC_FIELD_TYPES.has(field.type);
         return (
           <TableCell key={col.key} className="py-1 px-2">
             <input
               ref={isFirst ? firstInputRef : undefined}
-              type={NUMERIC_FIELD_TYPES.has(field.type) ? 'number' : 'text'}
+              type={isNumeric ? 'number' : 'text'}
               inputMode={field.inputMode}
               value={values[field.key] ?? ''}
               onChange={(e) => {
                 const raw = e.target.value;
-                const isNumericType = NUMERIC_FIELD_TYPES.has(field.type);
-                touchedFieldsRef.current.add(field.key);
-                if (isNumericType && raw !== '' && raw !== '-') {
+                if (isNumeric && raw !== '' && raw !== '-') {
                   const parsed = field.type === 'integer' ? parseInt(raw, 10) : parseFloat(raw);
-                  handleChange(field.key, isNaN(parsed) ? raw : parsed);
+                  handleFieldChange(field.key, isNaN(parsed) ? raw : parsed);
                 } else {
-                  handleChange(field.key, raw);
+                  handleFieldChange(field.key, raw);
                 }
               }}
               onKeyDown={handleKeyDown}
               placeholder={fieldLabel}
               required={field.required}
-              className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+              className={`w-full h-8 text-sm rounded-md border border-input bg-background px-2 focus:ring-2 focus:ring-primary focus:outline-none${isNumeric ? ' text-right tabular-nums' : ''}`}
             />
           </TableCell>
         );
@@ -643,7 +707,7 @@ function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFiel
       {hasCloneColumn && <TableCell className="w-10" />}
     </TableRow>
   );
-}
+});
 
 /**
  * Inline field that shows selected value and opens modal on click/focus.
@@ -761,10 +825,12 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [optimisticToggles, setOptimisticToggles] = useState({});
   const [savingToggles, setSavingToggles] = useState({});
+  const [deletingRows, setDeletingRows] = useState({});
 
   useEffect(() => {
     setOptimisticToggles({});
     setSavingToggles({});
+    setDeletingRows({});
   }, [data]);
 
   // Report columns to parent (e.g., ListView sort popover)
@@ -888,13 +954,12 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
         if (warehouseLabel) display = warehouseLabel;
       }
     }
-    // Link styling on first string column
     if (col === columns[0] && col.type === 'string') {
       const pill = col.pill;
       const pillLabel = pill && pill.when(row) ? pill.label : null;
       return (
         <span className="inline-flex items-center gap-2">
-          <span className="font-medium text-blue-600">{display}</span>
+          <span>{display}</span>
           {pillLabel && (
             <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${pill.className || 'bg-gray-50 text-gray-600 border-gray-200'}`} style={{ borderWidth: '0.5px' }}>
               {pillLabel}
@@ -915,7 +980,11 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           </span>
         );
       }
-      return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusGridPillClass(raw)}`}>{label}</span>;
+      if (col.enumVariants) {
+        const variant = col.enumVariants[raw] ?? 'neutral';
+        return <Tag variant={variant} label={label} />;
+      }
+      return <span>{label}</span>;
     }
     if (col.type === 'status') {
       const raw = row[col.key];
@@ -929,7 +998,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
           </span>
         );
       }
-      return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusGridPillClass(raw)}`}>{label}</span>;
+      return <StatusTag status={raw} label={label} />;
     }
     if (col.type === 'percent') {
       const val = Number(row[col.key]);
@@ -974,18 +1043,25 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
         };
         const trueLabel  = resolveBadgeLabel(col.badgeLabels?.true,  ui('statusComplete'));
         const falseLabel = resolveBadgeLabel(col.badgeLabels?.false, ui('statusInProcess'));
-        const trueColor  = col.badgeColors?.true  ?? 'bg-emerald-100 text-emerald-800';
-        const falseColor = col.badgeColors?.false ?? 'bg-amber-100 text-amber-700';
-        if (isTruthyBoolean(val)) return (
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${trueColor}`}>
-            {trueLabel}
-          </span>
-        );
-        if (isFalsyBoolean(val)) return (
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${falseColor}`}>
-            {falseLabel}
-          </span>
-        );
+        if (!col.badgeColors) {
+          const trueVariant = col.badgeVariants?.true ?? 'green';
+          const falseVariant = col.badgeVariants?.false ?? 'neutral';
+          if (isTruthyBoolean(val)) return <Tag variant={trueVariant} label={trueLabel} />;
+          if (isFalsyBoolean(val)) return <Tag variant={falseVariant} label={falseLabel} />;
+        } else {
+          const trueColor  = col.badgeColors.true  ?? 'bg-emerald-100 text-emerald-800';
+          const falseColor = col.badgeColors.false ?? 'bg-amber-100 text-amber-700';
+          if (isTruthyBoolean(val)) return (
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${trueColor}`}>
+              {trueLabel}
+            </span>
+          );
+          if (isFalsyBoolean(val)) return (
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${falseColor}`}>
+              {falseLabel}
+            </span>
+          );
+        }
       }
       if (isTruthyBoolean(val)) return <span className="text-emerald-600">{ui('yes')}</span>;
       if (isFalsyBoolean(val)) return <span className="text-slate-400">{ui('no')}</span>;
@@ -1080,7 +1156,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
               {columns.map(col => {
                 const colLabel = resolveColumnLabel(col, locale, t);
                 const isSorted = sortColumn === col.key;
-                const isRight = col.type === 'amount';
+                const isNumeric = NUMERIC_FIELD_TYPES.has(col.type);
                 return (
                   <TableHead key={col.key} className="align-top">
                     <div className="flex flex-col gap-1.5 pb-2">
@@ -1116,7 +1192,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                             columnFilters[col.key]
                               ? 'border-primary/40 bg-primary/5 pr-6'
                               : 'border-border/35',
-                            isRight ? 'text-right' : '',
+                            isNumeric ? 'text-right' : '',
                           ].filter(Boolean).join(' ')}
                         />
                         {columnFilters[col.key] && (
@@ -1182,7 +1258,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                       );
                     })()}
                     {columns.map(col => (
-                      <TableCell key={col.key} className={col.type === 'amount' ? 'text-right' : ''}>
+                      <TableCell key={col.key} className={NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right tabular-nums' : ''}>
                         {renderCellValue(row, col)}
                       </TableCell>
                     ))}
@@ -1190,12 +1266,25 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                       <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
                         <button
                           type="button"
-                          onClick={() => onDeleteRow(row)}
-                          className="opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                          disabled={!!deletingRows[row.id]}
+                          onClick={async () => {
+                            const deleteKey = row.id;
+                            setDeletingRows(prev => ({ ...prev, [deleteKey]: true }));
+                            try {
+                              await onDeleteRow(row);
+                            } finally {
+                              setDeletingRows(prev => {
+                                const next = { ...prev };
+                                delete next[deleteKey];
+                                return next;
+                              });
+                            }
+                          }}
+                          className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                           title={ui('deleteRowTooltip')}
                           aria-label={ui('deleteRowTooltip')}
                         >
-                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                          {deletingRows[row.id] ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />}
                         </button>
                       </TableCell>
                     )}
@@ -1223,6 +1312,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
             )}
             {addRow?.active && (
               <InlineAddRow
+                ref={addRow.ref}
                 columns={columns}
                 fields={addRow.fields}
                 onAdd={addRow.onAdd}
@@ -1260,7 +1350,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
       </div>
       {addRow?.active && (
         <p className="text-xs text-muted-foreground mt-1 text-center">
-          Enter to add &middot; Esc to cancel
+          {ui('inlineAddHint')}
         </p>
       )}
     </div>

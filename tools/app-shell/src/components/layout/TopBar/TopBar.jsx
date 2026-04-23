@@ -23,6 +23,7 @@ import {
   MoreVertical,
   Star,
   HelpCircle,
+  ArrowLeft,
 } from 'lucide-react';
 
 function openCommandPalette() {
@@ -32,6 +33,7 @@ function openCommandPalette() {
 }
 
 export default function TopBar({
+  onBack,
   title,
   breadcrumb,
   recordCount,
@@ -60,13 +62,23 @@ export default function TopBar({
     <TooltipProvider>
       <header
         className={cn(
-          'flex h-[62px] shrink-0 items-center gap-4 pl-0 pr-6 bg-page-bg',
+          'relative flex h-[62px] shrink-0 items-center gap-4 pl-0 pr-6 bg-page-bg',
           className
         )}
       >
-        {/* Left: title + breadcrumb + 3-dot menu */}
-        {title && (
+        {/* Left: back button + title + breadcrumb + 3-dot menu */}
+        {(title || onBack) && (
           <div className="flex items-center gap-1 shrink-0 min-w-0">
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                aria-label={ui('back')}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-topbar-icon hover:bg-muted hover:text-foreground transition-colors shrink-0"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            )}
             <div className="flex flex-col justify-center items-start min-w-0 h-12">
               <div className="flex items-center gap-2">
                 <span className="text-xl font-semibold leading-8 text-text-primary truncate">
@@ -136,12 +148,12 @@ export default function TopBar({
           </div>
         )}
 
-        {/* Center: search */}
-        <div className="flex flex-1 justify-center">
+        {/* Center: search — absolutely centered so it never shifts with title width */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-6">
           <button
             type="button"
             onClick={handleSearchClick}
-            className="relative flex h-9 w-full max-w-xl items-center gap-2 rounded-full bg-search-bg px-4 text-sm hover:bg-search-bg/80 transition-colors"
+            className="pointer-events-auto relative flex h-9 w-full max-w-xl items-center gap-2 rounded-full bg-search-bg px-4 text-sm hover:bg-search-bg/80 transition-colors"
           >
             <Search className="h-4 w-4 shrink-0 text-search-placeholder" />
             <span className="flex-1 text-left truncate text-search-placeholder">
@@ -164,7 +176,7 @@ export default function TopBar({
         </div>
 
         {/* Right: action icons */}
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="ml-auto flex items-center gap-1 shrink-0">
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <button

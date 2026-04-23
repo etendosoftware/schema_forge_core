@@ -134,8 +134,7 @@
           "visibility": "readOnly",
           "grid": true,
           "searchable": true,
-          "form": false,
-          "display": "dot"
+          "form": false
         },
         "processed": {
           "visibility": "readOnly",
@@ -279,8 +278,8 @@
           "inputMode": "search"
         },
         "lineNetAmount": {
-          "visibility": "readOnly",
-          "grid": true,
+          "visibility": "system",
+          "grid": false,
           "section": "principal"
         },
         "discount": {
@@ -454,7 +453,7 @@
     "ticketbai": {
       "exclude": true
     },
-    "resultadoValidación": {
+    "resultadoValidaci\u00f3n": {
       "exclude": true
     },
     "cashVat": {

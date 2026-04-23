@@ -234,7 +234,7 @@ function normalizeRows(rows, entityName) {
   return Array.isArray(rows) ? rows.map(row => normalizeRecord(row, entityName)) : [];
 }
 
-export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy, baseFilter }) {
+export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy, baseFilter, skipListFetch = false }) {
   const { logout } = useAuth();
   const ui = useUI();
   const [items, setItems] = useState([]);
@@ -244,6 +244,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
   const [childrenLoading, setChildrenLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [saveError, setSaveError] = useState(null);
   const [sortColumn, setSortColumn] = useState('creationDate');
@@ -306,7 +307,17 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       .catch(() => { setLoadingMore(false); setHasMore(false); });
   }, [apiBaseUrl, entity, token, sortColumn, sortDirection, hasMore, loadingMore, loading, baseFilter, logout]);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  // List fetch is a mount-time decision. Flipping skipListFetch after mount
+  // (e.g. a detail view whose recordId goes 'new' → ':id') must NOT retroactively
+  // trigger a list fetch — that caused the whole DetailView to show "Loading"
+  // post-save. Callers that need to reload the list call refresh() explicitly.
+  const didListFetchRef = useRef(false);
+  useEffect(() => {
+    if (didListFetchRef.current) return;
+    if (skipListFetch) return;
+    didListFetchRef.current = true;
+    refresh();
+  }, [refresh, skipListFetch]);
 
   const fetchChildren = useCallback((parentId) => {
     if (!childEntity || !parentId) { setChildren([]); setChildrenLoading(false); return; }
@@ -379,14 +390,6 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
             }
           }
 
-          // Remove NEO auto-sequence placeholders (e.g. "<10000000>") — they carry the
-          // wrong format (no prefix/mask). The real value is assigned by backend on save.
-          for (const key of Object.keys(normalized)) {
-            if (typeof normalized[key] === 'string' && /^<\d+>$/.test(normalized[key])) {
-              delete normalized[key];
-            }
-          }
-
           const isContactsBusinessPartner = entity === 'businessPartner'
             && /\/contacts$/i.test(apiBaseUrl || '');
           if (isContactsBusinessPartner && (normalized.oBTIKTaxIDKey == null || normalized.oBTIKTaxIDKey === '')) {
@@ -408,6 +411,7 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
 
   const handleSave = useCallback(async () => {
     if (!editing) return;
+    setIsSaving(true);
     setSaveError(null);
     const isNew = !editing.id;
     const url = isNew ? `${apiBaseUrl}/${entity}` : `${apiBaseUrl}/${entity}/${editing.id}`;
@@ -483,7 +487,10 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         setEditing({ ...saved });
         setSaveError(null);
         toast.success(isNew ? ui('recordCreated') : ui('recordSaved'));
-        refresh();
+        // NOTE: deliberately do NOT call refresh() here — the POST response already
+        // contains the full saved record and we feed it to setSelected/setEditing above.
+        // Callers that need the list reloaded (handleDelete, handleSaveAndProcess) call
+        // refresh() themselves. See docs/plans/sales-order-save-performance.md (Etapa 1.1).
         return saved;
       } else {
         const msg = await extractErrorMessage(res, ui);
@@ -496,8 +503,10 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       setSaveError(msg);
       toast.error(msg);
       return null;
+    } finally {
+      setIsSaving(false);
     }
-  }, [editing, selected, apiBaseUrl, entity, token, refresh, ui]);
+  }, [editing, selected, apiBaseUrl, entity, token, ui]);
 
   const handleDelete = useCallback(async () => {
     if (!selected?.id) return;
@@ -572,12 +581,8 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       if (typeof fieldOrObject === 'object') return { ...c, ...fieldOrObject };
       return { ...c, [fieldOrObject]: value };
     }));
-    // Refetch header and children — backend may recalculate totals or derived fields
-    if (selected?.id) {
-      fetchById(selected.id);
-      fetchChildren(selected.id);
-    }
-  }, [selected, fetchById, fetchChildren]);
+    if (selected?.id) fetchById(selected.id);
+  }, [selected, fetchById]);
 
   const handleDeleteChild = useCallback((childId) => {
     setChildren(prev => prev.filter(c => String(c.id) !== String(childId)));
@@ -643,10 +648,21 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
     }
   }, [selected, entity, apiBaseUrl, token, refresh, fetchById, ui]);
 
+  // Prime the hook state with a freshly-saved record so consumers (DetailView) can
+  // navigate /new → /:id without triggering a redundant GET /<entity>/:id. The POST
+  // response already carries the full record — primeSaved makes that explicit for
+  // callers that need to skip the "empty store → fetchById" path post-save.
+  // See docs/plans/sales-order-save-performance.md (Etapa 1.2).
+  const primeSaved = useCallback((saved) => {
+    if (!saved?.id) return;
+    setSelected(saved);
+    setEditing({ ...saved });
+  }, []);
+
   return {
-    items, selected, editing, children, childrenLoading, loading, loadingMore, hasMore, saveError,
+    items, selected, editing, children, childrenLoading, loading, loadingMore, hasMore, saveError, isSaving,
     handleSelect, handleNew, handleChange, handleSave, handleSaveAndProcess, handleDelete, handleProcess,
-    handleAddChild, handleUpdateChild, handleDeleteChild,
+    handleAddChild, handleUpdateChild, handleDeleteChild, primeSaved,
     refresh, fetchById, fetchChildren, loadMore,
     sortColumn, sortDirection, setSortColumn, setSortDirection,
   };

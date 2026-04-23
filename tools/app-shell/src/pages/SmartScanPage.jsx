@@ -4,8 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useUI, useMenuLabel } from '@/i18n';
-import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
-import { UserAvatarButton } from '@/components/UserAvatarButton.jsx';
+import { useSetPageMeta } from '@/components/layout/PageMetaContext';
+import { useFavorites } from '@/components/layout/FavoritesContext';
 import {
   ScanLine,
   Upload,
@@ -15,12 +15,6 @@ import {
   CheckCircle2,
   FileText,
   Activity,
-  Search,
-  Mic,
-  MoreVertical,
-  Sparkles,
-  Bell,
-  Plus
 } from 'lucide-react';
 
 const STATUS_VARIANT = {
@@ -71,56 +65,17 @@ export default function SmartScanPage() {
   const translatedConfidence = ui('smartScanConfidence');
   const translatedTitle = tMenu('Smart Scan');
   const breadcrumb = `${tMenu('Settings')} / ${translatedTitle}`;
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const favKey = 'smart-scan';
+  useSetPageMeta({
+    title: translatedTitle,
+    breadcrumb,
+    onAddToFavorites: () => toggleFavorite(favKey, 'Smart Scan'),
+    isFavorite: isFavorite(favKey),
+  }, [isFavorite(favKey)]);
 
   return (
-    <div className="h-full flex flex-col" data-testid="smartscan-page">
-      {/* Top bar area (gray background, inherited from parent) */}
-      <div className="px-6 pt-3 pb-3 shrink-0">
-        {/* Row 1: Title + Global search + action icons */}
-        <div className="flex items-center gap-4">
-          {/* Left: title */}
-          <div className="shrink-0">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-foreground">{translatedTitle}</h1>
-              <button className="text-muted-foreground hover:text-foreground">
-                <MoreVertical className="h-4 w-4" />
-              </button>
-            </div>
-            <p className="text-sm text-muted-foreground mt-0.5">{breadcrumb}</p>
-          </div>
-
-          {/* Center: global search */}
-          <div className="flex-1 flex justify-center">
-            <div className="relative w-full max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder={ui('searchPlaceholder')}
-                readOnly
-                tabIndex={-1}
-                className="w-full h-9 rounded-lg border border-border/50 bg-white/60 pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors cursor-default"
-              />
-              <Mic className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
-            </div>
-          </div>
-
-          {/* Right: action icons */}
-          <div className="flex items-center gap-1 shrink-0">
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-              <Sparkles className="h-4 w-4" />
-            </button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-              <Plus className="h-4 w-4" />
-            </button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-              <Bell className="h-4 w-4" />
-            </button>
-            <LocaleSwitcher />
-            <UserAvatarButton />
-          </div>
-        </div>
-      </div>
-
+    <div className="flex-1 min-h-0 flex flex-col" data-testid="smartscan-page">
       {/* Main Content Area */}
       <div className="flex-1 overflow-auto bg-muted/10 p-6">
         <div className="mx-auto max-w-5xl space-y-6">

@@ -35,7 +35,7 @@ const draftMode = null;
 
 
 
-const api = {
+export const api = {
   "specName": "product",
   "baseUrl": "/sws/neo/product",
   "crud": {
@@ -439,12 +439,14 @@ const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "inventory"
   }
 };
 
 // @sf-generated-start component:ProductPage
 export default function ProductPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -490,6 +492,8 @@ export default function ProductPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       galleryRenderer={(gProps) => <ProductGallery {...gProps} />}
+      hidePrint
+      hideMoreMenu
       {...props}
     />
   );

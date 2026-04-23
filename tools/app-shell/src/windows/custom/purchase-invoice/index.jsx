@@ -10,6 +10,7 @@ import InvoicePreviewModal from './InvoicePreviewModal.jsx';
 import PurchaseInvoiceTopbar from './PurchaseInvoiceTopbar.jsx';
 import PurchaseInvoiceBottomPanel from './PurchaseInvoiceBottomPanel.jsx';
 import RelatedDocuments from './RelatedDocuments.jsx';
+import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
@@ -54,6 +55,7 @@ export default function PurchaseInvoiceWindow(props) {
   const ui = useUI();
   const [savedRecord, setSavedRecord] = useState(null);
   const [previewRow, setPreviewRow] = useState(null);
+  const [cloneTargets, setCloneTargets] = useState(null);
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
     useCreateContactModal({ apiBaseUrl, token });
   const breadcrumb = 'Purchases / Purchase Invoice';
@@ -135,7 +137,20 @@ export default function PurchaseInvoiceWindow(props) {
         initialColumnFilters={initialColumnFilters}
         quickFilters={INVOICE_QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}
+        onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
       />
+      {cloneTargets && createPortal(
+        <CloneOrderModal
+          records={cloneTargets}
+          apiBaseUrl={apiBaseUrl}
+          headers={headers}
+          routePrefix="/purchase-invoice/"
+          errorKey="cloneInvoiceError"
+          processingKey="invoiceProcessing"
+          onClose={() => setCloneTargets(null)}
+        />,
+        document.body,
+      )}
       {(previewRow || effectiveRecord) && (
         <InvoicePreviewModal
           invoice={previewRow || effectiveRecord}

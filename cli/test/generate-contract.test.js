@@ -179,6 +179,86 @@ describe('generateFrontendContract — behavioral metadata', () => {
   });
 });
 
+describe('generateFrontendContract — forceCalloutFields', () => {
+  const schemaWithForceCallout = {
+    version: '0.1.0',
+    window: { id: '168', name: 'Physical Inventory', primaryEntity: 'inventory', category: 'inventory' },
+    entities: [
+      {
+        name: 'inventory',
+        table: 'M_Inventory',
+        level: 'header',
+        fields: [
+          { name: 'warehouse', column: 'M_Warehouse_ID', type: 'foreignKey',
+            reference: 'Warehouse', inputMode: 'search',
+            visibility: 'editable', required: true, searchable: true, grid: true, form: true },
+        ]
+      },
+      {
+        name: 'inventoryLine',
+        table: 'M_InventoryLine',
+        level: 'line',
+        fields: [
+          { name: 'product', column: 'M_Product_ID', type: 'foreignKey',
+            reference: 'Product', inputMode: 'search',
+            visibility: 'editable', required: true, grid: true, form: true,
+            lookup: true, forceCalloutFields: ['quantityCount', 'bookQuantity'] },
+          { name: 'quantityCount', column: 'QtyCount', type: 'number',
+            visibility: 'editable', required: true, grid: true, form: true },
+          { name: 'bookQuantity', column: 'QtyBook', type: 'number',
+            visibility: 'readOnly', required: false, grid: true, form: true },
+        ]
+      }
+    ]
+  };
+
+  it('preserves forceCalloutFields from curated field into frontendContract', () => {
+    const fc = generateFrontendContract(schemaWithForceCallout);
+    const product = fc.entities.inventoryLine.fields.find(f => f.name === 'product');
+    assert.deepStrictEqual(product.forceCalloutFields, ['quantityCount', 'bookQuantity']);
+  });
+
+  it('does not add forceCalloutFields when not declared on field', () => {
+    const fc = generateFrontendContract(schemaWithForceCallout);
+    const qty = fc.entities.inventoryLine.fields.find(f => f.name === 'quantityCount');
+    assert.equal(qty.forceCalloutFields, undefined);
+  });
+
+  it('does not add forceCalloutFields to a field that has an empty array', () => {
+    const schema = {
+      ...schemaWithForceCallout,
+      entities: schemaWithForceCallout.entities.map(e =>
+        e.name === 'inventoryLine'
+          ? { ...e, fields: e.fields.map(f =>
+              f.name === 'product' ? { ...f, forceCalloutFields: [] } : f
+            )}
+          : e
+      ),
+    };
+    const fc = generateFrontendContract(schema);
+    const product = fc.entities.inventoryLine.fields.find(f => f.name === 'product');
+    assert.equal(product.forceCalloutFields, undefined);
+  });
+
+  it('preserves forceCalloutFields on a non-FK (number) field', () => {
+    const schema = {
+      ...schemaWithForceCallout,
+      entities: schemaWithForceCallout.entities.map(e =>
+        e.name === 'inventoryLine'
+          ? { ...e, fields: e.fields.map(f =>
+              f.name === 'quantityCount'
+                ? { ...f, forceCalloutFields: ['bookQuantity'] }
+                : f
+            )}
+          : e
+      ),
+    };
+    const fc = generateFrontendContract(schema);
+    const qty = fc.entities.inventoryLine.fields.find(f => f.name === 'quantityCount');
+    assert.deepStrictEqual(qty.forceCalloutFields, ['bookQuantity']);
+  });
+});
+
 describe('generateBackendContract', () => {
   it('includes all fields including system', () => {
     const bc = generateBackendContract(minimalSchema, sampleRules, sampleProcesses);

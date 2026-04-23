@@ -1,13 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useUI } from '@/i18n';
+import { StatusTag } from '@/components/ui/status-tag';
 
-const STATUS_MAP = {
-  RPPC: { labelKey: 'statusCleared', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500' },
-  DR:   { labelKey: 'statusDraft', bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200', dot: 'bg-gray-400' },
-  RPAP: { labelKey: 'statusAwaiting', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-500' },
-  RPR:  { labelKey: 'statusReceived', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500' },
-  RDNC: { labelKey: 'statusNotCleared', bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-500' },
-  RPVD: { labelKey: 'statusVoided', bg: 'bg-gray-50', text: 'text-gray-500', border: 'border-gray-200', dot: 'bg-gray-400' },
+const STATUS_LABEL_KEYS = {
+  RPPC: 'statusCleared', DR: 'statusDraft', RPAP: 'statusAwaiting',
+  RPR: 'statusReceived', RDNC: 'statusNotCleared', RPVD: 'statusVoided',
 };
 
 function fmtAmount(amount, currencyId) {
@@ -50,7 +47,7 @@ export default function PaymentSummaryCard({ data, token, apiBaseUrl }) {
   }, [data?.id, token, apiBaseUrl]);
 
   const status = data.status || data.documentStatus;
-  const badge = STATUS_MAP[status] || { labelKey: status || 'statusUnknown', bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200', dot: 'bg-gray-400' };
+  const badgeLabelKey = STATUS_LABEL_KEYS[status] || status || 'statusUnknown';
   const currency = data['currency$_identifier'] || 'EUR';
   const totalAmount = Number.parseFloat(data.amount) || 0;
   const applied = appliedAmount ?? 0;
@@ -70,10 +67,7 @@ export default function PaymentSummaryCard({ data, token, apiBaseUrl }) {
     >
       {/* Status badge */}
       <div className="mb-4">
-        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${badge.bg} ${badge.text} border ${badge.border}`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
-          {ui(badge.labelKey)}
-        </span>
+        <StatusTag status={status} label={ui(badgeLabelKey)} />
       </div>
 
       {/* 3-column metrics — equal width */}

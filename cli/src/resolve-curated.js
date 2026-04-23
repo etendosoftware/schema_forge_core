@@ -216,6 +216,8 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   if (fieldDecision.badge) field.badge = true;
   if (fieldDecision.badgeLabels) field.badgeLabels = fieldDecision.badgeLabels;
   if (fieldDecision.badgeColors) field.badgeColors = fieldDecision.badgeColors;
+  if (fieldDecision.badgeVariants) field.badgeVariants = fieldDecision.badgeVariants;
+  if (fieldDecision.enumVariants) field.enumVariants = fieldDecision.enumVariants;
   if (fieldDecision.labels) field.labels = fieldDecision.labels;
   if (fieldDecision.summable) field.summable = true;
   if (fieldDecision.columnType) field.columnType = fieldDecision.columnType;
@@ -253,6 +255,11 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
     if (fieldDecision.lookup) field.lookup = true;
     if (fieldDecision.popup) field.popup = true;
   }
+
+  // forceCalloutFields is not FK-specific — any visible field that triggers a callout
+  // may declare which fields the callout result should always override.
+  if (isVisible && Array.isArray(fieldDecision.forceCalloutFields) && fieldDecision.forceCalloutFields.length > 0)
+    field.forceCalloutFields = fieldDecision.forceCalloutFields;
 
   // derivation — carry from raw field
   if (rawField.derivation) {

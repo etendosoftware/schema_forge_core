@@ -16142,7 +16142,7 @@
       "label": "Albarán de devolución"
     },
     "Purchase Invoice": {
-      "label": "Factura"
+      "label": "Factura de Compra"
     },
     "Warehouses": {
       "label": "Almacenes"
@@ -16232,7 +16232,7 @@
       "label": "General"
     },
     "Goods Receipt": {
-      "label": "Albarán"
+      "label": "Albarán de Compra"
     },
     "Return Shipments": {
       "label": "Envíos de devolución"
@@ -16253,31 +16253,31 @@
       "label": "Facturas recurrentes"
     },
     "Sales Quotation": {
-      "label": "Presupuesto"
+      "label": "Presupuesto de Venta"
     },
     "Sales Order": {
-      "label": "Pedido"
+      "label": "Pedido de Venta"
     },
     "Goods Shipment": {
-      "label": "Albarán"
+      "label": "Albarán de Venta"
     },
     "Sales Invoice": {
-      "label": "Factura"
+      "label": "Factura de Venta"
     },
     "Return from Customer": {
-      "label": "Devolución"
+      "label": "Devolución de Cliente"
     },
     "Return Material Receipt": {
-      "label": "Albarán de devolución"
+      "label": "Recibo de Devolución"
     },
     "Purchase Order": {
-      "label": "Pedido"
+      "label": "Pedido de Compra"
     },
     "Return to Vendor": {
-      "label": "Devolución"
+      "label": "Devolución a Proveedor"
     },
     "Return to Vendor Shipment": {
-      "label": "Albarán de devolución"
+      "label": "Albarán de Devolución a Proveedor"
     },
     "Quotation": {
       "label": "Presupuesto"
@@ -16329,9 +16329,6 @@
     },
     "Leads": {
       "label": "Leads"
-    },
-    "HR": {
-      "label": "RRHH"
     },
     "Employees": {
       "label": "Empleados"
@@ -16654,7 +16651,9 @@
     "enterAtLeastOneValueUpdatePricing": "Introduce al menos un valor para actualizar el precio.",
     "pricingCreatedUsingDefaultValues": "Precio creado usando valores predeterminados.",
     "unableToSavePricing": "No se pudo guardar el precio.",
-    "addEntity": "+ Agregar {label}",
+    "addEntity": "Añadir {label}",
+    "addLine": "Añadir línea",
+    "noAdditionalActions": "No hay acciones adicionales",
     "entityDetail": "Detalle de {label}",
     "saveHeaderFirst": "Guarda el encabezado primero para agregar líneas.",
     "documentStatus": "Estado del documento",
@@ -16810,6 +16809,7 @@
     "addToFavorites": "Añadir a favoritos",
     "removeFromFavorites": "Quitar de favoritos",
     "noFavoritesYet": "Aún no tienes favoritos",
+    "andNMore": "+{n} más",
     "pageHelp": "Ayuda de esta página",
     "configureDashboard": "Configurar dashboard",
     "searchInvoices": "Buscar facturas...",
@@ -16901,6 +16901,7 @@
     "filter": "Filtrar...",
     "clearAllFilters": "Limpiar todos los filtros",
     "cancelEsc": "Cancelar (Esc)",
+    "inlineAddHint": "Enter o clic fuera para guardar · Esc para cancelar",
     "statusComplete": "Confirmado",
     "statusCompleted": "Confirmado",
     "statusVoid": "Anulado",
@@ -17404,6 +17405,7 @@
     "selectCountryFirst": "Selecciona un país primero",
     "removeLocation": "Eliminar",
     "addLocation": "+ Agregar Dirección",
+    "addAddress": "+ Agregar dirección",
     "none": "— Ninguno —",
     "soConfirmBtn": "Confirmar",
     "soConfirmTitle": "Confirmar pedido #{number}",
@@ -17475,6 +17477,9 @@
     "sqOrderCreated": "Pedido creado",
     "sqViewOrder": "Ver pedido →",
     "sqOrderConfirmedError": "El presupuesto fue procesado pero no se pudo crear el pedido. ",
+    "sqSendToEvalTitle": "¿Enviar a Bajo Evaluación?",
+    "sqSendToEvalDesc": "La cotización quedará lista para crear pedido o factura.",
+    "sqSendToEvalConfirm": "Enviar a evaluación",
     "sqOrderConfirmedInvoiceError": "El presupuesto fue procesado pero no se pudo crear la factura. ",
     "productPctFree": "{pct}% libre",
     "productTotalOnHand": "Total en stock",
@@ -17605,6 +17610,14 @@
     "cloneInvoiceConfirmBody": "Se creará una copia en borrador de esta factura con los mismos datos.",
     "cloneInvoiceAction": "Clonar →",
     "cloneInvoiceError": "Ocurrió un error al clonar la factura",
+    "cloneConfirmTitleOne": "Clonar documento",
+    "cloneConfirmTitleMany": "Clonar {count} documentos",
+    "cloneConfirmSubtitleOne": "Se creará una copia en estado borrador",
+    "cloneConfirmSubtitleMany": "Se crearán {count} copias en estado borrador",
+    "cloneInfoBanner": "Los documentos clonados conservarán todos los datos del original.",
+    "cloneDoneTitleOne": "Documento clonado",
+    "cloneDoneTitleMany": "{count} documentos clonados",
+    "cloneDoneSubtitle": "Hacé clic en uno para abrirlo",
     "invoiceProcessing": "Procesando...",
     "orderStatusDraft": "Borrador",
     "orderStatusCompleted": "Completado",
@@ -17648,6 +17661,7 @@
     "profileComplete": "Perfil completo",
     "identifier": "Identificador",
     "contactName": "Nombre",
+    "contactLegalName": "Razón social",
     "taxIDField": "CIF/NIF",
     "bpGroupField": "Grupos de terceros",
     "taxIdTypeField": "Clave NIF país residencia",
@@ -17673,9 +17687,12 @@
     "vendorBlockField": "Bloqueo de proveedor",
     "saveContact": "Guardar contacto",
     "createContactError": "Error al crear el contacto",
+    "contactPersonNameRequired": "Nombre o apellido es obligatorio para persona",
     "noFinancialData": "Sin datos financieros",
     "customerBlockField": "Bloqueo de cliente",
     "generalTab": "General",
+    "direccionTab": "Dirección",
+    "masTab": "Más",
     "contactPersonTab": "Persona",
     "bankTab": "Cuenta bancaria",
     "addContactPerson": "Agregar persona de contacto",
@@ -18104,6 +18121,15 @@
     "Reports": {
       "label": "Informes"
     },
+    "Purchases Reports": {
+      "label": "Informes de Compras"
+    },
+    "Inventory Reports": {
+      "label": "Informes de Inventario"
+    },
+    "Finance Reports": {
+      "label": "Informes de Finanzas"
+    },
     "Payment Tracker": {
       "label": "Seguimiento cobros-pagos"
     },
@@ -18366,7 +18392,7 @@
       "label": "Terceros"
     },
     "Return Material Receipt": {
-      "label": "Recibo devolución de material"
+      "label": "Recibo de Devolución"
     },
     "General Ledger Configuration": {
       "label": "Esquema contable"
@@ -18411,7 +18437,7 @@
       "label": "Transportista"
     },
     "Sales Order": {
-      "label": "Pedido de venta"
+      "label": "Pedido de Venta"
     },
     "Product Category": {
       "label": "Categoría del producto"
@@ -18447,7 +18473,7 @@
       "label": "Informes y procesos"
     },
     "Sales Invoice": {
-      "label": "Factura (Cliente)"
+      "label": "Factura de Venta"
     },
     "Physical Inventory": {
       "label": "Inventario físico"
@@ -18456,7 +18482,7 @@
       "label": "Ajuste de Costes"
     },
     "Goods Shipment": {
-      "label": "Albarán (Cliente)"
+      "label": "Albarán de Venta"
     },
     "Goods Movements": {
       "label": "Movimiento entre almacenes"
@@ -18468,13 +18494,13 @@
       "label": "Entradas de Datos Importados"
     },
     "Purchase Order": {
-      "label": "Pedido de compra"
+      "label": "Pedido de Compra"
     },
     "Purchase Invoice": {
-      "label": "Factura (Proveedor)"
+      "label": "Factura de Compra"
     },
     "Goods Receipt": {
-      "label": "Albarán (Proveedor)"
+      "label": "Albarán de Compra"
     },
     "Form": {
       "label": "Formulario"
@@ -18546,7 +18572,7 @@
       "label": "Rol permisos"
     },
     "Return to Vendor Shipment": {
-      "label": "Devolución a albarán de proveedor"
+      "label": "Albarán de Devolución a Proveedor"
     },
     "Alert": {
       "label": "Alertas"
@@ -18591,7 +18617,7 @@
       "label": "Inventario Referenciado"
     },
     "Sales Quotation": {
-      "label": "Presupuesto de ventas"
+      "label": "Presupuesto de Venta"
     },
     "Costing Algorithm": {
       "label": "Algoritmo de cálculo de costes"
@@ -18801,7 +18827,7 @@
       "label": "Método de Adjuntos"
     },
     "Return to Vendor": {
-      "label": "Devolución a proveedor"
+      "label": "Devolución a Proveedor"
     },
     "Process Group": {
       "label": "Grupo de Procesos"
@@ -18840,7 +18866,7 @@
       "label": "Histórico de auditoría"
     },
     "Return from Customer": {
-      "label": "Devolución de cliente"
+      "label": "Devolución de Cliente"
     },
     "Production Run": {
       "label": "Parte de Fabricación"
@@ -18931,6 +18957,30 @@
     },
     "Depreciation Setup": {
       "label": "Configuración de depreciación"
+    },
+    "Order": {
+      "label": "Pedido"
+    },
+    "Invoice": {
+      "label": "Factura"
+    },
+    "Quotation": {
+      "label": "Presupuesto"
+    },
+    "Shipment": {
+      "label": "Albarán"
+    },
+    "Receipt": {
+      "label": "Albarán"
+    },
+    "Return": {
+      "label": "Devolución"
+    },
+    "Return Receipt": {
+      "label": "Recibo de Devolución"
+    },
+    "Return Shipment": {
+      "label": "Albarán de Devolución"
     }
   },
   "statuses": {

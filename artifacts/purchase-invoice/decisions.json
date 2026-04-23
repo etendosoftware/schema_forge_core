@@ -331,8 +331,8 @@
           "displayLogic": null
         },
         "lineNetAmount": {
-          "visibility": "readOnly",
-          "grid": true,
+          "visibility": "system",
+          "grid": false,
           "section": "principal",
           "readOnlyLogic": null
         },
