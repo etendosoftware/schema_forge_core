@@ -75,19 +75,22 @@ Max rejection cycles per phase: 3
 
 ## Orientation Before Action (MANDATORY)
 Before starting ANY task, agents MUST investigate their environment:
-1. **Where am I?** — Check the current branch, working directory, and repo state (`git branch --show-current`, `pwd`)
-2. **What exists?** — Read relevant existing files before modifying or creating anything. Never assume file contents or structure.
-3. **What's the DB state?** — If the task involves DB access, verify connectivity works (DB credentials auto-resolve from `gradle.properties` — see `cli/src/db.js`)
-4. **What's already done?** — Check `artifacts/` for existing work on the window/process. Check `docs/feedback.md` for known issues.
-5. **What are the IDs?** — Never hardcode or guess window/process/menu IDs. Always query the DB or use `resolve-menu.js --menu-name`.
+1. **Where is the functional guide?** — If the task touches a window, start by locating its guide through `docs/generated-custom-windows/INDEX.md` and open `docs/generated-custom-windows/<window>.md`.
+2. **Where am I?** — Check the current branch, working directory, and repo state (`git branch --show-current`, `pwd`)
+3. **What exists?** — Read relevant existing files before modifying or creating anything. Never assume file contents or structure.
+4. **What's the DB state?** — If the task involves DB access, verify connectivity works (DB credentials auto-resolve from `gradle.properties` — see `cli/src/db.js`)
+5. **What's already done?** — Check `artifacts/` for existing work on the window/process. Check `docs/feedback.md` for known issues.
+6. **What are the IDs?** — Never hardcode or guess window/process/menu IDs. Always query the DB or use `resolve-menu.js --menu-name`.
 
 This prevents wasted cycles from wrong assumptions (wrong IDs, stale data, broken connections).
 
 ## Task Execution
 Every task passes through the active phases IN ORDER. No exceptions.
 
+
 ## Branching & Merging
 Delegate all branch operations to Clerk. See `docs/branch-workflow.md` for full rules.
+
 
 ## Reject Cycle
 1. Coordinator receives rejection report
@@ -98,6 +101,7 @@ Delegate all branch operations to Clerk. See `docs/branch-workflow.md` for full 
 
 ## Documentation Freshness (MANDATORY)
 **CRITICAL POLICY:** Code change + doc update = one atomic unit. REVIEW must reject PRs that change behavior without updating docs. Full checklist and trigger list: `docs/self-documentation-policy.md`.
+Window-specific changes MUST update the matching `docs/generated-custom-windows/<window>.md` guide in the same change.
 
 ## Commit Conventions (MANDATORY)
 All commits MUST follow Etendo Git Police conventions as defined by the `/etendo-workflow-manager` skill.
