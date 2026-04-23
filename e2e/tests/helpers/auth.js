@@ -1,36 +1,56 @@
 /**
  * Authentication and navigation helpers for E2E tests.
  *
- * Login flow discovered via agent-browser:
- *   - /login page: textbox "Username", textbox "Password", button "Sign in"
- *   - After login: redirects to /dashboard
+ * These helpers target the mock dev server (make dev-mock / VITE_MOCK=true).
+ * The app has no login form in mock mode — authentication is done by seeding
+ * localStorage with a fake token before React boots.
  *
- * Context switch discovered via agent-browser:
- *   - Click Etendo logo (always visible) → opens popover
- *   - Popover has two <select>: Role + Organization, and an "Apply" button
+ * API calls are intercepted via page.route() so that /sws/* requests return
+ * empty-list responses (not 401), preventing useEntity from calling logout().
+ *
+ * Real Etendo mode (BASE_URL=http://localhost:8080/...) is not covered here.
  */
 
-/** Default role/org for all E2E tests */
+/** Default role/org — kept for future real-backend tests */
 export const DEFAULT_ROLE = 'F&B International Group Admin';
 export const DEFAULT_ORG = 'F&B España - Región Norte';
 
 /**
- * Login and switch to the default role/org context.
+ * Authenticate for E2E tests running against the mock dev server.
+ *
+ * Seeds localStorage before React boots and intercepts /sws/* API calls so
+ * useEntity never receives a 401 and never calls logout().
  */
-export async function login(page, {
-  user = 'admin',
-  password = 'admin',
-  role = DEFAULT_ROLE,
-  org = DEFAULT_ORG,
-} = {}) {
-  await page.goto('/login');
-  await page.getByRole('textbox', { name: 'Username' }).fill(user);
-  await page.getByRole('textbox', { name: 'Password' }).fill(password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.waitForURL('**/dashboard', { timeout: 15_000 });
+export async function login(page) {
+  // Inject token before React boots so AuthContext.isAuthenticated = true.
+  await page.addInitScript(() => {
+    localStorage.setItem('sf_auth_token', 'e2e-mock-token');
+    localStorage.setItem('sf_auth_user', 'admin');
+  });
 
-  // Switch role/org context
-  await switchContext(page, role, org);
+  // Intercept all /sws/* API calls to prevent the real Etendo backend from
+  // receiving our fake token (which would return 401 and trigger logout()).
+  // - GET → empty list
+  // - POST/PUT/PATCH → synthetic saved record so the UI can transition to detail view
+  await page.route('**/sws/**', (route) => {
+    const method = route.request().method();
+    if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id: 'e2e-record-id', data: {}, success: true }),
+      });
+    } else {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: [], totalRows: 0 }),
+      });
+    }
+  });
+
+  await page.goto('/dashboard');
+  await page.waitForURL('**/dashboard', { timeout: 10_000 });
 }
 
 /**
