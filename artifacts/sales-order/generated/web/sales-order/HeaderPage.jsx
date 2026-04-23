@@ -134,6 +134,14 @@ export const api = {
     },
     {
       "entity": "header",
+      "field": "paymentTerms",
+      "column": "C_PaymentTerm_ID",
+      "reference": "PaymentTerm",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-order/header/selectors/paymentTerms"
+    },
+    {
+      "entity": "header",
       "field": "warehouse",
       "column": "M_Warehouse_ID",
       "reference": "Warehouse",
