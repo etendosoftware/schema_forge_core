@@ -37,6 +37,11 @@ describe('useInvoicePdf', () => {
     assert.match(src, /Promise\.all/);
   });
 
+  it('optionally fetches session defaults to resolve the company document image', () => {
+    assert.match(src, /\/session/);
+    assert.match(src, /yourCompanyDocumentImageId/);
+  });
+
   it('derives the base URL by stripping the spec segment from apiBaseUrl', () => {
     assert.match(src, /apiBaseUrl\.replace/);
   });
@@ -63,11 +68,19 @@ describe('useInvoicePdf', () => {
     assert.match(src, /URL\.createObjectURL\(blob\)/);
   });
 
-  // ── Line padding ──────────────────────────────────────────────────────────
+  it('embeds the company logo in the rendered template when available', () => {
+    assert.match(src, /companyLogoDataUrl/);
+    assert.match(src, /inv-logo-img/);
+  });
 
-  it('pads invoice lines to at least MIN_ROWS for consistent layout', () => {
-    assert.match(src, /MIN_ROWS\s*=\s*8/);
-    assert.match(src, /Array\(MIN_ROWS - lines\.length\)\.fill\(null\)/);
+  it('renders the company identity block with name, address and tax ID', () => {
+    assert.match(src, /companyName/);
+    assert.match(src, /companyAddress1/);
+    assert.match(src, /companyTaxId/);
+  });
+
+  it('pulls the issuer organization from the session endpoint', () => {
+    assert.match(src, /session\?\.organization/);
   });
 
   // ── Memory management ─────────────────────────────────────────────────────
