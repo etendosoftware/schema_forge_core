@@ -187,4 +187,17 @@ describe('detectAffectedWindowsDetailed', () => {
       { window: 'sales-order', source: 'global' },
     ]);
   });
+
+  it('marks shared custom helpers as global', () => {
+    const affected = detectAffectedWindowsDetailed({
+      changedFiles: ['tools/app-shell/src/windows/custom/shared/InvoicePaymentModal.jsx'],
+      blastRadius: SAMPLE_CONFIG.blastRadius,
+      availableWindows: ['contacts', 'purchase-order'],
+    });
+
+    assert.deepEqual(affected, [
+      { window: 'contacts', source: 'global' },
+      { window: 'purchase-order', source: 'global' },
+    ]);
+  });
 });

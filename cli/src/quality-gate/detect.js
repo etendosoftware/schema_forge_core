@@ -18,7 +18,7 @@ function globToRegExp(pattern) {
 function resolveTouchedWindows(filePath, availableWindows) {
   const artifactMatch = filePath.match(/^artifacts\/([^/]+)\//);
   if (artifactMatch) {
-    return [artifactMatch[1]];
+    return [{ window: artifactMatch[1], source: 'direct' }];
   }
 
   const appShellMatch = filePath.match(/^tools\/app-shell\/src\/windows\/custom\/([^/]+)\//);
@@ -28,13 +28,13 @@ function resolveTouchedWindows(filePath, availableWindows) {
 
   const customDir = appShellMatch[1];
   if (availableWindows.includes(customDir)) {
-    return [customDir];
+    return [{ window: customDir, source: 'direct' }];
   }
   if (customDir === 'businessPartner' && availableWindows.includes('contacts')) {
-    return ['contacts'];
+    return [{ window: 'contacts', source: 'direct' }];
   }
   if (customDir === 'shared') {
-    return [...availableWindows];
+    return availableWindows.map((window) => ({ window, source: 'global' }));
   }
   return [];
 }
@@ -76,8 +76,11 @@ export function detectAffectedWindowsDetailed({ changedFiles, blastRadius, avail
       }
 
       if (rule.scope === 'touched-window') {
-        for (const windowName of resolveTouchedWindows(changedFile, allWindows)) {
-          affected.set(windowName, 'direct');
+        for (const entry of resolveTouchedWindows(changedFile, allWindows)) {
+          const current = affected.get(entry.window);
+          if (current !== 'direct') {
+            affected.set(entry.window, entry.source);
+          }
         }
       }
     }
