@@ -64,7 +64,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:quotationLine
 
-const api = {
+export const api = {
   "specName": "sales-quotation",
   "baseUrl": "/sws/neo/sales-quotation",
   "crud": {
