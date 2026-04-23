@@ -82,53 +82,46 @@ test.describe('Physical Inventory', () => {
 
     // Clicking "Añadir línea" saves the header first, then shows the inline add row
     await page.locator('button', { hasText: 'Añadir línea' }).first().click();
-    await page.waitForTimeout(1000);
 
-    // Inline row fields: lineNo and userCount are number inputs
-    await expect(page.locator('input[placeholder="Line No."]')).toBeVisible();
+    // Wait for the inline row to appear (placeholders come from the generated addLineFields,
+    // not from the locale dictionary — they are always English regardless of UI locale)
+    await expect(page.locator('input[placeholder="Line No."]')).toBeVisible({ timeout: 5_000 });
     await expect(page.locator('input[placeholder="User Count"]')).toBeVisible();
   });
 
   // --- forceCalloutFields invariant ---
   // Verifies ETP-3585: selecting a product must overwrite user-typed userCount,
   // even if the user pre-filled it manually (forceCalloutFields bypasses the touch guard).
-  // NOTE: this test requires VITE_MOCK=true (make dev-mock) so the callout mock
-  // returns actual quantityCount/bookQuantity values from mockData.
-  // Without VITE_MOCK, the API returns {} and the test is skipped gracefully.
+  // The route intercept in auth.js returns a synthetic product suggestion and callout
+  // response ({ quantityCount: 42 }), so this test runs without VITE_MOCK=true.
   test('selecting a product overwrites user-typed userCount (forceCalloutFields)', async ({ page }) => {
     await page.locator('button', { hasText: 'Nuevo' }).last().click();
     await page.waitForURL('**/physical-inventory/new', { timeout: 5_000 });
     await byRole(page, physicalInventoryDetail.addLine).click();
-    await page.waitForTimeout(300);
 
-    // Check if there's a number input (userCount field) — skip if no inline row appeared
-    const userCountInput = page.locator('input[type="number"]').first();
-    if (!await userCountInput.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      test.skip();
-      return;
-    }
+    // Wait for inline add row (POST saves the header first, then row appears)
+    const userCountInput = page.locator('input[placeholder="User Count"]');
+    await expect(userCountInput).toBeVisible({ timeout: 5_000 });
 
     // User manually types 999 in userCount BEFORE selecting a product
     await userCountInput.fill('999');
 
-    // Type in product search field to trigger callout
-    const productInput = page.locator('input[placeholder*="roducto"], input[placeholder*="roduct"]').first();
-    if (!await productInput.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      test.skip();
-      return;
-    }
-    await productInput.fill('Test');
+    // The product field is a PopupSearchInput: a button that opens a drawer dialog.
+    // Click the button to open it, then type in the inner search input.
+    const productButton = page.locator('td button:has(svg)').first();
+    await expect(productButton).toBeVisible({ timeout: 3_000 });
+    await productButton.click();
 
-    // Select first dropdown suggestion
-    const firstSuggestion = page.locator('[role="option"], [role="listitem"]').first();
-    if (await firstSuggestion.isVisible({ timeout: 3_000 }).catch(() => false)) {
-      await firstSuggestion.click();
-      await page.waitForTimeout(500);
-      // forceCalloutFields: value must NOT be 999 anymore
-      await expect(userCountInput).not.toHaveValue('999');
-    } else {
-      // No suggestions available (no mock data) — test is inconclusive, skip
-      test.skip();
-    }
+    const drawerInput = page.locator('[role="dialog"] input[type="text"]');
+    await expect(drawerInput).toBeVisible({ timeout: 3_000 });
+    await drawerInput.fill('Test');
+
+    // Select first result — route intercept ensures "Test Product" appears
+    const firstResult = page.locator('[role="dialog"] li button').first();
+    await expect(firstResult).toBeVisible({ timeout: 3_000 });
+    await firstResult.click();
+
+    // forceCalloutFields: callout returns quantityCount=42, must overwrite the 999
+    await expect(userCountInput).not.toHaveValue('999', { timeout: 3_000 });
   });
 });

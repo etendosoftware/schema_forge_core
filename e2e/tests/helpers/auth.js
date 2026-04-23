@@ -1,56 +1,89 @@
 /**
  * Authentication and navigation helpers for E2E tests.
  *
- * These helpers target the mock dev server (make dev-mock / VITE_MOCK=true).
- * The app has no login form in mock mode — authentication is done by seeding
- * localStorage with a fake token before React boots.
+ * Two modes, selected automatically based on the BASE_URL env var:
  *
- * API calls are intercepted via page.route() so that /sws/* requests return
- * empty-list responses (not 401), preventing useEntity from calling logout().
+ * Mock mode (default — no BASE_URL set, server started with make dev or make dev-mock):
+ *   Seeds localStorage with a fake token before React boots and intercepts /sws/*
+ *   so useEntity never receives a 401 and never calls logout().
  *
- * Real Etendo mode (BASE_URL=http://localhost:8080/...) is not covered here.
+ * Real Etendo mode (BASE_URL=http://localhost:8080/...):
+ *   Uses the original login form + switchContext flow.
+ *   Route interception is NOT applied so real API calls go through unchanged.
  */
 
-/** Default role/org — kept for future real-backend tests */
+const IS_MOCK_MODE = !process.env.BASE_URL;
+
+/** Default role/org for real-backend tests */
 export const DEFAULT_ROLE = 'F&B International Group Admin';
 export const DEFAULT_ORG = 'F&B España - Región Norte';
 
 /**
- * Authenticate for E2E tests running against the mock dev server.
+ * Authenticate for E2E tests.
  *
- * Seeds localStorage before React boots and intercepts /sws/* API calls so
- * useEntity never receives a 401 and never calls logout().
+ * In mock mode: seeds localStorage + intercepts /sws/* API calls.
+ * In real mode: fills the login form and switches role/org context.
  */
-export async function login(page) {
-  // Inject token before React boots so AuthContext.isAuthenticated = true.
-  await page.addInitScript(() => {
-    localStorage.setItem('sf_auth_token', 'e2e-mock-token');
-    localStorage.setItem('sf_auth_user', 'admin');
-  });
+export async function login(page, {
+  user = 'admin',
+  password = 'admin',
+  role = DEFAULT_ROLE,
+  org = DEFAULT_ORG,
+} = {}) {
+  if (IS_MOCK_MODE) {
+    // Inject token before React boots so AuthContext.isAuthenticated = true.
+    await page.addInitScript(() => {
+      localStorage.setItem('sf_auth_token', 'e2e-mock-token');
+      localStorage.setItem('sf_auth_user', 'admin');
+    });
 
-  // Intercept all /sws/* API calls to prevent the real Etendo backend from
-  // receiving our fake token (which would return 401 and trigger logout()).
-  // - GET → empty list
-  // - POST/PUT/PATCH → synthetic saved record so the UI can transition to detail view
-  await page.route('**/sws/**', (route) => {
-    const method = route.request().method();
-    if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ id: 'e2e-record-id', data: {}, success: true }),
-      });
-    } else {
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ data: [], totalRows: 0 }),
-      });
-    }
-  });
+    // Intercept /sws/* to prevent the real Etendo backend receiving our fake
+    // token (which would return 401 and trigger logout()).
+    // - GET /selectors/**  → single synthetic item so product search dropdowns populate
+    // - POST /**/callout   → synthetic updates so forceCalloutFields can override user values
+    // - POST/PUT/PATCH     → synthetic saved record so the UI can navigate to detail
+    // - GET (other)        → empty list
+    await page.route('**/sws/**', (route) => {
+      const url = route.request().url();
+      const method = route.request().method();
+      if (url.includes('/selectors/')) {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ items: [{ id: 'prod-e2e', label: 'Test Product', name: 'Test Product', _identifier: 'Test Product' }] }),
+        });
+      } else if (method === 'POST' && url.includes('/callout')) {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ updates: { quantityCount: 42, bookQuantity: 42 }, combos: {}, messages: [] }),
+        });
+      } else if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: 'e2e-record-id', data: {}, success: true }),
+        });
+      } else {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ data: [], totalRows: 0 }),
+        });
+      }
+    });
 
-  await page.goto('/dashboard');
-  await page.waitForURL('**/dashboard', { timeout: 10_000 });
+    await page.goto('/dashboard');
+    await page.waitForURL('**/dashboard', { timeout: 10_000 });
+  } else {
+    // Real Etendo mode: login form + context switch
+    await page.goto('/login');
+    await page.getByRole('textbox', { name: 'Username' }).fill(user);
+    await page.getByRole('textbox', { name: 'Password' }).fill(password);
+    await page.getByRole('button', { name: 'Sign in' }).click();
+    await page.waitForURL('**/dashboard', { timeout: 15_000 });
+    await switchContext(page, role, org);
+  }
 }
 
 /**
