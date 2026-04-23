@@ -59,7 +59,7 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 
 | Path | Description |
 |------|-------------|
-| [generated-custom-windows/](generated-custom-windows/) | Functional docs for generated/custom windows, including the app-shell flows guide |
+| [generated-custom-windows/INDEX.md](generated-custom-windows/INDEX.md) | Functional docs for generated/custom windows, including the app-shell flows guide |
 
 ## Guides
 

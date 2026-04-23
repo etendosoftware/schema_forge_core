@@ -20,9 +20,9 @@ Automated coverage note: the current automated evidence is mostly source-shape, 
 | Area | Entry path | Current behavior | Evidence |
 |---|---|---|---|
 | Public access | `/onboarding`, `/login` | `/onboarding` is the only public entry page. `/login` redirects to `/onboarding`. | `tools/app-shell/src/App.jsx` |
-| Authenticated shell | `/dashboard`, `/first-steps`, `/sales`, `/inventory`, `/purchases`, `/accounting`, `/reports`, `/report-viewer`, `/crm`, `/hr`, `/projects`, `/smart-scan`, `/oauth2-clients`, `/authorize`, `/quick-sales-order`, `/quick-purchase-order`, `/artifacts`, `/artifacts/:windowName` | These routes render inside `AppLayout` and require `AuthGuard`. | `tools/app-shell/src/App.jsx`, `tools/app-shell/src/layout/AppLayout.jsx` |
+| Authenticated shell | `/dashboard`, `/first-steps`, `/sales`, `/inventory`, `/purchases`, `/accounting`, `/reports`, `/report-viewer`, `/crm`, `/hr`, `/projects`, `/smart-scan`, `/oauth2-clients`, `/authorize`, `/quick-sales-order`, `/quick-purchase-order`, `/preview`, `/artifacts`, `/artifacts/:windowName` | These routes render inside `AppLayout` and require `AuthGuard`. | `tools/app-shell/src/App.jsx`, `tools/app-shell/src/layout/AppLayout.jsx` |
 | Generated/custom windows | `/:windowName`, `/:windowName/:recordId` | Loads the matching generated or custom window and optionally passes a record context. | `tools/app-shell/src/windows/WindowLoader.jsx`, `tools/app-shell/src/windows/registry.js` |
-| Menu-driven report links | `/report-viewer?category=purchases|inventory|finance` | Menu items can override the route with `item.path`, so report entries navigate to the shared report viewer instead of the generic window route. | `tools/app-shell/src/menu.json`, `tools/app-shell/src/components/layout/SideMenu/SideMenu.jsx` |
+| Menu-driven report links | `/report-viewer?category=purchases\|inventory\|finance` | Menu items can override the route with `item.path`, so report entries navigate to the shared report viewer instead of the generic window route. | `tools/app-shell/src/menu.json`, `tools/app-shell/src/components/layout/SideMenu/SideMenu.jsx` |
 
 Any authenticated route can also be opened with `?embedded=1`; in that mode the shell keeps the routed page but hides the side menu, top bar, command palette, and copilot widget.
 
@@ -58,7 +58,7 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
   - Protected routes render inside `AppLayout`.
   - `AppLayout` provides the side menu, top bar, command palette, copilot widget, favorites provider, page metadata provider, and sidebar provider.
   - The side menu resolves links with `item.path || item.name`, so report entries can point to `/report-viewer?category=...` while standard windows use `/<slug>`.
-  - The shell always exposes an artifacts entry via `/artifacts`.
+  - The authenticated shell includes the `/artifacts` route, but the visible side-menu artifacts entry is feature-flagged and only appears when `VITE_SHOW_ARTIFACTS === 'true'`.
 - **Failure or edge behavior:**
   - `?embedded=1` removes shell chrome and left-margin spacing while still rendering the current route content.
   - Hidden groups/items from `menu.json` are filtered out of the visible menu.
@@ -97,7 +97,7 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
 - **Main path behavior:**
   - `useEntity` fetches the first page in batches of 75 rows and exposes `loadMore()` for infinite pagination.
   - Sorting is tracked in hook state and can switch to the companion `$_identifier` field when present so foreign-key sorts are alphabetical.
-  - Selecting a row or loading by id fetches the full record and its children.
+  - Selecting a row uses the record data already present in the list and fetches that record's children; loading by id is the path that fetches the full record and its children.
   - `handleNew()` requests `/<entity>/defaults`, normalizes returned values, and pre-fills the form when defaults exist.
   - New records use `POST`; existing records use `PATCH` with changed fields only.
   - Child-row creation posts `parentId`, then refreshes both children and the header record so derived totals stay current.
@@ -105,7 +105,7 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
   - List refresh and pagination logout on HTTP 401.
   - If the defaults endpoint fails, the form still opens with an empty object.
   - Partial or empty batches stop pagination.
-  - Save/delete/process failures surface `saveError` and toast feedback.
+  - Save and child-row creation failures surface `saveError` and toast feedback; delete and process failures surface toast feedback.
 - **Automated evidence:**
   - `tools/app-shell/src/hooks/__tests__/useEntity-pagination.test.js` verifies first-page and subsequent-page batch windows, sort handling, retry behavior for the default `creationDate` sort, empty datasets, and fetch failures.
   - `tools/app-shell/src/hooks/__tests__/useEntity-defaults.test.js` verifies the defaults URL, bearer header use, non-OK handling, network-error fallback, and missing-defaults fallback.
