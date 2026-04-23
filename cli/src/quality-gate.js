@@ -1,0 +1,238 @@
+#!/usr/bin/env node
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { resolveBaseline } from './quality-gate/baseline.js';
+import { loadQualityGateConfig, QualityGateConfigError } from './quality-gate/config.js';
+import { collectDecisionWindows, detectAffectedWindows, getChangedFiles, resolveGitRef } from './quality-gate/detect.js';
+import { runQualityGate } from './quality-gate/runner.js';
+import { buildQualityGateAnalysisBundle, buildQualityGateReport } from './quality-gate/report.js';
+import { QUALITY_GATE_CHECKS } from './quality-gate/checks/index.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const ROOT = join(__dirname, '..', '..');
+
+function collectRuntimeFiles(dir) {
+  if (!existsSync(dir)) {
+    return [];
+  }
+  const files = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...collectRuntimeFiles(fullPath));
+      continue;
+    }
+    if (fullPath.endsWith('.js') || fullPath.endsWith('.json')) {
+      files.push(fullPath);
+    }
+  }
+  return files.sort((left, right) => left.localeCompare(right));
+}
+
+function hashCacheInputs(rootDir, config) {
+  const hash = createHash('sha1');
+  hash.update(JSON.stringify(config));
+  for (const filePath of [
+    ...collectRuntimeFiles(join(rootDir, 'cli', 'src', 'quality-gate')),
+    join(rootDir, 'cli', 'src', 'quality-gate.js'),
+    join(rootDir, 'schemas', 'contract.schema.json'),
+    join(rootDir, 'schemas', 'quality-gate-config.schema.json'),
+  ]) {
+    if (!existsSync(filePath)) {
+      continue;
+    }
+    hash.update(filePath);
+    hash.update(readFileSync(filePath, 'utf8'));
+  }
+  return hash.digest('hex').slice(0, 12);
+}
+
+function writeTextFile(path, content) {
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, content);
+}
+
+function computeBaselineWithWorktree({ rootDir, baselineRef, baselineSha, windowNames, config, runner }) {
+  const worktreePath = join(rootDir, '.quality-gate-cache', 'worktree', baselineSha.slice(0, 12));
+  mkdirSync(dirname(worktreePath), { recursive: true });
+
+  try {
+    execFileSync('git', ['worktree', 'add', '--detach', '--force', worktreePath, baselineRef], {
+      cwd: rootDir,
+      encoding: 'utf8',
+    });
+
+    return runner({
+      windowNames,
+      rootDir: worktreePath,
+      config,
+      checkers: QUALITY_GATE_CHECKS,
+    });
+  } finally {
+    try {
+      execFileSync('git', ['worktree', 'remove', '--force', worktreePath], {
+        cwd: rootDir,
+        encoding: 'utf8',
+      });
+    } catch {
+      // Best effort cleanup; missing baseline should degrade to head-only enforcement.
+    }
+  }
+}
+
+export function parseQualityGateArgs(argv) {
+  const options = {
+    mode: 'pr-affected',
+    windowName: null,
+    baselineRef: null,
+    format: 'md',
+    outputPath: null,
+    jsonPath: null,
+    analysisDir: null,
+  };
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === '--window' && argv[index + 1]) {
+      options.mode = 'window';
+      options.windowName = argv[index + 1];
+      index += 1;
+    } else if (arg === '--all') {
+      options.mode = 'all';
+    } else if (arg === '--pr-affected') {
+      options.mode = 'pr-affected';
+    } else if (arg === '--baseline-ref' && argv[index + 1]) {
+      options.baselineRef = argv[index + 1];
+      index += 1;
+    } else if (arg === '--format' && argv[index + 1]) {
+      options.format = argv[index + 1];
+      index += 1;
+    } else if (arg === '--output' && argv[index + 1]) {
+      options.outputPath = argv[index + 1];
+      index += 1;
+    } else if (arg === '--json' && argv[index + 1]) {
+      options.jsonPath = argv[index + 1];
+      index += 1;
+    } else if (arg === '--analysis-dir' && argv[index + 1]) {
+      options.analysisDir = argv[index + 1];
+      index += 1;
+    }
+  }
+
+  if (options.mode === 'window' && !options.windowName) {
+    throw new Error('Usage: quality-gate.js --window <name> | --all | --pr-affected [--baseline-ref <ref>] [--format md|json] [--output <path>] [--json <path>] [--analysis-dir <dir>]');
+  }
+
+  return options;
+}
+
+export async function runQualityGateCli({ args = process.argv.slice(2), rootDir = ROOT, deps = {} } = {}) {
+  const options = parseQualityGateArgs(args);
+  const loadConfig = deps.loadConfig ?? loadQualityGateConfig;
+  const collectWindows = deps.collectDecisionWindows ?? collectDecisionWindows;
+  const detectWindows = deps.detectAffectedWindows ?? detectAffectedWindows;
+  const changedFilesForPr = deps.getChangedFiles ?? getChangedFiles;
+  const qualityRunner = deps.runQualityGate ?? ((params) => runQualityGate({ ...params, checkers: QUALITY_GATE_CHECKS }));
+  const config = await loadConfig(rootDir);
+  const baselineRef = options.baselineRef ?? config.gate?.baselineRef ?? 'origin/main';
+
+  const availableWindows = options.mode === 'window'
+    ? [options.windowName]
+    : collectWindows(rootDir);
+
+  const windowNames = options.mode === 'window'
+    ? [options.windowName]
+    : options.mode === 'all'
+      ? availableWindows
+      : detectWindows({
+          changedFiles: await changedFilesForPr({ rootDir, baselineRef, headRef: 'HEAD' }),
+          blastRadius: config.blastRadius ?? [],
+          availableWindows,
+        });
+
+  if (windowNames.length === 0) {
+    return {
+      exitCode: 0,
+      stdout: 'No windows affected; gate skipped\n',
+      summary: null,
+      report: null,
+    };
+  }
+
+  const baselineResult = await (deps.resolveBaseline ?? ((params) => resolveBaseline(params)))({
+    baselineRef,
+    cacheDir: join(rootDir, '.quality-gate-cache'),
+    configHash: hashCacheInputs(rootDir, config),
+    resolveRefSha: async (ref) => resolveGitRef(rootDir, ref),
+    computeBaseline: async ({ baselineRef: ref, baselineSha }) => computeBaselineWithWorktree({
+      rootDir,
+      baselineRef: ref,
+      baselineSha,
+      windowNames,
+      config,
+      runner: qualityRunner,
+    }),
+  });
+
+  const headResult = await qualityRunner({
+    windowNames,
+    rootDir,
+    config,
+    checkers: QUALITY_GATE_CHECKS,
+  });
+
+  const report = buildQualityGateReport({
+    baselineRef,
+    baselineSha: baselineResult?.baselineSha ?? null,
+    headResult,
+    baselineResult: baselineResult?.data ?? null,
+    baselineWarning: baselineResult?.warning ?? null,
+  });
+
+  const analysisDir = options.analysisDir ?? (options.mode === 'all'
+    ? join(rootDir, '.quality-gate-cache', 'analysis', 'quality-gate-all')
+    : null);
+
+  if (options.outputPath) {
+    writeTextFile(options.outputPath, report.markdown);
+  }
+  if (options.jsonPath) {
+    writeTextFile(options.jsonPath, `${JSON.stringify(report.json, null, 2)}\n`);
+  }
+  if (analysisDir) {
+    const bundle = buildQualityGateAnalysisBundle(report);
+    writeTextFile(join(analysisDir, 'report.json'), bundle.reportJson);
+    writeTextFile(join(analysisDir, 'summary.csv'), bundle.summaryCsv);
+    writeTextFile(join(analysisDir, 'checks.csv'), bundle.checksCsv);
+    writeTextFile(join(analysisDir, 'checks.jsonl'), bundle.checksJsonl);
+  }
+
+  return {
+    exitCode: report.summary.gateVerdict === 'FAIL' ? 1 : 0,
+    stdout: options.format === 'json' ? `${JSON.stringify(report.json, null, 2)}\n` : report.markdown,
+    summary: report.summary,
+    report,
+    analysisDir,
+  };
+}
+
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+
+if (isMain) {
+  try {
+    const result = await runQualityGateCli();
+    process.stdout.write(result.stdout);
+    process.exit(result.exitCode);
+  } catch (error) {
+    if (error instanceof QualityGateConfigError) {
+      console.error(error.message);
+      process.exit(error.exitCode);
+    }
+    console.error(error.message || String(error));
+    process.exit(1);
+  }
+}

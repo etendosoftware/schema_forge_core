@@ -21,6 +21,7 @@ describe('JSON Schemas', () => {
       'rules.schema.json',
       'processes.schema.json',
       'contract.schema.json',
+      'quality-gate-config.schema.json',
       'step-operation.schema.json'
     ];
     for (const f of files) {
@@ -42,5 +43,12 @@ describe('JSON Schemas', () => {
     assert.ok(types.includes('validate'));
     assert.ok(types.includes('mutation'));
     assert.ok(types.includes('forEach'));
+  });
+
+  it('contract schema exposes frontend field metadata used by the quality gate', async () => {
+    const schema = await loadSchema('contract.schema.json');
+    const fieldProps = schema.properties.frontendContract.properties.entities.additionalProperties.properties.fields.items.properties;
+    assert.equal(fieldProps.sourceRequired.type, 'boolean');
+    assert.equal(fieldProps.derivation.type, 'object');
   });
 });
