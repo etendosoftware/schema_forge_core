@@ -60,25 +60,24 @@ jobs:
               per_page: 100,
             });
 
-            const existingComment = comments.find((comment) =>
+            const managedComments = comments.filter((comment) =>
               comment.user?.login === 'github-actions[bot]' && comment.body?.includes(marker)
             );
 
-            if (existingComment) {
-              await github.rest.issues.updateComment({
+            for (const comment of managedComments) {
+              await github.rest.issues.deleteComment({
                 owner,
                 repo,
-                comment_id: existingComment.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number,
-                body,
+                comment_id: comment.id,
               });
             }
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number,
+              body,
+            });
 
       - uses: actions/upload-artifact@v4
         if: always()
