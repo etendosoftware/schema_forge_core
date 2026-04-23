@@ -11,6 +11,7 @@ import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { ImageField } from './ImageField.jsx';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import { CreateContactContext } from './CreateContactContext.js';
+import { PartnerAddressPicker } from './PartnerAddressPicker.jsx';
 
 function buildSelectPlaceholder(ui, label) {
   return `${ui('selectLabelPrefix')} ${label}...`;
@@ -627,26 +628,43 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     }
     if (f.type === 'dependent') {
       if (isReadOnly) return renderReadOnlyFk();
+      const fieldSelectorUrl = apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null;
+      const fieldOnChange = (val, lbl) => {
+        onChange?.(f.key, val, f.column);
+        if (lbl) onChange?.(f.key + '$_identifier', lbl);
+      };
       return (
         <div key={f.key} className="space-y-1.5">
           <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
             {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
           </Label>
-          <DependentSelect
-            field={f}
-            value={data?.[f.key] ?? ''}
-            displayValue={data?.[f.key + '$_identifier']}
-            onChange={(val, label) => {
-              onChange?.(f.key, val, f.column);
-              if (label) onChange?.(f.key + '$_identifier', label);
-            }}
-            catalogs={catalogs}
-            formData={data}
-            resolvedLabel={label}
-            selectorUrl={apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null}
-            selectorContext={effectiveSelectorContext}
-            token={token}
-          />
+          {f.column === 'C_BPartner_Location_ID' ? (
+            <PartnerAddressPicker
+              field={f}
+              value={data?.[f.key] ?? ''}
+              displayValue={data?.[f.key + '$_identifier']}
+              onChange={fieldOnChange}
+              formData={data}
+              resolvedLabel={label}
+              selectorUrl={fieldSelectorUrl}
+              selectorContext={effectiveSelectorContext}
+              token={token}
+              apiBaseUrl={apiBaseUrl}
+            />
+          ) : (
+            <DependentSelect
+              field={f}
+              value={data?.[f.key] ?? ''}
+              displayValue={data?.[f.key + '$_identifier']}
+              onChange={fieldOnChange}
+              catalogs={catalogs}
+              formData={data}
+              resolvedLabel={label}
+              selectorUrl={fieldSelectorUrl}
+              selectorContext={effectiveSelectorContext}
+              token={token}
+            />
+          )}
         </div>
       );
     }

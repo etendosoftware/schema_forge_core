@@ -17405,6 +17405,7 @@
     "selectCountryFirst": "Selecciona un país primero",
     "removeLocation": "Eliminar",
     "addLocation": "+ Agregar Dirección",
+    "addAddress": "+ Agregar dirección",
     "none": "— Ninguno —",
     "soConfirmBtn": "Confirmar",
     "soConfirmTitle": "Confirmar pedido #{number}",

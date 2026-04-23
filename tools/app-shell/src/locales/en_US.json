@@ -17166,6 +17166,7 @@
     "selectCountryFirst": "Select a country first",
     "removeLocation": "Remove",
     "addLocation": "+ Add Location",
+    "addAddress": "+ Add address",
     "none": "— None —",
     "soConfirmBtn": "Confirm",
     "soConfirmTitle": "Confirm order #{number}",
