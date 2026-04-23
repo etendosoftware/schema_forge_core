@@ -1,10 +1,13 @@
-.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate dev dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview quality-gate
+.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate dev dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate
 
 # --- Testing ---
 
 test: ## Run all CLI tests and app-shell lib tests
 	cd cli && node --test 'test/*.test.js'
 	node --test tools/app-shell/src/lib/__tests__/*.test.js
+
+validate-pipeline: ## Validate pipeline completeness across all artifacts
+	node cli/src/validate-pipeline.js --format=text
 
 test-frontend: ## Run only frontend generator tests
 	cd cli && node --test 'test/generate-frontend.test.js'
@@ -54,8 +57,9 @@ build: ## Build app-shell for production
 
 # --- Setup ---
 
-install: ## Install all workspace dependencies
+install: ## Install all workspace dependencies and activate git hooks
 	npm install
+	git config core.hooksPath .githooks
 
 # --- Deploy ---
 
