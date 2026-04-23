@@ -51,11 +51,15 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 
 ## Internationalization
 
-| File | Description |
+| Path | Description |
 |------|-------------|
 | [i18n-guide.md](i18n-guide.md) | **i18n reference**: hooks (`useUI`, `useLabel`, `useMenuLabel`), locale JSON structure, rules for adding translations, decision tree |
 
-| [app-shell-functional-flows.md](app-shell-functional-flows.md) | Functional flows and verification points for app-shell routes and data behavior |
+## Generated/custom windows
+
+| Path | Description |
+|------|-------------|
+| [generated-custom-windows/](generated-custom-windows/) | Functional docs for generated/custom windows, including the app-shell flows guide |
 
 ## Guides
 
