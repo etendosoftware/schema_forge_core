@@ -16317,6 +16317,7 @@
     "completePartial": "{ok} of {total} orders completed",
     "noDraftSelected": "No draft orders in selection",
     "actionCompleted": "Action completed",
+    "salesOrderRef": "Sales Order #",
     "deleteRecord": "Delete record",
     "deleteConfirmTitle": "Delete record",
     "deleteConfirmMessage": "Are you sure you want to delete this record? This action cannot be undone.",

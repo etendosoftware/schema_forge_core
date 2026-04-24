@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { StatusTag } from '@/components/ui/status-tag';
+import { useUI } from '@/i18n';
 
 const STATUS_LABELS = {
   CO: 'Completed', DR: 'Draft', VO: 'Voided', CL: 'Closed',
@@ -149,6 +150,7 @@ function DocChip({ icon, iconColor, title, amount, currency, status, onClick }) 
 }
 
 export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) {
+  const ui = useUI();
   const [related, setRelated] = useState({});
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -204,7 +206,7 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
   }, [recordId, token, apiBaseUrl, refreshKey]);
 
   if (loading) {
-    return <span className="text-xs text-muted-foreground">Loading...</span>;
+    return <span className="text-xs text-muted-foreground">{ui('loading')}</span>;
   }
 
   const chips = [];
@@ -273,7 +275,7 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
     <button
       type="button"
       onClick={() => setRefreshKey(k => k + 1)}
-      title="Refresh"
+      title={ui('refresh')}
       className="inline-flex items-center justify-center w-5 h-5 rounded text-muted-foreground/50 hover:text-muted-foreground transition-colors"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`}>
@@ -286,7 +288,7 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
   if (chips.length === 0) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground/50">No related documents</span>
+        <span className="text-xs text-muted-foreground/50">{ui('noRelatedDocuments')}</span>
         {refreshBtn}
       </div>
     );
