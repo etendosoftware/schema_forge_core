@@ -568,8 +568,11 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, install
     ? new Date(invoice.invoiceDate).toLocaleDateString('en-GB')
     : '—';
 
-  const dueDate = invoice.dueDate
-    ? new Date(invoice.dueDate).toLocaleDateString('en-GB')
+  const dueDateTimestamps = installments
+    .map((i) => (i.dueDate ? new Date(i.dueDate).getTime() : NaN))
+    .filter((t) => !Number.isNaN(t));
+  const dueDate = dueDateTimestamps.length > 0
+    ? new Date(Math.max(...dueDateTimestamps)).toLocaleDateString('en-GB')
     : '—';
 
   const payPrefix = specName === 'purchase-invoice' ? 'payment-out' : 'payment-in';
