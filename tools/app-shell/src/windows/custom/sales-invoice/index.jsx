@@ -19,7 +19,7 @@ import { useCreateContactModal } from '@/components/contract-ui/useCreateContact
 const LIST_COLUMNS = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string', label: 'Document No.' },
   { key: 'invoiceDate', column: 'DateInvoiced', type: 'date', label: 'Invoice Date' },
-  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string', label: 'Business Partner' },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner' },
   { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
 ];
@@ -113,10 +113,14 @@ export default function SalesInvoiceWindow(props) {
   const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
 
   const INVOICE_QUICK_FILTERS = [
-    { label: 'all' },
-    { label: 'overdueOnly', rowFilter: (row) => Number(row.outstandingAmount ?? 0) > 0 },
+    {
+      label: 'overdueOnly',
+      filter: `criteria=${encodeURIComponent(JSON.stringify([
+        { fieldName: 'outstandingAmount', operator: 'greaterThan', value: 0 },
+      ]))}`,
+    },
   ];
-  const initialQuickFilterIndex = filterParam === 'overdue' ? 1 : 0;
+  const initialQuickFilterIndex = filterParam === 'overdue' ? 0 : null;
 
   return (
     <>
@@ -129,6 +133,7 @@ export default function SalesInvoiceWindow(props) {
         initialColumnFilters={initialColumnFilters}
         quickFilters={INVOICE_QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}
+        dateFilterKey="invoiceDate"
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
       />
       {cloneTargets && createPortal(

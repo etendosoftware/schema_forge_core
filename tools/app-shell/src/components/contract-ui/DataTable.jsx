@@ -16,7 +16,6 @@ import { Tag } from '@/components/ui/tag';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { resolveColumnLabel } from '@/lib/resolveColumnLabel.js';
 import { formatAmount } from '@/lib/formatAmount.js';
-import { parseUserFilter } from '@/lib/gridQuery.js';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import InternalConsumptionProductSearchDrawer from './InternalConsumptionProductSearchDrawer.jsx';
 
@@ -883,41 +882,8 @@ export function DataTable({
     }
   }, [columns, onColumnsReady]);
 
-  const [localFilterInputs, setLocalFilterInputs] = useState(() => {
-    const init = {};
-    for (const [key, val] of Object.entries(columnFilters)) {
-      if (val?.originalValue) init[key] = val.originalValue;
-    }
-    return init;
-  });
   const hasColumnFilter = useMemo(() => Object.values(columnFilters).some(v => v), [columnFilters]);
   const hasActiveFilter = searchQuery.length > 0 || hasColumnFilter;
-
-  const commitFilter = useCallback((key, value) => {
-    const col = columns.find(c => c.key === key);
-    const parsed = parseUserFilter(col || { key }, value);
-    onFilterChange?.(key, parsed);
-  }, [columns, onFilterChange]);
-
-  const filterTooltip = useCallback((col) => {
-    switch (col.type) {
-      case 'date':     return ui('filterHelpDate');
-      case 'number':
-      case 'amount':   return ui('filterHelpNumeric');
-      case 'selector': return ui('filterHelpSelector');
-      default:         return ui('filterHelpText');
-    }
-  }, [ui]);
-
-  const presentStatusValues = useMemo(() => {
-    const result = {};
-    for (const col of columns) {
-      if (col.type === 'status' && col.enumLabels) {
-        result[col.key] = new Set(data.map(row => row[col.key]).filter(Boolean));
-      }
-    }
-    return result;
-  }, [columns, data]);
 
   const filteredData = useMemo(() => {
     let result = data;
@@ -1202,41 +1168,28 @@ export function DataTable({
       <div className="overflow-x-auto overflow-y-visible">
         <Table>
           <TableHeader>
-            <TableRow className="border-b border-border/40 bg-muted/30">
+            <TableRow className="border-b border-border/40">
               {selectable && (
-                <TableHead className="w-10 px-3 align-top" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex flex-col gap-1.5 pt-1">
-                    <input
-                      type="checkbox"
-                      checked={allSelected}
-                      ref={el => { if (el) el.indeterminate = someSelected; }}
-                      onChange={toggleAll}
-                      onClick={(e) => e.stopPropagation()}
-                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                    />
-                    {hasColumnFilter && (
-                      <button
-                        onClick={() => { setLocalFilterInputs({}); onClearAllFilters ? onClearAllFilters() : setSearchQuery(''); }}
-                        title={ui('clearAllFilters')}
-                        className="h-4 w-4 flex items-center justify-center rounded text-muted-foreground/50 hover:text-foreground transition-colors"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    )}
-                  </div>
+                <TableHead className="w-10 px-3 align-middle" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={el => { if (el) el.indeterminate = someSelected; }}
+                    onChange={toggleAll}
+                    onClick={(e) => e.stopPropagation()}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                  />
                 </TableHead>
               )}
               {columns.map(col => {
                 const colLabel = resolveColumnLabel(col, locale, t);
                 const isSorted = sortColumn === col.key;
-                const isNumeric = NUMERIC_FIELD_TYPES.has(col.type);
                 return (
-                  <TableHead key={col.key} className="align-top">
-                    <div className="flex flex-col gap-1.5 pb-2">
-                      {onSort ? (
+                  <TableHead key={col.key} className="align-middle">
+                    {onSort ? (
                         <button
                           type="button"
-                          className="text-xs font-medium text-muted-foreground/70 tracking-wide cursor-pointer select-none hover:text-foreground transition-colors bg-transparent border-0 p-0 text-left"
+                          className="text-xs leading-4 font-semibold text-text-primary tracking-normal cursor-pointer select-none transition-colors bg-transparent border-0 p-0 text-left"
                           onClick={() => onSort(col.key)}
                         >
                           {colLabel}
@@ -1245,103 +1198,13 @@ export function DataTable({
                           )}
                         </button>
                       ) : (
-                        <span className="text-xs font-medium text-muted-foreground/70 tracking-wide">
+                        <span className="text-xs leading-4 font-semibold text-text-primary tracking-normal">
                           {colLabel}
                           {isSorted && (
                             <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
                           )}
                         </span>
                       )}
-                      <div className="relative w-full">
-                        {(col.type === 'status' || col.type === 'enum') && col.enumLabels && Object.keys(col.enumLabels).length > 0 ? (
-                          <select
-                            value={localFilterInputs[col.key] ?? ''}
-                            onChange={e => {
-                              const val = e.target.value;
-                              setLocalFilterInputs(prev => ({ ...prev, [col.key]: val }));
-                              commitFilter(col.key, val);
-                            }}
-                            className={[
-                              'w-full h-6 rounded border bg-background/80 px-1 text-xs text-foreground',
-                              'transition-colors cursor-pointer',
-                              'focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/40',
-                              localFilterInputs[col.key]
-                                ? 'border-primary/40 bg-primary/5'
-                                : 'border-border/35',
-                            ].filter(Boolean).join(' ')}
-                          >
-                            <option value="">{ui('filterAll')}</option>
-                            {Object.keys(col.enumLabels)
-                              .filter(code => {
-                                const present = presentStatusValues[col.key];
-                                return !present?.size || present.has(code);
-                              })
-                              .map(code => (
-                                <option key={code} value={code}>{dictionary?.statuses?.[code]?.label || col.enumLabels[code] || statusLabel(code, dictionary)}</option>
-                              ))}
-                          </select>
-                        ) : col.type === 'boolean' ? (
-                          <select
-                            value={localFilterInputs[col.key] ?? ''}
-                            onChange={e => {
-                              const val = e.target.value;
-                              setLocalFilterInputs(prev => ({ ...prev, [col.key]: val }));
-                              commitFilter(col.key, val);
-                            }}
-                            className={[
-                              'w-full h-6 rounded border bg-background/80 px-1 text-xs text-foreground',
-                              'transition-colors cursor-pointer',
-                              'focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/40',
-                              localFilterInputs[col.key]
-                                ? 'border-primary/40 bg-primary/5'
-                                : 'border-border/35',
-                            ].filter(Boolean).join(' ')}
-                          >
-                            <option value="">{ui('filterAll')}</option>
-                            <option value="true">{(() => {
-                              const raw = col.badgeLabels?.true;
-                              if (raw && typeof raw === 'object') return raw[locale] ?? raw.en_US ?? ui('filterBooleanYes');
-                              return raw ?? ui('filterBooleanYes');
-                            })()}</option>
-                            <option value="false">{(() => {
-                              const raw = col.badgeLabels?.false;
-                              if (raw && typeof raw === 'object') return raw[locale] ?? raw.en_US ?? ui('filterBooleanNo');
-                              return raw ?? ui('filterBooleanNo');
-                            })()}</option>
-                          </select>
-                        ) : (
-                          <input
-                            type="text"
-                            value={localFilterInputs[col.key] ?? ''}
-                            onChange={e => setLocalFilterInputs(prev => ({ ...prev, [col.key]: e.target.value }))}
-                            onBlur={() => commitFilter(col.key, localFilterInputs[col.key] ?? '')}
-                            onKeyDown={e => { if (e.key === 'Enter') { e.target.blur(); } }}
-                            placeholder={ui('filter')}
-                            title={filterTooltip(col)}
-                            className={[
-                              'w-full h-6 rounded border bg-background/80 px-2 text-xs text-foreground',
-                              'placeholder:text-muted-foreground/35 transition-colors',
-                              'focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/40',
-                              localFilterInputs[col.key]
-                                ? 'border-primary/40 bg-primary/5 pr-6'
-                                : 'border-border/35',
-                              isNumeric ? 'text-right' : '',
-                            ].filter(Boolean).join(' ')}
-                          />
-                        )}
-                        {localFilterInputs[col.key] && col.type !== 'boolean' && !((col.type === 'status' || col.type === 'enum') && col.enumLabels) && (
-                          <button
-                            onClick={() => {
-                              setLocalFilterInputs(prev => ({ ...prev, [col.key]: '' }));
-                              commitFilter(col.key, '');
-                            }}
-                            className="absolute right-1 top-1/2 -translate-y-1/2 h-4 w-4 flex items-center justify-center text-muted-foreground/50 hover:text-foreground transition-colors"
-                          >
-                            <X className="h-2.5 w-2.5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
                   </TableHead>
                 );
               })}
@@ -1395,7 +1258,7 @@ export function DataTable({
                       );
                     })()}
                     {columns.map(col => (
-                      <TableCell key={col.key} className={NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right tabular-nums' : ''}>
+                      <TableCell key={col.key} className={['text-sm', NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right tabular-nums' : ''].filter(Boolean).join(' ')}>
                         {renderCellValue(row, col)}
                       </TableCell>
                     ))}

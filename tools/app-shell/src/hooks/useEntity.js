@@ -238,6 +238,66 @@ function normalizeRows(rows, entityName) {
 const EMPTY_FILTERS = {};
 const EMPTY_DEFS = {};
 
+/**
+ * Extract `criteria=...` entries from a raw filter query-string fragment and push the
+ * remaining key/value pairs straight into queryParams as passthrough (e.g. `active=true`).
+ */
+function extractCriteriaFromFilter(filterStr, queryParams) {
+  const out = [];
+  if (!filterStr) return out;
+  for (const p of filterStr.split('&')) {
+    if (!p) continue;
+    const eqIdx = p.indexOf('=');
+    if (eqIdx < 0) continue;
+    const k = p.slice(0, eqIdx);
+    const v = decodeURIComponent(p.slice(eqIdx + 1));
+    if (k === 'criteria') {
+      try {
+        const parsed = JSON.parse(v);
+        if (Array.isArray(parsed)) out.push(...parsed);
+        else out.push(parsed);
+      } catch { /* skip malformed criteria */ }
+    } else {
+      queryParams.append(k, v);
+    }
+  }
+  return out;
+}
+
+/**
+ * Merge all filter layers into a single `criteria=...` param.
+ *
+ * Composition order (all AND):
+ *   baseFilter (window-scope: subset + quick) → columnFilters (status/date/search) → trailingFilter (funnel)
+ *
+ * Emitting separate `criteria=` params silently drops all but one on the backend,
+ * so everything must collapse into one array. If any sub-entry is an AdvancedCriteria
+ * (e.g. the funnel's OR block), wrap the whole result in an outer AdvancedCriteria AND
+ * so the OR stays parenthesized.
+ */
+function applyFilterParams(queryParams, baseFilter, columnFilters, columnDefs, trailingFilter) {
+  const baseCriteria = extractCriteriaFromFilter(baseFilter, queryParams);
+
+  const colCriteria = [];
+  for (const [key, parsed] of Object.entries(columnFilters)) {
+    if (!parsed) continue;
+    const c = columnDefs[key] || { key };
+    const filterCriteria = buildBackendFilter(c, parsed);
+    if (filterCriteria) colCriteria.push(...filterCriteria);
+  }
+
+  const trailingCriteria = extractCriteriaFromFilter(trailingFilter, queryParams);
+
+  const allCriteria = [...baseCriteria, ...colCriteria, ...trailingCriteria];
+  if (allCriteria.length === 0) return;
+
+  const hasAdvanced = allCriteria.some((c) => c && c._constructor === 'AdvancedCriteria');
+  const finalCriteria = hasAdvanced
+    ? { _constructor: 'AdvancedCriteria', operator: 'and', criteria: allCriteria }
+    : allCriteria;
+  queryParams.append('criteria', JSON.stringify(finalCriteria));
+}
+
 export function useEntity(entity, childEntity, {
   token,
   apiBaseUrl,
@@ -246,6 +306,7 @@ export function useEntity(entity, childEntity, {
   columnFilters = EMPTY_FILTERS,
   columnDefs = EMPTY_DEFS,
   skipListFetch = false,
+  trailingFilter = null,
 }) {
   const { logout } = useAuth();
   const ui = useUI();
@@ -283,27 +344,7 @@ export function useEntity(entity, childEntity, {
     queryParams.append('_startRow', '0');
     queryParams.append('_endRow', String(BATCH_SIZE - 1));
 
-    if (baseFilter) {
-      // baseFilter is expected to be a raw query string fragment like "active=true"
-      const parts = baseFilter.split('&');
-      for (const p of parts) {
-        if (!p) continue;
-        const [k, v] = p.split('=');
-        if (k && v !== undefined) queryParams.append(k, decodeURIComponent(v));
-      }
-    }
-
-    // Apply column filters as SmartClient criteria (iContains for text search)
-    const criteria = [];
-    for (const [key, parsed] of Object.entries(columnFilters)) {
-      if (!parsed) continue;
-      const c = columnDefs[key] || { key };
-      const filterCriteria = buildBackendFilter(c, parsed);
-      if (filterCriteria) criteria.push(...filterCriteria);
-    }
-    if (criteria.length > 0) {
-      queryParams.append('criteria', JSON.stringify(criteria));
-    }
+    applyFilterParams(queryParams, baseFilter, columnFilters, columnDefs, trailingFilter);
 
     fetch(`${apiBaseUrl}/${entity}?${queryParams.toString()}`, { headers })
       .then(res => {
@@ -327,7 +368,7 @@ export function useEntity(entity, childEntity, {
         setHasMore(false);
         setLoading(false);
       });
-  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, baseFilter, columnFilters, columnDefs, logout]);
+  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, baseFilter, columnFilters, columnDefs, trailingFilter, logout]);
 
   const loadMore = useCallback(() => {
     if (!hasMore || loadingMore || loading) return;
@@ -342,25 +383,7 @@ export function useEntity(entity, childEntity, {
     queryParams.append('_startRow', String(start));
     queryParams.append('_endRow', String(start + BATCH_SIZE - 1));
 
-    if (baseFilter) {
-      const parts = baseFilter.split('&');
-      for (const p of parts) {
-        if (!p) continue;
-        const [k, v] = p.split('=');
-        if (k && v !== undefined) queryParams.append(k, decodeURIComponent(v));
-      }
-    }
-
-    const criteriaMore = [];
-    for (const [key, parsed] of Object.entries(columnFilters)) {
-      if (!parsed) continue;
-      const c = columnDefs[key] || { key };
-      const filterCriteria = buildBackendFilter(c, parsed);
-      if (filterCriteria) criteriaMore.push(...filterCriteria);
-    }
-    if (criteriaMore.length > 0) {
-      queryParams.append('criteria', JSON.stringify(criteriaMore));
-    }
+    applyFilterParams(queryParams, baseFilter, columnFilters, columnDefs, trailingFilter);
 
     fetch(`${apiBaseUrl}/${entity}?${queryParams.toString()}`, { headers })
       .then(res => {
@@ -383,7 +406,7 @@ export function useEntity(entity, childEntity, {
         setLoadingMore(false);
         setHasMore(false);
       });
-  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, hasMore, loadingMore, loading, baseFilter, columnFilters, columnDefs, logout]);
+  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, hasMore, loadingMore, loading, baseFilter, columnFilters, columnDefs, trailingFilter, logout]);
 
   // List fetch is a mount-time decision. Flipping skipListFetch after mount
   // (e.g. a detail view whose recordId goes 'new' → ':id') must NOT retroactively

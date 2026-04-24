@@ -1,0 +1,469 @@
+import { useMemo, useState, useEffect, useRef } from 'react';
+import { Button } from '@/components/ui/button.jsx';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.jsx';
+import { Calendar } from '@/components/ui/calendar.jsx';
+import { ChevronDown, CalendarDays, Filter, Check, Loader2 } from 'lucide-react';
+import { useLocale, useUI } from '@/i18n';
+import { useDistinctValues } from '@/hooks/useDistinctValues.js';
+import { AdvancedFilterBuilder } from './AdvancedFilterBuilder.jsx';
+import { DistinctValuesList } from './DistinctValuesList.jsx';
+
+/**
+ * Quick-filter toolbar rendered above the list table.
+ *
+ * Shortcuts:
+ *   - Status selector: shown when a column has type='status'.
+ *   - Date range selector: shown only when `dateFilterKey` points to a column
+ *     with type='date'. No implicit fallback to the first date column.
+ *   - Funnel popover: placeholder for the upcoming advanced-filter builder.
+ *
+ * Filters are committed through the same onFilterChange pipeline used by the
+ * DataTable, so the backend query layer (gridQuery.buildBackendFilter) is
+ * unchanged.
+ */
+export function ListFilterBar({
+  entity = null,
+  apiBaseUrl = null,
+  columns = [],
+  columnFilters = {},
+  onFilterChange,
+  advancedFilter = null,
+  onAdvancedFilterChange,
+  rows = [],
+  dateFilterKey = null,
+  presets = null,
+  onApplyPreset = null,
+  onSavePreset = null,
+  onDeletePreset = null,
+}) {
+  const ui = useUI();
+  const dictionary = useLocale();
+
+  const statusCol = useMemo(
+    () => columns.find(c => c.type === 'status') || null,
+    [columns],
+  );
+  const dateCol = useMemo(
+    () => {
+      if (!dateFilterKey) return null;
+      const col = columns.find(c => c.key === dateFilterKey);
+      return col && col.type === 'date' ? col : null;
+    },
+    [columns, dateFilterKey],
+  );
+
+  const activeStatus = columnFilters?.[statusCol?.key]?.value;
+  const activeStatusCode = Array.isArray(activeStatus) ? activeStatus[0] : null;
+
+  // Label resolution map: enum labels from the column definition when present,
+  // otherwise fall back to the shared status dictionary. Used for both the
+  // active-status badge and the dropdown items.
+  const statusLabelMap = useMemo(() => {
+    if (!statusCol) return {};
+    if (statusCol.enumLabels && Object.keys(statusCol.enumLabels).length > 0) {
+      return { ...statusCol.enumLabels };
+    }
+    return Object.fromEntries(
+      Object.entries(dictionary?.statuses || {})
+        .filter(([code]) => /^[A-Z][A-Z0-9_]*$/.test(code))
+        .map(([code, entry]) => [code, entry?.label || code]),
+    );
+  }, [statusCol, dictionary]);
+
+  const labelForStatus = (code) =>
+    dictionary?.statuses?.[code]?.label || statusLabelMap[code] || code;
+
+  // In-memory distinct codes from the rows currently loaded — shown instantly
+  // so the dropdown is never empty while the backend fetch is in-flight.
+  const inMemoryStatusCodes = useMemo(() => {
+    if (!statusCol) return [];
+    const seen = new Set();
+    for (const r of rows || []) {
+      const v = r?.[statusCol.key];
+      if (v !== null && v !== undefined && v !== '') seen.add(v);
+    }
+    return Array.from(seen);
+  }, [rows, statusCol]);
+
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+
+  // Backend distinct fetch: paginated, server-side search, ignores active
+  // columnFilters (so the dropdown shows all values available for the
+  // unfiltered dataset).
+  const statusDistinct = useDistinctValues(entity, statusCol?.key, {
+    enabled: !!(statusCol && entity && apiBaseUrl && statusMenuOpen),
+    apiBaseUrl,
+  });
+
+  // Merge backend + in-memory + currently-active code. Backend order is kept
+  // (already sorted alphabetically server-side), in-memory extras are appended.
+  // Local search also filters client-side so in-memory-only codes are hidden
+  // when they don't match what the user typed.
+  const mergedStatusCodes = useMemo(() => {
+    if (!statusCol) return [];
+    const seen = new Set();
+    const out = [];
+    for (const entry of statusDistinct.values) {
+      const c = entry?.id;
+      if (c == null || c === '') continue;
+      if (!seen.has(c)) { seen.add(c); out.push(c); }
+    }
+    const q = statusDistinct.search.trim().toLowerCase();
+    for (const c of inMemoryStatusCodes) {
+      if (seen.has(c)) continue;
+      if (q && !labelForStatus(c).toLowerCase().includes(q) && !String(c).toLowerCase().includes(q)) continue;
+      seen.add(c);
+      out.push(c);
+    }
+    if (activeStatusCode && !seen.has(activeStatusCode)) {
+      seen.add(activeStatusCode);
+      out.push(activeStatusCode);
+    }
+    return out;
+  }, [statusCol, statusDistinct.values, statusDistinct.search, inMemoryStatusCodes, activeStatusCode, statusLabelMap, dictionary]);
+
+  const activeStatusLabel = useMemo(() => {
+    if (!activeStatusCode) return ui('allStatuses');
+    return labelForStatus(activeStatusCode);
+  }, [activeStatusCode, statusLabelMap, dictionary, ui]);
+
+  const handleStatusSelect = (code) => {
+    if (!statusCol) return;
+    const parsed = code
+      ? { mode: 'enumLabel', value: [code], originalValue: code }
+      : null;
+    onFilterChange?.(statusCol.key, parsed);
+  };
+
+  const activeDateFilter = columnFilters?.[dateCol?.key] || null;
+  const activeDateOriginal = activeDateFilter?.originalValue;
+  const activeDatePresetId = typeof activeDateOriginal === 'string' && activeDateOriginal.startsWith('preset:')
+    ? activeDateOriginal.slice('preset:'.length)
+    : null;
+  const isCustomRange = typeof activeDateOriginal === 'string' && activeDateOriginal.startsWith('custom:');
+  const activeDateRange = (() => {
+    if (!activeDateFilter) return null;
+    const v = activeDateFilter.value;
+    if (Array.isArray(v) && v.length === 2) {
+      const from = v[0] ? new Date(`${v[0]}T00:00:00`) : null;
+      const to = v[1] ? new Date(`${v[1]}T00:00:00`) : null;
+      if (from && to && !Number.isNaN(from.getTime()) && !Number.isNaN(to.getTime())) {
+        return { from, to };
+      }
+    }
+    return null;
+  })();
+
+  const datePresets = useMemo(() => ([
+    { id: 'today', label: ui('dateRangeToday') },
+    { id: 'yesterday', label: ui('dateRangeYesterday') },
+    { id: 'last7', label: ui('dateRangeLast7Days') },
+    { id: 'last30', label: ui('dateRangeLast30Days') },
+    { id: 'last12m', label: ui('dateRangeLast12Months') },
+    { id: 'allTime', label: ui('dateRangeAllTime') },
+  ]), [ui]);
+
+  const activeDateLabel = activeDatePresetId
+    ? (datePresets.find(p => p.id === activeDatePresetId)?.label || ui('dateRangeAnyTime'))
+    : isCustomRange
+      ? ui('dateRangeCustom')
+      : ui('dateRangeAnyTime');
+
+  const computePresetRange = (presetId) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const to = new Date(today);
+    const from = new Date(today);
+    if (presetId === 'today') { /* from = to = today */ }
+    else if (presetId === 'yesterday') { from.setDate(from.getDate() - 1); to.setDate(to.getDate() - 1); }
+    else if (presetId === 'last7') from.setDate(from.getDate() - 6);
+    else if (presetId === 'last30') from.setDate(from.getDate() - 29);
+    else if (presetId === 'last12m') from.setMonth(from.getMonth() - 12);
+    else return null;
+    return { from, to };
+  };
+
+  const toIsoDate = (d) => {
+    if (!(d instanceof Date) || Number.isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const emitDateFilter = (range, originalValue) => {
+    if (!dateCol) return;
+    if (!range) {
+      onFilterChange?.(dateCol.key, null);
+      return;
+    }
+    onFilterChange?.(dateCol.key, {
+      mode: 'date',
+      op: 'range',
+      value: [toIsoDate(range.from), toIsoDate(range.to)],
+      originalValue,
+    });
+  };
+
+  const [dateMenuOpen, setDateMenuOpen] = useState(false);
+  const [customMode, setCustomMode] = useState(false);
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
+  const [leftMonth, setLeftMonth] = useState(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 1);
+    return d;
+  });
+  const [rightMonth, setRightMonth] = useState(() => new Date());
+
+  const handlePresetSelect = (presetId) => {
+    if (!dateCol) return;
+    setCustomMode(false);
+    setDateMenuOpen(false);
+    if (presetId === 'allTime') {
+      emitDateFilter(null, null);
+      return;
+    }
+    const range = computePresetRange(presetId);
+    if (!range) return;
+    emitDateFilter(range, `preset:${presetId}`);
+  };
+
+  // When the popover opens, seed both single-date pickers with the currently
+  // applied range (or today/today-1month as defaults). Each picker navigates
+  // independently: left = "from", right = "to".
+  useEffect(() => {
+    if (!dateMenuOpen) return;
+    if (activeDateRange) {
+      setFromDate(activeDateRange.from);
+      setToDate(activeDateRange.to);
+      setCustomMode(isCustomRange);
+      setLeftMonth(new Date(activeDateRange.from));
+      setRightMonth(new Date(activeDateRange.to));
+    } else {
+      setFromDate(null);
+      setToDate(null);
+      setCustomMode(false);
+      const right = new Date();
+      const left = new Date();
+      left.setMonth(left.getMonth() - 1);
+      setLeftMonth(left);
+      setRightMonth(right);
+    }
+  }, [dateMenuOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleFromPick = (date) => {
+    setFromDate(date || null);
+    setCustomMode(true);
+  };
+  const handleToPick = (date) => {
+    setToDate(date || null);
+    setCustomMode(true);
+  };
+
+  const canApplyCustom = !!(fromDate && toDate && fromDate.getTime() <= toDate.getTime());
+
+  const handleApplyCustom = () => {
+    if (!canApplyCustom) return;
+    emitDateFilter(
+      { from: fromDate, to: toDate },
+      `custom:${toIsoDate(fromDate)}:${toIsoDate(toDate)}`,
+    );
+    setDateMenuOpen(false);
+  };
+
+  // Modifier used by both calendars to paint the days strictly inside the
+  // selected range with a muted background.
+  const inRangeModifier = useMemo(() => {
+    if (!fromDate || !toDate || fromDate.getTime() >= toDate.getTime()) return null;
+    const fromTs = fromDate.getTime();
+    const toTs = toDate.getTime();
+    return (day) => {
+      const ts = day.getTime();
+      return ts > fromTs && ts < toTs;
+    };
+  }, [fromDate, toDate]);
+
+  const fmtDay = (d) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  const rangeSummary = (() => {
+    if (fromDate && toDate) return `${fmtDay(fromDate)} – ${fmtDay(toDate)}`;
+    if (fromDate) return fmtDay(fromDate);
+    if (toDate) return fmtDay(toDate);
+    return '';
+  })();
+
+
+  const hasActiveColumnFilter = Object.values(columnFilters || {}).some(Boolean);
+  const hasActiveAdvancedFilter = !!advancedFilter?.conditions?.length;
+  const hasActiveFilter = hasActiveColumnFilter || hasActiveAdvancedFilter;
+  const hasActiveDate = !!activeDateFilter;
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  return (
+    <div className="flex items-center gap-2">
+      {statusCol && (
+        <Popover open={statusMenuOpen} onOpenChange={setStatusMenuOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={[
+                'gap-1.5 font-normal h-9 px-3 rounded-lg bg-white',
+                activeStatusCode ? 'text-foreground border-primary/40' : 'text-muted-foreground',
+              ].join(' ')}
+            >
+              {activeStatusLabel}
+              {statusDistinct.loading && (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+              )}
+              <ChevronDown className="h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-64 p-0">
+            <DistinctValuesList
+              activeCode={activeStatusCode}
+              allLabel={ui('allStatuses')}
+              codes={mergedStatusCodes}
+              labelFor={labelForStatus}
+              distinct={statusDistinct}
+              onSelect={(code) => {
+                handleStatusSelect(code);
+                setStatusMenuOpen(false);
+              }}
+              searchPlaceholder={ui('searchStatuses')}
+            />
+          </PopoverContent>
+        </Popover>
+      )}
+
+      {dateCol && (
+        <Popover open={dateMenuOpen} onOpenChange={setDateMenuOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={[
+                'gap-1.5 font-normal h-9 px-3 rounded-lg bg-white',
+                hasActiveDate ? 'text-foreground border-primary/40' : 'text-muted-foreground',
+              ].join(' ')}
+            >
+              <CalendarDays className="h-3.5 w-3.5" />
+              {activeDateLabel}
+              <ChevronDown className="h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-auto p-0">
+            <div className="flex">
+              <div className="flex flex-col py-2 border-r border-[#E8EAEF] min-w-[180px]">
+                {datePresets.map(preset => {
+                  const active = preset.id === 'allTime' ? (!hasActiveDate && !customMode) : (activeDatePresetId === preset.id && !customMode);
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => handlePresetSelect(preset.id)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-left hover:bg-muted/50 transition-colors"
+                    >
+                      <span className="flex-1">{preset.label}</span>
+                      {active && <Check className="h-3.5 w-3.5 shrink-0" />}
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() => setCustomMode(true)}
+                  className={[
+                    'flex items-center gap-2 px-4 py-2 text-sm text-left transition-colors',
+                    customMode ? 'bg-muted/60 hover:bg-muted/60' : 'hover:bg-muted/50',
+                  ].join(' ')}
+                >
+                  <span className="flex-1">{ui('dateRangeCustom')}</span>
+                  {customMode && <Check className="h-3.5 w-3.5 shrink-0" />}
+                </button>
+              </div>
+              <div className="flex flex-col">
+                <div className="flex">
+                  <Calendar
+                    mode="single"
+                    month={leftMonth}
+                    onMonthChange={setLeftMonth}
+                    selected={fromDate ?? undefined}
+                    onSelect={handleFromPick}
+                    modifiers={inRangeModifier ? { inRange: inRangeModifier } : undefined}
+                    modifiersClassNames={{ inRange: 'bg-muted/60 rounded-none [&>button]:rounded-none [&>button]:hover:bg-muted' }}
+                  />
+                  <div className="border-l border-[#E8EAEF]" />
+                  <Calendar
+                    mode="single"
+                    month={rightMonth}
+                    onMonthChange={setRightMonth}
+                    selected={toDate ?? undefined}
+                    onSelect={handleToPick}
+                    modifiers={inRangeModifier ? { inRange: inRangeModifier } : undefined}
+                    modifiersClassNames={{ inRange: 'bg-[#F5F7F9] rounded-none [&>button]:rounded-none [&>button]:hover:bg-[#EEF1F4]' }}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-2 h-16 px-5 py-3 border-t border-[#E8EAEF]">
+                  <span className="text-sm font-medium text-[#3F3F50]">{rangeSummary}</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDateMenuOpen(false)}
+                      className="inline-flex items-center justify-center h-10 px-3 rounded-full bg-white border border-[#D1D4DB] shadow-[0_1px_2px_rgba(18,18,23,0.05)] text-sm font-medium text-[#121217] hover:bg-[#F5F7F9] transition-colors"
+                    >
+                      {ui('dateRangeCancel')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleApplyCustom}
+                      disabled={!canApplyCustom}
+                      className="inline-flex items-center justify-center h-10 px-3 rounded-full bg-[#121217] text-sm font-medium text-white hover:bg-[#2A2A33] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {ui('dateRangeApply')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      )}
+
+      <Popover open={advancedOpen} onOpenChange={setAdvancedOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            title={ui('advancedFilters')}
+            className="relative h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Filter className="h-4 w-4" />
+            {hasActiveAdvancedFilter && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-[#121217] text-white text-[10px] font-semibold leading-none">
+                {advancedFilter.conditions.length}
+              </span>
+            )}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-auto p-4">
+          <AdvancedFilterBuilder
+            entity={entity}
+            apiBaseUrl={apiBaseUrl}
+            columns={columns}
+            rows={rows}
+            value={advancedFilter}
+            onApply={(next) => onAdvancedFilterChange?.(next)}
+            onClear={() => onAdvancedFilterChange?.(null)}
+            onClose={() => setAdvancedOpen(false)}
+            presets={presets}
+            onApplyPreset={onApplyPreset}
+            onSavePreset={onSavePreset}
+            onDeletePreset={onDeletePreset}
+            hasActiveFilter={hasActiveFilter}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
+export default ListFilterBar;

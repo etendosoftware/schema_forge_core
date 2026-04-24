@@ -4,6 +4,20 @@ import { useSearchParams } from 'react-router-dom';
 import GeneratedApp from '@generated/sales-order/generated/web/sales-order/index.jsx';
 import HeaderTable from '@generated/sales-order/generated/web/sales-order/HeaderTable';
 import { ListView } from '@/components/contract-ui';
+
+const LIST_COLUMNS = [
+  { key: 'documentNo', column: 'DocumentNo', type: 'string', label: 'Document No.' },
+  { key: 'orderDate', column: 'DateOrdered', type: 'date', label: 'Order Date' },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner' },
+  { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
+  { key: 'deliveryStatus', column: 'DeliveryStatus', type: 'percent', label: 'Shipment Status' },
+  { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'percent', label: 'Invoice Status' },
+];
+
+function CustomHeaderTable(props) {
+  return <HeaderTable columns={LIST_COLUMNS} {...props} />;
+}
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
@@ -49,16 +63,20 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
   const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
 
   const QUICK_FILTERS = [
-    { label: 'all' },
-    { label: 'pendingDeliveryOnly', rowFilter: (row) => (row.deliveryStatus ?? 100) < 100 },
+    {
+      label: 'pendingDeliveryOnly',
+      filter: `criteria=${encodeURIComponent(JSON.stringify([
+        { fieldName: 'deliveryStatus', operator: 'lessThan', value: 100 },
+      ]))}`,
+    },
   ];
-  const initialQuickFilterIndex = filterParam === 'pendingDelivery' ? 1 : 0;
+  const initialQuickFilterIndex = filterParam === 'pendingDelivery' ? 0 : null;
 
   return (
     <>
       <ListView
         entity="header"
-        Table={HeaderTable}
+        Table={CustomHeaderTable}
         entityLabel="Sales Order"
         windowName={windowName}
         breadcrumb="Sales / Sales Order"
@@ -69,6 +87,7 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
         initialColumnFilters={initialColumnFilters}
         quickFilters={QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}
+        dateFilterKey="orderDate"
         {...rest}
       />
       {cloneTargets && createPortal(

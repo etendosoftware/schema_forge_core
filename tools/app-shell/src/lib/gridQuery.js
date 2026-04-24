@@ -180,7 +180,7 @@ function tryBooleanText(raw, col) {
 export function parseUserFilter(col, input) {
   if (input === null || String(input).trim() === '') return null;
   const trimmed = String(input).trim();
-  const mode = col.filterMode ?? inferFilterMode(col.type);
+  const mode = resolveFilterMode(col);
   const parsed = parseByMode(mode, trimmed, col);
   if (parsed) {
     parsed.originalValue = input;
@@ -389,6 +389,129 @@ function inferFilterMode(type) {
     case 'amount':   return 'numeric';
     default:         return 'text';
   }
+}
+
+/**
+ * resolveFilterMode(col)
+ *
+ * Public helper to resolve the effective filter mode for a column.
+ * Precedence:
+ *   1. Explicit `col.filterMode` always wins.
+ *   2. Explicit `col.type` is honored ('selector' → identifier, etc).
+ *   3. Heuristic: an AD column name ending in `_ID` (e.g. `C_BPartner_ID`) is
+ *      a foreign key — filter against `<key>$_identifier` so "jua" matches the
+ *      BP display label, not the UUID.
+ */
+export function resolveFilterMode(col) {
+  if (!col) return 'text';
+  if (col.filterMode) return col.filterMode;
+  if (col.type === 'selector') return 'identifier';
+  if (col.type && col.type !== 'string') return inferFilterMode(col.type);
+  if (typeof col.column === 'string' && /_ID$/i.test(col.column)) return 'identifier';
+  return inferFilterMode(col.type);
+}
+
+/**
+ * buildAdvancedFilterCriteria(advancedFilter, columns)
+ *
+ * Convert the advanced-filter builder state to a SmartClient criteria array
+ * consumable by NEO Headless. Returns null when no valid row is present.
+ *
+ * Shape of advancedFilter:
+ *   { rowOperator: 'and' | 'or', conditions: [{ field, operator, value }] }
+ *
+ * AND rows are emitted flat (to compose with the surrounding AND layer).
+ * OR rows are wrapped in a single AdvancedCriteria object so the outer
+ * merge can still treat the whole advanced block as one AND-level item.
+ */
+export function buildAdvancedFilterCriteria(advancedFilter, columns) {
+  if (!advancedFilter?.conditions?.length || !Array.isArray(columns)) return null;
+  const colByKey = Object.fromEntries(columns.map((c) => [c.key, c]));
+  const items = [];
+  for (const row of advancedFilter.conditions) {
+    const col = colByKey[row.field];
+    if (!col) continue;
+    const crit = buildRowCriteria(col, row);
+    if (crit) items.push(...crit);
+  }
+  if (items.length === 0) return null;
+  if (advancedFilter.rowOperator === 'or' && items.length > 1) {
+    return [{ _constructor: 'AdvancedCriteria', operator: 'or', criteria: items }];
+  }
+  return items;
+}
+
+const TEXTUAL_IDENTIFIER_OPS = new Set(['iContains', 'iNotContains', 'iEquals', 'iNotEquals']);
+
+function buildRowCriteria(col, row) {
+  const op = row.operator;
+  if (!op) return null;
+  const mode = resolveFilterMode(col);
+  // For identifier columns: textual ops filter against the $_identifier (user
+  // typed free text → match BP display name). Discrete ops (equals/notEquals/
+  // inSet, picked from the checkbox popover) filter against the ID directly.
+  const fieldName = col.backendFilterKey
+    ?? (mode === 'identifier'
+        ? (TEXTUAL_IDENTIFIER_OPS.has(op) ? `${col.key}$_identifier` : col.key)
+        : col.key);
+
+  if (op === 'isNull') return [{ fieldName, operator: 'isNull' }];
+  if (op === 'isNotNull') return [{ fieldName, operator: 'notNull' }];
+
+  const val = row.value;
+
+  if (op === 'between') {
+    if (!Array.isArray(val)) return null;
+    const [from, to] = val;
+    if (from === '' || from == null || to === '' || to == null) return null;
+    const toVal = (raw) => (mode === 'numeric' ? coerceNumeric(raw) : raw);
+    const fromV = toVal(from);
+    const toV = toVal(to);
+    if (fromV === null || toV === null) return null;
+    return [
+      { fieldName, operator: 'greaterOrEqual', value: fromV },
+      { fieldName, operator: 'lessOrEqual', value: toV },
+    ];
+  }
+
+  if (op === 'inSet') {
+    const items = Array.isArray(val)
+      ? val.filter((v) => v !== '' && v != null).map(String)
+      : String(val).split(',').map((s) => s.trim()).filter(Boolean);
+    if (items.length === 0) return null;
+    if (items.length === 1) return [{ fieldName, operator: 'equals', value: items[0] }];
+    return [{ fieldName, operator: 'inSet', value: items.join(',') }];
+  }
+
+  // Multi-value via a checkbox picker: OR-compose the same operator across items.
+  if (Array.isArray(val)) {
+    const items = val.filter((v) => v !== '' && v != null).map(String);
+    if (items.length === 0) return null;
+    if (items.length === 1) return [{ fieldName, operator: op, value: items[0] }];
+    const clauses = items.map((v) => ({ fieldName, operator: op, value: v }));
+    return [{ _constructor: 'AdvancedCriteria', operator: 'or', criteria: clauses }];
+  }
+
+  if (val === null || val === undefined || val === '') return null;
+
+  if (mode === 'numeric') {
+    const num = coerceNumeric(val);
+    if (num === null) return null;
+    return [{ fieldName, operator: op, value: num }];
+  }
+
+  if (mode === 'booleanLabel') {
+    const boolVal = val === true || val === 'true';
+    return [{ fieldName, operator: 'equals', value: boolVal }];
+  }
+
+  return [{ fieldName, operator: op, value: val }];
+}
+
+function coerceNumeric(val) {
+  if (typeof val === 'number' && !Number.isNaN(val)) return val;
+  const num = Number.parseFloat(String(val).replaceAll(',', ''));
+  return Number.isNaN(num) ? null : num;
 }
 
 function inferSortMode(type, col) {
