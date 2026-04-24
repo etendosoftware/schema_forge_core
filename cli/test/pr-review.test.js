@@ -57,6 +57,24 @@ describe('detectDuplicatedBlocks', () => {
 
     assert.deepEqual(detectDuplicatedBlocks(diff), []);
   });
+
+  it('ignores duplicated blocks in artifact files', () => {
+    const block = [
+      '+"key": "cancel",',
+      '+"label": "Cancel",',
+      '+"labelKey": "cancel",',
+      '+"destructive": true,',
+      '+"visibleWhenStatus": "CO",',
+      '+"documentAction": "CL"',
+    ].join('\n');
+
+    const diff = [
+      makeDiff('artifacts/sales-invoice/decisions.json', block),
+      makeDiff('artifacts/sales-invoice/contract.json', block),
+    ].join('\n');
+
+    assert.deepEqual(detectDuplicatedBlocks(diff), []);
+  });
 });
 
 describe('analyzeChangedFiles', () => {

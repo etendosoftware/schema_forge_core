@@ -24,7 +24,7 @@
           "reference": "BusinessPartner",
           "section": "principal",
           "seq": 20,
-          "readOnlyLogic": null
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "partnerAddress": {
           "reference": "BusinessPartnerLocation",
@@ -35,30 +35,32 @@
           },
           "section": "principal",
           "seq": 30,
-          "readOnlyLogic": null
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "warehouse": {
           "grid": true,
           "section": "principal",
           "seq": 40,
-          "readOnlyLogic": null
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "movementDate": {
           "grid": true,
           "searchable": true,
           "section": "principal",
           "seq": 50,
-          "readOnlyLogic": null
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "orderReference": {
           "grid": true,
           "searchable": true,
           "section": "principal",
-          "seq": 60
+          "seq": 60,
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "description": {
           "section": "collapsed",
-          "seq": 70
+          "seq": 70,
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "accountingDate": {
           "form": false,
@@ -142,7 +144,8 @@
           "grid": true,
           "section": "principal",
           "seq": 40,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "defaultValue": "1"
         },
         "storageBin": {
           "grid": true,

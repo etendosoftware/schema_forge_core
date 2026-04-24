@@ -16,6 +16,7 @@ import { Tag } from '@/components/ui/tag';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { resolveColumnLabel } from '@/lib/resolveColumnLabel.js';
 import { formatAmount } from '@/lib/formatAmount.js';
+import { applyCalloutUpdates } from '@/lib/applyCalloutUpdates.js';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import InternalConsumptionProductSearchDrawer from './InternalConsumptionProductSearchDrawer.jsx';
 
@@ -488,20 +489,8 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
       }
     }
     // Notify parent for callout execution — pass computed snapshot (not stale React state)
-    onFieldChange?.(key, val, snapshot, (updates) => {
-      // Callback to apply callout results to the inline row.
-      // Never overwrite fields manually set by the user in this add-row session.
-      setValues((prev) => {
-        const next = { ...prev };
-        for (const [field, value] of Object.entries(updates)) {
-          const isTouched = touchedFieldsRef.current.has(field);
-          const hasUserValue = prev[field] !== '' && prev[field] != null;
-          if (field !== key && isTouched && hasUserValue) continue;
-          if ((value === '' || value == null) && hasUserValue) continue;
-          next[field] = value;
-        }
-        return next;
-      });
+    onFieldChange?.(key, val, snapshot, (updates, forceFields = new Set()) => {
+      setValues((prev) => applyCalloutUpdates(prev, updates, forceFields, key, touchedFieldsRef.current));
     });
   }, [handleChange, onFieldChange, values]);
 

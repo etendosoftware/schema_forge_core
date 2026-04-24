@@ -28,7 +28,7 @@
         "key": "cancel",
         "label": "Cancel",
         "destructive": true,
-        "visibleWhenStatus": "CO"
+        "visibleWhenStatus": ["CO", "UE"]
       }
     ],
     "processOverrides": {
@@ -61,6 +61,7 @@
         "documentNo": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 2,
           "searchable": true,
           "inputMode": "text",
           "section": "principal",
@@ -68,6 +69,7 @@
         },
         "businessPartner": {
           "grid": true,
+          "gridOrder": 3,
           "searchable": true,
           "reference": "BusinessPartner",
           "inputMode": "search",
@@ -87,6 +89,7 @@
         },
         "orderDate": {
           "grid": true,
+          "gridOrder": 1,
           "searchable": true,
           "inputMode": "date",
           "section": "principal",
@@ -94,6 +97,7 @@
         },
         "validUntil": {
           "grid": true,
+          "gridOrder": 5,
           "searchable": true,
           "inputMode": "date",
           "section": "principal"
@@ -102,7 +106,7 @@
           "visibility": "discarded"
         },
         "priceList": {
-          "section": "collapsed"
+          "section": "principal"
         },
         "currency": {
           "visibility": "readOnly",
@@ -111,10 +115,10 @@
           "section": "summary"
         },
         "paymentTerms": {
-          "visibility": "system"
+          "section": "principal"
         },
         "paymentMethod": {
-          "section": "collapsed"
+          "section": "principal"
         },
         "salesRepresentative": {
           "visibility": "system"
@@ -129,11 +133,13 @@
         "grandTotalAmount": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 6,
           "section": "summary"
         },
         "documentStatus": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 4,
           "searchable": true,
           "form": false
         },

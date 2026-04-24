@@ -290,7 +290,11 @@ export function generateFormComponent(entityName, contract) {
     // Section classification
     const sectionPart = `, section: '${fieldSections[idx]}'`;
     // UI hints
-    const defaultValuePart = f.defaultValue ? `, defaultValue: '${f.defaultValue.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
+    const defaultValuePart = (f.defaultValue !== undefined && f.defaultValue !== null && f.defaultValue !== '')
+      ? (typeof f.defaultValue === 'number'
+          ? `, defaultValue: ${f.defaultValue}`
+          : `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'`)
+      : '';
     const helpPart = f.help ? `, help: '${f.help.replace(/'/g, "\\'")}'` : '';
     const fieldGroupPart = f.fieldGroup ? `, fieldGroup: '${f.fieldGroup.replace(/'/g, "\\'")}'` : '';
     const precisionPart = f.precision ? `, precision: ${f.precision}` : '';
@@ -584,7 +588,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       const numDv = Number(rawDv);
       defaultValuePart = `, defaultValue: ${(!isNaN(numDv) && String(rawDv).trim() !== '') ? numDv : `'${String(rawDv).replace(/'/g, "\\'")}'`}`;
     }
-    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart} },`;
+    const forceCalloutFieldsPart = Array.isArray(f.forceCalloutFields) && f.forceCalloutFields.length > 0
+      ? `, forceCalloutFields: ${JSON.stringify(f.forceCalloutFields)}`
+      : '';
+    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart} },`;
   }).join('\n');
 
   const derivedArray = derivedFields.map(f => {
@@ -614,7 +621,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // API prediction config
   const apiPrediction = contract.apiPrediction;
   const apiBlock = apiPrediction
-    ? `\nconst api = ${JSON.stringify(apiPrediction, null, 2)};\n`
+    ? `\nexport const api = ${JSON.stringify(apiPrediction, null, 2)};\n`
     : '';
   const apiProp = apiPrediction ? '\n      api={api}' : '';
 
@@ -871,9 +878,21 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
             : `visible: status === '${a.visibleWhenStatus}'`
           : '';
         const destr = a.destructive ? 'destructive: true, ' : '';
-        const col = a.columnName ? `columnName: '${a.columnName}', ` : `onClick: () => {},`;
+        // Handler precedence: documentAction (declarative DocAction) > columnName (AD process button) > onClick placeholder
+        let handler;
+        if (a.documentAction) {
+          handler = `documentAction: '${a.documentAction}', `;
+        } else if (a.columnName) {
+          handler = `columnName: '${a.columnName}', `;
+        } else {
+          handler = `onClick: () => {},`;
+        }
+        const labelKeyPart = a.labelKey ? `labelKey: '${a.labelKey}', ` : '';
+        const successPart = a.successKey
+          ? `successKey: '${a.successKey}', `
+          : a.successMessage ? `successMessage: '${String(a.successMessage).replace(/'/g, "\\'")}', ` : '';
         const visPart = vis ? `${vis}, ` : '';
-        return `          { key: '${a.key}', label: '${a.label}', ${destr}${visPart}${col} }`;
+        return `          { key: '${a.key}', label: '${a.label}', ${destr}${visPart}${labelKeyPart}${successPart}${handler} }`;
       }).join(',\n')}\n        ]}`
     : '';
 
@@ -1134,14 +1153,12 @@ export function generateIndexComponent(headerEntity, detailEntity, contract) {
   const windowName = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
   const apiPrediction = contract?.apiPrediction;
 
-  const apiBlock = apiPrediction
-    ? `\nconst api = ${JSON.stringify(apiPrediction, null, 2)};\n`
-    : '';
   const apiProp = apiPrediction ? ' api={api}' : '';
-  return `import ${headerName}Page from './${headerName}Page';
+  const apiImport = apiPrediction ? `, { api }` : '';
+  return `import ${headerName}Page${apiImport} from './${headerName}Page';
 
 const windowMeta = { category: '${category}', name: '${windowName}' };
-${apiBlock}
+
 ${MARKERS.GENERATED_START('component:App')}
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
   return <${headerName}Page windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta}${apiProp} {...rest} />;

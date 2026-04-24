@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
+import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import GeneratedApp from '@generated/sales-order/generated/web/sales-order/index.jsx';
 import HeaderTable from '@generated/sales-order/generated/web/sales-order/HeaderTable';
+import OrderReactivateBulkAction from '@generated/sales-order/custom/OrderReactivateBulkAction';
 import { ListView } from '@/components/contract-ui';
 
 const LIST_COLUMNS = [
@@ -23,7 +25,29 @@ import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 
+// Mirrors artifacts/sales-order/generated/web/sales-order/HeaderPage.jsx
+// Kept in sync manually because the generator does not expose labelOverrides yet.
+const LABEL_OVERRIDES = {
+  es_ES: {
+    C_BPartner_ID: 'Contacto',
+    DeliveryStatus: 'Estado de entrega',
+  },
+  en_US: {
+    C_BPartner_ID: 'Contact',
+    DeliveryStatus: 'Delivery Status',
+  },
+};
+
+const draftModeWithModal = {
+  enabled: true,
+  processField: 'documentAction',
+  processValue: 'CO',
+  label: 'soConfirmBtn',
+  onConfirm: () => window.dispatchEvent(new CustomEvent('sales-order:open-confirm-modal')),
+};
+
 export default function SalesOrderWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
+  useBulkActionToast();
   const [searchParams] = useSearchParams();
   const [cloneTargets, setCloneTargets] = useState(null);
 
@@ -38,6 +62,7 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
           recordId={recordId}
           token={token}
           apiBaseUrl={apiBaseUrl}
+          draftMode={draftModeWithModal}
           {...rest}
         />
         {createContactState && createPortal(
@@ -80,10 +105,12 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
         entityLabel="Sales Order"
         windowName={windowName}
         breadcrumb="Sales / Sales Order"
+        labelOverrides={LABEL_OVERRIDES}
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
         token={token}
         apiBaseUrl={apiBaseUrl}
         hidePrint
+        bulkActions={(ctx) => <OrderReactivateBulkAction {...ctx} />}
         initialColumnFilters={initialColumnFilters}
         quickFilters={QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}

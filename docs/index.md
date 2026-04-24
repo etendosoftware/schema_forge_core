@@ -27,6 +27,7 @@
 | [field-visibility-types.md](field-visibility-types.md) | Field visibility types (editable, readOnly, system, discarded): behavior across pipeline, NEO Headless, and frontend |
 | [ui-customization.md](ui-customization.md) | **UI customization guide**: all extension points driven by `decisions.json` (statusBar, listKpiCards, customComponents, menuActions, layoutType, etc.) with real examples and decision tree |
 | [list-filters.md](list-filters.md) | **List view filters reference**: subset filters, quick filters, document-type filters, advanced filter popover — composition rules, URL-param hooks, when to use which |
+| [pipeline-validator-reference.md](pipeline-validator-reference.md) | **Pipeline completeness validator**: rules F1–F10, artifact classification, CLI flags, exit codes, and troubleshooting |
 
 ## Design Specs
 
@@ -52,9 +53,15 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 
 ## Internationalization
 
-| File | Description |
+| Path | Description |
 |------|-------------|
 | [i18n-guide.md](i18n-guide.md) | **i18n reference**: hooks (`useUI`, `useLabel`, `useMenuLabel`), locale JSON structure, rules for adding translations, decision tree |
+
+## Generated/custom windows
+
+| Path | Description |
+|------|-------------|
+| [generated-custom-windows/INDEX.md](generated-custom-windows/INDEX.md) | Functional docs for generated/custom windows, including the app-shell flows guide |
 
 ## Guides
 
@@ -70,7 +77,27 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 |------|-------------|
 | [ops/cloudfront-alb-routing.md](ops/cloudfront-alb-routing.md) | CloudFront + ALB routing for the SPA, same-origin `/etendo/*` forwarding, and deployment runbook |
 | [ops/copilot-pr-review.md](ops/copilot-pr-review.md) | Copilot-aligned PR review gate: review instructions, deterministic findings, PR comments, and request-changes behavior |
+| [ops/window-doc-freshness.md](ops/window-doc-freshness.md) | Window-specific doc freshness warning: diff-based CI review for `docs/generated-custom-windows/<window>.md` |
 | [ops/epic-rollup-report.md](ops/epic-rollup-report.md) | Develop-targeted epic rollout report: included feature PRs, prior review findings, and aggregated release-risk summary |
+
+## Proposals
+
+Design proposals and RFCs awaiting review and approval. See [proposals/INDEX.md](proposals/INDEX.md) for lifecycle details.
+
+| File | Status | Description |
+|------|--------|-------------|
+| [proposals/etendo-go-apps.md](proposals/etendo-go-apps.md) | Draft | External apps framework for Etendo Go (Jira Connect-style) — executive summary |
+| [proposals/etendo-go-apps-technical-annex.md](proposals/etendo-go-apps-technical-annex.md) | Draft | External apps framework — technical annex (architecture, descriptor, JWT+JWKS, BFF, SDK) |
+| [plans/2026-04-17-etendo-go-apps-f1-spike-plan.md](plans/2026-04-17-etendo-go-apps-f1-spike-plan.md) | Ready | F1 spike execution plan (10 tasks, validates JWT+JWKS+BFF end-to-end) |
+| [proposals/initial-organization-setup-accounting.md](proposals/initial-organization-setup-accounting.md) | Reviewed / Pending plan | Initial Organization Setup accounting proposal — global package reuse, org wiring, completeness validation, and standard `AD_Org_Ready` finish |
+
+## Presentations
+
+Slide-deck style walkthroughs (Marp Markdown). See [presentations/INDEX.md](presentations/INDEX.md) for how to render.
+
+| File | Description |
+|------|-------------|
+| [presentations/etendo-apps-sdk-demo.md](presentations/etendo-apps-sdk-demo.md) | Etendo Apps SDK + `quick-order-app` demo — architecture, JWT bridge, styling, trade-offs |
 
 ## Plans & Evaluations
 

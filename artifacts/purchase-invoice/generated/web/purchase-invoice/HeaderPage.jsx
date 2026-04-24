@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
+import { toast } from 'sonner';
 import HeaderTable from './HeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
@@ -18,10 +19,19 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Purchases / Purchase Invoice';
 
+const labelOverrides = {
+  "es_ES": {
+    "POReference": "Referencia de proveedor"
+  },
+  "en_US": {
+    "POReference": "Supplier reference"
+  }
+};
+
 
 // @sf-generated-start summary:header
 const summary = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+
 ];
 
 const statusField = 'documentStatus';
@@ -64,7 +74,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:lines
 
-const api = {
+export const api = {
   "specName": "purchase-invoice",
   "baseUrl": "/sws/neo/purchase-invoice",
   "crud": {
@@ -81,6 +91,7 @@ const api = {
         "documentNo",
         "invoiceDate",
         "businessPartner",
+        "orderReference",
         "documentStatus"
       ]
     },
@@ -117,17 +128,6 @@ const api = {
       "detailUrl": "/sws/neo/purchase-invoice/tax/{id}",
       "supportedFilters": []
     },
-    "cashVat": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/cashVat",
-      "detailUrl": "/sws/neo/purchase-invoice/cashVat/{id}",
-      "supportedFilters": []
-    },
     "basicDiscounts": {
       "get": true,
       "getById": true,
@@ -137,6 +137,17 @@ const api = {
       "delete": true,
       "listUrl": "/sws/neo/purchase-invoice/basicDiscounts",
       "detailUrl": "/sws/neo/purchase-invoice/basicDiscounts/{id}",
+      "supportedFilters": []
+    },
+    "cashVat": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/cashVat",
+      "detailUrl": "/sws/neo/purchase-invoice/cashVat/{id}",
       "supportedFilters": []
     },
     "paymentPlan": {
@@ -432,20 +443,20 @@ const api = {
       "url": "/sws/neo/purchase-invoice/tax/selectors/tax"
     },
     {
-      "entity": "cashVat",
-      "field": "payment",
-      "column": "FIN_Payment_ID",
-      "reference": "Payment",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/cashVat/selectors/payment"
-    },
-    {
       "entity": "basicDiscounts",
       "field": "discount",
       "column": "C_Discount_ID",
       "reference": "Discount",
       "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/basicDiscounts/selectors/discount"
+    },
+    {
+      "entity": "cashVat",
+      "field": "payment",
+      "column": "FIN_Payment_ID",
+      "reference": "Payment",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/cashVat/selectors/payment"
     },
     {
       "entity": "paymentPlan",
@@ -787,6 +798,14 @@ const api = {
   },
   "window": {
     "category": "purchases"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "POReference": "Referencia de proveedor"
+    },
+    "en_US": {
+      "POReference": "Supplier reference"
+    }
   }
 };
 
@@ -820,7 +839,12 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         ]}
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        menuActions={({ status }) => [
+          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', labelKey: 'cancel', onClick: () => {}, },
+          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
+        ]}
         draftMode={draftMode}
+        labelOverrides={labelOverrides}
         {...props}
       />
     );
@@ -835,6 +859,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="invoiceDate"
+      labelOverrides={labelOverrides}
       {...props}
     />
   );

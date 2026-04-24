@@ -3,8 +3,10 @@ import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
 import { useUI } from '@/i18n';
-import HeaderTable from '@generated/sales-invoice/generated/web/sales-invoice/HeaderTable';
+import BulkDocumentAction from '@/components/contract-ui/BulkDocumentAction';
+import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import HeaderPage from '@generated/sales-invoice/generated/web/sales-invoice/HeaderPage';
+import InvoiceHeaderTable from '@generated/sales-invoice/custom/InvoiceHeaderTable.jsx';
 import InvoicePreviewModal from '../purchase-invoice/InvoicePreviewModal.jsx';
 import SalesInvoiceTopbar from './SalesInvoiceTopbar.jsx';
 import InvoiceBottomPanel from '@generated/sales-invoice/custom/InvoiceBottomPanel.jsx';
@@ -27,12 +29,13 @@ const LIST_COLUMNS = [
 let previewRowSetterRef = null;
 
 /**
- * SalesInvoiceTable — generated table wrapper that opens the preview modal.
+ * SalesInvoiceTable — uses InvoiceHeaderTable (with type tabs + payment filter)
+ * and hooks in the preview modal via onNavigate.
+ * Columns and order are driven by InvoiceHeaderTable.jsx.
  */
 function SalesInvoiceTable(props) {
   return (
-    <HeaderTable
-      columns={LIST_COLUMNS}
+    <InvoiceHeaderTable
       {...props}
       onNavigate={(row) => previewRowSetterRef?.(row)}
     />
@@ -53,6 +56,7 @@ function SalesInvoiceTable(props) {
  *   4. render CloneOrderModal portal with cloneActionName="cloneRecord" and invoice i18n keys
  */
 export default function SalesInvoiceWindow(props) {
+  useBulkActionToast();
   const { recordId, token, apiBaseUrl, windowName } = props;
   const navigate = useNavigate();
   const location = useLocation();
@@ -135,6 +139,7 @@ export default function SalesInvoiceWindow(props) {
         initialQuickFilterIndex={initialQuickFilterIndex}
         dateFilterKey="invoiceDate"
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
+        bulkActions={(ctx) => <BulkDocumentAction {...ctx} />}
       />
       {cloneTargets && createPortal(
         <CloneOrderModal

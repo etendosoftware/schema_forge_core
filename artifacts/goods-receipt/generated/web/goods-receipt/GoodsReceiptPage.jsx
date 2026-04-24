@@ -19,7 +19,6 @@ const summary = [
 const statusField = 'documentStatus';
 // @sf-generated-end summary:goodsReceipt
 
-// @sf-custom-slot extraBadges:goodsReceipt
 // @sf-generated-start extraBadges:goodsReceipt
 const extraBadges = [];
 // @sf-generated-end extraBadges:goodsReceipt
@@ -44,20 +43,20 @@ const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
     { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text', label: 'Attribute Set Value' },
-    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity' },
-    { key: 'storageBin', column: 'M_Locator_ID', type: 'selector', label: 'Storage Bin', reference: 'Locator', inputMode: 'selector' },
+    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity', defaultValue: 1 },
+    { key: 'storageBin', column: 'M_Locator_ID', type: 'selector', label: 'Storage Bin', reference: 'Locator', inputMode: 'selector', defaultValue: '@OnHandLocatorDefault@' },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
 
   ],
   hidden: [
-    { key: 'lineNo', value: '@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM M_InOutLine WHERE M_InOut_ID=@M_InOut_ID@' },
+    { key: 'invoiceQuantity', value: '0' },
   ],
 };
 // @sf-generated-end addLineFields:goodsReceiptLine
 
-const api = {
+export const api = {
   "specName": "goods-receipt",
   "baseUrl": "/sws/neo/goods-receipt",
   "crud": {
@@ -363,8 +362,6 @@ const api = {
 
 // @sf-generated-start component:GoodsReceiptPage
 export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
-  // @sf-custom-slot hooks:GoodsReceiptPage
-  
   if (recordId) {
     return (
       <DetailView
@@ -406,5 +403,3 @@ dateFilterKey="movementDate"
   );
 }
 // @sf-generated-end component:GoodsReceiptPage
-
-// @sf-custom-slot section:GoodsReceiptPage-custom

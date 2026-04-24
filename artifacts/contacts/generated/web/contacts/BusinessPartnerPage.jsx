@@ -9,6 +9,7 @@ import BankAccountForm from './BankAccountForm';
 import LocationAddressTable from './LocationAddressTable';
 import LocationEditorModal from '@/windows/custom/contacts/LocationEditorModal';
 import ContactsFinancialPanel from '@/windows/custom/contacts/ContactsFinancialPanel';
+import ContactTypeToggle from '@/windows/custom/contacts/ContactTypeToggle';
 import catalogs from './mockCatalogs';
 
 import BusinessPartnerSidebar from '@/windows/custom/contacts/BusinessPartnerSidebar';
@@ -17,15 +18,21 @@ const breadcrumb = 'Contact';
 
 const labelOverrides = {
   "en_US": {
+    "Name": "Legal Name",
     "FIN_Financial_Account_ID": "Account",
     "PO_Financial_Account_ID": "Account",
-    "EM_Etgo_Web": "Website"
+    "EM_Etgo_Web": "Website",
+    "EM_Etgo_Firstname": "First Name",
+    "EM_Etgo_Lastname": "Last Name"
   },
   "es_ES": {
+    "Name": "Razón Social",
     "EM_Etgo_Identifier": "Identificador",
     "FIN_Financial_Account_ID": "Cuenta",
     "PO_Financial_Account_ID": "Cuenta",
-    "EM_Etgo_Web": "Página web"
+    "EM_Etgo_Web": "Página web",
+    "EM_Etgo_Firstname": "Nombre",
+    "EM_Etgo_Lastname": "Apellidos"
   }
 };
 
@@ -627,15 +634,21 @@ const api = {
   },
   "labelOverrides": {
     "en_US": {
+      "Name": "Legal Name",
       "FIN_Financial_Account_ID": "Account",
       "PO_Financial_Account_ID": "Account",
-      "EM_Etgo_Web": "Website"
+      "EM_Etgo_Web": "Website",
+      "EM_Etgo_Firstname": "First Name",
+      "EM_Etgo_Lastname": "Last Name"
     },
     "es_ES": {
+      "Name": "Razón Social",
       "EM_Etgo_Identifier": "Identificador",
       "FIN_Financial_Account_ID": "Cuenta",
       "PO_Financial_Account_ID": "Cuenta",
-      "EM_Etgo_Web": "Página web"
+      "EM_Etgo_Web": "Página web",
+      "EM_Etgo_Firstname": "Nombre",
+      "EM_Etgo_Lastname": "Apellidos"
     }
   }
 };
@@ -679,6 +692,7 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
         ]}
         hidePrint
         hideMoreMenu
+        topbarRight={ContactTypeToggle}
         labelOverrides={labelOverrides}
         {...props}
         sidebarContent={(data) => (
