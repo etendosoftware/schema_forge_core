@@ -58,7 +58,7 @@ const draftMode = {
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
   entry: [
-    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["unitPrice","tax","uOM","grossUnitPrice"] },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
     { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity', defaultValue: 1 },
     { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
@@ -278,6 +278,14 @@ export const api = {
     },
     {
       "entity": "header",
+      "field": "processNow",
+      "column": "Processing",
+      "url": "/sws/neo/sales-order/header/{id}/action/processNow",
+      "processId": "104",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
       "field": "posted",
       "column": "Posted",
       "url": "/sws/neo/sales-order/header/{id}/action/posted",
@@ -290,14 +298,6 @@ export const api = {
       "column": "Generatetemplate",
       "url": "/sws/neo/sales-order/header/{id}/action/generateTemplate",
       "processId": "800022",
-      "processType": "classic"
-    },
-    {
-      "entity": "header",
-      "field": "processNow",
-      "column": "Processing",
-      "url": "/sws/neo/sales-order/header/{id}/action/processNow",
-      "processId": "104",
       "processType": "classic"
     },
     {

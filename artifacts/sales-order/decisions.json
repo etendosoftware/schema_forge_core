@@ -293,8 +293,10 @@
           "grid": true,
           "searchable": true,
           "section": "principal",
+          "inputMode": "search",
           "order": 1,
-          "gridOrder": 1
+          "gridOrder": 1,
+          "forceCalloutFields": ["unitPrice", "tax", "uOM", "grossUnitPrice"]
         },
         "orderedQuantity": {
           "grid": true,
@@ -327,6 +329,7 @@
           "form": false
         },
         "lineNetAmount": {
+          "visibility": "system",
           "grid": false,
           "form": false
         },
