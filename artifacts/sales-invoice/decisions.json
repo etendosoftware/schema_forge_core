@@ -274,6 +274,7 @@
         "product": {
           "grid": true,
           "searchable": true,
+          "lookup": true,
           "section": "principal",
           "inputMode": "search",
           "displayLogic": null

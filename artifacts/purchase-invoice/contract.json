@@ -1,7 +1,7 @@
 {
   "version": "0.9.0",
-  "generatedAt": "2026-04-24T18:40:53.617Z",
-  "checksum": "2ff34cd9f6526136",
+  "generatedAt": "2026-04-24T19:27:47.663Z",
+  "checksum": "8b67e7c0e77b781f",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -791,6 +791,7 @@
             "form": true,
             "reference": "Product",
             "inputMode": "search",
+            "lookup": true,
             "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Invoice_Product"

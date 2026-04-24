@@ -1,7 +1,7 @@
 {
   "version": "0.2.0",
-  "generatedAt": "2026-04-24T18:20:02.556Z",
-  "checksum": "a509f769f46e5a76",
+  "generatedAt": "2026-04-24T19:14:43.730Z",
+  "checksum": "3c644aca23e1a37c",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -506,6 +506,7 @@
             "sourceRequired": true,
             "reference": "Product",
             "inputMode": "search",
+            "lookup": true,
             "gridOrder": 1,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Product"

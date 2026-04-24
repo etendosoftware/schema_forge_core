@@ -258,6 +258,7 @@
           "grid": true,
           "searchable": true,
           "inputMode": "search",
+          "lookup": true,
           "order": 1,
           "gridOrder": 1
         },

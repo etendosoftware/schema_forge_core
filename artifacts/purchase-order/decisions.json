@@ -306,6 +306,7 @@
         "product": {
           "grid": true,
           "form": true,
+          "lookup": true,
           "section": "principal",
           "order": 1,
           "gridOrder": 1,

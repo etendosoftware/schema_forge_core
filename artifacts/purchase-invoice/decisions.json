@@ -321,6 +321,7 @@
         },
         "product": {
           "grid": true,
+          "lookup": true,
           "section": "principal",
           "inputMode": "search",
           "readOnlyLogic": null,

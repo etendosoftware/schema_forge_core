@@ -1,7 +1,7 @@
 {
   "version": "0.15.0",
-  "generatedAt": "2026-04-24T18:35:00.124Z",
-  "checksum": "403f049d09b0d0e0",
+  "generatedAt": "2026-04-24T19:27:47.201Z",
+  "checksum": "36e643bbcbaefd8f",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -534,6 +534,7 @@
             "sourceRequired": true,
             "reference": "Product",
             "inputMode": "search",
+            "lookup": true,
             "section": "principal",
             "gridOrder": 1,
             "callout": {
