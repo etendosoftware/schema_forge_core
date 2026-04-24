@@ -7,7 +7,7 @@ import { ListChecks } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { useDocumentAction } from '@/hooks/useDocumentAction';
 
-export default function OrderReactivateBulkAction({ selectedRows, clearSelection, token, apiBaseUrl }) {
+export default function PurchaseOrderReactivateBulkAction({ selectedRows, clearSelection, token, apiBaseUrl }) {
   const ui = useUI();
   const { execute } = useDocumentAction({ apiBaseUrl, entity: 'header', token });
   const [open, setOpen] = useState(false);
