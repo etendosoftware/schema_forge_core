@@ -17233,6 +17233,7 @@
     "soViewInvoice": "View invoice →",
     "soOrderConfirmedShipmentError": "Order confirmed, but shipment could not be created. ",
     "soOrderConfirmedInvoiceError": "Order confirmed, but invoice could not be created. ",
+    "quotationDocumentLabel": "Quotation",
     "sqWhatToDo": "How do you want to confirm?",
     "sqCreateOrder": "Create sales order",
     "sqCreateOrderDesc": "For products with stock, deliveries or orders with multiple shipments.",

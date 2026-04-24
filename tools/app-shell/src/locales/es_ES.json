@@ -17472,6 +17472,7 @@
     "soViewInvoice": "Ver factura →",
     "soOrderConfirmedShipmentError": "El pedido fue procesado pero no se pudo crear el albarán. ",
     "soOrderConfirmedInvoiceError": "El pedido fue procesado pero no se pudo crear la factura. ",
+    "quotationDocumentLabel": "Presupuesto",
     "sqWhatToDo": "¿Cómo querés confirmar?",
     "sqCreateOrder": "Crear pedido de venta",
     "sqCreateOrderDesc": "Para productos con stock, entregas o pedidos con múltiples envíos.",
