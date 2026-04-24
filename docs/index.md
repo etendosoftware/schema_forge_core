@@ -26,6 +26,7 @@
 | [decisions-reference.md](decisions-reference.md) | **Complete reference for all `decisions.json` options**: visibility, draftMode, sections, selectors, rules, discard patterns |
 | [field-visibility-types.md](field-visibility-types.md) | Field visibility types (editable, readOnly, system, discarded): behavior across pipeline, NEO Headless, and frontend |
 | [ui-customization.md](ui-customization.md) | **UI customization guide**: all extension points driven by `decisions.json` (statusBar, listKpiCards, customComponents, menuActions, layoutType, etc.) with real examples and decision tree |
+| [ui-design-guidelines.md](ui-design-guidelines.md) | **UI design guidelines**: z-index scale, scrim opacity, overlay/drawer patterns, monetary amount formatting (`formatCurrency` vs `formatDashboardAmount`), column alignment |
 | [pipeline-validator-reference.md](pipeline-validator-reference.md) | **Pipeline completeness validator**: rules F1–F10, artifact classification, CLI flags, exit codes, and troubleshooting |
 
 ## Design Specs
