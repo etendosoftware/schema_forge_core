@@ -36,7 +36,7 @@ export default function BulkDocumentAction({
     return out;
   }, [selectedRows, buildActions]);
 
-  if (selectedRows.length <= 1 || actions.length === 0) return null;
+  if (selectedRows.length === 0 || actions.length === 0) return null;
 
   const handleOpen = () => {
     setSelectedAction(actions[0].value);
