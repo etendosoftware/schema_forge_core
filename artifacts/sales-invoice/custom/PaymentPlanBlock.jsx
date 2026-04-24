@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useUI } from '@/i18n';
 
 function fmt(val, curr) {
   const n = typeof val === 'string' ? parseFloat(val) : (val ?? 0);
@@ -23,6 +24,7 @@ const BADGE = {
 };
 
 export default function PaymentPlanBlock({ recordId, data, token, apiBaseUrl }) {
+  const ui = useUI();
   const [installments, setInstallments] = useState([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -61,7 +63,7 @@ export default function PaymentPlanBlock({ recordId, data, token, apiBaseUrl }) 
   return (
     <div style={{ marginBottom: 12 }}>
       <span style={{ display: 'block', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9ca3af', marginBottom: 6 }}>
-        Payment Plan
+        {ui('siPaymentPlanTitle')}
       </span>
       <div style={{ border: '0.5px solid #d1d5db', borderRadius: 10, overflow: 'hidden' }}>
         {sorted.map((inst, idx) => {
@@ -82,12 +84,12 @@ export default function PaymentPlanBlock({ recordId, data, token, apiBaseUrl }) 
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 13, color: '#6B7280' }}>Cuota {idx + 1}</span>
+                <span style={{ fontSize: 13, color: '#6B7280' }}>{ui('siPaymentPlanInstallment')} {idx + 1}</span>
                 <span className="tabular-nums" style={{ fontSize: 13, fontWeight: 500, color: '#111827' }}>{fmt(amount, currency)}</span>
                 <span style={{ fontSize: 12, color: '#9ca3af' }}>{pct}%</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span className="tabular-nums" style={{ fontSize: 12, color: '#6B7280' }}>Vence {fmtDate(inst.dueDate)}</span>
+                <span className="tabular-nums" style={{ fontSize: 12, color: '#6B7280' }}>{ui('siPaymentPlanDue')} {fmtDate(inst.dueDate)}</span>
                 <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 8px', borderRadius: 9999, backgroundColor: badge.bg, color: badge.color }}>
                   {status.charAt(0).toUpperCase() + status.slice(1)}
                 </span>

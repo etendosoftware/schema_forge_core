@@ -256,7 +256,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                     <iframe
                       src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1`}
                       className="w-full h-full border-0"
-                      title="Sales Invoice PDF"
+                      title={ui('piPreviewSalesInvoicePdfTitle')}
                     />
                   )}
                 </div>
@@ -275,7 +275,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                     <button
                       onClick={removeFile}
                       className="ml-2 p-1 text-gray-400 hover:text-red-500 rounded transition-colors shrink-0"
-                      title="Delete document"
+                      title={ui('piPreviewDeleteDocumentTitle')}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -295,7 +295,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                       <iframe
                         src={`${docFile.url}#toolbar=0&navpanes=0&scrollbar=1`}
                         className="w-full h-full border-0"
-                        title="PDF preview"
+                        title={ui('pdfPreview')}
                       />
                     )}
                   </div>
@@ -661,7 +661,7 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, install
                       onClick={() => { window.location.href = `/${payPrefix}/${p.id}`; }}
                       className="text-xs font-medium text-gray-500 hover:text-gray-700 underline shrink-0 ml-2"
                     >
-                      View →
+                      {ui('viewArrow')}
                     </button>
                   </div>
                   {(p.documentNo || acctLabel) && (

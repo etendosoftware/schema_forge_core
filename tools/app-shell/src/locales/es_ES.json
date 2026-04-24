@@ -17711,7 +17711,25 @@
     "paymentTermField": "Condiciones de pago",
     "financialAccountField": "Cuenta financiera",
     "customerDataSection": "Datos de cliente",
-    "vendorDataSection": "Datos de proveedor"
+    "vendorDataSection": "Datos de proveedor",
+    "piPreviewSalesInvoicePdfTitle": "PDF de factura de venta",
+    "piPreviewDeleteDocumentTitle": "Eliminar documento",
+    "siImportSearchShipmentPlaceholder": "Buscar albarán...",
+    "siImportColPrice": "Precio",
+    "siImportAlreadyImported": "ya importada",
+    "siTopbarDueInstallment": "Vencimiento",
+    "siTopbarRegisterPaymentPrefix": "+ Registrar pago ·",
+    "siTopbarOutstandingSuffix": "pendiente",
+    "siTopbarViewPayment": "Ver pago →",
+    "siTopbarOutstandingLabel": "Pendiente:",
+    "siTopbarSendInvoicePrefix": "Enviar factura",
+    "siTopbarPdfPlaceholder": "El PDF de la factura aparecerá aquí cuando se configuren las plantillas de documento",
+    "siTopbarInvoicePreviewTitle": "Vista previa de factura",
+    "siTopbarEmailPlaceholder": "correo@empresa.com",
+    "siPaymentPlanTitle": "Plan de pagos",
+    "siPaymentPlanInstallment": "Cuota",
+    "siPaymentPlanDue": "Vence",
+    "soConfirmSalesOrderPrefix": "Pedido de venta"
   },
   "menus": {
     "Tax": {

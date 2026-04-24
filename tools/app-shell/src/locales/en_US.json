@@ -17472,7 +17472,25 @@
     "paymentTermField": "Payment Terms",
     "financialAccountField": "Financial Account",
     "customerDataSection": "Customer data",
-    "vendorDataSection": "Vendor data"
+    "vendorDataSection": "Vendor data",
+    "piPreviewSalesInvoicePdfTitle": "Sales Invoice PDF",
+    "piPreviewDeleteDocumentTitle": "Delete document",
+    "siImportSearchShipmentPlaceholder": "Search shipment...",
+    "siImportColPrice": "Price",
+    "siImportAlreadyImported": "already imported",
+    "siTopbarDueInstallment": "Vencimiento",
+    "siTopbarRegisterPaymentPrefix": "+ Register payment ·",
+    "siTopbarOutstandingSuffix": "outstanding",
+    "siTopbarViewPayment": "View payment →",
+    "siTopbarOutstandingLabel": "Outstanding:",
+    "siTopbarSendInvoicePrefix": "Send Invoice",
+    "siTopbarPdfPlaceholder": "The invoice PDF will appear here once document templates are configured",
+    "siTopbarInvoicePreviewTitle": "Invoice preview",
+    "siTopbarEmailPlaceholder": "email@company.com",
+    "siPaymentPlanTitle": "Payment Plan",
+    "siPaymentPlanInstallment": "Cuota",
+    "siPaymentPlanDue": "Vence",
+    "soConfirmSalesOrderPrefix": "Sales Order"
   },
   "menus": {
     "Currency": {
