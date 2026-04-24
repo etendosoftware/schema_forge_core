@@ -16,10 +16,12 @@ const breadcrumb = 'Sales / Sales Order';
 
 const labelOverrides = {
   "es_ES": {
-    "C_BPartner_ID": "Contacto"
+    "C_BPartner_ID": "Contacto",
+    "DeliveryStatus": "Estado de entrega"
   },
   "en_US": {
-    "C_BPartner_ID": "Contact"
+    "C_BPartner_ID": "Contact",
+    "DeliveryStatus": "Delivery Status"
   }
 };
 
@@ -365,10 +367,12 @@ export const api = {
   },
   "labelOverrides": {
     "es_ES": {
-      "C_BPartner_ID": "Contacto"
+      "C_BPartner_ID": "Contacto",
+      "DeliveryStatus": "Estado de entrega"
     },
     "en_US": {
-      "C_BPartner_ID": "Contact"
+      "C_BPartner_ID": "Contact",
+      "DeliveryStatus": "Delivery Status"
     }
   }
 };

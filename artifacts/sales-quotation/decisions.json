@@ -60,6 +60,7 @@
         "documentNo": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 2,
           "searchable": true,
           "inputMode": "text",
           "section": "principal",
@@ -67,6 +68,7 @@
         },
         "businessPartner": {
           "grid": true,
+          "gridOrder": 3,
           "searchable": true,
           "reference": "BusinessPartner",
           "inputMode": "search",
@@ -86,6 +88,7 @@
         },
         "orderDate": {
           "grid": true,
+          "gridOrder": 1,
           "searchable": true,
           "inputMode": "date",
           "section": "principal",
@@ -93,6 +96,7 @@
         },
         "validUntil": {
           "grid": true,
+          "gridOrder": 5,
           "searchable": true,
           "inputMode": "date",
           "section": "principal"
@@ -128,11 +132,13 @@
         "grandTotalAmount": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 6,
           "section": "summary"
         },
         "documentStatus": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 4,
           "searchable": true,
           "form": false
         },

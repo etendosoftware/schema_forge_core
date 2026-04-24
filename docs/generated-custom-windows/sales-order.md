@@ -19,7 +19,7 @@ This window should let a user create, review, confirm, and manage sales orders f
 - Visibility: visible from the `Sales` menu group in `tools/app-shell/src/menu.json`; not hidden.
 - Implementation type: custom window wrapper in `tools/app-shell/src/windows/custom/sales-order/index.jsx` over the generated `sales-order` detail/list page.
 - Window shape: master-child. The header record is the primary entity and `lines` is the editable child entity.
-- List behavior: the custom wrapper adds row cloning support and a `pendingDelivery` quick filter that keeps only rows where `deliveryStatus` is below 100.
+- List behavior: the list columns are now driven by `decisions.json` through the generated `HeaderTable`. The visible columns, in order, are: Order Date, Document No., Business Partner, Document Status, Total Gross Amount, Invoice Status, and Delivery Status. The custom wrapper adds row cloning support and a `pendingDelivery` quick filter that keeps only rows where `deliveryStatus` is below 100. The Delivery Status column uses a sales-specific label override: `decisions.json` declares `labelOverrides.DeliveryStatus = "Delivery Status" / "Estado de entrega"` (mirrored in the wrapper's `LABEL_OVERRIDES`) to replace the default "Receipt Status"/"Estado del envío" label, which was shipment-oriented and wrong for sales.
 - Detail behavior: the generated detail view uses the header form plus child line table/form, exposes a `Related Documents` custom tab, and adds order-specific top-bar actions.
 
 ## Reactive behavior and dependencies
@@ -43,10 +43,11 @@ This window should let a user create, review, confirm, and manage sales orders f
 - The menu action shows `Cancel` only when status is `CO`, but the current generated page wires it with an empty `onClick`. The action is visible in configuration, yet its actual user-facing cancellation behavior is not evidenced here.
 - The menu action exposes `Reactivate Order` only when status is `CO`. Clicking it calls the standard `documentAction` endpoint on the header with `docAction=RE`, which Etendo core's `C_Order_Post` procedure handles. The procedure itself blocks reactivation when the order has linked invoices and returns an error message that the UI surfaces inline. Bulk reactivation is available from the list selection bar via `OrderReactivateBulkAction`, visible only when every selected row is in `CO`.
 - Related documents cover quotation, shipment, invoice, and payment navigation, but there is no evidence that replacement orders, reserved stock, related products, or related services are surfaced to users even though contracts exist for those entities.
+- Label-override duplication is a known piece of technical debt. The sales-specific "Delivery Status" label is declared both in `decisions.json` (as `labelOverrides.DeliveryStatus`) and, separately, in the custom wrapper's `LABEL_OVERRIDES` constant, because the custom list wrapper bypasses the generated `HeaderPage` when feeding labels into the `ListView`. Any change to this label has to be made in both places until the wrapper reuses the generated labels.
 
 ## Manual verification
 
-1. Open `/sales-order` and confirm the list shows document number, order date, business partner, document status, total gross amount, shipment status, and invoice status.
+1. Open `/sales-order` and confirm the list shows exactly Order Date, Document No., Business Partner, Document Status, Total Gross Amount, Invoice Status, and Delivery Status in that order, and that the Delivery Status header reads "Delivery Status"/"Estado de entrega" rather than the default "Receipt Status"/"Estado del envío".
 2. Open `/sales-order?filter=pendingDelivery` and confirm the list starts in the pending-delivery quick filter rather than the full order set.
 3. Start a new order and verify business partner is required, partner address stays disabled until a business partner is selected, and inline contact creation is available from the detail page.
 4. Add one or more lines and verify the line editor exposes product, ordered quantity, net unit price, discount, tax, and line gross amount, then verify the header totals refresh after saving line changes.

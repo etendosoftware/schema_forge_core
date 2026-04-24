@@ -19,10 +19,19 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Purchases / Purchase Invoice';
 
+const labelOverrides = {
+  "es_ES": {
+    "POReference": "Referencia de proveedor"
+  },
+  "en_US": {
+    "POReference": "Supplier reference"
+  }
+};
+
 
 // @sf-generated-start summary:header
 const summary = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+
 ];
 
 const statusField = 'documentStatus';
@@ -82,6 +91,7 @@ export const api = {
         "documentNo",
         "invoiceDate",
         "businessPartner",
+        "orderReference",
         "documentStatus"
       ]
     },
@@ -118,17 +128,6 @@ export const api = {
       "detailUrl": "/sws/neo/purchase-invoice/tax/{id}",
       "supportedFilters": []
     },
-    "cashVat": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/cashVat",
-      "detailUrl": "/sws/neo/purchase-invoice/cashVat/{id}",
-      "supportedFilters": []
-    },
     "basicDiscounts": {
       "get": true,
       "getById": true,
@@ -138,6 +137,17 @@ export const api = {
       "delete": true,
       "listUrl": "/sws/neo/purchase-invoice/basicDiscounts",
       "detailUrl": "/sws/neo/purchase-invoice/basicDiscounts/{id}",
+      "supportedFilters": []
+    },
+    "cashVat": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/cashVat",
+      "detailUrl": "/sws/neo/purchase-invoice/cashVat/{id}",
       "supportedFilters": []
     },
     "paymentPlan": {
@@ -433,20 +443,20 @@ export const api = {
       "url": "/sws/neo/purchase-invoice/tax/selectors/tax"
     },
     {
-      "entity": "cashVat",
-      "field": "payment",
-      "column": "FIN_Payment_ID",
-      "reference": "Payment",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/cashVat/selectors/payment"
-    },
-    {
       "entity": "basicDiscounts",
       "field": "discount",
       "column": "C_Discount_ID",
       "reference": "Discount",
       "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/basicDiscounts/selectors/discount"
+    },
+    {
+      "entity": "cashVat",
+      "field": "payment",
+      "column": "FIN_Payment_ID",
+      "reference": "Payment",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/cashVat/selectors/payment"
     },
     {
       "entity": "paymentPlan",
@@ -788,6 +798,14 @@ export const api = {
   },
   "window": {
     "category": "purchases"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "POReference": "Referencia de proveedor"
+    },
+    "en_US": {
+      "POReference": "Supplier reference"
+    }
   }
 };
 
@@ -826,6 +844,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
         ]}
         draftMode={draftMode}
+        labelOverrides={labelOverrides}
         {...props}
       />
     );
@@ -839,6 +858,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      labelOverrides={labelOverrides}
       {...props}
     />
   );

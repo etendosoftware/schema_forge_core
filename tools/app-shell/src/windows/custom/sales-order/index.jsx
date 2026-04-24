@@ -11,6 +11,19 @@ import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 
+// Mirrors artifacts/sales-order/generated/web/sales-order/HeaderPage.jsx
+// Kept in sync manually because the generator does not expose labelOverrides yet.
+const LABEL_OVERRIDES = {
+  es_ES: {
+    C_BPartner_ID: 'Contacto',
+    DeliveryStatus: 'Estado de entrega',
+  },
+  en_US: {
+    C_BPartner_ID: 'Contact',
+    DeliveryStatus: 'Delivery Status',
+  },
+};
+
 const draftModeWithModal = {
   enabled: true,
   processField: 'documentAction',
@@ -74,6 +87,7 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
         entityLabel="Sales Order"
         windowName={windowName}
         breadcrumb="Sales / Sales Order"
+        labelOverrides={LABEL_OVERRIDES}
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
         token={token}
         apiBaseUrl={apiBaseUrl}

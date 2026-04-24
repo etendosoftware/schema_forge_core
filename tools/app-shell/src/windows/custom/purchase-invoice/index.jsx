@@ -19,23 +19,22 @@ import { useCreateContactModal } from '@/components/contract-ui/useCreateContact
 
 /* eslint-disable react/prop-types */
 
-const LIST_COLUMNS = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string', label: 'Document No.' },
-  { key: 'invoiceDate', column: 'DateInvoiced', type: 'date', label: 'Invoice Date' },
-  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string', label: 'Business Partner' },
-  { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
-  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
-];
+// Mirrors artifacts/purchase-invoice/generated/web/purchase-invoice/HeaderPage.jsx
+// Kept in sync manually because the generator does not expose it yet.
+const LABEL_OVERRIDES = {
+  es_ES: { POReference: 'Referencia de proveedor' },
+  en_US: { POReference: 'Supplier reference' },
+};
 
 let previewRowSetterRef = null;
 
 /**
  * PurchaseInvoiceTable — generated table wrapper that opens the preview modal.
+ * Columns are driven by decisions.json via the generated HeaderTable.
  */
 function PurchaseInvoiceTable(props) {
   return (
     <HeaderTable
-      columns={LIST_COLUMNS}
       {...props}
       onNavigate={(row) => previewRowSetterRef?.(row)}
     />
@@ -137,6 +136,7 @@ export default function PurchaseInvoiceWindow(props) {
         Table={PurchaseInvoiceTable}
         entityLabel="Purchase Invoice"
         breadcrumb={breadcrumb}
+        labelOverrides={LABEL_OVERRIDES}
         initialColumnFilters={initialColumnFilters}
         quickFilters={INVOICE_QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}
