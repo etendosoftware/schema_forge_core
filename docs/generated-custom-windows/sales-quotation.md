@@ -19,7 +19,7 @@ Let a sales user prepare a customer quotation, review commercial terms before co
 - Visibility: visible from the Sales menu under the Commercial section.
 - Implementation type: custom window wrapper over the generated quotation page.
 - Window shape: master-child, with `quotation` as the header entity and `quotationLine` as the child entity.
-- List interaction: the list shows document number, quotation date, business partner, validity date, document status, and gross total, with filters for those same business fields.
+- List interaction: the list columns are driven by `decisions.json` through the generated `HeaderTable`. The visible columns, in order, are: Quotation Date, Document No., Business Partner, Document Status, Valid Until, and Total Gross Amount. `Valid Until` is placed between Document Status and Total Gross Amount on purpose, so the validity date is adjacent to the total and the user can triage each row by deciding whether the total is still actionable.
 - Record interaction: the detail page shows the quotation header form, a child lines table and line form, summary amounts, record status, top-bar actions, and a Related Documents tab.
 - Available record-level affordances in current evidence: duplicate and cancel menu entries, a send-document button, a draft-only confirmation button, and a clone button that opens a confirmation modal and navigates to the new draft.
 - Available list-level affordances: a per-row and multi-row clone action that opens the shared clone modal and, once the new draft is created, offers navigation into each cloned record.
@@ -46,7 +46,7 @@ Let a sales user prepare a customer quotation, review commercial terms before co
 
 ## Manual verification
 
-1. Open `/sales-quotation` and confirm the list exposes quotation-focused columns and filters rather than a generic placeholder workspace.
+1. Open `/sales-quotation` and confirm the list exposes exactly Quotation Date, Document No., Business Partner, Document Status, Valid Until, and Total Gross Amount in that order, with `Valid Until` sitting between Document Status and Total Gross Amount so the row is easy to triage.
 2. Create a draft quotation and verify that selecting a business partner narrows the partner-address selector to that customer.
 3. Set or change the price list, add a line, choose a product, and verify unit price and tax are populated or recalculated as expected for that quotation context.
 4. Change quantity, unit price, and discount on a line and verify whether line gross amount, total net amount, and total gross amount refresh immediately, on save, or only after record reload.
