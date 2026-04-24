@@ -2,6 +2,8 @@ import GoodsReceiptLineTable from '@generated/goods-receipt/generated/web/goods-
 import GeneratedApp from '@generated/goods-receipt/generated/web/goods-receipt/index.jsx';
 import GoodsReceiptBottomPanel from './GoodsReceiptBottomPanel.jsx';
 import RelatedDocuments from './RelatedDocuments.jsx';
+import BulkDocumentAction, { buildInOutActions } from '@/components/contract-ui/BulkDocumentAction';
+import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 
 // Lines table columns without lineNo
 const LINES_COLUMNS = [
@@ -17,6 +19,7 @@ function CustomLinesTable(props) {
 }
 
 export default function GoodsReceiptWindow(props) {
+  useBulkActionToast();
   return (
     <GeneratedApp
       {...props}
@@ -25,6 +28,9 @@ export default function GoodsReceiptWindow(props) {
       notesField="description"
       bottomSection={GoodsReceiptBottomPanel}
       customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+      bulkActions={(ctx) => (
+        <BulkDocumentAction {...ctx} entity="goodsReceipt" buildActions={buildInOutActions} />
+      )}
     />
   );
 }

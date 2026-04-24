@@ -130,6 +130,7 @@ export function detectDuplicatedBlocks(diffText, { minLines = DUPLICATE_MIN_LINE
   const groups = new Map();
 
   for (const run of runs) {
+    if (run.path.startsWith('artifacts/')) continue;
     const normalizedLines = run.lines
       .map((entry) => ({ ...entry, normalized: normalizeDuplicateLine(entry.text) }))
       .filter((entry) => entry.normalized);

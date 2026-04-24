@@ -4,9 +4,18 @@
     "category": "purchases",
     "name": "Return to Vendor Shipment",
     "relatedDocuments": true,
-    "notesField": "description"
+    "notesField": "description",
+    "dateFilterKey": "movementDate"
   },
-  "entities": {},
+  "entities": {
+    "header": {
+      "fields": {
+        "movementDate": {
+          "grid": true
+        }
+      }
+    }
+  },
   "rules": {},
   "discardPatterns": [],
   "version": 2

@@ -81,6 +81,8 @@ Per-locale field label overrides. When the simplified interface needs to rename 
 | `processOverrides` | object | `{}` | See below | Override presentation and behavior of process buttons in the detail view. Keys are process names or column names. See Process Overrides subsection. |
 | `detailSortBy` | string | `null` | Any valid sort expression | Default sort order for the detail entity tab (e.g., `"sEQNoAsset asc"`). Passed directly to DetailView as the `detailSortBy` prop. |
 | `statusBar` | object | `null` | See below | Generates a summary status bar above the detail form showing key numeric fields and an optional progress indicator. |
+| `subsetFilters` | array | `null` | See below | Segmented, radio-style filter above the list. One is always active, mutually exclusive, applied before any other filter. Ideal for "which universe am I looking at" selectors (e.g., All / Customers / Vendors). |
+| `quickFilters` | array | `null` | See below | Independent toggle pills above the list. Each can be on/off; multiple can be active simultaneously. Combined with the active subset and column filters using AND. Ideal for "refinements" (e.g., only overdue, only pending delivery). |
 
 ### Status Bar (`window.statusBar`)
 
@@ -128,6 +130,86 @@ Generates a `{WindowName}StatusBar` component inside `@sf-generated` markers. Th
 | `completedIcon` | string | Lucide icon shown at 100% (e.g., `CheckCircle2`). |
 
 The generator emits `headerContent={(data) => <{WindowName}StatusBar data={data} />}` on the DetailView prop automatically.
+
+### Subset Filters (`window.subsetFilters`)
+
+> See [`list-filters.md`](list-filters.md) for the full toolbar layout (subset / quick / document-type / advanced), URL-param conventions, and when to use which surface.
+
+Radio-style segmented control above the list. Exactly **one** entry is always active (first one by default). Clicking a different entry switches selection; clicking the already-active entry does nothing. Filters are applied to the backend query **before** quick filters and column filters.
+
+Use when the window exposes mutually exclusive views of the data — i.e., the user is choosing "which slice am I looking at".
+
+```json
+{
+  "subsetFilters": [
+    { "label": "all" },
+    {
+      "label": "Customers",
+      "filter": "criteria=%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"
+    },
+    {
+      "label": "Vendors",
+      "filter": "criteria=%5B%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"
+    }
+  ]
+}
+```
+
+| Property | Type | Purpose |
+|----------|------|---------|
+| `label` | string | i18n key resolved through `useUI()`. Rendered as the button text. |
+| `filter` | string | Optional. URL-encoded `criteria=...` string applied to the list API query. Omit for an "All" / no-filter option. |
+| `rowFilter` | function | Optional. Client-side predicate `(item) => boolean` used in addition to the backend `filter`. Only relevant when the generator passes a JS function reference (not used in plain `decisions.json`). |
+
+**Behavior:**
+- Always exactly one active — first entry wins on initial mount.
+- Replaces (never adds to) the selection — pure segmented control.
+- Combined with `quickFilters` and column filters via AND at the backend query level.
+
+### Quick Filters (`window.quickFilters`)
+
+Independent toggle pills above the list. Each pill can be on or off — any subset (including empty) is valid. Refines the active `subsetFilters` row selection further.
+
+Use when the window has optional refinements that the user turns on or off individually — e.g., "show only overdue", "only pending delivery".
+
+```json
+{
+  "quickFilters": [
+    {
+      "label": "overdueOnly",
+      "filter": "criteria=%5B%7B%22fieldName%22%3A%22dueDate%22%2C%22operator%22%3A%22lessThan%22%2C%22value%22%3A%22today%22%7D%5D"
+    },
+    {
+      "label": "pendingDeliveryOnly",
+      "filter": "criteria=..."
+    }
+  ]
+}
+```
+
+| Property | Type | Purpose |
+|----------|------|---------|
+| `label` | string | i18n key resolved through `useUI()`. Rendered as the button text. |
+| `filter` | string | URL-encoded `criteria=...` string applied when the pill is active. |
+| `rowFilter` | function | Optional. Client-side predicate, same semantics as `subsetFilters.rowFilter`. |
+
+**Behavior:**
+- Multi-select — clicking toggles the pill independently.
+- All active pills' criteria are merged with the active subset via AND.
+- Starts empty unless the parent component passes `initialQuickFilterIndex` (only the 4 custom sales/purchase windows do this today).
+
+### Subset vs Quick — when to use which
+
+| Signal | Use `subsetFilters` | Use `quickFilters` |
+|--------|---------------------|--------------------|
+| "Which slice am I viewing?" (tabs/segments) | ✅ | ❌ |
+| "Refine the current slice" (on/off flags) | ❌ | ✅ |
+| Always at least one active | ✅ | ❌ |
+| Can all be off | ❌ | ✅ |
+| Mutually exclusive | ✅ | ❌ |
+| Combinable | ❌ | ✅ |
+
+The two can coexist in the same window — subsets render first (segmented control), quick filters render after (toggle pills).
 
 ### Custom Components (`window.customComponents`)
 

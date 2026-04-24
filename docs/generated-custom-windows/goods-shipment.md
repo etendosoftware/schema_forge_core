@@ -14,6 +14,7 @@ Use this window to register and complete outbound customer shipments. The functi
 - Start a return flow from a completed shipment so the user can select shipped lines and quantities to send back through the return process.
 - Open related downstream or upstream documents from the shipment, especially the linked sales order and the invoices created from that order.
 - Send the shipment document from the detail view.
+- Complete multiple draft shipments at once from the list selection bar using the bulk action, which processes each shipment through the standard `documentAction=CO` endpoint.
 
 ## Interaction model
 
@@ -55,6 +56,7 @@ Use this window to register and complete outbound customer shipments. The functi
 8. In the batch invoice modal, deselect some lines or reduce quantities and confirm the preview total changes before creation.
 9. Open `Related Documents` on a shipment that came from a sales order and confirm the order chip and any invoice chips navigate to the expected records.
 10. Attempt the return flow on a completed shipment and verify whether the backend actually completes the return creation; if it fails, record it as the current functional gap.
+11. Select two or more draft shipments from the list and confirm the bulk-complete action is available. Trigger it and verify all selected shipments move to completed status and a result toast appears.
 
 ## Automated evidence
 
@@ -64,4 +66,5 @@ Use this window to register and complete outbound customer shipments. The functi
 - `artifacts/goods-shipment/custom/RelatedDocuments.jsx` shows that related-document navigation currently resolves the linked sales order and sales invoices, with return receipts left pending backend support.
 - `artifacts/goods-shipment/custom/ReturnWizard.jsx` explicitly documents the pending backend dependency for `createReturn`.
 - `artifacts/goods-shipment/custom/__tests__/BulkInvoiceFromShipment.test.js` provides source-shape coverage for the bulk invoice component, including invoiceable filtering, same-customer enforcement, line fetching, sales-order price enrichment, draft-invoice checking, and draft-invoice creation endpoint usage.
+- `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the bulk-complete component (CO only, via `buildInOutActions`) mounted in the list selection bar for goods shipments.
 - There is no dedicated browser E2E or interaction test in the current worktree proving the full shipment execution, invoicing, or return flow end to end.

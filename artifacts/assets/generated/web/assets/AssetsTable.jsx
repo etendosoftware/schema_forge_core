@@ -19,7 +19,7 @@ function renderDepreciationProgress(row) {
 // @sf-generated-start columns:assets
 const columns = [
   { key: 'name', column: 'Name', type: 'string', label: 'Name' },
-  { key: 'assetCategory', column: 'A_Asset_Group_ID', type: 'string', label: 'Asset Category' },
+  { key: 'assetCategory', column: 'A_Asset_Group_ID', type: 'selector', label: 'Asset Category' },
   { key: 'purchaseDate', column: 'Datepurchased', type: 'date', label: 'Purchase Date' },
   { key: 'depreciationStartDate', column: 'Amortizationstartdate', type: 'date', label: 'Depreciation Start Date' },
   { key: 'assetValue', column: 'AssetValueAmt', type: 'amount', label: 'Asset Value', summable: true },

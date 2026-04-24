@@ -4,6 +4,7 @@ import GoodsReceiptTable from './GoodsReceiptTable';
 import GoodsReceiptForm from './GoodsReceiptForm';
 import GoodsReceiptLineTable from './GoodsReceiptLineTable';
 import GoodsReceiptLineForm from './GoodsReceiptLineForm';
+import RelatedDocuments from '@/windows/custom/goods-receipt/RelatedDocuments';
 import catalogs from './mockCatalogs';
 
 
@@ -18,7 +19,6 @@ const summary = [
 const statusField = 'documentStatus';
 // @sf-generated-end summary:goodsReceipt
 
-// @sf-custom-slot extraBadges:goodsReceipt
 // @sf-generated-start extraBadges:goodsReceipt
 const extraBadges = [];
 // @sf-generated-end extraBadges:goodsReceipt
@@ -43,20 +43,20 @@ const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
     { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text', label: 'Attribute Set Value' },
-    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity' },
-    { key: 'storageBin', column: 'M_Locator_ID', type: 'selector', label: 'Storage Bin', reference: 'Locator', inputMode: 'selector' },
+    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity', defaultValue: 1 },
+    { key: 'storageBin', column: 'M_Locator_ID', type: 'selector', label: 'Storage Bin', reference: 'Locator', inputMode: 'selector', defaultValue: '@OnHandLocatorDefault@' },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
 
   ],
   hidden: [
-    { key: 'lineNo', value: '@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM M_InOutLine WHERE M_InOut_ID=@M_InOut_ID@' },
+    { key: 'invoiceQuantity', value: '0' },
   ],
 };
 // @sf-generated-end addLineFields:goodsReceiptLine
 
-const api = {
+export const api = {
   "specName": "goods-receipt",
   "baseUrl": "/sws/neo/goods-receipt",
   "crud": {
@@ -362,8 +362,6 @@ const api = {
 
 // @sf-generated-start component:GoodsReceiptPage
 export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
-  // @sf-custom-slot hooks:GoodsReceiptPage
-  
   if (recordId) {
     return (
       <DetailView
@@ -385,6 +383,7 @@ export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
         breadcrumb={breadcrumb}
       api={api}
         draftMode={draftMode}
+customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         {...props}
       />
     );
@@ -398,10 +397,9 @@ export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+dateFilterKey="movementDate"
       {...props}
     />
   );
 }
 // @sf-generated-end component:GoodsReceiptPage
-
-// @sf-custom-slot section:GoodsReceiptPage-custom

@@ -518,7 +518,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
       )}
       {columns.map(col => {
         const field = fieldMap[col.key];
-        const fieldLabel = field ? (field.label ?? t(field.column) ?? field.key) : (col.label ?? t(col.column) ?? col.key);
+        const fieldLabel = field ? (t(field.column) ?? field.label ?? field.key) : (t(col.column) ?? col.label ?? col.key);
         if (!field) {
           // Show callout-derived values if available, otherwise dash.
           // Prefer $_identifier (human-readable) over raw ID for FK fields.
@@ -810,7 +810,39 @@ function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) 
  *      that appears on row hover and on keyboard focus. Invoked with the row object; click
  *      propagation is stopped so it does not trigger row selection or navigation.
  */
-export function DataTable({ entity, columns = [], filters = [], data = [], onRowSelect, onNavigate, onRowClick, selectedRowId, selectedId, compact, loading, addRow, selectable = true, isRowSelectable, onSelectionChange, sortColumn, sortDirection, onSort, onColumnsReady, token, apiBaseUrl, showFooterTotals = true, selectorContext, onDataMutated, labelOverrides, initialColumnFilters, rowFilter, onDeleteRow, onCloneRow }) {
+export function DataTable({
+  entity,
+  columns = [],
+  filters = [],
+  data = [],
+  onRowSelect,
+  onNavigate,
+  onRowClick,
+  selectedRowId,
+  selectedId,
+  compact,
+  loading,
+  addRow,
+  selectable = true,
+  isRowSelectable,
+  onSelectionChange,
+  sortColumn,
+  sortDirection,
+  onSort,
+  onColumnsReady,
+  token,
+  apiBaseUrl,
+  showFooterTotals = true,
+  selectorContext,
+  onDataMutated,
+  labelOverrides,
+  onDeleteRow,
+  onCloneRow,
+  onFilterChange,
+  onClearAllFilters,
+  columnFilters = {},
+  rowFilter,
+}) {
   const t = useLabel(labelOverrides);
   const tMenu = useMenuLabel();
   const ui = useUI();
@@ -821,7 +853,6 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     [locale]
   );
   const [searchQuery, setSearchQuery] = useState('');
-  const [columnFilters, setColumnFilters] = useState(initialColumnFilters ?? {});
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [optimisticToggles, setOptimisticToggles] = useState({});
   const [savingToggles, setSavingToggles] = useState({});
@@ -845,29 +876,26 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
 
   const filteredData = useMemo(() => {
     let result = data;
-    // Global search (existing behaviour)
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(row =>
-        filters.some(key => {
-          const val = resolveIdentifier(row, key);
-          return String(val ?? '').toLowerCase().includes(q);
-        })
-      );
+
+    // If onFilterChange is provided, column filters/sort are handled by the backend;
+    // skip local search + column filter loops. Otherwise apply them client-side.
+    if (!onFilterChange) {
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        result = result.filter(row =>
+          filters.some(key => {
+            const val = resolveIdentifier(row, key);
+            return String(val ?? '').toLowerCase().includes(q);
+          })
+        );
+      }
     }
-    // Per-column filters (AND logic)
-    for (const [key, query] of Object.entries(columnFilters)) {
-      if (!query) continue;
-      const q = query.toLowerCase();
-      result = result.filter(row => {
-        const val = resolveIdentifier(row, key);
-        return String(val ?? '').toLowerCase().includes(q);
-      });
-    }
-    // Row-level predicate filter (e.g. numeric conditions like outstandingAmount > 0)
+
+    // Row-level predicate (e.g. numeric conditions like outstandingAmount > 0)
+    // is always applied locally — the backend cannot evaluate arbitrary JS predicates.
     if (rowFilter) result = result.filter(rowFilter);
     return result;
-  }, [data, filters, searchQuery, columnFilters, rowFilter]);
+  }, [data, filters, searchQuery, onFilterChange, rowFilter]);
 
   const amountColumns = useMemo(
     () => columns.filter(col => col.type === 'amount'),
@@ -988,7 +1016,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
     }
     if (col.type === 'status') {
       const raw = row[col.key];
-      const label = col.enumLabels?.[raw] ?? statusLabel(raw, dictionary);
+      const label = statusLabel(raw, dictionary);
       if (col.display === 'dot') {
         const dotColor = getStatusDotColor(raw);
         return (
@@ -1129,41 +1157,28 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
       <div className="overflow-x-auto overflow-y-visible">
         <Table>
           <TableHeader>
-            <TableRow className="border-b border-border/40 bg-muted/30">
+            <TableRow className="border-b border-border/40">
               {selectable && (
-                <TableHead className="w-10 px-3 align-top" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex flex-col gap-1.5 pt-1">
-                    <input
-                      type="checkbox"
-                      checked={allSelected}
-                      ref={el => { if (el) el.indeterminate = someSelected; }}
-                      onChange={toggleAll}
-                      onClick={(e) => e.stopPropagation()}
-                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                    />
-                    {hasColumnFilter && (
-                      <button
-                        onClick={() => setColumnFilters({})}
-                        title={ui('clearAllFilters')}
-                        className="h-4 w-4 flex items-center justify-center rounded text-muted-foreground/50 hover:text-foreground transition-colors"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    )}
-                  </div>
+                <TableHead className="w-10 px-3 align-middle" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={el => { if (el) el.indeterminate = someSelected; }}
+                    onChange={toggleAll}
+                    onClick={(e) => e.stopPropagation()}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                  />
                 </TableHead>
               )}
               {columns.map(col => {
                 const colLabel = resolveColumnLabel(col, locale, t);
                 const isSorted = sortColumn === col.key;
-                const isNumeric = NUMERIC_FIELD_TYPES.has(col.type);
                 return (
-                  <TableHead key={col.key} className="align-top">
-                    <div className="flex flex-col gap-1.5 pb-2">
-                      {onSort ? (
+                  <TableHead key={col.key} className="align-middle">
+                    {onSort ? (
                         <button
                           type="button"
-                          className="text-xs font-medium text-muted-foreground/70 tracking-wide cursor-pointer select-none hover:text-foreground transition-colors bg-transparent border-0 p-0 text-left"
+                          className="text-xs leading-4 font-semibold text-text-primary tracking-normal cursor-pointer select-none transition-colors bg-transparent border-0 p-0 text-left"
                           onClick={() => onSort(col.key)}
                         >
                           {colLabel}
@@ -1172,39 +1187,13 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                           )}
                         </button>
                       ) : (
-                        <span className="text-xs font-medium text-muted-foreground/70 tracking-wide">
+                        <span className="text-xs leading-4 font-semibold text-text-primary tracking-normal">
                           {colLabel}
                           {isSorted && (
                             <span className="ml-1 text-primary/70">{sortDirection === 'asc' ? '\u25B2' : '\u25BC'}</span>
                           )}
                         </span>
                       )}
-                      <div className="relative w-full">
-                        <input
-                          type="text"
-                          value={columnFilters[col.key] || ''}
-                          onChange={e => setColumnFilters(prev => ({ ...prev, [col.key]: e.target.value }))}
-                          placeholder={ui('filter')}
-                          className={[
-                            'w-full h-6 rounded border bg-background/80 px-2 text-xs text-foreground',
-                            'placeholder:text-muted-foreground/35 transition-colors',
-                            'focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/40',
-                            columnFilters[col.key]
-                              ? 'border-primary/40 bg-primary/5 pr-6'
-                              : 'border-border/35',
-                            isNumeric ? 'text-right' : '',
-                          ].filter(Boolean).join(' ')}
-                        />
-                        {columnFilters[col.key] && (
-                          <button
-                            onClick={() => setColumnFilters(prev => ({ ...prev, [col.key]: '' }))}
-                            className="absolute right-1 top-1/2 -translate-y-1/2 h-4 w-4 flex items-center justify-center text-muted-foreground/50 hover:text-foreground transition-colors"
-                          >
-                            <X className="h-2.5 w-2.5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
                   </TableHead>
                 );
               })}
@@ -1258,7 +1247,7 @@ export function DataTable({ entity, columns = [], filters = [], data = [], onRow
                       );
                     })()}
                     {columns.map(col => (
-                      <TableCell key={col.key} className={NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right tabular-nums' : ''}>
+                      <TableCell key={col.key} className={['text-sm', NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right tabular-nums' : ''].filter(Boolean).join(' ')}>
                         {renderCellValue(row, col)}
                       </TableCell>
                     ))}

@@ -8,6 +8,7 @@ import LinesForm from './LinesForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
 import OrderCreateInvoice from '../../../custom/OrderCreateInvoice';
 import OrderDraftChips from '../../../custom/OrderDraftChips';
+import OrderReactivateBulkAction from '../../../custom/OrderReactivateBulkAction';
 import catalogs from './mockCatalogs';
 
 
@@ -15,10 +16,12 @@ const breadcrumb = 'Sales / Sales Order';
 
 const labelOverrides = {
   "es_ES": {
-    "C_BPartner_ID": "Contacto"
+    "C_BPartner_ID": "Contacto",
+    "DeliveryStatus": "Estado de entrega"
   },
   "en_US": {
-    "C_BPartner_ID": "Contact"
+    "C_BPartner_ID": "Contact",
+    "DeliveryStatus": "Delivery Status"
   }
 };
 
@@ -44,13 +47,18 @@ const processes = [
 // @sf-generated-end processes:header
 
 // @sf-generated-start draftMode:header
-const draftMode = null;
+const draftMode = {
+  "enabled": true,
+  "processField": "documentAction",
+  "processValue": "CO",
+  "label": "soConfirmBtn"
+};
 // @sf-generated-end draftMode:header
 
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
   entry: [
-    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["unitPrice","tax","uOM","grossUnitPrice"] },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
     { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity', defaultValue: 1 },
     { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
@@ -270,6 +278,14 @@ export const api = {
     },
     {
       "entity": "header",
+      "field": "processNow",
+      "column": "Processing",
+      "url": "/sws/neo/sales-order/header/{id}/action/processNow",
+      "processId": "104",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
       "field": "posted",
       "column": "Posted",
       "url": "/sws/neo/sales-order/header/{id}/action/posted",
@@ -282,14 +298,6 @@ export const api = {
       "column": "Generatetemplate",
       "url": "/sws/neo/sales-order/header/{id}/action/generateTemplate",
       "processId": "800022",
-      "processType": "classic"
-    },
-    {
-      "entity": "header",
-      "field": "processNow",
-      "column": "Processing",
-      "url": "/sws/neo/sales-order/header/{id}/action/processNow",
-      "processId": "104",
       "processType": "classic"
     },
     {
@@ -359,10 +367,12 @@ export const api = {
   },
   "labelOverrides": {
     "es_ES": {
-      "C_BPartner_ID": "Contacto"
+      "C_BPartner_ID": "Contacto",
+      "DeliveryStatus": "Estado de entrega"
     },
     "en_US": {
-      "C_BPartner_ID": "Contact"
+      "C_BPartner_ID": "Contact",
+      "DeliveryStatus": "Delivery Status"
     }
   }
 };
@@ -397,8 +407,10 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         topbarRight={OrderCreateInvoice}
         topbarExtra={OrderDraftChips}
         menuActions={({ status }) => [
-          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
+          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', labelKey: 'cancel', onClick: () => {}, },
+          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
         ]}
+        draftMode={draftMode}
         salesTheme
         labelOverrides={labelOverrides}
         {...props}
@@ -414,6 +426,8 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="orderDate"
+      bulkActions={(ctx) => <OrderReactivateBulkAction {...ctx} />}
       hidePrint
       labelOverrides={labelOverrides}
       {...props}

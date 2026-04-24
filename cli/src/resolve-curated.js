@@ -656,6 +656,12 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.quickFilters) {
     schema.window.quickFilters = windowDecisions.quickFilters;
   }
+  if (windowDecisions.subsetFilters) {
+    schema.window.subsetFilters = windowDecisions.subsetFilters;
+  }
+  if (windowDecisions.dateFilterKey) {
+    schema.window.dateFilterKey = windowDecisions.dateFilterKey;
+  }
   if (windowDecisions.statusEnumLabels) {
     schema.window.statusEnumLabels = windowDecisions.statusEnumLabels;
   }

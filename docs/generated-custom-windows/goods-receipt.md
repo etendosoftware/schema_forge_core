@@ -17,6 +17,7 @@ A user should be able to:
 - review received-line essentials such as product, received quantity, UOM, storage bin, and invoiced quantity
 - confirm the receipt from draft so the document moves out of intake mode
 - open linked purchasing documents to understand where the receipt came from and whether invoices already exist for the same order
+- complete multiple draft receipts at once from the list selection bar using the bulk action, which processes each receipt through the standard `documentAction=CO` endpoint
 
 ## Interaction model
 
@@ -68,9 +69,11 @@ No current evidence shows:
 7. With lines already present, confirm the line-area extra action still exposes **Import from Purchase Order** while the receipt remains in draft.
 8. Confirm the receipt and verify the document leaves draft status and the draft-only import affordances disappear.
 9. Open **Related Documents** and confirm the purchase-order chip routes to `/purchase-order/:id` and invoice chips route to `/purchase-invoice/:id`.
+10. Select two or more draft goods receipts from the list and confirm the bulk-complete action is available. Trigger it and verify all selected receipts move to completed status and a result toast appears.
 
 ## Automated evidence
 
+- `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the bulk-complete component (CO only, via `buildInOutActions`) mounted in the list selection bar for goods receipts.
 - No dedicated goods-receipt UI test was found in `tools/app-shell`.
 - Shared route loading, authenticated shell behavior, and generic entity behavior are documented in `docs/generated-custom-windows/app-shell-functional-flows.md`.
 - Source evidence for this document:
