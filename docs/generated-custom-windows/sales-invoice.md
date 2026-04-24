@@ -27,7 +27,7 @@ A user should be able to:
 - Visibility: visible from the `Sales` menu group in `tools/app-shell/src/menu.json`; not hidden.
 - Implementation type: custom window wrapper in `tools/app-shell/src/windows/custom/sales-invoice/index.jsx` over the generated `sales-invoice` list/detail page, with a shared invoice preview modal reused from the purchase-invoice flow.
 - Window shape: master-child. The primary entity is the invoice `header`, with editable `lines` plus an additional `paymentPlan` child surface.
-- List behavior: the custom list uses a narrowed invoice table, opens rows into a lateral preview modal instead of immediately navigating away, supports cloning from the grid, accepts `?DocStatus=<status>` as a column pre-filter, and accepts `?filter=overdue` as a quick filter for invoices with remaining outstanding amount.
+- List behavior: the custom list now uses the richer `InvoiceHeaderTable` custom component (previously the list view used the plain generated `HeaderTable`). The visible columns, in order, are: Invoice Date, Document No., Business Partner, a custom Status column rendered as coloured `StatusTag` pills (Draft, Paid, Partial, Pending, Overdue, Voided, Closed), Total Gross Amount, and Total Outstanding. The grid opens rows into a lateral preview modal instead of immediately navigating away, supports cloning from the grid, accepts `?DocStatus=<status>` as a column pre-filter, and accepts `?filter=overdue` as a quick filter for invoices with remaining outstanding amount.
 - Detail behavior: the detail route keeps the generated invoice page, adds a custom top bar, custom bottom totals/documents panel, a `Related Documents` tab, a business-partner guard before adding lines, and invoice-specific extra actions such as shipment import and clone.
 
 ## Reactive behavior and dependencies
@@ -50,10 +50,11 @@ A user should be able to:
 - The related-documents flow for original invoices is explicitly conditional on the current document looking like a credit note. If users expect every sales invoice to expose upstream invoice relationships, that broader behavior is not supported by the current evidence.
 - The preview modal includes `Messages` and `History` tabs, but the shared invoice-preview implementation renders them as empty states today. If invoice communication history or audit history is expected here, that is a current functional gap.
 - No dedicated browser E2E test was found for the sales-invoice-specific flow. Confidence is therefore high for route wiring and source-level component behavior, but lower for end-to-end invoice management semantics in a live browser session.
+- List-column drift between `decisions.json` and `InvoiceHeaderTable.jsx` is a known piece of technical debt. The `decisions.json` file declares `gridOrder` values for `documentStatus` (index 4) and other fields, but `InvoiceHeaderTable.jsx` has a hardcoded `columns` array that ultimately drives what the list view renders. The status column visible in the list is the custom `_status` column with coloured `StatusTag` pills, not the raw `documentStatus` field. Any change to the list columns must be applied in both `decisions.json` and `InvoiceHeaderTable.jsx` until the custom table is refactored to consume the contract directly.
 
 ## Manual verification
 
-1. Open `/sales-invoice` and confirm the list shows document number, invoice date, business partner, document status, and total gross amount.
+1. Open `/sales-invoice` and confirm the list shows exactly Invoice Date, Document No., Business Partner, a coloured Status pill (Draft, Paid, Partial, Pending, Overdue, Voided, or Closed), Total Gross Amount, and Total Outstanding in that order, and that legacy columns such as `isPaid` and `paymentComplete` are no longer shown.
 2. Open `/sales-invoice?filter=overdue` and confirm the list starts in the overdue-only quick filter.
 3. Click a row from the list and confirm a lateral invoice preview opens instead of immediately navigating to `/sales-invoice/:recordId`. In that preview, confirm `General` is data-backed while `Messages` and `History` remain placeholder states.
 4. From the preview, choose **Edit** and confirm navigation to `/sales-invoice/:recordId`.

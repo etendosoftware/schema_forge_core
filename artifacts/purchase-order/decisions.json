@@ -24,11 +24,13 @@
     "labelOverrides": {
       "es_ES": {
         "C_BPartner_ID": "Contacto",
-        "DatePromised": "Fecha de entrega esperada"
+        "DatePromised": "Fecha de entrega esperada",
+        "DeliveryStatusPurchase": "Estado de entrega"
       },
       "en_US": {
         "C_BPartner_ID": "Contact",
-        "DatePromised": "Expected Delivery Date"
+        "DatePromised": "Expected Delivery Date",
+        "DeliveryStatusPurchase": "Delivery Status"
       }
     },
     "secondaryTabs": {},
@@ -46,7 +48,7 @@
       "fields": {
         "transactionDocument": {
           "visibility": "editable",
-          "grid": true,
+          "grid": false,
           "form": false,
           "reference": "DocumentType",
           "section": "other",
@@ -55,6 +57,7 @@
         "documentNo": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 2,
           "searchable": true,
           "form": true,
           "section": "principal",
@@ -74,6 +77,7 @@
         },
         "orderDate": {
           "grid": true,
+          "gridOrder": 1,
           "searchable": true,
           "section": "principal",
           "form": true,
@@ -81,6 +85,7 @@
         },
         "businessPartner": {
           "grid": true,
+          "gridOrder": 3,
           "searchable": true,
           "reference": "BusinessPartner",
           "section": "principal",
@@ -102,7 +107,7 @@
           }
         },
         "warehouse": {
-          "grid": true,
+          "grid": false,
           "form": false
         },
         "scheduledDeliveryDate": {
@@ -120,7 +125,7 @@
           "section": "principal"
         },
         "priceList": {
-          "grid": true,
+          "grid": false,
           "section": "principal",
           "form": true
         },
@@ -143,11 +148,15 @@
           "form": false
         },
         "orderReference": {
+          "visibility": "editable",
+          "grid": false,
+          "form": false,
           "searchable": true,
-          "form": false
+          "readOnlyLogic": null
         },
         "grandTotalAmount": {
           "grid": true,
+          "gridOrder": 5,
           "form": false,
           "section": "other"
         },
@@ -225,7 +234,7 @@
         },
         "priority": {
           "visibility": "editable",
-          "grid": true,
+          "grid": false,
           "form": false,
           "section": "other"
         },
@@ -248,11 +257,13 @@
         },
         "deliveryStatusPurchase": {
           "grid": true,
+          "gridOrder": 7,
           "form": false,
           "section": "other"
         },
         "invoiceStatus": {
           "grid": true,
+          "gridOrder": 6,
           "form": false,
           "section": "other"
         },

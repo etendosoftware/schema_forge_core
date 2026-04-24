@@ -16,10 +16,12 @@ const breadcrumb = 'Sales / Sales Order';
 
 const labelOverrides = {
   "es_ES": {
-    "C_BPartner_ID": "Contacto"
+    "C_BPartner_ID": "Contacto",
+    "DeliveryStatus": "Estado de entrega"
   },
   "en_US": {
-    "C_BPartner_ID": "Contact"
+    "C_BPartner_ID": "Contact",
+    "DeliveryStatus": "Delivery Status"
   }
 };
 
@@ -284,18 +286,18 @@ export const api = {
     },
     {
       "entity": "header",
-      "field": "processNow",
-      "column": "Processing",
-      "url": "/sws/neo/sales-order/header/{id}/action/processNow",
-      "processId": "104",
-      "processType": "classic"
-    },
-    {
-      "entity": "header",
       "field": "generateTemplate",
       "column": "Generatetemplate",
       "url": "/sws/neo/sales-order/header/{id}/action/generateTemplate",
       "processId": "800022",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "processNow",
+      "column": "Processing",
+      "url": "/sws/neo/sales-order/header/{id}/action/processNow",
+      "processId": "104",
       "processType": "classic"
     },
     {
@@ -365,10 +367,12 @@ export const api = {
   },
   "labelOverrides": {
     "es_ES": {
-      "C_BPartner_ID": "Contacto"
+      "C_BPartner_ID": "Contacto",
+      "DeliveryStatus": "Estado de entrega"
     },
     "en_US": {
-      "C_BPartner_ID": "Contact"
+      "C_BPartner_ID": "Contact",
+      "DeliveryStatus": "Delivery Status"
     }
   }
 };
