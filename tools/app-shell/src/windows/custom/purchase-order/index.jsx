@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
-import { toast } from 'sonner';
-import { useUI } from '@/i18n';
+import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import { ListView } from '@/components/contract-ui';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
@@ -52,27 +51,10 @@ function CustomLinesTable(props) {
 }
 
 export default function PurchaseOrderWindow(props) {
-  const ui = useUI();
+  useBulkActionToast();
   const { recordId, windowName, token, apiBaseUrl } = props;
   const [searchParams] = useSearchParams();
   const [cloneTargets, setCloneTargets] = useState(null);
-
-  useEffect(() => {
-    const stored = sessionStorage.getItem('bulkActionResult');
-    if (!stored) return;
-    sessionStorage.removeItem('bulkActionResult');
-    const { ok, failed } = JSON.parse(stored);
-    const msg = ui('processExecuted')
-      .replace('{ok}', String(ok))
-      .replace('{failed}', String(failed.length));
-    if (failed.length === 0) {
-      toast.success(msg);
-    } else if (ok > 0) {
-      toast.warning(msg);
-    } else {
-      toast.error(msg);
-    }
-  }, []);
 
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
     useCreateContactModal({ apiBaseUrl, token });

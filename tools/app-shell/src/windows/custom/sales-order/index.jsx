@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
-import { toast } from 'sonner';
-import { useUI } from '@/i18n';
+import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import GeneratedApp from '@generated/sales-order/generated/web/sales-order/index.jsx';
 import HeaderTable from '@generated/sales-order/generated/web/sales-order/HeaderTable';
 import OrderReactivateBulkAction from '@generated/sales-order/custom/OrderReactivateBulkAction';
@@ -21,26 +20,9 @@ const draftModeWithModal = {
 };
 
 export default function SalesOrderWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
-  const ui = useUI();
+  useBulkActionToast();
   const [searchParams] = useSearchParams();
   const [cloneTargets, setCloneTargets] = useState(null);
-
-  useEffect(() => {
-    const stored = sessionStorage.getItem('bulkActionResult');
-    if (!stored) return;
-    sessionStorage.removeItem('bulkActionResult');
-    const { ok, failed } = JSON.parse(stored);
-    const msg = ui('processExecuted')
-      .replace('{ok}', String(ok))
-      .replace('{failed}', String(failed.length));
-    if (failed.length === 0) {
-      toast.success(msg);
-    } else if (ok > 0) {
-      toast.warning(msg);
-    } else {
-      toast.error(msg);
-    }
-  }, []);
 
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
     useCreateContactModal({ apiBaseUrl, token });
