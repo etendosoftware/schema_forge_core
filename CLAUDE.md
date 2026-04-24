@@ -236,6 +236,23 @@ Contract tests (Node.js), Unit tests (JUnit in Etendo Go), Integration tests (OB
 Run `make test` for CLI tests. See `docs/e2e-testing-guide.md` for E2E setup, conventions, and `data-testid` patterns.
 Every process must declare >=3 edge cases. Every kept rule must have a behavioral test.
 
+## Pipeline Validation
+
+`cli/src/validate-pipeline.js` enforces consistency across the artifact pipeline (decisions → contract → generated → registry). Runs without DB access. Defined rules: F1–F10, full table in `docs/pipeline-validator-reference.md`.
+
+**Three integration points:**
+- **Manual:** `make validate-pipeline` (whole repo) or `node cli/src/validate-pipeline.js --scope=<window>` (single window)
+- **Pre-commit:** `make install` activates `.githooks/pre-commit` — runs only on staged artifact/generator/registry files
+- **CI:** `.github/workflows/pipeline-validate.yml` runs in shadow mode (annotates, doesn't block) until P3 backfill lands
+
+**Bypass:** `git commit --no-verify` (WIP only — never on epic-branch PRs).
+
+**Adding a new rule (F11+):** implement in `cli/src/validate-pipeline.js`, add fixture under `cli/test/fixtures/pipeline-validator/`, add tests in `cli/test/validate-pipeline.test.js`, AND update the rules table in `docs/pipeline-validator-reference.md`. The reference doc is canonical — if a rule is not documented there, it doesn't exist.
+
+**Pipeline phases that touch the validator:**
+- DEV: any change to `decisions.json` or `generated/` must keep `validate-pipeline.js` clean for that artifact
+- REVIEW: Alex must run `node cli/src/validate-pipeline.js --scope=<windows-touched-by-PR>` and confirm 0 violations
+
 ## Static Analysis (SonarQube)
 
 Run `cli/sonar-check.sh` to analyze specific Java files with SonarQube and get results inline.

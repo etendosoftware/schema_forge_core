@@ -25,9 +25,11 @@
     "sf-lock": "./src/lock-window.js",
     "sf-report-contract": "./src/report-contract.js",
     "sf-report-serve": "./src/report-serve.js",
-    "sf-report-preview": "./src/report-preview.js"
+    "sf-report-preview": "./src/report-preview.js",
+    "sf-quality-gate": "./src/quality-gate.js"
   },
   "devDependencies": {
+    "@babel/parser": "^7.29.2",
     "ajv": "^8.17.0"
   }
 }

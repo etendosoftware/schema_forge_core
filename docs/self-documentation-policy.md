@@ -11,6 +11,7 @@ Any change to:
 - **Data flow** (new data sources, changed artifact formats, new webhook endpoints)
 - **Runtime components** (new NeoHandler, changed URL patterns, new DB tables)
 - **Architecture** (new loops, changed integration points, new external dependencies)
+- **Validator rules** (adding a new rule F11+, changing severity, changing detection signal) in `cli/src/validate-pipeline.js`
 
 ## Window-specific rule
 
@@ -42,6 +43,7 @@ When a trigger fires, check and update **all** of the following that reference t
 | `docs/conventions.md` | If CLI behavior or edge cases changed |
 | `docs/plans/process-and-report-pipeline.md` | If process pipeline changed |
 | `docs/index.md` | If new docs were added |
+| `docs/pipeline-validator-reference.md` | Adding a new validator rule (F11+): update the rules table in the same PR |
 
 ## Rules for volatile data
 
