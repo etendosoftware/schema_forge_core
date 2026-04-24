@@ -360,7 +360,7 @@
             "required": true,
             "grid": true,
             "form": true,
-            "defaultValue": "0",
+            "defaultValue": 1,
             "section": "principal",
             "readOnlyLogic": {
               "raw": "@Processed@='Y' | @UomManagement@='Y'",

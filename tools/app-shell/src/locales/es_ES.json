@@ -16862,6 +16862,7 @@
     "createNewRecord": "Crea un nuevo registro para empezar.",
     "previewNotAvailable": "Vista previa no disponible",
     "pdfPreview": "Vista previa del PDF",
+    "deleteDocument": "Eliminar documento",
     "pdfPreviewPlaceholder": "El PDF aparecerá aquí cuando se configuren las plantillas de documentos",
     "downloadPdf": "Descargar PDF",
     "downloading": "Descargando...",

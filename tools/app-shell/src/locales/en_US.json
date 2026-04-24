@@ -16627,6 +16627,7 @@
     "createNewRecord": "Create a new record to get started.",
     "previewNotAvailable": "Preview not available",
     "pdfPreview": "PDF preview",
+    "deleteDocument": "Delete document",
     "pdfPreviewPlaceholder": "The PDF will appear here once document templates are configured",
     "downloadPdf": "Download PDF",
     "downloading": "Downloading...",

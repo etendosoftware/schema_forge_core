@@ -42,7 +42,7 @@ const draftMode = null;
 const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity' },
+    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity', defaultValue: 1 },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
@@ -54,7 +54,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:goodsShipmentLine
 
-const api = {
+export const api = {
   "specName": "goods-shipment",
   "baseUrl": "/sws/neo/goods-shipment",
   "crud": {
@@ -242,7 +242,6 @@ const api = {
 
 // @sf-generated-start component:GoodsShipmentPage
 export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView

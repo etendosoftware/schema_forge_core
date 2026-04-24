@@ -289,7 +289,11 @@ export function generateFormComponent(entityName, contract) {
     // Section classification
     const sectionPart = `, section: '${fieldSections[idx]}'`;
     // UI hints
-    const defaultValuePart = f.defaultValue ? `, defaultValue: '${f.defaultValue.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
+    const defaultValuePart = (f.defaultValue !== undefined && f.defaultValue !== null && f.defaultValue !== '')
+      ? (typeof f.defaultValue === 'number'
+          ? `, defaultValue: ${f.defaultValue}`
+          : `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'`)
+      : '';
     const helpPart = f.help ? `, help: '${f.help.replace(/'/g, "\\'")}'` : '';
     const fieldGroupPart = f.fieldGroup ? `, fieldGroup: '${f.fieldGroup.replace(/'/g, "\\'")}'` : '';
     const precisionPart = f.precision ? `, precision: ${f.precision}` : '';

@@ -10,6 +10,23 @@
       "category": "purchases",
       "notesField": "description",
       "relatedDocuments": true,
+      "menuActions": [
+        {
+          "key": "cancel",
+          "label": "Cancel",
+          "labelKey": "cancel",
+          "destructive": true,
+          "visibleWhenStatus": "CO"
+        },
+        {
+          "key": "reactivate",
+          "label": "Reactivate",
+          "labelKey": "reactivate",
+          "visibleWhenStatus": "CO",
+          "documentAction": "RE",
+          "successKey": "actionCompleted"
+        }
+      ],
       "processOverrides": {},
       "layoutType": "default"
     },
@@ -2877,6 +2894,23 @@
       "category": "purchases",
       "notesField": "description",
       "relatedDocuments": true,
+      "menuActions": [
+        {
+          "key": "cancel",
+          "label": "Cancel",
+          "labelKey": "cancel",
+          "destructive": true,
+          "visibleWhenStatus": "CO"
+        },
+        {
+          "key": "reactivate",
+          "label": "Reactivate",
+          "labelKey": "reactivate",
+          "visibleWhenStatus": "CO",
+          "documentAction": "RE",
+          "successKey": "actionCompleted"
+        }
+      ],
       "processOverrides": {}
     },
     "entities": {

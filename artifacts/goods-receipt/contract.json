@@ -48,6 +48,11 @@
             "seq": 40,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_InOut_Warehouse"
+            },
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
             }
           },
           {
@@ -67,6 +72,11 @@
             "seq": 20,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_BPartner"
+            },
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
             }
           },
           {
@@ -87,7 +97,12 @@
               "filterKey": "C_BPartner_ID"
             },
             "section": "principal",
-            "seq": 30
+            "seq": 30,
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
           },
           {
             "name": "movementDate",
@@ -105,6 +120,11 @@
             "seq": 50,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_AccountingDate"
+            },
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
             }
           },
           {
@@ -146,7 +166,12 @@
             "grid": true,
             "form": true,
             "section": "principal",
-            "seq": 60
+            "seq": 60,
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
           },
           {
             "name": "description",
@@ -160,7 +185,12 @@
             "grid": false,
             "form": true,
             "section": "collapsed",
-            "seq": 70
+            "seq": 70,
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
           },
           {
             "name": "documentStatus",
@@ -439,7 +469,7 @@
             "required": true,
             "grid": true,
             "form": true,
-            "defaultValue": "0",
+            "defaultValue": 1,
             "section": "principal",
             "seq": 40
           },

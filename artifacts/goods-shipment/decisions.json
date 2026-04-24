@@ -219,7 +219,8 @@
         "movementQuantity": {
           "grid": true,
           "inputMode": "number",
-          "section": "principal"
+          "section": "principal",
+          "defaultValue": 1
         },
         "uOM": {
           "visibility": "system"
