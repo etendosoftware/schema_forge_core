@@ -50,6 +50,13 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
     'Content-Type': 'application/json',
   }), [token]);
 
+  // draftMode confirm button (DetailView) dispatches this event to open the confirm modal
+  useEffect(() => {
+    const handler = () => setShowConfirm(true);
+    window.addEventListener('purchase-order:open-confirm-modal', handler);
+    return () => window.removeEventListener('purchase-order:open-confirm-modal', handler);
+  }, []);
+
   // PurchaseOrderDraftChips (topbarExtra) dispatches this event when a grouped chip is clicked
   useEffect(() => {
     const handler = (e) => {
@@ -162,28 +169,6 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
 
   return (
     <>
-      {isDraft && (
-        <>
-          <button type="button" onClick={() => setShowConfirm(true)} style={btnPrimaryStyle}>
-            {ui('poConfirmBtn')}
-          </button>
-          {/* Delete icon */}
-          <button
-            type="button"
-            aria-label={ui('delete')}
-            style={{ ...iconBtnStyle, color: '#ef4444', borderColor: '#fecaca' }}
-            onClick={() => onProcess?.('delete')}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6l-1 14H6L5 6" />
-              <path d="M10 11v6" />
-              <path d="M14 11v6" />
-              <path d="M9 6V4h6v2" />
-            </svg>
-          </button>
-        </>
-      )}
       {isCompleted && buttonLabel && (
         <button type="button" onClick={() => setShowActions(true)} style={btnPrimaryStyle}>
           {buttonLabel}

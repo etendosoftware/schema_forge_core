@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
+import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import GeneratedApp from '@generated/sales-order/generated/web/sales-order/index.jsx';
 import HeaderTable from '@generated/sales-order/generated/web/sales-order/HeaderTable';
+import OrderReactivateBulkAction from '@generated/sales-order/custom/OrderReactivateBulkAction';
 import { ListView } from '@/components/contract-ui';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
@@ -22,7 +24,16 @@ const LABEL_OVERRIDES = {
   },
 };
 
+const draftModeWithModal = {
+  enabled: true,
+  processField: 'documentAction',
+  processValue: 'CO',
+  label: 'soConfirmBtn',
+  onConfirm: () => window.dispatchEvent(new CustomEvent('sales-order:open-confirm-modal')),
+};
+
 export default function SalesOrderWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
+  useBulkActionToast();
   const [searchParams] = useSearchParams();
   const [cloneTargets, setCloneTargets] = useState(null);
 
@@ -37,6 +48,7 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
           recordId={recordId}
           token={token}
           apiBaseUrl={apiBaseUrl}
+          draftMode={draftModeWithModal}
           {...rest}
         />
         {createContactState && createPortal(
@@ -80,6 +92,7 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
         token={token}
         apiBaseUrl={apiBaseUrl}
         hidePrint
+        bulkActions={(ctx) => <OrderReactivateBulkAction {...ctx} />}
         initialColumnFilters={initialColumnFilters}
         quickFilters={QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}

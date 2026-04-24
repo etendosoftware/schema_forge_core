@@ -1,7 +1,7 @@
 {
   "version": "0.17.0",
-  "generatedAt": "2026-04-24T16:34:58.736Z",
-  "checksum": "553d0d26c1f8375c",
+  "generatedAt": "2026-04-24T17:31:26.674Z",
+  "checksum": "1a7691c9165fe4af",
   "frontendContract": {
     "window": {
       "id": "181",
@@ -19,8 +19,26 @@
       ],
       "customComponents": {
         "topbarRight": "PurchaseOrderActions",
-        "topbarExtra": "PurchaseOrderDraftChips"
+        "topbarExtra": "PurchaseOrderDraftChips",
+        "bulkActions": "PurchaseOrderReactivateBulkAction"
       },
+      "menuActions": [
+        {
+          "key": "cancel",
+          "label": "Cancel",
+          "labelKey": "cancel",
+          "destructive": true,
+          "visibleWhenStatus": "CO"
+        },
+        {
+          "key": "reactivate",
+          "label": "Reactivate",
+          "labelKey": "reactivate",
+          "visibleWhenStatus": "CO",
+          "documentAction": "RE",
+          "successKey": "actionCompleted"
+        }
+      ],
       "secondaryTabs": {},
       "labelOverrides": {
         "es_ES": {
@@ -1054,7 +1072,13 @@
             }
           }
         ],
-        "javaQualifier": "purchaseOrderHeaderHandler"
+        "javaQualifier": "purchaseOrderHeaderHandler",
+        "draftMode": {
+          "enabled": true,
+          "processField": "documentAction",
+          "processValue": "CO",
+          "label": "poConfirmBtn"
+        }
       },
       "lines": {
         "tableName": "C_OrderLine",
@@ -2225,8 +2249,26 @@
       ],
       "customComponents": {
         "topbarRight": "PurchaseOrderActions",
-        "topbarExtra": "PurchaseOrderDraftChips"
+        "topbarExtra": "PurchaseOrderDraftChips",
+        "bulkActions": "PurchaseOrderReactivateBulkAction"
       },
+      "menuActions": [
+        {
+          "key": "cancel",
+          "label": "Cancel",
+          "labelKey": "cancel",
+          "destructive": true,
+          "visibleWhenStatus": "CO"
+        },
+        {
+          "key": "reactivate",
+          "label": "Reactivate",
+          "labelKey": "reactivate",
+          "visibleWhenStatus": "CO",
+          "documentAction": "RE",
+          "successKey": "actionCompleted"
+        }
+      ],
       "secondaryTabs": {},
       "labelOverrides": {
         "es_ES": {

@@ -1,7 +1,7 @@
 {
-  "version": "0.9.1",
-  "generatedAt": "2026-04-24T15:07:35.286Z",
-  "checksum": "447db3cc61d2297a",
+  "version": "0.9.0",
+  "generatedAt": "2026-04-24T17:32:53.460Z",
+  "checksum": "26ef3732fb948cc8",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -10,6 +10,23 @@
       "category": "purchases",
       "notesField": "description",
       "relatedDocuments": true,
+      "menuActions": [
+        {
+          "key": "cancel",
+          "label": "Cancel",
+          "labelKey": "cancel",
+          "destructive": true,
+          "visibleWhenStatus": "CO"
+        },
+        {
+          "key": "reactivate",
+          "label": "Reactivate",
+          "labelKey": "reactivate",
+          "visibleWhenStatus": "CO",
+          "documentAction": "RE",
+          "successKey": "actionCompleted"
+        }
+      ],
       "processOverrides": {},
       "labelOverrides": {
         "es_ES": {
@@ -3078,6 +3095,23 @@
       "category": "purchases",
       "notesField": "description",
       "relatedDocuments": true,
+      "menuActions": [
+        {
+          "key": "cancel",
+          "label": "Cancel",
+          "labelKey": "cancel",
+          "destructive": true,
+          "visibleWhenStatus": "CO"
+        },
+        {
+          "key": "reactivate",
+          "label": "Reactivate",
+          "labelKey": "reactivate",
+          "visibleWhenStatus": "CO",
+          "documentAction": "RE",
+          "successKey": "actionCompleted"
+        }
+      ],
       "processOverrides": {},
       "labelOverrides": {
         "es_ES": {

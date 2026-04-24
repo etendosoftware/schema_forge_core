@@ -324,7 +324,7 @@ export default function ImportFromShipmentModal({ invoiceId, bpId, base, headers
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder={ui('siImportSearchShipmentPlaceholder')}
+            placeholder={ui('searchShipment')}
             style={{ width: '100%', fontSize: 13, padding: '7px 10px', border: '0.5px solid #E5E7EB', borderRadius: 6, outline: 'none', color: '#111827' }}
           />
         </div>
@@ -386,7 +386,7 @@ export default function ImportFromShipmentModal({ invoiceId, bpId, base, headers
                           <div style={{ display: 'flex', padding: '4px 12px 4px 48px', fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '0.5px solid #E5E7EB' }}>
                             <span style={{ flex: 1 }}>{ui('product')}</span>
                             <span style={{ width: 70, textAlign: 'right' }}>{ui('qty')}</span>
-                            <span style={{ width: 80, textAlign: 'right' }}>{ui('siImportColPrice')}</span>
+                            <span style={{ width: 80, textAlign: 'right' }}>{ui('price')}</span>
                             <span style={{ width: 80, textAlign: 'right' }}>{ui('amount')}</span>
                           </div>
                           {lines.map(line => {
@@ -418,7 +418,7 @@ export default function ImportFromShipmentModal({ invoiceId, bpId, base, headers
                                   style={{ accentColor: '#3b82f6', cursor: imported ? 'not-allowed' : 'pointer', marginRight: 8, flexShrink: 0 }}
                                 />
                                 <span style={{ fontSize: 13, color: imported ? '#9ca3af' : lineSelected ? '#2563eb' : '#111827', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: lineSelected ? 500 : 400 }}>
-                                  {productName}{imported && <span style={{ fontSize: 11, marginLeft: 6, color: '#9ca3af' }}>{ui('siImportAlreadyImported')}</span>}
+                                  {productName}{imported && <span style={{ fontSize: 11, marginLeft: 6, color: '#9ca3af' }}>{ui('alreadyImported')}</span>}
                                 </span>
                                 <span style={{ width: 70, flexShrink: 0, textAlign: 'right' }}>
                                   <input

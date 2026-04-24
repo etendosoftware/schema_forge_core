@@ -376,7 +376,7 @@ function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, to
           <div style={{ fontSize: 12, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
             <span style={{ color: '#10b981' }}>{ui('paidAmount')} {fmt(localPaid, currency)}</span>
             <span style={{ color: '#9ca3af' }}>&middot;</span>
-            <span style={{ color: localOutstanding > 0 ? '#f59e0b' : '#9ca3af' }}>{ui('outstandingLabel')} {fmt(localOutstanding, currency)}</span>
+            <span style={{ color: localOutstanding > 0 ? '#f59e0b' : '#9ca3af' }}>{ui('outstanding')} {fmt(localOutstanding, currency)}</span>
           </div>
         </div>
 
@@ -398,7 +398,7 @@ function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, to
                   {/* Card header */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 14px', background: '#F8F9FA', flexWrap: 'wrap', gap: 4 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 12, fontWeight: 500, color: '#374151' }}>{ui('siTopbarDueInstallment')} {idx + 1}</span>
+                      <span style={{ fontSize: 12, fontWeight: 500, color: '#374151' }}>{ui('dueDate')} {idx + 1}</span>
                       <span style={{ color: '#d1d5db' }}>&middot;</span>
                       <span className="tabular-nums" style={{ fontSize: 12, fontWeight: 500, color: '#111827' }}>{fmt(instAmount, currency)}</span>
                       <span style={{ fontSize: 11, color: '#9ca3af' }}>{Math.round(instAmount / (localTotal || grandTotal || 1) * 100)}%</span>
@@ -429,7 +429,7 @@ function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, to
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                   <span className="tabular-nums" style={{ fontSize: 13, fontWeight: 500 }}>{fmt(p.amount, currency)}</span>
-                                  <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 8px', borderRadius: 9999, backgroundColor: pBadge.bg, color: pBadge.color }}>{isPaid ? 'Paid' : 'Pending'}</span>
+                                  <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 8px', borderRadius: 9999, backgroundColor: pBadge.bg, color: pBadge.color }}>{isPaid ? ui('paid') : ui('pending')}</span>
                                   <span className="tabular-nums" style={{ fontSize: 11, color: '#6B7280' }}>{fmtDate(p.paymentDate)}</span>
                                 </div>
                                 <button type="button" onClick={() => navToPayment(p.id)} style={{ fontSize: 11, fontWeight: 500, color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{ui('viewArrow')}</button>
@@ -448,7 +448,7 @@ function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, to
                       <div style={{ padding: '10px 14px' }}>
                         <button type="button" onClick={() => setActiveFormScheduleId(scheduleId)}
                           style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '0.5px dashed #d1d5db', background: 'transparent', fontSize: 12, color: '#6B7280', cursor: 'pointer', textAlign: 'center' }}>
-                          {ui('siTopbarRegisterPaymentPrefix')} {fmt(instOutstanding, currency)} {ui('siTopbarOutstandingSuffix')}
+                          {ui('registerPaymentLabel')} {fmt(instOutstanding, currency)} {ui('outstandingLower')}
                         </button>
                       </div>
                     )}
@@ -486,7 +486,7 @@ function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, to
               <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#d1fae5', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
               </div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>{fullyPaid ? 'Invoice fully paid' : 'Payment registered'}</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>{fullyPaid ? ui('invoiceFullyPaid') : ui('paymentRegistered')}</div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 6 }}>
                 <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 9999, background: '#f3f4f6', color: '#374151' }}>{fmt(confirmation.amount, currency)}</span>
                 {paymentMethodName && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 9999, background: '#f3f4f6', color: '#374151' }}>{paymentMethodName}</span>}
@@ -500,7 +500,7 @@ function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, to
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: confirmation ? 'space-between' : 'flex-end', background: '#fff', borderTop: '0.5px solid #d1d5db', padding: '10px 14px' }}>
           <button type="button" onClick={onClose} style={{ fontSize: 13, padding: '5px 14px', borderRadius: 6, border: '0.5px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>{ui('close')}</button>
           {confirmation && (
-            <button type="button" onClick={() => navToPayment(confirmation.id)} style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: 'pointer' }}>{ui('siTopbarViewPayment')}</button>
+            <button type="button" onClick={() => navToPayment(confirmation.id)} style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: 'pointer' }}>{ui('viewPaymentArrow')}</button>
           )}
         </div>
       </div>
@@ -594,14 +594,14 @@ function PaymentRegisterForm({ invoiceId, invoiceData, scheduleId, outstanding, 
             style={{ width: '100%', border: '0.5px solid #E5E7EB', borderRadius: 4, padding: '6px 10px', outline: 'none', boxSizing: 'border-box' }} />
         </div>
         <div>
-          <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>{ui('amount')} ({currency})</label>
+          <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>{`${ui('amount')} (${currency})`}</label>
           <input type="number" min={0} step="0.01" value={amount} onChange={e => setAmount(Number(e.target.value))} className="text-sm tabular-nums"
             style={{ width: '100%', border: '0.5px solid #E5E7EB', borderRadius: 4, padding: '6px 10px', outline: 'none', boxSizing: 'border-box' }} />
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#92400e', marginTop: 6 }}>
         <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />
-        {ui('siTopbarOutstandingLabel')} {fmt(outstanding, currency)}
+        {ui('outstandingColon')} {fmt(outstanding, currency)}
       </div>
       {amountExceeded && <div style={{ fontSize: 10, color: '#dc2626', marginTop: 3 }}>{ui('amountExceedsOutstanding')}</div>}
       <div style={{ marginTop: 8 }}>
@@ -624,7 +624,7 @@ function PaymentRegisterForm({ invoiceId, invoiceData, scheduleId, outstanding, 
         <button type="button" onClick={onCancel} style={{ fontSize: 12, fontWeight: 500, padding: '5px 12px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>{ui('cancel')}</button>
         <button type="button" onClick={handleSubmit} disabled={saving || amountExceeded}
           style={{ fontSize: 12, fontWeight: 500, padding: '5px 12px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: (saving || amountExceeded) ? 'not-allowed' : 'pointer', opacity: (saving || amountExceeded) ? 0.4 : 1 }}>
-          {saving ? 'Processing...' : 'Confirm payment'}
+          {saving ? ui('processing') : ui('confirmPayment')}
         </button>
       </div>
     </div>
@@ -725,7 +725,7 @@ function _REMOVED_SendInvoiceModal({ invoiceData, token, onClose }) {
               <line x1="22" y1="2" x2="11" y2="13" />
               <polygon points="22 2 15 22 11 13 2 9 22 2" />
             </svg>
-            <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>{ui('siTopbarSendInvoicePrefix')} #{docNo}</span>
+            <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>{ui('send')} {ui('invoice')} #{docNo}</span>
           </div>
           <button type="button" onClick={onClose} style={{ fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}>&times;</button>
         </div>
@@ -742,10 +742,10 @@ function _REMOVED_SendInvoiceModal({ invoiceData, token, onClose }) {
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', padding: 24, textAlign: 'center', gap: 8 }}>
                   <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                   <span style={{ fontSize: 14, fontWeight: 500, color: '#6B7280' }}>{ui('pdfPreview')}</span>
-                  <span style={{ fontSize: 13, color: '#9ca3af', maxWidth: 200 }}>{ui('siTopbarPdfPlaceholder')}</span>
+                  <span style={{ fontSize: 13, color: '#9ca3af', maxWidth: 200 }}>{ui('pdfPreviewPlaceholder')}</span>
                 </div>
               )}
-              <iframe ref={iframeRef} style={{ width: '100%', height: '100%', border: 'none', opacity: pdfLoading ? 0 : 1 }} title={ui('siTopbarInvoicePreviewTitle')} />
+              <iframe ref={iframeRef} style={{ width: '100%', height: '100%', border: 'none', opacity: pdfLoading ? 0 : 1 }} title={ui('documentPreview')} />
             </div>
             <button
               type="button"
@@ -766,7 +766,7 @@ function _REMOVED_SendInvoiceModal({ invoiceData, token, onClose }) {
                 type="email"
                 value={to}
                 onChange={e => setTo(e.target.value)}
-                placeholder={ui('siTopbarEmailPlaceholder')}
+                placeholder={ui('emailPlaceholder')}
                 style={{ width: '100%', fontSize: 13, padding: '8px 10px', border: `0.5px solid ${!to && !hasEmail ? '#ef4444' : '#d1d5db'}`, borderRadius: 6, outline: 'none', color: '#111827', boxSizing: 'border-box' }}
               />
               {!to && !hasEmail && (
@@ -774,7 +774,7 @@ function _REMOVED_SendInvoiceModal({ invoiceData, token, onClose }) {
               )}
             </div>
             <div>
-              <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalSubject')}</label>
+              <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('subject')}</label>
               <input
                 type="text"
                 value={subject}
@@ -783,11 +783,11 @@ function _REMOVED_SendInvoiceModal({ invoiceData, token, onClose }) {
               />
             </div>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalMessage')}</label>
+              <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('message')}</label>
               <textarea
                 value={message}
                 onChange={e => setMessage(e.target.value)}
-                placeholder={ui('sendModalMessagePlaceholder')}
+                placeholder={ui('addMessage')}
                 style={{ width: '100%', flex: 1, minHeight: 80, fontSize: 13, padding: '8px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#111827', resize: 'none', boxSizing: 'border-box' }}
               />
             </div>

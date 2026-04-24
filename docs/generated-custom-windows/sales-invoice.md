@@ -17,7 +17,9 @@ A user should be able to:
 - inspect installment-level payment-plan data and open payment details from the payment-status badge or preview;
 - register or review downstream customer payment activity from the invoice payment modal when payment actions are available;
 - clone an invoice and navigate to the new invoice record;
-- open upstream or downstream related documents, especially the originating quotation or sales order, linked shipments, and, for credit-note scenarios, the original invoices from the same order.
+- open upstream or downstream related documents, especially the originating quotation or sales order, linked shipments, and, for credit-note scenarios, the original invoices from the same order;
+- reactivate a completed invoice back to draft from the detail view kebab menu when the invoice status is `CO`;
+- complete multiple draft invoices or reactivate multiple completed invoices at once from the list selection bar using the bulk action.
 
 ## Interaction model
 
@@ -62,13 +64,16 @@ A user should be able to:
 8. Open the `Payment Plan` child surface and confirm due date, expected date, amount, paid amount, outstanding amount, currency, last payment date, days overdue, and number of payments are present for invoices that have installment data.
 9. Use clone from either the grid or the detail top bar and confirm the app navigates to the new sales-invoice record.
 10. Open `Related Documents` on an invoice tied to a commercial chain and confirm the user can navigate to the originating quotation or sales order, related goods shipments, and, for credit notes, the original invoice records when present.
-11. If the `Cancel` action appears on a completed invoice, verify whether it performs a real cancellation flow; if it only renders without effect, treat that as a product gap.
+11. Open a completed sales invoice detail and confirm the kebab menu exposes a `Reactivate` action. Trigger it and verify the document returns to draft status.
+12. From the list, select multiple draft invoices and confirm the bulk-complete action is available; then select multiple completed invoices and confirm the bulk-reactivate action is available. Verify each produces the expected status transition and a result toast.
+13. If the `Cancel` action appears on a completed invoice, verify whether it performs a real cancellation flow; if it only renders without effect, treat that as a product gap.
 
 ## Automated evidence
 
 - `tools/app-shell/src/menu.json` shows `sales-invoice` is visible in the `Sales` menu.
 - `tools/app-shell/src/windows/registry.js` registers `sales-invoice` as a custom app-shell window override.
-- `tools/app-shell/src/windows/custom/sales-invoice/index.jsx` proves the custom list/detail wrapper, overdue quick filter, lateral preview modal, clone-from-grid flow, related-documents tab wiring, add-line guard, and detail route composition.
+- `tools/app-shell/src/windows/custom/sales-invoice/index.jsx` proves the custom list/detail wrapper, overdue quick filter, lateral preview modal, clone-from-grid flow, related-documents tab wiring, add-line guard, detail route composition, and the bulk-action component mounted in the list selection bar.
+- `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the bulk-action component supporting both CO and RE based on selected row statuses. The `Reactivate` kebab menu action in the detail view is declared in `artifacts/sales-invoice/decisions.json` with `visibleWhenStatus: "CO"` and `documentAction: "RE"`.
 - `tools/app-shell/src/windows/custom/sales-invoice/SalesInvoiceTopbar.jsx` proves clone-from-detail behavior and the use of the custom payment-status topbar component.
 - `tools/app-shell/src/windows/custom/purchase-invoice/InvoicePreviewModal.jsx` proves that sales invoices reuse the shared invoice preview modal with a PDF preview, `General | Messages | History` tabs, payment-plan fetching, payment-history fetching, edit/send actions, and placeholder `Messages`/`History` states.
 - `artifacts/sales-invoice/contract.json` proves the default-layout invoice contract, `relatedDocuments: true`, required header fields, dependent `partnerAddress`, default values, summary fields, line-level `SL_Invoice_Amt` callouts, and the presence of the `paymentPlan` child entity plus payment-plan action endpoints.

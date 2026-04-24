@@ -256,7 +256,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                     <iframe
                       src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1`}
                       className="w-full h-full border-0"
-                      title={ui('piPreviewSalesInvoicePdfTitle')}
+                      title={ui('pdfPreview')}
                     />
                   )}
                 </div>
@@ -275,7 +275,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                     <button
                       onClick={removeFile}
                       className="ml-2 p-1 text-gray-400 hover:text-red-500 rounded transition-colors shrink-0"
-                      title={ui('piPreviewDeleteDocumentTitle')}
+                      title={ui('deleteDocument')}
                     >
                       <Trash2 size={14} />
                     </button>

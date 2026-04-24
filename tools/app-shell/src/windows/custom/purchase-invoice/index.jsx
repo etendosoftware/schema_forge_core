@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
 import { useUI } from '@/i18n';
+import BulkDocumentAction from '@/components/contract-ui/BulkDocumentAction';
+import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import HeaderTable from '@generated/purchase-invoice/generated/web/purchase-invoice/HeaderTable';
 import HeaderPage from '@generated/purchase-invoice/generated/web/purchase-invoice/HeaderPage';
 import InvoiceLineTableCustom from './InvoiceLineTableCustom.jsx';
@@ -47,6 +49,7 @@ function PurchaseInvoiceTable(props) {
  *   - no recordId       → custom list view with preview modal
  */
 export default function PurchaseInvoiceWindow(props) {
+  useBulkActionToast();
   const { recordId, token, apiBaseUrl, windowName } = props;
   const navigate = useNavigate();
   const location = useLocation();
@@ -138,6 +141,7 @@ export default function PurchaseInvoiceWindow(props) {
         quickFilters={INVOICE_QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
+        bulkActions={(ctx) => <BulkDocumentAction {...ctx} />}
       />
       {cloneTargets && createPortal(
         <CloneOrderModal

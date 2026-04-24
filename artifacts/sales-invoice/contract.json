@@ -1,7 +1,7 @@
 {
   "version": "0.11.1",
-  "generatedAt": "2026-04-24T16:21:29.591Z",
-  "checksum": "4ed690c6efb283b8",
+  "generatedAt": "2026-04-24T17:31:26.828Z",
+  "checksum": "9aacaf86a05af508",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -25,8 +25,17 @@
         {
           "key": "cancel",
           "label": "Cancel",
+          "labelKey": "cancel",
           "destructive": true,
           "visibleWhenStatus": "CO"
+        },
+        {
+          "key": "reactivate",
+          "label": "Reactivate",
+          "labelKey": "reactivate",
+          "visibleWhenStatus": "CO",
+          "documentAction": "RE",
+          "successKey": "actionCompleted"
         }
       ],
       "processOverrides": {},
@@ -977,8 +986,17 @@
         {
           "key": "cancel",
           "label": "Cancel",
+          "labelKey": "cancel",
           "destructive": true,
           "visibleWhenStatus": "CO"
+        },
+        {
+          "key": "reactivate",
+          "label": "Reactivate",
+          "labelKey": "reactivate",
+          "visibleWhenStatus": "CO",
+          "documentAction": "RE",
+          "successKey": "actionCompleted"
         }
       ],
       "processOverrides": {},

@@ -1,7 +1,7 @@
 {
   "version": "0.15.0",
-  "generatedAt": "2026-04-24T15:44:34.751Z",
-  "checksum": "87e83df49a95f8bc",
+  "generatedAt": "2026-04-24T17:32:53.619Z",
+  "checksum": "b569b74ccfd80f30",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -14,14 +14,24 @@
       "hidePrint": true,
       "customComponents": {
         "topbarRight": "OrderCreateInvoice",
-        "topbarExtra": "OrderDraftChips"
+        "topbarExtra": "OrderDraftChips",
+        "bulkActions": "OrderReactivateBulkAction"
       },
       "menuActions": [
         {
           "key": "cancel",
           "label": "Cancel",
+          "labelKey": "cancel",
           "destructive": true,
           "visibleWhenStatus": "CO"
+        },
+        {
+          "key": "reactivate",
+          "label": "Reactivate",
+          "labelKey": "reactivate",
+          "visibleWhenStatus": "CO",
+          "documentAction": "RE",
+          "successKey": "actionCompleted"
         }
       ],
       "processOverrides": {},
@@ -496,7 +506,13 @@
             }
           }
         ],
-        "javaQualifier": "salesOrderHeaderHandler"
+        "javaQualifier": "salesOrderHeaderHandler",
+        "draftMode": {
+          "enabled": true,
+          "processField": "documentAction",
+          "processValue": "CO",
+          "label": "soConfirmBtn"
+        }
       },
       "lines": {
         "tableName": "C_OrderLine",
@@ -781,14 +797,24 @@
       "hidePrint": true,
       "customComponents": {
         "topbarRight": "OrderCreateInvoice",
-        "topbarExtra": "OrderDraftChips"
+        "topbarExtra": "OrderDraftChips",
+        "bulkActions": "OrderReactivateBulkAction"
       },
       "menuActions": [
         {
           "key": "cancel",
           "label": "Cancel",
+          "labelKey": "cancel",
           "destructive": true,
           "visibleWhenStatus": "CO"
+        },
+        {
+          "key": "reactivate",
+          "label": "Reactivate",
+          "labelKey": "reactivate",
+          "visibleWhenStatus": "CO",
+          "documentAction": "RE",
+          "successKey": "actionCompleted"
         }
       ],
       "processOverrides": {},
