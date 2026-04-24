@@ -426,6 +426,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="orderDate"
       bulkActions={(ctx) => <OrderReactivateBulkAction {...ctx} />}
       hidePrint
       labelOverrides={labelOverrides}

@@ -4,9 +4,18 @@
     "category": "purchases",
     "name": "Return to Vendor",
     "relatedDocuments": true,
-    "notesField": "returnReason"
+    "notesField": "returnReason",
+    "dateFilterKey": "orderDate"
   },
-  "entities": {},
+  "entities": {
+    "header": {
+      "fields": {
+        "orderDate": {
+          "grid": true
+        }
+      }
+    }
+  },
   "rules": {},
   "discardPatterns": [],
   "version": 2

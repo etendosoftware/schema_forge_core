@@ -48,7 +48,8 @@
         "displayLogicRaw": "@documentStatus@='VO'"
       }
     },
-    "noHeaderBorder": true
+    "noHeaderBorder": true,
+    "dateFilterKey": "orderDate"
   },
   "entities": {
     "header": {

@@ -243,6 +243,24 @@ Hides the delete button when the document is not in Draft status.
 
 ---
 
+### 10. `window.dateFilterKey` — date range filter column
+
+Declares which list column the date range shortcut in the list toolbar targets.
+Must match a column `key` whose `type` is `date`. If omitted, the date filter is
+**not rendered** — there is no implicit fallback to the first date column, so
+column order never affects the filter.
+
+```json
+"window": {
+  "dateFilterKey": "orderDate"
+}
+```
+
+**Real examples:** `sales-order` / `purchase-order` (`orderDate`),
+`sales-invoice` / `purchase-invoice` (`invoiceDate`).
+
+---
+
 ## Decision tree: which option to use?
 
 ```

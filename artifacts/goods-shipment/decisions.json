@@ -26,7 +26,8 @@
         "displayLogicRaw": "@documentStatus@='DR'"
       }
     },
-    "noHeaderBorder": true
+    "noHeaderBorder": true,
+    "dateFilterKey": "movementDate"
   },
   "entities": {
     "header": {

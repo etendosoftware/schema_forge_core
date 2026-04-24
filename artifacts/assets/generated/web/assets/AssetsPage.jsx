@@ -168,12 +168,14 @@ const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "finance"
   }
 };
 
 // @sf-generated-start component:AssetsPage
 export default function AssetsPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -222,6 +224,7 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="purchaseDate"
       hidePrint
       hideMoreMenu
       hideListFilters

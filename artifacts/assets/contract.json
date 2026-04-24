@@ -44,6 +44,7 @@
       ],
       "disableProcessedLock": true,
       "titleField": "name",
+      "dateFilterKey": "purchaseDate",
       "layoutType": "default"
     },
     "entities": {
@@ -777,7 +778,8 @@
         }
       ],
       "disableProcessedLock": true,
-      "titleField": "name"
+      "titleField": "name",
+      "dateFilterKey": "purchaseDate"
     },
     "entities": {
       "assets": {
@@ -1794,6 +1796,9 @@
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
+    },
+    "window": {
+      "category": "finance"
     }
   },
   "testManifest": {

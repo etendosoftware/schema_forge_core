@@ -41,7 +41,8 @@
         "DeliveryStatus": "Delivery Status"
       }
     },
-    "noHeaderBorder": true
+    "noHeaderBorder": true,
+    "dateFilterKey": "orderDate"
   },
   "entities": {
     "header": {

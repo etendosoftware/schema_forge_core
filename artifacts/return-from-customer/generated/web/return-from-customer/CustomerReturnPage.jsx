@@ -329,6 +329,7 @@ export default function CustomerReturnPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       hideCreate
       api={api}
+dateFilterKey="orderDate"
       {...props}
     />
   );
