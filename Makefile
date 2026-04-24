@@ -1,4 +1,4 @@
-.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate dev build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview
+.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview
 
 # --- Testing ---
 
@@ -35,6 +35,17 @@ install-e2e: ## Install E2E dependencies + browsers
 
 generate: ## Generate frontend from Sales Order contract
 	node cli/src/generate-frontend.js artifacts/sales-order/contract.json
+
+PUSH_TO_NEO ?= 0
+SKIP_EXTRACT ?= 0
+ONLY ?=
+
+regen: ## Re-run full pipeline for all active windows (PUSH_TO_NEO=1 to push, ONLY=a,b to filter)
+	@REGEN_ARGS=""; \
+	if [ "$(PUSH_TO_NEO)" = "1" ]; then REGEN_ARGS="$$REGEN_ARGS --push-to-neo"; fi; \
+	if [ "$(SKIP_EXTRACT)" = "1" ]; then REGEN_ARGS="$$REGEN_ARGS --skip-extract"; fi; \
+	if [ -n "$(ONLY)" ]; then REGEN_ARGS="$$REGEN_ARGS --only $(ONLY)"; fi; \
+	node cli/src/regen-all.js $$REGEN_ARGS
 
 # --- Dev Server ---
 
