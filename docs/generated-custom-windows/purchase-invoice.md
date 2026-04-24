@@ -12,6 +12,8 @@ Use this window to register supplier invoices, keep the payable document aligned
 - Inspect the invoice from the list without immediately leaving the list route, then move into full edit mode when needed.
 - Understand the payable relationship to the originating purchase order, related goods receipts, and downstream payment-out records.
 - Open payment detail flows when the invoice is completed and still has an amount pending.
+- Reactivate a completed invoice back to draft from the detail view kebab menu when the invoice status is `CO`.
+- Complete multiple draft invoices or reactivate multiple completed invoices at once from the list selection bar using the bulk action.
 
 ## Interaction model
 
@@ -53,9 +55,12 @@ Use this window to register supplier invoices, keep the payable document aligned
 6. On the detail page, confirm the custom lines table shows product, invoiced quantity, net unit price, tax, and line gross amount, and that the footer shows subtotal, inferred tax, and total.
 7. Open a completed invoice with pending balance and confirm the topbar payment-status pill appears, opens the payment modal, and reflects the invoice as pending or paid based on outstanding amount.
 8. From the detail footer or related-documents tab, confirm links are available to the source purchase order, related goods receipts, and downstream payment-out records when those relationships exist.
+9. Open a completed purchase invoice detail and confirm the kebab menu exposes a `Reactivate` action. Trigger it and verify the document returns to draft status.
+10. From the list, select multiple draft invoices and confirm the bulk-complete action is available; then select multiple completed invoices and confirm the bulk-reactivate action is available. Verify each produces the expected status transition and a result toast.
 
 ## Automated evidence
 
+- `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the bulk-action component mounted in the purchase-invoice list selection bar, supporting both CO and RE based on selected row statuses. The `Reactivate` kebab menu action in the detail view is declared in `artifacts/purchase-invoice/decisions.json` with `visibleWhenStatus: "CO"` and `documentAction: "RE"`.
 - No dedicated purchase-invoice UI test was found under `tools/app-shell`.
 - Shared shell and entity-loading behavior is documented in `docs/generated-custom-windows/app-shell-functional-flows.md`.
 - Contract and UI evidence reviewed for this rewrite:

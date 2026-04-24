@@ -11,6 +11,8 @@ The current evidence shows a purchase-order-specific experience rather than a ge
 - Review purchase progress from the order itself through delivery status, invoice status, related receipts, related purchase invoices, and linked payments.
 - Confirm a draft order and, from the confirmation flow or later follow-up actions, create the operational documents that fulfill it.
 - Clone an existing order and send the document from the top bar.
+- Reactivate a confirmed order back to draft from the detail view kebab menu when the order status is `CO`.
+- Complete multiple draft orders or reactivate multiple confirmed orders at once from the list selection bar using the bulk action, which calls `documentAction=CO` or `documentAction=RE` based on the status of the selected rows.
 
 ## Interaction model
 - Route: `/purchase-order` for the list and `/purchase-order/:recordId` for the detail view.
@@ -47,8 +49,12 @@ The current evidence shows a purchase-order-specific experience rather than a ge
 5. Open a confirmed order with remaining receipt and/or invoice work and verify the top bar exposes the corresponding management action based on pending quantities or pending amount.
 6. Open a confirmed order that already has draft receipts or a draft invoice and verify the top-bar chips link the user toward those downstream documents.
 7. Open the Related Documents tab on an order with receipts, purchase invoices, or payments and verify each chip routes to the linked document window.
+8. Open a confirmed purchase order detail and confirm the kebab menu exposes a `Reactivate` action. Trigger it and verify the document returns to draft status.
+9. Select two or more draft purchase orders from the list and confirm the bulk-complete action is available. Trigger it and verify all selected orders move to confirmed status and a result toast appears.
+10. Select two or more confirmed purchase orders and confirm the bulk-reactivate action is available. Trigger it and verify the orders return to draft status and a result toast appears.
 
 ## Automated evidence
+- `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the generic bulk action component; `artifacts/purchase-order/custom/PurchaseOrderReactivateBulkAction.jsx` re-exports it as the list selection bar entry for purchase orders, supporting both CO and RE based on selected row statuses.
 - There is no dedicated purchase-order UI test covering the tailored list, detail top bar, or procurement follow-up flow in `tools/app-shell`.
 - Shared shell and generic window-loading behavior are documented in `docs/generated-custom-windows/app-shell-functional-flows.md`.
 - One indirect automated clue exists at hook level: `tools/app-shell/src/hooks/__tests__/useEntity-defaults.test.js` verifies defaults fetching against the `/sws/neo/purchase-order` base URL, but it does not assert purchase-order-specific rendering or follow-up behavior.
