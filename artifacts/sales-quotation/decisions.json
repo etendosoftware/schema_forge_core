@@ -28,7 +28,7 @@
         "key": "cancel",
         "label": "Cancel",
         "destructive": true,
-        "visibleWhenStatus": "CO"
+        "visibleWhenStatus": ["CO", "UE"]
       }
     ],
     "processOverrides": {
@@ -101,7 +101,7 @@
           "visibility": "discarded"
         },
         "priceList": {
-          "section": "collapsed"
+          "section": "principal"
         },
         "currency": {
           "visibility": "readOnly",
@@ -110,10 +110,10 @@
           "section": "summary"
         },
         "paymentTerms": {
-          "visibility": "system"
+          "section": "principal"
         },
         "paymentMethod": {
-          "section": "collapsed"
+          "section": "principal"
         },
         "salesRepresentative": {
           "visibility": "system"

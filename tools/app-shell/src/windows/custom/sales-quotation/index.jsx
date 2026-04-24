@@ -1,10 +1,14 @@
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import GeneratedApp from '@generated/sales-quotation/generated/web/sales-quotation/index.jsx';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
+import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 
 export default function SalesQuotationWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
+  const [cloneTargets, setCloneTargets] = useState(null);
+
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
     useCreateContactModal({ apiBaseUrl, token });
 
@@ -37,12 +41,26 @@ export default function SalesQuotationWindow({ windowName, recordId, token, apiB
   }
 
   return (
-    <GeneratedApp
-      windowName={windowName}
-      recordId={recordId}
-      token={token}
-      apiBaseUrl={apiBaseUrl}
-      {...rest}
-    />
+    <>
+      <GeneratedApp
+        windowName={windowName}
+        recordId={recordId}
+        token={token}
+        apiBaseUrl={apiBaseUrl}
+        onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
+        {...rest}
+      />
+      {cloneTargets && createPortal(
+        <CloneOrderModal
+          records={cloneTargets}
+          apiBaseUrl={apiBaseUrl}
+          headers={headers}
+          headerEntity="quotation"
+          routePrefix="/sales-quotation/"
+          onClose={() => setCloneTargets(null)}
+        />,
+        document.body,
+      )}
+    </>
   );
 }

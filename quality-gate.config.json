@@ -1,0 +1,40 @@
+{
+  "checks": {
+    "parse": { "severity": "blocker", "enabled": true },
+    "imports": { "severity": "blocker", "enabled": true },
+    "contract": { "severity": "blocker", "enabled": true },
+    "invariants": { "severity": "blocker", "enabled": true },
+    "i18n": { "severity": "blocker", "enabled": true }
+  },
+  "gate": {
+    "onBlockerFail": "fail",
+    "regressionPolicy": "no-worse-than-main",
+    "baselineRef": "origin/main"
+  },
+  "blastRadius": [
+    { "pattern": "artifacts/*/decisions.json", "scope": "touched-window" },
+    { "pattern": "artifacts/*/contract.json", "scope": "touched-window" },
+    { "pattern": "artifacts/*/custom/**", "scope": "touched-window" },
+    { "pattern": "artifacts/*/generated/**", "scope": "touched-window" },
+    { "pattern": "tools/app-shell/src/windows/custom/*/**", "scope": "touched-window" },
+    { "pattern": "cli/src/generate-frontend.js", "scope": "all-windows" },
+    { "pattern": "cli/src/generate-contract.js", "scope": "all-windows" },
+    { "pattern": "cli/src/resolve-curated.js", "scope": "all-windows" },
+    { "pattern": "tools/app-shell/src/components/contract-ui/**", "scope": "all-windows" },
+    { "pattern": "tools/app-shell/src/i18n/*.js", "scope": "all-windows" },
+    { "pattern": "tools/app-shell/src/i18n/*.jsx", "scope": "all-windows" },
+    { "pattern": "tools/app-shell/src/i18n/locales/*.json", "scope": "all-windows" },
+    { "pattern": "tools/app-shell/src/windows/registry.js", "scope": "all-windows" },
+    { "pattern": "schemas/contract.schema.json", "scope": "all-windows" }
+  ],
+  "invariants": {
+    "addLineFields": {
+      "requiredProductLookup": true,
+      "quantityDefaultOne": true,
+      "hiddenContainsGrossUnitPriceAndPriceList": true
+    },
+    "draftModeReadOnlyLogic": true,
+    "notNullRequiresRequired": true,
+    "customFormPathRoot": "@/windows/custom/"
+  }
+}

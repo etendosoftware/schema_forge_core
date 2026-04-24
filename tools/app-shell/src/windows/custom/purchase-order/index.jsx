@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
+import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import { ListView } from '@/components/contract-ui';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
@@ -9,6 +10,15 @@ import { useCreateContactModal } from '@/components/contract-ui/useCreateContact
 import HeaderTable from '@generated/purchase-order/generated/web/purchase-order/HeaderTable';
 import LinesTable from '@generated/purchase-order/generated/web/purchase-order/LinesTable';
 import GeneratedApp from '@generated/purchase-order/generated/web/purchase-order/index.jsx';
+import PurchaseOrderReactivateBulkAction from '@generated/purchase-order/custom/PurchaseOrderReactivateBulkAction';
+
+const draftModeWithModal = {
+  enabled: true,
+  processField: 'documentAction',
+  processValue: 'CO',
+  label: 'poConfirmBtn',
+  onConfirm: () => window.dispatchEvent(new CustomEvent('purchase-order:open-confirm-modal')),
+};
 
 // Simplified list columns aligned with Sales Order visual style
 const LIST_COLUMNS = [
@@ -41,6 +51,7 @@ function CustomLinesTable(props) {
 }
 
 export default function PurchaseOrderWindow(props) {
+  useBulkActionToast();
   const { recordId, windowName, token, apiBaseUrl } = props;
   const [searchParams] = useSearchParams();
   const [cloneTargets, setCloneTargets] = useState(null);
@@ -54,6 +65,7 @@ export default function PurchaseOrderWindow(props) {
         <GeneratedApp
           {...props}
           DetailTable={CustomLinesTable}
+          draftMode={draftModeWithModal}
         />
         {createContactState && createPortal(
           <CreateContactModal
@@ -92,6 +104,7 @@ export default function PurchaseOrderWindow(props) {
         windowName={windowName}
         breadcrumb="Purchases / Purchase Order"
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
+        bulkActions={(ctx) => <PurchaseOrderReactivateBulkAction {...ctx} />}
         initialColumnFilters={initialColumnFilters}
         quickFilters={QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}

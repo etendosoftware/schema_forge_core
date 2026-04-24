@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
+import { toast } from 'sonner';
 import HeaderTable from './HeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
@@ -64,7 +65,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:lines
 
-const api = {
+export const api = {
   "specName": "purchase-invoice",
   "baseUrl": "/sws/neo/purchase-invoice",
   "crud": {
@@ -820,6 +821,10 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         ]}
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        menuActions={({ status }) => [
+          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', labelKey: 'cancel', onClick: () => {}, },
+          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
+        ]}
         draftMode={draftMode}
         {...props}
       />

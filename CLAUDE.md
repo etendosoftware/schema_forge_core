@@ -75,19 +75,22 @@ Max rejection cycles per phase: 3
 
 ## Orientation Before Action (MANDATORY)
 Before starting ANY task, agents MUST investigate their environment:
-1. **Where am I?** — Check the current branch, working directory, and repo state (`git branch --show-current`, `pwd`)
-2. **What exists?** — Read relevant existing files before modifying or creating anything. Never assume file contents or structure.
-3. **What's the DB state?** — If the task involves DB access, verify connectivity works (DB credentials auto-resolve from `gradle.properties` — see `cli/src/db.js`)
-4. **What's already done?** — Check `artifacts/` for existing work on the window/process. Check `docs/feedback.md` for known issues.
-5. **What are the IDs?** — Never hardcode or guess window/process/menu IDs. Always query the DB or use `resolve-menu.js --menu-name`.
+1. **Where is the functional guide?** — If the task touches a window, start by locating its guide through `docs/generated-custom-windows/INDEX.md` and open `docs/generated-custom-windows/<window>.md`.
+2. **Where am I?** — Check the current branch, working directory, and repo state (`git branch --show-current`, `pwd`)
+3. **What exists?** — Read relevant existing files before modifying or creating anything. Never assume file contents or structure.
+4. **What's the DB state?** — If the task involves DB access, verify connectivity works (DB credentials auto-resolve from `gradle.properties` — see `cli/src/db.js`)
+5. **What's already done?** — Check `artifacts/` for existing work on the window/process. Check `docs/feedback.md` for known issues.
+6. **What are the IDs?** — Never hardcode or guess window/process/menu IDs. Always query the DB or use `resolve-menu.js --menu-name`.
 
 This prevents wasted cycles from wrong assumptions (wrong IDs, stale data, broken connections).
 
 ## Task Execution
 Every task passes through the active phases IN ORDER. No exceptions.
 
+
 ## Branching & Merging
 Delegate all branch operations to Clerk. See `docs/branch-workflow.md` for full rules.
+
 
 ## Reject Cycle
 1. Coordinator receives rejection report
@@ -98,6 +101,7 @@ Delegate all branch operations to Clerk. See `docs/branch-workflow.md` for full 
 
 ## Documentation Freshness (MANDATORY)
 **CRITICAL POLICY:** Code change + doc update = one atomic unit. REVIEW must reject PRs that change behavior without updating docs. Full checklist and trigger list: `docs/self-documentation-policy.md`.
+Window-specific changes MUST update the matching `docs/generated-custom-windows/<window>.md` guide in the same change.
 
 ## Commit Conventions (MANDATORY)
 All commits MUST follow Etendo Git Police conventions as defined by the `/etendo-workflow-manager` skill.
@@ -231,6 +235,23 @@ See `docs/window-templates.md` for layout types (kanban, calendar, custom), conf
 Contract tests (Node.js), Unit tests (JUnit in Etendo Go), Integration tests (OBBaseTest), E2E (Playwright).
 Run `make test` for CLI tests. See `docs/e2e-testing-guide.md` for E2E setup, conventions, and `data-testid` patterns.
 Every process must declare >=3 edge cases. Every kept rule must have a behavioral test.
+
+## Pipeline Validation
+
+`cli/src/validate-pipeline.js` enforces consistency across the artifact pipeline (decisions → contract → generated → registry). Runs without DB access. Defined rules: F1–F10, full table in `docs/pipeline-validator-reference.md`.
+
+**Three integration points:**
+- **Manual:** `make validate-pipeline` (whole repo) or `node cli/src/validate-pipeline.js --scope=<window>` (single window)
+- **Pre-commit:** `make install` activates `.githooks/pre-commit` — runs only on staged artifact/generator/registry files
+- **CI:** `.github/workflows/pipeline-validate.yml` runs in shadow mode (annotates, doesn't block) until P3 backfill lands
+
+**Bypass:** `git commit --no-verify` (WIP only — never on epic-branch PRs).
+
+**Adding a new rule (F11+):** implement in `cli/src/validate-pipeline.js`, add fixture under `cli/test/fixtures/pipeline-validator/`, add tests in `cli/test/validate-pipeline.test.js`, AND update the rules table in `docs/pipeline-validator-reference.md`. The reference doc is canonical — if a rule is not documented there, it doesn't exist.
+
+**Pipeline phases that touch the validator:**
+- DEV: any change to `decisions.json` or `generated/` must keep `validate-pipeline.js` clean for that artifact
+- REVIEW: Alex must run `node cli/src/validate-pipeline.js --scope=<windows-touched-by-PR>` and confirm 0 violations
 
 ## Static Analysis (SonarQube)
 

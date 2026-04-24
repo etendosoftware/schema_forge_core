@@ -15,9 +15,6 @@ const filters = [];
 
 // @sf-generated-start component:GoodsReceiptLineTable
 export default function GoodsReceiptLineTable(props) {
-  // @sf-custom-slot hooks:GoodsReceiptLineTable
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
 // @sf-generated-end component:GoodsReceiptLineTable
-
-// @sf-custom-slot section:GoodsReceiptLineTable-custom

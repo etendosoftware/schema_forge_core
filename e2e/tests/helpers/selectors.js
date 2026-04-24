@@ -116,6 +116,50 @@ export const purchaseOrderDetail = {
   },
 };
 
+// --- Physical Inventory: List View ---
+// UI is in Spanish (es_ES locale). Column headers are sortable buttons, not columnheader role.
+export const physicalInventoryList = {
+  // Title shown in the top-left header area (not a heading role element)
+  titleText: 'Inventario físico',
+  newButton: { role: 'button', name: 'Nuevo' },
+  columns: {
+    movementDate: { role: 'button', name: 'Fecha del movimiento' },
+    name: { role: 'button', name: 'Nombre' },
+    warehouse: { role: 'button', name: 'Almacén' },
+    inventoryType: { role: 'button', name: 'Tipo de Inventario' },
+    status: { role: 'button', name: 'Procesar Declaración' },
+  },
+};
+
+// --- Physical Inventory: Detail (New Inventory form) ---
+export const physicalInventoryDetail = {
+  // Title is "Nuevo" in the breadcrumb/header area
+  titleText: 'Nuevo',
+  cancel: { role: 'button', name: 'Cancelar' },
+  save: { role: 'button', name: 'Guardar', exact: true },
+  // Fields
+  movementDate: 'input[type="date"]',
+  name: 'input[placeholder=""]',
+  warehouse: 'input[placeholder*="Almacén"]',
+  // Lines tab
+  linesTab: /^Líneas \d+$/,
+  addLine: { role: 'button', name: /Añadir línea/ },
+  processButton: { role: 'button', name: /Recuento de Inventario|Process Inventory/ },
+  // Line columns (buttons — sortable)
+  lineColumns: {
+    lineNo: { role: 'button', name: 'Línea' },
+    product: { role: 'button', name: 'Producto' },
+    userCount: { role: 'button', name: 'Conteo del usuario' },
+    uOM: { role: 'button', name: 'Unidad' },
+    systemCount: { role: 'button', name: 'Conteo del sistema' },
+  },
+  // Inline add row fields
+  addLineFields: {
+    product: 'input[placeholder*="Producto"]',
+    userCount: 'input[type="number"]',
+  },
+};
+
 // --- Context Switcher ---
 export const contextSwitcher = {
   apply: { role: 'button', name: 'Apply' },
