@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
 import { useUI } from '@/i18n';
+import BulkDocumentAction from '@/components/contract-ui/BulkDocumentAction';
+import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import HeaderTable from '@generated/sales-invoice/generated/web/sales-invoice/HeaderTable';
 import HeaderPage from '@generated/sales-invoice/generated/web/sales-invoice/HeaderPage';
 import InvoicePreviewModal from '../purchase-invoice/InvoicePreviewModal.jsx';
@@ -53,6 +55,7 @@ function SalesInvoiceTable(props) {
  *   4. render CloneOrderModal portal with cloneActionName="cloneRecord" and invoice i18n keys
  */
 export default function SalesInvoiceWindow(props) {
+  useBulkActionToast();
   const { recordId, token, apiBaseUrl, windowName } = props;
   const navigate = useNavigate();
   const location = useLocation();
@@ -130,6 +133,7 @@ export default function SalesInvoiceWindow(props) {
         quickFilters={INVOICE_QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
+        bulkActions={(ctx) => <BulkDocumentAction {...ctx} />}
       />
       {cloneTargets && createPortal(
         <CloneOrderModal

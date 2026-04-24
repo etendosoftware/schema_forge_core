@@ -25,8 +25,17 @@
         {
           "key": "cancel",
           "label": "Cancel",
+          "labelKey": "cancel",
           "destructive": true,
           "visibleWhenStatus": "CO"
+        },
+        {
+          "key": "reactivate",
+          "label": "Reactivate",
+          "labelKey": "reactivate",
+          "visibleWhenStatus": "CO",
+          "documentAction": "RE",
+          "successKey": "actionCompleted"
         }
       ],
       "processOverrides": {},
@@ -887,8 +896,17 @@
         {
           "key": "cancel",
           "label": "Cancel",
+          "labelKey": "cancel",
           "destructive": true,
           "visibleWhenStatus": "CO"
+        },
+        {
+          "key": "reactivate",
+          "label": "Reactivate",
+          "labelKey": "reactivate",
+          "visibleWhenStatus": "CO",
+          "documentAction": "RE",
+          "successKey": "actionCompleted"
         }
       ],
       "processOverrides": {},

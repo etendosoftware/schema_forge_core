@@ -19,7 +19,8 @@
       ],
       "customComponents": {
         "topbarRight": "PurchaseOrderActions",
-        "topbarExtra": "PurchaseOrderDraftChips"
+        "topbarExtra": "PurchaseOrderDraftChips",
+        "bulkActions": "PurchaseOrderReactivateBulkAction"
       },
       "secondaryTabs": {},
       "labelOverrides": {
@@ -33,7 +34,24 @@
         }
       },
       "noHeaderBorder": true,
-      "layoutType": "default"
+      "layoutType": "default",
+      "menuActions": [
+        {
+          "key": "cancel",
+          "label": "Cancel",
+          "labelKey": "cancel",
+          "destructive": true,
+          "visibleWhenStatus": "CO"
+        },
+        {
+          "key": "reactivate",
+          "label": "Reactivate",
+          "labelKey": "reactivate",
+          "visibleWhenStatus": "CO",
+          "documentAction": "RE",
+          "successKey": "actionCompleted"
+        }
+      ]
     },
     "entities": {
       "header": {
@@ -978,7 +996,13 @@
             }
           }
         ],
-        "javaQualifier": "purchaseOrderHeaderHandler"
+        "javaQualifier": "purchaseOrderHeaderHandler",
+        "draftMode": {
+          "enabled": true,
+          "processField": "documentAction",
+          "processValue": "CO",
+          "label": "poConfirmBtn"
+        }
       },
       "lines": {
         "tableName": "C_OrderLine",
