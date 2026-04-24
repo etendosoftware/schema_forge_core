@@ -350,11 +350,6 @@ function ConfirmOrderModal({
     'Content-Type': 'application/json',
   }), [token]);
 
-  const fmtNum = (v) =>
-    v != null && v !== ''
-      ? formatCurrency(currency || 'USD', v)
-      : '-';
-
   // Fetch fresh record + line count on mount
   useEffect(() => {
     let cancelled = false;
@@ -385,6 +380,11 @@ function ConfirmOrderModal({
   const grandTotal = d.grandTotalAmount ?? d.grandTotal ?? '';
   const totalLines = d.summedLineAmount ?? d.totalLines ?? grandTotal;
   const currency = d['currency$_identifier'] || '';
+
+  const fmtNum = (v) =>
+    v != null && v !== ''
+      ? formatCurrency(currency || 'USD', v)
+      : '-';
 
   const handleConfirm = async () => {
     if (loading) return;
@@ -557,14 +557,14 @@ function ConfirmOrderModal({
               {bpName}
             </div>
             <div style={{ fontSize: 28, fontWeight: 500, color: '#042C53', lineHeight: 1, marginTop: 4, marginBottom: 6 }}>
-              {fmtNum(grandTotal)}{currency ? ` ${currency}` : ''}
+              {fmtNum(grandTotal)}
             </div>
             <div style={{ fontSize: 11, color: '#185FA5' }}>
               {lineCount != null ? ui('soLines', { count: lineCount }) : '...'}
               {' '}<span style={{ color: '#85B7EB' }}>·</span>{' '}
               {ui('soSubtotal')}{' '}
               <span style={{ fontWeight: 500, color: '#042C53' }}>
-                {fmtNum(totalLines)}{currency ? ` ${currency}` : ''}
+                {fmtNum(totalLines)}
               </span>
             </div>
           </div>
