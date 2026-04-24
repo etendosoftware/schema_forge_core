@@ -144,7 +144,7 @@
           "section": "principal",
           "seq": 40,
           "readOnlyLogic": null,
-          "defaultValue": 1
+          "defaultValue": "1"
         },
         "storageBin": {
           "grid": true,

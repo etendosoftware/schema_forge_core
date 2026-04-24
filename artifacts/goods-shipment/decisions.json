@@ -220,7 +220,7 @@
           "grid": true,
           "inputMode": "number",
           "section": "principal",
-          "defaultValue": 1
+          "defaultValue": "1"
         },
         "uOM": {
           "visibility": "system"
