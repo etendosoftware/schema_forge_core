@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Upload, Edit2, FileText, Image, Plus, Check, Trash2, Loader2, AlertCircle, Send, Download } from 'lucide-react';
+import { X, Upload, Edit2, FileText, Image, Plus, Check, Trash2, Loader2, AlertCircle, Mail, Download, Ban, Wallet, MoreVertical } from 'lucide-react';
 import { Badge } from '@/components/ui/badge.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useMenuLabel, useUI } from '@/i18n';
@@ -227,16 +227,23 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
         {/* Side panel — slides in from the right (wider for better PDF view) */}
         <div
           className={`absolute right-0 bottom-0 bg-white shadow-2xl overflow-hidden flex flex-col ${cardClass}`}
-          style={{ top: 8, width: '56vw', height: 'calc(100% - 8px)', borderTopLeftRadius: 12 }}
+          style={{ top: 8, width: 'min(calc(100vw - 300px), 1400px)', height: 'calc(100% - 8px)', borderTopLeftRadius: 12 }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* ── Body — two panels (no top bar) ── */}
           <div className="flex flex-1 min-h-0">
             {/* Left panel: flex-1 — PDF preview (sales invoice) or document drop zone (purchase invoice) */}
-            <div className="flex-1 bg-gray-50 flex flex-col min-h-0 border-r border-gray-200">
+            <div
+              className={`flex-1 flex flex-col min-h-0 ${
+                isSalesInvoice
+                  ? 'px-7 pt-6 rounded-l-xl'
+                  : 'bg-gray-50 border-r border-gray-200'
+              }`}
+              style={isSalesInvoice ? { backgroundColor: '#E8EAEF' } : undefined}
+            >
               {/* ── Sales Invoice: auto-rendered PDF ── */}
               {isSalesInvoice ? (
-                <div className="flex flex-col h-full min-h-0">
+                <div className="flex flex-col h-full min-h-0 w-full bg-white shadow-md overflow-hidden">
                   {previewLoading && (
                     <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground">
                       <Loader2 className="h-5 w-5 animate-spin" />
@@ -254,8 +261,8 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                   )}
                   {pdfUrl && !previewLoading && (
                     <iframe
-                      src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1`}
-                      className="w-full h-full border-0"
+                      src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                      className="w-full h-full border-0 bg-white"
                       title={ui('pdfPreview')}
                     />
                   )}
@@ -374,10 +381,14 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                 </div>
 
                 {/* Action buttons row */}
-                <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="flex items-start flex-wrap gap-2">
                   {/* Enviar */}
-                  <Button size="sm" className="gap-1.5 text-xs h-8 bg-gray-900 hover:bg-gray-800 text-white" onClick={openEmailModal}>
-                    <Send size={12} />
+                  <Button
+                    size="sm"
+                    className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-[#121217] hover:bg-[#2a2a30] text-white [&_svg]:size-5"
+                    onClick={openEmailModal}
+                  >
+                    <Mail />
                     {ui('invoicePreviewSend')}
                   </Button>
 
@@ -385,11 +396,11 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                   <Button
                     size="sm"
                     variant="outline"
-                    className="gap-1.5 text-xs h-8 border-gray-300 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] disabled:opacity-40 disabled:cursor-not-allowed [&_svg]:size-5"
                     disabled={!canAddPayment}
                     onClick={canAddPayment ? () => setShowPaymentModal(true) : undefined}
                   >
-                    <Plus size={12} />
+                    <Wallet className="text-[#828FA3]" />
                     {ui('invoicePreviewAddPayment')}
                   </Button>
 
@@ -398,43 +409,56 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                     <Button
                       size="sm"
                       variant="outline"
-                      className="gap-1.5 text-xs h-8 border-gray-300 text-gray-700"
+                      className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] [&_svg]:size-5"
                       onClick={handleDownloadPdf}
                       disabled={!pdfUrl}
                     >
-                      <Download size={12} />
+                      <Download className="text-[#828FA3]" />
                       {ui('invoicePreviewDownloadPdf')}
                     </Button>
                   )}
 
                   {/* Edit */}
-                  <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8 border-gray-300 text-gray-700" onClick={handleEdit}>
-                    <Edit2 size={12} />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] [&_svg]:size-5"
+                    onClick={handleEdit}
+                  >
+                    <Edit2 className="text-[#828FA3]" />
                     {ui('invoicePreviewEdit')}
                   </Button>
 
                   {/* More options */}
-                  <button className="p-1.5 h-8 w-8 flex items-center justify-center text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg transition-colors">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+                  <button
+                    type="button"
+                    className="w-8 h-8 flex items-center justify-center bg-white border border-[#D1D4DB] shadow-sm rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <MoreVertical size={20} className="text-[#828FA3]" />
                   </button>
                 </div>
               </div>
 
               {/* ── Tab switcher ── */}
-              <div className="flex items-center gap-1 px-4 py-2 border-b border-gray-100 shrink-0">
-                {topTabs.map((tab) => (
+              <div className="px-3 pt-3 pb-2 shrink-0">
+                <div
+                  className="flex items-center gap-1 p-1 rounded-xl"
+                  style={{ backgroundColor: '#F5F7F9' }}
+                >
+                  {topTabs.map((tab) => (
                   <button
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
-                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                    className={`flex-1 h-8 px-2 py-1 text-sm font-medium rounded-lg transition-colors text-[#121217] ${
                       activeTab === tab.key
-                        ? 'bg-gray-100 text-gray-900 font-medium'
-                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                        ? 'bg-white shadow-sm'
+                        : 'hover:bg-white/50'
                     }`}
                   >
                     {tab.label}
                   </button>
                 ))}
+                </div>
               </div>
 
               {/* ── Tab content ── */}
@@ -632,49 +656,43 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, install
       >
         {loadingPayments ? (
           <p className="text-xs text-gray-400 py-4 text-center">{ui('loading')}</p>
-        ) : payments.length === 0 && totalOutstanding > 0 ? (
-          /* Pending installment — amber row */
-          <div className="flex justify-between items-center px-4 py-3">
-            <span className="text-sm font-medium text-amber-600">{ui('invoicePendingPayment')}</span>
-            <span className="text-sm font-semibold tabular-nums text-amber-600">
-              {currencyCode} {formatAmount(totalOutstanding)}
-            </span>
-          </div>
-        ) : payments.length === 0 ? (
+        ) : payments.length === 0 && totalOutstanding <= 0 ? (
           <p className="text-xs text-gray-400 py-4 text-center">{ui('invoicePreviewNoPaymentsRecorded')}</p>
         ) : (
-          <div className="overflow-y-auto divide-y divide-gray-100" style={{ maxHeight: '180px' }}>
+          <div className="flex flex-col gap-3 px-3 py-2">
             {payments.map((p) => {
-              const isPaid = PAID_STATUSES.has(p.status);
-              const acctLabel = [p.accountName, p.accountCurrency].filter(Boolean).join(' · ');
-
+              const acctLabel = p.accountName || (p.documentNo ? `#${p.documentNo}` : '—');
               return (
-                <div key={p.id} className="px-4 py-3 bg-white">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`text-sm font-semibold tabular-nums ${isPaid ? 'text-gray-900' : 'text-amber-600'}`}>
-                        {currencyCode} {formatAmount(p.amount)}
-                      </span>
-                      <span className={`text-xs font-medium ${isPaid ? 'text-green-600' : 'text-amber-600'}`}>
-                        {isPaid ? ui('statusPaid') : ui('statusPending')}
-                      </span>
-                      <span className="text-xs text-gray-400 tabular-nums">{fmtPayDate(p.paymentDate)}</span>
-                    </div>
-                    <button
-                      onClick={() => { window.location.href = `/${payPrefix}/${p.id}`; }}
-                      className="text-xs font-medium text-gray-500 hover:text-gray-700 underline shrink-0 ml-2"
-                    >
-                      {ui('viewArrow')}
-                    </button>
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between rounded px-2 py-2"
+                  style={{ backgroundColor: '#F5F7F9' }}
+                >
+                  <div className="flex items-center gap-1 min-w-0">
+                    <Ban size={20} className="shrink-0" style={{ color: '#828FA3' }} />
+                    <span className="text-sm text-gray-900 truncate">{acctLabel}</span>
                   </div>
-                  {(p.documentNo || acctLabel) && (
-                    <div className="text-xs text-gray-400 mt-0.5">
-                      {[p.documentNo ? `#${p.documentNo}` : null, acctLabel].filter(Boolean).join(' · ')}
-                    </div>
-                  )}
+                  <div className="flex flex-col items-end shrink-0">
+                    <span className="text-sm tabular-nums text-gray-900">
+                      {currencyCode} {formatAmount(p.amount)}
+                    </span>
+                    <span className="text-xs tabular-nums" style={{ color: '#555B6D' }}>
+                      {fmtPayDate(p.paymentDate)}
+                    </span>
+                  </div>
                 </div>
               );
             })}
+            {totalOutstanding > 0 && (
+              <div className="flex items-center justify-between px-3">
+                <span className="text-xs" style={{ color: '#8A6100' }}>
+                  {ui('invoicePendingPayment')}
+                </span>
+                <span className="text-sm tabular-nums" style={{ color: '#8A6100' }}>
+                  {currencyCode} {formatAmount(totalOutstanding)}
+                </span>
+              </div>
+            )}
           </div>
         )}
       </SectionCard>
