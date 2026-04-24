@@ -79,6 +79,21 @@ After a successful platform login or registration, `routeByEnvironments()` decid
 
 Every API call from the SPA passes through this wrapper, ensuring consistent auth handling.
 
+### Session Defaults Endpoint
+
+`GET /sws/neo/session` exposes lightweight session-scoped defaults that are not tied to a specific window record.
+
+Current response fields:
+- `currencyCode` -- ISO 4217 code resolved for the current organization.
+- `yourCompanyDocumentImageId` -- `AD_Image_ID` from `AD_ClientInfo.Your_Company_Document_Image` for the current client.
+- `organization` -- issuer identity used in printable documents (invoice templates, etc.):
+  - `name` -- `AD_Org.Name`.
+  - `taxId` -- `AD_OrgInfo.TaxID`.
+  - `address1`, `address2` -- `C_Location.AddressLine1` / `AddressLine2` via `AD_OrgInfo.C_Location_ID`.
+  - `cityLine` -- pre-formatted `<POSTAL> - <CITY> (<REGION>)`, matching Etendo Classic's `C_Location_Description` SQL function output.
+
+Frontend consumers that need the binary logo must fetch `GET /sws/neo/image/{imageId}` with the same JWT token.
+
 ## Session Management
 
 ### AD_Session (Etendo Server-Side)

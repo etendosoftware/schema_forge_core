@@ -21,7 +21,8 @@ Let a sales user prepare a customer quotation, review commercial terms before co
 - Window shape: master-child, with `quotation` as the header entity and `quotationLine` as the child entity.
 - List interaction: the list shows document number, quotation date, business partner, validity date, document status, and gross total, with filters for those same business fields.
 - Record interaction: the detail page shows the quotation header form, a child lines table and line form, summary amounts, record status, top-bar actions, and a Related Documents tab.
-- Available record-level affordances in current evidence: duplicate and cancel menu entries, a send-document button, and a draft-only confirmation button.
+- Available record-level affordances in current evidence: duplicate and cancel menu entries, a send-document button, a draft-only confirmation button, and a clone button that opens a confirmation modal and navigates to the new draft.
+- Available list-level affordances: a per-row and multi-row clone action that opens the shared clone modal and, once the new draft is created, offers navigation into each cloned record.
 
 ## Reactive behavior and dependencies
 
@@ -35,7 +36,8 @@ Let a sales user prepare a customer quotation, review commercial terms before co
 
 ## Gap assessment
 
-- Duplicate and Cancel are exposed as menu actions in the detail page, but the generated page currently wires both to empty `onClick` handlers. Their presence is visible; their actual behavior is a gap.
+- Cloning is now wired through the top-bar clone button in the detail page and through per-row/multi-row clone actions in the list, both of which invoke the `cloneRecord` backend action and navigate to the resulting draft. The `duplicate` entry in the record kebab menu is still generated with an empty `onClick` handler and remains a placeholder; only the menu affordance is a gap.
+- Cancel is exposed as a menu action in the detail page, but the generated page currently wires it to an empty `onClick` handler. Its presence is visible; its actual behavior is a gap.
 - The detail page includes a draft-only confirmation modal that can create an order or draft invoice, but the documented core conversion rule kept in decisions is specifically quotation-to-order. Draft-invoice creation exists in custom code, yet its business contract is not clearly documented in the curated decisions, so that downstream path remains an open ambiguity.
 - Discount, tax, line gross amount, total net amount, and total gross amount are all present in the schema, and retained rules imply recalculation, but there is no browser automation proving how quickly those values refresh or whether they update before save versus only after backend round-trips. That reaction timing is a gap.
 - The decisions file keeps a rule that should default `validUntil` from `orderDate`, but the generated form only shows `orderDate` with an explicit default value. The intended validity-date default is therefore not clearly evidenced in the current UI layer.
@@ -52,6 +54,8 @@ Let a sales user prepare a customer quotation, review commercial terms before co
 6. Use the confirmation flow to create a downstream document, then verify whether the resulting order or invoice opens in the expected status and whether the quotation remains usable afterward.
 7. Open Related Documents after downstream conversion and verify that order chips appear, invoice chips appear when applicable, and each chip navigates to the correct route.
 8. Check Duplicate and Cancel from the record menu and confirm whether they perform a real action or remain non-functional placeholders.
+9. Click the Clone button in the top bar of a quotation and verify the confirmation modal lists the current record and navigates to a new draft after cloning.
+10. From the list view, select one or more quotations, trigger the row or bulk clone action, and verify the modal creates new drafts and exposes navigation links to each cloned record.
 
 ## Automated evidence
 
@@ -60,5 +64,6 @@ Let a sales user prepare a customer quotation, review commercial terms before co
 - Window registration is grounded in `tools/app-shell/src/windows/registry.js`, where `sales-quotation` resolves to a custom wrapper over the generated window.
 - Header/line fields, selectors, actions, related-documents enablement, and retained callout/process expectations are grounded in `artifacts/sales-quotation/contract.json` and `artifacts/sales-quotation/decisions.json`.
 - Detail-page composition, including related-documents tab, top-bar actions, summary fields, hidden print/delete behavior, and currently empty duplicate/cancel handlers, is grounded in `artifacts/sales-quotation/generated/web/sales-quotation/QuotationPage.jsx`.
-- Draft-only confirmation and send-document behavior are grounded in `artifacts/sales-quotation/custom/QuotationTopbarActions.jsx` and `artifacts/sales-quotation/custom/QuotationConfirmModal.jsx`.
-- The only quotation-specific automated test evidence currently observed is source-shape coverage for the top-bar actions component in `artifacts/sales-quotation/custom/__tests__/QuotationTopbarActions.test.js`; no browser-level automation was found for pricing reactions, conversion flow, or related-documents navigation.
+- Draft-only confirmation, send-document, and clone behavior are grounded in `artifacts/sales-quotation/custom/QuotationTopbarActions.jsx` and `artifacts/sales-quotation/custom/QuotationConfirmModal.jsx`.
+- List-level clone wiring, including multi-row selection and post-clone navigation, is grounded in `tools/app-shell/src/windows/custom/sales-quotation/index.jsx`, which forwards `onCloneRow` into the generated `ListView` and renders the shared `CloneOrderModal`.
+- Quotation-specific automated test evidence currently observed is source-shape coverage for the top-bar actions component in `artifacts/sales-quotation/custom/__tests__/QuotationTopbarActions.test.js` (including assertions for the clone button wiring) and for the list-view wrapper in `tools/app-shell/src/windows/custom/sales-quotation/__tests__/index.test.js` (covering the forwarded `onCloneRow`, the `CloneOrderModal` portal and the post-clone route prefix); no browser-level automation was found for pricing reactions, conversion flow, or related-documents navigation.
