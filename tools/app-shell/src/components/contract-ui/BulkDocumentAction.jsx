@@ -9,14 +9,24 @@ import { useDocumentAction } from '@/hooks/useDocumentAction';
 
 const STORAGE_KEY = 'bulkActionResult';
 
-export default function BulkDocumentAction({ selectedRows, clearSelection, token, apiBaseUrl }) {
+export const buildInOutActions = (rows) => {
+  const hasDraft = rows.some((r) => (r.documentStatus || r.docStatus) === 'DR');
+  return hasDraft ? [{ value: 'CO', labelKey: 'book' }] : [];
+};
+
+export default function BulkDocumentAction({
+  selectedRows, clearSelection, token, apiBaseUrl,
+  entity = 'header',
+  buildActions,
+}) {
   const ui = useUI();
-  const { execute } = useDocumentAction({ apiBaseUrl, entity: 'header', token });
+  const { execute } = useDocumentAction({ apiBaseUrl, entity, token });
   const [open, setOpen] = useState(false);
   const [running, setRunning] = useState(false);
   const [selectedAction, setSelectedAction] = useState(null);
 
   const actions = useMemo(() => {
+    if (buildActions) return buildActions(selectedRows);
     const statusOf = (r) => r.documentStatus || r.docStatus;
     const hasDraft = selectedRows.some((r) => statusOf(r) === 'DR');
     const hasCompleted = selectedRows.some((r) => statusOf(r) === 'CO');
@@ -24,7 +34,7 @@ export default function BulkDocumentAction({ selectedRows, clearSelection, token
     if (hasDraft) out.push({ value: 'CO', labelKey: 'book' });
     if (hasCompleted) out.push({ value: 'RE', labelKey: 'reactivate' });
     return out;
-  }, [selectedRows]);
+  }, [selectedRows, buildActions]);
 
   if (selectedRows.length <= 1 || actions.length === 0) return null;
 
