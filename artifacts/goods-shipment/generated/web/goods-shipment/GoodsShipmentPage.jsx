@@ -285,6 +285,7 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+dateFilterKey="movementDate"
       bulkActions={(ctx) => <BulkInvoiceFromShipment {...ctx} />}
       hidePrint
       {...props}

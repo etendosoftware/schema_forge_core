@@ -12,6 +12,16 @@ import LinesTable from '@generated/purchase-order/generated/web/purchase-order/L
 import GeneratedApp from '@generated/purchase-order/generated/web/purchase-order/index.jsx';
 import PurchaseOrderReactivateBulkAction from '@generated/purchase-order/custom/PurchaseOrderReactivateBulkAction';
 
+// Simplified list columns aligned with Sales Order visual style
+const LIST_COLUMNS = [
+  { key: 'documentNo', column: 'DocumentNo', type: 'string', label: 'Document No.' },
+  { key: 'orderDate', column: 'DateOrdered', type: 'date', label: 'Order Date' },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner' },
+  { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
+  { key: 'deliveryStatusPurchase', column: 'DeliveryStatusPurchase', type: 'percent', label: 'Delivery Status' },
+  { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'percent', label: 'Invoice Status' },
+];
 const draftModeWithModal = {
   enabled: true,
   processField: 'documentAction',
@@ -94,10 +104,14 @@ export default function PurchaseOrderWindow(props) {
   const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
 
   const QUICK_FILTERS = [
-    { label: 'all' },
-    { label: 'pendingDeliveryOnly', rowFilter: (row) => (row.deliveryStatusPurchase ?? 100) < 100 },
+    {
+      label: 'pendingDeliveryOnly',
+      filter: `criteria=${encodeURIComponent(JSON.stringify([
+        { fieldName: 'deliveryStatusPurchase', operator: 'lessThan', value: 100 },
+      ]))}`,
+    },
   ];
-  const initialQuickFilterIndex = filterParam === 'pendingDelivery' ? 1 : 0;
+  const initialQuickFilterIndex = filterParam === 'pendingDelivery' ? 0 : null;
 
   return (
     <>
@@ -113,6 +127,7 @@ export default function PurchaseOrderWindow(props) {
         initialColumnFilters={initialColumnFilters}
         quickFilters={QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}
+        dateFilterKey="orderDate"
         {...props}
       />
       {cloneTargets && createPortal(

@@ -107,6 +107,7 @@ function mapFieldType(field) {
   if (field.type === 'amount') return 'amount';
   if (['number', 'integer', 'quantity', 'price', 'decimal'].includes(field.type)) return 'number';
   if (field.type === 'date') return 'date';
+  if (field.type === 'foreignKey') return 'selector';
   return 'string';
 }
 
@@ -154,7 +155,7 @@ export function generateTableComponent(entityName, contract) {
   const columnsArray = gridFields.map(f => {
     const type = mapFieldType(f);
     const selectionPart = f.isSelectionColumn ? ', isSelectionColumn: true' : '';
-    const enumLabelsPart = (type === 'enum' && f.enumValues?.length)
+    const enumLabelsPart = ((type === 'enum' || type === 'status') && f.enumValues?.length)
       ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${o.name.replace(/'/g, "\\'")}'`).join(', ')} }`
       : '';
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
@@ -642,6 +643,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const listViewOptions = windowConfig.listViewOptions ?? null;
   const listBaseFilter = windowConfig.listBaseFilter ?? null;
   const quickFilters = windowConfig.quickFilters ?? null;
+  const subsetFilters = windowConfig.subsetFilters ?? null;
+  const dateFilterKey = windowConfig.dateFilterKey ?? null;
   const contentBg = windowConfig.contentBg ?? null;
   const hideListFilters = windowConfig.hideListFilters ?? false;
   const hideLink = windowConfig.hideLink ?? false;
@@ -802,6 +805,12 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     : '';
   const quickFiltersProp = quickFilters
     ? `\n      quickFilters={${JSON.stringify(quickFilters)}}`
+    : '';
+  const subsetFiltersProp = subsetFilters
+    ? `\n      subsetFilters={${JSON.stringify(subsetFilters)}}`
+    : '';
+  const dateFilterKeyProp = dateFilterKey
+    ? `\n      dateFilterKey="${dateFilterKey}"`
     : '';
   // contentBg prop
   const contentBgProp = contentBg ? `\n        contentBg="${contentBg}"` : '';
@@ -1122,7 +1131,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}
       {...props}${customComponents.newRecordComponent ? `
       onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}
     />${customComponents.newRecordComponent ? `

@@ -4,6 +4,7 @@ import GoodsReceiptTable from './GoodsReceiptTable';
 import GoodsReceiptForm from './GoodsReceiptForm';
 import GoodsReceiptLineTable from './GoodsReceiptLineTable';
 import GoodsReceiptLineForm from './GoodsReceiptLineForm';
+import RelatedDocuments from '@/windows/custom/goods-receipt/RelatedDocuments';
 import catalogs from './mockCatalogs';
 
 
@@ -382,6 +383,7 @@ export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
         breadcrumb={breadcrumb}
       api={api}
         draftMode={draftMode}
+customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         {...props}
       />
     );
@@ -395,6 +397,7 @@ export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+dateFilterKey="movementDate"
       {...props}
     />
   );

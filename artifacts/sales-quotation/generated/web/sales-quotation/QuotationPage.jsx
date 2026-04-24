@@ -406,6 +406,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="orderDate"
       hidePrint
       labelOverrides={labelOverrides}
       {...props}

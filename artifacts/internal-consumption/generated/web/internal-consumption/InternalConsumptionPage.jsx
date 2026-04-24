@@ -175,6 +175,7 @@ export default function InternalConsumptionPage({ windowName, recordId, ...props
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="movementDate"
       {...props}
     />
   );

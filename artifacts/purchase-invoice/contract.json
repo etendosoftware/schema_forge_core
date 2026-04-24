@@ -1,7 +1,7 @@
 {
   "version": "0.9.0",
-  "generatedAt": "2026-04-24T19:27:47.663Z",
-  "checksum": "8b67e7c0e77b781f",
+  "generatedAt": "2026-04-24T19:31:49.311Z",
+  "checksum": "b439ef87dae1dfea",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -36,6 +36,7 @@
           "POReference": "Supplier reference"
         }
       },
+      "dateFilterKey": "invoiceDate",
       "layoutType": "default"
     },
     "entities": {
@@ -3121,7 +3122,8 @@
         "en_US": {
           "POReference": "Supplier reference"
         }
-      }
+      },
+      "dateFilterKey": "invoiceDate"
     },
     "entities": {
       "header": {

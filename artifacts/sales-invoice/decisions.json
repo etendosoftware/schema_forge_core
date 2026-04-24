@@ -41,7 +41,8 @@
       "processField": "documentAction",
       "processValue": "CO",
       "label": "Confirm"
-    }
+    },
+    "dateFilterKey": "invoiceDate"
   },
   "entities": {
     "header": {

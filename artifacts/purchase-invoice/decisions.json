@@ -29,6 +29,7 @@
       "processValue": "CO",
       "label": "Confirm"
     },
+    "dateFilterKey": "invoiceDate",
     "labelOverrides": {
       "es_ES": {
         "POReference": "Referencia de proveedor"

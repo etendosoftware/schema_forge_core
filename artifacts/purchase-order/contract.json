@@ -1,7 +1,7 @@
 {
   "version": "0.17.0",
-  "generatedAt": "2026-04-24T19:27:47.370Z",
-  "checksum": "845bd2ef0eb2e586",
+  "generatedAt": "2026-04-24T19:32:04.738Z",
+  "checksum": "166bd01274df4c55",
   "frontendContract": {
     "window": {
       "id": "181",
@@ -52,6 +52,7 @@
           "DeliveryStatusPurchase": "Delivery Status"
         }
       },
+      "dateFilterKey": "orderDate",
       "noHeaderBorder": true,
       "layoutType": "default"
     },
@@ -1101,6 +1102,12 @@
             "reference": "Product",
             "inputMode": "search",
             "lookup": true,
+            "forceCalloutFields": [
+              "unitPrice",
+              "tax",
+              "uOM",
+              "grossUnitPrice"
+            ],
             "section": "principal",
             "gridOrder": 1,
             "callout": {
@@ -2283,6 +2290,7 @@
           "DeliveryStatusPurchase": "Delivery Status"
         }
       },
+      "dateFilterKey": "orderDate",
       "noHeaderBorder": true
     },
     "entities": {

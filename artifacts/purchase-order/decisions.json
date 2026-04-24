@@ -40,7 +40,8 @@
       "CO",
       "CL",
       "VO"
-    ]
+    ],
+    "dateFilterKey": "orderDate"
   },
   "entities": {
     "header": {
@@ -310,7 +311,8 @@
           "section": "principal",
           "order": 1,
           "gridOrder": 1,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "forceCalloutFields": ["unitPrice", "tax", "uOM", "grossUnitPrice"]
         },
         "operativeQuantity": {
           "form": false,

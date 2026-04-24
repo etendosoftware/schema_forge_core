@@ -41,7 +41,8 @@
         "DeliveryStatus": "Delivery Status"
       }
     },
-    "noHeaderBorder": true
+    "noHeaderBorder": true,
+    "dateFilterKey": "orderDate"
   },
   "entities": {
     "header": {
@@ -293,8 +294,10 @@
           "searchable": true,
           "lookup": true,
           "section": "principal",
+          "inputMode": "search",
           "order": 1,
-          "gridOrder": 1
+          "gridOrder": 1,
+          "forceCalloutFields": ["unitPrice", "tax", "uOM", "grossUnitPrice"]
         },
         "orderedQuantity": {
           "grid": true,
@@ -327,6 +330,7 @@
           "form": false
         },
         "lineNetAmount": {
+          "visibility": "system",
           "grid": false,
           "form": false
         },

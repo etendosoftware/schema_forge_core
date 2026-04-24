@@ -1,7 +1,7 @@
 {
   "version": "0.11.1",
-  "generatedAt": "2026-04-24T19:27:47.512Z",
-  "checksum": "376e34bc47f53a80",
+  "generatedAt": "2026-04-24T19:31:49.175Z",
+  "checksum": "fafc3aee5fc6222f",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -41,6 +41,7 @@
       "processOverrides": {},
       "secondaryTabs": {},
       "salesTheme": true,
+      "dateFilterKey": "invoiceDate",
       "layoutType": "default"
     },
     "entities": {
@@ -1002,7 +1003,8 @@
       ],
       "processOverrides": {},
       "secondaryTabs": {},
-      "salesTheme": true
+      "salesTheme": true,
+      "dateFilterKey": "invoiceDate"
     },
     "entities": {
       "header": {
