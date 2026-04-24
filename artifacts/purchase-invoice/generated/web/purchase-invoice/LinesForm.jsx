@@ -7,7 +7,7 @@ const fields = [
   { key: 'unitPrice', column: 'PriceActual', type: 'number', label: 'Net Unit Price', required: true, section: 'principal', readOnlyLogic: (record) => record['processed'] === true || record['gROSSPRICE'] === 'Y' },
   { key: 'grossAmount', column: 'Line_Gross_Amount', type: 'number', label: 'Line Gross Amount', readOnly: true, section: 'principal', defaultValue: '0' },
   { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'principal' },
-  { key: 'tax', column: 'C_Tax_ID', type: 'search', label: 'Tax', section: 'principal', reference: 'Tax', inputMode: 'search', readOnlyLogic: (record) => record['processed'] === true },
+  { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', section: 'principal', reference: 'Tax', inputMode: 'selector', readOnlyLogic: (record) => record['processed'] === true },
 ];
 // @sf-generated-end fields:lines
 

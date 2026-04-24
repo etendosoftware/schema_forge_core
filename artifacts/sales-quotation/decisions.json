@@ -290,7 +290,7 @@
         "tax": {
           "grid": true,
           "form": true,
-          "inputMode": "search",
+          "inputMode": "selector",
           "order": 6,
           "gridOrder": 6
         },

@@ -1,7 +1,7 @@
 {
   "version": "0.15.0",
-  "generatedAt": "2026-04-24T17:32:53.619Z",
-  "checksum": "b569b74ccfd80f30",
+  "generatedAt": "2026-04-24T18:35:00.124Z",
+  "checksum": "403f049d09b0d0e0",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -651,7 +651,7 @@
             "form": true,
             "sourceRequired": true,
             "reference": "Tax",
-            "inputMode": "search",
+            "inputMode": "selector",
             "section": "principal",
             "gridOrder": 6,
             "validationRule": {
@@ -2416,7 +2416,7 @@
         "field": "tax",
         "column": "C_Tax_ID",
         "reference": "Tax",
-        "inputMode": "search",
+        "inputMode": "selector",
         "url": "/sws/neo/sales-order/lines/selectors/tax"
       }
     ],
