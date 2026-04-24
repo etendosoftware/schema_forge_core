@@ -23,10 +23,12 @@
     },
     "labelOverrides": {
       "es_ES": {
-        "C_BPartner_ID": "Contacto"
+        "C_BPartner_ID": "Contacto",
+        "DeliveryStatus": "Estado de entrega"
       },
       "en_US": {
-        "C_BPartner_ID": "Contact"
+        "C_BPartner_ID": "Contact",
+        "DeliveryStatus": "Delivery Status"
       }
     },
     "noHeaderBorder": true
@@ -41,6 +43,7 @@
         "documentNo": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 2,
           "searchable": true,
           "section": "principal",
           "seq": 2
@@ -48,6 +51,7 @@
         "documentStatus": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 4,
           "searchable": true,
           "form": false
         },
@@ -89,6 +93,7 @@
         },
         "businessPartner": {
           "grid": true,
+          "gridOrder": 3,
           "searchable": true,
           "reference": "BusinessPartner",
           "displayLogic": null,
@@ -150,6 +155,7 @@
         },
         "orderDate": {
           "grid": true,
+          "gridOrder": 1,
           "searchable": true,
           "section": "principal",
           "seq": 3
@@ -176,6 +182,7 @@
         "grandTotalAmount": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 5,
           "section": "summary"
         },
         "summedLineAmount": {
@@ -219,6 +226,7 @@
         "deliveryStatus": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 7,
           "form": false,
           "columnType": "percent",
           "label": "Shipment Status"
@@ -226,6 +234,7 @@
         "invoiceStatus": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 6,
           "form": false,
           "columnType": "percent"
         },

@@ -1,7 +1,7 @@
 {
   "version": "0.2.0",
-  "generatedAt": "2026-04-23T12:15:32.006Z",
-  "checksum": "14ee768f2ac73e0d",
+  "generatedAt": "2026-04-24T16:46:28.956Z",
+  "checksum": "0601769f90825148",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -77,8 +77,14 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "sequence",
+              "source": "documentType.sequence"
+            },
             "section": "principal",
             "seq": 2,
+            "gridOrder": 2,
             "readOnlyLogic": {
               "raw": "@Processed@='Y' | @DocStatus@='TMP'",
               "evaluable": true,
@@ -96,9 +102,15 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            },
             "defaultValue": "@#Date@",
             "section": "principal",
             "seq": 3,
+            "gridOrder": 1,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_UpdateLinesDate"
             },
@@ -119,10 +131,12 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "BusinessPartner",
             "inputMode": "search",
             "section": "principal",
             "seq": 1,
+            "gridOrder": 3,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Order_BPartner"
             },
@@ -143,6 +157,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "BusinessPartnerLocation",
             "inputMode": "dependent",
             "dependsOn": {
@@ -177,6 +192,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "PriceList",
             "inputMode": "selector",
             "section": "principal",
@@ -207,7 +223,8 @@
             "required": false,
             "grid": true,
             "form": true,
-            "section": "principal"
+            "section": "principal",
+            "gridOrder": 5
           },
           {
             "name": "paymentMethod",
@@ -247,6 +264,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "PaymentTerm",
             "inputMode": "selector",
             "section": "principal",
@@ -267,6 +285,11 @@
             "required": true,
             "grid": true,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "DR"
+            },
             "enumValues": [
               {
                 "value": "AE",
@@ -333,7 +356,8 @@
                 "name": "Voided"
               }
             ],
-            "defaultValue": "DR"
+            "defaultValue": "DR",
+            "gridOrder": 4
           },
           {
             "name": "grandTotalAmount",
@@ -346,7 +370,9 @@
             "required": true,
             "grid": true,
             "form": true,
-            "section": "summary"
+            "sourceRequired": true,
+            "section": "summary",
+            "gridOrder": 6
           },
           {
             "name": "summedLineAmount",
@@ -359,6 +385,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "section": "summary"
           },
           {
@@ -372,6 +399,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "fromConfig",
+              "source": "context.cCurrencyId"
+            },
             "reference": "Currency",
             "inputMode": "selector",
             "defaultValue": "@C_Currency_ID@",
@@ -400,7 +432,12 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": false
+            "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "false"
+            }
           }
         ],
         "searchableFields": [
@@ -466,6 +503,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "Product",
             "inputMode": "search",
             "gridOrder": 1,
@@ -502,6 +540,11 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "1"
+            },
             "defaultValue": "1",
             "gridOrder": 3,
             "callout": {
@@ -525,6 +568,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "gridOrder": 4,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
@@ -546,6 +590,10 @@
             "required": false,
             "grid": true,
             "form": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0",
             "gridOrder": 5,
             "callout": {
@@ -568,6 +616,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "Tax",
             "inputMode": "search",
             "gridOrder": 6,
@@ -602,6 +651,10 @@
             "required": false,
             "grid": true,
             "form": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0",
             "section": "principal",
             "gridOrder": 7,
@@ -621,6 +674,7 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },

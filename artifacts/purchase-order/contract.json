@@ -1,7 +1,7 @@
 {
   "version": "0.17.0",
-  "generatedAt": "2026-04-23T14:15:57.447Z",
-  "checksum": "6f425b5825b5b38c",
+  "generatedAt": "2026-04-24T16:34:58.736Z",
+  "checksum": "553d0d26c1f8375c",
   "frontendContract": {
     "window": {
       "id": "181",
@@ -25,11 +25,13 @@
       "labelOverrides": {
         "es_ES": {
           "C_BPartner_ID": "Contacto",
-          "DatePromised": "Fecha de entrega esperada"
+          "DatePromised": "Fecha de entrega esperada",
+          "DeliveryStatusPurchase": "Estado de entrega"
         },
         "en_US": {
           "C_BPartner_ID": "Contact",
-          "DatePromised": "Expected Delivery Date"
+          "DatePromised": "Expected Delivery Date",
+          "DeliveryStatusPurchase": "Delivery Status"
         }
       },
       "noHeaderBorder": true,
@@ -53,9 +55,11 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "BusinessPartner",
             "inputMode": "search",
             "section": "principal",
+            "gridOrder": 3,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Order_BPartner"
             },
@@ -76,7 +80,13 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "sequence",
+              "source": "documentType.sequence"
+            },
             "section": "principal",
+            "gridOrder": 2,
             "readOnlyLogic": {
               "raw": "@Processed@='Y' | @DocStatus@='TMP'",
               "evaluable": true,
@@ -94,8 +104,14 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            },
             "defaultValue": "@#Date@",
             "section": "principal",
+            "gridOrder": 1,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_UpdateLinesDate"
             },
@@ -116,6 +132,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "BusinessPartnerLocation",
             "inputMode": "dependent",
             "dependsOn": {
@@ -150,6 +167,11 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            },
             "defaultValue": "@#Date@",
             "section": "principal",
             "callout": {
@@ -170,8 +192,13 @@
             "tsType": "string",
             "visibility": "editable",
             "required": true,
-            "grid": true,
+            "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "fromConfig",
+              "source": "doctype.salesOrder"
+            },
             "reference": "DocumentType",
             "section": "other",
             "validationRule": {
@@ -204,8 +231,9 @@
             "tsType": "string",
             "visibility": "editable",
             "required": true,
-            "grid": true,
+            "grid": false,
             "form": false,
+            "sourceRequired": true,
             "reference": "Warehouse",
             "inputMode": "selector",
             "readOnlyLogic": {
@@ -252,6 +280,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "PaymentTerm",
             "inputMode": "selector",
             "section": "principal",
@@ -270,8 +299,9 @@
             "tsType": "string",
             "visibility": "editable",
             "required": true,
-            "grid": true,
+            "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "PriceList",
             "inputMode": "selector",
             "section": "principal",
@@ -302,6 +332,11 @@
             "required": true,
             "grid": true,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "DR"
+            },
             "enumValues": [
               {
                 "value": "AE",
@@ -382,7 +417,9 @@
             "required": true,
             "grid": true,
             "form": false,
-            "section": "other"
+            "sourceRequired": true,
+            "section": "other",
+            "gridOrder": 5
           },
           {
             "name": "summedLineAmount",
@@ -395,6 +432,7 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
             "section": "other"
           },
           {
@@ -408,6 +446,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "fromConfig",
+              "source": "context.cCurrencyId"
+            },
             "defaultValue": "@C_Currency_ID@",
             "section": "other"
           },
@@ -459,6 +502,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N",
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
@@ -499,6 +547,7 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
             "reference": "BusinessPartnerLocation",
             "inputMode": "dependent",
             "dependsOn": {
@@ -556,6 +605,7 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
             "section": "other"
           },
           {
@@ -569,6 +619,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "P"
+            },
             "enumValues": [
               {
                 "value": "D",
@@ -613,8 +668,13 @@
             "tsType": "string",
             "visibility": "editable",
             "required": true,
-            "grid": true,
+            "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "5"
+            },
             "enumValues": [
               {
                 "value": "3",
@@ -648,6 +708,10 @@
             "required": false,
             "grid": false,
             "form": false,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0",
             "section": "other",
             "readOnlyLogic": {
@@ -813,7 +877,8 @@
             "required": false,
             "grid": true,
             "form": false,
-            "section": "other"
+            "section": "other",
+            "gridOrder": 7
           },
           {
             "name": "invoiceStatus",
@@ -826,7 +891,8 @@
             "required": false,
             "grid": true,
             "form": false,
-            "section": "other"
+            "section": "other",
+            "gridOrder": 6
           },
           {
             "name": "deliveryTerms",
@@ -839,6 +905,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "A"
+            },
             "enumValues": [
               {
                 "value": "R",
@@ -876,6 +947,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            },
             "defaultValue": "@#Date@",
             "section": "other",
             "readOnlyLogic": {
@@ -997,6 +1073,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "Product",
             "inputMode": "search",
             "section": "principal",
@@ -1035,6 +1112,11 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "1"
+            },
             "defaultValue": "1",
             "section": "principal",
             "gridOrder": 3,
@@ -1059,6 +1141,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "section": "principal",
             "gridOrder": 4,
             "callout": {
@@ -1081,6 +1164,10 @@
             "required": false,
             "grid": true,
             "form": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0",
             "section": "principal",
             "gridOrder": 5,
@@ -1104,6 +1191,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "Tax",
             "inputMode": "search",
             "section": "principal",
@@ -1139,6 +1227,10 @@
             "required": false,
             "grid": true,
             "form": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0",
             "section": "principal",
             "gridOrder": 7,
@@ -1208,6 +1300,7 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
             "reference": "UOM",
             "readOnlyLogic": {
               "raw": "@UomManagement@='Y'",
@@ -1246,6 +1339,10 @@
             "required": false,
             "grid": false,
             "form": false,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
@@ -1267,6 +1364,7 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -1287,6 +1385,7 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -1336,6 +1435,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "fromConfig",
+              "source": "context.mWarehouseId"
+            },
             "reference": "Warehouse",
             "defaultValue": "@M_Warehouse_ID@",
             "readOnlyLogic": {
@@ -1354,7 +1458,8 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": false
+            "form": false,
+            "sourceRequired": true
           },
           {
             "name": "deliveredQuantity",
@@ -1366,7 +1471,8 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": false
+            "form": false,
+            "sourceRequired": true
           },
           {
             "name": "invoicedQuantity",
@@ -1378,7 +1484,8 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": false
+            "form": false,
+            "sourceRequired": true
           },
           {
             "name": "shippingCompany",
@@ -1391,6 +1498,10 @@
             "required": false,
             "grid": false,
             "form": false,
+            "derivation": {
+              "type": "fromConfig",
+              "source": "context.mShipperId"
+            },
             "reference": "Shipper",
             "defaultValue": "@M_Shipper_ID@"
           },
@@ -1405,6 +1516,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "fromConfig",
+              "source": "context.dateOrdered"
+            },
             "defaultValue": "@DateOrdered@"
           },
           {
@@ -1418,6 +1534,10 @@
             "required": false,
             "grid": false,
             "form": false,
+            "derivation": {
+              "type": "fromConfig",
+              "source": "context.datePromised"
+            },
             "defaultValue": "@DatePromised@"
           },
           {
@@ -1430,7 +1550,8 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": false
+            "form": false,
+            "sourceRequired": true
           },
           {
             "name": "partnerAddress",
@@ -1443,6 +1564,10 @@
             "required": false,
             "grid": false,
             "form": false,
+            "derivation": {
+              "type": "fromConfig",
+              "source": "context.cBpartnerLocationId"
+            },
             "reference": "BusinessPartnerLocation",
             "defaultValue": "@C_BPartner_Location_ID@",
             "validationRule": {
@@ -1562,6 +1687,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "fromConfig",
+              "source": "context.cCurrencyId"
+            },
             "reference": "Currency",
             "defaultValue": "@C_Currency_ID@"
           }
@@ -1658,6 +1788,10 @@
             "required": false,
             "grid": true,
             "form": true,
+            "derivation": {
+              "type": "lookup",
+              "source": "SELECT COALESCE(MAX(LINE),0)+10 AS DefaultValue FROM C_ORDERLINETAX WHERE C_ORDERLINE_ID=@C_OrderLine_ID@"
+            },
             "defaultValue": "@SQL=SELECT COALESCE(MAX(LINE),0)+10 AS DefaultValue FROM C_ORDERLINETAX WHERE C_ORDERLINE_ID=@C_OrderLine_ID@"
           },
           {
@@ -1671,6 +1805,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "Tax"
           },
           {
@@ -1684,6 +1819,11 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0"
           },
           {
@@ -1697,6 +1837,11 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0"
           }
         ],
@@ -1742,6 +1887,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "Reservation"
           },
           {
@@ -1755,6 +1901,10 @@
             "required": false,
             "grid": false,
             "form": true,
+            "derivation": {
+              "type": "lookup",
+              "source": "SELECT C_BPartner_ID AS DefaultValue FROM C_Order WHERE C_Order_ID=@C_Order_ID@"
+            },
             "reference": "BusinessPartner",
             "defaultValue": "@SQL=SELECT C_BPartner_ID AS DefaultValue FROM C_Order WHERE C_Order_ID=@C_Order_ID@",
             "readOnlyLogic": {
@@ -1799,6 +1949,11 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N"
           },
           {
@@ -1811,7 +1966,8 @@
             "visibility": "readOnly",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "released",
@@ -1861,6 +2017,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "Payment"
           },
           {
@@ -1935,7 +2092,8 @@
             "visibility": "readOnly",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "writeoffAmount",
@@ -2008,6 +2166,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "enumValues": [
               {
                 "value": "RPAP",
@@ -2072,11 +2231,13 @@
       "labelOverrides": {
         "es_ES": {
           "C_BPartner_ID": "Contacto",
-          "DatePromised": "Fecha de entrega esperada"
+          "DatePromised": "Fecha de entrega esperada",
+          "DeliveryStatusPurchase": "Estado de entrega"
         },
         "en_US": {
           "C_BPartner_ID": "Contact",
-          "DatePromised": "Expected Delivery Date"
+          "DatePromised": "Expected Delivery Date",
+          "DeliveryStatusPurchase": "Delivery Status"
         }
       },
       "noHeaderBorder": true
@@ -4769,11 +4930,13 @@
     "labelOverrides": {
       "es_ES": {
         "C_BPartner_ID": "Contacto",
-        "DatePromised": "Fecha de entrega esperada"
+        "DatePromised": "Fecha de entrega esperada",
+        "DeliveryStatusPurchase": "Estado de entrega"
       },
       "en_US": {
         "C_BPartner_ID": "Contact",
-        "DatePromised": "Expected Delivery Date"
+        "DatePromised": "Expected Delivery Date",
+        "DeliveryStatusPurchase": "Delivery Status"
       }
     }
   },

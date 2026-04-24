@@ -1,7 +1,7 @@
 {
   "version": "0.15.0",
-  "generatedAt": "2026-04-23T14:15:57.355Z",
-  "checksum": "48e1acfe3cb0d10e",
+  "generatedAt": "2026-04-24T15:44:34.751Z",
+  "checksum": "87e83df49a95f8bc",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -28,10 +28,12 @@
       "salesTheme": true,
       "labelOverrides": {
         "es_ES": {
-          "C_BPartner_ID": "Contacto"
+          "C_BPartner_ID": "Contacto",
+          "DeliveryStatus": "Estado de entrega"
         },
         "en_US": {
-          "C_BPartner_ID": "Contact"
+          "C_BPartner_ID": "Contact",
+          "DeliveryStatus": "Delivery Status"
         }
       },
       "noHeaderBorder": true,
@@ -55,8 +57,14 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "sequence",
+              "source": "documentType.sequence"
+            },
             "section": "principal",
             "seq": 2,
+            "gridOrder": 2,
             "readOnlyLogic": {
               "raw": "@Processed@='Y' | @DocStatus@='TMP'",
               "evaluable": true,
@@ -74,9 +82,15 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            },
             "defaultValue": "@#Date@",
             "section": "principal",
             "seq": 3,
+            "gridOrder": 1,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_UpdateLinesDate"
             },
@@ -97,10 +111,12 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "BusinessPartner",
             "inputMode": "search",
             "section": "principal",
             "seq": 1,
+            "gridOrder": 3,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Order_BPartner"
             },
@@ -121,6 +137,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "BusinessPartnerLocation",
             "inputMode": "dependent",
             "dependsOn": {
@@ -155,6 +172,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "PriceList",
             "inputMode": "selector",
             "section": "principal",
@@ -212,6 +230,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "PaymentTerm",
             "inputMode": "selector",
             "section": "principal",
@@ -232,6 +251,7 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
             "reference": "Warehouse",
             "inputMode": "search",
             "readOnlyLogic": {
@@ -251,6 +271,11 @@
             "required": true,
             "grid": true,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "DR"
+            },
             "enumValues": [
               {
                 "value": "AE",
@@ -317,7 +342,8 @@
                 "name": "Voided"
               }
             ],
-            "defaultValue": "DR"
+            "defaultValue": "DR",
+            "gridOrder": 4
           },
           {
             "name": "grandTotalAmount",
@@ -330,7 +356,9 @@
             "required": true,
             "grid": true,
             "form": true,
-            "section": "summary"
+            "sourceRequired": true,
+            "section": "summary",
+            "gridOrder": 5
           },
           {
             "name": "summedLineAmount",
@@ -343,6 +371,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "section": "summary"
           },
           {
@@ -356,6 +385,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "fromConfig",
+              "source": "context.cCurrencyId"
+            },
             "reference": "Currency",
             "inputMode": "selector",
             "defaultValue": "@C_Currency_ID@",
@@ -384,7 +418,8 @@
             "required": false,
             "grid": true,
             "form": false,
-            "columnType": "percent"
+            "columnType": "percent",
+            "gridOrder": 7
           },
           {
             "name": "invoiceStatus",
@@ -397,7 +432,8 @@
             "required": false,
             "grid": true,
             "form": false,
-            "columnType": "percent"
+            "columnType": "percent",
+            "gridOrder": 6
           },
           {
             "name": "processed",
@@ -409,7 +445,12 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": false
+            "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "false"
+            }
           }
         ],
         "searchableFields": [
@@ -474,6 +515,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "Product",
             "inputMode": "search",
             "section": "principal",
@@ -512,6 +554,11 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "1"
+            },
             "defaultValue": "1",
             "section": "principal",
             "gridOrder": 3,
@@ -536,6 +583,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "section": "principal",
             "gridOrder": 4,
             "callout": {
@@ -558,6 +606,10 @@
             "required": false,
             "grid": true,
             "form": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0",
             "section": "principal",
             "gridOrder": 5,
@@ -581,6 +633,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "Tax",
             "inputMode": "search",
             "section": "principal",
@@ -616,6 +669,10 @@
             "required": false,
             "grid": true,
             "form": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0",
             "section": "principal",
             "gridOrder": 7,
@@ -635,6 +692,10 @@
             "required": false,
             "grid": false,
             "form": false,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
@@ -660,6 +721,7 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -733,10 +795,12 @@
       "salesTheme": true,
       "labelOverrides": {
         "es_ES": {
-          "C_BPartner_ID": "Contacto"
+          "C_BPartner_ID": "Contacto",
+          "DeliveryStatus": "Estado de entrega"
         },
         "en_US": {
-          "C_BPartner_ID": "Contact"
+          "C_BPartner_ID": "Contact",
+          "DeliveryStatus": "Delivery Status"
         }
       },
       "noHeaderBorder": true
@@ -2516,10 +2580,12 @@
     },
     "labelOverrides": {
       "es_ES": {
-        "C_BPartner_ID": "Contacto"
+        "C_BPartner_ID": "Contacto",
+        "DeliveryStatus": "Estado de entrega"
       },
       "en_US": {
-        "C_BPartner_ID": "Contact"
+        "C_BPartner_ID": "Contact",
+        "DeliveryStatus": "Delivery Status"
       }
     }
   },

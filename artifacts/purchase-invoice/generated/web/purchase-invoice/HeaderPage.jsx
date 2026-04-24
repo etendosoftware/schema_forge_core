@@ -18,10 +18,19 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Purchases / Purchase Invoice';
 
+const labelOverrides = {
+  "es_ES": {
+    "POReference": "Referencia de proveedor"
+  },
+  "en_US": {
+    "POReference": "Supplier reference"
+  }
+};
+
 
 // @sf-generated-start summary:header
 const summary = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+
 ];
 
 const statusField = 'documentStatus';
@@ -81,6 +90,7 @@ export const api = {
         "documentNo",
         "invoiceDate",
         "businessPartner",
+        "orderReference",
         "documentStatus"
       ]
     },
@@ -787,6 +797,14 @@ export const api = {
   },
   "window": {
     "category": "purchases"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "POReference": "Referencia de proveedor"
+    },
+    "en_US": {
+      "POReference": "Supplier reference"
+    }
   }
 };
 
@@ -821,6 +839,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         draftMode={draftMode}
+        labelOverrides={labelOverrides}
         {...props}
       />
     );
@@ -834,6 +853,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      labelOverrides={labelOverrides}
       {...props}
     />
   );

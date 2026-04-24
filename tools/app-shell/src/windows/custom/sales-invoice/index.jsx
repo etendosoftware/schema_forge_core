@@ -3,8 +3,8 @@ import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
 import { useUI } from '@/i18n';
-import HeaderTable from '@generated/sales-invoice/generated/web/sales-invoice/HeaderTable';
 import HeaderPage from '@generated/sales-invoice/generated/web/sales-invoice/HeaderPage';
+import InvoiceHeaderTable from '@generated/sales-invoice/custom/InvoiceHeaderTable.jsx';
 import InvoicePreviewModal from '../purchase-invoice/InvoicePreviewModal.jsx';
 import SalesInvoiceTopbar from './SalesInvoiceTopbar.jsx';
 import InvoiceBottomPanel from '@generated/sales-invoice/custom/InvoiceBottomPanel.jsx';
@@ -16,23 +16,16 @@ import { useCreateContactModal } from '@/components/contract-ui/useCreateContact
 
 /* eslint-disable react/prop-types */
 
-const LIST_COLUMNS = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string', label: 'Document No.' },
-  { key: 'invoiceDate', column: 'DateInvoiced', type: 'date', label: 'Invoice Date' },
-  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string', label: 'Business Partner' },
-  { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
-  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
-];
-
 let previewRowSetterRef = null;
 
 /**
- * SalesInvoiceTable — generated table wrapper that opens the preview modal.
+ * SalesInvoiceTable — uses InvoiceHeaderTable (with type tabs + payment filter)
+ * and hooks in the preview modal via onNavigate.
+ * Columns and order are driven by InvoiceHeaderTable.jsx.
  */
 function SalesInvoiceTable(props) {
   return (
-    <HeaderTable
-      columns={LIST_COLUMNS}
+    <InvoiceHeaderTable
       {...props}
       onNavigate={(row) => previewRowSetterRef?.(row)}
     />

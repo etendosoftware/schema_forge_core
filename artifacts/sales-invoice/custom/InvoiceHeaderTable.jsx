@@ -57,6 +57,7 @@ export default function InvoiceHeaderTable(props) {
 
   // ─── Custom columns (override generated ones) ─────────────────
   const columns = useMemo(() => [
+    { key: 'invoiceDate', column: 'DateInvoiced', type: 'date' },
     {
       key: 'documentNo', column: 'DocumentNo', type: 'string',
       pill: {
@@ -65,7 +66,6 @@ export default function InvoiceHeaderTable(props) {
         className: 'bg-purple-50 text-purple-700 border-purple-200',
       },
     },
-    { key: 'invoiceDate', column: 'DateInvoiced', type: 'date' },
     { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
     { key: '_status', column: '_status', type: 'custom', label: t('statusColumn'),
       render: (row) => {
@@ -76,6 +76,7 @@ export default function InvoiceHeaderTable(props) {
       },
     },
     { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
+    { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
   ], [gl]);
 
   // ─── Filter options ───────────────────────────────────────────

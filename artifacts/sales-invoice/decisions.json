@@ -39,6 +39,7 @@
       "fields": {
         "businessPartner": {
           "grid": true,
+          "gridOrder": 3,
           "searchable": true,
           "reference": "BusinessPartner",
           "displayLogic": null,
@@ -48,6 +49,7 @@
         },
         "invoiceDate": {
           "grid": true,
+          "gridOrder": 1,
           "searchable": true,
           "section": "principal",
           "seq": 30
@@ -126,6 +128,7 @@
         "documentNo": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 2,
           "searchable": true,
           "section": "principal",
           "seq": 20
@@ -133,6 +136,7 @@
         "documentStatus": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 4,
           "searchable": true,
           "form": false
         },
@@ -149,6 +153,7 @@
         "grandTotalAmount": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 5,
           "section": "summary"
         },
         "summedLineAmount": {
@@ -157,16 +162,19 @@
         },
         "outstandingAmount": {
           "visibility": "readOnly",
+          "grid": true,
+          "gridOrder": 6,
+          "form": false,
           "section": "summary"
         },
         "isPaid": {
           "visibility": "readOnly",
-          "grid": true,
+          "grid": false,
           "form": false
         },
         "paymentComplete": {
           "visibility": "readOnly",
-          "grid": true,
+          "grid": false,
           "form": false
         },
         "totalPaid": {
