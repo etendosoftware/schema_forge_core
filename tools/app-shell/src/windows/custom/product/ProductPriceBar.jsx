@@ -3,6 +3,8 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { useUI } from '@/i18n';
+import { useCurrency } from '@/hooks/useCurrency';
+import { formatCurrency } from '@/lib/formatCurrency';
 import {
   Dialog,
   DialogContent,
@@ -10,11 +12,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-
-function formatPrice(v) {
-  if (v === null || v === undefined) return '—';
-  return Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
 
 function parseBoolean(value) {
   if (typeof value === 'boolean') return value;
@@ -137,6 +134,7 @@ function resolveOptionId(options, candidate) {
 
 function PriceTable({ title, rows, variant = 'neutral' }) {
   const ui = useUI();
+  const orgCurrency = useCurrency() ?? 'USD';
   const isEmpty = !rows || rows.length === 0;
   const tone = variant === 'sales'
     ? {
@@ -192,13 +190,12 @@ function PriceTable({ title, rows, variant = 'neutral' }) {
               {rows.map((row, idx) => {
                 const unitPrice = Number(row.standardPrice) || 0;
                 const listPrice = Number(row.listPrice) || 0;
-                const currency = row.currencySymbol ?? '€';
                 const name = row['priceListVersion$_identifier'] || row['priceList$_identifier'] || 'Unknown';
                 return (
                   <tr key={row.id} className={`${idx > 0 ? 'border-t border-gray-100' : ''}`}>
                     <td className="px-4 py-3 text-sm font-medium text-gray-800 truncate">{name}</td>
-                    <td className="w-36 px-4 py-3 text-sm text-gray-500 text-right">{formatPrice(unitPrice)} {currency}</td>
-                    <td className={`w-36 px-4 py-3 text-sm font-bold text-right ${tone.listPrice}`}>{formatPrice(listPrice)} {currency}</td>
+                    <td className="w-36 px-4 py-3 text-sm text-gray-500 text-right">{formatCurrency(orgCurrency, unitPrice)}</td>
+                    <td className={`w-36 px-4 py-3 text-sm font-bold text-right ${tone.listPrice}`}>{formatCurrency(orgCurrency, listPrice)}</td>
                   </tr>
                 );
               })}

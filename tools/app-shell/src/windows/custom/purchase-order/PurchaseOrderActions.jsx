@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { FileText, Check } from 'lucide-react';
 import { useUI } from '@/i18n';
+import { formatCurrency } from '@/lib/formatCurrency';
 
 /* eslint-disable react/prop-types */
 
@@ -351,7 +352,7 @@ function ConfirmOrderModal({
 
   const fmtNum = (v) =>
     v != null && v !== ''
-      ? Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      ? formatCurrency(currency || 'USD', v)
       : '-';
 
   // Fetch fresh record + line count on mount
@@ -421,7 +422,7 @@ function ConfirmOrderModal({
           type: 'invoice',
           id: invoice?.id ?? null,
           documentNo: invoice?.documentNo || '',
-          total: invoice?.grandTotal != null ? `${fmtNum(invoice.grandTotal)} ${currency}`.trim() : '',
+          total: invoice?.grandTotal != null ? fmtNum(invoice.grandTotal) : '',
           status: 'Draft',
         });
 
