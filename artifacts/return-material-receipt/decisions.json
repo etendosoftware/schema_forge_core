@@ -4,7 +4,8 @@
     "category": "sales",
     "name": "Return Material Receipt",
     "relatedDocuments": true,
-    "notesField": "description"
+    "notesField": "description",
+    "dateFilterKey": "movementDate"
   },
   "entities": {
     "mInOut": {

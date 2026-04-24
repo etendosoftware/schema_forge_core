@@ -29,7 +29,8 @@
         "C_BPartner_ID": "Contact"
       }
     },
-    "noHeaderBorder": true
+    "noHeaderBorder": true,
+    "dateFilterKey": "orderDate"
   },
   "entities": {
     "header": {

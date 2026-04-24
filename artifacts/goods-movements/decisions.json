@@ -8,7 +8,8 @@
       "processNow": {
         "requiresLines": true
       }
-    }
+    },
+    "dateFilterKey": "movementDate"
   },
   "entities": {
     "header": {

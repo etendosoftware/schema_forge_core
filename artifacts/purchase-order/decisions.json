@@ -27,7 +27,8 @@
       "CO",
       "CL",
       "VO"
-    ]
+    ],
+    "dateFilterKey": "orderDate"
   },
   "entities": {
     "header": {

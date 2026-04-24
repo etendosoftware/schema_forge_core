@@ -3,7 +3,8 @@
   "window": {
     "category": "purchases",
     "name": "Goods Receipt",
-    "relatedDocuments": true
+    "relatedDocuments": true,
+    "dateFilterKey": "movementDate"
   },
   "entities": {
     "header": {

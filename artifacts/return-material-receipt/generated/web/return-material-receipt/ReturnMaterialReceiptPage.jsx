@@ -267,6 +267,7 @@ export default function ReturnMaterialReceiptPage({ windowName, recordId, ...pro
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+dateFilterKey="movementDate"
       {...props}
     />
   );

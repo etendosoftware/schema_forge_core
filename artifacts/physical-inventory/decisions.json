@@ -11,7 +11,8 @@
     },
     "customComponents": {
       "moreMenuContent": "InventoryMenuContent"
-    }
+    },
+    "dateFilterKey": "movementDate"
   },
   "entities": {
     "header": {
