@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUI } from '@/i18n';
 import EntityCreationModal from './EntityCreationModal.jsx';
 import FinancialSection from './FinancialSection.jsx';
@@ -17,6 +17,58 @@ const EMPTY_OPTS = {
   countries: { options: [], loading: false, error: null },
   regions: { options: [], loading: false, error: null },
 };
+
+function buildPersonName(firstName, lastName) {
+  return [firstName, lastName]
+    .map(part => String(part ?? '').trim())
+    .filter(Boolean)
+    .join(' ')
+    .slice(0, 60);
+}
+
+function ContactModeToggle({ contactType, onChange }) {
+  const ui = useUI();
+
+  return (
+    <div
+      className="flex items-center gap-1 p-1 rounded-xl"
+      style={{ background: '#F5F7F9', width: '240px' }}
+    >
+      <button
+        type="button"
+        onClick={() => onChange('person')}
+        className="flex-1 h-8 px-2 text-sm font-medium rounded-lg transition-all"
+        style={
+          contactType === 'person'
+            ? {
+                background: '#FFFFFF',
+                color: '#121217',
+                boxShadow: '0px 1px 3px rgba(18,18,23,0.10), 0px 1px 2px rgba(18,18,23,0.06)',
+              }
+            : { color: '#121217' }
+        }
+      >
+        {ui('Person')}
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange('company')}
+        className="flex-1 h-8 px-2 text-sm font-medium rounded-lg transition-all"
+        style={
+          contactType === 'company'
+            ? {
+                background: '#FFFFFF',
+                color: '#121217',
+                boxShadow: '0px 1px 3px rgba(18,18,23,0.10), 0px 1px 2px rgba(18,18,23,0.06)',
+              }
+            : { color: '#121217' }
+        }
+      >
+        {ui('company')}
+      </button>
+    </div>
+  );
+}
 
 /**
  * Thin wrapper around EntityCreationModal for creating Business Partners.
@@ -47,6 +99,7 @@ export default function CreateContactModal({
   const [retryCount, setRetryCount] = useState(0);
   const [currentCountry, setCurrentCountry] = useState('');
   const [retryRegionCount, setRetryRegionCount] = useState(0);
+  const [contactType, setContactType] = useState('company');
 
   // Fetch all selectors (except regions, which depend on country)
   useEffect(() => {
@@ -184,6 +237,59 @@ export default function CreateContactModal({
     if (id === 'country') setCurrentCountry(value);
   }, []);
 
+  const headerFields = useMemo(() => {
+    const commonFields = [
+      {
+        id: 'taxIdType',
+        labelKey: 'taxIdTypeField',
+        type: 'dynamicSelect',
+        optionsKey: 'taxIdTypes',
+      },
+      {
+        id: 'taxID',
+        labelKey: 'taxIDField',
+        type: 'text',
+        placeholder: 'B-12345678',
+        required: true,
+      },
+    ];
+
+    if (contactType === 'person') {
+      return [
+        { id: 'etgoFirstname', labelKey: 'contactFirstName', type: 'text' },
+        { id: 'etgoLastname', labelKey: 'contactLastName', type: 'text' },
+        ...commonFields,
+      ];
+    }
+
+    return [
+      { id: 'name', labelKey: 'contactLegalName', type: 'text', required: true },
+      ...commonFields,
+    ];
+  }, [contactType]);
+
+  const requiredFields = useMemo(
+    () => (contactType === 'company' ? ['name', 'taxID', 'country'] : ['taxID', 'country']),
+    [contactType],
+  );
+
+  const progressFields = useMemo(() => {
+    if (contactType === 'company') {
+      return contactModalConfig.progressFields;
+    }
+
+    const baseProgressFields = contactModalConfig.progressFields.filter(key => key !== 'name');
+    return [...baseProgressFields, 'etgoFirstname', 'etgoLastname'];
+  }, [contactType]);
+
+  const validateForm = useCallback((form) => {
+    if (contactType !== 'person') return null;
+    if (!buildPersonName(form.etgoFirstname, form.etgoLastname)) {
+      return ui('contactPersonNameRequired');
+    }
+    return null;
+  }, [contactType, ui]);
+
   // Attach retry callbacks before passing opts down
   const optsWithRetry = {
     ...opts,
@@ -199,10 +305,15 @@ export default function CreateContactModal({
 
   const handleSave = async (form, repeatables) => {
     const toErrMsg = v => (typeof v === 'string' ? v : v?.message) || null;
+    const legalName = String(form.name ?? '').trim();
+    const firstName = String(form.etgoFirstname ?? '').trim();
+    const lastName = String(form.etgoLastname ?? '').trim();
 
     // Step 1 — Create BP
     const createPayload = {
-      name: form.name?.trim(),
+      ...(contactType === 'company' && legalName && { name: legalName }),
+      ...(contactType === 'person' && firstName && { etgoFirstname: firstName }),
+      ...(contactType === 'person' && lastName && { etgoLastname: lastName }),
       taxID: form.taxID?.trim(),
       oBTIKTaxIDKey: form.taxIdType || '1',
       creditLimit: Number(form.creditLimit) || 0,
@@ -239,7 +350,10 @@ export default function CreateContactModal({
     const data = await res.json();
     const record = data?.response?.data?.[0] ?? data?.response?.data ?? data;
     const newId = record?.id;
-    const newName = record?.name ?? form.name;
+    const fallbackName = contactType === 'person'
+      ? buildPersonName(firstName, lastName)
+      : legalName;
+    const newName = record?.name ?? fallbackName;
 
     try {
       // Step 2 — POST address (handled atomically by ContactsLocationAddressHandler)
@@ -370,8 +484,15 @@ export default function CreateContactModal({
       title={ui('newContact')}
       saveLabel={ui('saveContact')}
       {...contactModalConfig}
+      titleRightContent={<ContactModeToggle contactType={contactType} onChange={setContactType} />}
+      headerFields={headerFields}
+      requiredFields={requiredFields}
+      progressFields={progressFields}
+      validate={validateForm}
       initialValues={{
         name: '',
+        etgoFirstname: '',
+        etgoLastname: '',
         taxID: '',
         taxIdType: '1',
         creditLimit: 0,

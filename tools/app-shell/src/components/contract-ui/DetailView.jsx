@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { AddLineButton } from '@/components/ui/add-line-button.jsx';
-import { X, MoreVertical, Check, Save, List, Printer, Send, Trash2 } from 'lucide-react';
+import { X, MoreVertical, Check, Save, List, Printer, Send, Trash2, Loader2 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from '@/components/ui/dialog.jsx';
@@ -139,20 +139,32 @@ export function DetailView({
   onAfterCreate,
   labelOverrides,
 }) {
-  const hook = useEntity(entity, detailEntity, { token, apiBaseUrl });
+  // DetailView never needs the parent list: on `/new` there is no record to match, and on
+  // `/:id` the currentItem shortcut only helps when we arrived from ListView (items already
+  // in memory from the other hook instance). On a direct URL hit `items` is empty anyway and
+  // the effect falls through to fetchById. Skipping the list fetch unconditionally drops one
+  // wasted GET per direct-URL navigation.
+  const hook = useEntity(entity, detailEntity, { token, apiBaseUrl, skipListFetch: true });
   const LinesEmptyState = bottomSection?.linesEmptyState ?? null;
   const DetailExtraActions = bottomSection?.detailExtraActions ?? null;
-  // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls)
-  const secondaryHook0 = useEntity(entity, (secondaryTabs[0]?.isFormTab || secondaryTabs[0]?.Panel) ? null : (secondaryTabs[0]?.key ?? null), { token, apiBaseUrl });
-  const secondaryHook1 = useEntity(entity, (secondaryTabs[1]?.isFormTab || secondaryTabs[1]?.Panel) ? null : (secondaryTabs[1]?.key ?? null), { token, apiBaseUrl });
-  const secondaryHook2 = useEntity(entity, (secondaryTabs[2]?.isFormTab || secondaryTabs[2]?.Panel) ? null : (secondaryTabs[2]?.key ?? null), { token, apiBaseUrl });
-  const secondaryHook3 = useEntity(entity, (secondaryTabs[3]?.isFormTab || secondaryTabs[3]?.Panel) ? null : (secondaryTabs[3]?.key ?? null), { token, apiBaseUrl });
+  // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls).
+  // Secondary hooks only consume child-level state (children, handleAddChild, handleDeleteChild,
+  // handleSelect) — never the parent list. skipListFetch avoids refetching the parent entity
+  // list once per hook (which would otherwise cause N+1 identical GETs on mount).
+  const secondaryHook0 = useEntity(entity, (secondaryTabs[0]?.isFormTab || secondaryTabs[0]?.Panel) ? null : (secondaryTabs[0]?.key ?? null), { token, apiBaseUrl, skipListFetch: true });
+  const secondaryHook1 = useEntity(entity, (secondaryTabs[1]?.isFormTab || secondaryTabs[1]?.Panel) ? null : (secondaryTabs[1]?.key ?? null), { token, apiBaseUrl, skipListFetch: true });
+  const secondaryHook2 = useEntity(entity, (secondaryTabs[2]?.isFormTab || secondaryTabs[2]?.Panel) ? null : (secondaryTabs[2]?.key ?? null), { token, apiBaseUrl, skipListFetch: true });
+  const secondaryHook3 = useEntity(entity, (secondaryTabs[3]?.isFormTab || secondaryTabs[3]?.Panel) ? null : (secondaryTabs[3]?.key ?? null), { token, apiBaseUrl, skipListFetch: true });
   const secondaryHooks = [secondaryHook0, secondaryHook1, secondaryHook2, secondaryHook3];
   const parentRecordId = hook.selected?.id ?? recordId ?? hook.editing?.id ?? null;
-  const selectorContextByEntity = useMemo(() => {
-    const headerData = hook.editing || hook.selected;
-    const priceListId = headerData?.priceList ?? null;
+  // Depend on the single scalar the memo reads from editing/selected, not the whole objects.
+  // Keeps original semantics: prefer editing when present (even if priceList is null), else selected.
+  const priceListId = (hook.editing || hook.selected)?.priceList ?? null;
+  // Stringify secondary-tab keys so the memo is immune to the `secondaryTabs = []` default
+  // recreating a new array reference on every render.
+  const secondaryTabKeysStr = secondaryTabs.map(t => t?.key ?? '').join('|');
 
+  const selectorContextByEntity = useMemo(() => {
     // Derive isSOTrx from window category so NEO's validation filter resolves
     // @isSOTrx@ in M_PriceList.issopricelist = @isSOTrx@, showing only sales or
     // purchase price lists depending on the document type.
@@ -178,7 +190,8 @@ export function DetailView({
       // DateInvoiced is required by the C_Tax validationRule:
       // VALIDFROM <= COALESCE(@DateInvoiced@, @DateOrdered@)
       // Without it, COALESCE(null,null)=null → VALIDFROM<=null is always FALSE → no taxes returned.
-      const invoiceDate = headerData?.invoiceDate ?? headerData?.orderDate ?? null;
+      const headerSnapshot = hook.selected ?? hook.editing;
+      const invoiceDate = headerSnapshot?.invoiceDate ?? headerSnapshot?.orderDate ?? null;
       next[detailEntity] = {
         parentId: parentRecordId,
         ...(isSOTrx ? { isSOTrx, IsSOTrx: isSOTrx } : {}),
@@ -186,14 +199,12 @@ export function DetailView({
         ...(invoiceDate ? { DateInvoiced: invoiceDate } : {}),
       };
     }
-    for (const tab of secondaryTabs) {
-      if (tab?.key) {
-        next[tab.key] = { parentId: parentRecordId };
-      }
+    for (const key of secondaryTabKeysStr.split('|').filter(Boolean)) {
+      next[key] = { parentId: parentRecordId };
     }
     return next;
-  }, [entity, detailEntity, parentRecordId, secondaryTabs, hook.editing, hook.selected, api]);
-  const { catalogs, catalogsLoaded } = useCatalogs(api, token, apiBaseUrl, staticCatalogs, selectorContextByEntity);
+  }, [entity, detailEntity, parentRecordId, secondaryTabKeysStr, priceListId, api, hook.selected, hook.editing]);
+  const { catalogs, catalogsLoaded } = useCatalogs(api, token, apiBaseUrl, staticCatalogs);
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
   const navigate = useNavigate();
@@ -205,6 +216,31 @@ export function DetailView({
   const dictionary = useLocale();
   const [addingLine, setAddingLine] = useState(false);
   const [addingSecondaryLine, setAddingSecondaryLine] = useState({});
+  // Imperative handles to in-progress inline add rows so we can commit them
+  // before header save (mirrors clicking the green check on an editing line).
+  const primaryAddRowRef = useRef(null);
+  const secondaryAddRowRefs = useRef({});
+  const getSecondaryAddRowRef = useCallback((key) => {
+    if (!secondaryAddRowRefs.current[key]) {
+      secondaryAddRowRefs.current[key] = { current: null };
+    }
+    return secondaryAddRowRefs.current[key];
+  }, []);
+  const flushPendingLines = useCallback(async () => {
+    if (addingLine && primaryAddRowRef.current?.flush) {
+      const ok = await primaryAddRowRef.current.flush({ closeAfterSave: true });
+      if (ok === false) return false;
+    }
+    for (const [tabKey, active] of Object.entries(addingSecondaryLine)) {
+      if (!active) continue;
+      const handle = secondaryAddRowRefs.current[tabKey]?.current;
+      if (handle?.flush) {
+        const ok = await handle.flush({ closeAfterSave: true });
+        if (ok === false) return false;
+      }
+    }
+    return true;
+  }, [addingLine, addingSecondaryLine]);
   const [customModalState, setCustomModalState] = useState({ key: null, rowId: null });
   const [activeTab, setActiveTab] = useState(0);
 
@@ -324,12 +360,16 @@ export function DetailView({
     if (isNew) {
       const saved = await hook.handleSave();
       if (!saved?.id) return;
-      navigate(`/${windowName}/${saved.id}`, { replace: true, state: { openAddLine: true } });
+      hook.primeSaved?.(saved);
+      navigate(`/${windowName}/${saved.id}`, {
+        replace: true,
+        state: { openAddLine: true, justSaved: saved },
+      });
       return;
     }
     setAddingLine(prev => !prev);
     setEditingChild(null);
-  }, [isNew, hook.handleSave, navigate, windowName]);
+  }, [isNew, hook, navigate, windowName]);
 
   const handleSecondaryAddLineToggle = useCallback(async (tabKey) => {
     const targetTab = secondaryTabs.find(st => st.key === tabKey);
@@ -337,15 +377,16 @@ export function DetailView({
     if (isNew && targetTab.requireSavedRecord) {
       const saved = await hook.handleSave();
       if (!saved?.id) return;
+      hook.primeSaved?.(saved);
       navigate(`/${windowName}/${saved.id}`, {
         replace: true,
-        state: { openSecondaryTab: tabKey, openAddSecondaryLine: true },
+        state: { openSecondaryTab: tabKey, openAddSecondaryLine: true, justSaved: saved },
       });
       return;
     }
     setAddingSecondaryLine(prev => ({ ...prev, [tabKey]: !prev[tabKey] }));
     setSelectedSecondaryLine(null);
-  }, [secondaryTabs, isNew, hook.handleSave, navigate, windowName]);
+  }, [secondaryTabs, isNew, hook, navigate, windowName]);
 
   // Resolve $_identifier for default FK values.
   // NOTE: Mandatory defaults are now handled by the backend (NeoDefaultsService).
@@ -405,6 +446,24 @@ export function DetailView({
 
   useEffect(() => {
     if (isNew || !recordId) return;
+    // Skip the post-save fetchById round-trip: when the save handlers navigate
+    // /new → /:id they stash the saved record in location.state.justSaved and
+    // prime the hook via primeSaved() so selected/editing already match recordId.
+    // See docs/plans/sales-order-save-performance.md (Etapa 1.2).
+    const justSaved = location.state?.justSaved;
+    if (
+      justSaved?.id
+      && String(justSaved.id) === String(recordId)
+      && String(hook.selected?.id) === String(justSaved.id)
+    ) {
+      setDirectFetched(true);
+      // One-shot: clear the marker so a manual reload of /:id still fetches.
+      navigate(location.pathname, {
+        replace: true,
+        state: { ...location.state, justSaved: undefined },
+      });
+      return;
+    }
     if (currentItem && (!hook.selected || String(hook.selected.id) !== String(recordId))) {
       hook.handleSelect(currentItem);
       setDirectFetched(false);
@@ -414,6 +473,10 @@ export function DetailView({
       setDirectFetched(true);
       hook.fetchById(recordId);
     }
+    // `navigate` and `location` are stable refs from react-router v6 and are
+    // intentionally omitted from the dep list to avoid re-running on every
+    // navigation tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentItem, directFetched, hook.fetchById, hook.handleSelect, hook.loading, hook.selected, isNew, recordId]);
 
   // Reset selected line when the parent record changes
@@ -720,7 +783,12 @@ export function DetailView({
           }
         }
       }
-      applyUpdates?.(result);
+      // forceCalloutFields: explicit opt-in list declared per field in decisions.json.
+      // Only those fields bypass the touched-guard when this field triggers a callout.
+      // No other window or field is affected unless it declares forceCalloutFields.
+      const triggerFieldDef = (addLineFields?.entry ?? []).find(f => f.key === field);
+      const forceFields = new Set(triggerFieldDef?.forceCalloutFields ?? []);
+      applyUpdates?.(result, forceFields);
 
       // Cascade to SL_Order_Amt when a price-setting callout (e.g. SL_Order_Product) returned
       // unitPrice or grossUnitPrice but did not compute lineNetAmount.
@@ -890,7 +958,12 @@ export function DetailView({
     navigate(location.pathname, { replace: true, state: {} });
   }, [location.state?.openSecondaryTab, location.state?.openAddSecondaryLine, isNew, hook.editing, navigate, location.pathname, tabs]);
 
-  if (hook.loading) {
+  // Only black out the whole window when we actually don't have the record yet.
+  // A list refresh (hook.loading for the side list) or any unrelated background
+  // fetch must not wipe out a form the user was interacting with.
+  const hasRecordForRoute = isNew
+    || (hook.selected?.id && String(hook.selected.id) === String(recordId));
+  if (hook.loading && !hasRecordForRoute) {
     return (
       <div className="flex items-center justify-center h-64 text-muted-foreground">
         {ui('loading')}
@@ -1099,66 +1172,80 @@ export function DetailView({
 
               {!hideSaveStatuses.includes(_headerData?.documentStatus) && !isDraftModeCompleted && (draftMode?.enabled ? (
                 <>
-                  <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" data-testid="action-save-draft" onClick={async () => {
+                  <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" data-testid="action-save-draft" disabled={hook.isSaving} onClick={async () => {
+                    if (!(await flushPendingLines())) return;
                     const saved = await hook.handleSave(data);
-                    if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
+                    if (saved?.id && isNew) {
+                      hook.primeSaved?.(saved);
+                      navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
+                    }
                   }}>
-                    <Save className="h-3.5 w-3.5" />
+                    {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                     {ui('save')}
                   </Button>
-                  <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
+                  <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
+                    if (!(await flushPendingLines())) return;
                     const saved = await hook.handleSaveAndProcess(draftMode);
                     if (saved) {
                       if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
                       if (onAfterSave) {
-                        navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved } });
+                        navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved, justSaved: saved } });
                       } else if (saved.id && isNew) {
-                        navigate(`/${windowName}/${saved.id}`, { replace: true });
+                        hook.primeSaved?.(saved);
+                        navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
                       }
                     }
                   }}>
-                    <Check className="h-3.5 w-3.5" />
+                    {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
                     {ui(draftMode.label) || draftMode.label || ui('process')}
                   </Button>
                 </>
               ) : isNew ? (<>
-                <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly} onClick={async () => {
+                <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving} onClick={async () => {
+                  if (!(await flushPendingLines())) return;
                   const saved = await hook.handleSave(data);
-                  if (saved?.id && isNew) navigate(`/${windowName}/${saved.id}`, { replace: true });
+                  if (saved?.id && isNew) {
+                    hook.primeSaved?.(saved);
+                    navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
+                  }
                 }}>
-                  <Save className="h-3.5 w-3.5" />
+                  {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                   {ui('save')}
                 </Button>
                 {!isProcessed && hook.children.length > 0 && (
-                <Button size="sm" className="gap-1.5" data-testid="action-save" onClick={async () => {
+                <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
+                  if (!(await flushPendingLines())) return;
                   const saved = await hook.handleSaveAndProcess(draftMode);
                   if (saved) {
                     if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
                     if (onAfterSave) {
-                      navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved } });
+                      navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved, justSaved: saved } });
                     } else if (saved.id && isNew) {
-                      navigate(`/${windowName}/${saved.id}`, { replace: true });
+                      hook.primeSaved?.(saved);
+                      navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
                     }
                   }
                 }}>
-                  <Check className="h-3.5 w-3.5" />
+                  {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
                   {ui(draftMode.label) || tMenu(draftMode.label) || ui('process')}
                 </Button>
                 )}
               </>
             ) : (
-              <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly} onClick={async () => {
+              <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving} onClick={async () => {
+                if (!(await flushPendingLines())) return;
                 const saved = await hook.handleSave(data);
                 if (saved) {
                   if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
                   if (onAfterSave) {
-                    navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved } });
+                    navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved, justSaved: saved } });
                   } else if (saved.id && isNew) {
-                    navigate(`/${windowName}/${saved.id}`, { replace: true });
+                    hook.primeSaved?.(saved);
+                    navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
                   }
                 }
               }}>
-                <Check className="h-3.5 w-3.5" />
+                {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
                 {ui('save')}
               </Button>
             ))}
@@ -1391,6 +1478,7 @@ export function DetailView({
                           }
                         } : undefined}
                         addRow={{
+                          ref: primaryAddRowRef,
                           active: addingLine,
                           fields: allEntryFields,
                           onAdd: async (lineData) => {
@@ -1734,6 +1822,7 @@ export function DetailView({
                             : undefined}
                         selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
                         addRow={st.addLineFields?.entry?.length > 0 ? {
+                          ref: getSecondaryAddRowRef(st.key),
                           active: addingSecondaryLine[st.key] ?? false,
                           fields: st.addLineFields.entry,
                           onAdd: async (lineData) => {

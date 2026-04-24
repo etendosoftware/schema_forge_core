@@ -70,7 +70,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:lines
 
-const api = {
+export const api = {
   "specName": "purchase-order",
   "baseUrl": "/sws/neo/purchase-order",
   "crud": {

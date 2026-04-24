@@ -40,4 +40,21 @@ describe('QuotationTopbarActions', () => {
   it('imports SendDocumentModal and SendDocumentButton from contract-ui', () => {
     assert.match(src, /from\s+['"]@\/components\/contract-ui\/SendDocumentModal['"]/);
   });
+
+  it('imports CloneOrderModal from contract-ui', () => {
+    assert.match(src, /import\s+CloneOrderModal\s+from\s+['"]@\/components\/contract-ui\/CloneOrderModal['"]/);
+  });
+
+  it('renders a Clone button wired to the clone modal', () => {
+    assert.match(src, /setShowClone\(true\)/);
+    assert.match(src, /cloneOrderBtn/);
+  });
+
+  it('delegates to the cloneRecord backend action', () => {
+    assert.match(src, /cloneActionName="cloneRecord"/);
+  });
+
+  it('navigates to the new sales-quotation record after cloning', () => {
+    assert.match(src, /navigate\(`\/sales-quotation\/\$\{newId\}`\)/);
+  });
 });
