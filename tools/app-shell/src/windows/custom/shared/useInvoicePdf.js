@@ -275,7 +275,11 @@ async function buildInvoiceData(invoiceId, base, token) {
   ]);
   const companyLogoDataUrl = await fetchImageDataUrl(session?.yourCompanyDocumentImageId, base, token);
 
-  const lines = linesRaw.map((l, idx) => ({
+  // Sort by ERP lineNo so the rows always appear in the order the user created them
+  const linesSorted = [...linesRaw].sort(
+    (a, b) => (Number(a.lineNo) || 0) - (Number(b.lineNo) || 0)
+  );
+  const lines = linesSorted.map((l, idx) => ({
     lineNo: l.lineNo || (idx + 1),
     productName: l.product$_identifier || l.description || '—',
     quantity: l.invoicedQuantity ?? l.qtyInvoiced ?? 0,
