@@ -70,6 +70,7 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 | [developer-tools.md](developer-tools.md) | CLI tools used by the team: RTK (token optimization) and GWS (Google Workspace CLI) |
 | [claude-md-best-practices.md](claude-md-best-practices.md) | Best practices for writing effective CLAUDE.md files (research compilation) |
 | [self-documentation-policy.md](self-documentation-policy.md) | Self-documentation policy: triggers, checklists, and phase responsibilities for keeping docs in sync with code |
+| [coding-agent-window-qa-guide.md](coding-agent-window-qa-guide.md) | Mandatory guide for using coding agents on generated/custom window work with requirement, Figma, and functional QA evidence |
 
 ## Operations
 
