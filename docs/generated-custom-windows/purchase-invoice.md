@@ -69,8 +69,8 @@ Use this window to register supplier invoices, keep the payable document aligned
   - `tools/app-shell/src/windows/registry.js`
   - `artifacts/purchase-invoice/contract.json`
   - `tools/app-shell/src/windows/custom/purchase-invoice/index.jsx`
-  - `tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceTopbar.jsx` — the payment-status pill (paid/pending amounts) formats monetary values using the org's configured currency via `useCurrency()` and `formatCurrency()`.
-  - `tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceBottomPanel.jsx` — subtotal, inferred tax, and total in the footer are formatted using the org's configured currency via `useCurrency()` and `formatCurrency()`.
+  - `tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceTopbar.jsx`
+  - `tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceBottomPanel.jsx`
   - `tools/app-shell/src/windows/custom/purchase-invoice/InvoicePreviewModal.jsx`
   - `tools/app-shell/src/windows/custom/purchase-invoice/InvoiceLineTableCustom.jsx`
   - `tools/app-shell/src/windows/custom/purchase-invoice/RelatedDocuments.jsx`

@@ -80,6 +80,6 @@ The Assets window should let a finance user register fixed assets, define how ea
   - selector endpoints for asset category, currency, amortization, accounting schema, accumulated depreciation, and depreciation accounts
   - generated validation entries covering field presence, types, read-only/display logic, CRUD flags, and selector endpoints for the assets, amortizationLine, and assetAcct entities
 - `tools/app-shell/src/windows/custom/assets/AssetsConfigPanel.jsx` implements the visible setup logic that switches fields based on depreciation and calculation choices.
-- `tools/app-shell/src/windows/custom/assets/AssetsAmortizationPanel.jsx` fetches amortization lines by `parentId`, refreshes on `neo:processSuccess`, and shows planned totals/status. Monetary amounts in the amortization table and footer total are formatted using the org's configured currency via `useCurrency()` and `formatCurrency()`.
-- `tools/app-shell/src/windows/custom/assets/AssetsSidebar.jsx` derives depreciation progress from the asset header plus amortization lines. The asset value and planned depreciation metric cards display amounts using the org's configured currency via `useCurrency()` and `formatCurrency()`.
+- `tools/app-shell/src/windows/custom/assets/AssetsAmortizationPanel.jsx` fetches amortization lines by `parentId`, refreshes on `neo:processSuccess`, and shows planned totals/status.
+- `tools/app-shell/src/windows/custom/assets/AssetsSidebar.jsx` derives depreciation progress from the asset header plus amortization lines.
 - No assets-specific browser or component test file was found in `tools/app-shell/test` or `tools/app-shell/src/**/__tests__`, so the automated evidence is structural/code-backed rather than end-to-end behavioral proof.

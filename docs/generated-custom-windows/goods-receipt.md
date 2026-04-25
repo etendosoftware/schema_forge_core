@@ -82,5 +82,5 @@ No current evidence shows:
   - `artifacts/goods-receipt/contract.json`
   - `tools/app-shell/src/windows/custom/goods-receipt/index.jsx`
   - `tools/app-shell/src/windows/custom/goods-receipt/GoodsReceiptBottomPanel.jsx`
-  - `tools/app-shell/src/windows/custom/goods-receipt/ImportFromPurchaseOrderModal.jsx` — order totals shown in the import modal are formatted using the org's configured currency via `useCurrency()` and `formatCurrency()`.
+  - `tools/app-shell/src/windows/custom/goods-receipt/ImportFromPurchaseOrderModal.jsx`
   - `tools/app-shell/src/windows/custom/goods-receipt/RelatedDocuments.jsx`
