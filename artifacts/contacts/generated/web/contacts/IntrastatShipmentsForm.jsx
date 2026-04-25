@@ -14,5 +14,5 @@ const fields = [
 export default function IntrastatShipmentsForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-IntrastatShipmentsForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:IntrastatShipmentsForm

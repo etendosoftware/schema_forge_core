@@ -322,8 +322,7 @@ const api = {
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  
-  if (recordId) {
+    if (recordId) {
     return (
       <DetailView
         entity="header"

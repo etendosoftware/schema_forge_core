@@ -12,5 +12,5 @@ const fields = [
 export default function BasicDiscountsForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-BasicDiscountsForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:BasicDiscountsForm

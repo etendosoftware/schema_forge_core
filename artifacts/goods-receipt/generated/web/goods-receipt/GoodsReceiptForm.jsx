@@ -17,4 +17,5 @@ export default function GoodsReceiptForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
 GoodsReceiptForm.hasCollapsedFields = true;
+
 // @sf-generated-end component:GoodsReceiptForm

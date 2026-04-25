@@ -14,5 +14,5 @@ const fields = [
 export default function ExchangeRatesForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-ExchangeRatesForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:ExchangeRatesForm

@@ -10,5 +10,5 @@ const fields = [
 export default function FinPaymentForm(props) {
   return <EntityForm fields={fields} cols={3} {...props} />;
 }
-FinPaymentForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:FinPaymentForm

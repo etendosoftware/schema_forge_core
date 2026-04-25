@@ -16,5 +16,5 @@ const fields = [
 export default function ExecutionHistoryForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-ExecutionHistoryForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:ExecutionHistoryForm

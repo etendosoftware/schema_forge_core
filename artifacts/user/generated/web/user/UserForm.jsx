@@ -28,4 +28,5 @@ const fields = [
 export default function UserForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
+
 // @sf-generated-end component:UserForm

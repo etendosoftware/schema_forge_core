@@ -202,7 +202,6 @@ const api = {
 
 // @sf-generated-start component:UserPage
 export default function UserPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView

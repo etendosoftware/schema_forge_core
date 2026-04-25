@@ -24,5 +24,5 @@ const fields = [
 export default function VendorCreditorForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-VendorCreditorForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:VendorCreditorForm

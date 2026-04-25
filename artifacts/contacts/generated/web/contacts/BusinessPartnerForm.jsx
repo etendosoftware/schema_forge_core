@@ -19,5 +19,5 @@ const fields = [
 export default function BusinessPartnerForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-BusinessPartnerForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:BusinessPartnerForm

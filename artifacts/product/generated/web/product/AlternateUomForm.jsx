@@ -15,5 +15,5 @@ const fields = [
 export default function AlternateUomForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-AlternateUomForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:AlternateUomForm

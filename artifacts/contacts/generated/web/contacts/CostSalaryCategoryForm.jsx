@@ -11,5 +11,5 @@ const fields = [
 export default function CostSalaryCategoryForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-CostSalaryCategoryForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:CostSalaryCategoryForm

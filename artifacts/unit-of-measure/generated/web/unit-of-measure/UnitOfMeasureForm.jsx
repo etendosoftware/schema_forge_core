@@ -31,4 +31,5 @@ export default function UnitOfMeasureForm(props) {
   });
   return <EntityForm fields={fields} {...props} />;
 }
+
 // @sf-generated-end component:UnitOfMeasureForm

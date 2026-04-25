@@ -11,5 +11,5 @@ const fields = [
 export default function PaymentMethodForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-PaymentMethodForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:PaymentMethodForm

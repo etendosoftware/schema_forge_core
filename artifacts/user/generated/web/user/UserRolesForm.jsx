@@ -11,4 +11,5 @@ const fields = [
 export default function UserRolesForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
+
 // @sf-generated-end component:UserRolesForm

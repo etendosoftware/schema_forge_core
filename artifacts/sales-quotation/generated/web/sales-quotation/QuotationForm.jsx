@@ -21,4 +21,5 @@ export default function QuotationForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
 QuotationForm.hasCollapsedFields = true;
+
 // @sf-generated-end component:QuotationForm

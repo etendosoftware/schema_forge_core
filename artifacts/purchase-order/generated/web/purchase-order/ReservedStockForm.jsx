@@ -16,5 +16,5 @@ const fields = [
 export default function ReservedStockForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-ReservedStockForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:ReservedStockForm

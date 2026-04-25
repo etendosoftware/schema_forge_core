@@ -23,4 +23,5 @@ const fields = [
 export default function EmailConfigurationForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
+
 // @sf-generated-end component:EmailConfigurationForm

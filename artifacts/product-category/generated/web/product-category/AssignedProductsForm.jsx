@@ -12,4 +12,5 @@ const fields = [
 export default function AssignedProductsForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
+
 // @sf-generated-end component:AssignedProductsForm

@@ -13,5 +13,5 @@ const fields = [
 export default function EmployeeForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-EmployeeForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:EmployeeForm

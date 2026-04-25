@@ -16,5 +16,5 @@ const fields = [
 export default function HeaderForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-HeaderForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:HeaderForm

@@ -343,7 +343,7 @@ ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}(props) {
   return <EntityForm fields={fields}${colsProp} {...props} />;
 }
-${compName}.hasCollapsedFields = ${hasCollapsed};
+${hasCollapsed ? `${compName}.hasCollapsedFields = true;\n` : ''}
 ${MARKERS.GENERATED_END(`component:${compName}`)}
 `;
 }

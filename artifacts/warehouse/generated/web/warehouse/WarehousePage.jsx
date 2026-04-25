@@ -226,7 +226,6 @@ const api = {
 
 // @sf-generated-start component:WarehousePage
 export default function WarehousePage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView

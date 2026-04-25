@@ -164,8 +164,7 @@ const api = {
 
 // @sf-generated-start component:ProductCategoryPage
 export default function ProductCategoryPage({ windowName, recordId, ...props }) {
-  
-  if (recordId) {
+    if (recordId) {
     return (
       <DetailView
         entity="productCategory"

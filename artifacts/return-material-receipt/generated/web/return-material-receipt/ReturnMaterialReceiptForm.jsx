@@ -17,5 +17,5 @@ const fields = [
 export default function ReturnMaterialReceiptForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-ReturnMaterialReceiptForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:ReturnMaterialReceiptForm

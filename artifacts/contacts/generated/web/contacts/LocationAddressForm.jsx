@@ -18,5 +18,5 @@ const fields = [
 export default function LocationAddressForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-LocationAddressForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:LocationAddressForm
