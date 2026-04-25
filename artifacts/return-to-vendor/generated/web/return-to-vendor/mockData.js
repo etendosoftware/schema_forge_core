@@ -3,8 +3,8 @@
 export const header = [
   {
     "id": "mock-header-001",
-    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "documentAction": "Sample documentAction",
+    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "orderReference": "Sample orderReference",
     "orderDate": "2026-01-15",
     "businessPartner": "Acme Corp",
@@ -29,8 +29,8 @@ export const header = [
   },
   {
     "id": "mock-header-002",
-    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "documentAction": "Sample documentAction",
+    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "orderReference": "Sample orderReference",
     "orderDate": "2026-01-16",
     "businessPartner": "TechFlow Inc",
@@ -55,8 +55,8 @@ export const header = [
   },
   {
     "id": "mock-header-003",
-    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "documentAction": "Sample documentAction",
+    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "orderReference": "Sample orderReference",
     "orderDate": "2026-01-17",
     "businessPartner": "Global Trade Ltd",
@@ -81,8 +81,8 @@ export const header = [
   },
   {
     "id": "mock-header-004",
-    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "documentAction": "Sample documentAction",
+    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "orderReference": "Sample orderReference",
     "orderDate": "2026-01-18",
     "businessPartner": "Summit Industries",
@@ -107,8 +107,8 @@ export const header = [
   },
   {
     "id": "mock-header-005",
-    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "documentAction": "Sample documentAction",
+    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "orderReference": "Sample orderReference",
     "orderDate": "2026-01-19",
     "businessPartner": "Pacific Partners",
@@ -133,8 +133,8 @@ export const header = [
   },
   {
     "id": "mock-header-006",
-    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "documentAction": "Sample documentAction",
+    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "orderReference": "Sample orderReference",
     "orderDate": "2026-01-20",
     "businessPartner": "Alpine Solutions",
@@ -159,8 +159,8 @@ export const header = [
   },
   {
     "id": "mock-header-007",
-    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "documentAction": "Sample documentAction",
+    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "orderReference": "Sample orderReference",
     "orderDate": "2026-01-21",
     "businessPartner": "Meridian Group",
@@ -185,8 +185,8 @@ export const header = [
   },
   {
     "id": "mock-header-008",
-    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "documentAction": "Sample documentAction",
+    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "orderReference": "Sample orderReference",
     "orderDate": "2026-01-22",
     "businessPartner": "Vertex Systems",
@@ -211,8 +211,8 @@ export const header = [
   },
   {
     "id": "mock-header-009",
-    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "documentAction": "Sample documentAction",
+    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "orderReference": "Sample orderReference",
     "orderDate": "2026-01-23",
     "businessPartner": "Atlas Manufacturing",
@@ -237,8 +237,8 @@ export const header = [
   },
   {
     "id": "mock-header-010",
-    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "documentAction": "Sample documentAction",
+    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "orderReference": "Sample orderReference",
     "orderDate": "2026-01-24",
     "businessPartner": "Nova Enterprises",
@@ -263,8 +263,8 @@ export const header = [
   },
   {
     "id": "mock-header-011",
-    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "documentAction": "Sample documentAction",
+    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "orderReference": "Sample orderReference",
     "orderDate": "2026-01-25",
     "businessPartner": "Pinnacle Services",
@@ -289,8 +289,8 @@ export const header = [
   },
   {
     "id": "mock-header-012",
-    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "documentAction": "Sample documentAction",
+    "rMPickfromreceipt": "Sample rMPickfromreceipt",
     "orderReference": "Sample orderReference",
     "orderDate": "2026-01-26",
     "businessPartner": "Horizon Labs",

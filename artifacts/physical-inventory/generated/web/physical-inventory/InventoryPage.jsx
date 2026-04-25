@@ -38,7 +38,7 @@ const draftMode = null;
 const addLineFields = {
   entry: [
     { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.', defaultValue: '@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM M_InventoryLine WHERE M_Inventory_ID=@M_Inventory_ID@' },
-    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ['quantityCount', 'bookQuantity'] },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["quantityCount","bookQuantity"] },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
     { key: 'quantityCount', column: 'QtyCount', type: 'number', required: true, label: 'User Count' },
   ],

@@ -31,10 +31,11 @@ const extraBadges = [];
 
 // @sf-generated-start processes:header
 const processes = [
-  { name: 'rMPickfromreceipt', label: 'Pick/Edit Lines', style: 'positive',
-    displayLogicRaw: "@Processed@='N'" },
+  
   { name: 'documentAction', label: 'Process Order', style: 'positive',
     displayLogicRaw: "@DocStatus@!'VO'&@DocStatus@!'CL'" },
+  { name: 'rMPickfromreceipt', label: 'Pick/Edit Lines', style: 'positive',
+    displayLogicRaw: "@Processed@='N'" },
   { name: 'rMAddOrphanLine', label: 'Insert Orphan Line', style: 'positive',
     displayLogicRaw: "@Processed@='N' & @RMAllowOprhanLine@='Y'" },
 ];
@@ -389,19 +390,19 @@ export const api = {
   "actions": [
     {
       "entity": "header",
-      "field": "rMPickfromreceipt",
-      "column": "RM_Pickfromreceipt",
-      "url": "/sws/neo/return-to-vendor/header/{id}/action/rMPickfromreceipt",
-      "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
       "field": "documentAction",
       "column": "DocAction",
       "url": "/sws/neo/return-to-vendor/header/{id}/action/documentAction",
       "processId": "104",
       "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "rMPickfromreceipt",
+      "column": "RM_Pickfromreceipt",
+      "url": "/sws/neo/return-to-vendor/header/{id}/action/rMPickfromreceipt",
+      "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
+      "processType": "obuiapp"
     },
     {
       "entity": "header",

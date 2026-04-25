@@ -83,8 +83,7 @@ export const api = {
 
 // @sf-generated-start component:PaymentMethodPage
 export default function PaymentMethodPage({ windowName, recordId, ...props }) {
-  
-  if (recordId) {
+    if (recordId) {
     return (
       <DetailView
         entity="paymentMethod"
