@@ -291,7 +291,6 @@
         },
         "product": {
           "grid": true,
-          "searchable": true,
           "section": "principal",
           "inputMode": "search",
           "order": 1,
