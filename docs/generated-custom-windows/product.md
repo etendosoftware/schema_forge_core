@@ -73,7 +73,7 @@ The detail screen also changes the standard generated behavior in three visible 
 - Product-specific behavior is grounded in current code under `tools/app-shell/src/windows/custom/product/`:
   - `ProductGallery.jsx` for gallery browsing
   - `ProductAdditionalInfoPanel.jsx` for grouped commercial/logistics editing
-  - `ProductPriceBar.jsx` for product pricing fetch/create/edit behavior
+  - `ProductPriceBar.jsx` for product pricing fetch/create/edit behavior. Unit prices and list prices shown in the pricing tables are formatted using the org's configured currency via `useCurrency()` and `formatCurrency()`, so the currency symbol reflects the organization's setting rather than a hardcoded value.
   - `ProductSidebar.jsx` for stock and transaction-driven sidebar summaries
 - The generated product page at `artifacts/product/generated/web/product/ProductPage.jsx` wires those custom surfaces into the product window and declares the attached child CRUD endpoints.
 - The product contract at `artifacts/product/contract.json` provides evidence for layout (`gallery`, sidebar layout, primary tabs), selectors, child entities, default values, and declared actions.
