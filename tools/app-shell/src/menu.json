@@ -26,13 +26,15 @@
         {
           "name": "contacts",
           "label": "Contacts",
-          "favname": "Contacts"
+          "favname": "Contacts",
+          "windowId": "123"
         },
         {
           "name": "business-partner",
           "label": "Business Partner",
           "favname": "Business Partner",
-          "hidden": true
+          "hidden": true,
+          "windowId": "123"
         },
         {
           "name": "deal",
@@ -44,7 +46,8 @@
           "name": "activity",
           "label": "Activity",
           "favname": "Activity",
-          "hidden": true
+          "hidden": true,
+          "windowId": "800060"
         },
         {
           "name": "lead",
@@ -80,32 +83,38 @@
         {
           "name": "sales-quotation",
           "label": "Quotation",
-          "favname": "Sales Quotation"
+          "favname": "Sales Quotation",
+          "windowId": "6CB5B67ED33F47DFA334079D3EA2340E"
         },
         {
           "name": "sales-order",
           "label": "Order",
-          "favname": "Sales Order"
+          "favname": "Sales Order",
+          "windowId": "143"
         },
         {
           "name": "goods-shipment",
           "label": "Shipment",
-          "favname": "Goods Shipment"
+          "favname": "Goods Shipment",
+          "windowId": "169"
         },
         {
           "name": "sales-invoice",
           "label": "Invoice",
-          "favname": "Sales Invoice"
+          "favname": "Sales Invoice",
+          "windowId": "167"
         },
         {
           "name": "return-from-customer",
           "label": "Return",
-          "favname": "Return from Customer"
+          "favname": "Return from Customer",
+          "windowId": "FF808081330213E60133021822E40007"
         },
         {
           "name": "return-material-receipt",
           "label": "Return Receipt",
-          "favname": "Return Material Receipt"
+          "favname": "Return Material Receipt",
+          "windowId": "123271B9AD60469BAE8A924841456B63"
         }
       ]
     },
@@ -117,27 +126,32 @@
         {
           "name": "purchase-order",
           "label": "Order",
-          "favname": "Purchase Order"
+          "favname": "Purchase Order",
+          "windowId": "181"
         },
         {
           "name": "goods-receipt",
           "label": "Receipt",
-          "favname": "Goods Receipt"
+          "favname": "Goods Receipt",
+          "windowId": "184"
         },
         {
           "name": "purchase-invoice",
           "label": "Invoice",
-          "favname": "Purchase Invoice"
+          "favname": "Purchase Invoice",
+          "windowId": "183"
         },
         {
           "name": "return-to-vendor",
           "label": "Return",
-          "favname": "Return to Vendor"
+          "favname": "Return to Vendor",
+          "windowId": "C50A8AEE6F044825B5EF54FAAE76826F"
         },
         {
           "name": "return-to-vendor-shipment",
           "label": "Return Shipment",
-          "favname": "Return to Vendor Shipment"
+          "favname": "Return to Vendor Shipment",
+          "windowId": "273673D2ED914C399A6C51DB758BE0F9"
         },
         {
           "name": "report-viewer-purchases",
@@ -155,32 +169,38 @@
         {
           "name": "product",
           "label": "Product",
-          "favname": "Product"
+          "favname": "Product",
+          "windowId": "140"
         },
         {
           "name": "product-category",
           "label": "Product Category",
-          "favname": "Product Category"
+          "favname": "Product Category",
+          "windowId": "144"
         },
         {
           "name": "physical-inventory",
           "label": "Physical Inventory",
-          "favname": "Physical Inventory"
+          "favname": "Physical Inventory",
+          "windowId": "168"
         },
         {
           "name": "goods-movements",
           "label": "Goods Movement",
-          "favname": "Goods Movement"
+          "favname": "Goods Movement",
+          "windowId": "170"
         },
         {
           "name": "internal-consumption",
           "label": "Internal Consumption",
-          "favname": "Internal Consumption"
+          "favname": "Internal Consumption",
+          "windowId": "800076"
         },
         {
           "name": "warehouse",
           "label": "Warehouse",
-          "favname": "Warehouse"
+          "favname": "Warehouse",
+          "windowId": "139"
         },
         {
           "name": "report-viewer-inventory",
@@ -227,12 +247,14 @@
         {
           "name": "payment-in",
           "label": "Payment In",
-          "favname": "Payment In"
+          "favname": "Payment In",
+          "windowId": "E547CE89D4C04429B6340FFA44E70716"
         },
         {
           "name": "payment-out",
           "label": "Payment Out",
-          "favname": "Payment Out"
+          "favname": "Payment Out",
+          "windowId": "6F8F913FA60F4CBD93DC1D3AA696E76E"
         },
         {
           "name": "bank-reconciliation",
@@ -242,12 +264,14 @@
         {
           "name": "chart-of-accounts",
           "label": "Chart of Accounts",
-          "favname": "Chart of Accounts"
+          "favname": "Chart of Accounts",
+          "windowId": "118"
         },
         {
           "name": "assets",
           "label": "Assets",
-          "favname": "Assets"
+          "favname": "Assets",
+          "windowId": "800027"
         },
         {
           "name": "recurring-invoice",
@@ -283,32 +307,38 @@
         {
           "name": "price-list",
           "label": "Price List",
-          "favname": "Price List"
+          "favname": "Price List",
+          "windowId": "146"
         },
         {
           "name": "payment-term",
           "label": "Payment Term",
-          "favname": "Payment Term"
+          "favname": "Payment Term",
+          "windowId": "141"
         },
         {
           "name": "payment-method",
           "label": "Payment Method",
-          "favname": "Payment Method"
+          "favname": "Payment Method",
+          "windowId": "3CAAC7D54593489384452416ACF356DD"
         },
         {
           "name": "tax",
           "label": "Tax",
-          "favname": "Tax"
+          "favname": "Tax",
+          "windowId": "137"
         },
         {
           "name": "unit-of-measure",
           "label": "Unit of Measure",
-          "favname": "Unit of Measure"
+          "favname": "Unit of Measure",
+          "windowId": "120"
         },
         {
           "name": "user",
           "label": "User",
-          "favname": "User"
+          "favname": "User",
+          "windowId": "108"
         },
         {
           "name": "smart-scan",

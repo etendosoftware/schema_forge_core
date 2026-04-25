@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { resolveBackendSort, buildBackendFilter } from '@/lib/gridQuery.js';
 import { toast } from 'sonner';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI } from '@/i18n';
@@ -234,7 +235,79 @@ function normalizeRows(rows, entityName) {
   return Array.isArray(rows) ? rows.map(row => normalizeRecord(row, entityName)) : [];
 }
 
-export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy, baseFilter, skipListFetch = false }) {
+const EMPTY_FILTERS = {};
+const EMPTY_DEFS = {};
+
+/**
+ * Extract `criteria=...` entries from a raw filter query-string fragment and push the
+ * remaining key/value pairs straight into queryParams as passthrough (e.g. `active=true`).
+ */
+function extractCriteriaFromFilter(filterStr, queryParams) {
+  const out = [];
+  if (!filterStr) return out;
+  for (const p of filterStr.split('&')) {
+    if (!p) continue;
+    const eqIdx = p.indexOf('=');
+    if (eqIdx < 0) continue;
+    const k = p.slice(0, eqIdx);
+    const v = decodeURIComponent(p.slice(eqIdx + 1));
+    if (k === 'criteria') {
+      try {
+        const parsed = JSON.parse(v);
+        if (Array.isArray(parsed)) out.push(...parsed);
+        else out.push(parsed);
+      } catch { /* skip malformed criteria */ }
+    } else {
+      queryParams.append(k, v);
+    }
+  }
+  return out;
+}
+
+/**
+ * Merge all filter layers into a single `criteria=...` param.
+ *
+ * Composition order (all AND):
+ *   baseFilter (window-scope: subset + quick) → columnFilters (status/date/search) → trailingFilter (funnel)
+ *
+ * Emitting separate `criteria=` params silently drops all but one on the backend,
+ * so everything must collapse into one array. If any sub-entry is an AdvancedCriteria
+ * (e.g. the funnel's OR block), wrap the whole result in an outer AdvancedCriteria AND
+ * so the OR stays parenthesized.
+ */
+function applyFilterParams(queryParams, baseFilter, columnFilters, columnDefs, trailingFilter) {
+  const baseCriteria = extractCriteriaFromFilter(baseFilter, queryParams);
+
+  const colCriteria = [];
+  for (const [key, parsed] of Object.entries(columnFilters)) {
+    if (!parsed) continue;
+    const c = columnDefs[key] || { key };
+    const filterCriteria = buildBackendFilter(c, parsed);
+    if (filterCriteria) colCriteria.push(...filterCriteria);
+  }
+
+  const trailingCriteria = extractCriteriaFromFilter(trailingFilter, queryParams);
+
+  const allCriteria = [...baseCriteria, ...colCriteria, ...trailingCriteria];
+  if (allCriteria.length === 0) return;
+
+  const hasAdvanced = allCriteria.some((c) => c && c._constructor === 'AdvancedCriteria');
+  const finalCriteria = hasAdvanced
+    ? { _constructor: 'AdvancedCriteria', operator: 'and', criteria: allCriteria }
+    : allCriteria;
+  queryParams.append('criteria', JSON.stringify(finalCriteria));
+}
+
+export function useEntity(entity, childEntity, {
+  token,
+  apiBaseUrl,
+  childSortBy,
+  baseFilter,
+  columnFilters = EMPTY_FILTERS,
+  columnDefs = EMPTY_DEFS,
+  skipListFetch = false,
+  trailingFilter = null,
+}) {
   const { logout } = useAuth();
   const ui = useUI();
   const [items, setItems] = useState([]);
@@ -262,8 +335,18 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
     startRowRef.current = 0;
     setHasMore(true);
     setLoading(true);
-    const sortKey = resolveSortKey(sortColumn, sampleRowRef.current);
-    fetch(`${apiBaseUrl}/${entity}?_sortBy=${sortKey} ${sortDirection}&_startRow=0&_endRow=${BATCH_SIZE - 1}${baseFilter ? `&${baseFilter}` : ''}`, { headers })
+
+    const colDef = columnDefs[sortColumn] || { key: sortColumn };
+    const sortKey = resolveBackendSort(colDef, sortDirection);
+
+    const queryParams = new URLSearchParams();
+    queryParams.append('_sortBy', sortKey);
+    queryParams.append('_startRow', '0');
+    queryParams.append('_endRow', String(BATCH_SIZE - 1));
+
+    applyFilterParams(queryParams, baseFilter, columnFilters, columnDefs, trailingFilter);
+
+    fetch(`${apiBaseUrl}/${entity}?${queryParams.toString()}`, { headers })
       .then(res => {
         if (res.status === 401) {
           logout();
@@ -274,21 +357,35 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
       })
       .then(data => {
         const rows = normalizeRows(data?.response?.data ?? (Array.isArray(data) ? data : []), entity);
-        if (rows.length > 0) sampleRowRef.current = rows[0];
         setItems(rows);
         startRowRef.current = rows.length;
         if (rows.length < BATCH_SIZE) setHasMore(false);
         setLoading(false);
       })
-      .catch(() => { setItems([]); setHasMore(false); setLoading(false); });
-  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, baseFilter, logout]);
+      .catch((e) => {
+        console.error('refresh error', e);
+        setItems([]);
+        setHasMore(false);
+        setLoading(false);
+      });
+  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, baseFilter, columnFilters, columnDefs, trailingFilter, logout]);
 
   const loadMore = useCallback(() => {
     if (!hasMore || loadingMore || loading) return;
     setLoadingMore(true);
     const start = startRowRef.current;
-    const sortKey = resolveSortKey(sortColumn, sampleRowRef.current);
-    fetch(`${apiBaseUrl}/${entity}?_sortBy=${sortKey} ${sortDirection}&_startRow=${start}&_endRow=${start + BATCH_SIZE - 1}${baseFilter ? `&${baseFilter}` : ''}`, { headers })
+
+    const colDef = columnDefs[sortColumn] || { key: sortColumn };
+    const sortKey = resolveBackendSort(colDef, sortDirection);
+
+    const queryParams = new URLSearchParams();
+    queryParams.append('_sortBy', sortKey);
+    queryParams.append('_startRow', String(start));
+    queryParams.append('_endRow', String(start + BATCH_SIZE - 1));
+
+    applyFilterParams(queryParams, baseFilter, columnFilters, columnDefs, trailingFilter);
+
+    fetch(`${apiBaseUrl}/${entity}?${queryParams.toString()}`, { headers })
       .then(res => {
         if (res.status === 401) {
           logout();
@@ -304,8 +401,12 @@ export function useEntity(entity, childEntity, { token, apiBaseUrl, childSortBy,
         if (rows.length < BATCH_SIZE) setHasMore(false);
         setLoadingMore(false);
       })
-      .catch(() => { setLoadingMore(false); setHasMore(false); });
-  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, hasMore, loadingMore, loading, baseFilter, logout]);
+      .catch((e) => {
+        console.error('loadMore error', e);
+        setLoadingMore(false);
+        setHasMore(false);
+      });
+  }, [apiBaseUrl, entity, token, sortColumn, sortDirection, hasMore, loadingMore, loading, baseFilter, columnFilters, columnDefs, trailingFilter, logout]);
 
   // List fetch is a mount-time decision. Flipping skipListFetch after mount
   // (e.g. a detail view whose recordId goes 'new' → ':id') must NOT retroactively

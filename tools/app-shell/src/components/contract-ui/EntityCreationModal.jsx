@@ -418,7 +418,13 @@ export default function EntityCreationModal({
       return val !== undefined && val !== null && val !== '' && val !== false;
     }).length;
     const sectionsFilled = sections
-      .filter(s => s.countsToProgress && (repeatables[s.id] ?? []).length > 0)
+      .filter(s => {
+        if (!s.countsToProgress) return false;
+        const rows = repeatables[s.id] ?? [];
+        return rows.some(row =>
+          Object.values(row).some(v => v !== '' && v !== null && v !== undefined && v !== false)
+        );
+      })
       .length;
     const total = progressFields.length + sections.filter(s => s.countsToProgress).length;
     if (!total) return 0;

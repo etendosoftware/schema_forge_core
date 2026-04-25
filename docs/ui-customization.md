@@ -151,7 +151,8 @@ Adds actions to the triple-dot menu in the detail view. Visibility can be gated 
   "menuActions": [
     { "key": "duplicate", "label": "Duplicate" },
     { "key": "cancel",    "label": "Cancel",          "destructive": true, "visibleWhenStatus": "CO" },
-    { "key": "reverse",   "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR"], "columnName": "aPRMReversePayment" }
+    { "key": "reverse",   "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR"], "columnName": "aPRMReversePayment" },
+    { "key": "reactivate","label": "Reactivate Order","visibleWhenStatus": "CO", "documentAction": "RE", "successMessage": "Order reactivated" }
   ]
 }
 ```
@@ -162,9 +163,13 @@ Adds actions to the triple-dot menu in the detail view. Visibility can be gated 
 | `label` | string | Display label in the menu. |
 | `destructive` | boolean | Renders in red. |
 | `visibleWhenStatus` | string \| string[] | Only show when `documentStatus` matches. Omit to always show. |
-| `columnName` | string | If set, fires `hook.handleProcess(columnName)`. If omitted, an empty `onClick` placeholder is generated. |
+| `documentAction` | string | If set, invokes the standard DocAction endpoint with this value (`"RE"`, `"CO"`, `"VO"`, …) via the shared `useDocumentAction` hook. After success, the record is refreshed and `successMessage` (or a generic label) is shown inline. Errors from the backend are surfaced inline as well. |
+| `successMessage` | string | Text shown in the success banner after a `documentAction` resolves. |
+| `columnName` | string | Fires `hook.handleProcess(columnName)`. Use for AD process buttons that aren't DocAction-based. |
 
-**Real examples:** `goods-shipment` (cancel), `payment-in` (reverse), `sales-invoice` (duplicate, cancel).
+Handler precedence: `documentAction` > `columnName` > empty placeholder `onClick`. Declare `documentAction` for any DocAction-style action (Reactivate, Void, Close, etc.) — the generator wires the full fetch + error flow automatically.
+
+**Real examples:** `goods-shipment` (cancel), `payment-in` (reverse via `columnName`), `sales-invoice` (duplicate, cancel), `sales-order` (reactivate via `documentAction: "RE"`).
 
 ---
 
@@ -235,6 +240,24 @@ Hides the delete button when the document is not in Draft status.
 ```
 
 **Real examples:** `goods-shipment`, `payment-in`, `sales-invoice`.
+
+---
+
+### 10. `window.dateFilterKey` — date range filter column
+
+Declares which list column the date range shortcut in the list toolbar targets.
+Must match a column `key` whose `type` is `date`. If omitted, the date filter is
+**not rendered** — there is no implicit fallback to the first date column, so
+column order never affects the filter.
+
+```json
+"window": {
+  "dateFilterKey": "orderDate"
+}
+```
+
+**Real examples:** `sales-order` / `purchase-order` (`orderDate`),
+`sales-invoice` / `purchase-invoice` (`invoiceDate`).
 
 ---
 

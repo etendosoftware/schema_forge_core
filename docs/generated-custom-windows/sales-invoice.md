@@ -17,7 +17,9 @@ A user should be able to:
 - inspect installment-level payment-plan data and open payment details from the payment-status badge or preview;
 - register or review downstream customer payment activity from the invoice payment modal when payment actions are available;
 - clone an invoice and navigate to the new invoice record;
-- open upstream or downstream related documents, especially the originating quotation or sales order, linked shipments, and, for credit-note scenarios, the original invoices from the same order.
+- open upstream or downstream related documents, especially the originating quotation or sales order, linked shipments, and, for credit-note scenarios, the original invoices from the same order;
+- reactivate a completed invoice back to draft from the detail view kebab menu when the invoice status is `CO`;
+- complete multiple draft invoices or reactivate multiple completed invoices at once from the list selection bar using the bulk action.
 
 ## Interaction model
 
@@ -25,7 +27,7 @@ A user should be able to:
 - Visibility: visible from the `Sales` menu group in `tools/app-shell/src/menu.json`; not hidden.
 - Implementation type: custom window wrapper in `tools/app-shell/src/windows/custom/sales-invoice/index.jsx` over the generated `sales-invoice` list/detail page, with a shared invoice preview modal reused from the purchase-invoice flow.
 - Window shape: master-child. The primary entity is the invoice `header`, with editable `lines` plus an additional `paymentPlan` child surface.
-- List behavior: the custom list uses a narrowed invoice table, opens rows into a lateral preview modal instead of immediately navigating away, supports cloning from the grid, accepts `?DocStatus=<status>` as a column pre-filter, and accepts `?filter=overdue` as a quick filter for invoices with remaining outstanding amount.
+- List behavior: the custom list now uses the richer `InvoiceHeaderTable` custom component (previously the list view used the plain generated `HeaderTable`). The visible columns, in order, are: Invoice Date, Document No., Business Partner, a custom Status column rendered as coloured `StatusTag` pills (Draft, Paid, Partial, Pending, Overdue, Voided, Closed), Total Gross Amount, and Total Outstanding. The grid opens rows into a lateral preview modal instead of immediately navigating away, supports cloning from the grid, accepts `?DocStatus=<status>` as a column pre-filter, and accepts `?filter=overdue` as a quick filter for invoices with remaining outstanding amount.
 - Detail behavior: the detail route keeps the generated invoice page, adds a custom top bar, custom bottom totals/documents panel, a `Related Documents` tab, a business-partner guard before adding lines, and invoice-specific extra actions such as shipment import and clone.
 
 ## Reactive behavior and dependencies
@@ -48,10 +50,11 @@ A user should be able to:
 - The related-documents flow for original invoices is explicitly conditional on the current document looking like a credit note. If users expect every sales invoice to expose upstream invoice relationships, that broader behavior is not supported by the current evidence.
 - The preview modal includes `Messages` and `History` tabs, but the shared invoice-preview implementation renders them as empty states today. If invoice communication history or audit history is expected here, that is a current functional gap.
 - No dedicated browser E2E test was found for the sales-invoice-specific flow. Confidence is therefore high for route wiring and source-level component behavior, but lower for end-to-end invoice management semantics in a live browser session.
+- List-column drift between `decisions.json` and `InvoiceHeaderTable.jsx` is a known piece of technical debt. The `decisions.json` file declares `gridOrder` values for `documentStatus` (index 4) and other fields, but `InvoiceHeaderTable.jsx` has a hardcoded `columns` array that ultimately drives what the list view renders. The status column visible in the list is the custom `_status` column with coloured `StatusTag` pills, not the raw `documentStatus` field. Any change to the list columns must be applied in both `decisions.json` and `InvoiceHeaderTable.jsx` until the custom table is refactored to consume the contract directly.
 
 ## Manual verification
 
-1. Open `/sales-invoice` and confirm the list shows document number, invoice date, business partner, document status, and total gross amount.
+1. Open `/sales-invoice` and confirm the list shows exactly Invoice Date, Document No., Business Partner, a coloured Status pill (Draft, Paid, Partial, Pending, Overdue, Voided, or Closed), Total Gross Amount, and Total Outstanding in that order, and that legacy columns such as `isPaid` and `paymentComplete` are no longer shown.
 2. Open `/sales-invoice?filter=overdue` and confirm the list starts in the overdue-only quick filter.
 3. Click a row from the list and confirm a lateral invoice preview opens instead of immediately navigating to `/sales-invoice/:recordId`. In that preview, confirm `General` is data-backed while `Messages` and `History` remain placeholder states.
 4. From the preview, choose **Edit** and confirm navigation to `/sales-invoice/:recordId`.
@@ -61,13 +64,16 @@ A user should be able to:
 8. Open the `Payment Plan` child surface and confirm due date, expected date, amount, paid amount, outstanding amount, currency, last payment date, days overdue, and number of payments are present for invoices that have installment data.
 9. Use clone from either the grid or the detail top bar and confirm the app navigates to the new sales-invoice record.
 10. Open `Related Documents` on an invoice tied to a commercial chain and confirm the user can navigate to the originating quotation or sales order, related goods shipments, and, for credit notes, the original invoice records when present.
-11. If the `Cancel` action appears on a completed invoice, verify whether it performs a real cancellation flow; if it only renders without effect, treat that as a product gap.
+11. Open a completed sales invoice detail and confirm the kebab menu exposes a `Reactivate` action. Trigger it and verify the document returns to draft status.
+12. From the list, select multiple draft invoices and confirm the bulk-complete action is available; then select multiple completed invoices and confirm the bulk-reactivate action is available. Verify each produces the expected status transition and a result toast.
+13. If the `Cancel` action appears on a completed invoice, verify whether it performs a real cancellation flow; if it only renders without effect, treat that as a product gap.
 
 ## Automated evidence
 
 - `tools/app-shell/src/menu.json` shows `sales-invoice` is visible in the `Sales` menu.
 - `tools/app-shell/src/windows/registry.js` registers `sales-invoice` as a custom app-shell window override.
-- `tools/app-shell/src/windows/custom/sales-invoice/index.jsx` proves the custom list/detail wrapper, overdue quick filter, lateral preview modal, clone-from-grid flow, related-documents tab wiring, add-line guard, and detail route composition.
+- `tools/app-shell/src/windows/custom/sales-invoice/index.jsx` proves the custom list/detail wrapper, overdue quick filter, lateral preview modal, clone-from-grid flow, related-documents tab wiring, add-line guard, detail route composition, and the bulk-action component mounted in the list selection bar.
+- `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the bulk-action component supporting both CO and RE based on selected row statuses. The `Reactivate` kebab menu action in the detail view is declared in `artifacts/sales-invoice/decisions.json` with `visibleWhenStatus: "CO"` and `documentAction: "RE"`.
 - `tools/app-shell/src/windows/custom/sales-invoice/SalesInvoiceTopbar.jsx` proves clone-from-detail behavior and the use of the custom payment-status topbar component.
 - `tools/app-shell/src/windows/custom/purchase-invoice/InvoicePreviewModal.jsx` proves that sales invoices reuse the shared invoice preview modal with a PDF preview, `General | Messages | History` tabs, payment-plan fetching, payment-history fetching, edit/send actions, and placeholder `Messages`/`History` states.
 - `artifacts/sales-invoice/contract.json` proves the default-layout invoice contract, `relatedDocuments: true`, required header fields, dependent `partnerAddress`, default values, summary fields, line-level `SL_Invoice_Amt` callouts, and the presence of the `paymentPlan` child entity plus payment-plan action endpoints.
