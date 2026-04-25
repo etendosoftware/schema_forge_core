@@ -317,12 +317,15 @@ export const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "purchases"
   }
 };
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-    if (recordId) {
+  if (recordId) {
     return (
       <DetailView
         entity="header"
@@ -357,7 +360,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
-dateFilterKey="movementDate"
+      dateFilterKey="movementDate"
       {...props}
     />
   );

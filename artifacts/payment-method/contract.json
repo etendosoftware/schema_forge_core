@@ -7,7 +7,7 @@
       "id": "3CAAC7D54593489384452416ACF356DD",
       "name": "Payment Method",
       "primaryEntity": "paymentMethod",
-      "category": "configuracion",
+      "category": "Settings",
       "hidePrint": true,
       "hideMoreMenu": true,
       "breadcrumb": "Settings / Payment Method",
@@ -227,7 +227,7 @@
       "id": "3CAAC7D54593489384452416ACF356DD",
       "name": "Payment Method",
       "primaryEntity": "paymentMethod",
-      "category": "configuracion",
+      "category": "Settings",
       "hidePrint": true,
       "hideMoreMenu": true,
       "breadcrumb": "Settings / Payment Method",
@@ -576,7 +576,7 @@
       "parentFilter": "parentId={id} for child entities"
     },
     "window": {
-      "category": "configuracion"
+      "category": "Settings"
     },
     "labelOverrides": {
       "es_ES": {

@@ -7,8 +7,7 @@
       "id": "139",
       "name": "Warehouse",
       "primaryEntity": "warehouse",
-      "category": "warehouse",
-      "breadcrumb": "Inventory / Warehouse",
+      "category": "inventory",
       "secondaryTabs": {
         "productTransactions": {
           "label": "Transactions",

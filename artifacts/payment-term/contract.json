@@ -7,10 +7,9 @@
       "id": "141",
       "name": "Payment Term",
       "primaryEntity": "header",
-      "category": "configuracion",
+      "category": "Settings",
       "detailEntity": null,
       "layoutType": "default",
-      "breadcrumb": "Settings / Payment Term",
       "hidePrint": true,
       "hideMoreMenu": true,
       "labelOverrides": {
