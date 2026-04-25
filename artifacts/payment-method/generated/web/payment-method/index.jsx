@@ -1,41 +1,6 @@
-import PaymentMethodPage from './PaymentMethodPage';
+import PaymentMethodPage, { api } from './PaymentMethodPage';
 
-const windowMeta = { category: 'configuracion', name: 'Payment Method' };
-
-const api = {
-  "specName": "payment-method",
-  "baseUrl": "/sws/neo/payment-method",
-  "crud": {
-    "paymentMethod": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/payment-method/paymentMethod",
-      "detailUrl": "/sws/neo/payment-method/paymentMethod/{id}",
-      "supportedFilters": [
-        "name"
-      ]
-    }
-  },
-  "selectors": [],
-  "actions": [],
-  "queryParams": {
-    "pagination": {
-      "startRow": "_startRow",
-      "endRow": "_endRow",
-      "default": "0-100"
-    },
-    "sorting": {
-      "param": "_sortBy",
-      "example": "_sortBy=name"
-    },
-    "filtering": "Use field name as query param: ?fieldName=value",
-    "parentFilter": "parentId={id} for child entities"
-  }
-};
+const windowMeta = { category: 'Settings', name: 'Payment Method' };
 
 // @sf-generated-start component:App
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {

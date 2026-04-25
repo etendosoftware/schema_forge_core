@@ -54,7 +54,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:lines
 
-const api = {
+export const api = {
   "specName": "return-to-vendor-shipment",
   "baseUrl": "/sws/neo/return-to-vendor-shipment",
   "crud": {

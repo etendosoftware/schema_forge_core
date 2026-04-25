@@ -52,7 +52,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:lines
 
-const api = {
+export const api = {
   "specName": "payment-out",
   "baseUrl": "/sws/neo/payment-out",
   "crud": {

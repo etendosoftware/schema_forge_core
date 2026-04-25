@@ -48,7 +48,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:returnMaterialReceiptLine
 
-const api = {
+export const api = {
   "specName": "return-material-receipt",
   "baseUrl": "/sws/neo/return-material-receipt",
   "crud": {
@@ -231,8 +231,7 @@ const api = {
 
 // @sf-generated-start component:ReturnMaterialReceiptPage
 export default function ReturnMaterialReceiptPage({ windowName, recordId, ...props }) {
-  
-  if (recordId) {
+    if (recordId) {
     return (
       <DetailView
         entity="returnMaterialReceipt"

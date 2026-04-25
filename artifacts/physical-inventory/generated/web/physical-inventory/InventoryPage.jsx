@@ -51,7 +51,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:inventoryLine
 
-const api = {
+export const api = {
   "specName": "physical-inventory",
   "baseUrl": "/sws/neo/physical-inventory",
   "crud": {

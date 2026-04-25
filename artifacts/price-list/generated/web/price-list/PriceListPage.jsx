@@ -61,7 +61,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:priceListVersion
 
-const api = {
+export const api = {
   "specName": "price-list",
   "baseUrl": "/sws/neo/price-list",
   "crud": {

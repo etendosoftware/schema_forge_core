@@ -46,7 +46,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:assignedProducts
 
-const api = {
+export const api = {
   "specName": "product-category",
   "baseUrl": "/sws/neo/product-category",
   "crud": {
@@ -159,12 +159,12 @@ const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
-  }
+    }
 };
 
 // @sf-generated-start component:ProductCategoryPage
 export default function ProductCategoryPage({ windowName, recordId, ...props }) {
-    if (recordId) {
+  if (recordId) {
     return (
       <DetailView
         entity="productCategory"

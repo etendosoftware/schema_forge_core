@@ -5,7 +5,7 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Settings / Unit of Measure';
 
-const api = {
+export const api = {
   "specName": "unit-of-measure",
   "baseUrl": "/sws/neo/unit-of-measure",
   "crud": {

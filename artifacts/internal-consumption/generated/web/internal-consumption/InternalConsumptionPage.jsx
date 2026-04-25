@@ -50,7 +50,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:internalConsumptionLine
 
-const api = {
+export const api = {
   "specName": "internal-consumption",
   "baseUrl": "/sws/neo/internal-consumption",
   "crud": {
@@ -140,7 +140,6 @@ const api = {
 
 // @sf-generated-start component:InternalConsumptionPage
 export default function InternalConsumptionPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView

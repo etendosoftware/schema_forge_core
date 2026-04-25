@@ -33,7 +33,7 @@ const draftMode = null;
 
 
 
-const api = {
+export const api = {
   "specName": "warehouse",
   "baseUrl": "/sws/neo/warehouse",
   "crud": {

@@ -38,7 +38,7 @@ const draftMode = null;
 
 
 
-const api = {
+export const api = {
   "specName": "payment-in",
   "baseUrl": "/sws/neo/payment-in",
   "crud": {

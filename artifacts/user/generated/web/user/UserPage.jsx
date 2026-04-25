@@ -49,7 +49,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:userRoles
 
-const api = {
+export const api = {
   "specName": "user",
   "baseUrl": "/sws/neo/user",
   "crud": {
