@@ -227,8 +227,8 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
       >
         {/* Side panel — slides in from the right (wider for better PDF view) */}
         <div
-          className={`absolute right-0 bottom-0 bg-white shadow-2xl overflow-hidden flex flex-col ${cardClass}`}
-          style={{ top: 8, width: 'min(calc(100vw - 300px), 1400px)', height: 'calc(100% - 8px)', borderTopLeftRadius: 12 }}
+          className={`absolute bg-white shadow-2xl overflow-hidden flex flex-col ${cardClass}`}
+          style={{ top: 8, right: 8, bottom: 8, width: 'min(calc(100vw - 308px), 1400px)', borderRadius: 12 }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* ── Body — two panels (no top bar) ── */}
