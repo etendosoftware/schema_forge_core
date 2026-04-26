@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button.jsx';
 import { useMenuLabel, useUI } from '@/i18n';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
-import InvoicePaymentModal from '../shared/InvoicePaymentModal.jsx';
-import { useInvoicePdf } from '../shared/useInvoicePdf.js';
+import InvoicePaymentModal from './InvoicePaymentModal.jsx';
+import { useInvoicePdf } from './useInvoicePdf.js';
+import PdfViewer from './PdfViewer.jsx';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 
 const ACCEPTED_TYPES = {
@@ -234,16 +235,12 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
           <div className="flex flex-1 min-h-0">
             {/* Left panel: flex-1 — PDF preview (sales invoice) or document drop zone (purchase invoice) */}
             <div
-              className={`flex-1 flex flex-col min-h-0 ${
-                isSalesInvoice
-                  ? 'px-7 pt-6 rounded-l-xl'
-                  : 'bg-gray-50 border-r border-gray-200'
-              }`}
-              style={isSalesInvoice ? { backgroundColor: '#E8EAEF' } : undefined}
+              className="flex-1 min-w-0 flex flex-col min-h-0 px-7 pt-6 rounded-l-xl"
+              style={{ backgroundColor: '#E8EAEF' }}
             >
               {/* ── Sales Invoice: auto-rendered PDF ── */}
               {isSalesInvoice ? (
-                <div className="flex flex-col h-full min-h-0 w-full bg-white shadow-md overflow-hidden">
+                <div className="flex flex-col h-full min-h-0 w-full overflow-hidden">
                   {previewLoading && (
                     <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground">
                       <Loader2 className="h-5 w-5 animate-spin" />
@@ -260,52 +257,33 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
                     </div>
                   )}
                   {pdfUrl && !previewLoading && (
-                    <iframe
-                      src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
-                      className="w-full h-full border-0 bg-white"
-                      title={ui('pdfPreview')}
-                    />
+                    <PdfViewer url={pdfUrl} />
                   )}
                 </div>
               ) : docFile ? (
                 /* ── Document preview ── */
-                <div className="flex flex-col h-full min-h-0">
-                  {/* Toolbar */}
-                  <div className="flex items-center justify-between px-3 py-2 bg-white border-b border-gray-200 shrink-0">
-                    <div className="flex items-center gap-2 min-w-0">
-                      {docFile.kind === 'image'
-                        ? <Image size={14} className="text-blue-500 shrink-0" />
-                        : <FileText size={14} className="text-red-500 shrink-0" />
-                      }
-                      <span className="text-xs text-gray-600 truncate">{docFile.name}</span>
-                    </div>
-                    <button
-                      onClick={removeFile}
-                      className="ml-2 p-1 text-gray-400 hover:text-red-500 rounded transition-colors shrink-0"
-                      title={ui('deleteDocument')}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                  {/* Preview area */}
-                  <div className="flex-1 min-h-0 overflow-hidden">
-                    {docFile.kind === 'image' ? (
-                      <div className="w-full h-full overflow-auto flex items-center justify-center bg-gray-50 p-4">
-                        <img
-                          src={docFile.url}
-                          alt={docFile.name}
-                          className="max-w-full max-h-full object-contain rounded shadow"
-                        />
-                      </div>
-                    ) : (
-                      /* iframe with #toolbar=0 hides Chrome's PDF viewer toolbar */
-                      <iframe
-                        src={`${docFile.url}#toolbar=0&navpanes=0&scrollbar=1`}
-                        className="w-full h-full border-0"
-                        title={ui('pdfPreview')}
+                <div className="relative flex flex-col h-full min-h-0">
+                  {/* Floating delete button — top-left, matching PdfViewer button group style */}
+                  <button
+                    type="button"
+                    onClick={removeFile}
+                    className="absolute top-2 left-2 z-10 w-8 h-8 flex items-center justify-center bg-white border border-[#D1D4DB] shadow-sm rounded-lg hover:bg-gray-50 transition-colors"
+                    title={`${ui('deleteDocument')} — ${docFile.name}`}
+                    aria-label={ui('deleteDocument')}
+                  >
+                    <Trash2 size={16} className="text-[#828FA3]" />
+                  </button>
+                  {docFile.kind === 'image' ? (
+                    <div className="w-full h-full overflow-auto flex items-center justify-center">
+                      <img
+                        src={docFile.url}
+                        alt={docFile.name}
+                        className="max-w-full max-h-full object-contain bg-white shadow-md"
                       />
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <PdfViewer url={docFile.url} />
+                  )}
                 </div>
               ) : (
                 /* ── Drop zone ── */
