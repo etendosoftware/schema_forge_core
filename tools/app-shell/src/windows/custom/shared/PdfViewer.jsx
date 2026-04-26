@@ -75,7 +75,7 @@ export default function PdfViewer({ url }) {
           onClick={zoomIn}
           disabled={scale >= MAX_ZOOM}
           className="w-12 h-[38px] flex items-center justify-center hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          aria-label="Zoom in"
+          aria-label={ui('pdfViewerZoomIn')}
         >
           <ZoomIn size={20} style={{ color: '#828FA3' }} />
         </button>
@@ -84,7 +84,7 @@ export default function PdfViewer({ url }) {
           type="button"
           onClick={toggleFitMode}
           className="w-12 h-[38px] flex items-center justify-center hover:bg-gray-50 transition-colors"
-          aria-label="Fit to page"
+          aria-label={ui('pdfViewerFitToPage')}
         >
           <Maximize2 size={20} style={{ color: fitMode === 'page' ? '#121217' : '#828FA3' }} />
         </button>
@@ -94,7 +94,7 @@ export default function PdfViewer({ url }) {
           onClick={zoomOut}
           disabled={scale <= MIN_ZOOM}
           className="w-12 h-[38px] flex items-center justify-center hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          aria-label="Zoom out"
+          aria-label={ui('pdfViewerZoomOut')}
         >
           <ZoomOut size={20} style={{ color: '#828FA3' }} />
         </button>
