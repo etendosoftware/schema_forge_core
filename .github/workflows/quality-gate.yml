@@ -34,7 +34,8 @@ jobs:
         run: >-
           node cli/src/quality-gate.js
           --pr-affected
-          --baseline-ref origin/${{ github.base_ref }}
+          --baseline-ref ${{ github.event.pull_request.base.sha }}
+          --head-ref ${{ github.event.pull_request.head.sha }}
           --format md
           --output qg-report.md
           --json qg-report.json
