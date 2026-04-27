@@ -15,17 +15,19 @@ The skill's job is to check the delivery that is about to happen. Start from the
 
 ## Repository Delivery Scope Gate
 
-Before applying this gate, identify and validate the git repository that is being delivered. The repository is the working folder from which the delivery will be made.
+Before applying this gate, identify and validate the git repository that is being delivered. The repository is the working folder from which the delivery will be made. This gate must focus on exactly one repository per run, even when the overall initiative modifies multiple repositories.
 
 1. From the working folder being delivered, detect the repository root with `git rev-parse --show-toplevel`.
 2. Capture the active branch with `git branch --show-current`.
 3. Identify the epic/base branch for the delivery. If the task or branch workflow names an epic branch, use that branch; otherwise inspect repository branch conventions before asking.
 4. First obtain the delivery diff against the epic/base branch with `git diff --stat <epic-branch>..HEAD` and `git diff --name-status <epic-branch>..HEAD`.
 5. Use that diff to determine the changed-file scope before selecting tests, documentation checks, or QA evidence.
-6. If more than one git repository has relevant changes, or if the requested delivery target is ambiguous, ask the owner to confirm which repository is being delivered before judging completion.
-7. Read the confirmed repository's delivery instructions (`AGENTS.md`, `CLAUDE.md`, package/module docs, or equivalent) and use them to decide the required validation commands.
-8. Validate only against the confirmed delivery repository. Do not use tests from a sibling repository as evidence unless the delivery explicitly spans both repositories.
-9. Include the confirmed repository root, working folder, active branch, epic/base branch, changed-file scope, diff command output summary, and repo-specific validation commands in the delivery evidence.
+6. Confirm whether the task scope is clear from the delivery diff: what requirement is being delivered, which files implement it, which files validate it, and which files document it.
+7. If the diff spans multiple repositories, choose one repository as the current delivery target and evaluate only that repository. Record the other repositories as out of scope for this run.
+8. If the selected repository or task scope is ambiguous, ask the owner to confirm the single repository and delivery scope before judging completion.
+9. Read the confirmed repository's delivery instructions (`AGENTS.md`, `CLAUDE.md`, package/module docs, or equivalent) and use them to decide the required validation commands.
+10. Validate only against the confirmed delivery repository. Do not use tests from a sibling repository as evidence unless the delivery explicitly declares a multi-repository validation requirement for this repository.
+11. Include the confirmed repository root, working folder, active branch, epic/base branch, changed-file scope, diff command output summary, task-scope clarity status, out-of-scope repositories, and repo-specific validation commands in the delivery evidence.
 
 The repository choice determines the required pre-delivery checks. For example: a Java module delivery may require module JUnit/Gradle commands; a frontend delivery may require its package test/build commands; a docs-only repository may require documentation-specific justification instead of runtime tests.
 
@@ -95,6 +97,8 @@ Every PR or delivery must include this structure:
 - epic/base branch: ...
 - delivery diff: `git diff --stat <epic-branch>..HEAD` and `git diff --name-status <epic-branch>..HEAD`
 - changed-file scope: ...
+- task-scope clarity: clear / unclear, with reason
+- out-of-scope repositories: ...
 - repo-specific validation required: ...
 
 ## Added or modified tests
@@ -138,7 +142,9 @@ If QA validation is pending, the task is not fully closed. State that clearly.
 Before saying "done", answer:
 
 - Is the delivery repository confirmed and is the branch correct?
+- Is exactly one delivery repository selected for this gate?
 - Were repository-specific instructions used to choose validation commands?
+- Is the task scope clear from the delivery diff and stated delivery requirement?
 - Does the test assert the actual requirement, not just implementation details?
 - Are main cases and relevant regressions covered?
 - Were tests executed and did they pass?
