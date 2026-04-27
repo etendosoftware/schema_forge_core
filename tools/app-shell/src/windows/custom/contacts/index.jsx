@@ -18,7 +18,7 @@ export default function ContactsWindow(props) {
   return (
     <ContactsProvider>
       <div className={TABLE_CELL_BORDERS}>
-        <BusinessPartnerPage {...props} Form={ContactsBusinessPartnerForm} enableSecondaryRowDelete={true} />
+        <BusinessPartnerPage {...props} Form={ContactsBusinessPartnerForm} enableSecondaryRowDelete={true} sidebarClassName="w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF]" />
       </div>
     </ContactsProvider>
   );
