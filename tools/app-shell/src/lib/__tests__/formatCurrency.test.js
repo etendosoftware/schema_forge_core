@@ -106,4 +106,82 @@ describe('formatCurrency', () => {
       assert.match(result, /50/);
     });
   });
+
+  describe('null/undefined currency code — fallback path (callers use ?? "USD")', () => {
+    it('null code falls back to plain numeric formatting', () => {
+      const result = formatCurrency(null, 1234);
+      assert.equal(result, '1,234.00');
+    });
+
+    it('undefined code falls back to plain numeric formatting', () => {
+      const result = formatCurrency(undefined, 1234);
+      assert.equal(result, '1,234.00');
+    });
+
+    it('null code with null value returns em dash', () => {
+      assert.equal(formatCurrency(null, null), '—');
+    });
+  });
+
+  describe('numeric string values — coercion', () => {
+    it('accepts a numeric string and formats it correctly (USD)', () => {
+      assert.equal(formatCurrency('USD', '1234.56'), '$1,234.56');
+    });
+
+    it('accepts a numeric string and formats it correctly (EUR)', () => {
+      assert.equal(formatCurrency('EUR', '99.9'), '99.90 €');
+    });
+
+    it('treats empty string as zero for USD', () => {
+      // Number('') === 0, so empty string coerces to 0
+      assert.equal(formatCurrency('USD', ''), '$0.00');
+    });
+  });
+
+  describe('symbol-after currencies — DKK, CZK, HUF, PLN', () => {
+    it('formats DKK with symbol after amount', () => {
+      assert.match(formatCurrency('DKK', 100), /100\.00\s+kr/);
+    });
+
+    it('formats CZK with symbol after amount', () => {
+      assert.match(formatCurrency('CZK', 100), /100\.00\s+Kč/);
+    });
+
+    it('formats HUF with symbol after amount', () => {
+      assert.match(formatCurrency('HUF', 100), /100\.00\s+Ft/);
+    });
+
+    it('formats PLN with symbol after amount', () => {
+      assert.match(formatCurrency('PLN', 100), /100\.00\s+zł/);
+    });
+
+    it('formats negative DKK with leading minus before amount', () => {
+      const result = formatCurrency('DKK', -55);
+      assert.ok(result.startsWith('-'), `Expected leading minus, got: ${result}`);
+      assert.match(result, /55\.00/);
+    });
+  });
+
+  describe('-0 edge case', () => {
+    // -0 < 0 is false in JS, so the EUR symbol-after path treats it as positive zero
+    it('EUR: negative zero renders as positive zero (no minus sign)', () => {
+      assert.equal(formatCurrency('EUR', -0), '0.00 €');
+    });
+
+    // For USD (symbol-before), Intl.NumberFormat renders -0 with a minus sign
+    // This is a known inconsistency between the two paths in formatCurrency
+    it('USD: negative zero renders with minus sign (Intl.NumberFormat behavior)', () => {
+      assert.equal(formatCurrency('USD', -0), '-$0.00');
+    });
+  });
+
+  describe('large negative amounts', () => {
+    it('USD handles large negative with thousand separators', () => {
+      assert.equal(formatCurrency('USD', -1_000_000), '-$1,000,000.00');
+    });
+
+    it('EUR handles large negative with thousand separators', () => {
+      assert.equal(formatCurrency('EUR', -1_000_000), '-1,000,000.00 €');
+    });
+  });
 });

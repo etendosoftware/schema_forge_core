@@ -2,13 +2,8 @@ import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Maximize2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useUI, useLocaleSwitch } from '@/i18n';
-
-function formatCurrency(value) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency', currency: 'USD',
-    minimumFractionDigits: 0, maximumFractionDigits: 2,
-  }).format(value);
-}
+import { useCurrency } from '@/hooks/useCurrency';
+import { formatCurrency } from '@/lib/formatCurrency';
 
 function formatY(v) {
   if (v === 0) return '0';
@@ -16,8 +11,8 @@ function formatY(v) {
   return `${Math.round(v)}`;
 }
 
-function MiniKPICard({ label, value, trend, format, accentColor }) {
-  const display = format === 'currency' ? formatCurrency(value) : value;
+function MiniKPICard({ label, value, trend, format, accentColor, orgCurrency }) {
+  const display = format === 'currency' ? formatCurrency(orgCurrency ?? 'USD', value) : value;
   const hasTrend = trend !== null && trend !== 0;
   const up = trend > 0;
 
@@ -44,8 +39,9 @@ const PERIOD_OPTIONS = [
 
 function BPChartSVGContent({
   labels = [], revenue = [], expenses = [],
-  CW, CH, PX, PY, PB, fontSize = 9, chartId = 'bp',
+  CW, CH, PX, PY, PB, fontSize = 9, chartId = 'bp', orgCurrency = 'USD',
 }) {
+  const ui = useUI();
   const [hoveredIdx, setHoveredIdx] = useState(null);
 
   const plotW = CW - PX * 2;
@@ -110,7 +106,7 @@ function BPChartSVGContent({
       viewBox={`0 0 ${CW} ${CH}`}
       className="w-full h-auto cursor-crosshair"
       role="img"
-      aria-label="Sales and purchases trend"
+      aria-label={ui('bpSalesPurchasesChartAria')}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => setHoveredIdx(null)}
     >
@@ -169,7 +165,7 @@ function BPChartSVGContent({
 
       {!hasData && (
         <text x={CW / 2} y={PY + plotH / 2 + 4} textAnchor="middle" className="fill-muted-foreground" fontSize={fontSize}>
-          No invoice data
+          {ui('bpNoInvoiceData')}
         </text>
       )}
 
@@ -188,13 +184,13 @@ function BPChartSVGContent({
           <circle cx={tooltipX + 8} cy={tooltipY + fontSize * 2.6} r={fontSize * 0.4} fill="#10b981" />
           <text x={tooltipX + 15} y={tooltipY + fontSize * 2.6 + fontSize * 0.38}
             fontSize={fontSize} fontWeight="600" fill="white">
-            {formatCurrency(revenue[hoveredIdx] ?? 0)}
+            {formatCurrency(orgCurrency, revenue[hoveredIdx] ?? 0)}
           </text>
           {/* Expenses row */}
           <circle cx={tooltipX + 8} cy={tooltipY + fontSize * 4.2} r={fontSize * 0.4} fill="#ef4444" />
           <text x={tooltipX + 15} y={tooltipY + fontSize * 4.2 + fontSize * 0.38}
             fontSize={fontSize} fontWeight="600" fill="white">
-            {formatCurrency(expenses[hoveredIdx] ?? 0)}
+            {formatCurrency(orgCurrency, expenses[hoveredIdx] ?? 0)}
           </text>
         </>
       )}
@@ -218,7 +214,7 @@ function ChartLegend() {
   );
 }
 
-function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
+function BPTrendChart({ labels = [], revenue = [], expenses = [], orgCurrency = 'USD' }) {
   const ui = useUI();
   const { locale } = useLocaleSwitch();
   const [expanded, setExpanded] = useState(false);
@@ -246,7 +242,7 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
           <button
             onClick={() => setExpanded(true)}
             className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-            title="Expand chart"
+            title={ui('bpExpandChart')}
           >
             <Maximize2 size={12} />
           </button>
@@ -256,7 +252,7 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
       <BPChartSVGContent
         labels={localizedLabels} revenue={revenue} expenses={expenses}
         CW={320} CH={200} PX={32} PY={12} PB={22}
-        fontSize={9} chartId="bp-mini"
+        fontSize={9} chartId="bp-mini" orgCurrency={orgCurrency}
       />
 
       <ChartLegend />
@@ -288,7 +284,7 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
           <BPChartSVGContent
             labels={sl(localizedLabels)} revenue={sl(revenue)} expenses={sl(expenses)}
             CW={580} CH={280} PX={48} PY={16} PB={28}
-            fontSize={12} chartId="bp-expanded"
+            fontSize={12} chartId="bp-expanded" orgCurrency={orgCurrency}
           />
           <ChartLegend />
         </DialogContent>
@@ -299,6 +295,7 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
 
 export default function BusinessPartnerSidebar({ recordId, token, apiBaseUrl }) {
   const ui = useUI();
+  const orgCurrency = useCurrency() ?? 'USD';
   const [kpis, setKpis] = useState(null);
   const [trend, setTrend] = useState(null);
 
@@ -343,6 +340,7 @@ export default function BusinessPartnerSidebar({ recordId, token, apiBaseUrl }) 
               trend={kpi.trend || null}
               format={kpi.format}
               accentColor={kpiConfig[kpi.key]?.accent ?? 'text-foreground'}
+              orgCurrency={orgCurrency}
             />
           ))}
         </div>
