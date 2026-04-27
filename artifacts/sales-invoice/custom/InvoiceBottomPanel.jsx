@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { useUI } from '@/i18n';
@@ -119,13 +119,25 @@ export default function InvoiceBottomPanel({
   );
 }
 
-function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, token, apiBaseUrl }) {
+function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, token, apiBaseUrl, onSave, forceOpen, onForceOpenHandled }) {
   const ui = useUI();
   const [showImportModal, setShowImportModal] = useState(false);
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
+
+  useEffect(() => {
+    if (forceOpen) { setShowImportModal(true); onForceOpenHandled?.(); }
+  }, [forceOpen, onForceOpenHandled]);
+
+  const handleImportClick = async () => {
+    if (onSave) {
+      const shouldOpen = await onSave();
+      if (!shouldOpen) return;
+    }
+    setShowImportModal(true);
+  };
 
   return (
     <div style={{ margin: '24px 16px', padding: '32px 24px', background: 'var(--color-background-secondary)', borderRadius: 'var(--border-radius-lg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
@@ -145,7 +157,7 @@ function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, 
             + {ui('addLines')}
           </button>
           {bpId && (
-            <button type="button" onClick={() => setShowImportModal(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
+            <button type="button" onClick={handleImportClick} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
@@ -171,7 +183,7 @@ function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, 
   );
 }
 
-function InvoiceLineActions({ data, recordId, token, apiBaseUrl }) {
+function InvoiceLineActions({ data, recordId, token, apiBaseUrl, onSave, forceOpen, onForceOpenHandled }) {
   const ui = useUI();
   const [showImportModal, setShowImportModal] = useState(false);
   const isDraft = data?.documentStatus === 'DR';
@@ -179,13 +191,25 @@ function InvoiceLineActions({ data, recordId, token, apiBaseUrl }) {
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
+  useEffect(() => {
+    if (forceOpen) { setShowImportModal(true); onForceOpenHandled?.(); }
+  }, [forceOpen, onForceOpenHandled]);
+
   if (!isDraft || !bpId) return null;
+
+  const handleClick = async () => {
+    if (onSave) {
+      const shouldOpen = await onSave();
+      if (!shouldOpen) return;
+    }
+    setShowImportModal(true);
+  };
 
   return (
     <>
       <button
         type="button"
-        onClick={() => setShowImportModal(true)}
+        onClick={handleClick}
         style={{ all: 'unset', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-secondary, #6b7280)', cursor: 'pointer' }}
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

@@ -301,18 +301,18 @@ export const api = {
     },
     {
       "entity": "header",
-      "field": "processNow",
-      "column": "Processing",
-      "url": "/sws/neo/sales-invoice/header/{id}/action/processNow",
-      "processId": "111",
-      "processType": "classic"
-    },
-    {
-      "entity": "header",
       "field": "generateTo",
       "column": "GenerateTo",
       "url": "/sws/neo/sales-invoice/header/{id}/action/generateTo",
       "processId": "142",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "processNow",
+      "column": "Processing",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/processNow",
+      "processId": "111",
       "processType": "classic"
     },
     {
