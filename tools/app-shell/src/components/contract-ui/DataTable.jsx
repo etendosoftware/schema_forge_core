@@ -19,6 +19,7 @@ import { formatAmount } from '@/lib/formatAmount.js';
 import { applyCalloutUpdates } from '@/lib/applyCalloutUpdates.js';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import InternalConsumptionProductSearchDrawer from './InternalConsumptionProductSearchDrawer.jsx';
+import { SelectorInput } from './SelectorInput.jsx';
 
 /**
  * Compact inline combobox for search-type FK fields in rapid line entry.
@@ -433,6 +434,12 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
       if (target instanceof Element) {
         if (target.closest('[role="dialog"]')) return;
         if (target.closest('[data-inline-add-portal="true"]')) return;
+        // Radix Select renders its dropdown in a portal outside the row. Treat any
+        // click inside an open listbox/popper as part of the row interaction so the
+        // row is not silently saved with the previous value when the user just picked
+        // a different option (e.g. switching the tax).
+        if (target.closest('[role="listbox"]')) return;
+        if (target.closest('[data-radix-popper-content-wrapper]')) return;
       }
       // If a dialog/drawer is currently open anywhere, defer — clicks belong to it.
       if (document.querySelector('[role="dialog"]')) return;
@@ -634,8 +641,10 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         }
 
         // Selector fields render as native <select> dropdowns (few options).
-        // When catalog options are not pre-loaded, fall back to InlineSearchCombo
-        // which loads options dynamically from the selector URL.
+        // When catalog options are not pre-loaded, render the shared SelectorInput
+        // (Radix-based dropdown that lazy-loads from the selector URL). It does NOT
+        // accept free-text typing — the user has to pick from the list, matching the
+        // form-mode UX. Mirrors the InlineAddRow behavior for the line tax field.
         if (field.type === 'selector') {
           const options = getCatalogOptions(catalogs, entity, field);
           if (options.length === 0) {
@@ -643,22 +652,22 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
             if (!selectorUrl) return <TableCell key={col.key} className="py-1 px-2" />;
             return (
               <TableCell key={col.key} className="py-1 px-2">
-                <InlineSearchCombo
-                  field={{ ...field, type: 'search' }}
+                <SelectorInput
+                  entityName={entity}
+                  field={field}
                   value={values[field.key] ?? ''}
-                  displayLabel={values[field.key + '$_identifier'] || ''}
-                  options={[]}
-                  inputRef={isFirst ? firstInputRef : undefined}
-                  placeholder={fieldLabel}
+                  displayValue={values[field.key + '$_identifier'] || ''}
                   onChange={(id, label, selectedItem) => {
                     touchedFieldsRef.current.add(field.key);
-                    handleChange(field.key + '$_identifier', label);
+                    handleChange(field.key + '$_identifier', label || '');
                     handleFieldChange(field.key, id, selectedItem);
                   }}
-                  onKeyDown={handleKeyDown}
+                  catalogs={catalogs}
+                  resolvedLabel={fieldLabel}
                   selectorUrl={selectorUrl}
                   selectorContext={selectorContext}
                   token={token}
+                  compact
                 />
               </TableCell>
             );

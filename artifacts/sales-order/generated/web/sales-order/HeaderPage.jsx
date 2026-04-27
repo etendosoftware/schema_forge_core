@@ -63,7 +63,7 @@ const addLineFields = {
     { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity', defaultValue: 1 },
     { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
     { key: 'discount', column: 'Discount', type: 'number', label: 'Discount', defaultValue: 0 },
-    { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, label: 'Tax', reference: 'Tax', inputMode: 'selector' },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineGrossAmount","grossUnitPrice","lineNetAmount"] },
   ],
   derived: [
 
@@ -279,14 +279,6 @@ export const api = {
     },
     {
       "entity": "header",
-      "field": "processNow",
-      "column": "Processing",
-      "url": "/sws/neo/sales-order/header/{id}/action/processNow",
-      "processId": "104",
-      "processType": "classic"
-    },
-    {
-      "entity": "header",
       "field": "posted",
       "column": "Posted",
       "url": "/sws/neo/sales-order/header/{id}/action/posted",
@@ -299,6 +291,14 @@ export const api = {
       "column": "Generatetemplate",
       "url": "/sws/neo/sales-order/header/{id}/action/generateTemplate",
       "processId": "800022",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "processNow",
+      "column": "Processing",
+      "url": "/sws/neo/sales-order/header/{id}/action/processNow",
+      "processId": "104",
       "processType": "classic"
     },
     {

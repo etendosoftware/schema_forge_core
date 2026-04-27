@@ -65,6 +65,7 @@ export default function SalesInvoiceWindow(props) {
   const [savedRecord, setSavedRecord] = useState(null);
   const [previewRow, setPreviewRow] = useState(null);
   const [cloneTargets, setCloneTargets] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
     useCreateContactModal({ apiBaseUrl, token });
   const breadcrumb = 'Sales / Sales Invoice';
@@ -140,6 +141,7 @@ export default function SalesInvoiceWindow(props) {
         dateFilterKey="invoiceDate"
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
         bulkActions={(ctx) => <BulkDocumentAction {...ctx} />}
+        refreshTrigger={refreshKey}
       />
       {cloneTargets && createPortal(
         <CloneOrderModal
@@ -150,6 +152,7 @@ export default function SalesInvoiceWindow(props) {
           errorKey="cloneInvoiceError"
           processingKey="invoiceProcessing"
           onClose={() => setCloneTargets(null)}
+          onCloned={() => setRefreshKey(k => k + 1)}
         />,
         document.body,
       )}

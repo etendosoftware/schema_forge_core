@@ -3,8 +3,9 @@ import { X, Upload, Edit2, FileText, Image, Plus, Check, Trash2, Loader2, AlertC
 import { Badge } from '@/components/ui/badge.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { useLocaleSwitch, useMenuLabel, useUI } from '@/i18n';
-import { formatCalendarDate, parseCalendarDate } from '@/lib/dateOnly';
+import { formatCalendarDate } from '@/lib/dateOnly';
 import { formatAmount } from '@/lib/formatAmount.js';
+import { getLatestInstallmentDueDate } from '@/lib/invoiceDueDate';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 import InvoicePaymentModal from './InvoicePaymentModal.jsx';
 import { useInvoicePdf } from './useInvoicePdf.js';
@@ -569,11 +570,9 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, install
     ? formatCalendarDate(invoice.invoiceDate, locale)
     : '—';
 
-  const dueDateTimestamps = installments
-    .map((i) => parseCalendarDate(i.dueDate)?.getTime() ?? NaN)
-    .filter((t) => !Number.isNaN(t));
-  const dueDate = dueDateTimestamps.length > 0
-    ? formatCalendarDate(new Date(Math.max(...dueDateTimestamps)), locale)
+  const latestDueDate = getLatestInstallmentDueDate(installments);
+  const dueDate = latestDueDate
+    ? formatCalendarDate(latestDueDate, locale)
     : '—';
 
   const payPrefix = specName === 'purchase-invoice' ? 'payment-out' : 'payment-in';

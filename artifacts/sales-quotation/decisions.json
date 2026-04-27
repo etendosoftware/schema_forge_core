@@ -295,7 +295,8 @@
           "form": true,
           "inputMode": "selector",
           "order": 6,
-          "gridOrder": 6
+          "gridOrder": 6,
+          "forceCalloutFields": ["lineGrossAmount", "grossUnitPrice", "lineNetAmount"]
         },
         "description": {
           "grid": true,

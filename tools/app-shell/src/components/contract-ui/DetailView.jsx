@@ -341,6 +341,14 @@ export function DetailView({
 
   // Track fields whose values were set by a callout response to avoid re-triggering
   const calloutAppliedRef = useRef(new Set());
+  // Track fields the user has manually changed in this record session — protected
+  // from being overwritten by callouts triggered from other fields.
+  const userTouchedRef = useRef(new Set());
+  // Reset both refs when the record context changes (new record / different existing record)
+  useEffect(() => {
+    userTouchedRef.current = new Set();
+    calloutAppliedRef.current = new Set();
+  }, [recordId]);
   // Guard: fire default callouts only once per new-record session
   const defaultCalloutsTriggeredRef = useRef(false);
   // Cache for tax rates fetched from the selector (keyed by tax ID).
@@ -577,7 +585,7 @@ export function DetailView({
   // Apply callout results to the form when they arrive
   useEffect(() => {
     if (!calloutResult) return;
-    const { updates, combos } = calloutResult;
+    const { updates, combos, triggerField } = calloutResult;
     const appliedFields = new Set();
 
     if (updates) {
@@ -585,7 +593,14 @@ export function DetailView({
         // Skip empty callout values if the field already has a non-empty value
         // (e.g., callout clears warehouse but defaults already set it)
         const currentVal = data[key];
-        if ((entry.value === '' || entry.value == null) && currentVal && currentVal !== '') {
+        const userHasValue = currentVal !== '' && currentVal != null;
+        if ((entry.value === '' || entry.value == null) && userHasValue) {
+          continue;
+        }
+        // Protect user-touched fields from being overwritten by collateral updates
+        // coming from a callout triggered by a different field. The trigger field
+        // itself always wins (it was just changed by the user).
+        if (key !== triggerField && userTouchedRef.current.has(key) && userHasValue) {
           continue;
         }
         appliedFields.add(key);
@@ -615,6 +630,12 @@ export function DetailView({
           selectedLabel = combo.entries[0].identifier || combo.entries[0]._identifier;
         }
         if (selectedVal != null) {
+          // Protect user-touched fields from collateral combo updates
+          const currentVal = data[key];
+          const userHasValue = currentVal !== '' && currentVal != null;
+          if (key !== triggerField && userTouchedRef.current.has(key) && userHasValue) {
+            continue;
+          }
           appliedFields.add(key);
           hook.handleChange(key, selectedVal);
           if (selectedLabel) {
@@ -634,6 +655,10 @@ export function DetailView({
 
     // Skip companion/auxiliary fields — they don't have callouts
     if (field.includes('$_identifier') || /^[a-zA-Z]+_[A-Z]{2,4}$/.test(field)) return;
+
+    // Mark this field as user-touched so subsequent collateral callout updates
+    // from other triggers cannot overwrite the user's choice.
+    userTouchedRef.current.add(field);
 
     // If this field was just set by a callout response, don't re-trigger
     if (calloutAppliedRef.current.has(field)) {
@@ -835,6 +860,15 @@ export function DetailView({
           const price = parseFloat(String(rowValues.unitPrice ?? '')) || 0;
           const disc  = parseFloat(String(value)) || 0;
           lineNet = qty > 0 && price > 0 ? qty * price * (1 - disc / 100) : 0;
+        } else if (field === 'tax') {
+          // C_Tax_ID has no AD callout, so SL_Order_Amt does not run; the backend
+          // injects the new taxRate into result via injectTaxRateForTrigger. We
+          // recompute lineNet from rowValues so the existing taxFactor branch can
+          // derive the correct lineGrossAmount with the new rate.
+          const qty   = parseFloat(String(rowValues.orderedQuantity ?? rowValues.invoicedQuantity ?? '')) || 0;
+          const price = parseFloat(String(rowValues.unitPrice ?? '')) || 0;
+          const disc  = parseFloat(String(rowValues.discount ?? '')) || 0;
+          lineNet = qty > 0 && price > 0 ? qty * price * (1 - disc / 100) : 0;
         } else {
           lineNet = parseFloat(String(
             result.lineNetAmount ?? result.lineNetAmt ??
@@ -931,7 +965,7 @@ export function DetailView({
             // because it misinterprets the form's total lineGrossAmount as a unit price.
             // For product selection the callout correctly computes the value, so keep it
             // unless it came back null/0.
-            const forceLineGross = field === 'orderedQuantity' || field === 'invoicedQuantity' || field === 'unitPrice' || field === 'discount';
+            const forceLineGross = field === 'orderedQuantity' || field === 'invoicedQuantity' || field === 'unitPrice' || field === 'discount' || field === 'tax';
             if (forceLineGross || result.lineGrossAmount == null || Number(result.lineGrossAmount) === 0) {
               result.lineGrossAmount = result.grossAmount;
             }
@@ -1067,6 +1101,7 @@ export function DetailView({
           // Cascade is best-effort — first callout result was already applied above
         }
       }
+
     } catch {
       // Callout is best-effort
     }

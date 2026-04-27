@@ -12,6 +12,7 @@ import { ImageField } from './ImageField.jsx';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import { CreateContactContext } from './CreateContactContext.js';
 import { PartnerAddressPicker } from './PartnerAddressPicker.jsx';
+import { SelectorInput } from './SelectorInput.jsx';
 
 function buildSelectPlaceholder(ui, label) {
   return `${ui('selectLabelPrefix')} ${label}...`;
@@ -272,127 +273,8 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
   );
 }
 
-const SELECTOR_PAGE = 50;
-
-/**
- * Dropdown selector for FK fields with few options (inputMode: selector).
- * Fetches options from the server with lazy pagination triggered by scrolling.
- * Falls back to catalog when no selectorUrl is provided.
- */
-function SelectorInput({ entityName, field, value, displayValue, onChange, catalogs, resolvedLabel, selectorUrl, selectorContext, token }) {
-  const ui = useUI();
-  // When a real server selector is configured, ignore the local catalog — its data
-  // is a mock/dev fallback and would flash wrong values (e.g. "Wire Transfer", "Check")
-  // for the brief window before the first /selector page lands. Mirrors SearchInput.
-  const catalogOptions = selectorUrl ? [] : getCatalogOptions(catalogs, entityName, field);
-  const [serverOptions, setServerOptions] = useState(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [fetching, setFetching] = useState(false);
-  const loadingRef = useRef(false);
-  const hasMoreRef = useRef(true);
-  const offsetRef = useRef(0);
-
-  const fetchPage = useCallback((offset) => {
-    if (!selectorUrl || !token || loadingRef.current || !hasMoreRef.current) return;
-    loadingRef.current = true;
-    setFetching(true);
-    const url = buildUrlWithParams(selectorUrl, {
-      ...selectorContext,
-      limit: SELECTOR_PAGE,
-      offset,
-    });
-    fetch(url, {
-      headers: { 'Authorization': `Bearer ${token}` },
-    })
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        const items = data?.items ?? data?.response?.data ?? (Array.isArray(data) ? data : null);
-        if (items) {
-          const mapped = items.map(i => ({ id: i.id, name: i.label ?? i.name ?? i.id }));
-          setServerOptions(prev => offset === 0 ? mapped : [...(prev ?? []), ...mapped]);
-          offsetRef.current = offset + items.length;
-          if (items.length < SELECTOR_PAGE) { setHasMore(false); hasMoreRef.current = false; }
-        }
-        loadingRef.current = false;
-        setFetching(false);
-      })
-      .catch(() => { loadingRef.current = false; setFetching(false); });
-  }, [selectorUrl, selectorContext, token]);
-
-  // Invalidate cached options when the URL or the selector context changes.
-  // We do NOT eager-fetch here — the identifier (`<field>$_identifier`) arrives with
-  // the default/record payload, so the trigger can render the label without a list.
-  // The actual fetch is deferred to the first time the user opens the dropdown.
-  const contextKey = JSON.stringify(selectorContext ?? {});
-  useEffect(() => {
-    offsetRef.current = 0;
-    hasMoreRef.current = true;
-    setHasMore(true);
-    setServerOptions(null);
-  }, [selectorUrl, token, contextKey]);
-
-  // Callback ref: fires when SelectContent mounts (dropdown opens).
-  // Triggers the first page load if we don't have server options yet, then attaches
-  // the scroll listener for infinite pagination.
-  const contentCallbackRef = useCallback((node) => {
-    if (!node || !selectorUrl) return;
-    if (serverOptions === null && !loadingRef.current) {
-      fetchPage(0);
-    }
-    // Radix renders [data-radix-select-viewport] as the actual scrollable element
-    const viewport = node.querySelector('[data-radix-select-viewport]') ?? node;
-    viewport.addEventListener('scroll', () => {
-      const { scrollTop, scrollHeight, clientHeight } = viewport;
-      if (scrollHeight - scrollTop - clientHeight < 100) fetchPage(offsetRef.current);
-    }, { passive: true });
-  }, [fetchPage, selectorUrl, serverOptions]);
-
-  const baseOptions = serverOptions ?? catalogOptions;
-  // Whether the current value is among the (possibly filtered) server options.
-  const hasValue = value && baseOptions.some(opt => opt.id === value);
-
-  return (
-    <Select
-      value={value || '__empty__'}
-      onValueChange={(val) => {
-        if (val === '__empty__') {
-          onChange('', '', null);
-          return;
-        }
-        const opt = baseOptions.find(o => o.id === val);
-        onChange(val, opt?.name, opt);
-      }}
-      required={field.required}
-    >
-      <SelectTrigger id={field.key} data-testid={`field-${field.key}`} className="focus:ring-2 focus:ring-primary">
-        <SelectValue placeholder={buildSelectPlaceholder(ui, resolvedLabel)} />
-        {fetching && <Loader2 className="h-4 w-4 text-muted-foreground animate-spin ml-auto mr-1" />}
-      </SelectTrigger>
-      <SelectContent ref={contentCallbackRef}>
-        {!field.required && <SelectItem value="__empty__">&nbsp;</SelectItem>}
-        {/* When the current value is not among the filtered options (e.g. a purchase price list
-            on a sales invoice), render a hidden item so Radix can display the current label in
-            the trigger — but the user cannot re-select it from the dropdown. */}
-        {!hasValue && value && displayValue && (
-          <SelectItem
-            key={`__current__${value}`}
-            value={value}
-            style={{ display: 'none', height: 0, padding: 0, overflow: 'hidden' }}
-            aria-hidden="true"
-          >
-            {displayValue}
-          </SelectItem>
-        )}
-        {baseOptions.map(opt => (
-          <SelectItem key={opt.id} value={opt.id} data-testid={`option-${field.key}-${opt.id}`}>{opt.name}</SelectItem>
-        ))}
-        {hasMore && selectorUrl && (
-          <div className="py-1 text-center text-xs text-muted-foreground select-none pointer-events-none">{ui('loading')}</div>
-        )}
-      </SelectContent>
-    </Select>
-  );
-}
+// SelectorInput moved to './SelectorInput.jsx' to be reused by both the form view
+// here and the inline add-row in DataTable.
 
 /**
  * Dependent Select for FK fields that require a parent context.

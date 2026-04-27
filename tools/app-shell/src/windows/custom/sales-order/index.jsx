@@ -51,6 +51,7 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
   useBulkActionToast();
   const [searchParams] = useSearchParams();
   const [cloneTargets, setCloneTargets] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
     useCreateContactModal({ apiBaseUrl, token });
@@ -118,6 +119,7 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
         quickFilters={QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}
         dateFilterKey="orderDate"
+        refreshTrigger={refreshKey}
         {...rest}
       />
       {cloneTargets && createPortal(
@@ -127,6 +129,7 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
           headers={headers}
           routePrefix="/sales-order/"
           onClose={() => setCloneTargets(null)}
+          onCloned={() => setRefreshKey(k => k + 1)}
         />,
         document.body,
       )}

@@ -28,6 +28,7 @@ function CustomQuotationTable(props) {
 
 export default function SalesQuotationWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
   const [cloneTargets, setCloneTargets] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
     useCreateContactModal({ apiBaseUrl, token });
@@ -72,6 +73,7 @@ export default function SalesQuotationWindow({ windowName, recordId, token, apiB
         Table={CustomQuotationTable}
         labelOverrides={LABEL_OVERRIDES}
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
+        refreshTrigger={refreshKey}
         {...rest}
       />
       {cloneTargets && createPortal(
@@ -82,6 +84,7 @@ export default function SalesQuotationWindow({ windowName, recordId, token, apiB
           headerEntity="quotation"
           routePrefix="/sales-quotation/"
           onClose={() => setCloneTargets(null)}
+          onCloned={() => setRefreshKey(k => k + 1)}
         />,
         document.body,
       )}
