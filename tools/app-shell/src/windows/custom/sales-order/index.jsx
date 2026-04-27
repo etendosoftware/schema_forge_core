@@ -8,8 +8,8 @@ import OrderReactivateBulkAction from '@generated/sales-order/custom/OrderReacti
 import { ListView } from '@/components/contract-ui';
 
 const LIST_COLUMNS = [
+  { key: 'orderDate', column: 'DateOrdered', type: 'date', label: 'Order Date', dot: false },
   { key: 'documentNo', column: 'DocumentNo', type: 'string', label: 'Document No.' },
-  { key: 'orderDate', column: 'DateOrdered', type: 'date', label: 'Order Date' },
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner' },
   { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
@@ -24,6 +24,7 @@ import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
+import LinesEmptyState from '@/components/contract-ui/LinesEmptyState.jsx';
 
 // Mirrors artifacts/sales-order/generated/web/sales-order/HeaderPage.jsx
 // Kept in sync manually because the generator does not expose labelOverrides yet.
@@ -63,6 +64,8 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
           token={token}
           apiBaseUrl={apiBaseUrl}
           draftMode={draftModeWithModal}
+          linesEmptyState={LinesEmptyState}
+          addLineGuard={(d) => !!d?.businessPartner}
           {...rest}
         />
         {createContactState && createPortal(

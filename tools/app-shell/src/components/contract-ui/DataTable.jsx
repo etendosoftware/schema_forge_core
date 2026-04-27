@@ -222,6 +222,17 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
 }
 
 
+function getDateDotColor(dateValue) {
+  if (!dateValue) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const str = String(dateValue);
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(str) ? new Date(str + 'T00:00:00') : new Date(str);
+  d.setHours(0, 0, 0, 0);
+  if (d.getTime() === today.getTime()) return null;
+  return d > today ? 'bg-emerald-500' : 'bg-red-500';
+}
+
 function isTruthyBoolean(value) {
   return value === true || value === 'Y' || value === 'true';
 }
@@ -1100,7 +1111,13 @@ export function DataTable({
       // Parse date-only strings (yyyy-MM-dd) as local to avoid timezone shift
       const parsed = raw ? (/^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(raw + 'T00:00:00') : new Date(raw)) : null;
       const formatted = parsed && !isNaN(parsed) ? dateFormatter.format(parsed) : '\u2014';
-      return <span>{formatted}</span>;
+      const dotColor = col.dot === false ? null : getDateDotColor(raw);
+      return (
+        <span className="inline-flex items-center gap-1.5">
+          {dotColor && <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${dotColor}`} />}
+          {formatted}
+        </span>
+      );
     }
     if (col.type === 'amount') {
       return <span className="tabular-nums">{formatAmount(row[col.key], row['currency$_identifier'])}</span>;

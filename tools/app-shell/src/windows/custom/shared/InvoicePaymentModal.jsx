@@ -463,6 +463,21 @@ export default function InvoicePaymentModal({
             </div>
           )}
 
+          {/* Register another payment — shown between list and confirmation when partially paid */}
+          {confirmation && !fullyPaid && (
+            <div style={{ marginTop: 8 }}>
+              <button type="button" onClick={() => {
+                const nextInst = sorted.find(i => parseFloat(i.outstandingAmount) > 0);
+                const nextScheduleId = nextInst ? (nextInst.finPaymentScheduleID || nextInst.id) : null;
+                setConfirmation(null);
+                if (nextScheduleId) setActiveFormScheduleId(nextScheduleId);
+              }}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '0.5px dashed #d1d5db', background: 'transparent', fontSize: 12, color: '#6B7280', cursor: 'pointer', textAlign: 'center' }}>
+                + {ui('registerPayment')} &middot; {fmt(localOutstanding, currency)} {ui('outstandingLabel').toLowerCase()}
+              </button>
+            </div>
+          )}
+
           {/* Confirmation block */}
           {confirmation && (
             <div style={{ marginTop: 12, textAlign: 'center', padding: '8px 0' }}>
