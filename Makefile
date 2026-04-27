@@ -48,12 +48,32 @@ PUSH_TO_NEO ?= 0
 SKIP_EXTRACT ?= 0
 ONLY ?=
 
-regen: ## Re-run full pipeline for all active windows (PUSH_TO_NEO=1 to push, ONLY=a,b to filter)
-	@REGEN_ARGS=""; \
+regen: ## Re-run full pipeline for all active windows (HELP=1 or `make regen-help` for options)
+	@if [ "$(HELP)" = "1" ]; then $(MAKE) -s regen-help; exit 0; fi; \
+	REGEN_ARGS=""; \
 	if [ "$(PUSH_TO_NEO)" = "1" ]; then REGEN_ARGS="$$REGEN_ARGS --push-to-neo"; fi; \
 	if [ "$(SKIP_EXTRACT)" = "1" ]; then REGEN_ARGS="$$REGEN_ARGS --skip-extract"; fi; \
 	if [ -n "$(ONLY)" ]; then REGEN_ARGS="$$REGEN_ARGS --only $(ONLY)"; fi; \
 	node cli/src/regen-all.js $$REGEN_ARGS
+
+regen-help: ## Show usage and examples for `make regen`
+	@echo "Usage: make regen [VAR=value ...]"
+	@echo ""
+	@echo "Variables:"
+	@echo "  ONLY=<spec>[,<spec>...]   Run only the given window spec(s) (kebab-case, matches artifacts/<spec>/)"
+	@echo "  PUSH_TO_NEO=1             Push the resulting config to NEO Headless after regenerating"
+	@echo "  SKIP_EXTRACT=1            Skip the DB extraction step (reuse existing schema-raw.json)"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make regen                                # all active windows"
+	@echo "  make regen ONLY=tax                       # only the tax window"
+	@echo "  make regen ONLY=tax,product               # tax + product"
+	@echo "  make regen ONLY=tax SKIP_EXTRACT=1        # only tax, skip DB extraction"
+	@echo "  make regen ONLY=tax PUSH_TO_NEO=1         # only tax + push to NEO"
+	@echo ""
+	@echo "Notes:"
+	@echo "  - Window specs are the directory names under artifacts/ (kebab-case)."
+	@echo "  - For a single window, you can also run: node cli/src/resolve-curated.js --window <spec> --write"
 
 # --- Dev Server ---
 

@@ -171,7 +171,7 @@ export function generateTableComponent(entityName, contract) {
     let renderPart = '';
     if (f.cellType === 'depreciationProgress') renderPart = ', render: renderDepreciationProgress';
     else if (f.cellType === 'taxRate') renderPart = ', render: renderTaxRate';
-    else if (f.cellType === 'taxScope') renderPart = ', render: renderTaxScope';
+    else if (f.cellType === 'taxScope') renderPart = `, render: (row) => renderTaxScope(row, '${f.name}')`;
     return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart} },`;
   }).join('\n');
 
@@ -205,15 +205,16 @@ function renderTaxRate(row) {
 ` : '';
 
   const taxScopeHelper = neededCellTypes.has('taxScope') ? `
-function renderTaxScope(row) {
-  const value = row?.applicableTo;
+function TaxScopeCell({ row, fieldKey }) {
+  const ui = useUI();
+  const value = fieldKey ? row?.[fieldKey] : (row?.applicableTo ?? row?.salesPurchaseType);
   const showSales    = value === 'B' || value === 'S';
   const showPurchase = value === 'B' || value === 'P';
   if (!showSales && !showPurchase) return value ?? '';
   return (
     <span className="inline-flex items-center gap-1">
-      {showSales    && <Tag variant="blue"   label="Sales" />}
-      {showPurchase && <Tag variant="purple" label="Purchase" />}
+      {showSales    && <Tag variant="blue"   label={ui('taxScopeSales')} />}
+      {showPurchase && <Tag variant="purple" label={ui('taxScopePurchase')} />}
     </span>
   );
 }
@@ -221,9 +222,11 @@ function renderTaxScope(row) {
 
   const needsTagImport = neededCellTypes.has('taxRate') || neededCellTypes.has('taxScope');
   const tagImport = needsTagImport ? `import { Tag } from '@/components/ui/tag';\n` : '';
+  const needsUiImport = neededCellTypes.has('taxScope');
+  const uiImport = needsUiImport ? `import { useUI } from '@/i18n';\n` : '';
 
   return `import { DataTable } from '@/components/contract-ui';
-${tagImport}${depreciationProgressHelper}${taxRateHelper}${taxScopeHelper}
+${tagImport}${uiImport}${depreciationProgressHelper}${taxRateHelper}${taxScopeHelper}
 ${MARKERS.GENERATED_START(`columns:${entityName}`)}
 const columns = [
 ${columnsArray}

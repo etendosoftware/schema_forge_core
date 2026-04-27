@@ -1,32 +1,13 @@
 import { EntityForm } from '@/components/contract-ui';
 
-const APPLICABLE_TO_OPTIONS = [
-  { value: 'B', label: 'Both' },
-  { value: 'S', label: 'Sales Tax' },
-  { value: 'P', label: 'Purchase Tax' },
-];
-
-const DOC_TAX_AMOUNT_OPTIONS = [
-  { value: 'D', label: 'Document Amount' },
-  { value: 'L', label: 'Line Amount' },
-];
-
-const BASE_AMOUNT_OPTIONS = [
-  { value: 'LNA', label: 'Line Net Amount' },
-  { value: 'LNATAX', label: 'Line Net Amount + Tax' },
-  { value: 'TAX', label: 'Tax Amount' },
-  { value: 'TBA', label: 'Alternative Base Amount' },
-  { value: 'TBATAX', label: 'Alternative Base + Tax' },
-];
-
 // @sf-generated-start fields:tax
 const fields = [
-  { key: 'name', column: 'Name', type: 'text', required: true, section: 'principal' },
-  { key: 'rate', column: 'Rate', type: 'number', required: true, section: 'principal' },
-  { key: 'applicableTo', column: 'SOPOType', type: 'select', options: APPLICABLE_TO_OPTIONS, section: 'principal' },
-  { key: 'validFrom', column: 'ValidFrom', type: 'date', section: 'principal' },
-  { key: 'docTaxAmount', column: 'DocTaxAmount', type: 'select', options: DOC_TAX_AMOUNT_OPTIONS, required: true, section: 'principal' },
-  { key: 'baseAmount', column: 'BaseAmount', type: 'select', options: BASE_AMOUNT_OPTIONS, required: true, section: 'principal' },
+  { key: 'name', column: 'Name', type: 'text', label: 'Name', required: true, section: 'principal' },
+  { key: 'rate', column: 'Rate', type: 'number', label: 'Rate', required: true, section: 'principal' },
+  { key: 'salesPurchaseType', column: 'SOPOType', type: 'select', label: 'Sales/Purchase Type', required: true, section: 'principal', options: [{ value: 'B', label: 'Both' }, { value: 'P', label: 'Purchase Tax' }, { value: 'S', label: 'Sales Tax' }], defaultValue: 'B' },
+  { key: 'validFromDate', column: 'ValidFrom', type: 'date', label: 'Valid From Date', required: true, section: 'principal' },
+  { key: 'docTaxAmount', column: 'DocTaxAmount', type: 'select', label: 'Document Tax Amount Calculation', required: true, section: 'principal', options: [{ value: 'D', label: 'Document based amount by rate' }, { value: 'L', label: 'Line based amount by rate' }], defaultValue: 'D' },
+  { key: 'baseAmount', column: 'BaseAmount', type: 'select', label: 'Base Amount', required: true, section: 'principal', options: [{ value: 'TBA', label: 'Alternate Tax Base Amount' }, { value: 'TBATAX', label: 'Alternate Tax Base Amount + Tax Amount' }, { value: 'LNA', label: 'Line Net Amount' }, { value: 'LNATAX', label: 'Line Net Amount + Tax Amount' }, { value: 'TAX', label: 'Tax Amount' }], defaultValue: 'LNA' },
 ];
 // @sf-generated-end fields:tax
 
