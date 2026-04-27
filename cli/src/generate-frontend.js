@@ -557,8 +557,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       }),
   ].join('\n');
 
-  // Separate entry fields (user types) from auto-derived fields (price, tax, discount, amount)
-  const autoPatterns = /price|tax|discount|amount|total|cost|net/i;
+  // Separate entry fields (user types) from auto-derived fields (price, tax, amount)
+  // Note: discount is intentionally excluded — it is user-editable and triggers SL_Order_Amt recalculation.
+  const autoPatterns = /price|tax|amount|total|cost|net/i;
   const derivedFields = detailEditableFields.filter(f =>
     autoPatterns.test(f.name) && !f.required && !f.reference
   );

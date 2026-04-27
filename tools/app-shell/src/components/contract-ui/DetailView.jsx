@@ -636,7 +636,7 @@ export function DetailView({
   // Execute callout for child entity (line-level) fields and apply results via callback.
   // Merges parent header data into formState so callouts have full context (e.g., priceList).
   const handleLineFieldChange = useCallback(async (field, value, rowValues, applyUpdates) => {
-    if (!field || !value || value === '' || !token || !apiBaseUrl || !detailEntity) return;
+    if (!field || (value == null || value === '') || !token || !apiBaseUrl || !detailEntity) return;
     if (field.includes('$_identifier') || /^[a-zA-Z]+_[A-Z]{2,4}$/.test(field)) return;
     try {
       // Build formState: line row values + parent header fields for context
@@ -792,6 +792,11 @@ export function DetailView({
           const qty   = parseFloat(String(rowValues.invoicedQuantity || rowValues.orderedQuantity || '')) || 0;
           const price = parseFloat(String(rowValues.unitPrice ?? '')) || 0;
           lineNet = qty > 0 && price > 0 ? qty * price : 0;
+        } else if (field === 'discount') {
+          const qty   = parseFloat(String(rowValues.orderedQuantity ?? rowValues.invoicedQuantity ?? '')) || 0;
+          const price = parseFloat(String(rowValues.unitPrice ?? '')) || 0;
+          const disc  = parseFloat(String(value)) || 0;
+          lineNet = qty > 0 && price > 0 ? qty * price * (1 - disc / 100) : 0;
         } else {
           lineNet = parseFloat(String(
             result.lineNetAmount ?? result.lineNetAmt ??
@@ -886,7 +891,7 @@ export function DetailView({
             // because it misinterprets the form's total lineGrossAmount as a unit price.
             // For product selection the callout correctly computes the value, so keep it
             // unless it came back null/0.
-            const forceLineGross = field === 'orderedQuantity' || field === 'invoicedQuantity' || field === 'unitPrice';
+            const forceLineGross = field === 'orderedQuantity' || field === 'invoicedQuantity' || field === 'unitPrice' || field === 'discount';
             if (forceLineGross || result.lineGrossAmount == null || Number(result.lineGrossAmount) === 0) {
               result.lineGrossAmount = result.grossAmount;
             }
@@ -904,6 +909,9 @@ export function DetailView({
       // No other window or field is affected unless it declares forceCalloutFields.
       const triggerFieldDef = (addLineFields?.entry ?? []).find(f => f.key === field);
       const forceFields = new Set(triggerFieldDef?.forceCalloutFields ?? []);
+      for (const amtKey of ['grossAmount', 'lineGrossAmount', 'lineNetAmount']) {
+        if (result[amtKey] != null) result[amtKey] = parseFloat(Number(result[amtKey]).toFixed(2));
+      }
       applyUpdates?.(result, forceFields);
 
       // Cascade to SL_Order_Amt when a price-setting callout (e.g. SL_Order_Product) returned
