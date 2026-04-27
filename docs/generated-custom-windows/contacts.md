@@ -39,7 +39,7 @@ The Contacts window should let users maintain a shared contact/account master re
 - In the Location modal, country is required; choosing a country clears the region and reloads region options through country-filtered selectors.
 - New locations default shipping address and invoicing address to true, and the modal creates or updates the business-partner location plus underlying location data through the same `locationAddress` endpoint.
 - Bank account defaults are partially visible in current evidence: country defaults from configuration and bank format defaults to `GENERIC`. A bank-account format field exists, but current evidence does not prove how the form reacts between generic, IBAN, SWIFT, and Spanish modes.
-- A right-side sidebar is present in detail view and loads contact-specific KPIs/trend data from `bp-stats` and `bp-trend` endpoints.
+- A right-side sidebar is present in detail view and loads contact-specific KPIs/trend data from `bp-stats` and `bp-trend` endpoints. KPI cards and trend amounts in the sidebar are formatted in the organization's configured currency (resolved via `useCurrency` and the shared `formatCurrency` util), not hardcoded to USD.
 - No parent/child total, tax, or document-status reactions are visible in current evidence.
 
 ## Gap assessment
@@ -70,6 +70,6 @@ The Contacts window should let users maintain a shared contact/account master re
 - `artifacts/contacts/generated/web/contacts/BusinessPartnerPage.jsx` confirms the runtime composition: custom list table, Financial panel, Location modal, sidebar, General/Financial tabs, and Person/Bank Account/Location child areas.
 - `tools/app-shell/src/windows/custom/contacts/ContactsTable.jsx` confirms list enrichment for contact type badges and derived location lookup.
 - `tools/app-shell/src/windows/custom/contacts/ContactsFinancialPanel.jsx` and `BillingPreferencesForm.jsx` confirm post-save financial editing, customer/vendor-dependent sections, credit-limit persistence, and discount-row maintenance.
-- `tools/app-shell/src/windows/custom/contacts/LocationEditorModal.jsx` confirms saved-header dependency, country/region selector dependency, and atomic create/update/delete behavior through the `locationAddress` endpoint.
+- `tools/app-shell/src/windows/custom/contacts/LocationEditorModal.jsx` confirms saved-header dependency, country/region selector dependency, and atomic create/update/delete behavior through the `locationAddress` endpoint. All user-facing labels including the close button are i18n-driven via `useUI`.
 - `tools/app-shell/src/menu.json` and `tools/app-shell/src/windows/registry.js` confirm menu visibility and route-to-loader registration for `/contacts`.
 - No contacts-specific automated test was found in the current repo. Generic route-loading and shared entity-flow evidence lives in `docs/generated-custom-windows/app-shell-functional-flows.md`, including registry-backed window loading and shared child-refresh/defaults behavior.
