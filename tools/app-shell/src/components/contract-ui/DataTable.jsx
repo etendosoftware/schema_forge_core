@@ -1111,7 +1111,7 @@ export function DataTable({
       // Parse date-only strings (yyyy-MM-dd) as local to avoid timezone shift
       const parsed = raw ? (/^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(raw + 'T00:00:00') : new Date(raw)) : null;
       const formatted = parsed && !isNaN(parsed) ? dateFormatter.format(parsed) : '\u2014';
-      const dotColor = getDateDotColor(raw);
+      const dotColor = col.dot === false ? null : getDateDotColor(raw);
       return (
         <span className="inline-flex items-center gap-1.5">
           {dotColor && <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${dotColor}`} />}

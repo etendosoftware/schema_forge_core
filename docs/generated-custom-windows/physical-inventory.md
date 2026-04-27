@@ -15,7 +15,7 @@ Physical Inventory should let a warehouse user create an inventory count session
 ## Interaction model
 - Route: `/physical-inventory` for the list and `/physical-inventory/:recordId` for a specific count session.
 - Visibility: visible from the Inventory menu as `Physical Inventory`.
-- Implementation type: generated window with custom more-menu actions for count-list generation and system-count refresh.
+- Implementation type: custom window wrapper at `tools/app-shell/src/windows/custom/physical-inventory/index.jsx`, registered in `customLoaders` in `tools/app-shell/src/windows/registry.js`. The wrapper supplies an explicit `COLUMNS` array to `InventoryTable` (`dot: false` on `movementDate`) and passes a `CustomInventoryTable` to `GeneratedApp`. Custom more-menu actions for count-list generation and system-count refresh come from the generated window.
 - Window shape: master-child. The header entity is `inventory`, and the detail entity is `inventoryLine`.
 - List/detail behavior: the list page opens inventory headers; the record page shows the header form plus the child line table and line form.
 
@@ -47,7 +47,7 @@ Physical Inventory should let a warehouse user create an inventory count session
 ## Automated evidence
 - `docs/generated-custom-windows/app-shell-functional-flows.md` documents the shared generated-window routing model for `/:windowName` and `/:windowName/:recordId`.
 - `tools/app-shell/src/menu.json` includes the visible Inventory menu entry for `physical-inventory`.
-- `tools/app-shell/src/windows/registry.js` maps `physical-inventory` to the generated window loader.
+- `tools/app-shell/src/windows/registry.js` maps `physical-inventory` in `customLoaders` to `tools/app-shell/src/windows/custom/physical-inventory/index.jsx`, which wraps `InventoryTable` with a custom `COLUMNS` array before forwarding to the generated `GeneratedApp`.
 - `artifacts/physical-inventory/contract.json` defines the master-child contract, `processed` status field, `processNow` line requirement, header defaults, line fields including `QtyCount` and `QtyBook`, and action endpoints for `generateList`, `updateQuantities`, and `processNow`.
 - `artifacts/physical-inventory/generated/web/physical-inventory/InventoryPage.jsx` binds `inventory` + `inventoryLine`, uses the generated process action, and injects the custom menu content.
 - `artifacts/physical-inventory/generated/web/physical-inventory/InventoryLineForm.jsx` and `InventoryLineTable.jsx` show `User Count` as editable and `System Count` as read-only line data.

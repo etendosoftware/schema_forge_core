@@ -16,4 +16,5 @@ const fields = [
 export default function MovementLineForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
+MovementLineForm.hasCollapsedFields = false;
 // @sf-generated-end component:MovementLineForm

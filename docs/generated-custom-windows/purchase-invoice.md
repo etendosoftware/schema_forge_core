@@ -21,7 +21,7 @@ Use this window to register supplier invoices, keep the payable document aligned
 - Visibility: visible from the Purchases menu.
 - Implementation type: custom window override registered in `tools/app-shell/src/windows/registry.js`, combining generated header/detail scaffolding with custom list preview, topbar, line table, bottom panel, and related-documents behavior.
 - Window shape: master-child. The master record is the invoice header and the main child dataset is invoice lines; the detail page also surfaces a custom related-documents tab instead of relying on the generated payment secondary tabs.
-- List interaction: the list uses a narrowed header table driven by `decisions.json` through the generated `HeaderTable` (the custom wrapper no longer hardcodes a column list). The visible columns, in order, are: Invoice Date, Supplier Reference, Business Partner, Document Status, Total Gross Amount, and Total Outstanding. Selecting a row opens a preview modal instead of navigating directly to the detail route.
+- List interaction: the list uses a custom `PurchaseInvoiceHeaderTable` component (`tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceHeaderTable.jsx`). The visible columns, in order, are: Invoice Date (no dot indicator), Supplier Reference, Due Date (dot indicator: red if overdue, green if upcoming, computed as the maximum `dueDate` across all payment-plan installments for that invoice via a parallel `paymentPlan?parentId=` batch fetch — shown as "—" when no payment plan exists), Business Partner, Document Status, Total Gross Amount, and Total Outstanding. Selecting a row opens a preview modal instead of navigating directly to the detail route.
 - Detail interaction: the record page uses the generated header page with a custom lines table, a custom topbar, summary amounts, notes editing, footer totals, and related-document chips. The internal Document No. field is hidden from the grid and the form; the supplier-side reference (`POReference`, displayed as "Supplier reference"/"Referencia de proveedor") is editable on draft invoices and becomes read-only once the invoice is processed (`@Processed@='Y'`).
 
 ## Reactive behavior and dependencies
@@ -50,7 +50,7 @@ Use this window to register supplier invoices, keep the payable document aligned
 
 ## Manual verification
 
-1. Open `/purchase-invoice` and confirm the list shows purchase invoices with invoice date, supplier reference, business partner, document status, total gross amount, and total outstanding in that exact column order, and that the internal document number column is not present.
+1. Open `/purchase-invoice` and confirm the list shows: Invoice Date (no dot), Supplier Reference, Due Date (red dot if overdue / green if upcoming / "—" if no payment plan), Business Partner, Document Status, Total Gross Amount, and Total Outstanding in that exact column order, and that the internal document number column is not present.
 2. Click a list row and confirm the preview modal opens instead of immediate navigation.
 3. In the preview modal, verify the General tab shows total, due/payable state, and payment history, while Messages and History remain placeholder states.
 4. Open `/purchase-invoice?filter=overdue` and confirm the quick filter keeps invoices with an outstanding amount.
