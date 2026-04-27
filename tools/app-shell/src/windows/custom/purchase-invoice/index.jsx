@@ -5,7 +5,7 @@ import { ListView } from '@/components/contract-ui';
 import { useUI } from '@/i18n';
 import BulkDocumentAction from '@/components/contract-ui/BulkDocumentAction';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
-import HeaderTable from '@generated/purchase-invoice/generated/web/purchase-invoice/HeaderTable';
+import PurchaseInvoiceHeaderTable from './PurchaseInvoiceHeaderTable.jsx';
 import HeaderPage from '@generated/purchase-invoice/generated/web/purchase-invoice/HeaderPage';
 import InvoiceLineTableCustom from './InvoiceLineTableCustom.jsx';
 import InvoicePreviewModal from '../shared/InvoicePreviewModal.jsx';
@@ -41,7 +41,7 @@ let previewRowSetterRef = null;
  */
 function PurchaseInvoiceTable(props) {
   return (
-    <HeaderTable
+    <PurchaseInvoiceHeaderTable
       {...props}
       onNavigate={(row) => previewRowSetterRef?.(row)}
     />
