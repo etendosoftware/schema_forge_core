@@ -311,6 +311,9 @@ export function DetailView({
   const extractErrorMessage = useCallback(async (res) => {
     try {
       const data = await res.json();
+      // NEO Headless top-level format: { error: { message, status } }
+      if (data?.error?.message) return data.error.message;
+      // Etendo JsonDataService format: { response: { error: { message } | string } }
       const err = data?.response?.error;
       if (err?.message) return err.message;
       if (typeof err === 'string') return err;
@@ -338,6 +341,12 @@ export function DetailView({
   // Cache for tax rates fetched from the selector (keyed by tax ID).
   // Avoids repeated API calls when the same tax appears on multiple lines.
   const taxRateCacheRef = useRef({});
+  // Batching refs for the sidebar onChange: product selector fires multiple synchronous
+  // onChange calls (product, product$_identifier, unitPrice/grossUnitPrice). Without
+  // batching each fires its own callout with a stale/incomplete snapshot. We accumulate
+  // all synchronous calls and fire one handleLineFieldChange with the full snapshot.
+  const sidebarCalloutBatchRef = useRef(null);
+  const sidebarCalloutTimerRef = useRef(null);
 
   // When a sidebar line is selected, seed taxRateCacheRef from its saved values so that
   // subsequent unitPrice / orderedQuantity changes can resolve taxFactor via source 2 (cache)
@@ -350,13 +359,17 @@ export function DetailView({
     let rate = null;
     const gross = parseFloat(String(selectedLine.grossAmount ?? selectedLine.lineGrossAmount ?? '')) || 0;
     if (gross > 0) {
-      const net = parseFloat(String(selectedLine.lineNetAmount ?? '')) || 0;
+      const disc  = parseFloat(String(selectedLine.discount ?? '')) || 0;
+      const net   = parseFloat(String(selectedLine.lineNetAmount ?? '')) || 0;
       if (net > 0) {
-        rate = (gross / net - 1) * 100;
+        // Etendo stores LINENETAMT = qty × unitPrice (list price, before discount).
+        // Adjust by discount to get the actual taxable base before deriving the tax rate.
+        const taxableNet = disc > 0 ? net * (1 - disc / 100) : net;
+        rate = (gross / taxableNet - 1) * 100;
       } else {
         const qty   = parseFloat(String(selectedLine.orderedQuantity ?? selectedLine.invoicedQuantity ?? '')) || 0;
         const price = parseFloat(String(selectedLine.unitPrice ?? '')) || 0;
-        const lineNet = qty * price;
+        const lineNet = qty * price * (1 - disc / 100);
         if (lineNet > 0) rate = (gross / lineNet - 1) * 100;
       }
     }
@@ -683,13 +696,23 @@ export function DetailView({
       const result = {};
       if (calloutData.updates) {
         for (const [k, entry] of Object.entries(calloutData.updates)) {
+          // Classic callouts return value:"" for FK (UUID) fields they didn't explicitly set —
+          // NOT to clear them. Only skip the empty update when the existing value looks like
+          // an Etendo UUID (32-char hex). Numeric and text fields that come back as "" are
+          // legitimate resets (e.g. discount:"" means reset to 0) and must be applied.
+          const existingIsUuid = typeof rowValues[k] === 'string'
+            && /^[0-9A-Fa-f]{32}$|^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$/.test(rowValues[k]);
+          if (entry.value === '' && existingIsUuid) continue;
           result[k] = entry.value;
           if (entry._identifier) result[k + '$_identifier'] = entry._identifier;
         }
       }
       if (calloutData.combos) {
         for (const [k, combo] of Object.entries(calloutData.combos)) {
-          if (combo.selected != null) {
+          // Treat empty string as "no change" — the backend sometimes returns selected:""
+          // instead of null when the callout does not explicitly set a combo (e.g. tax on
+          // SL_Order_Product). An empty string would overwrite a valid existing value.
+          if (combo.selected != null && combo.selected !== '') {
             result[k] = combo.selected;
             if (combo._identifier) result[k + '$_identifier'] = combo._identifier;
           }
@@ -789,9 +812,19 @@ export function DetailView({
           const price = parseFloat(value) || 0;
           lineNet = qty > 0 && price > 0 ? qty * price : 0;
         } else if (field === 'product') {
-          const qty   = parseFloat(String(rowValues.invoicedQuantity || rowValues.orderedQuantity || '')) || 0;
-          const price = parseFloat(String(rowValues.unitPrice ?? '')) || 0;
-          lineNet = qty > 0 && price > 0 ? qty * price : 0;
+          // Prefer the callout's lineNetAmount — it already reflects the active price list
+          // and any server-side adjustments. rowValues.unitPrice is stale here: the selector
+          // item mapping injects the product's list price BEFORE the callout resolves the
+          // real active-price-list price, so using it would produce the wrong lineNet.
+          const calloutNet = parseFloat(String(result.lineNetAmount ?? result.lineNetAmt ?? '')) || 0;
+          if (calloutNet > 0) {
+            lineNet = calloutNet;
+          } else {
+            const qty      = parseFloat(String(rowValues.invoicedQuantity || rowValues.orderedQuantity || '')) || 0;
+            const priceStr = result.unitPrice != null ? String(result.unitPrice) : String(rowValues.unitPrice ?? '');
+            const price    = parseFloat(priceStr) || 0;
+            lineNet = qty > 0 && price > 0 ? qty * price : 0;
+          }
         } else if (field === 'discount') {
           const qty   = parseFloat(String(rowValues.orderedQuantity ?? rowValues.invoicedQuantity ?? '')) || 0;
           const price = parseFloat(String(rowValues.unitPrice ?? '')) || 0;
@@ -869,15 +902,17 @@ export function DetailView({
               return qty > 0 && price > 0;
             });
             if (ref) {
-              const gross = parseFloat(String(ref.grossAmount ?? ref.lineGrossAmount ?? '')) || 0;
-              const net   = parseFloat(String(ref.lineNetAmount ?? '')) || 0;
+              const gross    = parseFloat(String(ref.grossAmount ?? ref.lineGrossAmount ?? '')) || 0;
+              const net      = parseFloat(String(ref.lineNetAmount ?? '')) || 0;
+              const discount = parseFloat(String(ref.discount ?? '')) || 0;
               if (net > 0) {
-                taxFactor = gross / net;
+                // LINENETAMT = qty × unitPrice before discount; apply discount to get taxable base.
+                const adjustedNet = discount > 0 ? net * (1 - discount / 100) : net;
+                taxFactor = gross / adjustedNet;
               } else {
-                const qty      = parseFloat(String(ref.orderedQuantity ?? ref.invoicedQuantity ?? '')) || 0;
-                const price    = parseFloat(String(ref.unitPrice ?? '')) || 0;
-                const discount = parseFloat(String(ref.discount ?? '')) || 0;
-                const lineNet  = qty * price * (discount > 0 ? (1 - discount / 100) : 1);
+                const qty   = parseFloat(String(ref.orderedQuantity ?? ref.invoicedQuantity ?? '')) || 0;
+                const price = parseFloat(String(ref.unitPrice ?? '')) || 0;
+                const lineNet = qty * price * (discount > 0 ? (1 - discount / 100) : 1);
                 if (lineNet > 0) taxFactor = gross / lineNet;
               }
             }
@@ -971,13 +1006,16 @@ export function DetailView({
             const cascadeResult = {};
             if (cascadeData.updates) {
               for (const [k, entry] of Object.entries(cascadeData.updates)) {
+                const existingIsUuid = typeof rowValues[k] === 'string'
+                  && /^[0-9A-Fa-f]{32}$|^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$/.test(rowValues[k]);
+                if (entry.value === '' && existingIsUuid) continue;
                 cascadeResult[k] = entry.value;
                 if (entry._identifier) cascadeResult[k + '$_identifier'] = entry._identifier;
               }
             }
             if (cascadeData.combos) {
               for (const [k, combo] of Object.entries(cascadeData.combos)) {
-                if (combo.selected != null) cascadeResult[k] = combo.selected;
+                if (combo.selected != null && combo.selected !== '') cascadeResult[k] = combo.selected;
               }
             }
             // Same guard: don't let the cascade zero out a quantity the user already set.
@@ -1835,11 +1873,31 @@ export function DetailView({
                           onChange={(key, val, column) => {
                             setLineEdits(prev => ({ ...(prev ?? selectedLine), [key]: val }));
                             if (column) setLineEditColumns(prev => ({ ...prev, [key]: column }));
-                            handleLineFieldChange(
-                              key, val,
-                              { ...(lineEdits ?? selectedLine ?? {}), [key]: val },
-                              (updates) => setLineEdits(prev => ({ ...(prev ?? selectedLine), ...updates })),
-                            );
+                            // Batch all synchronous onChange calls from a single product
+                            // selection (product, product$_identifier, unitPrice/grossUnitPrice)
+                            // into ONE handleLineFieldChange with a complete snapshot.
+                            // This mirrors how DataTable builds its snapshot before the callout.
+                            if (!sidebarCalloutBatchRef.current) {
+                              sidebarCalloutBatchRef.current = {
+                                base: lineEdits ?? selectedLine ?? {},
+                                changes: {},
+                                primaryField: key,
+                                primaryVal: val,
+                              };
+                            }
+                            sidebarCalloutBatchRef.current.changes[key] = val;
+                            clearTimeout(sidebarCalloutTimerRef.current);
+                            sidebarCalloutTimerRef.current = setTimeout(() => {
+                              const batch = sidebarCalloutBatchRef.current;
+                              sidebarCalloutBatchRef.current = null;
+                              if (!batch) return;
+                              const rowSnapshot = { ...batch.base, ...batch.changes };
+                              handleLineFieldChange(
+                                batch.primaryField, batch.primaryVal,
+                                rowSnapshot,
+                                (updates) => setLineEdits(prev => ({ ...(prev ?? selectedLine), ...updates })),
+                              );
+                            }, 0);
                           }}
                                 entity={detailEntity}
                                 catalogs={catalogs}
