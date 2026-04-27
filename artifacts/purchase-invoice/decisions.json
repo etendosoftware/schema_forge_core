@@ -383,7 +383,8 @@
           "grid": true,
           "section": "principal",
           "inputMode": "selector",
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "forceCalloutFields": ["lineGrossAmount", "grossAmount", "lineNetAmount"]
         },
         "taxableAmount": {
           "visibility": "readOnly",

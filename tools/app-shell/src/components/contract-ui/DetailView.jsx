@@ -855,6 +855,15 @@ export function DetailView({
           const price = parseFloat(String(rowValues.unitPrice ?? '')) || 0;
           const disc  = parseFloat(String(value)) || 0;
           lineNet = qty > 0 && price > 0 ? qty * price * (1 - disc / 100) : 0;
+        } else if (field === 'tax') {
+          // C_Tax_ID has no AD callout, so SL_Order_Amt does not run; the backend
+          // injects the new taxRate into result via injectTaxRateForTrigger. We
+          // recompute lineNet from rowValues so the existing taxFactor branch can
+          // derive the correct lineGrossAmount with the new rate.
+          const qty   = parseFloat(String(rowValues.orderedQuantity ?? rowValues.invoicedQuantity ?? '')) || 0;
+          const price = parseFloat(String(rowValues.unitPrice ?? '')) || 0;
+          const disc  = parseFloat(String(rowValues.discount ?? '')) || 0;
+          lineNet = qty > 0 && price > 0 ? qty * price * (1 - disc / 100) : 0;
         } else {
           lineNet = parseFloat(String(
             result.lineNetAmount ?? result.lineNetAmt ??
@@ -951,7 +960,7 @@ export function DetailView({
             // because it misinterprets the form's total lineGrossAmount as a unit price.
             // For product selection the callout correctly computes the value, so keep it
             // unless it came back null/0.
-            const forceLineGross = field === 'orderedQuantity' || field === 'invoicedQuantity' || field === 'unitPrice' || field === 'discount';
+            const forceLineGross = field === 'orderedQuantity' || field === 'invoicedQuantity' || field === 'unitPrice' || field === 'discount' || field === 'tax';
             if (forceLineGross || result.lineGrossAmount == null || Number(result.lineGrossAmount) === 0) {
               result.lineGrossAmount = result.grossAmount;
             }
@@ -1087,6 +1096,7 @@ export function DetailView({
           // Cascade is best-effort — first callout result was already applied above
         }
       }
+
     } catch {
       // Callout is best-effort
     }
