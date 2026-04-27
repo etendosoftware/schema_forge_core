@@ -26,7 +26,7 @@ function TaxScopeCell({ row, fieldKey }) {
 const columns = [
   { key: 'name', column: 'Name', type: 'string', label: 'Name' },
   { key: 'rate', column: 'Rate', type: 'number', label: 'Rate', render: renderTaxRate },
-  { key: 'salesPurchaseType', column: 'SOPOType', type: 'enum', label: 'Sales/Purchase Type', enumLabels: { 'B': 'Both', 'P': 'Purchase Tax', 'S': 'Sales Tax' }, render: (row) => <TaxScopeCell row={row} fieldKey="salesPurchaseType" /> },
+  { key: 'salesPurchaseType', column: 'SOPOType', type: 'enum', label: 'Sales/Purchase Type', enumLabels: { 'B': 'Both', 'P': 'Purchase Tax', 'S': 'Sales Tax' }, render: (row) => renderTaxScope(row, 'salesPurchaseType') },
 ];
 // @sf-generated-end columns:tax
 

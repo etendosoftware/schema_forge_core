@@ -672,7 +672,7 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
     actions: dedupedActions,
     queryParams: {
       pagination: { startRow: '_startRow', endRow: '_endRow', default: '0-100' },
-      sorting: { param: '_sortBy', example: `_sortBy=${specName}Date` },
+      sorting: { param: '_sortBy', example: '_sortBy=creationDate desc' },
       filtering: 'Use field name as query param: ?fieldName=value',
       parentFilter: 'parentId={id} for child entities',
     },
