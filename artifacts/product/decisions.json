@@ -20,6 +20,7 @@
     "secondaryTabs": {}
   },
   "entities": {
+    "intrastat": { "exclude": true },
     "product": {
       "fields": {
         "searchKey": {
