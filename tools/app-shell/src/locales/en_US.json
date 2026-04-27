@@ -2441,7 +2441,7 @@
       "description": "The asset is used internally and will be depreciated"
     },
     "PO_PaymentTerm_ID": {
-      "label": "PO Payment Terms",
+      "label": "Payment Terms",
       "description": "The setup and timing defined to complete a specified payment."
     },
     "M_AttributeSet_ID": {
@@ -7873,7 +7873,7 @@
       "description": ""
     },
     "PO_Paymentmethod_ID": {
-      "label": "PO Payment Method",
+      "label": "Payment Method",
       "description": ""
     },
     "Lastpayment": {
@@ -17312,7 +17312,7 @@
     "removeLocation": "Remove",
     "addLocation": "+ Add Location",
     "addAddress": "+ Add address",
-    "none": "— None —",
+    "none": "None",
     "soConfirmBtn": "Confirm",
     "soConfirmTitle": "Confirm order #{number}",
     "soConfirmWarning": "Once confirmed, you won't be able to edit the order",
