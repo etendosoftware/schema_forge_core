@@ -310,7 +310,9 @@
           "visibility": "discarded"
         },
         "description": {
-          "section": "principal"
+          "grid": true,
+          "section": "principal",
+          "gridOrder": 2
         },
         "taxAmount": {
           "visibility": "discarded"

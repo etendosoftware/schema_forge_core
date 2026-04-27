@@ -11,6 +11,7 @@ import HeaderTable from '@generated/purchase-order/generated/web/purchase-order/
 import LinesTable from '@generated/purchase-order/generated/web/purchase-order/LinesTable';
 import GeneratedApp from '@generated/purchase-order/generated/web/purchase-order/index.jsx';
 import PurchaseOrderReactivateBulkAction from '@generated/purchase-order/custom/PurchaseOrderReactivateBulkAction';
+import LinesEmptyState from '@/components/contract-ui/LinesEmptyState.jsx';
 
 // Simplified list columns aligned with Sales Order visual style
 const LIST_COLUMNS = [
@@ -80,6 +81,8 @@ export default function PurchaseOrderWindow(props) {
           {...props}
           DetailTable={CustomLinesTable}
           draftMode={draftModeWithModal}
+          linesEmptyState={LinesEmptyState}
+          addLineGuard={(d) => !!d?.businessPartner}
         />
         {createContactState && createPortal(
           <CreateContactModal
