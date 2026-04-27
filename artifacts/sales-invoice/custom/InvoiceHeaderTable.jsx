@@ -43,6 +43,29 @@ export default function InvoiceHeaderTable(props) {
   const gl = dictionary?.genericLabels || {};
   const t = (key) => gl[key] || key;
 
+  // ─── Batch-fetch max dueDate per invoice from payment plan ────
+  const [dueDates, setDueDates] = useState({});
+  useEffect(() => {
+    const rows = props.data;
+    if (!rows?.length || !props.apiBaseUrl || !props.token) return;
+    const headers = { Authorization: `Bearer ${props.token}` };
+    const ids = rows.map(r => r.id).filter(Boolean);
+    Promise.all(
+      ids.map(id =>
+        fetch(`${props.apiBaseUrl}/paymentPlan?parentId=${id}`, { headers })
+          .then(r => r.ok ? r.json() : {})
+          .then(d => {
+            const installments = d?.response?.data ?? d?.data ?? [];
+            const timestamps = installments
+              .map(i => i.dueDate ? new Date(i.dueDate).getTime() : NaN)
+              .filter(ts => !Number.isNaN(ts));
+            return [id, timestamps.length > 0 ? new Date(Math.max(...timestamps)) : null];
+          })
+          .catch(() => [id, null])
+      )
+    ).then(entries => setDueDates(Object.fromEntries(entries)));
+  }, [props.data, props.apiBaseUrl, props.token]);
+
   // ─── Custom columns (override generated ones) ─────────────────
   const columns = useMemo(() => [
     { key: 'invoiceDate', column: 'DateInvoiced', type: 'date' },
@@ -54,11 +77,19 @@ export default function InvoiceHeaderTable(props) {
         className: 'bg-purple-50 text-purple-700 border-purple-200',
       },
     },
+    {
+      key: '_dueDate', column: '_dueDate', type: 'custom', label: t('dueDate'),
+      render: (row) => {
+        const d = dueDates[row.id];
+        if (!d) return <span className="text-muted-foreground">—</span>;
+        return <span>{d.toLocaleDateString('en-GB')}</span>;
+      },
+    },
     { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
     { key: 'documentStatus', column: 'DocStatus', type: 'status', label: t('statusColumn') },
     { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
     { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
-  ], [gl]);
+  ], [gl, dueDates]);
 
   // ─── Filter options ───────────────────────────────────────────
   const TYPE_OPTIONS = useMemo(() => [
