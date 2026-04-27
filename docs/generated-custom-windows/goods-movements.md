@@ -18,9 +18,9 @@ Goods Movements should let an inventory user register a stock transfer from one 
 
 - **Route:** `/goods-movements`, `/goods-movements/:recordId`
 - **Visibility:** visible from the Inventory menu as **Goods Movement**
-- **Implementation type:** generated window loaded from `tools/app-shell/src/windows/registry.js`
+- **Implementation type:** custom window wrapper at `tools/app-shell/src/windows/custom/goods-movements/index.jsx`, registered in `customLoaders` in `tools/app-shell/src/windows/registry.js`. The wrapper supplies an explicit `COLUMNS` array to `MovementTable` and passes a `CustomMovementTable` to `GeneratedApp`.
 - **Window shape:** master-child. The list route shows movement headers; the record route shows one `movement` header with child `movementLine` rows.
-- **List behavior:** the generated table exposes Name, Movement Date, Document No., and Status columns, with filters on Name and Movement Date.
+- **List behavior:** the list shows Name, Movement Date, Document No., and Status columns. Movement Date has `dot: false` so no red/green date dot appears on that column. Filters are available on Name and Movement Date.
 - **Record behavior:** the header form exposes Name, Movement Date, Description, and read-only Document No. The detail area manages movement lines with Line No., Product, Movement Quantity, UOM, Storage Bin, and New Storage Bin.
 
 ## Reactive behavior and dependencies
@@ -53,7 +53,7 @@ Goods Movements should let an inventory user register a stock transfer from one 
 ## Automated evidence
 
 - `tools/app-shell/src/menu.json` places **Goods Movement** in the visible Inventory menu.
-- `tools/app-shell/src/windows/registry.js` registers the `goods-movements` route to the generated window loader.
+- `tools/app-shell/src/windows/registry.js` registers `goods-movements` in `customLoaders` to `tools/app-shell/src/windows/custom/goods-movements/index.jsx`, which wraps `MovementTable` with a custom `COLUMNS` array (`dot: false` on `movementDate`) before forwarding to the generated `GeneratedApp`.
 - `artifacts/goods-movements/generated/web/goods-movements/index.jsx` defines the live generated route behavior: list/detail structure, `processed` status field, the `Process Movements` action, line-entry fields, and selector endpoints for Product, UOM, Storage Bin, and New Storage Bin.
 - `artifacts/goods-movements/generated/web/goods-movements/MovementForm.jsx`, `MovementLineForm.jsx`, and `MovementTable.jsx` show the current visible header, line, and list fields.
 - `artifacts/goods-movements/contract.json` and `artifacts/goods-movements/decisions.json` provide supporting evidence for the required-lines processing rule, processed-state read-only logic, omitted classic callouts, and omitted `moveBetweenLocators` / `posted` actions.

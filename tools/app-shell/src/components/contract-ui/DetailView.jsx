@@ -127,6 +127,7 @@ export function DetailView({
   sidePanelStyle = null,
   afterTotals = null,
   bottomSection = null,
+  linesEmptyState = null,
   topbarExtra = null,
   topbarRight = null,
   statusFieldLabel = null,
@@ -151,7 +152,7 @@ export function DetailView({
   // the effect falls through to fetchById. Skipping the list fetch unconditionally drops one
   // wasted GET per direct-URL navigation.
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl, skipListFetch: true });
-  const LinesEmptyState = bottomSection?.linesEmptyState ?? null;
+  const LinesEmptyState = linesEmptyState ?? bottomSection?.linesEmptyState ?? null;
   const DetailExtraActions = bottomSection?.detailExtraActions ?? null;
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls).
   // Secondary hooks only consume child-level state (children, handleAddChild, handleDeleteChild,
@@ -196,13 +197,17 @@ export function DetailView({
       // DateInvoiced is required by the C_Tax validationRule:
       // VALIDFROM <= COALESCE(@DateInvoiced@, @DateOrdered@)
       // Without it, COALESCE(null,null)=null → VALIDFROM<=null is always FALSE → no taxes returned.
+      // Etendo Classic's PL/pgSQL to_date() expects DD-MM-YYYY, so the ISO date from the
+      // header (YYYY-MM-DD) must be reformatted before being sent as a context param.
       const headerSnapshot = hook.selected ?? hook.editing;
       const invoiceDate = headerSnapshot?.invoiceDate ?? headerSnapshot?.orderDate ?? null;
+      const isoMatch = typeof invoiceDate === 'string' ? invoiceDate.match(/^(\d{4})-(\d{2})-(\d{2})/) : null;
+      const dateInvoicedParam = isoMatch ? `${isoMatch[3]}-${isoMatch[2]}-${isoMatch[1]}` : invoiceDate;
       next[detailEntity] = {
         parentId: parentRecordId,
         ...(isSOTrx ? { isSOTrx, IsSOTrx: isSOTrx } : {}),
         ...(priceListId ? { priceList: priceListId } : {}),
-        ...(invoiceDate ? { DateInvoiced: invoiceDate } : {}),
+        ...(dateInvoicedParam ? { DateInvoiced: dateInvoicedParam } : {}),
       };
     }
     for (const key of secondaryTabKeysStr.split('|').filter(Boolean)) {
@@ -224,6 +229,7 @@ export function DetailView({
   const dictionary = useLocale();
   const [addingLine, setAddingLine] = useState(false);
   const [addingSecondaryLine, setAddingSecondaryLine] = useState({});
+  const [forceOpenImport, setForceOpenImport] = useState(false);
   // Imperative handles to in-progress inline add rows so we can commit them
   // before header save (mirrors clicking the green check on an editing line).
   const primaryAddRowRef = useRef(null);
@@ -389,6 +395,19 @@ export function DetailView({
     navigate(location.pathname, { replace: true, state: {} });
   }, [location.state?.openAddLine, isNew, hook.editing, navigate, location.pathname]);
 
+  // Auto-open import modal after header auto-save navigation (openImportModal flag in route state).
+  const handledOpenImportRef = useRef(false);
+  useEffect(() => {
+    if (!location.state?.openImportModal || isNew || !hook.editing) {
+      handledOpenImportRef.current = false;
+      return;
+    }
+    if (handledOpenImportRef.current) return;
+    handledOpenImportRef.current = true;
+    setForceOpenImport(true);
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.state?.openImportModal, isNew, hook.editing, navigate, location.pathname]);
+
   // Save header first (if new), then open add-line form.
   const handleAddLineClick = useCallback(async () => {
     if (isNew) {
@@ -403,6 +422,22 @@ export function DetailView({
     }
     setAddingLine(prev => !prev);
     setEditingChild(null);
+  }, [isNew, hook, navigate, windowName]);
+
+  // Save header first (if new → navigate with flag; if existing → save in place), then open import modal.
+  const handleImportClick = useCallback(async () => {
+    if (isNew) {
+      const saved = await hook.handleSave();
+      if (!saved?.id) return false;
+      hook.primeSaved?.(saved);
+      navigate(`/${windowName}/${saved.id}`, {
+        replace: true,
+        state: { openImportModal: true, justSaved: saved },
+      });
+      return false;
+    }
+    await hook.handleSave();
+    return true;
   }, [isNew, hook, navigate, windowName]);
 
   const handleSecondaryAddLineToggle = useCallback(async (tabKey) => {
@@ -1555,6 +1590,9 @@ export function DetailView({
                       token={token}
                       apiBaseUrl={apiBaseUrl}
                       onRefresh={() => hook.fetchChildren?.(data?.id || recordId)}
+                      onSave={handleImportClick}
+                      forceOpen={forceOpenImport}
+                      onForceOpenHandled={() => setForceOpenImport(false)}
                     />
                   ) : (
                   <div className={`pt-3 flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`}>
@@ -1781,7 +1819,7 @@ export function DetailView({
                             />
                           )}
                           {DetailExtraActions && (
-                            <DetailExtraActions data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} onRefresh={() => hook.fetchChildren?.(data?.id || recordId)} />
+                            <DetailExtraActions data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} onRefresh={() => hook.fetchChildren?.(data?.id || recordId)} onSave={handleImportClick} forceOpen={forceOpenImport} onForceOpenHandled={() => setForceOpenImport(false)} />
                           )}
                         </div>
                       )}

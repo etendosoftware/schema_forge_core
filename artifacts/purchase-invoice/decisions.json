@@ -322,10 +322,16 @@
         },
         "product": {
           "grid": true,
+          "lookup": true,
           "section": "principal",
           "inputMode": "search",
           "readOnlyLogic": null,
           "displayLogic": null
+        },
+        "description": {
+          "grid": true,
+          "section": "principal",
+          "gridOrder": 2
         },
         "account": {
           "form": false,
@@ -376,7 +382,7 @@
         "tax": {
           "grid": true,
           "section": "principal",
-          "inputMode": "search",
+          "inputMode": "selector",
           "readOnlyLogic": null
         },
         "taxableAmount": {

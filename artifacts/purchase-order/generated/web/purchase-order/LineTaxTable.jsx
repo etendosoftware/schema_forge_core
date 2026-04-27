@@ -3,7 +3,7 @@ import { DataTable } from '@/components/contract-ui';
 // @sf-generated-start columns:lineTax
 const columns = [
   { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.' },
-  { key: 'tax', column: 'C_Tax_ID', type: 'string', label: 'Tax' },
+  { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax' },
   { key: 'taxableAmount', column: 'Taxbaseamt', type: 'amount', label: 'Taxable Amount' },
   { key: 'taxAmount', column: 'Taxamt', type: 'amount', label: 'Tax Amount' },
 ];
