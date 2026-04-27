@@ -74,6 +74,6 @@ Use this window to register supplier invoices, keep the payable document aligned
   - `tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceTopbar.jsx`
   - `tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceBottomPanel.jsx`
   - `tools/app-shell/src/windows/custom/purchase-invoice/InvoicePreviewModal.jsx`
-  - `tools/app-shell/src/windows/custom/purchase-invoice/InvoiceLineTableCustom.jsx`
+  - `tools/app-shell/src/windows/custom/purchase-invoice/InvoiceLineTableCustom.jsx` — hardcoded column list: product, description, invoiced quantity, net unit price, tax, line gross amount (matches the generated sales-invoice lines table column order).
   - `tools/app-shell/src/windows/custom/purchase-invoice/RelatedDocuments.jsx`
   - `tools/app-shell/src/windows/custom/shared/InvoicePaymentModal.jsx`

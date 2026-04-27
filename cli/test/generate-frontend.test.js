@@ -873,7 +873,7 @@ describe('field type mapping edge cases', () => {
 // ---------------------------------------------------------------------------
 
 describe('addLineFields derived field separation', () => {
-  it('puts price/tax/discount/amount pattern fields in derived array', () => {
+  it('puts price/tax/amount pattern fields in derived; discount stays in entry', () => {
     const contract = {
       frontendContract: {
         window: { id: '1', name: 'Test', primaryEntity: 'header', category: 'test' },
@@ -904,12 +904,14 @@ describe('addLineFields derived field separation', () => {
     assert.ok(entryMatch);
     assert.ok(derivedMatch);
 
-    // product is in entry
+    // product and discount are in entry — discount is user-editable, not auto-derived
     assert.ok(entryMatch[1].includes("key: 'product'"));
-    // price/discount/amount fields are in derived
+    assert.ok(entryMatch[1].includes("key: 'discount'"));
+    // price/amount fields are in derived
     assert.ok(derivedMatch[1].includes("key: 'unitPrice'"));
-    assert.ok(derivedMatch[1].includes("key: 'discount'"));
     assert.ok(derivedMatch[1].includes("key: 'netAmount'"));
+    // discount must NOT be in derived
+    assert.ok(!derivedMatch[1].includes("key: 'discount'"));
   });
 
   it('excludes readOnly detail fields from addLineFields entirely', () => {
