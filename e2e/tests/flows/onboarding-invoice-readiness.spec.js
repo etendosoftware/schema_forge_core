@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 const RUN_ONBOARDING_E2E = process.env.RUN_ONBOARDING_E2E === '1';
-const DEFAULT_PASSWORD = 'OnboardingQA2026!';
+function buildDisposablePassword(suffix) {
+  return `Qa-${suffix}-Pass!42`;
+}
 
 test.describe('Onboarding invoice readiness', () => {
   test.skip(!RUN_ONBOARDING_E2E, 'Set RUN_ONBOARDING_E2E=1 to run state-changing onboarding E2E tests.');
@@ -12,12 +14,13 @@ test.describe('Onboarding invoice readiness', () => {
     const suffix = `${Date.now()}`;
     const email = `sbarrozo+onboarding-payment-term-${suffix}@gmail.com`;
     const clientName = `QA Payment Term Seed ${suffix}`;
+    const password = buildDisposablePassword(suffix);
 
     await page.goto('/onboarding');
 
     await page.getByRole('textbox', { name: 'Nombre*' }).fill('QA Payment Term User');
     await page.getByRole('textbox', { name: 'Correo electrónico*' }).fill(email);
-    await page.getByRole('textbox', { name: 'Contraseña*' }).fill(DEFAULT_PASSWORD);
+    await page.getByRole('textbox', { name: 'Contraseña*' }).fill(password);
     await page.getByRole('button', { name: 'Crear cuenta' }).click();
 
     await expect(page.getByText(/Vamos a dejar todo listo/i)).toBeVisible({ timeout: 30_000 });

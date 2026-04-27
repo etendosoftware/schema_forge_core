@@ -591,6 +591,16 @@ export default function OnboardingPage() {
         const storageValues = buildEnvironmentSessionStorage(env, data);
         Object.entries(storageValues).forEach(([key, value]) => localStorage.setItem(key, value));
 
+        // Clear all SW caches on login to guarantee fresh resources
+        if ('caches' in window) {
+          try {
+            const names = await caches.keys();
+            await Promise.all(names.map((n) => caches.delete(n)));
+          } catch (err) {
+            console.warn('Failed to clear SW caches during login', err);
+          }
+        }
+
         if (requireReadiness) {
           const readiness = await checkSalesInvoiceReadiness(fetch, BASE_URL, data.token);
           if (!readiness.ready) {
@@ -599,16 +609,6 @@ export default function OnboardingPage() {
               error: `El entorno se creó, pero todavía no está listo para facturar: ${readiness.failures.join(' ')}`,
             });
             return;
-          }
-        }
-
-        // Clear all SW caches on login to guarantee fresh resources
-        if ('caches' in window) {
-          try {
-            const names = await caches.keys();
-            await Promise.all(names.map((n) => caches.delete(n)));
-          } catch (err) {
-            console.warn('Failed to clear SW caches during login', err);
           }
         }
         window.location.href = '/dashboard';

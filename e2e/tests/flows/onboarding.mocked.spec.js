@@ -110,13 +110,18 @@ async function installOnboardingMocks(page, { invalidDocumentType = false } = {}
   });
 }
 
+function buildDisposablePassword(suffix) {
+  return `Qa-${suffix}-Pass!42`;
+}
+
 async function completeOnboardingForm(page, emailPrefix) {
   const suffix = Date.now();
+  const password = buildDisposablePassword(suffix);
   await page.goto('/onboarding');
 
   await page.getByRole('textbox', { name: 'Nombre*' }).fill('QA Onboarding User');
   await page.getByRole('textbox', { name: 'Correo electrónico*' }).fill(`${emailPrefix}-${suffix}@example.com`);
-  await page.getByRole('textbox', { name: 'Contraseña*' }).fill('OnboardingQA2026!');
+  await page.getByRole('textbox', { name: 'Contraseña*' }).fill(password);
   await page.getByRole('button', { name: 'Crear cuenta' }).click();
 
   await expect(page.getByText(/Vamos a dejar todo listo/i)).toBeVisible();
