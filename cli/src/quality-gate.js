@@ -174,7 +174,7 @@ export async function runQualityGateCli({ args = process.argv.slice(2), rootDir 
         });
 
   if (windowNames.length === 0) {
-    const stdout = 'No windows affected; gate skipped\n';
+    const stdout = '<!-- sfqg-report -->\nNo windows affected; gate skipped\n';
     if (options.outputPath) {
       writeTextFile(options.outputPath, stdout);
     }

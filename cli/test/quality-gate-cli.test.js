@@ -66,7 +66,9 @@ describe('runQualityGateCli', () => {
 
       assert.equal(result.exitCode, 0);
       assert.equal(result.summary, null);
+      assert.match(result.stdout, /<!-- sfqg-report -->/);
       assert.match(result.stdout, /No windows affected; gate skipped/);
+      assert.match(readFileSync(markdownPath, 'utf8'), /<!-- sfqg-report -->/);
       assert.match(readFileSync(markdownPath, 'utf8'), /No windows affected; gate skipped/);
       const json = JSON.parse(readFileSync(jsonPath, 'utf8'));
       assert.equal(json.skipped, true);

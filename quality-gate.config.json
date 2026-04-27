@@ -25,6 +25,7 @@
     { "pattern": "tools/app-shell/src/i18n/*.jsx", "scope": "all-windows" },
     { "pattern": "tools/app-shell/src/i18n/locales/*.json", "scope": "all-windows" },
     { "pattern": "tools/app-shell/src/windows/registry.js", "scope": "all-windows" },
+    { "pattern": "tools/app-shell/src/pages/**", "scope": "all-windows" },
     { "pattern": "schemas/contract.schema.json", "scope": "all-windows" }
   ],
   "invariants": {
