@@ -68,7 +68,7 @@ export default function InvoiceHeaderTable(props) {
 
   // ─── Custom columns (override generated ones) ─────────────────
   const columns = useMemo(() => [
-    { key: 'invoiceDate', column: 'DateInvoiced', type: 'date' },
+    { key: 'invoiceDate', column: 'DateInvoiced', type: 'date', dot: false },
     {
       key: 'documentNo', column: 'DocumentNo', type: 'string',
       pill: {
@@ -82,7 +82,15 @@ export default function InvoiceHeaderTable(props) {
       render: (row) => {
         const d = dueDates[row.id];
         if (!d) return <span className="text-muted-foreground">—</span>;
-        return <span>{d.toLocaleDateString('en-GB')}</span>;
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const due = new Date(d); due.setHours(0, 0, 0, 0);
+        const dotColor = due < today ? 'bg-red-500' : 'bg-emerald-500';
+        return (
+          <span className="inline-flex items-center gap-1.5">
+            <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${dotColor}`} />
+            {d.toLocaleDateString('en-GB')}
+          </span>
+        );
       },
     },
     { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
