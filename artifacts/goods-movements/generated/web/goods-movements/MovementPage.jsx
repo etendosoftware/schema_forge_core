@@ -154,6 +154,9 @@ export const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "inventory"
   }
 };
 
@@ -192,6 +195,7 @@ export default function MovementPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="movementDate"
       {...props}
     />
   );
