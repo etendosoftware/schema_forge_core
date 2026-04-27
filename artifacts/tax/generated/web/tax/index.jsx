@@ -1,6 +1,6 @@
 import TaxPage, { api } from './TaxPage';
 
-const windowMeta = { category: 'configuracion', name: 'Tax Rate' };
+const windowMeta = { category: 'settings', name: 'Tax Rate' };
 
 // @sf-generated-start component:App
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {

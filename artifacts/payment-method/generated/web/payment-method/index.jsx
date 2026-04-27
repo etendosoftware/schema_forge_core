@@ -1,6 +1,6 @@
 import PaymentMethodPage, { api } from './PaymentMethodPage';
 
-const windowMeta = { category: 'Settings', name: 'Payment Method' };
+const windowMeta = { category: 'settings', name: 'Payment Method' };
 
 // @sf-generated-start component:App
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {

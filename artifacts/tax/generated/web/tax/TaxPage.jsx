@@ -85,7 +85,7 @@ export const api = {
     "parentFilter": "parentId={id} for child entities"
   },
   "window": {
-    "category": "configuracion"
+    "category": "settings"
   },
   "labelOverrides": {
     "es_ES": {

@@ -79,13 +79,13 @@ export const api = {
     "parentFilter": "parentId={id} for child entities"
   },
   "window": {
-    "category": "Settings"
+    "category": "settings"
   }
 };
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-    if (recordId) {
+  if (recordId) {
     return (
       <DetailView
         entity="header"

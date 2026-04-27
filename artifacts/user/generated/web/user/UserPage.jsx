@@ -7,7 +7,7 @@ import UserRolesForm from './UserRolesForm';
 import catalogs from './mockCatalogs';
 
 
-const breadcrumb = 'Configuracion / User';
+const breadcrumb = 'Settings / User';
 
 
 // @sf-generated-start summary:user

@@ -2,7 +2,7 @@
   "$schema": "decisions-v2",
   "version": 2,
   "window": {
-    "category": "configuracion",
+    "category": "settings",
     "name": "User"
   },
   "discardPatterns": ["EM_*"],

@@ -1,6 +1,6 @@
 import UserPage, { api } from './UserPage';
 
-const windowMeta = { category: 'configuracion', name: 'User' };
+const windowMeta = { category: 'settings', name: 'User' };
 
 // @sf-generated-start component:App
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {

@@ -1,6 +1,6 @@
 import UnitOfMeasurePage, { api } from './UnitOfMeasurePage';
 
-const windowMeta = { category: 'configuracion', name: 'Unit of Measure' };
+const windowMeta = { category: 'settings', name: 'Unit of Measure' };
 
 // @sf-generated-start component:App
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {

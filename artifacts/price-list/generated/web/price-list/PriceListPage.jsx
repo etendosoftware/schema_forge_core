@@ -7,7 +7,7 @@ import PriceListVersionForm from './PriceListVersionForm';
 import catalogs from './mockCatalogs';
 
 
-const breadcrumb = 'Reference / Price List';
+const breadcrumb = 'Settings / Price List';
 
 const labelOverrides = {
   "es_ES": {
@@ -167,7 +167,7 @@ export const api = {
     "parentFilter": "parentId={id} for child entities"
   },
   "window": {
-    "category": "reference"
+    "category": "settings"
   },
   "labelOverrides": {
     "es_ES": {

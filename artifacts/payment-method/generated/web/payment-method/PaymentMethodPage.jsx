@@ -78,15 +78,15 @@ export const api = {
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
-},
+  },
   "window": {
-    "category": "Settings"
+    "category": "settings"
   }
 };
 
 // @sf-generated-start component:PaymentMethodPage
 export default function PaymentMethodPage({ windowName, recordId, ...props }) {
-    if (recordId) {
+  if (recordId) {
     return (
       <DetailView
         entity="paymentMethod"

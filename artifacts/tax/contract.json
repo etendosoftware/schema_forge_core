@@ -7,7 +7,7 @@
       "id": "137",
       "name": "Tax Rate",
       "primaryEntity": "tax",
-      "category": "configuracion",
+      "category": "settings",
       "hidePrint": true,
       "hideMoreMenu": true,
       "breadcrumb": "Settings / Tax",
