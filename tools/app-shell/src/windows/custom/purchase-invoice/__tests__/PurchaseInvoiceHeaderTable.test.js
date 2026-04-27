@@ -36,9 +36,10 @@ describe('PurchaseInvoiceHeaderTable', () => {
     assert.match(src, /POReference/);
   });
 
-  it('includes a custom _dueDate column with dot color logic', () => {
+  it('includes a custom _dueDate column with red, amber, and green dot logic', () => {
     assert.match(src, /key.*_dueDate/);
     assert.match(src, /bg-red-500/);
+    assert.match(src, /bg-amber-500/);
     assert.match(src, /bg-emerald-500/);
   });
 
@@ -48,6 +49,11 @@ describe('PurchaseInvoiceHeaderTable', () => {
 
   it('uses the dueDate generic label key', () => {
     assert.match(src, /t\('dueDate'\)/);
+  });
+
+  it('formats due dates with the active locale instead of a hardcoded region', () => {
+    assert.match(src, /useLocaleSwitch/);
+    assert.match(src, /formatCalendarDate\(d, locale\)/);
   });
 
   it('passes Authorization header when fetching payment plans', () => {

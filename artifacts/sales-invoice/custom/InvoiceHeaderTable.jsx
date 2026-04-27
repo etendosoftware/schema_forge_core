@@ -1,6 +1,11 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { DataTable } from '@/components/contract-ui';
-import { useLocale } from '@/i18n';
+import { useLocale, useLocaleSwitch } from '@/i18n';
+import {
+  formatCalendarDate,
+  getCalendarDateRelation,
+  parseCalendarDate,
+} from '@/lib/dateOnly';
 
 // ─── Invoice-specific status logic ───────────────────────────────
 
@@ -19,11 +24,17 @@ function getInvoiceStatus(row) {
   if (outstanding <= 0 || row.paymentComplete === true || row.paymentComplete === 'Y')
     return 'paid';
   if (row.dueDate) {
-    const due = new Date(row.dueDate);
-    if (due < new Date() && outstanding > 0) return 'overdue';
+    if (getCalendarDateRelation(row.dueDate) === 'past' && outstanding > 0) return 'overdue';
   }
   if (paid > 0) return 'partial';
   return 'pending';
+}
+
+function getDueDateDotColor(raw) {
+  const relation = getCalendarDateRelation(raw);
+  if (relation === 'past') return 'bg-red-500';
+  if (relation === 'today') return 'bg-amber-500';
+  return 'bg-emerald-500';
 }
 
 function getPaymentFilter(row) {
@@ -40,6 +51,7 @@ const filters = ['documentNo', 'invoiceDate', 'businessPartner'];
 
 export default function InvoiceHeaderTable(props) {
   const dictionary = useLocale();
+  const { locale } = useLocaleSwitch();
   const gl = dictionary?.genericLabels || {};
   const t = (key) => gl[key] || key;
 
@@ -57,7 +69,7 @@ export default function InvoiceHeaderTable(props) {
           .then(d => {
             const installments = d?.response?.data ?? d?.data ?? [];
             const timestamps = installments
-              .map(i => i.dueDate ? new Date(i.dueDate).getTime() : NaN)
+              .map(i => parseCalendarDate(i.dueDate)?.getTime() ?? NaN)
               .filter(ts => !Number.isNaN(ts));
             return [id, timestamps.length > 0 ? new Date(Math.max(...timestamps)) : null];
           })
@@ -82,13 +94,11 @@ export default function InvoiceHeaderTable(props) {
       render: (row) => {
         const d = dueDates[row.id];
         if (!d) return <span className="text-muted-foreground">—</span>;
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        const due = new Date(d); due.setHours(0, 0, 0, 0);
-        const dotColor = due < today ? 'bg-red-500' : 'bg-emerald-500';
+        const dotColor = getDueDateDotColor(d);
         return (
           <span className="inline-flex items-center gap-1.5">
             <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${dotColor}`} />
-            {d.toLocaleDateString('en-GB')}
+            {formatCalendarDate(d, locale)}
           </span>
         );
       },
@@ -97,7 +107,7 @@ export default function InvoiceHeaderTable(props) {
     { key: 'documentStatus', column: 'DocStatus', type: 'status', label: t('statusColumn') },
     { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
     { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
-  ], [gl, dueDates]);
+  ], [gl, dueDates, locale]);
 
   // ─── Filter options ───────────────────────────────────────────
   const TYPE_OPTIONS = useMemo(() => [

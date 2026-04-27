@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Upload, Edit2, FileText, Image, Plus, Check, Trash2, Loader2, AlertCircle, Mail, Download, Ban, Wallet, MoreVertical } from 'lucide-react';
 import { Badge } from '@/components/ui/badge.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import { useMenuLabel, useUI } from '@/i18n';
+import { useLocaleSwitch, useMenuLabel, useUI } from '@/i18n';
+import { formatCalendarDate, parseCalendarDate } from '@/lib/dateOnly';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 import InvoicePaymentModal from './InvoicePaymentModal.jsx';
@@ -554,27 +555,25 @@ function InfoRow({ label, value, link, underline }) {
 }
 
 function fmtPayDate(raw) {
-  if (!raw) return '—';
-  const d = new Date(raw);
-  return isNaN(d.getTime()) ? '—'
-    : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  return formatCalendarDate(raw, 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 const PAID_STATUSES = new Set(['RPR', 'RPPC', 'RDNC', 'PPM']);
 
 function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, installments, payments, loadingPayments, totalOutstanding, canAddPayment, isDraft, isFullyPaid, specName, apiBaseUrl, token, onAddPayment, onSend }) {
   const ui = useUI();
+  const { locale } = useLocaleSwitch();
   const [accountingAccount, setAccountingAccount] = useState(null);
 
   const invoiceDate = invoice.invoiceDate
-    ? new Date(invoice.invoiceDate).toLocaleDateString('en-GB')
+    ? formatCalendarDate(invoice.invoiceDate, locale)
     : '—';
 
   const dueDateTimestamps = installments
-    .map((i) => (i.dueDate ? new Date(i.dueDate).getTime() : NaN))
+    .map((i) => parseCalendarDate(i.dueDate)?.getTime() ?? NaN)
     .filter((t) => !Number.isNaN(t));
   const dueDate = dueDateTimestamps.length > 0
-    ? new Date(Math.max(...dueDateTimestamps)).toLocaleDateString('en-GB')
+    ? formatCalendarDate(new Date(Math.max(...dueDateTimestamps)), locale)
     : '—';
 
   const payPrefix = specName === 'purchase-invoice' ? 'payment-out' : 'payment-in';
