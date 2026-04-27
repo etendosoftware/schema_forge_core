@@ -328,6 +328,11 @@
           "readOnlyLogic": null,
           "displayLogic": null
         },
+        "description": {
+          "grid": true,
+          "section": "principal",
+          "gridOrder": 2
+        },
         "account": {
           "form": false,
           "reference": "GLAccount",

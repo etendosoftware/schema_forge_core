@@ -7,7 +7,7 @@ Use this window to register supplier invoices, keep the payable document aligned
 ## What this window should allow
 
 - Create and edit a purchase invoice header with the supplier, invoice dates, payment terms, payment method, supplier reference, and other payable-identifying fields.
-- Add and review invoice lines so the document reflects what the supplier billed, including product, quantity, unit price, tax, and line gross amount.
+- Add and review invoice lines so the document reflects what the supplier billed, including product, description, quantity, unit price, tax, and line gross amount.
 - Review invoice totals at document level, including net amount, gross amount, paid amount, and outstanding amount when those values are available from the header or payment schedule data.
 - Inspect the invoice from the list without immediately leaving the list route, then move into full edit mode when needed.
 - Understand the payable relationship to the originating purchase order, related goods receipts, and downstream payment-out records.
@@ -55,7 +55,7 @@ Use this window to register supplier invoices, keep the payable document aligned
 3. In the preview modal, verify the General tab shows total, due/payable state, and payment history, while Messages and History remain placeholder states.
 4. Open `/purchase-invoice?filter=overdue` and confirm the quick filter keeps invoices with an outstanding amount.
 5. Open a draft invoice detail and confirm adding a line is blocked until a business partner is selected.
-6. On the detail page, confirm the custom lines table shows product, invoiced quantity, net unit price, tax, and line gross amount, and that the footer shows subtotal, inferred tax, and total. Open a line for edit and confirm the `Impuesto`/`Tax` field opens a dropdown listing the configured purchase taxes (filtered by `IsSOTrx=N` and validity against the invoice date), not a free-text search that returns "Sin resultados".
+6. On the detail page, confirm the custom lines table shows product, description, invoiced quantity, net unit price, tax, and line gross amount in that exact column order, and that the footer shows subtotal, inferred tax, and total. Open a line for edit and confirm the `Impuesto`/`Tax` field opens a dropdown listing the configured purchase taxes (filtered by `IsSOTrx=N` and validity against the invoice date), not a free-text search that returns "Sin resultados".
 7. Open a completed invoice with pending balance and confirm the topbar payment-status pill appears, opens the payment modal, and reflects the invoice as pending or paid based on outstanding amount.
 8. From the detail footer or related-documents tab, confirm links are available to the source purchase order, related goods receipts, and downstream payment-out records when those relationships exist.
 9. Open a completed purchase invoice detail and confirm the kebab menu exposes a `Reactivate` action. Trigger it and verify the document returns to draft status.
