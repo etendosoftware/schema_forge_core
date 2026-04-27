@@ -216,7 +216,7 @@ export function CreatableSearchSelect({
           disabled={isDisabled}
           required={field.required && !isDisabled}
           autoComplete="off"
-          className="w-full h-9 pl-8 pr-8 text-sm rounded-md border border-input bg-background focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full h-9 pl-8 pr-8 text-sm rounded-md border border-input bg-transparent focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           onChange={(e) => {
             isEditingRef.current = true;
             setQuery(e.target.value);
