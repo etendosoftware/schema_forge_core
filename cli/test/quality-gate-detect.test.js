@@ -17,7 +17,6 @@ const SAMPLE_CONFIG = {
     { pattern: 'tools/app-shell/src/i18n/*.js', scope: 'all-windows' },
     { pattern: 'tools/app-shell/src/i18n/*.jsx', scope: 'all-windows' },
     { pattern: 'tools/app-shell/src/windows/registry.js', scope: 'all-windows' },
-    { pattern: 'tools/app-shell/src/pages/**', scope: 'all-windows' },
     { pattern: 'schemas/contract.schema.json', scope: 'all-windows' },
   ],
 };
@@ -132,14 +131,14 @@ describe('detectAffectedWindows', () => {
     assert.deepEqual(affected, ['purchase-order', 'sales-order']);
   });
 
-  it('returns all windows for top-level app shell page changes', () => {
+  it('returns no windows for top-level app shell page changes', () => {
     const affected = detectAffectedWindows({
       changedFiles: ['tools/app-shell/src/pages/OnboardingPage.jsx'],
       blastRadius: SAMPLE_CONFIG.blastRadius,
       availableWindows: ['purchase-order', 'sales-order'],
     });
 
-    assert.deepEqual(affected, ['purchase-order', 'sales-order']);
+    assert.deepEqual(affected, []);
   });
 
   it('maps businessPartner shared custom code back to contacts', () => {
@@ -212,16 +211,13 @@ describe('detectAffectedWindowsDetailed', () => {
     ]);
   });
 
-  it('marks top-level app shell page changes as global', () => {
+  it('does not mark top-level app shell page changes as window-affecting', () => {
     const affected = detectAffectedWindowsDetailed({
       changedFiles: ['tools/app-shell/src/pages/OnboardingPage.jsx'],
       blastRadius: SAMPLE_CONFIG.blastRadius,
       availableWindows: ['purchase-order', 'sales-order'],
     });
 
-    assert.deepEqual(affected, [
-      { window: 'purchase-order', source: 'global' },
-      { window: 'sales-order', source: 'global' },
-    ]);
+    assert.deepEqual(affected, []);
   });
 });
