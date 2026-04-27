@@ -1,24 +1,12 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { DataTable } from '@/components/contract-ui';
 import { useLocale } from '@/i18n';
-import { StatusTag } from '@/components/ui/status-tag';
 
 // ─── Invoice-specific status logic ───────────────────────────────
 
 function isCreditNote(row) {
   return (row['transactionDocument$_identifier'] || '').toLowerCase().includes('credit');
 }
-
-const STATUS_TONE = {
-  draft: 'neutral', paid: 'success', partial: 'warning',
-  pending: 'warning', overdue: 'destructive', voided: 'destructive', closed: 'neutral',
-};
-
-// i18n keys for each status / UI element
-const STATUS_KEYS = {
-  draft: 'statusDraft', paid: 'statusPaid', partial: 'statusPartial',
-  pending: 'statusPending', overdue: 'statusOverdue', voided: 'statusVoided', closed: 'statusClosed',
-};
 
 function getInvoiceStatus(row) {
   const docStatus = row.documentStatus;
@@ -67,14 +55,7 @@ export default function InvoiceHeaderTable(props) {
       },
     },
     { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
-    { key: '_status', column: '_status', type: 'custom', label: t('statusColumn'),
-      render: (row) => {
-        const statusKey = getInvoiceStatus(row);
-        const tone = STATUS_TONE[statusKey] || 'neutral';
-        const label = gl[STATUS_KEYS[statusKey]] || statusKey;
-        return <StatusTag status={statusKey} tone={tone} label={label} />;
-      },
-    },
+    { key: 'documentStatus', column: 'DocStatus', type: 'status', label: t('statusColumn') },
     { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
     { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
   ], [gl]);
