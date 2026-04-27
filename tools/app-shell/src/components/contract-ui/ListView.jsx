@@ -54,6 +54,7 @@ export function ListView({
   initialColumnFilters,
   rowFilter,
   dateFilterKey = null,
+  refreshTrigger = 0,
 }) {
   // Subset filters — radio-style, always one active, applied first.
   const [activeSubsetIndex, setActiveSubsetIndex] = useState(() => {
@@ -253,6 +254,15 @@ export function ListView({
     }
     refreshRef.current?.();
   }, [columnFilters, effectiveFilter, advancedFilterPart, hook.sortColumn, hook.sortDirection]);
+
+  // External refresh signal — increments when the host wants to force a reload
+  // (e.g. after cloning records via CloneOrderModal).
+  const lastRefreshTriggerRef = useRef(refreshTrigger);
+  useEffect(() => {
+    if (refreshTrigger === lastRefreshTriggerRef.current) return;
+    lastRefreshTriggerRef.current = refreshTrigger;
+    refreshRef.current?.();
+  }, [refreshTrigger]);
 
   const navigate = useNavigate();
   const tMenu = useMenuLabel();
@@ -584,9 +594,22 @@ export function ListView({
           </div>
         )}
 
+        {/* Indeterminate top progress bar — visible while refreshing existing data */}
+        {hook.loading && hook.items.length > 0 && (
+          <>
+            <div className="h-0.5 w-full overflow-hidden bg-primary/10">
+              <div
+                className="h-full w-1/3 bg-primary"
+                style={{ animation: 'sf-list-progress 1.1s ease-in-out infinite' }}
+              />
+            </div>
+            <style>{`@keyframes sf-list-progress { 0% { transform: translateX(-100%) } 100% { transform: translateX(400%) } }`}</style>
+          </>
+        )}
+
         {/* Table */}
         <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-auto px-6 pb-6">
-          {hook.loading ? (
+          {hook.loading && hook.items.length === 0 ? (
             <div className="space-y-3">
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-8 w-full" />
@@ -594,7 +617,7 @@ export function ListView({
               <Skeleton className="h-8 w-full" />
             </div>
           ) : (
-            <>
+            <div className={hook.loading ? 'opacity-70 transition-opacity duration-200' : 'transition-opacity duration-200'}>
               {viewMode === 'gallery' && galleryRenderer
                 ? galleryRenderer({ data: hook.items, onNavigate: (id) => navigate(`/${windowName}/${id}`), token, apiBaseUrl })
                 : (
@@ -631,7 +654,7 @@ export function ListView({
               {!hook.hasMore && hook.items.length > 0 && !hook.loadingMore && (
                 <p className="text-center text-xs text-muted-foreground/60 py-3">{ui('allRecordsLoaded')}</p>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
