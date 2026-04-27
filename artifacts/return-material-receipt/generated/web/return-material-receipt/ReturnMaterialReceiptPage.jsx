@@ -222,10 +222,13 @@ export const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=return-material-receiptDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "sales"
   }
 };
 

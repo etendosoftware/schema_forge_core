@@ -161,7 +161,7 @@ export const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=price-listDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"

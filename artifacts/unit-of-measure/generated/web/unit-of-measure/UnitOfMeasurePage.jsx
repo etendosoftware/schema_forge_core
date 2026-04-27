@@ -31,7 +31,8 @@ export const api = {
       "default": "0-100"
     },
     "sorting": {
-      "param": "_sortBy"
+      "param": "_sortBy",
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value"
   }

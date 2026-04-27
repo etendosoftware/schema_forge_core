@@ -31,8 +31,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:header
 const processes = [
-  
-  { name: 'documentAction', label: 'Process Order', style: 'positive',
+    { name: 'documentAction', label: 'Process Order', style: 'positive',
     displayLogicRaw: "@DocStatus@!'VO'&@DocStatus@!'CL'" },
   { name: 'rMPickfromreceipt', label: 'Pick/Edit Lines', style: 'positive',
     displayLogicRaw: "@Processed@='N'" },
@@ -571,7 +570,7 @@ export const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=return-to-vendorDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
