@@ -11,16 +11,21 @@ Every development delivery must prove the requirement is covered by real tests a
 
 This applies to new functionality, fixes, regressions, refactors, and changes to existing flows.
 
+The skill's job is to check the delivery that is about to happen. Start from the actual working directory being delivered, not from an assumed repository or sibling checkout.
+
 ## Repository Delivery Scope Gate
 
-Before applying this gate, identify and validate the git repository that is being delivered.
+Before applying this gate, identify and validate the git repository that is being delivered. The repository is the working folder from which the delivery will be made.
 
-1. Detect the repository root for the delivery with `git rev-parse --show-toplevel` from the changed area.
-2. Capture the active branch and changed files for that repository.
-3. If more than one git repository has relevant changes, or if the requested delivery target is ambiguous, ask the owner to confirm which repository is being delivered before judging completion.
-4. Read the confirmed repository's delivery instructions (`AGENTS.md`, `CLAUDE.md`, package/module docs, or equivalent) and use them to decide the required validation commands.
-5. Validate only against the confirmed delivery repository. Do not use tests from a sibling repository as evidence unless the delivery explicitly spans both repositories.
-6. Include the confirmed repository root, branch, changed-file scope, and repo-specific validation commands in the delivery evidence.
+1. From the working folder being delivered, detect the repository root with `git rev-parse --show-toplevel`.
+2. Capture the active branch with `git branch --show-current`.
+3. Identify the epic/base branch for the delivery. If the task or branch workflow names an epic branch, use that branch; otherwise inspect repository branch conventions before asking.
+4. First obtain the delivery diff against the epic/base branch with `git diff --stat <epic-branch>..HEAD` and `git diff --name-status <epic-branch>..HEAD`.
+5. Use that diff to determine the changed-file scope before selecting tests, documentation checks, or QA evidence.
+6. If more than one git repository has relevant changes, or if the requested delivery target is ambiguous, ask the owner to confirm which repository is being delivered before judging completion.
+7. Read the confirmed repository's delivery instructions (`AGENTS.md`, `CLAUDE.md`, package/module docs, or equivalent) and use them to decide the required validation commands.
+8. Validate only against the confirmed delivery repository. Do not use tests from a sibling repository as evidence unless the delivery explicitly spans both repositories.
+9. Include the confirmed repository root, working folder, active branch, epic/base branch, changed-file scope, diff command output summary, and repo-specific validation commands in the delivery evidence.
 
 The repository choice determines the required pre-delivery checks. For example: a Java module delivery may require module JUnit/Gradle commands; a frontend delivery may require its package test/build commands; a docs-only repository may require documentation-specific justification instead of runtime tests.
 
@@ -84,8 +89,11 @@ Every PR or delivery must include this structure:
 
 ```md
 ## Delivery repository
+- working folder: ...
 - repository root: ...
 - branch: ...
+- epic/base branch: ...
+- delivery diff: `git diff --stat <epic-branch>..HEAD` and `git diff --name-status <epic-branch>..HEAD`
 - changed-file scope: ...
 - repo-specific validation required: ...
 
