@@ -5,6 +5,7 @@ import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import GeneratedApp from '@generated/sales-order/generated/web/sales-order/index.jsx';
 import HeaderTable from '@generated/sales-order/generated/web/sales-order/HeaderTable';
 import OrderReactivateBulkAction from '@generated/sales-order/custom/OrderReactivateBulkAction';
+import BulkOrderMoreMenu from '@generated/sales-order/custom/BulkOrderMoreMenu';
 import { ListView } from '@/components/contract-ui';
 
 const LIST_COLUMNS = [
@@ -26,8 +27,9 @@ import { CreateContactContext } from '@/components/contract-ui/CreateContactCont
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 import LinesEmptyState from '@/components/contract-ui/LinesEmptyState.jsx';
 
-// Mirrors artifacts/sales-order/generated/web/sales-order/HeaderPage.jsx
-// Kept in sync manually because the generator does not expose labelOverrides yet.
+// Mirrors artifacts/sales-order/generated/web/sales-order/HeaderPage.jsx.
+// Kept in sync manually because the generator does not expose labelOverrides yet,
+// and the list view bulkActions prop is hand-rolled here (drift with decisions.json).
 const LABEL_OVERRIDES = {
   es_ES: {
     C_BPartner_ID: 'Contacto',
@@ -113,7 +115,12 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
         token={token}
         apiBaseUrl={apiBaseUrl}
         hidePrint
-        bulkActions={(ctx) => <OrderReactivateBulkAction {...ctx} />}
+        bulkActions={(ctx) => (
+          <>
+            <BulkOrderMoreMenu {...ctx} />
+            <OrderReactivateBulkAction {...ctx} />
+          </>
+        )}
         initialColumnFilters={initialColumnFilters}
         quickFilters={QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}
