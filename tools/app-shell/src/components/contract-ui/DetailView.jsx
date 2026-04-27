@@ -191,13 +191,17 @@ export function DetailView({
       // DateInvoiced is required by the C_Tax validationRule:
       // VALIDFROM <= COALESCE(@DateInvoiced@, @DateOrdered@)
       // Without it, COALESCE(null,null)=null → VALIDFROM<=null is always FALSE → no taxes returned.
+      // Etendo Classic's PL/pgSQL to_date() expects DD-MM-YYYY, so the ISO date from the
+      // header (YYYY-MM-DD) must be reformatted before being sent as a context param.
       const headerSnapshot = hook.selected ?? hook.editing;
       const invoiceDate = headerSnapshot?.invoiceDate ?? headerSnapshot?.orderDate ?? null;
+      const isoMatch = typeof invoiceDate === 'string' ? invoiceDate.match(/^(\d{4})-(\d{2})-(\d{2})/) : null;
+      const dateInvoicedParam = isoMatch ? `${isoMatch[3]}-${isoMatch[2]}-${isoMatch[1]}` : invoiceDate;
       next[detailEntity] = {
         parentId: parentRecordId,
         ...(isSOTrx ? { isSOTrx, IsSOTrx: isSOTrx } : {}),
         ...(priceListId ? { priceList: priceListId } : {}),
-        ...(invoiceDate ? { DateInvoiced: invoiceDate } : {}),
+        ...(dateInvoicedParam ? { DateInvoiced: dateInvoicedParam } : {}),
       };
     }
     for (const key of secondaryTabKeysStr.split('|').filter(Boolean)) {

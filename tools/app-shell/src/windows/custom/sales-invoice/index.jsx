@@ -7,7 +7,7 @@ import BulkDocumentAction from '@/components/contract-ui/BulkDocumentAction';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import HeaderPage from '@generated/sales-invoice/generated/web/sales-invoice/HeaderPage';
 import InvoiceHeaderTable from '@generated/sales-invoice/custom/InvoiceHeaderTable.jsx';
-import InvoicePreviewModal from '../purchase-invoice/InvoicePreviewModal.jsx';
+import InvoicePreviewModal from '../shared/InvoicePreviewModal.jsx';
 import SalesInvoiceTopbar from './SalesInvoiceTopbar.jsx';
 import InvoiceBottomPanel from '@generated/sales-invoice/custom/InvoiceBottomPanel.jsx';
 import RelatedDocuments from '@generated/sales-invoice/custom/RelatedDocuments.jsx';

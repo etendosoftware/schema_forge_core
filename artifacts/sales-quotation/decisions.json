@@ -259,6 +259,7 @@
           "grid": true,
           "searchable": true,
           "inputMode": "search",
+          "lookup": true,
           "order": 1,
           "gridOrder": 1
         },
@@ -291,7 +292,7 @@
         "tax": {
           "grid": true,
           "form": true,
-          "inputMode": "search",
+          "inputMode": "selector",
           "order": 6,
           "gridOrder": 6
         },
