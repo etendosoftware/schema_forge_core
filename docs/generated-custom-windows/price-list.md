@@ -1,55 +1,50 @@
 # Price List
 
 ## Intent
-This window should let a user maintain a price-list header and then manage product-specific selling prices that belong to that price list.
+This window lets a user maintain a price-list header and then manage the product prices attached to that price list.
 
-At header level, the current contract exposes the commercial definition of the list: `Name`, `Currency`, `Sales Price List`, `Price list based on cost`, `Price includes Tax`, and `Default`. At line level, the current custom experience focuses on assigning products and maintaining their `Unit Price` and `List Price` for the selected price list.
+On `origin/develop`, the generated contract was expanded to model `priceListVersion` and `productPrice`, but the user-visible SPA still routes the detail area through the custom `Product Price` workspace. In practice, the visible workflow is still: save the price-list header first, then manage product prices for the hidden version that the custom panel resolves for that header.
 
 ## What this window should allow
 - Create, review, and update price-list headers.
 - Identify whether a price list is sales-oriented, tax-inclusive, cost-based, and default.
 - Open an existing price list and inspect the product prices associated with it.
 - Add a product to the selected price list and define its `Unit Price` and `List Price`.
-- Select an existing product-price row, adjust the two visible price values, and delete the row when it is no longer needed.
-- Search the header list by price-list name and the child pricing area by product.
+- Select an existing product-price row, edit the two visible price fields from the side panel, and delete the row when it is no longer needed.
+- Search the header list by price-list name and the custom pricing area by product.
 
 ## Interaction model
 - **Route:** `/price-list` and `/price-list/:recordId`.
-- **Visibility:** Visible in `System > Settings`; the menu entry is present in `tools/app-shell/src/menu.json` and is not marked hidden.
-- **Implementation type:** Custom window. `tools/app-shell/src/windows/registry.js` declares both generated and custom loaders for `price-list`, and the custom loader takes precedence.
-- **Window shape:** Master-child. The header entity is `priceList`, but the visible child workspace is not the stock generated `priceListLine` table. The custom wrapper disables the generated detail entity and injects a custom `Product Price` workspace instead.
+- **Visibility:** visible from the `System` section in `tools/app-shell/src/menu.json`.
+- **Implementation type:** custom window. `tools/app-shell/src/windows/registry.js` still registers both generated and custom loaders for `price-list`, and the custom loader takes precedence.
+- **Window shape:** master-child. The visible master entity is `priceList`, but the visible detail area is not the generated `Price List Version` grid. The custom wrapper disables the generated detail entity and injects a custom `Product Price` workspace instead.
 
 ## Reactive behavior and dependencies
-- The child pricing area depends on the header being saved first. When the record has no persistent id yet, the UI shows a save-first message instead of allowing product-price maintenance.
-- After the header exists, the custom child workspace first resolves a hidden `priceListVersion` record using the header id. Product-price rows are then loaded with `parentId=<versionId>`. This means product pricing is functionally dependent on a hidden version layer, not directly on the visible header record alone.
-- If no hidden version is found, the UI shows an explicit empty-state warning that product prices cannot be shown yet.
-- Adding a product-price row depends on that hidden version being available. The add flow sends `priceListVersion`, `product`, `standardPrice`, `listPrice`, and a fixed `priceLimit: 0`.
-- The product selector in the add flow is context-aware through `selectorContext={ parentId: versionId }`, so child-row operations are scoped to the resolved hidden version.
-- Editing a selected row opens a side panel. Saving or deleting a row refreshes the child table afterward, so the visible prices react immediately to the operation.
-- No totals, discounts, tax recalculations, status-driven actions, or parent-header-driven pricing reactions are visible in the current custom implementation. The header booleans exist in the contract, but current repo evidence does not show the SPA recalculating or propagating child prices when those flags change.
+- The pricing area depends on the header being saved first. When the record has no persistent id yet, the UI shows a save-first message instead of allowing line maintenance.
+- After the header exists, the custom panel fetches `/priceListVersion?parentId=<priceListId>` and uses only the first returned version. There is no visible version selector in the current SPA.
+- If no hidden version exists yet, the UI shows an explicit empty state: product prices cannot be shown until that hidden version exists.
+- Adding a row depends on that hidden version id. The add flow requires `Product`, `Unit Price`, and `List Price`, scopes the product selector with `parentId=<versionId>`, and posts `priceLimit: 0` together with the visible values.
+- Selecting a row opens a `Price Detail` side panel with `Product` shown read-only and `Unit Price` / `List Price` editable. Saving or deleting from that panel refreshes the table immediately afterward.
+- The merged generated contract now contains separate `priceListVersion` and `productPrice` entities, including version-level fields such as `Valid From Date`, `Price List Schema`, and `Base Version (Default)`, plus classic actions for `create` and `generatePriceListVersion`. The current custom wrapper suppresses those generated version surfaces, so those fields and actions are not visible from the live price-list page.
 
 ## Gap assessment
-- The generated contract still describes a standard child entity `priceListLine` with `Product`, `List Price`, `Unit Price`, `Limit Price`, and read-only `UOM`, but the visible custom workspace actually reads and writes `productPrice` rows through a resolved `priceListVersion`. That mismatch is a material ambiguity in the current documented behavior.
-- The visible custom child UI only exposes `Product`, `Unit Price`, and `List Price`. There is no visible support for editing `Limit Price` or viewing `UOM`, even though those fields are part of the generated line contract.
-- The add flow hardcodes `priceLimit: 0`, but the current evidence does not explain whether that is a temporary implementation shortcut, an intended business rule, or a backend requirement.
-- The business meaning of `Sales Price List`, `Price list based on cost`, `Price includes Tax`, and `Default` suggests downstream pricing behavior, but no current SPA evidence shows those flags propagating changes to product-price rows or enforcing exclusive/default rules. That expected pricing reaction remains a gap or open ambiguity.
-- Hidden version creation and lifecycle are not visible in the current UI evidence. The window can detect that a version exists or does not exist, but the current code does not show how or when the required hidden version is created.
-- There are no current process/action endpoints declared for this window, so any expected mass repricing, copy-from-other-list behavior, or propagation workflow is not evidenced here.
+- The visible page still collapses all pricing work onto the first resolved hidden version. If a price list has multiple versions, current repo evidence shows no user-facing way to pick which version is being edited.
+- `origin/develop` now models `productPrice` with additional generated fields such as `Cost` and `Algorithm`, but the custom workspace still exposes only `Product`, `Unit Price`, and `List Price`.
+- The custom add flow still hardcodes `priceLimit: 0`. The current inspected code does not explain whether that is a business rule or just a technical default.
+- The generated contract now declares version-level classic actions, but the current custom SPA does not surface any visible control for creating or generating price-list versions.
 
 ## Manual verification
-1. Open `/price-list` and confirm the list shows existing price lists and supports opening a selected record.
-2. Open `/price-list/new` and confirm the child workspace does not allow product pricing before the header is saved.
-3. Save a new price-list header and confirm whether the screen either resolves a product-pricing workspace or shows the explicit missing-version message.
-4. Open `/price-list/<recordId>` for a record that already has product prices and confirm the detail area is labeled and behaves as a custom `Product Price` workspace rather than the stock generated child grid.
-5. Add a product-price row and confirm `Product`, `Unit Price`, and `List Price` are captured and the table refreshes after save.
-6. Select an existing product-price row, change both visible price fields in the side panel, save, and confirm the refreshed row reflects the edit.
-7. Delete a product-price row and confirm the table refreshes and the row disappears.
-8. Change header flags such as `Price includes Tax` or `Price list based on cost` and verify whether any visible child-price recalculation happens; if nothing reacts, treat that as confirming the current documented gap.
+1. Open `/price-list` from the `System` menu and confirm the list shows existing price lists.
+2. Open `/price-list/new` and confirm the detail area says the price list must be saved before products can be managed.
+3. Save a new price-list header and confirm the screen either resolves the custom product-pricing table or shows the explicit hidden-version warning.
+4. Open `/price-list/<recordId>` for a record with product prices and confirm the detail area behaves as a custom `Product Price` workspace, not as a generated `Price List Version` grid.
+5. Click `+ Add Product` and confirm the add row captures `Product`, `Unit Price`, and `List Price` only.
+6. Select an existing row and confirm the `Price Detail` side panel shows read-only `Product` plus editable `Unit Price` and `List Price`, with save and delete actions.
+7. If the backend contains multiple price-list versions for one header, confirm the page still exposes no version switcher. Repo evidence indicates the component uses only the first returned version.
 
 ## Automated evidence
-- `artifacts/price-list/contract.json` defines the header entity `priceList` and the generated child entity `priceListLine`, including searchable coverage for `name` and `product`.
-- `artifacts/price-list/generated/web/price-list/PriceListPage.jsx` shows the generated baseline is a normal master-child window using `priceList` and `priceListLine`.
-- `tools/app-shell/src/windows/custom/price-list/index.jsx` overrides that generated detail flow by disabling the generated detail entity and injecting `PriceListProductPrices`.
-- `tools/app-shell/src/windows/custom/price-list/PriceListProductPrices.jsx` provides the observable custom behavior: save-first gating, hidden `priceListVersion` lookup, `productPrice` CRUD, side-panel editing, and post-save/post-delete refresh.
-- `tools/app-shell/src/windows/registry.js` and `tools/app-shell/src/menu.json` confirm the route is menu-backed and resolved through the custom window loader.
-- There is no dedicated automated SPA test in the current repo that exercises the custom price-list wrapper, hidden-version path, or product-price side-panel behavior end to end.
+- `origin/develop` commit `19f31dd4` regenerated the price-list window to add generated `priceListVersion` / `productPrice` entities and version-level actions.
+- `origin/develop:tools/app-shell/src/windows/custom/price-list/index.jsx` keeps the user-visible page on the custom `Product Price` workspace by disabling the generated detail surface.
+- `origin/develop:tools/app-shell/src/windows/custom/price-list/PriceListProductPrices.jsx` shows the visible behavior that still drives the page: save-first gating, first-version lookup, product-scoped add row, `Price Detail` side panel, and refresh-after-save/delete.
+- `origin/develop:artifacts/price-list/contract.json` now defines `priceListVersion`, `productPrice`, their selectors, and the version-level classic actions that exist in generated metadata but are not exposed by the custom wrapper.
+- `origin/develop:artifacts/price-list/generated/web/price-list/PriceListPage.jsx`, `PriceListVersionForm.jsx`, and `ProductPriceForm.jsx` show the regenerated baseline the custom wrapper is bypassing.

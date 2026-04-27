@@ -1,12 +1,15 @@
 # Purchase Order
 
 ## Intent
+
 This window should let a buyer prepare a supplier order, maintain its commercial header and line details, confirm it, and then follow the downstream procurement flow through receipts, purchase invoices, and payments.
 
 The current evidence shows a purchase-order-specific experience rather than a generic generated order screen: the list is narrowed to purchasing signals, the detail page keeps the generated master-child layout, and the top bar adds procurement actions and follow-up status cues.
 
 ## What this window should allow
-- Create a purchase order for a selected vendor with the key commercial header data: vendor, vendor address, order date, expected delivery date, document type, warehouse, payment method, payment terms, and price list.
+
+- Create a purchase order for a selected vendor with the key commercial header data: vendor, vendor address, order date, scheduled delivery date, payment method, payment terms, and price list.
+- Start a new unsaved order with visible `Save`, `Save draft`, and `Cancel` controls while the order-line tab is already available before the first save.
 - Add and maintain order lines with at least product, description, ordered quantity, unit price, discount, tax, and the resulting line gross amount.
 - Review purchase progress from the order itself through delivery status, invoice status, related receipts, related purchase invoices, and linked payments.
 - Confirm a draft order and, from the confirmation flow or later follow-up actions, create the operational documents that fulfill it.
@@ -15,25 +18,28 @@ The current evidence shows a purchase-order-specific experience rather than a ge
 - Complete multiple draft orders or reactivate multiple confirmed orders at once from the list selection bar using the bulk action, which calls `documentAction=CO` or `documentAction=RE` based on the status of the selected rows.
 
 ## Interaction model
+
 - Route: `/purchase-order` for the list and `/purchase-order/:recordId` for the detail view.
 - Visibility: visible from the Purchases menu.
 - Implementation type: custom window override in `tools/app-shell/src/windows/registry.js`, with a custom list wrapper in `tools/app-shell/src/windows/custom/purchase-order/index.jsx` and a generated detail page that injects purchase-order-specific top-bar and related-document components from `artifacts/purchase-order/generated/web/purchase-order/HeaderPage.jsx`.
 - Window shape: master-child. The primary entity is the order header and the main child dataset is `lines`; the contract also exposes `lineTax` and `paymentDetails` child datasets.
 - List interaction: the list view is tailored to procurement review. The custom wrapper passes an explicit `LIST_COLUMNS` array to the generated `HeaderTable`, which overrides the generated column defaults. The visible columns, in order, are: Order Date (no dot indicator), Document No., Business Partner, Document Status, Total Gross Amount, Invoice Status, and Delivery Status. It supports `?DocStatus=<status>` filtering and a `?filter=pendingDelivery` quick filter that keeps only orders whose delivery progress is still below 100%.
 - Detail interaction: opening a record keeps the generated detail flow but swaps the visible lines table to a purchasing-focused subset of columns. The generated detail page also enables a related-documents tab.
+- New-record behavior evidenced by Playwright coverage: opening `New Order` should immediately show the header form, the order-line tab, and `Save` / `Save draft` / `Cancel` controls without forcing a first intermediate save.
 - Top-bar interaction: on draft orders the detail page exposes confirmation, delete, clone, and send actions. On confirmed orders it computes whether receipt and/or invoice follow-up is still pending and exposes a management action accordingly; related draft/completion chips can also appear in the top bar.
 - Form surface: the purchase order keeps `documentNo` (the internal document number) visible in both the grid and the form. The supplier-side `orderReference` (DB column `POReference`) field remains hidden from both the grid and the form, because procurement needs to reason about the company's own document number rather than the supplier's reference. An earlier iteration of this PR temporarily mirrored the purchase-invoice pattern (hide `documentNo`, expose supplier reference) but that change was reverted inside the same PR to preserve the internal-document-number behavior.
 
 ## Reactive behavior and dependencies
+
 - Header-to-selector dependency is explicitly modeled for vendor addresses: `partnerAddress` is a dependent selector filtered by `businessPartner`, so the address choices should react to the selected vendor.
+- Header visibility changed in the merged code: `paymentTerms` is now exposed as a visible principal-section selector in the generated purchase-order header form, next to the already visible scheduled delivery date, payment method, and price list.
 - Header defaults are partially evidenced in the contract: `orderDate` and `scheduledDeliveryDate` default to the current date, while `currency` is derived from context. The lines entity also derives `scheduledDeliveryDate`, `partnerAddress`, and `currency` from the parent context.
 - Line defaults are also explicit in the contract: new lines start with ordered quantity `1`, discount `0`, and line gross amount `0` before the user edits values.
 - The line surface mixes editable commercial inputs with read-only results. `orderedQuantity`, `unitPrice`, `discount`, and `tax` are editable, while `lineGrossAmount` is read-only. Pricing reacts to line edits via the `SL_Order_Amt` callout chain wired in the contract.
-
 - The line `tax` field is now a dropdown selector (Radix Select) instead of a free-text search input. The list of available taxes is loaded server-side via `GET /sws/neo/purchase-order/lines/selectors/C_Tax_ID` and is filtered by `IsSOTrx=N` (purchase taxes) and by the `VAL_Tax_IsSOTrx_Date` validation rule, which keeps only taxes whose `VALIDFROM` is on or before the order date (`COALESCE(@DateInvoiced@, @DateOrdered@)`, which falls back to `DateOrdered` for purchase orders). Previously this field rendered as a text search that always returned "Sin resultados" because the validation rule context was not populated.
-
+- Save behavior is status-sensitive in the generated detail page. New drafts expose `Save` and `Save draft`, but `HeaderPage` hides save controls for `CO`, `CL`, and `VO` statuses through `hideSaveStatuses`.
 - Lines empty state: when the order is in Draft status and no lines exist yet, the lines tab shows a centered empty state (icon, "Sin líneas todavía", "Añade líneas manualmente", and a "+ Añadir líneas" button). The button is gated by `addLineGuard={(d) => !!d?.businessPartner}` — it only appears once a vendor is selected. The state is rendered by the shared `LinesEmptyState` component (`tools/app-shell/src/components/contract-ui/LinesEmptyState.jsx`) wired via the `linesEmptyState` prop in the custom wrapper.
-- Add-line product selection callout: when a user picks a product in the add-line row, the callout system must fire updates for `unitPrice`, `tax`, `uOM`, and `grossUnitPrice`. This is enabled by `forceCalloutFields: ["unitPrice","tax","uOM","grossUnitPrice"]` on the `product` field in `lines` in `decisions.json`. Without this declaration, the `touchedFieldsRef` guard in `DetailView.jsx` silences callout updates for fields the user never directly touched, leaving `tax` empty and `lineGrossAmount` at 0 after product selection.
+- Add-line product selection callout: when a user picks a product in the add-line row, the callout system must fire updates for `unitPrice`, `tax`, `uOM`, `grossUnitPrice`, and `discount`. This is enabled by `forceCalloutFields: ["unitPrice","tax","uOM","grossUnitPrice","discount"]` on the `product` field in `lines` in `decisions.json`. Without this declaration, the `touchedFieldsRef` guard in `DetailView.jsx` silences callout updates for fields the user never directly touched, leaving `tax` empty and `lineGrossAmount` at 0 after product selection. `discount` is included because product/price-list callouts may return a vendor- or product-specific discount value that must be applied even when the user has not explicitly touched that field.
 - `netUnitPrice` derivation for gross price lists: when a callout returns `grossUnitPrice` without a corresponding `netUnitPrice`, `DetailView.jsx` derives `netUnitPrice = grossUnitPrice / (1 + taxRate/100)` using three sources in priority order: (A) `taxRate` injected as a synthetic field in the callout result by `NeoCalloutService.injectTaxRateIfPresent`, (B) `taxRateCacheRef` from previous callout responses, (C) the ratio `lineGrossAmount/lineNetAmount` from an existing line with the same tax. This ensures `lineGrossAmount` is correct in the add-line preview.
 - Backend price list handling (`OrderLineHandler.java`): a `NeoHandler` CDI bean registered as `orderLineHandler` intercepts order-line CRUD requests. On POST (new line), it resets `grossUnitPrice` to `0` for net price lists (`isPriceIncludesTax=N`) before the CRUD runs, preventing the DB trigger `c_orderline_trg` from mistakenly using the product's `standardPrice` as a gross price. On PATCH (unit price edit), it detects when the trigger on a gross price list (`isPriceIncludesTax=Y`) produced the wrong `priceActual`, recomputes `grossUnitPrice = sentUnitPrice × (1 + taxRate/100)`, and flushes the correction within the same transaction. The same handler is shared with sales-order and sales-quotation via the same `javaQualifier`.
 - Header totals and progress are status-driven rather than freeform. `grandTotalAmount`, `summedLineAmount`, `deliveryStatusPurchase`, and `invoiceStatus` are read-only contract fields, and the top bar uses confirmed-order data plus fetched receipts, invoices, and delivered quantities to decide whether receipt or invoice work is still pending.
@@ -44,14 +50,17 @@ The current evidence shows a purchase-order-specific experience rather than a ge
 
 ## Gap assessment
 - Vendor-driven defaulting is only partially evidenced. The contract proves that vendor address is dependent on vendor selection, but it does not clearly prove whether choosing a vendor automatically defaults address, payment method, payment terms, price list, or warehouse in the current UI. Treat those behaviors as open ambiguities.
+- Price and tax recalculation is implied by the editable commercial fields and read-only totals, but the current code reviewed for this document does not make the recalculation behavior explicit at the purchase-order-specific UI layer. The exact reaction timing and whether header totals update immediately should be treated as a gap in observed evidence.
 - Tax auto-fill after product selection works only for vendors with a Spanish billing address because `c_gettax` derives the tax zone from the address country. For vendors without a Spanish address, tax remains empty after product selection and must be set manually. This is a core AD constraint, not a UI gap.
 - Downstream receipt and invoice creation is clearly part of the intent, but the current evidence does not fully describe business safeguards such as partial-receipt constraints, over-receipt prevention, or invoice quantity controls. Those remain open functional questions.
 - The contract exposes payment-detail and line-tax child entities, yet the current purchase-order-specific evidence does not explain when a user should work with them directly from this window. Their role is available structurally but not functionally documented.
 - The list and detail behavior are well evidenced, but there is no dedicated purchase-order render test in `tools/app-shell`, so the procurement-specific interactions still rely on manual verification.
+- The save-control hiding for completed/closed/voided orders is grounded in generated code, but there is no purchase-order browser test that exercises those status transitions directly. That still needs manual verification.
 - Label-override duplication is a known piece of technical debt. Because the custom list wrapper bypasses the generated `HeaderPage`, it carries its own `LABEL_OVERRIDES` constant that restates `C_BPartner_ID` as "Contacto", `DatePromised` as "Fecha de entrega esperada", and `DeliveryStatusPurchase` as "Estado de entrega" (overriding the default "Receipt Status"/"Estado del envío"). The same labels are also declared in `decisions.json` for the generated surfaces, so label changes have to be made in both places until the wrapper reuses the generated labels.
 - Header-date format reformatting for the tax selector context lives in a generic component, `tools/app-shell/src/components/contract-ui/DetailView.jsx`, which converts the ISO `YYYY-MM-DD` order date into the `DD-MM-YYYY` form that Etendo Classic's PL/pgSQL `to_date()` expects before sending it as `DateInvoiced` in the selector context. This is technical debt to keep in mind: any future change to date handling has to consider both formats, because sending the raw ISO date triggers HTTP 500 with "date/time field value out of range".
 
 ## Manual verification
+
 1. Open `/purchase-order` and confirm the list shows exactly Order Date (no red dot), Document No., Business Partner, Document Status, Total Gross Amount, Invoice Status, and Delivery Status in that order, and that legacy columns such as transaction document, warehouse, price list, and priority are no longer present.
 2. Open `/purchase-order?filter=pendingDelivery` and confirm fully delivered orders are excluded while orders with remaining delivery progress stay visible.
 3. Open a draft order at `/purchase-order/:recordId` and confirm the detail page allows line editing and exposes the draft top-bar actions for confirmation, deletion, cloning, and sending. Open a line for edit and confirm the `Impuesto`/`Tax` field opens a dropdown listing the configured purchase taxes (filtered by `IsSOTrx=N` and validity against the order date), not a free-text search that returns "Sin resultados".
@@ -64,12 +73,17 @@ The current evidence shows a purchase-order-specific experience rather than a ge
 10. Select two or more confirmed purchase orders and confirm the bulk-reactivate action is available. Trigger it and verify the orders return to draft status and a result toast appears.
 
 ## Automated evidence
+
 - `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the generic bulk action component; `artifacts/purchase-order/custom/PurchaseOrderReactivateBulkAction.jsx` re-exports it as the list selection bar entry for purchase orders, supporting both CO and RE based on selected row statuses.
 - There is no dedicated purchase-order UI test covering the tailored list, detail top bar, or procurement follow-up flow in `tools/app-shell`.
 - Shared shell and generic window-loading behavior are documented in `docs/generated-custom-windows/app-shell-functional-flows.md`.
 - One indirect automated clue exists at hook level: `tools/app-shell/src/hooks/__tests__/useEntity-defaults.test.js` verifies defaults fetching against the `/sws/neo/purchase-order` base URL, but it does not assert purchase-order-specific rendering or follow-up behavior.
-- `artifacts/purchase-order/decisions.json` → `lines.product.forceCalloutFields` declares `["unitPrice","tax","uOM","grossUnitPrice"]`, which is the source of truth for the add-line callout bypass. The generated `HeaderPage.jsx` emits this into the `addLineFields` prop consumed by `DetailView.jsx`.
+- `artifacts/purchase-order/decisions.json` → `lines.product.forceCalloutFields` declares `["unitPrice","tax","uOM","grossUnitPrice","discount"]`, which is the source of truth for the add-line callout bypass. The generated `HeaderPage.jsx` emits this into the `addLineFields` prop consumed by `DetailView.jsx`.
 - `modules/com.etendoerp.go/src/com/etendoerp/go/schemaforge/OrderLineHandler.java` implements pre- and post-CRUD hooks shared by sales-order, purchase-order, and sales-quotation. The `javaQualifier = "orderLineHandler"` on the `lines` entity in `ETGO_SF_ENTITY` routes requests through this handler.
+- `origin/develop:artifacts/purchase-order/generated/web/purchase-order/HeaderForm.jsx` at merge commit `36f10538` proves that `paymentTerms` is now a visible principal-section selector in the generated header form.
+- `origin/develop:artifacts/purchase-order/generated/web/purchase-order/HeaderPage.jsx` at `36f10538` proves `hideSaveStatuses={['CO','CL','VO']}` on the detail page.
+- `e2e/tests/flows/purchase-order-create.spec.js` provides browser-level checks for the new-order `Save` / `Save draft` / `Cancel` controls, order-line-tab visibility before first save, and cancel-to-list navigation.
+- `e2e/tests/flows/purchase-order-partner-address-bug.spec.js` provides browser-level evidence that the partner-address selector is expected to enable and offer vendor locations after business-partner selection.
 - Evidence reviewed for this document:
   - `tools/app-shell/src/menu.json`
   - `tools/app-shell/src/windows/registry.js`

@@ -1,15 +1,14 @@
 # Tax
 
 ## Intent
-
 Define reusable tax-rate records that describe the percentage to apply, whether the tax is meant for sales, purchases, or both, and which amount should be treated as the taxable base.
 
-## What this window should allow
+On `origin/develop`, the merged tax regeneration keeps this as a simple standalone maintenance window, but the list now has clearer visual semantics: the rate is rendered as a green percentage tag and the sales/purchase scope is rendered as colored tags instead of raw database codes.
 
+## What this window should allow
 Users should be able to create, review, and update tax definitions by setting a tax name, a rate, an applicability scope, an effective date, and the base semantics used later by transactional documents.
 
-From the current generated form and contract, the window should allow a user to:
-
+From the current generated form and decisions, the visible window allows a user to:
 - name the tax rate record
 - enter the rate as a numeric percentage value
 - choose whether the tax applies to both flows, sales only, or purchases only
@@ -17,49 +16,46 @@ From the current generated form and contract, the window should allow a user to:
 - choose whether document-level or line-level amounts drive tax calculation
 - choose the base amount definition, including line net amount, line net amount plus tax, tax amount, alternative base amount, or alternative base plus tax
 
-The list should also let users scan existing definitions quickly by showing the rate as a percentage badge and the applicability as Sales/Purchase pills instead of raw codes.
+The list also lets users scan existing definitions quickly by showing the rate as a green `+<rate> %` tag and the applicability as `Sales` / `Purchase` tags. When the tax applies to both flows, the list shows both tags side by side rather than a single `Both` badge.
 
 ## Interaction model
-
-- Route: `/tax` for the list and `/tax/:recordId` for record detail
-- Visibility: visible from **System > Settings** in `tools/app-shell/src/menu.json`; it is not marked hidden
-- Implementation type: generated window loaded through `tools/app-shell/src/windows/registry.js`
-- Window shape: single-entity window with no child entities and no declared process endpoints in `artifacts/tax/contract.json`
+- **Route:** `/tax` and `/tax/:recordId`.
+- **Visibility:** visible from the `System` section in `tools/app-shell/src/menu.json`.
+- **Implementation type:** generated window loaded through `tools/app-shell/src/windows/registry.js`.
+- **Window shape:** single-entity window with no child entities and no declared process endpoints in the generated index.
+- **Screen chrome:** the generated detail view hides print and the generic More menu.
 
 ## Reactive behavior and dependencies
+This is a standalone definition window. No parent/child behavior is visible in the current evidence.
 
-No parent/child behavior is visible in the current evidence. This is a standalone definition window.
-
-The visible dependencies are limited to selector semantics:
-
-- `Applicable To` changes the intended business scope of the tax record between both flows, sales only, and purchases only.
+The visible dependencies are limited to selector semantics and list rendering:
+- `Applicable To` changes the intended business scope of the tax record between `Both`, `Sales Tax`, and `Purchase Tax`.
 - `Doc Tax Amount` changes whether tax is conceptually based on document-level or line-level amounts.
 - `Base Amount` changes which monetary base downstream calculations should use.
+- The merged decisions intentionally keep `Description` discarded and `Active` hidden from the visible form, so the current user-facing form is limited to the six main fields above.
 
-No dependent selector behavior, automatic defaulting between these fields, status-driven actions, or visible total/discount/tax recalculation logic is shown in the current window code or contract. Any downstream reaction appears to happen outside this definition screen.
+No dependent selector behavior, automatic defaulting between these fields, status-driven actions, or visible total/discount/tax recalculation logic is shown in the current window code. Any downstream reaction happens outside this definition screen.
 
 ## Gap assessment
-
-- The window clearly captures tax-definition inputs, but the current evidence does not show where or how those choices are enforced in sales or purchase documents. Downstream tax reaction behavior is therefore a gap from this window-level evidence.
-- The generated UI exposes coded base options with user-facing labels, but the business meaning of when each option should be used is not documented here or in the visible contract. That leaves open ambiguity around expected accounting behavior for each base mode.
-- The rate is rendered in the table as a percentage badge, which supports percentage semantics, but the contract only says `number`; precision, rounding, and whether values are entered as `10` or `0.10` are not explicitly documented in the visible evidence.
-- No current evidence shows validation rules that constrain incompatible combinations between applicability, document-tax amount mode, and base amount mode.
+- The window captures tax-definition inputs, but the current evidence does not show where or how those choices are enforced in sales or purchase documents.
+- The list now gives friendlier visual cues for rate and scope, but the current evidence still does not document the business meaning of when each base-amount mode should be chosen.
+- The visible rate field is a numeric input and the list renders `+<rate> %`, but the inspected code still does not explain rounding rules or whether business users are expected to enter `10` vs `0.10`.
+- No current evidence shows validation rules that constrain incompatible combinations between applicability, document-tax amount mode, and base-amount mode.
 
 ## Manual verification
-
-1. Open `/tax` and confirm the list view loads.
-2. Confirm the list renders the rate as a percentage badge and `Applicable To` as Sales/Purchase pills.
-3. Open `/tax/<recordId>` and confirm the form exposes `Name`, `Rate`, `Applicable To`, `Valid From`, `Doc Tax Amount`, and `Base Amount`.
-4. Confirm `Applicable To` offers `Both`, `Sales Tax`, and `Purchase Tax`.
-5. Confirm `Doc Tax Amount` offers `Document Amount` and `Line Amount`.
-6. Confirm `Base Amount` offers `Line Net Amount`, `Line Net Amount + Tax`, `Tax Amount`, `Alternative Base Amount`, and `Alternative Base + Tax`.
-7. Save a change and reopen the record to confirm the updated definition persists.
+1. Open `/tax` from the `System` menu and confirm the list view loads.
+2. Confirm the list renders the rate as a green percentage tag and `Applicable To` as `Sales` / `Purchase` tags.
+3. For a tax whose applicability is `Both`, confirm the list shows both tags together instead of a raw code.
+4. Open `/tax/<recordId>` and confirm the form exposes `Name`, `Rate`, `Applicable To`, `Valid From`, `Doc Tax Amount`, and `Base Amount`.
+5. Confirm `Applicable To` offers `Both`, `Sales Tax`, and `Purchase Tax`.
+6. Confirm `Doc Tax Amount` offers `Document Amount` and `Line Amount`.
+7. Confirm `Base Amount` offers `Line Net Amount`, `Line Net Amount + Tax`, `Tax Amount`, `Alternative Base Amount`, and `Alternative Base + Tax`.
+8. Confirm the visible form does not show `Description`, and that print / generic More actions are not present.
+9. Save a change and reopen the record to confirm the updated definition persists.
 
 ## Automated evidence
-
-- `tools/app-shell/src/menu.json` exposes the `tax` entry under **System > Settings**.
-- `tools/app-shell/src/windows/registry.js` maps `tax` to the generated tax window loader.
-- `artifacts/tax/contract.json` defines a single-entity `Tax Rate` window, the editable fields, and CRUD endpoints for `/tax` and `/tax/:id`.
-- `artifacts/tax/generated/web/tax/TaxForm.jsx` defines the visible selector options for applicability, document-tax amount, and base amount.
-- `artifacts/tax/generated/web/tax/TaxTable.jsx` renders the rate as a percentage badge and applicability as Sales/Purchase pills.
-- There is no dedicated automated SPA test in the current evidence for the full tax record flow or for downstream tax-application behavior.
+- `origin/develop` commit `15a2288a` added the tax-table cell helpers that drive the current badge/tag rendering.
+- `origin/develop:artifacts/tax/decisions.json` marks `rate` with `cellType: taxRate`, `applicableTo` with `cellType: taxScope`, discards `description`, and hides `isActive` from the visible form.
+- `origin/develop:artifacts/tax/generated/web/tax/TaxTable.jsx` renders the rate as a green `+<rate> %` tag and renders scope as `Sales` / `Purchase` tags.
+- `origin/develop:artifacts/tax/generated/web/tax/TaxForm.jsx` defines the six visible form fields and the selector options for applicability, document-tax amount, and base amount.
+- `origin/develop:artifacts/tax/generated/web/tax/index.jsx` confirms the route, standalone generated layout, breadcrumb, and the hidden print/More controls.
