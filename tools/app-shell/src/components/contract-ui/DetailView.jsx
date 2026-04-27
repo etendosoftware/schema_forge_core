@@ -909,6 +909,9 @@ export function DetailView({
       // No other window or field is affected unless it declares forceCalloutFields.
       const triggerFieldDef = (addLineFields?.entry ?? []).find(f => f.key === field);
       const forceFields = new Set(triggerFieldDef?.forceCalloutFields ?? []);
+      for (const amtKey of ['grossAmount', 'lineGrossAmount', 'lineNetAmount']) {
+        if (result[amtKey] != null) result[amtKey] = parseFloat(Number(result[amtKey]).toFixed(2));
+      }
       applyUpdates?.(result, forceFields);
 
       // Cascade to SL_Order_Amt when a price-setting callout (e.g. SL_Order_Product) returned
