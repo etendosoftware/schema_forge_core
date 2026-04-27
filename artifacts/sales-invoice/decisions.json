@@ -275,6 +275,7 @@
         "product": {
           "grid": true,
           "searchable": true,
+          "lookup": true,
           "section": "principal",
           "inputMode": "search",
           "displayLogic": null
@@ -293,7 +294,7 @@
         "tax": {
           "grid": true,
           "section": "principal",
-          "inputMode": "search"
+          "inputMode": "selector"
         },
         "lineNetAmount": {
           "visibility": "system",
@@ -309,7 +310,9 @@
           "visibility": "discarded"
         },
         "description": {
-          "section": "principal"
+          "grid": true,
+          "section": "principal",
+          "gridOrder": 2
         },
         "taxAmount": {
           "visibility": "discarded"

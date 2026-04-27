@@ -261,6 +261,47 @@ column order never affects the filter.
 
 ---
 
+### 11. `linesEmptyState` — empty state when the lines tab has no rows
+
+Displays a centered call-to-action inside the lines tab when the document is in Draft status and no child lines exist yet. Two wiring patterns are available:
+
+**Pattern A — direct prop (preferred for windows that have no `bottomSection`):**
+```jsx
+// custom/index.jsx
+import LinesEmptyState from '@/components/contract-ui/LinesEmptyState.jsx';
+
+<GeneratedApp linesEmptyState={LinesEmptyState} ... />
+```
+
+**Pattern B — attached to `bottomSection` (used by windows that already have a bottom panel):**
+```jsx
+MyBottomPanel.linesEmptyState = MyLinesEmptyState;
+<GeneratedApp bottomSection={MyBottomPanel} ... />
+```
+
+`DetailView` resolves the component as `linesEmptyState ?? bottomSection?.linesEmptyState`. Pattern A takes priority.
+
+The generic `LinesEmptyState` component lives at `tools/app-shell/src/components/contract-ui/LinesEmptyState.jsx` and renders only when `data.documentStatus === 'DR'`. It receives `{ data, onAddLine, canAddLine }` from `DetailView`.
+
+**`addLineGuard` — gate the add-line button on required header fields:**
+
+```jsx
+// Only show the "+ Add Lines" button once businessPartner is filled.
+<GeneratedApp
+  linesEmptyState={LinesEmptyState}
+  addLineGuard={(d) => !!d?.businessPartner}
+  ...
+/>
+```
+
+`addLineGuard` receives current form data and must return `true` to enable adding lines. It gates both the button inside the empty state (`canAddLine` prop) and the `+ Add Line` button in the lines table header. Without a guard, adding is always allowed.
+
+**Real examples:**
+- `linesEmptyState` (Pattern B): `purchase-invoice` (`PurchaseInvoiceBottomPanel.linesEmptyState`)
+- `linesEmptyState` (Pattern A) + `addLineGuard`: `sales-order`, `purchase-order`, `sales-quotation`
+
+---
+
 ## Decision tree: which option to use?
 
 ```
@@ -301,7 +342,9 @@ I need to customize the UI of a window
 └─ Cross-cutting behavior (notes, delete protection, related docs)
     ├─ → window.notesField
     ├─ → window.hideDeleteWhenComplete
-    └─ → window.relatedDocuments
+    ├─ → window.relatedDocuments
+    ├─ Empty state when lines tab is empty → linesEmptyState prop + addLineGuard
+    └─ Gate add-line button on header field → addLineGuard prop
 ```
 
 ---

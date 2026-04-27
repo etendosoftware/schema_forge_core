@@ -6,7 +6,7 @@ Use this window to register and complete outbound customer shipments. The functi
 
 ## What this window should allow
 
-- Create or review a shipment header with warehouse, customer, delivery address, movement date, status, and invoicing state.
+- Create or review a shipment header with warehouse, customer, delivery address, movement date, status (rendered as a status badge, not a dot indicator), and invoicing state.
 - Maintain shipment lines that represent the delivered products and quantities for the selected shipment.
 - Complete a draft shipment when it is ready to be executed.
 - Cancel a completed shipment from the detail view when reversal is required.
@@ -18,7 +18,7 @@ Use this window to register and complete outbound customer shipments. The functi
 
 ## Interaction model
 
-- Route: `/goods-shipment` and `/goods-shipment/:recordId`; the custom window wrapper also supports `?DocStatus=...`, currently used to prefilter the list to a status such as completed shipments.
+- Route: `/goods-shipment` and `/goods-shipment/:recordId`; the custom window wrapper also supports `?DocStatus=...`, currently used to prefilter the list to a status such as completed shipments. The list `COLUMNS` definition has `dot: false` on `movementDate` (no red/green date dot) and `type: 'status'` on `documentStatus` (proper status badge, not a dot-prefixed display).
 - Visibility: visible in the Sales menu and not marked hidden in `tools/app-shell/src/menu.json`.
 - Implementation type: custom route entry in `tools/app-shell/src/windows/registry.js` that loads a generated `GoodsShipmentPage` plus shipment-specific custom actions (`GoodsShipmentActions`, `BulkInvoiceFromShipment`, `RelatedDocuments`).
 - Window shape: master-child window. The header entity is `goodsShipment` and the child entity is `goodsShipmentLine`.

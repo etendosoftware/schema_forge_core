@@ -2,8 +2,8 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:reservedStock
 const columns = [
-  { key: 'reservation', column: 'M_Reservation_ID', type: 'string', label: 'Stock Reservation' },
-  { key: 'storageBin', column: 'M_Locator_ID', type: 'string', label: 'Storage Bin' },
+  { key: 'reservation', column: 'M_Reservation_ID', type: 'selector', label: 'Stock Reservation' },
+  { key: 'storageBin', column: 'M_Locator_ID', type: 'selector', label: 'Storage Bin' },
   { key: 'allocated', column: 'IsAllocated', type: 'boolean', label: 'Allocated' },
   { key: 'quantity', column: 'Quantity', type: 'number', label: 'Quantity' },
   { key: 'released', column: 'ReleasedQty', type: 'number', label: 'Released' },
