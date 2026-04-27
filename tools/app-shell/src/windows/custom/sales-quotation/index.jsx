@@ -5,6 +5,7 @@ import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
+import LinesEmptyState from '@/components/contract-ui/LinesEmptyState.jsx';
 
 export default function SalesQuotationWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
   const [cloneTargets, setCloneTargets] = useState(null);
@@ -20,6 +21,8 @@ export default function SalesQuotationWindow({ windowName, recordId, token, apiB
           recordId={recordId}
           token={token}
           apiBaseUrl={apiBaseUrl}
+          linesEmptyState={LinesEmptyState}
+          addLineGuard={(d) => !!d?.businessPartner}
           {...rest}
         />
         {createContactState && createPortal(

@@ -24,6 +24,7 @@ import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
+import LinesEmptyState from '@/components/contract-ui/LinesEmptyState.jsx';
 
 // Mirrors artifacts/sales-order/generated/web/sales-order/HeaderPage.jsx
 // Kept in sync manually because the generator does not expose labelOverrides yet.
@@ -63,6 +64,8 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
           token={token}
           apiBaseUrl={apiBaseUrl}
           draftMode={draftModeWithModal}
+          linesEmptyState={LinesEmptyState}
+          addLineGuard={(d) => !!d?.businessPartner}
           {...rest}
         />
         {createContactState && createPortal(

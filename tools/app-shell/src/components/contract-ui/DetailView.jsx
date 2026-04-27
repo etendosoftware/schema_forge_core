@@ -124,6 +124,7 @@ export function DetailView({
   sidePanelStyle = null,
   afterTotals = null,
   bottomSection = null,
+  linesEmptyState = null,
   topbarExtra = null,
   topbarRight = null,
   statusFieldLabel = null,
@@ -146,7 +147,7 @@ export function DetailView({
   // the effect falls through to fetchById. Skipping the list fetch unconditionally drops one
   // wasted GET per direct-URL navigation.
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl, skipListFetch: true });
-  const LinesEmptyState = bottomSection?.linesEmptyState ?? null;
+  const LinesEmptyState = linesEmptyState ?? bottomSection?.linesEmptyState ?? null;
   const DetailExtraActions = bottomSection?.detailExtraActions ?? null;
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls).
   // Secondary hooks only consume child-level state (children, handleAddChild, handleDeleteChild,
