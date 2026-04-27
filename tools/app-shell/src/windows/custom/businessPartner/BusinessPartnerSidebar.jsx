@@ -41,6 +41,7 @@ function BPChartSVGContent({
   labels = [], revenue = [], expenses = [],
   CW, CH, PX, PY, PB, fontSize = 9, chartId = 'bp', orgCurrency = 'USD',
 }) {
+  const ui = useUI();
   const [hoveredIdx, setHoveredIdx] = useState(null);
 
   const plotW = CW - PX * 2;
@@ -105,7 +106,7 @@ function BPChartSVGContent({
       viewBox={`0 0 ${CW} ${CH}`}
       className="w-full h-auto cursor-crosshair"
       role="img"
-      aria-label="Sales and purchases trend"
+      aria-label={ui('bpSalesPurchasesChartAria')}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => setHoveredIdx(null)}
     >
@@ -164,7 +165,7 @@ function BPChartSVGContent({
 
       {!hasData && (
         <text x={CW / 2} y={PY + plotH / 2 + 4} textAnchor="middle" className="fill-muted-foreground" fontSize={fontSize}>
-          No invoice data
+          {ui('bpNoInvoiceData')}
         </text>
       )}
 
@@ -241,7 +242,7 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [], orgCurrency = 
           <button
             onClick={() => setExpanded(true)}
             className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-            title="Expand chart"
+            title={ui('bpExpandChart')}
           >
             <Maximize2 size={12} />
           </button>
