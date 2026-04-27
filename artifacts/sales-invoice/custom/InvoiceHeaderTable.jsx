@@ -1,11 +1,8 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { DataTable } from '@/components/contract-ui';
 import { useLocale, useLocaleSwitch } from '@/i18n';
-import {
-  formatCalendarDate,
-  getCalendarDateRelation,
-  parseCalendarDate,
-} from '@/lib/dateOnly';
+import { formatCalendarDate, getCalendarDateRelation } from '@/lib/dateOnly';
+import { getDueDateDotColor, getLatestInstallmentDueDate } from '@/lib/invoiceDueDate';
 
 // ─── Invoice-specific status logic ───────────────────────────────
 
@@ -28,13 +25,6 @@ function getInvoiceStatus(row) {
   }
   if (paid > 0) return 'partial';
   return 'pending';
-}
-
-function getDueDateDotColor(raw) {
-  const relation = getCalendarDateRelation(raw);
-  if (relation === 'past') return 'bg-red-500';
-  if (relation === 'today') return 'bg-amber-500';
-  return 'bg-emerald-500';
 }
 
 function getPaymentFilter(row) {
@@ -68,10 +58,7 @@ export default function InvoiceHeaderTable(props) {
           .then(r => r.ok ? r.json() : {})
           .then(d => {
             const installments = d?.response?.data ?? d?.data ?? [];
-            const timestamps = installments
-              .map(i => parseCalendarDate(i.dueDate)?.getTime() ?? NaN)
-              .filter(ts => !Number.isNaN(ts));
-            return [id, timestamps.length > 0 ? new Date(Math.max(...timestamps)) : null];
+            return [id, getLatestInstallmentDueDate(installments)];
           })
           .catch(() => [id, null])
       )

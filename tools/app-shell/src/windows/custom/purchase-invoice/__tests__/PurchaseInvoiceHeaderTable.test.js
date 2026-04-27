@@ -22,8 +22,7 @@ describe('PurchaseInvoiceHeaderTable', () => {
   });
 
   it('derives max dueDate from installments', () => {
-    assert.match(src, /Math\.max/);
-    assert.match(src, /dueDate/);
+    assert.match(src, /getLatestInstallmentDueDate/);
   });
 
   it('includes invoiceDate column with dot suppressed', () => {
@@ -38,9 +37,7 @@ describe('PurchaseInvoiceHeaderTable', () => {
 
   it('includes a custom _dueDate column with red, amber, and green dot logic', () => {
     assert.match(src, /key.*_dueDate/);
-    assert.match(src, /bg-red-500/);
-    assert.match(src, /bg-amber-500/);
-    assert.match(src, /bg-emerald-500/);
+    assert.match(src, /getDueDateDotColor/);
   });
 
   it('shows a dash when no due date is available', () => {
