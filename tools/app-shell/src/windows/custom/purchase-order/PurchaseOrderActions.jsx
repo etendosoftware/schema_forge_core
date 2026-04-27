@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { FileText, Check } from 'lucide-react';
 import { useUI } from '@/i18n';
+import { formatCurrency } from '@/lib/formatCurrency';
 
 /* eslint-disable react/prop-types */
 
@@ -349,11 +350,6 @@ function ConfirmOrderModal({
     'Content-Type': 'application/json',
   }), [token]);
 
-  const fmtNum = (v) =>
-    v != null && v !== ''
-      ? Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-      : '-';
-
   // Fetch fresh record + line count on mount
   useEffect(() => {
     let cancelled = false;
@@ -384,6 +380,11 @@ function ConfirmOrderModal({
   const grandTotal = d.grandTotalAmount ?? d.grandTotal ?? '';
   const totalLines = d.summedLineAmount ?? d.totalLines ?? grandTotal;
   const currency = d['currency$_identifier'] || '';
+
+  const fmtNum = (v) =>
+    v != null && v !== ''
+      ? formatCurrency(currency || 'USD', v)
+      : '-';
 
   const handleConfirm = async () => {
     if (loading) return;
@@ -421,7 +422,7 @@ function ConfirmOrderModal({
           type: 'invoice',
           id: invoice?.id ?? null,
           documentNo: invoice?.documentNo || '',
-          total: invoice?.grandTotal != null ? `${fmtNum(invoice.grandTotal)} ${currency}`.trim() : '',
+          total: invoice?.grandTotal != null ? fmtNum(invoice.grandTotal) : '',
           status: 'Draft',
         });
 
@@ -556,14 +557,14 @@ function ConfirmOrderModal({
               {bpName}
             </div>
             <div style={{ fontSize: 28, fontWeight: 500, color: '#042C53', lineHeight: 1, marginTop: 4, marginBottom: 6 }}>
-              {fmtNum(grandTotal)}{currency ? ` ${currency}` : ''}
+              {fmtNum(grandTotal)}
             </div>
             <div style={{ fontSize: 11, color: '#185FA5' }}>
               {lineCount != null ? ui('soLines', { count: lineCount }) : '...'}
               {' '}<span style={{ color: '#85B7EB' }}>·</span>{' '}
               {ui('soSubtotal')}{' '}
               <span style={{ fontWeight: 500, color: '#042C53' }}>
-                {fmtNum(totalLines)}{currency ? ` ${currency}` : ''}
+                {fmtNum(totalLines)}
               </span>
             </div>
           </div>

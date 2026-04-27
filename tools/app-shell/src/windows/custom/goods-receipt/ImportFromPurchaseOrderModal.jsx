@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useUI } from '@/i18n';
+import { useCurrency } from '@/hooks/useCurrency';
+import { formatCurrency } from '@/lib/formatCurrency';
 
 export default function ImportFromPurchaseOrderModal({ receiptId, bpId, base, headers, onClose, onSuccess }) {
   const ui = useUI();
+  const orgCurrency = useCurrency() ?? 'USD';
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(new Set());
@@ -226,7 +229,8 @@ export default function ImportFromPurchaseOrderModal({ receiptId, bpId, base, he
   };
 
   const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-');
-  const fmtNum = (v) => Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtQty = (v) => Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtMoney = (v, curr) => formatCurrency(curr || orgCurrency, v);
 
   return (
     <div onClick={onClose} className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
@@ -298,7 +302,7 @@ export default function ImportFromPurchaseOrderModal({ receiptId, bpId, base, he
                       </div>
                     </div>
                     <span style={{ fontSize: 12, color: '#9ca3af', fontVariantNumeric: 'tabular-nums', flexShrink: 0, marginLeft: 8 }}>
-                      {orderTotal != null ? fmtNum(orderTotal) : ''}
+                      {orderTotal != null ? fmtMoney(orderTotal, order['currency$_identifier']) : ''}
                     </span>
                   </div>
 
@@ -349,7 +353,7 @@ export default function ImportFromPurchaseOrderModal({ receiptId, bpId, base, he
                                   {!selectable && <span style={{ fontSize: 11, marginLeft: 6, color: '#9ca3af' }}>{ui('alreadyFullyReceived')}</span>}
                                 </span>
                                 <span style={{ width: 90, fontSize: 12, color: '#6B7280', fontVariantNumeric: 'tabular-nums', textAlign: 'right', flexShrink: 0 }}>
-                                  {fmtNum(line._availableQty)}
+                                  {fmtQty(line._availableQty)}
                                 </span>
                                 <span style={{ width: 90, flexShrink: 0, textAlign: 'right' }}>
                                   <input

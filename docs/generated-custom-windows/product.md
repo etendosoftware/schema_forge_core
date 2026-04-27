@@ -66,10 +66,13 @@ The detail screen also changes the standard generated behavior in three visible 
 10. If the business depends on BOM, costing, transactions, characteristics, stock, category price rule version, alternate UOM, or variant actions, verify which of those surfaces are actually visible in the running page. Current repo evidence does not fully prove all of them.
 
 ## Automated evidence
-- `origin/develop` commits `ba6910d8`, `e3c6bf1f`, `af305cc4`, and `123ef1ba` introduced the current pricing-footer and stock-sidebar behavior described above.
-- `origin/develop:artifacts/product/generated/web/product/ProductPage.jsx` wires the generated route to the custom gallery, `Additional Info` panel, pricing footer, and sidebar.
-- `origin/develop:tools/app-shell/src/windows/custom/product/ProductGallery.jsx` shows the gallery-card presentation and image fallback behavior.
-- `origin/develop:tools/app-shell/src/windows/custom/product/ProductAdditionalInfoPanel.jsx` defines the grouped `Commercial` and `Logistics` layout.
-- `origin/develop:tools/app-shell/src/windows/custom/product/ProductPriceBar.jsx` shows the visible pricing states: save-first gating, `Set Pricing` inline create flow, automatic default/selector resolution, `Edit Pricing` dialog, staged save behavior, and the unsaved-changes confirmation.
-- `origin/develop:tools/app-shell/src/windows/custom/product/ProductSidebar.jsx` shows the `Summary` / `Warehouses` tabs, stock stat cards, and the expandable stock-movement modal.
-- `origin/develop:artifacts/product/contract.json` provides the contract evidence for selectors, child entities, defaults, and declared actions that are only partially surfaced in the inspected page code.
+- Route registration and menu visibility are grounded in `tools/app-shell/src/windows/registry.js` and `tools/app-shell/src/menu.json`, which register `product` as a generated/custom window reachable from the Inventory section.
+- Shared shell/route behavior is documented in `docs/generated-custom-windows/app-shell-functional-flows.md`, especially the generated/custom window loading flow and the shared entity list/detail flow.
+- Product-specific behavior is grounded in current code under `tools/app-shell/src/windows/custom/product/`:
+  - `ProductGallery.jsx` for gallery browsing
+  - `ProductAdditionalInfoPanel.jsx` for grouped commercial/logistics editing
+  - `ProductPriceBar.jsx` for product pricing fetch/create/edit behavior. Unit prices and list prices shown in the pricing tables are formatted using the org's configured currency via `useCurrency()` and `formatCurrency()`, so the currency symbol reflects the organization's setting rather than a hardcoded value.
+  - `ProductSidebar.jsx` for stock and transaction-driven sidebar summaries
+- The generated product page at `artifacts/product/generated/web/product/ProductPage.jsx` wires those custom surfaces into the product window and declares the attached child CRUD endpoints.
+- The product contract at `artifacts/product/contract.json` provides evidence for layout (`gallery`, sidebar layout, primary tabs), selectors, child entities, default values, and declared actions.
+- No dedicated product browser test or product-specific component test was found in the inspected test files. Automated evidence in this repo is therefore structural and contract-backed rather than end-to-end proof of the full product workflow.

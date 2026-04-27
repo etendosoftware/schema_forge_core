@@ -1,13 +1,8 @@
 import { useUI } from '@/i18n';
 import RelatedDocuments from './RelatedDocuments.jsx';
+import { formatCurrency } from '@/lib/formatCurrency';
 
 /* eslint-disable react/prop-types */
-
-function fmt(val, curr) {
-  const n = typeof val === 'string' ? parseFloat(val) : (val ?? 0);
-  const s = n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return curr ? `${s} ${curr}` : s;
-}
 
 /**
  * PurchaseInvoiceBottomPanel — two-column bottom block for Purchase Invoice detail.
@@ -114,13 +109,13 @@ export default function PurchaseInvoiceBottomPanel({
             {subtotal != null && (
               <div className="flex justify-between py-1 px-1">
                 <span className="text-muted-foreground">{ui('subtotal')}</span>
-                <span className="tabular-nums">{fmt(subtotal, currency)}</span>
+                <span className="tabular-nums">{formatCurrency(currency || 'USD', subtotal)}</span>
               </div>
             )}
             {taxes != null && taxes !== 0 && (
               <div className="flex justify-between py-1 px-1">
                 <span className="text-muted-foreground">{ui('tax')}</span>
-                <span className="tabular-nums">{fmt(taxes, currency)}</span>
+                <span className="tabular-nums">{formatCurrency(currency || 'USD', taxes)}</span>
               </div>
             )}
             {total != null && (
@@ -129,7 +124,7 @@ export default function PurchaseInvoiceBottomPanel({
                 style={{ borderTopWidth: '0.5px' }}
               >
                 <span>{ui('total')}</span>
-                <span className="tabular-nums">{fmt(total, currency)}</span>
+                <span className="tabular-nums">{formatCurrency(currency || 'USD', total)}</span>
               </div>
             )}
           </div>
