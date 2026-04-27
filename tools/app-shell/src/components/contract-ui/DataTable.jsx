@@ -1220,7 +1220,7 @@ export function DataTable({
           </TableHeader>
           <TableBody>
             {filteredData.length === 0 && !addRow?.active ? (
-              <TableRow>
+              <TableRow data-empty-state="">
                 <TableCell colSpan={colSpan} className="p-0">
                   <EmptyState hasFilter={hasActiveFilter} totalCount={data.length} />
                 </TableCell>

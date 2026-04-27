@@ -117,6 +117,9 @@ export function DetailView({
   hideMoreMenu = false,
   hideMoreDetails = false,
   noHeaderBorder = false,
+  toolbarBorderBottom = false,
+  tabsBarRightDivider = null,
+  tabsBarRight = null,
   hideTopBar = false,
   CustomLines = null,
   customLinesLabel = 'Invoices',
@@ -140,6 +143,8 @@ export function DetailView({
   onAfterSave,
   onAfterCreate,
   labelOverrides,
+  enableSecondaryRowDelete = false,
+  sidebarClassName = 'w-96 shrink-0 overflow-y-auto pt-0 pl-0 pr-4 pb-5',
 }) {
   // DetailView never needs the parent list: on `/new` there is no record to match, and on
   // `/:id` the currentItem shortcut only helps when we arrived from ListView (items already
@@ -1182,7 +1187,7 @@ export function DetailView({
             </div>
           ) : null
         ) : (
-        <div className="flex items-center justify-between px-6 py-3">
+        <div className={`flex items-center justify-between px-6 py-3${toolbarBorderBottom ? ' border-b border-[#E8EAEF]' : ''}`}>
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
@@ -1486,31 +1491,43 @@ export function DetailView({
           </div>
         )}
 
+        {/* Scrollable content + optional sidebarContent (full-height independent column) */}
+        <div className="flex-1 flex overflow-hidden">
+        {/* Content column: tab bar (shrink-0) + scrollable form area */}
+        <div className="flex-1 flex flex-col min-w-0">
         {/* Primary tab bar (General / Additional Info / etc.) */}
         {primaryTabs && (
-          <div className="flex items-center gap-1 px-6 py-2 shrink-0">
+          <div
+            className={`flex items-center gap-1 px-6 py-2 shrink-0${tabsBarRightDivider ? ' relative' : ''}`}
+            style={tabsBarRight && tabsBarRightDivider ? { paddingRight: `calc(${tabsBarRightDivider} + 24px)` } : undefined}
+          >
+            {tabsBarRightDivider && (
+              <div className="absolute top-0 bottom-0 w-px bg-[#E8EAEF] pointer-events-none" style={{ left: `calc(100% - ${tabsBarRightDivider})` }} />
+            )}
             {primaryTabs.map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setActivePrimaryTab(tab.key)}
                 className={[
-                  'px-4 py-1.5 text-sm font-medium rounded-lg transition-colors border',
+                  'relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors border',
                   activePrimaryTab === tab.key
                     ? 'bg-white border-gray-200 shadow-sm text-foreground'
                     : 'border-transparent text-muted-foreground hover:text-foreground',
                 ].join(' ')}
               >
                 {tMenu(tab.label)}
-                {activePrimaryTab === tab.key && (
-                  <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full" />
-                )}
               </button>
             ))}
+            {tabsBarRight && (() => {
+              const TabsBarRightComponent = tabsBarRight;
+              return (
+                <div className="ml-auto flex-shrink-0">
+                  <TabsBarRightComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} />
+                </div>
+              );
+            })()}
           </div>
         )}
-
-        {/* Scrollable content + optional sidebarContent (full-height independent column) */}
-        <div className="flex-1 flex overflow-hidden">
         {/* Non-general primary tab: show Panel fullscreen */}
         {primaryTabs && activePrimaryTab !== 'general' ? (() => {
           const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
@@ -2077,6 +2094,13 @@ export function DetailView({
                             ? (row) => { setSelectedSecondaryLine({ ...row, _tabKey: st.key }); setSecondaryLineEdits(null); }
                             : undefined}
                         selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
+                        onDeleteRow={enableSecondaryRowDelete && (api?.crud?.[st.key]?.delete ?? true) ? (row) => {
+                          setSecondaryDeleteConfirm({
+                            tabKey: st.key,
+                            tabIndex: stIdx,
+                            id: row.id,
+                          });
+                        } : undefined}
                         addRow={st.addLineFields?.entry?.length > 0 ? {
                           ref: getSecondaryAddRowRef(st.key),
                           active: addingSecondaryLine[st.key] ?? false,
@@ -2387,8 +2411,9 @@ export function DetailView({
           )}
           </div>
         </div>
+        </div>{/* end content column wrapper */}
         {sidebarContent && (
-          <div className="w-96 shrink-0 overflow-y-auto pt-0 pl-0 pr-4 pb-5">
+          <div className={sidebarClassName}>
             {typeof sidebarContent === 'function' ? sidebarContent(data) : sidebarContent}
           </div>
         )}

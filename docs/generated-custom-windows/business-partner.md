@@ -47,6 +47,7 @@ Maintain a business partner header record and its attached location records in o
 ## Custom component notes
 
 - **`BusinessPartnerSidebar`** — the sidebar KPI cards (revenue this month, expenses this month) and the trend-chart tooltip display monetary amounts using the org's configured currency via `useCurrency()` and `formatCurrency()`. The currency symbol shown (e.g. `EUR`, `USD`) reflects the organization's setting rather than a hardcoded value.
+- **`BPChartSVGContent`** — the chart SVG sub-component is now a named export (`export function BPChartSVGContent`) so that other windows (currently the contacts sidebar) can reuse the same chart rendering logic without duplicating code. It uses `niceScale`, `formatDashboardAxisTick`, `toBezierPath`, and `toBezierFillPath` from the shared `@/lib/dashboardNumberFormat` utility, which provides clean Y-axis scale values and smooth bezier curve paths for the revenue/expenses lines and fill areas.
 
 ## Automated evidence
 

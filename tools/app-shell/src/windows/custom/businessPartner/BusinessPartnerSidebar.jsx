@@ -2,14 +2,10 @@ import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Maximize2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useUI, useLocaleSwitch } from '@/i18n';
+import { niceScale, formatDashboardAxisTick, toBezierPath, toBezierFillPath } from '@/lib/dashboardNumberFormat';
 import { useCurrency } from '@/hooks/useCurrency';
 import { formatCurrency } from '@/lib/formatCurrency';
 
-function formatY(v) {
-  if (v === 0) return '0';
-  if (Math.abs(v) >= 1000) return `${(v / 1000).toFixed(0)}k`;
-  return `${Math.round(v)}`;
-}
 
 function MiniKPICard({ label, value, trend, format, accentColor, orgCurrency }) {
   const display = format === 'currency' ? formatCurrency(orgCurrency ?? 'USD', value) : value;
@@ -37,7 +33,7 @@ const PERIOD_OPTIONS = [
   { label: '6M', months: 6 },
 ];
 
-function BPChartSVGContent({
+export function BPChartSVGContent({
   labels = [], revenue = [], expenses = [],
   CW, CH, PX, PY, PB, fontSize = 9, chartId = 'bp', orgCurrency = 'USD',
 }) {
@@ -49,30 +45,16 @@ function BPChartSVGContent({
 
   const allVals = [...revenue, ...expenses];
   const maxVal = Math.max(...allVals, 0);
-  const minVal = Math.min(...allVals, 0);
-  const range = maxVal - minVal || 1;
+  const { niceMax, ticks: yTicks } = niceScale(maxVal);
+  const baseY = PY + plotH;
 
   const toPoint = (v, i, len) => ({
     x: PX + (len <= 1 ? plotW / 2 : (i / (len - 1)) * plotW),
-    y: PY + plotH - ((v - minVal) / range) * plotH,
+    y: PY + plotH - (v / niceMax) * plotH,
   });
 
   const revPts = revenue.map((v, i) => toPoint(v, i, revenue.length));
   const expPts = expenses.map((v, i) => toPoint(v, i, expenses.length));
-
-  const toLine = (pts) =>
-    pts.length === 0 ? '' : pts.map((p) => `${p.x},${p.y}`).join(' ');
-
-  const toArea = (pts) => {
-    if (pts.length === 0) return '';
-    return [
-      `M ${pts[0].x},${pts[0].y}`,
-      ...pts.slice(1).map((p) => `L ${p.x},${p.y}`),
-      `L ${pts[pts.length - 1].x},${PY + plotH}`,
-      `L ${pts[0].x},${PY + plotH}`,
-      'Z',
-    ].join(' ');
-  };
 
   const hasData = allVals.some((v) => v > 0);
 
@@ -121,38 +103,35 @@ function BPChartSVGContent({
         </linearGradient>
       </defs>
 
-      {[0, 0.5, 1].map((frac) => {
-        const y = PY + plotH - frac * plotH;
-        const val = minVal + frac * range;
+      {yTicks.map((val) => {
+        const y = PY + plotH - (val / niceMax) * plotH;
         return (
-          <g key={frac}>
+          <g key={val}>
             <line x1={PX} y1={y} x2={CW - PX} y2={y}
               stroke="hsl(var(--border))" strokeWidth="1" strokeDasharray="3 3" />
             <text x={PX - 4} y={y + 3} textAnchor="end" className="fill-muted-foreground" fontSize={fontSize}>
-              {formatY(val)}
+              {formatDashboardAxisTick(val)}
             </text>
           </g>
         );
       })}
 
-      <path d={toArea(expPts)} fill={`url(#${expGradId})`} />
-      <polyline points={toLine(expPts)} fill="none"
+      <path d={toBezierFillPath(expPts, baseY)} fill={`url(#${expGradId})`} />
+      <path d={toBezierPath(expPts)} fill="none"
         stroke="hsl(var(--destructive))" strokeWidth="1.5"
-        strokeLinecap="round" strokeLinejoin="round" strokeDasharray="4 2" />
-      {expPts.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y}
-          r={hoveredIdx === i ? 3.5 : 2}
-          fill="hsl(var(--background))" stroke="hsl(var(--destructive))" strokeWidth="1.5" />
-      ))}
+        strokeLinecap="round" strokeLinejoin="round" />
+      {hoveredIdx !== null && expPts[hoveredIdx] && (
+        <circle cx={expPts[hoveredIdx].x} cy={expPts[hoveredIdx].y}
+          r={3.5} fill="hsl(var(--background))" stroke="hsl(var(--destructive))" strokeWidth="1.5" />
+      )}
 
-      <path d={toArea(revPts)} fill={`url(#${revGradId})`} />
-      <polyline points={toLine(revPts)} fill="none"
+      <path d={toBezierFillPath(revPts, baseY)} fill={`url(#${revGradId})`} />
+      <path d={toBezierPath(revPts)} fill="none"
         stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      {revPts.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y}
-          r={hoveredIdx === i ? 4 : 2.5}
-          fill="hsl(var(--background))" stroke="#10b981" strokeWidth="1.5" />
-      ))}
+      {hoveredIdx !== null && revPts[hoveredIdx] && (
+        <circle cx={revPts[hoveredIdx].x} cy={revPts[hoveredIdx].y}
+          r={4} fill="hsl(var(--background))" stroke="#10b981" strokeWidth="1.5" />
+      )}
 
       {labels.map((lbl, i) => {
         const x = PX + (labels.length <= 1 ? plotW / 2 : (i / (labels.length - 1)) * plotW);
@@ -355,6 +334,7 @@ export default function BusinessPartnerSidebar({ recordId, token, apiBaseUrl }) 
           labels={trend.labels ?? []}
           revenue={trend.revenue ?? []}
           expenses={trend.expenses ?? []}
+          orgCurrency={orgCurrency}
         />
       )}
     </div>
