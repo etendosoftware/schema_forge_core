@@ -5,6 +5,7 @@ import { collectSourceFiles, isJavaScriptModule, parseModuleSource, readJson, re
 const IGNORED_VISIBILITIES = new Set(['discarded', 'system']);
 const SCANNED_ATTRIBUTES = new Set(['title', 'placeholder', 'aria-label']);
 const TRANSLATOR_HOOKS = new Set(['useUI', 'useLabel', 'useMenuLabel']);
+const SCANNED_LITERAL_PROPERTIES = new Set(['label', 'title', 'description', 'placeholder', 'switchPrompt', 'switchAction', 'error']);
 
 function collectAllowlist(source) {
   const match = source.match(/i18n-allowlist:\s*(\[[^\]]*\])/);
@@ -43,12 +44,14 @@ function collectTranslatorAliases(ast) {
 
 function collectCustomFiles(rootDir, windowDir, windowName) {
   const appShellCustomDir = join(rootDir, 'tools', 'app-shell', 'src', 'windows', 'custom');
+  const appShellPagesDir = join(rootDir, 'tools', 'app-shell', 'src', 'pages');
   const aliases = windowName === 'contacts' ? ['businessPartner'] : [];
   return [
     ...collectSourceFiles(join(windowDir, 'custom'), isJavaScriptModule),
     ...collectSourceFiles(join(appShellCustomDir, windowName), isJavaScriptModule),
     ...aliases.flatMap((alias) => collectSourceFiles(join(appShellCustomDir, alias), isJavaScriptModule)),
     ...collectSourceFiles(join(appShellCustomDir, 'shared'), isJavaScriptModule),
+    ...collectSourceFiles(appShellPagesDir, isJavaScriptModule),
   ].sort((left, right) => left.localeCompare(right));
 }
 
@@ -75,6 +78,21 @@ function collectStringViolations(ast, source, rootDir, filePath) {
       const text = significantText(node.value.value || '');
       if (text && !allowlist.has(text)) {
         violations.push(`${repoRelative(rootDir, filePath)}:${node.loc?.start?.line ?? 1} — hardcoded ${node.name.name} '${text}'.`);
+      }
+      return;
+    }
+
+    if (
+      node.type === 'ObjectProperty'
+      && !node.computed
+      && ((node.key?.type === 'Identifier' && SCANNED_LITERAL_PROPERTIES.has(node.key.name))
+        || (node.key?.type === 'StringLiteral' && SCANNED_LITERAL_PROPERTIES.has(node.key.value)))
+      && node.value?.type === 'StringLiteral'
+    ) {
+      const text = significantText(node.value.value || '');
+      if (text && !allowlist.has(text)) {
+        const propertyName = node.key.type === 'Identifier' ? node.key.name : node.key.value;
+        violations.push(`${repoRelative(rootDir, filePath)}:${node.loc?.start?.line ?? 1} — hardcoded ${propertyName} '${text}'.`);
       }
       return;
     }
