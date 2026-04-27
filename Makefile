@@ -2,9 +2,10 @@
 
 # --- Testing ---
 
-test: ## Run all CLI tests and app-shell lib tests
+test: ## Run all CLI tests and app-shell unit tests
 	cd cli && node --test 'test/*.test.js'
 	node --test tools/app-shell/src/lib/__tests__/*.test.js
+	node --test tools/app-shell/src/pages/onboarding/__tests__/*.test.js
 
 validate-pipeline: ## Validate pipeline completeness across all artifacts
 	node cli/src/validate-pipeline.js --format=text

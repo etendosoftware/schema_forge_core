@@ -9,6 +9,22 @@ import {
   UserPlus, Mail, Lock, Eye, EyeOff, Sparkles,
   ArrowRight, User, MessageCircle,
 } from 'lucide-react';
+import {
+  fetchAccount,
+  fetchEnvironments,
+  loginAccount,
+  loginEnvironment,
+  registerAccount,
+  runOnboardingStream,
+} from './onboarding/onboardingApi.js';
+import { checkSalesInvoiceReadiness } from './onboarding/onboardingReadiness.js';
+import {
+  applyProgressMessage,
+  buildEnvironmentSessionStorage,
+  initialSetupSteps,
+  isCompanyStepValid,
+  isProfileStepValid,
+} from './onboarding/onboardingState.js';
 
 function detectBaseUrl() {
   const path = window.location.pathname;
@@ -435,9 +451,7 @@ export default function OnboardingPage() {
   // Create form
   const [createStep, setCreateStep] = useState(1);
   const [form, setForm] = useState(DEFAULT_ONBOARDING_FORM);
-  const [steps, setSteps] = useState(
-    SETUP_STEPS.map(s => ({ ...s, status: 'pending', ms: null, error: null }))
-  );
+  const [steps, setSteps] = useState(() => initialSetupSteps());
   const [result, setResult] = useState(null);
   const [running, setRunning] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
@@ -447,21 +461,15 @@ export default function OnboardingPage() {
     const token = getPlatformToken();
     setLoadingEnvs(true);
     try {
-      const res = await fetch(`${BASE_URL}/sws/go/environments`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const envs = data.environments || [];
-        setEnvironments(envs);
-        if (envs.length === 0) {
-          setCreateStep(1);
-          setView('create');
-        } else {
-          loginToEnvironment(envs[0]);
-        }
-        return;
+      const envs = await fetchEnvironments(fetch, BASE_URL, token);
+      setEnvironments(envs);
+      if (envs.length === 0) {
+        setCreateStep(1);
+        setView('create');
+      } else {
+        loginToEnvironment(envs[0]);
       }
+      return;
     } catch (err) {
       console.error('Failed to load environments', err);
     } finally {
@@ -477,13 +485,7 @@ export default function OnboardingPage() {
       setView('register');
       return;
     }
-    fetch(`${BASE_URL}/sws/go/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(res => {
-        if (res.ok) return res.json();
-        throw new Error('invalid');
-      })
+    fetchAccount(fetch, BASE_URL, token)
       .then(data => {
         setAccountName(data.name || data.email || null);
         routeByEnvironments();
@@ -519,7 +521,7 @@ export default function OnboardingPage() {
     setFormSubmitted(false);
     setRunning(false);
     setCreateStep(1);
-    setSteps(SETUP_STEPS.map(s => ({ ...s, status: 'pending', ms: null, error: null })));
+    setSteps(initialSetupSteps());
     setForm({
       ...DEFAULT_ONBOARDING_FORM,
       fullName: account?.name || account?.email || '',
@@ -538,6 +540,7 @@ export default function OnboardingPage() {
     setLoginError(null);
     setShowRegisterPassword(false);
     setShowLoginPassword(false);
+    setSteps(initialSetupSteps());
     setView('register');
   };
 
@@ -547,19 +550,14 @@ export default function OnboardingPage() {
     setRegisterError(null);
     setRegisterLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/sws/go/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(registerForm),
-      });
-      const data = await res.json();
-      if (res.ok && data.token) {
+      const data = await registerAccount(fetch, BASE_URL, registerForm);
+      if (data.token) {
         handleRegisterSuccess(data.token, data.account);
       } else {
-        setRegisterError(data?.error?.message || 'No se pudo crear la cuenta.');
+        setRegisterError('No se pudo crear la cuenta.');
       }
     } catch (err) {
-      setRegisterError('Error de conexion. Intenta de nuevo.');
+      setRegisterError(err.message || 'Error de conexion. Intenta de nuevo.');
     } finally {
       setRegisterLoading(false);
     }
@@ -571,63 +569,58 @@ export default function OnboardingPage() {
     setLoginError(null);
     setLoginLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/sws/go/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(loginForm),
-      });
-      const data = await res.json();
-      if (res.ok && data.token) {
+      const data = await loginAccount(fetch, BASE_URL, loginForm);
+      if (data.token) {
         handleAuthSuccess(data.token, data.account);
       } else {
-        setLoginError(data?.error?.message || 'Credenciales invalidas.');
+        setLoginError('Credenciales invalidas.');
       }
     } catch (err) {
-      setLoginError('Error de conexion. Intenta de nuevo.');
+      setLoginError(err.message || 'Error de conexion. Intenta de nuevo.');
     } finally {
       setLoginLoading(false);
     }
   };
 
-  const loginToEnvironment = async (env) => {
+  const loginToEnvironment = async (env, { requireReadiness = false } = {}) => {
     const token = getPlatformToken();
     setLoggingIn(env.clientId);
     try {
-      const res = await fetch(`${BASE_URL}/sws/go/login?userId=${env.adminUserId}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.token) {
-          localStorage.setItem('sf_auth_token', data.token);
-          localStorage.setItem('sf_auth_user', env.adminUserName || env.adminUser || '');
-          if (data.roleList) {
-            localStorage.setItem('sf_auth_rolelist', JSON.stringify(data.roleList));
-            const role = data.roleList[0];
-            if (role) {
-              localStorage.setItem('sf_auth_selected_role', JSON.stringify(role));
-              const org = role.orgList?.find(o => o.name !== '*') || role.orgList?.[0];
-              if (org) {
-                localStorage.setItem('sf_auth_selected_org', JSON.stringify(org));
-              }
-            }
+      const data = await loginEnvironment(fetch, BASE_URL, token, env);
+      if (data.token) {
+        const storageValues = buildEnvironmentSessionStorage(env, data);
+        Object.entries(storageValues).forEach(([key, value]) => localStorage.setItem(key, value));
+
+        if (requireReadiness) {
+          const readiness = await checkSalesInvoiceReadiness(fetch, BASE_URL, data.token);
+          if (!readiness.ready) {
+            setResult({
+              status: 'failed',
+              error: `El entorno se creó, pero todavía no está listo para facturar: ${readiness.failures.join(' ')}`,
+            });
+            return;
           }
-          // Clear all SW caches on login to guarantee fresh resources
-          if ('caches' in window) {
-            try {
-              const names = await caches.keys();
-              await Promise.all(names.map((n) => caches.delete(n)));
-            } catch (err) {
-              console.warn('Failed to clear SW caches during login', err);
-            }
-          }
-          window.location.href = '/dashboard';
-          return;
         }
+
+        // Clear all SW caches on login to guarantee fresh resources
+        if ('caches' in window) {
+          try {
+            const names = await caches.keys();
+            await Promise.all(names.map((n) => caches.delete(n)));
+          } catch (err) {
+            console.warn('Failed to clear SW caches during login', err);
+          }
+        }
+        window.location.href = '/dashboard';
+        return;
       }
       alert('Login failed.');
     } catch (err) {
-      alert('Login error: ' + err.message);
+      if (requireReadiness) {
+        setResult({ status: 'failed', error: err.message });
+      } else {
+        alert('Login error: ' + err.message);
+      }
     } finally {
       setLoggingIn(null);
     }
@@ -638,61 +631,22 @@ export default function OnboardingPage() {
     setRunning(true);
     setResult(null);
     setFormSubmitted(true);
-    setSteps(SETUP_STEPS.map(s => ({ ...s, status: 'pending', ms: null, error: null })));
+    setSteps(initialSetupSteps());
 
     let succeeded = false;
     try {
-      const res = await fetch(`${BASE_URL}/sws/go/onboarding`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          clientName: form.clientName,
-          currency: form.currency,
-          language: form.language,
-          countryCode: form.countryCode,
-        }),
-      });
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (value) buffer += decoder.decode(value, { stream: !done });
-        if (done) buffer += decoder.decode();
-
-        const lines = buffer.split('\n');
-        buffer = done ? '' : lines.pop();
-
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          const msg = JSON.parse(line);
-          if (msg.type === 'result') {
-            const resultObj = {
-              status: msg.success ? 'success' : 'failed',
-              error: msg.success ? null : msg.message,
-            };
-            setResult(resultObj);
-            if (msg.success) succeeded = true;
-          } else if (msg.type === 'progress' && msg.step) {
-            // Map backend status to frontend step status
-            const stepStatus = msg.status === 'in_progress' ? 'running'
-              : msg.status === 'done' ? 'done'
-              : msg.status === 'error' ? 'failed'
-              : msg.status;
-            setSteps(prev => prev.map(s =>
-              s.name === msg.step
-                ? { ...s, status: stepStatus, ms: msg.ms || null, error: msg.status === 'error' ? msg.message : null }
-                : s
-            ));
-          }
+      await runOnboardingStream(fetch, BASE_URL, token, form, (msg) => {
+        if (msg.type === 'result') {
+          const resultObj = {
+            status: msg.success ? 'success' : 'failed',
+            error: msg.success ? null : msg.message,
+          };
+          setResult(resultObj);
+          if (msg.success) succeeded = true;
+        } else if (msg.type === 'progress' && msg.step) {
+          setSteps(prev => applyProgressMessage(prev, msg));
         }
-        if (done) break;
-      }
+      });
     } catch (err) {
       setResult({ status: 'failed', error: err.message });
     } finally {
@@ -704,16 +658,10 @@ export default function OnboardingPage() {
           for (let i = 0; i < attempts; i++) {
             await new Promise(r => setTimeout(r, delay));
             try {
-              const res = await fetch(`${BASE_URL}/sws/go/environments`, {
-                headers: token ? { Authorization: `Bearer ${token}` } : {},
-              });
-              if (res.ok) {
-                const data = await res.json();
-                const envs = data.environments || [];
-                if (envs.length > 0) {
-                  loginToEnvironment(envs[0]);
-                  return;
-                }
+              const envs = await fetchEnvironments(fetch, BASE_URL, token);
+              if (envs.length > 0) {
+                loginToEnvironment(envs[0], { requireReadiness: true });
+                return;
               }
             } catch (err) {
               // retry
@@ -732,8 +680,8 @@ export default function OnboardingPage() {
     { value: 'freelancer', label: 'Autónomo', icon: User },
     { value: 'advisory', label: 'Asesoría', icon: MessageCircle },
   ];
-  const isStepOneValid = form.fullName.trim() && form.countryCode;
-  const isStepTwoValid = form.clientName.trim() && form.fiscalIdValue.trim();
+  const isStepOneValid = isProfileStepValid(form);
+  const isStepTwoValid = isCompanyStepValid(form);
   const setupGreetingName = (form.fullName || accountName || 'Jhon').trim().split(/\s+/)[0];
   const activeSetupStep = steps.find((step) => step.status === 'running')?.name;
   const setupProgressState = result?.status === 'success'

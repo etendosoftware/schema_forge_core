@@ -159,3 +159,27 @@ Runtime onboarding is now validated through a disposable creation attempt and a 
 - Sales Order bridge after onboarding: pass through defaults/callouts and Contact selector selection. Partner Address dependency is wired, but sample data remains thin.
 - Disposable Sales Invoice creation from a fresh onboarded environment: blocked. Missing usable customer/payment-term seed data, broken inline contact creation without `searchKey`, and invoice header save fails with `500` / `Index 0 out of bounds for length 0` when `documentType` remains `0`.
 - `goadmin@etendo.software` run: blocked at `POST /sws/go/login` because the account row has a non-zero client even though `ETGO_Account` is system-client-only.
+
+
+## Schema Forge Automated Coverage Added — 2026-04-27
+
+This repository now covers the Schema Forge onboarding frontend contract without mutating a real Etendo tenant:
+
+- Unit tests for onboarding API request construction and NDJSON stream parsing.
+- Unit tests for onboarding progress/state transitions and environment session storage.
+- Unit tests for Sales Invoice readiness checks after environment login.
+- Mocked Playwright integration test for register → create environment → login environment → readiness check → dashboard redirect.
+- Mocked Playwright negative test that blocks dashboard redirect when invoice readiness is invalid.
+
+These tests intentionally mock `/sws/go/*` and `/sws/neo/*` because the backend endpoints are state-changing and owned outside this repository.
+
+## Delivery Verification Commands — 2026-04-27
+
+- `node --test tools/app-shell/src/pages/onboarding/__tests__/*.test.js` — PASS (`22` tests, `0` failures).
+- `make test` — PASS. The final included onboarding suite reported `22` tests, `0` failures, after the existing CLI and app-shell lib suites completed.
+- `npm run build --workspace=tools/app-shell` — PASS. Vite build completed and generated `dist/` assets; existing chunk-size and `.well-known` warnings remained non-blocking.
+- `cd e2e && npx playwright test tests/flows/onboarding.mocked.spec.js --project=chromium` with the Schema Forge app-shell dev server on `127.0.0.1:3100` — PASS (`2` tests, `0` failures). During the dashboard redirect, Vite logged proxy connection errors for unmocked dashboard widgets because Etendo was intentionally not running; those requests are outside this mocked onboarding contract and did not fail the test.
+
+## QA
+
+- Pending validation by QA: Matías Bernal / Emilio Polliotti

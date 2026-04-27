@@ -187,3 +187,17 @@ Do not extend it to invoice-line UI creation until the tax selector date-format 
 8. Assert `Líneas 1` and `Agua` are visible.
 9. Click `Guardar`.
 10. Assert the invoice remains on `/sales-invoice/<id>` with status `Borrador` and line visible.
+
+
+## Schema Forge Coverage Boundary — 2026-04-27
+
+The mocked Schema Forge integration test proves the frontend onboarding contract and readiness gating: register, environment creation stream handling, environment login storage, Sales Invoice readiness checks, dashboard redirect on success, and visible failure when readiness is invalid.
+
+It does not prove Etendo Go creates the required seed data in a real tenant. That remains backend/runtime validation outside this repository or requires an explicitly approved state-changing E2E run.
+
+Additional Schema Forge unit coverage now exists for:
+
+- onboarding API request construction and NDJSON parsing;
+- onboarding state/progress transformations;
+- environment session storage shape;
+- Sales Invoice readiness checks for session, defaults, payment terms, customers, and invalid `documentType`.
