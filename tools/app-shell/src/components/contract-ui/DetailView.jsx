@@ -1387,7 +1387,7 @@ export function DetailView({
 
               {!hideSaveStatuses.includes(_headerData?.documentStatus) && !isDraftModeCompleted && (draftMode?.enabled ? (
                 <>
-                  <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" data-testid="action-save-draft" disabled={hook.isSaving} onClick={async () => {
+                  <Button variant="outline" size="sm" className="gap-1.5 bg-white text-gray-700 hover:text-gray-700" data-testid="action-save-draft" disabled={hook.isSaving} onClick={async () => {
                     if (!(await flushPendingLines())) return;
                     const saved = await hook.handleSave(data);
                     if (saved?.id && isNew) {
