@@ -5,18 +5,18 @@ import { useUI } from '@/i18n';
 import { resolveDashboardNavigation } from '@/lib/dashboardNavigation.js';
 
 const CATEGORY_MAP = {
-  overdueInvoices:               { category: 'sales',       icon: FileText,    statusKey: 'pendingStatusOverdueInvoices',  labelKey: 'salesCategory'       },
-  overdueInvoices_plural:        { category: 'sales',       icon: FileText,    statusKey: 'pendingStatusOverdueInvoices',  labelKey: 'salesCategory'       },
-  pendingSalesDeliveries:        { category: 'sales',       icon: Truck,       statusKey: 'pendingStatusPendingShipment',  labelKey: 'salesCategory'       },
-  pendingSalesDeliveries_plural: { category: 'sales',       icon: Truck,       statusKey: 'pendingStatusPendingShipment',  labelKey: 'salesCategory'       },
-  collectionsDueToday:           { category: 'collections', icon: DollarSign,  statusKey: 'pendingStatusUnreconciled',     labelKey: 'collectionsCategory' },
-  collectionsDueToday_plural:    { category: 'collections', icon: DollarSign,  statusKey: 'pendingStatusUnreconciled',     labelKey: 'collectionsCategory' },
-  paymentsDueToday:              { category: 'payments',    icon: CreditCard,  statusKey: 'pendingStatusPendingReception', labelKey: 'paymentsCategory'    },
-  paymentsDueToday_plural:       { category: 'payments',    icon: CreditCard,  statusKey: 'pendingStatusPendingReception', labelKey: 'paymentsCategory'    },
-  pendingReceptions:             { category: 'purchases',   icon: ShoppingBag, statusKey: 'pendingStatusPendingReception', labelKey: 'purchasesCategory'   },
-  pendingReceptions_plural:      { category: 'purchases',   icon: ShoppingBag, statusKey: 'pendingStatusPendingReception', labelKey: 'purchasesCategory'   },
-  lowStockAlert:                 { category: 'stock',       icon: Box,         statusKey: 'pendingStatusLowStock',         labelKey: 'stockCategory'       },
-  lowStockAlerts:                { category: 'stock',       icon: Box,         statusKey: 'pendingStatusLowStock',         labelKey: 'stockCategory'       },
+  overdueInvoices:               { category: 'sales',       icon: FileText,    subjectKey: 'pendingSubjectSalesInvoices', stateKey: 'pendingStateOverdue'   },
+  overdueInvoices_plural:        { category: 'sales',       icon: FileText,    subjectKey: 'pendingSubjectSalesInvoices', stateKey: 'pendingStateOverdue'   },
+  pendingSalesDeliveries:        { category: 'sales',       icon: Truck,       subjectKey: 'pendingSubjectShipments',     stateKey: 'pendingStatePending'   },
+  pendingSalesDeliveries_plural: { category: 'sales',       icon: Truck,       subjectKey: 'pendingSubjectShipments',     stateKey: 'pendingStatePending'   },
+  collectionsDueToday:           { category: 'collections', icon: DollarSign,  subjectKey: 'pendingSubjectCollections',   stateKey: 'pendingStateDueToday'  },
+  collectionsDueToday_plural:    { category: 'collections', icon: DollarSign,  subjectKey: 'pendingSubjectCollections',   stateKey: 'pendingStateDueToday'  },
+  paymentsDueToday:              { category: 'payments',    icon: CreditCard,  subjectKey: 'pendingSubjectPayments',      stateKey: 'pendingStateDueToday'  },
+  paymentsDueToday_plural:       { category: 'payments',    icon: CreditCard,  subjectKey: 'pendingSubjectPayments',      stateKey: 'pendingStateDueToday'  },
+  pendingReceptions:             { category: 'purchases',   icon: ShoppingBag, subjectKey: 'pendingSubjectReceptions',    stateKey: 'pendingStatePending'   },
+  pendingReceptions_plural:      { category: 'purchases',   icon: ShoppingBag, subjectKey: 'pendingSubjectReceptions',    stateKey: 'pendingStatePending'   },
+  lowStockAlert:                 { category: 'stock',       icon: Box,         subjectKey: 'pendingSubjectStock',         stateKey: 'pendingStateLowStock'  },
+  lowStockAlerts:                { category: 'stock',       icon: Box,         subjectKey: 'pendingSubjectStock',         stateKey: 'pendingStateLowStock'  },
 };
 
 const STATUS_BADGE_STYLES = {
@@ -33,7 +33,7 @@ function resolveTaskMeta(task) {
   const meta = key && CATEGORY_MAP[key];
   if (meta) return meta;
   console.warn('[PendingTasksRail] Unknown taskKey:', key, task);
-  return { category: 'other', icon: Circle, statusKey: null, labelKey: null };
+  return { category: 'other', icon: Circle, subjectKey: null, stateKey: null };
 }
 
 export function PendingTasksRail({ tasks = [] }) {
@@ -88,8 +88,8 @@ export function PendingTasksRail({ tasks = [] }) {
               const meta = resolveTaskMeta(task);
               const Icon = meta.icon;
               const target = resolveDashboardNavigation(task.navigation) || task.link || '/dashboard';
-              const categoryLabel = meta.labelKey ? ui(meta.labelKey) : task.text;
-              const statusLabel   = meta.statusKey ? ui(meta.statusKey) : task.text;
+              const subjectLabel = meta.subjectKey ? ui(meta.subjectKey) : task.text;
+              const stateLabel   = meta.stateKey   ? ui(meta.stateKey)   : task.text;
               const badgeStyle    = STATUS_BADGE_STYLES[meta.category] || STATUS_BADGE_STYLES.other;
 
               return (
@@ -111,7 +111,7 @@ export function PendingTasksRail({ tasks = [] }) {
                       <Icon className="h-3.5 w-3.5" style={{ color: '#3F3F50' }} />
                     </div>
                     <span className="text-sm font-normal truncate" style={{ color: '#3F3F50' }}>
-                      {categoryLabel}
+                      {subjectLabel}
                     </span>
                   </div>
 
@@ -127,7 +127,7 @@ export function PendingTasksRail({ tasks = [] }) {
                       className="inline-flex self-start items-center rounded-full border px-2.5 py-0.5 text-xs font-medium"
                       style={badgeStyle}
                     >
-                      {statusLabel}
+                      {stateLabel}
                     </span>
                   </div>
                 </Link>
