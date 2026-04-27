@@ -19,9 +19,9 @@ Let a sales user prepare a customer quotation, review commercial terms before co
 - Visibility: visible from the Sales menu under the Commercial section.
 - Implementation type: custom window wrapper over the generated quotation page.
 - Window shape: master-child, with `quotation` as the header entity and `quotationLine` as the child entity.
-- List interaction: the list shows document number, quotation date, business partner, validity date, document status, and gross total, with filters for those same business fields.
+- List interaction: the custom wrapper injects a `CustomQuotationTable` (with `dot: false` on the date column) and a `labelOverrides` that maps `DateOrdered` → "Quotation Date" / "Fecha cotización", overriding the global locale label "Order Date". The visible columns, in order, are: Quotation Date (no dot indicator), Document No., Business Partner, Document Status, Valid Until, and Total Gross Amount. `Valid Until` is placed between Document Status and Total Gross Amount on purpose, so the validity date is adjacent to the total and the user can triage each row by deciding whether the total is still actionable.
 - Record interaction: the detail page shows the quotation header form, a child lines table and line form, summary amounts, record status, top-bar actions, and a Related Documents tab.
-- Available record-level affordances in current evidence: duplicate and cancel menu entries, a send-document button, a draft-only send-to-evaluation modal trigger, and an under-evaluation confirmation modal trigger.
+- Available record-level affordances in current evidence: duplicate and cancel menu entries, a send-document button, and a draft-only confirmation button.
 
 ## Reactive behavior and dependencies
 
@@ -30,39 +30,36 @@ Let a sales user prepare a customer quotation, review commercial terms before co
 - Header defaulting and callouts: the contract keeps business-partner, address, price-list, order-date, and valid-until callouts. Current evidence supports customer-driven address and price-list autofill expectations, and it still records an intended default of `validUntil = orderDate + 30 days` for new quotations.
 - Pricing dependency: line product selection is expected to auto-fill unit price and tax from the active price list according to the retained `Product_AutoFill_Price` rule.
 - Line recalculation: quantity, unit price, and discount are expected to recalculate line amounts through the retained `Line_Calc_NetAmount` callout, and saved lines are expected to refresh header totals through the retained `Line_Recalc_Totals` handler.
-- Status-driven behavior now follows two visible modal steps. In `DR`, the primary top-bar action opens `SendToEvaluationModal`, POSTs `DocAction`, then closes and reloads the page. In `UE`, the primary action opens `QuotationConfirmModal`, which can create an order through `Convertquotation` or create a draft invoice through `createDraftInvoice`.
-- Order conversion has an extra observable follow-up in the custom flow: after creating the sales order, the modal queries the new order and best-effort reactivates it back to `DR` when the backend auto-completes it. Users therefore may land on a downstream order shown as draft even though the conversion path started from quotation confirmation.
-- Menu configuration now exposes `Cancel` for both `CO` and `UE`, but the generated detail page still wires that menu action to an empty handler. The entry is visible; the business effect is not implemented in the inspected UI layer.
+- Status-driven behavior: editable header fields become read-only when the quotation is processed, the draft-only confirmation button only appears when `documentStatus === 'DR'`, and the generated detail page hides delete/print affordances for completed records.
 - Related downstream behavior: the Related Documents tab is intended to surface sales orders and invoices tied to the quotation so the user can navigate into fulfillment and billing from the quotation record.
 - Current visible evidence does not show inline formulas or client-side calculators for discount, tax, or totals; the observable design is server-driven recalculation after selector, callout, save, and modal action flows.
 
 ## Gap assessment
 
-- Duplicate and Cancel are exposed as menu actions in the detail page, but the generated page still wires both to empty `onClick` handlers. Their presence is visible; their actual behavior remains a gap.
-- The draft-invoice path is clearly user-visible in `QuotationConfirmModal`, but the curated decisions still center the quotation-to-order process. Treat draft invoice creation as a custom overlay behavior backed by code, not as a baseline generated-window contract.
+- Duplicate and Cancel are exposed as menu actions in the detail page, but the generated page currently wires both to empty `onClick` handlers. Their presence is visible; their actual behavior is a gap.
+- The detail page includes a draft-only confirmation modal that can create an order or draft invoice, but the documented core conversion rule kept in decisions is specifically quotation-to-order. Draft-invoice creation exists in custom code, yet its business contract is not clearly documented in the curated decisions, so that downstream path remains an open ambiguity.
 - Discount, tax, line gross amount, total net amount, and total gross amount are all present in the schema, and retained rules imply recalculation, but there is no browser automation proving how quickly those values refresh or whether they update before save versus only after backend round-trips. That reaction timing is a gap.
-- The decisions file keeps a rule that should default `validUntil` from `orderDate`, but the repo evidence reviewed here does not prove that default at browser level. The intended validity-date default therefore remains partially inferred.
-- Related documents are clearly enabled for orders, but invoice lookup still depends on quotation-linked downstream data being resolved the way the custom tab expects. Invoice visibility from the quotation tab remains an open ambiguity until exercised against real data.
+- The decisions file keeps a rule that should default `validUntil` from `orderDate`, but the generated form only shows `orderDate` with an explicit default value. The intended validity-date default is therefore not clearly evidenced in the current UI layer.
+- Related documents are clearly enabled for orders, but invoice lookup currently queries sales invoices by `salesOrder` using the quotation record id. That may work only if backend linkage matches this assumption; otherwise invoice visibility from the quotation tab is an open ambiguity.
+- The line form exposes discount and tax fields, but the current evidence does not show whether price-list changes on the header force existing lines to recalculate. If users expect quotation-wide repricing after changing the header price list, that behavior is not clearly evidenced.
 
 ## Manual verification
 
 1. Open `/sales-quotation` and confirm the list exposes quotation-focused columns and filters rather than a generic placeholder workspace.
-2. Create a draft quotation and verify that the header now exposes `Price List`, `Valid Until`, `Payment Method`, and `Payment Terms` as visible form fields.
-3. Select a business partner and verify that the partner-address selector becomes scoped to that customer.
-4. Set or change the price list, add a line, choose a product, and verify unit price and tax are populated or recalculated as expected for that quotation context.
-5. While the quotation is still in `DR`, click the primary top-bar action and verify the send-to-evaluation modal appears, shows quotation totals/line count, and reloads the page into `Under Evaluation` after confirmation.
-6. While the quotation is in `UE`, click the primary top-bar action again and verify the confirmation modal offers downstream order creation and draft-invoice creation.
-7. Use the under-evaluation confirmation flow to create a downstream document, then verify whether the created order opens in draft after the best-effort reactivation step and whether the quotation remains usable afterward.
-8. Open Related Documents after downstream conversion and verify that order chips appear, invoice chips appear when applicable, and each chip navigates to the correct route.
-9. Check Duplicate and Cancel from the record menu and confirm whether they perform a real action or remain non-functional placeholders.
+2. Create a draft quotation and verify that selecting a business partner narrows the partner-address selector to that customer.
+3. Set or change the price list, add a line, choose a product, and verify unit price and tax are populated or recalculated as expected for that quotation context.
+4. Change quantity, unit price, and discount on a line and verify whether line gross amount, total net amount, and total gross amount refresh immediately, on save, or only after record reload.
+5. While the quotation remains in draft, confirm the top bar shows the quotation confirmation action and the send-document action.
+6. Use the confirmation flow to create a downstream document, then verify whether the resulting order or invoice opens in the expected status and whether the quotation remains usable afterward.
+7. Open Related Documents after downstream conversion and verify that order chips appear, invoice chips appear when applicable, and each chip navigates to the correct route.
+8. Check Duplicate and Cancel from the record menu and confirm whether they perform a real action or remain non-functional placeholders.
 
 ## Automated evidence
 
 - App-shell route loading for generated/custom windows is documented in `docs/generated-custom-windows/app-shell-functional-flows.md`.
 - Menu visibility for Sales Quotation is grounded in `tools/app-shell/src/menu.json`.
 - Window registration is grounded in `tools/app-shell/src/windows/registry.js`, where `sales-quotation` resolves to a custom wrapper over the generated window.
-- Header/line fields, selectors, statuses, actions, and retained callout/process expectations are grounded in `origin/develop:artifacts/sales-quotation/contract.json` and `origin/develop:artifacts/sales-quotation/decisions.json` at merge commit `36f10538`.
-- Visible header-field changes are grounded in `origin/develop:artifacts/sales-quotation/generated/web/sales-quotation/QuotationForm.jsx` at `36f10538`, where `validUntil` and `paymentTerms` are part of the principal form.
-- The draft `DR -> UE` modal flow is grounded in `origin/develop:artifacts/sales-quotation/custom/QuotationTopbarActions.jsx`, `origin/develop:artifacts/sales-quotation/custom/SendToEvaluationModal.jsx`, and `origin/develop:artifacts/sales-quotation/custom/__tests__/SendToEvaluationModal.test.js` at `36f10538`.
-- The `UE -> order|draft invoice` conversion flow is grounded in `origin/develop:artifacts/sales-quotation/custom/QuotationConfirmModal.jsx` at `36f10538`.
-- Detail-page composition, related-documents wiring, and the still-empty duplicate/cancel handlers are grounded in `origin/develop:artifacts/sales-quotation/generated/web/sales-quotation/QuotationPage.jsx` at `36f10538`.
+- Header/line fields, selectors, actions, related-documents enablement, and retained callout/process expectations are grounded in `artifacts/sales-quotation/contract.json` and `artifacts/sales-quotation/decisions.json`.
+- Detail-page composition, including related-documents tab, top-bar actions, summary fields, hidden print/delete behavior, and currently empty duplicate/cancel handlers, is grounded in `artifacts/sales-quotation/generated/web/sales-quotation/QuotationPage.jsx`.
+- Draft-only confirmation and send-document behavior are grounded in `artifacts/sales-quotation/custom/QuotationTopbarActions.jsx` and `artifacts/sales-quotation/custom/QuotationConfirmModal.jsx`.
+- The only quotation-specific automated test evidence currently observed is source-shape coverage for the top-bar actions component in `artifacts/sales-quotation/custom/__tests__/QuotationTopbarActions.test.js`; no browser-level automation was found for pricing reactions, conversion flow, or related-documents navigation.

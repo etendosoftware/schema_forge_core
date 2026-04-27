@@ -93,7 +93,7 @@ export default function SendToEvaluationModal({
             &times;
           </button>
           <div style={{ fontSize: 10, color: '#9CA3AF', letterSpacing: '0.04em', marginBottom: 8 }}>
-            Quotation #{documentNo}
+            {ui('quotationDocumentLabel')} #{documentNo}
           </div>
           <div style={{
             background: '#E6F1FB', border: '0.5px solid #B5D4F4', borderRadius: 10,

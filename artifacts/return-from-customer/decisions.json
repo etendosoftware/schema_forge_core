@@ -10,8 +10,12 @@
     "relatedDocuments": true,
     "hideDeleteWhenComplete": true,
     "processOverrides": {
-      "documentAction": { "label": "Complete Return", "displayLogicRaw": "@documentStatus@='DR'" }
+      "documentAction": {
+        "label": "Complete Return",
+        "displayLogicRaw": "@documentStatus@='DR'"
     }
+    },
+    "dateFilterKey": "orderDate"
   },
   "entities": {
     "cOrder": {

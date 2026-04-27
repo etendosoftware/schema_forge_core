@@ -7,7 +7,7 @@ const columns = [
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string', label: 'Business Partner' },
   { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'string', label: 'Partner Address' },
   { key: 'movementDate', column: 'MovementDate', type: 'date', label: 'Movement Date' },
-  { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
+  { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status', display: 'dot' },
   { key: 'invoiced', column: 'Iscompletelyinvoiced', type: 'boolean', label: 'Completely Invoiced', badge: true, badgeLabels: {"true":"Invoiced","false":"Pending"} },
 ];
 // @sf-generated-end columns:goodsShipment

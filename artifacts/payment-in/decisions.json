@@ -4,7 +4,9 @@
     "category": "finance",
     "name": "Payment In",
     "salesTheme": true,
-    "documentPreview": { "titlePrefix": "Payment" },
+    "documentPreview": {
+      "titlePrefix": "Payment"
+    },
     "relatedDocuments": true,
     "notesField": "description",
     "customComponents": {
@@ -16,15 +18,40 @@
     "hideDeleteWhenComplete": true,
     "summaryFields": [],
     "menuActions": [
-      { "key": "reverse", "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR", "RDNC"], "columnName": "aPRMReversePayment" }
+      {
+        "key": "reverse",
+        "label": "Reverse Payment",
+        "destructive": true,
+        "visibleWhenStatus": [
+          "RPPC",
+          "RPR",
+          "RDNC"
+        ],
+        "columnName": "aPRMReversePayment"
+      }
     ],
     "processOverrides": {
-      "aPRMProcessPayment": { "add": true, "label": "Process Payment", "style": "positive", "columnName": "aPRMProcessPayment", "displayLogicRaw": "@status@='RPAP'" },
-      "aPRMAddScheduledpayments": { "exclude": true },
-      "aprmExecutepayment": { "exclude": true },
-      "aPRMReversePayment": { "exclude": true },
-      "aPRMReconcilePayment": { "exclude": true }
-    }
+      "aPRMProcessPayment": {
+        "add": true,
+        "label": "Process Payment",
+        "style": "positive",
+        "columnName": "aPRMProcessPayment",
+        "displayLogicRaw": "@status@='RPAP'"
+      },
+      "aPRMAddScheduledpayments": {
+        "exclude": true
+      },
+      "aprmExecutepayment": {
+        "exclude": true
+      },
+      "aPRMReversePayment": {
+        "exclude": true
+      },
+      "aPRMReconcilePayment": {
+        "exclude": true
+      }
+    },
+    "dateFilterKey": "paymentDate"
   },
   "entities": {
     "header": {

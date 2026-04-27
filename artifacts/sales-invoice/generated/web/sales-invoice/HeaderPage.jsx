@@ -19,7 +19,6 @@ const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
-  { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
 ];
 
 const statusField = 'documentStatus';
@@ -50,7 +49,7 @@ const addLineFields = {
     { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
     { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity', defaultValue: 1 },
     { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'search', label: 'Tax', reference: 'Tax', inputMode: 'search' },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector' },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
@@ -169,7 +168,7 @@ export const api = {
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
-      "inputMode": "search",
+      "inputMode": "selector",
       "url": "/sws/neo/sales-invoice/lines/selectors/tax"
     },
     {
@@ -302,18 +301,18 @@ export const api = {
     },
     {
       "entity": "header",
-      "field": "processNow",
-      "column": "Processing",
-      "url": "/sws/neo/sales-invoice/header/{id}/action/processNow",
-      "processId": "111",
-      "processType": "classic"
-    },
-    {
-      "entity": "header",
       "field": "generateTo",
       "column": "GenerateTo",
       "url": "/sws/neo/sales-invoice/header/{id}/action/generateTo",
       "processId": "142",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "processNow",
+      "column": "Processing",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/processNow",
+      "processId": "111",
       "processType": "classic"
     },
     {
@@ -427,7 +426,8 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         topbarRight={InvoiceTopbarExtra}
         menuActions={({ status }) => [
           { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
-          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
+          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', labelKey: 'cancel', onClick: () => {}, },
+          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
         ]}
         draftMode={draftMode}
         salesTheme
@@ -444,6 +444,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="invoiceDate"
       hidePrint
       {...props}
     />

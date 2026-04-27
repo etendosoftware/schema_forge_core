@@ -12,35 +12,52 @@
       {
         "key": "cancel",
         "label": "Cancel",
+        "labelKey": "cancel",
         "destructive": true,
         "visibleWhenStatus": "CO"
+      },
+      {
+        "key": "reactivate",
+        "label": "Reactivate",
+        "labelKey": "reactivate",
+        "visibleWhenStatus": "CO",
+        "documentAction": "RE",
+        "successKey": "actionCompleted"
       }
     ],
     "processOverrides": {},
     "customComponents": {
       "topbarRight": "OrderCreateInvoice",
-      "topbarExtra": "OrderDraftChips"
+      "topbarExtra": "OrderDraftChips",
+      "bulkActions": "OrderReactivateBulkAction"
     },
     "labelOverrides": {
       "es_ES": {
-        "C_BPartner_ID": "Contacto"
+        "C_BPartner_ID": "Contacto",
+        "DeliveryStatus": "Estado de entrega"
       },
       "en_US": {
-        "C_BPartner_ID": "Contact"
+        "C_BPartner_ID": "Contact",
+        "DeliveryStatus": "Delivery Status"
       }
     },
-    "noHeaderBorder": true
+    "noHeaderBorder": true,
+    "dateFilterKey": "orderDate"
   },
   "entities": {
     "header": {
       "javaQualifier": "salesOrderHeaderHandler",
       "draftMode": {
-        "enabled": false
+        "enabled": true,
+        "processField": "documentAction",
+        "processValue": "CO",
+        "label": "soConfirmBtn"
       },
       "fields": {
         "documentNo": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 2,
           "searchable": true,
           "section": "principal",
           "seq": 2
@@ -48,6 +65,7 @@
         "documentStatus": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 4,
           "searchable": true,
           "form": false
         },
@@ -89,6 +107,7 @@
         },
         "businessPartner": {
           "grid": true,
+          "gridOrder": 3,
           "searchable": true,
           "reference": "BusinessPartner",
           "displayLogic": null,
@@ -150,6 +169,7 @@
         },
         "orderDate": {
           "grid": true,
+          "gridOrder": 1,
           "searchable": true,
           "section": "principal",
           "seq": 3
@@ -176,6 +196,7 @@
         "grandTotalAmount": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 5,
           "section": "summary"
         },
         "summedLineAmount": {
@@ -219,6 +240,7 @@
         "deliveryStatus": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 7,
           "form": false,
           "columnType": "percent",
           "label": "Shipment Status"
@@ -226,6 +248,7 @@
         "invoiceStatus": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 6,
           "form": false,
           "columnType": "percent"
         },
@@ -269,9 +292,12 @@
         "product": {
           "grid": true,
           "searchable": true,
+          "lookup": true,
           "section": "principal",
+          "inputMode": "search",
           "order": 1,
-          "gridOrder": 1
+          "gridOrder": 1,
+          "forceCalloutFields": ["unitPrice", "tax", "uOM", "grossUnitPrice"]
         },
         "orderedQuantity": {
           "grid": true,
@@ -304,6 +330,7 @@
           "form": false
         },
         "lineNetAmount": {
+          "visibility": "system",
           "grid": false,
           "form": false
         },
@@ -313,7 +340,7 @@
           "section": "principal",
           "order": 6,
           "gridOrder": 6,
-          "inputMode": "search"
+          "inputMode": "selector"
         },
         "listPrice": {
           "visibility": "discarded"

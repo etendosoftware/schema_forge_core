@@ -222,6 +222,7 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="paymentDate"
       {...props}
       onNew={() => setShowNewModal(true)}
     />

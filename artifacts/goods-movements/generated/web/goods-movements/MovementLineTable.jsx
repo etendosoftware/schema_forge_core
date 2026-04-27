@@ -3,11 +3,11 @@ import { DataTable } from '@/components/contract-ui';
 // @sf-generated-start columns:movementLine
 const columns = [
   { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.' },
-  { key: 'product', column: 'M_Product_ID', type: 'string', label: 'Product' },
+  { key: 'product', column: 'M_Product_ID', type: 'selector', label: 'Product' },
   { key: 'movementQuantity', column: 'MovementQty', type: 'number', label: 'Movement Quantity' },
-  { key: 'uOM', column: 'C_UOM_ID', type: 'string', label: 'UOM' },
-  { key: 'storageBin', column: 'M_Locator_ID', type: 'string', label: 'Storage Bin' },
-  { key: 'newStorageBin', column: 'M_LocatorTo_ID', type: 'string', label: 'New Storage Bin' },
+  { key: 'uOM', column: 'C_UOM_ID', type: 'selector', label: 'UOM' },
+  { key: 'storageBin', column: 'M_Locator_ID', type: 'selector', label: 'Storage Bin' },
+  { key: 'newStorageBin', column: 'M_LocatorTo_ID', type: 'selector', label: 'New Storage Bin' },
 ];
 // @sf-generated-end columns:movementLine
 

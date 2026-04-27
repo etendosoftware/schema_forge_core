@@ -11,6 +11,7 @@ import { useEntity } from '@/hooks/useEntity';
 import { useCatalogs } from '@/hooks/useCatalogs';
 import { useDisplayLogic } from '@/hooks/useDisplayLogic';
 import { useCallout } from '@/hooks/useCallout';
+import { useDocumentAction } from '@/hooks/useDocumentAction';
 import { useMenuLabel, useUI, useLocale } from '@/i18n';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
@@ -123,6 +124,7 @@ export function DetailView({
   sidePanelStyle = null,
   afterTotals = null,
   bottomSection = null,
+  linesEmptyState = null,
   topbarExtra = null,
   topbarRight = null,
   statusFieldLabel = null,
@@ -145,7 +147,7 @@ export function DetailView({
   // the effect falls through to fetchById. Skipping the list fetch unconditionally drops one
   // wasted GET per direct-URL navigation.
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl, skipListFetch: true });
-  const LinesEmptyState = bottomSection?.linesEmptyState ?? null;
+  const LinesEmptyState = linesEmptyState ?? bottomSection?.linesEmptyState ?? null;
   const DetailExtraActions = bottomSection?.detailExtraActions ?? null;
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls).
   // Secondary hooks only consume child-level state (children, handleAddChild, handleDeleteChild,
@@ -190,13 +192,17 @@ export function DetailView({
       // DateInvoiced is required by the C_Tax validationRule:
       // VALIDFROM <= COALESCE(@DateInvoiced@, @DateOrdered@)
       // Without it, COALESCE(null,null)=null → VALIDFROM<=null is always FALSE → no taxes returned.
+      // Etendo Classic's PL/pgSQL to_date() expects DD-MM-YYYY, so the ISO date from the
+      // header (YYYY-MM-DD) must be reformatted before being sent as a context param.
       const headerSnapshot = hook.selected ?? hook.editing;
       const invoiceDate = headerSnapshot?.invoiceDate ?? headerSnapshot?.orderDate ?? null;
+      const isoMatch = typeof invoiceDate === 'string' ? invoiceDate.match(/^(\d{4})-(\d{2})-(\d{2})/) : null;
+      const dateInvoicedParam = isoMatch ? `${isoMatch[3]}-${isoMatch[2]}-${isoMatch[1]}` : invoiceDate;
       next[detailEntity] = {
         parentId: parentRecordId,
         ...(isSOTrx ? { isSOTrx, IsSOTrx: isSOTrx } : {}),
         ...(priceListId ? { priceList: priceListId } : {}),
-        ...(invoiceDate ? { DateInvoiced: invoiceDate } : {}),
+        ...(dateInvoicedParam ? { DateInvoiced: dateInvoicedParam } : {}),
       };
     }
     for (const key of secondaryTabKeysStr.split('|').filter(Boolean)) {
@@ -207,6 +213,8 @@ export function DetailView({
   const { catalogs, catalogsLoaded } = useCatalogs(api, token, apiBaseUrl, staticCatalogs);
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
+  const docAction = useDocumentAction({ apiBaseUrl, entity, token });
+  const [actionFeedback, setActionFeedback] = useState(null); // { type: 'error'|'success', message }
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -216,6 +224,7 @@ export function DetailView({
   const dictionary = useLocale();
   const [addingLine, setAddingLine] = useState(false);
   const [addingSecondaryLine, setAddingSecondaryLine] = useState({});
+  const [forceOpenImport, setForceOpenImport] = useState(false);
   // Imperative handles to in-progress inline add rows so we can commit them
   // before header save (mirrors clicking the green check on an editing line).
   const primaryAddRowRef = useRef(null);
@@ -330,6 +339,32 @@ export function DetailView({
   // Avoids repeated API calls when the same tax appears on multiple lines.
   const taxRateCacheRef = useRef({});
 
+  // When a sidebar line is selected, seed taxRateCacheRef from its saved values so that
+  // subsequent unitPrice / orderedQuantity changes can resolve taxFactor via source 2 (cache)
+  // without needing a network round-trip. Uses lineGrossAmount÷(qty×price) for order lines
+  // (which lack lineNetAmount) and grossAmount÷lineNetAmount for invoice lines.
+  useEffect(() => {
+    if (!selectedLine) return;
+    const taxId = selectedLine.tax;
+    if (!taxId || taxRateCacheRef.current[taxId] != null) return;
+    let rate = null;
+    const gross = parseFloat(String(selectedLine.grossAmount ?? selectedLine.lineGrossAmount ?? '')) || 0;
+    if (gross > 0) {
+      const net = parseFloat(String(selectedLine.lineNetAmount ?? '')) || 0;
+      if (net > 0) {
+        rate = (gross / net - 1) * 100;
+      } else {
+        const qty   = parseFloat(String(selectedLine.orderedQuantity ?? selectedLine.invoicedQuantity ?? '')) || 0;
+        const price = parseFloat(String(selectedLine.unitPrice ?? '')) || 0;
+        const lineNet = qty * price;
+        if (lineNet > 0) rate = (gross / lineNet - 1) * 100;
+      }
+    }
+    if (rate != null && rate >= 0) {
+      taxRateCacheRef.current[taxId] = rate;
+    }
+  }, [selectedLine]);
+
   const isNew = recordId === 'new';
   const currentItem = useMemo(() => {
     if (isNew) return null;
@@ -355,6 +390,19 @@ export function DetailView({
     navigate(location.pathname, { replace: true, state: {} });
   }, [location.state?.openAddLine, isNew, hook.editing, navigate, location.pathname]);
 
+  // Auto-open import modal after header auto-save navigation (openImportModal flag in route state).
+  const handledOpenImportRef = useRef(false);
+  useEffect(() => {
+    if (!location.state?.openImportModal || isNew || !hook.editing) {
+      handledOpenImportRef.current = false;
+      return;
+    }
+    if (handledOpenImportRef.current) return;
+    handledOpenImportRef.current = true;
+    setForceOpenImport(true);
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.state?.openImportModal, isNew, hook.editing, navigate, location.pathname]);
+
   // Save header first (if new), then open add-line form.
   const handleAddLineClick = useCallback(async () => {
     if (isNew) {
@@ -369,6 +417,22 @@ export function DetailView({
     }
     setAddingLine(prev => !prev);
     setEditingChild(null);
+  }, [isNew, hook, navigate, windowName]);
+
+  // Save header first (if new → navigate with flag; if existing → save in place), then open import modal.
+  const handleImportClick = useCallback(async () => {
+    if (isNew) {
+      const saved = await hook.handleSave();
+      if (!saved?.id) return false;
+      hook.primeSaved?.(saved);
+      navigate(`/${windowName}/${saved.id}`, {
+        replace: true,
+        state: { openImportModal: true, justSaved: saved },
+      });
+      return false;
+    }
+    await hook.handleSave();
+    return true;
   }, [isNew, hook, navigate, windowName]);
 
   const handleSecondaryAddLineToggle = useCallback(async (tabKey) => {
@@ -656,11 +720,19 @@ export function DetailView({
       // omits netUnitPrice (net price). Fetch the real tax rate from the Etendo DAL REST API
       // so the backend receives a valid netUnitPrice instead of null/0 at save time.
       if (result.grossUnitPrice != null && result.netUnitPrice == null) {
-        // Derive net price from gross using taxFactor from existing saved lines.
-        // Avoids DAL fetch which may not be available in all environments.
         const taxId = result.tax;
         let taxFactor = null;
-        if (taxId) {
+        // Source A: taxRate returned by the callout (covers fresh orders with no saved lines)
+        const calloutRate = parseFloat(String(result.taxRate ?? ''));
+        if (!isNaN(calloutRate) && calloutRate > 0) {
+          taxFactor = 1 + calloutRate / 100;
+        }
+        // Source B: cache from a previous callout for the same tax
+        if (taxFactor === null && taxId && taxRateCacheRef.current[taxId] != null) {
+          taxFactor = 1 + taxRateCacheRef.current[taxId] / 100;
+        }
+        // Source C: derive from existing saved lines
+        if (taxFactor === null && taxId) {
           const ref = (hook.children || []).find(l =>
             l.tax === taxId &&
             parseFloat(String(l.grossAmount ?? '')) > 0 &&
@@ -708,16 +780,23 @@ export function DetailView({
         // For product-field changes: unitPrice was already injected into rowValues by the selector
         // item mapping before the callout ran, so we can compute lineNet from rowValues directly.
         let lineNet;
-        if (field === 'invoicedQuantity' || field === 'unitPrice') {
-          const qty   = parseFloat(field === 'invoicedQuantity' ? value : rowValues.invoicedQuantity) || 0;
-          const price = parseFloat(field === 'unitPrice'        ? value : rowValues.unitPrice)        || 0;
+        if (field === 'invoicedQuantity' || field === 'orderedQuantity') {
+          const qty   = parseFloat(value) || 0;
+          const price = parseFloat(String(rowValues.unitPrice ?? '')) || 0;
+          lineNet = qty > 0 && price > 0 ? qty * price : 0;
+        } else if (field === 'unitPrice') {
+          const qty   = parseFloat(String(rowValues.invoicedQuantity || rowValues.orderedQuantity || '')) || 0;
+          const price = parseFloat(value) || 0;
           lineNet = qty > 0 && price > 0 ? qty * price : 0;
         } else if (field === 'product') {
-          const qty   = parseFloat(String(rowValues.invoicedQuantity ?? '')) || 0;
+          const qty   = parseFloat(String(rowValues.invoicedQuantity || rowValues.orderedQuantity || '')) || 0;
           const price = parseFloat(String(rowValues.unitPrice ?? '')) || 0;
           lineNet = qty > 0 && price > 0 ? qty * price : 0;
         } else {
-          lineNet = parseFloat(String(result.lineNetAmount ?? rowValues.lineNetAmount ?? '')) || 0;
+          lineNet = parseFloat(String(
+            result.lineNetAmount ?? result.lineNetAmt ??
+            rowValues.lineNetAmount ?? rowValues.lineNetAmt ?? ''
+          )) || 0;
         }
 
         if (lineNet > 0) {
@@ -742,7 +821,21 @@ export function DetailView({
             }
           }
 
-          // 2. Derive taxFactor from the current row's saved values (sidebar case).
+          // 2. Cached rate from a previous callout for the same tax.
+          //    Must run before the gross/net ratio sources (3 and 4) because those ratios become
+          //    wrong for qty/price changes: after the first qty change our code updates grossAmount
+          //    (total line gross) while lineNetAmount still holds the per-unit value from the
+          //    product callout, making gross/net ≠ taxFactor (e.g. 29.04/12 = 2.42 instead of 1.21).
+          //    The cache was populated by source 0 during product selection and is always reliable.
+          if (taxFactor === null && effectiveTaxId) {
+            const cachedRate = taxRateCacheRef.current[effectiveTaxId];
+            if (cachedRate != null) {
+              taxFactor = 1 + cachedRate / 100;
+            }
+          }
+
+          // 3. Derive taxFactor from the current row's saved values (sidebar case — persisted
+          //    grossAmount and lineNetAmount are both totals so their ratio equals taxFactor).
           if (taxFactor === null) {
             const savedGross = parseFloat(String(rowValues.grossAmount ?? '')) || 0;
             const savedNet   = parseFloat(String(rowValues.lineNetAmount ?? '')) || 0;
@@ -751,29 +844,52 @@ export function DetailView({
             }
           }
 
-          // 3. Find any saved line with the same tax that has both amounts (add-row case).
+          // 4. Find any saved line with the same tax that has both amounts.
+          //    Covers two cases:
+          //    a) Invoice lines: grossAmount + lineNetAmount are both total amounts → their ratio = taxFactor.
+          //    b) Order lines: lineGrossAmount is the only gross field; lineNetAmount is absent.
+          //       Derive taxFactor from lineGrossAmount / (orderedQuantity × unitPrice) using the
+          //       SAVED values from hook.children (original DB data, not the user's current edits).
+          //       This is the fix for the sidebar: when the user changes unitPrice, rowValues already
+          //       has the new price so we can't recompute taxFactor from it — the saved line does.
           if (taxFactor === null && effectiveTaxId) {
-            const ref = (hook.children || []).find(l =>
-              l.tax === effectiveTaxId &&
-              parseFloat(String(l.grossAmount ?? '')) > 0 &&
-              parseFloat(String(l.lineNetAmount ?? '')) > 0
-            );
+            const ref = (hook.children || []).find(l => {
+              if (l.tax !== effectiveTaxId) return false;
+              const gross = parseFloat(String(l.grossAmount ?? l.lineGrossAmount ?? '')) || 0;
+              if (gross <= 0) return false;
+              const net = parseFloat(String(l.lineNetAmount ?? '')) || 0;
+              if (net > 0) return true;
+              const qty   = parseFloat(String(l.orderedQuantity ?? l.invoicedQuantity ?? '')) || 0;
+              const price = parseFloat(String(l.unitPrice ?? '')) || 0;
+              return qty > 0 && price > 0;
+            });
             if (ref) {
-              taxFactor = parseFloat(String(ref.grossAmount)) / parseFloat(String(ref.lineNetAmount));
-            }
-          }
-
-          // 4. Cached rate from a previous callout for the same tax (e.g., user changes qty
-          //    after already selecting the product — source 0 already cached the rate).
-          if (taxFactor === null && effectiveTaxId) {
-            const cachedRate = taxRateCacheRef.current[effectiveTaxId];
-            if (cachedRate != null) {
-              taxFactor = 1 + cachedRate / 100;
+              const gross = parseFloat(String(ref.grossAmount ?? ref.lineGrossAmount ?? '')) || 0;
+              const net   = parseFloat(String(ref.lineNetAmount ?? '')) || 0;
+              if (net > 0) {
+                taxFactor = gross / net;
+              } else {
+                const qty      = parseFloat(String(ref.orderedQuantity ?? ref.invoicedQuantity ?? '')) || 0;
+                const price    = parseFloat(String(ref.unitPrice ?? '')) || 0;
+                const discount = parseFloat(String(ref.discount ?? '')) || 0;
+                const lineNet  = qty * price * (discount > 0 ? (1 - discount / 100) : 1);
+                if (lineNet > 0) taxFactor = gross / lineNet;
+              }
             }
           }
 
           if (taxFactor !== null) {
             result.grossAmount = parseFloat((lineNet * taxFactor).toFixed(2));
+            // Order lines use lineGrossAmount (same concept, different field name).
+            // For qty/price changes we ALWAYS override: SL_Order_Amt returns
+            // prevLineGrossAmount × newQty instead of qty × unitPrice × taxFactor,
+            // because it misinterprets the form's total lineGrossAmount as a unit price.
+            // For product selection the callout correctly computes the value, so keep it
+            // unless it came back null/0.
+            const forceLineGross = field === 'orderedQuantity' || field === 'invoicedQuantity' || field === 'unitPrice';
+            if (forceLineGross || result.lineGrossAmount == null || Number(result.lineGrossAmount) === 0) {
+              result.lineGrossAmount = result.grossAmount;
+            }
           }
 
           // Resolve tax$_identifier from existing lines if callout didn't include it.
@@ -796,8 +912,13 @@ export function DetailView({
       // SL_Order_Amt to compute lineNetAmount = unitPrice * qty (and, for gross-price lists,
       // to derive the correct net unitPrice from grossUnitPrice).
       const priceUpdated = result.unitPrice != null || result.grossUnitPrice != null;
-      // Cascade when lineNetAmount is absent or 0 — a zero could mean qty=0 was used internally.
-      const amountNotComputed = result.lineNetAmount == null || Number(result.lineNetAmount) === 0;
+      // Cascade when lineNetAmount is absent or 0.
+      // Check both API key ('lineNetAmount') and OBDal property name ('lineNetAmt') because
+      // NeoCalloutService.inpToCleanName() maps via OBDal — SL_Order_Amt returns 'lineNetAmt',
+      // not 'lineNetAmount'. Without the fallback the cascade fires on every qty/price change
+      // (not just product selection), causing lineGrossAmount to accumulate incorrectly.
+      const lineNetFromResult = result.lineNetAmount ?? result.lineNetAmt;
+      const amountNotComputed = lineNetFromResult == null || Number(lineNetFromResult) === 0;
       if (priceUpdated && amountNotComputed) {
         try {
           // Merge first callout result into the form state so SL_Order_Amt sees the
@@ -861,6 +982,33 @@ export function DetailView({
             if (result.grossUnitPrice != null && result.netUnitPrice != null
                 && cascadeResult.unitPrice == null) {
               cascadeResult.unitPrice = result.netUnitPrice;
+            }
+            // Compute lineGrossAmount for order lines (shown as a grid column in real-time).
+            // Computed from first principles to avoid relying on cascadeResult.lineNetAmount,
+            // whose key name may differ (OBDal property 'lineNetAmt' vs API key 'lineNetAmount').
+            if (cascadeResult.lineGrossAmount == null || Number(cascadeResult.lineGrossAmount) === 0) {
+              const netPrice = Number(result.netUnitPrice ?? result.unitPrice ?? 0);
+              const qty      = Number(formStateForCallout.orderedQuantity) || 1;
+              const lineNet  = netPrice * qty;
+              if (lineNet > 0) {
+                const taxId = result.tax ?? rowValues.tax;
+                const rate  = parseFloat(String(result.taxRate ?? ''));
+                let factor  = !isNaN(rate) ? 1 + rate / 100 : null;
+                if (factor === null && taxId && taxRateCacheRef.current[taxId] != null) {
+                  factor = 1 + taxRateCacheRef.current[taxId] / 100;
+                }
+                if (factor === null && taxId) {
+                  const ref = (hook.children || []).find(l =>
+                    l.tax === taxId &&
+                    parseFloat(String(l.lineGrossAmount ?? '')) > 0 &&
+                    parseFloat(String(l.lineNetAmount ?? '')) > 0
+                  );
+                  if (ref) factor = parseFloat(String(ref.lineGrossAmount)) / parseFloat(String(ref.lineNetAmount));
+                }
+                if (factor !== null) {
+                  cascadeResult.lineGrossAmount = parseFloat((lineNet * factor).toFixed(2));
+                }
+              }
             }
             if (Object.keys(cascadeResult).length > 0) applyUpdates?.(cascadeResult);
           }
@@ -1093,8 +1241,24 @@ export function DetailView({
                         <button
                           key={action.key || i}
                           type="button"
-                          onClick={() => {
+                          disabled={docAction.loading}
+                          onClick={async () => {
                             setShowMoreMenu(false);
+                            if (action.documentAction) {
+                              setActionFeedback(null);
+                              const currentId = data?.id || recordId;
+                              try {
+                                await docAction.execute(currentId, action.documentAction);
+                                setActionFeedback({
+                                  type: 'success',
+                                  message: (action.successKey ? ui(action.successKey) : action.successMessage) || ui('actionCompleted'),
+                                });
+                                hook.fetchById?.(currentId);
+                              } catch (err) {
+                                setActionFeedback({ type: 'error', message: err.message });
+                              }
+                              return;
+                            }
                             if (action.columnName) {
                               hook.handleProcess?.({ columnName: action.columnName, name: action.key });
                             } else if (action.onClick) {
@@ -1104,9 +1268,9 @@ export function DetailView({
                           className={`w-full text-left px-3 py-1.5 text-[13px] transition-colors ${action.destructive
                               ? 'text-red-600 hover:bg-red-50'
                               : 'text-foreground hover:bg-secondary'
-                            }`}
+                            } ${docAction.loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
-                          {action.label}
+                          {action.labelKey ? ui(action.labelKey) : action.label}
                         </button>
                       ))}
                       {customMenuContent && (() => {
@@ -1185,6 +1349,7 @@ export function DetailView({
                   </Button>
                   <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
                     if (!(await flushPendingLines())) return;
+                    if (typeof draftMode.onConfirm === 'function') { draftMode.onConfirm(); return; }
                     const saved = await hook.handleSaveAndProcess(draftMode);
                     if (saved) {
                       if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
@@ -1251,6 +1416,28 @@ export function DetailView({
             ))}
           </div>
         </div>
+        )}
+
+        {/* Menu action feedback (from documentAction items) */}
+        {actionFeedback && (
+          <div
+            role="alert"
+            className={`mx-6 my-2 px-3 py-2 text-xs rounded-md border flex items-start justify-between gap-3 ${
+              actionFeedback.type === 'error'
+                ? 'bg-red-50 border-red-200 text-red-700'
+                : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+            }`}
+          >
+            <span className="flex-1">{actionFeedback.message}</span>
+            <button
+              type="button"
+              onClick={() => setActionFeedback(null)}
+              className="text-xs font-medium opacity-60 hover:opacity-100"
+              aria-label="Dismiss"
+            >
+              &times;
+            </button>
+          </div>
         )}
 
         {/* Primary tab bar (General / Additional Info / etc.) */}
@@ -1387,6 +1574,9 @@ export function DetailView({
                       token={token}
                       apiBaseUrl={apiBaseUrl}
                       onRefresh={() => hook.fetchChildren?.(data?.id || recordId)}
+                      onSave={handleImportClick}
+                      forceOpen={forceOpenImport}
+                      onForceOpenHandled={() => setForceOpenImport(false)}
                     />
                   ) : (
                   <div className={`pt-3 flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`}>
@@ -1613,7 +1803,7 @@ export function DetailView({
                             />
                           )}
                           {DetailExtraActions && (
-                            <DetailExtraActions data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} onRefresh={() => hook.fetchChildren?.(data?.id || recordId)} />
+                            <DetailExtraActions data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} onRefresh={() => hook.fetchChildren?.(data?.id || recordId)} onSave={handleImportClick} forceOpen={forceOpenImport} onForceOpenHandled={() => setForceOpenImport(false)} />
                           )}
                         </div>
                       )}

@@ -1,7 +1,7 @@
 {
   "version": "0.11.1",
-  "generatedAt": "2026-04-22T14:47:01.187Z",
-  "checksum": "42980a7a334ff3f9",
+  "generatedAt": "2026-04-27T12:52:06.997Z",
+  "checksum": "fafc3aee5fc6222f",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -25,13 +25,23 @@
         {
           "key": "cancel",
           "label": "Cancel",
+          "labelKey": "cancel",
           "destructive": true,
           "visibleWhenStatus": "CO"
+        },
+        {
+          "key": "reactivate",
+          "label": "Reactivate",
+          "labelKey": "reactivate",
+          "visibleWhenStatus": "CO",
+          "documentAction": "RE",
+          "successKey": "actionCompleted"
         }
       ],
       "processOverrides": {},
       "secondaryTabs": {},
       "salesTheme": true,
+      "dateFilterKey": "invoiceDate",
       "layoutType": "default"
     },
     "entities": {
@@ -52,8 +62,14 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "sequence",
+              "source": "documentType.sequence"
+            },
             "section": "principal",
             "seq": 20,
+            "gridOrder": 2,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -71,9 +87,15 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            },
             "defaultValue": "@#Date@",
             "section": "principal",
             "seq": 30,
+            "gridOrder": 1,
             "callout": {
               "className": "com.etendoerp.sif.general.callouts.SifInvoiceOperationDateCallout"
             },
@@ -94,10 +116,12 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "BusinessPartner",
             "inputMode": "search",
             "section": "principal",
             "seq": 10,
+            "gridOrder": 3,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Invoice_BPartner"
             },
@@ -118,6 +142,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "BusinessPartnerLocation",
             "inputMode": "dependent",
             "dependsOn": {
@@ -165,6 +190,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "PaymentTerm",
             "inputMode": "selector",
             "section": "principal",
@@ -186,6 +212,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "PaymentMethod",
             "inputMode": "selector",
             "section": "principal",
@@ -217,6 +244,11 @@
             "required": true,
             "grid": true,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "DR"
+            },
             "enumValues": [
               {
                 "value": "CL",
@@ -260,7 +292,7 @@
               }
             ],
             "defaultValue": "DR",
-            "display": "dot"
+            "gridOrder": 4
           },
           {
             "name": "grandTotalAmount",
@@ -273,7 +305,9 @@
             "required": true,
             "grid": true,
             "form": true,
-            "section": "summary"
+            "sourceRequired": true,
+            "section": "summary",
+            "gridOrder": 5
           },
           {
             "name": "summedLineAmount",
@@ -286,6 +320,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "section": "summary"
           },
           {
@@ -299,6 +334,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "fromConfig",
+              "source": "context.cCurrencyId"
+            },
             "reference": "Currency",
             "inputMode": "selector",
             "defaultValue": "@C_Currency_ID@",
@@ -313,8 +353,13 @@
             "tsType": "boolean",
             "visibility": "readOnly",
             "required": true,
-            "grid": true,
+            "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N",
             "displayLogic": {
               "raw": "@Processed@='Y'",
@@ -332,6 +377,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "'N'"
+            },
             "defaultValue": "N",
             "displayLogic": {
               "raw": "@Processed@='Y' & @#ShowAcct@='Y'",
@@ -349,10 +399,16 @@
             "tsType": "number",
             "visibility": "readOnly",
             "required": true,
-            "grid": false,
-            "form": true,
+            "grid": true,
+            "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0",
             "section": "summary",
+            "gridOrder": 6,
             "displayLogic": {
               "raw": "@Processed@='Y' & @Ispaid@='N'",
               "evaluable": true
@@ -369,6 +425,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "PriceList",
             "inputMode": "selector",
             "section": "principal",
@@ -398,7 +455,12 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": false
+            "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "false"
+            }
           }
         ],
         "searchableFields": [
@@ -491,6 +553,7 @@
             "form": true,
             "reference": "Product",
             "inputMode": "search",
+            "lookup": true,
             "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Invoice_Product"
@@ -512,6 +575,11 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "1"
+            },
             "defaultValue": "1",
             "section": "principal",
             "callout": {
@@ -534,6 +602,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Invoice_Amt"
@@ -555,6 +624,10 @@
             "required": false,
             "grid": false,
             "form": false,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Invoice_Amt"
@@ -580,6 +653,10 @@
             "required": false,
             "grid": true,
             "form": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0",
             "section": "principal",
             "gridOrder": 6
@@ -596,7 +673,7 @@
             "grid": true,
             "form": true,
             "reference": "Tax",
-            "inputMode": "search",
+            "inputMode": "selector",
             "section": "principal",
             "validationRule": {
               "code": "C_TAX.VALIDFROM<=COALESCE(@DateInvoiced@,@DateOrdered@) AND (C_TAX.SOPOTYPE =(CASE WHEN @IsSOTrx@ = 'Y' THEN 'S' ELSE 'P' END) OR C_TAX.SOPOTYPE = 'B') AND C_TAX.AD_CLIENT_ID=@AD_CLIENT_ID@ AND C_TAX.C_TAX_ID=(CASE WHEN @IsSOTrx@ = 'Y' AND EXISTS(SELECT 1 FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) THEN (SELECT C_TAX_ID FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) ELSE C_TAX.C_TAX_ID END)",
@@ -627,9 +704,10 @@
             "tsType": "string",
             "visibility": "editable",
             "required": false,
-            "grid": false,
+            "grid": true,
             "form": true,
-            "section": "principal"
+            "section": "principal",
+            "gridOrder": 2
           }
         ],
         "searchableFields": [
@@ -675,7 +753,8 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "expectedDate",
@@ -687,7 +766,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "finPaymentmethodID",
@@ -700,6 +780,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "Paymentmethod",
             "inputMode": "selector"
           },
@@ -714,6 +795,11 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0"
           },
           {
@@ -727,6 +813,11 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0"
           },
           {
@@ -740,6 +831,11 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0"
           },
           {
@@ -753,6 +849,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "Currency",
             "inputMode": "selector"
           },
@@ -815,6 +912,10 @@
             "required": false,
             "grid": false,
             "form": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0"
           },
           {
@@ -827,7 +928,8 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           }
         ],
         "searchableFields": [],
@@ -887,13 +989,23 @@
         {
           "key": "cancel",
           "label": "Cancel",
+          "labelKey": "cancel",
           "destructive": true,
           "visibleWhenStatus": "CO"
+        },
+        {
+          "key": "reactivate",
+          "label": "Reactivate",
+          "labelKey": "reactivate",
+          "visibleWhenStatus": "CO",
+          "documentAction": "RE",
+          "successKey": "actionCompleted"
         }
       ],
       "processOverrides": {},
       "secondaryTabs": {},
-      "salesTheme": true
+      "salesTheme": true,
+      "dateFilterKey": "invoiceDate"
     },
     "entities": {
       "header": {
@@ -3046,7 +3158,7 @@
         "field": "tax",
         "column": "C_Tax_ID",
         "reference": "Tax",
-        "inputMode": "search",
+        "inputMode": "selector",
         "url": "/sws/neo/sales-invoice/lines/selectors/tax"
       },
       {

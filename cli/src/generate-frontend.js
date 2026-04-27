@@ -107,6 +107,7 @@ function mapFieldType(field) {
   if (field.type === 'amount') return 'amount';
   if (['number', 'integer', 'quantity', 'price', 'decimal'].includes(field.type)) return 'number';
   if (field.type === 'date') return 'date';
+  if (field.type === 'foreignKey') return 'selector';
   return 'string';
 }
 
@@ -154,7 +155,7 @@ export function generateTableComponent(entityName, contract) {
   const columnsArray = gridFields.map(f => {
     const type = mapFieldType(f);
     const selectionPart = f.isSelectionColumn ? ', isSelectionColumn: true' : '';
-    const enumLabelsPart = (type === 'enum' && f.enumValues?.length)
+    const enumLabelsPart = ((type === 'enum' || type === 'status') && f.enumValues?.length)
       ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${o.name.replace(/'/g, "\\'")}'`).join(', ')} }`
       : '';
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
@@ -289,7 +290,11 @@ export function generateFormComponent(entityName, contract) {
     // Section classification
     const sectionPart = `, section: '${fieldSections[idx]}'`;
     // UI hints
-    const defaultValuePart = f.defaultValue ? `, defaultValue: '${f.defaultValue.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
+    const defaultValuePart = (f.defaultValue !== undefined && f.defaultValue !== null && f.defaultValue !== '')
+      ? (typeof f.defaultValue === 'number'
+          ? `, defaultValue: ${f.defaultValue}`
+          : `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'`)
+      : '';
     const helpPart = f.help ? `, help: '${f.help.replace(/'/g, "\\'")}'` : '';
     const fieldGroupPart = f.fieldGroup ? `, fieldGroup: '${f.fieldGroup.replace(/'/g, "\\'")}'` : '';
     const precisionPart = f.precision ? `, precision: ${f.precision}` : '';
@@ -638,6 +643,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const listViewOptions = windowConfig.listViewOptions ?? null;
   const listBaseFilter = windowConfig.listBaseFilter ?? null;
   const quickFilters = windowConfig.quickFilters ?? null;
+  const subsetFilters = windowConfig.subsetFilters ?? null;
+  const dateFilterKey = windowConfig.dateFilterKey ?? null;
   const contentBg = windowConfig.contentBg ?? null;
   const hideListFilters = windowConfig.hideListFilters ?? false;
   const hideLink = windowConfig.hideLink ?? false;
@@ -799,6 +806,12 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const quickFiltersProp = quickFilters
     ? `\n      quickFilters={${JSON.stringify(quickFilters)}}`
     : '';
+  const subsetFiltersProp = subsetFilters
+    ? `\n      subsetFilters={${JSON.stringify(subsetFilters)}}`
+    : '';
+  const dateFilterKeyProp = dateFilterKey
+    ? `\n      dateFilterKey="${dateFilterKey}"`
+    : '';
   // contentBg prop
   const contentBgProp = contentBg ? `\n        contentBg="${contentBg}"` : '';
   // ListView toolbar props
@@ -865,9 +878,21 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
             : `visible: status === '${a.visibleWhenStatus}'`
           : '';
         const destr = a.destructive ? 'destructive: true, ' : '';
-        const col = a.columnName ? `columnName: '${a.columnName}', ` : `onClick: () => {},`;
+        // Handler precedence: documentAction (declarative DocAction) > columnName (AD process button) > onClick placeholder
+        let handler;
+        if (a.documentAction) {
+          handler = `documentAction: '${a.documentAction}', `;
+        } else if (a.columnName) {
+          handler = `columnName: '${a.columnName}', `;
+        } else {
+          handler = `onClick: () => {},`;
+        }
+        const labelKeyPart = a.labelKey ? `labelKey: '${a.labelKey}', ` : '';
+        const successPart = a.successKey
+          ? `successKey: '${a.successKey}', `
+          : a.successMessage ? `successMessage: '${String(a.successMessage).replace(/'/g, "\\'")}', ` : '';
         const visPart = vis ? `${vis}, ` : '';
-        return `          { key: '${a.key}', label: '${a.label}', ${destr}${visPart}${col} }`;
+        return `          { key: '${a.key}', label: '${a.label}', ${destr}${visPart}${labelKeyPart}${successPart}${handler} }`;
       }).join(',\n')}\n        ]}`
     : '';
 
@@ -1106,7 +1131,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}
       {...props}${customComponents.newRecordComponent ? `
       onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}
     />${customComponents.newRecordComponent ? `

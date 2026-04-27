@@ -3,9 +3,11 @@ import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
 import { useUI } from '@/i18n';
-import HeaderTable from '@generated/sales-invoice/generated/web/sales-invoice/HeaderTable';
+import BulkDocumentAction from '@/components/contract-ui/BulkDocumentAction';
+import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import HeaderPage from '@generated/sales-invoice/generated/web/sales-invoice/HeaderPage';
-import InvoicePreviewModal from '../purchase-invoice/InvoicePreviewModal.jsx';
+import InvoiceHeaderTable from '@generated/sales-invoice/custom/InvoiceHeaderTable.jsx';
+import InvoicePreviewModal from '../shared/InvoicePreviewModal.jsx';
 import SalesInvoiceTopbar from './SalesInvoiceTopbar.jsx';
 import InvoiceBottomPanel from '@generated/sales-invoice/custom/InvoiceBottomPanel.jsx';
 import RelatedDocuments from '@generated/sales-invoice/custom/RelatedDocuments.jsx';
@@ -19,7 +21,7 @@ import { useCreateContactModal } from '@/components/contract-ui/useCreateContact
 const LIST_COLUMNS = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string', label: 'Document No.' },
   { key: 'invoiceDate', column: 'DateInvoiced', type: 'date', label: 'Invoice Date' },
-  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string', label: 'Business Partner' },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner' },
   { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
 ];
@@ -27,12 +29,13 @@ const LIST_COLUMNS = [
 let previewRowSetterRef = null;
 
 /**
- * SalesInvoiceTable — generated table wrapper that opens the preview modal.
+ * SalesInvoiceTable — uses InvoiceHeaderTable (with type tabs + payment filter)
+ * and hooks in the preview modal via onNavigate.
+ * Columns and order are driven by InvoiceHeaderTable.jsx.
  */
 function SalesInvoiceTable(props) {
   return (
-    <HeaderTable
-      columns={LIST_COLUMNS}
+    <InvoiceHeaderTable
       {...props}
       onNavigate={(row) => previewRowSetterRef?.(row)}
     />
@@ -53,6 +56,7 @@ function SalesInvoiceTable(props) {
  *   4. render CloneOrderModal portal with cloneActionName="cloneRecord" and invoice i18n keys
  */
 export default function SalesInvoiceWindow(props) {
+  useBulkActionToast();
   const { recordId, token, apiBaseUrl, windowName } = props;
   const navigate = useNavigate();
   const location = useLocation();
@@ -113,10 +117,14 @@ export default function SalesInvoiceWindow(props) {
   const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
 
   const INVOICE_QUICK_FILTERS = [
-    { label: 'all' },
-    { label: 'overdueOnly', rowFilter: (row) => Number(row.outstandingAmount ?? 0) > 0 },
+    {
+      label: 'overdueOnly',
+      filter: `criteria=${encodeURIComponent(JSON.stringify([
+        { fieldName: 'outstandingAmount', operator: 'greaterThan', value: 0 },
+      ]))}`,
+    },
   ];
-  const initialQuickFilterIndex = filterParam === 'overdue' ? 1 : 0;
+  const initialQuickFilterIndex = filterParam === 'overdue' ? 0 : null;
 
   return (
     <>
@@ -129,7 +137,9 @@ export default function SalesInvoiceWindow(props) {
         initialColumnFilters={initialColumnFilters}
         quickFilters={INVOICE_QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}
+        dateFilterKey="invoiceDate"
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
+        bulkActions={(ctx) => <BulkDocumentAction {...ctx} />}
       />
       {cloneTargets && createPortal(
         <CloneOrderModal
