@@ -1,9 +1,7 @@
 {
   "version": "0.2.0",
-  "generatedAt": "2026-04-24T19:31:48.721Z",
-  "checksum": "f0283c637f49c2d7",
-  "generatedAt": "2026-04-24T19:57:48.171Z",
-  "checksum": "6474b11b9f4e7b6b",
+  "generatedAt": "2026-04-27T15:51:23.284Z",
+  "checksum": "958a11a346d8ae9a",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -510,6 +508,13 @@
             "reference": "Product",
             "inputMode": "search",
             "lookup": true,
+            "forceCalloutFields": [
+              "unitPrice",
+              "tax",
+              "uOM",
+              "grossUnitPrice",
+              "discount"
+            ],
             "gridOrder": 1,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Product"

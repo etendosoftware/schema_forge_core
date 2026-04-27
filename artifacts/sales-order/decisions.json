@@ -297,7 +297,7 @@
           "inputMode": "search",
           "order": 1,
           "gridOrder": 1,
-          "forceCalloutFields": ["unitPrice", "tax", "uOM", "grossUnitPrice"]
+          "forceCalloutFields": ["unitPrice", "tax", "uOM", "grossUnitPrice", "discount"]
         },
         "orderedQuantity": {
           "grid": true,
