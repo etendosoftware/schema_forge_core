@@ -12,6 +12,7 @@ const labelOverrides = {
   "es_ES": {
     "Name": "Nombre",
     "Description": "Descripción",
+    "Isactive": "Activo",
     "Payin_Allow": "Cobro permitido",
     "Automatic_Receipt": "Cobro automático",
     "Automatic_Deposit": "Depósito automático",
