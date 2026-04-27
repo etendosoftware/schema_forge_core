@@ -1453,6 +1453,10 @@ export function DetailView({
           </div>
         )}
 
+        {/* Scrollable content + optional sidebarContent (full-height independent column) */}
+        <div className="flex-1 flex overflow-hidden">
+        {/* Content column: tab bar (shrink-0) + scrollable form area */}
+        <div className="flex-1 flex flex-col min-w-0">
         {/* Primary tab bar (General / Additional Info / etc.) */}
         {primaryTabs && (
           <div
@@ -1486,9 +1490,6 @@ export function DetailView({
             })()}
           </div>
         )}
-
-        {/* Scrollable content + optional sidebarContent (full-height independent column) */}
-        <div className="flex-1 flex overflow-hidden">
         {/* Non-general primary tab: show Panel fullscreen */}
         {primaryTabs && activePrimaryTab !== 'general' ? (() => {
           const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
@@ -2352,6 +2353,7 @@ export function DetailView({
           )}
           </div>
         </div>
+        </div>{/* end content column wrapper */}
         {sidebarContent && (
           <div className={sidebarClassName}>
             {typeof sidebarContent === 'function' ? sidebarContent(data) : sidebarContent}
