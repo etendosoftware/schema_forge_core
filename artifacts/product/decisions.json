@@ -551,6 +551,6 @@
     }
   },
   "rules": {},
-  "discardPatterns": [],
+  "discardPatterns": ["EM_Aeat347_*"],
   "version": 2
 }

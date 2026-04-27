@@ -29,7 +29,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:goodsShipment
 const processes = [
-  
+
 ];
 // @sf-generated-end processes:goodsShipment
 
@@ -279,7 +279,7 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
-dateFilterKey="movementDate"
+      dateFilterKey="movementDate"
       bulkActions={(ctx) => <BulkInvoiceFromShipment {...ctx} />}
       hidePrint
       {...props}

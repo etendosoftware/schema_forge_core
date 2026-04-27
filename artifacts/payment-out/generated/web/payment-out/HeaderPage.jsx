@@ -548,7 +548,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
-dateFilterKey="paymentDate"
+      dateFilterKey="paymentDate"
       {...props}
     />
   );

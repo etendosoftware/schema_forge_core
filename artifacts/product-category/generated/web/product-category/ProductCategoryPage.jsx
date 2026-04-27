@@ -155,14 +155,14 @@ export const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=product-categoryDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
-},
+  },
   "window": {
     "category": "inventory"
-    }
+  }
 };
 
 // @sf-generated-start component:ProductCategoryPage
