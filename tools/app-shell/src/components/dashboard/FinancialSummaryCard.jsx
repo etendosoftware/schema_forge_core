@@ -1,12 +1,16 @@
-import { Check, ArrowUp, ArrowDown, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Check, ArrowUp, ArrowDown, Sparkles, Plus } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { useLocaleSwitch } from '@/i18n';
 import { formatDashboardCompact, localeFromUi } from '@/lib/dashboardNumberFormat.js';
+import { useCopilot } from '@/components/CopilotContext';
 
 export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
   const ui = useUI();
+  const navigate = useNavigate();
   const { locale } = useLocaleSwitch();
   const numberLocale = localeFromUi(locale);
+  const { open: openCopilot } = useCopilot();
 
   function getMetricValueTypography(value) {
     const length = String(value ?? '').replace(/^-/, '').length;
@@ -71,9 +75,46 @@ export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
         >
           {ui('financialSummaryTitle')}
         </span>
-        <ExternalLink style={{ width: '16px', height: '16px', color: '#828FA3', flexShrink: 0 }} />
       </div>
 
+      {kpis.length === 0 ? (
+        <div className="flex-1 flex items-center justify-center w-full">
+          <div className="flex flex-col items-center" style={{ gap: '12px', width: '340px' }}>
+            <div className="flex flex-col items-center" style={{ gap: '4px' }}>
+              <p style={{ fontSize: '20px', fontWeight: 600, lineHeight: '28px', textAlign: 'center', color: '#121217' }}>
+                {ui('financialSummaryEmptyTitle')}
+              </p>
+              <p style={{ fontSize: '12px', fontWeight: 400, lineHeight: '16px', textAlign: 'center', color: '#282833' }}>
+                {ui('financialSummaryEmptySubtitle')}
+              </p>
+            </div>
+            <div className="flex flex-row items-center" style={{ gap: '12px' }}>
+              <button
+                type="button"
+                onClick={openCopilot}
+                className="flex items-center justify-center"
+                style={{ padding: '4px 8px', height: '32px', background: '#FFFFFF', border: '1px solid #D1D4DB', boxShadow: '0px 1px 2px rgba(18,18,23,0.05)', borderRadius: '8px', gap: '4px', cursor: 'pointer' }}
+              >
+                <Sparkles style={{ width: '20px', height: '20px', color: '#828FA3' }} />
+                <span style={{ fontSize: '14px', fontWeight: 500, lineHeight: '24px', color: '#121217' }}>
+                  {ui('createWithCopilot')}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/sales-invoice/new')}
+                className="flex items-center justify-center"
+                style={{ padding: '4px 8px', height: '32px', background: '#121217', borderRadius: '8px', gap: '4px', cursor: 'pointer', border: 'none' }}
+              >
+                <Plus style={{ width: '20px', height: '20px', color: 'rgba(255,255,255,0.9)' }} />
+                <span style={{ fontSize: '14px', fontWeight: 500, lineHeight: '24px', color: '#FFFFFF' }}>
+                  {ui('newInvoice')}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
       <div
         className="flex flex-1 flex-col items-start justify-center"
         style={{
@@ -227,6 +268,7 @@ export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
           })}
         </div>
       </div>
+      )}
     </div>
   );
 }
