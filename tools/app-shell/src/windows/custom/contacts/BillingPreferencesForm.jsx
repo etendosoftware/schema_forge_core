@@ -50,24 +50,6 @@ function DiscountSelect({ value, options, onChange, loading }) {
   );
 }
 
-function DiscountCard({ value, options, onChange, loading, ui }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 flex flex-col gap-3">
-      <div className="flex items-center gap-2 px-1">
-        <span className="text-sm font-bold text-gray-800">{ui('basicDiscount')}</span>
-      </div>
-      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden p-1">
-        <DiscountSelect
-          value={value}
-          options={options}
-          onChange={onChange}
-          loading={loading}
-        />
-      </div>
-    </div>
-  );
-}
-
 // ─── Main component ─────────────────────────────────────────────────────────
 
 export default function BillingPreferencesForm(props) {
@@ -82,13 +64,19 @@ export default function BillingPreferencesForm(props) {
   // Sub-entity records (current BP's discount)
   const [discountRecord, setDiscountRecord] = useState(undefined); // undefined=loading, null=none
 
+  const paymentMethodId = resolveId(data?.paymentMethod);
+  const pOPaymentMethodId = resolveId(data?.pOPaymentMethod);
   const selectorContext = useMemo(() => {
     const ctx = {};
     if (organizationId) ctx.AD_Org_ID = organizationId;
     if (clientId) ctx.AD_Client_ID = clientId;
     if (bpId) ctx.parentId = bpId;
+    // SQL validation rules on FIN/PO_Financial_Account_ID resolve @Fin_Paymentmethod_ID@
+    // and @PO_Paymentmethod_ID@ from the request context.
+    if (paymentMethodId) ctx.Fin_Paymentmethod_ID = paymentMethodId;
+    if (pOPaymentMethodId) ctx.PO_Paymentmethod_ID = pOPaymentMethodId;
     return ctx;
-  }, [organizationId, clientId, bpId]);
+  }, [organizationId, clientId, bpId, paymentMethodId, pOPaymentMethodId]);
   // Available discount catalog
   const [discountOptions, setDiscountOptions] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -201,9 +189,9 @@ export default function BillingPreferencesForm(props) {
 
   const customerBillingFields = [
     { key: 'priceList', column: 'M_PriceList_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
+    { key: 'account', column: 'FIN_Financial_Account_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
     { key: 'paymentMethod', column: 'FIN_Paymentmethod_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
     { key: 'paymentTerms', column: 'C_PaymentTerm_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
-    { key: 'account', column: 'FIN_Financial_Account_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
     { key: 'customerBlocking', column: 'Customer_Blocking', type: 'checkbox', section: 'principal' },
   ];
 
@@ -213,29 +201,25 @@ export default function BillingPreferencesForm(props) {
 
   const vendorBillingFields = [
     { key: 'purchasePricelist', column: 'PO_PriceList_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
+    { key: 'pOFinancialAccount', column: 'PO_Financial_Account_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
     { key: 'pOPaymentMethod', column: 'PO_Paymentmethod_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
     { key: 'pOPaymentTerms', column: 'PO_PaymentTerm_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
-    { key: 'pOFinancialAccount', column: 'PO_Financial_Account_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
     { key: 'vendorBlocking', column: 'Vendor_Blocking', type: 'checkbox', section: 'principal' },
   ];
 
   return (
-    <>
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
 
-      {/* ── Discount ───────────────────────────────────────────────── */}
+      {/* ── Descuento ──────────────────────────────────────────────── */}
       {bpId && (
-        <>
-          <DiscountCard
+        <div className="w-[236px]">
+          <DiscountSelect
             value={currentDiscountId}
             options={discountOptions}
             onChange={handleDiscountChange}
             loading={discountLoading || saving}
-            ui={ui}
           />
-
-          <div className="border-t border-border" />
-        </>
+        </div>
       )}
 
       {!canEditBillingPreferences ? (
@@ -244,23 +228,23 @@ export default function BillingPreferencesForm(props) {
         </div>
       ) : (
         <>
-          {/* ── Customer / Vendor billing ─────────────────────────────────── */}
-          <EntityForm {...props} fields={customerCheckboxField} selectorContext={selectorContext} />
-          {data?.customer && (
-            <div className="pl-4 border-l-2 border-border">
+          {/* ── Cliente ───────────────────────────────────────────────────── */}
+          <div className="bg-[#F5F7F9] rounded-lg p-3 flex flex-col gap-3">
+            <EntityForm {...props} fields={customerCheckboxField} selectorContext={selectorContext} />
+            {data?.customer && (
               <EntityForm {...props} fields={customerBillingFields} selectorContext={selectorContext} />
-            </div>
-          )}
+            )}
+          </div>
 
-          <EntityForm {...props} fields={vendorCheckboxField} selectorContext={selectorContext} />
-          {data?.vendor && (
-            <div className="pl-4 border-l-2 border-border">
+          {/* ── Proveedor ─────────────────────────────────────────────────── */}
+          <div className="bg-[#F5F7F9] rounded-lg p-3 flex flex-col gap-3">
+            <EntityForm {...props} fields={vendorCheckboxField} selectorContext={selectorContext} />
+            {data?.vendor && (
               <EntityForm {...props} fields={vendorBillingFields} selectorContext={selectorContext} />
-            </div>
-          )}
+            )}
+          </div>
         </>
       )}
     </div>
-    </>
   );
 }

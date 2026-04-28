@@ -151,7 +151,8 @@ Adds actions to the triple-dot menu in the detail view. Visibility can be gated 
   "menuActions": [
     { "key": "duplicate", "label": "Duplicate" },
     { "key": "cancel",    "label": "Cancel",          "destructive": true, "visibleWhenStatus": "CO" },
-    { "key": "reverse",   "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR"], "columnName": "aPRMReversePayment" }
+    { "key": "reverse",   "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR"], "columnName": "aPRMReversePayment" },
+    { "key": "reactivate","label": "Reactivate Order","visibleWhenStatus": "CO", "documentAction": "RE", "successMessage": "Order reactivated" }
   ]
 }
 ```
@@ -162,9 +163,13 @@ Adds actions to the triple-dot menu in the detail view. Visibility can be gated 
 | `label` | string | Display label in the menu. |
 | `destructive` | boolean | Renders in red. |
 | `visibleWhenStatus` | string \| string[] | Only show when `documentStatus` matches. Omit to always show. |
-| `columnName` | string | If set, fires `hook.handleProcess(columnName)`. If omitted, an empty `onClick` placeholder is generated. |
+| `documentAction` | string | If set, invokes the standard DocAction endpoint with this value (`"RE"`, `"CO"`, `"VO"`, …) via the shared `useDocumentAction` hook. After success, the record is refreshed and `successMessage` (or a generic label) is shown inline. Errors from the backend are surfaced inline as well. |
+| `successMessage` | string | Text shown in the success banner after a `documentAction` resolves. |
+| `columnName` | string | Fires `hook.handleProcess(columnName)`. Use for AD process buttons that aren't DocAction-based. |
 
-**Real examples:** `goods-shipment` (cancel), `payment-in` (reverse), `sales-invoice` (duplicate, cancel).
+Handler precedence: `documentAction` > `columnName` > empty placeholder `onClick`. Declare `documentAction` for any DocAction-style action (Reactivate, Void, Close, etc.) — the generator wires the full fetch + error flow automatically.
+
+**Real examples:** `goods-shipment` (cancel), `payment-in` (reverse via `columnName`), `sales-invoice` (duplicate, cancel), `sales-order` (reactivate via `documentAction: "RE"`).
 
 ---
 
@@ -238,6 +243,65 @@ Hides the delete button when the document is not in Draft status.
 
 ---
 
+### 10. `window.dateFilterKey` — date range filter column
+
+Declares which list column the date range shortcut in the list toolbar targets.
+Must match a column `key` whose `type` is `date`. If omitted, the date filter is
+**not rendered** — there is no implicit fallback to the first date column, so
+column order never affects the filter.
+
+```json
+"window": {
+  "dateFilterKey": "orderDate"
+}
+```
+
+**Real examples:** `sales-order` / `purchase-order` (`orderDate`),
+`sales-invoice` / `purchase-invoice` (`invoiceDate`).
+
+---
+
+### 11. `linesEmptyState` — empty state when the lines tab has no rows
+
+Displays a centered call-to-action inside the lines tab when the document is in Draft status and no child lines exist yet. Two wiring patterns are available:
+
+**Pattern A — direct prop (preferred for windows that have no `bottomSection`):**
+```jsx
+// custom/index.jsx
+import LinesEmptyState from '@/components/contract-ui/LinesEmptyState.jsx';
+
+<GeneratedApp linesEmptyState={LinesEmptyState} ... />
+```
+
+**Pattern B — attached to `bottomSection` (used by windows that already have a bottom panel):**
+```jsx
+MyBottomPanel.linesEmptyState = MyLinesEmptyState;
+<GeneratedApp bottomSection={MyBottomPanel} ... />
+```
+
+`DetailView` resolves the component as `linesEmptyState ?? bottomSection?.linesEmptyState`. Pattern A takes priority.
+
+The generic `LinesEmptyState` component lives at `tools/app-shell/src/components/contract-ui/LinesEmptyState.jsx` and renders only when `data.documentStatus === 'DR'`. It receives `{ data, onAddLine, canAddLine }` from `DetailView`.
+
+**`addLineGuard` — gate the add-line button on required header fields:**
+
+```jsx
+// Only show the "+ Add Lines" button once businessPartner is filled.
+<GeneratedApp
+  linesEmptyState={LinesEmptyState}
+  addLineGuard={(d) => !!d?.businessPartner}
+  ...
+/>
+```
+
+`addLineGuard` receives current form data and must return `true` to enable adding lines. It gates both the button inside the empty state (`canAddLine` prop) and the `+ Add Line` button in the lines table header. Without a guard, adding is always allowed.
+
+**Real examples:**
+- `linesEmptyState` (Pattern B): `purchase-invoice` (`PurchaseInvoiceBottomPanel.linesEmptyState`)
+- `linesEmptyState` (Pattern A) + `addLineGuard`: `sales-order`, `purchase-order`, `sales-quotation`
+
+---
+
 ## Decision tree: which option to use?
 
 ```
@@ -278,7 +342,9 @@ I need to customize the UI of a window
 └─ Cross-cutting behavior (notes, delete protection, related docs)
     ├─ → window.notesField
     ├─ → window.hideDeleteWhenComplete
-    └─ → window.relatedDocuments
+    ├─ → window.relatedDocuments
+    ├─ Empty state when lines tab is empty → linesEmptyState prop + addLineGuard
+    └─ Gate add-line button on header field → addLineGuard prop
 ```
 
 ---

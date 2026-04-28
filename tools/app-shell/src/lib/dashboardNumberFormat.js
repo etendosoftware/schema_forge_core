@@ -94,3 +94,21 @@ export function niceScale(dataMax) {
   const count = Math.round(niceMax / step) + 1;
   return { niceMax, ticks: Array.from({ length: count }, (_, i) => i * step) };
 }
+
+export function toBezierPath(pts) {
+  if (pts.length === 0) return '';
+  if (pts.length === 1) return `M ${pts[0].x},${pts[0].y}`;
+  let d = `M ${pts[0].x},${pts[0].y}`;
+  for (let i = 1; i < pts.length; i++) {
+    const prev = pts[i - 1];
+    const curr = pts[i];
+    const cpx = (curr.x - prev.x) * 0.35;
+    d += ` C ${prev.x + cpx},${prev.y} ${curr.x - cpx},${curr.y} ${curr.x},${curr.y}`;
+  }
+  return d;
+}
+
+export function toBezierFillPath(pts, baseY) {
+  if (pts.length === 0) return '';
+  return `${toBezierPath(pts)} L ${pts[pts.length - 1].x},${baseY} L ${pts[0].x},${baseY} Z`;
+}

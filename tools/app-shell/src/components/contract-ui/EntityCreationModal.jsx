@@ -349,7 +349,6 @@ function CollapsibleFieldSection({ section, form, onChange, opts, ui }) {
  *   headerFields   FieldConfig[] — always-visible fields above the tabs
  *   sections       SectionConfig[] — one tab per section
  *   requiredFields string[] — field IDs that must be non-empty to show Save
- *   progressFields string[] — field IDs counted toward the progress %
  *   onSave         async (form, repeatables) => void
  *   onCancel       () => void
  *   initialValues  object — pre-filled form values
@@ -361,8 +360,7 @@ function CollapsibleFieldSection({ section, form, onChange, opts, ui }) {
  * FieldConfig: { id, labelKey, type, required?, placeholder?, optionsKey?,
  *               dependsOn?, clearOnDependencyChange?, inSummary?, fullWidth? }
  * SectionConfig: { id, labelKey, contentLabelKey?, emptyTextKey?,
- *                  fields?, repeatable?, addLabelKey?, component?,
- *                  countsToProgress? }
+ *                  fields?, repeatable?, addLabelKey?, component? }
  */
 export default function EntityCreationModal({
   title,
@@ -372,7 +370,6 @@ export default function EntityCreationModal({
   headerFields = [],
   sections = [],
   requiredFields = [],
-  progressFields = [],
   onSave,
   onCancel,
   initialValues = {},
@@ -412,18 +409,6 @@ export default function EntityCreationModal({
     onFieldChange?.(id, value);
   }, [allDeclaredFields, onFieldChange]);
 
-  const progress = useMemo(() => {
-    const fieldsFilled = progressFields.filter(id => {
-      const val = form[id];
-      return val !== undefined && val !== null && val !== '' && val !== false;
-    }).length;
-    const sectionsFilled = sections
-      .filter(s => s.countsToProgress && (repeatables[s.id] ?? []).length > 0)
-      .length;
-    const total = progressFields.length + sections.filter(s => s.countsToProgress).length;
-    if (!total) return 0;
-    return Math.round(((fieldsFilled + sectionsFilled) / total) * 100);
-  }, [form, progressFields, sections, repeatables]);
 
   const isSaveDisabled = loading || !requiredFields.every(id => {
     const val = form[id];
@@ -572,13 +557,6 @@ export default function EntityCreationModal({
                 </button>
               );
             })}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', fontSize: '12px', color: '#374151', flexShrink: 0 }}>
-            <span style={{ whiteSpace: 'nowrap' }}>{ui('profileComplete')}</span>
-            <div style={{ width: '64px', height: '6px', background: '#e5e7eb', borderRadius: '999px', overflow: 'hidden' }}>
-              <div style={{ height: '100%', background: '#121217', borderRadius: '999px', width: `${progress}%`, transition: 'width 0.3s' }} />
-            </div>
-            <span style={{ fontWeight: 500, fontVariantNumeric: 'tabular-nums', width: '28px', textAlign: 'right' }}>{progress}%</span>
           </div>
         </div>
 

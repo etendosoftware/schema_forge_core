@@ -8,7 +8,8 @@
       "processNow": {
         "requiresLines": true
       }
-    }
+    },
+    "dateFilterKey": "movementDate"
   },
   "entities": {
     "header": {
@@ -101,7 +102,8 @@
         },
         "movementQuantity": {
           "grid": true,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "defaultValue": "1"
         },
         "uOM": {
           "visibility": "readOnly",

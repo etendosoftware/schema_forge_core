@@ -11,6 +11,7 @@ import { useEntity } from '@/hooks/useEntity';
 import { useCatalogs } from '@/hooks/useCatalogs';
 import { useDisplayLogic } from '@/hooks/useDisplayLogic';
 import { useCallout } from '@/hooks/useCallout';
+import { useDocumentAction } from '@/hooks/useDocumentAction';
 import { useMenuLabel, useUI, useLocale } from '@/i18n';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
@@ -117,6 +118,9 @@ export function DetailView({
   hideMoreMenu = false,
   hideMoreDetails = false,
   noHeaderBorder = false,
+  toolbarBorderBottom = false,
+  tabsBarRightDivider = null,
+  tabsBarRight = null,
   hideTopBar = false,
   CustomLines = null,
   customLinesLabel = 'Invoices',
@@ -124,6 +128,7 @@ export function DetailView({
   sidePanelStyle = null,
   afterTotals = null,
   bottomSection = null,
+  linesEmptyState = null,
   topbarExtra = null,
   topbarRight = null,
   statusFieldLabel = null,
@@ -139,6 +144,8 @@ export function DetailView({
   onAfterSave,
   onAfterCreate,
   labelOverrides,
+  enableSecondaryRowDelete = false,
+  sidebarClassName = 'w-96 shrink-0 overflow-y-auto pt-0 pl-0 pr-4 pb-5',
 }) {
   // DetailView never needs the parent list: on `/new` there is no record to match, and on
   // `/:id` the currentItem shortcut only helps when we arrived from ListView (items already
@@ -146,7 +153,7 @@ export function DetailView({
   // the effect falls through to fetchById. Skipping the list fetch unconditionally drops one
   // wasted GET per direct-URL navigation.
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl, skipListFetch: true });
-  const LinesEmptyState = bottomSection?.linesEmptyState ?? null;
+  const LinesEmptyState = linesEmptyState ?? bottomSection?.linesEmptyState ?? null;
   const DetailExtraActions = bottomSection?.detailExtraActions ?? null;
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls).
   // Secondary hooks only consume child-level state (children, handleAddChild, handleDeleteChild,
@@ -191,13 +198,17 @@ export function DetailView({
       // DateInvoiced is required by the C_Tax validationRule:
       // VALIDFROM <= COALESCE(@DateInvoiced@, @DateOrdered@)
       // Without it, COALESCE(null,null)=null → VALIDFROM<=null is always FALSE → no taxes returned.
+      // Etendo Classic's PL/pgSQL to_date() expects DD-MM-YYYY, so the ISO date from the
+      // header (YYYY-MM-DD) must be reformatted before being sent as a context param.
       const headerSnapshot = hook.selected ?? hook.editing;
       const invoiceDate = headerSnapshot?.invoiceDate ?? headerSnapshot?.orderDate ?? null;
+      const isoMatch = typeof invoiceDate === 'string' ? invoiceDate.match(/^(\d{4})-(\d{2})-(\d{2})/) : null;
+      const dateInvoicedParam = isoMatch ? `${isoMatch[3]}-${isoMatch[2]}-${isoMatch[1]}` : invoiceDate;
       next[detailEntity] = {
         parentId: parentRecordId,
         ...(isSOTrx ? { isSOTrx, IsSOTrx: isSOTrx } : {}),
         ...(priceListId ? { priceList: priceListId } : {}),
-        ...(invoiceDate ? { DateInvoiced: invoiceDate } : {}),
+        ...(dateInvoicedParam ? { DateInvoiced: dateInvoicedParam } : {}),
       };
     }
     for (const key of secondaryTabKeysStr.split('|').filter(Boolean)) {
@@ -208,6 +219,8 @@ export function DetailView({
   const { catalogs, catalogsLoaded } = useCatalogs(api, token, apiBaseUrl, staticCatalogs);
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
+  const docAction = useDocumentAction({ apiBaseUrl, entity, token });
+  const [actionFeedback, setActionFeedback] = useState(null); // { type: 'error'|'success', message }
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -217,6 +230,7 @@ export function DetailView({
   const dictionary = useLocale();
   const [addingLine, setAddingLine] = useState(false);
   const [addingSecondaryLine, setAddingSecondaryLine] = useState({});
+  const [forceOpenImport, setForceOpenImport] = useState(false);
   // Imperative handles to in-progress inline add rows so we can commit them
   // before header save (mirrors clicking the green check on an editing line).
   const primaryAddRowRef = useRef(null);
@@ -315,6 +329,9 @@ export function DetailView({
   const extractErrorMessage = useCallback(async (res) => {
     try {
       const data = await res.json();
+      // NEO Headless top-level format: { error: { message, status } }
+      if (data?.error?.message) return data.error.message;
+      // Etendo JsonDataService format: { response: { error: { message } | string } }
       const err = data?.response?.error;
       if (err?.message) return err.message;
       if (typeof err === 'string') return err;
@@ -337,11 +354,55 @@ export function DetailView({
 
   // Track fields whose values were set by a callout response to avoid re-triggering
   const calloutAppliedRef = useRef(new Set());
+  // Track fields the user has manually changed in this record session — protected
+  // from being overwritten by callouts triggered from other fields.
+  const userTouchedRef = useRef(new Set());
+  // Reset both refs when the record context changes (new record / different existing record)
+  useEffect(() => {
+    userTouchedRef.current = new Set();
+    calloutAppliedRef.current = new Set();
+  }, [recordId]);
   // Guard: fire default callouts only once per new-record session
   const defaultCalloutsTriggeredRef = useRef(false);
   // Cache for tax rates fetched from the selector (keyed by tax ID).
   // Avoids repeated API calls when the same tax appears on multiple lines.
   const taxRateCacheRef = useRef({});
+  // Batching refs for the sidebar onChange: product selector fires multiple synchronous
+  // onChange calls (product, product$_identifier, unitPrice/grossUnitPrice). Without
+  // batching each fires its own callout with a stale/incomplete snapshot. We accumulate
+  // all synchronous calls and fire one handleLineFieldChange with the full snapshot.
+  const sidebarCalloutBatchRef = useRef(null);
+  const sidebarCalloutTimerRef = useRef(null);
+
+  // When a sidebar line is selected, seed taxRateCacheRef from its saved values so that
+  // subsequent unitPrice / orderedQuantity changes can resolve taxFactor via source 2 (cache)
+  // without needing a network round-trip. Uses lineGrossAmount÷(qty×price) for order lines
+  // (which lack lineNetAmount) and grossAmount÷lineNetAmount for invoice lines.
+  useEffect(() => {
+    if (!selectedLine) return;
+    const taxId = selectedLine.tax;
+    if (!taxId || taxRateCacheRef.current[taxId] != null) return;
+    let rate = null;
+    const gross = parseFloat(String(selectedLine.grossAmount ?? selectedLine.lineGrossAmount ?? '')) || 0;
+    if (gross > 0) {
+      const disc  = parseFloat(String(selectedLine.discount ?? '')) || 0;
+      const net   = parseFloat(String(selectedLine.lineNetAmount ?? '')) || 0;
+      if (net > 0) {
+        // Etendo stores LINENETAMT = qty × unitPrice (list price, before discount).
+        // Adjust by discount to get the actual taxable base before deriving the tax rate.
+        const taxableNet = disc > 0 ? net * (1 - disc / 100) : net;
+        rate = (gross / taxableNet - 1) * 100;
+      } else {
+        const qty   = parseFloat(String(selectedLine.orderedQuantity ?? selectedLine.invoicedQuantity ?? '')) || 0;
+        const price = parseFloat(String(selectedLine.unitPrice ?? '')) || 0;
+        const lineNet = qty * price * (1 - disc / 100);
+        if (lineNet > 0) rate = (gross / lineNet - 1) * 100;
+      }
+    }
+    if (rate != null && rate >= 0) {
+      taxRateCacheRef.current[taxId] = rate;
+    }
+  }, [selectedLine]);
 
   const isNew = recordId === 'new';
   const currentItem = useMemo(() => {
@@ -368,6 +429,19 @@ export function DetailView({
     navigate(location.pathname, { replace: true, state: {} });
   }, [location.state?.openAddLine, isNew, hook.editing, navigate, location.pathname]);
 
+  // Auto-open import modal after header auto-save navigation (openImportModal flag in route state).
+  const handledOpenImportRef = useRef(false);
+  useEffect(() => {
+    if (!location.state?.openImportModal || isNew || !hook.editing) {
+      handledOpenImportRef.current = false;
+      return;
+    }
+    if (handledOpenImportRef.current) return;
+    handledOpenImportRef.current = true;
+    setForceOpenImport(true);
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.state?.openImportModal, isNew, hook.editing, navigate, location.pathname]);
+
   // Save header first (if new), then open add-line form.
   const handleAddLineClick = useCallback(async () => {
     if (isNew) {
@@ -382,6 +456,22 @@ export function DetailView({
     }
     setAddingLine(prev => !prev);
     setEditingChild(null);
+  }, [isNew, hook, navigate, windowName]);
+
+  // Save header first (if new → navigate with flag; if existing → save in place), then open import modal.
+  const handleImportClick = useCallback(async () => {
+    if (isNew) {
+      const saved = await hook.handleSave();
+      if (!saved?.id) return false;
+      hook.primeSaved?.(saved);
+      navigate(`/${windowName}/${saved.id}`, {
+        replace: true,
+        state: { openImportModal: true, justSaved: saved },
+      });
+      return false;
+    }
+    await hook.handleSave();
+    return true;
   }, [isNew, hook, navigate, windowName]);
 
   const handleSecondaryAddLineToggle = useCallback(async (tabKey) => {
@@ -508,7 +598,7 @@ export function DetailView({
   // Apply callout results to the form when they arrive
   useEffect(() => {
     if (!calloutResult) return;
-    const { updates, combos } = calloutResult;
+    const { updates, combos, triggerField } = calloutResult;
     const appliedFields = new Set();
 
     if (updates) {
@@ -516,7 +606,14 @@ export function DetailView({
         // Skip empty callout values if the field already has a non-empty value
         // (e.g., callout clears warehouse but defaults already set it)
         const currentVal = data[key];
-        if ((entry.value === '' || entry.value == null) && currentVal && currentVal !== '') {
+        const userHasValue = currentVal !== '' && currentVal != null;
+        if ((entry.value === '' || entry.value == null) && userHasValue) {
+          continue;
+        }
+        // Protect user-touched fields from being overwritten by collateral updates
+        // coming from a callout triggered by a different field. The trigger field
+        // itself always wins (it was just changed by the user).
+        if (key !== triggerField && userTouchedRef.current.has(key) && userHasValue) {
           continue;
         }
         appliedFields.add(key);
@@ -546,6 +643,12 @@ export function DetailView({
           selectedLabel = combo.entries[0].identifier || combo.entries[0]._identifier;
         }
         if (selectedVal != null) {
+          // Protect user-touched fields from collateral combo updates
+          const currentVal = data[key];
+          const userHasValue = currentVal !== '' && currentVal != null;
+          if (key !== triggerField && userTouchedRef.current.has(key) && userHasValue) {
+            continue;
+          }
           appliedFields.add(key);
           hook.handleChange(key, selectedVal);
           if (selectedLabel) {
@@ -566,6 +669,10 @@ export function DetailView({
     // Skip companion/auxiliary fields — they don't have callouts
     if (field.includes('$_identifier') || /^[a-zA-Z]+_[A-Z]{2,4}$/.test(field)) return;
 
+    // Mark this field as user-touched so subsequent collateral callout updates
+    // from other triggers cannot overwrite the user's choice.
+    userTouchedRef.current.add(field);
+
     // If this field was just set by a callout response, don't re-trigger
     if (calloutAppliedRef.current.has(field)) {
       calloutAppliedRef.current.delete(field);
@@ -585,7 +692,7 @@ export function DetailView({
   // Execute callout for child entity (line-level) fields and apply results via callback.
   // Merges parent header data into formState so callouts have full context (e.g., priceList).
   const handleLineFieldChange = useCallback(async (field, value, rowValues, applyUpdates) => {
-    if (!field || !value || value === '' || !token || !apiBaseUrl || !detailEntity) return;
+    if (!field || (value == null || value === '') || !token || !apiBaseUrl || !detailEntity) return;
     if (field.includes('$_identifier') || /^[a-zA-Z]+_[A-Z]{2,4}$/.test(field)) return;
     try {
       // Build formState: line row values + parent header fields for context
@@ -632,13 +739,23 @@ export function DetailView({
       const result = {};
       if (calloutData.updates) {
         for (const [k, entry] of Object.entries(calloutData.updates)) {
+          // Classic callouts return value:"" for FK (UUID) fields they didn't explicitly set —
+          // NOT to clear them. Only skip the empty update when the existing value looks like
+          // an Etendo UUID (32-char hex). Numeric and text fields that come back as "" are
+          // legitimate resets (e.g. discount:"" means reset to 0) and must be applied.
+          const existingIsUuid = typeof rowValues[k] === 'string'
+            && /^[0-9A-Fa-f]{32}$|^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$/.test(rowValues[k]);
+          if (entry.value === '' && existingIsUuid) continue;
           result[k] = entry.value;
           if (entry._identifier) result[k + '$_identifier'] = entry._identifier;
         }
       }
       if (calloutData.combos) {
         for (const [k, combo] of Object.entries(calloutData.combos)) {
-          if (combo.selected != null) {
+          // Treat empty string as "no change" — the backend sometimes returns selected:""
+          // instead of null when the callout does not explicitly set a combo (e.g. tax on
+          // SL_Order_Product). An empty string would overwrite a valid existing value.
+          if (combo.selected != null && combo.selected !== '') {
             result[k] = combo.selected;
             if (combo._identifier) result[k + '$_identifier'] = combo._identifier;
           }
@@ -669,11 +786,19 @@ export function DetailView({
       // omits netUnitPrice (net price). Fetch the real tax rate from the Etendo DAL REST API
       // so the backend receives a valid netUnitPrice instead of null/0 at save time.
       if (result.grossUnitPrice != null && result.netUnitPrice == null) {
-        // Derive net price from gross using taxFactor from existing saved lines.
-        // Avoids DAL fetch which may not be available in all environments.
         const taxId = result.tax;
         let taxFactor = null;
-        if (taxId) {
+        // Source A: taxRate returned by the callout (covers fresh orders with no saved lines)
+        const calloutRate = parseFloat(String(result.taxRate ?? ''));
+        if (!isNaN(calloutRate) && calloutRate > 0) {
+          taxFactor = 1 + calloutRate / 100;
+        }
+        // Source B: cache from a previous callout for the same tax
+        if (taxFactor === null && taxId && taxRateCacheRef.current[taxId] != null) {
+          taxFactor = 1 + taxRateCacheRef.current[taxId] / 100;
+        }
+        // Source C: derive from existing saved lines
+        if (taxFactor === null && taxId) {
           const ref = (hook.children || []).find(l =>
             l.tax === taxId &&
             parseFloat(String(l.grossAmount ?? '')) > 0 &&
@@ -721,16 +846,47 @@ export function DetailView({
         // For product-field changes: unitPrice was already injected into rowValues by the selector
         // item mapping before the callout ran, so we can compute lineNet from rowValues directly.
         let lineNet;
-        if (field === 'invoicedQuantity' || field === 'unitPrice') {
-          const qty   = parseFloat(field === 'invoicedQuantity' ? value : rowValues.invoicedQuantity) || 0;
-          const price = parseFloat(field === 'unitPrice'        ? value : rowValues.unitPrice)        || 0;
-          lineNet = qty > 0 && price > 0 ? qty * price : 0;
-        } else if (field === 'product') {
-          const qty   = parseFloat(String(rowValues.invoicedQuantity ?? '')) || 0;
+        if (field === 'invoicedQuantity' || field === 'orderedQuantity') {
+          const qty   = parseFloat(value) || 0;
           const price = parseFloat(String(rowValues.unitPrice ?? '')) || 0;
           lineNet = qty > 0 && price > 0 ? qty * price : 0;
+        } else if (field === 'unitPrice') {
+          const qty   = parseFloat(String(rowValues.invoicedQuantity || rowValues.orderedQuantity || '')) || 0;
+          const price = parseFloat(value) || 0;
+          lineNet = qty > 0 && price > 0 ? qty * price : 0;
+        } else if (field === 'product') {
+          // Prefer the callout's lineNetAmount — it already reflects the active price list
+          // and any server-side adjustments. rowValues.unitPrice is stale here: the selector
+          // item mapping injects the product's list price BEFORE the callout resolves the
+          // real active-price-list price, so using it would produce the wrong lineNet.
+          const calloutNet = parseFloat(String(result.lineNetAmount ?? result.lineNetAmt ?? '')) || 0;
+          if (calloutNet > 0) {
+            lineNet = calloutNet;
+          } else {
+            const qty      = parseFloat(String(rowValues.invoicedQuantity || rowValues.orderedQuantity || '')) || 0;
+            const priceStr = result.unitPrice != null ? String(result.unitPrice) : String(rowValues.unitPrice ?? '');
+            const price    = parseFloat(priceStr) || 0;
+            lineNet = qty > 0 && price > 0 ? qty * price : 0;
+          }
+        } else if (field === 'discount') {
+          const qty   = parseFloat(String(rowValues.orderedQuantity ?? rowValues.invoicedQuantity ?? '')) || 0;
+          const price = parseFloat(String(rowValues.unitPrice ?? '')) || 0;
+          const disc  = parseFloat(String(value)) || 0;
+          lineNet = qty > 0 && price > 0 ? qty * price * (1 - disc / 100) : 0;
+        } else if (field === 'tax') {
+          // C_Tax_ID has no AD callout, so SL_Order_Amt does not run; the backend
+          // injects the new taxRate into result via injectTaxRateForTrigger. We
+          // recompute lineNet from rowValues so the existing taxFactor branch can
+          // derive the correct lineGrossAmount with the new rate.
+          const qty   = parseFloat(String(rowValues.orderedQuantity ?? rowValues.invoicedQuantity ?? '')) || 0;
+          const price = parseFloat(String(rowValues.unitPrice ?? '')) || 0;
+          const disc  = parseFloat(String(rowValues.discount ?? '')) || 0;
+          lineNet = qty > 0 && price > 0 ? qty * price * (1 - disc / 100) : 0;
         } else {
-          lineNet = parseFloat(String(result.lineNetAmount ?? rowValues.lineNetAmount ?? '')) || 0;
+          lineNet = parseFloat(String(
+            result.lineNetAmount ?? result.lineNetAmt ??
+            rowValues.lineNetAmount ?? rowValues.lineNetAmt ?? ''
+          )) || 0;
         }
 
         if (lineNet > 0) {
@@ -755,7 +911,21 @@ export function DetailView({
             }
           }
 
-          // 2. Derive taxFactor from the current row's saved values (sidebar case).
+          // 2. Cached rate from a previous callout for the same tax.
+          //    Must run before the gross/net ratio sources (3 and 4) because those ratios become
+          //    wrong for qty/price changes: after the first qty change our code updates grossAmount
+          //    (total line gross) while lineNetAmount still holds the per-unit value from the
+          //    product callout, making gross/net ≠ taxFactor (e.g. 29.04/12 = 2.42 instead of 1.21).
+          //    The cache was populated by source 0 during product selection and is always reliable.
+          if (taxFactor === null && effectiveTaxId) {
+            const cachedRate = taxRateCacheRef.current[effectiveTaxId];
+            if (cachedRate != null) {
+              taxFactor = 1 + cachedRate / 100;
+            }
+          }
+
+          // 3. Derive taxFactor from the current row's saved values (sidebar case — persisted
+          //    grossAmount and lineNetAmount are both totals so their ratio equals taxFactor).
           if (taxFactor === null) {
             const savedGross = parseFloat(String(rowValues.grossAmount ?? '')) || 0;
             const savedNet   = parseFloat(String(rowValues.lineNetAmount ?? '')) || 0;
@@ -764,29 +934,54 @@ export function DetailView({
             }
           }
 
-          // 3. Find any saved line with the same tax that has both amounts (add-row case).
+          // 4. Find any saved line with the same tax that has both amounts.
+          //    Covers two cases:
+          //    a) Invoice lines: grossAmount + lineNetAmount are both total amounts → their ratio = taxFactor.
+          //    b) Order lines: lineGrossAmount is the only gross field; lineNetAmount is absent.
+          //       Derive taxFactor from lineGrossAmount / (orderedQuantity × unitPrice) using the
+          //       SAVED values from hook.children (original DB data, not the user's current edits).
+          //       This is the fix for the sidebar: when the user changes unitPrice, rowValues already
+          //       has the new price so we can't recompute taxFactor from it — the saved line does.
           if (taxFactor === null && effectiveTaxId) {
-            const ref = (hook.children || []).find(l =>
-              l.tax === effectiveTaxId &&
-              parseFloat(String(l.grossAmount ?? '')) > 0 &&
-              parseFloat(String(l.lineNetAmount ?? '')) > 0
-            );
+            const ref = (hook.children || []).find(l => {
+              if (l.tax !== effectiveTaxId) return false;
+              const gross = parseFloat(String(l.grossAmount ?? l.lineGrossAmount ?? '')) || 0;
+              if (gross <= 0) return false;
+              const net = parseFloat(String(l.lineNetAmount ?? '')) || 0;
+              if (net > 0) return true;
+              const qty   = parseFloat(String(l.orderedQuantity ?? l.invoicedQuantity ?? '')) || 0;
+              const price = parseFloat(String(l.unitPrice ?? '')) || 0;
+              return qty > 0 && price > 0;
+            });
             if (ref) {
-              taxFactor = parseFloat(String(ref.grossAmount)) / parseFloat(String(ref.lineNetAmount));
-            }
-          }
-
-          // 4. Cached rate from a previous callout for the same tax (e.g., user changes qty
-          //    after already selecting the product — source 0 already cached the rate).
-          if (taxFactor === null && effectiveTaxId) {
-            const cachedRate = taxRateCacheRef.current[effectiveTaxId];
-            if (cachedRate != null) {
-              taxFactor = 1 + cachedRate / 100;
+              const gross    = parseFloat(String(ref.grossAmount ?? ref.lineGrossAmount ?? '')) || 0;
+              const net      = parseFloat(String(ref.lineNetAmount ?? '')) || 0;
+              const discount = parseFloat(String(ref.discount ?? '')) || 0;
+              if (net > 0) {
+                // LINENETAMT = qty × unitPrice before discount; apply discount to get taxable base.
+                const adjustedNet = discount > 0 ? net * (1 - discount / 100) : net;
+                taxFactor = gross / adjustedNet;
+              } else {
+                const qty   = parseFloat(String(ref.orderedQuantity ?? ref.invoicedQuantity ?? '')) || 0;
+                const price = parseFloat(String(ref.unitPrice ?? '')) || 0;
+                const lineNet = qty * price * (discount > 0 ? (1 - discount / 100) : 1);
+                if (lineNet > 0) taxFactor = gross / lineNet;
+              }
             }
           }
 
           if (taxFactor !== null) {
             result.grossAmount = parseFloat((lineNet * taxFactor).toFixed(2));
+            // Order lines use lineGrossAmount (same concept, different field name).
+            // For qty/price changes we ALWAYS override: SL_Order_Amt returns
+            // prevLineGrossAmount × newQty instead of qty × unitPrice × taxFactor,
+            // because it misinterprets the form's total lineGrossAmount as a unit price.
+            // For product selection the callout correctly computes the value, so keep it
+            // unless it came back null/0.
+            const forceLineGross = field === 'orderedQuantity' || field === 'invoicedQuantity' || field === 'unitPrice' || field === 'discount' || field === 'tax';
+            if (forceLineGross || result.lineGrossAmount == null || Number(result.lineGrossAmount) === 0) {
+              result.lineGrossAmount = result.grossAmount;
+            }
           }
 
           // Resolve tax$_identifier from existing lines if callout didn't include it.
@@ -801,6 +996,9 @@ export function DetailView({
       // No other window or field is affected unless it declares forceCalloutFields.
       const triggerFieldDef = (addLineFields?.entry ?? []).find(f => f.key === field);
       const forceFields = new Set(triggerFieldDef?.forceCalloutFields ?? []);
+      for (const amtKey of ['grossAmount', 'lineGrossAmount', 'lineNetAmount']) {
+        if (result[amtKey] != null) result[amtKey] = parseFloat(Number(result[amtKey]).toFixed(2));
+      }
       applyUpdates?.(result, forceFields);
 
       // Cascade to SL_Order_Amt when a price-setting callout (e.g. SL_Order_Product) returned
@@ -809,8 +1007,13 @@ export function DetailView({
       // SL_Order_Amt to compute lineNetAmount = unitPrice * qty (and, for gross-price lists,
       // to derive the correct net unitPrice from grossUnitPrice).
       const priceUpdated = result.unitPrice != null || result.grossUnitPrice != null;
-      // Cascade when lineNetAmount is absent or 0 — a zero could mean qty=0 was used internally.
-      const amountNotComputed = result.lineNetAmount == null || Number(result.lineNetAmount) === 0;
+      // Cascade when lineNetAmount is absent or 0.
+      // Check both API key ('lineNetAmount') and OBDal property name ('lineNetAmt') because
+      // NeoCalloutService.inpToCleanName() maps via OBDal — SL_Order_Amt returns 'lineNetAmt',
+      // not 'lineNetAmount'. Without the fallback the cascade fires on every qty/price change
+      // (not just product selection), causing lineGrossAmount to accumulate incorrectly.
+      const lineNetFromResult = result.lineNetAmount ?? result.lineNetAmt;
+      const amountNotComputed = lineNetFromResult == null || Number(lineNetFromResult) === 0;
       if (priceUpdated && amountNotComputed) {
         try {
           // Merge first callout result into the form state so SL_Order_Amt sees the
@@ -855,13 +1058,16 @@ export function DetailView({
             const cascadeResult = {};
             if (cascadeData.updates) {
               for (const [k, entry] of Object.entries(cascadeData.updates)) {
+                const existingIsUuid = typeof rowValues[k] === 'string'
+                  && /^[0-9A-Fa-f]{32}$|^[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}$/.test(rowValues[k]);
+                if (entry.value === '' && existingIsUuid) continue;
                 cascadeResult[k] = entry.value;
                 if (entry._identifier) cascadeResult[k + '$_identifier'] = entry._identifier;
               }
             }
             if (cascadeData.combos) {
               for (const [k, combo] of Object.entries(cascadeData.combos)) {
-                if (combo.selected != null) cascadeResult[k] = combo.selected;
+                if (combo.selected != null && combo.selected !== '') cascadeResult[k] = combo.selected;
               }
             }
             // Same guard: don't let the cascade zero out a quantity the user already set.
@@ -875,12 +1081,40 @@ export function DetailView({
                 && cascadeResult.unitPrice == null) {
               cascadeResult.unitPrice = result.netUnitPrice;
             }
+            // Compute lineGrossAmount for order lines (shown as a grid column in real-time).
+            // Computed from first principles to avoid relying on cascadeResult.lineNetAmount,
+            // whose key name may differ (OBDal property 'lineNetAmt' vs API key 'lineNetAmount').
+            if (cascadeResult.lineGrossAmount == null || Number(cascadeResult.lineGrossAmount) === 0) {
+              const netPrice = Number(result.netUnitPrice ?? result.unitPrice ?? 0);
+              const qty      = Number(formStateForCallout.orderedQuantity) || 1;
+              const lineNet  = netPrice * qty;
+              if (lineNet > 0) {
+                const taxId = result.tax ?? rowValues.tax;
+                const rate  = parseFloat(String(result.taxRate ?? ''));
+                let factor  = !isNaN(rate) ? 1 + rate / 100 : null;
+                if (factor === null && taxId && taxRateCacheRef.current[taxId] != null) {
+                  factor = 1 + taxRateCacheRef.current[taxId] / 100;
+                }
+                if (factor === null && taxId) {
+                  const ref = (hook.children || []).find(l =>
+                    l.tax === taxId &&
+                    parseFloat(String(l.lineGrossAmount ?? '')) > 0 &&
+                    parseFloat(String(l.lineNetAmount ?? '')) > 0
+                  );
+                  if (ref) factor = parseFloat(String(ref.lineGrossAmount)) / parseFloat(String(ref.lineNetAmount));
+                }
+                if (factor !== null) {
+                  cascadeResult.lineGrossAmount = parseFloat((lineNet * factor).toFixed(2));
+                }
+              }
+            }
             if (Object.keys(cascadeResult).length > 0) applyUpdates?.(cascadeResult);
           }
         } catch {
           // Cascade is best-effort — first callout result was already applied above
         }
       }
+
     } catch {
       // Callout is best-effort
     }
@@ -1001,7 +1235,7 @@ export function DetailView({
             </div>
           ) : null
         ) : (
-        <div className="flex items-center justify-between px-6 py-3">
+        <div className={`flex items-center justify-between px-6 py-3${toolbarBorderBottom ? ' border-b border-[#E8EAEF]' : ''}`}>
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
@@ -1106,8 +1340,24 @@ export function DetailView({
                         <button
                           key={action.key || i}
                           type="button"
-                          onClick={() => {
+                          disabled={docAction.loading}
+                          onClick={async () => {
                             setShowMoreMenu(false);
+                            if (action.documentAction) {
+                              setActionFeedback(null);
+                              const currentId = data?.id || recordId;
+                              try {
+                                await docAction.execute(currentId, action.documentAction);
+                                setActionFeedback({
+                                  type: 'success',
+                                  message: (action.successKey ? ui(action.successKey) : action.successMessage) || ui('actionCompleted'),
+                                });
+                                hook.fetchById?.(currentId);
+                              } catch (err) {
+                                setActionFeedback({ type: 'error', message: err.message });
+                              }
+                              return;
+                            }
                             if (action.columnName) {
                               hook.handleProcess?.({ columnName: action.columnName, name: action.key });
                             } else if (action.onClick) {
@@ -1117,9 +1367,9 @@ export function DetailView({
                           className={`w-full text-left px-3 py-1.5 text-[13px] transition-colors ${action.destructive
                               ? 'text-red-600 hover:bg-red-50'
                               : 'text-foreground hover:bg-secondary'
-                            }`}
+                            } ${docAction.loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
-                          {action.label}
+                          {action.labelKey ? ui(action.labelKey) : action.label}
                         </button>
                       ))}
                       {customMenuContent && (() => {
@@ -1185,7 +1435,7 @@ export function DetailView({
 
               {!hideSaveStatuses.includes(_headerData?.documentStatus) && !isDraftModeCompleted && (draftMode?.enabled ? (
                 <>
-                  <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground" data-testid="action-save-draft" disabled={hook.isSaving} onClick={async () => {
+                  <Button variant="outline" size="sm" className="gap-1.5 bg-white text-gray-700 hover:text-gray-700" data-testid="action-save-draft" disabled={hook.isSaving} onClick={async () => {
                     if (!(await flushPendingLines())) return;
                     const saved = await hook.handleSave(data);
                     if (saved?.id && isNew) {
@@ -1198,6 +1448,7 @@ export function DetailView({
                   </Button>
                   <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
                     if (!(await flushPendingLines())) return;
+                    if (typeof draftMode.onConfirm === 'function') { draftMode.onConfirm(); return; }
                     const saved = await hook.handleSaveAndProcess(draftMode);
                     if (saved) {
                       if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
@@ -1266,31 +1517,65 @@ export function DetailView({
         </div>
         )}
 
+        {/* Menu action feedback (from documentAction items) */}
+        {actionFeedback && (
+          <div
+            role="alert"
+            className={`mx-6 my-2 px-3 py-2 text-xs rounded-md border flex items-start justify-between gap-3 ${
+              actionFeedback.type === 'error'
+                ? 'bg-red-50 border-red-200 text-red-700'
+                : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+            }`}
+          >
+            <span className="flex-1">{actionFeedback.message}</span>
+            <button
+              type="button"
+              onClick={() => setActionFeedback(null)}
+              className="text-xs font-medium opacity-60 hover:opacity-100"
+              aria-label="Dismiss"
+            >
+              &times;
+            </button>
+          </div>
+        )}
+
+        {/* Scrollable content + optional sidebarContent (full-height independent column) */}
+        <div className="flex-1 flex overflow-hidden">
+        {/* Content column: tab bar (shrink-0) + scrollable form area */}
+        <div className="flex-1 flex flex-col min-w-0">
         {/* Primary tab bar (General / Additional Info / etc.) */}
         {primaryTabs && (
-          <div className="flex items-center gap-1 px-6 py-2 shrink-0">
+          <div
+            className={`flex items-center gap-1 px-6 py-2 shrink-0${tabsBarRightDivider ? ' relative' : ''}`}
+            style={tabsBarRight && tabsBarRightDivider ? { paddingRight: `calc(${tabsBarRightDivider} + 24px)` } : undefined}
+          >
+            {tabsBarRightDivider && (
+              <div className="absolute top-0 bottom-0 w-px bg-[#E8EAEF] pointer-events-none" style={{ left: `calc(100% - ${tabsBarRightDivider})` }} />
+            )}
             {primaryTabs.map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setActivePrimaryTab(tab.key)}
                 className={[
-                  'px-4 py-1.5 text-sm font-medium rounded-lg transition-colors border',
+                  'relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors border',
                   activePrimaryTab === tab.key
                     ? 'bg-white border-gray-200 shadow-sm text-foreground'
                     : 'border-transparent text-muted-foreground hover:text-foreground',
                 ].join(' ')}
               >
                 {tMenu(tab.label)}
-                {activePrimaryTab === tab.key && (
-                  <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full" />
-                )}
               </button>
             ))}
+            {tabsBarRight && (() => {
+              const TabsBarRightComponent = tabsBarRight;
+              return (
+                <div className="ml-auto flex-shrink-0">
+                  <TabsBarRightComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} />
+                </div>
+              );
+            })()}
           </div>
         )}
-
-        {/* Scrollable content + optional sidebarContent (full-height independent column) */}
-        <div className="flex-1 flex overflow-hidden">
         {/* Non-general primary tab: show Panel fullscreen */}
         {primaryTabs && activePrimaryTab !== 'general' ? (() => {
           const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
@@ -1400,6 +1685,9 @@ export function DetailView({
                       token={token}
                       apiBaseUrl={apiBaseUrl}
                       onRefresh={() => hook.fetchChildren?.(data?.id || recordId)}
+                      onSave={handleImportClick}
+                      forceOpen={forceOpenImport}
+                      onForceOpenHandled={() => setForceOpenImport(false)}
                     />
                   ) : (
                   <div className={`pt-3 flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`}>
@@ -1626,7 +1914,7 @@ export function DetailView({
                             />
                           )}
                           {DetailExtraActions && (
-                            <DetailExtraActions data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} onRefresh={() => hook.fetchChildren?.(data?.id || recordId)} />
+                            <DetailExtraActions data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} onRefresh={() => hook.fetchChildren?.(data?.id || recordId)} onSave={handleImportClick} forceOpen={forceOpenImport} onForceOpenHandled={() => setForceOpenImport(false)} />
                           )}
                         </div>
                       )}
@@ -1650,11 +1938,31 @@ export function DetailView({
                           onChange={(key, val, column) => {
                             setLineEdits(prev => ({ ...(prev ?? selectedLine), [key]: val }));
                             if (column) setLineEditColumns(prev => ({ ...prev, [key]: column }));
-                            handleLineFieldChange(
-                              key, val,
-                              { ...(lineEdits ?? selectedLine ?? {}), [key]: val },
-                              (updates) => setLineEdits(prev => ({ ...(prev ?? selectedLine), ...updates })),
-                            );
+                            // Batch all synchronous onChange calls from a single product
+                            // selection (product, product$_identifier, unitPrice/grossUnitPrice)
+                            // into ONE handleLineFieldChange with a complete snapshot.
+                            // This mirrors how DataTable builds its snapshot before the callout.
+                            if (!sidebarCalloutBatchRef.current) {
+                              sidebarCalloutBatchRef.current = {
+                                base: lineEdits ?? selectedLine ?? {},
+                                changes: {},
+                                primaryField: key,
+                                primaryVal: val,
+                              };
+                            }
+                            sidebarCalloutBatchRef.current.changes[key] = val;
+                            clearTimeout(sidebarCalloutTimerRef.current);
+                            sidebarCalloutTimerRef.current = setTimeout(() => {
+                              const batch = sidebarCalloutBatchRef.current;
+                              sidebarCalloutBatchRef.current = null;
+                              if (!batch) return;
+                              const rowSnapshot = { ...batch.base, ...batch.changes };
+                              handleLineFieldChange(
+                                batch.primaryField, batch.primaryVal,
+                                rowSnapshot,
+                                (updates) => setLineEdits(prev => ({ ...(prev ?? selectedLine), ...updates })),
+                              );
+                            }, 0);
                           }}
                                 entity={detailEntity}
                                 catalogs={catalogs}
@@ -1834,6 +2142,13 @@ export function DetailView({
                             ? (row) => { setSelectedSecondaryLine({ ...row, _tabKey: st.key }); setSecondaryLineEdits(null); }
                             : undefined}
                         selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
+                        onDeleteRow={enableSecondaryRowDelete && (api?.crud?.[st.key]?.delete ?? true) ? (row) => {
+                          setSecondaryDeleteConfirm({
+                            tabKey: st.key,
+                            tabIndex: stIdx,
+                            id: row.id,
+                          });
+                        } : undefined}
                         addRow={st.addLineFields?.entry?.length > 0 ? {
                           ref: getSecondaryAddRowRef(st.key),
                           active: addingSecondaryLine[st.key] ?? false,
@@ -2144,8 +2459,9 @@ export function DetailView({
           )}
           </div>
         </div>
+        </div>{/* end content column wrapper */}
         {sidebarContent && (
-          <div className="w-96 shrink-0 overflow-y-auto pt-0 pl-0 pr-4 pb-5">
+          <div className={sidebarClassName}>
             {typeof sidebarContent === 'function' ? sidebarContent(data) : sidebarContent}
           </div>
         )}

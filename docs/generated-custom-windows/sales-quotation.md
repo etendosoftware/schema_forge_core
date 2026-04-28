@@ -6,10 +6,10 @@ Let a sales user prepare a customer quotation, review commercial terms before co
 
 ## What this window should allow
 
-- Create and review quotation headers with customer, quotation date, validity date, address, price list, payment method, notes, and read-only commercial totals.
+- Create and review quotation headers with customer, quotation date, validity date, address, price list, payment method, payment terms, notes, and read-only commercial totals.
 - Add, edit, and remove quotation lines with product, description, quantity, unit price, discount, tax, and line gross amount.
-- Keep the quotation in a draft state while the commercial proposal is still being negotiated.
-- Confirm a draft quotation and create a downstream sales order from the quotation flow.
+- Keep the quotation in draft while the commercial proposal is being prepared, then explicitly send that draft into an `Under Evaluation` state before final conversion.
+- From `Under Evaluation`, create a downstream sales order and, in the current custom overlay, optionally create a draft sales invoice.
 - Send the quotation document from the record view.
 - Inspect related downstream sales orders and invoices from the quotation record when those documents exist.
 
@@ -19,19 +19,23 @@ Let a sales user prepare a customer quotation, review commercial terms before co
 - Visibility: visible from the Sales menu under the Commercial section.
 - Implementation type: custom window wrapper over the generated quotation page.
 - Window shape: master-child, with `quotation` as the header entity and `quotationLine` as the child entity.
-- List interaction: the list shows document number, quotation date, business partner, validity date, document status, and gross total, with filters for those same business fields.
+- List interaction: the custom wrapper injects a `CustomQuotationTable` (with `dot: false` on the date column) and a `labelOverrides` that maps `DateOrdered` → "Quotation Date" / "Fecha cotización", overriding the global locale label "Order Date". The visible columns, in order, are: Quotation Date (no dot indicator), Document No., Business Partner, Document Status, Valid Until, and Total Gross Amount. `Valid Until` is placed between Document Status and Total Gross Amount on purpose, so the validity date is adjacent to the total and the user can triage each row by deciding whether the total is still actionable. The wrapper also enables clone-from-grid via the shared `CloneOrderModal` and feeds a `refreshTrigger` counter into the generated `ListView`, so when the user closes the clone result modal the list auto-refreshes and the new draft quotations show up without a manual reload.
 - Record interaction: the detail page shows the quotation header form, a child lines table and line form, summary amounts, record status, top-bar actions, and a Related Documents tab.
 - Available record-level affordances in current evidence: duplicate and cancel menu entries, a send-document button, and a draft-only confirmation button.
 
 ## Reactive behavior and dependencies
 
 - Header dependency: `partnerAddress` is a dependent selector filtered by the selected `businessPartner`, so address choice should narrow after the customer changes.
+- Header visibility changed in the merged code: `priceList`, `validUntil`, `paymentMethod`, and `paymentTerms` are now part of the visible quotation header form instead of remaining hidden or collapsed-only fields.
+- User-touched field protection on the header form: when the user manually changes an FK field after a callout has already set it (typical case: `paymentTerms` set to "30 días" by the `businessPartner` callout, then changed by the user), follow-up callouts triggered by other fields cannot overwrite that value. The guard lives in `DetailView.jsx` (`userTouchedRef`) and resets when `recordId` changes, so each new or freshly loaded record starts clean. The current callout's trigger field still wins because it represents the user's most recent action.
+- Persisted payment-term changes: the `etgo_sf_field` row for `paymentTerms` was historically marked `IsReadOnly=Y`, which made `NeoFieldFilter.filterWriteRequest` strip the field from PATCH bodies and silently drop user changes. The row is now `IsReadOnly=N` (kept in sync via `push-to-neo` and the exported XML in `com.etendoerp.go`), so editing `paymentTerms` on an existing draft quotation actually persists.
+- POST-create cascade no longer overwrites user-set FK values: `NeoCrudHandler.executePostCreate` snapshots the keys submitted in the request body before `injectMandatoryDefaults` runs, and passes them as `protectedFields` into the post-create callout cascade. The cascade can still refine missing/derived fields, but it no longer flips `paymentTerms` (or any other user-set field) back to the business-partner default during the initial save.
 - Header defaulting and callouts: the contract keeps business-partner, address, price-list, order-date, and valid-until callouts. Current evidence supports customer-driven address and price-list autofill expectations, and it also records an intended default of `validUntil = orderDate + 30 days` for new quotations.
-- Pricing dependency: line product selection is expected to auto-fill unit price and tax from the active price list according to the retained `Product_AutoFill_Price` rule.
+- Pricing dependency: line product selection is expected to auto-fill unit price and tax from the active price list according to the retained `Product_AutoFill_Price` rule. This is enabled by `forceCalloutFields: ["unitPrice","tax","uOM","grossUnitPrice","discount"]` on the `product` field in `quotationLine` in `decisions.json`, which bypasses the `touchedFieldsRef` guard so callout-returned values for those fields are applied even when the user has not directly touched them. `discount` is included because product/price-list callouts may return a customer- or product-specific discount that must be applied on product selection.
 - Line recalculation: quantity, unit price, and discount are expected to recalculate line amounts through the retained `Line_Calc_NetAmount` callout, and saved lines are expected to refresh header totals through the retained `Line_Recalc_Totals` handler.
 - Status-driven behavior: editable header fields become read-only when the quotation is processed, the draft-only confirmation button only appears when `documentStatus === 'DR'`, and the generated detail page hides delete/print affordances for completed records.
 - Related downstream behavior: the Related Documents tab is intended to surface sales orders and invoices tied to the quotation so the user can navigate into fulfillment and billing from the quotation record.
-- Current visible evidence does not show inline formulas or client-side calculators for discount, tax, or totals; the observable design is server-driven recalculation after selector/callout/action flows.
+- Current visible evidence does not show inline formulas or client-side calculators for discount, tax, or totals; the observable design is server-driven recalculation after selector, callout, save, and modal action flows.
 
 ## Gap assessment
 
@@ -52,6 +56,8 @@ Let a sales user prepare a customer quotation, review commercial terms before co
 6. Use the confirmation flow to create a downstream document, then verify whether the resulting order or invoice opens in the expected status and whether the quotation remains usable afterward.
 7. Open Related Documents after downstream conversion and verify that order chips appear, invoice chips appear when applicable, and each chip navigates to the correct route.
 8. Check Duplicate and Cancel from the record menu and confirm whether they perform a real action or remain non-functional placeholders.
+9. From the list view, select one or more quotations, run `Clone`, close the result modal and confirm the cloned drafts appear in the list without manually pressing `Refresh`.
+10. On a draft quotation with a business partner already chosen, change `Payment Terms` to a different value than the BP default and save. Reopen the record and confirm the chosen value persisted (regression: it used to revert to the BP default).
 
 ## Automated evidence
 

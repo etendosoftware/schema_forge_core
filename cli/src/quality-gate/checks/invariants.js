@@ -116,7 +116,7 @@ export async function runInvariantsCheck(windowName, { rootDir, windowDir, confi
   const detailEntityName = findDetailEntityName(entities, primaryEntity);
   const detailEntity = detailEntityName ? entities[detailEntityName] : null;
   const detailFieldNames = new Set((detailEntity?.fields ?? []).map((field) => field.name));
-  const addLineFieldsSource = config?.invariants?.addLineFields
+  const addLineFieldsSource = config?.invariants?.addLineFields && detailEntityName === 'lines'
     ? findAddLineFieldsSource(windowDir, windowName)
     : null;
 

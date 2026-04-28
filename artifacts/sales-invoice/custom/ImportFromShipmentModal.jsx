@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
+import { useUI } from '@/i18n';
 
 export default function ImportFromShipmentModal({ invoiceId, bpId, base, headers, onClose, onSuccess }) {
+  const ui = useUI();
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(new Set());
@@ -224,7 +226,12 @@ export default function ImportFromShipmentModal({ invoiceId, bpId, base, headers
 
   const toggleShipment = (shipmentId) => {
     const lines = shipmentLines[shipmentId] || [];
-    if (lines.length === 0) return;
+    if (lines.length === 0) {
+      // Lines not fetched yet — expand and fetch; fetchLines auto-selects on completion
+      setExpanded(prev => { const n = new Set(prev); n.add(shipmentId); return n; });
+      fetchLines(shipmentId);
+      return;
+    }
     const lineIds = lines.map(l => l.id);
     const allSelected = lineIds.every(id => selected.has(id));
     setSelected(prev => {
@@ -311,7 +318,7 @@ export default function ImportFromShipmentModal({ invoiceId, bpId, base, headers
 
         <div style={{ padding: '14px 16px', borderBottom: '2px solid #E5E7EB' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>Import from Shipment</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{ui('importFromShipment')}</span>
             <button type="button" onClick={onClose} style={{ fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280' }}>&times;</button>
           </div>
           {bpName && <div style={{ fontSize: 13, color: '#9ca3af', marginTop: 2 }}>{bpName}</div>}
@@ -322,14 +329,14 @@ export default function ImportFromShipmentModal({ invoiceId, bpId, base, headers
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search shipment..."
+            placeholder={ui('searchShipment')}
             style={{ width: '100%', fontSize: 13, padding: '7px 10px', border: '0.5px solid #E5E7EB', borderRadius: 6, outline: 'none', color: '#111827' }}
           />
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: 0 }}>
           {loading ? (
-            <p style={{ fontSize: 13, color: '#9ca3af', padding: '24px 0', textAlign: 'center' }}>Loading...</p>
+            <p style={{ fontSize: 13, color: '#9ca3af', padding: '24px 0', textAlign: 'center' }}>{ui('loading')}</p>
           ) : filtered.length === 0 ? (
             <p style={{ fontSize: 13, color: '#9ca3af', padding: '24px 0', textAlign: 'center' }}>
               {shipments.length === 0 ? 'No pending shipments to invoice for this customer.' : 'No shipments match your search.'}
@@ -376,16 +383,16 @@ export default function ImportFromShipmentModal({ invoiceId, bpId, base, headers
                   {isExpanded && (
                     <div style={{ background: 'var(--color-background-secondary, #F9FAFB)' }}>
                       {isLoadingLns ? (
-                        <div style={{ padding: '8px 12px 8px 48px', fontSize: 12, color: '#9ca3af' }}>Loading lines...</div>
+                        <div style={{ padding: '8px 12px 8px 48px', fontSize: 12, color: '#9ca3af' }}>{ui('loadingLines')}</div>
                       ) : lines.length === 0 ? (
-                        <div style={{ padding: '8px 12px 8px 48px', fontSize: 12, color: '#9ca3af' }}>No lines found</div>
+                        <div style={{ padding: '8px 12px 8px 48px', fontSize: 12, color: '#9ca3af' }}>{ui('noLinesFound')}</div>
                       ) : (
                         <>
                           <div style={{ display: 'flex', padding: '4px 12px 4px 48px', fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '0.5px solid #E5E7EB' }}>
-                            <span style={{ flex: 1 }}>Product</span>
-                            <span style={{ width: 70, textAlign: 'right' }}>Qty</span>
-                            <span style={{ width: 80, textAlign: 'right' }}>Price</span>
-                            <span style={{ width: 80, textAlign: 'right' }}>Amount</span>
+                            <span style={{ flex: 1 }}>{ui('product')}</span>
+                            <span style={{ width: 70, textAlign: 'right' }}>{ui('qty')}</span>
+                            <span style={{ width: 80, textAlign: 'right' }}>{ui('price')}</span>
+                            <span style={{ width: 80, textAlign: 'right' }}>{ui('amount')}</span>
                           </div>
                           {lines.map(line => {
                             const imported = line._alreadyImported;
@@ -416,7 +423,7 @@ export default function ImportFromShipmentModal({ invoiceId, bpId, base, headers
                                   style={{ accentColor: '#3b82f6', cursor: imported ? 'not-allowed' : 'pointer', marginRight: 8, flexShrink: 0 }}
                                 />
                                 <span style={{ fontSize: 13, color: imported ? '#9ca3af' : lineSelected ? '#2563eb' : '#111827', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: lineSelected ? 500 : 400 }}>
-                                  {productName}{imported && <span style={{ fontSize: 11, marginLeft: 6, color: '#9ca3af' }}>already imported</span>}
+                                  {productName}{imported && <span style={{ fontSize: 11, marginLeft: 6, color: '#9ca3af' }}>{ui('alreadyImported')}</span>}
                                 </span>
                                 <span style={{ width: 70, flexShrink: 0, textAlign: 'right' }}>
                                   <input
@@ -457,15 +464,15 @@ export default function ImportFromShipmentModal({ invoiceId, bpId, base, headers
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F8F9FA', borderTop: '1px solid #E5E7EB', padding: '10px 16px' }}>
           <span style={{ fontSize: 12, color: selected.size > 0 ? 'var(--color-text-info, #2563eb)' : '#6B7280', fontWeight: selected.size > 0 ? 500 : 400 }}>
-            {selected.size > 0 ? `${selected.size} line${selected.size > 1 ? 's' : ''} selected` : 'Select lines to import'}
+            {selected.size > 0 ? ui('selected', { count: selected.size }) : ui('selectLinesToImport')}
           </span>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button type="button" onClick={onClose} style={{ fontSize: 13, padding: '5px 14px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>Cancel</button>
+            <button type="button" onClick={onClose} style={{ fontSize: 13, padding: '5px 14px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>{ui('cancel')}</button>
             <button
               type="button" onClick={handleImport} disabled={selected.size === 0 || importing}
               style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: (selected.size === 0 || importing) ? 'not-allowed' : 'pointer', opacity: (selected.size === 0 || importing) ? 0.4 : 1 }}
             >
-              {importing ? 'Importing...' : `Import selected${selected.size > 0 ? ` (${selected.size})` : ''}`}
+              {importing ? ui('importing') : ui('importSelected', { count: selected.size > 0 ? ` (${selected.size})` : '' })}
             </button>
           </div>
         </div>

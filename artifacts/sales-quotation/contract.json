@@ -1,7 +1,7 @@
 {
   "version": "0.2.0",
-  "generatedAt": "2026-04-23T12:15:32.006Z",
-  "checksum": "14ee768f2ac73e0d",
+  "generatedAt": "2026-04-27T23:22:07.714Z",
+  "checksum": "9bb49efd526d31f1",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -56,6 +56,7 @@
           "C_BPartner_ID": "Contact"
         }
       },
+      "dateFilterKey": "orderDate",
       "noHeaderBorder": true,
       "layoutType": "default"
     },
@@ -77,8 +78,14 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "sequence",
+              "source": "documentType.sequence"
+            },
             "section": "principal",
             "seq": 2,
+            "gridOrder": 2,
             "readOnlyLogic": {
               "raw": "@Processed@='Y' | @DocStatus@='TMP'",
               "evaluable": true,
@@ -96,9 +103,15 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            },
             "defaultValue": "@#Date@",
             "section": "principal",
             "seq": 3,
+            "gridOrder": 1,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_UpdateLinesDate"
             },
@@ -119,10 +132,12 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "BusinessPartner",
             "inputMode": "search",
             "section": "principal",
             "seq": 1,
+            "gridOrder": 3,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Order_BPartner"
             },
@@ -143,6 +158,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "BusinessPartnerLocation",
             "inputMode": "dependent",
             "dependsOn": {
@@ -177,6 +193,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "PriceList",
             "inputMode": "selector",
             "section": "principal",
@@ -207,7 +224,8 @@
             "required": false,
             "grid": true,
             "form": true,
-            "section": "principal"
+            "section": "principal",
+            "gridOrder": 5
           },
           {
             "name": "paymentMethod",
@@ -247,6 +265,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "PaymentTerm",
             "inputMode": "selector",
             "section": "principal",
@@ -267,6 +286,11 @@
             "required": true,
             "grid": true,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "DR"
+            },
             "enumValues": [
               {
                 "value": "AE",
@@ -333,7 +357,8 @@
                 "name": "Voided"
               }
             ],
-            "defaultValue": "DR"
+            "defaultValue": "DR",
+            "gridOrder": 4
           },
           {
             "name": "grandTotalAmount",
@@ -346,7 +371,9 @@
             "required": true,
             "grid": true,
             "form": true,
-            "section": "summary"
+            "sourceRequired": true,
+            "section": "summary",
+            "gridOrder": 6
           },
           {
             "name": "summedLineAmount",
@@ -359,6 +386,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "section": "summary"
           },
           {
@@ -372,6 +400,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "fromConfig",
+              "source": "context.cCurrencyId"
+            },
             "reference": "Currency",
             "inputMode": "selector",
             "defaultValue": "@C_Currency_ID@",
@@ -400,7 +433,12 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": false
+            "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "false"
+            }
           }
         ],
         "searchableFields": [
@@ -466,8 +504,17 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "Product",
             "inputMode": "search",
+            "lookup": true,
+            "forceCalloutFields": [
+              "unitPrice",
+              "tax",
+              "uOM",
+              "grossUnitPrice",
+              "discount"
+            ],
             "gridOrder": 1,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Product"
@@ -502,6 +549,11 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "1"
+            },
             "defaultValue": "1",
             "gridOrder": 3,
             "callout": {
@@ -525,6 +577,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "gridOrder": 4,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
@@ -546,6 +599,10 @@
             "required": false,
             "grid": true,
             "form": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0",
             "gridOrder": 5,
             "callout": {
@@ -568,8 +625,14 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "Tax",
-            "inputMode": "search",
+            "inputMode": "selector",
+            "forceCalloutFields": [
+              "lineGrossAmount",
+              "grossUnitPrice",
+              "lineNetAmount"
+            ],
             "gridOrder": 6,
             "validationRule": {
               "code": "C_TAX.VALIDFROM<=COALESCE(@DateInvoiced@,@DateOrdered@) AND (C_TAX.SOPOTYPE =(CASE WHEN @IsSOTrx@ = 'Y' THEN 'S' ELSE 'P' END) OR C_TAX.SOPOTYPE = 'B') AND C_TAX.AD_CLIENT_ID=@AD_CLIENT_ID@ AND C_TAX.C_TAX_ID=(CASE WHEN @IsSOTrx@ = 'Y' AND EXISTS(SELECT 1 FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) THEN (SELECT C_TAX_ID FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) ELSE C_TAX.C_TAX_ID END)",
@@ -602,6 +665,10 @@
             "required": false,
             "grid": true,
             "form": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0",
             "section": "principal",
             "gridOrder": 7,
@@ -621,6 +688,7 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -715,6 +783,7 @@
           "C_BPartner_ID": "Contact"
         }
       },
+      "dateFilterKey": "orderDate",
       "noHeaderBorder": true
     },
     "entities": {
@@ -2296,7 +2365,7 @@
         "field": "tax",
         "column": "C_Tax_ID",
         "reference": "Tax",
-        "inputMode": "search",
+        "inputMode": "selector",
         "url": "/sws/neo/sales-quotation/quotationLine/selectors/tax"
       }
     ],

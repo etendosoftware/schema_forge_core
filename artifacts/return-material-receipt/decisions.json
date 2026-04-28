@@ -1,10 +1,11 @@
 {
-  "$schema": "decisions-v1",
+  "$schema": "decisions-v2",
   "window": {
     "category": "sales",
     "name": "Return Material Receipt",
     "relatedDocuments": true,
-    "notesField": "description"
+    "notesField": "description",
+    "dateFilterKey": "movementDate"
   },
   "entities": {
     "mInOut": {
@@ -408,5 +409,6 @@
       "description": "When selecting a product on a line, auto-fill UOM from product default"
     }
   },
-  "discardPatterns": []
+  "discardPatterns": [],
+  "version": 2
 }

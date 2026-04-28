@@ -26,6 +26,8 @@
 | [decisions-reference.md](decisions-reference.md) | **Complete reference for all `decisions.json` options**: visibility, draftMode, sections, selectors, rules, discard patterns |
 | [field-visibility-types.md](field-visibility-types.md) | Field visibility types (editable, readOnly, system, discarded): behavior across pipeline, NEO Headless, and frontend |
 | [ui-customization.md](ui-customization.md) | **UI customization guide**: all extension points driven by `decisions.json` (statusBar, listKpiCards, customComponents, menuActions, layoutType, etc.) with real examples and decision tree |
+| [ui-design-guidelines.md](ui-design-guidelines.md) | **UI design guidelines**: z-index scale, scrim opacity, overlay/drawer patterns, monetary amount formatting (`formatCurrency` vs `formatDashboardAmount`), column alignment |
+| [list-filters.md](list-filters.md) | **List view filters reference**: subset filters, quick filters, document-type filters, advanced filter popover — composition rules, URL-param hooks, when to use which |
 | [pipeline-validator-reference.md](pipeline-validator-reference.md) | **Pipeline completeness validator**: rules F1–F10, artifact classification, CLI flags, exit codes, and troubleshooting |
 
 ## Design Specs
@@ -62,6 +64,7 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 |------|-------------|
 | [generated-custom-windows/INDEX.md](generated-custom-windows/INDEX.md) | Functional docs for generated/custom windows, including the app-shell flows guide |
 
+| [generated-custom-windows/2026-04-23-epic-etp-3504-merge-changelog.md](generated-custom-windows/2026-04-23-epic-etp-3504-merge-changelog.md) | Change log for the `epic/ETP-3504` -> `develop` window-level merge deltas documented in generated/custom windows |
 ## Guides
 
 | File | Description |

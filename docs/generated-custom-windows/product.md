@@ -1,71 +1,69 @@
 # Product
 
 ## Intent
-Product should let a user maintain the commercial and inventory identity of an item, then continue into the related surfaces that usually matter after the master record exists: pricing, stock visibility, transaction history, bill of materials, costing, characteristics, and alternate units of measure.
+Product lets a user maintain the commercial and inventory identity of an item, then continue into the product-specific surfaces that matter after the master record exists: pricing, stock visibility, transaction history, and the contract-backed child datasets attached to the selected product.
 
-In current repo evidence, this is not a narrow single-form maintenance screen. It is a multi-surface product workspace intended for browsing products visually, opening one record, and then working across product-specific detail panels and child datasets.
+On `origin/develop`, the visible product page is still a generated route with custom surfaces embedded into it: a gallery list, a grouped `Additional Info` panel, a pricing footer, and a product-specific inventory sidebar.
 
 ## What this window should allow
 - Browse products from the Inventory menu and recognize them quickly by image, name, search key, and category.
-- Create or update the core product definition, including search key, name, product type, category, UOM, image, tax category, sale/purchase flags, stocked flag, weight, UOM for weight, attribute set, brand, status, and UPC/EAN.
-- Move between a main identity view and a separate Additional Info view so commercial and logistics settings are not mixed into a single crowded form.
-- Review and maintain the product's main sales and purchase pricing from the detail footer instead of leaving the record for a separate pricing window.
-- Inspect stock availability and stock movement context for the selected product from the custom sidebar.
-- Work with product-related child datasets declared by the contract: price, price rule version, bill of materials, costing, transaction adjustments, transactions, characteristics, stock, category price rule version, and alternate UOM.
-- Use product-related actions declared in the contract for variant management and service/tax helper flows when the UI exposes them.
+- Create or update the core product definition, including search key, name, description, product type, category, UOM, image, tax category, sale/purchase flags, stocked flag, weight, UOM for weight, attribute set, brand, lifecycle status, returnable flag, and UPC/EAN.
+- Move between a main `General` tab and a separate `Additional Info` tab so commercial and logistics settings are grouped instead of mixed into one form.
+- Review pricing from the footer area instead of leaving the product page.
+- Inspect stock availability and stock movement context from the custom sidebar.
+- Use the contract-backed product children and actions when the generated page exposes them, while treating the exact visible tab set beyond the custom surfaces as partially evidenced.
 
 ## Interaction model
-- Route: `/product`, `/product/:recordId`
-- Visibility: visible from the Inventory menu as `Product`
-- Implementation type: generated window route registered in `tools/app-shell/src/windows/registry.js`, with product-specific custom surfaces embedded in the generated page: `ProductGallery`, `ProductAdditionalInfoPanel`, `ProductPriceBar`, and `ProductSidebar`
-- Window shape: master-child window. The product record is the master entity, and multiple child/product-related datasets are attached to the selected record.
+- **Route:** `/product` and `/product/:recordId`.
+- **Visibility:** visible from the `Inventory` section as `Product`.
+- **Implementation type:** generated window route loaded through `tools/app-shell/src/windows/registry.js`, with product-specific custom surfaces embedded in the generated page: `ProductGallery`, `ProductAdditionalInfoPanel`, `ProductPriceBar`, and `ProductSidebar`.
+- **Window shape:** master-child workspace. The selected product is the master entity, and product-related child datasets are attached to that record.
 
-The list surface is gallery-based rather than a plain grid. Product cards show image content when available and fall back to an icon when no image is present. Opening a record should take the user into a detail screen with two primary tabs: `General` and `Additional Info`.
+The list surface is gallery-based rather than a plain grid. Product cards show the image when one exists and fall back to a package icon when no image is available. Opening a record takes the user into a detail screen with two primary tabs: `General` and `Additional Info`.
 
 The detail screen also changes the standard generated behavior in three visible ways:
-- pricing is surfaced through a custom footer bar (`ProductPriceBar`)
+- pricing is surfaced through a custom footer (`ProductPriceBar`)
 - the sidebar is product-specific (`ProductSidebar`)
-- print and the generic More menu are hidden by contract
+- print and the generic More menu are hidden
 
 ## Reactive behavior and dependencies
-- Master/child dependency: the selected product drives child data loading. Pricing, stock, and transactions are fetched with `parentId=<productId>`, so those surfaces should always react to the currently opened product.
-- Gallery/detail dependency: selecting a product card in the gallery should navigate into that product's detail route.
-- Tab behavior: `Additional Info` is not just a field reorder. It is a custom panel that groups commercial settings (`Tax Category`, `Sale`, `Purchase`) separately from logistics settings (`Stocked`, `Returnable`, `Weight`, `UOM for Weight`).
-- Selector dependencies: product maintenance depends on reference selectors for category, tax category, UOM, UOM for weight, attribute set, brand, status, warehouse, currency, characteristic, characteristic subset, storage bin, and price list version where relevant.
-- Pricing behavior:
-  - the custom price bar separates existing rows into sales and purchase price lists
-  - if no pricing exists yet, the user can draft initial sales and purchase prices directly in the footer
-  - pricing creation tries to resolve defaults for `priceListVersion` and `priceList`, then falls back to selector options if defaults are unavailable
-  - once price rows exist, the dialog supports add, edit, and delete flows for price-list-version rows
-- Sidebar reactions:
-  - stock totals react to stock rows for the selected product and summarize on-hand, reserved, and available quantities
-  - warehouse distribution is aggregated from stock rows and shown in a warehouse-focused view
-  - stock movement visualization depends on transaction history for the selected product and is only shown when transaction data exists
-- Child-row defaults visible in current evidence:
-  - bill-of-materials line number defaults to the next line sequence
-  - bill-of-materials quantity defaults to `1`
-  - product category defaults to the default category returned by the SQL default in the contract
-- Totals, discount, and tax reactions: no product-level discount or tax-total recalculation behavior is visible in the current evidence. Tax handling is visible as master-data selection (`Tax Category`) and service/tax helper actions, not as live amount recalculation inside this window.
-- Status-driven actions: variant/service/tax helper actions are declared in the product contract, and a manual cost adjustment action is declared on transaction rows, but the current repo evidence inspected here does not clearly show how those actions are surfaced in the live product UI.
+- **Master/child dependency:** the selected product drives price, stock, and transaction loading through `parentId=<productId>`.
+- **Gallery/detail dependency:** selecting a product card in the gallery navigates into that product's detail route.
+- **Additional Info grouping:** the `Additional Info` tab is a custom panel with two cards. `Commercial` groups `Tax Category`, `Sale`, and `Purchase`. `Logistics` groups `Stocked`, `Returnable`, `Weight`, and `UOM for Weight`.
+- **Selector dependencies:** the current evidence shows selector-backed maintenance for category, tax category, UOM, UOM for weight, attribute set, brand, lifecycle status, warehouse, currency, characteristic, characteristic subset, storage bin, and price-list-version references where relevant.
+- **Pricing footer states:**
+  - When the product has not been saved yet, the footer shows a save-first message and blocks pricing maintenance.
+  - When the product exists but has no price rows yet, the footer shows an empty state plus `Set Pricing`. That action opens an inline create mode with two draft cards labeled `Sales price` and `Purchase price`.
+  - The initial create mode requires at least one entered amount, but it does not ask the user to choose a price list version. Repo evidence shows it resolves defaults from `/price/defaults` and then falls back to selector options automatically.
+  - In that initial create mode, the footer posts a single price row. The `Sales price` draft becomes `standardPrice`, the `Purchase price` draft becomes `listPrice`, and if one side is left blank the code mirrors the entered value into the missing one before saving.
+  - Once price rows exist, the footer switches to two summary tables: `Sales lists` and `Purchase lists`. The action changes from `Set Pricing` to `Edit Pricing` and opens a dialog.
+  - Inside the dialog, added rows are split by sales-vs-purchase selector metadata, duplicate price-list-version rows are blocked, and staged adds/edits/deletes are only applied when `Save changes` is pressed.
+  - Closing the dialog with unsaved changes triggers a confirmation overlay offering discard vs save.
+- **Sidebar reactions:**
+  - The inventory sidebar has two tabs: `Summary` and `Warehouses`.
+  - `Summary` shows on-hand, available, and reserved stat cards with color changes based on stock conditions.
+  - `Warehouses` shows a total on-hand callout plus per-warehouse cards with on-hand / available / reserved mini-stats.
+  - A separate `Stock movement` card is only shown when transaction rows exist for the selected product.
+  - The stock-movement card can expand into a modal with period switches (`1M`, `3M`, `6M`, `1Y`, `2Y`) and a warehouse-focused breakdown. Code-backed inference: when transactions exist but recent months are flat, the chart stays visible as a flat line anchored to current stock.
+- **Defaults visible in the generated contract:** bill-of-materials line number defaults to the next line sequence, bill-of-materials quantity defaults to `1`, and product category defaults from the SQL default declared in the contract.
 
 ## Gap assessment
-- The product contract declares many child datasets, but the current product page evidence inspected here only makes the custom gallery, the two main tabs, the custom pricing footer, and the custom sidebar explicit. It is not clear from the inspected docs/code whether every declared child dataset is currently exposed as a visible child tab or panel in the shipped page.
-- Variant management is clearly part of the business intent: the contract declares `manageVariants`, `createVariants`, and `updateInvariants`, and characteristic rows include `variant`, `definesPrice`, and related configuration fields. However, those action fields are marked discarded in the contract, and the inspected product page does not make their UI entry points explicit. Treat variant workflow support as partially evidenced, not fully confirmed.
-- Costing and transaction-adjustment capabilities are only partially visible. The contract exposes costing data and a transaction-level manual cost adjustment action, but the inspected evidence does not clearly show whether users can trigger those flows from obvious product-window controls today.
-- Stock is strongly represented in the sidebar and child entities, but no explicit stock validation or stock-driven blocking behavior is visible in current evidence. If the business expects stocked/non-stocked or warehouse-specific behavior to change other fields live, that dependency is not clearly shown here.
-- Pricing support is explicit, but discount-specific or tax-derived pricing reactions are not visible. The current evidence supports price-list maintenance, not broader promotional or tax-calculation logic inside the product window.
-- The custom `ProductDetailHeader` file currently returns `null` and is effectively replaced by the sidebar layout. If stakeholders expect a richer product header summary, that is not part of the current visible behavior.
+- The generated contract declares many child datasets and actions, but the inspected page code makes only the gallery, the two primary tabs, the pricing footer, and the product sidebar explicit. Treat the exact visible availability of every child surface beyond those areas as partially evidenced.
+- The footer's initial `Set Pricing` flow hides which price list version is chosen. Users only see the drafted values, while the actual target list/version comes from defaults or selector fallback.
+- Variant management, service/tax helper actions, and transaction-level manual cost adjustment remain declared in metadata, but the inspected page code does not make their live entry points explicit.
+- `ProductDetailHeader.jsx` still returns `null`, so any richer standalone product header is not part of the current visible behavior.
 
 ## Manual verification
-1. Open `/product` and confirm the list is a gallery of product cards, not only a flat table.
-2. Verify product cards show image content when present and still remain usable when no image is available.
+1. Open `/product` and confirm the list is a gallery of product cards rather than a flat table.
+2. Verify product cards show the product image when present and fall back to the package icon when no image exists.
 3. Open an existing product and confirm the detail surface exposes `General` and `Additional Info`.
-4. In `Additional Info`, verify the commercial group contains Tax Category, Sale, and Purchase, and the logistics group contains Stocked, Returnable, Weight, and UOM for Weight.
-5. In the footer, verify pricing is available through the custom pricing bar and that sales and purchase price lists are separated.
-6. For a product with no price rows, confirm the window allows entering initial sales and/or purchase pricing only after the product record exists.
-7. Confirm the sidebar reacts to the selected product by showing inventory overview figures and, when transaction history exists, stock movement visualization.
-8. If child tabs/panels for BOM, costing, transactions, characteristics, stock, category price rule version, and alternate UOM are expected, verify which of them are actually visible in the running window and record any missing surfaces as implementation gaps.
-9. If the business relies on variant actions or service/tax helper actions, verify whether those actions are reachable from the product UI; current repo evidence leaves that ambiguous.
+4. In `Additional Info`, verify the `Commercial` card contains `Tax Category`, `Sale`, and `Purchase`, and the `Logistics` card contains `Stocked`, `Returnable`, `Weight`, and `UOM for Weight`.
+5. Open `/product/new` and confirm the pricing footer says the product must be saved before pricing can be maintained.
+6. For a saved product with no price rows, confirm the footer shows `Set Pricing`, enters the inline `Sales price` / `Purchase price` draft state, and saves successfully when at least one amount is provided.
+7. After price rows exist, confirm the footer shows separate `Sales lists` and `Purchase lists` sections and that `Edit Pricing` opens the pricing dialog.
+8. In the dialog, stage an edit or add/delete action, try closing it, and confirm the unsaved-changes overlay appears.
+9. Confirm the sidebar exposes `Summary` and `Warehouses`, and that `Stock movement` only appears when the product has transaction history. When it appears, expand it and verify the period switches and warehouse drill-down.
+10. If the business depends on BOM, costing, transactions, characteristics, stock, category price rule version, alternate UOM, or variant actions, verify which of those surfaces are actually visible in the running page. Current repo evidence does not fully prove all of them.
 
 ## Automated evidence
 - Route registration and menu visibility are grounded in `tools/app-shell/src/windows/registry.js` and `tools/app-shell/src/menu.json`, which register `product` as a generated/custom window reachable from the Inventory section.
@@ -73,7 +71,7 @@ The detail screen also changes the standard generated behavior in three visible 
 - Product-specific behavior is grounded in current code under `tools/app-shell/src/windows/custom/product/`:
   - `ProductGallery.jsx` for gallery browsing
   - `ProductAdditionalInfoPanel.jsx` for grouped commercial/logistics editing
-  - `ProductPriceBar.jsx` for product pricing fetch/create/edit behavior
+  - `ProductPriceBar.jsx` for product pricing fetch/create/edit behavior. Unit prices and list prices shown in the pricing tables are formatted using the org's configured currency via `useCurrency()` and `formatCurrency()`, so the currency symbol reflects the organization's setting rather than a hardcoded value.
   - `ProductSidebar.jsx` for stock and transaction-driven sidebar summaries
 - The generated product page at `artifacts/product/generated/web/product/ProductPage.jsx` wires those custom surfaces into the product window and declares the attached child CRUD endpoints.
 - The product contract at `artifacts/product/contract.json` provides evidence for layout (`gallery`, sidebar layout, primary tabs), selectors, child entities, default values, and declared actions.

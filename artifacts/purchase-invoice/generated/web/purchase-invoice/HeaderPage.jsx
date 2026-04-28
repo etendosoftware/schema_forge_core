@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
+import { toast } from 'sonner';
 import HeaderTable from './HeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
@@ -18,10 +19,19 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Purchases / Purchase Invoice';
 
+const labelOverrides = {
+  "es_ES": {
+    "POReference": "Referencia de proveedor"
+  },
+  "en_US": {
+    "POReference": "Supplier reference"
+  }
+};
+
 
 // @sf-generated-start summary:header
 const summary = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+
 ];
 
 const statusField = 'documentStatus';
@@ -53,7 +63,7 @@ const addLineFields = {
     { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity', defaultValue: 1 },
     { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'search', label: 'Tax', reference: 'Tax', inputMode: 'search' },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineGrossAmount","grossAmount","lineNetAmount"] },
   ],
   derived: [
 
@@ -81,6 +91,7 @@ export const api = {
         "documentNo",
         "invoiceDate",
         "businessPartner",
+        "orderReference",
         "documentStatus"
       ]
     },
@@ -324,7 +335,7 @@ export const api = {
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
-      "inputMode": "search",
+      "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/lines/selectors/tax"
     },
     {
@@ -787,6 +798,14 @@ export const api = {
   },
   "window": {
     "category": "purchases"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "POReference": "Referencia de proveedor"
+    },
+    "en_US": {
+      "POReference": "Supplier reference"
+    }
   }
 };
 
@@ -820,7 +839,12 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         ]}
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        menuActions={({ status }) => [
+          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', labelKey: 'cancel', onClick: () => {}, },
+          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
+        ]}
         draftMode={draftMode}
+        labelOverrides={labelOverrides}
         {...props}
       />
     );
@@ -834,6 +858,8 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="invoiceDate"
+      labelOverrides={labelOverrides}
       {...props}
     />
   );

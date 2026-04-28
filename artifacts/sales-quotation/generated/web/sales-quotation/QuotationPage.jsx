@@ -49,14 +49,15 @@ const draftMode = null;
 // @sf-generated-start addLineFields:quotationLine
 const addLineFields = {
   entry: [
-    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["unitPrice","tax","uOM","grossUnitPrice","discount"] },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
     { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity', defaultValue: 1 },
     { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'search', required: true, label: 'Tax', reference: 'Tax', inputMode: 'search' },
+    { key: 'discount', column: 'Discount', type: 'number', label: 'Discount', defaultValue: 0 },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineGrossAmount","grossUnitPrice","lineNetAmount"] },
   ],
   derived: [
-    { key: 'discount', column: 'Discount', type: 'number', label: 'Discount' },
+
   ],
   hidden: [
 
@@ -161,7 +162,7 @@ export const api = {
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
-      "inputMode": "search",
+      "inputMode": "selector",
       "url": "/sws/neo/sales-quotation/quotationLine/selectors/tax"
     }
   ],
@@ -406,6 +407,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="orderDate"
       hidePrint
       labelOverrides={labelOverrides}
       {...props}

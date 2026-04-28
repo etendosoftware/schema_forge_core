@@ -26,7 +26,6 @@ export const contactModalConfig = {
       repeatable: true,
       initialRows: 1,
       noHeaders: true,
-      countsToProgress: true,
       emptyTextKey: 'noContactsYet',
       addLabelKey: 'addContactPerson',
       fields: [
@@ -42,7 +41,6 @@ export const contactModalConfig = {
       repeatable: true,
       initialRows: 1,
       noHeaders: true,
-      countsToProgress: true,
       emptyTextKey: 'noBankAccountsYet',
       addLabelKey: 'addBankAccount',
       fields: [
@@ -69,5 +67,5 @@ export const contactModalConfig = {
     },
   ],
   requiredFields: ['name', 'taxID', 'country'],
-  progressFields: ['name', 'taxID', 'taxIdType', 'address', 'country', 'city'],
+  progressFields: ['name', 'taxID', 'address', 'country', 'city'],
 };
