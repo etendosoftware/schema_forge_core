@@ -81,7 +81,7 @@ The Contacts window should let users maintain a shared business-partner master r
 ## Automated evidence
 
 - `tools/app-shell/src/windows/registry.js` and `tools/app-shell/src/menu.json` confirm that `/contacts` resolves to the custom contacts wrapper and remains the only visible People menu entry.
-- `tools/app-shell/src/windows/custom/contacts/index.jsx`, `ContactsContext.jsx`, `ContactsBusinessPartnerForm.jsx`, and `ContactTypeToggle.jsx` confirm the Company/Person toggle, its default Company initialization, and the field-exclusion behavior applied on the header form.
+- `tools/app-shell/src/windows/custom/contacts/index.jsx`, `ContactsContext.jsx`, `ContactsBusinessPartnerForm.jsx`, and `ContactTypeToggle.jsx` confirm the Company/Person toggle, its default Company initialization, and the field-exclusion behavior applied on the header form. The `index.jsx` wrapper div carries `flex-1 min-h-0 flex flex-col` to preserve the app-shell flex height chain; without these classes the `ListView` scroll container has no bounded height and the list cannot scroll.
 - `artifacts/contacts/generated/web/contacts/BusinessPartnerForm.jsx` and `BusinessPartnerPage.jsx` confirm the header fields, top-bar slot usage, General/Financial tabs, and the Person/Bank Account/Location child areas.
 - `tools/app-shell/src/components/contract-ui/DetailView.jsx` confirms the new-header auto-save flow before opening require-saved secondary tabs.
 - `tools/app-shell/src/windows/custom/contacts/ContactsTable.jsx` confirms list enrichment for customer/vendor badges and the derived location lookup.
