@@ -64,7 +64,7 @@ Use this window to register supplier invoices, keep the payable document aligned
 ## Automated evidence
 
 - `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the bulk-action component mounted in the purchase-invoice list selection bar, supporting both CO and RE based on selected row statuses. The `Reactivate` kebab menu action in the detail view is declared in `artifacts/purchase-invoice/decisions.json` with `visibleWhenStatus: "CO"` and `documentAction: "RE"`.
-- No dedicated purchase-invoice UI test was found under `tools/app-shell`.
+- `tools/app-shell/src/lib/__tests__/dateOnly.test.js`, `tools/app-shell/src/lib/__tests__/invoiceDueDate.test.js`, and `tools/app-shell/src/windows/custom/purchase-invoice/__tests__/PurchaseInvoiceHeaderTable.test.js` provide source-level and helper-level regression coverage for due-date calendar normalization, locale formatting, max-installment selection, and status-dot rendering in the purchase-invoice list.
 - Shared shell and entity-loading behavior is documented in `docs/generated-custom-windows/app-shell-functional-flows.md`.
 - Contract and UI evidence reviewed for this rewrite:
   - `tools/app-shell/src/menu.json`

@@ -9637,7 +9637,7 @@
       "description": "Cuenta para contabilizar ganancias por revalorización"
     },
     "PO_Paymentmethod_ID": {
-      "label": "Método de pago PO",
+      "label": "Método de pago",
       "description": ""
     },
     "PO_Financial_Account_ID": {
@@ -17551,7 +17551,7 @@
     "removeLocation": "Eliminar",
     "addLocation": "+ Agregar Dirección",
     "addAddress": "+ Agregar dirección",
-    "none": "— Ninguno —",
+    "none": "Ninguno",
     "soConfirmBtn": "Confirmar",
     "soConfirmTitle": "Confirmar pedido #{number}",
     "soConfirmWarning": "Una vez confirmado no podrás editar el pedido",

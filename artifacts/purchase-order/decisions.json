@@ -371,7 +371,8 @@
           "order": 6,
           "gridOrder": 6,
           "inputMode": "selector",
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "forceCalloutFields": ["lineGrossAmount", "grossUnitPrice", "lineNetAmount"]
         },
         "listPrice": {
           "visibility": "readOnly",

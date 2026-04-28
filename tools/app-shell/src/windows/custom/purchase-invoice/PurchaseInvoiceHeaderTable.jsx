@@ -1,22 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
 import { DataTable } from '@/components/contract-ui';
 import { useLocale, useLocaleSwitch } from '@/i18n';
-import {
-  formatCalendarDate,
-  getCalendarDateRelation,
-  parseCalendarDate,
-} from '@/lib/dateOnly';
+import { formatCalendarDate } from '@/lib/dateOnly';
+import { getDueDateDotColor, getLatestInstallmentDueDate } from '@/lib/invoiceDueDate';
 
 /* eslint-disable react/prop-types */
 
 const filters = ['documentNo', 'invoiceDate', 'businessPartner', 'orderReference', 'documentStatus'];
-
-function getDueDateDotColor(raw) {
-  const relation = getCalendarDateRelation(raw);
-  if (relation === 'past') return 'bg-red-500';
-  if (relation === 'today') return 'bg-amber-500';
-  return 'bg-emerald-500';
-}
 
 export default function PurchaseInvoiceHeaderTable(props) {
   const dictionary = useLocale();
@@ -37,10 +27,7 @@ export default function PurchaseInvoiceHeaderTable(props) {
           .then(r => r.ok ? r.json() : {})
           .then(d => {
             const installments = d?.response?.data ?? d?.data ?? [];
-            const timestamps = installments
-              .map(i => parseCalendarDate(i.dueDate)?.getTime() ?? NaN)
-              .filter(ts => !Number.isNaN(ts));
-            return [id, timestamps.length > 0 ? new Date(Math.max(...timestamps)) : null];
+            return [id, getLatestInstallmentDueDate(installments)];
           })
           .catch(() => [id, null])
       )

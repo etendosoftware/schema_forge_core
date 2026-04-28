@@ -83,6 +83,15 @@ describe('useInvoicePdf', () => {
     assert.match(src, /session\?\.organization/);
   });
 
+  it('fetches the full partner location from the contacts locationAddress endpoint', () => {
+    assert.match(src, /contacts\/locationAddress\/\$\{locationId\}/);
+  });
+
+  it('builds multi-line customer address output for the PDF', () => {
+    assert.match(src, /customerAddressLines/);
+    assert.match(src, /inv-address-lines/);
+  });
+
   // ── Memory management ─────────────────────────────────────────────────────
 
   it('revokes the previous blob URL on cleanup to avoid memory leaks', () => {

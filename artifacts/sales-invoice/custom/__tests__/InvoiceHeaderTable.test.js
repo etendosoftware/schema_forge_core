@@ -9,9 +9,9 @@ const src = readFileSync(join(__dirname, '..', 'InvoiceHeaderTable.jsx'), 'utf8'
 
 describe('Sales InvoiceHeaderTable', () => {
   it('uses calendar-date helpers for due date parsing and formatting', () => {
-    assert.match(src, /parseCalendarDate/);
     assert.match(src, /formatCalendarDate/);
     assert.match(src, /getCalendarDateRelation/);
+    assert.match(src, /getLatestInstallmentDueDate/);
   });
 
   it('formats due dates with the active locale instead of a hardcoded region', () => {
@@ -21,9 +21,7 @@ describe('Sales InvoiceHeaderTable', () => {
 
   it('renders the due date column with red, amber, and green dot states', () => {
     assert.match(src, /key.*_dueDate/);
-    assert.match(src, /bg-red-500/);
-    assert.match(src, /bg-amber-500/);
-    assert.match(src, /bg-emerald-500/);
+    assert.match(src, /getDueDateDotColor/);
   });
 
   it('treats only past due dates as overdue status', () => {

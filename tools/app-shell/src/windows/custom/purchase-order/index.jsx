@@ -72,6 +72,7 @@ export default function PurchaseOrderWindow(props) {
   const { recordId, windowName, token, apiBaseUrl } = props;
   const [searchParams] = useSearchParams();
   const [cloneTargets, setCloneTargets] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
     useCreateContactModal({ apiBaseUrl, token });
@@ -138,6 +139,7 @@ export default function PurchaseOrderWindow(props) {
         quickFilters={QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}
         dateFilterKey="orderDate"
+        refreshTrigger={refreshKey}
         {...props}
       />
       {cloneTargets && createPortal(
@@ -147,6 +149,7 @@ export default function PurchaseOrderWindow(props) {
           headers={headers}
           routePrefix="/purchase-order/"
           onClose={() => setCloneTargets(null)}
+          onCloned={() => setRefreshKey(k => k + 1)}
         />,
         document.body,
       )}
