@@ -16804,6 +16804,8 @@
     "customers": "Customers",
     "vendors": "Vendors",
     "commercialName": "Commercial Name",
+    "firstNameColumn": "First Name",
+    "lastNameColumn": "Last Name",
     "locationColumn": "Location",
     "webColumn": "Web",
     "emailColumn": "Email",

@@ -17039,6 +17039,8 @@
     "customers": "Clientes",
     "vendors": "Proveedores",
     "commercialName": "Nombre comercial",
+    "firstNameColumn": "Nombre",
+    "lastNameColumn": "Apellidos",
     "locationColumn": "Dirección",
     "webColumn": "Web",
     "emailColumn": "Correo electrónico",
