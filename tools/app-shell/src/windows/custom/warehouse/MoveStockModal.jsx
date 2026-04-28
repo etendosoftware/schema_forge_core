@@ -187,7 +187,7 @@ export default function MoveStockModal({ product, currentWarehouseId, data, toke
             <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#6B7280', marginBottom: 4 }}>
               {ui('warehouseMoveQtyLabel')}
               <span style={{ marginLeft: 6, fontWeight: 400, color: '#9CA3AF' }}>
-                (max {maxQty.toFixed(2)})
+                {ui('warehouseMoveQtyMax', { n: maxQty.toFixed(2) })}
               </span>
             </label>
             <input
