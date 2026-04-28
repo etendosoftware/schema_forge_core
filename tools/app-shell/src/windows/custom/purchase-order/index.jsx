@@ -11,6 +11,7 @@ import HeaderTable from '@generated/purchase-order/generated/web/purchase-order/
 import LinesTable from '@generated/purchase-order/generated/web/purchase-order/LinesTable';
 import GeneratedApp from '@generated/purchase-order/generated/web/purchase-order/index.jsx';
 import PurchaseOrderReactivateBulkAction from '@generated/purchase-order/custom/PurchaseOrderReactivateBulkAction';
+import BulkPurchaseOrderMoreMenu from '@generated/purchase-order/custom/BulkPurchaseOrderMoreMenu';
 import LinesEmptyState from '@/components/contract-ui/LinesEmptyState.jsx';
 
 // Simplified list columns aligned with Sales Order visual style
@@ -31,8 +32,9 @@ const draftModeWithModal = {
   onConfirm: () => window.dispatchEvent(new CustomEvent('purchase-order:open-confirm-modal')),
 };
 
-// Mirrors artifacts/purchase-order/generated/web/purchase-order/HeaderPage.jsx
-// Kept in sync manually because the generator does not expose labelOverrides yet.
+// Mirrors artifacts/purchase-order/generated/web/purchase-order/HeaderPage.jsx.
+// Kept in sync manually because the generator does not expose labelOverrides yet,
+// and the list view bulkActions prop is hand-rolled here (drift with decisions.json).
 const LABEL_OVERRIDES = {
   es_ES: {
     C_BPartner_ID: 'Contacto',
@@ -127,7 +129,12 @@ export default function PurchaseOrderWindow(props) {
         breadcrumb="Purchases / Purchase Order"
         labelOverrides={LABEL_OVERRIDES}
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
-        bulkActions={(ctx) => <PurchaseOrderReactivateBulkAction {...ctx} />}
+        bulkActions={(ctx) => (
+          <>
+            <BulkPurchaseOrderMoreMenu {...ctx} />
+            <PurchaseOrderReactivateBulkAction {...ctx} />
+          </>
+        )}
         initialColumnFilters={initialColumnFilters}
         quickFilters={QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}
