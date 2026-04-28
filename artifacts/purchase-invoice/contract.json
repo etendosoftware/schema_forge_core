@@ -1,7 +1,7 @@
 {
   "version": "0.9.0",
-  "generatedAt": "2026-04-27T23:22:08.056Z",
-  "checksum": "809aeda20e39e8bc",
+  "generatedAt": "2026-04-28T13:10:20.146Z",
+  "checksum": "bf9a99bc6c21b355",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -30,10 +30,10 @@
       "processOverrides": {},
       "labelOverrides": {
         "es_ES": {
-          "POReference": "Referencia de proveedor"
+          "POReference": "Nº documento"
         },
         "en_US": {
-          "POReference": "Supplier reference"
+          "POReference": "Document No."
         }
       },
       "dateFilterKey": "invoiceDate",
@@ -3124,10 +3124,10 @@
       "processOverrides": {},
       "labelOverrides": {
         "es_ES": {
-          "POReference": "Referencia de proveedor"
+          "POReference": "Nº documento"
         },
         "en_US": {
-          "POReference": "Supplier reference"
+          "POReference": "Document No."
         }
       },
       "dateFilterKey": "invoiceDate"
@@ -7949,10 +7949,10 @@
     },
     "labelOverrides": {
       "es_ES": {
-        "POReference": "Referencia de proveedor"
+        "POReference": "Nº documento"
       },
       "en_US": {
-        "POReference": "Supplier reference"
+        "POReference": "Document No."
       }
     }
   },

@@ -29,8 +29,8 @@ const LIST_COLUMNS = [
 // Mirrors artifacts/purchase-invoice/generated/web/purchase-invoice/HeaderPage.jsx
 // Kept in sync manually because the generator does not expose it yet.
 const LABEL_OVERRIDES = {
-  es_ES: { POReference: 'Referencia de proveedor' },
-  en_US: { POReference: 'Supplier reference' },
+  es_ES: { POReference: 'Nº documento' },
+  en_US: { POReference: 'Document No.' },
 };
 
 let previewRowSetterRef = null;
