@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { LineChart, BarChart2, Maximize2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useUI } from '@/i18n';
+import { niceScale, formatDashboardAxisTick } from '@/lib/dashboardNumberFormat';
 import { useWarehouseStock } from './useWarehouseStock';
 
 // Sidebar chart dimensions
@@ -56,12 +57,6 @@ function buildLabels(monthsBack) {
   });
 }
 
-function fmtY(val) {
-  if (Math.abs(val) >= 1_000_000) return (val / 1_000_000).toFixed(1) + 'M';
-  if (Math.abs(val) >= 1_000) return (val / 1_000).toFixed(0) + 'k';
-  return String(Math.round(val));
-}
-
 function fmtNum(val) {
   return Number(val).toLocaleString('en-US', { maximumFractionDigits: 0 });
 }
@@ -93,13 +88,13 @@ function StockSvg({ values, labels, chartType, cw, ch }) {
 
   // Line chart geometry
   const maxVal = Math.max(...values, 0);
-  const range = maxVal || 1;
+  const { niceMax, ticks: yTicks } = niceScale(maxVal);
   const plotW = cw - PAD_X * 2;
   const plotH = ch - PAD_Y - PAD_BOTTOM;
 
   const toPoint = (v, i) => ({
     x: n === 1 ? PAD_X + plotW / 2 : PAD_X + (i / (n - 1)) * plotW,
-    y: PAD_Y + plotH - (v / range) * plotH,
+    y: PAD_Y + plotH - (v / niceMax) * plotH,
   });
   const pts = values.map((v, i) => toPoint(v, i));
   const toPolyline = (p) => p.map((pt) => `${pt.x},${pt.y}`).join(' ');
@@ -115,6 +110,7 @@ function StockSvg({ values, labels, chartType, cw, ch }) {
   const barPlotW = cw - PAD_X - BAR_PAD_X;
   const barPlotH = ch - BAR_PAD_Y - BAR_PAD_BOTTOM;
   const barMaxVal = Math.max(...values, 1);
+  const { niceMax: barNiceMax, ticks: barYTicks } = niceScale(barMaxVal);
   const barSlotW = barPlotW / n;
   const barW = Math.min(barSlotW * 0.65, 56);
   const barGap = (barSlotW - barW) / 2;
@@ -131,13 +127,13 @@ function StockSvg({ values, labels, chartType, cw, ch }) {
             <stop offset="100%" stopColor="#10b981" stopOpacity="0.02" />
           </linearGradient>
         </defs>
-        {[0, 0.25, 0.5, 0.75, 1].map((frac) => {
-          const y = PAD_Y + plotH - frac * plotH;
+        {yTicks.map((val) => {
+          const y = PAD_Y + plotH - (val / niceMax) * plotH;
           return (
-            <g key={frac}>
+            <g key={val}>
               <line x1={PAD_X} y1={y} x2={cw - PAD_X} y2={y} stroke="hsl(var(--border))" strokeWidth="1" strokeDasharray="4 4" />
               <text x={PAD_X - 6} y={y + 3} textAnchor="end" className="fill-muted-foreground" fontSize="9">
-                {fmtY(frac * maxVal)}
+                {formatDashboardAxisTick(val)}
               </text>
             </g>
           );
@@ -148,9 +144,11 @@ function StockSvg({ values, labels, chartType, cw, ch }) {
           <circle
             key={i}
             cx={p.x} cy={p.y}
-            r={hovered?.i === i ? 5 : 3}
-            fill="hsl(var(--background))" stroke="#10b981" strokeWidth="2"
-            style={{ cursor: 'default', transition: 'r 0.1s' }}
+            r={hovered?.i === i ? 4.5 : 6}
+            fill={hovered?.i === i ? 'hsl(var(--background))' : 'transparent'}
+            stroke={hovered?.i === i ? '#10b981' : 'none'}
+            strokeWidth="2"
+            style={{ cursor: 'default' }}
             onMouseEnter={() => setHovered({ i, x: p.x, y: p.y })}
             onMouseLeave={() => setHovered(null)}
           />
@@ -176,19 +174,19 @@ function StockSvg({ values, labels, chartType, cw, ch }) {
 
   return (
     <svg viewBox={`0 0 ${cw} ${ch}`} className="w-full h-auto" role="img" aria-label="Stock bar chart">
-      {[0, 0.25, 0.5, 0.75, 1].map((frac) => {
-        const y = BAR_PAD_Y + barPlotH - frac * barPlotH;
+      {barYTicks.map((val) => {
+        const y = BAR_PAD_Y + barPlotH - (val / barNiceMax) * barPlotH;
         return (
-          <g key={frac}>
+          <g key={val}>
             <line x1={PAD_X} y1={y} x2={cw - BAR_PAD_X} y2={y} stroke="hsl(var(--border))" strokeWidth="1" strokeDasharray="4 4" />
             <text x={PAD_X - 6} y={y + 3} textAnchor="end" className="fill-muted-foreground" fontSize="9">
-              {fmtY(frac * barMaxVal)}
+              {formatDashboardAxisTick(val)}
             </text>
           </g>
         );
       })}
       {values.map((v, i) => {
-        const bH = Math.max((v / barMaxVal) * barPlotH, v > 0 ? 3 : 0);
+        const bH = Math.max((v / barNiceMax) * barPlotH, v > 0 ? 3 : 0);
         const x = PAD_X + i * barSlotW + barGap;
         const y = BAR_PAD_Y + barPlotH - bH;
         const tipX = x + barW / 2;
@@ -210,7 +208,7 @@ function StockSvg({ values, labels, chartType, cw, ch }) {
         );
       })}
       {hovered && (
-        <SvgTooltip x={hovered.x} y={hovered.y} label={labels[hovered.i]} value={values[hovered.i]} cw={cw} />
+        <SvgTooltip x={hovered.x} y={hovered.y} label={labels[hovered.i]} value={values[hovered.i]} cw={cw} ui={ui} />
       )}
     </svg>
   );
