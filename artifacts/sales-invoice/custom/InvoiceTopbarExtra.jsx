@@ -401,7 +401,6 @@ function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, to
                       <span style={{ fontSize: 12, fontWeight: 500, color: '#374151' }}>{ui('dueDate')} {idx + 1}</span>
                       <span style={{ color: '#d1d5db' }}>&middot;</span>
                       <span className="tabular-nums" style={{ fontSize: 12, fontWeight: 500, color: '#111827' }}>{fmt(instAmount, currency)}</span>
-                      <span style={{ fontSize: 11, color: '#9ca3af' }}>{Math.round(instAmount / (localTotal || grandTotal || 1) * 100)}%</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span className="tabular-nums" style={{ fontSize: 11, color: '#6B7280' }}>{fmtDate(inst.dueDate)}</span>
