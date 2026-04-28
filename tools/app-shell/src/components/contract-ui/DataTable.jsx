@@ -295,7 +295,7 @@ const NUMERIC_FIELD_TYPES = new Set(['number', 'integer', 'decimal', 'quantity',
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
-const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable, hasDeleteColumn, hasCloneColumn, token, apiBaseUrl, entity, selectorContext }, ref) {
+const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable, hasDeleteColumn, hasCloneColumn, token, apiBaseUrl, entity, selectorContext, parentId, selectors }, ref) {
   const t = useLabel();
   const fieldMap = useMemo(() => {
     const map = {};
@@ -344,6 +344,85 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
   const handleChange = (key, val) => {
     setValues(prev => ({ ...prev, [key]: val }));
   };
+
+  // Fetch backend /defaults for the new line, mirroring useEntity.handleNew for headers.
+  // The endpoint resolves link-to-parent columns (via parentId), @SQL= defaults using parent
+  // context, and other window-aware defaults that the contract's static defaultValue cannot
+  // express. After defaults arrive, fire callouts for non-dependent selector fields with
+  // values so the callout chain runs (mirrors DetailView.jsx default-callouts trigger).
+  const defaultsLoadedRef = useRef(false);
+  useEffect(() => {
+    if (defaultsLoadedRef.current) return;
+    if (!apiBaseUrl || !entity) return;
+    defaultsLoadedRef.current = true;
+    let cancelled = false;
+    (async () => {
+      try {
+        const url = `${apiBaseUrl}/${entity}/defaults${parentId ? `?parentId=${encodeURIComponent(parentId)}` : ''}`;
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const res = await fetch(url, { headers });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (!data?.defaults) return;
+        const { id: _discardId, ...rest } = data.defaults;
+        const normalized = {};
+        const fieldKeys = new Set(fields.map(f => f.key));
+        for (const [key, val] of Object.entries(rest)) {
+          let normalizedVal = val;
+          if (typeof val === 'string' && /^\d{2}-\d{2}-\d{4}$/.test(val)) {
+            const [dd, mm, yyyy] = val.split('-');
+            normalizedVal = `${yyyy}-${mm}-${dd}`;
+          } else if (typeof val === 'string' && /^'.*'$/.test(val)) {
+            normalizedVal = val.slice(1, -1).replace(/''/g, "'");
+          } else if (val === 'Y') {
+            normalizedVal = true;
+          } else if (val === 'N') {
+            normalizedVal = false;
+          } else if (typeof val === 'number' && Number.isInteger(val)) {
+            normalizedVal = String(val);
+          }
+          // Keep $_identifier companions even if the base field is not in fieldKeys —
+          // the callout/display layer reads them.
+          if (fieldKeys.has(key) || key.includes('$_identifier')) {
+            normalized[key] = normalizedVal;
+          }
+        }
+        if (cancelled || Object.keys(normalized).length === 0) return;
+        setValues(prev => {
+          const merged = { ...prev };
+          for (const [k, v] of Object.entries(normalized)) {
+            // Do not overwrite contract defaults the user can already see (e.g. lineNo, qty=1)
+            // unless the current value is empty.
+            const cur = merged[k];
+            if (cur === '' || cur == null) merged[k] = v;
+          }
+          return merged;
+        });
+
+        // Trigger callouts for non-dependent selector fields that received a default value.
+        // Stagger so each callout result settles before the next one fires.
+        if (Array.isArray(selectors) && onFieldChange) {
+          const triggers = selectors
+            .filter(s => s.entity === entity && s.inputMode !== 'dependent' && normalized[s.field]);
+          const STAGGER_MS = 400;
+          const snapshot = { ...normalized };
+          triggers.forEach(({ field }, i) => {
+            setTimeout(() => {
+              if (cancelled) return;
+              const value = snapshot[field];
+              if (value) onFieldChange(field, value, snapshot, (updates, forceFields = new Set()) => {
+                setValues((prev) => applyCalloutUpdates(prev, updates, forceFields, field, touchedFieldsRef.current));
+              });
+            }, i * STAGGER_MS);
+          });
+        }
+      } catch {
+        // Defaults are best-effort; line stays usable with contract defaults only.
+      }
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiBaseUrl, entity, parentId]);
 
   const submitLine = useCallback(({ closeAfterSave = false } = {}) => {
     // Dedupe concurrent submits: outside-click + parent flushPendingLines can fire
@@ -825,7 +904,7 @@ function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) 
  *  - selectedId: string | number
  *  - compact: boolean (reserved for narrower layout)
  *  - loading: boolean (shows skeleton when true)
- *  - addRow: { active, fields, onAdd, onCancel, catalogs, onFieldChange } — inline add row config
+ *  - addRow: { active, fields, onAdd, onCancel, catalogs, onFieldChange, parentId, selectors } — inline add row config
  *  - onDeleteRow: (row) => void — when provided, renders a per-row delete button (trash icon)
  *      that appears on row hover and on keyboard focus. Invoked with the row object; click
  *      propagation is stopped so it does not trigger row selection or navigation.
@@ -1342,6 +1421,8 @@ export function DataTable({
                   apiBaseUrl={apiBaseUrl}
                   entity={entity}
                   selectorContext={selectorContext}
+                  parentId={addRow.parentId}
+                  selectors={addRow.selectors}
                 />
               )}
           </TableBody>

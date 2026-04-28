@@ -1816,6 +1816,8 @@ export function DetailView({
                           onCancel: () => setAddingLine(false),
                           catalogs,
                           onFieldChange: handleLineFieldChange,
+                          parentId: hook.selected?.id ?? recordId,
+                          selectors: api?.selectors,
                         }}
                       />
 
@@ -2152,6 +2154,8 @@ export function DetailView({
                           },
                           onCancel: () => setAddingSecondaryLine(prev => ({ ...prev, [st.key]: false })),
                           catalogs,
+                          parentId: hook.selected?.id ?? recordId,
+                          selectors: api?.selectors,
                         } : undefined}
                       />
                     </div>
