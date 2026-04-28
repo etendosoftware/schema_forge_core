@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { collectSourceFiles, isJavaScriptModule, parseModuleSource, readJson, repoRelative, walkAst } from './shared.js';
+import { collectSourceFiles, collectTargetSourceFiles, isJavaScriptModule, parseModuleSource, readJson, repoRelative, walkAst } from './shared.js';
 
 const IGNORED_VISIBILITIES = new Set(['discarded', 'system']);
 const SCANNED_ATTRIBUTES = new Set(['title', 'placeholder', 'aria-label']);
@@ -43,6 +43,10 @@ function collectTranslatorAliases(ast) {
 }
 
 function collectCustomFiles(rootDir, windowDir, windowName) {
+  if (windowName.startsWith('app-shell:')) {
+    return collectTargetSourceFiles(rootDir, windowName);
+  }
+
   const appShellCustomDir = join(rootDir, 'tools', 'app-shell', 'src', 'windows', 'custom');
   const appShellPagesDir = join(rootDir, 'tools', 'app-shell', 'src', 'pages');
   const aliases = windowName === 'contacts' ? ['businessPartner'] : [];
@@ -111,21 +115,23 @@ function collectStringViolations(ast, source, rootDir, filePath) {
 }
 
 export async function runI18nCheck(windowName, { rootDir, windowDir }) {
-  const contractPath = join(windowDir, 'contract.json');
-  if (!existsSync(contractPath)) {
-    return { status: 'skip', detail: 'contract.json is missing.' };
-  }
-
-  const contract = readJson(contractPath);
   const violations = [];
 
-  for (const [entityName, entity] of Object.entries(contract.frontendContract?.entities ?? {})) {
-    for (const field of entity.fields ?? []) {
-      if (!field.form || IGNORED_VISIBILITIES.has(field.visibility)) {
-        continue;
-      }
-      if (typeof field.column !== 'string' || field.column.trim().length === 0) {
-        violations.push(`${entityName}.${field.name} is missing a non-empty column key for i18n lookup.`);
+  if (!windowName.startsWith('app-shell:')) {
+    const contractPath = join(windowDir, 'contract.json');
+    if (!existsSync(contractPath)) {
+      return { status: 'skip', detail: 'contract.json is missing.' };
+    }
+
+    const contract = readJson(contractPath);
+    for (const [entityName, entity] of Object.entries(contract.frontendContract?.entities ?? {})) {
+      for (const field of entity.fields ?? []) {
+        if (!field.form || IGNORED_VISIBILITIES.has(field.visibility)) {
+          continue;
+        }
+        if (typeof field.column !== 'string' || field.column.trim().length === 0) {
+          violations.push(`${entityName}.${field.name} is missing a non-empty column key for i18n lookup.`);
+        }
       }
     }
   }

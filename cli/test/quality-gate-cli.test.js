@@ -119,6 +119,43 @@ describe('runQualityGateCli', () => {
     assert.deepEqual(calls[0], { rootDir: '/repo', baselineRef: 'base-sha', headRef: 'head-sha' });
   });
 
+  it('does not skip when app-shell onboarding files change without touching generated windows', async () => {
+    const result = await runQualityGateCli({
+      args: ['--pr-affected'],
+      rootDir: '/repo',
+      deps: {
+        loadConfig: async () => CONFIG,
+        collectDecisionWindows: () => ['purchase-order', 'sales-order'],
+        getChangedFiles: async () => ['tools/app-shell/src/pages/onboarding/onboardingState.js'],
+        detectAffectedWindows: () => ['app-shell:onboarding'],
+        detectAffectedWindowsDetailed: () => [{ window: 'app-shell:onboarding', source: 'direct' }],
+        runQualityGate: async ({ windowNames }) => ({
+          summary: { gateVerdict: 'PASS', affectedWindows: windowNames.length },
+          windows: [{
+            window: 'app-shell:onboarding',
+            verdict: 'PASS',
+            score: { passed: 3, total: 3 },
+            blockerFailures: [],
+            checks: [
+              { check: 'parse', severity: 'blocker', status: 'pass', detail: 'ok' },
+              { check: 'imports', severity: 'blocker', status: 'pass', detail: 'ok' },
+              { check: 'i18n', severity: 'blocker', status: 'pass', detail: 'ok' },
+            ],
+          }],
+        }),
+        resolveBaseline: async () => ({
+          source: 'cache',
+          baselineSha: 'abc1234',
+          data: { windows: [{ window: 'app-shell:onboarding', score: { passed: 3, total: 3 } }] },
+        }),
+      },
+    });
+
+    assert.equal(result.exitCode, 0);
+    assert.match(result.stdout, /Affected windows: 1/);
+    assert.doesNotMatch(result.stdout, /No windows affected; gate skipped/);
+  });
+
   it('writes markdown and json outputs and returns a failing exit code when the gate fails', async () => {
     const rootDir = mkdtempSync(join(tmpdir(), 'quality-gate-cli-'));
     const markdownPath = join(rootDir, 'qg-report.md');

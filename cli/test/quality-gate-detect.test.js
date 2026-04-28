@@ -17,6 +17,8 @@ const SAMPLE_CONFIG = {
     { pattern: 'tools/app-shell/src/i18n/*.js', scope: 'all-windows' },
     { pattern: 'tools/app-shell/src/i18n/*.jsx', scope: 'all-windows' },
     { pattern: 'tools/app-shell/src/windows/registry.js', scope: 'all-windows' },
+    { pattern: 'tools/app-shell/src/pages/OnboardingPage.jsx', scope: 'named-target', target: 'app-shell:onboarding' },
+    { pattern: 'tools/app-shell/src/pages/onboarding/**', scope: 'named-target', target: 'app-shell:onboarding' },
     { pattern: 'schemas/contract.schema.json', scope: 'all-windows' },
   ],
 };
@@ -131,14 +133,24 @@ describe('detectAffectedWindows', () => {
     assert.deepEqual(affected, ['purchase-order', 'sales-order']);
   });
 
-  it('returns no windows for top-level app shell page changes', () => {
+  it('returns the onboarding app-shell target for top-level onboarding page changes', () => {
     const affected = detectAffectedWindows({
       changedFiles: ['tools/app-shell/src/pages/OnboardingPage.jsx'],
       blastRadius: SAMPLE_CONFIG.blastRadius,
       availableWindows: ['purchase-order', 'sales-order'],
     });
 
-    assert.deepEqual(affected, []);
+    assert.deepEqual(affected, ['app-shell:onboarding']);
+  });
+
+  it('returns the onboarding app-shell target for onboarding helper changes', () => {
+    const affected = detectAffectedWindows({
+      changedFiles: ['tools/app-shell/src/pages/onboarding/onboardingState.js'],
+      blastRadius: SAMPLE_CONFIG.blastRadius,
+      availableWindows: ['purchase-order', 'sales-order'],
+    });
+
+    assert.deepEqual(affected, ['app-shell:onboarding']);
   });
 
   it('maps businessPartner shared custom code back to contacts', () => {
@@ -211,13 +223,15 @@ describe('detectAffectedWindowsDetailed', () => {
     ]);
   });
 
-  it('does not mark top-level app shell page changes as window-affecting', () => {
+  it('marks onboarding app-shell targets as direct', () => {
     const affected = detectAffectedWindowsDetailed({
       changedFiles: ['tools/app-shell/src/pages/OnboardingPage.jsx'],
       blastRadius: SAMPLE_CONFIG.blastRadius,
       availableWindows: ['purchase-order', 'sales-order'],
     });
 
-    assert.deepEqual(affected, []);
+    assert.deepEqual(affected, [
+      { window: 'app-shell:onboarding', source: 'direct' },
+    ]);
   });
 });

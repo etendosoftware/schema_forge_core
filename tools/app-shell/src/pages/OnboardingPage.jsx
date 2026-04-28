@@ -417,7 +417,7 @@ function SetupProgressShell({ children }) {
 }
 
 // Shared page header — shown in post-auth views
-function PageHeader({ accountName, onLogout, isAuthenticated, logoutLabel }) {
+function PageHeader({ accountName, onLogout, isAuthenticated, logoutLabel, brandLabel }) {
   return (
     <header className="bg-white border-b border-gray-100 px-6 py-4">
       <div className="max-w-2xl mx-auto flex items-center justify-between">
@@ -425,7 +425,7 @@ function PageHeader({ accountName, onLogout, isAuthenticated, logoutLabel }) {
           <div className="w-8 h-8 bg-amber-400 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">E</span>
           </div>
-          <span className="font-semibold text-gray-900">Etendo</span>
+          <span className="font-semibold text-gray-900">{brandLabel}</span>
         </div>
         {isAuthenticated && accountName && (
           <div className="flex items-center gap-3">
@@ -977,6 +977,7 @@ export default function OnboardingPage() {
           accountName={accountName}
           onLogout={handleLogout}
           logoutLabel={ui('logout')}
+          brandLabel={ui('onboardingBrandName')}
         />
 
         {/* Extra header actions row */}

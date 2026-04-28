@@ -25,6 +25,26 @@ export function isJavaScriptModule(filePath) {
   return filePath.endsWith('.js') || filePath.endsWith('.jsx');
 }
 
+export function isOnboardingTarget(targetName) {
+  return targetName === 'app-shell:onboarding';
+}
+
+export function collectTargetSourceFiles(rootDir, targetName) {
+  if (isOnboardingTarget(targetName)) {
+    const pagesDir = join(rootDir, 'tools', 'app-shell', 'src', 'pages');
+    const onboardingFiles = collectSourceFiles(
+      join(pagesDir, 'onboarding'),
+      (filePath) => isJavaScriptModule(filePath) && !filePath.includes('/__tests__/')
+    );
+    const onboardingPagePath = join(pagesDir, 'OnboardingPage.jsx');
+    return [
+      ...(existsSync(onboardingPagePath) ? [onboardingPagePath] : []),
+      ...onboardingFiles,
+    ].sort((left, right) => left.localeCompare(right));
+  }
+  return [];
+}
+
 export function parseModuleSource(source, filename) {
   return parse(source, {
     sourceType: 'module',
