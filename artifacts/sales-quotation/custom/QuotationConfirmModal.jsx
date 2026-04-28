@@ -192,7 +192,12 @@ export default function QuotationConfirmModal({
               {docLabel}
             </div>
             <div style={{ fontSize: 12, color: '#6B7280', marginTop: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              {createdDoc.documentNo && <span>{ui('orderDoc', { number: createdDoc.documentNo })}</span>}
+              {createdDoc.documentNo && (
+                <span>
+                  {ui(createdDoc.type === 'invoice' ? 'invoiceDoc' : 'orderDoc',
+                      { number: createdDoc.documentNo })}
+                </span>
+              )}
               {createdDoc.total && <><span style={{ color: '#D1D5DB' }}>·</span> <span>{createdDoc.total}</span></>}
               <span style={{
                 fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 99,
