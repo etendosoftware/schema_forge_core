@@ -148,6 +148,11 @@
           "section": "principal",
           "order": 4
         },
+        "etgoIsperson": {
+          "visibility": "editable",
+          "form": false,
+          "grid": false
+        },
         "etgoIdentifier": {
           "visibility": "readOnly",
           "form": true,

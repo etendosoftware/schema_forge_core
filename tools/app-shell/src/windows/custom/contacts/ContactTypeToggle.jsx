@@ -1,13 +1,56 @@
+import { useEffect, useRef } from 'react';
 import { useUI } from '@/i18n';
 import { useContactsType } from './ContactsContext';
 
 /* eslint-disable react/prop-types */
 
-export default function ContactTypeToggle({ data }) {
+export default function ContactTypeToggle({ data, recordId, token, apiBaseUrl }) {
   const ui = useUI();
   const { personType: selected, setPersonType: setSelected } = useContactsType();
 
+  // Ref so the post-save PATCH can read the current selection without a stale closure
+  const selectedRef = useRef(selected);
+  selectedRef.current = selected;
+
+  const userSelectedRef = useRef(false);
+  const prevDataIdRef = useRef(data?.id ?? null);
+
+  useEffect(() => {
+    if (!data?.id) return;
+    const prevDataId = prevDataIdRef.current;
+    prevDataIdRef.current = data.id;
+
+    if (!prevDataId && userSelectedRef.current) {
+      // New record was just saved — persist the user's toggle choice
+      userSelectedRef.current = false;
+      if (recordId && token && apiBaseUrl) {
+        fetch(`${apiBaseUrl}/businessPartner/${recordId}`, {
+          method: 'PATCH',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ etgoIsperson: selectedRef.current === 'person' }),
+        }).catch(() => {});
+      }
+      return;
+    }
+
+    userSelectedRef.current = false;
+    const isPerson = data.etgoIsperson === true || data.etgoIsperson === 'Y';
+    setSelected(isPerson ? 'person' : 'company');
+  }, [data?.id]);
+
   if (!data) return null;
+
+  function handleSelect(newType) {
+    userSelectedRef.current = true;
+    setSelected(newType);
+    if (recordId && token && apiBaseUrl) {
+      fetch(`${apiBaseUrl}/businessPartner/${recordId}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ etgoIsperson: newType === 'person' }),
+      }).catch(() => {});
+    }
+  }
 
   return (
     <div
@@ -16,7 +59,7 @@ export default function ContactTypeToggle({ data }) {
     >
       <button
         type="button"
-        onClick={() => setSelected('person')}
+        onClick={() => handleSelect('person')}
         className="flex-1 h-8 px-2 text-sm font-medium rounded-lg transition-all"
         style={
           selected === 'person'
@@ -32,7 +75,7 @@ export default function ContactTypeToggle({ data }) {
       </button>
       <button
         type="button"
-        onClick={() => setSelected('company')}
+        onClick={() => handleSelect('company')}
         className="flex-1 h-8 px-2 text-sm font-medium rounded-lg transition-all"
         style={
           selected === 'company'
