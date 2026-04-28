@@ -1,6 +1,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkSalesInvoiceReadiness, READINESS_ENDPOINTS } from '../onboardingReadiness.js';
+import {
+  checkSalesInvoiceReadiness,
+  READINESS_ENDPOINTS,
+  READINESS_FAILURE_KEYS,
+} from '../onboardingReadiness.js';
 
 function jsonResponse(status, body) {
   return {
@@ -52,7 +56,7 @@ describe('checkSalesInvoiceReadiness', () => {
     const result = await checkSalesInvoiceReadiness(fetchImpl, '', 'env-token');
 
     assert.equal(result.ready, false);
-    assert.match(result.failures.join('\n'), /session/i);
+    assert.deepEqual(result.failures[0], { key: READINESS_FAILURE_KEYS.session, status: 401 });
   });
 
   it('fails when payment terms are missing', async () => {
@@ -66,7 +70,7 @@ describe('checkSalesInvoiceReadiness', () => {
     const result = await checkSalesInvoiceReadiness(fetchImpl, '', 'env-token');
 
     assert.equal(result.ready, false);
-    assert.match(result.failures.join('\n'), /payment term/i);
+    assert.equal(result.failures[0].key, READINESS_FAILURE_KEYS.paymentTerms);
   });
 
   it('fails when customer selector is empty', async () => {
@@ -80,7 +84,7 @@ describe('checkSalesInvoiceReadiness', () => {
     const result = await checkSalesInvoiceReadiness(fetchImpl, '', 'env-token');
 
     assert.equal(result.ready, false);
-    assert.match(result.failures.join('\n'), /customer/i);
+    assert.equal(result.failures[0].key, READINESS_FAILURE_KEYS.customers);
   });
 
   it('fails when document type is zero', async () => {
@@ -94,6 +98,10 @@ describe('checkSalesInvoiceReadiness', () => {
     const result = await checkSalesInvoiceReadiness(fetchImpl, '', 'env-token');
 
     assert.equal(result.ready, false);
-    assert.match(result.failures.join('\n'), /document type/i);
+    assert.deepEqual(result.failures[0], {
+      key: READINESS_FAILURE_KEYS.documentType,
+      status: 200,
+      documentType: '0',
+    });
   });
 });

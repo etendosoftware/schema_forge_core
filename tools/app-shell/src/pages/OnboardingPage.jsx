@@ -10,6 +10,7 @@ import {
   ArrowRight, User, MessageCircle,
 } from 'lucide-react';
 import {
+  ONBOARDING_ERROR_CODES,
   fetchAccount,
   fetchEnvironments,
   loginAccount,
@@ -18,6 +19,7 @@ import {
   runOnboardingStream,
 } from './onboarding/onboardingApi.js';
 import { checkSalesInvoiceReadiness } from './onboarding/onboardingReadiness.js';
+import { useLocaleSwitch, useUI } from '../i18n/index.js';
 import {
   applyProgressMessage,
   buildEnvironmentSessionStorage,
@@ -35,27 +37,18 @@ function detectBaseUrl() {
 
 const BASE_URL = detectBaseUrl();
 
-const SETUP_STEPS = [
-  { name: 'setup', label: 'Preparando contexto', icon: Settings, estimate: '1s' },
-  { name: 'client', label: 'Crear empresa', icon: Briefcase, estimate: '2 min' },
-  { name: 'organization', label: 'Crear organizacion', icon: Building2, estimate: '1 min' },
-  { name: 'finalize', label: 'Finalizar configuracion', icon: Rocket, estimate: '1s' },
-];
+const SETUP_STEP_ICONS = {
+  setup: Settings,
+  client: Briefcase,
+  organization: Building2,
+  finalize: Rocket,
+};
 
 const CURRENCIES = ['EUR'];
-const LANGUAGES = [
-  { value: 'es_ES', label: 'Español' },
-  { value: 'en_US', label: 'English' },
-];
-const COUNTRIES = [
-  { value: 'ES', label: 'España' },
-];
-const SECTORS = [
-  { value: 'technology', label: 'Tecnología' },
-  { value: 'services', label: 'Servicios' },
-  { value: 'commerce', label: 'Comercio' },
-  { value: 'manufacturing', label: 'Industria' },
-];
+const LOCALE_CODES = ['es_ES', 'en_US'];
+const COUNTRY_CODES = ['ES'];
+const SECTOR_CODES = ['technology', 'services', 'commerce', 'manufacturing'];
+const BUSINESS_TYPE_VALUES = ['company', 'freelancer', 'advisory'];
 const DEFAULT_ONBOARDING_FORM = {
   fullName: '',
   businessType: 'company',
@@ -129,18 +122,17 @@ function SelectField({ id, value, onChange, disabled, children, label }) {
   );
 }
 
-const AUTH_FEATURES = ['Sin tarjeta de crédito', 'Prueba gratuita', 'Acceso inmediato'];
 
-function AuthBrand() {
+function AuthBrand({ label }) {
   return (
     <div className="flex items-center gap-3">
       <img
         src="/favicon.png"
-        alt="Etendo"
+        alt={label}
         className="h-14 w-14 rounded-2xl border border-white/80 bg-white object-contain p-1 shadow-[0_12px_30px_rgba(250,204,21,0.45)]"
       />
       <span className="text-xl font-semibold tracking-[-0.03em] text-slate-900 sm:text-2xl">
-        Etendo
+        {label}
       </span>
     </div>
   );
@@ -168,23 +160,49 @@ function AuthPreviewMockup() {
   );
 }
 
-function AuthShell({ switchPrompt, switchAction, onSwitch, children }) {
+function OnboardingLanguageSelect({ label, locale, onChange, options }) {
+  return (
+    <div className="min-w-[132px]">
+      <Label htmlFor="onboarding-language" className="mb-2 block text-xs font-medium uppercase tracking-[0.08em] text-slate-500">
+        {label}
+      </Label>
+      <select
+        id="onboarding-language"
+        aria-label={label}
+        value={locale}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-4 focus:ring-slate-900/5"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>{option.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+const AUTH_FEATURE_KEYS = ['onboardingAuthFeatureNoCard', 'onboardingAuthFeatureTrial', 'onboardingAuthFeatureInstantAccess'];
+
+function AuthShell({ brandLabel, switchPrompt, switchAction, onSwitch, headerContent, marketingTitle, marketingDescription, featureLabels, children }) {
   return (
     <div className="min-h-screen bg-white">
       <div className="flex min-h-screen w-full bg-white lg:grid lg:grid-cols-[minmax(0,1.12fr)_minmax(420px,0.88fr)]">
         <section className="flex min-h-[720px] flex-col bg-white px-6 py-6 sm:px-8 lg:px-10 xl:px-12">
-          <div className="flex flex-col gap-5 border-b border-slate-100 pb-6 sm:flex-row sm:items-center sm:justify-between lg:border-b-0 lg:pb-0">
-            <AuthBrand />
-            <p className="text-xs text-slate-700 sm:text-sm">
-              {switchPrompt}{' '}
-              <button
-                type="button"
-                onClick={onSwitch}
-                className="font-medium text-slate-900 underline underline-offset-4 transition hover:text-slate-700"
-              >
-                {switchAction}
-              </button>
-            </p>
+          <div className="flex flex-col gap-5 border-b border-slate-100 pb-6 sm:flex-row sm:items-start sm:justify-between lg:border-b-0 lg:pb-0">
+            <AuthBrand label={brandLabel} />
+            <div className="flex flex-col items-end gap-4">
+              {headerContent}
+              <p className="text-xs text-slate-700 sm:text-sm">
+                {switchPrompt}{' '}
+                <button
+                  type="button"
+                  onClick={onSwitch}
+                  className="font-medium text-slate-900 underline underline-offset-4 transition hover:text-slate-700"
+                >
+                  {switchAction}
+                </button>
+              </p>
+            </div>
           </div>
 
           <div className="flex flex-1 items-center justify-center py-10 lg:py-16">
@@ -199,13 +217,13 @@ function AuthShell({ switchPrompt, switchAction, onSwitch, children }) {
                 <Sparkles className="h-6 w-6 text-slate-500" />
               </div>
               <h2 className="max-w-xl text-3xl font-semibold tracking-[-0.05em] text-slate-900 xl:text-[2.5rem] xl:leading-[1.08]">
-                Gestiona tu negocio con ayuda de Copilot
+                {marketingTitle}
               </h2>
               <p className="mt-4 max-w-2xl text-lg leading-7 text-slate-600">
-                Factura, registra gastos y obtén reportes en segundos, con una interfaz simple y guiada
+                {marketingDescription}
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                {AUTH_FEATURES.map((feature) => (
+                {featureLabels.map((feature) => (
                   <AuthFeaturePill key={feature}>{feature}</AuthFeaturePill>
                 ))}
               </div>
@@ -241,22 +259,25 @@ function AuthField({ id, label, required = false, icon: Icon, trailing, classNam
   );
 }
 
-function SetupShell({ progressLabel, progressValue, children }) {
+function SetupShell({ brandLabel, progressLabel, progressValue, headerContent, children }) {
   return (
     <div className="min-h-screen bg-white">
       <div className="flex min-h-screen w-full bg-white lg:grid lg:grid-cols-[minmax(0,1.12fr)_minmax(420px,0.88fr)]">
         <section className="flex min-h-screen flex-col bg-white px-6 py-6 sm:px-8 lg:px-10 xl:px-12">
           <div className="flex items-start justify-between gap-6">
-            <AuthBrand />
-            <div className="w-full max-w-[22rem] pt-1">
-              <p className="text-right text-xs font-medium text-slate-500 sm:text-sm">
-                {progressLabel}
-              </p>
-              <div className="mt-3 h-2.5 rounded-full bg-slate-200">
-                <div
-                  className="h-full rounded-full bg-slate-900 transition-all duration-300"
-                  style={{ width: `${progressValue}%` }}
-                />
+            <AuthBrand label={brandLabel} />
+            <div className="flex w-full max-w-[22rem] flex-col items-end gap-3 pt-1">
+              {headerContent}
+              <div className="w-full">
+                <p className="text-right text-xs font-medium text-slate-500 sm:text-sm">
+                  {progressLabel}
+                </p>
+                <div className="mt-3 h-2.5 rounded-full bg-slate-200">
+                  <div
+                    className="h-full rounded-full bg-slate-900 transition-all duration-300"
+                    style={{ width: `${progressValue}%` }}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -334,7 +355,7 @@ function BusinessTypeCard({ icon: Icon, label, selected, onClick }) {
   );
 }
 
-function SetupProgressCard({ progress, title, description, leading, success = false }) {
+function SetupProgressCard({ progress, title, description, leading, statusLabel, success = false }) {
   const ringColor = success ? '#54b56a' : '#171923';
   const trackColor = success ? '#d9f2df' : '#e6eaf2';
   const barColor = success ? '#54b56a' : '#171923';
@@ -361,7 +382,7 @@ function SetupProgressCard({ progress, title, description, leading, success = fa
 
       <div className="mx-auto max-w-[460px]">
         <div className="mb-3 flex items-center justify-between text-sm text-slate-500">
-          <span>{success ? 'Completado' : 'Cargando...'}</span>
+          <span>{statusLabel}</span>
           <span>{progress}%</span>
         </div>
         <div className="h-2 rounded-full" style={{ backgroundColor: trackColor }}>
@@ -396,7 +417,7 @@ function SetupProgressShell({ children }) {
 }
 
 // Shared page header — shown in post-auth views
-function PageHeader({ accountName, onLogout, isAuthenticated }) {
+function PageHeader({ accountName, onLogout, isAuthenticated, logoutLabel }) {
   return (
     <header className="bg-white border-b border-gray-100 px-6 py-4">
       <div className="max-w-2xl mx-auto flex items-center justify-between">
@@ -415,7 +436,7 @@ function PageHeader({ accountName, onLogout, isAuthenticated }) {
               onClick={onLogout}
               className="text-gray-500 hover:text-gray-700"
             >
-              Cerrar sesion
+              {logoutLabel}
             </Button>
           </div>
         )}
@@ -455,6 +476,8 @@ export default function OnboardingPage() {
   const [result, setResult] = useState(null);
   const [running, setRunning] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const ui = useUI();
+  const { locale, setLocale } = useLocaleSwitch();
 
   // Fetch environments and route: 0 → create, 1+ → auto-enter first
   const routeByEnvironments = useCallback(async () => {
@@ -495,6 +518,11 @@ export default function OnboardingPage() {
         setView('register');
       });
   }, []);
+
+  useEffect(() => {
+    if (!locale) return;
+    setForm(prev => (prev.language === locale ? prev : { ...prev, language: locale }));
+  }, [locale]);
 
   useEffect(() => {
     if (!accountName) return;
@@ -554,10 +582,10 @@ export default function OnboardingPage() {
       if (data.token) {
         handleRegisterSuccess(data.token, data.account);
       } else {
-        setRegisterError('No se pudo crear la cuenta.');
+        setRegisterError(ui('onboardingRegisterFailed'));
       }
     } catch (err) {
-      setRegisterError(err.message || 'Error de conexion. Intenta de nuevo.');
+      setRegisterError(err.userMessage || ui(err.code || 'onboardingConnectionError'));
     } finally {
       setRegisterLoading(false);
     }
@@ -573,10 +601,10 @@ export default function OnboardingPage() {
       if (data.token) {
         handleAuthSuccess(data.token, data.account);
       } else {
-        setLoginError('Credenciales invalidas.');
+        setLoginError(ui('onboardingInvalidCredentials'));
       }
     } catch (err) {
-      setLoginError(err.message || 'Error de conexion. Intenta de nuevo.');
+      setLoginError(err.userMessage || ui(err.code || 'onboardingConnectionError'));
     } finally {
       setLoginLoading(false);
     }
@@ -606,7 +634,8 @@ export default function OnboardingPage() {
           if (!readiness.ready) {
             setResult({
               status: 'failed',
-              error: `El entorno se creó, pero todavía no está listo para facturar: ${readiness.failures.join(' ')}`,
+              readinessFailures: readiness.failures,
+              error: null,
             });
             return;
           }
@@ -614,12 +643,12 @@ export default function OnboardingPage() {
         window.location.href = '/dashboard';
         return;
       }
-      alert('Login failed.');
+      alert(ui('onboardingEnvironmentLoginFailed'));
     } catch (err) {
       if (requireReadiness) {
-        setResult({ status: 'failed', error: err.message });
+        setResult({ status: 'failed', error: err.userMessage || ui(err.code || 'onboardingEnvironmentLoginFailed') });
       } else {
-        alert('Login error: ' + err.message);
+        alert(err.userMessage || ui(err.code || 'onboardingEnvironmentLoginFailed'));
       }
     } finally {
       setLoggingIn(null);
@@ -648,7 +677,7 @@ export default function OnboardingPage() {
         }
       });
     } catch (err) {
-      setResult({ status: 'failed', error: err.message });
+      setResult({ status: 'failed', error: err.userMessage || ui(err.code || 'onboardingGenericError') });
     } finally {
       setRunning(false);
       if (succeeded) {
@@ -675,53 +704,77 @@ export default function OnboardingPage() {
   }, [form]);
 
   const updateField = (field, value) => setForm(f => ({ ...f, [field]: value }));
-  const businessTypeOptions = [
-    { value: 'company', label: 'Empresa', icon: Building2 },
-    { value: 'freelancer', label: 'Autónomo', icon: User },
-    { value: 'advisory', label: 'Asesoría', icon: MessageCircle },
-  ];
+  const setOnboardingLocale = (nextLocale) => {
+    setLocale?.(nextLocale);
+    setForm(prev => ({ ...prev, language: nextLocale }));
+  };
+  const countryOptions = COUNTRY_CODES.map((code) => ({
+    value: code,
+    label: code === 'ES' ? ui('onboardingCountrySpain') : code,
+  }));
+  const sectorOptions = SECTOR_CODES.map((code) => ({
+    value: code,
+    label: ui(`onboardingSector${code.charAt(0).toUpperCase()}${code.slice(1)}`),
+  }));
+  const businessTypeOptions = BUSINESS_TYPE_VALUES.map((value) => ({
+    value,
+    label: ui(`onboardingBusinessType${value.charAt(0).toUpperCase()}${value.slice(1)}`),
+    icon: value === 'company' ? Building2 : value === 'freelancer' ? User : MessageCircle,
+  }));
+  const authFeatureLabels = AUTH_FEATURE_KEYS.map((key) => ui(key));
+  const languageOptions = LOCALE_CODES.map((code) => ({
+    value: code,
+    label: code === 'es_ES' ? ui('onboardingLanguageSpanish') : ui('onboardingLanguageEnglish'),
+  }));
+  const localeControl = setLocale ? (
+    <OnboardingLanguageSelect
+      label={ui('language')}
+      locale={locale}
+      onChange={setOnboardingLocale}
+      options={languageOptions}
+    />
+  ) : null;
   const isStepOneValid = isProfileStepValid(form);
   const isStepTwoValid = isCompanyStepValid(form);
-  const setupGreetingName = (form.fullName || accountName || 'Jhon').trim().split(/\s+/)[0];
+  const setupGreetingName = (form.fullName || accountName || ui('onboardingGreetingFallback')).trim().split(/\s+/)[0];
   const activeSetupStep = steps.find((step) => step.status === 'running')?.name;
+  const readinessFailureText = (result?.readinessFailures ?? []).map((failure) => ui(failure.key)).join(' ');
   const setupProgressState = result?.status === 'success'
     ? {
       progress: 100,
-      title: 'Tu cuenta ya está en marcha',
-      description: 'Ya puedes empezar a gestionar tu negocio',
+      title: ui('onboardingSuccessTitle'),
+      description: ui('onboardingSuccessDescription'),
       leading: <Check className="h-8 w-8 text-[#54b56a]" strokeWidth={3} />,
+      statusLabel: ui('onboardingCompleted'),
       success: true,
     }
     : activeSetupStep === 'client'
       ? {
         progress: 50,
-        title: 'Estamos preparando tu espacio',
-        description: 'Activando tus módulos...',
+        title: ui('onboardingPreparingTitle'),
+        description: ui('onboardingPreparingActivatingDescription'),
         leading: <Sparkles className="h-8 w-8 text-slate-400" />,
+        statusLabel: ui('loading'),
         success: false,
       }
       : activeSetupStep === 'organization' || activeSetupStep === 'finalize'
         ? {
           progress: 80,
-          title: 'Estamos preparando tu espacio',
-          description: 'Dejando todo listo...',
+          title: ui('onboardingPreparingTitle'),
+          description: ui('onboardingPreparingFinishingDescription'),
           leading: <Check className="h-8 w-8 text-slate-400" strokeWidth={3} />,
+          statusLabel: ui('loading'),
           success: false,
         }
         : {
           progress: 20,
-          title: 'Estamos preparando tu espacio',
-          description: 'Configurando impuestos según tu país...',
+          title: ui('onboardingPreparingTitle'),
+          description: ui('onboardingPreparingTaxesDescription'),
           leading: form.countryCode === 'ES' ? '🇪🇸' : '🌍',
+          statusLabel: ui('loading'),
           success: false,
         };
 
-  // Calculate progress
-  const completedCount = steps.filter(s => s.status === 'done').length;
-  const totalSteps = steps.length + 1; // +1 for the form step
-  const progressPercent = formSubmitted
-    ? Math.round(((completedCount + 1) / totalSteps) * 100)
-    : 0;
 
   // ── LOADING (initial token check) ──
   if (view === null) {
@@ -736,8 +789,8 @@ export default function OnboardingPage() {
   if (view === 'register') {
     return (
       <AuthShell
-        switchPrompt="¿Ya tienes una cuenta?"
-        switchAction="Iniciar sesión"
+        switchPrompt={ui('onboardingSwitchToLoginPrompt')}
+        switchAction={ui('onboardingSwitchToLoginAction')}
         onSwitch={() => {
           setRegisterError(null);
           setLoginError(null);
@@ -745,13 +798,18 @@ export default function OnboardingPage() {
           setShowLoginPassword(false);
           setView('login');
         }}
+        brandLabel={ui('onboardingBrandName')}
+        headerContent={localeControl}
+        marketingTitle={ui('onboardingMarketingTitle')}
+        marketingDescription={ui('onboardingMarketingDescription')}
+        featureLabels={authFeatureLabels}
       >
         <div className="mb-10">
           <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
-            Crea tu cuenta gratis
+            {ui('onboardingRegisterTitle')}
           </h1>
           <p className="mt-3 text-base text-slate-600 sm:text-xl">
-            Empieza en menos de 1 minuto
+            {ui('onboardingRegisterSubtitle')}
           </p>
         </div>
 
@@ -759,12 +817,12 @@ export default function OnboardingPage() {
           <AuthField
             id="reg-name"
             type="text"
-            label="Nombre"
+            label={ui('onboardingNameLabel')}
             icon={UserPlus}
             value={registerForm.name}
             onChange={e => setRegisterForm(f => ({ ...f, name: e.target.value }))}
             disabled={registerLoading}
-            placeholder="Tu nombre"
+            placeholder={ui('onboardingNamePlaceholder')}
             autoComplete="name"
             required
           />
@@ -772,12 +830,12 @@ export default function OnboardingPage() {
           <AuthField
             id="reg-email"
             type="email"
-            label="Correo electrónico"
+            label={ui('onboardingEmailLabel')}
             icon={Mail}
             value={registerForm.email}
             onChange={e => setRegisterForm(f => ({ ...f, email: e.target.value }))}
             disabled={registerLoading}
-            placeholder="tu@email.com"
+            placeholder={ui('onboardingEmailPlaceholder')}
             autoComplete="email"
             required
           />
@@ -785,18 +843,18 @@ export default function OnboardingPage() {
           <AuthField
             id="reg-password"
             type={showRegisterPassword ? 'text' : 'password'}
-            label="Contraseña"
+            label={ui('onboardingPasswordLabel')}
             icon={Lock}
             value={registerForm.password}
             onChange={e => setRegisterForm(f => ({ ...f, password: e.target.value }))}
             disabled={registerLoading}
-            placeholder="********"
+            placeholder={ui('onboardingPasswordPlaceholder')}
             autoComplete="new-password"
             required
             trailing={(
               <button
                 type="button"
-                aria-label={showRegisterPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                aria-label={showRegisterPassword ? ui('onboardingHidePassword') : ui('onboardingShowPassword')}
                 onClick={() => setShowRegisterPassword(value => !value)}
                 className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
               >
@@ -817,8 +875,8 @@ export default function OnboardingPage() {
             className="h-12 w-full rounded-2xl bg-gray-900 text-base font-medium text-white hover:bg-gray-800"
           >
             {registerLoading
-              ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Creando cuenta...</>
-              : 'Crear cuenta'}
+              ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />{ui('onboardingCreatingAccount')}</>
+              : ui('onboardingCreateAccountAction')}
           </Button>
         </form>
       </AuthShell>
@@ -829,8 +887,8 @@ export default function OnboardingPage() {
   if (view === 'login') {
     return (
       <AuthShell
-        switchPrompt="¿Aún no tienes una cuenta?"
-        switchAction="Crear cuenta"
+        switchPrompt={ui('onboardingSwitchToRegisterPrompt')}
+        switchAction={ui('onboardingSwitchToRegisterAction')}
         onSwitch={() => {
           setRegisterError(null);
           setLoginError(null);
@@ -838,13 +896,18 @@ export default function OnboardingPage() {
           setShowLoginPassword(false);
           setView('register');
         }}
+        brandLabel={ui('onboardingBrandName')}
+        headerContent={localeControl}
+        marketingTitle={ui('onboardingMarketingTitle')}
+        marketingDescription={ui('onboardingMarketingDescription')}
+        featureLabels={authFeatureLabels}
       >
         <div className="mb-10">
           <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
-            Inicia sesión en tu cuenta
+            {ui('onboardingLoginTitle')}
           </h1>
           <p className="mt-3 text-base text-slate-600 sm:text-xl">
-            Continúa donde lo dejaste
+            {ui('onboardingLoginSubtitle')}
           </p>
         </div>
 
@@ -852,12 +915,12 @@ export default function OnboardingPage() {
           <AuthField
             id="login-email"
             type="email"
-            label="Correo electrónico"
+            label={ui('onboardingEmailLabel')}
             icon={Mail}
             value={loginForm.email}
             onChange={e => setLoginForm(f => ({ ...f, email: e.target.value }))}
             disabled={loginLoading}
-            placeholder="tu@email.com"
+            placeholder={ui('onboardingEmailPlaceholder')}
             autoComplete="email"
             required
           />
@@ -865,18 +928,18 @@ export default function OnboardingPage() {
           <AuthField
             id="login-password"
             type={showLoginPassword ? 'text' : 'password'}
-            label="Contraseña"
+            label={ui('onboardingPasswordLabel')}
             icon={Lock}
             value={loginForm.password}
             onChange={e => setLoginForm(f => ({ ...f, password: e.target.value }))}
             disabled={loginLoading}
-            placeholder="********"
+            placeholder={ui('onboardingPasswordPlaceholder')}
             autoComplete="current-password"
             required
             trailing={(
               <button
                 type="button"
-                aria-label={showLoginPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                aria-label={showLoginPassword ? ui('onboardingHidePassword') : ui('onboardingShowPassword')}
                 onClick={() => setShowLoginPassword(value => !value)}
                 className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
               >
@@ -897,8 +960,8 @@ export default function OnboardingPage() {
             className="h-12 w-full rounded-2xl bg-gray-900 text-base font-medium text-white hover:bg-gray-800"
           >
             {loginLoading
-              ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Iniciando sesión...</>
-              : 'Iniciar sesión'}
+              ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />{ui('onboardingSigningIn')}</>
+              : ui('onboardingLoginAction')}
           </Button>
         </form>
       </AuthShell>
@@ -913,36 +976,40 @@ export default function OnboardingPage() {
           isAuthenticated
           accountName={accountName}
           onLogout={handleLogout}
+          logoutLabel={ui('logout')}
         />
 
         {/* Extra header actions row */}
         <div className="bg-white border-b border-gray-100">
           <div className="max-w-2xl mx-auto px-6 py-3 flex items-center justify-between">
-            <span className="text-sm text-gray-400">Tus entornos</span>
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={routeByEnvironments}
-                disabled={loadingEnvs}
-                className="text-gray-500"
-              >
-                <RefreshCw className={`h-4 w-4 ${loadingEnvs ? 'animate-spin' : ''}`} />
-              </Button>
-              <Button
-                onClick={() => { setCreateStep(1); setResult(null); setView('create'); }}
-                className="bg-amber-400 hover:bg-amber-500 text-white"
-              >
-                <Plus className="h-4 w-4 mr-1" /> Nuevo entorno
-              </Button>
+            <span className="text-sm text-gray-400">{ui('onboardingEnvironmentsShort')}</span>
+            <div className="flex items-end gap-3">
+              {localeControl}
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={routeByEnvironments}
+                  disabled={loadingEnvs}
+                  className="text-gray-500"
+                >
+                  <RefreshCw className={`h-4 w-4 ${loadingEnvs ? 'animate-spin' : ''}`} />
+                </Button>
+                <Button
+                  onClick={() => { setCreateStep(1); setResult(null); setView('create'); }}
+                  className="bg-amber-400 hover:bg-amber-500 text-white"
+                >
+                  <Plus className="h-4 w-4 mr-1" /> {ui('onboardingNewEnvironment')}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
 
         <div className="max-w-2xl mx-auto p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Tus entornos</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">{ui('onboardingEnvironmentsTitle')}</h1>
           <p className="text-gray-500 text-sm mb-6">
-            Selecciona un entorno para comenzar a trabajar.
+            {ui('onboardingEnvironmentsSubtitle')}
           </p>
 
           {loadingEnvs ? (
@@ -954,13 +1021,13 @@ export default function OnboardingPage() {
               <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Building2 className="h-8 w-8 text-gray-300" />
               </div>
-              <p className="text-lg font-medium text-gray-900 mb-1">Sin entornos</p>
-              <p className="text-gray-500 text-sm mb-6">Crea tu primer entorno para comenzar.</p>
+              <p className="text-lg font-medium text-gray-900 mb-1">{ui('onboardingNoEnvironments')}</p>
+              <p className="text-gray-500 text-sm mb-6">{ui('onboardingCreateFirstEnvironment')}</p>
               <Button
                 onClick={() => { setCreateStep(1); setResult(null); setView('create'); }}
                 className="bg-amber-400 hover:bg-amber-500 text-white"
               >
-                <Plus className="h-4 w-4 mr-1" /> Crear entorno
+                <Plus className="h-4 w-4 mr-1" /> {ui('onboardingCreateEnvironment')}
               </Button>
             </div>
           ) : (
@@ -991,7 +1058,7 @@ export default function OnboardingPage() {
                     {loggingIn === env.clientId ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <>Entrar <ChevronRight className="h-4 w-4 ml-1" /></>
+                      <>{ui('onboardingEnterEnvironment')} <ChevronRight className="h-4 w-4 ml-1" /></>
                     )}
                   </Button>
                 </div>
@@ -1014,45 +1081,47 @@ export default function OnboardingPage() {
 
   return (
     <SetupShell
-      progressLabel={createStep === 1 ? 'Un paso más' : 'Casi listo'}
+      progressLabel={createStep === 1 ? ui('onboardingProgressAlmostReady') : ui('onboardingProgressAlmostDone')}
       progressValue={createStep === 1 ? 50 : 90}
+      headerContent={localeControl}
+      brandLabel={ui('onboardingBrandName')}
     >
       {createStep === 1 ? (
         <div>
           <div className="mb-10">
             <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
-              Hola {setupGreetingName} 👋
+              {ui('onboardingGreeting', { name: setupGreetingName })}
             </h1>
             <p className="mt-3 text-base text-slate-700 sm:text-xl">
-              Vamos a dejar todo listo en menos de 1 minuto
+              {ui('onboardingSetupSubtitle')}
             </p>
           </div>
 
           <div className="space-y-6">
             <SetupField
               id="fullName"
-              label="Nombre completo"
+              label={ui('onboardingFullNameLabel')}
               required
               value={form.fullName}
               onChange={e => updateField('fullName', e.target.value)}
-              placeholder="Jhon Doe"
+              placeholder={ui('onboardingFullNamePlaceholder')}
             />
 
             <SetupSelect
               id="countryCode"
-              label="País"
+              label={ui('onboardingCountryLabel')}
               required
               value={form.countryCode}
               onChange={e => updateField('countryCode', e.target.value)}
             >
-              {COUNTRIES.map((country) => (
+              {countryOptions.map((country) => (
                 <option key={country.value} value={country.value}>{country.label}</option>
               ))}
             </SetupSelect>
 
             <div>
               <Label className="mb-2 block text-base font-medium tracking-[-0.02em] text-slate-900">
-                Tipo de negocio:
+                {ui('onboardingBusinessTypeLabel')}
               </Label>
               <div className="grid gap-4 sm:grid-cols-3">
                 {businessTypeOptions.map((option) => (
@@ -1075,7 +1144,7 @@ export default function OnboardingPage() {
               disabled={!isStepOneValid}
               className="h-12 rounded-2xl bg-gray-900 px-6 text-base font-medium text-white hover:bg-gray-800"
             >
-              Continuar <ArrowRight className="ml-2 h-4 w-4" />
+              {ui('onboardingContinueAction')} <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -1083,26 +1152,26 @@ export default function OnboardingPage() {
         <div>
           <div className="mb-10">
             <h1 className="text-3xl font-semibold tracking-[-0.06em] text-slate-900 sm:text-[2.7rem] sm:leading-[1.04]">
-              Datos para empezar a facturar
+              {ui('onboardingCompanyTitle')}
             </h1>
             <p className="mt-3 text-base text-slate-700 sm:text-xl">
-              Puedes editarlos más adelante
+              {ui('onboardingCompanySubtitle')}
             </p>
           </div>
 
           <div className="space-y-6">
             <SetupField
               id="clientName"
-              label="Nombre de la empresa"
+              label={ui('onboardingCompanyNameLabel')}
               required
               value={form.clientName}
               onChange={e => updateField('clientName', e.target.value)}
-              placeholder="Mi empresa"
+              placeholder={ui('onboardingCompanyNamePlaceholder')}
             />
 
             <div>
               <Label htmlFor="fiscalIdValue" className="mb-2 block text-base font-medium tracking-[-0.02em] text-slate-900">
-                Identificación fiscal <span className="ml-1 text-rose-500">*</span>
+                {ui('onboardingFiscalIdLabel')} <span className="ml-1 text-rose-500">*</span>
               </Label>
               <div className="flex overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] focus-within:ring-4 focus-within:ring-slate-900/5">
                 <div className="flex min-w-[88px] items-center justify-center border-r border-slate-300 px-4 text-base text-slate-500">
@@ -1113,7 +1182,7 @@ export default function OnboardingPage() {
                   type="text"
                   value={form.fiscalIdValue}
                   onChange={e => updateField('fiscalIdValue', e.target.value)}
-                  placeholder="12345678Z"
+                  placeholder={ui('onboardingFiscalIdPlaceholder')}
                   className="h-12 w-full border-0 px-4 text-base text-slate-900 outline-none placeholder:text-slate-400"
                 />
               </div>
@@ -1121,20 +1190,20 @@ export default function OnboardingPage() {
 
             <SetupField
               id="address"
-              label="Dirección"
-              trailingLabel="(opcional)"
+              label={ui('onboardingAddressLabel')}
+              trailingLabel={`(${ui('optional')})`}
               value={form.address}
               onChange={e => updateField('address', e.target.value)}
-              placeholder="Av. Corrientes 1234"
+              placeholder={ui('onboardingAddressPlaceholder')}
             />
 
             <SetupSelect
               id="sector"
-              label="Sector"
+              label={ui('onboardingSectorLabel')}
               value={form.sector}
               onChange={e => updateField('sector', e.target.value)}
             >
-              {SECTORS.map((sector) => (
+              {sectorOptions.map((sector) => (
                 <option key={sector.value} value={sector.value}>{sector.label}</option>
               ))}
             </SetupSelect>
@@ -1142,7 +1211,7 @@ export default function OnboardingPage() {
 
           {result?.status === 'failed' && (
             <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
-              {result.error}
+              {result.error || ui('onboardingReadinessFailed', { reasons: readinessFailureText })}
             </div>
           )}
 
@@ -1153,7 +1222,7 @@ export default function OnboardingPage() {
               disabled={running}
               className="text-base font-medium tracking-[-0.02em] text-slate-900 transition hover:text-slate-600 disabled:opacity-50 sm:text-lg"
             >
-              Atrás
+              {ui('back')}
             </button>
 
             <Button
@@ -1163,9 +1232,9 @@ export default function OnboardingPage() {
               className="h-12 rounded-2xl bg-gray-900 px-6 text-base font-medium text-white hover:bg-gray-800 disabled:bg-slate-200 disabled:text-slate-500"
             >
               {running ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Empezando...</>
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{ui('onboardingStarting')}</>
               ) : (
-                <><ArrowRight className="mr-2 h-4 w-4" />Empezar</>
+                <><ArrowRight className="mr-2 h-4 w-4" />{ui('onboardingStartAction')}</>
               )}
             </Button>
           </div>

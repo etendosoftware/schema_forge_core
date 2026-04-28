@@ -1,3 +1,13 @@
+export const ONBOARDING_ERROR_CODES = {
+  registerFailed: 'onboardingRegisterFailed',
+  invalidCredentials: 'onboardingInvalidCredentials',
+  invalidSession: 'onboardingInvalidSession',
+  loadEnvironmentsFailed: 'onboardingLoadEnvironmentsFailed',
+  environmentLoginFailed: 'onboardingEnvironmentLoginFailed',
+  streamUnavailable: 'onboardingStreamUnavailable',
+  missingResult: 'onboardingMissingResult',
+};
+
 export function buildAuthHeaders(token) {
   return {
     'Content-Type': 'application/json',
@@ -5,10 +15,17 @@ export function buildAuthHeaders(token) {
   };
 }
 
-async function readJsonResponse(response, fallbackMessage) {
+function buildApiError(data, fallbackCode) {
+  const error = new Error(data?.error?.message || data?.message || fallbackCode);
+  error.code = fallbackCode;
+  error.userMessage = data?.error?.message || data?.message || null;
+  return error;
+}
+
+async function readJsonResponse(response, fallbackCode) {
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data?.error?.message || fallbackMessage);
+    throw buildApiError(data, fallbackCode);
   }
   return data;
 }
@@ -19,7 +36,7 @@ export async function registerAccount(fetchImpl, baseUrl, form) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(form),
   });
-  return readJsonResponse(response, 'No se pudo crear la cuenta.');
+  return readJsonResponse(response, ONBOARDING_ERROR_CODES.registerFailed);
 }
 
 export async function loginAccount(fetchImpl, baseUrl, form) {
@@ -28,21 +45,21 @@ export async function loginAccount(fetchImpl, baseUrl, form) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(form),
   });
-  return readJsonResponse(response, 'Credenciales invalidas.');
+  return readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidCredentials);
 }
 
 export async function fetchAccount(fetchImpl, baseUrl, token) {
   const response = await fetchImpl(`${baseUrl}/sws/go/me`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
-  return readJsonResponse(response, 'Invalid platform session.');
+  return readJsonResponse(response, ONBOARDING_ERROR_CODES.invalidSession);
 }
 
 export async function fetchEnvironments(fetchImpl, baseUrl, token) {
   const response = await fetchImpl(`${baseUrl}/sws/go/environments`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
-  const data = await readJsonResponse(response, 'Could not load environments.');
+  const data = await readJsonResponse(response, ONBOARDING_ERROR_CODES.loadEnvironmentsFailed);
   return data.environments || [];
 }
 
@@ -51,7 +68,7 @@ export async function loginEnvironment(fetchImpl, baseUrl, token, env) {
   const response = await fetchImpl(`${baseUrl}/sws/go/login?userId=${userId}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
-  return readJsonResponse(response, 'Login failed.');
+  return readJsonResponse(response, ONBOARDING_ERROR_CODES.environmentLoginFailed);
 }
 
 export async function runOnboardingStream(fetchImpl, baseUrl, token, form, onMessage) {
@@ -67,7 +84,9 @@ export async function runOnboardingStream(fetchImpl, baseUrl, token, form, onMes
   });
 
   if (!response.body?.getReader) {
-    throw new Error('Onboarding response stream is not available.');
+    const error = new Error(ONBOARDING_ERROR_CODES.streamUnavailable);
+    error.code = ONBOARDING_ERROR_CODES.streamUnavailable;
+    throw error;
   }
 
   const reader = response.body.getReader();
@@ -96,7 +115,9 @@ export async function runOnboardingStream(fetchImpl, baseUrl, token, form, onMes
   }
 
   if (!finalResult) {
-    throw new Error('Onboarding finished without a result message.');
+    const error = new Error(ONBOARDING_ERROR_CODES.missingResult);
+    error.code = ONBOARDING_ERROR_CODES.missingResult;
+    throw error;
   }
   return finalResult;
 }

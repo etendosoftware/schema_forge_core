@@ -1,6 +1,39 @@
 import { test, expect } from '@playwright/test';
 
-async function installOnboardingMocks(page, { invalidDocumentType = false } = {}) {
+const LOCALE_LABELS = {
+  es_ES: {
+    languageLabel: 'Idioma',
+    name: 'Nombre*',
+    email: 'Correo electrónico*',
+    password: 'Contraseña*',
+    createAccount: 'Crear cuenta',
+    continue: 'Continuar',
+    companyName: 'Nombre de la empresa*',
+    address: 'Dirección',
+    start: 'Empezar',
+    intro: /Vamos a dejar todo listo/i,
+    heading: /Crea tu cuenta gratis/i,
+  },
+  en_US: {
+    languageLabel: 'Language',
+    name: 'Name*',
+    email: 'Email*',
+    password: 'Password*',
+    createAccount: 'Create account',
+    continue: 'Continue',
+    companyName: 'Company name*',
+    address: 'Address',
+    start: 'Start',
+    intro: /We will get everything ready/i,
+    heading: /Create your free account/i,
+  },
+};
+
+function labelsFor(locale) {
+  return LOCALE_LABELS[locale] || LOCALE_LABELS.es_ES;
+}
+
+async function installOnboardingMocks(page, { invalidDocumentType = false, expectedLanguage = 'es_ES' } = {}) {
   await page.route('**/sws/go/me', async route => {
     await route.fulfill({
       status: 401,
@@ -30,7 +63,7 @@ async function installOnboardingMocks(page, { invalidDocumentType = false } = {}
     expect(body).toEqual({
       clientName: 'QA Mock Company',
       currency: 'EUR',
-      language: 'es_ES',
+      language: expectedLanguage,
       countryCode: 'ES',
     });
     await route.fulfill({
@@ -114,27 +147,28 @@ function buildDisposablePassword(suffix) {
   return `Qa-${suffix}-Pass!42`;
 }
 
-async function completeOnboardingForm(page, emailPrefix) {
+async function completeOnboardingForm(page, emailPrefix, locale = 'es_ES') {
+  const labels = labelsFor(locale);
   const suffix = Date.now();
   const password = buildDisposablePassword(suffix);
   await page.goto('/onboarding');
 
-  await page.getByRole('textbox', { name: 'Nombre*' }).fill('QA Onboarding User');
-  await page.getByRole('textbox', { name: 'Correo electrónico*' }).fill(`${emailPrefix}-${suffix}@example.com`);
-  await page.getByRole('textbox', { name: 'Contraseña*' }).fill(password);
-  await page.getByRole('button', { name: 'Crear cuenta' }).click();
+  await expect(page.getByRole('heading', { name: labels.heading })).toBeVisible();
+  await page.getByRole('textbox', { name: labels.name }).fill('QA Onboarding User');
+  await page.getByRole('textbox', { name: labels.email }).fill(`${emailPrefix}-${suffix}@example.com`);
+  await page.getByRole('textbox', { name: labels.password }).fill(password);
+  await page.getByRole('button', { name: labels.createAccount }).click();
 
-  await expect(page.getByText(/Vamos a dejar todo listo/i)).toBeVisible();
-  await page.getByRole('button', { name: /Continuar/ }).click();
+  await expect(page.getByText(labels.intro)).toBeVisible();
+  await page.getByRole('button', { name: labels.continue }).click();
 
-  await page.getByRole('textbox', { name: 'Nombre de la empresa*' }).fill('QA Mock Company');
+  await page.getByRole('textbox', { name: labels.companyName }).fill('QA Mock Company');
   await page.locator('#fiscalIdValue').fill('B12345678');
-  await page.getByRole('textbox', { name: /Dirección/ }).fill('QA Street 123');
-  await page.getByRole('button', { name: /Empezar/ }).click();
+  await page.getByRole('textbox', { name: labels.address }).fill('QA Street 123');
+  await page.getByRole('button', { name: labels.start }).click();
 }
 
 test.describe('Onboarding with mocked Schema Forge backend boundary', () => {
-
   test('registers, creates environment, verifies readiness, and redirects to dashboard', async ({ page }) => {
     await installOnboardingMocks(page);
     await completeOnboardingForm(page, 'qa-onboarding');
@@ -142,6 +176,24 @@ test.describe('Onboarding with mocked Schema Forge backend boundary', () => {
     await page.waitForURL('**/dashboard');
     await expect.poll(async () => page.evaluate(() => localStorage.getItem('sf_auth_token'))).toBe('env-token');
     await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem('sf_auth_selected_org')).id)).toBe('ORG_1');
+  });
+
+  test('lets the user switch onboarding language to English before registration', async ({ page }) => {
+    const labels = labelsFor('en_US');
+    const suffix = Date.now();
+    await installOnboardingMocks(page, { expectedLanguage: 'en_US' });
+    await page.goto('/onboarding');
+
+    await page.locator('#onboarding-language').selectOption('en_US');
+    await expect(page.getByRole('heading', { name: labels.heading })).toBeVisible();
+
+    await page.getByRole('textbox', { name: labels.name }).fill('QA Onboarding User');
+    await page.getByRole('textbox', { name: labels.email }).fill(`qa-onboarding-en-${suffix}@example.com`);
+    await page.getByRole('textbox', { name: labels.password }).fill(buildDisposablePassword(suffix));
+    await page.getByRole('button', { name: labels.createAccount }).click();
+
+    await expect(page.getByText(labels.intro)).toBeVisible();
+    await expect.poll(async () => page.evaluate(() => localStorage.getItem('schema-forge-locale'))).toBe('en_US');
   });
 
   test('shows readiness failure instead of redirecting when invoice defaults are invalid', async ({ page }) => {

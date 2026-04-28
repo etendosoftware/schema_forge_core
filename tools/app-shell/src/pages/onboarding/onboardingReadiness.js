@@ -5,6 +5,14 @@ export const READINESS_ENDPOINTS = {
   customers: '/sws/neo/sales-invoice/header/selectors/C_BPartner_ID?isSOTrx=Y&isCustomer=Y&limit=50&offset=0',
 };
 
+export const READINESS_FAILURE_KEYS = {
+  session: 'onboardingReadinessSession',
+  defaults: 'onboardingReadinessDefaults',
+  paymentTerms: 'onboardingReadinessPaymentTerms',
+  customers: 'onboardingReadinessCustomers',
+  documentType: 'onboardingReadinessDocumentType',
+};
+
 async function fetchJson(fetchImpl, baseUrl, token, endpoint, label) {
   const response = await fetchImpl(`${baseUrl}${endpoint}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -43,18 +51,18 @@ export async function checkSalesInvoiceReadiness(fetchImpl, baseUrl, token) {
 
   const failures = [];
 
-  if (!session.ok) failures.push(`NEO session is not ready (${session.status}).`);
-  if (!defaults.ok) failures.push(`Sales Invoice defaults are not ready (${defaults.status}).`);
+  if (!session.ok) failures.push({ key: READINESS_FAILURE_KEYS.session, status: session.status });
+  if (!defaults.ok) failures.push({ key: READINESS_FAILURE_KEYS.defaults, status: defaults.status });
   if (!paymentTerms.ok || !hasUsableSelectorItem(paymentTerms.body)) {
-    failures.push('Sales Invoice payment term selector has no usable payment term.');
+    failures.push({ key: READINESS_FAILURE_KEYS.paymentTerms, status: paymentTerms.status });
   }
   if (!customers.ok || !hasUsableSelectorItem(customers.body)) {
-    failures.push('Sales Invoice customer selector has no usable customer.');
+    failures.push({ key: READINESS_FAILURE_KEYS.customers, status: customers.status });
   }
 
   const documentType = readDocumentType(defaults.body);
   if (!documentType || documentType === '0') {
-    failures.push('Sales Invoice document type is missing or invalid.');
+    failures.push({ key: READINESS_FAILURE_KEYS.documentType, status: defaults.status, documentType });
   }
 
   return {

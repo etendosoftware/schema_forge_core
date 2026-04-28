@@ -1,8 +1,8 @@
 export const SETUP_STEP_DEFINITIONS = [
-  { name: 'setup', label: 'Preparando contexto', estimate: '1s' },
-  { name: 'client', label: 'Crear empresa', estimate: '2 min' },
-  { name: 'organization', label: 'Crear organizacion', estimate: '1 min' },
-  { name: 'finalize', label: 'Finalizar configuracion', estimate: '1s' },
+  { name: 'setup', estimate: '1s' },
+  { name: 'client', estimate: '2 min' },
+  { name: 'organization', estimate: '1 min' },
+  { name: 'finalize', estimate: '1s' },
 ];
 
 export function initialSetupSteps() {
