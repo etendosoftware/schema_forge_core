@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUI } from '@/i18n';
+import { formatCurrency } from '@/lib/formatCurrency';
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
@@ -11,12 +12,7 @@ const STATUS_LABELS = {
 
 function fmt(val, curr) {
   const n = typeof val === 'string' ? parseFloat(val) : (val ?? 0);
-  if (curr) {
-    try {
-      return new Intl.NumberFormat(undefined, { style: 'currency', currency: curr }).format(n);
-    } catch { /* fallback if currency code is invalid */ }
-  }
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return formatCurrency(curr || 'USD', n);
 }
 
 function fmtDate(raw) {

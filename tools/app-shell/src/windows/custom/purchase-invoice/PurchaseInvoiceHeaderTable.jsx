@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { DataTable } from '@/components/contract-ui';
-import { useLocale } from '@/i18n';
+import { useLocale, useLocaleSwitch } from '@/i18n';
+import { formatCalendarDate } from '@/lib/dateOnly';
+import { getDueDateDotColor, getLatestInstallmentDueDate } from '@/lib/invoiceDueDate';
 
 /* eslint-disable react/prop-types */
 
@@ -8,6 +10,7 @@ const filters = ['documentNo', 'invoiceDate', 'businessPartner', 'orderReference
 
 export default function PurchaseInvoiceHeaderTable(props) {
   const dictionary = useLocale();
+  const { locale } = useLocaleSwitch();
   const gl = dictionary?.genericLabels || {};
   const t = (key) => gl[key] || key;
 
@@ -24,10 +27,7 @@ export default function PurchaseInvoiceHeaderTable(props) {
           .then(r => r.ok ? r.json() : {})
           .then(d => {
             const installments = d?.response?.data ?? d?.data ?? [];
-            const timestamps = installments
-              .map(i => i.dueDate ? new Date(i.dueDate).getTime() : NaN)
-              .filter(ts => !Number.isNaN(ts));
-            return [id, timestamps.length > 0 ? new Date(Math.max(...timestamps)) : null];
+            return [id, getLatestInstallmentDueDate(installments)];
           })
           .catch(() => [id, null])
       )
@@ -42,13 +42,11 @@ export default function PurchaseInvoiceHeaderTable(props) {
       render: (row) => {
         const d = dueDates[row.id];
         if (!d) return <span className="text-muted-foreground">—</span>;
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        const due = new Date(d); due.setHours(0, 0, 0, 0);
-        const dotColor = due < today ? 'bg-red-500' : 'bg-emerald-500';
+        const dotColor = getDueDateDotColor(d);
         return (
           <span className="inline-flex items-center gap-1.5">
             <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${dotColor}`} />
-            {d.toLocaleDateString('en-GB')}
+            {formatCalendarDate(d, locale)}
           </span>
         );
       },
@@ -57,7 +55,7 @@ export default function PurchaseInvoiceHeaderTable(props) {
     { key: 'documentStatus', column: 'DocStatus', type: 'status' },
     { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
     { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
-  ], [gl, dueDates]);
+  ], [gl, dueDates, locale]);
 
   return <DataTable columns={columns} filters={filters} {...props} />;
 }

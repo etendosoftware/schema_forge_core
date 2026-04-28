@@ -2,13 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { StatusTag } from '@/components/ui/status-tag';
-
-function fmt(v) {
-  if (v == null || v === '') return '—';
-  const n = Number(v);
-  if (isNaN(n)) return '—';
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
+import { useCurrency } from '@/hooks/useCurrency';
+import { formatCurrency } from '@/lib/formatCurrency';
 
 function StatusBadge({ isProcessed, ui }) {
   return (
@@ -31,6 +26,7 @@ function getLineStatuses(lines, depreciatedValue) {
 
 export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
   const ui = useUI();
+  const orgCurrency = useCurrency() ?? 'USD';
   const [lines, setLines] = useState([]);
   const [loading, setLoading] = useState(false);
   const recordId = data?.id;
@@ -119,7 +115,7 @@ export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
                       ? `${Number(line.amortizationPercentage).toFixed(2)}%`
                       : '—'}
                   </td>
-                  <td className="py-2.5 pr-4 text-gray-700">€ {fmt(line.amortizationAmount)}</td>
+                  <td className="py-2.5 pr-4 text-gray-700">{formatCurrency(orgCurrency, line.amortizationAmount)}</td>
                   <td className="py-2.5">
                     <StatusBadge isProcessed={lineStatuses.get(line.id ?? line.sEQNoAsset)} ui={ui} />
                   </td>
@@ -131,7 +127,7 @@ export default function AssetsAmortizationPanel({ data, token, apiBaseUrl }) {
                 <tr className="border-t border-gray-200">
                   <td colSpan={2} />
                   <td colSpan={2} className="py-2.5 text-right text-xs font-semibold text-gray-700 pr-4">
-                    {ui('assetsTotalPlanned')} € {fmt(totalAmount)}
+                    {ui('assetsTotalPlanned')} {formatCurrency(orgCurrency, totalAmount)}
                   </td>
                 </tr>
               </tfoot>

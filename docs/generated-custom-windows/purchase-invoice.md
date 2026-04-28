@@ -21,7 +21,7 @@ Use this window to register supplier invoices, keep the payable document aligned
 - Visibility: visible from the Purchases menu.
 - Implementation type: custom window override registered in `tools/app-shell/src/windows/registry.js`, combining generated header/detail scaffolding with custom list preview, topbar, line table, bottom panel, and related-documents behavior.
 - Window shape: master-child. The master record is the invoice header and the main child dataset is invoice lines; the detail page also surfaces a custom related-documents tab instead of relying on the generated payment secondary tabs.
-- List interaction: the list uses a custom `PurchaseInvoiceHeaderTable` component (`tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceHeaderTable.jsx`). The visible columns, in order, are: Invoice Date (no dot indicator), Supplier Reference, Due Date (dot indicator: red if overdue, green if upcoming, computed as the maximum `dueDate` across all payment-plan installments for that invoice via a parallel `paymentPlan?parentId=` batch fetch — shown as "—" when no payment plan exists), Business Partner, Document Status, Total Gross Amount, and Total Outstanding. Selecting a row opens a preview modal instead of navigating directly to the detail route.
+- List interaction: the list uses a custom `PurchaseInvoiceHeaderTable` component (`tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceHeaderTable.jsx`). The visible columns, in order, are: Invoice Date (no dot indicator), Supplier Reference, Due Date (dot indicator: red if overdue, amber if due today, green if future, computed as the maximum `dueDate` across all payment-plan installments for that invoice via a parallel `paymentPlan?parentId=` batch fetch — shown as "—" when no payment plan exists). Date-only invoice and due-date values are normalized as local calendar dates before rendering so same-day invoices do not shift backward because of timezone conversion, and the final rendered date follows the active app locale just like `Invoice Date`. Business Partner, Document Status, Total Gross Amount, and Total Outstanding complete the list. Selecting a row opens a preview modal instead of navigating directly to the detail route.
 - Detail interaction: the record page uses the generated header page with a custom lines table, a custom topbar, summary amounts, notes editing, footer totals, and related-document chips. The internal Document No. field is hidden from the grid and the form; the supplier-side reference (`POReference`, displayed as "Supplier reference"/"Referencia de proveedor") is editable on draft invoices and becomes read-only once the invoice is processed (`@Processed@='Y'`).
 
 ## Reactive behavior and dependencies
@@ -50,7 +50,7 @@ Use this window to register supplier invoices, keep the payable document aligned
 
 ## Manual verification
 
-1. Open `/purchase-invoice` and confirm the list shows: Invoice Date (no dot), Supplier Reference, Due Date (red dot if overdue / green if upcoming / "—" if no payment plan), Business Partner, Document Status, Total Gross Amount, and Total Outstanding in that exact column order, and that the internal document number column is not present.
+1. Open `/purchase-invoice` and confirm the list shows: Invoice Date (no dot), Supplier Reference, Due Date (red dot if overdue / amber dot if due today / green dot if future / "—" if no payment plan), Business Partner, Document Status, Total Gross Amount, and Total Outstanding in that exact column order, and that the internal document number column is not present. Also confirm date-only values keep their original calendar day when rendered.
 2. Click a list row and confirm the preview modal opens instead of immediate navigation.
 3. In the preview modal, verify the General tab shows total, due/payable state, and payment history, while Messages and History remain placeholder states.
 4. Open `/purchase-invoice?filter=overdue` and confirm the quick filter keeps invoices with an outstanding amount.
@@ -64,15 +64,15 @@ Use this window to register supplier invoices, keep the payable document aligned
 ## Automated evidence
 
 - `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the bulk-action component mounted in the purchase-invoice list selection bar, supporting both CO and RE based on selected row statuses. The `Reactivate` kebab menu action in the detail view is declared in `artifacts/purchase-invoice/decisions.json` with `visibleWhenStatus: "CO"` and `documentAction: "RE"`.
-- No dedicated purchase-invoice UI test was found under `tools/app-shell`.
+- `tools/app-shell/src/lib/__tests__/dateOnly.test.js`, `tools/app-shell/src/lib/__tests__/invoiceDueDate.test.js`, and `tools/app-shell/src/windows/custom/purchase-invoice/__tests__/PurchaseInvoiceHeaderTable.test.js` provide source-level and helper-level regression coverage for due-date calendar normalization, locale formatting, max-installment selection, and status-dot rendering in the purchase-invoice list.
 - Shared shell and entity-loading behavior is documented in `docs/generated-custom-windows/app-shell-functional-flows.md`.
 - Contract and UI evidence reviewed for this rewrite:
   - `tools/app-shell/src/menu.json`
   - `tools/app-shell/src/windows/registry.js`
   - `artifacts/purchase-invoice/contract.json`
   - `tools/app-shell/src/windows/custom/purchase-invoice/index.jsx`
-  - `tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceTopbar.jsx`
-  - `tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceBottomPanel.jsx`
+  - `tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceTopbar.jsx` — the payment-status pill (paid/pending amounts) formats monetary values using the org's configured currency via `useCurrency()` and `formatCurrency()`.
+  - `tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceBottomPanel.jsx` — subtotal, inferred tax, and total in the footer are formatted using the org's configured currency via `useCurrency()` and `formatCurrency()`.
   - `tools/app-shell/src/windows/custom/purchase-invoice/InvoicePreviewModal.jsx`
   - `tools/app-shell/src/windows/custom/purchase-invoice/InvoiceLineTableCustom.jsx` — hardcoded column list: product, description, invoiced quantity, net unit price, tax, line gross amount (matches the generated sales-invoice lines table column order).
   - `tools/app-shell/src/windows/custom/purchase-invoice/RelatedDocuments.jsx`

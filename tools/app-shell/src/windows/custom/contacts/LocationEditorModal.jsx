@@ -612,7 +612,7 @@ export default function LocationEditorModal({
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
-            aria-label="Close"
+            aria-label={ui('close')}
           >
             <X size={18} />
           </button>

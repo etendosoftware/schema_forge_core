@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUI } from '@/i18n';
+import { useUI, useLocale } from '@/i18n';
+import { statusLabel } from '@/lib/statusBadge.js';
+import { StatusTag } from '@/components/ui/status-tag';
 
 function CloneIcon({ size = 18 }) {
   return (
@@ -50,20 +52,8 @@ function Spinner() {
   );
 }
 
-const STATUS_CFG = {
-  DR: { labelKey: 'orderStatusDraft',     bg: '#FEF3C7', color: '#D97706' },
-  CO: { labelKey: 'orderStatusCompleted', bg: '#DCFCE7', color: '#16A34A' },
-  CL: { labelKey: 'orderStatusClosed',    bg: '#F3F4F6', color: '#6B7280' },
-  VO: { labelKey: 'orderStatusVoided',    bg: '#FEE2E2', color: '#DC2626' },
-};
-
-function StatusBadge({ status, ui }) {
-  const cfg = STATUS_CFG[status] ?? { labelKey: null, bg: '#F3F4F6', color: '#6B7280' };
-  return (
-    <span style={{ fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 999, background: cfg.bg, color: cfg.color, whiteSpace: 'nowrap', flexShrink: 0 }}>
-      {cfg.labelKey ? ui(cfg.labelKey) : status}
-    </span>
-  );
+function DocStatusTag({ status, dictionary }) {
+  return <StatusTag status={status} label={statusLabel(status, dictionary)} />;
 }
 
 /**
@@ -102,6 +92,7 @@ export default function CloneOrderModal({
 }) {
   const navigate = useNavigate();
   const ui = useUI();
+  const dictionary = useLocale();
 
   const items = recordsProp ?? (recordId ? [{ id: recordId, ...data }] : []);
   const n = items.length;
@@ -131,6 +122,7 @@ export default function CloneOrderModal({
         newIds.push(json?.response?.data?.id);
       }
 
+      const result = n > 1 ? newIds : newIds[0];
       if (routePrefix) {
         const fetched = await Promise.all(
           newIds.map(id =>
@@ -146,9 +138,10 @@ export default function CloneOrderModal({
         );
         setCloned(fetched);
         setPhase('done');
+        onCloned?.(result);
       } else {
         onClose();
-        onCloned?.(n > 1 ? newIds : newIds[0]);
+        onCloned?.(result);
       }
     } catch {
       setError(ui(errorKey));
@@ -201,7 +194,7 @@ export default function CloneOrderModal({
                   <span style={{ fontSize: 13, color: '#374151', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {rec['businessPartner$_identifier'] || ''}
                   </span>
-                  <StatusBadge status="DR" ui={ui} />
+                  <DocStatusTag status="DR" dictionary={dictionary} />
                   <span style={{ color: '#9CA3AF', opacity: hoveredId === rec.id ? 1 : 0, transition: 'opacity 0.12s', flexShrink: 0 }}>
                     <ArrowRightIcon />
                   </span>
@@ -235,7 +228,7 @@ export default function CloneOrderModal({
                   <span style={{ fontSize: 13, color: '#111827', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {item['businessPartner$_identifier'] || ''}
                   </span>
-                  {item.documentStatus && <StatusBadge status={item.documentStatus} ui={ui} />}
+                  {item.documentStatus && <DocStatusTag status={item.documentStatus} dictionary={dictionary} />}
                 </div>
               ))}
             </div>

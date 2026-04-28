@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useUI } from '@/i18n';
+import { buildLocationAddressLines } from '@/lib/locationAddress.js';
 
 // ---------------------------------------------------------------------------
 // Handlebars helpers (CommonJS for jsreport context)
@@ -89,6 +90,7 @@ body { font-family: var(--font-sans); font-size: 13px; line-height: 18px; color:
 .inv-info-card .eyebrow { margin-bottom:8px; }
 .inv-info-card .row { font-size:13px; line-height:20px; color:var(--fg-2); }
 .inv-info-card .row strong { color:var(--fg-1); font-weight:600; }
+.inv-address-lines { margin-top:2px; display:flex; flex-direction:column; gap:2px; }
 
 /* Lines table */
 .inv-table { width:100%; border-collapse:collapse; font-size:13px; margin-top:4px; }
@@ -149,7 +151,12 @@ const TEMPLATE = `<!DOCTYPE html>
     <div class="inv-info-card">
       <div class="eyebrow">{{labels.customerSection}}</div>
       <div class="row"><strong>{{labels.customer}}</strong> {{customerName}}</div>
-      {{#if customerAddress}}<div class="row"><strong>{{labels.address}}</strong> {{customerAddress}}</div>{{/if}}
+      {{#if hasCustomerAddress}}
+      <div class="row"><strong>{{labels.address}}</strong></div>
+      <div class="inv-address-lines">
+        {{#each customerAddressLines}}<div class="row">{{this}}</div>{{/each}}
+      </div>
+      {{/if}}
     </div>
     <div class="inv-info-card">
       <div class="eyebrow">{{labels.invoiceSection}}</div>
@@ -240,6 +247,15 @@ async function fetchOptionalJson(url, token) {
   }
 }
 
+async function fetchLocationAddress(locationId, base, token) {
+  if (!locationId) return null;
+  try {
+    return await fetchJson(`${base}/contacts/locationAddress/${locationId}`, token);
+  } catch {
+    return null;
+  }
+}
+
 function blobToDataUrl(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -273,7 +289,10 @@ async function buildInvoiceData(invoiceId, base, token) {
     fetchAll(`${base}/sales-invoice/lines?parentId=${invoiceId}`, token),
     fetchOptionalJson(`${base}/session`, token),
   ]);
-  const companyLogoDataUrl = await fetchImageDataUrl(session?.yourCompanyDocumentImageId, base, token);
+  const [companyLogoDataUrl, partnerLocation] = await Promise.all([
+    fetchImageDataUrl(session?.yourCompanyDocumentImageId, base, token),
+    fetchLocationAddress(header.partnerAddress, base, token),
+  ]);
 
   // Sort by ERP lineNo so the rows always appear in the order the user created them
   const linesSorted = [...linesRaw].sort(
@@ -294,6 +313,10 @@ async function buildInvoiceData(invoiceId, base, token) {
   const taxAmount  = grandTotal - netAmount;
 
   const org = session?.organization ?? {};
+  const customerAddressLines = buildLocationAddressLines(
+    partnerLocation,
+    header.partnerAddress$_identifier || header.bpAddress || null,
+  );
 
   return {
     // Company (issuer) — from session.organization with header fallback
@@ -308,7 +331,8 @@ async function buildInvoiceData(invoiceId, base, token) {
     invoiceDate: header.invoiceDate || header.dateInvoiced || '',
     // Customer
     customerName: header.businessPartner$_identifier || header.businessPartner || '—',
-    customerAddress: header.partnerAddress$_identifier || header.bpAddress || null,
+    hasCustomerAddress: customerAddressLines.length > 0,
+    customerAddressLines,
     // Payment
     paymentMethod: header.paymentMethod$_identifier || null,
     paymentTerms: header.paymentTerms$_identifier || null,

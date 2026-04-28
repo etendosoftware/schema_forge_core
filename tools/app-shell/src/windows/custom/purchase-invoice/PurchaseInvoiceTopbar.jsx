@@ -4,12 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import InvoicePaymentModal from '../shared/InvoicePaymentModal.jsx';
 import { useUI } from '@/i18n';
-
-function fmt(val, curr) {
-  const n = typeof val === 'string' ? parseFloat(val) : (val ?? 0);
-  const s = n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return curr ? `${s} ${curr}` : s;
-}
+import { formatCurrency } from '@/lib/formatCurrency';
 
 function CopyIcon() {
   return (
@@ -104,7 +99,7 @@ export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUr
             <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#10b981' }} />
             {ui('statusPaid')}
             <span style={{ opacity: 0.4 }}>&middot;</span>
-            <span className="font-semibold tabular-nums">{fmt(totalPaid, currency)}</span>
+            <span className="font-semibold tabular-nums">{formatCurrency(currency || 'USD', totalPaid)}</span>
           </span>
         ) : (
           <span
@@ -115,7 +110,7 @@ export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUr
             <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#f59e0b' }} />
             {ui('statusPending')}
             <span style={{ opacity: 0.4 }}>&middot;</span>
-            <span className="font-semibold tabular-nums">{fmt(outstanding, currency)}</span>
+            <span className="font-semibold tabular-nums">{formatCurrency(currency || 'USD', outstanding)}</span>
           </span>
         )
       )}

@@ -340,7 +340,8 @@
           "section": "principal",
           "order": 6,
           "gridOrder": 6,
-          "inputMode": "selector"
+          "inputMode": "selector",
+          "forceCalloutFields": ["lineGrossAmount", "grossUnitPrice", "lineNetAmount"]
         },
         "listPrice": {
           "visibility": "discarded"

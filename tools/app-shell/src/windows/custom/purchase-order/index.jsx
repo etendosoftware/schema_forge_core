@@ -11,6 +11,7 @@ import HeaderTable from '@generated/purchase-order/generated/web/purchase-order/
 import LinesTable from '@generated/purchase-order/generated/web/purchase-order/LinesTable';
 import GeneratedApp from '@generated/purchase-order/generated/web/purchase-order/index.jsx';
 import PurchaseOrderReactivateBulkAction from '@generated/purchase-order/custom/PurchaseOrderReactivateBulkAction';
+import BulkPurchaseOrderMoreMenu from '@generated/purchase-order/custom/BulkPurchaseOrderMoreMenu';
 import LinesEmptyState from '@/components/contract-ui/LinesEmptyState.jsx';
 
 // Simplified list columns aligned with Sales Order visual style
@@ -31,8 +32,9 @@ const draftModeWithModal = {
   onConfirm: () => window.dispatchEvent(new CustomEvent('purchase-order:open-confirm-modal')),
 };
 
-// Mirrors artifacts/purchase-order/generated/web/purchase-order/HeaderPage.jsx
-// Kept in sync manually because the generator does not expose labelOverrides yet.
+// Mirrors artifacts/purchase-order/generated/web/purchase-order/HeaderPage.jsx.
+// Kept in sync manually because the generator does not expose labelOverrides yet,
+// and the list view bulkActions prop is hand-rolled here (drift with decisions.json).
 const LABEL_OVERRIDES = {
   es_ES: {
     C_BPartner_ID: 'Contacto',
@@ -70,6 +72,7 @@ export default function PurchaseOrderWindow(props) {
   const { recordId, windowName, token, apiBaseUrl } = props;
   const [searchParams] = useSearchParams();
   const [cloneTargets, setCloneTargets] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
     useCreateContactModal({ apiBaseUrl, token });
@@ -126,11 +129,17 @@ export default function PurchaseOrderWindow(props) {
         breadcrumb="Purchases / Purchase Order"
         labelOverrides={LABEL_OVERRIDES}
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
-        bulkActions={(ctx) => <PurchaseOrderReactivateBulkAction {...ctx} />}
+        bulkActions={(ctx) => (
+          <>
+            <BulkPurchaseOrderMoreMenu {...ctx} />
+            <PurchaseOrderReactivateBulkAction {...ctx} />
+          </>
+        )}
         initialColumnFilters={initialColumnFilters}
         quickFilters={QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}
         dateFilterKey="orderDate"
+        refreshTrigger={refreshKey}
         {...props}
       />
       {cloneTargets && createPortal(
@@ -140,6 +149,7 @@ export default function PurchaseOrderWindow(props) {
           headers={headers}
           routePrefix="/purchase-order/"
           onClose={() => setCloneTargets(null)}
+          onCloned={() => setRefreshKey(k => k + 1)}
         />,
         document.body,
       )}

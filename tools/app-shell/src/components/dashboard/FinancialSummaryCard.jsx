@@ -181,6 +181,7 @@ export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
                 <div className="flex flex-col items-start" style={{ width: '100%', gap: '8px' }}>
                   <span
                     style={{
+                      display: 'block',
                       height: '32px',
                       ...valueTypography,
                       fontWeight: 500,
@@ -188,7 +189,7 @@ export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      maxWidth: '100%',
+                      width: '100%',
                     }}
                   >
                     {formattedValue}
@@ -200,6 +201,7 @@ export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
                       padding: '4px 8px',
                       borderRadius: '360px',
                       maxWidth: '100%',
+                      overflow: 'hidden',
                       ...badgeStyle,
                     }}
                   >
@@ -211,6 +213,9 @@ export function FinancialSummaryCard({ kpis = [], currencyLabel = '' }) {
                         color: badgeStyle.color,
                         fontWeight: 400,
                         whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        minWidth: 0,
                       }}
                     >
                       {trendLabel}

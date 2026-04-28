@@ -261,6 +261,7 @@ export function BestProductsList({ sellers = [], products = [], currencyLabel = 
           alignSelf: 'stretch',
           flexGrow: 1,
           overflowY: 'auto',
+          overflowX: 'hidden',
         }}
       >
         {rows.length === 0 ? (
@@ -296,12 +297,10 @@ export function BestProductsList({ sellers = [], products = [], currencyLabel = 
                     flexDirection: 'column',
                     alignItems: 'flex-start',
                     padding: '0px 16px 0px 8px',
-                    width: '232px',
                     height: '24px',
                     borderRadius: '0px',
-                    flex: 'none',
+                    flex: '1 1 0',
                     order: 0,
-                    flexGrow: 1,
                     minWidth: 0,
                   }}
                 >

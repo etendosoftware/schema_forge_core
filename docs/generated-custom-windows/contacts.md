@@ -17,6 +17,8 @@ The Contacts window should let users maintain a shared business-partner master r
 - Add and maintain addresses in the Location area, including shipping and invoicing flags.
 - Start child-entry creation from a new unsaved contact; the detail view auto-saves the header first, navigates to `/contacts/:recordId`, and then opens the requested Person, Bank Account, or Location editor.
 - Maintain customer-side and vendor-side financial preferences once the header already exists.
+- Edit the credit limit via a stepper widget (number input with − and + buttons) in the Financial tab. Each button click immediately persists the new value via PATCH. The minimum allowed value is 0; clicking − when the value is already 0 has no effect. Typing a value manually and leaving the field also persists it.
+- Review and set the commercial discount for the contact through an inline dropdown selector (visible only after the header is saved).
 
 ## Interaction model
 
@@ -39,13 +41,13 @@ The Contacts window should let users maintain a shared business-partner master r
   - vendor billing fields appear only when the vendor flag is enabled.
 - Before the header is saved, the financial panel suppresses effective billing-preference editing and clears prefilled billing values from the unsaved draft so those values are not posted too early.
 - The discount card is only active after the header exists and creates, updates, or deletes a related discount row against the current business partner.
-- Customer-side and vendor-side account selectors depend on the selected payment method through validation rules, so the eligible account set should react when payment method changes.
-- The payment method fields also carry a payment-method callout in the contract, so account-related behavior is expected to react to payment-method choice.
+- Customer-side and vendor-side account selectors depend on the selected payment method through backend SQL validation rules. The `selectorContext` now passes `Fin_Paymentmethod_ID` (for customer) and `PO_Paymentmethod_ID` (for vendor) to the selector request, so the eligible financial account list is filtered in real time as the payment method changes.
+- The payment method fields also carry a payment-method callout in the contract, so account-related behavior reacts to payment-method choice.
 - In the Location modal, country is required; choosing a country clears the region, reloads region options through country-filtered selectors, and keeps country/region option loading paginated behind searchable pickers.
 - New locations default shipping address and invoicing address to true, and the modal creates or updates the business-partner location plus underlying location data through the same `locationAddress` endpoint.
 - The same `LocationEditorModal` is also reused by the shared partner-address picker for inline "+ Add address" flows in other windows. That reuse is proved in code/tests, but it is not a distinct extra screen inside `/contacts` itself.
 - Bank account defaults are partially visible in current evidence: country defaults from configuration and bank format defaults to `GENERIC`. A bank-account format field exists, but current evidence does not prove how the form reacts between generic, IBAN, SWIFT, and Spanish modes.
-- A right-side sidebar is present in detail view and loads contact-specific KPIs/trend data from `bp-stats` and `bp-trend` endpoints.
+- A right-side sidebar is present in detail view and loads contact-specific KPIs/trend data from `bp-stats` and `bp-trend` endpoints. The contacts sidebar has its own implementation (not a re-export of the generic business-partner sidebar): KPI cards show revenue and expenses with contacts-specific color styling, and the trend chart reuses the shared `BPChartSVGContent` component from the business-partner sidebar. Clicking the "last 6 months" link opens an expandable dialog with a 3M/6M period toggle. Chart axis labels are localized based on the active locale.
 - No parent/child total, tax, or document-status reactions are visible in current evidence.
 
 ## Gap assessment
@@ -67,12 +69,14 @@ The Contacts window should let users maintain a shared business-partner master r
 4. Open a record at `/contacts/:recordId` and confirm the detail top bar shows a Company/Person toggle in addition to the General and Financial tabs and the right-side sidebar.
 5. Toggle between Company and Person and confirm the header swaps Commercial Name vs. First Name/Last Name fields without changing the list's customer/vendor meaning.
 6. From a new unsaved contact, trigger add in Person, Bank Account, and Location and confirm the header auto-saves, the route changes to `/contacts/:recordId`, and the requested child editor opens.
-7. In the Financial tab, verify customer and vendor flags control the related billing-preference sections.
-8. Change payment method in the financial section and confirm the eligible account selector reacts to that choice.
-9. Open the Location add flow and confirm it uses a modal, requires country, clears region when country changes, paginates/searches selector options, and defaults shipping/invoicing flags on a new address.
-10. Add or edit a location and confirm the saved address is reflected back in the contact detail and list enrichment.
-11. Add a bank account and confirm the saved row stays linked to the current contact.
-12. Reopen an existing person-like contact and verify whether the screen remembers Person mode automatically or reopens in Company mode; current code inspection suggests the latter, but this needs runtime confirmation.
+7. In the Financial tab, verify the Credit section shows as a horizontal row: descriptive text on the left, stepper on the right. Click + and − and confirm the value changes and is immediately persisted to the backend. Confirm − does not go below 0.
+8. In the Financial tab, verify customer and vendor flags control the related billing-preference sections.
+9. Select a payment method in the financial section and confirm the eligible financial account selector is filtered to only accounts compatible with that payment method.
+10. Open the Location add flow and confirm it uses a modal, requires country, clears region when country changes, paginates/searches selector options, and defaults shipping/invoicing flags on a new address.
+11. Add or edit a location and confirm the saved address is reflected back in the contact detail and list enrichment.
+12. Add a bank account and confirm the saved row stays linked to the current contact.
+13. In the sidebar, confirm KPI cards show revenue (green) and expenses (red) for the current contact. Click the "last 6 months" link and confirm an expanded chart dialog opens with a 3M/6M period toggle.
+14. Reopen an existing person-like contact and verify whether the screen remembers Person mode automatically or reopens in Company mode; current code inspection suggests the latter, but this needs runtime confirmation.
 
 ## Automated evidence
 
@@ -81,7 +85,10 @@ The Contacts window should let users maintain a shared business-partner master r
 - `artifacts/contacts/generated/web/contacts/BusinessPartnerForm.jsx` and `BusinessPartnerPage.jsx` confirm the header fields, top-bar slot usage, General/Financial tabs, and the Person/Bank Account/Location child areas.
 - `tools/app-shell/src/components/contract-ui/DetailView.jsx` confirms the new-header auto-save flow before opening require-saved secondary tabs.
 - `tools/app-shell/src/windows/custom/contacts/ContactsTable.jsx` confirms list enrichment for customer/vendor badges and the derived location lookup.
-- `tools/app-shell/src/windows/custom/contacts/ContactsFinancialPanel.jsx` and `BillingPreferencesForm.jsx` confirm post-save financial editing, customer/vendor-dependent sections, credit-limit persistence, and discount-row maintenance.
-- `tools/app-shell/src/windows/custom/contacts/LocationEditorModal.jsx` confirms saved-header dependency handling, country/region selector dependency, paginated searchable country/region pickers, and atomic create/update/delete behavior through the `locationAddress` endpoint.
+- `tools/app-shell/src/windows/custom/contacts/ContactsFinancialPanel.jsx` and `BillingPreferencesForm.jsx` confirm post-save financial editing, customer/vendor-dependent sections, credit-limit persistence, and discount-row maintenance. The Financial tab layout uses a horizontal two-column design (descriptive text fixed-width on the left, interactive widget on the right) for both the Credit and Billing Preferences sections. `ContactsFinancialPanel.jsx` includes an inline `CreditLimitStepper` sub-component that renders a numeric input with − and + buttons and fires an immediate PATCH per step.
+- `tools/app-shell/src/windows/custom/contacts/LocationEditorModal.jsx` confirms saved-header dependency, country/region selector dependency, paginated searchable country/region pickers, and atomic create/update/delete behavior through the `locationAddress` endpoint. All user-facing labels including the close button are i18n-driven via `useUI`.
 - `tools/app-shell/src/components/contract-ui/PartnerAddressPicker.jsx` and `tools/app-shell/src/components/contract-ui/__tests__/PartnerAddressPicker.test.js` confirm that the same contacts location modal now supports inline "+ Add address" creation for partner-address selectors outside the Contacts window.
 - `tools/app-shell/src/components/contract-ui/CreateContactModal.jsx` provides partial supporting evidence for person/company create payload semantics in the shared quick-create flow, but no contacts-window-specific automated test was found for the main detail-route save behavior.
+- `tools/app-shell/src/menu.json` and `tools/app-shell/src/windows/registry.js` confirm menu visibility and route-to-loader registration for `/contacts`.
+- `tools/app-shell/src/windows/custom/contacts/BusinessPartnerSidebar.jsx` confirms the contacts-specific sidebar implementation: KPI cards with color-coded revenue/expenses, a localized trend chart built on the shared `BPChartSVGContent` exported from `businessPartner/BusinessPartnerSidebar`, and an expandable dialog with a 3M/6M period toggle.
+- No contacts-specific automated test was found in the current repo. Generic route-loading and shared entity-flow evidence lives in `docs/generated-custom-windows/app-shell-functional-flows.md`, including registry-backed window loading and shared child-refresh/defaults behavior.

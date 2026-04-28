@@ -294,7 +294,8 @@
         "tax": {
           "grid": true,
           "section": "principal",
-          "inputMode": "selector"
+          "inputMode": "selector",
+          "forceCalloutFields": ["lineGrossAmount", "grossAmount", "lineNetAmount"]
         },
         "lineNetAmount": {
           "visibility": "system",
