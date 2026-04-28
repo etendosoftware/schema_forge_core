@@ -632,6 +632,7 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
   const [open, setOpen] = useState(false);
   const selected = Array.isArray(value) ? value : [];
   const sentinelRef = useRef(null);
+  const labelOf = useLabel();
 
   // Pulls {id, _identifier} pairs from the list GET's `_distinct` branch so
   // the picker shows all values in the filterable universe, not only those on
@@ -711,7 +712,7 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
       ? selectedLabels[0]
       : `${selectedLabels[0]} +${selected.length - 1}`;
 
-  const colLabelKey = col.label || col.key;
+  const colLabelKey = labelOf(col.column) ?? col.label ?? col.key;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -731,8 +732,8 @@ function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange,
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-64 p-0">
-        <div className="px-3 pt-3 pb-2 text-[11px] uppercase tracking-wide text-muted-foreground">
-          {`${ui('advancedFilterSelectValue')}: ${colLabelKey}`}
+        <div className="px-3 pt-3 pb-2 text-xs font-normal leading-6" style={{ color: '#6C6C89' }}>
+          {ui('advancedFilterSelectorOf', { label: colLabelKey })}
         </div>
         <div className="px-3 pb-2">
           <Input

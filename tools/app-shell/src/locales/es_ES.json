@@ -16804,6 +16804,7 @@
     "advancedFilterSelectField": "Selector de campo",
     "advancedFilterSelectOp": "Seleccionar condición",
     "advancedFilterSelectValue": "Seleccionar valor",
+    "advancedFilterSelectorOf": "Selector de {label}",
     "advancedFilterAddCondition": "Añadir condición",
     "advancedFilterApply": "Aplicar",
     "advancedFilterClear": "Limpiar",

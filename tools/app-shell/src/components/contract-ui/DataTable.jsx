@@ -748,6 +748,13 @@ function LookupField({ value, placeholder, selectorUrl, selectorContext, token, 
         type="button"
         onClick={() => setOpen(true)}
         onKeyDown={(e) => {
+          // Once a value is selected, Enter should bubble up so the row's
+          // handleKeyDown can save the line. Space still re-opens the picker
+          // for re-selection.
+          if (e.key === 'Enter' && value) {
+            if (onKeyDown) onKeyDown(e);
+            return;
+          }
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(true); }
           else if (onKeyDown) onKeyDown(e);
         }}
@@ -764,7 +771,13 @@ function LookupField({ value, placeholder, selectorUrl, selectorContext, token, 
         <InternalConsumptionProductSearchDrawer
           open={open}
           onClose={() => setOpen(false)}
-          onSelect={(item) => { onSelect(item); setOpen(false); }}
+          onSelect={(item) => {
+            onSelect(item);
+            setOpen(false);
+            // Restore focus to the field button so keyboard users do not lose
+            // tab position after the picker closes (Enter then saves the row).
+            setTimeout(() => btnRef.current?.focus(), 0);
+          }}
           selectorUrl={selectorUrl}
           selectorContext={selectorContext}
           token={token}
@@ -774,7 +787,13 @@ function LookupField({ value, placeholder, selectorUrl, selectorContext, token, 
         <ProductSearchDrawer
           open={open}
           onClose={() => setOpen(false)}
-          onSelect={(item) => { onSelect(item); setOpen(false); }}
+          onSelect={(item) => {
+            onSelect(item);
+            setOpen(false);
+            // Restore focus to the field button so keyboard users do not lose
+            // tab position after the picker closes (Enter then saves the row).
+            setTimeout(() => btnRef.current?.focus(), 0);
+          }}
           selectorUrl={selectorUrl}
           selectorContext={selectorContext}
           token={token}

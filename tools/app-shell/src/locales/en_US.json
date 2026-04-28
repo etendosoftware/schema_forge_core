@@ -16573,6 +16573,7 @@
     "advancedFilterSelectField": "Select field",
     "advancedFilterSelectOp": "Select condition",
     "advancedFilterSelectValue": "Select value",
+    "advancedFilterSelectorOf": "{label} selector",
     "advancedFilterAddCondition": "Add condition",
     "advancedFilterApply": "Apply",
     "advancedFilterClear": "Clear",
