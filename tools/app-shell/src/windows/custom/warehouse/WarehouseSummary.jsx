@@ -120,7 +120,7 @@ function StockSvg({ values, labels, chartType, cw, ch }) {
 
   if (showLine) {
     return (
-      <svg viewBox={`0 0 ${cw} ${ch}`} className="w-full h-auto" role="img" aria-label="Stock trend">
+      <svg viewBox={`0 0 ${cw} ${ch}`} className="w-full h-auto" role="img" aria-label={ui('warehouseStockTrend')}>
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
@@ -173,7 +173,7 @@ function StockSvg({ values, labels, chartType, cw, ch }) {
   }
 
   return (
-    <svg viewBox={`0 0 ${cw} ${ch}`} className="w-full h-auto" role="img" aria-label="Stock bar chart">
+    <svg viewBox={`0 0 ${cw} ${ch}`} className="w-full h-auto" role="img" aria-label={ui('warehouseStockBarAria')}>
       {barYTicks.map((val) => {
         const y = BAR_PAD_Y + barPlotH - (val / barNiceMax) * barPlotH;
         return (
@@ -248,14 +248,14 @@ function StockChart({ transactions }) {
         <button
           onClick={() => switchType('line')}
           className={`p-1 transition-colors ${chartType === 'line' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
-          title="Line chart"
+          title={ui('warehouseLineChart')}
         >
           <LineChart className="h-3 w-3" />
         </button>
         <button
           onClick={() => switchType('bar')}
           className={`p-1 transition-colors ${chartType === 'bar' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
-          title="Bar chart"
+          title={ui('warehouseBarChart')}
         >
           <BarChart2 className="h-3 w-3" />
         </button>
@@ -263,7 +263,7 @@ function StockChart({ transactions }) {
       <button
         onClick={() => setMaximized(true)}
         className="p-1 border rounded-md text-muted-foreground hover:bg-muted transition-colors"
-        title="Expand chart"
+        title={ui('warehouseExpandChart')}
       >
         <Maximize2 className="h-3 w-3" />
       </button>

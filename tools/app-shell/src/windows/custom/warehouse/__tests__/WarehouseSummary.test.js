@@ -33,6 +33,30 @@ describe('WarehouseSummary — Y-axis formatting', () => {
   });
 });
 
+describe('WarehouseSummary — i18n', () => {
+  it('uses i18n key for line chart aria-label', () => {
+    assert.match(src, /aria-label=\{ui\('warehouseStockTrend'\)\}/);
+  });
+
+  it('uses i18n key for bar chart aria-label', () => {
+    assert.match(src, /aria-label=\{ui\('warehouseStockBarAria'\)\}/);
+  });
+
+  it('uses i18n keys for toolbar button titles', () => {
+    assert.match(src, /title=\{ui\('warehouseLineChart'\)\}/);
+    assert.match(src, /title=\{ui\('warehouseBarChart'\)\}/);
+    assert.match(src, /title=\{ui\('warehouseExpandChart'\)\}/);
+  });
+
+  it('does not hardcode Line chart, Bar chart or Expand chart strings', () => {
+    assert.doesNotMatch(src, /"Line chart"/);
+    assert.doesNotMatch(src, /"Bar chart"/);
+    assert.doesNotMatch(src, /"Expand chart"/);
+    assert.doesNotMatch(src, /"Stock trend"/);
+    assert.doesNotMatch(src, /"Stock bar chart"/);
+  });
+});
+
 describe('WarehouseSummary — line chart dots', () => {
   it('circles are transparent by default (no permanent dots)', () => {
     assert.match(src, /fill.*transparent/);
@@ -45,7 +69,7 @@ describe('WarehouseSummary — line chart dots', () => {
 
 describe('WarehouseSummary — bar chart tooltip', () => {
   it('passes ui prop to SvgTooltip in the bar chart branch', () => {
-    const barSection = src.slice(src.indexOf('aria-label="Stock bar chart"'));
+    const barSection = src.slice(src.indexOf("ui('warehouseStockBarAria')"));
     assert.match(barSection, /SvgTooltip[^/]*ui=\{ui\}/);
   });
 });
