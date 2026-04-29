@@ -104,7 +104,8 @@
           "gridOrder": 5,
           "searchable": true,
           "inputMode": "date",
-          "section": "principal"
+          "section": "principal",
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "scheduledDeliveryDate": {
           "visibility": "discarded"
@@ -152,7 +153,8 @@
         },
         "description": {
           "inputMode": "textarea",
-          "section": "collapsed"
+          "section": "collapsed",
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "client": {
           "visibility": "system"
