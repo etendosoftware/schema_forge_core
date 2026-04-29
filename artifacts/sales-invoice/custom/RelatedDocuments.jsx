@@ -27,8 +27,9 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
     if (orderId) {
       promises.push(
         (async () => {
-          const quotation = await fetchById('sales-quotation', 'quotation', orderId, token, apiBaseUrl).catch(() => null);
-          if (quotation) { setOrder({ ...quotation, _isQuotation: true }); return; }
+          // criteria queries apply the DocSubTypeSO='ON' WHERE that GET-by-ID bypasses
+          const quotations = await fetchByCriteria('sales-quotation', 'quotation', 'id', orderId, token, apiBaseUrl).catch(() => []);
+          if (quotations.length > 0) { setOrder({ ...quotations[0], _isQuotation: true }); return; }
           const order = await fetchById('sales-order', 'header', orderId, token, apiBaseUrl).catch(() => null);
           if (order) setOrder(order);
         })()
