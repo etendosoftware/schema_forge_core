@@ -314,6 +314,7 @@ export default function CreateContactModal({
       ...(contactType === 'company' && legalName && { name: legalName }),
       ...(contactType === 'person' && firstName && { etgoFirstname: firstName }),
       ...(contactType === 'person' && lastName && { etgoLastname: lastName }),
+      etgoIsperson: contactType === 'person',
       taxID: form.taxID?.trim(),
       oBTIKTaxIDKey: form.taxIdType || '1',
       creditLimit: Number(form.creditLimit) || 0,

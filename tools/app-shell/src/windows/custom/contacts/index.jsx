@@ -4,7 +4,7 @@ import ContactsBusinessPartnerForm from './ContactsBusinessPartnerForm';
 
 /* eslint-disable react/prop-types */
 
-const CONTACTS_WRAPPER = '[&_tr[data-empty-state]]:hidden';
+const CONTACTS_WRAPPER = 'flex-1 min-h-0 flex flex-col [&_tr[data-empty-state]]:hidden';
 
 export default function ContactsWindow(props) {
   return (

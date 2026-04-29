@@ -45,6 +45,7 @@ The detail screen also changes the standard generated behavior in three visible 
   - `Warehouses` shows a total on-hand callout plus per-warehouse cards with on-hand / available / reserved mini-stats.
   - A separate `Stock movement` card is only shown when transaction rows exist for the selected product.
   - The stock-movement card can expand into a modal with period switches (`1M`, `3M`, `6M`, `1Y`, `2Y`) and a warehouse-focused breakdown. Code-backed inference: when transactions exist but recent months are flat, the chart stays visible as a flat line anchored to current stock.
+  - The Y-axis of the stock-movement chart formats values using the shared `formatDashboardAxisTick` utility from `@/lib/dashboardNumberFormat` (e.g. `2K`, `1.5M`), consistent with the Dashboard and Contact sidebar charts.
 - **Defaults visible in the generated contract:** bill-of-materials line number defaults to the next line sequence, bill-of-materials quantity defaults to `1`, and product category defaults from the SQL default declared in the contract.
 
 ## Gap assessment
@@ -75,4 +76,4 @@ The detail screen also changes the standard generated behavior in three visible 
   - `ProductSidebar.jsx` for stock and transaction-driven sidebar summaries
 - The generated product page at `artifacts/product/generated/web/product/ProductPage.jsx` wires those custom surfaces into the product window and declares the attached child CRUD endpoints.
 - The product contract at `artifacts/product/contract.json` provides evidence for layout (`gallery`, sidebar layout, primary tabs), selectors, child entities, default values, and declared actions.
-- No dedicated product browser test or product-specific component test was found in the inspected test files. Automated evidence in this repo is therefore structural and contract-backed rather than end-to-end proof of the full product workflow.
+- `tools/app-shell/src/windows/custom/product/__tests__/ProductSidebar.test.js` verifies that `ProductSidebar` uses the shared `formatDashboardAxisTick` utility for Y-axis labels and does not define a local formatting function. Beyond that, automated evidence in this repo is structural and contract-backed rather than end-to-end proof of the full product workflow.

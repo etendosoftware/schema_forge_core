@@ -21,10 +21,10 @@ const breadcrumb = 'Purchases / Purchase Invoice';
 
 const labelOverrides = {
   "es_ES": {
-    "POReference": "Referencia de proveedor"
+    "POReference": "Nº documento"
   },
   "en_US": {
-    "POReference": "Supplier reference"
+    "POReference": "Document No."
   }
 };
 
@@ -801,10 +801,10 @@ export const api = {
   },
   "labelOverrides": {
     "es_ES": {
-      "POReference": "Referencia de proveedor"
+      "POReference": "Nº documento"
     },
     "en_US": {
-      "POReference": "Supplier reference"
+      "POReference": "Document No."
     }
   }
 };

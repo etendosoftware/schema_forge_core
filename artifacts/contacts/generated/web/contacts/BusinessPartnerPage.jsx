@@ -61,7 +61,7 @@ const draftMode = null;
 
 
 
-const api = {
+export const api = {
   "specName": "contacts",
   "baseUrl": "/sws/neo/contacts",
   "crud": {
@@ -716,7 +716,8 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
       breadcrumb={breadcrumb}
       api={api}
       listViewOptions={{"hidePrint":true,"hideEye":true,"hideCounter":true,"hideLink":true,"hideFilters":true}}
-      subsetFilters={[{"label":"all"},{"label":"Customers","filter":"criteria=%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"},{"label":"Vendors","filter":"criteria=%5B%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"}]}
+      baseFilter="criteria=%7B%22operator%22%3A%22or%22%2C%22criteria%22%3A%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%2C%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D%7D"
+      quickFilters={[{"label":"All","filter":null},{"label":"Customers","filter":"criteria=%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"},{"label":"Vendors","filter":"criteria=%5B%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"}]}
       hidePrint
       hideMoreMenu
       labelOverrides={labelOverrides}

@@ -28,6 +28,8 @@ export default function ContactsTable({ data = [], token, apiBaseUrl, ...rest })
 
   const columns = useMemo(() => [
     { key: 'name', column: 'Name', type: 'string', label: t('commercialName') },
+    { key: 'etgoFirstname', column: 'EM_Etgo_Firstname', type: 'string', label: t('firstNameColumn'), render: (row) => row.etgoFirstname ?? '—' },
+    { key: 'etgoLastname', column: 'EM_Etgo_Lastname', type: 'string', label: t('lastNameColumn'), render: (row) => row.etgoLastname ?? '—' },
     { key: '__type', type: 'string', label: t('typeColumn'), render: (row) => <TypeBadge row={row} t={t} /> },
     { key: '__location', type: 'string', label: t('locationColumn'), render: (row) => row.__location ?? '—' },
     { key: 'etgoWeb', column: 'EM_Etgo_Web', type: 'string', label: t('webColumn'), render: (row) => row.etgoWeb ?? '—' },

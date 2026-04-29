@@ -70,7 +70,6 @@ export default function PaymentPlanBlock({ recordId, data, token, apiBaseUrl }) 
           const amount = parseFloat(inst.amount) || 0;
           const outstanding = parseFloat(inst.outstandingAmount) || 0;
           const paid = parseFloat(inst.paidAmount) || 0;
-          const pct = Math.round(amount / grandTotal * 100);
           const status = outstanding <= 0 ? 'paid' : (paid > 0 ? 'partial' : 'pending');
           const badge = BADGE[status];
 
@@ -86,7 +85,6 @@ export default function PaymentPlanBlock({ recordId, data, token, apiBaseUrl }) 
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ fontSize: 13, color: '#6B7280' }}>{ui('installment')} {idx + 1}</span>
                 <span className="tabular-nums" style={{ fontSize: 13, fontWeight: 500, color: '#111827' }}>{fmt(amount, currency)}</span>
-                <span style={{ fontSize: 12, color: '#9ca3af' }}>{pct}%</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span className="tabular-nums" style={{ fontSize: 12, color: '#6B7280' }}>{ui('dueShort')} {fmtDate(inst.dueDate)}</span>
