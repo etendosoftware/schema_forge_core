@@ -47,7 +47,8 @@ LEFT JOIN ad_ref_list_trl rlt
 WHERE rl.value IN (
   'DR', 'CO', 'VO', 'IP', 'CL', 'PA', 'UE', 'CA',
   'RPR', 'RPAE', 'RPAP', 'RPPC', 'RPVOID',
-  'PPM', 'PWNC', 'RDNC'
+  'PPM', 'PWNC', 'RDNC',
+  'ETGO_CI'
 )
 AND rl.isactive = 'Y'
 ORDER BY rl.value, rlt.name NULLS LAST`,

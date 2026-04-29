@@ -15,6 +15,8 @@ export const STATUS_KEYS = {
   DR: 'statusDraft',
   VO: 'statusVoided',
   CL: 'statusClosed',
+  CA: 'statusOrderCreated',
+  ETGO_CI: 'statusInvoiceCreated',
   RPPC: 'statusReceived',
   RPR: 'statusReceived',
   PPM: 'statusPaid',

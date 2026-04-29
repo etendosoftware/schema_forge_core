@@ -16790,6 +16790,8 @@
     "statusVoid": "Void",
     "statusInProcess": "In Process",
     "statusClosed": "Closed",
+    "statusOrderCreated": "Closed - Order Created",
+    "statusInvoiceCreated": "Closed - Invoice Created",
     "statusPaid": "Paid",
     "statusPending": "Pending",
     "statusPartiallyExecuted": "Partially executed",
@@ -19016,6 +19018,9 @@
     },
     "DR": {
       "label": "Draft"
+    },
+    "ETGO_CI": {
+      "label": "Closed - Invoice Created"
     },
     "IP": {
       "label": "Under Way"
