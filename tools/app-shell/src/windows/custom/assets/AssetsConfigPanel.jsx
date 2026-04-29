@@ -50,27 +50,26 @@ function isDepreciate(record) {
   return record.depreciate === true || record.depreciate === 'Y';
 }
 
-const currencyFields = [
-  { key: 'currency', column: 'C_Currency_ID', type: 'selector', label: 'Currency', section: 'other', reference: 'Currency', inputMode: 'selector', defaultValue: '@C_Currency_ID@', readOnlyLogic: (record) => Number(record.depreciatedPlan || 0) > 0 || Number(record.depreciatedValue || 0) > 0 },
-];
-
-
-const dateFields = [
-  { key: 'purchaseDate', column: 'Datepurchased', type: 'date', label: 'Purchase Date', section: 'other' },
-  { key: 'cancellationDate', column: 'Cancellationdate', type: 'date', label: 'Cancellation Date', section: 'other' },
-  { key: 'depreciationStartDate', column: 'Amortizationstartdate', type: 'date', label: 'Depreciation Start Date', section: 'other' },
-  { key: 'depreciationEndDate', column: 'Amortizationenddate', type: 'date', label: 'Depreciation End Date', section: 'other' },
-];
-
-const amtFields = [
-  { key: 'assetValue', column: 'AssetValueAmt', type: 'number', label: 'Asset Value', section: 'other' },
-  { key: 'residualAssetValue', column: 'Residualassetvalueamt', type: 'number', label: 'Residual Asset Value', section: 'other' },
-  { key: 'depreciationAmt', column: 'Amortizationvalueamt', type: 'number', label: 'Depreciation Amount', section: 'other' },
-  { key: 'previouslyDepreciatedAmt', column: 'Depreciatedpreviousamt', type: 'number', label: 'Previously Depreciated Amount', section: 'other', defaultValue: '0' },
-];
-
 export default function AssetsConfigPanel({ data, token, apiBaseUrl, catalogs, api, editing, onChange }) {
   const ui = useUI();
+
+  const currencyFields = [
+    { key: 'currency', column: 'C_Currency_ID', type: 'selector', label: ui('assetsCurrencyLabel'), section: 'other', reference: 'Currency', inputMode: 'selector', defaultValue: '@C_Currency_ID@', readOnlyLogic: (record) => Number(record.depreciatedPlan || 0) > 0 || Number(record.depreciatedValue || 0) > 0 },
+  ];
+
+  const dateFields = [
+    { key: 'purchaseDate', column: 'Datepurchased', type: 'date', label: ui('assetsPurchaseDateLabel'), section: 'other' },
+    { key: 'cancellationDate', column: 'Cancellationdate', type: 'date', label: ui('assetsCancellationDateLabel'), section: 'other' },
+    { key: 'depreciationStartDate', column: 'Amortizationstartdate', type: 'date', label: ui('assetsDepStartDateLabel'), section: 'other' },
+    { key: 'depreciationEndDate', column: 'Amortizationenddate', type: 'date', label: ui('assetsDepEndDateLabel'), section: 'other' },
+  ];
+
+  const amtFields = [
+    { key: 'assetValue', column: 'AssetValueAmt', type: 'number', label: ui('assetsAssetValueLabel'), section: 'other' },
+    { key: 'residualAssetValue', column: 'Residualassetvalueamt', type: 'number', label: ui('assetsResidualValueLabel'), section: 'other' },
+    { key: 'depreciationAmt', column: 'Amortizationvalueamt', type: 'number', label: ui('assetsDepreciationAmtLabel'), section: 'other' },
+    { key: 'previouslyDepreciatedAmt', column: 'Depreciatedpreviousamt', type: 'number', label: ui('assetsPrevDepreciatedLabel'), section: 'other', defaultValue: '0' },
+  ];
   const d = data ?? {};
   const depreciate = isDepreciate(d);
 
