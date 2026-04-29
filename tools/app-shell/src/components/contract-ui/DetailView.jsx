@@ -478,6 +478,22 @@ export function DetailView({
     setSelectedSecondaryLine(null);
   }, [secondaryTabs, isNew, hook, navigate, windowName]);
 
+  const handleCustomModalAddClick = useCallback(async (tabKey) => {
+    const targetTab = secondaryTabs.find(st => st.key === tabKey);
+    if (!targetTab) return;
+    if (isNew && targetTab.requireSavedRecord) {
+      const saved = await hook.handleSave();
+      if (!saved?.id) return;
+      hook.primeSaved?.(saved);
+      navigate(`/${windowName}/${saved.id}`, {
+        replace: true,
+        state: { openSecondaryTab: tabKey, openAddSecondaryLine: true, justSaved: saved },
+      });
+      return;
+    }
+    setCustomModalState({ key: tabKey, rowId: null });
+  }, [secondaryTabs, isNew, hook, navigate, windowName]);
+
   // Resolve $_identifier for default FK values.
   // NOTE: Mandatory defaults are now handled by the backend (NeoDefaultsService).
   // The frontend only ensures that if a value exists (from a default or callout),
@@ -1186,11 +1202,16 @@ export function DetailView({
       setActiveTab(nextTabIndex);
     }
     if (location.state?.openAddSecondaryLine) {
-      setAddingSecondaryLine(prev => ({ ...prev, [targetTabKey]: true }));
-      setSelectedSecondaryLine(null);
+      const targetSecondaryTab = secondaryTabs.find(st => st.key === targetTabKey);
+      if (targetSecondaryTab?.customAddModal) {
+        setCustomModalState({ key: targetTabKey, rowId: null });
+      } else {
+        setAddingSecondaryLine(prev => ({ ...prev, [targetTabKey]: true }));
+        setSelectedSecondaryLine(null);
+      }
     }
     navigate(location.pathname, { replace: true, state: {} });
-  }, [location.state?.openSecondaryTab, location.state?.openAddSecondaryLine, isNew, hook.editing, navigate, location.pathname, tabs]);
+  }, [location.state?.openSecondaryTab, location.state?.openAddSecondaryLine, isNew, hook.editing, navigate, location.pathname, tabs, secondaryTabs]);
 
   // Only black out the whole window when we actually don't have the record yet.
   // A list refresh (hook.loading for the side list) or any unrelated background
@@ -2251,7 +2272,7 @@ export function DetailView({
                       <AddLineButton
                         onClick={() => {
                           if (st.customAddModal) {
-                            setCustomModalState({ key: st.key, rowId: null });
+                            void handleCustomModalAddClick(st.key);
                           } else {
                             void handleSecondaryAddLineToggle(st.key);
                           }
