@@ -1726,12 +1726,6 @@ export function DetailView({
                               <Trash2 className="h-3.5 w-3.5" />
                               {deletingChildren ? ui('loading') : ui('delete')}
                             </button>
-                            <button
-                              onClick={() => setSelectedChildRows([])}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border hover:bg-accent transition-colors text-muted-foreground"
-                            >
-                              {ui('clear')}
-                            </button>
                           </div>
                         </div>
                       )}
