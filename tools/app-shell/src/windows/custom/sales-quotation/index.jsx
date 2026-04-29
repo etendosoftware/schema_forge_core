@@ -26,6 +26,14 @@ function CustomQuotationTable(props) {
   return <QuotationTable columns={QUOTATION_COLUMNS} {...props} />;
 }
 
+const draftModeWithModal = {
+  enabled: true,
+  processField: 'documentAction',
+  processValue: 'CO',
+  label: 'soConfirmBtn',
+  onConfirm: () => window.dispatchEvent(new CustomEvent('sales-quotation:open-confirm-modal')),
+};
+
 export default function SalesQuotationWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
   const [cloneTargets, setCloneTargets] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -41,6 +49,7 @@ export default function SalesQuotationWindow({ windowName, recordId, token, apiB
           recordId={recordId}
           token={token}
           apiBaseUrl={apiBaseUrl}
+          draftMode={draftModeWithModal}
           linesEmptyState={LinesEmptyState}
           addLineGuard={(d) => !!d?.businessPartner}
           {...rest}

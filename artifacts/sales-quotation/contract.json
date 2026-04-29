@@ -1,7 +1,7 @@
 {
   "version": "0.2.0",
-  "generatedAt": "2026-04-27T23:22:07.714Z",
-  "checksum": "9bb49efd526d31f1",
+  "generatedAt": "2026-04-29T17:29:49.647Z",
+  "checksum": "278e11929c7af58e",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -12,6 +12,12 @@
       "relatedDocuments": true,
       "hideDeleteWhenComplete": true,
       "hidePrint": true,
+      "hideSaveStatuses": [
+        "CA",
+        "ETGO_CI",
+        "CL",
+        "VO"
+      ],
       "customComponents": {
         "topbarRight": "QuotationTopbarActions"
       },
@@ -485,7 +491,13 @@
             }
           }
         ],
-        "javaQualifier": "salesQuotationHeaderHandler"
+        "javaQualifier": "salesQuotationHeaderHandler",
+        "draftMode": {
+          "enabled": true,
+          "processField": "documentAction",
+          "processValue": "CO",
+          "label": "soConfirmBtn"
+        }
       },
       "quotationLine": {
         "tableName": "C_OrderLine",
@@ -739,6 +751,12 @@
       "relatedDocuments": true,
       "hideDeleteWhenComplete": true,
       "hidePrint": true,
+      "hideSaveStatuses": [
+        "CA",
+        "ETGO_CI",
+        "CL",
+        "VO"
+      ],
       "customComponents": {
         "topbarRight": "QuotationTopbarActions"
       },

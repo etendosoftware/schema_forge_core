@@ -43,7 +43,12 @@ const processes = [
 // @sf-generated-end processes:quotation
 
 // @sf-generated-start draftMode:quotation
-const draftMode = null;
+const draftMode = {
+  "enabled": true,
+  "processField": "documentAction",
+  "processValue": "CO",
+  "label": "soConfirmBtn"
+};
 // @sf-generated-end draftMode:quotation
 
 // @sf-generated-start addLineFields:quotationLine
@@ -384,6 +389,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
       api={api}
         hideDeleteWhenComplete
         hidePrint
+        hideSaveStatuses={["CA","ETGO_CI","CL","VO"]}
         noHeaderBorder
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
@@ -392,6 +398,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
           { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
           { key: 'cancel', label: 'Cancel', destructive: true, visible: ["CO","UE"].includes(status), onClick: () => {}, }
         ]}
+        draftMode={draftMode}
         salesTheme
         labelOverrides={labelOverrides}
         {...props}

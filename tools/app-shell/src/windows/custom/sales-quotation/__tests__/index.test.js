@@ -52,4 +52,22 @@ describe('SalesQuotationWindow custom wrapper', () => {
   it('imports CloneOrderModal from contract-ui', () => {
     assert.match(src, /import\s+CloneOrderModal\s+from\s+['"]@\/components\/contract-ui\/CloneOrderModal['"]/);
   });
+
+  describe('draftMode override for the Confirmar button', () => {
+    it('defines a draftModeWithModal with enabled and the soConfirmBtn label', () => {
+      assert.match(src, /draftModeWithModal\s*=\s*\{[^}]*enabled:\s*true/);
+      assert.match(src, /label:\s*['"]soConfirmBtn['"]/);
+    });
+
+    it('routes onConfirm through a custom DOM event so QuotationTopbarActions can pick the right modal', () => {
+      assert.match(
+        src,
+        /onConfirm:\s*\(\)\s*=>\s*window\.dispatchEvent\(\s*new\s+CustomEvent\(\s*['"]sales-quotation:open-confirm-modal['"]/,
+      );
+    });
+
+    it('passes draftModeWithModal to GeneratedApp on the record view', () => {
+      assert.match(src, /draftMode=\{draftModeWithModal\}/);
+    });
+  });
 });

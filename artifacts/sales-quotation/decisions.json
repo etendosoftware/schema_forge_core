@@ -49,13 +49,17 @@
       }
     },
     "noHeaderBorder": true,
-    "dateFilterKey": "orderDate"
+    "dateFilterKey": "orderDate",
+    "hideSaveStatuses": ["CA", "ETGO_CI", "CL", "VO"]
   },
   "entities": {
     "header": {
       "name": "quotation",
       "draftMode": {
-        "enabled": false
+        "enabled": true,
+        "processField": "documentAction",
+        "processValue": "CO",
+        "label": "soConfirmBtn"
       },
       "fields": {
         "documentNo": {
