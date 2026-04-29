@@ -4,13 +4,55 @@ import { useUI } from '@/i18n';
 import {
   DocChip,
   RelatedDocumentsShell,
-  STATUS_KEYS,
   CHIP_ICONS,
   CHIP_COLORS,
   fetchByCriteria,
   fetchChild,
   neoBase,
 } from '@/components/related-documents';
+
+const STATUS_LABEL_KEYS = {
+  CO: 'statusComplete',
+  DR: 'statusDraft',
+  VO: 'statusVoid',
+  CL: 'statusClosed',
+  CA: 'statusOrderCreated',
+  RPPC: 'statusPaymentCleared',
+  RPR: 'statusPaymentReceived',
+  PWNC: 'statusWithdrawnNotCleared',
+  RDNC: 'statusDepositedNotCleared',
+};
+
+const RELATED_SPECS = [
+  {
+    key: 'goods-shipment',
+    icon: 'shipment',
+    route: '/goods-shipment',
+    format: (row) => ({
+      titleKey: 'shipmentDoc',
+      titleParams: { number: row.documentNo },
+      status: row.documentStatus,
+    }),
+  },
+  {
+    key: 'sales-invoice',
+    icon: 'invoice',
+    route: '/sales-invoice',
+    format: (row) => ({
+      titleKey: 'invoiceDoc',
+      titleParams: { number: row.documentNo },
+      amount: row.grandTotalAmount,
+      currency: row['currency$_identifier'],
+      status: row.documentStatus,
+    }),
+  },
+];
+
+function resolveStatusLabel(status, ui) {
+  if (!status) return null;
+  const key = STATUS_LABEL_KEYS[status];
+  return key ? ui(key) : status;
+}
 
 async function fetchPayments(orderId, token, apiBaseUrl) {
   const plans = await fetchChild('sales-order', 'Payment Plan', orderId, token, apiBaseUrl);
@@ -114,10 +156,14 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
   const quotationLabel = data?.['quotation$_identifier'];
   if (quotationId) {
     // Parse backend _identifier: "1000373 - 07-04-2026 - 191.80"
-    let qNumber = quotationLabel ? quotationLabel.split(' - ')[0].trim() : quotationId;
+    // ConvertQuotationIntoOrder sets the source quotation to CA (Closed - Order Created)
+    // when the order is generated, so any quotation reachable through this chip is in CA.
+    let qTitle = ui('quotation');
     let qAmount = null;
+    const qStatus = 'CA';
     if (quotationLabel) {
       const parts = quotationLabel.split(' - ');
+      if (parts.length >= 1) qTitle = ui('quotationDoc', { number: parts[0].trim() });
       if (parts.length >= 3) qAmount = parseFloat(parts[2].trim()) || null;
     }
     chips.push(
@@ -125,44 +171,35 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
         key="quotation"
         icon={CHIP_ICONS.quotation}
         iconColor={CHIP_COLORS.quotation}
-        title={ui('quotationDoc', { number: qNumber })}
+        title={qTitle}
         amount={qAmount}
         currency={data?.['currency$_identifier']}
-        status="CO"
-        statusLabel={ui(STATUS_KEYS.CO)}
+        status={qStatus}
+        statusLabel={resolveStatusLabel(qStatus, ui)}
         onClick={() => navigate(`/sales-quotation/${quotationId}`)}
       />
     );
   }
 
-  for (const row of (related['goods-shipment'] || [])) {
-    chips.push(
-      <DocChip
-        key={`shipment-${row.id}`}
-        icon={CHIP_ICONS.shipment}
-        iconColor={CHIP_COLORS.shipment}
-        title={ui('shipmentDoc', { number: row.documentNo })}
-        status={row.documentStatus}
-        statusLabel={ui(STATUS_KEYS[row.documentStatus] || row.documentStatus)}
-        onClick={() => navigate(`/goods-shipment/${row.id}`)}
-      />
-    );
-  }
-
-  for (const row of (related['sales-invoice'] || [])) {
-    chips.push(
-      <DocChip
-        key={`invoice-${row.id}`}
-        icon={CHIP_ICONS.invoice}
-        iconColor={CHIP_COLORS.invoice}
-        title={ui('invoiceDoc', { number: row.documentNo })}
-        amount={row.grandTotalAmount}
-        currency={row['currency$_identifier']}
-        status={row.documentStatus}
-        statusLabel={ui(STATUS_KEYS[row.documentStatus] || row.documentStatus)}
-        onClick={() => navigate(`/sales-invoice/${row.id}`)}
-      />
-    );
+  for (const spec of RELATED_SPECS) {
+    const rows = related[spec.key] || [];
+    for (const row of rows) {
+      const f = spec.format(row);
+      const title = f.titleKey ? ui(f.titleKey, f.titleParams) : f.title;
+      chips.push(
+        <DocChip
+          key={`${spec.key}-${row.id}`}
+          icon={CHIP_ICONS[spec.icon]}
+          iconColor={CHIP_COLORS[spec.icon]}
+          title={title}
+          amount={f.amount}
+          currency={f.currency}
+          status={f.status}
+          statusLabel={resolveStatusLabel(f.status, ui)}
+          onClick={() => navigate(`${spec.route}/${row.id}`)}
+        />
+      );
+    }
   }
 
   for (const p of payments) {
@@ -175,7 +212,7 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
         amount={p.amount}
         currency={p['currency$_identifier']}
         status={p.status}
-        statusLabel={ui(STATUS_KEYS[p.status] || p.status)}
+        statusLabel={resolveStatusLabel(p.status, ui)}
         onClick={() => navigate(`/payment-in/${p.id}`)}
       />
     );

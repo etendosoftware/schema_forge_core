@@ -17025,6 +17025,8 @@
     "statusVoid": "Anulado",
     "statusInProcess": "En proceso",
     "statusClosed": "Cerrado",
+    "statusOrderCreated": "Cerrado - Pedido creado",
+    "statusInvoiceCreated": "Cerrado - Factura creada",
     "statusPaid": "Pagado",
     "statusPending": "Pendiente",
     "statusPartiallyExecuted": "Pago parcial",
@@ -19273,6 +19275,9 @@
     },
     "DR": {
       "label": "Borrador"
+    },
+    "ETGO_CI": {
+      "label": "Cerrado - Factura creada"
     },
     "IP": {
       "label": "En curso"

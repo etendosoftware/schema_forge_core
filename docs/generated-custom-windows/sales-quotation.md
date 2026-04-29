@@ -37,10 +37,32 @@ Let a sales user prepare a customer quotation, review commercial terms before co
 - Related downstream behavior: the Related Documents tab is intended to surface sales orders and invoices tied to the quotation so the user can navigate into fulfillment and billing from the quotation record.
 - Current visible evidence does not show inline formulas or client-side calculators for discount, tax, or totals; the observable design is server-driven recalculation after selector, callout, save, and modal action flows.
 
+## Invoice creation flow
+
+The "Facturar directamente" action on the confirmation modal calls
+`POST /sws/neo/sales-quotation/header/{id}/action/createDraftInvoice`, routed
+to `CreateDraftInvoiceHandler` in `com.etendoerp.go`. The handler reuses the
+sales-order code path: it copies the quotation header (business partner,
+currency, payment terms, price list) and the lines (product, quantity, prices)
+into a new sales invoice in `DR` (Draft) status via the native
+`CreateInvoiceLinesFromProcess`.
+
+After the invoice is persisted, the source quotation's DocStatus is set to
+`ETGO_CI` ("Closed - Invoice Created") via a direct OBDal write. This mirrors
+the standard Etendo pattern in `ConvertQuotationIntoOrder`, which sets DocStatus
+to `CA` ("Closed - Order Created") when an order is generated from a
+quotation. The transition is performed without invoking `C_Order_Post`, so it
+is immune to the `@AlreadyPosted@` raised by that stored procedure regardless
+of the quotation's `Processed` flag or prior status.
+
+The line quantity invoiced is `orderedQuantity − invoicedQuantity` per line.
+Lines whose pending is zero are skipped; if every line is fully invoiced, the
+handler returns HTTP 400 with "No hay líneas a facturar en este pedido".
+
 ## Gap assessment
 
 - Duplicate and Cancel are exposed as menu actions in the detail page, but the generated page currently wires both to empty `onClick` handlers. Their presence is visible; their actual behavior is a gap.
-- The detail page includes a draft-only confirmation modal that can create an order or draft invoice, but the documented core conversion rule kept in decisions is specifically quotation-to-order. Draft-invoice creation exists in custom code, yet its business contract is not clearly documented in the curated decisions, so that downstream path remains an open ambiguity.
+- The detail page includes a draft-only confirmation modal that can create an order or draft invoice. Quotation-to-order remains the documented core conversion rule kept in decisions; the quotation-to-draft-invoice path is implemented in `CreateDraftInvoiceHandler` (com.etendoerp.go) by mirroring the sales-order branch — see "Invoice creation flow" above.
 - Discount, tax, line gross amount, total net amount, and total gross amount are all present in the schema, and retained rules imply recalculation, but there is no browser automation proving how quickly those values refresh or whether they update before save versus only after backend round-trips. That reaction timing is a gap.
 - The decisions file keeps a rule that should default `validUntil` from `orderDate`, but the generated form only shows `orderDate` with an explicit default value. The intended validity-date default is therefore not clearly evidenced in the current UI layer.
 - Related documents are clearly enabled for orders, but invoice lookup currently queries sales invoices by `salesOrder` using the quotation record id. That may work only if backend linkage matches this assumption; otherwise invoice visibility from the quotation tab is an open ambiguity.
