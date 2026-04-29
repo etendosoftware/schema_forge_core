@@ -1,7 +1,7 @@
 {
   "version": "0.2.0",
-  "generatedAt": "2026-04-29T17:37:56.540Z",
-  "checksum": "99024f68a1bea9a1",
+  "generatedAt": "2026-04-29T17:43:04.660Z",
+  "checksum": "e6b1cab78765b640",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -502,7 +502,13 @@
           "enabled": true,
           "processField": "documentAction",
           "processValue": "CO",
-          "label": "soConfirmBtn"
+          "label": "soConfirmBtn",
+          "completedStatuses": [
+            "CA",
+            "ETGO_CI",
+            "CL",
+            "VO"
+          ]
         }
       },
       "quotationLine": {

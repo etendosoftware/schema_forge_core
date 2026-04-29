@@ -261,9 +261,15 @@ export function DetailView({
   // Document-level read-only: when processed===true, the entire record (including lines) is read-only.
   const _headerData = hook.selected ?? hook.editing;
   const isProcessed = _headerData?.processed === true || _headerData?.processed === 'Y';
+  // When draftMode declares an explicit completedStatuses array, only those documentStatus
+  // values hide the Save/Confirm pair. This lets windows like sales-quotation keep the
+  // pair visible during intermediate processed states (UE) while still hiding it in
+  // terminal states (CA, ETGO_CI, CL, VO).
   const isDraftModeCompleted = Boolean(
     draftMode?.enabled && (
-      isProcessed || _headerData?.documentStatus === 'CO'
+      Array.isArray(draftMode.completedStatuses)
+        ? draftMode.completedStatuses.includes(_headerData?.documentStatus)
+        : (isProcessed || _headerData?.documentStatus === 'CO')
     )
   );
   const isDocumentReadOnly = lockWhenProcessed && isProcessed;

@@ -55,7 +55,8 @@
         "enabled": true,
         "processField": "documentAction",
         "processValue": "CO",
-        "label": "soConfirmBtn"
+        "label": "soConfirmBtn",
+        "completedStatuses": ["CA", "ETGO_CI", "CL", "VO"]
       },
       "fields": {
         "documentNo": {

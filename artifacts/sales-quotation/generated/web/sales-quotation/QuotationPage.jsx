@@ -47,7 +47,13 @@ const draftMode = {
   "enabled": true,
   "processField": "documentAction",
   "processValue": "CO",
-  "label": "soConfirmBtn"
+  "label": "soConfirmBtn",
+  "completedStatuses": [
+    "CA",
+    "ETGO_CI",
+    "CL",
+    "VO"
+  ]
 };
 // @sf-generated-end draftMode:quotation
 

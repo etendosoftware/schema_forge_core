@@ -31,6 +31,11 @@ const draftModeWithModal = {
   processField: 'documentAction',
   processValue: 'CO',
   label: 'soConfirmBtn',
+  // Keep Save/Confirm visible in DR and UE. Only hide once the quotation is closed
+  // by reaching one of the terminal statuses below — UE is intermediate and must
+  // still expose the Confirmar button (which dispatches the convert-to-order/invoice
+  // modal via onConfirm).
+  completedStatuses: ['CA', 'ETGO_CI', 'CL', 'VO'],
   onConfirm: () => window.dispatchEvent(new CustomEvent('sales-quotation:open-confirm-modal')),
 };
 

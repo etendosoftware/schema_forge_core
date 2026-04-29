@@ -69,5 +69,14 @@ describe('SalesQuotationWindow custom wrapper', () => {
     it('passes draftModeWithModal to GeneratedApp on the record view', () => {
       assert.match(src, /draftMode=\{draftModeWithModal\}/);
     });
+
+    it('keeps Save/Confirm visible during UE by setting completedStatuses to the terminal statuses only', () => {
+      assert.match(src, /completedStatuses:\s*\[[^\]]*['"]CA['"]/);
+      assert.match(src, /completedStatuses:\s*\[[^\]]*['"]ETGO_CI['"]/);
+      assert.match(src, /completedStatuses:\s*\[[^\]]*['"]CL['"]/);
+      assert.match(src, /completedStatuses:\s*\[[^\]]*['"]VO['"]/);
+      assert.doesNotMatch(src, /completedStatuses:\s*\[[^\]]*['"]UE['"]/);
+      assert.doesNotMatch(src, /completedStatuses:\s*\[[^\]]*['"]DR['"]/);
+    });
   });
 });
