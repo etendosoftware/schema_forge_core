@@ -13,13 +13,15 @@ import { useCallback } from 'react';
  * Add a new entry here whenever a new window type is onboarded.
  */
 export const LINE_CONFIGS = {
-  order:   { qtyField: 'orderedQuantity',  grossField: 'lineGrossAmount', priceField: 'listPrice', discountField: 'discount' },
-  invoice: { qtyField: 'invoicedQuantity', grossField: 'grossAmount',     priceField: 'listPrice', discountField: 'etgoDiscount' },
+  order:        { qtyField: 'orderedQuantity',  grossField: 'lineGrossAmount', priceField: 'listPrice',  discountField: 'discount'      },
+  invoice:      { qtyField: 'invoicedQuantity', grossField: 'grossAmount',     priceField: 'listPrice',  discountField: 'etgoDiscount'  },
+  returnOrder:  { qtyField: 'orderedQuantity',  grossField: 'lineGrossAmount', priceField: 'unitPrice',  discountField: null            },
 };
 
 // Convenience aliases — import the one that matches the window type.
-export const ORDER_LINE_CONFIG   = LINE_CONFIGS.order;
-export const INVOICE_LINE_CONFIG = LINE_CONFIGS.invoice;
+export const ORDER_LINE_CONFIG        = LINE_CONFIGS.order;
+export const INVOICE_LINE_CONFIG      = LINE_CONFIGS.invoice;
+export const RETURN_ORDER_LINE_CONFIG = LINE_CONFIGS.returnOrder;
 
 // ─── Pure helpers (no React, fully testable) ──────────────────────────────────
 

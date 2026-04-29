@@ -817,7 +817,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // contentBg prop
   const contentBgProp = contentBg ? `\n        contentBg="${contentBg}"` : '';
   // lineConfig prop — emitted when the window uses a non-default line pricing config
-  const LINE_CONFIG_SYMBOLS = { invoice: 'INVOICE_LINE_CONFIG' };
+  const LINE_CONFIG_SYMBOLS = { invoice: 'INVOICE_LINE_CONFIG', returnOrder: 'RETURN_ORDER_LINE_CONFIG' };
   const lineConfigSymbol = lineEntityConfig ? (LINE_CONFIG_SYMBOLS[lineEntityConfig] ?? null) : null;
   const lineConfigProp = lineConfigSymbol ? `\n        lineConfig={${lineConfigSymbol}}` : '';
   // ListView toolbar props

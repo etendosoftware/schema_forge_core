@@ -1,8 +1,9 @@
 {
-  "$schema": "decisions-v1",
+  "$schema": "decisions-v2",
   "window": {
     "category": "sales",
     "name": "Return from Customer",
+    "lineEntityConfig": "returnOrder",
     "documentPreview": {
       "titlePrefix": "Return"
     },
@@ -13,12 +14,12 @@
       "documentAction": {
         "label": "Complete Return",
         "displayLogicRaw": "@documentStatus@='DR'"
-    }
+      }
     },
     "dateFilterKey": "orderDate"
   },
   "entities": {
-    "cOrder": {
+    "header": {
       "name": "customerReturn",
       "fields": {
         "documentNo": {
@@ -353,7 +354,7 @@
         }
       }
     },
-    "cOrderLine": {
+    "lines": {
       "name": "customerReturnLine",
       "fields": {
         "lineNo": {
@@ -560,7 +561,10 @@
           "visibility": "discarded"
         },
         "lineGrossAmount": {
-          "visibility": "discarded"
+          "visibility": "readOnly",
+          "grid": true,
+          "form": true,
+          "displayLogic": null
         },
         "taxableAmount": {
           "visibility": "discarded"
@@ -612,25 +616,25 @@
         }
       }
     },
-    "cOrderLineTax": {
+    "lineTax": {
       "exclude": true
     },
-    "cOrderlineProductrelation": {
+    "relatedServices": {
       "exclude": true
     },
-    "cOrderlineServicerelation": {
+    "relatedProducts": {
       "exclude": true
     },
-    "cOrderDiscount": {
+    "basicDiscounts": {
       "exclude": true
     },
-    "cOrderTax": {
+    "tax": {
       "exclude": true
     },
-    "finPaymentSchedOrdV": {
+    "paymentInPlan": {
       "exclude": true
     },
-    "finPaymentDetailV": {
+    "paymentInDetails": {
       "exclude": true
     }
   },
@@ -672,5 +676,6 @@
       "description": "Complete/void the return document. On completion generates a return receipt (goods come back to warehouse) and optionally a customer credit memo"
     }
   },
-  "discardPatterns": []
+  "discardPatterns": [],
+  "version": 2
 }

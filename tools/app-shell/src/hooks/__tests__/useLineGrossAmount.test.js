@@ -479,4 +479,20 @@ describe('LINE_CONFIGS contract', () => {
     assert.equal(LINE_CONFIGS.invoice.grossField, 'grossAmount');
   });
 
+  it('returnOrder config uses unitPrice as priceField', () => {
+    assert.equal(LINE_CONFIGS.returnOrder.priceField, 'unitPrice');
+  });
+
+  it('returnOrder config has no discountField', () => {
+    assert.equal(LINE_CONFIGS.returnOrder.discountField, null);
+  });
+
+  it('returnOrder config uses orderedQuantity as qtyField', () => {
+    assert.equal(LINE_CONFIGS.returnOrder.qtyField, 'orderedQuantity');
+  });
+
+  it('returnOrder config uses lineGrossAmount as grossField', () => {
+    assert.equal(LINE_CONFIGS.returnOrder.grossField, 'lineGrossAmount');
+  });
+
 });
