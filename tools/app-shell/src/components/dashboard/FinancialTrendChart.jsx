@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LineChart, BarChart2, Check, Sparkles, Plus } from 'lucide-react';
+import { LineChart, BarChart2, Check, Plus } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { useLocaleSwitch } from '@/i18n';
-import { useCopilot } from '@/components/CopilotContext';
 import {
   formatDashboardAmount,
   formatDashboardAxisTick,
@@ -40,7 +39,6 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
   const navigate = useNavigate();
   const { locale } = useLocaleSwitch();
   const numberLocale = localeFromUi(locale);
-  const { open: openCopilot } = useCopilot();
   const [chartType, setChartType] = useState(() => localStorage.getItem('dashboard_chart_type') || 'line');
   const [tooltip, setTooltip] = useState(null);
 
@@ -229,13 +227,13 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
             <div className="flex flex-row items-center" style={{ gap: '12px' }}>
               <button
                 type="button"
-                onClick={openCopilot}
+                onClick={() => navigate('/purchase-invoice/new')}
                 className="flex items-center justify-center"
-                style={{ padding: '4px 8px', height: '32px', background: '#FFFFFF', border: '1px solid #D1D4DB', boxShadow: '0px 1px 2px rgba(18,18,23,0.05)', borderRadius: '8px', gap: '4px', cursor: 'pointer' }}
+                style={{ padding: '4px 8px', height: '32px', background: '#121217', borderRadius: '8px', gap: '4px', cursor: 'pointer', border: 'none' }}
               >
-                <Sparkles style={{ width: '20px', height: '20px', color: '#828FA3' }} />
-                <span style={{ fontSize: '14px', fontWeight: 500, lineHeight: '24px', color: '#121217' }}>
-                  {ui('createWithCopilot')}
+                <Plus style={{ width: '20px', height: '20px', color: 'rgba(255,255,255,0.9)' }} />
+                <span style={{ fontSize: '14px', fontWeight: 500, lineHeight: '24px', color: '#FFFFFF' }}>
+                  {ui('newPurchase')}
                 </span>
               </button>
               <button
@@ -246,7 +244,7 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
               >
                 <Plus style={{ width: '20px', height: '20px', color: 'rgba(255,255,255,0.9)' }} />
                 <span style={{ fontSize: '14px', fontWeight: 500, lineHeight: '24px', color: '#FFFFFF' }}>
-                  {ui('newInvoice')}
+                  {ui('newSale')}
                 </span>
               </button>
             </div>
