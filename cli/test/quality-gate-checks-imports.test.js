@@ -64,4 +64,23 @@ describe('runImportsCheck', () => {
       rmSync(rootDir, { recursive: true, force: true });
     }
   });
+
+  it('checks onboarding target relative imports outside generated artifacts', async () => {
+    const { rootDir, windowDir } = makeWindowDir();
+    const onboardingDir = join(rootDir, 'tools', 'app-shell', 'src', 'pages', 'onboarding');
+
+    try {
+      mkdirSync(onboardingDir, { recursive: true });
+      writeFileSync(join(onboardingDir, 'helpers.js'), 'export const answer = 42;');
+      writeFileSync(
+        join(onboardingDir, 'onboardingState.js'),
+        "import { answer } from './helpers';\nexport const STEP = answer;",
+      );
+
+      const result = await runImportsCheck('app-shell:onboarding', { rootDir, windowDir });
+      assert.deepEqual(result, { status: 'pass', detail: 'Resolved 1 relative import(s).' });
+    } finally {
+      rmSync(rootDir, { recursive: true, force: true });
+    }
+  });
 });

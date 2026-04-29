@@ -1,13 +1,15 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { collectSourceFiles, isJavaScriptModule, parseModuleSource, repoRelative } from './shared.js';
+import { collectSourceFiles, collectTargetSourceFiles, isJavaScriptModule, parseModuleSource, repoRelative } from './shared.js';
 
-export async function runParseCheck(_windowName, { rootDir, windowDir }) {
+export async function runParseCheck(targetName, { rootDir, windowDir }) {
   const generatedDir = join(windowDir, 'generated');
-  const files = collectSourceFiles(generatedDir, isJavaScriptModule);
+  const files = targetName.startsWith('app-shell:')
+    ? collectTargetSourceFiles(rootDir, targetName)
+    : collectSourceFiles(generatedDir, isJavaScriptModule);
 
   if (files.length === 0) {
-    return { status: 'skip', detail: 'No generated .js or .jsx files found.' };
+    return { status: 'skip', detail: 'No generated or targeted .js/.jsx files found.' };
   }
 
   for (const filePath of files) {
@@ -23,6 +25,6 @@ export async function runParseCheck(_windowName, { rootDir, windowDir }) {
 
   return {
     status: 'pass',
-    detail: `Parsed ${files.length} generated source file(s).`,
+    detail: `Parsed ${files.length} source file(s).`,
   };
 }

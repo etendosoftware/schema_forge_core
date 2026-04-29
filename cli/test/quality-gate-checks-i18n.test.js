@@ -5,7 +5,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { runI18nCheck } from '../src/quality-gate/checks/i18n.js';
 
-function makeFixture({ missingColumn = false, hardcoded = false, allowlisted = false, sharedHardcoded = false, aliasHardcoded = false } = {}) {
+function makeFixture({
+  missingColumn = false,
+  hardcoded = false,
+  allowlisted = false,
+  sharedHardcoded = false,
+  aliasHardcoded = false,
+  pageHardcoded = false,
+  pageModuleHardcoded = false,
+} = {}) {
   const rootDir = mkdtempSync(join(tmpdir(), 'quality-gate-i18n-'));
   const windowDir = join(rootDir, 'artifacts', 'sales-order');
   const appCustomDir = join(rootDir, 'tools', 'app-shell', 'src', 'windows', 'custom');
@@ -13,6 +21,8 @@ function makeFixture({ missingColumn = false, hardcoded = false, allowlisted = f
   mkdirSync(join(appCustomDir, 'sales-order'), { recursive: true });
   mkdirSync(join(appCustomDir, 'shared'), { recursive: true });
   mkdirSync(join(appCustomDir, 'businessPartner'), { recursive: true });
+  const pagesDir = join(rootDir, 'tools', 'app-shell', 'src', 'pages');
+  mkdirSync(join(pagesDir, 'onboarding'), { recursive: true });
 
   const contract = {
     frontendContract: {
@@ -38,6 +48,16 @@ function makeFixture({ missingColumn = false, hardcoded = false, allowlisted = f
 
   writeFileSync(join(windowDir, 'contract.json'), JSON.stringify(contract, null, 2));
   writeFileSync(join(windowDir, 'custom', 'Sidebar.jsx'), customComponent);
+
+  if (pageHardcoded) {
+    writeFileSync(join(pagesDir, 'OnboardingPage.jsx'), 'export default function OnboardingPage() { return <button title="Crear cuenta">Crear cuenta</button>; }');
+  }
+
+  if (pageModuleHardcoded) {
+    writeFileSync(join(pagesDir, 'onboarding', 'onboardingState.js'), `export const SETUP_STEP_DEFINITIONS = [
+  { name: 'setup', label: 'Preparando contexto', description: 'Crear empresa' },
+];`);
+  }
 
   if (sharedHardcoded) {
     writeFileSync(join(appCustomDir, 'shared', 'SharedModal.jsx'), 'export default function SharedModal() { return <span>Shared warning</span>; }');
@@ -100,6 +120,30 @@ describe('runI18nCheck', () => {
       assert.equal(result.status, 'fail');
       assert.match(result.detail, /Shared warning/);
       assert.match(result.detail, /Business partner note/);
+    } finally {
+      rmSync(fixture.rootDir, { recursive: true, force: true });
+    }
+  });
+
+  it('fails on hardcoded strings inside top-level app shell pages', async () => {
+    const fixture = makeFixture({ pageHardcoded: true });
+    try {
+      const result = await runI18nCheck('sales-order', { rootDir: fixture.rootDir, windowDir: fixture.windowDir });
+      assert.equal(result.status, 'fail');
+      assert.match(result.detail, /OnboardingPage.jsx/);
+      assert.match(result.detail, /Crear cuenta/);
+    } finally {
+      rmSync(fixture.rootDir, { recursive: true, force: true });
+    }
+  });
+
+  it('fails on hardcoded user-facing string literals inside page helper modules', async () => {
+    const fixture = makeFixture({ pageModuleHardcoded: true });
+    try {
+      const result = await runI18nCheck('sales-order', { rootDir: fixture.rootDir, windowDir: fixture.windowDir });
+      assert.equal(result.status, 'fail');
+      assert.match(result.detail, /onboardingState.js/);
+      assert.match(result.detail, /Preparando contexto/);
     } finally {
       rmSync(fixture.rootDir, { recursive: true, force: true });
     }

@@ -1,7 +1,8 @@
-import { Link } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ChevronRight, Sparkles, Plus } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { useLocaleSwitch } from '@/i18n';
+import { useCopilot } from '@/components/CopilotContext';
 import { formatDashboardAmount, localeFromUi } from '@/lib/dashboardNumberFormat.js';
 import { resolveDashboardNavigation } from '@/lib/dashboardNavigation.js';
 
@@ -13,8 +14,10 @@ function resolveDocumentNumber(inv) {
 
 export function RecentSalesList({ invoices = [], currencyLabel = '' }) {
   const ui = useUI();
+  const navigate = useNavigate();
   const { locale } = useLocaleSwitch();
   const numberLocale = localeFromUi(locale);
+  const { open: openCopilot } = useCopilot();
 
   return (
     <div
@@ -72,6 +75,44 @@ export function RecentSalesList({ invoices = [], currencyLabel = '' }) {
           </span>
         </div>
       </div>
+      {invoices.length === 0 ? (
+        <div className="flex-1 flex items-center justify-center w-full">
+          <div className="flex flex-col items-center" style={{ gap: '12px', width: '340px' }}>
+            <div className="flex flex-col items-center" style={{ gap: '4px' }}>
+              <p style={{ fontSize: '20px', fontWeight: 600, lineHeight: '28px', textAlign: 'center', color: '#121217' }}>
+                {ui('recentSalesEmptyTitle')}
+              </p>
+              <p style={{ fontSize: '12px', fontWeight: 400, lineHeight: '16px', textAlign: 'center', color: '#282833' }}>
+                {ui('recentSalesEmptySubtitle')}
+              </p>
+            </div>
+            <div className="flex flex-row items-center" style={{ gap: '12px' }}>
+              <button
+                type="button"
+                onClick={openCopilot}
+                className="flex items-center justify-center"
+                style={{ padding: '4px 8px', height: '32px', background: '#FFFFFF', border: '1px solid #D1D4DB', boxShadow: '0px 1px 2px rgba(18,18,23,0.05)', borderRadius: '8px', gap: '4px', cursor: 'pointer' }}
+              >
+                <Sparkles style={{ width: '20px', height: '20px', color: '#828FA3' }} />
+                <span style={{ fontSize: '14px', fontWeight: 500, lineHeight: '24px', color: '#121217' }}>
+                  {ui('createWithCopilot')}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/sales-invoice/new')}
+                className="flex items-center justify-center"
+                style={{ padding: '4px 8px', height: '32px', background: '#121217', borderRadius: '8px', gap: '4px', cursor: 'pointer', border: 'none' }}
+              >
+                <Plus style={{ width: '20px', height: '20px', color: 'rgba(255,255,255,0.9)' }} />
+                <span style={{ fontSize: '14px', fontWeight: 500, lineHeight: '24px', color: '#FFFFFF' }}>
+                  {ui('newSale')}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
       <div
         style={{
           display: 'flex',
@@ -84,10 +125,7 @@ export function RecentSalesList({ invoices = [], currencyLabel = '' }) {
           overflowY: 'scroll',
         }}
       >
-        {invoices.length === 0 ? (
-          <p className="text-sm" style={{ color: '#828FA3', padding: '0 12px' }}>{ui('noInvoicesFound')}</p>
-        ) : (
-          invoices.map((inv, i) => {
+          {invoices.map((inv, i) => {
               const target = resolveDashboardNavigation(inv.navigation) || (inv.id ? `/sales-invoice/${inv.id}` : '/sales-invoice');
               const docNum = resolveDocumentNumber(inv);
               return (
@@ -242,8 +280,9 @@ export function RecentSalesList({ invoices = [], currencyLabel = '' }) {
                 </Link>
               );
             })
-        )}
+        }
       </div>
+      )}
     </div>
   );
 }

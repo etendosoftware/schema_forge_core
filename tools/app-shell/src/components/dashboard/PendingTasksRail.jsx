@@ -74,11 +74,20 @@ export function PendingTasksRail({ tasks = [] }) {
         )}
       </div>
 
-      {/* Cards rail */}
-      <div className="p-3">
-        {tasks.length === 0 ? (
-          <p className="text-sm p-1" style={{ color: '#828FA3' }}>{ui('noDataAvailable')}</p>
-        ) : (
+      {/* Cards rail / empty state */}
+      {tasks.length === 0 ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center" style={{ gap: '4px', width: '340px' }}>
+            <p style={{ fontSize: '20px', fontWeight: 600, lineHeight: '28px', textAlign: 'center', color: '#121217' }}>
+              {ui('pendingTasksEmptyTitle')}
+            </p>
+            <p style={{ fontSize: '12px', fontWeight: 400, lineHeight: '16px', textAlign: 'center', color: '#282833' }}>
+              {ui('pendingTasksEmptySubtitle')}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="p-3">
           <div
             ref={railRef}
             className="flex gap-3 overflow-x-auto"
@@ -134,8 +143,8 @@ export function PendingTasksRail({ tasks = [] }) {
               );
             })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
