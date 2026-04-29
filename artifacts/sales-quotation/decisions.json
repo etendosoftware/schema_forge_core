@@ -278,7 +278,8 @@
           "form": true,
           "inputMode": "number",
           "order": 4,
-          "gridOrder": 4
+          "gridOrder": 4,
+          "columnType": "amount"
         },
         "discount": {
           "grid": true,

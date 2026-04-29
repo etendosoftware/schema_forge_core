@@ -345,7 +345,8 @@
           "section": "principal",
           "order": 4,
           "gridOrder": 4,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "columnType": "amount"
         },
         "grossUnitPrice": {
           "form": false,
