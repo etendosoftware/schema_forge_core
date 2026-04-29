@@ -31,7 +31,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:header
 const processes = [
-    { name: 'documentAction', label: 'Process Order', style: 'positive',
+  { name: 'documentAction', label: 'Process Order', style: 'positive',
     displayLogicRaw: "@DocStatus@!'VO'&@DocStatus@!'CL'" },
   { name: 'rMPickfromreceipt', label: 'Pick/Edit Lines', style: 'positive',
     displayLogicRaw: "@Processed@='N'" },

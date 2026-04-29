@@ -40,14 +40,14 @@ const draftMode = null;
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
   entry: [
-    { key: 'amount', column: 'Amount', type: 'number', required: true, label: 'Paid Amount' },
+    { key: 'amount', column: 'Amount', type: 'number', required: true, label: 'Paid Amount', defaultValue: 0 },
     { key: 'invoicePaymentSchedule', column: 'FIN_Payment_Schedule_Invoice', type: 'search', lookup: true, label: 'Invoice Payment Schedule', reference: 'Payment_Schedule', inputMode: 'search' },
   ],
   derived: [
 
   ],
   hidden: [
-
+    { key: 'canceled', value: 'N' },
   ],
 };
 // @sf-generated-end addLineFields:lines

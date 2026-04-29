@@ -169,7 +169,11 @@ async function runProcessPipeline({ processId, processName, dryRun, isReport, sp
           const { generateProcessContract } = await import('./generate-contract.js');
           const { readFile, writeFile } = await import('node:fs/promises');
           const processRaw = JSON.parse(await readFile(`artifacts/${processName}/process-raw.json`, 'utf8'));
-          const contract = generateProcessContract(processRaw);
+          let prevContract = null;
+          try {
+            prevContract = JSON.parse(await readFile(`artifacts/${processName}/contract.json`, 'utf8'));
+          } catch { /* first generation */ }
+          const contract = generateProcessContract(processRaw, prevContract);
           await writeFile(`artifacts/${processName}/contract.json`, JSON.stringify(contract, null, 2));
           console.log(`  ✓ Process contract generated (${contract.testManifest.summary.total} tests)`);
           break;
@@ -406,6 +410,7 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
           // Read existing version before overwriting, so the new contract preserves it
           // and check-version can bump from the correct baseline.
           let prevVersion = null;
+          let prevContract = null;
           try {
             const existingRaw = await readFile(`artifacts/${windowName}/contract.json`, 'utf-8');
             const existingContract = JSON.parse(existingRaw);
@@ -416,12 +421,13 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
               rawVersion = rawVersion.version ?? null;
             }
             prevVersion = rawVersion;
+            prevContract = existingContract;
             // Snapshot for version diffing
             await writeFile(`artifacts/${windowName}/contract.prev.json`, existingRaw, 'utf-8');
           } catch {
             // No existing contract — first generation, no prev needed
           }
-          const contract = generateContract(schema, Array.isArray(rules) ? rules : rules.rules || [], processes.processes || [], prevVersion);
+          const contract = generateContract(schema, Array.isArray(rules) ? rules : rules.rules || [], processes.processes || [], prevVersion, prevContract);
           await writeFile(`artifacts/${windowName}/contract.json`, JSON.stringify(contract, null, 2));
           console.log(`  ✓ Contract generated (${contract.testManifest.summary.total} tests)`);
           // Version check

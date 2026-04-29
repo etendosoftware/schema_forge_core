@@ -9,6 +9,7 @@ export const header = [
     "partnerAddress": "Acme Corp",
     "priceList": "Sample priceList",
     "paymentMethod": "Sample paymentMethod",
+    "paymentTerms": "Sample paymentTerms",
     "warehouse": "Main Warehouse",
     "documentStatus": "DR",
     "grandTotalAmount": 38907,
@@ -27,6 +28,7 @@ export const header = [
     "partnerAddress": "TechFlow Inc",
     "priceList": "Sample priceList",
     "paymentMethod": "Sample paymentMethod",
+    "paymentTerms": "Sample paymentTerms",
     "warehouse": "East Distribution Center",
     "documentStatus": "CO",
     "grandTotalAmount": 9306,
@@ -45,6 +47,7 @@ export const header = [
     "partnerAddress": "Global Trade Ltd",
     "priceList": "Sample priceList",
     "paymentMethod": "Sample paymentMethod",
+    "paymentTerms": "Sample paymentTerms",
     "warehouse": "West Hub",
     "documentStatus": "VO",
     "grandTotalAmount": 11544,
@@ -63,6 +66,7 @@ export const header = [
     "partnerAddress": "Summit Industries",
     "priceList": "Sample priceList",
     "paymentMethod": "Sample paymentMethod",
+    "paymentTerms": "Sample paymentTerms",
     "warehouse": "North Storage",
     "documentStatus": "IP",
     "grandTotalAmount": 11872,
@@ -81,6 +85,7 @@ export const header = [
     "partnerAddress": "Pacific Partners",
     "priceList": "Sample priceList",
     "paymentMethod": "Sample paymentMethod",
+    "paymentTerms": "Sample paymentTerms",
     "warehouse": "South Logistics",
     "documentStatus": "DR",
     "grandTotalAmount": 48460,
@@ -99,6 +104,7 @@ export const header = [
     "partnerAddress": "Alpine Solutions",
     "priceList": "Sample priceList",
     "paymentMethod": "Sample paymentMethod",
+    "paymentTerms": "Sample paymentTerms",
     "warehouse": "Central Depot",
     "documentStatus": "CO",
     "grandTotalAmount": 45418,
@@ -117,6 +123,7 @@ export const header = [
     "partnerAddress": "Meridian Group",
     "priceList": "Sample priceList",
     "paymentMethod": "Sample paymentMethod",
+    "paymentTerms": "Sample paymentTerms",
     "warehouse": "Regional Warehouse A",
     "documentStatus": "VO",
     "grandTotalAmount": 33840,
@@ -135,6 +142,7 @@ export const header = [
     "partnerAddress": "Vertex Systems",
     "priceList": "Sample priceList",
     "paymentMethod": "Sample paymentMethod",
+    "paymentTerms": "Sample paymentTerms",
     "warehouse": "Regional Warehouse B",
     "documentStatus": "IP",
     "grandTotalAmount": 25716,
@@ -153,6 +161,7 @@ export const header = [
     "partnerAddress": "Atlas Manufacturing",
     "priceList": "Sample priceList",
     "paymentMethod": "Sample paymentMethod",
+    "paymentTerms": "Sample paymentTerms",
     "warehouse": "Main Warehouse",
     "documentStatus": "DR",
     "grandTotalAmount": 44780,
@@ -171,6 +180,7 @@ export const header = [
     "partnerAddress": "Nova Enterprises",
     "priceList": "Sample priceList",
     "paymentMethod": "Sample paymentMethod",
+    "paymentTerms": "Sample paymentTerms",
     "warehouse": "East Distribution Center",
     "documentStatus": "CO",
     "grandTotalAmount": 12483,
@@ -189,6 +199,7 @@ export const header = [
     "partnerAddress": "Pinnacle Services",
     "priceList": "Sample priceList",
     "paymentMethod": "Sample paymentMethod",
+    "paymentTerms": "Sample paymentTerms",
     "warehouse": "West Hub",
     "documentStatus": "VO",
     "grandTotalAmount": 46022,
@@ -207,6 +218,7 @@ export const header = [
     "partnerAddress": "Horizon Labs",
     "priceList": "Sample priceList",
     "paymentMethod": "Sample paymentMethod",
+    "paymentTerms": "Sample paymentTerms",
     "warehouse": "North Storage",
     "documentStatus": "IP",
     "grandTotalAmount": 38634,
@@ -230,7 +242,6 @@ export const lines = [
     "tax": "VAT 21%",
     "lineGrossAmount": 38907,
     "grossUnitPrice": "Sample grossUnitPrice",
-    "lineNetAmount": 38907,
     "headerId": "mock-header-001"
   },
   {
@@ -243,7 +254,6 @@ export const lines = [
     "tax": "VAT 10%",
     "lineGrossAmount": 9306,
     "grossUnitPrice": "Sample grossUnitPrice",
-    "lineNetAmount": 9306,
     "headerId": "mock-header-002"
   },
   {
@@ -256,7 +266,6 @@ export const lines = [
     "tax": "VAT 0%",
     "lineGrossAmount": 11544,
     "grossUnitPrice": "Sample grossUnitPrice",
-    "lineNetAmount": 11544,
     "headerId": "mock-header-003"
   },
   {
@@ -269,7 +278,6 @@ export const lines = [
     "tax": "Sales Tax 8.5%",
     "lineGrossAmount": 11872,
     "grossUnitPrice": "Sample grossUnitPrice",
-    "lineNetAmount": 11872,
     "headerId": "mock-header-004"
   },
   {
@@ -282,7 +290,6 @@ export const lines = [
     "tax": "Exempt",
     "lineGrossAmount": 48460,
     "grossUnitPrice": "Sample grossUnitPrice",
-    "lineNetAmount": 48460,
     "headerId": "mock-header-005"
   },
   {
@@ -295,7 +302,6 @@ export const lines = [
     "tax": "Reduced Rate 5%",
     "lineGrossAmount": 45418,
     "grossUnitPrice": "Sample grossUnitPrice",
-    "lineNetAmount": 45418,
     "headerId": "mock-header-006"
   },
   {
@@ -308,7 +314,6 @@ export const lines = [
     "tax": "Standard Rate 20%",
     "lineGrossAmount": 33840,
     "grossUnitPrice": "Sample grossUnitPrice",
-    "lineNetAmount": 33840,
     "headerId": "mock-header-007"
   },
   {
@@ -321,7 +326,6 @@ export const lines = [
     "tax": "VAT 21%",
     "lineGrossAmount": 25716,
     "grossUnitPrice": "Sample grossUnitPrice",
-    "lineNetAmount": 25716,
     "headerId": "mock-header-008"
   },
   {
@@ -334,7 +338,6 @@ export const lines = [
     "tax": "VAT 10%",
     "lineGrossAmount": 44780,
     "grossUnitPrice": "Sample grossUnitPrice",
-    "lineNetAmount": 44780,
     "headerId": "mock-header-009"
   },
   {
@@ -347,7 +350,6 @@ export const lines = [
     "tax": "VAT 0%",
     "lineGrossAmount": 12483,
     "grossUnitPrice": "Sample grossUnitPrice",
-    "lineNetAmount": 12483,
     "headerId": "mock-header-010"
   },
   {
@@ -360,7 +362,6 @@ export const lines = [
     "tax": "Sales Tax 8.5%",
     "lineGrossAmount": 46022,
     "grossUnitPrice": "Sample grossUnitPrice",
-    "lineNetAmount": 46022,
     "headerId": "mock-header-011"
   },
   {
@@ -373,7 +374,6 @@ export const lines = [
     "tax": "Exempt",
     "lineGrossAmount": 38634,
     "grossUnitPrice": "Sample grossUnitPrice",
-    "lineNetAmount": 38634,
     "headerId": "mock-header-012"
   }
 ];

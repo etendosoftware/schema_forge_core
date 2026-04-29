@@ -45,8 +45,8 @@ const draftMode = null;
 // @sf-generated-start addLineFields:priceListVersion
 const addLineFields = {
   entry: [
-    { key: 'name', column: 'Name', type: 'text', required: true, label: 'Name', defaultValue: '@#Date@' },
-    { key: 'validFromDate', column: 'ValidFrom', type: 'date', required: true, label: 'Valid From Date', defaultValue: '@#Date@' },
+    { key: 'name', column: 'Name', type: 'text', required: true, label: 'Name' },
+    { key: 'validFromDate', column: 'ValidFrom', type: 'date', required: true, label: 'Valid From Date' },
     { key: 'priceListSchema', column: 'M_DiscountSchema_ID', type: 'selector', required: true, label: 'Price List Schema', reference: 'DiscountSchema', inputMode: 'selector' },
     { key: 'basePriceListVersion', column: 'M_Pricelist_Version_Base_ID', type: 'search', lookup: true, label: 'Base Version (Default)', reference: 'PriceList_Version', inputMode: 'search' },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },

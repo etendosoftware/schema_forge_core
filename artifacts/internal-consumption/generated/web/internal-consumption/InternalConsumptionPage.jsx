@@ -36,9 +36,9 @@ const draftMode = null;
 // @sf-generated-start addLineFields:internalConsumptionLine
 const addLineFields = {
   entry: [
-    { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.' },
+    { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.', defaultValue: '@SQL=SELECT COALESCE(MAX(LINE),0)+10 AS DefaultValue FROM M_INTERNAL_CONSUMPTIONLINE WHERE M_INTERNAL_CONSUMPTION_ID=@M_INTERNAL_CONSUMPTION_ID@' },
     { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity' },
+    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity', defaultValue: 0 },
     { key: 'storageBin', column: 'M_Locator_ID', type: 'search', required: true, label: 'Warehouse', reference: 'Locator', inputMode: 'search' },
   ],
   derived: [

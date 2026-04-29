@@ -1,13 +1,13 @@
 {
-  "version": "0.2.0",
-  "generatedAt": "2026-04-09T13:07:25.208Z",
-  "checksum": "942166893d0a3359",
+  "version": "0.3.0",
+  "generatedAt": "2026-04-29T18:12:34.035Z",
+  "checksum": "1570eed6659e22bc",
   "frontendContract": {
     "window": {
       "id": "108",
       "name": "User",
       "primaryEntity": "user",
-      "category": "configuracion",
+      "category": "settings",
       "layoutType": "default"
     },
     "entities": {
@@ -28,6 +28,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "section": "principal",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_User_Name"
@@ -44,6 +45,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "section": "principal"
           },
           {
@@ -102,6 +104,10 @@
             "required": false,
             "grid": false,
             "form": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N",
             "section": "security"
           },
@@ -157,6 +163,11 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N",
             "section": "security"
           },
@@ -214,7 +225,14 @@
             "form": true,
             "reference": "Role",
             "inputMode": "selector",
-            "section": "defaults"
+            "section": "defaults",
+            "validationRule": {
+              "code": "EXISTS ( SELECT 1\n        FROM  AD_USER_ROLES A_U_R\n        WHERE A_U_R.AD_ROLE_ID = AD_Role.AD_Role_ID\n        AND A_U_R.ISACTIVE = 'Y'\n        AND A_U_R.AD_USER_ID = @AD_User_ID@)",
+              "contextParams": [],
+              "cascadeParams": [
+                "AD_User_ID"
+              ]
+            }
           },
           {
             "name": "defaultLanguage",
@@ -248,7 +266,14 @@
               "field": "defaultRole",
               "filterKey": "Default_AD_Role_ID"
             },
-            "section": "defaults"
+            "section": "defaults",
+            "validationRule": {
+              "code": "AD_CLIENT.ISACTIVE = 'Y' AND EXISTS (SELECT 1 FROM AD_ROLE_ORGACCESS WHERE AD_ROLE_ORGACCESS.AD_CLIENT_ID = AD_CLIENT.AD_CLIENT_ID AND AD_ROLE_ORGACCESS.AD_ROLE_ID = @Default_AD_Role_ID@ AND AD_ROLE_ORGACCESS.ISACTIVE = 'Y')",
+              "contextParams": [],
+              "cascadeParams": [
+                "Default_AD_Role_ID"
+              ]
+            }
           },
           {
             "name": "defaultOrganization",
@@ -267,7 +292,14 @@
               "field": "defaultRole",
               "filterKey": "Default_AD_Role_ID"
             },
-            "section": "defaults"
+            "section": "defaults",
+            "validationRule": {
+              "code": "EXISTS (SELECT 1 FROM AD_ROLE_ORGACCESS A_R_O, ad_role r\n        WHERE A_R_O.AD_ORG_ID = AD_ORG.AD_Org_ID\n        AND A_R_O.ISACTIVE = 'Y'\n        AND A_R_O.AD_ROLE_ID = R.AD_ROLE_ID\n        and r.ad_role_id = @Default_AD_Role_ID@\n        AND R.ISACTIVE = 'Y'\n        AND (LPAD(TO_CHAR(R.USERLEVEL), 1, '1')='S' OR AD_ORG.AD_ORG_ID <> '0')\n        AND A_R_O.AD_ROLE_ID = @Default_AD_Role_ID@)",
+              "contextParams": [],
+              "cascadeParams": [
+                "Default_AD_Role_ID"
+              ]
+            }
           },
           {
             "name": "defaultWarehouse",
@@ -286,7 +318,14 @@
               "field": "defaultClient",
               "filterKey": "Default_AD_Client_ID"
             },
-            "section": "defaults"
+            "section": "defaults",
+            "validationRule": {
+              "code": "M_Warehouse.AD_Client_ID = @Default_AD_Client_ID@",
+              "contextParams": [],
+              "cascadeParams": [
+                "Default_AD_Client_ID"
+              ]
+            }
           },
           {
             "name": "lastPasswordUpdate",
@@ -299,6 +338,11 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            },
             "defaultValue": "@#Date@",
             "section": "security"
           }
@@ -349,8 +393,16 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "Role",
-            "inputMode": "selector"
+            "inputMode": "selector",
+            "validationRule": {
+              "code": "AD_Role.AD_Client_ID=@#AD_Client_ID@",
+              "contextParams": [
+                "AD_Client_ID"
+              ],
+              "cascadeParams": []
+            }
           },
           {
             "name": "roleAdmin",
@@ -363,6 +415,11 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N"
           }
         ],
@@ -395,7 +452,8 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "smtpServer",
@@ -408,6 +466,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "section": "server"
           },
           {
@@ -421,6 +480,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "section": "server"
           },
           {
@@ -473,6 +533,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "enumValues": [
               {
                 "value": "N",
@@ -503,6 +564,11 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "25"
+            },
             "defaultValue": "25",
             "section": "server"
           },
@@ -517,6 +583,10 @@
             "required": false,
             "grid": false,
             "form": true,
+            "derivation": {
+              "type": "computed",
+              "source": "600"
+            },
             "defaultValue": "600",
             "section": "server"
           },
@@ -557,6 +627,11 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N"
           },
           {
@@ -582,6 +657,11 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N"
           },
           {
@@ -595,6 +675,11 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N"
           }
         ],
@@ -646,7 +731,7 @@
       "id": "108",
       "name": "User",
       "primaryEntity": "user",
-      "category": "configuracion"
+      "category": "settings"
     },
     "entities": {
       "user": {
@@ -703,19 +788,19 @@
             "required": false
           },
           {
-            "name": "comments",
-            "apiKey": "comments",
-            "column": "Comments",
-            "type": "text",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
             "name": "password",
             "apiKey": "password",
             "column": "Password",
             "type": "string",
             "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "comments",
+            "apiKey": "comments",
+            "column": "Comments",
+            "type": "text",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -895,19 +980,19 @@
             "required": false
           },
           {
-            "name": "lastContactResult",
-            "apiKey": "lastContactResult",
-            "column": "LastResult",
-            "type": "string",
-            "visibility": "system",
-            "required": false
-          },
-          {
             "name": "defaultWarehouse",
             "apiKey": "defaultWarehouse",
             "column": "Default_M_Warehouse_ID",
             "type": "foreignKey",
             "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "lastContactResult",
+            "apiKey": "lastContactResult",
+            "column": "LastResult",
+            "type": "string",
+            "visibility": "system",
             "required": false
           },
           {
@@ -1062,6 +1147,14 @@
             "required": true
           },
           {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
             "name": "organization",
             "apiKey": "organization",
             "column": "AD_Org_ID",
@@ -1074,14 +1167,6 @@
             "apiKey": "id",
             "column": "AD_User_Roles_ID",
             "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
@@ -1577,6 +1662,9 @@
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
+    },
+    "window": {
+      "category": "settings"
     }
   },
   "testManifest": {
@@ -2526,25 +2614,25 @@
         "id": "t-119",
         "category": "system-field",
         "entity": "userRoles",
-        "field": "organization",
+        "field": "client",
         "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for userRoles"
+        "description": "System field 'client' should exist in backend but not frontend for userRoles"
       },
       {
         "id": "t-120",
         "category": "system-field",
         "entity": "userRoles",
-        "field": "id",
+        "field": "organization",
         "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for userRoles"
+        "description": "System field 'organization' should exist in backend but not frontend for userRoles"
       },
       {
         "id": "t-121",
         "category": "system-field",
         "entity": "userRoles",
-        "field": "client",
+        "field": "id",
         "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for userRoles"
+        "description": "System field 'id' should exist in backend but not frontend for userRoles"
       },
       {
         "id": "t-122",

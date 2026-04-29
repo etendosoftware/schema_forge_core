@@ -4,7 +4,7 @@ import { DataTable } from '@/components/contract-ui';
 const columns = [
   { key: 'dueDate', column: 'DueDate', type: 'date', label: 'Due Date' },
   { key: 'amount', column: 'Amount', type: 'amount', label: 'Received Amount' },
-  { key: 'invoicePaymentSchedule', column: 'FIN_Payment_Schedule_Invoice', type: 'string', label: 'Invoice Payment Schedule' },
+  { key: 'invoicePaymentSchedule', column: 'FIN_Payment_Schedule_Invoice', type: 'selector', label: 'Invoice Payment Schedule' },
 ];
 // @sf-generated-end columns:finPaymentScheduleDetail
 

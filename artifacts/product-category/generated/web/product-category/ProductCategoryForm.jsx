@@ -6,7 +6,7 @@ const fields = [
   { key: 'name', column: 'Name', type: 'text', label: 'Name', required: true, section: 'principal' },
   { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'principal' },
   { key: 'default', column: 'IsDefault', type: 'checkbox', label: 'Default', required: true, section: 'principal' },
-  { key: 'summaryLevel', column: 'Issummary', type: 'checkbox', label: 'Summary Level', required: true, section: 'principal', defaultValue: 'N' },
+  { key: 'summaryLevel', column: 'Issummary', type: 'checkbox', label: 'Summary Level', required: true, section: 'principal' },
   { key: 'image', column: 'AD_Image_ID', type: 'image', label: 'Image', section: 'other' },
 ];
 // @sf-generated-end fields:productCategory

@@ -222,8 +222,8 @@ export const api = {
       "listUrl": "/sws/neo/contacts/contact",
       "detailUrl": "/sws/neo/contacts/contact/{id}",
       "supportedFilters": [
-        "name",
-        "email"
+        "email",
+        "name"
       ]
     },
     "basicDiscount": {

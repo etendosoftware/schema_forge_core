@@ -1,7 +1,8 @@
 {
   "version": "0.4.0",
   "generatedAt": "2026-04-27T19:18:32.198Z",
-  "checksum": "8fdd67e5e6aa37c6",
+  "updatedAt": "2026-04-29T19:32:33.601Z",
+  "checksum": "d7dec2cc387b2363",
   "frontendContract": {
     "window": {
       "id": "137",
@@ -246,7 +247,7 @@
       "id": "137",
       "name": "Tax Rate",
       "primaryEntity": "tax",
-      "category": "configuracion",
+      "category": "settings",
       "hidePrint": true,
       "hideMoreMenu": true,
       "breadcrumb": "Settings / Tax",
@@ -821,7 +822,7 @@
       "parentFilter": "parentId={id} for child entities"
     },
     "window": {
-      "category": "configuracion"
+      "category": "settings"
     },
     "labelOverrides": {
       "es_ES": {

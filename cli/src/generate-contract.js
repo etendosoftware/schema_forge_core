@@ -694,7 +694,7 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
 /**
  * Main orchestrator: generates the full contract object.
  */
-export function generateContract(schema, rules = [], processes = [], previousVersion = null) {
+export function generateContract(schema, rules = [], processes = [], previousVersion = null, previousContract = null) {
   const frontendContract = generateFrontendContract(schema, rules);
   const backendContract = generateBackendContract(schema, rules, processes);
   const testManifest = generateTestManifest(frontendContract, backendContract, rules, processes);
@@ -752,12 +752,21 @@ export function generateContract(schema, rules = [], processes = [], previousVer
     .digest('hex')
     .slice(0, 16);
 
-  return {
+  const now = new Date().toISOString();
+  const generatedAt = previousContract?.generatedAt ?? now;
+  const checksumChanged = previousContract && previousContract.checksum !== checksum;
+  const result = {
     version: previousVersion ?? schema.version ?? '0.1.0',
-    generatedAt: new Date().toISOString(),
-    checksum,
-    ...contractData,
+    generatedAt,
   };
+  if (checksumChanged) {
+    result.updatedAt = now;
+  } else if (previousContract?.updatedAt) {
+    result.updatedAt = previousContract.updatedAt;
+  }
+  result.checksum = checksum;
+  Object.assign(result, contractData);
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -796,7 +805,7 @@ export function mapProcessReference(referenceId) {
  * @param {object} processRaw - The process-raw.json structure
  * @returns {object} Process contract
  */
-export function generateProcessContract(processRaw) {
+export function generateProcessContract(processRaw, previousContract = null) {
   const { process: proc, parameters: rawParams } = processRaw;
   const specName = toSpecName(proc.name);
 
@@ -895,10 +904,19 @@ export function generateProcessContract(processRaw) {
     .digest('hex')
     .slice(0, 16);
 
-  return {
+  const now = new Date().toISOString();
+  const generatedAt = previousContract?.generatedAt ?? now;
+  const checksumChanged = previousContract && previousContract.checksum !== checksum;
+  const result = {
     version: '0.1.0',
-    generatedAt: new Date().toISOString(),
-    checksum,
-    ...contractData,
+    generatedAt,
   };
+  if (checksumChanged) {
+    result.updatedAt = now;
+  } else if (previousContract?.updatedAt) {
+    result.updatedAt = previousContract.updatedAt;
+  }
+  result.checksum = checksum;
+  Object.assign(result, contractData);
+  return result;
 }

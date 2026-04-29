@@ -1,7 +1,7 @@
 {
-  "version": "0.4.0",
-  "generatedAt": "2026-04-08T15:12:32.237Z",
-  "checksum": "11b903b874759d66",
+  "version": "0.5.0",
+  "generatedAt": "2026-04-29T18:11:37.816Z",
+  "checksum": "5b48e037fe7957a0",
   "frontendContract": {
     "window": {
       "id": "139",
@@ -34,7 +34,8 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "name",
@@ -46,7 +47,8 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "description",
@@ -71,6 +73,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "Location",
             "inputMode": "search"
           },
@@ -99,6 +102,11 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N",
             "displayLogic": {
               "raw": "@StockReservations@!''",
@@ -138,7 +146,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "rowX",
@@ -150,7 +159,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "stackY",
@@ -162,7 +172,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "levelZ",
@@ -174,7 +185,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "relativePriority",
@@ -187,6 +199,11 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "50"
+            },
             "defaultValue": "50"
           },
           {
@@ -212,6 +229,11 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "7B3DC15A20234C418D26EECDC5D59003"
+            },
             "reference": "InventoryStatus",
             "inputMode": "selector",
             "defaultValue": "7B3DC15A20234C418D26EECDC5D59003"
@@ -226,7 +248,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "changeStatus",
@@ -239,6 +262,11 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N",
             "displayLogic": {
               "raw": "@Isvirtual@='N'",
@@ -288,6 +316,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "Product",
             "inputMode": "search"
           },
@@ -302,6 +331,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "displayLogic": {
               "raw": "(@ATTRIBUTESET@!''&@ATTRSETVALUETYPE@!'F')|(@M_AttributeSetInstance_ID@!''&@M_AttributeSetInstance_ID@!'0')",
               "evaluable": true
@@ -317,7 +347,8 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "movementDate",
@@ -329,7 +360,8 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "movementType",
@@ -342,6 +374,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "enumValues": [
               {
                 "value": "V+",
@@ -476,6 +509,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "Product",
             "inputMode": "search"
           },
@@ -518,6 +552,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "UOM",
             "inputMode": "selector"
           },
@@ -545,7 +580,8 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "onHandOrderQuanity",
@@ -608,7 +644,7 @@
       "id": "139",
       "name": "Warehouse",
       "primaryEntity": "warehouse",
-      "category": "warehouse",
+      "category": "inventory",
       "secondaryTabs": {
         "productTransactions": {
           "label": "Transactions",
@@ -680,19 +716,19 @@
             "required": false
           },
           {
-            "name": "storageBinSeparator",
-            "apiKey": "storageBinSeparator",
-            "column": "Separator",
-            "type": "string",
-            "visibility": "discarded",
-            "required": true
-          },
-          {
             "name": "allocated",
             "apiKey": "allocated",
             "column": "Isallocated",
             "type": "boolean",
             "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "storageBinSeparator",
+            "apiKey": "storageBinSeparator",
+            "column": "Separator",
+            "type": "string",
+            "visibility": "discarded",
             "required": true
           },
           {
@@ -1094,14 +1130,6 @@
             "required": false
           },
           {
-            "name": "uOM",
-            "apiKey": "uOM",
-            "column": "C_UOM_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
             "name": "checkpricedifference",
             "apiKey": "checkpricedifference",
             "column": "Checkpricedifference",
@@ -1142,6 +1170,14 @@
             "required": true
           },
           {
+            "name": "uOM",
+            "apiKey": "uOM",
+            "column": "C_UOM_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
             "name": "isCostCalculated",
             "apiKey": "isCostCalculated",
             "column": "IsCostCalculated",
@@ -1166,6 +1202,14 @@
             "required": true
           },
           {
+            "name": "manualcostadjustment",
+            "apiKey": "manualcostadjustment",
+            "column": "Manualcostadjustment",
+            "type": "button",
+            "visibility": "system",
+            "required": false
+          },
+          {
             "name": "costingAlgorithm",
             "apiKey": "costingAlgorithm",
             "column": "M_Costing_Algorithm_ID",
@@ -1186,14 +1230,6 @@
             "apiKey": "orderUOM",
             "column": "M_Product_Uom_Id",
             "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "manualcostadjustment",
-            "apiKey": "manualcostadjustment",
-            "column": "Manualcostadjustment",
-            "type": "button",
             "visibility": "system",
             "required": false
           },
@@ -1738,6 +1774,9 @@
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
+    },
+    "window": {
+      "category": "inventory"
     }
   },
   "testManifest": {
@@ -2702,20 +2741,12 @@
         "id": "t-121",
         "category": "system-field",
         "entity": "productTransactions",
-        "field": "uOM",
-        "runner": "node",
-        "description": "System field 'uOM' should exist in backend but not frontend for productTransactions"
-      },
-      {
-        "id": "t-122",
-        "category": "system-field",
-        "entity": "productTransactions",
         "field": "checkpricedifference",
         "runner": "node",
         "description": "System field 'checkpricedifference' should exist in backend but not frontend for productTransactions"
       },
       {
-        "id": "t-123",
+        "id": "t-122",
         "category": "system-field",
         "entity": "productTransactions",
         "field": "checkReservedQuantity",
@@ -2723,7 +2754,7 @@
         "description": "System field 'checkReservedQuantity' should exist in backend but not frontend for productTransactions"
       },
       {
-        "id": "t-124",
+        "id": "t-123",
         "category": "system-field",
         "entity": "productTransactions",
         "field": "costingStatus",
@@ -2731,7 +2762,7 @@
         "description": "System field 'costingStatus' should exist in backend but not frontend for productTransactions"
       },
       {
-        "id": "t-125",
+        "id": "t-124",
         "category": "system-field",
         "entity": "productTransactions",
         "field": "creationDate",
@@ -2739,12 +2770,20 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for productTransactions"
       },
       {
-        "id": "t-126",
+        "id": "t-125",
         "category": "system-field",
         "entity": "productTransactions",
         "field": "createdBy",
         "runner": "node",
         "description": "System field 'createdBy' should exist in backend but not frontend for productTransactions"
+      },
+      {
+        "id": "t-126",
+        "category": "system-field",
+        "entity": "productTransactions",
+        "field": "uOM",
+        "runner": "node",
+        "description": "System field 'uOM' should exist in backend but not frontend for productTransactions"
       },
       {
         "id": "t-127",
@@ -2774,12 +2813,20 @@
         "id": "t-130",
         "category": "system-field",
         "entity": "productTransactions",
+        "field": "manualcostadjustment",
+        "runner": "node",
+        "description": "System field 'manualcostadjustment' should exist in backend but not frontend for productTransactions"
+      },
+      {
+        "id": "t-131",
+        "category": "system-field",
+        "entity": "productTransactions",
         "field": "costingAlgorithm",
         "runner": "node",
         "description": "System field 'costingAlgorithm' should exist in backend but not frontend for productTransactions"
       },
       {
-        "id": "t-131",
+        "id": "t-132",
         "category": "system-field",
         "entity": "productTransactions",
         "field": "internalConsumptionLine",
@@ -2787,20 +2834,12 @@
         "description": "System field 'internalConsumptionLine' should exist in backend but not frontend for productTransactions"
       },
       {
-        "id": "t-132",
+        "id": "t-133",
         "category": "system-field",
         "entity": "productTransactions",
         "field": "orderUOM",
         "runner": "node",
         "description": "System field 'orderUOM' should exist in backend but not frontend for productTransactions"
-      },
-      {
-        "id": "t-133",
-        "category": "system-field",
-        "entity": "productTransactions",
-        "field": "manualcostadjustment",
-        "runner": "node",
-        "description": "System field 'manualcostadjustment' should exist in backend but not frontend for productTransactions"
       },
       {
         "id": "t-134",

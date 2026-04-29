@@ -6,10 +6,8 @@ export const assets = [
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AS-00001",
     "description": "Standard order for Q1 delivery",
     "currency": "USD",
-    "product": "Laptop Pro 15",
     "depreciate": "Sample depreciate",
     "depreciationType": "Sample depreciationType",
     "calculateType": "Sample calculateType",
@@ -30,7 +28,6 @@ export const assets = [
     "depreciatedValue": 38907,
     "depreciatedPlan": 38907,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "project": "Sample project",
     "processAsset": "Sample processAsset"
   },
   {
@@ -38,10 +35,8 @@ export const assets = [
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AS-00002",
     "description": "Rush order - priority shipping required",
     "currency": "EUR",
-    "product": "USB-C Cable",
     "depreciate": "Sample depreciate",
     "depreciationType": "Sample depreciationType",
     "calculateType": "Sample calculateType",
@@ -62,7 +57,6 @@ export const assets = [
     "depreciatedValue": 9306,
     "depreciatedPlan": 9306,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "project": "Sample project",
     "processAsset": "Sample processAsset"
   },
   {
@@ -70,10 +64,8 @@ export const assets = [
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AS-00003",
     "description": "Bulk purchase for warehouse restocking",
     "currency": "GBP",
-    "product": "Wireless Mouse",
     "depreciate": "Sample depreciate",
     "depreciationType": "Sample depreciationType",
     "calculateType": "Sample calculateType",
@@ -94,7 +86,6 @@ export const assets = [
     "depreciatedValue": 11544,
     "depreciatedPlan": 11544,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "project": "Sample project",
     "processAsset": "Sample processAsset"
   },
   {
@@ -102,10 +93,8 @@ export const assets = [
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AS-00004",
     "description": "Sample order for client evaluation",
     "currency": "USD",
-    "product": "Mechanical Keyboard",
     "depreciate": "Sample depreciate",
     "depreciationType": "Sample depreciationType",
     "calculateType": "Sample calculateType",
@@ -126,7 +115,6 @@ export const assets = [
     "depreciatedValue": 11872,
     "depreciatedPlan": 11872,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "project": "Sample project",
     "processAsset": "Sample processAsset"
   },
   {
@@ -134,10 +122,8 @@ export const assets = [
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AS-00005",
     "description": "Recurring monthly supply order",
     "currency": "EUR",
-    "product": "Monitor 27\"",
     "depreciate": "Sample depreciate",
     "depreciationType": "Sample depreciationType",
     "calculateType": "Sample calculateType",
@@ -158,7 +144,6 @@ export const assets = [
     "depreciatedValue": 48460,
     "depreciatedPlan": 48460,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "project": "Sample project",
     "processAsset": "Sample processAsset"
   },
   {
@@ -166,10 +151,8 @@ export const assets = [
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AS-00006",
     "description": "Special pricing agreement applies",
     "currency": "GBP",
-    "product": "Webcam HD",
     "depreciate": "Sample depreciate",
     "depreciationType": "Sample depreciationType",
     "calculateType": "Sample calculateType",
@@ -190,7 +173,6 @@ export const assets = [
     "depreciatedValue": 45418,
     "depreciatedPlan": 45418,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "project": "Sample project",
     "processAsset": "Sample processAsset"
   },
   {
@@ -198,10 +180,8 @@ export const assets = [
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AS-00007",
     "description": "Consolidated order from multiple requests",
     "currency": "USD",
-    "product": "Headset Pro",
     "depreciate": "Sample depreciate",
     "depreciationType": "Sample depreciationType",
     "calculateType": "Sample calculateType",
@@ -222,7 +202,6 @@ export const assets = [
     "depreciatedValue": 33840,
     "depreciatedPlan": 33840,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "project": "Sample project",
     "processAsset": "Sample processAsset"
   },
   {
@@ -230,10 +209,8 @@ export const assets = [
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AS-00008",
     "description": "Trial order for new product line",
     "currency": "EUR",
-    "product": "Docking Station",
     "depreciate": "Sample depreciate",
     "depreciationType": "Sample depreciationType",
     "calculateType": "Sample calculateType",
@@ -254,7 +231,6 @@ export const assets = [
     "depreciatedValue": 25716,
     "depreciatedPlan": 25716,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "project": "Sample project",
     "processAsset": "Sample processAsset"
   },
   {
@@ -262,10 +238,8 @@ export const assets = [
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AS-00009",
     "description": "Replacement for damaged goods",
     "currency": "GBP",
-    "product": "SSD 1TB",
     "depreciate": "Sample depreciate",
     "depreciationType": "Sample depreciationType",
     "calculateType": "Sample calculateType",
@@ -286,7 +260,6 @@ export const assets = [
     "depreciatedValue": 44780,
     "depreciatedPlan": 44780,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "project": "Sample project",
     "processAsset": "Sample processAsset"
   },
   {
@@ -294,10 +267,8 @@ export const assets = [
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AS-00010",
     "description": "Pre-season inventory build-up",
     "currency": "USD",
-    "product": "RAM 16GB",
     "depreciate": "Sample depreciate",
     "depreciationType": "Sample depreciationType",
     "calculateType": "Sample calculateType",
@@ -318,7 +289,6 @@ export const assets = [
     "depreciatedValue": 12483,
     "depreciatedPlan": 12483,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "project": "Sample project",
     "processAsset": "Sample processAsset"
   },
   {
@@ -326,10 +296,8 @@ export const assets = [
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AS-00011",
     "description": "Customer-specific configuration",
     "currency": "EUR",
-    "product": "Power Supply 750W",
     "depreciate": "Sample depreciate",
     "depreciationType": "Sample depreciationType",
     "calculateType": "Sample calculateType",
@@ -350,7 +318,6 @@ export const assets = [
     "depreciatedValue": 46022,
     "depreciatedPlan": 46022,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "project": "Sample project",
     "processAsset": "Sample processAsset"
   },
   {
@@ -358,10 +325,8 @@ export const assets = [
     "searchKey": "Sample searchKey",
     "name": "Sample name",
     "assetCategory": "Sample assetCategory",
-    "documentNo": "AS-00012",
     "description": "Government contract fulfillment",
     "currency": "GBP",
-    "product": "Network Switch",
     "depreciate": "Sample depreciate",
     "depreciationType": "Sample depreciationType",
     "calculateType": "Sample calculateType",
@@ -382,7 +347,6 @@ export const assets = [
     "depreciatedValue": 38634,
     "depreciatedPlan": 38634,
     "fullyDepreciated": "Sample fullyDepreciated",
-    "project": "Sample project",
     "processAsset": "Sample processAsset"
   }
 ];

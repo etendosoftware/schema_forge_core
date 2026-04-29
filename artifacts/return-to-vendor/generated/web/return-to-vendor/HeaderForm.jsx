@@ -3,7 +3,7 @@ import { EntityForm } from '@/components/contract-ui';
 // @sf-generated-start fields:header
 const fields = [
   { key: 'orderReference', column: 'POReference', type: 'text', label: 'RMA vendor ref.', section: 'principal' },
-  { key: 'orderDate', column: 'DateOrdered', type: 'date', label: 'Order Date', required: true, section: 'principal', defaultValue: '@#Date@', readOnlyLogic: (record) => record['processed'] === true },
+  { key: 'orderDate', column: 'DateOrdered', type: 'date', label: 'Order Date', required: true, section: 'principal', readOnlyLogic: (record) => record['processed'] === true },
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'search', label: 'Business Partner', required: true, section: 'principal', reference: 'BPartner', inputMode: 'search', readOnlyLogic: (record) => record['processed'] === true || record['documentStatus'] === 'TMP' },
   { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'selector', label: 'Partner Address', required: true, section: 'principal', reference: 'BPartner_Location', inputMode: 'selector', readOnlyLogic: (record) => record['processed'] === true || record['documentStatus'] === 'TMP' },
   { key: 'cReturnReasonID', column: 'C_Return_Reason_ID', type: 'selector', label: 'Return Reason', section: 'other', reference: 'Return_Reason', inputMode: 'selector' },

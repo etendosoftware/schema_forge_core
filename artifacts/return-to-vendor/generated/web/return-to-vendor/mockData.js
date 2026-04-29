@@ -705,105 +705,6 @@ export const lineTax = [
   }
 ];
 
-export const basicDiscounts = [
-  {
-    "id": "mock-basicDiscounts-001",
-    "lineNo": 10,
-    "discount": 6,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-001"
-  },
-  {
-    "id": "mock-basicDiscounts-002",
-    "lineNo": 20,
-    "discount": 21,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-002"
-  },
-  {
-    "id": "mock-basicDiscounts-003",
-    "lineNo": 30,
-    "discount": 0,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-003"
-  },
-  {
-    "id": "mock-basicDiscounts-004",
-    "lineNo": 40,
-    "discount": 6,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-004"
-  },
-  {
-    "id": "mock-basicDiscounts-005",
-    "lineNo": 50,
-    "discount": 14,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-005"
-  },
-  {
-    "id": "mock-basicDiscounts-006",
-    "lineNo": 60,
-    "discount": 4,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-006"
-  },
-  {
-    "id": "mock-basicDiscounts-007",
-    "lineNo": 70,
-    "discount": 6,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-007"
-  },
-  {
-    "id": "mock-basicDiscounts-008",
-    "lineNo": 80,
-    "discount": 10,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-008"
-  },
-  {
-    "id": "mock-basicDiscounts-009",
-    "lineNo": 90,
-    "discount": 17,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-009"
-  },
-  {
-    "id": "mock-basicDiscounts-010",
-    "lineNo": 100,
-    "discount": 14,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-010"
-  },
-  {
-    "id": "mock-basicDiscounts-011",
-    "lineNo": 110,
-    "discount": 19,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-011"
-  },
-  {
-    "id": "mock-basicDiscounts-012",
-    "lineNo": 120,
-    "discount": 12,
-    "cascade": "Sample cascade",
-    "active": "Sample active",
-    "headerId": "mock-header-012"
-  }
-];
-
 export const tax = [
   {
     "id": "mock-tax-001",
@@ -899,6 +800,105 @@ export const tax = [
     "tax": "Exempt",
     "taxAmount": "Exempt",
     "taxableAmount": "Exempt",
+    "headerId": "mock-header-012"
+  }
+];
+
+export const basicDiscounts = [
+  {
+    "id": "mock-basicDiscounts-001",
+    "lineNo": 10,
+    "discount": 6,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "headerId": "mock-header-001"
+  },
+  {
+    "id": "mock-basicDiscounts-002",
+    "lineNo": 20,
+    "discount": 21,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "headerId": "mock-header-002"
+  },
+  {
+    "id": "mock-basicDiscounts-003",
+    "lineNo": 30,
+    "discount": 0,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "headerId": "mock-header-003"
+  },
+  {
+    "id": "mock-basicDiscounts-004",
+    "lineNo": 40,
+    "discount": 6,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "headerId": "mock-header-004"
+  },
+  {
+    "id": "mock-basicDiscounts-005",
+    "lineNo": 50,
+    "discount": 14,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "headerId": "mock-header-005"
+  },
+  {
+    "id": "mock-basicDiscounts-006",
+    "lineNo": 60,
+    "discount": 4,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "headerId": "mock-header-006"
+  },
+  {
+    "id": "mock-basicDiscounts-007",
+    "lineNo": 70,
+    "discount": 6,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "headerId": "mock-header-007"
+  },
+  {
+    "id": "mock-basicDiscounts-008",
+    "lineNo": 80,
+    "discount": 10,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "headerId": "mock-header-008"
+  },
+  {
+    "id": "mock-basicDiscounts-009",
+    "lineNo": 90,
+    "discount": 17,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "headerId": "mock-header-009"
+  },
+  {
+    "id": "mock-basicDiscounts-010",
+    "lineNo": 100,
+    "discount": 14,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "headerId": "mock-header-010"
+  },
+  {
+    "id": "mock-basicDiscounts-011",
+    "lineNo": 110,
+    "discount": 19,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
+    "headerId": "mock-header-011"
+  },
+  {
+    "id": "mock-basicDiscounts-012",
+    "lineNo": 120,
+    "discount": 12,
+    "cascade": "Sample cascade",
+    "active": "Sample active",
     "headerId": "mock-header-012"
   }
 ];

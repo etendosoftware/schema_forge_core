@@ -39,8 +39,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "DR",
     "invoiceStatus": "DR",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-15"
+    "accountingDate": "2026-01-15",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-002",
@@ -80,8 +80,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "CO",
     "invoiceStatus": "CO",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-16"
+    "accountingDate": "2026-01-16",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-003",
@@ -121,8 +121,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "VO",
     "invoiceStatus": "VO",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-17"
+    "accountingDate": "2026-01-17",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-004",
@@ -162,8 +162,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "IP",
     "invoiceStatus": "IP",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-18"
+    "accountingDate": "2026-01-18",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-005",
@@ -203,8 +203,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "DR",
     "invoiceStatus": "DR",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-19"
+    "accountingDate": "2026-01-19",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-006",
@@ -244,8 +244,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "CO",
     "invoiceStatus": "CO",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-20"
+    "accountingDate": "2026-01-20",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-007",
@@ -285,8 +285,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "VO",
     "invoiceStatus": "VO",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-21"
+    "accountingDate": "2026-01-21",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-008",
@@ -326,8 +326,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "IP",
     "invoiceStatus": "IP",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-22"
+    "accountingDate": "2026-01-22",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-009",
@@ -367,8 +367,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "DR",
     "invoiceStatus": "DR",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-23"
+    "accountingDate": "2026-01-23",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-010",
@@ -408,8 +408,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "CO",
     "invoiceStatus": "CO",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-24"
+    "accountingDate": "2026-01-24",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-011",
@@ -449,8 +449,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "VO",
     "invoiceStatus": "VO",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-25"
+    "accountingDate": "2026-01-25",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-012",
@@ -490,8 +490,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "IP",
     "invoiceStatus": "IP",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-26"
+    "accountingDate": "2026-01-26",
+    "deliveryTerms": "Sample deliveryTerms"
   }
 ];
 

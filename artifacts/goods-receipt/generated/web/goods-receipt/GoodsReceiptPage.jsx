@@ -43,7 +43,7 @@ const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
     { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text', label: 'Attribute Set Value' },
-    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity', defaultValue: 1 },
+    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity', defaultValue: 0 },
     { key: 'storageBin', column: 'M_Locator_ID', type: 'selector', label: 'Storage Bin', reference: 'Locator', inputMode: 'selector', defaultValue: '@OnHandLocatorDefault@' },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
@@ -268,18 +268,18 @@ export const api = {
     },
     {
       "entity": "goodsReceipt",
-      "field": "documentAction",
-      "column": "DocAction",
-      "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/documentAction",
-      "processId": "109",
-      "processType": "classic"
-    },
-    {
-      "entity": "goodsReceipt",
       "field": "processGoodsJava",
       "column": "Process_Goods_Java",
       "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/processGoodsJava",
       "processId": "49DEE812BF0545269781FCEBF2235924",
+      "processType": "classic"
+    },
+    {
+      "entity": "goodsReceipt",
+      "field": "documentAction",
+      "column": "DocAction",
+      "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/documentAction",
+      "processId": "109",
       "processType": "classic"
     },
     {
@@ -298,6 +298,14 @@ export const api = {
     },
     {
       "entity": "goodsReceipt",
+      "field": "sendMaterials",
+      "column": "RM_Shipment_Pickedit",
+      "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/sendMaterials",
+      "processId": "4AD70293357245AB96E59C2CDB43A35D",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "goodsReceipt",
       "field": "updateLines",
       "column": "UpdateLines",
       "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/updateLines",
@@ -310,14 +318,6 @@ export const api = {
       "column": "RM_Receipt_PickEdit",
       "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/receiveMaterials",
       "processId": "5E9F9D7EECC24E4FBB2C60840FF613BE",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "goodsReceipt",
-      "field": "sendMaterials",
-      "column": "RM_Shipment_Pickedit",
-      "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/sendMaterials",
-      "processId": "4AD70293357245AB96E59C2CDB43A35D",
       "processType": "obuiapp"
     },
     {
@@ -386,6 +386,7 @@ export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
         breadcrumb={breadcrumb}
       api={api}
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        draftMode={draftMode}
         {...props}
       />
     );

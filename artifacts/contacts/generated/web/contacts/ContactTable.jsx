@@ -9,7 +9,7 @@ const columns = [
 ];
 // @sf-generated-end columns:contact
 
-const filters = ['name', 'email'];
+const filters = ['email', 'name'];
 
 // @sf-generated-start component:ContactTable
 export default function ContactTable(props) {

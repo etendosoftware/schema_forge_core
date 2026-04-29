@@ -10,7 +10,7 @@ const fields = [
   { key: 'shipToAddress', column: 'IsShipTo', type: 'checkbox', label: 'Shipping Address', required: true, section: 'principal', defaultValue: 'Y' },
   { key: 'invoiceToAddress', column: 'IsBillTo', type: 'checkbox', label: 'Invoicing Address', required: true, section: 'principal', defaultValue: 'Y' },
   { key: 'active', column: 'IsActive', type: 'checkbox', label: 'Active', required: true, readOnly: true, section: 'other' },
-  { key: 'taxLocation', column: 'IsTaxLocation', type: 'checkbox', label: 'Tax Location', required: true, section: 'principal', defaultValue: 'N' },
+  { key: 'taxLocation', column: 'IsTaxLocation', type: 'checkbox', label: 'Tax Location', required: true, section: 'principal' },
 ];
 // @sf-generated-end fields:locationAddress
 

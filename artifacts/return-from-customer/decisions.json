@@ -2,7 +2,7 @@
   "$schema": "decisions-v2",
   "window": {
     "category": "sales",
-    "name": "Return from Customer",
+    "name": "Returns",
     "lineEntityConfig": "returnOrder",
     "documentPreview": {
       "titlePrefix": "Return"
@@ -25,6 +25,7 @@
         "documentNo": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 1,
           "searchable": true,
           "inputMode": "text",
           "section": "principal"
@@ -32,6 +33,7 @@
         "businessPartner": {
           "visibility": "editable",
           "grid": true,
+          "gridOrder": 3,
           "searchable": true,
           "inputMode": "search",
           "section": "principal"
@@ -48,6 +50,7 @@
         "orderDate": {
           "visibility": "editable",
           "grid": true,
+          "gridOrder": 2,
           "searchable": true,
           "inputMode": "date",
           "section": "principal"
@@ -61,12 +64,14 @@
         "documentStatus": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 4,
           "searchable": true,
           "form": false
         },
         "grandTotalAmount": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 5,
           "inputMode": "number",
           "section": "principal",
           "form": false

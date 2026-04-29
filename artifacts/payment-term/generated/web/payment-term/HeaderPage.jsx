@@ -80,6 +80,17 @@ export const api = {
   },
   "window": {
     "category": "settings"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "Value": "Clave",
+      "Name": "Nombre",
+      "Description": "Descripción",
+      "FixMonthOffset": "Meses de desplazamiento",
+      "NetDays": "Días",
+      "IsDefault": "Por defecto",
+      "IsActive": "Activo"
+    }
   }
 };
 

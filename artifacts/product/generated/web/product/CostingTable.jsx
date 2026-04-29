@@ -7,7 +7,7 @@ const columns = [
   { key: 'startingDate', column: 'DateFrom', type: 'date', label: 'Starting Date' },
   { key: 'endingDate', column: 'DateTo', type: 'date', label: 'Ending Date' },
   { key: 'quantity', column: 'Qty', type: 'number', label: 'Quantity' },
-  { key: 'warehouse', column: 'M_Warehouse_ID', type: 'string', label: 'Warehouse' },
+  { key: 'warehouse', column: 'M_Warehouse_ID', type: 'selector', label: 'Warehouse' },
 ];
 // @sf-generated-end columns:costing
 

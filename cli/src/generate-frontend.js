@@ -90,6 +90,15 @@ export function getReadOnlyFields(contract, entityName) {
 }
 
 /**
+ * Etendo session/system macros (`@#Date@`, `@#User@`, `@#Client@`, ...) are
+ * resolved server-side by NeoDefaultsService. Emitting them as a frontend
+ * defaultValue would leak the literal token into inputs, so skip them here.
+ */
+function isEtendoSessionMacro(value) {
+  return typeof value === 'string' && /^@#[\w]+@$/.test(value);
+}
+
+/**
  * Map a contract field type to a column/field type for the declarative config.
  */
 function mapFieldType(field) {
@@ -293,7 +302,11 @@ export function generateFormComponent(entityName, contract) {
     // Section classification
     const sectionPart = `, section: '${fieldSections[idx]}'`;
     // UI hints
-    const defaultValuePart = (f.defaultValue !== undefined && f.defaultValue !== null && f.defaultValue !== '')
+    // Skip redundant unchecked defaults on YESNO/checkbox fields: backend NeoDefaultsService
+    // already coerces missing/'N'/false to false, so emitting them only bloats generated files.
+    const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
+    const skipServerMacro = isEtendoSessionMacro(f.defaultValue);
+    const defaultValuePart = (!skipCheckboxDefault && !skipServerMacro && f.defaultValue !== undefined && f.defaultValue !== null && f.defaultValue !== '')
       ? (typeof f.defaultValue === 'number'
           ? `, defaultValue: ${f.defaultValue}`
           : `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'`)
@@ -585,10 +598,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
-    // Include defaultValue for quantity/numeric fields so the add-line form starts with a sensible value
+    // Include defaultValue for quantity/numeric fields so the add-line form starts with a sensible value.
+    // Skip redundant unchecked defaults on YESNO/checkbox fields (backend coerces to false anyway).
     const rawDv = f.defaultValue;
     let defaultValuePart = '';
-    if (rawDv !== undefined && rawDv !== null && rawDv !== '') {
+    const skipCheckboxDefault = type === 'checkbox' && (rawDv === 'N' || rawDv === false);
+    const skipServerMacro = isEtendoSessionMacro(rawDv);
+    if (!skipCheckboxDefault && !skipServerMacro && rawDv !== undefined && rawDv !== null && rawDv !== '') {
       const numDv = Number(rawDv);
       defaultValuePart = `, defaultValue: ${(!isNaN(numDv) && String(rawDv).trim() !== '') ? numDv : `'${String(rawDv).replace(/'/g, "\\'")}'`}`;
     }
@@ -607,7 +623,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   }).join('\n');
 
   const hiddenDefaultsArray = hiddenDefaultFields
-    .filter(f => !String(f.defaultValue).startsWith('@SQL='))
+    .filter(f => !String(f.defaultValue).startsWith('@SQL=') && !isEtendoSessionMacro(f.defaultValue))
     .map(f => {
     const rawDefault = String(f.defaultValue);
     const parentColMatch = rawDefault.match(/^@(\w+)@$/);
@@ -688,7 +704,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
           const labelPart = f.label ? `, label: '${f.label}'` : '';
           const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
           const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
-          const defaultValuePart = f.defaultValue ? `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
+          // Skip redundant unchecked defaults on YESNO/checkbox fields (backend coerces to false anyway).
+          const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
+          const defaultValuePart = (!skipCheckboxDefault && f.defaultValue) ? `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
           const optionsPart = (type === 'select' && f.enumValues?.length)
             ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
             : '';

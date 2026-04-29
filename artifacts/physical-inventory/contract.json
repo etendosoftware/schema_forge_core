@@ -1,7 +1,7 @@
 {
-  "version": "0.16.2",
-  "generatedAt": "2026-04-23T11:25:36.627Z",
-  "checksum": "644d7123166367ce",
+  "version": "0.17.0",
+  "generatedAt": "2026-04-29T19:05:48.442Z",
+  "checksum": "b576251e8981659e",
   "frontendContract": {
     "window": {
       "id": "168",
@@ -17,6 +17,7 @@
         }
       },
       "statusField": "processed",
+      "dateFilterKey": "movementDate",
       "layoutType": "default"
     },
     "entities": {
@@ -37,6 +38,11 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            },
             "defaultValue": "@#Date@",
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
@@ -55,6 +61,11 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            },
             "defaultValue": "@#Date@"
           },
           {
@@ -68,6 +79,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "Warehouse",
             "inputMode": "search",
             "readOnlyLogic": {
@@ -100,6 +112,10 @@
             "required": false,
             "grid": false,
             "form": true,
+            "derivation": {
+              "type": "computed",
+              "source": "false"
+            },
             "displayLogic": {
               "raw": "@Processed@='N'",
               "evaluable": true
@@ -116,6 +132,11 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "enumValues": [
               {
                 "value": "C",
@@ -169,6 +190,11 @@
             "required": true,
             "grid": true,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "false"
+            },
             "columnType": "status"
           }
         ],
@@ -232,6 +258,10 @@
             "required": false,
             "grid": true,
             "form": true,
+            "derivation": {
+              "type": "lookup",
+              "source": "SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM M_InventoryLine WHERE M_Inventory_ID=@M_Inventory_ID@"
+            },
             "defaultValue": "@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM M_InventoryLine WHERE M_Inventory_ID=@M_Inventory_ID@",
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
@@ -250,6 +280,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "Product",
             "inputMode": "search",
             "lookup": true,
@@ -277,6 +308,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "lookup",
+              "source": "SELECT M_LOCATOR_ID AS DEFAULTVALUE FROM M_LOCATOR WHERE AD_ISORGINCLUDED(@AD_Org_ID@, M_LOCATOR.AD_Org_ID, @#AD_Client_ID@) <> -1 AND ISACTIVE='Y' AND M_WAREHOUSE_ID=@M_WAREHOUSE_ID@  ORDER BY M_LOCATOR.ISDEFAULT DESC"
+            },
             "reference": "Locator",
             "inputMode": "search",
             "defaultValue": "@SQL=SELECT M_LOCATOR_ID AS DEFAULTVALUE FROM M_LOCATOR WHERE AD_ISORGINCLUDED(@AD_Org_ID@, M_LOCATOR.AD_Org_ID, @#AD_Client_ID@) <> -1 AND ISACTIVE='Y' AND M_WAREHOUSE_ID=@M_WAREHOUSE_ID@  ORDER BY M_LOCATOR.ISDEFAULT DESC",
@@ -324,6 +360,10 @@
             "required": false,
             "grid": false,
             "form": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0",
             "displayLogic": {
               "raw": "@HASSECONDUOM@=1",
@@ -341,6 +381,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -358,6 +399,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "UOM",
             "inputMode": "selector"
           },
@@ -371,7 +413,8 @@
             "visibility": "readOnly",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "cost",
@@ -433,7 +476,8 @@
           "requiresLines": true
         }
       },
-      "statusField": "processed"
+      "statusField": "processed",
+      "dateFilterKey": "movementDate"
     },
     "entities": {
       "inventory": {
@@ -554,14 +598,6 @@
             "required": false
           },
           {
-            "name": "salesCampaign",
-            "apiKey": "salesCampaign",
-            "column": "C_Campaign_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
             "name": "stDimension",
             "apiKey": "stDimension",
             "column": "User1_ID",
@@ -570,9 +606,9 @@
             "required": false
           },
           {
-            "name": "ndDimension",
-            "apiKey": "ndDimension",
-            "column": "User2_ID",
+            "name": "salesCampaign",
+            "apiKey": "salesCampaign",
+            "column": "C_Campaign_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": false
@@ -581,6 +617,14 @@
             "name": "trxOrganization",
             "apiKey": "trxOrganization",
             "column": "AD_OrgTrx_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "ndDimension",
+            "apiKey": "ndDimension",
+            "column": "User2_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": false
@@ -1638,33 +1682,33 @@
         "id": "t-77",
         "category": "system-field",
         "entity": "inventory",
-        "field": "salesCampaign",
-        "runner": "node",
-        "description": "System field 'salesCampaign' should exist in backend but not frontend for inventory"
-      },
-      {
-        "id": "t-78",
-        "category": "system-field",
-        "entity": "inventory",
         "field": "stDimension",
         "runner": "node",
         "description": "System field 'stDimension' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-79",
+        "id": "t-78",
         "category": "system-field",
         "entity": "inventory",
-        "field": "ndDimension",
+        "field": "salesCampaign",
         "runner": "node",
-        "description": "System field 'ndDimension' should exist in backend but not frontend for inventory"
+        "description": "System field 'salesCampaign' should exist in backend but not frontend for inventory"
       },
       {
-        "id": "t-80",
+        "id": "t-79",
         "category": "system-field",
         "entity": "inventory",
         "field": "trxOrganization",
         "runner": "node",
         "description": "System field 'trxOrganization' should exist in backend but not frontend for inventory"
+      },
+      {
+        "id": "t-80",
+        "category": "system-field",
+        "entity": "inventory",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "System field 'ndDimension' should exist in backend but not frontend for inventory"
       },
       {
         "id": "t-81",

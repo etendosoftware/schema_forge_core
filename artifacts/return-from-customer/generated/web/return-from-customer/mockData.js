@@ -13,6 +13,7 @@ export const customerReturn = [
     "partnerAddress": "Acme Corp",
     "warehouse": "Main Warehouse",
     "description": "Standard order for Q1 delivery",
+    "etvfacReversedInvoice": "Sample etvfacReversedInvoice",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -27,6 +28,7 @@ export const customerReturn = [
     "partnerAddress": "TechFlow Inc",
     "warehouse": "East Distribution Center",
     "description": "Rush order - priority shipping required",
+    "etvfacReversedInvoice": "Sample etvfacReversedInvoice",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -41,6 +43,7 @@ export const customerReturn = [
     "partnerAddress": "Global Trade Ltd",
     "warehouse": "West Hub",
     "description": "Bulk purchase for warehouse restocking",
+    "etvfacReversedInvoice": "Sample etvfacReversedInvoice",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -55,6 +58,7 @@ export const customerReturn = [
     "partnerAddress": "Summit Industries",
     "warehouse": "North Storage",
     "description": "Sample order for client evaluation",
+    "etvfacReversedInvoice": "Sample etvfacReversedInvoice",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -69,6 +73,7 @@ export const customerReturn = [
     "partnerAddress": "Pacific Partners",
     "warehouse": "South Logistics",
     "description": "Recurring monthly supply order",
+    "etvfacReversedInvoice": "Sample etvfacReversedInvoice",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -83,6 +88,7 @@ export const customerReturn = [
     "partnerAddress": "Alpine Solutions",
     "warehouse": "Central Depot",
     "description": "Special pricing agreement applies",
+    "etvfacReversedInvoice": "Sample etvfacReversedInvoice",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -97,6 +103,7 @@ export const customerReturn = [
     "partnerAddress": "Meridian Group",
     "warehouse": "Regional Warehouse A",
     "description": "Consolidated order from multiple requests",
+    "etvfacReversedInvoice": "Sample etvfacReversedInvoice",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -111,6 +118,7 @@ export const customerReturn = [
     "partnerAddress": "Vertex Systems",
     "warehouse": "Regional Warehouse B",
     "description": "Trial order for new product line",
+    "etvfacReversedInvoice": "Sample etvfacReversedInvoice",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -125,6 +133,7 @@ export const customerReturn = [
     "partnerAddress": "Atlas Manufacturing",
     "warehouse": "Main Warehouse",
     "description": "Replacement for damaged goods",
+    "etvfacReversedInvoice": "Sample etvfacReversedInvoice",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -139,6 +148,7 @@ export const customerReturn = [
     "partnerAddress": "Nova Enterprises",
     "warehouse": "East Distribution Center",
     "description": "Pre-season inventory build-up",
+    "etvfacReversedInvoice": "Sample etvfacReversedInvoice",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -153,6 +163,7 @@ export const customerReturn = [
     "partnerAddress": "Pinnacle Services",
     "warehouse": "West Hub",
     "description": "Customer-specific configuration",
+    "etvfacReversedInvoice": "Sample etvfacReversedInvoice",
     "salesRepresentative": "Sample salesRepresentative"
   },
   {
@@ -167,6 +178,7 @@ export const customerReturn = [
     "partnerAddress": "Horizon Labs",
     "warehouse": "North Storage",
     "description": "Government contract fulfillment",
+    "etvfacReversedInvoice": "Sample etvfacReversedInvoice",
     "salesRepresentative": "Sample salesRepresentative"
   }
 ];
@@ -178,7 +190,7 @@ export const customerReturnLine = [
     "product": "Laptop Pro 15",
     "attributeSetValue": "Sample attributeSetValue",
     "cReturnReasonID": "Sample cReturnReasonID",
-    "orderedQuantity": "Sample orderedQuantity",
+    "orderedQuantity": 402,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 38907,
@@ -193,7 +205,7 @@ export const customerReturnLine = [
     "product": "USB-C Cable",
     "attributeSetValue": "Sample attributeSetValue",
     "cReturnReasonID": "Sample cReturnReasonID",
-    "orderedQuantity": "Sample orderedQuantity",
+    "orderedQuantity": 54,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 9306,
@@ -208,7 +220,7 @@ export const customerReturnLine = [
     "product": "Wireless Mouse",
     "attributeSetValue": "Sample attributeSetValue",
     "cReturnReasonID": "Sample cReturnReasonID",
-    "orderedQuantity": "Sample orderedQuantity",
+    "orderedQuantity": 150,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 11544,
@@ -223,7 +235,7 @@ export const customerReturnLine = [
     "product": "Mechanical Keyboard",
     "attributeSetValue": "Sample attributeSetValue",
     "cReturnReasonID": "Sample cReturnReasonID",
-    "orderedQuantity": "Sample orderedQuantity",
+    "orderedQuantity": 97,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 11872,
@@ -238,7 +250,7 @@ export const customerReturnLine = [
     "product": "Monitor 27\"",
     "attributeSetValue": "Sample attributeSetValue",
     "cReturnReasonID": "Sample cReturnReasonID",
-    "orderedQuantity": "Sample orderedQuantity",
+    "orderedQuantity": 311,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 48460,
@@ -253,7 +265,7 @@ export const customerReturnLine = [
     "product": "Webcam HD",
     "attributeSetValue": "Sample attributeSetValue",
     "cReturnReasonID": "Sample cReturnReasonID",
-    "orderedQuantity": "Sample orderedQuantity",
+    "orderedQuantity": 451,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 45418,
@@ -268,7 +280,7 @@ export const customerReturnLine = [
     "product": "Headset Pro",
     "attributeSetValue": "Sample attributeSetValue",
     "cReturnReasonID": "Sample cReturnReasonID",
-    "orderedQuantity": "Sample orderedQuantity",
+    "orderedQuantity": 496,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 33840,
@@ -283,7 +295,7 @@ export const customerReturnLine = [
     "product": "Docking Station",
     "attributeSetValue": "Sample attributeSetValue",
     "cReturnReasonID": "Sample cReturnReasonID",
-    "orderedQuantity": "Sample orderedQuantity",
+    "orderedQuantity": 284,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 25716,
@@ -298,7 +310,7 @@ export const customerReturnLine = [
     "product": "SSD 1TB",
     "attributeSetValue": "Sample attributeSetValue",
     "cReturnReasonID": "Sample cReturnReasonID",
-    "orderedQuantity": "Sample orderedQuantity",
+    "orderedQuantity": 225,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 44780,
@@ -313,7 +325,7 @@ export const customerReturnLine = [
     "product": "RAM 16GB",
     "attributeSetValue": "Sample attributeSetValue",
     "cReturnReasonID": "Sample cReturnReasonID",
-    "orderedQuantity": "Sample orderedQuantity",
+    "orderedQuantity": 479,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 12483,
@@ -328,7 +340,7 @@ export const customerReturnLine = [
     "product": "Power Supply 750W",
     "attributeSetValue": "Sample attributeSetValue",
     "cReturnReasonID": "Sample cReturnReasonID",
-    "orderedQuantity": "Sample orderedQuantity",
+    "orderedQuantity": 123,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 46022,
@@ -343,7 +355,7 @@ export const customerReturnLine = [
     "product": "Network Switch",
     "attributeSetValue": "Sample attributeSetValue",
     "cReturnReasonID": "Sample cReturnReasonID",
-    "orderedQuantity": "Sample orderedQuantity",
+    "orderedQuantity": 337,
     "uOM": "Sample uOM",
     "unitPrice": "Sample unitPrice",
     "lineNetAmount": 38634,

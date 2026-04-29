@@ -11,10 +11,10 @@ const fields = [
   { key: 'pOMaturityDate2', column: 'PO_Fixmonthday2', type: 'number', label: 'PO Maturity Date 2', section: 'other' },
   { key: 'pOMaturityDate3', column: 'PO_Fixmonthday3', type: 'number', label: 'PO Maturity Date 3', section: 'other' },
   { key: 'taxCategory', column: 'PO_BP_TaxCategory_ID', type: 'search', label: 'Tax Category', section: 'other', reference: 'BP_TaxCategory', inputMode: 'search' },
-  { key: 'cashVAT', column: 'Iscashvat', type: 'checkbox', label: 'Cash VAT', required: true, section: 'other', defaultValue: 'N' },
-  { key: 'vendorBlocking', column: 'Vendor_Blocking', type: 'checkbox', label: 'On Hold', required: true, section: 'other', defaultValue: 'N' },
+  { key: 'cashVAT', column: 'Iscashvat', type: 'checkbox', label: 'Cash VAT', required: true, section: 'other' },
+  { key: 'vendorBlocking', column: 'Vendor_Blocking', type: 'checkbox', label: 'On Hold', required: true, section: 'other' },
   { key: 'purchaseOrder', column: 'PO_Order_Blocking', type: 'checkbox', label: 'Purchase Order', required: true, section: 'other', defaultValue: 'Y' },
-  { key: 'goodsReceipt', column: 'PO_Goods_Blocking', type: 'checkbox', label: 'Goods Receipt', required: true, section: 'other', defaultValue: 'N' },
+  { key: 'goodsReceipt', column: 'PO_Goods_Blocking', type: 'checkbox', label: 'Goods Receipt', required: true, section: 'other' },
   { key: 'purchaseInvoice', column: 'PO_Invoice_Blocking', type: 'checkbox', label: 'Purchase Invoice', required: true, section: 'other', defaultValue: 'Y' },
   { key: 'paymentOut', column: 'PO_Payment_Blocking', type: 'checkbox', label: 'Payment Out', required: true, section: 'other', defaultValue: 'Y' },
 ];

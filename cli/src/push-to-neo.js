@@ -139,6 +139,25 @@ export async function loadConfig(projectRoot) {
   return { url, user, password };
 }
 
+// com.etendoerp.go — the module that owns the NEO Headless config.
+const GO_MODULE_ID = '94E1B433CF55451EABB764750AC5902A';
+
+/**
+ * Mark com.etendoerp.go as "in development" so AD changes can be applied.
+ * Idempotent — only updates if the flag is not already 'Y'.
+ */
+async function setGoModuleInDevelopment(client) {
+  const res = await client.query(
+    `UPDATE ad_module
+     SET isindevelopment = 'Y', updated = now()
+     WHERE ad_module_id = $1 AND COALESCE(isindevelopment, 'N') <> 'Y'`,
+    [GO_MODULE_ID],
+  );
+  if (res.rowCount > 0) {
+    console.log(`       Module com.etendoerp.go marked as 'In Development'.`);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Main push function
 // ---------------------------------------------------------------------------
@@ -273,6 +292,7 @@ export async function pushToNeo(windowName, options = {}) {
 
   try {
     await client.query('BEGIN');
+    await setGoModuleInDevelopment(client);
 
     // Step 1: Upsert spec (look up existing spec first for idempotent updates)
     const existingSpec = await client.query(
@@ -576,6 +596,7 @@ export async function pushProcessToNeo(processName, options = {}) {
 
   try {
     await client.query('BEGIN');
+    await setGoModuleInDevelopment(client);
 
     // Step 1: Upsert spec (look up existing spec first for idempotent updates)
     const existingSpec = await client.query(
@@ -688,6 +709,7 @@ export async function pushReportToNeo(reportName, options = {}) {
 
   try {
     await client.query('BEGIN');
+    await setGoModuleInDevelopment(client);
 
     // Step 1: Upsert spec
     const existingSpec = await client.query(

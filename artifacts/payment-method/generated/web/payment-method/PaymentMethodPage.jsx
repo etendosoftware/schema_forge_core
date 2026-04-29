@@ -82,6 +82,19 @@ export const api = {
   },
   "window": {
     "category": "settings"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "Name": "Nombre",
+      "Description": "Descripción",
+      "Isactive": "Activo",
+      "Payin_Allow": "Cobro permitido",
+      "Automatic_Receipt": "Cobro automático",
+      "Automatic_Deposit": "Depósito automático",
+      "Payout_Allow": "Pago permitido",
+      "Automatic_Payment": "Pago automático",
+      "Automatic_Withdrawn": "Retiro automático"
+    }
   }
 };
 
