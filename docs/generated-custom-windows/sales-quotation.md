@@ -63,7 +63,7 @@ handler returns HTTP 400 with "No hay líneas a facturar en este pedido".
 
 ## Gap assessment
 
-- Duplicate and Cancel are exposed as menu actions in the detail page, but the generated page currently wires both to empty `onClick` handlers. Their presence is visible; their actual behavior is a gap.
+- Cancel is exposed as a menu action in the kebab (⋮) menu when the quotation is in `CO` or `UE`, but the generated page wires it to an empty `onClick` handler. Its presence is visible; its actual behavior is a gap. The previous `Duplicate` menu entry was removed because it duplicated the `Clonar` button already exposed in the topbar.
 - The detail page includes a draft-only confirmation modal that can create an order or draft invoice. Quotation-to-order remains the documented core conversion rule kept in decisions; the quotation-to-draft-invoice path is implemented in `CreateDraftInvoiceHandler` (com.etendoerp.go) by mirroring the sales-order branch — see "Invoice creation flow" above.
 - Discount, tax, line gross amount, total net amount, and total gross amount are all present in the schema, and retained rules imply recalculation, but there is no browser automation proving how quickly those values refresh or whether they update before save versus only after backend round-trips. That reaction timing is a gap.
 - The decisions file keeps a rule that should default `validUntil` from `orderDate`, but the generated form only shows `orderDate` with an explicit default value. The intended validity-date default is therefore not clearly evidenced in the current UI layer.
@@ -79,7 +79,7 @@ handler returns HTTP 400 with "No hay líneas a facturar en este pedido".
 5. While the quotation remains in draft, confirm the top bar shows the quotation confirmation action and the send-document action.
 6. Use the confirmation flow to create a downstream document, then verify whether the resulting order or invoice opens in the expected status and whether the quotation remains usable afterward.
 7. Open Related Documents after downstream conversion and verify that order chips appear, invoice chips appear when applicable, and each chip navigates to the correct route.
-8. Check Duplicate and Cancel from the record menu and confirm whether they perform a real action or remain non-functional placeholders.
+8. Open the kebab (⋮) menu on a quotation in `CO` or `UE` and confirm only `Cancel` is listed (regression: `Duplicate` used to appear there as a redundant copy of the topbar `Clonar` button).
 9. From the list view, select one or more quotations, run `Clone`, close the result modal and confirm the cloned drafts appear in the list without manually pressing `Refresh`.
 10. On a draft quotation with a business partner already chosen, change `Payment Terms` to a different value than the BP default and save. Reopen the record and confirm the chosen value persisted (regression: it used to revert to the BP default).
 

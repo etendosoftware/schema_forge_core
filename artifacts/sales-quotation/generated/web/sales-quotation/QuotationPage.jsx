@@ -395,7 +395,6 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         topbarRight={QuotationTopbarActions}
         menuActions={({ status }) => [
-          { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
           { key: 'cancel', label: 'Cancel', destructive: true, visible: ["CO","UE"].includes(status), onClick: () => {}, }
         ]}
         draftMode={draftMode}

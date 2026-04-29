@@ -1,7 +1,7 @@
 {
   "version": "0.2.0",
-  "generatedAt": "2026-04-29T17:35:12.095Z",
-  "checksum": "46112f3a267cbe35",
+  "generatedAt": "2026-04-29T17:37:56.540Z",
+  "checksum": "99024f68a1bea9a1",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -22,10 +22,6 @@
         "topbarRight": "QuotationTopbarActions"
       },
       "menuActions": [
-        {
-          "key": "duplicate",
-          "label": "Duplicate"
-        },
         {
           "key": "cancel",
           "label": "Cancel",
@@ -771,10 +767,6 @@
         "topbarRight": "QuotationTopbarActions"
       },
       "menuActions": [
-        {
-          "key": "duplicate",
-          "label": "Duplicate"
-        },
         {
           "key": "cancel",
           "label": "Cancel",
