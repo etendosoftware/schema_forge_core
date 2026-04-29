@@ -50,6 +50,11 @@ currency, payment terms, price list) and the lines (product, quantity, prices)
 into a new sales invoice in `DR` (Draft) status via the native
 `CreateInvoiceLinesFromProcess`.
 
+The success state of `QuotationConfirmModal` displays the invoice doc number
+followed by the formatted grand total and the quotation's currency identifier
+(e.g. `Factura #10000083 · 48.40 EUR`). The order branch already rendered the
+currency; the invoice branch was previously dropping the suffix.
+
 After the invoice is persisted, the source quotation's DocStatus is set to
 `ETGO_CI` ("Closed - Invoice Created") via a direct OBDal write. This mirrors
 the standard Etendo pattern in `ConvertQuotationIntoOrder`, which sets DocStatus
