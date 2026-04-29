@@ -278,14 +278,22 @@
           "searchable": true,
           "lookup": true,
           "order": 1,
+          "gridOrder": 1,
           "section": "principal",
           "inputMode": "search",
           "displayLogic": null,
           "forceCalloutFields": ["listPrice", "unitPrice", "tax", "uOM", "grossUnitPrice"]
         },
-        "invoicedQuantity": {
+        "description": {
           "grid": true,
           "order": 2,
+          "gridOrder": 2,
+          "section": "principal"
+        },
+        "invoicedQuantity": {
+          "grid": true,
+          "order": 3,
+          "gridOrder": 3,
           "section": "principal"
         },
         "uOM": {
@@ -296,10 +304,21 @@
           "grid": true,
           "form": true,
           "inputMode": "number",
-          "order": 3,
-          "gridOrder": 3,
+          "order": 4,
+          "gridOrder": 4,
           "section": "principal",
           "columnType": "amount"
+        },
+        "etgoDiscount": {
+          "visibility": "editable",
+          "grid": true,
+          "form": true,
+          "inputMode": "number",
+          "order": 5,
+          "gridOrder": 5,
+          "section": "principal",
+          "derivation": null,
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "unitPrice": {
           "grid": false,
@@ -307,7 +326,8 @@
         },
         "tax": {
           "grid": true,
-          "order": 4,
+          "order": 6,
+          "gridOrder": 6,
           "section": "principal",
           "inputMode": "selector",
           "forceCalloutFields": ["lineNetAmount"]
@@ -319,12 +339,6 @@
         },
         "discount": {
           "visibility": "discarded"
-        },
-        "description": {
-          "grid": true,
-          "order": 5,
-          "section": "principal",
-          "gridOrder": 2
         },
         "taxAmount": {
           "visibility": "discarded"
@@ -343,7 +357,7 @@
         "grossAmount": {
           "visibility": "readOnly",
           "grid": true,
-          "gridOrder": 6,
+          "gridOrder": 7,
           "form": true,
           "section": "principal",
           "displayLogic": null

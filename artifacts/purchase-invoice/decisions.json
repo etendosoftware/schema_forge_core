@@ -325,6 +325,7 @@
           "grid": true,
           "lookup": true,
           "order": 1,
+          "gridOrder": 1,
           "section": "principal",
           "inputMode": "search",
           "readOnlyLogic": null,
@@ -333,9 +334,9 @@
         },
         "description": {
           "grid": true,
-          "order": 5,
-          "section": "principal",
-          "gridOrder": 2
+          "order": 2,
+          "gridOrder": 2,
+          "section": "principal"
         },
         "account": {
           "form": false,
@@ -360,7 +361,8 @@
         },
         "invoicedQuantity": {
           "grid": true,
-          "order": 2,
+          "order": 3,
+          "gridOrder": 3,
           "section": "principal",
           "readOnlyLogic": null
         },
@@ -376,10 +378,21 @@
           "grid": true,
           "form": true,
           "inputMode": "number",
-          "order": 3,
-          "gridOrder": 3,
+          "order": 4,
+          "gridOrder": 4,
           "section": "principal",
           "columnType": "amount"
+        },
+        "etgoDiscount": {
+          "visibility": "editable",
+          "grid": true,
+          "form": true,
+          "inputMode": "number",
+          "order": 5,
+          "gridOrder": 5,
+          "section": "principal",
+          "derivation": null,
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "lineNetAmount": {
           "visibility": "system",
@@ -389,7 +402,8 @@
         },
         "tax": {
           "grid": true,
-          "order": 4,
+          "order": 6,
+          "gridOrder": 6,
           "section": "principal",
           "inputMode": "selector",
           "readOnlyLogic": null,
@@ -446,7 +460,7 @@
         "grossAmount": {
           "visibility": "readOnly",
           "grid": true,
-          "gridOrder": 6,
+          "gridOrder": 7,
           "form": true,
           "section": "principal",
           "displayLogic": null

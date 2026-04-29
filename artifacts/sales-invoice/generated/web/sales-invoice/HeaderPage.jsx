@@ -48,10 +48,11 @@ const draftMode = {
 const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["listPrice","unitPrice","tax","uOM","grossUnitPrice"] },
+    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
     { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity', defaultValue: 1 },
     { key: 'listPrice', column: 'PriceList', type: 'number', required: true, label: 'List Price' },
+    { key: 'etgoDiscount', column: 'EM_Etgo_Discount', type: 'number', label: 'Discount %', defaultValue: 0 },
     { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineNetAmount"] },
-    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
 
@@ -302,18 +303,18 @@ export const api = {
     },
     {
       "entity": "header",
-      "field": "generateTo",
-      "column": "GenerateTo",
-      "url": "/sws/neo/sales-invoice/header/{id}/action/generateTo",
-      "processId": "142",
-      "processType": "classic"
-    },
-    {
-      "entity": "header",
       "field": "processNow",
       "column": "Processing",
       "url": "/sws/neo/sales-invoice/header/{id}/action/processNow",
       "processId": "111",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "generateTo",
+      "column": "GenerateTo",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/generateTo",
+      "processId": "142",
       "processType": "classic"
     },
     {

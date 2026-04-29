@@ -61,10 +61,11 @@ const draftMode = {
 const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["listPrice","unitPrice","tax","uOM","grossUnitPrice"] },
+    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
     { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity', defaultValue: 1 },
     { key: 'listPrice', column: 'PriceList', type: 'number', required: true, label: 'List Price' },
+    { key: 'etgoDiscount', column: 'EM_Etgo_Discount', type: 'number', label: 'Discount %', defaultValue: 0 },
     { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineNetAmount"] },
-    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
 
@@ -129,17 +130,6 @@ export const api = {
       "detailUrl": "/sws/neo/purchase-invoice/tax/{id}",
       "supportedFilters": []
     },
-    "cashVat": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/cashVat",
-      "detailUrl": "/sws/neo/purchase-invoice/cashVat/{id}",
-      "supportedFilters": []
-    },
     "basicDiscounts": {
       "get": true,
       "getById": true,
@@ -149,6 +139,17 @@ export const api = {
       "delete": true,
       "listUrl": "/sws/neo/purchase-invoice/basicDiscounts",
       "detailUrl": "/sws/neo/purchase-invoice/basicDiscounts/{id}",
+      "supportedFilters": []
+    },
+    "cashVat": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/cashVat",
+      "detailUrl": "/sws/neo/purchase-invoice/cashVat/{id}",
       "supportedFilters": []
     },
     "paymentPlan": {
@@ -444,20 +445,20 @@ export const api = {
       "url": "/sws/neo/purchase-invoice/tax/selectors/tax"
     },
     {
-      "entity": "cashVat",
-      "field": "payment",
-      "column": "FIN_Payment_ID",
-      "reference": "Payment",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/cashVat/selectors/payment"
-    },
-    {
       "entity": "basicDiscounts",
       "field": "discount",
       "column": "C_Discount_ID",
       "reference": "Discount",
       "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/basicDiscounts/selectors/discount"
+    },
+    {
+      "entity": "cashVat",
+      "field": "payment",
+      "column": "FIN_Payment_ID",
+      "reference": "Payment",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/cashVat/selectors/payment"
     },
     {
       "entity": "paymentPlan",

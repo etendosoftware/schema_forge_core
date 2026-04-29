@@ -21,7 +21,6 @@ import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import {
   buildCalloutFormState, extractAuxValues, normalizeCalloutQty,
   normalizeCalloutResponse, applyQtyZeroGuard, roundAmounts,
-  shouldFireCascade, buildCascadeState, selectCascadeField,
   resolveSnapshotIdentifiers,
 } from '@/lib/lineFieldChange.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
@@ -740,17 +739,18 @@ export function DetailView({
       const calloutData = await res.json();
       const result = normalizeCalloutResponse(calloutData, rowValues);
 
-      // SL_Order_Product returns the catalog price as standardPrice (PriceStd) and may
-      // set listPrice=0 (PriceList column, which Classic callouts often zero out).
-      // Use standardPrice as the list price when the callout zeroed listPrice — ORDER config only.
-      // For INVOICE config, the product selector already fetches the correct price-list price;
-      // the callout's standardPrice comes from product defaults (often purchase price) and must
-      // not overwrite what the selector provided.
-      if (field === 'product' && lineConfig.discountField !== null && result.standardPrice != null && (result.listPrice == null || Number(result.listPrice) === 0)) {
+      // Classic callouts (SL_Order_Product, SL_Invoice_Product) return the catalog price
+      // as standardPrice (PriceStd) and zero out listPrice (PriceList column).
+      // Use standardPrice as the list price when the callout zeroed listPrice.
+      // The selector enrichment in NeoSelectorService ensures standardPrice always comes
+      // from the document's price list for both order and invoice configs.
+      if (field === 'product' && result.standardPrice != null && (result.listPrice == null || Number(result.listPrice) === 0)) {
         result.listPrice = result.standardPrice;
       }
-      if (field === 'product' && lineConfig.discountField === null) {
-        delete result.listPrice;
+
+      // Reset discount to 0 on product change so each product starts with no discount applied.
+      if (field === 'product' && lineConfig.discountField) {
+        result[lineConfig.discountField] = 0;
       }
 
       // Resolve missing $_identifier from loaded catalogs for FK fields returned by callout
@@ -818,57 +818,10 @@ export function DetailView({
       // No other window or field is affected unless it declares forceCalloutFields.
       const triggerFieldDef = (addLineFields?.entry ?? []).find(f => f.key === field);
       const forceFields = new Set(triggerFieldDef?.forceCalloutFields ?? []);
+      if (field === 'product' && lineConfig.discountField) forceFields.add(lineConfig.discountField);
       roundAmounts(result);
       applyUpdates?.(result, forceFields);
 
-      // Cascade to SL_Order_Amt when a price-setting callout (e.g. SL_Order_Product) returned
-      // unitPrice or grossUnitPrice but did not compute lineNetAmount.
-      // This mirrors classic browser behaviour: detecting a price field change auto-fires
-      // SL_Order_Amt to compute lineNetAmount = unitPrice * qty (and, for gross-price lists,
-      // Skip cascade for invoice-type configs (no discount field): listPrice IS unitPrice,
-      // lineNetAmount is computed by the fallback above, and grossAmount is client-side.
-      // Firing SL_Invoice_Amt can overwrite listPrice with a stale server-side value.
-      if (shouldFireCascade(result) && lineConfig.discountField !== null) {
-        try {
-          const cascadeState = buildCascadeState(result, formStateForCallout);
-          const { field: cascadeField, value: cascadeValue } = selectCascadeField(result, addLineFields?.entry);
-          // SL_Order_Amt needs grossListPrice for tax-inclusive lists — seed it if absent.
-          const useGross = result.grossUnitPrice != null;
-          if (useGross && (cascadeState.grossListPrice == null || Number(cascadeState.grossListPrice) === 0)) {
-            cascadeState.grossListPrice = result.grossUnitPrice;
-          }
-          const cascadePayload = {
-            field: cascadeField,
-            value: cascadeValue,
-            formState: cascadeState,
-            ...(Object.keys(auxiliaryValues).length > 0 ? { auxiliaryValues } : {}),
-          };
-          const cascadeRes = await fetch(`${apiBaseUrl}/${detailEntity}/callout`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(cascadePayload),
-          });
-          if (cascadeRes.ok) {
-            const cascadeResult = normalizeCalloutResponse(await cascadeRes.json(), rowValues);
-            applyQtyZeroGuard(cascadeResult, rowValues);
-            if (result.grossUnitPrice != null && result.netUnitPrice != null && cascadeResult.unitPrice == null) {
-              cascadeResult.unitPrice = result.netUnitPrice;
-            }
-            if (cascadeResult.lineGrossAmount == null || Number(cascadeResult.lineGrossAmount) === 0) {
-              const netPrice = Number(result.netUnitPrice ?? result.unitPrice ?? 0);
-              const qty      = Number(formStateForCallout.orderedQuantity) || 1;
-              const lineNet  = netPrice * qty;
-              if (lineNet > 0) {
-                const factor = resolveTaxFactor(result.tax ?? rowValues.tax, result, rowValues);
-                if (factor !== null) cascadeResult.lineGrossAmount = parseFloat((lineNet * factor).toFixed(2));
-              }
-            }
-            if (Object.keys(cascadeResult).length > 0) applyUpdates?.(cascadeResult);
-          }
-        } catch {
-          // Cascade is best-effort — first callout result was already applied above
-        }
-      }
 
     } catch {
       // Callout is best-effort
@@ -1507,7 +1460,7 @@ export function DetailView({
                         entity={detailEntity}
                         token={token}
                         apiBaseUrl={apiBaseUrl}
-                        onRowClick={DetailForm ? (row) => setSelectedLine(row) : undefined}
+                        onRowClick={DetailForm ? (row) => { const line = { ...row }; roundAmounts(line); setSelectedLine(line); } : undefined}
                         selectedRowId={selectedLine?.id}
                         onSelectionChange={setSelectedChildRows}
                         showFooterTotals={showDetailFooterTotals ?? !summary.some(f => f.type === 'amount')}
