@@ -4,6 +4,7 @@
     "category": "sales",
     "name": "Sales Invoice",
     "salesTheme": true,
+    "lineEntityConfig": "invoice",
     "relatedDocuments": true,
     "notesField": "description",
     "hideDeleteWhenComplete": true,
@@ -276,27 +277,40 @@
           "grid": true,
           "searchable": true,
           "lookup": true,
+          "order": 1,
           "section": "principal",
           "inputMode": "search",
-          "displayLogic": null
+          "displayLogic": null,
+          "forceCalloutFields": ["listPrice", "unitPrice", "tax", "uOM", "grossUnitPrice"]
         },
         "invoicedQuantity": {
           "grid": true,
+          "order": 2,
           "section": "principal"
         },
         "uOM": {
           "visibility": "system"
         },
-        "unitPrice": {
+        "listPrice": {
+          "visibility": "editable",
           "grid": true,
+          "form": true,
+          "inputMode": "number",
+          "order": 3,
+          "gridOrder": 3,
           "section": "principal",
           "columnType": "amount"
         },
+        "unitPrice": {
+          "grid": false,
+          "form": false
+        },
         "tax": {
           "grid": true,
+          "order": 4,
           "section": "principal",
           "inputMode": "selector",
-          "forceCalloutFields": ["lineGrossAmount", "grossAmount", "lineNetAmount"]
+          "forceCalloutFields": ["lineNetAmount"]
         },
         "lineNetAmount": {
           "visibility": "system",
@@ -304,15 +318,11 @@
           "section": "principal"
         },
         "discount": {
-          "visibility": "editable",
-          "grid": true,
-          "section": "principal"
-        },
-        "listPrice": {
           "visibility": "discarded"
         },
         "description": {
           "grid": true,
+          "order": 5,
           "section": "principal",
           "gridOrder": 2
         },

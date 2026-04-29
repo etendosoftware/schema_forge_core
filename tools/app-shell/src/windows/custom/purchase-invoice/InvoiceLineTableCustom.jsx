@@ -5,7 +5,7 @@ const columns = [
   { key: 'product',          column: 'M_Product_ID',       type: 'string', label: 'Product' },
   { key: 'description',      column: 'Description',         type: 'string', label: 'Description' },
   { key: 'invoicedQuantity', column: 'QtyInvoiced',         type: 'number', label: 'Invoiced Quantity' },
-  { key: 'unitPrice',        column: 'PriceActual',         type: 'amount', label: 'Net Unit Price' },
+  { key: 'listPrice',        column: 'PriceList',            type: 'amount', label: 'Net Unit Price' },
   { key: 'tax',              column: 'C_Tax_ID',            type: 'string', label: 'Tax' },
   { key: 'grossAmount',      column: 'Line_Gross_Amount',   type: 'amount', label: 'Line Gross Amount' },
 ];

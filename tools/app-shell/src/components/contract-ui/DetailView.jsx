@@ -11,7 +11,7 @@ import { useEntity } from '@/hooks/useEntity';
 import { useCatalogs } from '@/hooks/useCatalogs';
 import { useDisplayLogic } from '@/hooks/useDisplayLogic';
 import { useCallout } from '@/hooks/useCallout';
-import { useLineGrossAmount } from '@/hooks/useLineGrossAmount';
+import { useLineGrossAmount, ORDER_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import { useDocumentAction } from '@/hooks/useDocumentAction';
 import { useMenuLabel, useUI, useLocale } from '@/i18n';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
@@ -144,6 +144,7 @@ export function DetailView({
   othersLabel = null,
   primaryTabs = null,
   contentBg = 'bg-white',
+  lineConfig = ORDER_LINE_CONFIG,
   lockWhenProcessed = true,
   addLineGuard = null,
   showDetailFooterTotals = undefined,
@@ -361,7 +362,7 @@ export function DetailView({
   // Cache for tax rates fetched from the selector (keyed by tax ID).
   // Avoids repeated API calls when the same tax appears on multiple lines.
   const taxRateCacheRef = useRef({});
-  const { computeLineGrossAmount, resolveTaxFactor } = useLineGrossAmount(taxRateCacheRef, hook.children);
+  const { computeLineGrossAmount, resolveTaxFactor, prepareLineForPost } = useLineGrossAmount(taxRateCacheRef, hook.children, lineConfig);
   // Batching refs for the sidebar onChange: product selector fires multiple synchronous
   // onChange calls (product, product$_identifier, unitPrice/grossUnitPrice). Without
   // batching each fires its own callout with a stale/incomplete snapshot. We accumulate
@@ -370,26 +371,25 @@ export function DetailView({
   const sidebarCalloutTimerRef = useRef(null);
 
   // When a sidebar line is selected, seed taxRateCacheRef from its saved values so that
-  // subsequent unitPrice / orderedQuantity changes can resolve taxFactor via source 2 (cache)
-  // without needing a network round-trip. Uses lineGrossAmount÷(qty×price) for order lines
-  // (which lack lineNetAmount) and grossAmount÷lineNetAmount for invoice lines.
+  // subsequent priceField / qtyField changes can resolve taxFactor via source 2 (cache)
+  // without needing a network round-trip.
   useEffect(() => {
     if (!selectedLine) return;
     const taxId = selectedLine.tax;
     if (!taxId || taxRateCacheRef.current[taxId] != null) return;
     let rate = null;
-    const gross = parseFloat(String(selectedLine.grossAmount ?? selectedLine.lineGrossAmount ?? '')) || 0;
+    const gross = parseFloat(String(selectedLine[lineConfig.grossField] ?? selectedLine.grossAmount ?? selectedLine.lineGrossAmount ?? '')) || 0;
     if (gross > 0) {
-      const disc  = parseFloat(String(selectedLine.discount ?? '')) || 0;
+      const disc  = lineConfig.discountField ? (parseFloat(String(selectedLine[lineConfig.discountField] ?? '')) || 0) : 0;
       const net   = parseFloat(String(selectedLine.lineNetAmount ?? '')) || 0;
       if (net > 0) {
-        // Etendo stores LINENETAMT = qty × unitPrice (list price, before discount).
+        // Etendo stores LINENETAMT = qty × listPrice (before discount).
         // Adjust by discount to get the actual taxable base before deriving the tax rate.
         const taxableNet = disc > 0 ? net * (1 - disc / 100) : net;
         rate = (gross / taxableNet - 1) * 100;
       } else {
-        const qty   = parseFloat(String(selectedLine.orderedQuantity ?? selectedLine.invoicedQuantity ?? '')) || 0;
-        const price = parseFloat(String(selectedLine.unitPrice ?? '')) || 0;
+        const qty   = parseFloat(String(selectedLine[lineConfig.qtyField]   ?? '')) || 0;
+        const price = parseFloat(String(selectedLine[lineConfig.priceField] ?? selectedLine.unitPrice ?? '')) || 0;
         const lineNet = qty * price * (1 - disc / 100);
         if (lineNet > 0) rate = (gross / lineNet - 1) * 100;
       }
@@ -397,7 +397,7 @@ export function DetailView({
     if (rate != null && rate >= 0) {
       taxRateCacheRef.current[taxId] = rate;
     }
-  }, [selectedLine]);
+  }, [selectedLine, lineConfig]);
 
   const isNew = recordId === 'new';
   const currentItem = useMemo(() => {
@@ -705,6 +705,18 @@ export function DetailView({
   const handleLineFieldChange = useCallback(async (field, value, rowValues, applyUpdates) => {
     if (!field || (value == null || value === '') || !token || !apiBaseUrl || !detailEntity) return;
     if (field.includes('$_identifier') || /^[a-zA-Z]+_[A-Z]{2,4}$/.test(field)) return;
+
+    // These fields are computed client-side — no callout needed.
+    // Derived from lineConfig so order, invoice, and future window types all share the same guard.
+    const clientSideFieldList = [lineConfig.qtyField, lineConfig.priceField, lineConfig.discountField].filter(Boolean);
+    const CLIENT_SIDE_FIELDS = new Set(clientSideFieldList);
+    if (CLIENT_SIDE_FIELDS.has(field)) {
+      const result = {};
+      computeLineGrossAmount(field, value, result, rowValues);
+      applyUpdates?.(result, new Set());
+      return;
+    }
+
     try {
       const headerData         = hook.editing || hook.selected || {};
       const formState          = buildCalloutFormState(rowValues, headerData);
@@ -727,6 +739,19 @@ export function DetailView({
       if (!res.ok) return;
       const calloutData = await res.json();
       const result = normalizeCalloutResponse(calloutData, rowValues);
+
+      // SL_Order_Product returns the catalog price as standardPrice (PriceStd) and may
+      // set listPrice=0 (PriceList column, which Classic callouts often zero out).
+      // Use standardPrice as the list price when the callout zeroed listPrice — ORDER config only.
+      // For INVOICE config, the product selector already fetches the correct price-list price;
+      // the callout's standardPrice comes from product defaults (often purchase price) and must
+      // not overwrite what the selector provided.
+      if (field === 'product' && lineConfig.discountField !== null && result.standardPrice != null && (result.listPrice == null || Number(result.listPrice) === 0)) {
+        result.listPrice = result.standardPrice;
+      }
+      if (field === 'product' && lineConfig.discountField === null) {
+        delete result.listPrice;
+      }
 
       // Resolve missing $_identifier from loaded catalogs for FK fields returned by callout
       // (e.g., callout sets uOM='100' but server omits the display name)
@@ -770,15 +795,12 @@ export function DetailView({
       applyQtyZeroGuard(result, rowValues);
       // Fallback: when callout returns no lineNetAmount (e.g. SL_Invoice_Amt throws
       // PriceAdjustment exception for products without standard cost), compute qty × price.
-      // Covers both the inline add-row (DataTable) and the sidebar detail form (DetailView).
-      // Also covers the product-selection case: SL_Invoice_Product returns 'priceActual' (OBDal
-      // property name), not 'unitPrice' (Schema Forge key), so result.unitPrice is null. But the
-      // selector item mapping already put unitPrice into rowValues before the callout fired.
-      if (result.lineNetAmount == null && (field === 'invoicedQuantity' || field === 'unitPrice' || field === 'product')) {
-        const qty   = field === 'invoicedQuantity' ? (parseFloat(value) || 0)
-                    : (parseFloat(String(rowValues.invoicedQuantity ?? '')) || 0);
-        const price = field === 'unitPrice'        ? (parseFloat(value) || 0)
-                    : (parseFloat(String(rowValues.unitPrice ?? '')) || 0);
+      // Uses lineConfig fields so orders, invoices, and future window types all benefit.
+      if (result.lineNetAmount == null && (field === lineConfig.qtyField || field === lineConfig.priceField || field === 'product')) {
+        const qty   = field === lineConfig.qtyField   ? (parseFloat(value) || 0)
+                    : (parseFloat(String(rowValues[lineConfig.qtyField] ?? '')) || 0);
+        const price = field === lineConfig.priceField ? (parseFloat(value) || 0)
+                    : (parseFloat(String(result[lineConfig.priceField] ?? rowValues[lineConfig.priceField] ?? '')) || 0);
         if (qty > 0 && price > 0) result.lineNetAmount = String(qty * price);
       }
       computeLineGrossAmount(field, value, result, rowValues);
@@ -803,7 +825,10 @@ export function DetailView({
       // unitPrice or grossUnitPrice but did not compute lineNetAmount.
       // This mirrors classic browser behaviour: detecting a price field change auto-fires
       // SL_Order_Amt to compute lineNetAmount = unitPrice * qty (and, for gross-price lists,
-      if (shouldFireCascade(result)) {
+      // Skip cascade for invoice-type configs (no discount field): listPrice IS unitPrice,
+      // lineNetAmount is computed by the fallback above, and grossAmount is client-side.
+      // Firing SL_Invoice_Amt can overwrite listPrice with a stale server-side value.
+      if (shouldFireCascade(result) && lineConfig.discountField !== null) {
         try {
           const cascadeState = buildCascadeState(result, formStateForCallout);
           const { field: cascadeField, value: cascadeValue } = selectCascadeField(result, addLineFields?.entry);
@@ -1522,24 +1547,9 @@ export function DetailView({
                                   : hiddenField.value;
                               }
                             }
-                            // Always recompute lineNetAmount = qty × unitPrice before POST.
-                            {
-                              const qty   = parseFloat(String(lineData.invoicedQuantity ?? '')) || 0;
-                              const price = parseFloat(String(lineData.unitPrice        ?? '')) || 0;
-                              if (qty > 0 && price > 0) lineData.lineNetAmount = qty * price;
-                            }
-                            // Compute grossAmount if not already set correctly (0 counts as not set).
-                            if (!lineData.grossAmount || Number(lineData.grossAmount) === 0) {
-                              const qty     = parseFloat(String(lineData.invoicedQuantity ?? '')) || 0;
-                              const price   = parseFloat(String(lineData.unitPrice        ?? '')) || 0;
-                              const lineNet = qty > 0 && price > 0 ? qty * price : 0;
-                              if (lineNet > 0) {
-                                const factor = resolveTaxFactor(lineData.tax, lineData, lineData);
-                                if (factor !== null) {
-                                  lineData.grossAmount = parseFloat((lineNet * factor).toFixed(2));
-                                }
-                              }
-                            }
+                            // Derive unitPrice = listPrice × (1-discount/100) before POST.
+                            // For invoice config (priceField='unitPrice') this is a no-op.
+                            prepareLineForPost(lineData);
                             return hook.handleAddChild?.(lineData);
                           },
                           onCancel: () => setAddingLine(false),
@@ -1698,8 +1708,14 @@ export function DetailView({
                                     try {
                                       const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', selectedLine.id)
                                         || `${apiBaseUrl}/${detailEntity}/${selectedLine.id}`;
+                                      // Derive unitPrice = listPrice × (1-discount/100) before PATCH.
+                                      // Merge with selectedLine so listPrice/discount are always available.
+                                      const patchData = { ...(selectedLine ?? {}), ...lineEdits };
+                                      prepareLineForPost(patchData);
+                                      const patchEdits = { ...lineEdits };
+                                      if (patchData.unitPrice !== undefined) patchEdits.unitPrice = patchData.unitPrice;
                                       const fieldValues = {};
-                                      for (const [k, v] of Object.entries(lineEdits)) {
+                                      for (const [k, v] of Object.entries(patchEdits)) {
                                         if (k.endsWith('$_identifier')) continue;
                                         // NEO Headless PATCH expects camelCase API keys, not DB column names.
                                         // Always use k (the API key) as the field name.

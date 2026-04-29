@@ -3,14 +3,16 @@ import { useCallback } from 'react';
 /**
  * Per-window line configuration.
  *
- * qtyField   — form key holding the editable quantity
- * grossField — form key to write the computed gross line amount
+ * qtyField    — form key holding the editable quantity
+ * grossField  — form key to write the computed gross line amount
+ * priceField  — form key holding the editable base price
+ *               (listPrice for orders/quotations, unitPrice for invoices)
  *
  * Add a new entry here whenever a new window type is onboarded.
  */
 export const LINE_CONFIGS = {
-  order:   { qtyField: 'orderedQuantity',  grossField: 'lineGrossAmount' },
-  invoice: { qtyField: 'invoicedQuantity', grossField: 'grossAmount'     },
+  order:   { qtyField: 'orderedQuantity',  grossField: 'lineGrossAmount', priceField: 'listPrice', discountField: 'discount' },
+  invoice: { qtyField: 'invoicedQuantity', grossField: 'grossAmount',     priceField: 'listPrice', discountField: null       },
 };
 
 // Convenience aliases — import the one that matches the window type.
@@ -90,51 +92,54 @@ export function resolveTaxFactor(taxId, calloutResult, rowValues, taxRateCache, 
 
 /**
  * Derives the taxable net amount for the changed field.
- * Always applies the active discount so the gross can be computed correctly.
+ *
+ * The base price is config.priceField:
+ *   - Orders/quotations: listPrice (the catalog price the user sees and edits)
+ *   - Invoices: unitPrice
+ *
+ * Discount is always applied so the gross can be computed correctly.
  *
  * @param {string}        field        Changed field key
  * @param {string|number} value        New value
  * @param {object}        calloutResult
  * @param {object}        rowValues
- * @param {string}        qtyField     Config: which field holds the editable quantity
+ * @param {string}        qtyField     Config: qty field key
+ * @param {string}        [priceField='unitPrice']  Config: base price field key
  * @returns {number}  0 when indeterminate
  */
-export function deriveLineNet(field, value, calloutResult, rowValues, qtyField) {
-  const disc       = parseFloat(String(rowValues.discount ?? '')) || 0;
-  const discFactor = 1 - disc / 100;
+export function deriveLineNet(field, value, calloutResult, rowValues, qtyField, priceField = 'unitPrice') {
+  const qty      = parseFloat(String(rowValues[qtyField]   ?? '')) || 0;
+  const price    = parseFloat(String(rowValues[priceField] ?? '')) || 0;
+  const discount = parseFloat(String(rowValues.discount    ?? '')) || 0;
+  const discFactor = 1 - discount / 100;
 
   if (field === qtyField) {
-    const qty   = parseFloat(value) || 0;
-    const price = parseFloat(String(rowValues.unitPrice ?? '')) || 0;
-    return qty > 0 && price > 0 ? qty * price * discFactor : 0;
+    const q = parseFloat(value) || 0;
+    return q > 0 && price > 0 ? q * price * discFactor : 0;
   }
 
-  if (field === 'unitPrice') {
-    const qty   = parseFloat(String(rowValues[qtyField] ?? '')) || 0;
-    const price = parseFloat(value) || 0;
-    return qty > 0 && price > 0 ? qty * price * discFactor : 0;
+  if (field === priceField) {
+    const p = parseFloat(value) || 0;
+    return qty > 0 && p > 0 ? qty * p * discFactor : 0;
   }
 
   if (field === 'discount') {
-    const qty     = parseFloat(String(rowValues[qtyField] ?? '')) || 0;
-    const price   = parseFloat(String(rowValues.unitPrice ?? '')) || 0;
-    const newDisc = parseFloat(String(value)) || 0;
-    return qty > 0 && price > 0 ? qty * price * (1 - newDisc / 100) : 0;
+    const d = parseFloat(String(value)) || 0;
+    return qty > 0 && price > 0 ? qty * price * (1 - d / 100) : 0;
   }
 
   if (field === 'product') {
-    // Prefer callout's lineNetAmount — it reflects the active price list.
     const calloutNet = parseFloat(String(calloutResult.lineNetAmount ?? calloutResult.lineNetAmt ?? '')) || 0;
     if (calloutNet > 0) return calloutNet;
-    const qty      = parseFloat(String(rowValues[qtyField] ?? '')) || 0;
-    const priceStr = calloutResult.unitPrice != null ? String(calloutResult.unitPrice) : String(rowValues.unitPrice ?? '');
-    const price    = parseFloat(priceStr) || 0;
-    return qty > 0 && price > 0 ? qty * price * discFactor : 0;
+    const priceStr = calloutResult[priceField] != null
+      ? String(calloutResult[priceField])
+      : String(rowValues[priceField] ?? '');
+    const p = parseFloat(priceStr) || 0;
+    const d = parseFloat(String(calloutResult.discount ?? rowValues.discount ?? '')) || 0;
+    return qty > 0 && p > 0 ? qty * p * (1 - d / 100) : 0;
   }
 
   if (field === 'tax') {
-    const qty   = parseFloat(String(rowValues[qtyField] ?? '')) || 0;
-    const price = parseFloat(String(rowValues.unitPrice ?? '')) || 0;
     return qty > 0 && price > 0 ? qty * price * discFactor : 0;
   }
 
@@ -148,7 +153,9 @@ export function deriveLineNet(field, value, calloutResult, rowValues, qtyField) 
  * Mutates calloutResult in place, adding grossAmount and the window-specific
  * gross field (lineGrossAmount for orders, grossAmount for invoices).
  *
- * No-op when the callout already returned a non-zero grossAmount.
+ * For client-side computed fields (qty, priceField, discount), the gross is
+ * always recomputed locally — callout values are overridden.
+ * For product changes, the callout's grossAmount is trusted if non-zero.
  *
  * @param {string}        field
  * @param {string|number} value
@@ -156,12 +163,22 @@ export function deriveLineNet(field, value, calloutResult, rowValues, qtyField) 
  * @param {object}        rowValues
  * @param {Record<string,number>} taxRateCache
  * @param {Array}         siblings
- * @param {{ qtyField: string, grossField: string }} config
+ * @param {{ qtyField: string, grossField: string, priceField: string }} config
  */
 export function computeLineGrossAmount(field, value, calloutResult, rowValues, taxRateCache, siblings, config) {
-  if (calloutResult.grossAmount != null && Number(calloutResult.grossAmount) !== 0) return;
+  const lineNet = deriveLineNet(field, value, calloutResult, rowValues, config.qtyField, config.priceField);
 
-  const lineNet = deriveLineNet(field, value, calloutResult, rowValues, config.qtyField);
+  // Keep lineNetAmount in sync for fields the UI computes client-side.
+  const clientSideFields = [config.qtyField, config.priceField, 'discount'];
+  if (clientSideFields.includes(field) && lineNet > 0) {
+    if (calloutResult.lineNetAmount == null || Number(calloutResult.lineNetAmount) === 0) {
+      calloutResult.lineNetAmount = parseFloat(lineNet.toFixed(2));
+    }
+  }
+
+  // For product changes, trust the callout if it already computed the gross amount.
+  if (field === 'product' && calloutResult.grossAmount != null && Number(calloutResult.grossAmount) !== 0) return;
+
   if (lineNet <= 0) return;
 
   const taxId  = calloutResult.tax ?? rowValues.tax;
@@ -170,11 +187,28 @@ export function computeLineGrossAmount(field, value, calloutResult, rowValues, t
 
   calloutResult.grossAmount = parseFloat((lineNet * factor).toFixed(2));
 
-  // SL_Order_Amt misinterprets the stored lineGrossAmount as a unit price for
-  // qty/price/discount/tax changes, so we always override for those fields.
-  const forceOverride = [config.qtyField, 'unitPrice', 'discount', 'tax'].includes(field);
+  // Always override for client-side fields and tax changes to correct any stale callout value.
+  const forceOverride = [...clientSideFields, 'tax'].includes(field);
   if (forceOverride || calloutResult[config.grossField] == null || Number(calloutResult[config.grossField]) === 0) {
     calloutResult[config.grossField] = calloutResult.grossAmount;
+  }
+}
+
+/**
+ * Prepares a line record for POST/PATCH by deriving unitPrice from listPrice and discount.
+ * unitPrice (PriceActual) = listPrice × (1 − discount/100).
+ * For invoice config (priceField = 'unitPrice'), this is a no-op.
+ * Mutates lineData in place.
+ *
+ * @param {object} lineData   Mutable line record about to be sent
+ * @param {{ priceField: string }} config
+ */
+export function computeUnitPriceForPost(lineData, config) {
+  if (config.priceField === 'unitPrice') return;
+  const listPrice = parseFloat(String(lineData[config.priceField] ?? '')) || 0;
+  const discount  = parseFloat(String(lineData.discount           ?? '')) || 0;
+  if (listPrice > 0) {
+    lineData.unitPrice = parseFloat((listPrice * (1 - discount / 100)).toFixed(6));
   }
 }
 
@@ -186,7 +220,7 @@ export function computeLineGrossAmount(field, value, calloutResult, rowValues, t
  *
  * @param {React.MutableRefObject<Record<string,number>>} taxRateCacheRef
  * @param {Array}  children   Saved child lines (hook.children)
- * @param {{ qtyField: string, grossField: string }} [config]  Defaults to ORDER_LINE_CONFIG
+ * @param {{ qtyField: string, grossField: string, priceField: string }} [config]  Defaults to ORDER_LINE_CONFIG
  */
 export function useLineGrossAmount(taxRateCacheRef, children, config = ORDER_LINE_CONFIG) {
   const boundResolveTaxFactor = useCallback(
@@ -197,8 +231,8 @@ export function useLineGrossAmount(taxRateCacheRef, children, config = ORDER_LIN
 
   const boundDeriveLineNet = useCallback(
     (field, value, calloutResult, rowValues) =>
-      deriveLineNet(field, value, calloutResult, rowValues, config.qtyField),
-    [config.qtyField],
+      deriveLineNet(field, value, calloutResult, rowValues, config.qtyField, config.priceField),
+    [config.qtyField, config.priceField],
   );
 
   const boundComputeLineGrossAmount = useCallback(
@@ -207,9 +241,15 @@ export function useLineGrossAmount(taxRateCacheRef, children, config = ORDER_LIN
     [taxRateCacheRef, children, config],
   );
 
+  const boundPrepareLineForPost = useCallback(
+    (lineData) => computeUnitPriceForPost(lineData, config),
+    [config],
+  );
+
   return {
     computeLineGrossAmount: boundComputeLineGrossAmount,
     resolveTaxFactor:       boundResolveTaxFactor,
     deriveLineNet:          boundDeriveLineNet,
+    prepareLineForPost:     boundPrepareLineForPost,
   };
 }

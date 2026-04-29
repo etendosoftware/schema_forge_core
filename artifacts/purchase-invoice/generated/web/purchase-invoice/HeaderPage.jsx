@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import { toast } from 'sonner';
+import { INVOICE_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import HeaderTable from './HeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
@@ -59,11 +60,11 @@ const draftMode = {
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
   entry: [
-    { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["listPrice","unitPrice","tax","uOM","grossUnitPrice"] },
     { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity', defaultValue: 1 },
-    { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
+    { key: 'listPrice', column: 'PriceList', type: 'number', required: true, label: 'List Price' },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineNetAmount"] },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineGrossAmount","grossAmount","lineNetAmount"] },
   ],
   derived: [
 
@@ -128,17 +129,6 @@ export const api = {
       "detailUrl": "/sws/neo/purchase-invoice/tax/{id}",
       "supportedFilters": []
     },
-    "basicDiscounts": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/basicDiscounts",
-      "detailUrl": "/sws/neo/purchase-invoice/basicDiscounts/{id}",
-      "supportedFilters": []
-    },
     "cashVat": {
       "get": true,
       "getById": true,
@@ -148,6 +138,17 @@ export const api = {
       "delete": true,
       "listUrl": "/sws/neo/purchase-invoice/cashVat",
       "detailUrl": "/sws/neo/purchase-invoice/cashVat/{id}",
+      "supportedFilters": []
+    },
+    "basicDiscounts": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/basicDiscounts",
+      "detailUrl": "/sws/neo/purchase-invoice/basicDiscounts/{id}",
       "supportedFilters": []
     },
     "paymentPlan": {
@@ -324,19 +325,19 @@ export const api = {
     },
     {
       "entity": "lines",
-      "field": "account",
-      "column": "Account_ID",
-      "reference": "GLAccount",
-      "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/lines/selectors/account"
-    },
-    {
-      "entity": "lines",
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
       "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/lines/selectors/tax"
+    },
+    {
+      "entity": "lines",
+      "field": "account",
+      "column": "Account_ID",
+      "reference": "GLAccount",
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/lines/selectors/account"
     },
     {
       "entity": "lines",
@@ -443,20 +444,20 @@ export const api = {
       "url": "/sws/neo/purchase-invoice/tax/selectors/tax"
     },
     {
-      "entity": "basicDiscounts",
-      "field": "discount",
-      "column": "C_Discount_ID",
-      "reference": "Discount",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/basicDiscounts/selectors/discount"
-    },
-    {
       "entity": "cashVat",
       "field": "payment",
       "column": "FIN_Payment_ID",
       "reference": "Payment",
       "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/cashVat/selectors/payment"
+    },
+    {
+      "entity": "basicDiscounts",
+      "field": "discount",
+      "column": "C_Discount_ID",
+      "reference": "Discount",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/basicDiscounts/selectors/discount"
     },
     {
       "entity": "paymentPlan",
@@ -845,6 +846,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         ]}
         draftMode={draftMode}
         labelOverrides={labelOverrides}
+        lineConfig={INVOICE_LINE_CONFIG}
         {...props}
       />
     );
