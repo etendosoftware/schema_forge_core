@@ -1,10 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { collectSourceFiles, isJavaScriptModule, parseModuleSource, readJson, repoRelative, walkAst } from './shared.js';
+import { collectSourceFiles, collectTargetSourceFiles, isJavaScriptModule, parseModuleSource, readJson, repoRelative, walkAst } from './shared.js';
 
 const IGNORED_VISIBILITIES = new Set(['discarded', 'system']);
 const SCANNED_ATTRIBUTES = new Set(['title', 'placeholder', 'aria-label']);
 const TRANSLATOR_HOOKS = new Set(['useUI', 'useLabel', 'useMenuLabel']);
+const SCANNED_LITERAL_PROPERTIES = new Set(['label', 'title', 'description', 'placeholder', 'switchPrompt', 'switchAction', 'error']);
 
 function collectAllowlist(source) {
   const match = source.match(/i18n-allowlist:\s*(\[[^\]]*\])/);
@@ -42,13 +43,19 @@ function collectTranslatorAliases(ast) {
 }
 
 function collectCustomFiles(rootDir, windowDir, windowName) {
+  if (windowName.startsWith('app-shell:')) {
+    return collectTargetSourceFiles(rootDir, windowName);
+  }
+
   const appShellCustomDir = join(rootDir, 'tools', 'app-shell', 'src', 'windows', 'custom');
+  const appShellPagesDir = join(rootDir, 'tools', 'app-shell', 'src', 'pages');
   const aliases = windowName === 'contacts' ? ['businessPartner'] : [];
   return [
     ...collectSourceFiles(join(windowDir, 'custom'), isJavaScriptModule),
     ...collectSourceFiles(join(appShellCustomDir, windowName), isJavaScriptModule),
     ...aliases.flatMap((alias) => collectSourceFiles(join(appShellCustomDir, alias), isJavaScriptModule)),
     ...collectSourceFiles(join(appShellCustomDir, 'shared'), isJavaScriptModule),
+    ...collectSourceFiles(appShellPagesDir, isJavaScriptModule),
   ].sort((left, right) => left.localeCompare(right));
 }
 
@@ -80,6 +87,21 @@ function collectStringViolations(ast, source, rootDir, filePath) {
     }
 
     if (
+      node.type === 'ObjectProperty'
+      && !node.computed
+      && ((node.key?.type === 'Identifier' && SCANNED_LITERAL_PROPERTIES.has(node.key.name))
+        || (node.key?.type === 'StringLiteral' && SCANNED_LITERAL_PROPERTIES.has(node.key.value)))
+      && node.value?.type === 'StringLiteral'
+    ) {
+      const text = significantText(node.value.value || '');
+      if (text && !allowlist.has(text)) {
+        const propertyName = node.key.type === 'Identifier' ? node.key.name : node.key.value;
+        violations.push(`${repoRelative(rootDir, filePath)}:${node.loc?.start?.line ?? 1} — hardcoded ${propertyName} '${text}'.`);
+      }
+      return;
+    }
+
+    if (
       node.type === 'CallExpression'
       && node.callee?.type === 'Identifier'
       && translatorAliases.has(node.callee.name)
@@ -93,21 +115,23 @@ function collectStringViolations(ast, source, rootDir, filePath) {
 }
 
 export async function runI18nCheck(windowName, { rootDir, windowDir }) {
-  const contractPath = join(windowDir, 'contract.json');
-  if (!existsSync(contractPath)) {
-    return { status: 'skip', detail: 'contract.json is missing.' };
-  }
-
-  const contract = readJson(contractPath);
   const violations = [];
 
-  for (const [entityName, entity] of Object.entries(contract.frontendContract?.entities ?? {})) {
-    for (const field of entity.fields ?? []) {
-      if (!field.form || IGNORED_VISIBILITIES.has(field.visibility)) {
-        continue;
-      }
-      if (typeof field.column !== 'string' || field.column.trim().length === 0) {
-        violations.push(`${entityName}.${field.name} is missing a non-empty column key for i18n lookup.`);
+  if (!windowName.startsWith('app-shell:')) {
+    const contractPath = join(windowDir, 'contract.json');
+    if (!existsSync(contractPath)) {
+      return { status: 'skip', detail: 'contract.json is missing.' };
+    }
+
+    const contract = readJson(contractPath);
+    for (const [entityName, entity] of Object.entries(contract.frontendContract?.entities ?? {})) {
+      for (const field of entity.fields ?? []) {
+        if (!field.form || IGNORED_VISIBILITIES.has(field.visibility)) {
+          continue;
+        }
+        if (typeof field.column !== 'string' || field.column.trim().length === 0) {
+          violations.push(`${entityName}.${field.name} is missing a non-empty column key for i18n lookup.`);
+        }
       }
     }
   }

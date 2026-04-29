@@ -23,7 +23,7 @@ describe('runParseCheck', () => {
       );
 
       const result = await runParseCheck('sales-order', { rootDir, windowDir });
-      assert.deepEqual(result, { status: 'pass', detail: 'Parsed 1 generated source file(s).' });
+      assert.deepEqual(result, { status: 'pass', detail: 'Parsed 1 source file(s).' });
     } finally {
       rmSync(rootDir, { recursive: true, force: true });
     }
@@ -51,7 +51,23 @@ describe('runParseCheck', () => {
 
     try {
       const result = await runParseCheck('sales-order', { rootDir, windowDir });
-      assert.deepEqual(result, { status: 'skip', detail: 'No generated .js or .jsx files found.' });
+      assert.deepEqual(result, { status: 'skip', detail: 'No generated or targeted .js/.jsx files found.' });
+    } finally {
+      rmSync(rootDir, { recursive: true, force: true });
+    }
+  });
+
+  it('parses onboarding target source files outside generated artifacts', async () => {
+    const { rootDir, windowDir } = makeWindowDir();
+    const pagesDir = join(rootDir, 'tools', 'app-shell', 'src', 'pages');
+
+    try {
+      mkdirSync(join(pagesDir, 'onboarding'), { recursive: true });
+      writeFileSync(join(pagesDir, 'OnboardingPage.jsx'), 'export default function OnboardingPage() { return <section>Ready</section>; }');
+      writeFileSync(join(pagesDir, 'onboarding', 'onboardingState.js'), 'export const STEP = "ok";');
+
+      const result = await runParseCheck('app-shell:onboarding', { rootDir, windowDir });
+      assert.deepEqual(result, { status: 'pass', detail: 'Parsed 2 source file(s).' });
     } finally {
       rmSync(rootDir, { recursive: true, force: true });
     }

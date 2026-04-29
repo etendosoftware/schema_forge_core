@@ -89,6 +89,7 @@ export function parseQualityGateArgs(argv) {
     mode: 'pr-affected',
     windowName: null,
     baselineRef: null,
+    headRef: 'HEAD',
     format: 'md',
     outputPath: null,
     jsonPath: null,
@@ -108,6 +109,9 @@ export function parseQualityGateArgs(argv) {
     } else if (arg === '--baseline-ref' && argv[index + 1]) {
       options.baselineRef = argv[index + 1];
       index += 1;
+    } else if (arg === '--head-ref' && argv[index + 1]) {
+      options.headRef = argv[index + 1];
+      index += 1;
     } else if (arg === '--format' && argv[index + 1]) {
       options.format = argv[index + 1];
       index += 1;
@@ -124,7 +128,7 @@ export function parseQualityGateArgs(argv) {
   }
 
   if (options.mode === 'window' && !options.windowName) {
-    throw new Error('Usage: quality-gate.js --window <name> | --all | --pr-affected [--baseline-ref <ref>] [--format md|json] [--output <path>] [--json <path>] [--analysis-dir <dir>]');
+    throw new Error('Usage: quality-gate.js --window <name> | --all | --pr-affected [--baseline-ref <ref>] [--head-ref <ref>] [--format md|json] [--output <path>] [--json <path>] [--analysis-dir <dir>]');
   }
 
   return options;
@@ -146,7 +150,7 @@ export async function runQualityGateCli({ args = process.argv.slice(2), rootDir 
     : collectWindows(rootDir);
 
   const changedFiles = options.mode === 'pr-affected'
-    ? await changedFilesForPr({ rootDir, baselineRef, headRef: 'HEAD' })
+    ? await changedFilesForPr({ rootDir, baselineRef, headRef: options.headRef })
     : [];
 
   const affectedWindowMetadata = options.mode === 'window'
@@ -170,7 +174,7 @@ export async function runQualityGateCli({ args = process.argv.slice(2), rootDir 
         });
 
   if (windowNames.length === 0) {
-    const stdout = 'No windows affected; gate skipped\n';
+    const stdout = '<!-- sfqg-report -->\nNo windows affected; gate skipped\n';
     if (options.outputPath) {
       writeTextFile(options.outputPath, stdout);
     }
@@ -209,6 +213,7 @@ export async function runQualityGateCli({ args = process.argv.slice(2), rootDir 
 
   const report = buildQualityGateReport({
     baselineRef,
+    headRef: options.headRef,
     baselineSha: baselineResult?.baselineSha ?? null,
     headResult,
     baselineResult: baselineResult?.data ?? null,

@@ -74,7 +74,6 @@ export function detectAffectedWindowsDetailed({ changedFiles, blastRadius, avail
         }
         continue;
       }
-
       if (rule.scope === 'touched-window') {
         for (const entry of resolveTouchedWindows(changedFile, allWindows)) {
           const current = affected.get(entry.window);
@@ -82,6 +81,11 @@ export function detectAffectedWindowsDetailed({ changedFiles, blastRadius, avail
             affected.set(entry.window, entry.source);
           }
         }
+        continue;
+      }
+
+      if (rule.scope === 'named-target' && rule.target) {
+        affected.set(rule.target, 'direct');
       }
     }
   }

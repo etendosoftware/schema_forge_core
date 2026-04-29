@@ -25,6 +25,8 @@
     { "pattern": "tools/app-shell/src/i18n/*.jsx", "scope": "all-windows" },
     { "pattern": "tools/app-shell/src/i18n/locales/*.json", "scope": "all-windows" },
     { "pattern": "tools/app-shell/src/windows/registry.js", "scope": "all-windows" },
+    { "pattern": "tools/app-shell/src/pages/OnboardingPage.jsx", "scope": "named-target", "target": "app-shell:onboarding" },
+    { "pattern": "tools/app-shell/src/pages/onboarding/**", "scope": "named-target", "target": "app-shell:onboarding" },
     { "pattern": "schemas/contract.schema.json", "scope": "all-windows" }
   ],
   "invariants": {
