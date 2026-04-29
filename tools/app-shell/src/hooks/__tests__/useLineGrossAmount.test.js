@@ -435,11 +435,16 @@ describe('computeUnitPriceForPost', () => {
     assert.equal(lineData.unitPrice, undefined);
   });
 
-  it('invoice config: derives unitPrice = listPrice (no discount field)', () => {
+  it('invoice config: derives unitPrice = listPrice when etgoDiscount absent', () => {
     const lineData = { listPrice: 50 };
     computeUnitPriceForPost(lineData, INVOICE_LINE_CONFIG);
-    // No discountField → discount=0 → unitPrice = listPrice × 1
     assert.equal(lineData.unitPrice, 50);
+  });
+
+  it('invoice config: applies etgoDiscount to unitPrice', () => {
+    const lineData = { listPrice: 100, etgoDiscount: 10 };
+    computeUnitPriceForPost(lineData, INVOICE_LINE_CONFIG);
+    assert.equal(lineData.unitPrice, 90);
   });
 
   it('invoice config: missing listPrice → does not write unitPrice', () => {
@@ -458,8 +463,8 @@ describe('LINE_CONFIGS contract', () => {
     assert.equal(LINE_CONFIGS.order.discountField, 'discount');
   });
 
-  it('invoice config has discountField null (no discount at line level)', () => {
-    assert.equal(LINE_CONFIGS.invoice.discountField, null);
+  it('invoice config has discountField etgoDiscount', () => {
+    assert.equal(LINE_CONFIGS.invoice.discountField, 'etgoDiscount');
   });
 
   it('invoice config uses listPrice as priceField (same as order)', () => {
