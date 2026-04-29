@@ -35,9 +35,24 @@ const draftModeWithModal = {
   // by reaching one of the terminal statuses below — UE is intermediate and must
   // still expose the Confirmar button (which dispatches the convert-to-order/invoice
   // modal via onConfirm).
-  completedStatuses: ['CA', 'ETGO_CI', 'CL', 'VO'],
+  completedStatuses: ['CA', 'ETGO_CI', 'CL', 'VO', 'CJ'],
   onConfirm: () => window.dispatchEvent(new CustomEvent('sales-quotation:open-confirm-modal')),
 };
+
+// Override the generated menuActions so the kebab's "Reject" item dispatches
+// a DOM event that QuotationTopbarActions listens for. We can't pass functions
+// through decisions.json (JSON only), and DetailView accepts menuActions as a
+// function — see tools/app-shell/src/components/contract-ui/DetailView.jsx
+// (resolvedActions = typeof menuActions === 'function' ? menuActions(...) : ...).
+const customMenuActions = ({ status }) => [
+  {
+    key: 'reject',
+    labelKey: 'rejectQuotation',
+    destructive: true,
+    visible: status === 'UE',
+    onClick: () => window.dispatchEvent(new CustomEvent('sales-quotation:open-reject-modal')),
+  },
+];
 
 export default function SalesQuotationWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
   const [cloneTargets, setCloneTargets] = useState(null);
@@ -55,6 +70,7 @@ export default function SalesQuotationWindow({ windowName, recordId, token, apiB
           token={token}
           apiBaseUrl={apiBaseUrl}
           draftMode={draftModeWithModal}
+          menuActions={customMenuActions}
           linesEmptyState={LinesEmptyState}
           addLineGuard={(d) => !!d?.businessPartner}
           {...rest}

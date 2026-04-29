@@ -5,6 +5,7 @@ import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import QuotationConfirmModal from './QuotationConfirmModal';
 import SendToEvaluationModal from './SendToEvaluationModal';
+import RejectQuotationModal from './RejectQuotationModal';
 import { useUI } from '@/i18n';
 
 function CopyIcon() {
@@ -37,6 +38,7 @@ export default function QuotationTopbarActions({ data, recordId, token, apiBaseU
   const [showConfirm, setShowConfirm] = useState(false);
   const [showSendToEval, setShowSendToEval] = useState(false);
   const [showClone, setShowClone] = useState(false);
+  const [showReject, setShowReject] = useState(false);
 
   const headers = useMemo(() => ({
     Authorization: `Bearer ${token}`,
@@ -57,6 +59,14 @@ export default function QuotationTopbarActions({ data, recordId, token, apiBaseU
     window.addEventListener('sales-quotation:open-confirm-modal', handler);
     return () => window.removeEventListener('sales-quotation:open-confirm-modal', handler);
   }, [status]);
+
+  // The wrapper's customMenuActions dispatches this event when the user clicks
+  // the kebab "Reject" item (only visible while status === 'UE').
+  useEffect(() => {
+    function handler() { setShowReject(true); }
+    window.addEventListener('sales-quotation:open-reject-modal', handler);
+    return () => window.removeEventListener('sales-quotation:open-reject-modal', handler);
+  }, []);
 
   if (!status) return null;
 
@@ -117,6 +127,17 @@ export default function QuotationTopbarActions({ data, recordId, token, apiBaseU
           windowName="sales-quotation"
           token={token}
           onClose={() => setShowSend(false)}
+        />,
+        document.body,
+      )}
+
+      {showReject && createPortal(
+        <RejectQuotationModal
+          quotationId={recordId}
+          data={data}
+          token={token}
+          apiBaseUrl={apiBaseUrl}
+          onClose={() => setShowReject(false)}
         />,
         document.body,
       )}

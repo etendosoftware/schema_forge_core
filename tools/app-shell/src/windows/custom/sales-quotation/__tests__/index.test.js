@@ -75,8 +75,39 @@ describe('SalesQuotationWindow custom wrapper', () => {
       assert.match(src, /completedStatuses:\s*\[[^\]]*['"]ETGO_CI['"]/);
       assert.match(src, /completedStatuses:\s*\[[^\]]*['"]CL['"]/);
       assert.match(src, /completedStatuses:\s*\[[^\]]*['"]VO['"]/);
+      assert.match(src, /completedStatuses:\s*\[[^\]]*['"]CJ['"]/);
       assert.doesNotMatch(src, /completedStatuses:\s*\[[^\]]*['"]UE['"]/);
       assert.doesNotMatch(src, /completedStatuses:\s*\[[^\]]*['"]DR['"]/);
+    });
+  });
+
+  describe('customMenuActions override (kebab reject)', () => {
+    it('exports a customMenuActions function', () => {
+      assert.match(src, /customMenuActions\s*=\s*\(\{\s*status\s*\}\)\s*=>/);
+    });
+
+    it('declares a reject entry visible only in UE', () => {
+      assert.match(src, /key:\s*['"]reject['"]/);
+      assert.match(src, /visible:\s*status\s*===\s*['"]UE['"]/);
+    });
+
+    it('marks the reject entry as destructive', () => {
+      assert.match(src, /key:\s*['"]reject['"][\s\S]{0,160}destructive:\s*true/);
+    });
+
+    it('routes onClick through the open-reject-modal custom event', () => {
+      assert.match(
+        src,
+        /onClick:\s*\(\)\s*=>\s*window\.dispatchEvent\(\s*new\s+CustomEvent\(\s*['"]sales-quotation:open-reject-modal['"]/,
+      );
+    });
+
+    it('passes customMenuActions to GeneratedApp on the record view', () => {
+      assert.match(src, /menuActions=\{customMenuActions\}/);
+    });
+
+    it('does not expose a cancel entry in the kebab anymore', () => {
+      assert.doesNotMatch(src, /key:\s*['"]cancel['"]/);
     });
   });
 });

@@ -21,10 +21,11 @@
     },
     "menuActions": [
       {
-        "key": "cancel",
-        "label": "Cancel",
+        "key": "reject",
+        "label": "Reject",
+        "labelKey": "rejectQuotation",
         "destructive": true,
-        "visibleWhenStatus": ["CO", "UE"]
+        "visibleWhenStatus": ["UE"]
       }
     ],
     "processOverrides": {
@@ -46,7 +47,7 @@
     },
     "noHeaderBorder": true,
     "dateFilterKey": "orderDate",
-    "hideSaveStatuses": ["CA", "ETGO_CI", "CL", "VO"]
+    "hideSaveStatuses": ["CA", "ETGO_CI", "CL", "VO", "CJ"]
   },
   "entities": {
     "header": {
@@ -56,7 +57,7 @@
         "processField": "documentAction",
         "processValue": "CO",
         "label": "soConfirmBtn",
-        "completedStatuses": ["CA", "ETGO_CI", "CL", "VO"]
+        "completedStatuses": ["CA", "ETGO_CI", "CL", "VO", "CJ"]
       },
       "fields": {
         "documentNo": {
@@ -127,6 +128,12 @@
         },
         "orderReference": {
           "visibility": "discarded"
+        },
+        "rejectReason": {
+          "visibility": "editable",
+          "form": false,
+          "grid": false,
+          "readOnlyLogic": "@DocStatus@='CJ'|@DocStatus@='CA'"
         },
         "summedLineAmount": {
           "visibility": "readOnly",
@@ -234,9 +241,6 @@
           "visibility": "discarded"
         },
         "isSotrx": {
-          "visibility": "discarded"
-        },
-        "rejectReason": {
           "visibility": "discarded"
         },
         "documentAction": {

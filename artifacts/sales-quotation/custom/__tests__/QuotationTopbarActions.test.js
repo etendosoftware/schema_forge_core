@@ -76,4 +76,24 @@ describe('QuotationTopbarActions', () => {
       assert.match(src, /status\s*===\s*'UE'.*setShowConfirm\(true\)/s);
     });
   });
+
+  describe('reject flow via kebab event', () => {
+    it('imports RejectQuotationModal', () => {
+      assert.match(src, /import\s+RejectQuotationModal\s+from\s+['"]\.\/RejectQuotationModal['"]/);
+    });
+
+    it('listens for the sales-quotation:open-reject-modal custom event', () => {
+      assert.match(src, /addEventListener\(\s*['"]sales-quotation:open-reject-modal['"]/);
+      assert.match(src, /removeEventListener\(\s*['"]sales-quotation:open-reject-modal['"]/);
+    });
+
+    it('renders RejectQuotationModal via createPortal when triggered', () => {
+      assert.match(src, /showReject\s*&&\s*createPortal\(\s*<RejectQuotationModal/);
+    });
+
+    it('has a setShowReject state setter wired to onClose', () => {
+      assert.match(src, /setShowReject\(true\)/);
+      assert.match(src, /onClose=\{\(\)\s*=>\s*setShowReject\(false\)\}/);
+    });
+  });
 });

@@ -16792,6 +16792,7 @@
     "statusClosed": "Closed",
     "statusOrderCreated": "Closed - Order Created",
     "statusInvoiceCreated": "Closed - Invoice Created",
+    "statusRejected": "Closed - Rejected",
     "statusPaid": "Paid",
     "statusPending": "Pending",
     "statusPartiallyExecuted": "Partially executed",
@@ -17508,6 +17509,21 @@
     "sqSendToEvalDesc": "The quotation will be ready to create an order or invoice.",
     "sqSendToEvalConfirm": "Send to evaluation",
     "sqOrderConfirmedInvoiceError": "Quotation confirmed, but invoice could not be created. ",
+    "rejectQuotation": "Reject",
+    "rejectQuotationTitle": "Reject quotation",
+    "rejectQuotationDesc": "Select a rejection reason. Once confirmed, the quotation will be closed as rejected and can no longer be edited.",
+    "rejectReasonLabel": "Rejection reason",
+    "rejectReasonPlaceholder": "Choose a reason…",
+    "rejectQuotationConfirm": "Reject quotation",
+    "rejectQuotationError": "Could not reject the quotation. ",
+    "rejectReasonSearchPlaceholder": "Search reasons…",
+    "rejectReasonNoResults": "No reasons match",
+    "createRejectReason": "Create reason",
+    "createRejectReasonTitle": "Create rejection reason",
+    "rejectReasonNameLabel": "Name",
+    "rejectReasonNamePlaceholder": "e.g. Price too high",
+    "rejectReasonCreateConfirm": "Create reason",
+    "rejectReasonCreateError": "Could not create the rejection reason. ",
     "productPctFree": "{pct}% free",
     "productTotalOnHand": "Total on hand",
     "productInWarehouse": "In {name}",
@@ -19009,6 +19025,9 @@
   "statuses": {
     "CA": {
       "label": "Closed - Order Created"
+    },
+    "CJ": {
+      "label": "Closed - Rejected"
     },
     "CL": {
       "label": "Closed"

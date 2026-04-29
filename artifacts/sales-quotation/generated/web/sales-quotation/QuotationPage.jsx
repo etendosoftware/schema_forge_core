@@ -52,7 +52,8 @@ const draftMode = {
     "CA",
     "ETGO_CI",
     "CL",
-    "VO"
+    "VO",
+    "CJ"
   ]
 };
 // @sf-generated-end draftMode:quotation
@@ -151,6 +152,14 @@ export const api = {
       "reference": "PaymentTerm",
       "inputMode": "selector",
       "url": "/sws/neo/sales-quotation/quotation/selectors/paymentTerms"
+    },
+    {
+      "entity": "quotation",
+      "field": "rejectReason",
+      "column": "C_Reject_Reason_ID",
+      "reference": "Reject_Reason",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/rejectReason"
     },
     {
       "entity": "quotation",
@@ -395,13 +404,13 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
       api={api}
         hideDeleteWhenComplete
         hidePrint
-        hideSaveStatuses={["CA","ETGO_CI","CL","VO"]}
+        hideSaveStatuses={["CA","ETGO_CI","CL","VO","CJ"]}
         noHeaderBorder
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         topbarRight={QuotationTopbarActions}
         menuActions={({ status }) => [
-          { key: 'cancel', label: 'Cancel', destructive: true, visible: ["CO","UE"].includes(status), onClick: () => {}, }
+          { key: 'reject', label: 'Reject', destructive: true, visible: ["UE"].includes(status), labelKey: 'rejectQuotation', onClick: () => {}, }
         ]}
         draftMode={draftMode}
         salesTheme
