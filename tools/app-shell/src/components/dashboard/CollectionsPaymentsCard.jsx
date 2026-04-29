@@ -10,6 +10,7 @@ export function CollectionsPaymentsCard({ pendingAmounts = {}, currencyLabel = '
   const numberLocale = localeFromUi(locale);
 
   const { toCollect = { count: 0, amount: 0 }, toPay = { count: 0, amount: 0 } } = pendingAmounts;
+  const hasNoData = toCollect.count === 0 && toPay.count === 0;
 
   const toCollectTarget = resolveDashboardNavigation(
     toCollect.navigation ?? createDashboardNavigation({ type: 'list', window: 'sales-invoice', filter: 'overdue' })
@@ -76,6 +77,20 @@ export function CollectionsPaymentsCard({ pendingAmounts = {}, currencyLabel = '
         </div>
       </div>
       
+      {hasNoData ? (
+        <div className="flex-1 flex items-center justify-center w-full">
+          <div className="flex flex-col items-center" style={{ gap: '12px' }}>
+            <div className="flex flex-col items-center" style={{ padding: '0px 20px', gap: '4px' }}>
+              <p style={{ fontSize: '20px', fontWeight: 600, lineHeight: '28px', textAlign: 'center', color: '#121217' }}>
+                {ui('collectionsPaymentsEmptyTitle')}
+              </p>
+              <p style={{ fontSize: '12px', fontWeight: 400, lineHeight: '16px', textAlign: 'center', color: '#282833' }}>
+                {ui('collectionsPaymentsEmptySubtitle')}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : (
       <div
         style={{
           display: 'flex',
@@ -374,6 +389,7 @@ export function CollectionsPaymentsCard({ pendingAmounts = {}, currencyLabel = '
           </div>
         </Link>
       </div>
+      )}
     </div>
   );
 }
