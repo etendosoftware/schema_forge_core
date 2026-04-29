@@ -101,3 +101,4 @@ The current evidence shows a purchase-order-specific experience rather than a ge
   - `artifacts/purchase-order/custom/PurchaseOrderActions.jsx` — the order confirmation modal displays the grand total and subtotal using the org's configured currency via `useCurrency()` and `formatCurrency()`.
   - `artifacts/purchase-order/custom/PurchaseOrderDraftChips.jsx`
   - `artifacts/purchase-order/custom/RelatedDocuments.jsx`
+- `artifacts/purchase-order/generated/web/purchase-order/LinesTable.jsx` — the `unitPrice` column (`PriceActual`) uses `type: 'amount'` so the net unit price renders as a formatted currency value rather than a raw number.

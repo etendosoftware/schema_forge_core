@@ -94,3 +94,4 @@ This window should let a user create, review, confirm, and manage sales orders f
 - `artifacts/sales-order/custom/__tests__/OrderCreateInvoice.test.js` proves source-level coverage for draft confirm actions, shipment creation, draft invoice creation, and invoice lookup action wiring.
 - `e2e/tests/flows/sales-order-crud.spec.js` provides browser-level checks for the new-order `Save` / `Save draft` / `Cancel` controls, order-line-tab visibility before first save, cancel-to-list navigation, and the partner-address dependency.
 - `tests/test-sales-order-endpoints.sh` provides backend-level evidence for list/detail payloads, required order fields in API responses, and creation of a new sales-order header through the NEO endpoints.
+- `artifacts/sales-order/generated/web/sales-order/LinesTable.jsx` — the `unitPrice` column (`PriceActual`) uses `type: 'amount'` so the net unit price renders as a formatted currency value rather than a raw number.
