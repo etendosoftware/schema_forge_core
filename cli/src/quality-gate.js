@@ -56,7 +56,7 @@ function writeTextFile(path, content) {
   writeFileSync(path, content);
 }
 
-function computeBaselineWithWorktree({ rootDir, baselineSha, windowNames, config, runner }) {
+async function computeBaselineWithWorktree({ rootDir, baselineSha, windowNames, config, runner }) {
   const worktreePath = join(rootDir, '.quality-gate-cache', 'worktree', baselineSha.slice(0, 12));
   mkdirSync(dirname(worktreePath), { recursive: true });
 
@@ -66,7 +66,7 @@ function computeBaselineWithWorktree({ rootDir, baselineSha, windowNames, config
       encoding: 'utf8',
     });
 
-    return runner({
+    return await runner({
       windowNames,
       rootDir: worktreePath,
       config,
