@@ -8,6 +8,7 @@ Let a sales user prepare a customer quotation, review commercial terms before co
 
 - Create and review quotation headers with customer, quotation date, validity date, address, price list, payment method, payment terms, notes, and read-only commercial totals.
 - Add, edit, and remove quotation lines with product, description, quantity, Net List Price, discount, tax, and line gross amount.
+- Render Net List Price in the quotation grid as a currency-formatted `amount` column backed by `PriceList`, instead of exposing the derived `unitPrice` (`PriceActual`) as the visible price column.
 - Keep the quotation in draft while the commercial proposal is being prepared, then explicitly send that draft into an `Under Evaluation` state before final conversion.
 - From `Under Evaluation`, create a downstream sales order and, in the current custom overlay, optionally create a draft sales invoice.
 - Send the quotation document from the record view.

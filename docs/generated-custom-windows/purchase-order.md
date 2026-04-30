@@ -10,7 +10,7 @@ The current evidence shows a purchase-order-specific experience rather than a ge
 
 - Create a purchase order for a selected vendor with the key commercial header data: vendor, vendor address, order date, scheduled delivery date, payment method, payment terms, and price list.
 - Start a new unsaved order with visible `Save`, `Save draft`, and `Cancel` controls while the order-line tab is already available before the first save.
-- Add and maintain order lines with at least product, description, ordered quantity, unit price, discount, tax, and the resulting line gross amount.
+- Add and maintain order lines with at least product, description, ordered quantity, net list price, discount, tax, and the resulting line gross amount.
 - Review purchase progress from the order itself through delivery status, invoice status, related receipts, related purchase invoices, and linked payments.
 - Confirm a draft order and, from the confirmation flow or later follow-up actions, create the operational documents that fulfill it.
 - Clone an existing order and send the document from the top bar.
