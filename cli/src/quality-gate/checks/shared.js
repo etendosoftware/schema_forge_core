@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import { parse } from '@babel/parser';
 
 export function collectSourceFiles(dir, predicate = () => true) {
@@ -30,8 +30,9 @@ export function isOnboardingTarget(targetName) {
 }
 
 export function collectTargetSourceFiles(rootDir, targetName) {
+  const pagesDir = join(rootDir, 'tools', 'app-shell', 'src', 'pages');
+
   if (isOnboardingTarget(targetName)) {
-    const pagesDir = join(rootDir, 'tools', 'app-shell', 'src', 'pages');
     const onboardingFiles = collectSourceFiles(
       join(pagesDir, 'onboarding'),
       (filePath) => isJavaScriptModule(filePath) && !filePath.includes('/__tests__/')
@@ -42,6 +43,20 @@ export function collectTargetSourceFiles(rootDir, targetName) {
       ...onboardingFiles,
     ].sort((left, right) => left.localeCompare(right));
   }
+
+  if (targetName === 'app-shell:pages') {
+    const onboardingDir = join(pagesDir, 'onboarding');
+    const onboardingPagePath = join(pagesDir, 'OnboardingPage.jsx');
+    return collectSourceFiles(
+      pagesDir,
+      (filePath) => {
+        const rel = relative(pagesDir, filePath);
+        const isOnboarding = filePath === onboardingPagePath || rel.startsWith('onboarding' + sep);
+        return isJavaScriptModule(filePath) && !filePath.includes('/__tests__/') && !isOnboarding;
+      }
+    );
+  }
+
   return [];
 }
 
