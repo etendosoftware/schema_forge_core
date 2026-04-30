@@ -38,7 +38,7 @@ const SiiSection = forwardRef(function SiiSection({ record, token, apiBaseUrl, o
     if (validationError) { setError(validationError); throw new Error(validationError); }
     const recordId = getFiscalRecordId(record, 'SII');
     if (!recordId) {
-      const idError = 'Missing SII record identifier.';
+      const idError = ui('fiscal.sii.err.noRecordId');
       setError(idError);
       throw new Error(idError);
     }
@@ -153,7 +153,7 @@ const SiiSection = forwardRef(function SiiSection({ record, token, apiBaseUrl, o
             try {
               const base = neoBase(apiBaseUrl);
               const recordId = getFiscalRecordId(record, 'SII');
-              if (!recordId) throw new Error('Missing SII record identifier.');
+              if (!recordId) throw new Error(ui('fiscal.sii.err.noRecordId'));
               const res = await fetch(`${base}/sii-config/${SII_ENTITY}/${recordId}/action/validHash`, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },

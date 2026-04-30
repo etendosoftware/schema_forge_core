@@ -46,6 +46,11 @@ const VerifactuSection = forwardRef(function VerifactuSection({ record, token, a
   }
 
   async function handleSave() {
+    if (!form.tAXType) {
+      const taxError = ui('fiscal.verifactu.err.noTaxType');
+      setError(taxError);
+      throw new Error(taxError);
+    }
     const recordId = getFiscalRecordId(record, 'VERIFACTU');
     if (!recordId) {
       const idError = ui('fiscal.verifactu.err.noRecordId');

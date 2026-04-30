@@ -353,8 +353,8 @@
         },
         {
           "name": "fiscal-config",
-          "label": "Configuración Fiscal",
-          "favname": "Configuración Fiscal"
+          "label": "Fiscal Configuration",
+          "favname": "Fiscal Configuration"
         }
       ]
     },
