@@ -1,8 +1,8 @@
 {
   "version": "0.2.0",
   "generatedAt": "2026-04-30T15:33:38.824Z",
-  "updatedAt": "2026-04-30T17:19:24.688Z",
-  "checksum": "877899863b038f4c",
+  "updatedAt": "2026-04-30T18:38:03.838Z",
+  "checksum": "73fcb640f4c1f6e8",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -1234,20 +1234,20 @@
             "required": false
           },
           {
-            "name": "invoiceStatus",
-            "apiKey": "invoiceStatus",
-            "column": "InvoiceStatus",
-            "type": "integer",
-            "visibility": "readOnly",
-            "required": false
-          },
-          {
             "name": "cashVAT",
             "apiKey": "cashVAT",
             "column": "Iscashvat",
             "type": "boolean",
             "visibility": "discarded",
             "required": true
+          },
+          {
+            "name": "invoiceStatus",
+            "apiKey": "invoiceStatus",
+            "column": "InvoiceStatus",
+            "type": "integer",
+            "visibility": "readOnly",
+            "required": false
           },
           {
             "name": "calculatePromotions",
@@ -1558,14 +1558,6 @@
             "apiKey": "print",
             "column": "IsPrinted",
             "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "accountingDate",
-            "apiKey": "accountingDate",
-            "column": "DateAcct",
-            "type": "date",
             "visibility": "system",
             "required": true
           },
@@ -1970,17 +1962,17 @@
             "required": false
           },
           {
-            "name": "baseGrossUnitPrice",
-            "apiKey": "baseGrossUnitPrice",
-            "column": "grosspricestd",
+            "name": "standardPrice",
+            "apiKey": "standardPrice",
+            "column": "PriceStd",
             "type": "price",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "standardPrice",
-            "apiKey": "standardPrice",
-            "column": "PriceStd",
+            "name": "baseGrossUnitPrice",
+            "apiKey": "baseGrossUnitPrice",
+            "column": "grosspricestd",
             "type": "price",
             "visibility": "system",
             "required": true
@@ -1994,18 +1986,18 @@
             "required": false
           },
           {
-            "name": "quotationLine",
-            "apiKey": "quotationLine",
-            "column": "Quotationline_ID",
-            "type": "foreignKey",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
             "name": "reservationStatus",
             "apiKey": "reservationStatus",
             "column": "SO_Res_Status",
             "type": "enum",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "quotationLine",
+            "apiKey": "quotationLine",
+            "column": "Quotationline_ID",
+            "type": "foreignKey",
             "visibility": "discarded",
             "required": false
           },
@@ -3889,15 +3881,15 @@
         "entity": "header",
         "field": "iNCOTERMSDescription",
         "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for header"
+        "description": "System field 'iNCOTERMSDescription' should exist in backend but not frontend for header"
       },
       {
         "id": "t-156",
         "category": "system-field",
         "entity": "header",
-        "field": "deliveryNotes",
+        "field": "selfService",
         "runner": "node",
-        "description": "System field 'deliveryNotes' should exist in backend but not frontend for header"
+        "description": "System field 'selfService' should exist in backend but not frontend for header"
       },
       {
         "id": "t-157",
@@ -4343,17 +4335,17 @@
         "id": "t-212",
         "category": "system-field",
         "entity": "lines",
-        "field": "baseGrossUnitPrice",
+        "field": "standardPrice",
         "runner": "node",
-        "description": "System field 'baseGrossUnitPrice' should exist in backend but not frontend for lines"
+        "description": "System field 'standardPrice' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-213",
         "category": "system-field",
         "entity": "lines",
-        "field": "standardPrice",
+        "field": "baseGrossUnitPrice",
         "runner": "node",
-        "description": "System field 'standardPrice' should exist in backend but not frontend for lines"
+        "description": "System field 'baseGrossUnitPrice' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-214",
@@ -4367,17 +4359,17 @@
         "id": "t-215",
         "category": "system-field",
         "entity": "lines",
-        "field": "quotationLine",
+        "field": "reservationStatus",
         "runner": "node",
-        "description": "System field 'quotationLine' should exist in backend but not frontend for lines"
+        "description": "System field 'reservationStatus' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-216",
         "category": "system-field",
         "entity": "lines",
-        "field": "reservationStatus",
+        "field": "quotationLine",
         "runner": "node",
-        "description": "System field 'reservationStatus' should exist in backend but not frontend for lines"
+        "description": "System field 'quotationLine' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-217",
@@ -6615,9 +6607,9 @@
         "id": "t-528",
         "category": "action-endpoint",
         "entity": "header",
-        "field": "processNow",
+        "field": "posted",
         "runner": "node",
-        "description": "Action endpoint for 'processNow' in header should exist"
+        "description": "Action endpoint for 'posted' in header should exist"
       },
       {
         "id": "t-529",
