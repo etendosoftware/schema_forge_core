@@ -16303,6 +16303,8 @@
     }
   },
   "genericLabels": {
+    "taxScopeSales": "Sales",
+    "taxScopePurchase": "Purchase",
     "save": "Save",
     "saveDraft": "Save draft",
     "saveAndProcess": "Save & {action}",

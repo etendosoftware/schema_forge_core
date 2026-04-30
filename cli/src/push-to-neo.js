@@ -139,6 +139,25 @@ export async function loadConfig(projectRoot) {
   return { url, user, password };
 }
 
+// com.etendoerp.go — the module that owns the NEO Headless config.
+const GO_MODULE_ID = '94E1B433CF55451EABB764750AC5902A';
+
+/**
+ * Mark com.etendoerp.go as "in development" so AD changes can be applied.
+ * Idempotent — only updates if the flag is not already 'Y'.
+ */
+async function setGoModuleInDevelopment(client) {
+  const res = await client.query(
+    `UPDATE ad_module
+     SET isindevelopment = 'Y', updated = now()
+     WHERE ad_module_id = $1 AND COALESCE(isindevelopment, 'N') <> 'Y'`,
+    [GO_MODULE_ID],
+  );
+  if (res.rowCount > 0) {
+    console.log(`       Module com.etendoerp.go marked as 'In Development'.`);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Main push function
 // ---------------------------------------------------------------------------
@@ -273,6 +292,7 @@ export async function pushToNeo(windowName, options = {}) {
 
   try {
     await client.query('BEGIN');
+    await setGoModuleInDevelopment(client);
 
     // Step 1: Upsert spec (look up existing spec first for idempotent updates)
     const existingSpec = await client.query(
@@ -350,16 +370,20 @@ export async function pushToNeo(windowName, options = {}) {
     // Uses tabName (AD tab display name) as the primary key — unique within a window
     // and handles tabs that share the same DB table correctly.
     // Read entity names from the backend contract which reflects the resolved curated schema.
+    // java_qualifier is a CDI bean name (@Named) used by NeoServlet.lookupHandler
+    // to route to a specific NeoHandler. It is NOT the Hibernate entity FQN —
+    // schema-raw's entityFullClass would never match any @Named bean and would
+    // silently override hand-wired handlers. Only propagate values explicitly
+    // declared in decisions.json (which flow through backendContract).
     const schemaEntities = (schemaRawData.entities || []).map((ent) => ({
       name: ent.name,
       tabName: ent.tabName,
       tableName: ent.tableName,
-      javaQualifier: ent.entityFullClass ?? null,
     }));
     const desiredEntities = new Map(
       schemaEntities
         .filter((ent) => ent.tabName || ent.tableName)
-        .map((ent) => [ent.tabName || ent.tableName, ent]),
+        .map((ent) => [ent.tabName || ent.tableName, { ...ent, javaQualifier: undefined }]),
     );
 
     if (contract.backendContract?.entities) {
@@ -375,7 +399,7 @@ export async function pushToNeo(windowName, options = {}) {
           name,
           tabName: data.tabName || schemaFallback?.tabName || null,
           tableName: data.tableName || schemaFallback?.tableName || null,
-          javaQualifier: data.javaQualifier ?? schemaFallback?.javaQualifier ?? null,
+          javaQualifier: data.javaQualifier ?? undefined,
         });
       }
     }
@@ -384,13 +408,20 @@ export async function pushToNeo(windowName, options = {}) {
       for (const ent of desiredEntities.values()) {
         const entityId = (ent.tabName && entityMapByName[ent.tabName])
           || (ent.tableName && entityMapByTableName[ent.tableName]);
-        if (entityId) {
+        if (!entityId) continue;
+        if (ent.javaQualifier !== undefined) {
           await client.query(
             'UPDATE etgo_sf_entity SET name = $1, java_qualifier = $2 WHERE etgo_sf_entity_id = $3',
-            [ent.name, ent.javaQualifier ?? null, entityId],
+            [ent.name, ent.javaQualifier, entityId],
           );
-          entityMapByName[ent.name] = entityId;
+        } else {
+          // Preserve any existing java_qualifier set manually or by a NeoHandler wiring.
+          await client.query(
+            'UPDATE etgo_sf_entity SET name = $1 WHERE etgo_sf_entity_id = $2',
+            [ent.name, entityId],
+          );
         }
+        entityMapByName[ent.name] = entityId;
       }
       console.log('       Entity names updated to contract names');
     }
@@ -436,13 +467,18 @@ export async function pushToNeo(windowName, options = {}) {
 
       const fieldId = colLookup.rows[0].etgo_sf_field_id;
       const defaultExprKey = `${f.entityName}.${f.fieldName}`;
+      // java_qualifier on a field is an API-key alias used by NeoFieldFilter ONLY when
+      // it differs from the DAL propName. Since f.fieldName comes from toPropertyName()
+      // and matches the DAL propName by construction, persisting it adds zero runtime
+      // effect, generates an UPDATE per field, and bloats sourcedata XML on export.
+      // upsertField() ignores undefined params and preserves the existing value, so
+      // explicit aliasing (if introduced later) can re-enable it via a different path.
       const fieldParams = {
         entityId,
         fieldId,
         moduleId,
         isIncluded: vis.isIncluded,
         isReadOnly: vis.isReadOnly,
-        javaQualifier: f.fieldName,
         audit: auditOpts,
       };
       if (defaultExprKey in fieldDefaultExprs) {
@@ -576,6 +612,7 @@ export async function pushProcessToNeo(processName, options = {}) {
 
   try {
     await client.query('BEGIN');
+    await setGoModuleInDevelopment(client);
 
     // Step 1: Upsert spec (look up existing spec first for idempotent updates)
     const existingSpec = await client.query(
@@ -688,6 +725,7 @@ export async function pushReportToNeo(reportName, options = {}) {
 
   try {
     await client.query('BEGIN');
+    await setGoModuleInDevelopment(client);
 
     // Step 1: Upsert spec
     const existingSpec = await client.query(

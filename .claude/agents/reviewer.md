@@ -147,6 +147,7 @@ decisions.json → resolve-curated.js → contract.json → generate-frontend.js
 1. Grep `resolve-curated.js` for the field name — does it pass it through?
 2. Grep `generate-frontend.js` for the field name — does it emit it in the template?
 3. If either grep returns nothing, the chain is broken → BLOCKER.
+4. If the chain looks intact, re-run `make regen ONLY=<spec> SKIP_EXTRACT=1` and confirm the generated output reflects the change. (Use `node cli/src/pipeline.js --skip-to resolve-curated --dry-run` only when you need flags `make regen` does not expose.)
 
 ### Stale Files After Entity Rename (BLOCKER)
 When `decisions.json` renames entities (e.g., `cOrder` → `header`), the generator produces files with the NEW entity name (`HeaderForm.jsx`, `HeaderPage.jsx`, etc.). The OLD files (`OrderForm.jsx`, `OrderPage.jsx`, etc.) become orphans that would not be regenerated.

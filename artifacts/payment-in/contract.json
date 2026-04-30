@@ -1,7 +1,7 @@
 {
-  "version": "0.2.0",
-  "generatedAt": "2026-04-10T16:18:23.177Z",
-  "checksum": "704b5551a177e782",
+  "version": "0.3.0",
+  "generatedAt": "2026-04-29T19:05:52.312Z",
+  "checksum": "5b1ab28d7d8afb26",
   "frontendContract": {
     "window": {
       "id": "E547CE89D4C04429B6340FFA44E70716",
@@ -56,6 +56,7 @@
       "detailEntity": null,
       "summaryFields": [],
       "salesTheme": true,
+      "dateFilterKey": "paymentDate",
       "layoutType": "default"
     },
     "entities": {
@@ -76,6 +77,11 @@
             "required": true,
             "grid": true,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "sequence",
+              "source": "documentType.sequence"
+            },
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -105,6 +111,10 @@
             "required": false,
             "grid": true,
             "form": false,
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            },
             "defaultValue": "@#Date@",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_MultiCurrency"
@@ -166,8 +176,16 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
             "reference": "Paymentmethod",
             "inputMode": "search",
+            "validationRule": {
+              "code": "EXISTS (SELECT 1 FROM FIN_FinAcc_PaymentMethod fapm WHERE FIN_PaymentMethod.FIN_PaymentMethod_ID=fapm.FIN_PaymentMethod_ID\nAND fapm.isActive='Y'\nAND fapm.Payin_Allow = (SELECT CASE WHEN '@FIN_ISRECEIPT@'='Y' THEN 'Y' ELSE fapm.Payin_Allow END FROM DUAL)\nAND fapm.Payout_Allow = (SELECT CASE WHEN '@FIN_ISRECEIPT@'='N' THEN 'Y' ELSE fapm.Payout_Allow END FROM DUAL))",
+              "contextParams": [],
+              "cascadeParams": [
+                "FIN_ISRECEIPT"
+              ]
+            },
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_PaymentMethod_FinAccount"
             },
@@ -188,6 +206,11 @@
             "required": true,
             "grid": true,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_MultiCurrency"
@@ -210,11 +233,20 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
             "reference": "Financial_Account",
             "inputMode": "dependent",
             "dependsOn": {
               "field": "paymentMethod",
               "filterKey": "Fin_Paymentmethod_ID"
+            },
+            "validationRule": {
+              "code": "Fin_Financial_Account_ID IN (SELECT Fin_Financial_Account_ID FROM Fin_Finacc_Paymentmethod WHERE Fin_Paymentmethod_ID=@Fin_Paymentmethod_ID@ AND (CASE WHEN @IsReceipt@='Y' THEN Payin_Allow  ELSE Payout_Allow END)='Y' AND isActive='Y')",
+              "contextParams": [],
+              "cascadeParams": [
+                "Fin_Paymentmethod_ID",
+                "IsReceipt"
+              ]
             },
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_FinAccount"
@@ -236,6 +268,7 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
             "reference": "Currency",
             "inputMode": "dependent",
             "dependsOn": {
@@ -243,6 +276,15 @@
               "filterKey": "FIN_Financial_Account_ID"
             },
             "section": "principal",
+            "validationRule": {
+              "code": "c_currency.c_currency_id in (select c_currency_id from fin_financial_account where fin_financial_account_id = @FIN_Financial_Account_ID@) \nOR \nexists (select 1 from fin_finacc_paymentmethod where fin_financial_account_id = @FIN_Financial_Account_ID@ and fin_paymentmethod_id = @FIN_PaymentMethod_ID@ and isactive='Y' and  (\n(@IsReceipt@ = 'Y' and payin_allow ='Y' and payin_ismulticurrency='Y')\nOR\n(@IsReceipt@ = 'N' and payout_allow ='Y' and payout_ismulticurrency='Y')\n))",
+              "contextParams": [],
+              "cascadeParams": [
+                "FIN_Financial_Account_ID",
+                "FIN_PaymentMethod_ID",
+                "IsReceipt"
+              ]
+            },
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Payment_MultiCurrency"
             },
@@ -264,6 +306,11 @@
             "required": true,
             "grid": true,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "RPAP"
+            },
             "enumValues": [
               {
                 "value": "RPAP",
@@ -298,7 +345,14 @@
                 "name": "Payment Cleared"
               }
             ],
-            "defaultValue": "RPAP"
+            "defaultValue": "RPAP",
+            "validationRule": {
+              "code": "(((@Isreceipt@='Y') AND Value not IN  ('PPM','PWNC')) OR ((@Isreceipt@='N') AND Value not IN ('RPR','RDNC')))",
+              "contextParams": [],
+              "cascadeParams": [
+                "Isreceipt"
+              ]
+            }
           }
         ],
         "searchableFields": [
@@ -367,6 +421,11 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0"
           },
           {
@@ -454,7 +513,8 @@
       },
       "detailEntity": null,
       "summaryFields": [],
-      "salesTheme": true
+      "salesTheme": true,
+      "dateFilterKey": "paymentDate"
     },
     "entities": {
       "finPayment": {
@@ -703,6 +763,22 @@
             "required": false
           },
           {
+            "name": "active",
+            "apiKey": "active",
+            "column": "Isactive",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "receipt",
+            "apiKey": "receipt",
+            "column": "Isreceipt",
+            "type": "boolean",
+            "visibility": "system",
+            "required": false
+          },
+          {
             "name": "client",
             "apiKey": "client",
             "column": "AD_Client_ID",
@@ -711,10 +787,10 @@
             "required": true
           },
           {
-            "name": "payment",
-            "apiKey": "payment",
-            "column": "Fin_Payment_ID",
-            "type": "id",
+            "name": "processed",
+            "apiKey": "processed",
+            "column": "Processed",
+            "type": "boolean",
             "visibility": "system",
             "required": true
           },
@@ -735,28 +811,12 @@
             "required": true
           },
           {
-            "name": "processed",
-            "apiKey": "processed",
-            "column": "Processed",
-            "type": "boolean",
+            "name": "payment",
+            "apiKey": "payment",
+            "column": "Fin_Payment_ID",
+            "type": "id",
             "visibility": "system",
             "required": true
-          },
-          {
-            "name": "active",
-            "apiKey": "active",
-            "column": "Isactive",
-            "type": "boolean",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
-            "name": "receipt",
-            "apiKey": "receipt",
-            "column": "Isreceipt",
-            "type": "boolean",
-            "visibility": "system",
-            "required": false
           },
           {
             "name": "creationDate",
@@ -1299,10 +1359,13 @@
       },
       "sorting": {
         "param": "_sortBy",
-        "example": "_sortBy=payment-inDate"
+        "example": "_sortBy=creationDate desc"
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
+    },
+    "window": {
+      "category": "finance"
     }
   },
   "testManifest": {
@@ -1893,36 +1956,28 @@
         "id": "t-74",
         "category": "system-field",
         "entity": "finPayment",
-        "field": "client",
+        "field": "active",
         "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for finPayment"
+        "description": "System field 'active' should exist in backend but not frontend for finPayment"
       },
       {
         "id": "t-75",
         "category": "system-field",
         "entity": "finPayment",
-        "field": "payment",
+        "field": "receipt",
         "runner": "node",
-        "description": "System field 'payment' should exist in backend but not frontend for finPayment"
+        "description": "System field 'receipt' should exist in backend but not frontend for finPayment"
       },
       {
         "id": "t-76",
         "category": "system-field",
         "entity": "finPayment",
-        "field": "aPRMReconcilePayment",
+        "field": "client",
         "runner": "node",
-        "description": "System field 'aPRMReconcilePayment' should exist in backend but not frontend for finPayment"
+        "description": "System field 'client' should exist in backend but not frontend for finPayment"
       },
       {
         "id": "t-77",
-        "category": "system-field",
-        "entity": "finPayment",
-        "field": "processNow",
-        "runner": "node",
-        "description": "System field 'processNow' should exist in backend but not frontend for finPayment"
-      },
-      {
-        "id": "t-78",
         "category": "system-field",
         "entity": "finPayment",
         "field": "processed",
@@ -1930,20 +1985,28 @@
         "description": "System field 'processed' should exist in backend but not frontend for finPayment"
       },
       {
+        "id": "t-78",
+        "category": "system-field",
+        "entity": "finPayment",
+        "field": "aPRMReconcilePayment",
+        "runner": "node",
+        "description": "System field 'aPRMReconcilePayment' should exist in backend but not frontend for finPayment"
+      },
+      {
         "id": "t-79",
         "category": "system-field",
         "entity": "finPayment",
-        "field": "active",
+        "field": "processNow",
         "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for finPayment"
+        "description": "System field 'processNow' should exist in backend but not frontend for finPayment"
       },
       {
         "id": "t-80",
         "category": "system-field",
         "entity": "finPayment",
-        "field": "receipt",
+        "field": "payment",
         "runner": "node",
-        "description": "System field 'receipt' should exist in backend but not frontend for finPayment"
+        "description": "System field 'payment' should exist in backend but not frontend for finPayment"
       },
       {
         "id": "t-81",

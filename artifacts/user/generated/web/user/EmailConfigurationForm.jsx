@@ -13,9 +13,9 @@ const fields = [
   { key: 'smtpConnectionTimeout', column: 'SmtpTimeout', type: 'number', label: 'Smtp Connection Timeout', section: 'server', defaultValue: '600' },
   { key: 'fromName', column: 'Smtpserverfromname', type: 'text', label: 'From Name', section: 'sender' },
   { key: 'replyToAddress', column: 'Smtpreplytoaddress', type: 'text', label: 'Reply-To Address', section: 'sender' },
-  { key: 'testSuccessful', column: 'Istestsuccessful', type: 'checkbox', label: 'Test Successful', required: true, readOnly: true, section: 'other', defaultValue: 'N' },
+  { key: 'testSuccessful', column: 'Istestsuccessful', type: 'checkbox', label: 'Test Successful', required: true, readOnly: true, section: 'other' },
   { key: 'lastTestDate', column: 'Lasttestdate', type: 'date', label: 'Last Test Date', readOnly: true, section: 'other' },
-  { key: 'defaultConfiguration', column: 'Isdefaultconfig', type: 'checkbox', label: 'Default', required: true, section: 'principal', defaultValue: 'N' },
+  { key: 'defaultConfiguration', column: 'Isdefaultconfig', type: 'checkbox', label: 'Default', required: true, section: 'principal' },
 ];
 // @sf-generated-end fields:emailConfiguration
 
@@ -23,4 +23,5 @@ const fields = [
 export default function EmailConfigurationForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
+
 // @sf-generated-end component:EmailConfigurationForm

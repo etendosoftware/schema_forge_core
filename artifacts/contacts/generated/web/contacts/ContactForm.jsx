@@ -16,5 +16,5 @@ const fields = [
 export default function ContactForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-ContactForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:ContactForm

@@ -1,7 +1,7 @@
 {
-  "version": "0.1.0",
-  "generatedAt": "2026-04-09T20:05:40.746Z",
-  "checksum": "c7e82a8b4fdae696",
+  "version": "0.2.0",
+  "generatedAt": "2026-04-29T19:06:30.936Z",
+  "checksum": "90fcd7dadec485bd",
   "frontendContract": {
     "window": {
       "id": "800027",
@@ -64,7 +64,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "name",
@@ -76,7 +77,8 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "assetCategory",
@@ -89,6 +91,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "AssetGroup",
             "inputMode": "selector",
             "callout": {
@@ -118,6 +121,10 @@
             "required": false,
             "grid": false,
             "form": false,
+            "derivation": {
+              "type": "fromConfig",
+              "source": "context.cCurrencyId"
+            },
             "reference": "Currency",
             "inputMode": "selector",
             "defaultValue": "@C_Currency_ID@",
@@ -137,7 +144,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": false
+            "form": false,
+            "sourceRequired": true
           },
           {
             "name": "depreciationType",
@@ -150,6 +158,7 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
             "enumValues": [
               {
                 "value": "LI",
@@ -173,6 +182,7 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
             "enumValues": [
               {
                 "value": "PE",
@@ -217,6 +227,7 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
             "enumValues": [
               {
                 "value": "MO",
@@ -278,6 +289,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "Y"
+            },
             "defaultValue": "Y",
             "displayLogic": {
               "raw": "@IsDepreciated@='Y' & @Amortizationcalctype@='TI' & (@Assetschedule@='YE' | @Assetschedule@='MO')",
@@ -425,6 +441,10 @@
             "required": false,
             "grid": false,
             "form": false,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0",
             "displayLogic": {
               "raw": "@IsDepreciated@='Y'",
@@ -443,6 +463,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N",
             "displayLogic": {
               "raw": "@IsDepreciated@='Y'",
@@ -460,6 +485,10 @@
             "required": false,
             "grid": true,
             "form": false,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0",
             "summable": true,
             "displayLogic": {
@@ -478,6 +507,10 @@
             "required": false,
             "grid": false,
             "form": false,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0",
             "displayLogic": {
               "raw": "@IsDepreciated@='Y'",
@@ -495,6 +528,11 @@
             "required": true,
             "grid": true,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N",
             "cellType": "depreciationProgress",
             "displayLogic": {
@@ -513,6 +551,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N",
             "displayLogic": {
               "raw": "@IsDepreciated@='Y'",
@@ -603,6 +646,10 @@
             "required": false,
             "grid": true,
             "form": true,
+            "derivation": {
+              "type": "lookup",
+              "source": "SELECT COALESCE(MAX(SEQ_No_Asset),0)+10 AS DefaultValue FROM A_AMORTIZATIONLINE WHERE A_ASSET_ID=@A_ASSET_ID@"
+            },
             "defaultValue": "@SQL=SELECT COALESCE(MAX(SEQ_No_Asset),0)+10 AS DefaultValue FROM A_AMORTIZATIONLINE WHERE A_ASSET_ID=@A_ASSET_ID@"
           },
           {
@@ -701,6 +748,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "AcctSchema",
             "inputMode": "selector"
           },
@@ -715,6 +763,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "ValidCombination",
             "inputMode": "selector"
           },
@@ -729,6 +778,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "ValidCombination",
             "inputMode": "selector"
           }
@@ -757,7 +807,8 @@
         "processAsset": {
           "add": true,
           "label": "Create Amortization",
-          "style": "positive"
+          "style": "positive",
+          "displayLogicRaw": "@Depreciate@='Y'"
         }
       },
       "secondaryTabs": {},
@@ -1068,73 +1119,9 @@
             "required": true
           },
           {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "inPossession",
-            "apiKey": "inPossession",
-            "column": "IsInPosession",
-            "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "id",
-            "apiKey": "id",
-            "column": "A_Asset_ID",
-            "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "partnerAddress",
-            "apiKey": "partnerAddress",
-            "column": "C_BPartner_Location_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "locationAddress",
-            "apiKey": "locationAddress",
-            "column": "C_Location_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "disposed",
-            "apiKey": "disposed",
-            "column": "IsDisposed",
-            "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "inServiceDate",
-            "apiKey": "inServiceDate",
-            "column": "AssetServiceDate",
-            "type": "date",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "userContact",
-            "apiKey": "userContact",
-            "column": "AD_User_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "storageBin",
-            "apiKey": "storageBin",
-            "column": "M_Locator_ID",
+            "name": "businessPartner",
+            "apiKey": "businessPartner",
+            "column": "C_BPartner_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": false
@@ -1148,42 +1135,98 @@
             "required": false
           },
           {
-            "name": "businessPartner",
-            "apiKey": "businessPartner",
-            "column": "C_BPartner_ID",
+            "name": "helpComment",
+            "apiKey": "helpComment",
+            "column": "Help",
+            "type": "text",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "storageBin",
+            "apiKey": "storageBin",
+            "column": "M_Locator_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": false
           },
           {
-            "name": "lifeUse",
-            "apiKey": "lifeUse",
-            "column": "LifeUseUnits",
-            "type": "integer",
+            "name": "userContact",
+            "apiKey": "userContact",
+            "column": "AD_User_ID",
+            "type": "foreignKey",
             "visibility": "system",
             "required": false
           },
           {
-            "name": "useUnits",
-            "apiKey": "useUnits",
-            "column": "UseUnits",
-            "type": "integer",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "assetDisposalDate",
-            "apiKey": "assetDisposalDate",
-            "column": "AssetDisposalDate",
+            "name": "inServiceDate",
+            "apiKey": "inServiceDate",
+            "column": "AssetServiceDate",
             "type": "date",
             "visibility": "system",
             "required": false
           },
           {
-            "name": "expirationDate",
-            "apiKey": "expirationDate",
-            "column": "GuaranteeDate",
-            "type": "date",
+            "name": "disposed",
+            "apiKey": "disposed",
+            "column": "IsDisposed",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "profit",
+            "apiKey": "profit",
+            "column": "Profit",
+            "type": "decimal",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "lotName",
+            "apiKey": "lotName",
+            "column": "Lot",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "locationAddress",
+            "apiKey": "locationAddress",
+            "column": "C_Location_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "partnerAddress",
+            "apiKey": "partnerAddress",
+            "column": "C_BPartner_Location_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "id",
+            "apiKey": "id",
+            "column": "A_Asset_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "inPossession",
+            "apiKey": "inPossession",
+            "column": "IsInPosession",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "acctvalueamt",
+            "apiKey": "acctvalueamt",
+            "column": "Acctvalueamt",
+            "type": "decimal",
             "visibility": "system",
             "required": false
           },
@@ -1194,14 +1237,6 @@
             "type": "boolean",
             "visibility": "system",
             "required": true
-          },
-          {
-            "name": "helpComment",
-            "apiKey": "helpComment",
-            "column": "Help",
-            "type": "text",
-            "visibility": "system",
-            "required": false
           },
           {
             "name": "locationComment",
@@ -1228,26 +1263,42 @@
             "required": false
           },
           {
-            "name": "acctvalueamt",
-            "apiKey": "acctvalueamt",
-            "column": "Acctvalueamt",
-            "type": "decimal",
+            "name": "expirationDate",
+            "apiKey": "expirationDate",
+            "column": "GuaranteeDate",
+            "type": "date",
             "visibility": "system",
             "required": false
           },
           {
-            "name": "profit",
-            "apiKey": "profit",
-            "column": "Profit",
-            "type": "decimal",
+            "name": "assetDisposalDate",
+            "apiKey": "assetDisposalDate",
+            "column": "AssetDisposalDate",
+            "type": "date",
             "visibility": "system",
             "required": false
           },
           {
-            "name": "lotName",
-            "apiKey": "lotName",
-            "column": "Lot",
-            "type": "string",
+            "name": "useUnits",
+            "apiKey": "useUnits",
+            "column": "UseUnits",
+            "type": "integer",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "lifeUse",
+            "apiKey": "lifeUse",
+            "column": "LifeUseUnits",
+            "type": "integer",
             "visibility": "system",
             "required": false
           },
@@ -1792,7 +1843,7 @@
       },
       "sorting": {
         "param": "_sortBy",
-        "example": "_sortBy=assetsDate"
+        "example": "_sortBy=creationDate desc"
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
@@ -2940,76 +2991,12 @@
         "id": "t-143",
         "category": "system-field",
         "entity": "assets",
-        "field": "client",
+        "field": "businessPartner",
         "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for assets"
+        "description": "System field 'businessPartner' should exist in backend but not frontend for assets"
       },
       {
         "id": "t-144",
-        "category": "system-field",
-        "entity": "assets",
-        "field": "inPossession",
-        "runner": "node",
-        "description": "System field 'inPossession' should exist in backend but not frontend for assets"
-      },
-      {
-        "id": "t-145",
-        "category": "system-field",
-        "entity": "assets",
-        "field": "id",
-        "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for assets"
-      },
-      {
-        "id": "t-146",
-        "category": "system-field",
-        "entity": "assets",
-        "field": "partnerAddress",
-        "runner": "node",
-        "description": "System field 'partnerAddress' should exist in backend but not frontend for assets"
-      },
-      {
-        "id": "t-147",
-        "category": "system-field",
-        "entity": "assets",
-        "field": "locationAddress",
-        "runner": "node",
-        "description": "System field 'locationAddress' should exist in backend but not frontend for assets"
-      },
-      {
-        "id": "t-148",
-        "category": "system-field",
-        "entity": "assets",
-        "field": "disposed",
-        "runner": "node",
-        "description": "System field 'disposed' should exist in backend but not frontend for assets"
-      },
-      {
-        "id": "t-149",
-        "category": "system-field",
-        "entity": "assets",
-        "field": "inServiceDate",
-        "runner": "node",
-        "description": "System field 'inServiceDate' should exist in backend but not frontend for assets"
-      },
-      {
-        "id": "t-150",
-        "category": "system-field",
-        "entity": "assets",
-        "field": "userContact",
-        "runner": "node",
-        "description": "System field 'userContact' should exist in backend but not frontend for assets"
-      },
-      {
-        "id": "t-151",
-        "category": "system-field",
-        "entity": "assets",
-        "field": "storageBin",
-        "runner": "node",
-        "description": "System field 'storageBin' should exist in backend but not frontend for assets"
-      },
-      {
-        "id": "t-152",
         "category": "system-field",
         "entity": "assets",
         "field": "assetDepreciationDate",
@@ -3017,55 +3004,7 @@
         "description": "System field 'assetDepreciationDate' should exist in backend but not frontend for assets"
       },
       {
-        "id": "t-153",
-        "category": "system-field",
-        "entity": "assets",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "System field 'businessPartner' should exist in backend but not frontend for assets"
-      },
-      {
-        "id": "t-154",
-        "category": "system-field",
-        "entity": "assets",
-        "field": "lifeUse",
-        "runner": "node",
-        "description": "System field 'lifeUse' should exist in backend but not frontend for assets"
-      },
-      {
-        "id": "t-155",
-        "category": "system-field",
-        "entity": "assets",
-        "field": "useUnits",
-        "runner": "node",
-        "description": "System field 'useUnits' should exist in backend but not frontend for assets"
-      },
-      {
-        "id": "t-156",
-        "category": "system-field",
-        "entity": "assets",
-        "field": "assetDisposalDate",
-        "runner": "node",
-        "description": "System field 'assetDisposalDate' should exist in backend but not frontend for assets"
-      },
-      {
-        "id": "t-157",
-        "category": "system-field",
-        "entity": "assets",
-        "field": "expirationDate",
-        "runner": "node",
-        "description": "System field 'expirationDate' should exist in backend but not frontend for assets"
-      },
-      {
-        "id": "t-158",
-        "category": "system-field",
-        "entity": "assets",
-        "field": "owned",
-        "runner": "node",
-        "description": "System field 'owned' should exist in backend but not frontend for assets"
-      },
-      {
-        "id": "t-159",
+        "id": "t-145",
         "category": "system-field",
         "entity": "assets",
         "field": "helpComment",
@@ -3073,39 +3012,39 @@
         "description": "System field 'helpComment' should exist in backend but not frontend for assets"
       },
       {
-        "id": "t-160",
+        "id": "t-146",
         "category": "system-field",
         "entity": "assets",
-        "field": "locationComment",
+        "field": "storageBin",
         "runner": "node",
-        "description": "System field 'locationComment' should exist in backend but not frontend for assets"
+        "description": "System field 'storageBin' should exist in backend but not frontend for assets"
       },
       {
-        "id": "t-161",
+        "id": "t-147",
         "category": "system-field",
         "entity": "assets",
-        "field": "versionNo",
+        "field": "userContact",
         "runner": "node",
-        "description": "System field 'versionNo' should exist in backend but not frontend for assets"
+        "description": "System field 'userContact' should exist in backend but not frontend for assets"
       },
       {
-        "id": "t-162",
+        "id": "t-148",
         "category": "system-field",
         "entity": "assets",
-        "field": "serialNo",
+        "field": "inServiceDate",
         "runner": "node",
-        "description": "System field 'serialNo' should exist in backend but not frontend for assets"
+        "description": "System field 'inServiceDate' should exist in backend but not frontend for assets"
       },
       {
-        "id": "t-163",
+        "id": "t-149",
         "category": "system-field",
         "entity": "assets",
-        "field": "acctvalueamt",
+        "field": "disposed",
         "runner": "node",
-        "description": "System field 'acctvalueamt' should exist in backend but not frontend for assets"
+        "description": "System field 'disposed' should exist in backend but not frontend for assets"
       },
       {
-        "id": "t-164",
+        "id": "t-150",
         "category": "system-field",
         "entity": "assets",
         "field": "profit",
@@ -3113,12 +3052,124 @@
         "description": "System field 'profit' should exist in backend but not frontend for assets"
       },
       {
-        "id": "t-165",
+        "id": "t-151",
         "category": "system-field",
         "entity": "assets",
         "field": "lotName",
         "runner": "node",
         "description": "System field 'lotName' should exist in backend but not frontend for assets"
+      },
+      {
+        "id": "t-152",
+        "category": "system-field",
+        "entity": "assets",
+        "field": "locationAddress",
+        "runner": "node",
+        "description": "System field 'locationAddress' should exist in backend but not frontend for assets"
+      },
+      {
+        "id": "t-153",
+        "category": "system-field",
+        "entity": "assets",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "System field 'partnerAddress' should exist in backend but not frontend for assets"
+      },
+      {
+        "id": "t-154",
+        "category": "system-field",
+        "entity": "assets",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for assets"
+      },
+      {
+        "id": "t-155",
+        "category": "system-field",
+        "entity": "assets",
+        "field": "inPossession",
+        "runner": "node",
+        "description": "System field 'inPossession' should exist in backend but not frontend for assets"
+      },
+      {
+        "id": "t-156",
+        "category": "system-field",
+        "entity": "assets",
+        "field": "acctvalueamt",
+        "runner": "node",
+        "description": "System field 'acctvalueamt' should exist in backend but not frontend for assets"
+      },
+      {
+        "id": "t-157",
+        "category": "system-field",
+        "entity": "assets",
+        "field": "owned",
+        "runner": "node",
+        "description": "System field 'owned' should exist in backend but not frontend for assets"
+      },
+      {
+        "id": "t-158",
+        "category": "system-field",
+        "entity": "assets",
+        "field": "locationComment",
+        "runner": "node",
+        "description": "System field 'locationComment' should exist in backend but not frontend for assets"
+      },
+      {
+        "id": "t-159",
+        "category": "system-field",
+        "entity": "assets",
+        "field": "versionNo",
+        "runner": "node",
+        "description": "System field 'versionNo' should exist in backend but not frontend for assets"
+      },
+      {
+        "id": "t-160",
+        "category": "system-field",
+        "entity": "assets",
+        "field": "serialNo",
+        "runner": "node",
+        "description": "System field 'serialNo' should exist in backend but not frontend for assets"
+      },
+      {
+        "id": "t-161",
+        "category": "system-field",
+        "entity": "assets",
+        "field": "expirationDate",
+        "runner": "node",
+        "description": "System field 'expirationDate' should exist in backend but not frontend for assets"
+      },
+      {
+        "id": "t-162",
+        "category": "system-field",
+        "entity": "assets",
+        "field": "assetDisposalDate",
+        "runner": "node",
+        "description": "System field 'assetDisposalDate' should exist in backend but not frontend for assets"
+      },
+      {
+        "id": "t-163",
+        "category": "system-field",
+        "entity": "assets",
+        "field": "useUnits",
+        "runner": "node",
+        "description": "System field 'useUnits' should exist in backend but not frontend for assets"
+      },
+      {
+        "id": "t-164",
+        "category": "system-field",
+        "entity": "assets",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for assets"
+      },
+      {
+        "id": "t-165",
+        "category": "system-field",
+        "entity": "assets",
+        "field": "lifeUse",
+        "runner": "node",
+        "description": "System field 'lifeUse' should exist in backend but not frontend for assets"
       },
       {
         "id": "t-166",

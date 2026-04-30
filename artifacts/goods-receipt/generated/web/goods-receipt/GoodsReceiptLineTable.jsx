@@ -3,10 +3,10 @@ import { DataTable } from '@/components/contract-ui';
 // @sf-generated-start columns:goodsReceiptLine
 const columns = [
   { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.' },
-  { key: 'product', column: 'M_Product_ID', type: 'string', label: 'Product' },
+  { key: 'product', column: 'M_Product_ID', type: 'selector', label: 'Product' },
   { key: 'movementQuantity', column: 'MovementQty', type: 'number', label: 'Movement Quantity' },
-  { key: 'uOM', column: 'C_UOM_ID', type: 'string', label: 'UOM' },
-  { key: 'storageBin', column: 'M_Locator_ID', type: 'string', label: 'Storage Bin' },
+  { key: 'uOM', column: 'C_UOM_ID', type: 'selector', label: 'UOM' },
+  { key: 'storageBin', column: 'M_Locator_ID', type: 'selector', label: 'Storage Bin' },
   { key: 'invoiceQuantity', column: 'Qtyinvoiced', type: 'number', label: 'Invoiced Quantity' },
 ];
 // @sf-generated-end columns:goodsReceiptLine

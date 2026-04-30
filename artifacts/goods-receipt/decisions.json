@@ -4,7 +4,13 @@
     "category": "purchases",
     "name": "Goods Receipt",
     "relatedDocuments": true,
-    "dateFilterKey": "movementDate"
+    "dateFilterKey": "movementDate",
+    "draftMode": {
+      "enabled": true,
+      "processField": "documentAction",
+      "processValue": "CO",
+      "label": "Confirmar"
+    }
   },
   "entities": {
     "header": {
@@ -226,6 +232,7 @@
       }
     },
     "accounting": {
+      "javaQualifier": "factAcctHandler",
       "exclude": true
     },
     "landedCost": {

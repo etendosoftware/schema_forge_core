@@ -21,5 +21,5 @@ const fields = [
 export default function CustomerReturnLineForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-CustomerReturnLineForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:CustomerReturnLineForm

@@ -2,7 +2,7 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:conversion
 const columns = [
-  { key: 'toUOM', column: 'C_UOM_To_ID', type: 'string', label: 'To UOM' },
+  { key: 'toUOM', column: 'C_UOM_To_ID', type: 'selector', label: 'To UOM' },
   { key: 'multipleRateBy', column: 'MultiplyRate', type: 'string', label: 'Multiple Rate By' },
   { key: 'divideRateBy', column: 'DivideRate', type: 'string', label: 'Divide Rate By' },
 ];

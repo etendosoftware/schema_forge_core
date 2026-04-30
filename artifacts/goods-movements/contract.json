@@ -1,7 +1,7 @@
 {
-  "version": "0.2.0",
-  "generatedAt": "2026-04-09T13:10:41.606Z",
-  "checksum": "5d15ae892467cbae",
+  "version": "0.3.0",
+  "generatedAt": "2026-04-29T19:05:48.778Z",
+  "checksum": "8c7844ec3968b230",
   "frontendContract": {
     "window": {
       "id": "170",
@@ -14,6 +14,7 @@
         }
       },
       "statusField": "processed",
+      "dateFilterKey": "movementDate",
       "layoutType": "default"
     },
     "entities": {
@@ -34,7 +35,13 @@
             "required": true,
             "grid": true,
             "form": true,
-            "defaultValue": "@#Date@"
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            },
+            "defaultValue": "@#Date@",
+            "gridOrder": 1
           },
           {
             "name": "movementDate",
@@ -47,7 +54,18 @@
             "required": true,
             "grid": true,
             "form": true,
-            "defaultValue": "@#Date@"
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            },
+            "defaultValue": "@#Date@",
+            "gridOrder": 2,
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
           },
           {
             "name": "description",
@@ -73,6 +91,10 @@
             "required": false,
             "grid": false,
             "form": true,
+            "derivation": {
+              "type": "computed",
+              "source": "false"
+            },
             "displayLogic": {
               "raw": "@Processed@='N'",
               "evaluable": true
@@ -88,7 +110,18 @@
             "visibility": "readOnly",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "sequence",
+              "source": "documentType.sequence"
+            },
+            "gridOrder": 3,
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
           },
           {
             "name": "processed",
@@ -101,7 +134,13 @@
             "required": true,
             "grid": true,
             "form": false,
-            "columnType": "status"
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "false"
+            },
+            "columnType": "status",
+            "gridOrder": 4
           }
         ],
         "searchableFields": [
@@ -163,7 +202,17 @@
             "required": true,
             "grid": true,
             "form": true,
-            "defaultValue": "@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM M_MovementLine WHERE M_Movement_ID=@M_Movement_ID@"
+            "sourceRequired": true,
+            "derivation": {
+              "type": "lookup",
+              "source": "SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM M_MovementLine WHERE M_Movement_ID=@M_Movement_ID@"
+            },
+            "defaultValue": "@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM M_MovementLine WHERE M_Movement_ID=@M_Movement_ID@",
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
           },
           {
             "name": "product",
@@ -176,11 +225,17 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "Product",
             "inputMode": "search",
             "lookup": true,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Movement_Product"
+            },
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
             }
           },
           {
@@ -194,7 +249,12 @@
             "required": false,
             "grid": false,
             "form": true,
-            "section": "other"
+            "section": "other",
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
           },
           {
             "name": "movementQuantity",
@@ -207,7 +267,17 @@
             "required": true,
             "grid": true,
             "form": true,
-            "defaultValue": "1"
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "1"
+            },
+            "defaultValue": "1",
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y' | @UomManagement@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true || record['uomManagement'] === 'Y'"
+            }
           },
           {
             "name": "uOM",
@@ -220,6 +290,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "UOM",
             "inputMode": "selector"
           },
@@ -234,8 +305,14 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "Locator",
-            "inputMode": "selector"
+            "inputMode": "selector",
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
           },
           {
             "name": "newStorageBin",
@@ -248,8 +325,14 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "Locator",
-            "inputMode": "selector"
+            "inputMode": "selector",
+            "readOnlyLogic": {
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
           }
         ],
         "searchableFields": [
@@ -285,7 +368,8 @@
           "requiresLines": true
         }
       },
-      "statusField": "processed"
+      "statusField": "processed",
+      "dateFilterKey": "movementDate"
     },
     "entities": {
       "movement": {
@@ -422,18 +506,18 @@
             "required": false
           },
           {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
             "name": "documentNo",
             "apiKey": "documentNo",
             "column": "DocumentNo",
             "type": "string",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "processed",
+            "apiKey": "processed",
+            "column": "Processed",
+            "type": "boolean",
             "visibility": "readOnly",
             "required": true
           },
@@ -446,11 +530,11 @@
             "required": true
           },
           {
-            "name": "processed",
-            "apiKey": "processed",
-            "column": "Processed",
-            "type": "boolean",
-            "visibility": "readOnly",
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
             "required": true
           },
           {
@@ -613,6 +697,14 @@
             "required": false
           },
           {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
             "name": "movement",
             "apiKey": "movement",
             "column": "M_Movement_ID",
@@ -632,14 +724,6 @@
             "name": "organization",
             "apiKey": "organization",
             "column": "AD_Org_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": true
@@ -846,10 +930,13 @@
       },
       "sorting": {
         "param": "_sortBy",
-        "example": "_sortBy=goods-movementsDate"
+        "example": "_sortBy=creationDate desc"
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
+    },
+    "window": {
+      "category": "inventory"
     }
   },
   "testManifest": {
@@ -983,6 +1070,22 @@
       },
       {
         "id": "t-17",
+        "category": "readonlylogic-valid",
+        "entity": "movement",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Read-only logic for 'movementDate' in movement should be valid JS"
+      },
+      {
+        "id": "t-18",
+        "category": "readonlylogic-valid",
+        "entity": "movement",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Read-only logic for 'documentNo' in movement should be valid JS"
+      },
+      {
+        "id": "t-19",
         "category": "displaylogic-evaluable",
         "entity": "movement",
         "field": "processNow",
@@ -990,7 +1093,23 @@
         "description": "Display logic for 'processNow' in movement should have evaluable flag"
       },
       {
-        "id": "t-18",
+        "id": "t-20",
+        "category": "readonlylogic-evaluable",
+        "entity": "movement",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Read-only logic for 'movementDate' in movement should have evaluable flag"
+      },
+      {
+        "id": "t-21",
+        "category": "readonlylogic-evaluable",
+        "entity": "movement",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Read-only logic for 'documentNo' in movement should have evaluable flag"
+      },
+      {
+        "id": "t-22",
         "category": "default-value-type",
         "entity": "movement",
         "field": "name",
@@ -998,7 +1117,7 @@
         "description": "Default value for 'name' in movement should be a string"
       },
       {
-        "id": "t-19",
+        "id": "t-23",
         "category": "default-value-type",
         "entity": "movement",
         "field": "movementDate",
@@ -1006,7 +1125,7 @@
         "description": "Default value for 'movementDate' in movement should be a string"
       },
       {
-        "id": "t-20",
+        "id": "t-24",
         "category": "field-presence",
         "entity": "movementLine",
         "field": "lineNo",
@@ -1014,7 +1133,7 @@
         "description": "Field 'lineNo' should be present in movementLine"
       },
       {
-        "id": "t-21",
+        "id": "t-25",
         "category": "field-presence",
         "entity": "movementLine",
         "field": "product",
@@ -1022,7 +1141,7 @@
         "description": "Field 'product' should be present in movementLine"
       },
       {
-        "id": "t-22",
+        "id": "t-26",
         "category": "field-presence",
         "entity": "movementLine",
         "field": "description",
@@ -1030,7 +1149,7 @@
         "description": "Field 'description' should be present in movementLine"
       },
       {
-        "id": "t-23",
+        "id": "t-27",
         "category": "field-presence",
         "entity": "movementLine",
         "field": "movementQuantity",
@@ -1038,7 +1157,7 @@
         "description": "Field 'movementQuantity' should be present in movementLine"
       },
       {
-        "id": "t-24",
+        "id": "t-28",
         "category": "field-presence",
         "entity": "movementLine",
         "field": "uOM",
@@ -1046,7 +1165,7 @@
         "description": "Field 'uOM' should be present in movementLine"
       },
       {
-        "id": "t-25",
+        "id": "t-29",
         "category": "field-presence",
         "entity": "movementLine",
         "field": "storageBin",
@@ -1054,7 +1173,7 @@
         "description": "Field 'storageBin' should be present in movementLine"
       },
       {
-        "id": "t-26",
+        "id": "t-30",
         "category": "field-presence",
         "entity": "movementLine",
         "field": "newStorageBin",
@@ -1062,7 +1181,7 @@
         "description": "Field 'newStorageBin' should be present in movementLine"
       },
       {
-        "id": "t-27",
+        "id": "t-31",
         "category": "field-type",
         "entity": "movementLine",
         "field": "lineNo",
@@ -1070,7 +1189,7 @@
         "description": "Field 'lineNo' should have type 'number' in movementLine"
       },
       {
-        "id": "t-28",
+        "id": "t-32",
         "category": "field-type",
         "entity": "movementLine",
         "field": "product",
@@ -1078,7 +1197,7 @@
         "description": "Field 'product' should have type 'string' in movementLine"
       },
       {
-        "id": "t-29",
+        "id": "t-33",
         "category": "field-type",
         "entity": "movementLine",
         "field": "description",
@@ -1086,7 +1205,7 @@
         "description": "Field 'description' should have type 'string' in movementLine"
       },
       {
-        "id": "t-30",
+        "id": "t-34",
         "category": "field-type",
         "entity": "movementLine",
         "field": "movementQuantity",
@@ -1094,7 +1213,7 @@
         "description": "Field 'movementQuantity' should have type 'number' in movementLine"
       },
       {
-        "id": "t-31",
+        "id": "t-35",
         "category": "field-type",
         "entity": "movementLine",
         "field": "uOM",
@@ -1102,7 +1221,7 @@
         "description": "Field 'uOM' should have type 'string' in movementLine"
       },
       {
-        "id": "t-32",
+        "id": "t-36",
         "category": "field-type",
         "entity": "movementLine",
         "field": "storageBin",
@@ -1110,7 +1229,7 @@
         "description": "Field 'storageBin' should have type 'string' in movementLine"
       },
       {
-        "id": "t-33",
+        "id": "t-37",
         "category": "field-type",
         "entity": "movementLine",
         "field": "newStorageBin",
@@ -1118,7 +1237,7 @@
         "description": "Field 'newStorageBin' should have type 'string' in movementLine"
       },
       {
-        "id": "t-34",
+        "id": "t-38",
         "category": "searchable-filters",
         "entity": "movementLine",
         "field": "product",
@@ -1126,14 +1245,110 @@
         "description": "Field 'product' should be a supported filter for movementLine"
       },
       {
-        "id": "t-35",
+        "id": "t-39",
         "category": "visibility",
         "entity": "movementLine",
         "runner": "node",
         "description": "Entity 'movementLine' should only expose visible fields in frontend"
       },
       {
-        "id": "t-36",
+        "id": "t-40",
+        "category": "readonlylogic-valid",
+        "entity": "movementLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Read-only logic for 'lineNo' in movementLine should be valid JS"
+      },
+      {
+        "id": "t-41",
+        "category": "readonlylogic-valid",
+        "entity": "movementLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Read-only logic for 'product' in movementLine should be valid JS"
+      },
+      {
+        "id": "t-42",
+        "category": "readonlylogic-valid",
+        "entity": "movementLine",
+        "field": "description",
+        "runner": "node",
+        "description": "Read-only logic for 'description' in movementLine should be valid JS"
+      },
+      {
+        "id": "t-43",
+        "category": "readonlylogic-valid",
+        "entity": "movementLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Read-only logic for 'movementQuantity' in movementLine should be valid JS"
+      },
+      {
+        "id": "t-44",
+        "category": "readonlylogic-valid",
+        "entity": "movementLine",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "Read-only logic for 'storageBin' in movementLine should be valid JS"
+      },
+      {
+        "id": "t-45",
+        "category": "readonlylogic-valid",
+        "entity": "movementLine",
+        "field": "newStorageBin",
+        "runner": "node",
+        "description": "Read-only logic for 'newStorageBin' in movementLine should be valid JS"
+      },
+      {
+        "id": "t-46",
+        "category": "readonlylogic-evaluable",
+        "entity": "movementLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Read-only logic for 'lineNo' in movementLine should have evaluable flag"
+      },
+      {
+        "id": "t-47",
+        "category": "readonlylogic-evaluable",
+        "entity": "movementLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Read-only logic for 'product' in movementLine should have evaluable flag"
+      },
+      {
+        "id": "t-48",
+        "category": "readonlylogic-evaluable",
+        "entity": "movementLine",
+        "field": "description",
+        "runner": "node",
+        "description": "Read-only logic for 'description' in movementLine should have evaluable flag"
+      },
+      {
+        "id": "t-49",
+        "category": "readonlylogic-evaluable",
+        "entity": "movementLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Read-only logic for 'movementQuantity' in movementLine should have evaluable flag"
+      },
+      {
+        "id": "t-50",
+        "category": "readonlylogic-evaluable",
+        "entity": "movementLine",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "Read-only logic for 'storageBin' in movementLine should have evaluable flag"
+      },
+      {
+        "id": "t-51",
+        "category": "readonlylogic-evaluable",
+        "entity": "movementLine",
+        "field": "newStorageBin",
+        "runner": "node",
+        "description": "Read-only logic for 'newStorageBin' in movementLine should have evaluable flag"
+      },
+      {
+        "id": "t-52",
         "category": "default-value-type",
         "entity": "movementLine",
         "field": "lineNo",
@@ -1141,7 +1356,7 @@
         "description": "Default value for 'lineNo' in movementLine should be a string"
       },
       {
-        "id": "t-37",
+        "id": "t-53",
         "category": "default-value-type",
         "entity": "movementLine",
         "field": "movementQuantity",
@@ -1149,7 +1364,7 @@
         "description": "Default value for 'movementQuantity' in movementLine should be a string"
       },
       {
-        "id": "t-38",
+        "id": "t-54",
         "category": "system-field",
         "entity": "movement",
         "field": "organization",
@@ -1157,7 +1372,7 @@
         "description": "System field 'organization' should exist in backend but not frontend for movement"
       },
       {
-        "id": "t-39",
+        "id": "t-55",
         "category": "system-field",
         "entity": "movement",
         "field": "moveBetweenLocators",
@@ -1165,7 +1380,7 @@
         "description": "System field 'moveBetweenLocators' should exist in backend but not frontend for movement"
       },
       {
-        "id": "t-40",
+        "id": "t-56",
         "category": "system-field",
         "entity": "movement",
         "field": "posted",
@@ -1173,7 +1388,7 @@
         "description": "System field 'posted' should exist in backend but not frontend for movement"
       },
       {
-        "id": "t-41",
+        "id": "t-57",
         "category": "system-field",
         "entity": "movement",
         "field": "active",
@@ -1181,7 +1396,7 @@
         "description": "System field 'active' should exist in backend but not frontend for movement"
       },
       {
-        "id": "t-42",
+        "id": "t-58",
         "category": "system-field",
         "entity": "movement",
         "field": "trxOrganization",
@@ -1189,7 +1404,7 @@
         "description": "System field 'trxOrganization' should exist in backend but not frontend for movement"
       },
       {
-        "id": "t-43",
+        "id": "t-59",
         "category": "system-field",
         "entity": "movement",
         "field": "project",
@@ -1197,7 +1412,7 @@
         "description": "System field 'project' should exist in backend but not frontend for movement"
       },
       {
-        "id": "t-44",
+        "id": "t-60",
         "category": "system-field",
         "entity": "movement",
         "field": "costCenter",
@@ -1205,7 +1420,7 @@
         "description": "System field 'costCenter' should exist in backend but not frontend for movement"
       },
       {
-        "id": "t-45",
+        "id": "t-61",
         "category": "system-field",
         "entity": "movement",
         "field": "asset",
@@ -1213,7 +1428,7 @@
         "description": "System field 'asset' should exist in backend but not frontend for movement"
       },
       {
-        "id": "t-46",
+        "id": "t-62",
         "category": "system-field",
         "entity": "movement",
         "field": "activity",
@@ -1221,7 +1436,7 @@
         "description": "System field 'activity' should exist in backend but not frontend for movement"
       },
       {
-        "id": "t-47",
+        "id": "t-63",
         "category": "system-field",
         "entity": "movement",
         "field": "salesCampaign",
@@ -1229,7 +1444,7 @@
         "description": "System field 'salesCampaign' should exist in backend but not frontend for movement"
       },
       {
-        "id": "t-48",
+        "id": "t-64",
         "category": "system-field",
         "entity": "movement",
         "field": "stDimension",
@@ -1237,7 +1452,7 @@
         "description": "System field 'stDimension' should exist in backend but not frontend for movement"
       },
       {
-        "id": "t-49",
+        "id": "t-65",
         "category": "system-field",
         "entity": "movement",
         "field": "ndDimension",
@@ -1245,15 +1460,7 @@
         "description": "System field 'ndDimension' should exist in backend but not frontend for movement"
       },
       {
-        "id": "t-50",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-51",
+        "id": "t-66",
         "category": "system-field",
         "entity": "movement",
         "field": "id",
@@ -1261,7 +1468,15 @@
         "description": "System field 'id' should exist in backend but not frontend for movement"
       },
       {
-        "id": "t-52",
+        "id": "t-67",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-68",
         "category": "system-field",
         "entity": "movement",
         "field": "creationDate",
@@ -1269,7 +1484,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for movement"
       },
       {
-        "id": "t-53",
+        "id": "t-69",
         "category": "system-field",
         "entity": "movement",
         "field": "createdBy",
@@ -1277,7 +1492,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for movement"
       },
       {
-        "id": "t-54",
+        "id": "t-70",
         "category": "system-field",
         "entity": "movement",
         "field": "updated",
@@ -1285,7 +1500,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for movement"
       },
       {
-        "id": "t-55",
+        "id": "t-71",
         "category": "system-field",
         "entity": "movement",
         "field": "updatedBy",
@@ -1293,7 +1508,7 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for movement"
       },
       {
-        "id": "t-56",
+        "id": "t-72",
         "category": "system-field",
         "entity": "movementLine",
         "field": "attributeSetValue",
@@ -1301,7 +1516,7 @@
         "description": "System field 'attributeSetValue' should exist in backend but not frontend for movementLine"
       },
       {
-        "id": "t-57",
+        "id": "t-73",
         "category": "system-field",
         "entity": "movementLine",
         "field": "operativeQuantity",
@@ -1309,7 +1524,7 @@
         "description": "System field 'operativeQuantity' should exist in backend but not frontend for movementLine"
       },
       {
-        "id": "t-58",
+        "id": "t-74",
         "category": "system-field",
         "entity": "movementLine",
         "field": "alternativeUOM",
@@ -1317,7 +1532,7 @@
         "description": "System field 'alternativeUOM' should exist in backend but not frontend for movementLine"
       },
       {
-        "id": "t-59",
+        "id": "t-75",
         "category": "system-field",
         "entity": "movementLine",
         "field": "active",
@@ -1325,7 +1540,7 @@
         "description": "System field 'active' should exist in backend but not frontend for movementLine"
       },
       {
-        "id": "t-60",
+        "id": "t-76",
         "category": "system-field",
         "entity": "movementLine",
         "field": "orderUOM",
@@ -1333,7 +1548,7 @@
         "description": "System field 'orderUOM' should exist in backend but not frontend for movementLine"
       },
       {
-        "id": "t-61",
+        "id": "t-77",
         "category": "system-field",
         "entity": "movementLine",
         "field": "orderQuantity",
@@ -1341,7 +1556,7 @@
         "description": "System field 'orderQuantity' should exist in backend but not frontend for movementLine"
       },
       {
-        "id": "t-62",
+        "id": "t-78",
         "category": "system-field",
         "entity": "movementLine",
         "field": "stockReservation",
@@ -1349,7 +1564,7 @@
         "description": "System field 'stockReservation' should exist in backend but not frontend for movementLine"
       },
       {
-        "id": "t-63",
+        "id": "t-79",
         "category": "system-field",
         "entity": "movementLine",
         "field": "mAttributeSetInstanceToID",
@@ -1357,31 +1572,7 @@
         "description": "System field 'mAttributeSetInstanceToID' should exist in backend but not frontend for movementLine"
       },
       {
-        "id": "t-64",
-        "category": "system-field",
-        "entity": "movementLine",
-        "field": "movement",
-        "runner": "node",
-        "description": "System field 'movement' should exist in backend but not frontend for movementLine"
-      },
-      {
-        "id": "t-65",
-        "category": "system-field",
-        "entity": "movementLine",
-        "field": "id",
-        "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for movementLine"
-      },
-      {
-        "id": "t-66",
-        "category": "system-field",
-        "entity": "movementLine",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for movementLine"
-      },
-      {
-        "id": "t-67",
+        "id": "t-80",
         "category": "system-field",
         "entity": "movementLine",
         "field": "client",
@@ -1389,7 +1580,31 @@
         "description": "System field 'client' should exist in backend but not frontend for movementLine"
       },
       {
-        "id": "t-68",
+        "id": "t-81",
+        "category": "system-field",
+        "entity": "movementLine",
+        "field": "movement",
+        "runner": "node",
+        "description": "System field 'movement' should exist in backend but not frontend for movementLine"
+      },
+      {
+        "id": "t-82",
+        "category": "system-field",
+        "entity": "movementLine",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for movementLine"
+      },
+      {
+        "id": "t-83",
+        "category": "system-field",
+        "entity": "movementLine",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for movementLine"
+      },
+      {
+        "id": "t-84",
         "category": "system-field",
         "entity": "movementLine",
         "field": "creationDate",
@@ -1397,7 +1612,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for movementLine"
       },
       {
-        "id": "t-69",
+        "id": "t-85",
         "category": "system-field",
         "entity": "movementLine",
         "field": "createdBy",
@@ -1405,7 +1620,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for movementLine"
       },
       {
-        "id": "t-70",
+        "id": "t-86",
         "category": "system-field",
         "entity": "movementLine",
         "field": "updated",
@@ -1413,7 +1628,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for movementLine"
       },
       {
-        "id": "t-71",
+        "id": "t-87",
         "category": "system-field",
         "entity": "movementLine",
         "field": "updatedBy",
@@ -1421,105 +1636,105 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for movementLine"
       },
       {
-        "id": "t-72",
+        "id": "t-88",
         "category": "rule-declared",
         "rule": "SL_Movement_Conversion_QuantityOrder",
         "runner": "node",
         "description": "Rule 'SL_Movement_Conversion_QuantityOrder' (callout) should be declared"
       },
       {
-        "id": "t-73",
+        "id": "t-89",
         "category": "rule-declared",
         "rule": "SL_Movement_Conversion_M_Product_Uom_Id",
         "runner": "node",
         "description": "Rule 'SL_Movement_Conversion_M_Product_Uom_Id' (callout) should be declared"
       },
       {
-        "id": "t-74",
+        "id": "t-90",
         "category": "rule-declared",
         "rule": "SL_Movement_Product",
         "runner": "node",
         "description": "Rule 'SL_Movement_Product' (callout) should be declared"
       },
       {
-        "id": "t-75",
+        "id": "t-91",
         "category": "rule-declared",
         "rule": "OperativeQuantity_To_BaseQuantity_C_Aum",
         "runner": "node",
         "description": "Rule 'OperativeQuantity_To_BaseQuantity_C_Aum' (callout) should be declared"
       },
       {
-        "id": "t-76",
+        "id": "t-92",
         "category": "rule-declared",
         "rule": "OperativeQuantity_To_BaseQuantity_Aumqty",
         "runner": "node",
         "description": "Rule 'OperativeQuantity_To_BaseQuantity_Aumqty' (callout) should be declared"
       },
       {
-        "id": "t-77",
+        "id": "t-93",
         "category": "rule-declared",
         "rule": "AD_Org show child organizations",
         "runner": "node",
         "description": "Rule 'AD_Org show child organizations' (validation) should be declared"
       },
       {
-        "id": "t-78",
+        "id": "t-94",
         "category": "rule-declared",
         "rule": "Available UOM's for Product for Logistics flow",
         "runner": "node",
         "description": "Rule 'Available UOM's for Product for Logistics flow' (validation) should be declared"
       },
       {
-        "id": "t-79",
+        "id": "t-95",
         "category": "rule-declared",
         "rule": "READONLY_Processed_Header",
         "runner": "node",
         "description": "Rule 'READONLY_Processed_Header' (readOnlyLogic) should be declared"
       },
       {
-        "id": "t-80",
+        "id": "t-96",
         "category": "rule-declared",
         "rule": "READONLY_Processed_Lines",
         "runner": "node",
         "description": "Rule 'READONLY_Processed_Lines' (readOnlyLogic) should be declared"
       },
       {
-        "id": "t-81",
+        "id": "t-97",
         "category": "rule-declared",
         "rule": "PROCESS_ProcessMovements",
         "runner": "node",
         "description": "Rule 'PROCESS_ProcessMovements' (process) should be declared"
       },
       {
-        "id": "t-82",
+        "id": "t-98",
         "category": "rule-declared",
         "rule": "PROCESS_MoveStorageBin",
         "runner": "node",
         "description": "Rule 'PROCESS_MoveStorageBin' (process) should be declared"
       },
       {
-        "id": "t-83",
+        "id": "t-99",
         "category": "rule-declared",
         "rule": "PROCESS_Posted",
         "runner": "node",
         "description": "Rule 'PROCESS_Posted' (process) should be declared"
       },
       {
-        "id": "t-84",
+        "id": "t-100",
         "category": "crud-flags",
         "entity": "movement",
         "runner": "node",
         "description": "CRUD flags for 'movement' should all be booleans"
       },
       {
-        "id": "t-85",
+        "id": "t-101",
         "category": "crud-flags",
         "entity": "movementLine",
         "runner": "node",
         "description": "CRUD flags for 'movementLine' should all be booleans"
       },
       {
-        "id": "t-86",
+        "id": "t-102",
         "category": "selector-endpoint",
         "entity": "movementLine",
         "field": "product",
@@ -1527,7 +1742,7 @@
         "description": "Selector endpoint for 'product' in movementLine should exist"
       },
       {
-        "id": "t-87",
+        "id": "t-103",
         "category": "selector-endpoint",
         "entity": "movementLine",
         "field": "uOM",
@@ -1535,7 +1750,7 @@
         "description": "Selector endpoint for 'uOM' in movementLine should exist"
       },
       {
-        "id": "t-88",
+        "id": "t-104",
         "category": "selector-endpoint",
         "entity": "movementLine",
         "field": "storageBin",
@@ -1543,7 +1758,7 @@
         "description": "Selector endpoint for 'storageBin' in movementLine should exist"
       },
       {
-        "id": "t-89",
+        "id": "t-105",
         "category": "selector-endpoint",
         "entity": "movementLine",
         "field": "newStorageBin",
@@ -1551,7 +1766,7 @@
         "description": "Selector endpoint for 'newStorageBin' in movementLine should exist"
       },
       {
-        "id": "t-90",
+        "id": "t-106",
         "category": "action-endpoint",
         "entity": "movement",
         "field": "moveBetweenLocators",
@@ -1559,7 +1774,7 @@
         "description": "Action endpoint for 'moveBetweenLocators' in movement should exist"
       },
       {
-        "id": "t-91",
+        "id": "t-107",
         "category": "action-endpoint",
         "entity": "movement",
         "field": "processNow",
@@ -1567,7 +1782,7 @@
         "description": "Action endpoint for 'processNow' in movement should exist"
       },
       {
-        "id": "t-92",
+        "id": "t-108",
         "category": "action-endpoint",
         "entity": "movement",
         "field": "posted",
@@ -1576,14 +1791,16 @@
       }
     ],
     "summary": {
-      "total": 92,
+      "total": 108,
       "byCategory": {
         "field-presence": 13,
         "field-type": 13,
         "searchable-filters": 3,
         "visibility": 2,
         "displaylogic-valid": 1,
+        "readonlylogic-valid": 8,
         "displaylogic-evaluable": 1,
+        "readonlylogic-evaluable": 8,
         "default-value-type": 4,
         "system-field": 34,
         "rule-declared": 12,
@@ -1592,7 +1809,7 @@
         "action-endpoint": 3
       },
       "byRunner": {
-        "node": 92,
+        "node": 108,
         "junit": 0
       }
     }

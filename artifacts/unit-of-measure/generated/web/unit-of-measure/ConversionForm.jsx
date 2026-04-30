@@ -12,4 +12,5 @@ const fields = [
 export default function ConversionForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
+
 // @sf-generated-end component:ConversionForm

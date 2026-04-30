@@ -39,8 +39,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "DR",
     "invoiceStatus": "DR",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-15"
+    "accountingDate": "2026-01-15",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-002",
@@ -80,8 +80,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "CO",
     "invoiceStatus": "CO",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-16"
+    "accountingDate": "2026-01-16",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-003",
@@ -121,8 +121,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "VO",
     "invoiceStatus": "VO",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-17"
+    "accountingDate": "2026-01-17",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-004",
@@ -162,8 +162,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "IP",
     "invoiceStatus": "IP",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-18"
+    "accountingDate": "2026-01-18",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-005",
@@ -203,8 +203,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "DR",
     "invoiceStatus": "DR",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-19"
+    "accountingDate": "2026-01-19",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-006",
@@ -244,8 +244,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "CO",
     "invoiceStatus": "CO",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-20"
+    "accountingDate": "2026-01-20",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-007",
@@ -285,8 +285,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "VO",
     "invoiceStatus": "VO",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-21"
+    "accountingDate": "2026-01-21",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-008",
@@ -326,8 +326,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "IP",
     "invoiceStatus": "IP",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-22"
+    "accountingDate": "2026-01-22",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-009",
@@ -367,8 +367,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "DR",
     "invoiceStatus": "DR",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-23"
+    "accountingDate": "2026-01-23",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-010",
@@ -408,8 +408,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "CO",
     "invoiceStatus": "CO",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-24"
+    "accountingDate": "2026-01-24",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-011",
@@ -449,8 +449,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "VO",
     "invoiceStatus": "VO",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-25"
+    "accountingDate": "2026-01-25",
+    "deliveryTerms": "Sample deliveryTerms"
   },
   {
     "id": "mock-header-012",
@@ -490,8 +490,8 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "IP",
     "invoiceStatus": "IP",
-    "deliveryTerms": "Sample deliveryTerms",
-    "accountingDate": "2026-01-26"
+    "accountingDate": "2026-01-26",
+    "deliveryTerms": "Sample deliveryTerms"
   }
 ];
 
@@ -501,7 +501,7 @@ export const lines = [
     "product": "Laptop Pro 15",
     "description": "Standard order for Q1 delivery",
     "orderedQuantity": 402,
-    "unitPrice": "Sample unitPrice",
+    "listPrice": "Sample listPrice",
     "discount": 6,
     "tax": "VAT 21%",
     "lineGrossAmount": 38907,
@@ -509,9 +509,9 @@ export const lines = [
     "operativeUOM": "Sample operativeUOM",
     "uOM": "Sample uOM",
     "attributeSetValue": "Sample attributeSetValue",
+    "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 38907,
-    "listPrice": "Sample listPrice",
     "grossListPrice": 99.44,
     "taxableAmount": "VAT 21%",
     "warehouse": "Main Warehouse",
@@ -536,7 +536,7 @@ export const lines = [
     "product": "USB-C Cable",
     "description": "Rush order - priority shipping required",
     "orderedQuantity": 54,
-    "unitPrice": "Sample unitPrice",
+    "listPrice": "Sample listPrice",
     "discount": 21,
     "tax": "VAT 10%",
     "lineGrossAmount": 9306,
@@ -544,9 +544,9 @@ export const lines = [
     "operativeUOM": "Sample operativeUOM",
     "uOM": "Sample uOM",
     "attributeSetValue": "Sample attributeSetValue",
+    "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 9306,
-    "listPrice": "Sample listPrice",
     "grossListPrice": 96.94,
     "taxableAmount": "VAT 10%",
     "warehouse": "East Distribution Center",
@@ -571,7 +571,7 @@ export const lines = [
     "product": "Wireless Mouse",
     "description": "Bulk purchase for warehouse restocking",
     "orderedQuantity": 150,
-    "unitPrice": "Sample unitPrice",
+    "listPrice": "Sample listPrice",
     "discount": 0,
     "tax": "VAT 0%",
     "lineGrossAmount": 11544,
@@ -579,9 +579,9 @@ export const lines = [
     "operativeUOM": "Sample operativeUOM",
     "uOM": "Sample uOM",
     "attributeSetValue": "Sample attributeSetValue",
+    "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 11544,
-    "listPrice": "Sample listPrice",
     "grossListPrice": 12.48,
     "taxableAmount": "VAT 0%",
     "warehouse": "West Hub",
@@ -606,7 +606,7 @@ export const lines = [
     "product": "Mechanical Keyboard",
     "description": "Sample order for client evaluation",
     "orderedQuantity": 97,
-    "unitPrice": "Sample unitPrice",
+    "listPrice": "Sample listPrice",
     "discount": 6,
     "tax": "Sales Tax 8.5%",
     "lineGrossAmount": 11872,
@@ -614,9 +614,9 @@ export const lines = [
     "operativeUOM": "Sample operativeUOM",
     "uOM": "Sample uOM",
     "attributeSetValue": "Sample attributeSetValue",
+    "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 11872,
-    "listPrice": "Sample listPrice",
     "grossListPrice": 96.31,
     "taxableAmount": "Sales Tax 8.5%",
     "warehouse": "North Storage",
@@ -641,7 +641,7 @@ export const lines = [
     "product": "Monitor 27\"",
     "description": "Recurring monthly supply order",
     "orderedQuantity": 311,
-    "unitPrice": "Sample unitPrice",
+    "listPrice": "Sample listPrice",
     "discount": 14,
     "tax": "Exempt",
     "lineGrossAmount": 48460,
@@ -649,9 +649,9 @@ export const lines = [
     "operativeUOM": "Sample operativeUOM",
     "uOM": "Sample uOM",
     "attributeSetValue": "Sample attributeSetValue",
+    "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 48460,
-    "listPrice": "Sample listPrice",
     "grossListPrice": 31.27,
     "taxableAmount": "Exempt",
     "warehouse": "South Logistics",
@@ -676,7 +676,7 @@ export const lines = [
     "product": "Webcam HD",
     "description": "Special pricing agreement applies",
     "orderedQuantity": 451,
-    "unitPrice": "Sample unitPrice",
+    "listPrice": "Sample listPrice",
     "discount": 4,
     "tax": "Reduced Rate 5%",
     "lineGrossAmount": 45418,
@@ -684,9 +684,9 @@ export const lines = [
     "operativeUOM": "Sample operativeUOM",
     "uOM": "Sample uOM",
     "attributeSetValue": "Sample attributeSetValue",
+    "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 45418,
-    "listPrice": "Sample listPrice",
     "grossListPrice": 76.52,
     "taxableAmount": "Reduced Rate 5%",
     "warehouse": "Central Depot",
@@ -711,7 +711,7 @@ export const lines = [
     "product": "Headset Pro",
     "description": "Consolidated order from multiple requests",
     "orderedQuantity": 496,
-    "unitPrice": "Sample unitPrice",
+    "listPrice": "Sample listPrice",
     "discount": 6,
     "tax": "Standard Rate 20%",
     "lineGrossAmount": 33840,
@@ -719,9 +719,9 @@ export const lines = [
     "operativeUOM": "Sample operativeUOM",
     "uOM": "Sample uOM",
     "attributeSetValue": "Sample attributeSetValue",
+    "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 33840,
-    "listPrice": "Sample listPrice",
     "grossListPrice": 2.66,
     "taxableAmount": "Standard Rate 20%",
     "warehouse": "Regional Warehouse A",
@@ -746,7 +746,7 @@ export const lines = [
     "product": "Docking Station",
     "description": "Trial order for new product line",
     "orderedQuantity": 284,
-    "unitPrice": "Sample unitPrice",
+    "listPrice": "Sample listPrice",
     "discount": 10,
     "tax": "VAT 21%",
     "lineGrossAmount": 25716,
@@ -754,9 +754,9 @@ export const lines = [
     "operativeUOM": "Sample operativeUOM",
     "uOM": "Sample uOM",
     "attributeSetValue": "Sample attributeSetValue",
+    "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 25716,
-    "listPrice": "Sample listPrice",
     "grossListPrice": 10.03,
     "taxableAmount": "VAT 21%",
     "warehouse": "Regional Warehouse B",
@@ -781,7 +781,7 @@ export const lines = [
     "product": "SSD 1TB",
     "description": "Replacement for damaged goods",
     "orderedQuantity": 225,
-    "unitPrice": "Sample unitPrice",
+    "listPrice": "Sample listPrice",
     "discount": 17,
     "tax": "VAT 10%",
     "lineGrossAmount": 44780,
@@ -789,9 +789,9 @@ export const lines = [
     "operativeUOM": "Sample operativeUOM",
     "uOM": "Sample uOM",
     "attributeSetValue": "Sample attributeSetValue",
+    "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 44780,
-    "listPrice": "Sample listPrice",
     "grossListPrice": 93.97,
     "taxableAmount": "VAT 10%",
     "warehouse": "Main Warehouse",
@@ -816,7 +816,7 @@ export const lines = [
     "product": "RAM 16GB",
     "description": "Pre-season inventory build-up",
     "orderedQuantity": 479,
-    "unitPrice": "Sample unitPrice",
+    "listPrice": "Sample listPrice",
     "discount": 14,
     "tax": "VAT 0%",
     "lineGrossAmount": 12483,
@@ -824,9 +824,9 @@ export const lines = [
     "operativeUOM": "Sample operativeUOM",
     "uOM": "Sample uOM",
     "attributeSetValue": "Sample attributeSetValue",
+    "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 12483,
-    "listPrice": "Sample listPrice",
     "grossListPrice": 1.1,
     "taxableAmount": "VAT 0%",
     "warehouse": "East Distribution Center",
@@ -851,7 +851,7 @@ export const lines = [
     "product": "Power Supply 750W",
     "description": "Customer-specific configuration",
     "orderedQuantity": 123,
-    "unitPrice": "Sample unitPrice",
+    "listPrice": "Sample listPrice",
     "discount": 19,
     "tax": "Sales Tax 8.5%",
     "lineGrossAmount": 46022,
@@ -859,9 +859,9 @@ export const lines = [
     "operativeUOM": "Sample operativeUOM",
     "uOM": "Sample uOM",
     "attributeSetValue": "Sample attributeSetValue",
+    "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 46022,
-    "listPrice": "Sample listPrice",
     "grossListPrice": 79.99,
     "taxableAmount": "Sales Tax 8.5%",
     "warehouse": "West Hub",
@@ -886,7 +886,7 @@ export const lines = [
     "product": "Network Switch",
     "description": "Government contract fulfillment",
     "orderedQuantity": 337,
-    "unitPrice": "Sample unitPrice",
+    "listPrice": "Sample listPrice",
     "discount": 12,
     "tax": "Exempt",
     "lineGrossAmount": 38634,
@@ -894,9 +894,9 @@ export const lines = [
     "operativeUOM": "Sample operativeUOM",
     "uOM": "Sample uOM",
     "attributeSetValue": "Sample attributeSetValue",
+    "unitPrice": "Sample unitPrice",
     "grossUnitPrice": "Sample grossUnitPrice",
     "lineNetAmount": 38634,
-    "listPrice": "Sample listPrice",
     "grossListPrice": 53.61,
     "taxableAmount": "Exempt",
     "warehouse": "North Storage",

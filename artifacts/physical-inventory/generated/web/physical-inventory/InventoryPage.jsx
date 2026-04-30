@@ -38,7 +38,7 @@ const draftMode = null;
 const addLineFields = {
   entry: [
     { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.', defaultValue: '@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM M_InventoryLine WHERE M_Inventory_ID=@M_Inventory_ID@' },
-    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ['quantityCount', 'bookQuantity'] },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["quantityCount","bookQuantity"] },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
     { key: 'quantityCount', column: 'QtyCount', type: 'number', required: true, label: 'User Count' },
   ],
@@ -51,7 +51,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:inventoryLine
 
-const api = {
+export const api = {
   "specName": "physical-inventory",
   "baseUrl": "/sws/neo/physical-inventory",
   "crud": {
@@ -164,7 +164,7 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=physical-inventoryDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"

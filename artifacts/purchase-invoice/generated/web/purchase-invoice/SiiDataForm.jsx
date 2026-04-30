@@ -17,5 +17,5 @@ const fields = [
 export default function SiiDataForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-SiiDataForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:SiiDataForm

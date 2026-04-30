@@ -7,7 +7,7 @@ const columns = [
   { key: 'amount', column: 'Amount', type: 'amount', label: 'Paid Amount' },
   { key: 'orderNo', column: 'DocumentNo', type: 'string', label: 'Order No.' },
   { key: 'invoiceNo', column: 'DocumentNo', type: 'string', label: 'Invoice No.' },
-  { key: 'businessPartner', column: 'C_Bpartner_ID', type: 'string', label: 'Business Partner' },
+  { key: 'businessPartner', column: 'C_Bpartner_ID', type: 'selector', label: 'Business Partner' },
 ];
 // @sf-generated-end columns:lines
 

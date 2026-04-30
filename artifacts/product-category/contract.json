@@ -1,7 +1,7 @@
 {
-  "version": "0.2.0",
-  "generatedAt": "2026-04-09T12:40:29.761Z",
-  "checksum": "3f910b853879b98f",
+  "version": "0.3.0",
+  "generatedAt": "2026-04-29T18:11:26.703Z",
+  "checksum": "7d3e8a94de4dd070",
   "frontendContract": {
     "window": {
       "id": "144",
@@ -29,6 +29,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "section": "principal",
             "seq": 1
           },
@@ -43,6 +44,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "section": "principal",
             "seq": 2
           },
@@ -71,6 +73,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "section": "principal",
             "seq": 4
           },
@@ -85,6 +88,11 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N",
             "section": "principal",
             "seq": 5
@@ -134,7 +142,8 @@
             "visibility": "readOnly",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "name",
@@ -146,7 +155,8 @@
             "visibility": "readOnly",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "productType",
@@ -159,6 +169,11 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "I"
+            },
             "enumValues": [
               {
                 "value": "E",
@@ -271,20 +286,20 @@
             "required": true
           },
           {
-            "name": "image",
-            "apiKey": "image",
-            "column": "AD_Image_ID",
-            "type": "image",
-            "visibility": "editable",
-            "required": false
-          },
-          {
             "name": "plannedMargin",
             "apiKey": "plannedMargin",
             "column": "PlannedMargin",
             "type": "decimal",
             "visibility": "discarded",
             "required": true
+          },
+          {
+            "name": "image",
+            "apiKey": "image",
+            "column": "AD_Image_ID",
+            "type": "image",
+            "visibility": "editable",
+            "required": false
           },
           {
             "name": "assetCategory",
@@ -406,10 +421,10 @@
             "required": false
           },
           {
-            "name": "storageBin",
-            "apiKey": "storageBin",
-            "column": "M_Locator_ID",
-            "type": "foreignKey",
+            "name": "imageURL",
+            "apiKey": "imageURL",
+            "column": "ImageURL",
+            "type": "string",
             "visibility": "system",
             "required": false
           },
@@ -646,14 +661,6 @@
             "required": true
           },
           {
-            "name": "imageURL",
-            "apiKey": "imageURL",
-            "column": "ImageURL",
-            "type": "string",
-            "visibility": "system",
-            "required": false
-          },
-          {
             "name": "descriptionURL",
             "apiKey": "descriptionURL",
             "column": "DescriptionURL",
@@ -705,6 +712,14 @@
             "name": "freightCategory",
             "apiKey": "freightCategory",
             "column": "M_FreightCategory_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "storageBin",
+            "apiKey": "storageBin",
+            "column": "M_Locator_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": false
@@ -1508,10 +1523,13 @@
       },
       "sorting": {
         "param": "_sortBy",
-        "example": "_sortBy=product-categoryDate"
+        "example": "_sortBy=creationDate desc"
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
+    },
+    "window": {
+      "category": "inventory"
     }
   },
   "testManifest": {
@@ -1846,9 +1864,9 @@
         "id": "t-42",
         "category": "system-field",
         "entity": "assignedProducts",
-        "field": "storageBin",
+        "field": "imageURL",
         "runner": "node",
-        "description": "System field 'storageBin' should exist in backend but not frontend for assignedProducts"
+        "description": "System field 'imageURL' should exist in backend but not frontend for assignedProducts"
       },
       {
         "id": "t-43",
@@ -2086,20 +2104,12 @@
         "id": "t-72",
         "category": "system-field",
         "entity": "assignedProducts",
-        "field": "imageURL",
-        "runner": "node",
-        "description": "System field 'imageURL' should exist in backend but not frontend for assignedProducts"
-      },
-      {
-        "id": "t-73",
-        "category": "system-field",
-        "entity": "assignedProducts",
         "field": "descriptionURL",
         "runner": "node",
         "description": "System field 'descriptionURL' should exist in backend but not frontend for assignedProducts"
       },
       {
-        "id": "t-74",
+        "id": "t-73",
         "category": "system-field",
         "entity": "assignedProducts",
         "field": "versionNo",
@@ -2107,7 +2117,7 @@
         "description": "System field 'versionNo' should exist in backend but not frontend for assignedProducts"
       },
       {
-        "id": "t-75",
+        "id": "t-74",
         "category": "system-field",
         "entity": "assignedProducts",
         "field": "guaranteedDays",
@@ -2115,7 +2125,7 @@
         "description": "System field 'guaranteedDays' should exist in backend but not frontend for assignedProducts"
       },
       {
-        "id": "t-76",
+        "id": "t-75",
         "category": "system-field",
         "entity": "assignedProducts",
         "field": "attributeSet",
@@ -2123,7 +2133,7 @@
         "description": "System field 'attributeSet' should exist in backend but not frontend for assignedProducts"
       },
       {
-        "id": "t-77",
+        "id": "t-76",
         "category": "system-field",
         "entity": "assignedProducts",
         "field": "attributeSetValue",
@@ -2131,7 +2141,7 @@
         "description": "System field 'attributeSetValue' should exist in backend but not frontend for assignedProducts"
       },
       {
-        "id": "t-78",
+        "id": "t-77",
         "category": "system-field",
         "entity": "assignedProducts",
         "field": "downloadURL",
@@ -2139,12 +2149,20 @@
         "description": "System field 'downloadURL' should exist in backend but not frontend for assignedProducts"
       },
       {
-        "id": "t-79",
+        "id": "t-78",
         "category": "system-field",
         "entity": "assignedProducts",
         "field": "freightCategory",
         "runner": "node",
         "description": "System field 'freightCategory' should exist in backend but not frontend for assignedProducts"
+      },
+      {
+        "id": "t-79",
+        "category": "system-field",
+        "entity": "assignedProducts",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "System field 'storageBin' should exist in backend but not frontend for assignedProducts"
       },
       {
         "id": "t-80",

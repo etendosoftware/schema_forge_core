@@ -657,8 +657,8 @@ export const intrastat = [
     "netMassKg": 99.44,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 38907,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 38907,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-001"
   },
   {
@@ -675,8 +675,8 @@ export const intrastat = [
     "netMassKg": 96.94,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 9306,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 9306,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-002"
   },
   {
@@ -693,8 +693,8 @@ export const intrastat = [
     "netMassKg": 12.48,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 11544,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 11544,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-003"
   },
   {
@@ -711,8 +711,8 @@ export const intrastat = [
     "netMassKg": 96.31,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 11872,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 11872,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-004"
   },
   {
@@ -729,8 +729,8 @@ export const intrastat = [
     "netMassKg": 31.27,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 48460,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 48460,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-005"
   },
   {
@@ -747,8 +747,8 @@ export const intrastat = [
     "netMassKg": 76.52,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 45418,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 45418,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-006"
   },
   {
@@ -765,8 +765,8 @@ export const intrastat = [
     "netMassKg": 2.66,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 33840,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 33840,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-007"
   },
   {
@@ -783,8 +783,8 @@ export const intrastat = [
     "netMassKg": 10.03,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 25716,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 25716,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-008"
   },
   {
@@ -801,8 +801,8 @@ export const intrastat = [
     "netMassKg": 93.97,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 44780,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 44780,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-009"
   },
   {
@@ -819,8 +819,8 @@ export const intrastat = [
     "netMassKg": 1.1,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 12483,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 12483,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-010"
   },
   {
@@ -837,8 +837,8 @@ export const intrastat = [
     "netMassKg": 79.99,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 46022,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 46022,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-011"
   },
   {
@@ -855,8 +855,8 @@ export const intrastat = [
     "netMassKg": 53.61,
     "hasSuplementaryUnit": "Sample hasSuplementaryUnit",
     "conversionRate": 38634,
-    "supplementaryUOM": "Sample supplementaryUOM",
     "staticalValue": 38634,
+    "supplementaryUOM": "Sample supplementaryUOM",
     "headerId": "mock-header-012"
   }
 ];

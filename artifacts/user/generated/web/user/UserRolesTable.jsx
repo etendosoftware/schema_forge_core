@@ -2,7 +2,7 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:userRoles
 const columns = [
-  { key: 'role', column: 'AD_Role_ID', type: 'string', label: 'Role' },
+  { key: 'role', column: 'AD_Role_ID', type: 'selector', label: 'Role' },
   { key: 'roleAdmin', column: 'Is_Role_Admin', type: 'boolean', label: 'Role Administrator' },
 ];
 // @sf-generated-end columns:userRoles

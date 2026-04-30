@@ -61,7 +61,7 @@ decisions.json
 5. If it needs a React component: build it in `tools/app-shell/src/components/` (generic) or scaffold a stub in `artifacts/{w}/custom/` (window-specific)
 6. Document in `docs/decisions-reference.md`
 7. Write a regression test
-8. Validate by running the pipeline on at least one window
+8. Validate by running the pipeline on at least one window — use `make regen ONLY=<spec>` (canonical); fall back to `node cli/src/pipeline.js` only when you need flags `make regen` does not expose (e.g. `--dry-run`, custom `--skip-to`).
 
 **Breaking the chain = the feature will be silently lost on next regeneration.**
 To verify chain integrity, grep each file for the new key name.

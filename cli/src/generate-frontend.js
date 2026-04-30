@@ -90,6 +90,15 @@ export function getReadOnlyFields(contract, entityName) {
 }
 
 /**
+ * Etendo session/system macros (`@#Date@`, `@#User@`, `@#Client@`, ...) are
+ * resolved server-side by NeoDefaultsService. Emitting them as a frontend
+ * defaultValue would leak the literal token into inputs, so skip them here.
+ */
+function isEtendoSessionMacro(value) {
+  return typeof value === 'string' && /^@#[\w]+@$/.test(value);
+}
+
+/**
  * Map a contract field type to a column/field type for the declarative config.
  */
 function mapFieldType(field) {
@@ -171,7 +180,7 @@ export function generateTableComponent(entityName, contract) {
     let renderPart = '';
     if (f.cellType === 'depreciationProgress') renderPart = ', render: renderDepreciationProgress';
     else if (f.cellType === 'taxRate') renderPart = ', render: renderTaxRate';
-    else if (f.cellType === 'taxScope') renderPart = ', render: renderTaxScope';
+    else if (f.cellType === 'taxScope') renderPart = `, render: (row) => renderTaxScope(row, '${f.name}')`;
     return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart} },`;
   }).join('\n');
 
@@ -205,15 +214,16 @@ function renderTaxRate(row) {
 ` : '';
 
   const taxScopeHelper = neededCellTypes.has('taxScope') ? `
-function renderTaxScope(row) {
-  const value = row?.applicableTo;
+function TaxScopeCell({ row, fieldKey }) {
+  const ui = useUI();
+  const value = fieldKey ? row?.[fieldKey] : (row?.applicableTo ?? row?.salesPurchaseType);
   const showSales    = value === 'B' || value === 'S';
   const showPurchase = value === 'B' || value === 'P';
   if (!showSales && !showPurchase) return value ?? '';
   return (
     <span className="inline-flex items-center gap-1">
-      {showSales    && <Tag variant="blue"   label="Sales" />}
-      {showPurchase && <Tag variant="purple" label="Purchase" />}
+      {showSales    && <Tag variant="blue"   label={ui('taxScopeSales')} />}
+      {showPurchase && <Tag variant="purple" label={ui('taxScopePurchase')} />}
     </span>
   );
 }
@@ -221,9 +231,11 @@ function renderTaxScope(row) {
 
   const needsTagImport = neededCellTypes.has('taxRate') || neededCellTypes.has('taxScope');
   const tagImport = needsTagImport ? `import { Tag } from '@/components/ui/tag';\n` : '';
+  const needsUiImport = neededCellTypes.has('taxScope');
+  const uiImport = needsUiImport ? `import { useUI } from '@/i18n';\n` : '';
 
   return `import { DataTable } from '@/components/contract-ui';
-${tagImport}${depreciationProgressHelper}${taxRateHelper}${taxScopeHelper}
+${tagImport}${uiImport}${depreciationProgressHelper}${taxRateHelper}${taxScopeHelper}
 ${MARKERS.GENERATED_START(`columns:${entityName}`)}
 const columns = [
 ${columnsArray}
@@ -290,7 +302,11 @@ export function generateFormComponent(entityName, contract) {
     // Section classification
     const sectionPart = `, section: '${fieldSections[idx]}'`;
     // UI hints
-    const defaultValuePart = (f.defaultValue !== undefined && f.defaultValue !== null && f.defaultValue !== '')
+    // Skip redundant unchecked defaults on YESNO/checkbox fields: backend NeoDefaultsService
+    // already coerces missing/'N'/false to false, so emitting them only bloats generated files.
+    const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
+    const skipServerMacro = isEtendoSessionMacro(f.defaultValue);
+    const defaultValuePart = (!skipCheckboxDefault && !skipServerMacro && f.defaultValue !== undefined && f.defaultValue !== null && f.defaultValue !== '')
       ? (typeof f.defaultValue === 'number'
           ? `, defaultValue: ${f.defaultValue}`
           : `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'`)
@@ -343,7 +359,7 @@ ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}(props) {
   return <EntityForm fields={fields}${colsProp} {...props} />;
 }
-${compName}.hasCollapsedFields = ${hasCollapsed};
+${hasCollapsed ? `${compName}.hasCollapsedFields = true;\n` : ''}
 ${MARKERS.GENERATED_END(`component:${compName}`)}
 `;
 }
@@ -582,10 +598,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
-    // Include defaultValue for quantity/numeric fields so the add-line form starts with a sensible value
+    // Include defaultValue for quantity/numeric fields so the add-line form starts with a sensible value.
+    // Skip redundant unchecked defaults on YESNO/checkbox fields (backend coerces to false anyway).
     const rawDv = f.defaultValue;
     let defaultValuePart = '';
-    if (rawDv !== undefined && rawDv !== null && rawDv !== '') {
+    const skipCheckboxDefault = type === 'checkbox' && (rawDv === 'N' || rawDv === false);
+    const skipServerMacro = isEtendoSessionMacro(rawDv);
+    if (!skipCheckboxDefault && !skipServerMacro && rawDv !== undefined && rawDv !== null && rawDv !== '') {
       const numDv = Number(rawDv);
       defaultValuePart = `, defaultValue: ${(!isNaN(numDv) && String(rawDv).trim() !== '') ? numDv : `'${String(rawDv).replace(/'/g, "\\'")}'`}`;
     }
@@ -604,7 +623,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   }).join('\n');
 
   const hiddenDefaultsArray = hiddenDefaultFields
-    .filter(f => !String(f.defaultValue).startsWith('@SQL='))
+    .filter(f => !String(f.defaultValue).startsWith('@SQL=') && !isEtendoSessionMacro(f.defaultValue))
     .map(f => {
     const rawDefault = String(f.defaultValue);
     const parentColMatch = rawDefault.match(/^@(\w+)@$/);
@@ -685,7 +704,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
           const labelPart = f.label ? `, label: '${f.label}'` : '';
           const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
           const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
-          const defaultValuePart = f.defaultValue ? `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
+          // Skip redundant unchecked defaults on YESNO/checkbox fields (backend coerces to false anyway).
+          const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
+          const defaultValuePart = (!skipCheckboxDefault && f.defaultValue) ? `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
           const optionsPart = (type === 'select' && f.enumValues?.length)
             ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
             : '';

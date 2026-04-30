@@ -14,5 +14,5 @@ const fields = [
 export default function InternalConsumptionLineForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-InternalConsumptionLineForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:InternalConsumptionLineForm
