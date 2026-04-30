@@ -75,6 +75,35 @@ Window/entity-specific behavior belongs in metadata, a named policy provider, or
 6. **Recommend the control point**
    Name the owner that should hold the decision: metadata, `NeoHandler`, selector policy registry, `McpAuthorizationService`, `NeoAccessHelper`, OAuth client policy, onboarding application service, or protocol adapter.
 
+## Class Size Risk Scan
+
+During architecture review, also quantify Java class size because oversized generic services often correlate with boundary drift.
+
+Use non-empty LOC, not raw physical lines, and report counts for:
+- `>300 LOC`: above healthy range; inspect cohesion.
+- `>500 LOC`: high maintenance risk; likely mixed responsibilities unless justified.
+- `>800 LOC`: refactor candidate, especially for generic `Neo*` services, protocol servlets, routers, or auth boundaries.
+- `>1000 LOC`: priority split unless generated or a deliberately isolated compatibility adapter.
+
+When a protected generic class is oversized, do not report size alone as the architecture issue. Use size as supporting evidence for observed wrong-layer decisions, repeated policies, excessive routing, or mixed protocol/auth/DAL/business responsibilities.
+
+Reference command from repo root:
+```bash
+python3 - <<'PY'
+from pathlib import Path
+root=Path('etendo_core/modules/com.etendoerp.go/src/com/etendoerp/go')
+rows=[]
+for p in root.rglob('*.java'):
+    text=p.read_text(encoding='utf-8', errors='ignore')
+    loc=sum(1 for line in text.splitlines() if line.strip())
+    rows.append((loc,str(p)))
+for t in (300,500,800,1000):
+    print(f'above_{t}', sum(1 for loc,_ in rows if loc>t))
+for loc,path in sorted((r for r in rows if r[0]>300), reverse=True):
+    print(f'{loc}\t{path}')
+PY
+```
+
 ## Evidence Patterns
 
 ### MCP discovery/execution mismatch
