@@ -643,7 +643,10 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
               if (isGross) {
                 onChange?.('grossUnitPrice', auxVal);
               } else {
+                // Mirror InlineAddRow: for net price lists, standardPrice is the net price →
+                // populate both unitPrice and listPrice so sidebar and add-row behave identically.
                 onChange?.('unitPrice', auxVal);
+                onChange?.('listPrice', auxVal);
               }
             } else if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
               for (const [auxSuffix, auxSuffixVal] of Object.entries(auxVal)) {

@@ -4,6 +4,7 @@
     "category": "sales",
     "name": "Sales Invoice",
     "salesTheme": true,
+    "lineEntityConfig": "invoice",
     "relatedDocuments": true,
     "notesField": "description",
     "hideDeleteWhenComplete": true,
@@ -276,26 +277,60 @@
           "grid": true,
           "searchable": true,
           "lookup": true,
+          "order": 1,
+          "gridOrder": 1,
           "section": "principal",
           "inputMode": "search",
-          "displayLogic": null
+          "displayLogic": null,
+          "forceCalloutFields": ["listPrice", "unitPrice", "tax", "uOM", "grossUnitPrice"]
+        },
+        "description": {
+          "grid": true,
+          "order": 2,
+          "gridOrder": 2,
+          "section": "principal"
         },
         "invoicedQuantity": {
           "grid": true,
+          "order": 3,
+          "gridOrder": 3,
           "section": "principal"
         },
         "uOM": {
           "visibility": "system"
         },
-        "unitPrice": {
+        "listPrice": {
+          "visibility": "editable",
           "grid": true,
-          "section": "principal"
+          "form": true,
+          "inputMode": "number",
+          "order": 4,
+          "gridOrder": 4,
+          "section": "principal",
+          "columnType": "amount"
+        },
+        "etgoDiscount": {
+          "visibility": "editable",
+          "grid": true,
+          "form": true,
+          "inputMode": "number",
+          "order": 5,
+          "gridOrder": 5,
+          "section": "principal",
+          "derivation": null,
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        "unitPrice": {
+          "grid": false,
+          "form": false
         },
         "tax": {
           "grid": true,
+          "order": 6,
+          "gridOrder": 6,
           "section": "principal",
           "inputMode": "selector",
-          "forceCalloutFields": ["lineGrossAmount", "grossAmount", "lineNetAmount"]
+          "forceCalloutFields": ["lineNetAmount"]
         },
         "lineNetAmount": {
           "visibility": "system",
@@ -303,17 +338,7 @@
           "section": "principal"
         },
         "discount": {
-          "visibility": "editable",
-          "grid": true,
-          "section": "principal"
-        },
-        "listPrice": {
           "visibility": "discarded"
-        },
-        "description": {
-          "grid": true,
-          "section": "principal",
-          "gridOrder": 2
         },
         "taxAmount": {
           "visibility": "discarded"
@@ -332,7 +357,7 @@
         "grossAmount": {
           "visibility": "readOnly",
           "grid": true,
-          "gridOrder": 6,
+          "gridOrder": 7,
           "form": true,
           "section": "principal",
           "displayLogic": null

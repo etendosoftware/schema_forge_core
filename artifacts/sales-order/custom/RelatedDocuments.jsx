@@ -1,7 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { StatusTag } from '@/components/ui/status-tag';
 import { useUI } from '@/i18n';
+import {
+  DocChip,
+  RelatedDocumentsShell,
+  CHIP_ICONS,
+  CHIP_COLORS,
+  fetchByCriteria,
+  fetchChild,
+  neoBase,
+} from '@/components/related-documents';
 
 const STATUS_LABEL_KEYS = {
   CO: 'statusComplete',
@@ -15,61 +23,24 @@ const STATUS_LABEL_KEYS = {
   RDNC: 'statusDepositedNotCleared',
 };
 
-const CHIP_ICONS = {
-  shipments: (
-    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <rect x="1" y="3" width="22" height="5" rx="1" />
-      <path d="M1 8l2 13h18l2-13" />
-    </svg>
-  ),
-  invoices: (
-    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-      <path d="M14 2v6h6M8 13h8M8 17h8M8 9h2" />
-    </svg>
-  ),
-  payments: (
-    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M16 8h-4a2 2 0 100 4h2a2 2 0 110 4H8M12 6v2m0 8v2" />
-    </svg>
-  ),
-  quotation: (
-    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
-      <rect x="9" y="3" width="6" height="4" rx="1" />
-      <path d="M9 14l2 2 4-4" />
-    </svg>
-  ),
-};
-
-const CHIP_COLORS = {
-  shipments: 'text-blue-600',
-  invoices: 'text-purple-600',
-  payments: 'text-emerald-600',
-  quotation: 'text-amber-600',
-};
-
 const RELATED_SPECS = [
   {
     key: 'goods-shipment',
-    icon: 'shipments',
+    icon: 'shipment',
     route: '/goods-shipment',
     format: (row) => ({
       titleKey: 'shipmentDoc',
       titleParams: { number: row.documentNo },
-      date: row.movementDate,
       status: row.documentStatus,
     }),
   },
   {
     key: 'sales-invoice',
-    icon: 'invoices',
+    icon: 'invoice',
     route: '/sales-invoice',
     format: (row) => ({
       titleKey: 'invoiceDoc',
       titleParams: { number: row.documentNo },
-      date: row.invoiceDate,
       amount: row.grandTotalAmount,
       currency: row['currency$_identifier'],
       status: row.documentStatus,
@@ -77,30 +48,10 @@ const RELATED_SPECS = [
   },
 ];
 
-function neoBase(apiBaseUrl) {
-  return (apiBaseUrl || '').replace(/\/[^/]+$/, '');
-}
-
-function fetchByCriteria(specName, entityName, fieldName, value, token, apiBaseUrl) {
-  const base = neoBase(apiBaseUrl);
-  const criteria = JSON.stringify([{ fieldName, operator: 'equals', value }]);
-  const params = new URLSearchParams({ criteria, _limit: '50' });
-  return fetch(`${base}/${specName}/${entityName}?${params}`, {
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-  })
-    .then(r => r.ok ? r.json() : { response: { data: [] } })
-    .then(j => j.response?.data || [])
-    .catch(() => []);
-}
-
-function fetchChild(specName, entityName, parentId, token, apiBaseUrl) {
-  const base = neoBase(apiBaseUrl);
-  return fetch(`${base}/${specName}/${encodeURIComponent(entityName)}?parentId=${parentId}&_limit=50`, {
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-  })
-    .then(r => r.ok ? r.json() : { response: { data: [] } })
-    .then(j => j.response?.data || [])
-    .catch(() => []);
+function resolveStatusLabel(status, ui) {
+  if (!status) return null;
+  const key = STATUS_LABEL_KEYS[status];
+  return key ? ui(key) : status;
 }
 
 async function fetchPayments(orderId, token, apiBaseUrl) {
@@ -123,37 +74,6 @@ async function fetchPayments(orderId, token, apiBaseUrl) {
       .catch(() => null)
   ));
   return results.filter(Boolean);
-}
-
-function formatAmount(val, currency) {
-  if (val == null) return '';
-  const num = typeof val === 'string' ? parseFloat(val) : val;
-  const formatted = num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return currency ? `${formatted} ${currency}` : formatted;
-}
-
-function DocChip({ icon, iconColor, title, amount, currency, status, statusLabel, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 border border-border/40 rounded-full bg-white hover:bg-muted/30 transition-colors text-sm cursor-pointer"
-      style={{ borderWidth: '0.5px' }}
-    >
-      <span className={`shrink-0 ${iconColor}`}>{icon}</span>
-      <span className="font-medium text-foreground/80">{title}</span>
-      {amount != null && (
-        <span className="text-xs text-muted-foreground tabular-nums">{formatAmount(amount, currency)}</span>
-      )}
-      {status && <StatusTag status={status} label={statusLabel || status} />}
-    </button>
-  );
-}
-
-function resolveStatusLabel(status, ui) {
-  if (!status) return null;
-  const key = STATUS_LABEL_KEYS[status];
-  return key ? ui(key) : status;
 }
 
 export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) {
@@ -212,8 +132,22 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
       });
   }, [recordId, token, apiBaseUrl, refreshKey]);
 
+  const refreshBtn = (
+    <button
+      type="button"
+      onClick={() => setRefreshKey(k => k + 1)}
+      title={ui('refresh')}
+      className="inline-flex items-center justify-center w-5 h-5 rounded text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`}>
+        <path d="M23 4v6h-6" /><path d="M1 20v-6h6" />
+        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+      </svg>
+    </button>
+  );
+
   if (loading) {
-    return <span className="text-xs text-muted-foreground">{ui('loading')}</span>;
+    return <RelatedDocumentsShell loading />;
   }
 
   const chips = [];
@@ -222,10 +156,10 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
   const quotationLabel = data?.['quotation$_identifier'];
   if (quotationId) {
     // Parse backend _identifier: "1000373 - 07-04-2026 - 191.80"
-    let qTitle = ui('quotation');
-    let qAmount = null;
     // ConvertQuotationIntoOrder sets the source quotation to CA (Closed - Order Created)
     // when the order is generated, so any quotation reachable through this chip is in CA.
+    let qTitle = ui('quotation');
+    let qAmount = null;
     const qStatus = 'CA';
     if (quotationLabel) {
       const parts = quotationLabel.split(' - ');
@@ -272,8 +206,8 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
     chips.push(
       <DocChip
         key={`payment-${p.id}`}
-        icon={CHIP_ICONS.payments}
-        iconColor={CHIP_COLORS.payments}
+        icon={CHIP_ICONS.payment}
+        iconColor={CHIP_COLORS.payment}
         title={ui('paymentDoc', { number: p.documentNo || p.id })}
         amount={p.amount}
         currency={p['currency$_identifier']}
@@ -283,20 +217,6 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
       />
     );
   }
-
-  const refreshBtn = (
-    <button
-      type="button"
-      onClick={() => setRefreshKey(k => k + 1)}
-      title={ui('refresh')}
-      className="inline-flex items-center justify-center w-5 h-5 rounded text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-    >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`}>
-        <path d="M23 4v6h-6" /><path d="M1 20v-6h6" />
-        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-      </svg>
-    </button>
-  );
 
   if (chips.length === 0) {
     return (

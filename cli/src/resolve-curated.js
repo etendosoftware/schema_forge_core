@@ -671,6 +671,9 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.noHeaderBorder) {
     schema.window.noHeaderBorder = true;
   }
+  if (windowDecisions.lineEntityConfig) {
+    schema.window.lineEntityConfig = windowDecisions.lineEntityConfig;
+  }
 
   // Propagate window-level draftMode to the primary (header) entity so generate-contract
   // can emit the correct draftMode block. draftMode lives in decisions.window but

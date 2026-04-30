@@ -1396,6 +1396,10 @@
       "label": "Teléfono",
       "description": "Número de teléfono del contacto."
     },
+    "EM_Etgo_Discount": {
+      "label": "% Descuento",
+      "description": "Porcentaje de descuento aplicado sobre el precio tarifa de la línea de factura."
+    },
     "Exercise": {
       "label": "Exercise",
       "description": "Exercise"

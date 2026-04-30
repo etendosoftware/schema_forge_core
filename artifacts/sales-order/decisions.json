@@ -297,7 +297,7 @@
           "inputMode": "search",
           "order": 1,
           "gridOrder": 1,
-          "forceCalloutFields": ["unitPrice", "tax", "uOM", "grossUnitPrice", "discount"]
+          "forceCalloutFields": ["listPrice", "unitPrice", "tax", "uOM", "grossUnitPrice", "discount"]
         },
         "orderedQuantity": {
           "grid": true,
@@ -320,11 +320,8 @@
           "visibility": "discarded"
         },
         "unitPrice": {
-          "grid": true,
-          "form": true,
-          "section": "principal",
-          "order": 4,
-          "gridOrder": 4
+          "grid": false,
+          "form": false
         },
         "grossUnitPrice": {
           "form": false
@@ -344,7 +341,12 @@
           "forceCalloutFields": ["lineGrossAmount", "grossUnitPrice", "lineNetAmount"]
         },
         "listPrice": {
-          "visibility": "discarded"
+          "grid": true,
+          "form": true,
+          "section": "principal",
+          "order": 4,
+          "gridOrder": 4,
+          "columnType": "amount"
         },
         "discount": {
           "grid": true,

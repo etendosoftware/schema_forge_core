@@ -30,6 +30,7 @@
       "label": "Confirm"
     },
     "dateFilterKey": "invoiceDate",
+    "lineEntityConfig": "invoice",
     "labelOverrides": {
       "es_ES": {
         "POReference": "Nº documento"
@@ -323,15 +324,19 @@
         "product": {
           "grid": true,
           "lookup": true,
+          "order": 1,
+          "gridOrder": 1,
           "section": "principal",
           "inputMode": "search",
           "readOnlyLogic": null,
-          "displayLogic": null
+          "displayLogic": null,
+          "forceCalloutFields": ["listPrice", "unitPrice", "tax", "uOM", "grossUnitPrice"]
         },
         "description": {
           "grid": true,
-          "section": "principal",
-          "gridOrder": 2
+          "order": 2,
+          "gridOrder": 2,
+          "section": "principal"
         },
         "account": {
           "form": false,
@@ -356,6 +361,8 @@
         },
         "invoicedQuantity": {
           "grid": true,
+          "order": 3,
+          "gridOrder": 3,
           "section": "principal",
           "readOnlyLogic": null
         },
@@ -363,15 +370,29 @@
           "visibility": "system"
         },
         "unitPrice": {
-          "grid": true,
-          "section": "principal",
-          "readOnlyLogic": null
+          "grid": false,
+          "form": false
         },
         "listPrice": {
-          "visibility": "readOnly",
-          "form": false,
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "visibility": "editable",
+          "grid": true,
+          "form": true,
+          "inputMode": "number",
+          "order": 4,
+          "gridOrder": 4,
+          "section": "principal",
+          "columnType": "amount"
+        },
+        "etgoDiscount": {
+          "visibility": "editable",
+          "grid": true,
+          "form": true,
+          "inputMode": "number",
+          "order": 5,
+          "gridOrder": 5,
+          "section": "principal",
+          "derivation": null,
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "lineNetAmount": {
           "visibility": "system",
@@ -381,10 +402,12 @@
         },
         "tax": {
           "grid": true,
+          "order": 6,
+          "gridOrder": 6,
           "section": "principal",
           "inputMode": "selector",
           "readOnlyLogic": null,
-          "forceCalloutFields": ["lineGrossAmount", "grossAmount", "lineNetAmount"]
+          "forceCalloutFields": ["lineNetAmount"]
         },
         "taxableAmount": {
           "visibility": "readOnly",
@@ -437,7 +460,7 @@
         "grossAmount": {
           "visibility": "readOnly",
           "grid": true,
-          "gridOrder": 6,
+          "gridOrder": 7,
           "form": true,
           "section": "principal",
           "displayLogic": null
