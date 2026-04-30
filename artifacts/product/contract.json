@@ -1,7 +1,8 @@
 {
   "version": "0.2.0",
   "generatedAt": "2026-04-29T18:11:24.842Z",
-  "checksum": "3c56d16036a6f586",
+  "updatedAt": "2026-04-30T17:19:53.937Z",
+  "checksum": "54057bc60c12a97f",
   "frontendContract": {
     "window": {
       "id": "140",
@@ -513,7 +514,8 @@
               "source": "0"
             }
           }
-        ]
+        ],
+        "javaQualifier": "productPriceHandler"
       },
       "priceRuleVersion": {
         "tableName": "M_ServicePriceRule_Version",
@@ -1435,7 +1437,8 @@
               "source": "0"
             }
           }
-        ]
+        ],
+        "javaQualifier": "productStockWarehouseHandler"
       },
       "categoryPriceRuleVersion": {
         "tableName": "M_ServicePriceRule_Version",
@@ -2820,7 +2823,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "productPriceHandler"
       },
       "priceRuleVersion": {
         "tableName": "M_ServicePriceRule_Version",
@@ -4005,7 +4009,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "productStockWarehouseHandler"
       },
       "categoryPriceRuleVersion": {
         "tableName": "M_ServicePriceRule_Version",

@@ -1,7 +1,8 @@
 {
-  "version": "0.2.0",
-  "generatedAt": "2026-04-30T16:29:32.691Z",
-  "checksum": "c04d6587f9fafaab",
+  "version": "0.3.0",
+  "generatedAt": "2026-04-30T15:42:46.907Z",
+  "updatedAt": "2026-04-30T17:19:23.296Z",
+  "checksum": "d39b2e3e1e54cfcf",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -330,6 +331,10 @@
               {
                 "value": "CL",
                 "name": "Closed"
+              },
+              {
+                "value": "ETGO_CI",
+                "name": "Closed - Invoice Created"
               },
               {
                 "value": "CA",
@@ -2628,7 +2633,7 @@
       },
       "sorting": {
         "param": "_sortBy",
-        "example": "_sortBy=sales-quotationDate"
+        "example": "_sortBy=creationDate desc"
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
@@ -3478,12 +3483,20 @@
         "description": "System field 'rMPickFromShipment' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-105",
+        "id": "t-97",
         "category": "system-field",
         "entity": "quotation",
         "field": "scheduledDeliveryDate",
         "runner": "node",
         "description": "System field 'scheduledDeliveryDate' should exist in backend but not frontend for quotation"
+      },
+      {
+        "id": "t-98",
+        "category": "system-field",
+        "entity": "quotation",
+        "field": "rMReceiveMaterials",
+        "runner": "node",
+        "description": "System field 'rMReceiveMaterials' should exist in backend but not frontend for quotation"
       },
       {
         "id": "t-106",
@@ -3686,12 +3699,20 @@
         "description": "System field 'calculatePromotions' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-131",
+        "id": "t-124",
         "category": "system-field",
         "entity": "quotation",
         "field": "project",
         "runner": "node",
         "description": "System field 'project' should exist in backend but not frontend for quotation"
+      },
+      {
+        "id": "t-125",
+        "category": "system-field",
+        "entity": "quotation",
+        "field": "activity",
+        "runner": "node",
+        "description": "System field 'activity' should exist in backend but not frontend for quotation"
       },
       {
         "id": "t-132",
@@ -3734,7 +3755,7 @@
         "description": "System field 'ndDimension' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-137",
+        "id": "t-130",
         "category": "system-field",
         "entity": "quotation",
         "field": "processNow",
@@ -3742,7 +3763,7 @@
         "description": "System field 'processNow' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-138",
+        "id": "t-131",
         "category": "system-field",
         "entity": "quotation",
         "field": "priceIncludesTax",
@@ -3750,7 +3771,7 @@
         "description": "System field 'priceIncludesTax' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-139",
+        "id": "t-132",
         "category": "system-field",
         "entity": "quotation",
         "field": "dropShipPartner",
@@ -3758,7 +3779,7 @@
         "description": "System field 'dropShipPartner' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-140",
+        "id": "t-133",
         "category": "system-field",
         "entity": "quotation",
         "field": "dropShipLocation",
@@ -3766,7 +3787,7 @@
         "description": "System field 'dropShipLocation' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-141",
+        "id": "t-134",
         "category": "system-field",
         "entity": "quotation",
         "field": "reinvoice",
@@ -3774,7 +3795,7 @@
         "description": "System field 'reinvoice' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-142",
+        "id": "t-135",
         "category": "system-field",
         "entity": "quotation",
         "field": "posted",
@@ -3782,7 +3803,7 @@
         "description": "System field 'posted' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-143",
+        "id": "t-136",
         "category": "system-field",
         "entity": "quotation",
         "field": "id",
@@ -3790,7 +3811,7 @@
         "description": "System field 'id' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-144",
+        "id": "t-137",
         "category": "system-field",
         "entity": "quotation",
         "field": "salesTransaction",
@@ -3798,7 +3819,7 @@
         "description": "System field 'salesTransaction' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-145",
+        "id": "t-138",
         "category": "system-field",
         "entity": "quotation",
         "field": "active",
@@ -3806,7 +3827,7 @@
         "description": "System field 'active' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-146",
+        "id": "t-139",
         "category": "system-field",
         "entity": "quotation",
         "field": "print",
@@ -3814,7 +3835,7 @@
         "description": "System field 'print' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-147",
+        "id": "t-140",
         "category": "system-field",
         "entity": "quotation",
         "field": "accountingDate",
@@ -3822,7 +3843,7 @@
         "description": "System field 'accountingDate' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-148",
+        "id": "t-141",
         "category": "system-field",
         "entity": "quotation",
         "field": "deliveryNotes",
@@ -3830,7 +3851,7 @@
         "description": "System field 'deliveryNotes' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-149",
+        "id": "t-142",
         "category": "system-field",
         "entity": "quotation",
         "field": "selfService",
@@ -3838,7 +3859,7 @@
         "description": "System field 'selfService' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-150",
+        "id": "t-143",
         "category": "system-field",
         "entity": "quotation",
         "field": "formOfPayment",
@@ -3846,12 +3867,68 @@
         "description": "System field 'formOfPayment' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-151",
+        "id": "t-144",
         "category": "system-field",
         "entity": "quotation",
         "field": "datePrinted",
         "runner": "node",
         "description": "System field 'datePrinted' should exist in backend but not frontend for quotation"
+      },
+      {
+        "id": "t-145",
+        "category": "system-field",
+        "entity": "quotation",
+        "field": "generateTemplate",
+        "runner": "node",
+        "description": "System field 'generateTemplate' should exist in backend but not frontend for quotation"
+      },
+      {
+        "id": "t-146",
+        "category": "system-field",
+        "entity": "quotation",
+        "field": "delivered",
+        "runner": "node",
+        "description": "System field 'delivered' should exist in backend but not frontend for quotation"
+      },
+      {
+        "id": "t-147",
+        "category": "system-field",
+        "entity": "quotation",
+        "field": "formOfPayment",
+        "runner": "node",
+        "description": "System field 'formOfPayment' should exist in backend but not frontend for quotation"
+      },
+      {
+        "id": "t-148",
+        "category": "system-field",
+        "entity": "quotation",
+        "field": "iNCOTERMSDescription",
+        "runner": "node",
+        "description": "System field 'iNCOTERMSDescription' should exist in backend but not frontend for quotation"
+      },
+      {
+        "id": "t-149",
+        "category": "system-field",
+        "entity": "quotation",
+        "field": "selected",
+        "runner": "node",
+        "description": "System field 'selected' should exist in backend but not frontend for quotation"
+      },
+      {
+        "id": "t-150",
+        "category": "system-field",
+        "entity": "quotation",
+        "field": "dropShipContact",
+        "runner": "node",
+        "description": "System field 'dropShipContact' should exist in backend but not frontend for quotation"
+      },
+      {
+        "id": "t-151",
+        "category": "system-field",
+        "entity": "quotation",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for quotation"
       },
       {
         "id": "t-152",
@@ -3926,7 +4003,7 @@
         "description": "System field 'externalBusinessPartnerReference' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-161",
+        "id": "t-154",
         "category": "system-field",
         "entity": "quotation",
         "field": "cancelandreplace",
@@ -3934,7 +4011,7 @@
         "description": "System field 'cancelandreplace' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-162",
+        "id": "t-155",
         "category": "system-field",
         "entity": "quotation",
         "field": "cancelledorder",
@@ -3942,7 +4019,7 @@
         "description": "System field 'cancelledorder' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-163",
+        "id": "t-156",
         "category": "system-field",
         "entity": "quotation",
         "field": "costcenter",
@@ -3950,7 +4027,7 @@
         "description": "System field 'costcenter' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-164",
+        "id": "t-157",
         "category": "system-field",
         "entity": "quotation",
         "field": "confirmcancelandreplace",
@@ -3958,7 +4035,7 @@
         "description": "System field 'confirmcancelandreplace' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-165",
+        "id": "t-158",
         "category": "system-field",
         "entity": "quotation",
         "field": "creationDate",
@@ -3966,7 +4043,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-166",
+        "id": "t-159",
         "category": "system-field",
         "entity": "quotation",
         "field": "createdBy",
@@ -3974,7 +4051,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-167",
+        "id": "t-160",
         "category": "system-field",
         "entity": "quotation",
         "field": "createPOLines",
@@ -3982,7 +4059,7 @@
         "description": "System field 'createPOLines' should exist in backend but not frontend for quotation"
       },
       {
-        "id": "t-168",
+        "id": "t-161",
         "category": "system-field",
         "entity": "quotation",
         "field": "deliveryStatus",
@@ -4518,7 +4595,7 @@
         "description": "System field 'costcenter' should exist in backend but not frontend for quotationLine"
       },
       {
-        "id": "t-235",
+        "id": "t-228",
         "category": "system-field",
         "entity": "quotationLine",
         "field": "creationDate",
@@ -4526,7 +4603,7 @@
         "description": "System field 'creationDate' should exist in backend but not frontend for quotationLine"
       },
       {
-        "id": "t-236",
+        "id": "t-229",
         "category": "system-field",
         "entity": "quotationLine",
         "field": "createdBy",
@@ -4534,7 +4611,7 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for quotationLine"
       },
       {
-        "id": "t-237",
+        "id": "t-230",
         "category": "system-field",
         "entity": "quotationLine",
         "field": "createReservation",
@@ -4542,7 +4619,7 @@
         "description": "System field 'createReservation' should exist in backend but not frontend for quotationLine"
       },
       {
-        "id": "t-238",
+        "id": "t-231",
         "category": "system-field",
         "entity": "quotationLine",
         "field": "explode",
@@ -4550,7 +4627,7 @@
         "description": "System field 'explode' should exist in backend but not frontend for quotationLine"
       },
       {
-        "id": "t-239",
+        "id": "t-232",
         "category": "system-field",
         "entity": "quotationLine",
         "field": "managePrereservation",
@@ -4558,7 +4635,7 @@
         "description": "System field 'managePrereservation' should exist in backend but not frontend for quotationLine"
       },
       {
-        "id": "t-240",
+        "id": "t-233",
         "category": "system-field",
         "entity": "quotationLine",
         "field": "manageReservation",
@@ -4566,7 +4643,7 @@
         "description": "System field 'manageReservation' should exist in backend but not frontend for quotationLine"
       },
       {
-        "id": "t-241",
+        "id": "t-234",
         "category": "system-field",
         "entity": "quotationLine",
         "field": "warehouseRule",
@@ -4574,7 +4651,7 @@
         "description": "System field 'warehouseRule' should exist in backend but not frontend for quotationLine"
       },
       {
-        "id": "t-242",
+        "id": "t-235",
         "category": "system-field",
         "entity": "quotationLine",
         "field": "overdueReturnDays",
@@ -4852,7 +4929,7 @@
         "description": "Action endpoint for 'calculatePromotions' in quotation should exist"
       },
       {
-        "id": "t-278",
+        "id": "t-270",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "processNow",
@@ -4860,7 +4937,7 @@
         "description": "Action endpoint for 'processNow' in quotation should exist"
       },
       {
-        "id": "t-279",
+        "id": "t-271",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "posted",
@@ -4868,7 +4945,7 @@
         "description": "Action endpoint for 'posted' in quotation should exist"
       },
       {
-        "id": "t-280",
+        "id": "t-272",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "generateTemplate",
@@ -4876,7 +4953,7 @@
         "description": "Action endpoint for 'generateTemplate' in quotation should exist"
       },
       {
-        "id": "t-281",
+        "id": "t-273",
         "category": "action-endpoint",
         "entity": "quotation",
         "field": "cancelandreplace",

@@ -279,6 +279,14 @@ export const api = {
     },
     {
       "entity": "header",
+      "field": "generateTemplate",
+      "column": "Generatetemplate",
+      "url": "/sws/neo/sales-order/header/{id}/action/generateTemplate",
+      "processId": "800022",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
       "field": "posted",
       "column": "Posted",
       "url": "/sws/neo/sales-order/header/{id}/action/posted",
@@ -291,14 +299,6 @@ export const api = {
       "column": "Processing",
       "url": "/sws/neo/sales-order/header/{id}/action/processNow",
       "processId": "104",
-      "processType": "classic"
-    },
-    {
-      "entity": "header",
-      "field": "generateTemplate",
-      "column": "Generatetemplate",
-      "url": "/sws/neo/sales-order/header/{id}/action/generateTemplate",
-      "processId": "800022",
       "processType": "classic"
     },
     {
