@@ -312,7 +312,7 @@
           "order": 1,
           "gridOrder": 1,
           "readOnlyLogic": null,
-          "forceCalloutFields": ["unitPrice", "tax", "uOM", "grossUnitPrice", "discount"]
+          "forceCalloutFields": ["listPrice", "unitPrice", "tax", "uOM", "grossUnitPrice", "discount"]
         },
         "operativeQuantity": {
           "form": false,
@@ -340,13 +340,9 @@
           "readOnlyLogic": null
         },
         "unitPrice": {
-          "grid": true,
-          "form": true,
-          "section": "principal",
-          "order": 4,
-          "gridOrder": 4,
-          "readOnlyLogic": null,
-          "columnType": "amount"
+          "grid": false,
+          "form": false,
+          "readOnlyLogic": null
         },
         "grossUnitPrice": {
           "form": false,
@@ -376,10 +372,14 @@
           "forceCalloutFields": ["lineGrossAmount", "grossUnitPrice", "lineNetAmount"]
         },
         "listPrice": {
-          "visibility": "readOnly",
-          "form": false,
+          "grid": true,
+          "form": true,
+          "section": "principal",
+          "order": 4,
+          "gridOrder": 4,
           "readOnlyLogic": null,
-          "displayLogic": null
+          "displayLogic": null,
+          "columnType": "amount"
         },
         "grossListPrice": {
           "form": false,

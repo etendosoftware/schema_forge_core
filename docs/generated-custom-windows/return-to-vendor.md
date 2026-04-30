@@ -8,7 +8,7 @@ The Return to Vendor window should let purchasing users register a vendor return
 
 - Create and update a vendor-return header with the vendor reference, order date, business partner, partner address, return reason, warehouse, payment method, payment terms, price list, and supporting notes.
 - Review return orders in a list/detail flow and inspect summary values such as total net amount, total gross amount, currency, and delivered state.
-- Open a specific return and work with its `lines` child dataset so the order captures which products, quantities, taxes, and amounts are being returned.
+- Open a specific return and work with its `lines` child dataset so the order captures which products, quantities, taxes, and amounts are being returned, even though the generated line table currently only shows `lineGrossAmount` as the visible grid column.
 - Pick or edit return lines from prior goods receipts instead of forcing users to build the return entirely from scratch.
 - Process a draft return order so the document can leave draft status once the selected lines and header context are ready.
 - Follow linked purchasing records through the related-documents tab when upstream or downstream documents already exist.

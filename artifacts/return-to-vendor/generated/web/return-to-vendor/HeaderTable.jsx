@@ -2,7 +2,7 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:header
 const columns = [
-
+  { key: 'orderDate', column: 'DateOrdered', type: 'date', label: 'Order Date' },
 ];
 // @sf-generated-end columns:header
 

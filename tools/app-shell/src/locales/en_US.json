@@ -13404,6 +13404,10 @@
       "label": "Phone",
       "description": "The Phone field identifies a telephone number"
     },
+    "EM_Etgo_Discount": {
+      "label": "Discount %",
+      "description": "Discount percentage applied to the list price of the invoice line."
+    },
     "EM_Etvfac_Issue_Description": {
       "label": "Detalle de la Incidencia",
       "description": "Información acerca del problema técnico que ocurrió."
