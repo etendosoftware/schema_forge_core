@@ -17031,6 +17031,7 @@
     "statusClosed": "Cerrado",
     "statusOrderCreated": "Cerrado - Pedido creado",
     "statusInvoiceCreated": "Cerrado - Factura creada",
+    "statusRejected": "Cerrado - Rechazado",
     "statusPaid": "Pagado",
     "statusPending": "Pendiente",
     "statusPartiallyExecuted": "Pago parcial",
@@ -17751,6 +17752,21 @@
     "sqSendToEvalDesc": "La cotización quedará lista para crear pedido o factura.",
     "sqSendToEvalConfirm": "Enviar a evaluación",
     "sqOrderConfirmedInvoiceError": "El presupuesto fue procesado pero no se pudo crear la factura. ",
+    "rejectQuotation": "Rechazar",
+    "rejectQuotationTitle": "Rechazar Presupuesto",
+    "rejectQuotationDesc": "Selecciona un motivo de rechazo. Esta acción cambiará el estado del presupuesto a rechazado.",
+    "rejectReasonLabel": "Selecciona un motivo",
+    "rejectReasonPlaceholder": "Selecciona o crea un motivo",
+    "rejectQuotationConfirm": "Rechazar presupuesto",
+    "rejectQuotationError": "No se pudo rechazar el presupuesto. ",
+    "rejectReasonSearchPlaceholder": "Selecciona o crea un motivo",
+    "rejectReasonNoResults": "No hay razones que coincidan",
+    "createRejectReason": "Crear razón",
+    "createRejectReasonTitle": "Crear razón de rechazo",
+    "rejectReasonNameLabel": "Nombre",
+    "rejectReasonNamePlaceholder": "ej. Precio demasiado alto",
+    "rejectReasonCreateConfirm": "Crear razón",
+    "rejectReasonCreateError": "No se pudo crear la razón de rechazo. ",
     "productPctFree": "{pct}% libre",
     "productTotalOnHand": "Total en stock",
     "productInWarehouse": "En {name}",
@@ -19270,6 +19286,9 @@
   "statuses": {
     "CA": {
       "label": "Cerrado - Pedido creado"
+    },
+    "CJ": {
+      "label": "Cerrado - Rechazado"
     },
     "CL": {
       "label": "Cerrado"

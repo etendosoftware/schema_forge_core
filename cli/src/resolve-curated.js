@@ -510,6 +510,9 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
         processValue: entityDecision.draftMode.processValue || 'CO',
         label: entityDecision.draftMode.label || 'Process',
       };
+      if (Array.isArray(entityDecision.draftMode.completedStatuses)) {
+        entity.draftMode.completedStatuses = entityDecision.draftMode.completedStatuses;
+      }
     }
 
     if (entityDecision.formCols != null) {
@@ -684,6 +687,9 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
         processValue: windowDecisions.draftMode.processValue || 'CO',
         label: windowDecisions.draftMode.label || 'Process',
       };
+      if (Array.isArray(windowDecisions.draftMode.completedStatuses)) {
+        primaryEntity.draftMode.completedStatuses = windowDecisions.draftMode.completedStatuses;
+      }
     }
   }
 

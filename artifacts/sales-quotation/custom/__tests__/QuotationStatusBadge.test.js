@@ -30,6 +30,7 @@ describe('QuotationStatusBadge', () => {
       CA:      'statusOrderCreated',
       ETGO_CI: 'statusInvoiceCreated',
       CL:      'statusClosed',
+      CJ:      'statusRejected',
       VO:      'statusVoid',
     };
 
@@ -48,6 +49,11 @@ describe('QuotationStatusBadge', () => {
     it('has ETGO_CI styled with the success/emerald palette', () => {
       assert.match(src, /ETGO_CI:\s*\{[^}]*dot:\s*'#10B981'/);
       assert.match(src, /ETGO_CI:\s*\{[^}]*bg:\s*'#ECFDF5'/);
+    });
+
+    it('has CJ styled with the destructive/red palette', () => {
+      assert.match(src, /CJ:\s*\{[^}]*dot:\s*'#EF4444'/);
+      assert.match(src, /CJ:\s*\{[^}]*bg:\s*'#FEE2E2'/);
     });
   });
 

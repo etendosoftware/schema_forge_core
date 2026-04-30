@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import QuotationConfirmModal from './QuotationConfirmModal';
 import SendToEvaluationModal from './SendToEvaluationModal';
+import RejectQuotationModal from './RejectQuotationModal';
 import { useUI } from '@/i18n';
 
 function CopyIcon() {
@@ -37,6 +38,7 @@ export default function QuotationTopbarActions({ data, recordId, token, apiBaseU
   const [showConfirm, setShowConfirm] = useState(false);
   const [showSendToEval, setShowSendToEval] = useState(false);
   const [showClone, setShowClone] = useState(false);
+  const [showReject, setShowReject] = useState(false);
 
   const headers = useMemo(() => ({
     Authorization: `Bearer ${token}`,
@@ -44,41 +46,32 @@ export default function QuotationTopbarActions({ data, recordId, token, apiBaseU
   }), [token]);
 
   const status = data?.documentStatus;
-  const isDraft = status === 'DR';
-  const isUnderEvaluation = status === 'UE';
+
+  // The framework's draftMode renders a "Confirmar" primary button after Save.
+  // The wrapper at tools/app-shell/src/windows/custom/sales-quotation/index.jsx
+  // overrides draftMode.onConfirm so that clicking it dispatches this event,
+  // which we route to the right modal based on the current quotation status.
+  useEffect(() => {
+    function handler() {
+      if (status === 'DR') setShowSendToEval(true);
+      else if (status === 'UE') setShowConfirm(true);
+    }
+    window.addEventListener('sales-quotation:open-confirm-modal', handler);
+    return () => window.removeEventListener('sales-quotation:open-confirm-modal', handler);
+  }, [status]);
+
+  // The wrapper's customMenuActions dispatches this event when the user clicks
+  // the kebab "Reject" item (only visible while status === 'UE').
+  useEffect(() => {
+    function handler() { setShowReject(true); }
+    window.addEventListener('sales-quotation:open-reject-modal', handler);
+    return () => window.removeEventListener('sales-quotation:open-reject-modal', handler);
+  }, []);
 
   if (!status) return null;
 
   return (
     <>
-      {isDraft && (
-        <button
-          type="button"
-          onClick={() => setShowSendToEval(true)}
-          className="inline-flex items-center gap-1.5 text-[13px] font-medium transition-colors"
-          style={{
-            padding: '4px 14px', borderRadius: 6, border: 'none',
-            background: '#185FA5', color: '#fff', fontWeight: 500, cursor: 'pointer',
-          }}
-        >
-          {ui('soConfirmBtn')}
-        </button>
-      )}
-
-      {isUnderEvaluation && (
-        <button
-          type="button"
-          onClick={() => setShowConfirm(true)}
-          className="inline-flex items-center gap-1.5 text-[13px] font-medium transition-colors"
-          style={{
-            padding: '4px 14px', borderRadius: 6, border: 'none',
-            background: '#185FA5', color: '#fff', fontWeight: 500, cursor: 'pointer',
-          }}
-        >
-          {ui('soConfirmBtn')}
-        </button>
-      )}
-
       <button type="button" onClick={() => setShowClone(true)} style={btnCloneStyle}>
         <CopyIcon />{ui('cloneOrderBtn')}
       </button>
@@ -134,6 +127,17 @@ export default function QuotationTopbarActions({ data, recordId, token, apiBaseU
           windowName="sales-quotation"
           token={token}
           onClose={() => setShowSend(false)}
+        />,
+        document.body,
+      )}
+
+      {showReject && createPortal(
+        <RejectQuotationModal
+          quotationId={recordId}
+          data={data}
+          token={token}
+          apiBaseUrl={apiBaseUrl}
+          onClose={() => setShowReject(false)}
         />,
         document.body,
       )}

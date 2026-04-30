@@ -7,6 +7,7 @@ const STATUS_CONFIG = {
   CA:      { key: 'statusOrderCreated',    dot: '#10B981', bg: '#ECFDF5', text: '#059669', border: '#A7F3D0' },
   ETGO_CI: { key: 'statusInvoiceCreated',  dot: '#10B981', bg: '#ECFDF5', text: '#059669', border: '#A7F3D0' },
   CL:      { key: 'statusClosed',          dot: '#8B5CF6', bg: '#F5F3FF', text: '#6D28D9', border: '#DDD6FE' },
+  CJ:      { key: 'statusRejected',        dot: '#EF4444', bg: '#FEE2E2', text: '#DC2626', border: '#FECACA' },
   VO:      { key: 'statusVoid',            dot: '#EF4444', bg: '#FEE2E2', text: '#DC2626', border: '#FECACA' },
 };
 

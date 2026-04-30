@@ -93,6 +93,29 @@ describe('statusBadge — destructive tones still apply only to truly cancelled 
   });
 });
 
+describe('statusBadge — CJ (Closed - Rejected) is destructive', () => {
+  it('getStatusTone returns destructive for CJ', () => {
+    assert.equal(getStatusTone('CJ'), 'destructive');
+    assert.equal(getStatusTone('cj'), 'destructive');
+  });
+
+  it('getStatusBadgeProps renders CJ with the destructive variant', () => {
+    assert.equal(getStatusBadgeProps('CJ').variant, 'destructive');
+  });
+
+  it('getStatusDotColor paints CJ dot red', () => {
+    assert.equal(getStatusDotColor('CJ'), 'bg-red-500');
+  });
+
+  it('getStatusPillClass paints CJ pill red', () => {
+    assert.equal(getStatusPillClass('CJ'), 'bg-red-50 text-red-800');
+  });
+
+  it('getStatusGridPillClass paints CJ grid pill red', () => {
+    assert.equal(getStatusGridPillClass('CJ'), 'bg-red-500 text-white');
+  });
+});
+
 describe('statusBadge — non-regression on previously success/closed/draft states', () => {
   it('CO stays success', () => {
     assert.equal(getStatusTone('CO'), 'success');

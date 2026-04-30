@@ -139,7 +139,7 @@ export default function QuotationConfirmModal({
           type: 'invoice',
           id: doc?.id ?? null,
           documentNo: doc?.documentNo ?? '',
-          total: fmtNum(doc?.grandTotalAmount ?? grandTotal),
+          total: `${fmtNum(doc?.grandTotalAmount ?? grandTotal)} ${currency}`,
           status: 'Draft',
         });
       }
