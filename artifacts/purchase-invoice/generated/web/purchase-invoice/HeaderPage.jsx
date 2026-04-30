@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import { toast } from 'sonner';
+import { INVOICE_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import HeaderTable from './HeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
@@ -59,11 +60,12 @@ const draftMode = {
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
   entry: [
-    { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity', defaultValue: 1 },
-    { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["listPrice","unitPrice","tax","uOM","grossUnitPrice"] },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineGrossAmount","grossAmount","lineNetAmount"] },
+    { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity', defaultValue: 1 },
+    { key: 'listPrice', column: 'PriceList', type: 'number', required: true, label: 'List Price' },
+    { key: 'etgoDiscount', column: 'EM_Etgo_Discount', type: 'number', label: 'Discount %', defaultValue: 0 },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineNetAmount"] },
   ],
   derived: [
 
@@ -324,19 +326,19 @@ export const api = {
     },
     {
       "entity": "lines",
-      "field": "account",
-      "column": "Account_ID",
-      "reference": "GLAccount",
-      "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/lines/selectors/account"
-    },
-    {
-      "entity": "lines",
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
       "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/lines/selectors/tax"
+    },
+    {
+      "entity": "lines",
+      "field": "account",
+      "column": "Account_ID",
+      "reference": "GLAccount",
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/lines/selectors/account"
     },
     {
       "entity": "lines",
@@ -845,6 +847,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         ]}
         draftMode={draftMode}
         labelOverrides={labelOverrides}
+        lineConfig={INVOICE_LINE_CONFIG}
         {...props}
       />
     );

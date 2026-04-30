@@ -2,7 +2,7 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:lines
 const columns = [
-
+  { key: 'lineGrossAmount', column: 'Line_Gross_Amount', type: 'amount', label: 'Line Gross Amount' },
 ];
 // @sf-generated-end columns:lines
 
