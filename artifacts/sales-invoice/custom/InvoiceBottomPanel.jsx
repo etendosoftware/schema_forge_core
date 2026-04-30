@@ -4,11 +4,16 @@ import { toast } from 'sonner';
 import { useUI } from '@/i18n';
 import RelatedDocuments from './RelatedDocuments';
 import ImportFromShipmentModal from './ImportFromShipmentModal';
+import DocumentTotalsPanel from '@/components/contract-ui/DocumentTotalsPanel.jsx';
 
 function fmt(val, curr) {
   const n = typeof val === 'string' ? parseFloat(val) : (val ?? 0);
   const s = n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return curr ? `${s} ${curr}` : s;
+}
+
+function fmtForPanel(val, currency) {
+  return fmt(val, currency);
 }
 
 /**
@@ -22,15 +27,12 @@ function fmt(val, curr) {
 export default function InvoiceBottomPanel({
   recordId, data, token, apiBaseUrl, api, summary,
   notesField, onFieldChange, notesFocused, setNotesFocused,
+  lines, pendingLine, editingLine, lineConfig, discountPerProductEnabled, onDiscountPerProductChange,
 }) {
   const ui = useUI();
   const currency = data?.['currency$_identifier'] || '';
 
-  const subtotalField = summary?.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('summed') || f.key.toLowerCase().includes('totallines') || f.key.toLowerCase().includes('lineamount')));
-  const totalField = summary?.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || (f.key.toLowerCase().includes('total') && !f.key.toLowerCase().includes('line'))));
-  const subtotal = subtotalField ? data?.[subtotalField.key] : null;
-  const total = totalField ? data?.[totalField.key] : null;
-  const taxes = (subtotal != null && total != null) ? total - subtotal : null;
+  const isReadOnly = data?.documentStatus !== 'DR';
 
   return (
     <div className="flex flex-col">
@@ -91,28 +93,19 @@ export default function InvoiceBottomPanel({
       {/* ── Vertical separator ── */}
       <div className="border-l border-border/50" style={{ borderLeftWidth: '0.5px' }} />
 
-      {/* ── Right column: Totals only ── */}
-      <div className="w-[280px] shrink-0 py-4 px-4">
-        <div className="text-sm space-y-0.5">
-          {subtotal != null && (
-            <div className="flex justify-between py-1 px-1">
-              <span className="text-muted-foreground">{ui('subtotal')}</span>
-              <span className="tabular-nums">{fmt(subtotal, currency)}</span>
-            </div>
-          )}
-          {taxes != null && taxes !== 0 && (
-            <div className="flex justify-between py-1 px-1">
-              <span className="text-muted-foreground">{ui('tax')}</span>
-              <span className="tabular-nums">{fmt(taxes, currency)}</span>
-            </div>
-          )}
-          {total != null && (
-            <div className="flex justify-between py-1.5 px-1 border-t border-border/40 font-semibold text-base" style={{ borderTopWidth: '0.5px' }}>
-              <span>{ui('total')}</span>
-              <span className="tabular-nums">{fmt(total, currency)}</span>
-            </div>
-          )}
-        </div>
+      {/* ── Right column: Totals ── */}
+      <div className="w-[340px] shrink-0 py-4 px-4 flex flex-col justify-start">
+        <DocumentTotalsPanel
+          lines={lines ?? []}
+          pendingLine={pendingLine ?? null}
+          editingLine={editingLine ?? null}
+          lineConfig={lineConfig}
+          formatAmount={fmtForPanel}
+          currency={currency}
+          discountPerProductEnabled={discountPerProductEnabled ?? false}
+          onDiscountPerProductChange={onDiscountPerProductChange}
+          readOnly={isReadOnly}
+        />
       </div>
       </div>
     </div>

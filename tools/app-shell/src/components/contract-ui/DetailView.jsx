@@ -17,6 +17,7 @@ import { useMenuLabel, useUI, useLocale } from '@/i18n';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
 import { SummaryBar } from './SummaryBar.jsx';
+import DocumentTotalsPanel from './DocumentTotalsPanel.jsx';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import {
   buildCalloutFormState, extractAuxValues, normalizeCalloutQty,
@@ -235,6 +236,9 @@ export function DetailView({
   const ui = useUI();
   const dictionary = useLocale();
   const [addingLine, setAddingLine] = useState(false);
+  // Live snapshot of the in-progress add-row values — updated on every keystroke
+  // so DocumentTotalsPanel can compute real-time totals before the line is saved.
+  const [pendingLineValues, setPendingLineValues] = useState(null);
   const [addingSecondaryLine, setAddingSecondaryLine] = useState({});
   const [forceOpenImport, setForceOpenImport] = useState(false);
   // Imperative handles to in-progress inline add rows so we can commit them
@@ -887,6 +891,13 @@ export function DetailView({
   const [showOthers, setShowOthers] = useState(primaryTabs ? false : null);
   const [activePrimaryTab, setActivePrimaryTab] = useState(primaryTabs?.[0]?.key ?? 'general');
   const [notesFocused, setNotesFocused] = useState(false);
+  const [discountPerProductEnabled, setDiscountPerProductEnabled] = useState(false);
+
+  // Reset discount column visibility when all lines are removed.
+  useEffect(() => {
+    if (hook.children.length === 0) setDiscountPerProductEnabled(false);
+  }, [hook.children.length]);
+
   const othersRef = useRef(null);
 
   useEffect(() => {
@@ -1487,6 +1498,7 @@ export function DetailView({
                         onSelectionChange={setSelectedChildRows}
                         showFooterTotals={showDetailFooterTotals ?? !summary.some(f => f.type === 'amount')}
                         selectorContext={selectorContextByEntity[detailEntity]}
+                        hiddenColumns={lineConfig?.discountField && !discountPerProductEnabled ? [lineConfig.discountField] : []}
                         onDeleteRow={(api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly ? async (row) => {
                           if (!window.confirm(ui('deleteConfirmMessage'))) return;
                           try {
@@ -1525,11 +1537,13 @@ export function DetailView({
                             // Derive unitPrice = listPrice × (1-discount/100) before POST.
                             // For invoice config (priceField='unitPrice') this is a no-op.
                             prepareLineForPost(lineData);
+                            setPendingLineValues(null);
                             return hook.handleAddChild?.(lineData);
                           },
-                          onCancel: () => setAddingLine(false),
+                          onCancel: () => { setAddingLine(false); setPendingLineValues(null); },
                           catalogs,
                           onFieldChange: handleLineFieldChange,
+                          onValuesChange: setPendingLineValues,
                         }}
                       />
 
@@ -2052,42 +2066,34 @@ export function DetailView({
                   onFieldChange={handleChangeWithCallout}
                   notesFocused={notesFocused}
                   setNotesFocused={setNotesFocused}
+                  lines={hook.children}
+                  pendingLine={pendingLineValues}
+                  editingLine={lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine}
+                  lineConfig={lineConfig}
+                  discountPerProductEnabled={discountPerProductEnabled}
+                  onDiscountPerProductChange={setDiscountPerProductEnabled}
                 />
               );
             })() : (
               <>
-                {/* Totals block: Subtotal / Tax / Total */}
+                {/* Totals block: DocumentTotalsPanel with optional discount expansion */}
                 {(() => {
                   const subtotalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('summed') || f.key.toLowerCase().includes('totallines') || f.key.toLowerCase().includes('lineamount')));
                   const totalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || (f.key.toLowerCase().includes('total') && !f.key.toLowerCase().includes('line'))));
                   if (!subtotalField && !totalField) return null;
-                  const subtotal = subtotalField ? data[subtotalField.key] : null;
-                  const total = totalField ? data[totalField.key] : null;
-                  const taxes = (subtotal != null && total != null) ? total - subtotal : null;
                   const currency = data['currency$_identifier'];
                   return (
-                    <div className="mt-1 flex justify-end">
-                      <div className="w-64 text-sm" style={{ borderTopWidth: '0.5px' }}>
-                        {subtotal != null && (
-                          <div className="flex justify-between py-1.5 px-2">
-                            <span className="text-muted-foreground">{ui('subtotal')}</span>
-                            <span className="tabular-nums">{formatAmount(subtotal, currency)}</span>
-                          </div>
-                        )}
-                        {taxes != null && taxes !== 0 && (
-                          <div className="flex justify-between py-1.5 px-2">
-                            <span className="text-muted-foreground">{ui('tax')}</span>
-                            <span className="tabular-nums">{formatAmount(taxes, currency)}</span>
-                          </div>
-                        )}
-                        {total != null && (
-                          <div className="flex justify-between py-1.5 px-2 border-t border-border/40 font-semibold" style={{ borderTopWidth: '0.5px' }}>
-                            <span>{ui('total')}</span>
-                            <span className="tabular-nums">{formatAmount(total, currency)}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <DocumentTotalsPanel
+                      lines={hook.children}
+                      pendingLine={pendingLineValues}
+                      editingLine={lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine}
+                      lineConfig={lineConfig}
+                      formatAmount={formatAmount}
+                      currency={currency}
+                      discountPerProductEnabled={discountPerProductEnabled}
+                      onDiscountPerProductChange={setDiscountPerProductEnabled}
+                      readOnly={isDocumentReadOnly}
+                    />
                   );
                 })()}
 
