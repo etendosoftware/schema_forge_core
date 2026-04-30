@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ── Config ──────────────────────────────────────────────────────────
-PROJECT_KEY="${SONAR_PROJECT_KEY:-etendosoftware_etendo_schema_forge}"
+PROJECT_KEY="${SONAR_PROJECT_KEY:-}"
 POLL_INTERVAL=5      # seconds between polls
 MAX_WAIT=300         # max seconds to wait for analysis
 REPORT_DIR="sonar-reports"
@@ -56,6 +56,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+load_sonar_property() {
+  local key="$1"
+  local file="$SCRIPT_DIR/sonar-project.properties"
+  [[ -f "$file" ]] || return 0
+  awk -F'=' -v k="$key" '$1==k {sub(/^[^=]*=/, ""); print; exit}' "$file"
+}
 load_env_file() {
   local env_file="$1"
   [[ -f "$env_file" ]] || return 0
@@ -81,7 +87,7 @@ prompt_for_sonar_env_file() {
     echo "Example:"
     echo "SONAR_HOST_URL=https://sonar.example.com"
     echo "SONAR_TOKEN=your_token_here"
-    echo "SONAR_PROJECT_KEY=$PROJECT_KEY"
+    echo "SONAR_PROJECT_KEY=your_project_key  # optional if sonar-project.properties defines sonar.projectKey"
     echo
     read -r -p "Press Enter after completing the .env file, or Ctrl-C to cancel... " _
     load_env_file "$preferred_env"
@@ -190,8 +196,17 @@ join_existing_paths() {
 
 load_env_file "$SCRIPT_DIR/.env"
 
-if [[ -n "${SONAR_PROJECT_KEY:-}" && "$PROJECT_KEY" == "etendosoftware_etendo_schema_forge" ]]; then
-  PROJECT_KEY="$SONAR_PROJECT_KEY"
+if [[ -z "$PROJECT_KEY" ]]; then
+  PROJECT_KEY="$(load_sonar_property sonar.projectKey)"
+fi
+if [[ -z "${SONAR_HOST_URL:-}" ]]; then
+  SONAR_HOST_URL="$(load_sonar_property sonar.host.url)"
+fi
+
+if [[ -z "$PROJECT_KEY" ]]; then
+  echo "ERROR: Missing Sonar project key."
+  echo "Set SONAR_PROJECT_KEY, pass --project-key, or define sonar.projectKey in sonar-project.properties."
+  exit 1
 fi
 
 if [[ -z "${SONAR_HOST_URL:-}" || -z "${SONAR_TOKEN:-}" ]]; then
