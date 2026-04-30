@@ -1,5 +1,6 @@
 pipeline {
     environment { // MARK: - Environment Variables
+        // --- Database (used by ./gradlew install) ---
         CONTEXT_NAME        = 'etendo'
         BBDD_SID            = 'etendo'
         BBDD_PORT           = '5432'
@@ -7,756 +8,381 @@ pipeline {
         BBDD_SYSTEMPASS     = 'syspass'
         BBDD_USER           = 'tad'
         BBDD_PASSWORD       = 'tad'
+
+        // --- Credentials ---
         NEXUS_USER          = credentials('nexus-admin-user')
         NEXUS_PASSWORD      = credentials('nexus-admin-passwd')
         GITHUB_USER         = 'etendobot'
         GITHUB_TOKEN        = credentials('github-read-package-token')
-
         ACCESS_TOKEN        = credentials('access_token_github')
-
-        REPOSITORY_NAME     = 'com.etendoerp.etendorx'
-
         EMAIL_ADDRESS       = credentials('email_builds')
 
-        CORE_URL_REPO           = 'https://github.com/etendosoftware/etendo_core'
-        RX_URL_REPO             = 'https://github.com/etendosoftware/etendo_rx'
-        URL_REPO                = 'https://github.com/etendosoftware/com.etendoerp.etendorx'
-        RX_MODULE_SSH           = 'git@github.com:etendosoftware/com.etendoerp.etendorx.git'
-        BRANCH_NAME_RX          = 'develop'
-        RX_DIR                  = 'etendo_rx'
-        CLASSIC_DIR             = 'etendo_core'
+        // --- Repositories ---
+        REPOSITORY_NAME     = 'schema_forge'
+        URL_REPO            = 'https://github.com/etendosoftware/schema_forge'
+        SCHEMA_FORGE_SSH    = 'git@github.com:etendosoftware/schema_forge.git'
+        CORE_URL_REPO       = 'https://github.com/etendosoftware/etendo_core'
+        GO_MODULE_SSH       = 'git@github.com:etendosoftware/com.etendoerp.go.git'
+        GO_MODULE_NAME      = 'com.etendoerp.go'
 
+        // --- Layout ---
+        CORE_DIR            = 'etendo_core'                                   // ${WORKSPACE}/etendo_core
+        SCHEMA_FORGE_DIR    = "${CORE_DIR}/schema_forge"                      // sibling of modules/
+        GO_MODULE_DIR       = "${CORE_DIR}/modules/${GO_MODULE_NAME}"
+
+        // --- Build env ---
+        JAVA_HOME           = '/usr/lib/jvm/java-17-openjdk-amd64'
+        NODE_VERSION        = '22'
+
+        // --- GitHub commit status ---
+        CONTEXT_BUILD            = 'Schema Forge Pipeline'
+        COMMIT_INPROGRESS_STATUS = 'pending'
+        COMMIT_SUCCESS_STATUS    = 'success'
+        COMMIT_FAILED_STATUS     = 'failure'
+
+        // --- Result constants ---
+        SUCCESS  = 'SUCCESS'
+        FAILED   = 'FAILED'
+        UNSTABLE = 'UNSTABLE'
+        TRUE     = 'true'
+        FALSE    = 'false'
+
+        DEVELOP_BRANCH = 'develop'
+        MAIN_BRANCH    = 'main'
+
+        // --- Jira (used to resolve the parent epic of a feature branch) ---
+        JIRA_ACCESS_TOKEN = credentials('jira-access-token')
+        JIRA_BASE_URL     = credentials('jira-url')
+
+        // --- Commit metadata for emails ---
         COMMIT_AUTHOR_NAME  = sh(returnStdout: true, script: "git log -1 --pretty=format:'%an'").trim()
         COMMIT_AUTHOR_EMAIL = sh(returnStdout: true, script: "git log -1 --pretty=format:'%ae'").trim()
-
-        JAVA_HOME           = '/usr/lib/jvm/java-17-openjdk-amd64'
-        BUILD_CLASSIC       = true
-
-        CONTEXT_BUILD       = 'Module Tests'
-        STATUSCORE          = '1'
-
-        COMMIT_INPROGRESS_STATUS = "pending"
-        COMMIT_SUCCESS_STATUS    = "success"
-        COMMIT_FAILED_STATUS     = "failure"
-
-        SUCCESS             = 'SUCCESS'
-        FAILED              = 'FAILED'
-        UNSTABLE            = 'UNSTABLE'
-
-        SONAR_SERVER        = "https://sonar.etendo.cloud"
-        SONAR_TOKEN         = credentials('sonar-token-access')
-
-        TRUE                = 'true'
-        FALSE               = 'false'
-
-        MAIN_BRANCH    = "main"
-        DEVELOP_BRANCH = "develop"
-
-        JIRA_ACCESS_TOKEN = credentials('jira-access-token') // Jenkins credential stored as base64-encoded string for another Atlassian user, not etendobot
-        JIRA_BASE_URL       = credentials('jira-url')
-        EXTRA_MODULES_FILE = "jenkinsExtraModules.txt"
     }
 
     agent { // MARK: - Agent
         kubernetes {
-            inheritFrom 'jenkins-node-rx'
+            inheritFrom 'default'
             defaultContainer 'jnlp'
             yamlFile 'pipelines/Agent.yaml'
         }
     }
+
     stages { // MARK: - Stages
-        stage ('RX Setup') { // MARK: - RX Setup
+        stage('Checkout & Align Branches') { // MARK: - Stage 1
             steps {
                 container('compiler') {
                     script {
                         try {
-                            env.WORKDIR_MODULE = "${CLASSIC_DIR}/modules/${REPOSITORY_NAME}"
-                            echo '---------------------- Clonning RX Repo ----------------------'
-                            sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_INPROGRESS_STATUS} \"RX Setup\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
+                            sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_INPROGRESS_STATUS} \"Checkout & Align Branches\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
 
-                            echo '---------------------- Setup RX Repo ----------------------'
-                            sh """
-                            git clone ${RX_URL_REPO}
-                            cd ${RX_DIR}
-                            cp gradle.properties.template gradle.properties
-                            sed -i 's/^githubUser=.*/githubUser=${GITHUB_USER}/' gradle.properties
-                            sed -i 's/^githubToken=.*/githubToken=${GITHUB_TOKEN}/' gradle.properties
-                            sed -i 's/^grpc.enabled=.*/grpc.enabled=true/' gradle.properties
-                            sed -i 's/^data-rest.enabled=.*/data-rest.enabled=true/' gradle.properties
-                            echo "\nrx.checkModuleVersion=false" >> gradle.properties
-                            ./gradlew :setup
-                            """
-                            echo '---------------------- Setting up Environment Variables ----------------------'
-                            env.JACOCO_REPORT_EXISTS = FALSE // Initialize Jacoco report existence flag
-                            env.TEST_STATUS = SUCCESS // Initialize test status
-                            env.RX_STATUS = SUCCESS // Initialize RX build status
-                            env.CODE_SCHEMA_VERIFICATION = SUCCESS // Initialize code and schema verification status
-                            env.VERIFICATIONS_MESSAGE = '' // Initialize verifications message
-                            env.FROM_BACKPORT = FALSE // Initialize backport flag
-                            env.FROM_PRERELEASE = FALSE // Initialize prerelease flag
-                            env.FAILED_SUITES = "" // List to collect failed test suites
+                            env.REPOS_INFO = ''
 
-                            echo '---------------------- Clone and Setup RX Repo Successful ----------------------'
-                            currentBuild.result = SUCCESS
-                        } catch (Exception e) {
-                            echo '---------------------- Clone and Setup RX Repo Failed ----------------------'
-                            echo 'Exception occurred: ' + e.toString()
-                            currentBuild.result = FAILED
-                            error('Clone and Setup RX Repo Failed')
-                            env.RX_STATUS = FAILED
-                        }
-                    }
-                }
-            }
-        }
-        stage ('Build Environment Etendo Core') { // MARK: - Build Environment Etendo Core
-            when {
-                expression {
-                    env.BUILD_CLASSIC == TRUE && currentBuild.result == SUCCESS
-                }
-            }
-            steps {
-                container('compiler') {
-                    script {
-                        try {
-                            sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_INPROGRESS_STATUS} \"Build Environment Etendo Classic\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
-                            withCredentials([sshUserPrivateKey(credentialsId: 'my-credentials', keyFileVariable: 'keyfile')]) {
-                                withCredentials([usernamePassword(credentialsId: "koodu_credentials", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
-                                    def sshCmd = "ssh -i ${keyfile} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"                                    
-
-                                    echo '-------------------------- Selecting the Classic Correct Branch for Repository Cloning --------------------------'
-                                    def branchSelector = load 'pipelines/utils/branchSelector.groovy'
-                                    def coreBranch = branchSelector.determineBranch(true)
-                                    env.CORE_BRANCH = coreBranch
-                                    echo "CORE_BRANCH → ${env.CORE_BRANCH}"
-
-                                    echo '---------------------- Clonning Classic Repo ----------------------'
-                                    sh "git clone --branch ${CORE_BRANCH} ${CORE_URL_REPO}"
-
-                                    echo '---------------------- Environment Variables ----------------------'
-                                    sh 'printenv'
-
-                                    echo '---------------------- Clonning RX Module Repo ----------------------'
-                                    sh """
-                                    cd ${CLASSIC_DIR}
-                                    mkdir -p modules
-                                    cd modules
-                                    GIT_SSH_COMMAND=\"${sshCmd}\" git clone ${RX_MODULE_SSH}
-                                    cd ${REPOSITORY_NAME}
-                                    git checkout ${GIT_COMMIT}
-                                    cd ../..
-                                    """
-                                    
-                                    echo '-------------------------- Cloning of other modules --------------------------'
-                                    env.EXTRA_MODULES = ''
-                                    env.REPOS_INFO = ''
-                                    def currentBranch = ''
-                                    if (fileExists("${CLASSIC_DIR}/modules/${REPOSITORY_NAME}/pipelines/${EXTRA_MODULES_FILE}")) {
-                                        env.EXTRA_MODULES = readFile("${CLASSIC_DIR}/modules/${REPOSITORY_NAME}/pipelines/${EXTRA_MODULES_FILE}").trim()
-
-                                        def extraModules = []
-                                        if (env.EXTRA_MODULES != ''){
-                                            extraModules = env.EXTRA_MODULES.tokenize(',')
-                                            env.REPOS_INFO = "<em>🧲 Branches used in dependent modules:</em><br><ul>"
-                                        }
-                                        def module_package = ''
-
-                                        def isFeatureBranch = env.GIT_BRANCH.startsWith("feature/")
-                                        def epicKey = ''
-                                        if (isFeatureBranch) {
-                                            echo '-------------------------- Feature Branch Detected --------------------------'
-                                            def taskName = env.GIT_BRANCH.replaceAll("feature/", "").replaceAll("-Y\\d+", "")
-                                            epicKey = sh(script: "bash ${env.WORKDIR_MODULE}/pipelines/utils/jira/jira-utils.sh ${taskName} ${JIRA_BASE_URL} ${JIRA_ACCESS_TOKEN}", returnStdout: true).trim()
-                                            if (epicKey) {
-                                            echo "Epic Key: ${epicKey}"
-                                            if (env.GIT_BRANCH.contains("-Y")) {
-                                                env.EPIC_BRANCH = "epic/${epicKey}-Y${env.GIT_BRANCH.split('-Y')[1]}"
-                                            } else {
-                                                env.EPIC_BRANCH = "epic/${epicKey}"
-                                            }
-                                            echo "Epic Branch: ${env.EPIC_BRANCH}"
-                                            }
-                                        }
-
-                                        for (String module in extraModules) {
-                                            module_package = sh(script: "echo '${module}' | sed -E 's#.*/##' | sed 's/.git\$//'", returnStdout: true).trim()
-                                            echo "------------------------------- Clone ${module_package} Module --------------------------"
-                                            sh """
-                                            cd ${CLASSIC_DIR}/modules
-                                            GIT_SSH_COMMAND='${sshCmd}' git clone ${module}
-                                            """
-
-                                            if (!(env.GIT_BRANCH.contains("-Y")) &&  !(env.GIT_BRANCH.startsWith("prerelease")) && !(env.GIT_BRANCH.startsWith("release")) && !(env.GIT_BRANCH.startsWith("main" )) && !(env.GIT_BRANCH.startsWith("master")) && !(env.GIT_BRANCH.startsWith("hotfix"))) {
-                                                echo "-------------------------- Checking out to ${module_package} Module Branch --------------------------"
-                                                if (isFeatureBranch && epicKey) {
-                                                    sh """
-                                                    cd ${CLASSIC_DIR}/modules/${module_package}
-                                                    git checkout ${env.EPIC_BRANCH} || git checkout ${env.DEVELOP_BRANCH}
-                                                    """
-                                                } else {
-                                                    sh """
-                                                    cd ${CLASSIC_DIR}/modules/${module_package}
-                                                    git checkout ${env.DEVELOP_BRANCH}
-                                                    """
-                                                }
-                                            } else if (env.FROM_BACKPORT == TRUE) {
-                                                if (isFeatureBranch && epicKey) {
-                                                    sh """
-                                                    cd ${CLASSIC_DIR}/modules/${module_package}
-                                                    git checkout ${env.EPIC_BRANCH} || git checkout ${env.BACKPORT_BRANCH}
-                                                    """
-                                                } else {
-                                                    sh """
-                                                    cd ${CLASSIC_DIR}/modules/${module_package}
-                                                    git checkout ${env.BACKPORT_BRANCH}
-                                                    """
-                                                }
-                                            } else if (env.FROM_PRERELEASE == TRUE) {
-                                                if (isFeatureBranch && epicKey) {
-                                                    sh """
-                                                    cd ${CLASSIC_DIR}/modules/${module_package}
-                                                    git checkout ${env.EPIC_BRANCH} || git checkout ${env.PRERELEASE_BRANCH}
-                                                    """
-                                                } else {
-                                                    sh """
-                                                    cd ${CLASSIC_DIR}/modules/${module_package}
-                                                    git checkout ${env.PRERELEASE_BRANCH}
-                                                    """
-                                                }
-                                            }
-
-                                            sh """
-                                            cd ${CLASSIC_DIR}/modules/${module_package}
-                                            git checkout ${env.GIT_BRANCH} || echo 'Branch ${env.GIT_BRANCH} not found in ${module_package}'
-                                            """
-                                            currentBranch = sh(script: "cd ${CLASSIC_DIR}/modules/${module_package} && git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
-                                            env.REPOS_INFO += "<li> Module ${module_package}: ${currentBranch}</li>"
-                                        }
-                                        if (env.REPOS_INFO != '') {
-                                            env.REPOS_INFO += "</ul>"
-                                            echo "${env.REPOS_INFO}"
-                                        } else {
-                                            echo "No extra modules found."
-                                        }
+                            // -------- Branch resolution strategy (mirrors RX pipeline) --------
+                            // 1. If GIT_BRANCH is feature/ETP-XXXX (optionally with a -YNN suffix), ask
+                            //    Jira for the parent epic key and build an `epic/ETP-PARENT[-YNN]` branch.
+                            // 2. Per-repo checkout order:
+                            //      feature/*  → epic/PARENT || develop      (then GIT_BRANCH wins if it exists)
+                            //      hotfix/*   → main                        (no develop fallback)
+                            //      other      → develop                     (then GIT_BRANCH wins if it exists)
+                            //    The final `git checkout ${GIT_BRANCH}` step always runs and overrides
+                            //    when the exact branch exists in that repo.
+                            def isFeatureBranch = env.GIT_BRANCH?.startsWith('feature/')
+                            def isHotfixBranch  = env.GIT_BRANCH?.startsWith('hotfix/')
+                            env.EPIC_BRANCH = ''
+                            if (isFeatureBranch) {
+                                def taskName = env.GIT_BRANCH.replaceAll('feature/', '').replaceAll('-Y\\d+', '')
+                                echo "---------------------- Resolving parent epic via Jira (task=${taskName}) ----------------------"
+                                def epicKey = sh(
+                                    script: "bash ./pipelines/utils/jira/jira-utils.sh ${taskName} ${JIRA_BASE_URL} ${JIRA_ACCESS_TOKEN}",
+                                    returnStdout: true
+                                ).trim()
+                                if (epicKey) {
+                                    if (env.GIT_BRANCH.contains('-Y')) {
+                                        env.EPIC_BRANCH = "epic/${epicKey}-Y${env.GIT_BRANCH.split('-Y')[1]}"
                                     } else {
-                                        echo "${EXTRA_MODULES_FILE} not found for ${REPOSITORY_NAME}, skipping extra modules checkout."
+                                        env.EPIC_BRANCH = "epic/${epicKey}"
                                     }
-
-                                    dir(CLASSIC_DIR) {
-                                        echo '---------------------- Setup Classic Repo ----------------------'
-                                        sh """
-                                        echo "\n
-                                        context.name=${CONTEXT_NAME}
-                                        bbdd.sid=${BBDD_SID}
-                                        bbdd.port=${BBDD_PORT}
-                                        bbdd.systemUser=${BBDD_SYSTEMUSER}
-                                        bbdd.systemPassword=${BBDD_SYSTEMPASS}
-                                        bbdd.user=${BBDD_USER}
-                                        bbdd.password=${BBDD_PASSWORD}
-                                        nexusUser=${NEXUS_USER}
-                                        nexusPassword=${NEXUS_PASSWORD}
-                                        githubUser=${GITHUB_USER}
-                                        githubToken=${GITHUB_TOKEN}
-                                        allow.root=true
-                                        org.gradle.jvmargs=-Dfile.encoding=UTF-8
-                                        org.gradle.daemon=false" > gradle.properties
-                                        """
-                                        sh './gradlew prepareConfig --info --stacktrace'
-                                        sh './gradlew setup --info --stacktrace'
-                                        sh './gradlew expandModules --info --stacktrace'
-
-                                        echo '---------------------- Building Classic Environment ----------------------'
-                                        sh './gradlew install -PignoreConsistency=true --info --stacktrace'
-                                        sh './gradlew update.database -PignoreConsistency=true --info --stacktrace'
-                                        sh './gradlew smartbuild -PignoreConsistency=true --info --stacktrace'
-
-                                        echo '---------------------- Classic Environment Successful ----------------------'
-                                        currentBuild.result = SUCCESS
-                                    }
+                                    echo "Epic Branch resolved: ${env.EPIC_BRANCH}"
+                                } else {
+                                    echo "No parent epic returned by Jira for ${taskName} (will fall back to develop)."
                                 }
                             }
-                        } catch (Exception e) {
-                            env.ERROR_MESSAGE = "Build of Classic Environment Failed"
-                            echo "--------------- ${env.ERROR_MESSAGE} ---------------"
-                            echo 'Exception occurred: ' + e.toString()
-                            currentBuild.result = FAILED
-                            error(env.ERROR_MESSAGE)
-                        }
-                    }
-                }
-            }
-        }
-        stage ('Code and Schema Verification') { // MARK: - Code and Schema Verification
-            when {
-                expression {
-                    currentBuild.result == SUCCESS
-                }
-            }
-            steps {
-            container('compiler') {
-                    script {
-                        try {
-                            sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_INPROGRESS_STATUS} \"Running Code and Schema Verification\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
-                            def verificationsMessage = '<p><strong>Code and Schema Verification:</strong></p>'
-                            if (env.CORE_BRANCH != env.BACKPORT_BRANCH) {
-                                echo '-------------------------- Checking for "org.apache.commons.lang" usage --------------------------'
-                                def commonsLangUsed = sh(script: "grep -rF --exclude-dir=pipelines --include='*.java' 'org.apache.commons.lang.' ${env.WORKDIR_MODULE} || echo 'false'", returnStdout: true).trim()
-                                if (commonsLangUsed != FALSE) {
-                                    env.COMMONS_LANG_USED = TRUE
-                                    def commonsLangMessage = "'org.apache.commons.lang' is used in the module ${REPOSITORY_NAME}. Should be replaced with 'org.apache.commons.lang3'"
-                                    verificationsMessage += "<p><em>🚨 ${commonsLangMessage}</em></p>"
-                                    echo "-------------------------- ${commonsLangMessage} --------------------------"
-                                    env.CODE_SCHEMA_VERIFICATION = FAILED
+
+                            // Builds the per-repo `git checkout` chain.
+                            def checkoutChain = { ->
+                                def steps = []
+                                if (isHotfixBranch) {
+                                    steps << "git checkout ${MAIN_BRANCH}"
+                                } else if (isFeatureBranch && env.EPIC_BRANCH) {
+                                    steps << "git checkout ${env.EPIC_BRANCH} || git checkout ${DEVELOP_BRANCH}"
+                                } else {
+                                    steps << "git checkout ${DEVELOP_BRANCH}"
                                 }
+                                // Always try the exact branch last — wins if it exists in the target repo.
+                                steps << "git checkout ${env.GIT_BRANCH} || echo 'Branch ${env.GIT_BRANCH} not found, keeping previous checkout'"
+                                return steps.join('\n')
                             }
-                        
-                            echo '-------------------------- Checking for duplicate constraints --------------------------'
-                            def sqlDuplicateConstraints = "${pwd()}/pipelines/utils/sql/check_duplicate_constraints.sql"
-                            def constraintDuplicates = sh(
-                                script: """
-                                psql -h localhost -U ${BBDD_SYSTEMUSER} -d ${BBDD_SID} -t -A -F '|' -f ${sqlDuplicateConstraints} | cut -d '|' -f1
-                                """, returnStdout: true
-                            ).trim()
+                            def coreCheckout = checkoutChain()
+                            def goCheckout   = checkoutChain()
+                            echo "Checkout chain for etendo_core / com.etendoerp.go:\n${coreCheckout}"
 
-                            if (constraintDuplicates) {
-                                echo "Duplicate Constraints Found: ${constraintDuplicates}"
-                                verificationsMessage += "<p><em>🚨 Duplicate constraints detected in the DB:</em><br><pre>${constraintDuplicates}</pre></p>"
-                                env.CODE_SCHEMA_VERIFICATION = FAILED
-                            }
+                            withCredentials([sshUserPrivateKey(credentialsId: 'my-credentials', keyFileVariable: 'keyfile')]) {
+                                def sshCmd = "ssh -i ${keyfile} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 
-                            echo '-------------------------- Checking for orphaned triggers --------------------------'
-                            def sqlOrphanedTriggers = "${pwd()}/pipelines/utils/sql/check_orphaned_triggers.sql"
-                            def orphanedTriggers = sh(
-                                script: """
-                                psql -h localhost -U ${BBDD_SYSTEMUSER} -d ${BBDD_SID} -t -A -F '|' -f ${sqlOrphanedTriggers} | cut -d '|' -f1
-                                """, returnStdout: true
-                            ).trim()
-
-                            if (orphanedTriggers) {
-                                echo "Orphaned Triggers Found: ${orphanedTriggers}"
-                                verificationsMessage += "<p><em>🚨 Orphaned triggers detected in the DB:</em><br><pre>${orphanedTriggers}</pre></p>"
-                                env.CODE_SCHEMA_VERIFICATION = FAILED
-                            }
-
-                            if (env.CODE_SCHEMA_VERIFICATION == FAILED) {
-                                verificationsMessage += "<p>__________________________________________________________</p>"
-                                env.VERIFICATIONS_MESSAGE = verificationsMessage
-                                echo "${env.VERIFICATIONS_MESSAGE}"
-                                env.ERROR_MESSAGE = "Code and Schema Verification Failed"
-                                error(env.ERROR_MESSAGE)
-                            }
-                            echo '-------------------------- Code and Schema Verification SUCCESS --------------------------'
-                            currentBuild.result = SUCCESS
-                        } catch (Exception e) {
-                            env.ERROR_MESSAGE = "Code and schema verification Failed"
-                            echo "-------------------------- ${env.ERROR_MESSAGE} --------------------------"
-                            echo "Exception occurred: " + e.toString()
-                            currentBuild.result = UNSTABLE
-                            error(env.ERROR_MESSAGE)
-                        }
-                    }
-                }
-            }
-        }
-        stage ('Build Environment Etendo RX') { // MARK: - Build Environment Etendo RX
-            when {
-                expression {
-                    currentBuild.result == SUCCESS
-                }
-            }
-            steps {
-                container('compiler') {
-                    script {
-                        try {
-                            sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_INPROGRESS_STATUS} \"Build Environment Etendo RX\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
-                            echo '---------------------- Building Etendo RX Environment ----------------------'
-                            echo '---------------------- Checking Branch Type ----------------------'
-                            env.IS_HOTFIX_OR_MAIN_BRANCH = FALSE
-                            if ((GIT_BRANCH.startsWith('hotfix/') && !(GIT_BRANCH.contains("-Y"))) || GIT_BRANCH.startsWith('main') || GIT_BRANCH.startsWith('master')) {
-                                echo "Branch ${GIT_BRANCH} is a hotfix or main/master."
-                                env.IS_HOTFIX_OR_MAIN_BRANCH = TRUE
-                            }
-                            if (IS_HOTFIX_OR_MAIN_BRANCH == FALSE) {
-                                echo '---------------------- Checking out to RX Core Branch ----------------------'
+                                echo '---------------------- Cloning etendo_core ----------------------'
                                 sh """
-                                    cd ${RX_DIR}
-                                    git checkout develop
+                                    GIT_SSH_COMMAND='${sshCmd}' git clone ${CORE_URL_REPO} ${CORE_DIR}
+                                    cd ${CORE_DIR}
+                                    ${coreCheckout}
+                                """
+
+                                echo '---------------------- Cloning com.etendoerp.go ----------------------'
+                                sh """
+                                    mkdir -p ${CORE_DIR}/modules
+                                    cd ${CORE_DIR}/modules
+                                    GIT_SSH_COMMAND='${sshCmd}' git clone ${GO_MODULE_SSH}
+                                    cd ${GO_MODULE_NAME}
+                                    ${goCheckout}
+                                """
+
+                                echo '---------------------- Placing schema_forge as sibling of modules/ ----------------------'
+                                // The Jenkins SCM checkout already left schema_forge content at ${WORKSPACE}.
+                                // db.js auto-discovers gradle.properties at ../../.. relative to cli/src/db.js,
+                                // which only works if schema_forge sits at {etendo_root}/schema_forge/.
+                                sh """
+                                    mkdir -p ${SCHEMA_FORGE_DIR}
+                                    rsync -a --delete \
+                                        --exclude='/${CORE_DIR}' \
+                                        --exclude='/${SCHEMA_FORGE_DIR}' \
+                                        ./ ${SCHEMA_FORGE_DIR}/
                                 """
                             }
-                            echo "---------------------- Attempting to checkout to ${GIT_BRANCH} branch in RX Core ----------------------"
-                            sh """
-                              cd ${RX_DIR}
-                              git checkout ${GIT_BRANCH} || echo 'Branch ${GIT_BRANCH} not found in RX Core'
-                            """
-                            sh """
-                            cd ${RX_DIR}
-                            ./gradlew generate.entities --info
-                            """
-                            echo '---------------------- Build of Etendo RX Successful ----------------------'
+
+                            // Record the resolved branches for the failure email.
+                            def coreBranch = sh(script: "cd ${CORE_DIR} && git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                            def goBranch   = sh(script: "cd ${GO_MODULE_DIR} && git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                            def sfBranch   = sh(script: "cd ${SCHEMA_FORGE_DIR} && git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                            env.REPOS_INFO = "<em>🧲 Branches in use:</em><br><ul>" +
+                                "<li>schema_forge: ${sfBranch}</li>" +
+                                "<li>etendo_core: ${coreBranch}</li>" +
+                                "<li>${GO_MODULE_NAME}: ${goBranch}</li>" +
+                                "</ul>"
+                            echo "${env.REPOS_INFO}"
+
                             currentBuild.result = SUCCESS
                         } catch (Exception e) {
-                            env.ERROR_MESSAGE = "Build of Etendo RX Failed"
-                            echo "--------------- ${env.ERROR_MESSAGE} ---------------"
+                            env.ERROR_MESSAGE = 'Checkout & Align Branches Failed'
+                            echo "---------------------- ${env.ERROR_MESSAGE} ----------------------"
                             echo 'Exception occurred: ' + e.toString()
                             currentBuild.result = FAILED
                             error(env.ERROR_MESSAGE)
-                            env.RX_STATUS = FAILED
                         }
                     }
                 }
             }
         }
-        stage ("Run Etendo RX Module tests") { // MARK: - Run Etendo RX Module tests
-            when {
-                expression {
-                    currentBuild.result == SUCCESS
-                }
-            }
+
+        stage('Install Etendo (DB)') { // MARK: - Stage 2
+            when { expression { currentBuild.result == SUCCESS } }
             steps {
                 container('compiler') {
                     script {
-                        def suiteName = "RX Module Tests"
                         try {
-                            sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_INPROGRESS_STATUS} \"Running Module Tests\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
+                            sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_INPROGRESS_STATUS} \"Install Etendo (DB)\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
 
-                            echo '---------------------- Running Etendo RX Module Tests ----------------------'
+                            echo '---------------------- Writing gradle.properties ----------------------'
+                            dir(CORE_DIR) {
+                                sh """
+                                cat > gradle.properties <<EOF
+context.name=${CONTEXT_NAME}
+bbdd.sid=${BBDD_SID}
+bbdd.port=${BBDD_PORT}
+bbdd.systemUser=${BBDD_SYSTEMUSER}
+bbdd.systemPassword=${BBDD_SYSTEMPASS}
+bbdd.user=${BBDD_USER}
+bbdd.password=${BBDD_PASSWORD}
+nexusUser=${NEXUS_USER}
+nexusPassword=${NEXUS_PASSWORD}
+githubUser=${GITHUB_USER}
+githubToken=${GITHUB_TOKEN}
+allow.root=true
+org.gradle.jvmargs=-Dfile.encoding=UTF-8
+org.gradle.daemon=false
+EOF
+                                """
+                                echo '---------------------- ./gradlew install ----------------------'
+                                sh './gradlew prepareConfig --info --stacktrace'
+                                sh './gradlew setup --info --stacktrace'
+                                sh './gradlew expandModules --info --stacktrace'
+                                sh './gradlew install -PignoreConsistency=true --info --stacktrace'
+                            }
+                            currentBuild.result = SUCCESS
+                        } catch (Exception e) {
+                            env.ERROR_MESSAGE = 'Install Etendo (DB) Failed'
+                            echo "---------------------- ${env.ERROR_MESSAGE} ----------------------"
+                            echo 'Exception occurred: ' + e.toString()
+                            currentBuild.result = FAILED
+                            error(env.ERROR_MESSAGE)
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Schema Forge Regen') { // MARK: - Stage 3
+            when { expression { currentBuild.result == SUCCESS } }
+            steps {
+                container('compiler') {
+                    script {
+                        try {
+                            sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_INPROGRESS_STATUS} \"Schema Forge Regen\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
+
+                            echo '---------------------- Installing Node.js ----------------------'
                             sh """
-                            cd ${CLASSIC_DIR}
-                            ./gradlew test --tests "com.etendoerp.etendorx.*" --info
-                            ./gradlew jacocoRootReport --info
+                                if ! command -v node >/dev/null 2>&1 || [ "\$(node -p 'process.versions.node.split(\".\")[0]')" -lt ${NODE_VERSION} ]; then
+                                    curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash -
+                                    apt-get install -y nodejs
+                                fi
+                                node --version
+                                npm --version
                             """
 
-                            if (fileExists("${CLASSIC_DIR}/build/reports/jacoco/jacocoRootReport/jacocoRootReport.xml")) {
-                                echo '----> Jacoco report found'
-                                env.JACOCO_REPORT_EXISTS = TRUE
+                            dir(SCHEMA_FORGE_DIR) {
+                                echo '---------------------- npm install ----------------------'
+                                sh 'npm ci || npm install'
+
+                                echo '---------------------- make regen PUSH_TO_NEO=1 ----------------------'
+                                // ONLY is intentionally omitted → regenerates ALL active windows.
+                                sh 'make regen PUSH_TO_NEO=1'
+                            }
+                            currentBuild.result = SUCCESS
+                        } catch (Exception e) {
+                            env.ERROR_MESSAGE = 'Schema Forge Regen Failed'
+                            echo "---------------------- ${env.ERROR_MESSAGE} ----------------------"
+                            echo 'Exception occurred: ' + e.toString()
+                            currentBuild.result = FAILED
+                            error(env.ERROR_MESSAGE)
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Export Database') { // MARK: - Stage 4
+            when { expression { currentBuild.result == SUCCESS } }
+            steps {
+                container('compiler') {
+                    script {
+                        try {
+                            sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_INPROGRESS_STATUS} \"Export Database\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
+
+                            dir(CORE_DIR) {
+                                echo '---------------------- ./gradlew export.database ----------------------'
+                                sh './gradlew export.database --info --stacktrace'
+                            }
+                            currentBuild.result = SUCCESS
+                        } catch (Exception e) {
+                            env.ERROR_MESSAGE = 'Export Database Failed'
+                            echo "---------------------- ${env.ERROR_MESSAGE} ----------------------"
+                            echo 'Exception occurred: ' + e.toString()
+                            currentBuild.result = FAILED
+                            error(env.ERROR_MESSAGE)
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Verify No Local Changes') { // MARK: - Stage 5
+            when { expression { currentBuild.result == SUCCESS } }
+            steps {
+                container('compiler') {
+                    script {
+                        try {
+                            sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_INPROGRESS_STATUS} \"Verify No Local Changes\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
+
+                            def sfDirty = sh(script: "cd ${SCHEMA_FORGE_DIR} && git status --porcelain", returnStdout: true).trim()
+                            def goDirty = sh(script: "cd ${GO_MODULE_DIR} && git status --porcelain", returnStdout: true).trim()
+
+                            if (sfDirty) {
+                                echo '---------------------- 🚨 Uncommitted changes in schema_forge ----------------------'
+                                sh "cd ${SCHEMA_FORGE_DIR} && git status && git --no-pager diff"
                             } else {
-                                echo '----> Jacoco report not found'
+                                echo '✅ schema_forge clean'
                             }
-                            echo '---------------------- RX Module Tests Successful ----------------------'
+
+                            if (goDirty) {
+                                echo "---------------------- 🚨 Uncommitted changes in ${GO_MODULE_NAME} ----------------------"
+                                sh "cd ${GO_MODULE_DIR} && git status && git --no-pager diff"
+                            } else {
+                                echo "✅ ${GO_MODULE_NAME} clean"
+                            }
+
+                            if (sfDirty || goDirty) {
+                                env.ERROR_MESSAGE = 'Pipeline produced uncommitted changes — regenerated artifacts are out of sync with the repo'
+                                error(env.ERROR_MESSAGE)
+                            }
+                            currentBuild.result = SUCCESS
                         } catch (Exception e) {
-                            env.ERROR_MESSAGE = "RX Module Tests Failed"
+                            if (!env.ERROR_MESSAGE) {
+                                env.ERROR_MESSAGE = 'Verify No Local Changes Failed'
+                            }
                             echo "---------------------- ${env.ERROR_MESSAGE} ----------------------"
-                            echo 'Exception occurred: ' + e.toString()
-                            currentBuild.result = UNSTABLE
-                            unstable(env.ERROR_MESSAGE)
-                            env.TEST_STATUS = UNSTABLE
-                            def currentFailed = env.FAILED_SUITES ?: ""
-                            env.FAILED_SUITES = currentFailed.isEmpty() ? "${suiteName}" : "${currentFailed}, ${suiteName}"
-                        }
-                        publishHTML([
-                            allowMissing: false,
-                            alwaysLinkToLastBuild: false,
-                            keepAll: true,
-                            reportDir: "${CLASSIC_DIR}/build/reports/tests/test",
-                            reportFiles: '*.html',
-                            reportName: 'ETENDO RX MODULE TESTS REPORT',
-                            reportTitles: ''
-                        ])
-                    }
-                }
-            }
-        }
-        stage('SonarQube Analysis') { // MARK: - SonarQube Analysis
-            when {
-                expression {
-                    currentBuild.result == SUCCESS && env.JACOCO_REPORT_EXISTS == TRUE
-                }
-            }
-            steps {
-                container('compiler') {
-                    script {
-                        try {
-                            sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_INPROGRESS_STATUS} \"Running SonarQube Analysis\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
-                            echo '-------------------------- Installing SonarQube Scanner --------------------------'
-                            sh """
-                                apt-get update && apt-get install -y wget unzip
-                                wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SONAR_VERSION}-linux.zip
-                                unzip sonar-scanner-cli-${SONAR_VERSION}-linux.zip
-                                export PATH=\$PATH:\${WORKSPACE}/sonar-scanner-${SONAR_VERSION}-linux/bin
-                            """
-                            echo '-------------------------- Reading SonarQube Project Key from sonar-project.properties --------------------------'
-                            def sonarPropertiesFile = "${CLASSIC_DIR}/modules/${REPOSITORY_NAME}/sonar-project.properties"
-                            if (!fileExists(sonarPropertiesFile)) {
-                                error("SonarQube properties file not found in ${sonarPropertiesFile}")
-                            }
-                            def sonarProjectKey = sh(script: "grep 'sonar.projectKey' ${sonarPropertiesFile} | cut -d '=' -f2", returnStdout: true).trim()
-                            env.PROJECT_KEY = sonarProjectKey
-                            echo "SonarQube Project Key: ${env.PROJECT_KEY}"
-
-                            echo '-------------------------- Checking if module contains Java source files --------------------------'
-                            def parsedRepositoryName = REPOSITORY_NAME.replace('.', '/')
-                            def sonarSources = '.'
-                            if (fileExists("${CLASSIC_DIR}/modules/${REPOSITORY_NAME}/src/${parsedRepositoryName}")) {
-                                echo '----> Java source files found in module'
-                                sonarSources = "src/${parsedRepositoryName}"
-                                echo "SonarQube Sources: ${sonarSources}"
-                            }
-
-                            env.WORKDIR_JACOCO = "${pwd()}/${CLASSIC_DIR}/build/reports/jacoco/jacocoRootReport/jacocoRootReport.xml"
-                            def jacocoReportPathAttribute = "-Dsonar.java.coveragePlugin=jacoco -Dsonar.coverage.jacoco.xmlReportPaths=${env.WORKDIR_JACOCO}"
-                            echo "Jacoco Report Path: ${env.WORKDIR_JACOCO}"
-
-                            echo '-------------------------- Executing SonarQube Analysis --------------------------'
-                            sh """
-                                cd ${CLASSIC_DIR}/modules/${REPOSITORY_NAME}
-                                ${WORKSPACE}/sonar-scanner-${SONAR_VERSION}-linux/bin/sonar-scanner -X \
-                                    -Dsonar.projectKey=${sonarProjectKey} \
-                                    -Dsonar.sources=${sonarSources} \
-                                    -Dsonar.host.url=${SONAR_SERVER} \
-                                    -Dsonar.login=${SONAR_TOKEN} \
-                                    -Dsonar.branch.name=${GIT_BRANCH} \
-                                    -Dsonar.projectVersion=${GIT_COMMIT} \
-                                    -Dsonar.scm.revision=${GIT_COMMIT} \
-                                    ${jacocoReportPathAttribute}
-                            """
-                            echo '---------------------- Getting SonarQube Report URL ----------------------'
-                            def branchName = URLEncoder.encode(GIT_BRANCH, 'UTF-8')
-                            def projectUrl = "${SONAR_SERVER}/dashboard?id=${env.PROJECT_KEY}&branch=${branchName}"
-                            env.PROJECT_URL = "${projectUrl}"
-                            echo "Sonar Project URL: ${PROJECT_URL}"
-                            echo '-------------------------- SonarQube Analysis Completed --------------------------'
-                        } catch (Exception e) {
-                            env.ERROR_MESSAGE = "SonarQube Analysis Failed"
-                            echo "--------------- ${env.ERROR_MESSAGE} ---------------"
                             echo 'Exception occurred: ' + e.toString()
                             currentBuild.result = FAILED
                             error(env.ERROR_MESSAGE)
-                        }
-                    }
-                }
-            }
-        }
-        stage('Compare Coverage Results') { // MARK: - Compare Coverage Results
-            when {
-                expression {
-                    currentBuild.result == SUCCESS && env.JACOCO_REPORT_EXISTS == TRUE && !(env.GIT_BRANCH == env.MAIN_BRANCH || env.GIT_BRANCH.startsWith("release/"))
-                }
-            }
-            steps {
-                script {
-                    try {
-                        sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_INPROGRESS_STATUS} \"Comparing Coverage Results\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
-                        echo "SonarQube Project Key: ${env.PROJECT_KEY}"
-                        def branchCurrent = URLEncoder.encode(GIT_BRANCH, 'UTF-8') 
-                        echo "Sonar Project URL: ${PROJECT_URL}"
-                        def branchCompare = 'main'
-                        env.COMPARE_COVERAGE_STATUS = SUCCESS
-                        if (env.FROM_BACKPORT == TRUE) {
-                            branchCompare = env.BACKPORT_BRANCH
-                        }
-                        echo "-------------------------- Comparing Coverage with ${branchCompare} Branch --------------------------"
-
-                        def rootDir = pwd()
-                        def sonarUtils = load "${rootDir}/pipelines/utils/sonarUtils.groovy"
-
-                        // Only check commit on PR branches
-                        def checkCommitCurrent = GIT_BRANCH.startsWith('feature/') || GIT_BRANCH.startsWith('hotfix/') || GIT_BRANCH.startsWith('epic/')
-                        echo "Check commit for current branch (${GIT_BRANCH}): ${checkCommitCurrent}"
-                        def coverageCurrent = sonarUtils.getCoverageWithRetry(
-                            GIT_BRANCH,
-                            checkCommitCurrent,
-                            env.PROJECT_KEY,
-                            SONAR_TOKEN,
-                            SONAR_SERVER,
-                            GIT_COMMIT
-                        )
-                        def coverageOriginBranch = sonarUtils.getCoverageWithRetry(
-                            branchCompare,
-                            false,
-                            env.PROJECT_KEY,
-                            SONAR_TOKEN,
-                            SONAR_SERVER,
-                            null
-                        )
-
-                        echo "Current branch (${env.GIT_BRANCH}) coverage: ${coverageCurrent}%"
-                        echo "${branchCompare} branch coverage: ${coverageOriginBranch}%"
-                        if (coverageCurrent < coverageOriginBranch) {
-                            env.ERROR_MESSAGE = "Coverage (${coverageCurrent}%) is lower than ${branchCompare} branch (${coverageOriginBranch}%)"
-                            echo "-------------------------- ${env.ERROR_MESSAGE} --------------------------"
-                            currentBuild.result = UNSTABLE
-                            env.COMPARE_COVERAGE_STATUS = FAILED
-                            unstable(env.ERROR_MESSAGE)
-                        } else {
-                            echo '-------------------------- Coverage is OK --------------------------'
-                            currentBuild.result = SUCCESS
-                        }
-                    } catch (Exception e) {
-                        echo "Exception occurred: " + e.toString()
-                        env.ERROR_MESSAGE = "Comparing Coverage Results Failed"
-                        echo "-------------------------- ${env.ERROR_MESSAGE} --------------------------"
-                        currentBuild.result = UNSTABLE
-                        error(env.ERROR_MESSAGE)
-                    }
-                }
-            }
-        }
-        stage ("Run Das Tests") { // MARK: - Run Das Tests
-            when {
-                expression {
-                    env.RX_STATUS == SUCCESS && env.CODE_SCHEMA_VERIFICATION == SUCCESS
-                }
-            }
-            steps {
-                container("compiler") {
-                    script {
-                        def suiteName = "Das Tests"
-                        try {
-                            sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_INPROGRESS_STATUS} \"Running Das Tests\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
-                            echo '---------------------- Running Das Tests ----------------------'
-                            def tests = [
-                                "com.etendorx.das.test.RepositoryTest",
-                                "com.etendorx.das.test.RestCallTest",
-                                "com.etendorx.das.test.DefaultFiltersTest",
-                                "com.etendorx.das.test.eventhandlertest.test.AnnotationTests",
-                                "com.etendorx.das.unit.BindedRestControllerTest",
-                                "com.etendorx.das.unit.JsonPathEntityRetrieverDefaultTest",
-                                "com.etendorx.das.unit.MappingUtilsImplTest",
-                                "com.etendorx.das.test.DisableEnableTriggersTest",
-                                "com.etendorx.das.test.FieldMappingRestCallTest",
-                                "com.etendorx.das.integration.PropertyMetadataTest",
-                                "com.etendorx.das.unit.BaseDTORepositoryDefaultTests",
-                                "com.etendorx.das.unit.JsonPathConverterBaseTests",
-                                "com.etendorx.entities.mapper.lib.JsonPathEntityRetrieverBaseTests"
-                            ]
-                            dir(RX_DIR) {
-                                tests.each { test ->
-                                    sh "./gradlew :com.etendorx.das:test --info --tests ${test}"
-                                }
-                            }
-                            echo '---------------------- Das Tests Successful ----------------------'
-                        } catch (Exception e) {
-                            env.ERROR_MESSAGE = "Das Tests Failed"
-                            echo "---------------------- ${env.ERROR_MESSAGE} ----------------------"
-                            echo 'Exception occurred: ' + e.toString()
-                            currentBuild.result = UNSTABLE
-                            unstable(env.ERROR_MESSAGE)
-                            env.TEST_STATUS = UNSTABLE
-                            def currentFailed = env.FAILED_SUITES ?: ""
-                            env.FAILED_SUITES = currentFailed.isEmpty() ? "${suiteName}" : "${currentFailed}, ${suiteName}"
-                        }
-                        if(fileExists("${RX_DIR}/modules_core/com.etendorx.das/build/reports/tests/test")) {
-                            publishHTML([
-                                allowMissing: false,
-                                alwaysLinkToLastBuild: false,
-                                keepAll: true,
-                                reportDir: "${RX_DIR}/modules_core/com.etendorx.das/build/reports/tests/test",
-                                reportFiles: '*.html',
-                                reportName: 'DAS TESTS REPORT',
-                                reportTitles: ''
-                            ])
                         }
                     }
                 }
             }
         }
     }
+
     post { // MARK: - Post Actions
         failure {
             script {
-                env.EMAIL_SUBJECT = 'Build Failed'
+                env.EMAIL_SUBJECT = env.ERROR_MESSAGE ?: 'Build Failed'
                 sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_FAILED_STATUS} \"${env.EMAIL_SUBJECT}\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
-                echo "---------------------- ${env.ERROR_MESSAGE} ----------------------"
+                echo "---------------------- ${env.EMAIL_SUBJECT} ----------------------"
             }
             mail to: EMAIL_ADDRESS,
-            subject: "⛔ ${env.EMAIL_SUBJECT} - ${currentBuild.fullDisplayName}",
-            mimeType: "text/html",
-            body:  """
-            <html>
-                <head>
-                    <style>
-                        body { font-family: 'Arial', sans-serif; }
-                        .header { font-size: 16px; font-weight: bold; color: #FF0000; }
-                    </style>
-                </head>
-                <body>
-                    <p><em>${new Date()}</em></p>
-                    <p>__________________________________________________________</p>
-
-                    <h2 class="header">🚫 ${env.EMAIL_SUBJECT} 🚫</h2>
-
-                    <p><strong>Reasons ⇢ <em>${env.ERROR_MESSAGE}</em></strong></p>
-
-                    <p>
-                        <strong>• Commit:</strong> <a href="${URL_REPO}/commits/${env.GIT_COMMIT}">${URL_REPO}/commits/${env.GIT_COMMIT}</a><br />
-                        <strong>• Author:</strong> ${COMMIT_AUTHOR_NAME} (${COMMIT_AUTHOR_EMAIL})
-                    </p>
-
-                    ${env.REPOS_INFO}
-
-                    <p>
-                        The build has failed unexpectedly.<br />
-                        💡 This build was on an Full Etendo (CORE and RX) build environment based on RX module commit.<br />
-                        To more information on the failing run visit:<br />
-                        <a href="${env.BUILD_URL}">${env.BUILD_URL}</a>
-                    </p>
-            __________________________________________________________
-            """
-        }
-        unstable {
-            script {
-                sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_FAILED_STATUS} \"${env.ERROR_MESSAGE}\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
-                echo "---------------------- ${env.ERROR_MESSAGE} ----------------------"
-
-                def mailSubject = ""
-                def moreInfo = ""
-                def bodyMessageError = ""
-
-                if (env.CODE_SCHEMA_VERIFICATION == FAILED) {
-                    mailSubject = "Failed Code and Schema Verification"
-                    bodyMessageError = env.VERIFICATIONS_MESSAGE
-                } else if (env.TEST_STATUS == UNSTABLE) {
-                    mailSubject = "Failed Tests"
-                    if (env.FAILED_SUITES && !env.FAILED_SUITES.isEmpty()) {
-                        bodyMessageError = "Failed Test Suites: ${env.FAILED_SUITES}"
-                    } else {
-                        bodyMessageError = "Failed tests have been detected in the RX module."
-                    }
-                } else if (env.COMPARE_COVERAGE_STATUS == FAILED) {
-                    mailSubject = "Coverage Decreased"
-                    bodyMessageError = "<p><strong>${env.ERROR_MESSAGE}</strong></p>"
-                    moreInfo = "Check the <a href='${env.PROJECT_URL}'>SonarQube Report</a> for more details about the coverage.<br/>"
-                }
-                env.EMAIL_SUBJECT = mailSubject
-                env.MORE_INFO = moreInfo
-                env.BODY_MESSAGE_ERROR = bodyMessageError
-            }
-            mail to: EMAIL_ADDRESS,
-                subject: "⚠️ ${env.EMAIL_SUBJECT} - ${currentBuild.fullDisplayName}",
-                mimeType: "text/html",
+                subject: "⛔ ${env.EMAIL_SUBJECT} - ${currentBuild.fullDisplayName}",
+                mimeType: 'text/html',
                 body: """
-                    <html>
-                        <head>
-                            <style>
-                                body { font-family: 'Arial', sans-serif; }
-                                .header { font-size: 16px; font-weight: bold; color: #FFA500; }
-                            </style>
-                        </head>
-                        <body>
-                            <p><em>${new Date()}</em></p>
-                            <p>__________________________________________________________</p>
+                <html>
+                    <head>
+                        <style>
+                            body { font-family: 'Arial', sans-serif; }
+                            .header { font-size: 16px; font-weight: bold; color: #FF0000; }
+                        </style>
+                    </head>
+                    <body>
+                        <p><em>${new Date()}</em></p>
+                        <p>__________________________________________________________</p>
 
-                            <h2 class="header">⚠️ ${env.EMAIL_SUBJECT} ⚠️</h2>
+                        <h2 class="header">🚫 ${env.EMAIL_SUBJECT} 🚫</h2>
 
-                            <p><strong>Reasons ⇢ <em>${env.BODY_MESSAGE_ERROR}</em></strong></p>
+                        <p><strong>Reason ⇢ <em>${env.ERROR_MESSAGE}</em></strong></p>
 
-                            <p>
-                                <strong>• Commit:</strong> <a href="${URL_REPO}/commits/${env.GIT_COMMIT}">${URL_REPO}/commits/${env.GIT_COMMIT}</a><br />
-                                <strong>• Author:</strong> ${COMMIT_AUTHOR_NAME} (${COMMIT_AUTHOR_EMAIL})
-                            </p>
+                        <p>
+                            <strong>• Commit:</strong> <a href="${URL_REPO}/commits/${env.GIT_COMMIT}">${URL_REPO}/commits/${env.GIT_COMMIT}</a><br />
+                            <strong>• Author:</strong> ${COMMIT_AUTHOR_NAME} (${COMMIT_AUTHOR_EMAIL})
+                        </p>
 
-                            ${env.REPOS_INFO}
+                        ${env.REPOS_INFO ?: ''}
 
-                            <p>
-                                ${env.MORE_INFO}
-                                To more information on the failing run, visit <a href='${env.BUILD_URL}'>Jenkins Build</a>
-                            </p>
-                    __________________________________________________________
+                        <p>
+                            The Schema Forge pipeline has failed.<br />
+                            💡 This build provisions a full Etendo Core + com.etendoerp.go environment, runs <code>make regen PUSH_TO_NEO=1</code>, and then <code>./gradlew export.database</code>.<br />
+                            For more information visit:<br />
+                            <a href="${env.BUILD_URL}">${env.BUILD_URL}</a>
+                        </p>
+                __________________________________________________________
                 """
         }
         success {
             script {
-                sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_SUCCESS_STATUS} \"Test Finalized Successfully\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
+                sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_SUCCESS_STATUS} \"Pipeline Finalized Successfully\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
                 echo '---------------------- DONE ----------------------'
             }
         }
