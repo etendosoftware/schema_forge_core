@@ -1,7 +1,7 @@
 {
   "version": "0.2.0",
-  "generatedAt": "2026-04-28T22:51:30.617Z",
-  "checksum": "5a723d960bdd940f",
+  "generatedAt": "2026-04-30T15:42:46.907Z",
+  "checksum": "af69791a1a93b5fc",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -579,6 +579,7 @@
             "grid": true,
             "form": true,
             "sourceRequired": true,
+            "columnType": "amount",
             "gridOrder": 4,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
@@ -591,8 +592,7 @@
               "raw": "@Processed@='Y'",
               "evaluable": true,
               "js": "record['processed'] === true"
-            },
-            "columnType": "amount"
+            }
           },
           {
             "name": "discount",

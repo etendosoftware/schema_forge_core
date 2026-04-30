@@ -1,7 +1,7 @@
 {
   "version": "0.17.0",
-  "generatedAt": "2026-04-29T12:08:05.812Z",
-  "checksum": "9ed7b9cbd69687c6",
+  "generatedAt": "2026-04-30T15:42:46.497Z",
+  "checksum": "b78ea3ee36cc5e6a",
   "frontendContract": {
     "window": {
       "id": "181",
@@ -1176,6 +1176,7 @@
             "grid": true,
             "form": true,
             "sourceRequired": true,
+            "columnType": "amount",
             "section": "principal",
             "gridOrder": 4,
             "callout": {
@@ -1185,8 +1186,7 @@
               "raw": "@Processed@='Y'",
               "evaluable": true,
               "js": "record['processed'] === true"
-            },
-            "columnType": "amount"
+            }
           },
           {
             "name": "discount",

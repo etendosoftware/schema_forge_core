@@ -1,7 +1,7 @@
 {
   "version": "0.16.0",
-  "generatedAt": "2026-04-29T18:18:25.759Z",
-  "checksum": "2e6773cbcde66bf7",
+  "generatedAt": "2026-04-30T15:42:46.582Z",
+  "checksum": "6f809d2d05c3bbd4",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -627,6 +627,7 @@
             "grid": true,
             "form": true,
             "sourceRequired": true,
+            "columnType": "amount",
             "section": "principal",
             "gridOrder": 4,
             "displayLogic": {
@@ -720,8 +721,7 @@
               "raw": "@Processed@='Y'|@GROSSPRICE@='Y'",
               "evaluable": true,
               "js": "record['processed'] === true || record['gROSSPRICE'] === 'Y'"
-            },
-            "columnType": "amount"
+            }
           },
           {
             "name": "grossUnitPrice",
