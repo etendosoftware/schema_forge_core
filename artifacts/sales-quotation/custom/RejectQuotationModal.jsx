@@ -6,11 +6,12 @@ import CreateRejectReasonModal from './CreateRejectReasonModal';
 /**
  * Reject confirmation for Sales Quotation in Under Evaluation (UE).
  *
- * The user must pick (or create) a rejection reason from the C_Reject_Reason
- * FK list. The reason picker is a search-typeahead modelled after the
- * `businessPartner` search in EntityForm — typing filters the loaded options,
- * and a "+ Crear razón" button opens an inline sub-modal that creates a new
- * RejectReason via the dedicated NEO action endpoint and preselects it.
+ * Visual spec follows the Figma frame "Rechazar Presupuesto":
+ * 375px-wide compact card, Inter typography, header with title + document
+ * subtitle, body with description + labelled typeahead, and a button row
+ * mirroring the EntityCreationModal palette (#121217 enabled / #D1D4DB
+ * disabled, fully-rounded). The selector itself stays a typeahead so users
+ * can search and inline-create reasons via the "+ Crear razón" affordance.
  *
  * On confirm we POST to the dedicated NEO action endpoint; the Java handler
  * is the one in com.etendoerp.go that flips DocStatus to CJ and persists
@@ -99,8 +100,6 @@ export default function RejectQuotationModal({
 
   const handleCreated = (created) => {
     setShowCreate(false);
-    // Append the new reason to the cached list and preselect it so the user
-    // sees the chosen value immediately.
     setReasons((prev) => {
       if (prev.some((r) => r.id === created.id)) return prev;
       return [...prev, created].sort((a, b) =>
@@ -136,135 +135,136 @@ export default function RejectQuotationModal({
     }
   };
 
+  const canSubmit = !loading && !!selected;
+
   return (
     <div onClick={onClose} style={overlayStyle}>
       <div onClick={(e) => e.stopPropagation()} style={cardStyle}>
 
-        <div style={{ padding: '14px 16px 0', position: 'relative' }}>
-          <button
-            type="button"
-            onClick={onClose}
-            style={closeBtnStyle}
-            aria-label={ui('cancel')}
-            disabled={loading}
-          >
-            &times;
-          </button>
-          <div style={{ fontSize: 10, color: '#9CA3AF', letterSpacing: '0.04em', marginBottom: 8 }}>
-            {ui('quotationDocumentLabel')} #{documentNo}
-          </div>
-          <div style={{ fontSize: 14, fontWeight: 500, color: '#111827', marginBottom: 4 }}>
-            {ui('rejectQuotationTitle')}
-          </div>
-          <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5, marginBottom: 14 }}>
-            {ui('rejectQuotationDesc')}
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={loading}
+          style={{ ...closeBtnStyle, opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
+          aria-label={ui('cancel')}
+        >
+          <svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="#828FA3" strokeWidth="2"
+               strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 5l10 10M15 5l-10 10" />
+          </svg>
+        </button>
+
+        <div style={headerStyle}>
+          <div style={titleStyle}>{ui('rejectQuotationTitle')}</div>
+          <div style={subtitleStyle}>
+            {ui('quotationDocumentLabel')}: {documentNo}
           </div>
         </div>
 
-        <div style={{ padding: '0 16px 14px', position: 'relative' }}>
-          <label htmlFor="reject-reason-search"
-            style={{ display: 'block', fontSize: 11, color: '#374151', fontWeight: 500, marginBottom: 6 }}>
-            {ui('rejectReasonLabel')}
-          </label>
-
-          <div style={{ position: 'relative' }}>
-            <svg style={searchIconStyle} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                 strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
-            <input
-              id="reject-reason-search"
-              type="text"
-              value={query}
-              onChange={(e) => {
-                isEditingRef.current = true;
-                setQuery(e.target.value);
-                setSelected(null);
-                if (!open) setOpen(true);
-              }}
-              onFocus={() => setOpen(true)}
-              onBlur={() => {
-                isEditingRef.current = false;
-                blurTimeoutRef.current = setTimeout(() => setOpen(false), 200);
-              }}
-              placeholder={loadingReasons ? `${ui('loading')}…` : ui('rejectReasonSearchPlaceholder')}
-              disabled={loading || loadingReasons}
-              style={inputStyle}
-              autoComplete="off"
-            />
-            {selected && !loading && (
-              <button
-                type="button"
-                onMouseDown={(e) => { e.preventDefault(); handleClear(); }}
-                style={clearBtnStyle}
-                aria-label={ui('clear')}
-              >
-                ×
-              </button>
-            )}
+        <div style={bodyStyle}>
+          <div style={descriptionStyle}>
+            {ui('rejectQuotationDesc')}
           </div>
 
-          {open && (
-            <div style={dropdownStyle}>
-              <button
-                type="button"
-                onMouseDown={(e) => { e.preventDefault(); handleOpenCreate(); }}
-                style={createOptionStyle}
-                disabled={loading}
-              >
-                + {ui('createRejectReason')}
-              </button>
-              {filteredReasons.map((r) => (
+          <div style={fieldGroupStyle}>
+            <label htmlFor="reject-reason-search" style={labelRowStyle}>
+              <span style={labelTextStyle}>{ui('rejectReasonLabel')}</span>
+              <span style={asteriskStyle}>*</span>
+            </label>
+
+            <div style={{ position: 'relative', alignSelf: 'stretch' }}>
+              <input
+                id="reject-reason-search"
+                type="text"
+                value={query}
+                onChange={(e) => {
+                  isEditingRef.current = true;
+                  setQuery(e.target.value);
+                  setSelected(null);
+                  if (!open) setOpen(true);
+                }}
+                onFocus={() => setOpen(true)}
+                onBlur={() => {
+                  isEditingRef.current = false;
+                  blurTimeoutRef.current = setTimeout(() => setOpen(false), 200);
+                }}
+                placeholder={loadingReasons ? `${ui('loading')}…` : ui('rejectReasonSearchPlaceholder')}
+                disabled={loading || loadingReasons}
+                style={inputStyle}
+                autoComplete="off"
+              />
+              <svg style={chevronIconStyle} viewBox="0 0 24 24" width="24" height="24"
+                   fill="none" stroke="#828FA3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+              {selected && !loading && (
                 <button
-                  key={r.id}
                   type="button"
-                  onMouseDown={() => handleSelect(r)}
-                  style={optionStyle}
-                  disabled={loading}
+                  onMouseDown={(e) => { e.preventDefault(); handleClear(); }}
+                  style={clearBtnStyle}
+                  aria-label={ui('clear')}
                 >
-                  {r.name}
+                  ×
                 </button>
-              ))}
-              {filteredReasons.length === 0 && !loadingReasons && query.length > 0 && (
-                <div style={{ padding: '8px 12px', fontSize: 12, color: '#9CA3AF' }}>
-                  {ui('rejectReasonNoResults')}
+              )}
+
+              {open && (
+                <div style={dropdownStyle}>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => { e.preventDefault(); handleOpenCreate(); }}
+                    style={createOptionStyle}
+                    disabled={loading}
+                  >
+                    + {ui('createRejectReason')}
+                  </button>
+                  {filteredReasons.map((r) => (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onMouseDown={() => handleSelect(r)}
+                      style={optionStyle}
+                      disabled={loading}
+                    >
+                      {r.name}
+                    </button>
+                  ))}
+                  {filteredReasons.length === 0 && !loadingReasons && query.length > 0 && (
+                    <div style={noResultsStyle}>
+                      {ui('rejectReasonNoResults')}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
+          </div>
         </div>
 
         {error && (
-          <div style={{
-            padding: '8px 16px', fontSize: 12, color: '#DC2626',
-            background: '#FEF2F2', borderTop: '0.5px solid #FECACA',
-          }}>
-            {error}
-          </div>
+          <div style={errorStyle}>{error}</div>
         )}
 
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8,
-          padding: '12px 16px', borderTop: '0.5px solid #E5E7EB',
-        }}>
+        <div style={buttonsRowStyle}>
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            style={{ ...btnSecondary, opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
+            style={{
+              ...btnSecondary,
+              opacity: loading ? 0.5 : 1,
+              cursor: loading ? 'not-allowed' : 'pointer',
+            }}
           >
             {ui('cancel')}
           </button>
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={loading || !selected}
+            disabled={!canSubmit}
             style={{
-              ...btnPrimary,
-              opacity: loading || !selected ? 0.6 : 1,
-              cursor: loading || !selected ? 'not-allowed' : 'pointer',
-              display: 'inline-flex', alignItems: 'center', gap: 6,
+              ...(canSubmit ? btnPrimary : btnPrimaryDisabled),
+              cursor: canSubmit ? 'pointer' : 'not-allowed',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             }}
           >
             {loading && (
@@ -275,7 +275,10 @@ export default function RejectQuotationModal({
             )}
             {loading ? ui('soProcessing') : ui('rejectQuotationConfirm')}
           </button>
-          <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+          <style>{`
+            @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+            #reject-reason-search::placeholder { color: #6C6C89; opacity: 1; font-family: Inter, sans-serif; font-size: 14px; line-height: 24px; font-weight: 400; }
+          `}</style>
         </div>
       </div>
 
@@ -306,63 +309,156 @@ const overlayStyle = {
 };
 
 const cardStyle = {
-  width: 460, maxHeight: '80vh', display: 'flex', flexDirection: 'column',
-  overflow: 'visible', borderRadius: 12, backgroundColor: '#fff',
-  boxShadow: '0 8px 30px rgba(0,0,0,0.12)', border: '0.5px solid #E5E7EB',
+  position: 'relative',
+  width: 375, display: 'flex', flexDirection: 'column',
+  padding: '8px 0', backgroundColor: '#FFFFFF',
+  boxShadow: '0px 0px 0px 1px rgba(18,18,23,0.1), 0px 24px 48px rgba(18,18,23,0.03), 0px 10px 18px rgba(18,18,23,0.03), 0px 5px 8px rgba(18,18,23,0.04), 0px 2px 4px rgba(18,18,23,0.04)',
+  borderRadius: 8,
+  fontFamily: 'Inter, sans-serif',
 };
 
 const closeBtnStyle = {
-  position: 'absolute', top: 10, right: 12,
-  fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4,
-  background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF',
+  position: 'absolute', top: 6, right: 6,
+  width: 24, height: 24, borderRadius: 360,
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  background: 'transparent', border: 'none', padding: 2,
 };
 
+const headerStyle = {
+  display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+  padding: '8px 20px', gap: 2, alignSelf: 'stretch',
+};
+
+const titleStyle = {
+  fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: 20, lineHeight: '32px',
+  color: '#121217',
+};
+
+const subtitleStyle = {
+  fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: 12, lineHeight: '16px',
+  color: '#121217',
+};
+
+const bodyStyle = {
+  display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+  padding: '4px 20px 8px', gap: 12, alignSelf: 'stretch',
+};
+
+const descriptionStyle = {
+  fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: 12, lineHeight: '16px',
+  color: '#121217', alignSelf: 'stretch',
+};
+
+const fieldGroupStyle = {
+  display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8,
+  alignSelf: 'stretch',
+};
+
+const labelRowStyle = {
+  display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: 4,
+  alignSelf: 'stretch',
+};
+
+const labelTextStyle = {
+  fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: 14, lineHeight: '24px',
+  color: '#121217',
+};
+
+const asteriskStyle = {
+  fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: 14, lineHeight: '24px',
+  color: '#F53D6B',
+};
+
+// Input matches Figma frame "Text Input": 335×40, border 1px #D1D4DB, radius 8.
+// Spec composes its inner layout as nested wraps (text wrap padding 0 8,
+// chevron wrap 28 wide padding 0 4 0 0, chevron 24×24). We collapse that
+// into explicit input padding so the visual placement of text and chevron
+// matches without nesting flex containers.
 const inputStyle = {
-  width: '100%', fontSize: 13, color: '#111827',
-  border: '1px solid #D1D5DB', borderRadius: 6, padding: '7px 10px 7px 30px',
+  width: '100%', boxSizing: 'border-box', height: 40,
+  fontFamily: 'Inter, sans-serif', fontSize: 14, lineHeight: '24px', color: '#121217',
+  border: '1px solid #D1D4DB', borderRadius: 8,
+  padding: '8px 44px 8px 16px',
   background: '#FFFFFF',
+  boxShadow: '0px 1px 2px rgba(18,18,23,0.05)',
   outline: 'none',
 };
 
-const searchIconStyle = {
-  position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
-  width: 14, height: 14, color: '#9CA3AF', pointerEvents: 'none',
+const chevronIconStyle = {
+  position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+  width: 24, height: 24,
+  pointerEvents: 'none',
 };
 
 const clearBtnStyle = {
-  position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+  position: 'absolute', right: 40, top: '50%', transform: 'translateY(-50%)',
   width: 20, height: 20, borderRadius: '50%',
-  border: 'none', background: 'transparent', color: '#9CA3AF',
+  border: 'none', background: 'transparent', color: '#828FA3',
   cursor: 'pointer', fontSize: 16, lineHeight: 1,
 };
 
 const dropdownStyle = {
-  position: 'absolute', left: 16, right: 16, top: '100%', marginTop: -6, zIndex: 51,
-  background: '#fff', border: '1px solid #E5E7EB', borderRadius: 6,
-  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+  position: 'absolute', left: 0, right: 0, top: '100%', marginTop: 4, zIndex: 51,
+  background: '#fff', border: '1px solid #D1D4DB', borderRadius: 8,
+  boxShadow: '0 4px 12px rgba(18,18,23,0.08)',
   maxHeight: 220, overflowY: 'auto',
 };
 
 const createOptionStyle = {
   display: 'block', width: '100%', textAlign: 'left',
-  padding: '8px 12px', fontSize: 13, fontWeight: 500,
-  color: '#202452', background: 'transparent',
+  padding: '8px 12px',
+  fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 500, lineHeight: '24px',
+  color: '#121217', background: 'transparent',
   border: 'none', borderBottom: '1px solid #E5E7EB',
   cursor: 'pointer',
 };
 
 const optionStyle = {
   display: 'block', width: '100%', textAlign: 'left',
-  padding: '8px 12px', fontSize: 13, color: '#111827',
-  background: 'transparent', border: 'none', cursor: 'pointer',
+  padding: '8px 12px',
+  fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 400, lineHeight: '24px',
+  color: '#121217', background: 'transparent', border: 'none', cursor: 'pointer',
 };
 
+const noResultsStyle = {
+  padding: '8px 12px',
+  fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#6C6C89',
+};
+
+const errorStyle = {
+  padding: '8px 20px',
+  fontFamily: 'Inter, sans-serif', fontSize: 12,
+  color: '#DC2626', background: '#FEF2F2',
+  borderTop: '0.5px solid #FECACA',
+};
+
+const buttonsRowStyle = {
+  display: 'flex', flexDirection: 'row', justifyContent: 'flex-end',
+  alignItems: 'center', gap: 12, padding: '12px 20px', alignSelf: 'stretch',
+};
+
+// Button widths match the Figma frame (Screenshot 2026-04-30 11-39-55):
+// Cancelar = 132×40, Rechazar presupuesto = 191×40. Both centered.
+// Palette mirrors EntityCreationModal / CreateRejectReasonModal.
 const btnSecondary = {
-  fontSize: 12, padding: '7px 14px', borderRadius: 6,
-  border: '1px solid #D1D5DB', background: 'transparent', color: '#6B7280',
+  width: 132, height: 40,
+  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+  fontSize: 14, fontWeight: 500, lineHeight: '24px', padding: '8px 12px',
+  borderRadius: 360, fontFamily: 'Inter, sans-serif',
+  border: '1px solid #D1D4DB', background: '#FFFFFF', color: '#121217',
+  boxShadow: '0px 1px 2px rgba(18,18,23,0.05)',
 };
 
 const btnPrimary = {
-  fontSize: 12, fontWeight: 500, padding: '7px 16px', borderRadius: 6,
-  border: 'none', background: '#DC2626', color: '#fff',
+  width: 191, height: 40,
+  fontSize: 14, fontWeight: 500, lineHeight: '24px', padding: '8px 12px',
+  borderRadius: 360, fontFamily: 'Inter, sans-serif',
+  border: 'none', background: '#121217', color: '#FFFFFF',
+};
+
+const btnPrimaryDisabled = {
+  width: 191, height: 40,
+  fontSize: 14, fontWeight: 500, lineHeight: '24px', padding: '8px 12px',
+  borderRadius: 360, fontFamily: 'Inter, sans-serif',
+  border: 'none', background: '#D1D4DB', color: '#FFFFFF',
 };

@@ -1347,10 +1347,16 @@ export function DetailView({
                   if (visibleActions.length === 0 && !customMenuContent) return null;
                   return (
                     <div
-                      className="absolute right-0 top-full mt-1 z-50 bg-white py-1 min-w-[160px]"
-                      style={{ border: '0.5px solid hsl(var(--border))', borderRadius: '8px' }}
+                      className="absolute right-0 top-full mt-1 z-50 bg-white py-2 min-w-[148px]"
+                      style={{
+                        borderRadius: '8px',
+                        boxShadow:
+                          '0px 0px 0px 1px rgba(18,18,23,0.1), 0px 24px 48px rgba(18,18,23,0.03), 0px 10px 18px rgba(18,18,23,0.03), 0px 5px 8px rgba(18,18,23,0.04), 0px 2px 4px rgba(18,18,23,0.04)',
+                      }}
                     >
-                      {visibleActions.map((action, i) => (
+                      {visibleActions.map((action, i) => {
+                        const ActionIcon = action.icon;
+                        return (
                         <button
                           key={action.key || i}
                           type="button"
@@ -1378,14 +1384,24 @@ export function DetailView({
                               action.onClick();
                             }
                           }}
-                          className={`w-full text-left px-3 py-1.5 text-[13px] transition-colors ${action.destructive
+                          className={`w-full text-left px-2 py-1 text-sm leading-6 transition-colors flex items-center gap-2 ${action.destructive
                               ? 'text-red-600 hover:bg-red-50'
                               : 'text-foreground hover:bg-secondary'
                             } ${docAction.loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400 }}
                         >
-                          {action.labelKey ? ui(action.labelKey) : action.label}
+                          {ActionIcon && (
+                            <ActionIcon
+                              className="h-4 w-4 flex-shrink-0 ml-1"
+                              style={{ color: action.destructive ? undefined : '#828FA3' }}
+                            />
+                          )}
+                          <span className={ActionIcon ? 'pl-1' : ''}>
+                            {action.labelKey ? ui(action.labelKey) : action.label}
+                          </span>
                         </button>
-                      ))}
+                        );
+                      })}
                       {customMenuContent && (() => {
                         const CustomMenuContent = customMenuContent;
                         return <CustomMenuContent

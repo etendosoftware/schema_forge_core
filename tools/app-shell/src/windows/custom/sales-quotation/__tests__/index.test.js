@@ -91,8 +91,8 @@ describe('SalesQuotationWindow custom wrapper', () => {
       assert.match(src, /visible:\s*status\s*===\s*['"]UE['"]/);
     });
 
-    it('marks the reject entry as destructive', () => {
-      assert.match(src, /key:\s*['"]reject['"][\s\S]{0,160}destructive:\s*true/);
+    it('does NOT mark the reject entry as destructive (regression: text was red, Figma uses neutral dark-gray)', () => {
+      assert.doesNotMatch(src, /key:\s*['"]reject['"][\s\S]{0,200}destructive:\s*true/);
     });
 
     it('routes onClick through the open-reject-modal custom event', () => {
@@ -108,6 +108,11 @@ describe('SalesQuotationWindow custom wrapper', () => {
 
     it('does not expose a cancel entry in the kebab anymore', () => {
       assert.doesNotMatch(src, /key:\s*['"]cancel['"]/);
+    });
+
+    it('renders the reject entry with the XCircle icon (Figma redesign)', () => {
+      assert.match(src, /import\s*\{\s*XCircle\s*\}\s*from\s*['"]lucide-react['"]/);
+      assert.match(src, /key:\s*['"]reject['"][\s\S]{0,200}icon:\s*XCircle/);
     });
   });
 });

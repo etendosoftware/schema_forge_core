@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { XCircle } from 'lucide-react';
 import GeneratedApp from '@generated/sales-quotation/generated/web/sales-quotation/index.jsx';
 import QuotationTable from '@generated/sales-quotation/generated/web/sales-quotation/QuotationTable';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
@@ -48,7 +49,10 @@ const customMenuActions = ({ status }) => [
   {
     key: 'reject',
     labelKey: 'rejectQuotation',
-    destructive: true,
+    icon: XCircle,
+    // The XCircle icon already carries the destructive cue; the Figma
+    // (Screenshot 2026-04-30 11-38-53) renders both icon and label in the
+    // neutral dark-gray (#121217), not the legacy red text.
     visible: status === 'UE',
     onClick: () => window.dispatchEvent(new CustomEvent('sales-quotation:open-reject-modal')),
   },

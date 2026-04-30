@@ -74,7 +74,8 @@ describe('RejectQuotationModal', () => {
     });
 
     it('disables the confirm button until a reason is selected', () => {
-      assert.match(src, /disabled=\{loading\s*\|\|\s*!selected\}/);
+      assert.match(src, /const\s+canSubmit\s*=\s*!loading\s*&&\s*!!selected/);
+      assert.match(src, /disabled=\{!canSubmit\}/);
     });
 
     it('reloads the page on success', () => {
@@ -97,6 +98,51 @@ describe('RejectQuotationModal', () => {
 
     it('uses the rejectQuotationError key when surfacing backend failures', () => {
       assert.match(src, /ui\(\s*['"]rejectQuotationError['"]\s*\)/);
+    });
+  });
+
+  describe('Figma redesign — visual spec', () => {
+    it('renders the document subtitle via quotationDocumentLabel + documentNo (regression: was "#" separator)', () => {
+      assert.match(src, /\{ui\(\s*['"]quotationDocumentLabel['"]\s*\)\}\s*:\s*\{documentNo\}/);
+    });
+
+    it('uses the Inter font family in the card', () => {
+      assert.match(src, /fontFamily:\s*['"]Inter,\s*sans-serif['"]/);
+    });
+
+    it('pins the card width to the Figma frame (375px)', () => {
+      assert.match(src, /width:\s*375\b/);
+    });
+
+    it('renders a required-field asterisk in #F53D6B next to the reason label', () => {
+      assert.match(src, /asteriskStyle/);
+      assert.match(src, /#F53D6B/);
+    });
+
+    it('borders the typeahead input with #D1D4DB at 8px radius (matches Figma)', () => {
+      assert.match(src, /border:\s*['"]1px solid #D1D4DB['"]/);
+      assert.match(src, /borderRadius:\s*8\b/);
+    });
+
+    it('renders a chevron-down indicator inside the input (replaces magnifying glass)', () => {
+      assert.match(src, /chevronIconStyle/);
+      assert.doesNotMatch(src, /searchIconStyle/);
+    });
+
+    it('uses the EntityCreationModal button palette (#121217 enabled / #D1D4DB disabled, 360 radius)', () => {
+      assert.match(src, /background:\s*['"]#121217['"]/);
+      assert.match(src, /background:\s*['"]#D1D4DB['"]/);
+      assert.match(src, /borderRadius:\s*360\b/);
+    });
+
+    it('locks button dimensions to the Figma spec (Cancelar 132×40, Rechazar 191×40)', () => {
+      assert.match(src, /btnSecondary\s*=\s*\{[^}]*width:\s*132[^}]*height:\s*40/s);
+      assert.match(src, /btnPrimary\s*=\s*\{[^}]*width:\s*191[^}]*height:\s*40/s);
+      assert.match(src, /btnPrimaryDisabled\s*=\s*\{[^}]*width:\s*191[^}]*height:\s*40/s);
+    });
+
+    it('positions the close button at top:6 right:6 (Figma frame)', () => {
+      assert.match(src, /top:\s*6\b[\s\S]*right:\s*6\b/);
     });
   });
 });
