@@ -365,7 +365,8 @@
         "unitPrice": {
           "grid": true,
           "section": "principal",
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "columnType": "amount"
         },
         "listPrice": {
           "visibility": "readOnly",

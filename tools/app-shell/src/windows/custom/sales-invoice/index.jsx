@@ -9,6 +9,7 @@ import HeaderPage from '@generated/sales-invoice/generated/web/sales-invoice/Hea
 import InvoiceHeaderTable from '@generated/sales-invoice/custom/InvoiceHeaderTable.jsx';
 import InvoicePreviewModal from '../shared/InvoicePreviewModal.jsx';
 import SalesInvoiceTopbar from './SalesInvoiceTopbar.jsx';
+import SalesInvoiceLinesTable from './SalesInvoiceLinesTable.jsx';
 import InvoiceBottomPanel from '@generated/sales-invoice/custom/InvoiceBottomPanel.jsx';
 import RelatedDocuments from '@generated/sales-invoice/custom/RelatedDocuments.jsx';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
@@ -87,6 +88,7 @@ export default function SalesInvoiceWindow(props) {
       <CreateContactContext.Provider value={createContactCtxValue}>
         <HeaderPage
           {...props}
+          DetailTable={SalesInvoiceLinesTable}
           bottomSection={InvoiceBottomPanel}
           topbarRight={SalesInvoiceTopbar}
           notesField="description"

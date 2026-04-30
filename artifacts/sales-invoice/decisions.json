@@ -289,7 +289,8 @@
         },
         "unitPrice": {
           "grid": true,
-          "section": "principal"
+          "section": "principal",
+          "columnType": "amount"
         },
         "tax": {
           "grid": true,

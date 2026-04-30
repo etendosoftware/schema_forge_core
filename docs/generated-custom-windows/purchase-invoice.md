@@ -74,6 +74,6 @@ Use this window to register supplier invoices, keep the payable document aligned
   - `tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceTopbar.jsx` — the payment-status pill (paid/pending amounts) formats monetary values using the org's configured currency via `useCurrency()` and `formatCurrency()`.
   - `tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceBottomPanel.jsx` — subtotal, inferred tax, and total in the footer are formatted using the org's configured currency via `useCurrency()` and `formatCurrency()`.
   - `tools/app-shell/src/windows/custom/purchase-invoice/InvoicePreviewModal.jsx`
-  - `tools/app-shell/src/windows/custom/purchase-invoice/InvoiceLineTableCustom.jsx` — hardcoded column list: product, description, invoiced quantity, net unit price, tax, line gross amount (matches the generated sales-invoice lines table column order).
+  - `tools/app-shell/src/windows/custom/purchase-invoice/InvoiceLineTableCustom.jsx` — hardcoded column list: product, description, invoiced quantity, net unit price, tax, line gross amount. The `unitPrice` column uses `type: 'amount'` and rows are enriched with `currency$_identifier` from `useCurrency()` so the net unit price renders as a formatted currency value (e.g. `23,00 €`) rather than a raw number.
   - `tools/app-shell/src/windows/custom/purchase-invoice/RelatedDocuments.jsx`
   - `tools/app-shell/src/windows/custom/shared/InvoicePaymentModal.jsx`

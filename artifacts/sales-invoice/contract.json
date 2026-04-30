@@ -611,7 +611,8 @@
               "raw": "@Processed@='Y'|@GROSSPRICE@='Y'",
               "evaluable": true,
               "js": "record['processed'] === true || record['gROSSPRICE'] === 'Y'"
-            }
+            },
+            "columnType": "amount"
           },
           {
             "name": "grossUnitPrice",
