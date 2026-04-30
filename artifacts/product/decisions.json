@@ -225,6 +225,7 @@
       }
     },
     "price": {
+      "javaQualifier": "productPriceHandler",
       "fields": {
         "cost": {
           "visibility": "editable",
@@ -296,6 +297,7 @@
       }
     },
     "stock": {
+      "javaQualifier": "productStockWarehouseHandler",
       "fields": {
         "storageBin": {
           "visibility": "readOnly",

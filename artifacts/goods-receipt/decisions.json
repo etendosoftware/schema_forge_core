@@ -232,6 +232,7 @@
       }
     },
     "accounting": {
+      "javaQualifier": "factAcctHandler",
       "exclude": true
     },
     "landedCost": {
