@@ -16543,6 +16543,7 @@
     "optional": "opcional",
     "reactivate": "Reactivar",
     "reactivateOrder": "Reactivar pedido",
+    "cannotReactivateLinkedDocs": "No se puede reactivar: el pedido tiene documentos vinculados",
     "bulkCompletion": "Procesado masivo",
     "documentAction": "Acción de documento",
     "book": "Procesar",

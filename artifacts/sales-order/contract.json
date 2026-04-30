@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "generatedAt": "2026-04-30T15:33:38.824Z",
-  "checksum": "91848a0c530c9153",
+  "generatedAt": "2026-04-30T16:43:44.036Z",
+  "checksum": "fe09adbcc011324e",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -30,6 +30,7 @@
           "label": "Reactivate",
           "labelKey": "reactivate",
           "visibleWhenStatus": "CO",
+          "visibleWhenFieldFalse": "hasLinkedDocuments",
           "documentAction": "RE",
           "successKey": "actionCompleted"
         }
@@ -833,6 +834,7 @@
           "label": "Reactivate",
           "labelKey": "reactivate",
           "visibleWhenStatus": "CO",
+          "visibleWhenFieldFalse": "hasLinkedDocuments",
           "documentAction": "RE",
           "successKey": "actionCompleted"
         }
@@ -875,20 +877,20 @@
             "required": true
           },
           {
-            "name": "cReturnReasonID",
-            "apiKey": "cReturnReasonID",
-            "column": "C_Return_Reason_ID",
-            "type": "foreignKey",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
             "name": "documentNo",
             "apiKey": "documentNo",
             "column": "DocumentNo",
             "type": "string",
             "visibility": "readOnly",
             "required": true
+          },
+          {
+            "name": "cReturnReasonID",
+            "apiKey": "cReturnReasonID",
+            "column": "C_Return_Reason_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
           },
           {
             "name": "orderDate",
@@ -907,20 +909,20 @@
             "required": true
           },
           {
-            "name": "partnerAddress",
-            "apiKey": "partnerAddress",
-            "column": "C_BPartner_Location_ID",
-            "type": "foreignKey",
-            "visibility": "editable",
-            "required": true
-          },
-          {
             "name": "rMPickFromShipment",
             "apiKey": "rMPickFromShipment",
             "column": "RM_PickFromShipment",
             "type": "button",
             "visibility": "discarded",
             "required": false
+          },
+          {
+            "name": "partnerAddress",
+            "apiKey": "partnerAddress",
+            "column": "C_BPartner_Location_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
           },
           {
             "name": "priceList",
@@ -947,19 +949,19 @@
             "required": false
           },
           {
-            "name": "paymentMethod",
-            "apiKey": "paymentMethod",
-            "column": "FIN_Paymentmethod_ID",
-            "type": "foreignKey",
-            "visibility": "editable",
-            "required": false
-          },
-          {
             "name": "rMCreateInvoice",
             "apiKey": "rMCreateInvoice",
             "column": "RM_CreateInvoice",
             "type": "button",
             "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "paymentMethod",
+            "apiKey": "paymentMethod",
+            "column": "FIN_Paymentmethod_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
             "required": false
           },
           {
@@ -1227,20 +1229,20 @@
             "required": false
           },
           {
-            "name": "cashVAT",
-            "apiKey": "cashVAT",
-            "column": "Iscashvat",
-            "type": "boolean",
-            "visibility": "discarded",
-            "required": true
-          },
-          {
             "name": "invoiceStatus",
             "apiKey": "invoiceStatus",
             "column": "InvoiceStatus",
             "type": "integer",
             "visibility": "readOnly",
             "required": false
+          },
+          {
+            "name": "cashVAT",
+            "apiKey": "cashVAT",
+            "column": "Iscashvat",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": true
           },
           {
             "name": "calculatePromotions",
@@ -1411,6 +1413,78 @@
             "required": false
           },
           {
+            "name": "processed",
+            "apiKey": "processed",
+            "column": "Processed",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "datePrinted",
+            "apiKey": "datePrinted",
+            "column": "DatePrinted",
+            "type": "date",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "salesTransaction",
+            "apiKey": "salesTransaction",
+            "column": "IsSOTrx",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "formOfPayment",
+            "apiKey": "formOfPayment",
+            "column": "PaymentRule",
+            "type": "enum",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "posted",
+            "apiKey": "posted",
+            "column": "Posted",
+            "type": "button",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "priceIncludesTax",
+            "apiKey": "priceIncludesTax",
+            "column": "IsTaxIncluded",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "selected",
+            "apiKey": "selected",
+            "column": "IsSelected",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "dropShipContact",
+            "apiKey": "dropShipContact",
+            "column": "DropShip_User_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "dropShipPartner",
+            "apiKey": "dropShipPartner",
+            "column": "DropShip_BPartner_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
             "name": "dropShipLocation",
             "apiKey": "dropShipLocation",
             "column": "DropShip_Location_ID",
@@ -1419,10 +1493,42 @@
             "required": false
           },
           {
+            "name": "selfService",
+            "apiKey": "selfService",
+            "column": "IsSelfService",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "incoterms",
+            "apiKey": "incoterms",
+            "column": "C_Incoterms_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "iNCOTERMSDescription",
+            "apiKey": "iNCOTERMSDescription",
+            "column": "Incotermsdescription",
+            "type": "text",
+            "visibility": "system",
+            "required": false
+          },
+          {
             "name": "print",
             "apiKey": "print",
             "column": "IsPrinted",
             "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "accountingDate",
+            "apiKey": "accountingDate",
+            "column": "DateAcct",
+            "type": "date",
             "visibility": "system",
             "required": true
           },
@@ -1459,30 +1565,6 @@
             "required": true
           },
           {
-            "name": "processNow",
-            "apiKey": "processNow",
-            "column": "Processing",
-            "type": "button",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "processed",
-            "apiKey": "processed",
-            "column": "Processed",
-            "type": "boolean",
-            "visibility": "readOnly",
-            "required": true
-          },
-          {
-            "name": "datePrinted",
-            "apiKey": "datePrinted",
-            "column": "DatePrinted",
-            "type": "date",
-            "visibility": "system",
-            "required": false
-          },
-          {
             "name": "active",
             "apiKey": "active",
             "column": "IsActive",
@@ -1491,90 +1573,10 @@
             "required": true
           },
           {
-            "name": "salesTransaction",
-            "apiKey": "salesTransaction",
-            "column": "IsSOTrx",
-            "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "formOfPayment",
-            "apiKey": "formOfPayment",
-            "column": "PaymentRule",
-            "type": "enum",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "posted",
-            "apiKey": "posted",
-            "column": "Posted",
+            "name": "processNow",
+            "apiKey": "processNow",
+            "column": "Processing",
             "type": "button",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "priceIncludesTax",
-            "apiKey": "priceIncludesTax",
-            "column": "IsTaxIncluded",
-            "type": "boolean",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
-            "name": "accountingDate",
-            "apiKey": "accountingDate",
-            "column": "DateAcct",
-            "type": "date",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "selected",
-            "apiKey": "selected",
-            "column": "IsSelected",
-            "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "dropShipContact",
-            "apiKey": "dropShipContact",
-            "column": "DropShip_User_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "dropShipPartner",
-            "apiKey": "dropShipPartner",
-            "column": "DropShip_BPartner_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "iNCOTERMSDescription",
-            "apiKey": "iNCOTERMSDescription",
-            "column": "Incotermsdescription",
-            "type": "text",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "incoterms",
-            "apiKey": "incoterms",
-            "column": "C_Incoterms_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "deliveryNotes",
-            "apiKey": "deliveryNotes",
-            "column": "Deliverynotes",
-            "type": "text",
             "visibility": "system",
             "required": false
           },
@@ -1587,12 +1589,12 @@
             "required": false
           },
           {
-            "name": "selfService",
-            "apiKey": "selfService",
-            "column": "IsSelfService",
-            "type": "boolean",
+            "name": "deliveryNotes",
+            "apiKey": "deliveryNotes",
+            "column": "Deliverynotes",
+            "type": "text",
             "visibility": "system",
-            "required": true
+            "required": false
           },
           {
             "name": "createPOLines",
@@ -1955,17 +1957,17 @@
             "required": false
           },
           {
-            "name": "standardPrice",
-            "apiKey": "standardPrice",
-            "column": "PriceStd",
+            "name": "baseGrossUnitPrice",
+            "apiKey": "baseGrossUnitPrice",
+            "column": "grosspricestd",
             "type": "price",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "baseGrossUnitPrice",
-            "apiKey": "baseGrossUnitPrice",
-            "column": "grosspricestd",
+            "name": "standardPrice",
+            "apiKey": "standardPrice",
+            "column": "PriceStd",
             "type": "price",
             "visibility": "system",
             "required": true
@@ -1979,18 +1981,18 @@
             "required": false
           },
           {
-            "name": "reservationStatus",
-            "apiKey": "reservationStatus",
-            "column": "SO_Res_Status",
-            "type": "enum",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
             "name": "quotationLine",
             "apiKey": "quotationLine",
             "column": "Quotationline_ID",
             "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "reservationStatus",
+            "apiKey": "reservationStatus",
+            "column": "SO_Res_Status",
+            "type": "enum",
             "visibility": "discarded",
             "required": false
           },
@@ -2538,19 +2540,19 @@
       },
       {
         "entity": "header",
-        "field": "processNow",
-        "column": "Processing",
-        "url": "/sws/neo/sales-order/header/{id}/action/processNow",
-        "processId": "104",
-        "processType": "classic"
-      },
-      {
-        "entity": "header",
         "field": "posted",
         "column": "Posted",
         "url": "/sws/neo/sales-order/header/{id}/action/posted",
         "processId": "57496FB9CF9E4E8F847224017941570E",
         "processType": "obuiapp"
+      },
+      {
+        "entity": "header",
+        "field": "processNow",
+        "column": "Processing",
+        "url": "/sws/neo/sales-order/header/{id}/action/processNow",
+        "processId": "104",
+        "processType": "classic"
       },
       {
         "entity": "header",
@@ -3872,76 +3874,12 @@
         "id": "t-155",
         "category": "system-field",
         "entity": "header",
-        "field": "dropShipLocation",
-        "runner": "node",
-        "description": "System field 'dropShipLocation' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-156",
-        "category": "system-field",
-        "entity": "header",
-        "field": "print",
-        "runner": "node",
-        "description": "System field 'print' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-157",
-        "category": "system-field",
-        "entity": "header",
-        "field": "reinvoice",
-        "runner": "node",
-        "description": "System field 'reinvoice' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-158",
-        "category": "system-field",
-        "entity": "header",
-        "field": "delivered",
-        "runner": "node",
-        "description": "System field 'delivered' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-159",
-        "category": "system-field",
-        "entity": "header",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-160",
-        "category": "system-field",
-        "entity": "header",
-        "field": "id",
-        "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-161",
-        "category": "system-field",
-        "entity": "header",
-        "field": "processNow",
-        "runner": "node",
-        "description": "System field 'processNow' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-162",
-        "category": "system-field",
-        "entity": "header",
         "field": "datePrinted",
         "runner": "node",
         "description": "System field 'datePrinted' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-163",
-        "category": "system-field",
-        "entity": "header",
-        "field": "active",
-        "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-164",
+        "id": "t-156",
         "category": "system-field",
         "entity": "header",
         "field": "salesTransaction",
@@ -3949,7 +3887,7 @@
         "description": "System field 'salesTransaction' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-165",
+        "id": "t-157",
         "category": "system-field",
         "entity": "header",
         "field": "formOfPayment",
@@ -3957,7 +3895,7 @@
         "description": "System field 'formOfPayment' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-166",
+        "id": "t-158",
         "category": "system-field",
         "entity": "header",
         "field": "posted",
@@ -3965,12 +3903,76 @@
         "description": "System field 'posted' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-167",
+        "id": "t-159",
         "category": "system-field",
         "entity": "header",
         "field": "priceIncludesTax",
         "runner": "node",
         "description": "System field 'priceIncludesTax' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-160",
+        "category": "system-field",
+        "entity": "header",
+        "field": "selected",
+        "runner": "node",
+        "description": "System field 'selected' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-161",
+        "category": "system-field",
+        "entity": "header",
+        "field": "dropShipContact",
+        "runner": "node",
+        "description": "System field 'dropShipContact' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-162",
+        "category": "system-field",
+        "entity": "header",
+        "field": "dropShipPartner",
+        "runner": "node",
+        "description": "System field 'dropShipPartner' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-163",
+        "category": "system-field",
+        "entity": "header",
+        "field": "dropShipLocation",
+        "runner": "node",
+        "description": "System field 'dropShipLocation' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-164",
+        "category": "system-field",
+        "entity": "header",
+        "field": "selfService",
+        "runner": "node",
+        "description": "System field 'selfService' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-165",
+        "category": "system-field",
+        "entity": "header",
+        "field": "incoterms",
+        "runner": "node",
+        "description": "System field 'incoterms' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-166",
+        "category": "system-field",
+        "entity": "header",
+        "field": "iNCOTERMSDescription",
+        "runner": "node",
+        "description": "System field 'iNCOTERMSDescription' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-167",
+        "category": "system-field",
+        "entity": "header",
+        "field": "print",
+        "runner": "node",
+        "description": "System field 'print' should exist in backend but not frontend for header"
       },
       {
         "id": "t-168",
@@ -3984,49 +3986,49 @@
         "id": "t-169",
         "category": "system-field",
         "entity": "header",
-        "field": "selected",
+        "field": "reinvoice",
         "runner": "node",
-        "description": "System field 'selected' should exist in backend but not frontend for header"
+        "description": "System field 'reinvoice' should exist in backend but not frontend for header"
       },
       {
         "id": "t-170",
         "category": "system-field",
         "entity": "header",
-        "field": "dropShipContact",
+        "field": "delivered",
         "runner": "node",
-        "description": "System field 'dropShipContact' should exist in backend but not frontend for header"
+        "description": "System field 'delivered' should exist in backend but not frontend for header"
       },
       {
         "id": "t-171",
         "category": "system-field",
         "entity": "header",
-        "field": "dropShipPartner",
+        "field": "client",
         "runner": "node",
-        "description": "System field 'dropShipPartner' should exist in backend but not frontend for header"
+        "description": "System field 'client' should exist in backend but not frontend for header"
       },
       {
         "id": "t-172",
         "category": "system-field",
         "entity": "header",
-        "field": "iNCOTERMSDescription",
+        "field": "id",
         "runner": "node",
-        "description": "System field 'iNCOTERMSDescription' should exist in backend but not frontend for header"
+        "description": "System field 'id' should exist in backend but not frontend for header"
       },
       {
         "id": "t-173",
         "category": "system-field",
         "entity": "header",
-        "field": "incoterms",
+        "field": "active",
         "runner": "node",
-        "description": "System field 'incoterms' should exist in backend but not frontend for header"
+        "description": "System field 'active' should exist in backend but not frontend for header"
       },
       {
         "id": "t-174",
         "category": "system-field",
         "entity": "header",
-        "field": "deliveryNotes",
+        "field": "processNow",
         "runner": "node",
-        "description": "System field 'deliveryNotes' should exist in backend but not frontend for header"
+        "description": "System field 'processNow' should exist in backend but not frontend for header"
       },
       {
         "id": "t-175",
@@ -4040,9 +4042,9 @@
         "id": "t-176",
         "category": "system-field",
         "entity": "header",
-        "field": "selfService",
+        "field": "deliveryNotes",
         "runner": "node",
-        "description": "System field 'selfService' should exist in backend but not frontend for header"
+        "description": "System field 'deliveryNotes' should exist in backend but not frontend for header"
       },
       {
         "id": "t-177",
@@ -4328,17 +4330,17 @@
         "id": "t-212",
         "category": "system-field",
         "entity": "lines",
-        "field": "standardPrice",
+        "field": "baseGrossUnitPrice",
         "runner": "node",
-        "description": "System field 'standardPrice' should exist in backend but not frontend for lines"
+        "description": "System field 'baseGrossUnitPrice' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-213",
         "category": "system-field",
         "entity": "lines",
-        "field": "baseGrossUnitPrice",
+        "field": "standardPrice",
         "runner": "node",
-        "description": "System field 'baseGrossUnitPrice' should exist in backend but not frontend for lines"
+        "description": "System field 'standardPrice' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-214",
@@ -4352,17 +4354,17 @@
         "id": "t-215",
         "category": "system-field",
         "entity": "lines",
-        "field": "reservationStatus",
+        "field": "quotationLine",
         "runner": "node",
-        "description": "System field 'reservationStatus' should exist in backend but not frontend for lines"
+        "description": "System field 'quotationLine' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-216",
         "category": "system-field",
         "entity": "lines",
-        "field": "quotationLine",
+        "field": "reservationStatus",
         "runner": "node",
-        "description": "System field 'quotationLine' should exist in backend but not frontend for lines"
+        "description": "System field 'reservationStatus' should exist in backend but not frontend for lines"
       },
       {
         "id": "t-217",
@@ -6592,17 +6594,17 @@
         "id": "t-527",
         "category": "action-endpoint",
         "entity": "header",
-        "field": "processNow",
+        "field": "posted",
         "runner": "node",
-        "description": "Action endpoint for 'processNow' in header should exist"
+        "description": "Action endpoint for 'posted' in header should exist"
       },
       {
         "id": "t-528",
         "category": "action-endpoint",
         "entity": "header",
-        "field": "posted",
+        "field": "processNow",
         "runner": "node",
-        "description": "Action endpoint for 'posted' in header should exist"
+        "description": "Action endpoint for 'processNow' in header should exist"
       },
       {
         "id": "t-529",

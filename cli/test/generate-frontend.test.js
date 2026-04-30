@@ -1347,3 +1347,91 @@ describe('generateTableComponent - isSelectionColumn hint', () => {
     assert.ok(!plainLine.includes('isSelectionColumn'), 'plainField should not have isSelectionColumn');
   });
 });
+
+// ---------------------------------------------------------------------------
+// menuActions — visibleWhenFieldFalse
+// ---------------------------------------------------------------------------
+
+const makeMenuContract = (menuActions) => ({
+  frontendContract: {
+    window: { id: '1', name: 'Test', primaryEntity: 'header', category: 'sales', menuActions },
+    entities: {
+      header: {
+        fields: [
+          { name: 'docStatus', column: 'DocStatus', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+        ],
+        searchableFields: [],
+        computedFields: [],
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+});
+
+describe('generatePageComponent — menuActions visibleWhenFieldFalse', () => {
+  it('uses ({ status }) params when no action has visibleWhenFieldFalse', () => {
+    const contract = makeMenuContract([
+      { key: 'cancel', label: 'Cancel', destructive: true, visibleWhenStatus: 'CO' },
+    ]);
+    const code = generatePageComponent('header', null, contract);
+    assert.ok(code.includes('({ status }) =>'), 'should use ({ status }) when no field condition');
+    assert.ok(!code.includes('({ data, status }) =>'), 'should NOT destructure data when not needed');
+  });
+
+  it('uses ({ data, status }) params when any action has visibleWhenFieldFalse', () => {
+    const contract = makeMenuContract([
+      { key: 'reactivate', label: 'Reactivate', visibleWhenStatus: 'CO', visibleWhenFieldFalse: 'hasLinkedDocuments', documentAction: 'RE' },
+    ]);
+    const code = generatePageComponent('header', null, contract);
+    assert.ok(code.includes('({ data, status }) =>'), 'should destructure data when field condition is used');
+  });
+
+  it('generates compound condition when both visibleWhenStatus and visibleWhenFieldFalse are set', () => {
+    const contract = makeMenuContract([
+      { key: 'reactivate', label: 'Reactivate', visibleWhenStatus: 'CO', visibleWhenFieldFalse: 'hasLinkedDocuments', documentAction: 'RE' },
+    ]);
+    const code = generatePageComponent('header', null, contract);
+    assert.ok(
+      code.includes("visible: status === 'CO' && !data?.hasLinkedDocuments"),
+      'should combine status check and field check with &&',
+    );
+  });
+
+  it('generates only field condition when visibleWhenStatus is absent', () => {
+    const contract = makeMenuContract([
+      { key: 'duplicate', label: 'Duplicate', visibleWhenFieldFalse: 'isDraft' },
+    ]);
+    const code = generatePageComponent('header', null, contract);
+    assert.ok(code.includes('visible: !data?.isDraft'), 'should emit only field condition when no status filter');
+    assert.ok(!code.includes('status ==='), 'should not include status check when visibleWhenStatus is absent');
+  });
+
+  it('other actions in the same list keep their original condition unaffected', () => {
+    const contract = makeMenuContract([
+      { key: 'cancel', label: 'Cancel', destructive: true, visibleWhenStatus: 'CO' },
+      { key: 'reactivate', label: 'Reactivate', visibleWhenStatus: 'CO', visibleWhenFieldFalse: 'hasLinkedDocuments', documentAction: 'RE' },
+    ]);
+    const code = generatePageComponent('header', null, contract);
+    assert.ok(
+      code.includes("visible: status === 'CO' && !data?.hasLinkedDocuments"),
+      'reactivate should have compound condition',
+    );
+    assert.ok(
+      code.includes("key: 'cancel'"),
+      'cancel action should still be present',
+    );
+    // Cancel has only visibleWhenStatus, its condition should NOT include data?.
+    const cancelLine = code.split('\n').find(l => l.includes("key: 'cancel'"));
+    assert.ok(cancelLine, 'cancel line must exist');
+    assert.ok(!cancelLine.includes('data?.'), 'cancel should not reference data field');
+  });
+
+  it('generates documentAction prop when set', () => {
+    const contract = makeMenuContract([
+      { key: 'reactivate', label: 'Reactivate', visibleWhenStatus: 'CO', visibleWhenFieldFalse: 'hasLinkedDocuments', documentAction: 'RE', successKey: 'actionCompleted' },
+    ]);
+    const code = generatePageComponent('header', null, contract);
+    assert.ok(code.includes("documentAction: 'RE'"), 'should emit documentAction');
+    assert.ok(code.includes("successKey: 'actionCompleted'"), 'should emit successKey');
+  });
+});

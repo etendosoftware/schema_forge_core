@@ -239,7 +239,8 @@ Additional actions shown in the detail view's "more" menu (triple dot icon). Eac
 {
   "menuActions": [
     { "key": "duplicate", "label": "Duplicate" },
-    { "key": "cancel", "label": "Cancel", "destructive": true, "visibleWhenStatus": "CO" },
+    { "key": "cancel", "labelKey": "cancel", "destructive": true, "visibleWhenStatus": "CO" },
+    { "key": "reactivate", "labelKey": "reactivate", "visibleWhenStatus": "CO", "visibleWhenFieldFalse": "hasLinkedDocuments", "documentAction": "RE", "successKey": "actionCompleted" },
     { "key": "reverse", "label": "Reverse Payment", "destructive": true, "visibleWhenStatus": ["RPPC", "RPR"], "columnName": "aPRMReversePayment" }
   ]
 }
@@ -249,9 +250,14 @@ Additional actions shown in the detail view's "more" menu (triple dot icon). Eac
 |----------|------|---------|
 | `key` | string | Unique identifier for the action. |
 | `label` | string | Display label in the menu. |
+| `labelKey` | string | i18n key for the label (alternative to `label`). |
 | `destructive` | boolean | If `true`, renders in red as a destructive action. |
 | `visibleWhenStatus` | string or string[] | Only show the action when document status matches. Omit to always show. |
+| `visibleWhenFieldFalse` | string | Hide the action when the named field in the record `data` is truthy. Combines with `visibleWhenStatus` using AND. Requires the backend to expose the field (e.g. via a NeoHandler `afterHandle`). When used, the generator emits `({ data, status }) =>` instead of `({ status }) =>`. |
+| `documentAction` | string | Invokes the standard DocAction endpoint with this value (`"RE"`, `"CO"`, `"VO"`, etc.). The record refreshes automatically on success. |
 | `columnName` | string | If set, triggers the named process column via `hook.handleProcess`. If omitted, generates an empty `onClick` placeholder. |
+| `successMessage` | string | Text shown in the success banner after `documentAction` resolves. |
+| `successKey` | string | i18n key for the success banner message (alternative to `successMessage`). |
 
 ### New Actions (`window.newActions`)
 

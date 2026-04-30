@@ -8,7 +8,7 @@
     "hideDeleteWhenComplete": true,
     "menuActions": [
       { "key": "cancel", "label": "Cancel", "labelKey": "cancel", "destructive": true, "visibleWhenStatus": "CO" },
-      { "key": "reactivate", "label": "Reactivate", "labelKey": "reactivate", "visibleWhenStatus": "CO", "documentAction": "RE", "successKey": "actionCompleted" }
+      { "key": "reactivate", "label": "Reactivate", "labelKey": "reactivate", "visibleWhenStatus": "CO", "visibleWhenFieldFalse": "hasLinkedDocuments", "documentAction": "RE", "successKey": "actionCompleted" }
     ],
     "draftMode": {
       "enabled": true,
