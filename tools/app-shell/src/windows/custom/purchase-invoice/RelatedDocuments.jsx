@@ -24,6 +24,7 @@ async function fetchPayments(invoiceId, token, apiBaseUrl) {
 }
 
 export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) {
+  const [purchaseOrder, setPurchaseOrder] = useState(null);
   const [receipts, setReceipts] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,11 +35,15 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
     if (!recordId) return;
     setLoading(true);
     const orderId = data?.salesOrder;
+    const orderPromise = orderId
+      ? fetchById('purchase-order', 'header', orderId, token, apiBaseUrl).catch(() => null)
+      : Promise.resolve(null);
     const receiptPromise = orderId
       ? fetchByCriteria('goods-receipt', 'goodsReceipt', 'salesOrder', orderId, token, apiBaseUrl)
       : Promise.resolve([]);
-    Promise.all([receiptPromise, fetchPayments(recordId, token, apiBaseUrl)])
-      .then(([receiptRows, paymentResults]) => {
+    Promise.all([orderPromise, receiptPromise, fetchPayments(recordId, token, apiBaseUrl)])
+      .then(([orderResult, receiptRows, paymentResults]) => {
+        setPurchaseOrder(orderResult);
         setReceipts(receiptRows);
         setPayments(paymentResults);
       })
@@ -47,17 +52,18 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
 
   const chips = [];
 
-  // Purchase Order from header data
-  const orderId = data?.salesOrder;
-  const orderLabel = data?.['salesOrder$_identifier'];
-  if (orderId) {
+  if (purchaseOrder) {
     chips.push(
       <DocChip
         key="purchase-order"
         icon={CHIP_ICONS.order}
         iconColor={CHIP_COLORS.order}
-        title={orderLabel || ui('orderDoc', { number: orderId })}
-        onClick={() => navigate(`/purchase-order/${orderId}`)}
+        title={ui('orderDoc', { number: purchaseOrder.documentNo })}
+        amount={purchaseOrder.grandTotalAmount}
+        currency={purchaseOrder['currency$_identifier']}
+        status={purchaseOrder.documentStatus}
+        statusLabel={ui(STATUS_KEYS[purchaseOrder.documentStatus] || purchaseOrder.documentStatus)}
+        onClick={() => navigate(`/purchase-order/${purchaseOrder.id}`)}
       />
     );
   }
