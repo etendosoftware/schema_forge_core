@@ -71,6 +71,18 @@ export function getAllWindowNames() {
 }
 
 /**
+ * API-only sub-windows: have a contract.json and NEO spec but are never loaded
+ * as standalone UI windows. They are consumed directly via fetch by other custom
+ * components (e.g. FiscalConfigPage fetches sii-config / tbai-config / verifactu-config).
+ * Listed here so pipeline F3 validation knows they are intentionally registry-free.
+ */
+export const apiOnlyWindows = new Set([
+  'sii-config',
+  'tbai-config',
+  'verifactu-config',
+]);
+
+/**
  * Hand-written custom window loaders.
  * Each entry maps a window slug to a dynamic import of its custom component.
  * Entries are auto-registered by the pipeline when layoutType is "custom".
@@ -78,6 +90,7 @@ export function getAllWindowNames() {
  */
 const customLoaders = {
   // Auto-registered by pipeline when layoutType: "custom"
+  'fiscal-config': () => import('./custom/fiscal-config/index.jsx'),
   'sales-order': () => import('./custom/sales-order/index.jsx'),
   'price-list': () => import('./custom/price-list/index.jsx'),
   'purchase-invoice': () => import('./custom/purchase-invoice/index.jsx'),

@@ -1,0 +1,733 @@
+{
+  "version": "0.1.0",
+  "generatedAt": "2026-04-28T16:08:39.756Z",
+  "checksum": "62d5ec2b6d348e49",
+  "frontendContract": {
+    "window": {
+      "id": "C327DE215AC945F69363905840118177",
+      "name": "TBAI Config",
+      "primaryEntity": "header",
+      "category": "configuration",
+      "layoutType": "default"
+    },
+    "entities": {
+      "header": {
+        "tableName": "TBAI_Config",
+        "tabId": "6E0100DFD42149C7A1BCCF452018B380",
+        "tabName": "Header",
+        "uiPattern": "STD",
+        "fields": [
+          {
+            "name": "etsgSifTerritory",
+            "apiKey": "etsgSifTerritory",
+            "column": "ETSG_SIF_Territory",
+            "label": "Territorio SIF",
+            "type": "enum",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "enumValues": [
+              {
+                "value": "AEAT",
+                "name": "AEAT (Agencia Estatal de Administración Tributaria)"
+              },
+              {
+                "value": "ARABA",
+                "name": "Araba/Álava (Hacienda Foral de Álava)"
+              },
+              {
+                "value": "BIZKAIA",
+                "name": "Bizkaia (Hacienda Foral de Bizkaia)"
+              },
+              {
+                "value": "GIPUZKOA",
+                "name": "Gipuzkoa (Hacienda Foral de Gipuzkoa)"
+              },
+              {
+                "value": "IGIC",
+                "name": "IGIC (Islas Canarias)"
+              },
+              {
+                "value": "NAVARRA",
+                "name": "Navarra (Hacienda Foral de Navarra)"
+              }
+            ],
+            "validationRule": {
+              "code": "AD_Ref_List.Value IN ('ARABA', 'BIZKAIA', 'GIPUZKOA')",
+              "contextParams": [],
+              "cascadeParams": []
+            }
+          },
+          {
+            "name": "tbaisystemdate",
+            "apiKey": "tbaisystemdate",
+            "column": "Tbaisystemdate",
+            "label": "Fecha Acogida TBAI",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            },
+            "defaultValue": "@#Date@"
+          },
+          {
+            "name": "productionEnv",
+            "apiKey": "productionEnv",
+            "column": "Production_Env",
+            "label": "Entorno de Producción",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "Y"
+            },
+            "defaultValue": "Y"
+          },
+          {
+            "name": "invoiceDescription",
+            "apiKey": "invoiceDescription",
+            "column": "Invoice_Description",
+            "label": "Descripción de Facturas",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "Descripcion Factura"
+            },
+            "defaultValue": "Descripcion Factura"
+          },
+          {
+            "name": "uSEAsproductDesc",
+            "apiKey": "uSEAsproductDesc",
+            "column": "USE_Asproduct_Desc",
+            "label": "Utilizar descripción también para nombre producto",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
+            "defaultValue": "N"
+          },
+          {
+            "name": "autoSendInvoices",
+            "apiKey": "autoSendInvoices",
+            "column": "Auto_Send_Invoices",
+            "label": "Auto enviar facturas al completarse",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
+            "defaultValue": "N"
+          },
+          {
+            "name": "jasperreportPath",
+            "apiKey": "jasperreportPath",
+            "column": "Jasperreport_Path",
+            "label": "Ruta de Reporte Jasper",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "validatePreviousInvoice",
+            "apiKey": "validatePreviousInvoice",
+            "column": "Validate_Previous_Invoice",
+            "label": "Validar factura anterior",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
+            "defaultValue": "N"
+          }
+        ],
+        "searchableFields": [],
+        "computedFields": [
+          {
+            "name": "tbaisystemdate",
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            }
+          },
+          {
+            "name": "productionEnv",
+            "derivation": {
+              "type": "computed",
+              "source": "Y"
+            }
+          },
+          {
+            "name": "invoiceDescription",
+            "derivation": {
+              "type": "computed",
+              "source": "Descripcion Factura"
+            }
+          },
+          {
+            "name": "uSEAsproductDesc",
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            }
+          },
+          {
+            "name": "autoSendInvoices",
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            }
+          },
+          {
+            "name": "validatePreviousInvoice",
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "backendContract": {
+    "window": {
+      "id": "C327DE215AC945F69363905840118177",
+      "name": "TBAI Config",
+      "primaryEntity": "header",
+      "category": "configuration"
+    },
+    "entities": {
+      "header": {
+        "tableName": "TBAI_Config",
+        "tabId": "6E0100DFD42149C7A1BCCF452018B380",
+        "tabName": "Header",
+        "fields": [
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "Isactive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "etsgSifTerritory",
+            "apiKey": "etsgSifTerritory",
+            "column": "ETSG_SIF_Territory",
+            "type": "enum",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "tbaisystemdate",
+            "apiKey": "tbaisystemdate",
+            "column": "Tbaisystemdate",
+            "type": "date",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "productionEnv",
+            "apiKey": "productionEnv",
+            "column": "Production_Env",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "invoiceDescription",
+            "apiKey": "invoiceDescription",
+            "column": "Invoice_Description",
+            "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "uSEAsproductDesc",
+            "apiKey": "uSEAsproductDesc",
+            "column": "USE_Asproduct_Desc",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "autoSendInvoices",
+            "apiKey": "autoSendInvoices",
+            "column": "Auto_Send_Invoices",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "jasperreportPath",
+            "apiKey": "jasperreportPath",
+            "column": "Jasperreport_Path",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "validatePreviousInvoice",
+            "apiKey": "validatePreviousInvoice",
+            "column": "Validate_Previous_Invoice",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "tbaiConfigID",
+            "apiKey": "tbaiConfigID",
+            "column": "Tbai_Config_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "Createdby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "apiKey": "updated",
+            "column": "Updated",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "Updatedby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      }
+    },
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/header",
+        "entity": "header",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/header/:id",
+        "entity": "header",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/header",
+        "entity": "header",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/header/:id",
+        "entity": "header",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/header/:id",
+        "entity": "header",
+        "supportedFilters": []
+      }
+    ],
+    "processEndpoints": []
+  },
+  "apiPrediction": {
+    "specName": "tbai-config",
+    "baseUrl": "/sws/neo/tbai-config",
+    "crud": {
+      "header": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/tbai-config/header",
+        "detailUrl": "/sws/neo/tbai-config/header/{id}",
+        "supportedFilters": []
+      }
+    },
+    "selectors": [],
+    "actions": [],
+    "queryParams": {
+      "pagination": {
+        "startRow": "_startRow",
+        "endRow": "_endRow",
+        "default": "0-100"
+      },
+      "sorting": {
+        "param": "_sortBy",
+        "example": "_sortBy=tbai-configDate"
+      },
+      "filtering": "Use field name as query param: ?fieldName=value",
+      "parentFilter": "parentId={id} for child entities"
+    },
+    "window": {
+      "category": "configuration"
+    }
+  },
+  "testManifest": {
+    "tests": [
+      {
+        "id": "t-1",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "etsgSifTerritory",
+        "runner": "node",
+        "description": "Field 'etsgSifTerritory' should be present in header"
+      },
+      {
+        "id": "t-2",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "tbaisystemdate",
+        "runner": "node",
+        "description": "Field 'tbaisystemdate' should be present in header"
+      },
+      {
+        "id": "t-3",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "productionEnv",
+        "runner": "node",
+        "description": "Field 'productionEnv' should be present in header"
+      },
+      {
+        "id": "t-4",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "invoiceDescription",
+        "runner": "node",
+        "description": "Field 'invoiceDescription' should be present in header"
+      },
+      {
+        "id": "t-5",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "uSEAsproductDesc",
+        "runner": "node",
+        "description": "Field 'uSEAsproductDesc' should be present in header"
+      },
+      {
+        "id": "t-6",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "autoSendInvoices",
+        "runner": "node",
+        "description": "Field 'autoSendInvoices' should be present in header"
+      },
+      {
+        "id": "t-7",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "jasperreportPath",
+        "runner": "node",
+        "description": "Field 'jasperreportPath' should be present in header"
+      },
+      {
+        "id": "t-8",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "validatePreviousInvoice",
+        "runner": "node",
+        "description": "Field 'validatePreviousInvoice' should be present in header"
+      },
+      {
+        "id": "t-9",
+        "category": "field-type",
+        "entity": "header",
+        "field": "etsgSifTerritory",
+        "runner": "node",
+        "description": "Field 'etsgSifTerritory' should have type 'string' in header"
+      },
+      {
+        "id": "t-10",
+        "category": "field-type",
+        "entity": "header",
+        "field": "tbaisystemdate",
+        "runner": "node",
+        "description": "Field 'tbaisystemdate' should have type 'string' in header"
+      },
+      {
+        "id": "t-11",
+        "category": "field-type",
+        "entity": "header",
+        "field": "productionEnv",
+        "runner": "node",
+        "description": "Field 'productionEnv' should have type 'boolean' in header"
+      },
+      {
+        "id": "t-12",
+        "category": "field-type",
+        "entity": "header",
+        "field": "invoiceDescription",
+        "runner": "node",
+        "description": "Field 'invoiceDescription' should have type 'string' in header"
+      },
+      {
+        "id": "t-13",
+        "category": "field-type",
+        "entity": "header",
+        "field": "uSEAsproductDesc",
+        "runner": "node",
+        "description": "Field 'uSEAsproductDesc' should have type 'boolean' in header"
+      },
+      {
+        "id": "t-14",
+        "category": "field-type",
+        "entity": "header",
+        "field": "autoSendInvoices",
+        "runner": "node",
+        "description": "Field 'autoSendInvoices' should have type 'boolean' in header"
+      },
+      {
+        "id": "t-15",
+        "category": "field-type",
+        "entity": "header",
+        "field": "jasperreportPath",
+        "runner": "node",
+        "description": "Field 'jasperreportPath' should have type 'string' in header"
+      },
+      {
+        "id": "t-16",
+        "category": "field-type",
+        "entity": "header",
+        "field": "validatePreviousInvoice",
+        "runner": "node",
+        "description": "Field 'validatePreviousInvoice' should have type 'boolean' in header"
+      },
+      {
+        "id": "t-17",
+        "category": "visibility",
+        "entity": "header",
+        "runner": "node",
+        "description": "Entity 'header' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-18",
+        "category": "default-value-type",
+        "entity": "header",
+        "field": "tbaisystemdate",
+        "runner": "node",
+        "description": "Default value for 'tbaisystemdate' in header should be a string"
+      },
+      {
+        "id": "t-19",
+        "category": "default-value-type",
+        "entity": "header",
+        "field": "productionEnv",
+        "runner": "node",
+        "description": "Default value for 'productionEnv' in header should be a string"
+      },
+      {
+        "id": "t-20",
+        "category": "default-value-type",
+        "entity": "header",
+        "field": "invoiceDescription",
+        "runner": "node",
+        "description": "Default value for 'invoiceDescription' in header should be a string"
+      },
+      {
+        "id": "t-21",
+        "category": "default-value-type",
+        "entity": "header",
+        "field": "uSEAsproductDesc",
+        "runner": "node",
+        "description": "Default value for 'uSEAsproductDesc' in header should be a string"
+      },
+      {
+        "id": "t-22",
+        "category": "default-value-type",
+        "entity": "header",
+        "field": "autoSendInvoices",
+        "runner": "node",
+        "description": "Default value for 'autoSendInvoices' in header should be a string"
+      },
+      {
+        "id": "t-23",
+        "category": "default-value-type",
+        "entity": "header",
+        "field": "validatePreviousInvoice",
+        "runner": "node",
+        "description": "Default value for 'validatePreviousInvoice' in header should be a string"
+      },
+      {
+        "id": "t-24",
+        "category": "system-field",
+        "entity": "header",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-25",
+        "category": "system-field",
+        "entity": "header",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-26",
+        "category": "system-field",
+        "entity": "header",
+        "field": "tbaiConfigID",
+        "runner": "node",
+        "description": "System field 'tbaiConfigID' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-27",
+        "category": "system-field",
+        "entity": "header",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-28",
+        "category": "system-field",
+        "entity": "header",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-29",
+        "category": "system-field",
+        "entity": "header",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-30",
+        "category": "system-field",
+        "entity": "header",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-31",
+        "category": "system-field",
+        "entity": "header",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-32",
+        "category": "rule-declared",
+        "rule": "SetNIFOrganization_AD_Org_ID",
+        "runner": "node",
+        "description": "Rule 'SetNIFOrganization_AD_Org_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-33",
+        "category": "rule-declared",
+        "rule": "Territorios TicketBAI",
+        "runner": "node",
+        "description": "Rule 'Territorios TicketBAI' (validation) should be declared"
+      },
+      {
+        "id": "t-34",
+        "category": "crud-flags",
+        "entity": "header",
+        "runner": "node",
+        "description": "CRUD flags for 'header' should all be booleans"
+      }
+    ],
+    "summary": {
+      "total": 34,
+      "byCategory": {
+        "field-presence": 8,
+        "field-type": 8,
+        "visibility": 1,
+        "default-value-type": 6,
+        "system-field": 8,
+        "rule-declared": 2,
+        "crud-flags": 1
+      },
+      "byRunner": {
+        "node": 34,
+        "junit": 0
+      }
+    }
+  }
+}
