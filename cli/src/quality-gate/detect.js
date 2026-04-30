@@ -85,7 +85,10 @@ export function detectAffectedWindowsDetailed({ changedFiles, blastRadius, avail
       }
 
       if (rule.scope === 'named-target' && rule.target) {
-        affected.set(rule.target, 'direct');
+        const excluded = (rule.excludePatterns ?? []).some((p) => globToRegExp(p).test(changedFile));
+        if (!excluded) {
+          affected.set(rule.target, 'direct');
+        }
       }
     }
   }

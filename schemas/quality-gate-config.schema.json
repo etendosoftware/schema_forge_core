@@ -35,7 +35,11 @@
         "properties": {
           "pattern": { "type": "string", "minLength": 1 },
           "scope": { "enum": ["touched-window", "all-windows", "named-target"] },
-          "target": { "type": "string", "minLength": 1 }
+          "target": { "type": "string", "minLength": 1 },
+          "excludePatterns": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
         },
         "additionalProperties": false,
         "allOf": [

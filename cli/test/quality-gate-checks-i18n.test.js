@@ -11,8 +11,9 @@ function makeFixture({
   allowlisted = false,
   sharedHardcoded = false,
   aliasHardcoded = false,
-  pageHardcoded = false,
-  pageModuleHardcoded = false,
+  onboardingPageHardcoded = false,
+  onboardingModuleHardcoded = false,
+  appPageHardcoded = false,
 } = {}) {
   const rootDir = mkdtempSync(join(tmpdir(), 'quality-gate-i18n-'));
   const windowDir = join(rootDir, 'artifacts', 'sales-order');
@@ -49,14 +50,18 @@ function makeFixture({
   writeFileSync(join(windowDir, 'contract.json'), JSON.stringify(contract, null, 2));
   writeFileSync(join(windowDir, 'custom', 'Sidebar.jsx'), customComponent);
 
-  if (pageHardcoded) {
+  if (onboardingPageHardcoded) {
     writeFileSync(join(pagesDir, 'OnboardingPage.jsx'), 'export default function OnboardingPage() { return <button title="Crear cuenta">Crear cuenta</button>; }');
   }
 
-  if (pageModuleHardcoded) {
+  if (onboardingModuleHardcoded) {
     writeFileSync(join(pagesDir, 'onboarding', 'onboardingState.js'), `export const SETUP_STEP_DEFINITIONS = [
   { name: 'setup', label: 'Preparando contexto', description: 'Crear empresa' },
 ];`);
+  }
+
+  if (appPageHardcoded) {
+    writeFileSync(join(pagesDir, 'SalesPage.jsx'), 'export default function SalesPage() { return <h1>Sales Orders</h1>; }');
   }
 
   if (sharedHardcoded) {
@@ -125,10 +130,52 @@ describe('runI18nCheck', () => {
     }
   });
 
-  it('fails on hardcoded strings inside top-level app shell pages', async () => {
-    const fixture = makeFixture({ pageHardcoded: true });
+  it('artifact window is not polluted by hardcoded strings in app shell pages', async () => {
+    const fixture = makeFixture({ appPageHardcoded: true });
     try {
       const result = await runI18nCheck('sales-order', { rootDir: fixture.rootDir, windowDir: fixture.windowDir });
+      assert.equal(result.status, 'pass', 'pages violations must not bleed into artifact window checks');
+    } finally {
+      rmSync(fixture.rootDir, { recursive: true, force: true });
+    }
+  });
+
+  it('artifact window is not polluted by hardcoded strings in onboarding page', async () => {
+    const fixture = makeFixture({ onboardingPageHardcoded: true });
+    try {
+      const result = await runI18nCheck('sales-order', { rootDir: fixture.rootDir, windowDir: fixture.windowDir });
+      assert.equal(result.status, 'pass', 'onboarding page violations must not bleed into artifact window checks');
+    } finally {
+      rmSync(fixture.rootDir, { recursive: true, force: true });
+    }
+  });
+
+  it('app-shell:pages target catches hardcoded strings in app pages', async () => {
+    const fixture = makeFixture({ appPageHardcoded: true });
+    try {
+      const result = await runI18nCheck('app-shell:pages', { rootDir: fixture.rootDir, windowDir: fixture.rootDir });
+      assert.equal(result.status, 'fail');
+      assert.match(result.detail, /SalesPage.jsx/);
+      assert.match(result.detail, /Sales Orders/);
+    } finally {
+      rmSync(fixture.rootDir, { recursive: true, force: true });
+    }
+  });
+
+  it('app-shell:pages target does not scan onboarding files (those belong to app-shell:onboarding)', async () => {
+    const fixture = makeFixture({ onboardingPageHardcoded: true });
+    try {
+      const result = await runI18nCheck('app-shell:pages', { rootDir: fixture.rootDir, windowDir: fixture.rootDir });
+      assert.equal(result.status, 'pass', 'OnboardingPage.jsx must not appear in app-shell:pages scan');
+    } finally {
+      rmSync(fixture.rootDir, { recursive: true, force: true });
+    }
+  });
+
+  it('app-shell:onboarding target catches hardcoded strings in OnboardingPage', async () => {
+    const fixture = makeFixture({ onboardingPageHardcoded: true });
+    try {
+      const result = await runI18nCheck('app-shell:onboarding', { rootDir: fixture.rootDir, windowDir: fixture.rootDir });
       assert.equal(result.status, 'fail');
       assert.match(result.detail, /OnboardingPage.jsx/);
       assert.match(result.detail, /Crear cuenta/);
@@ -137,10 +184,10 @@ describe('runI18nCheck', () => {
     }
   });
 
-  it('fails on hardcoded user-facing string literals inside page helper modules', async () => {
-    const fixture = makeFixture({ pageModuleHardcoded: true });
+  it('app-shell:onboarding target catches hardcoded strings in onboarding helper modules', async () => {
+    const fixture = makeFixture({ onboardingModuleHardcoded: true });
     try {
-      const result = await runI18nCheck('sales-order', { rootDir: fixture.rootDir, windowDir: fixture.windowDir });
+      const result = await runI18nCheck('app-shell:onboarding', { rootDir: fixture.rootDir, windowDir: fixture.rootDir });
       assert.equal(result.status, 'fail');
       assert.match(result.detail, /onboardingState.js/);
       assert.match(result.detail, /Preparando contexto/);
