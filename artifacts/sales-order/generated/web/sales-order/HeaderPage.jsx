@@ -407,9 +407,9 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         topbarRight={OrderCreateInvoice}
         topbarExtra={OrderDraftChips}
-        menuActions={({ status }) => [
+        menuActions={({ data, status }) => [
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', labelKey: 'cancel', onClick: () => {}, },
-          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
+          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO' && !data?.hasLinkedDocuments, labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
         ]}
         draftMode={draftMode}
         salesTheme

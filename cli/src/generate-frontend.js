@@ -871,13 +871,18 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     : `import ${headerName}Table from './${headerName}Table';`;
 
   // menuActions prop
+  const menuActionsNeedsData = menuActionsConfig.some(a => a.visibleWhenFieldFalse);
+  const menuActionsFnParams = menuActionsNeedsData ? '({ data, status })' : '({ status })';
   const menuActionsProp = menuActionsConfig.length > 0
-    ? `\n        menuActions={({ status }) => [\n${menuActionsConfig.map(a => {
-        const vis = a.visibleWhenStatus
+    ? `\n        menuActions={${menuActionsFnParams} => [\n${menuActionsConfig.map(a => {
+        const statusVis = a.visibleWhenStatus
           ? Array.isArray(a.visibleWhenStatus)
-            ? `visible: ${JSON.stringify(a.visibleWhenStatus)}.includes(status)`
-            : `visible: status === '${a.visibleWhenStatus}'`
+            ? `${JSON.stringify(a.visibleWhenStatus)}.includes(status)`
+            : `status === '${a.visibleWhenStatus}'`
           : '';
+        const fieldVis = a.visibleWhenFieldFalse ? `!data?.${a.visibleWhenFieldFalse}` : '';
+        const visParts = [statusVis, fieldVis].filter(Boolean);
+        const vis = visParts.length > 0 ? `visible: ${visParts.join(' && ')}, ` : '';
         const destr = a.destructive ? 'destructive: true, ' : '';
         // Handler precedence: documentAction (declarative DocAction) > columnName (AD process button) > onClick placeholder
         let handler;
@@ -892,8 +897,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
         const successPart = a.successKey
           ? `successKey: '${a.successKey}', `
           : a.successMessage ? `successMessage: '${String(a.successMessage).replace(/'/g, "\\'")}', ` : '';
-        const visPart = vis ? `${vis}, ` : '';
-        return `          { key: '${a.key}', label: '${a.label}', ${destr}${visPart}${labelKeyPart}${successPart}${handler} }`;
+        return `          { key: '${a.key}', label: '${a.label}', ${destr}${vis}${labelKeyPart}${successPart}${handler} }`;
       }).join(',\n')}\n        ]}`
     : '';
 

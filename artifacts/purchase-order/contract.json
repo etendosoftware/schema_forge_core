@@ -35,6 +35,7 @@
           "label": "Reactivate",
           "labelKey": "reactivate",
           "visibleWhenStatus": "CO",
+          "visibleWhenFieldFalse": "hasLinkedDocuments",
           "documentAction": "RE",
           "successKey": "actionCompleted"
         }
@@ -2280,6 +2281,7 @@
           "label": "Reactivate",
           "labelKey": "reactivate",
           "visibleWhenStatus": "CO",
+          "visibleWhenFieldFalse": "hasLinkedDocuments",
           "documentAction": "RE",
           "successKey": "actionCompleted"
         }

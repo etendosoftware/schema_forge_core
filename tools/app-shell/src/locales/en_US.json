@@ -16309,6 +16309,7 @@
     "delete": "Delete",
     "reactivate": "Reactivate",
     "reactivateOrder": "Reactivate Order",
+    "cannotReactivateLinkedDocs": "Cannot reactivate: order has linked documents",
     "bulkCompletion": "Bulk Completion",
     "documentAction": "Document Action",
     "book": "Book",

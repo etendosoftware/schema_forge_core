@@ -18,6 +18,7 @@ export default function BulkDocumentAction({
   selectedRows, clearSelection, token, apiBaseUrl,
   entity = 'header',
   buildActions,
+  rowFilter,
 }) {
   const ui = useUI();
   const { execute } = useDocumentAction({ apiBaseUrl, entity, token });
@@ -46,17 +47,33 @@ export default function BulkDocumentAction({
   const handleDone = async () => {
     if (running || !selectedAction) return;
     setRunning(true);
+
+    let rowsToProcess = selectedRows;
+    let preBlocked = [];
+    if (rowFilter) {
+      rowsToProcess = [];
+      for (const row of selectedRows) {
+        const result = rowFilter(row, selectedAction);
+        if (result === true || result == null) {
+          rowsToProcess.push(row);
+        } else {
+          preBlocked.push({ documentNo: row.documentNo || row.id, message: result });
+        }
+      }
+    }
+
     const outcomes = await Promise.allSettled(
-      selectedRows.map((row) => execute(row.id, selectedAction).then(() => row)),
+      rowsToProcess.map((row) => execute(row.id, selectedAction).then(() => row)),
     );
-    const failed = outcomes
-      .map((o, i) => ({ o, row: selectedRows[i] }))
+    const apiFailed = outcomes
+      .map((o, i) => ({ o, row: rowsToProcess[i] }))
       .filter(({ o }) => o.status === 'rejected')
       .map(({ o, row }) => ({
         documentNo: row.documentNo || row.id,
         message: o.reason?.message || 'Unknown error',
       }));
-    const ok = outcomes.length - failed.length;
+    const failed = [...preBlocked, ...apiFailed];
+    const ok = rowsToProcess.length - apiFailed.length;
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ok, failed }));
     setRunning(false);
     setOpen(false);

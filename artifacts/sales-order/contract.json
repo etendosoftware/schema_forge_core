@@ -1,7 +1,7 @@
 {
   "version": "0.15.0",
-  "generatedAt": "2026-04-29T17:36:44.979Z",
-  "checksum": "f9171d55cd7cff8c",
+  "generatedAt": "2026-04-30T11:56:17.164Z",
+  "checksum": "30b108a9649d0684",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -30,6 +30,7 @@
           "label": "Reactivate",
           "labelKey": "reactivate",
           "visibleWhenStatus": "CO",
+          "visibleWhenFieldFalse": "hasLinkedDocuments",
           "documentAction": "RE",
           "successKey": "actionCompleted"
         }
@@ -807,6 +808,7 @@
           "label": "Reactivate",
           "labelKey": "reactivate",
           "visibleWhenStatus": "CO",
+          "visibleWhenFieldFalse": "hasLinkedDocuments",
           "documentAction": "RE",
           "successKey": "actionCompleted"
         }
