@@ -35,7 +35,7 @@ export function collectTargetSourceFiles(rootDir, targetName) {
   if (isOnboardingTarget(targetName)) {
     const onboardingFiles = collectSourceFiles(
       join(pagesDir, 'onboarding'),
-      (filePath) => isJavaScriptModule(filePath) && !filePath.includes('/__tests__/')
+      (filePath) => isJavaScriptModule(filePath) && !filePath.split(sep).includes('__tests__')
     );
     const onboardingPagePath = join(pagesDir, 'OnboardingPage.jsx');
     return [
@@ -45,14 +45,14 @@ export function collectTargetSourceFiles(rootDir, targetName) {
   }
 
   if (targetName === 'app-shell:pages') {
-    const onboardingDir = join(pagesDir, 'onboarding');
     const onboardingPagePath = join(pagesDir, 'OnboardingPage.jsx');
     return collectSourceFiles(
       pagesDir,
       (filePath) => {
         const rel = relative(pagesDir, filePath);
         const isOnboarding = filePath === onboardingPagePath || rel.startsWith('onboarding' + sep);
-        return isJavaScriptModule(filePath) && !filePath.includes('/__tests__/') && !isOnboarding;
+        const isTest = filePath.split(sep).includes('__tests__');
+        return isJavaScriptModule(filePath) && !isTest && !isOnboarding;
       }
     );
   }

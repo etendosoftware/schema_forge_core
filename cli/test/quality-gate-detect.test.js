@@ -17,6 +17,7 @@ const SAMPLE_CONFIG = {
     { pattern: 'tools/app-shell/src/i18n/*.js', scope: 'all-windows' },
     { pattern: 'tools/app-shell/src/i18n/*.jsx', scope: 'all-windows' },
     { pattern: 'tools/app-shell/src/windows/registry.js', scope: 'all-windows' },
+    { pattern: 'tools/app-shell/src/pages/**', scope: 'named-target', target: 'app-shell:pages', excludePatterns: ['tools/app-shell/src/pages/OnboardingPage.jsx', 'tools/app-shell/src/pages/onboarding/**'] },
     { pattern: 'tools/app-shell/src/pages/OnboardingPage.jsx', scope: 'named-target', target: 'app-shell:onboarding' },
     { pattern: 'tools/app-shell/src/pages/onboarding/**', scope: 'named-target', target: 'app-shell:onboarding' },
     { pattern: 'schemas/contract.schema.json', scope: 'all-windows' },
@@ -233,5 +234,28 @@ describe('detectAffectedWindowsDetailed', () => {
     assert.deepEqual(affected, [
       { window: 'app-shell:onboarding', source: 'direct' },
     ]);
+  });
+
+  it('excludePatterns prevents onboarding files from triggering app-shell:pages', () => {
+    const onboardingPage = detectAffectedWindowsDetailed({
+      changedFiles: ['tools/app-shell/src/pages/OnboardingPage.jsx'],
+      blastRadius: SAMPLE_CONFIG.blastRadius,
+      availableWindows: [],
+    });
+    assert.ok(!onboardingPage.some((e) => e.window === 'app-shell:pages'), 'OnboardingPage.jsx must not trigger app-shell:pages');
+
+    const onboardingModule = detectAffectedWindowsDetailed({
+      changedFiles: ['tools/app-shell/src/pages/onboarding/onboardingState.js'],
+      blastRadius: SAMPLE_CONFIG.blastRadius,
+      availableWindows: [],
+    });
+    assert.ok(!onboardingModule.some((e) => e.window === 'app-shell:pages'), 'onboarding/** must not trigger app-shell:pages');
+
+    const regularPage = detectAffectedWindowsDetailed({
+      changedFiles: ['tools/app-shell/src/pages/SalesPage.jsx'],
+      blastRadius: SAMPLE_CONFIG.blastRadius,
+      availableWindows: [],
+    });
+    assert.ok(regularPage.some((e) => e.window === 'app-shell:pages'), 'regular pages must still trigger app-shell:pages');
   });
 });
