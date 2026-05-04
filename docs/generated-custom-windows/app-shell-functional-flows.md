@@ -177,6 +177,37 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
   3. Navigate to another route or refocus the tab and confirm the app reloads onto the new assets.
   4. Re-enter an environment from `/onboarding` and confirm the browser reaches `/dashboard` without serving stale cached shell assets.
 
+## DocumentTotalsPanel — real-time totals and discount breakdown
+
+`tools/app-shell/src/components/contract-ui/DocumentTotalsPanel.jsx` is a generic totals block shared by sales-order, purchase-order, sales-invoice, purchase-invoice, and sales-quotation.
+
+**How it works:**
+- Receives `lines` (saved child rows), `pendingLine` (live in-progress add-row values), and `editingLine` (live sidebar editing values).
+- Computes all amounts client-side: `grossSubtotal = Σ(qty × listPrice)`, `netSubtotal = Σ(qty × listPrice × (1 − discount/100))`, `grandTotal = Σ(line.grossField)` (server-computed line gross), `discountAmt = grossSubtotal − netSubtotal`, `taxAmt = grandTotal − netSubtotal`.
+- Three visual states: **simple** (subtotal, IVA, total); **expanded-unchecked** (breakdown visible, discount checkbox off); **expanded-checked** (same, discount checkbox on → discount column visible in grid).
+
+**Discount column visibility:**
+- Controlled by `discountPerProductEnabled` state in `DetailView.jsx`.
+- When enabled, `hiddenColumns={[]}` → discount column visible in `DataTable` and the inline add-row.
+- When disabled, `hiddenColumns={[lineConfig.discountField]}` → column hidden in both.
+- `DetailView.jsx` resets `discountPerProductEnabled` to `false` only when `hook.children.length === 0` (all lines deleted), avoiding the race condition where `pendingLine` clears before the server confirms the first line save.
+
+**Live preview wiring:**
+- `DataTable`'s `InlineAddRow` calls `onValuesChange(values)` on every keystroke → `DetailView` stores it as `pendingLineValues` → passed as `pendingLine` to the panel → totals include the in-progress row before any save.
+- Sidebar editing: `DetailView` merges `selectedLine + lineEdits` into `editingLine` → panel replaces the matching saved line with live values in the computation.
+
+**Preventing line save on panel click:**
+- `InlineAddRow` uses `document.addEventListener('mousedown', handler, true)` (capture phase) to auto-save when the user clicks outside the row. Panels with `data-inline-add-portal="true"` on their root element are whitelisted — the handler skips the save. Both root `<div>` elements of `DocumentTotalsPanel` carry this attribute.
+
+**i18n keys** (both `en_US.json` and `es_ES.json`):
+- `addDiscount` — "+ Añadir descuento"
+- `subtotalWithoutDiscount` — "Subtotal sin descuento"
+- `discountPerProduct` — "Descuento por producto"
+
+**Where it renders:**
+- Sales-order, purchase-order, sales-quotation: directly inside `DetailView` at the bottom-right of the detail layout (uses `lineConfig` built from the summary + line fields).
+- Sales-invoice, purchase-invoice: inside the custom `InvoiceBottomPanel` / `PurchaseInvoiceBottomPanel` which hosts the right column of the docs/notes/totals footer.
+
 ## Current coverage gaps worth knowing
 
 - There is no end-to-end browser test that walks from `/onboarding` through `/dashboard` into a generated window.

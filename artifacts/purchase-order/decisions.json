@@ -156,14 +156,14 @@
           "readOnlyLogic": null
         },
         "grandTotalAmount": {
+          "visibility": "readOnly",
           "grid": true,
           "gridOrder": 5,
-          "form": false,
-          "section": "other"
+          "section": "summary"
         },
         "summedLineAmount": {
-          "form": false,
-          "section": "other"
+          "visibility": "readOnly",
+          "section": "summary"
         },
         "priceIncludesTax": {
           "visibility": "readOnly",
