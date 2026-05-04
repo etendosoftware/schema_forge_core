@@ -350,6 +350,11 @@
           "label": "OAuth2 Clients",
           "favname": "OAuth2 Clients",
           "icon": "Shield"
+        },
+        {
+          "name": "fiscal-config",
+          "label": "Fiscal Configuration",
+          "favname": "Fiscal Configuration"
         }
       ]
     },
