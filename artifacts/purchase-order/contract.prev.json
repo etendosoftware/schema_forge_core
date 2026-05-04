@@ -441,9 +441,9 @@
             "visibility": "readOnly",
             "required": true,
             "grid": true,
-            "form": false,
+            "form": true,
             "sourceRequired": true,
-            "section": "other",
+            "section": "summary",
             "gridOrder": 5
           },
           {
@@ -456,9 +456,9 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": false,
+            "form": true,
             "sourceRequired": true,
-            "section": "other"
+            "section": "summary"
           },
           {
             "name": "currency",

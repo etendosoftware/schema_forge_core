@@ -279,19 +279,19 @@ export const api = {
     },
     {
       "entity": "header",
-      "field": "posted",
-      "column": "Posted",
-      "url": "/sws/neo/sales-order/header/{id}/action/posted",
-      "processId": "57496FB9CF9E4E8F847224017941570E",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
       "field": "generateTemplate",
       "column": "Generatetemplate",
       "url": "/sws/neo/sales-order/header/{id}/action/generateTemplate",
       "processId": "800022",
       "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "posted",
+      "column": "Posted",
+      "url": "/sws/neo/sales-order/header/{id}/action/posted",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
     },
     {
       "entity": "header",
