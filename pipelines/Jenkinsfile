@@ -24,6 +24,10 @@ pipeline {
         CORE_URL_REPO       = 'https://github.com/etendosoftware/etendo_core'
         GO_MODULE_SSH       = 'git@github.com:etendosoftware/com.etendoerp.go.git'
         GO_MODULE_NAME      = 'com.etendoerp.go'
+        // Newline-separated list of extra module SSH URLs cloned into
+        // ${CORE_DIR}/modules/ and aligned with the same branch strategy.
+        // Used when a published module version is missing recent changes.
+        EXTRA_MODULES_FILE  = 'pipelines/extra-modules.txt'
 
         // --- Layout ---
         CORE_DIR            = 'etendo_core'                                   // ${WORKSPACE}/etendo_core
@@ -185,6 +189,32 @@ pipeline {
                                     ${goCheckout}
                                 """
 
+                                // Extra modules: cloned BEFORE schema_forge so they sit under modules/
+                                // and follow the same branch resolution chain as core / go.
+                                env.EXTRA_MODULE_NAMES = ''
+                                if (fileExists(env.EXTRA_MODULES_FILE)) {
+                                    def extraCheckout = checkoutChain()
+                                    def extraModules = readFile(env.EXTRA_MODULES_FILE)
+                                        .split('\n')
+                                        .collect { it.replaceAll(/#.*$/, '').trim() }
+                                        .findAll { it }
+                                    def names = []
+                                    extraModules.each { repoUrl ->
+                                        def moduleName = repoUrl.tokenize('/').last().replaceAll(/\.git$/, '')
+                                        names << moduleName
+                                        echo "---------------------- Cloning extra module ${moduleName} ----------------------"
+                                        sh """
+                                            cd ${CORE_DIR}/modules
+                                            GIT_SSH_COMMAND='${sshCmd}' git clone ${repoUrl}
+                                            cd ${moduleName}
+                                            ${extraCheckout}
+                                        """
+                                    }
+                                    env.EXTRA_MODULE_NAMES = names.join(',')
+                                } else {
+                                    echo "No extra modules file at ${env.EXTRA_MODULES_FILE} — skipping."
+                                }
+
                                 echo '---------------------- Cloning etendo_schema_forge as sibling of modules/ ----------------------'
                                 // db.js auto-discovers gradle.properties relative to cli/src/db.js,
                                 // which only works if schema_forge sits at {etendo_root}/etendo_schema_forge/.
@@ -203,10 +233,18 @@ pipeline {
                             def coreBranch = sh(script: "cd ${CORE_DIR} && git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
                             def goBranch   = sh(script: "cd ${GO_MODULE_DIR} && git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
                             def sfBranch   = sh(script: "cd ${SCHEMA_FORGE_DIR} && git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                            def extraInfo = ''
+                            if (env.EXTRA_MODULE_NAMES?.trim()) {
+                                env.EXTRA_MODULE_NAMES.split(',').each { name ->
+                                    def br = sh(script: "cd ${CORE_DIR}/modules/${name} && git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                                    extraInfo += "<li>${name}: ${br}</li>"
+                                }
+                            }
                             env.REPOS_INFO = "<em>🧲 Branches in use:</em><br><ul>" +
                                 "<li>schema_forge: ${sfBranch}</li>" +
                                 "<li>etendo_core: ${coreBranch}</li>" +
                                 "<li>${GO_MODULE_NAME}: ${goBranch}</li>" +
+                                extraInfo +
                                 "</ul>"
                             echo "${env.REPOS_INFO}"
 
@@ -345,6 +383,19 @@ EOF
 
                             def sfDirty = sh(script: "cd ${SCHEMA_FORGE_DIR} && git status --porcelain", returnStdout: true).trim()
                             def goDirty = sh(script: "cd ${GO_MODULE_DIR} && git status --porcelain", returnStdout: true).trim()
+                            def extraDirty = false
+                            if (env.EXTRA_MODULE_NAMES?.trim()) {
+                                env.EXTRA_MODULE_NAMES.split(',').each { name ->
+                                    def d = sh(script: "cd ${CORE_DIR}/modules/${name} && git status --porcelain", returnStdout: true).trim()
+                                    if (d) {
+                                        echo "---------------------- 🚨 Uncommitted changes in ${name} ----------------------"
+                                        sh "cd ${CORE_DIR}/modules/${name} && git status && git --no-pager diff"
+                                        extraDirty = true
+                                    } else {
+                                        echo "✅ ${name} clean"
+                                    }
+                                }
+                            }
 
                             if (sfDirty) {
                                 echo '---------------------- 🚨 Uncommitted changes in schema_forge ----------------------'
@@ -360,7 +411,7 @@ EOF
                                 echo "✅ ${GO_MODULE_NAME} clean"
                             }
 
-                            if (sfDirty || goDirty) {
+                            if (sfDirty || goDirty || extraDirty) {
                                 env.ERROR_MESSAGE = 'Pipeline produced uncommitted changes — regenerated artifacts are out of sync with the repo'
                                 error(env.ERROR_MESSAGE)
                             }
