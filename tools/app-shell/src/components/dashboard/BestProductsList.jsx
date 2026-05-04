@@ -26,6 +26,31 @@ function TrendPill({ pct }) {
   );
 }
 
+const BTN_SHADOW = '0px 1px 3px rgba(18, 18, 23, 0.1), 0px 1px 2px rgba(18, 18, 23, 0.06)';
+
+function ViewToggle({ viewMode, onToggle, ui }) {
+  const isQty = viewMode === 'quantity';
+  const isRev = viewMode === 'revenue';
+  return (
+    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', padding: '4px', gap: '4px', width: '175.33px', height: '40px', background: '#F5F7F9', borderRadius: '12px', flex: 'none', order: 1, flexGrow: 0 }}>
+      <button type="button" onClick={() => onToggle('quantity')} style={{ boxSizing: 'border-box', display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: '4px 8px', width: '81.33px', height: '32px', background: isQty ? '#FFFFFF' : 'transparent', boxShadow: isQty ? BTN_SHADOW : 'none', borderRadius: '8px', flex: 'none', order: 0, flexGrow: 0, border: 'none', cursor: 'pointer' }}>
+        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', padding: '0px 4px', width: '72px', height: '24px', flex: 'none', order: 1, flexGrow: 0 }}>
+          <span style={{ width: '64px', height: '24px', fontFamily: 'Inter', fontStyle: 'normal', fontWeight: 500, fontSize: '14px', lineHeight: '24px', color: isQty ? '#121217' : '#6C6C89', flex: 'none', order: 0, flexGrow: 0 }}>
+            {ui('bestProductsToggleUnits')}
+          </span>
+        </div>
+      </button>
+      <button type="button" onClick={() => onToggle('revenue')} style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: '4px 8px', width: '82px', height: '32px', background: isRev ? '#FFFFFF' : 'transparent', boxShadow: isRev ? BTN_SHADOW : 'none', borderRadius: '8px', flex: 'none', order: 1, flexGrow: 0, border: 'none', cursor: 'pointer' }}>
+        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', padding: '0px 4px', width: '66px', height: '24px', flex: 'none', order: 1, flexGrow: 0 }}>
+          <span style={{ width: '58px', height: '24px', fontFamily: 'Inter', fontStyle: 'normal', fontWeight: 500, fontSize: '14px', lineHeight: '24px', color: isRev ? '#121217' : '#6C6C89', flex: 'none', order: 0, flexGrow: 0 }}>
+            {ui('bestProductsToggleRevenue')}
+          </span>
+        </div>
+      </button>
+    </div>
+  );
+}
+
 export function BestProductsList({ sellers = [], products = [], currencyLabel = '' }) {
   const ui = useUI();
   const navigate = useNavigate();
@@ -173,130 +198,7 @@ export function BestProductsList({ sellers = [], products = [], currencyLabel = 
           )}
         </div>
         
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            padding: '4px',
-            gap: '4px',
-            width: '175.33px',
-            height: '40px',
-            background: '#F5F7F9',
-            borderRadius: '12px',
-            flex: 'none',
-            order: 1,
-            flexGrow: 0,
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setViewMode('quantity')}
-            style={{
-              boxSizing: 'border-box',
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: '4px 8px',
-              width: '81.33px',
-              height: '32px',
-              background: viewMode === 'quantity' ? '#FFFFFF' : 'transparent',
-              boxShadow: viewMode === 'quantity' ? '0px 1px 3px rgba(18, 18, 23, 0.1), 0px 1px 2px rgba(18, 18, 23, 0.06)' : 'none',
-              borderRadius: '8px',
-              flex: 'none',
-              order: 0,
-              flexGrow: 0,
-              border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'flex-start',
-                padding: '0px 4px',
-                width: '72px',
-                height: '24px',
-                flex: 'none',
-                order: 1,
-                flexGrow: 0,
-              }}
-            >
-              <span
-                style={{
-                  width: '64px',
-                  height: '24px',
-                  fontFamily: 'Inter',
-                  fontStyle: 'normal',
-                  fontWeight: 500,
-                  fontSize: '14px',
-                  lineHeight: '24px',
-                  color: viewMode === 'quantity' ? '#121217' : '#6C6C89',
-                  flex: 'none',
-                  order: 0,
-                  flexGrow: 0,
-                }}
-              >
-                {ui('bestProductsToggleUnits')}
-              </span>
-            </div>
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('revenue')}
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: '4px 8px',
-              width: '82px',
-              height: '32px',
-              background: viewMode === 'revenue' ? '#FFFFFF' : 'transparent',
-              boxShadow: viewMode === 'revenue' ? '0px 1px 3px rgba(18, 18, 23, 0.1), 0px 1px 2px rgba(18, 18, 23, 0.06)' : 'none',
-              borderRadius: '8px',
-              flex: 'none',
-              order: 1,
-              flexGrow: 0,
-              border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'flex-start',
-                padding: '0px 4px',
-                width: '66px',
-                height: '24px',
-                flex: 'none',
-                order: 1,
-                flexGrow: 0,
-              }}
-            >
-              <span
-                style={{
-                  width: '58px',
-                  height: '24px',
-                  fontFamily: 'Inter',
-                  fontStyle: 'normal',
-                  fontWeight: 500,
-                  fontSize: '14px',
-                  lineHeight: '24px',
-                  color: viewMode === 'revenue' ? '#121217' : '#6C6C89',
-                  flex: 'none',
-                  order: 0,
-                  flexGrow: 0,
-                }}
-              >
-                {ui('bestProductsToggleRevenue')}
-              </span>
-            </div>
-          </button>
-        </div>
+        <ViewToggle viewMode={viewMode} onToggle={setViewMode} ui={ui} />
       </div>
 
       <div

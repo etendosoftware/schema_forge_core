@@ -383,7 +383,7 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
               {/* X-axis month labels */}
               {axisLabels.map((m, i) => (
                 <text
-                  key={i}
+                  key={m}
                   x={PAD_X + (i / Math.max(axisLabels.length - 1, 1)) * plotW}
                   y={CHART_H - 5}
                   textAnchor={i === axisLabels.length - 1 ? 'end' : 'middle'}
