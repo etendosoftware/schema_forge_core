@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   FileText,
   ShoppingCart,
@@ -114,6 +114,12 @@ function DashboardContent({ apiBaseUrl }) {
   const resolvedKpis = kpis.map((k) => ({ ...k, icon: ICON_MAP[k.icon] || DollarSign }));
   const quickActions = useQuickActions(ui);
 
+  const [scrolled, setScrolled] = useState(false);
+  const scrollRef = useRef(null);
+  const handleScroll = useCallback(() => {
+    setScrolled((scrollRef.current?.scrollTop ?? 0) > 0);
+  }, []);
+
   useSetPageMeta({
     title: ui('dashboardTitle'),
     breadcrumb: ui('dashboardTitle'),
@@ -142,18 +148,35 @@ function DashboardContent({ apiBaseUrl }) {
   return (
     <div className="h-full flex flex-col">
       {(loading || !isCurrencyReady) ? <DashboardSkeleton /> : (
-        <div className="p-6 bg-white rounded-tl-2xl flex-1 overflow-y-auto space-y-4">
-          <DashboardGreeting username={username || ''} onAskCopilot={openCopilot} />
+        <div className="bg-white rounded-tl-2xl flex-1 flex flex-col overflow-hidden">
+          {/* Fixed header — always visible */}
+          <div
+            className="px-2 pt-2 pb-0 flex-shrink-0"
+            style={{
+              borderBottom: scrolled ? '1px solid #E8EAEF' : '1px solid transparent',
+              filter: scrolled ? 'drop-shadow(0px 4px 6px rgba(18, 18, 23, 0.1))' : 'none',
+              transition: 'border-color 0.2s ease, filter 0.2s ease',
+            }}
+          >
+            <DashboardGreeting username={username || ''} onAskCopilot={openCopilot} />
+          </div>
+
+          {/* Scrollable content */}
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="dashboard-scroll px-2 pb-2 flex-1 overflow-y-auto space-y-4"
+          >
 
           {/* Row 1: Pending tasks | Quick access | Top clients */}
           <div className="flex flex-col gap-4 lg:flex-row" style={dashboardRowStyle}>
             <div className="flex flex-col w-full h-[234px] min-w-0" style={{ flex: '672 1 0' }}>
               <PendingTasksRail tasks={pendingTasks} />
             </div>
-            <div className="flex flex-col w-full h-[234px] min-w-0" style={{ flex: '328 1 0' }}>
+            <div className="flex flex-col w-full h-[234px] min-w-0" style={{ flex: '213 1 0' }}>
               <QuickActionsList actions={quickActions} />
             </div>
-            <div className="flex flex-col w-full h-[234px] min-w-0" style={{ flex: '328 1 0' }}>
+            <div className="flex flex-col w-full h-[234px] min-w-0" style={{ flex: '435 1 0' }}>
               <TopClientsList
                 clients={topClients}
                 currencyLabel={dashboardCurrency}
@@ -195,6 +218,7 @@ function DashboardContent({ apiBaseUrl }) {
             </div>
           </div>
         </div>
+      </div>
       )}
     </div>
   );

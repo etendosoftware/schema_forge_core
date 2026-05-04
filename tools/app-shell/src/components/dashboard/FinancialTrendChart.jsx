@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, BarChart2, Check, Plus } from 'lucide-react';
 import { useUI } from '@/i18n';
@@ -13,6 +13,7 @@ import {
 const CHART_W = 869;
 const CHART_H = 196;
 const PAD_X = 74;
+const PAD_RIGHT = 4;
 const PAD_Y = 10;
 const PAD_BOTTOM = 24;
 
@@ -41,6 +42,19 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
   const numberLocale = localeFromUi(locale);
   const [chartType, setChartType] = useState(() => localStorage.getItem('dashboard_chart_type') || 'line');
   const [tooltip, setTooltip] = useState(null);
+  const svgWrapperRef = useRef(null);
+  const [chartW, setChartW] = useState(CHART_W);
+
+  useEffect(() => {
+    const el = svgWrapperRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(entries => {
+      const w = entries[0]?.contentRect.width;
+      if (w > 0) setChartW(Math.round(w));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const hasNoData = values.every(v => v === 0);
 
@@ -79,7 +93,7 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
     : ui('financialTrendGrowthDown').replace('{pct}', Math.abs(growthPct));
 
   // Geometry (shared between line and bar)
-  const plotW = CHART_W - PAD_X * 2;
+  const plotW = chartW - PAD_X - PAD_RIGHT;
   const plotH = CHART_H - PAD_Y - PAD_BOTTOM;
   const baseY = PAD_Y + plotH;
 
@@ -125,15 +139,17 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
     ];
     const boxW  = 186;
     const lineH = 16;
-    const boxH  = 12 + lines.length * lineH;
+    const padV  = 8;
+    const boxH  = padV * 2 + lines.length * lineH;
     return (
       <g pointerEvents="none">
-        <rect x={tx} y={ty} width={boxW} height={boxH} rx="6" fill="#121217" />
+        <rect x={tx} y={ty} width={boxW} height={boxH} rx="8" fill="#121217" />
         {lines.map((l, li) => (
           <text
             key={li}
-            x={tx + 10}
-            y={ty + 13 + li * lineH}
+            x={tx + 12}
+            y={ty + padV + 12 + li * lineH}
+            fontFamily="Inter"
             fontSize="10"
             fontWeight={l.bold ? '500' : '400'}
             fill={l.color}
@@ -145,23 +161,33 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
     );
   };
 
+  const resolveTooltipTy = (anchorY, upperY, boxH) => {
+    let ty = anchorY - boxH - 16;
+    if (ty < 0) ty = upperY + 16;
+    return Math.max(0, Math.min(ty, baseY - boxH));
+  };
+
   const lineTooltipEl = tooltip && (() => {
     const { idx, x, expense } = tooltip;
     const boxW = 186;
     const lineH = 16;
-    const lines = 1 + 1 + (hasExpenses && expense != null ? 1 : 0);
-    const boxH  = 12 + lines * lineH;
-    const tx = Math.min(Math.max(x - boxW / 2, PAD_X), CHART_W - PAD_X - boxW);
-    const ty = Math.max(revPts[idx].y - boxH - 18, PAD_Y);
+    const padV = 8;
+    const numLines = 1 + 1 + (hasExpenses && expense != null ? 1 : 0);
+    const boxH = padV * 2 + numLines * lineH;
+
+    const incY = revPts[idx].y;
+    const expY = hasExpenses && expPts[idx] ? expPts[idx].y : incY;
+    const anchorY = Math.max(incY, expY);
+    const upperY  = Math.min(incY, expY);
+    const ty = resolveTooltipTy(anchorY, upperY, boxH);
+    const tx = Math.min(Math.max(x - boxW / 2, PAD_X), chartW - PAD_RIGHT - boxW);
 
     return (
       <g pointerEvents="none">
-        {/* Crosshair */}
-        <line x1={x} y1={PAD_Y} x2={x} y2={baseY} stroke="#C4C9D4" strokeWidth="1" />
-        {/* Hover dots */}
-        <circle cx={revPts[idx].x} cy={revPts[idx].y} r="5" fill="#FFFFFF" stroke="#26A95F" strokeWidth="2" />
+        <line x1={x} y1={0} x2={x} y2={baseY} stroke="#6C6C89" strokeWidth="1" />
+        <circle cx={revPts[idx].x} cy={revPts[idx].y} r="6" fill="#FFFFFF" stroke="#121217" strokeWidth="1.5" />
         {hasExpenses && expPts[idx] && (
-          <circle cx={expPts[idx].x} cy={expPts[idx].y} r="4" fill="#FFFFFF" stroke="#F3164E" strokeWidth="1.5" />
+          <circle cx={expPts[idx].x} cy={expPts[idx].y} r="6" fill="#FFFFFF" stroke="#121217" strokeWidth="1.5" />
         )}
         <TooltipBox tx={tx} ty={ty} idx={idx} expense={expense} />
       </g>
@@ -172,11 +198,20 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
     const { idx, x, y, expense } = tooltip;
     const boxW = 186;
     const lineH = 16;
-    const lines = 1 + 1 + (hasExpenses && expense != null ? 1 : 0);
-    const boxH  = 12 + lines * lineH;
-    const tx = Math.min(Math.max(x - boxW / 2, PAD_X), CHART_W - PAD_X - boxW);
-    const ty = Math.max(y - boxH - 8, PAD_Y);
-    return <TooltipBox tx={tx} ty={ty} idx={idx} expense={expense} />;
+    const padV = 8;
+    const numLines = 1 + 1 + (hasExpenses && expense != null ? 1 : 0);
+    const boxH = padV * 2 + numLines * lineH;
+
+    // y = tipY = top of the taller bar (smallest y = highest on screen)
+    const ty = Math.max(0, Math.min(y - boxH - 8, baseY - boxH));
+    const tx = Math.min(Math.max(x - boxW / 2, PAD_X), chartW - PAD_RIGHT - boxW);
+
+    return (
+      <g pointerEvents="none">
+        <line x1={x} y1={0} x2={x} y2={baseY} stroke="#6C6C89" strokeWidth="1" />
+        <TooltipBox tx={tx} ty={ty} idx={idx} expense={expense} />
+      </g>
+    );
   })();
 
   return (
@@ -251,9 +286,9 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
           </div>
         </div>
       ) : (
-      <div style={{ display: 'flex', flexDirection: 'column', padding: '8px 16px 12px', gap: '4px', width: '100%', flex: 1, minHeight: 0 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', padding: '8px 16px 20px', gap: '8px', width: '100%', flex: 1, minHeight: 0 }}>
         {/* Sub-header row */}
-        <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexShrink: 0, paddingBottom: '4px' }}>
+        <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexShrink: 0, paddingBottom: '8px' }}>
           <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '16px', minWidth: 0, flex: 1, overflow: 'hidden' }}>
             {/* Status badge */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
@@ -281,17 +316,17 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
           </div>
 
           {/* Toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', padding: '4px', gap: '4px', width: '88px', height: '36px', background: '#F5F7F9', borderRadius: '10px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', padding: '4px', gap: '4px', width: '96px', height: '40px', background: '#F5F7F9', borderRadius: '12px', flexShrink: 0 }}>
             {[['line', LineChart], ['bar', BarChart2]].map(([type, Icon]) => (
               <button
                 key={type}
                 onClick={() => switchChartType(type)}
                 style={{
                   display: 'flex', justifyContent: 'center', alignItems: 'center',
-                  width: '38px', height: '28px',
+                  width: '42px', height: '32px',
                   background: chartType === type ? '#FFFFFF' : 'transparent',
                   boxShadow: chartType === type ? '0px 1px 3px rgba(18,18,23,0.1)' : 'none',
-                  borderRadius: '6px', border: 'none', cursor: 'pointer',
+                  borderRadius: '8px', border: 'none', cursor: 'pointer',
                 }}
               >
                 <Icon style={{ width: '18px', height: '18px', color: '#828FA3' }} />
@@ -301,11 +336,11 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
         </div>
 
         {/* SVG wrapper — takes all remaining flex height */}
-        <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+        <div ref={svgWrapperRef} style={{ height: '196px', flexShrink: 0, position: 'relative' }}>
           {chartType === 'line' ? (
             <svg
-              viewBox={`0 0 ${CHART_W} ${CHART_H}`}
-              preserveAspectRatio="none"
+              width={chartW}
+              height={CHART_H}
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
               role="img"
             >
@@ -314,6 +349,10 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
                   <stop offset="0%" stopColor="#26A95F" stopOpacity="0.22" />
                   <stop offset="100%" stopColor="#26A95F" stopOpacity="0.02" />
                 </linearGradient>
+                <linearGradient id="trend-expense-fill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#F3164E" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="#F3164E" stopOpacity="0.02" />
+                </linearGradient>
               </defs>
 
               {/* Grid + Y-axis labels */}
@@ -321,15 +360,18 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
                 const y = PAD_Y + plotH - (val / niceMax) * plotH;
                 return (
                   <g key={val}>
-                    <line x1={PAD_X} y1={y} x2={CHART_W - PAD_X} y2={y} stroke="#E8EAEF" strokeWidth="1" strokeDasharray="4 4" />
-                    <text x={PAD_X - 6} y={y + 3} textAnchor="end" fill="#9CA3AF" fontSize="9">
+                    <line x1={PAD_X} y1={y} x2={chartW - PAD_RIGHT} y2={y} stroke="#A9AEBC" strokeWidth="1.5" strokeDasharray="1 40" strokeLinecap="round" />
+                    <text x={PAD_X - 6} y={y + 3} textAnchor="end" fill="#6C6C89" style={{ fontSize: '12px', fontFamily: 'Inter', fontWeight: '400' }}>
                       {formatDashboardAxisTick(val, numberLocale)}
                     </text>
                   </g>
                 );
               })}
 
-              {/* Expenses line — solid, no fill */}
+              {/* Expenses area + line */}
+              {hasExpenses && (
+                <path d={toBezierFillPath(expPts, baseY)} fill="url(#trend-expense-fill)" />
+              )}
               {hasExpenses && (
                 <path d={toBezierPath(expPts)} fill="none" stroke="#F3164E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               )}
@@ -340,7 +382,14 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
 
               {/* X-axis month labels */}
               {axisLabels.map((m, i) => (
-                <text key={i} x={PAD_X + (i / Math.max(axisLabels.length - 1, 1)) * plotW} y={CHART_H - 5} textAnchor="middle" fill="#9CA3AF" fontSize="10">{m}</text>
+                <text
+                  key={m}
+                  x={PAD_X + (i / Math.max(axisLabels.length - 1, 1)) * plotW}
+                  y={CHART_H - 5}
+                  textAnchor={i === axisLabels.length - 1 ? 'end' : 'middle'}
+                  fill="#6C6C89"
+                  style={{ fontSize: '12px', fontFamily: 'Inter', fontWeight: '400' }}
+                >{m}</text>
               ))}
 
               {/* Invisible hover columns */}
@@ -362,21 +411,36 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
                 );
               })}
 
+              {/* Frame: left, right, bottom borders */}
+              <line x1={PAD_X} y1={0} x2={PAD_X} y2={baseY} stroke="#A9AEBC" strokeWidth="0.5" />
+              <line x1={chartW - PAD_RIGHT} y1={0} x2={chartW - PAD_RIGHT} y2={baseY} stroke="#A9AEBC" strokeWidth="0.5" />
+              <line x1={PAD_X} y1={baseY} x2={chartW - PAD_RIGHT} y2={baseY} stroke="#A9AEBC" strokeWidth="0.5" />
+
               {lineTooltipEl}
             </svg>
           ) : (
             <svg
-              viewBox={`0 0 ${CHART_W} ${CHART_H}`}
-              preserveAspectRatio="none"
+              width={chartW}
+              height={CHART_H}
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
               role="img"
             >
+              <defs>
+                <linearGradient id="bar-income-gradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#26A95F" stopOpacity="1" />
+                  <stop offset="100%" stopColor="#26A95F" stopOpacity="0.12" />
+                </linearGradient>
+                <linearGradient id="bar-expense-gradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#F3164E" stopOpacity="1" />
+                  <stop offset="100%" stopColor="#F3164E" stopOpacity="0.12" />
+                </linearGradient>
+              </defs>
               {yTicks.map((val) => {
                 const y = PAD_Y + plotH - (val / niceMax) * plotH;
                 return (
                   <g key={val}>
-                    <line x1={PAD_X} y1={y} x2={CHART_W - PAD_X} y2={y} stroke="#E8EAEF" strokeWidth="1" strokeDasharray="4 4" />
-                    <text x={PAD_X - 6} y={y + 3} textAnchor="end" fill="#9CA3AF" fontSize="9">
+                    <line x1={PAD_X} y1={y} x2={chartW - PAD_RIGHT} y2={y} stroke="#A9AEBC" strokeWidth="1.5" strokeDasharray="1 40" strokeLinecap="round" />
+                    <text x={PAD_X - 6} y={y + 3} textAnchor="end" fill="#6C6C89" style={{ fontSize: '12px', fontFamily: 'Inter', fontWeight: '400' }}>
                       {formatDashboardAxisTick(val, numberLocale)}
                     </text>
                   </g>
@@ -399,14 +463,19 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
                     onMouseLeave={hideTooltip}
                     style={{ cursor: 'crosshair' }}
                   >
-                    <rect x={gx} y={PAD_Y + plotH - revH} width={barW} height={revH} rx="3" fill={isLast ? '#26A95F' : 'rgba(38,169,95,0.35)'} />
+                    <rect x={gx} y={PAD_Y + plotH - revH} width={barW} height={revH} rx="3" fill="url(#bar-income-gradient)" />
                     {hasExpenses && (
-                      <rect x={gx + barW + innerGap} y={PAD_Y + plotH - expH} width={barW} height={expH} rx="3" fill={isLast ? '#F3164E' : 'rgba(243,22,78,0.35)'} />
+                      <rect x={gx + barW + innerGap} y={PAD_Y + plotH - expH} width={barW} height={expH} rx="3" fill="url(#bar-expense-gradient)" />
                     )}
-                    <text x={cx} y={CHART_H - 5} textAnchor="middle" fill="#9CA3AF" fontSize="10">{axisLabels[i]}</text>
+                    <text x={cx} y={CHART_H - 5} textAnchor="middle" fill="#6C6C89" style={{ fontSize: '12px', fontFamily: 'Inter', fontWeight: '400' }}>{axisLabels[i]}</text>
                   </g>
                 );
               })}
+
+              {/* Frame: left, right, bottom borders */}
+              <line x1={PAD_X} y1={0} x2={PAD_X} y2={baseY} stroke="#A9AEBC" strokeWidth="0.5" />
+              <line x1={chartW - PAD_RIGHT} y1={0} x2={chartW - PAD_RIGHT} y2={baseY} stroke="#A9AEBC" strokeWidth="0.5" />
+              <line x1={PAD_X} y1={baseY} x2={chartW - PAD_RIGHT} y2={baseY} stroke="#A9AEBC" strokeWidth="0.5" />
 
               {barTooltipEl}
             </svg>
