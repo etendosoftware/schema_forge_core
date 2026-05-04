@@ -2525,8 +2525,6 @@
     "reservedStock",
     "relatedProducts",
     "relatedServices",
-    "paymentPlan",
-    "paymentDetails",
     "replacementOrders"
   ],
   "version": 2
