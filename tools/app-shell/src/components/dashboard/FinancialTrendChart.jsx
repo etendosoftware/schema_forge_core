@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, BarChart2, Check, Plus } from 'lucide-react';
 import { useUI } from '@/i18n';
@@ -42,6 +42,19 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
   const numberLocale = localeFromUi(locale);
   const [chartType, setChartType] = useState(() => localStorage.getItem('dashboard_chart_type') || 'line');
   const [tooltip, setTooltip] = useState(null);
+  const svgWrapperRef = useRef(null);
+  const [chartW, setChartW] = useState(CHART_W);
+
+  useEffect(() => {
+    const el = svgWrapperRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(entries => {
+      const w = entries[0]?.contentRect.width;
+      if (w > 0) setChartW(Math.round(w));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const hasNoData = values.every(v => v === 0);
 
@@ -80,7 +93,7 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
     : ui('financialTrendGrowthDown').replace('{pct}', Math.abs(growthPct));
 
   // Geometry (shared between line and bar)
-  const plotW = CHART_W - PAD_X - PAD_RIGHT;
+  const plotW = chartW - PAD_X - PAD_RIGHT;
   const plotH = CHART_H - PAD_Y - PAD_BOTTOM;
   const baseY = PAD_Y + plotH;
 
@@ -167,7 +180,7 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
     const anchorY = Math.max(incY, expY);
     const upperY  = Math.min(incY, expY);
     const ty = resolveTooltipTy(anchorY, upperY, boxH);
-    const tx = Math.min(Math.max(x - boxW / 2, PAD_X), CHART_W - PAD_RIGHT - boxW);
+    const tx = Math.min(Math.max(x - boxW / 2, PAD_X), chartW - PAD_RIGHT - boxW);
 
     return (
       <g pointerEvents="none">
@@ -191,7 +204,7 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
 
     // y = tipY = top of the taller bar (smallest y = highest on screen)
     const ty = Math.max(0, Math.min(y - boxH - 8, baseY - boxH));
-    const tx = Math.min(Math.max(x - boxW / 2, PAD_X), CHART_W - PAD_RIGHT - boxW);
+    const tx = Math.min(Math.max(x - boxW / 2, PAD_X), chartW - PAD_RIGHT - boxW);
 
     return (
       <g pointerEvents="none">
@@ -323,11 +336,11 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
         </div>
 
         {/* SVG wrapper — takes all remaining flex height */}
-        <div style={{ height: '196px', flexShrink: 0, position: 'relative' }}>
+        <div ref={svgWrapperRef} style={{ height: '196px', flexShrink: 0, position: 'relative' }}>
           {chartType === 'line' ? (
             <svg
-              viewBox={`0 0 ${CHART_W} ${CHART_H}`}
-              preserveAspectRatio="none"
+              width={chartW}
+              height={CHART_H}
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
               role="img"
             >
@@ -347,7 +360,7 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
                 const y = PAD_Y + plotH - (val / niceMax) * plotH;
                 return (
                   <g key={val}>
-                    <line x1={PAD_X} y1={y} x2={CHART_W - PAD_RIGHT} y2={y} stroke="#A9AEBC" strokeWidth="1.5" strokeDasharray="1 40" strokeLinecap="round" />
+                    <line x1={PAD_X} y1={y} x2={chartW - PAD_RIGHT} y2={y} stroke="#A9AEBC" strokeWidth="1.5" strokeDasharray="1 40" strokeLinecap="round" />
                     <text x={PAD_X - 6} y={y + 3} textAnchor="end" fill="#6C6C89" style={{ fontSize: '12px', fontFamily: 'Inter', fontWeight: '400' }}>
                       {formatDashboardAxisTick(val, numberLocale)}
                     </text>
@@ -400,15 +413,15 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
 
               {/* Frame: left, right, bottom borders */}
               <line x1={PAD_X} y1={0} x2={PAD_X} y2={baseY} stroke="#A9AEBC" strokeWidth="0.5" />
-              <line x1={CHART_W - PAD_RIGHT} y1={0} x2={CHART_W - PAD_RIGHT} y2={baseY} stroke="#A9AEBC" strokeWidth="0.5" />
-              <line x1={PAD_X} y1={baseY} x2={CHART_W - PAD_RIGHT} y2={baseY} stroke="#A9AEBC" strokeWidth="0.5" />
+              <line x1={chartW - PAD_RIGHT} y1={0} x2={chartW - PAD_RIGHT} y2={baseY} stroke="#A9AEBC" strokeWidth="0.5" />
+              <line x1={PAD_X} y1={baseY} x2={chartW - PAD_RIGHT} y2={baseY} stroke="#A9AEBC" strokeWidth="0.5" />
 
               {lineTooltipEl}
             </svg>
           ) : (
             <svg
-              viewBox={`0 0 ${CHART_W} ${CHART_H}`}
-              preserveAspectRatio="none"
+              width={chartW}
+              height={CHART_H}
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
               role="img"
             >
@@ -426,7 +439,7 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
                 const y = PAD_Y + plotH - (val / niceMax) * plotH;
                 return (
                   <g key={val}>
-                    <line x1={PAD_X} y1={y} x2={CHART_W - PAD_RIGHT} y2={y} stroke="#A9AEBC" strokeWidth="1.5" strokeDasharray="1 40" strokeLinecap="round" />
+                    <line x1={PAD_X} y1={y} x2={chartW - PAD_RIGHT} y2={y} stroke="#A9AEBC" strokeWidth="1.5" strokeDasharray="1 40" strokeLinecap="round" />
                     <text x={PAD_X - 6} y={y + 3} textAnchor="end" fill="#6C6C89" style={{ fontSize: '12px', fontFamily: 'Inter', fontWeight: '400' }}>
                       {formatDashboardAxisTick(val, numberLocale)}
                     </text>
@@ -461,8 +474,8 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
 
               {/* Frame: left, right, bottom borders */}
               <line x1={PAD_X} y1={0} x2={PAD_X} y2={baseY} stroke="#A9AEBC" strokeWidth="0.5" />
-              <line x1={CHART_W - PAD_RIGHT} y1={0} x2={CHART_W - PAD_RIGHT} y2={baseY} stroke="#A9AEBC" strokeWidth="0.5" />
-              <line x1={PAD_X} y1={baseY} x2={CHART_W - PAD_RIGHT} y2={baseY} stroke="#A9AEBC" strokeWidth="0.5" />
+              <line x1={chartW - PAD_RIGHT} y1={0} x2={chartW - PAD_RIGHT} y2={baseY} stroke="#A9AEBC" strokeWidth="0.5" />
+              <line x1={PAD_X} y1={baseY} x2={chartW - PAD_RIGHT} y2={baseY} stroke="#A9AEBC" strokeWidth="0.5" />
 
               {barTooltipEl}
             </svg>
