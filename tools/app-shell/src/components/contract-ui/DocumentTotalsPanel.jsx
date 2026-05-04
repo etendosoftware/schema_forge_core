@@ -60,16 +60,16 @@ export default function DocumentTotalsPanel({
     }
   }, [lines.length, lineConfig?.discountField]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Collapse the panel when the parent resets discountPerProductEnabled to false.
-  // This only happens when DetailView confirms all saved lines are gone (hook.children.length === 0),
-  // avoiding the race condition where pendingLine clears before hook.children updates after a save.
+  // Collapse the panel only when the parent resets discountPerProductEnabled to false AND there are
+  // no lines left. This distinguishes document navigation (all lines gone) from the user manually
+  // unchecking the checkbox — in the latter case the panel stays expanded, only the checkbox changes.
   const prevDiscountEnabled = useRef(discountPerProductEnabled);
   useEffect(() => {
-    if (prevDiscountEnabled.current && !discountPerProductEnabled) {
+    if (prevDiscountEnabled.current && !discountPerProductEnabled && lines.length === 0) {
       setDiscountPanelOpen(false);
     }
     prevDiscountEnabled.current = discountPerProductEnabled;
-  }, [discountPerProductEnabled]);
+  }, [discountPerProductEnabled, lines.length]);
 
   // --- Computations (client-side, real-time) ---
 
@@ -153,7 +153,7 @@ export default function DocumentTotalsPanel({
               </span>
             </label>
             <span className="tabular-nums text-muted-foreground">
-              {discountAmt != null && discountPerProductEnabled && discountAmt > 0
+              {discountAmt != null && discountAmt > 0
                 ? `-${fmt(discountAmt)}`
                 : fmt(0)}
             </span>
