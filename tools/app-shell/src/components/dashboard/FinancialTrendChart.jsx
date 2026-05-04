@@ -185,9 +185,9 @@ export function FinancialTrendChart({ labels = [], values = [], expenseValues = 
     return (
       <g pointerEvents="none">
         <line x1={x} y1={0} x2={x} y2={baseY} stroke="#6C6C89" strokeWidth="1" />
-        <circle cx={revPts[idx].x} cy={revPts[idx].y} r="4" fill="#FFFFFF" stroke="#121217" strokeWidth="1.5" />
+        <circle cx={revPts[idx].x} cy={revPts[idx].y} r="6" fill="#FFFFFF" stroke="#121217" strokeWidth="1.5" />
         {hasExpenses && expPts[idx] && (
-          <circle cx={expPts[idx].x} cy={expPts[idx].y} r="4" fill="#FFFFFF" stroke="#121217" strokeWidth="1.5" />
+          <circle cx={expPts[idx].x} cy={expPts[idx].y} r="6" fill="#FFFFFF" stroke="#121217" strokeWidth="1.5" />
         )}
         <TooltipBox tx={tx} ty={ty} idx={idx} expense={expense} />
       </g>
