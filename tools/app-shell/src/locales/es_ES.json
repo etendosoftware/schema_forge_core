@@ -17740,6 +17740,7 @@
     "soViewInvoice": "Ver factura →",
     "soOrderConfirmedShipmentError": "El pedido fue procesado pero no se pudo crear el albarán. ",
     "soOrderConfirmedInvoiceError": "El pedido fue procesado pero no se pudo crear la factura. ",
+    "soAlreadyCreated": "Ya creado",
     "soBulkCreateInvoices": "Crear facturas masivamente",
     "soBulkCreateShipments": "Crear albaranes masivamente",
     "soBulkOrderNotCompleted": "Pedido {documentNo} no está procesado (estado debe ser CO).",

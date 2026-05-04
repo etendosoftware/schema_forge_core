@@ -239,12 +239,15 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
 function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed }) {
   const navigate = useNavigate();
   const ui       = useUI();
-  const [createShipment, setCreateShipment] = useState(false);
-  const [createInvoice,  setCreateInvoice]  = useState(false);
-  const [loading,        setLoading]        = useState(false);
-  const [error,          setError]          = useState(null);
-  const [lineCount,      setLineCount]      = useState(null);
-  const [freshData,      setFreshData]      = useState(null);
+  const [createShipment,  setCreateShipment]  = useState(false);
+  const [createInvoice,   setCreateInvoice]   = useState(false);
+  const [loading,         setLoading]         = useState(false);
+  const [error,           setError]           = useState(null);
+  const [lineCount,       setLineCount]       = useState(null);
+  const [freshData,       setFreshData]       = useState(null);
+  const [orderConfirmed,  setOrderConfirmed]  = useState(false);
+  const [shipmentCreated, setShipmentCreated] = useState(false);
+  const [invoiceCreated,  setInvoiceCreated]  = useState(false);
 
   // Fetch fresh record + line count on mount
   useEffect(() => {
@@ -281,22 +284,25 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
     setLoading(true);
     setError(null);
     try {
-      // Step 1: Confirm the order (always)
-      const processRes = await fetch(
-        `${apiBaseUrl}/header/${orderId}/action/documentAction`,
-        { method: 'POST', headers, body: JSON.stringify({ docAction: 'CO' }) },
-      );
-      if (!processRes.ok) {
-        const e = await processRes.json().catch(() => null);
-        throw new Error(e?.response?.message || `Error (${processRes.status})`);
+      // Step 1: Confirm the order — skip if already done on a previous attempt
+      if (!orderConfirmed) {
+        const processRes = await fetch(
+          `${apiBaseUrl}/header/${orderId}/action/documentAction`,
+          { method: 'POST', headers, body: JSON.stringify({ docAction: 'CO' }) },
+        );
+        if (!processRes.ok) {
+          const e = await processRes.json().catch(() => null);
+          throw new Error(e?.response?.message || `Error (${processRes.status})`);
+        }
+        setOrderConfirmed(true);
+        window.dispatchEvent(new CustomEvent('sales-order:document-created'));
       }
-      window.dispatchEvent(new CustomEvent('sales-order:document-created'));
 
-      // Step 2: Create shipment if checked
+      // Step 2: Create shipment if checked and not already done
       let shipmentId = null;
       let shipmentDocNo = '';
       let shipmentAmount = null;
-      if (createShipment) {
+      if (createShipment && !shipmentCreated) {
         const res = await fetch(`${apiBaseUrl}/header/${orderId}/action/createShipment`,
           { method: 'POST', headers, body: JSON.stringify({}) });
         if (!res.ok) {
@@ -304,17 +310,18 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
           throw new Error(ui('soOrderConfirmedShipmentError') + (e?.response?.message || `Error (${res.status})`));
         }
         const doc = (await res.json())?.response?.data;
+        setShipmentCreated(true);
         shipmentId     = doc?.id ?? null;
         shipmentDocNo  = doc?.documentNo ?? '';
         shipmentAmount = doc?.grandTotalAmount ?? null;
       }
 
-      // Step 3: Create invoice if checked.
+      // Step 3: Create invoice if checked and not already done.
       // Uses order quantities (ordered - already invoiced), independent of the shipment above.
       let invoiceId = null;
       let invoiceDocNo = '';
       let invoiceAmount = null;
-      if (createInvoice) {
+      if (createInvoice && !invoiceCreated) {
         const res = await fetch(`${apiBaseUrl}/header/${orderId}/action/createDraftInvoice`,
           { method: 'POST', headers, body: JSON.stringify({}) });
         if (!res.ok) {
@@ -322,6 +329,7 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
           throw new Error(ui('soOrderConfirmedInvoiceError') + (e?.response?.message || `Error (${res.status})`));
         }
         const doc = (await res.json())?.response?.data;
+        setInvoiceCreated(true);
         invoiceId     = doc?.id ?? null;
         invoiceDocNo  = doc?.documentNo ?? '';
         invoiceAmount = doc?.grandTotalAmount ?? null;
@@ -392,18 +400,20 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
             {ui('soGenerateDocs')}
           </div>
           <SoCheckboxCard
-            checked={createShipment}
-            onChange={() => setCreateShipment(v => !v)}
+            checked={createShipment || shipmentCreated}
+            onChange={() => !shipmentCreated && setCreateShipment(v => !v)}
             icon="🚚"
             title={ui('soCreateShipmentTitle')}
-            subtitle={ui('soCreateShipmentCheckDesc')}
+            subtitle={shipmentCreated ? ui('soAlreadyCreated') : ui('soCreateShipmentCheckDesc')}
+            disabled={shipmentCreated}
           />
           <SoCheckboxCard
-            checked={createInvoice}
-            onChange={() => setCreateInvoice(v => !v)}
+            checked={createInvoice || invoiceCreated}
+            onChange={() => !invoiceCreated && setCreateInvoice(v => !v)}
             icon="🧾"
             title={ui('soCreateInvoiceTitle')}
-            subtitle={ui('soCreateInvoiceCheckDesc')}
+            subtitle={invoiceCreated ? ui('soAlreadyCreated') : ui('soCreateInvoiceCheckDesc')}
+            disabled={invoiceCreated}
           />
         </div>
 
@@ -430,21 +440,23 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
 
 // ── SoCheckboxCard ─────────────────────────────────────────────────────────────
 
-function SoCheckboxCard({ checked, onChange, icon, title, subtitle }) {
+function SoCheckboxCard({ checked, onChange, icon, title, subtitle, disabled }) {
   return (
     <div
-      onClick={onChange}
+      onClick={disabled ? undefined : onChange}
       style={{
         display: 'flex', alignItems: 'center', gap: 12,
-        padding: checked ? '11px 13px' : '12px 14px', borderRadius: 8, cursor: 'pointer',
-        border: checked ? '2px solid #3B82F6' : '1px solid #E5E7EB',
-        background: checked ? '#EFF6FF' : '#fff',
+        padding: checked ? '11px 13px' : '12px 14px', borderRadius: 8,
+        cursor: disabled ? 'default' : 'pointer',
+        border: disabled ? '2px solid #10B981' : (checked ? '2px solid #3B82F6' : '1px solid #E5E7EB'),
+        background: disabled ? '#ECFDF5' : (checked ? '#EFF6FF' : '#fff'),
+        opacity: disabled ? 0.85 : 1,
         transition: 'border-color 0.15s, background 0.15s',
       }}
     >
       <span style={{ fontSize: 15, lineHeight: 1, flexShrink: 0 }}>{icon}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 500, color: checked ? '#2563EB' : '#111827' }}>
+        <div style={{ fontSize: 13, fontWeight: 500, color: disabled ? '#059669' : (checked ? '#2563EB' : '#111827') }}>
           {title}
         </div>
         <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 3, lineHeight: 1.4 }}>
@@ -454,12 +466,12 @@ function SoCheckboxCard({ checked, onChange, icon, title, subtitle }) {
       {/* Checkbox indicator */}
       <div style={{
         width: 18, height: 18, borderRadius: 4, flexShrink: 0,
-        border: checked ? 'none' : '1.5px solid #D1D5DB',
-        background: checked ? '#3B82F6' : '#fff',
+        border: (checked || disabled) ? 'none' : '1.5px solid #D1D5DB',
+        background: disabled ? '#10B981' : (checked ? '#3B82F6' : '#fff'),
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         transition: 'background 0.15s',
       }}>
-        {checked && (
+        {(checked || disabled) && (
           <svg width="11" height="9" viewBox="0 0 11 9" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="1 4 4 7.5 10 1" />
           </svg>

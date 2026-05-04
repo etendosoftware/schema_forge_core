@@ -17501,6 +17501,7 @@
     "soViewInvoice": "View invoice →",
     "soOrderConfirmedShipmentError": "Order confirmed, but shipment could not be created. ",
     "soOrderConfirmedInvoiceError": "Order confirmed, but invoice could not be created. ",
+    "soAlreadyCreated": "Already created",
     "soBulkCreateInvoices": "Create Invoices",
     "soBulkCreateShipments": "Create Shipments",
     "soBulkOrderNotCompleted": "Order {documentNo} is not completed (status must be CO).",
