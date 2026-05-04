@@ -283,9 +283,11 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
     if (loading) return;
     setLoading(true);
     setError(null);
-    try {
-      // Step 1: Confirm the order — skip if already done on a previous attempt
-      if (!orderConfirmed) {
+
+    // Step 1: Confirm the order — must succeed before anything else.
+    // If this fails the order is still in DR, so the rest of the flow makes no sense.
+    if (!orderConfirmed) {
+      try {
         const processRes = await fetch(
           `${apiBaseUrl}/header/${orderId}/action/documentAction`,
           { method: 'POST', headers, body: JSON.stringify({ docAction: 'CO' }) },
@@ -296,11 +298,22 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
         }
         setOrderConfirmed(true);
         window.dispatchEvent(new CustomEvent('sales-order:document-created'));
+      } catch (e) {
+        setError(e.message || ui('soErrorOccurred'));
+        setLoading(false);
+        return;
       }
+    }
 
-      // Step 2: Create shipment if checked and not already done
-      let currentShipment = null;
-      if (createShipment && !shipmentResult) {
+    // Steps 2 and 3 are independent: the invoice uses order quantities, not
+    // shipment quantities. A failure in one must NOT prevent the other from
+    // running. Errors are accumulated and shown together at the end.
+    const errors = [];
+
+    // Step 2: Create shipment if checked and not already done
+    let currentShipment = null;
+    if (createShipment && !shipmentResult) {
+      try {
         const res = await fetch(`${apiBaseUrl}/header/${orderId}/action/createShipment`,
           { method: 'POST', headers, body: JSON.stringify({}) });
         if (!res.ok) {
@@ -310,12 +323,15 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
         const doc = (await res.json())?.response?.data;
         currentShipment = { id: doc?.id ?? null, documentNo: doc?.documentNo ?? '', amount: doc?.grandTotalAmount ?? null };
         setShipmentResult(currentShipment);
+      } catch (e) {
+        errors.push(e.message || ui('soErrorOccurred'));
       }
+    }
 
-      // Step 3: Create invoice if checked and not already done.
-      // Uses order quantities (ordered - already invoiced), independent of the shipment above.
-      let currentInvoice = null;
-      if (createInvoice && !invoiceResult) {
+    // Step 3: Create invoice if checked and not already done.
+    let currentInvoice = null;
+    if (createInvoice && !invoiceResult) {
+      try {
         const res = await fetch(`${apiBaseUrl}/header/${orderId}/action/createDraftInvoice`,
           { method: 'POST', headers, body: JSON.stringify({}) });
         if (!res.ok) {
@@ -325,19 +341,26 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
         const doc = (await res.json())?.response?.data;
         currentInvoice = { id: doc?.id ?? null, documentNo: doc?.documentNo ?? '', amount: doc?.grandTotalAmount ?? null };
         setInvoiceResult(currentInvoice);
+      } catch (e) {
+        errors.push(e.message || ui('soErrorOccurred'));
       }
-
-      // Always show the result modal — never navigate from here.
-      // Use the current attempt's result first; fall back to persisted result from a prior attempt.
-      onConfirmed({
-        shipment: currentShipment ?? shipmentResult,
-        invoice:  currentInvoice  ?? invoiceResult,
-      });
-
-    } catch (e) {
-      setError(e.message || ui('soErrorOccurred'));
-      setLoading(false);
     }
+
+    // If any step failed, surface all errors and keep the modal open so the
+    // user can retry. The successful steps are already locked via state, so
+    // the next attempt will skip them.
+    if (errors.length > 0) {
+      setError(errors.join('\n'));
+      setLoading(false);
+      return;
+    }
+
+    // All requested steps succeeded — close the modal with whatever was created.
+    // Use the current attempt's result first; fall back to persisted result from a prior attempt.
+    onConfirmed({
+      shipment: currentShipment ?? shipmentResult,
+      invoice:  currentInvoice  ?? invoiceResult,
+    });
   };
 
   const primaryLabel = (() => {
@@ -411,7 +434,7 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
         </div>
 
         {error && (
-          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA' }}>
+          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA', whiteSpace: 'pre-line' }}>
             {error}
           </div>
         )}
@@ -598,7 +621,7 @@ function CreateDocsModal({ orderId, data, base, headers, currency, derived, onCl
         </div>
 
         {error && (
-          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA' }}>
+          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA', whiteSpace: 'pre-line' }}>
             {error}
           </div>
         )}

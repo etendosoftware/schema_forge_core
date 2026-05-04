@@ -17,6 +17,10 @@ import { login } from '../helpers/auth.js';
  *
  * In both cases retry must also NOT call documentAction=CO again, because the
  * order is already in 'CO' status and the backend would return @AlreadyPosted@.
+ *
+ * Steps 2 and 3 run INDEPENDENTLY — a failure on createShipment must not
+ * prevent createDraftInvoice from being attempted. Each step has its own
+ * try/catch and the modal aggregates the errors at the end.
  */
 
 const ORDER_ID = 'idem-mock-order-001';
@@ -236,23 +240,62 @@ test.describe('Sales Order — Confirm Modal idempotency (mocked)', () => {
     await openConfirmAndTickBoth(page);
     await clickConfirm(page);
 
-    // First attempt: documentAction + (failed) createShipment, invoice never reached
+    // First attempt: documentAction + (failed) createShipment + (independent) createDraftInvoice
+    // The shipment failure must NOT block the invoice — both steps are independent.
     await expect(page.getByText(/simulated shipment failure/i)).toBeVisible({ timeout: 5000 });
     expect(state.calls.documentAction).toBe(1);
     expect(state.calls.createShipment).toBe(1);
-    expect(state.calls.createDraftInvoice).toBe(0);
+    expect(state.calls.createDraftInvoice).toBe(1);
 
-    // Retry — shipment mock now succeeds
+    // Invoice succeeded silently in the same attempt — its card must now be locked
+    await expect(page.getByText(/Ya creado|Already created/i)).toBeVisible();
+
+    // Retry — shipment mock now succeeds, invoice is locked and skipped by the !invoiceResult guard
     await clickConfirm(page);
 
     await expect(page.getByText(/Pedido confirmado|Order confirmed/i)).toBeVisible({ timeout: 5000 });
 
-    // CRITICAL: documentAction must not be called again, shipment is retried, invoice runs once
+    // CRITICAL: documentAction must not be called again, shipment is retried, invoice is NOT re-run
     expect(state.calls.documentAction).toBe(1);
     expect(state.calls.createShipment).toBe(2);
     expect(state.calls.createDraftInvoice).toBe(1);
 
     // Both documents must show in the result modal
+    await expect(page.getByText(/SHIP-001/)).toBeVisible();
+    await expect(page.getByText(/INV-001/)).toBeVisible();
+  });
+
+  test('both steps fail — both errors are surfaced together and both retry-able', async ({ page }) => {
+    const state = {
+      calls: { documentAction: 0, createShipment: 0, createDraftInvoice: 0 },
+      failNext: { shipment: true, invoice: true },
+    };
+    await installConfirmMocks(page, state);
+
+    await page.goto(`/sales-order/${ORDER_ID}`);
+    await page.waitForLoadState('domcontentloaded');
+
+    await openConfirmAndTickBoth(page);
+    await clickConfirm(page);
+
+    // First attempt: both step 2 and step 3 must run and both must fail
+    await expect(page.getByText(/simulated shipment failure/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/simulated invoice failure/i)).toBeVisible();
+    expect(state.calls.documentAction).toBe(1);
+    expect(state.calls.createShipment).toBe(1);
+    expect(state.calls.createDraftInvoice).toBe(1);
+
+    // Neither card should be locked — both must remain retry-able
+    await expect(page.getByText(/Ya creado|Already created/i)).toHaveCount(0);
+
+    // Retry — both mocks now succeed
+    await clickConfirm(page);
+
+    await expect(page.getByText(/Pedido confirmado|Order confirmed/i)).toBeVisible({ timeout: 5000 });
+    expect(state.calls.documentAction).toBe(1);
+    expect(state.calls.createShipment).toBe(2);
+    expect(state.calls.createDraftInvoice).toBe(2);
+
     await expect(page.getByText(/SHIP-001/)).toBeVisible();
     await expect(page.getByText(/INV-001/)).toBeVisible();
   });

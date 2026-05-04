@@ -17623,6 +17623,7 @@
     "poOrderConfirmed": "Order confirmed",
     "poOrderConfirmedDesc": "Purchase order #{number} is confirmed and ready to receive goods or invoice.",
     "poOrderConfirmedInvoiceError": "Order confirmed, but invoice could not be created.",
+    "poOrderConfirmedReceiptError": "Order confirmed, but goods receipt could not be created.",
     "poReceiveGoods": "Receive goods",
     "poCreateInvoice": "Create invoice",
     "poInvoiceCreated": "Invoice created",

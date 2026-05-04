@@ -270,9 +270,11 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
     if (loading) return;
     setLoading(true);
     setError(null);
-    try {
-      // Step 1: Confirm the order — skip if already done on a previous attempt
-      if (!orderConfirmed) {
+
+    // Step 1: Confirm the order — must succeed before anything else.
+    // If this fails the order is still in DR, so the rest of the flow makes no sense.
+    if (!orderConfirmed) {
+      try {
         const processRes = await fetch(
           `${orderUrl}/${orderId}/action/documentAction`,
           { method: 'POST', headers, body: JSON.stringify({ docAction: 'CO' }) },
@@ -283,16 +285,27 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
         }
         setOrderConfirmed(true);
         window.dispatchEvent(new CustomEvent('purchase-order:document-created'));
+      } catch (e) {
+        setError(e.message || ui('poErrorOccurred'));
+        setLoading(false);
+        return;
       }
+    }
 
-      // Step 2: Create goods receipt if checked and not already done
-      let currentReceipt = null;
-      if (createReceipt && !receiptResult) {
+    // Steps 2 and 3 are independent: the invoice uses order quantities, not
+    // receipt quantities. A failure in one must NOT prevent the other from
+    // running. Errors are accumulated and shown together at the end.
+    const errors = [];
+
+    // Step 2: Create goods receipt if checked and not already done
+    let currentReceipt = null;
+    if (createReceipt && !receiptResult) {
+      try {
         const res = await fetch(`${orderUrl}/${orderId}/action/createGoodsReceipt`,
           { method: 'POST', headers, body: JSON.stringify({}) });
         if (!res.ok) {
           const e = await res.json().catch(() => null);
-          throw new Error(e?.response?.message || e?.message || `Error (${res.status})`);
+          throw new Error(ui('poOrderConfirmedReceiptError') + ' ' + (e?.response?.message || e?.message || `Error (${res.status})`));
         }
         const doc = (await res.json())?.response?.data;
         const docObj = Array.isArray(doc) ? doc[0] : doc;
@@ -302,11 +315,15 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
           amount:     docObj?.grandTotalAmount ?? null,
         };
         setReceiptResult(currentReceipt);
+      } catch (e) {
+        errors.push(e.message || ui('poErrorOccurred'));
       }
+    }
 
-      // Step 3: Create purchase invoice if checked and not already done
-      let currentInvoice = null;
-      if (createInvoice && !invoiceResult) {
+    // Step 3: Create purchase invoice if checked and not already done
+    let currentInvoice = null;
+    if (createInvoice && !invoiceResult) {
+      try {
         const res = await fetch(`${orderUrl}/${orderId}/action/createPurchaseInvoice`,
           { method: 'POST', headers, body: JSON.stringify({}) });
         if (!res.ok) {
@@ -321,19 +338,27 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
           amount:     docObj?.grandTotalAmount ?? null,
         };
         setInvoiceResult(currentInvoice);
+      } catch (e) {
+        errors.push(e.message || ui('poErrorOccurred'));
       }
-
-      // Use the current attempt's result first; fall back to persisted result from a prior attempt.
-      const result = {};
-      const finalReceipt = currentReceipt ?? receiptResult;
-      const finalInvoice = currentInvoice ?? invoiceResult;
-      if (finalReceipt) result.receipt = finalReceipt;
-      if (finalInvoice) result.invoice = finalInvoice;
-      onConfirmed(result);
-    } catch (e) {
-      setError(e.message || ui('poErrorOccurred'));
-      setLoading(false);
     }
+
+    // If any step failed, surface all errors and keep the modal open so the
+    // user can retry. The successful steps are already locked via state, so
+    // the next attempt will skip them.
+    if (errors.length > 0) {
+      setError(errors.join('\n'));
+      setLoading(false);
+      return;
+    }
+
+    // All requested steps succeeded — close the modal with whatever was created.
+    const result = {};
+    const finalReceipt = currentReceipt ?? receiptResult;
+    const finalInvoice = currentInvoice ?? invoiceResult;
+    if (finalReceipt) result.receipt = finalReceipt;
+    if (finalInvoice) result.invoice = finalInvoice;
+    onConfirmed(result);
   };
 
   const primaryLabel = (() => {
@@ -407,7 +432,7 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
         </div>
 
         {error && (
-          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA' }}>
+          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA', whiteSpace: 'pre-line' }}>
             {error}
           </div>
         )}
@@ -596,7 +621,7 @@ function CreateDocsModal({ orderId, data, base, headers, currency, derived, onCl
         </div>
 
         {error && (
-          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA' }}>
+          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA', whiteSpace: 'pre-line' }}>
             {error}
           </div>
         )}

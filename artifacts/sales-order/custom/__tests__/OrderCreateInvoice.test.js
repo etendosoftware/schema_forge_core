@@ -141,6 +141,37 @@ describe('OrderCreateInvoice', () => {
       assert.match(src, /shipmentResult\s*\?\s*ui\('soAlreadyCreated'\)/);
       assert.match(src, /invoiceResult\s*\?\s*ui\('soAlreadyCreated'\)/);
     });
+
+    it('runs shipment and invoice steps independently (each in its own try/catch)', () => {
+      // Step 2 has its own try/catch — failure does NOT throw out of handleConfirm
+      assert.match(
+        src,
+        /if\s*\(createShipment\s*&&\s*!shipmentResult\)\s*\{\s*try\s*\{[\s\S]*?action\/createShipment[\s\S]*?\}\s*catch\s*\(e\)\s*\{[\s\S]*?errors\.push/,
+      );
+      // Step 3 has its own try/catch — runs even if step 2 failed
+      assert.match(
+        src,
+        /if\s*\(createInvoice\s*&&\s*!invoiceResult\)\s*\{\s*try\s*\{[\s\S]*?action\/createDraftInvoice[\s\S]*?\}\s*catch\s*\(e\)\s*\{[\s\S]*?errors\.push/,
+      );
+    });
+
+    it('aggregates errors from steps 2 and 3 instead of stopping on the first', () => {
+      assert.match(src, /const errors\s*=\s*\[\]/);
+      assert.match(src, /if\s*\(errors\.length\s*>\s*0\)\s*\{[\s\S]*?setError\(errors\.join\('\\n'\)\)/);
+    });
+
+    it('aborts before steps 2 and 3 only when step 1 (documentAction) fails', () => {
+      // Step 1 still has a try/catch with early return — without a confirmed
+      // order the rest of the flow makes no sense
+      assert.match(
+        src,
+        /if\s*\(!orderConfirmed\)\s*\{\s*try\s*\{[\s\S]*?action\/documentAction[\s\S]*?\}\s*catch\s*\(e\)\s*\{[\s\S]*?setError[\s\S]*?return;\s*\}/,
+      );
+    });
+
+    it('renders the error region with whiteSpace: pre-line so multiple errors keep their newline', () => {
+      assert.match(src, /whiteSpace:\s*'pre-line'/);
+    });
   });
 
   describe('SoCheckboxCard — disabled (already-done) treatment', () => {
