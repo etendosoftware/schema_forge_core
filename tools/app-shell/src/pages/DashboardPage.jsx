@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   FileText,
   ShoppingCart,
@@ -114,6 +114,12 @@ function DashboardContent({ apiBaseUrl }) {
   const resolvedKpis = kpis.map((k) => ({ ...k, icon: ICON_MAP[k.icon] || DollarSign }));
   const quickActions = useQuickActions(ui);
 
+  const [scrolled, setScrolled] = useState(false);
+  const scrollRef = useRef(null);
+  const handleScroll = useCallback(() => {
+    setScrolled((scrollRef.current?.scrollTop ?? 0) > 0);
+  }, []);
+
   useSetPageMeta({
     title: ui('dashboardTitle'),
     breadcrumb: ui('dashboardTitle'),
@@ -144,12 +150,15 @@ function DashboardContent({ apiBaseUrl }) {
       {(loading || !isCurrencyReady) ? <DashboardSkeleton /> : (
         <div className="bg-white rounded-tl-2xl flex-1 flex flex-col overflow-hidden">
           {/* Fixed header — always visible */}
-          <div className="px-2 pt-2 pb-0 flex-shrink-0">
+          <div
+            className="px-2 pt-2 pb-0 flex-shrink-0"
+            style={{ boxShadow: scrolled ? '0px 4px 8px rgba(18, 18, 23, 0.08)' : 'none', transition: 'box-shadow 0.2s ease' }}
+          >
             <DashboardGreeting username={username || ''} onAskCopilot={openCopilot} />
           </div>
 
           {/* Scrollable content */}
-          <div className="dashboard-scroll px-2 pb-2 flex-1 overflow-y-auto space-y-4">
+          <div ref={scrollRef} onScroll={handleScroll} className="dashboard-scroll px-2 pb-2 flex-1 overflow-y-auto space-y-4">
 
           {/* Row 1: Pending tasks | Quick access | Top clients */}
           <div className="flex flex-col gap-4 lg:flex-row" style={dashboardRowStyle}>
