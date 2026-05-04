@@ -37,6 +37,7 @@ export function BestProductsList({ sellers = [], products = [], currencyLabel = 
   const hasNoData = sellers.length === 0 && products.length === 0;
   const rows = viewMode === 'quantity' ? sellers : products;
   const hasPositiveTrend = rows.some((r) => (r.trendPct ?? 0) > 0);
+  const hasNegativeTrend = !hasPositiveTrend && rows.some((r) => (r.trendPct ?? 0) < 0);
 
   return (
     <div
@@ -158,6 +159,12 @@ export function BestProductsList({ sellers = [], products = [], currencyLabel = 
             <div className="flex items-center gap-1.5 text-xs" style={{ color: '#1E874C' }}>
               <Check className="h-3.5 w-3.5 shrink-0" />
               <span>{ui('bestProductsTrendPositive')}</span>
+            </div>
+          )}
+          {hasNegativeTrend && (
+            <div className="flex items-center gap-1.5 text-xs" style={{ color: '#D50B3E' }}>
+              <TrendingDown className="h-3.5 w-3.5 shrink-0" />
+              <span>{ui('bestProductsTrendNegative')}</span>
             </div>
           )}
         </div>
