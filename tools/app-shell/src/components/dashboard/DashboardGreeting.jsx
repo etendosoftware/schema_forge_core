@@ -25,7 +25,7 @@ export function DashboardGreeting({ username = '', onAskCopilot }) {
   const greeting = ui('dashboardGreetingHello').replace('{name}', username || '');
 
   return (
-    <div className="flex items-start justify-between gap-4 mb-2">
+    <div className="flex items-center justify-between gap-4 mb-2">
       <div className="flex items-center gap-3 min-w-0">
         <div
           style={{
@@ -48,8 +48,8 @@ export function DashboardGreeting({ username = '', onAskCopilot }) {
           </svg>
         </div>
         <div className="min-w-0">
-          <p className="text-sm text-muted-foreground leading-tight">{greeting}</p>
-          <h1 className="text-xl font-bold leading-tight truncate">{ui('dashboardGreetingHeadline')}</h1>
+          <p className="text-xs text-foreground leading-tight">{greeting}</p>
+          <h1 className="text-lg font-semibold leading-8 truncate">{ui('dashboardGreetingHeadline')}</h1>
         </div>
       </div>
 

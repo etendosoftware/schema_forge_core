@@ -142,7 +142,7 @@ function DashboardContent({ apiBaseUrl }) {
   return (
     <div className="h-full flex flex-col">
       {(loading || !isCurrencyReady) ? <DashboardSkeleton /> : (
-        <div className="p-6 bg-white rounded-tl-2xl flex-1 overflow-y-auto space-y-4">
+        <div className="p-2 bg-white rounded-tl-2xl flex-1 overflow-y-auto space-y-4">
           <DashboardGreeting username={username || ''} onAskCopilot={openCopilot} />
 
           {/* Row 1: Pending tasks | Quick access | Top clients */}
