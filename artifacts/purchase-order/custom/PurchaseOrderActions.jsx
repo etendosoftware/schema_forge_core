@@ -223,12 +223,15 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
 
 function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed }) {
   const ui      = useUI();
-  const [createReceipt, setCreateReceipt] = useState(false);
-  const [createInvoice, setCreateInvoice] = useState(false);
-  const [loading,       setLoading]       = useState(false);
-  const [error,         setError]         = useState(null);
-  const [freshData,     setFreshData]     = useState(null);
-  const [lineCount,     setLineCount]     = useState(null);
+  const [createReceipt,  setCreateReceipt]  = useState(false);
+  const [createInvoice,  setCreateInvoice]  = useState(false);
+  const [loading,        setLoading]        = useState(false);
+  const [error,          setError]          = useState(null);
+  const [freshData,      setFreshData]      = useState(null);
+  const [lineCount,      setLineCount]      = useState(null);
+  const [orderConfirmed, setOrderConfirmed] = useState(false);
+  const [receiptResult,  setReceiptResult]  = useState(null);
+  const [invoiceResult,  setInvoiceResult]  = useState(null);
 
   const orderUrl = `${apiBaseUrl}/header`;
 
@@ -267,39 +270,60 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
     if (loading) return;
     setLoading(true);
     setError(null);
-    try {
-      // Step 1: Confirm the order (always)
-      const processRes = await fetch(
-        `${orderUrl}/${orderId}/action/documentAction`,
-        { method: 'POST', headers, body: JSON.stringify({ docAction: 'CO' }) },
-      );
-      if (!processRes.ok) {
-        const e = await processRes.json().catch(() => null);
-        throw new Error(e?.response?.message || e?.message || `Error (${processRes.status})`);
+
+    // Step 1: Confirm the order — must succeed before anything else.
+    // If this fails the order is still in DR, so the rest of the flow makes no sense.
+    if (!orderConfirmed) {
+      try {
+        const processRes = await fetch(
+          `${orderUrl}/${orderId}/action/documentAction`,
+          { method: 'POST', headers, body: JSON.stringify({ docAction: 'CO' }) },
+        );
+        if (!processRes.ok) {
+          const e = await processRes.json().catch(() => null);
+          throw new Error(e?.response?.message || e?.message || `Error (${processRes.status})`);
+        }
+        setOrderConfirmed(true);
+        window.dispatchEvent(new CustomEvent('purchase-order:document-created'));
+      } catch (e) {
+        setError(e.message || ui('poErrorOccurred'));
+        setLoading(false);
+        return;
       }
-      window.dispatchEvent(new CustomEvent('purchase-order:document-created'));
+    }
 
-      const result = {};
+    // Steps 2 and 3 are independent: the invoice uses order quantities, not
+    // receipt quantities. A failure in one must NOT prevent the other from
+    // running. Errors are accumulated and shown together at the end.
+    const errors = [];
 
-      // Step 2: Create goods receipt if checked
-      if (createReceipt) {
+    // Step 2: Create goods receipt if checked and not already done
+    let currentReceipt = null;
+    if (createReceipt && !receiptResult) {
+      try {
         const res = await fetch(`${orderUrl}/${orderId}/action/createGoodsReceipt`,
           { method: 'POST', headers, body: JSON.stringify({}) });
         if (!res.ok) {
           const e = await res.json().catch(() => null);
-          throw new Error(e?.response?.message || e?.message || `Error (${res.status})`);
+          throw new Error(ui('poOrderConfirmedReceiptError') + ' ' + (e?.response?.message || e?.message || `Error (${res.status})`));
         }
         const doc = (await res.json())?.response?.data;
         const docObj = Array.isArray(doc) ? doc[0] : doc;
-        result.receipt = {
+        currentReceipt = {
           id:         docObj?.id ?? null,
           documentNo: docObj?.documentNo ?? '',
           amount:     docObj?.grandTotalAmount ?? null,
         };
+        setReceiptResult(currentReceipt);
+      } catch (e) {
+        errors.push(e.message || ui('poErrorOccurred'));
       }
+    }
 
-      // Step 3: Create purchase invoice if checked
-      if (createInvoice) {
+    // Step 3: Create purchase invoice if checked and not already done
+    let currentInvoice = null;
+    if (createInvoice && !invoiceResult) {
+      try {
         const res = await fetch(`${orderUrl}/${orderId}/action/createPurchaseInvoice`,
           { method: 'POST', headers, body: JSON.stringify({}) });
         if (!res.ok) {
@@ -308,18 +332,33 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
         }
         const doc = (await res.json())?.response?.data;
         const docObj = Array.isArray(doc) ? doc[0] : doc;
-        result.invoice = {
+        currentInvoice = {
           id:         docObj?.id ?? null,
           documentNo: docObj?.documentNo ?? '',
           amount:     docObj?.grandTotalAmount ?? null,
         };
+        setInvoiceResult(currentInvoice);
+      } catch (e) {
+        errors.push(e.message || ui('poErrorOccurred'));
       }
-
-      onConfirmed(result);
-    } catch (e) {
-      setError(e.message || ui('poErrorOccurred'));
-      setLoading(false);
     }
+
+    // If any step failed, surface all errors and keep the modal open so the
+    // user can retry. The successful steps are already locked via state, so
+    // the next attempt will skip them.
+    if (errors.length > 0) {
+      setError(errors.join('\n'));
+      setLoading(false);
+      return;
+    }
+
+    // All requested steps succeeded — close the modal with whatever was created.
+    const result = {};
+    const finalReceipt = currentReceipt ?? receiptResult;
+    const finalInvoice = currentInvoice ?? invoiceResult;
+    if (finalReceipt) result.receipt = finalReceipt;
+    if (finalInvoice) result.invoice = finalInvoice;
+    onConfirmed(result);
   };
 
   const primaryLabel = (() => {
@@ -329,8 +368,24 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
     return ui('soConfirmActionOnly');
   })();
 
+  // If the user closes the modal AFTER step 1 succeeded (or any document was
+  // already created), route the close through `onConfirmed` so the result
+  // modal opens with whatever exists and the page reloads on its own close.
+  // Otherwise the order is silently in CO state but the UI keeps showing DR,
+  // and reopening the modal would re-attempt step 1 → @AlreadyPosted@.
+  const handleClose = () => {
+    if (orderConfirmed || receiptResult || invoiceResult) {
+      const result = {};
+      if (receiptResult) result.receipt = receiptResult;
+      if (invoiceResult) result.invoice = invoiceResult;
+      onConfirmed(result);
+      return;
+    }
+    onClose();
+  };
+
   return (
-    <div onClick={onClose} style={overlayStyle}>
+    <div onClick={handleClose} style={overlayStyle}>
       <div onClick={e => e.stopPropagation()} style={{ ...cardStyle, width: 460 }}>
 
         {/* Title row */}
@@ -338,7 +393,7 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
           <div style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>
             {ui('poConfirmTitle', { number: documentNo })}
           </div>
-          <button type="button" onClick={onClose} style={closeBtn}>&times;</button>
+          <button type="button" onClick={handleClose} style={closeBtn}>&times;</button>
         </div>
 
         {/* Blue summary card */}
@@ -375,29 +430,31 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
             {ui('soGenerateDocs')}
           </div>
           <PoCheckboxCard
-            checked={createReceipt}
-            onChange={() => setCreateReceipt(v => !v)}
+            checked={createReceipt || Boolean(receiptResult)}
+            onChange={() => !receiptResult && setCreateReceipt(v => !v)}
             icon="📦"
             title={ui('poCreateReceiptTitle')}
-            subtitle={ui('poCreateReceiptCheckDesc')}
+            subtitle={receiptResult ? ui('soAlreadyCreated') : ui('poCreateReceiptCheckDesc')}
+            disabled={Boolean(receiptResult)}
           />
           <PoCheckboxCard
-            checked={createInvoice}
-            onChange={() => setCreateInvoice(v => !v)}
+            checked={createInvoice || Boolean(invoiceResult)}
+            onChange={() => !invoiceResult && setCreateInvoice(v => !v)}
             icon="🧾"
             title={ui('soCreateInvoiceTitle')}
-            subtitle={ui('poCreateInvoiceCheckDesc')}
+            subtitle={invoiceResult ? ui('soAlreadyCreated') : ui('poCreateInvoiceCheckDesc')}
+            disabled={Boolean(invoiceResult)}
           />
         </div>
 
         {error && (
-          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA' }}>
+          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA', whiteSpace: 'pre-line' }}>
             {error}
           </div>
         )}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '12px 20px', borderTop: '0.5px solid #E5E7EB' }}>
-          <button type="button" onClick={onClose} disabled={loading}
+          <button type="button" onClick={handleClose} disabled={loading}
             style={{ ...btnSecondary, opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
             {ui('cancel')}
           </button>
@@ -414,21 +471,23 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
 
 // ── PoCheckboxCard ─────────────────────────────────────────────────────────────
 
-function PoCheckboxCard({ checked, onChange, icon, title, subtitle }) {
+function PoCheckboxCard({ checked, onChange, icon, title, subtitle, disabled }) {
   return (
     <div
-      onClick={onChange}
+      onClick={disabled ? undefined : onChange}
       style={{
         display: 'flex', alignItems: 'center', gap: 12,
-        padding: checked ? '11px 13px' : '12px 14px', borderRadius: 8, cursor: 'pointer',
-        border: checked ? '2px solid #3B82F6' : '1px solid #E5E7EB',
-        background: checked ? '#EFF6FF' : '#fff',
+        padding: checked ? '11px 13px' : '12px 14px', borderRadius: 8,
+        cursor: disabled ? 'default' : 'pointer',
+        border: disabled ? '2px solid #10B981' : (checked ? '2px solid #3B82F6' : '1px solid #E5E7EB'),
+        background: disabled ? '#ECFDF5' : (checked ? '#EFF6FF' : '#fff'),
+        opacity: disabled ? 0.85 : 1,
         transition: 'border-color 0.15s, background 0.15s',
       }}
     >
       <span style={{ fontSize: 15, lineHeight: 1, flexShrink: 0 }}>{icon}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 500, color: checked ? '#2563EB' : '#111827' }}>
+        <div style={{ fontSize: 13, fontWeight: 500, color: disabled ? '#059669' : (checked ? '#2563EB' : '#111827') }}>
           {title}
         </div>
         <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 3, lineHeight: 1.4 }}>
@@ -437,12 +496,12 @@ function PoCheckboxCard({ checked, onChange, icon, title, subtitle }) {
       </div>
       <div style={{
         width: 18, height: 18, borderRadius: 4, flexShrink: 0,
-        border: checked ? 'none' : '1.5px solid #D1D5DB',
-        background: checked ? '#3B82F6' : '#fff',
+        border: (checked || disabled) ? 'none' : '1.5px solid #D1D5DB',
+        background: disabled ? '#10B981' : (checked ? '#3B82F6' : '#fff'),
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         transition: 'background 0.15s',
       }}>
-        {checked && (
+        {(checked || disabled) && (
           <svg width="11" height="9" viewBox="0 0 11 9" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="1 4 4 7.5 10 1" />
           </svg>
@@ -578,7 +637,7 @@ function CreateDocsModal({ orderId, data, base, headers, currency, derived, onCl
         </div>
 
         {error && (
-          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA' }}>
+          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA', whiteSpace: 'pre-line' }}>
             {error}
           </div>
         )}

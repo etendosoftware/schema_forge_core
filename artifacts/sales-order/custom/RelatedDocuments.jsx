@@ -55,10 +55,10 @@ function resolveStatusLabel(status, ui) {
 }
 
 async function fetchPayments(orderId, token, apiBaseUrl) {
-  const plans = await fetchChild('sales-order', 'Payment Plan', orderId, token, apiBaseUrl);
+  const plans = await fetchChild('sales-order', 'paymentPlan', orderId, token, apiBaseUrl);
   if (plans.length === 0) return [];
   const detailResults = await Promise.all(
-    plans.map(plan => fetchChild('sales-order', 'Payment Details', plan.id, token, apiBaseUrl))
+    plans.map(plan => fetchChild('sales-order', 'paymentDetails', plan.id, token, apiBaseUrl))
   );
   const paymentIds = [...new Set(
     detailResults.flat().filter(d => d.payment).map(d => d.payment)
