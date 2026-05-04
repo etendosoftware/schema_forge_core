@@ -1,8 +1,8 @@
 {
-  "version": "0.3.0",
+  "version": "0.4.0",
   "generatedAt": "2026-04-29T19:04:26.206Z",
-  "updatedAt": "2026-05-04T17:52:03.088Z",
-  "checksum": "071c1b2df9258dd6",
+  "updatedAt": "2026-05-04T18:01:54.953Z",
+  "checksum": "58ce53c42c51598c",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -140,7 +140,7 @@
             "type": "string",
             "tsType": "string",
             "visibility": "editable",
-            "required": false,
+            "required": true,
             "grid": false,
             "form": false,
             "sourceRequired": true,
@@ -3869,7 +3869,7 @@
             "column": "Value",
             "type": "string",
             "visibility": "editable",
-            "required": false
+            "required": true
           },
           {
             "name": "name",

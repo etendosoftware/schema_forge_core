@@ -167,7 +167,6 @@
           "visibility": "editable",
           "form": false,
           "grid": false,
-          "required": false,
           "section": "principal",
           "order": 1
         },
