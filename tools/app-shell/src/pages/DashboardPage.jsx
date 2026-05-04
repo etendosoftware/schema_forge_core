@@ -152,6 +152,10 @@ function DashboardContent({ apiBaseUrl }) {
           {/* Fixed header — always visible */}
           <div
             className="px-2 pt-2 pb-0 flex-shrink-0"
+            style={{
+              borderBottom: scrolled ? '1px solid #E8EAEF' : '1px solid transparent',
+              transition: 'border-color 0.2s ease',
+            }}
           >
             <DashboardGreeting username={username || ''} onAskCopilot={openCopilot} />
           </div>
@@ -161,7 +165,6 @@ function DashboardContent({ apiBaseUrl }) {
             ref={scrollRef}
             onScroll={handleScroll}
             className="dashboard-scroll px-2 pb-2 flex-1 overflow-y-auto space-y-4"
-            style={{ boxShadow: scrolled ? 'inset 0 8px 8px -8px rgba(18, 18, 23, 0.12)' : 'none', transition: 'box-shadow 0.2s ease' }}
           >
 
           {/* Row 1: Pending tasks | Quick access | Top clients */}
