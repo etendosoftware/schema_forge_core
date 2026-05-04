@@ -757,7 +757,16 @@ export default function OnboardingPage() {
         statusLabel: ui('loading'),
         success: false,
       }
-      : activeSetupStep === 'organization' || activeSetupStep === 'finalize'
+      : activeSetupStep === 'sequences'
+        ? {
+          progress: 80,
+          title: ui('onboardingPreparingTitle'),
+          description: ui('onboardingPreparingSequencesDescription'),
+          leading: <Settings className="h-8 w-8 text-slate-400" />,
+          statusLabel: ui('loading'),
+          success: false,
+        }
+        : activeSetupStep === 'organization' || activeSetupStep === 'finalize'
         ? {
           progress: 80,
           title: ui('onboardingPreparingTitle'),

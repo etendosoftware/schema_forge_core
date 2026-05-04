@@ -17392,6 +17392,7 @@
     "onboardingPreparingTitle": "We are preparing your workspace",
     "onboardingPreparingActivatingDescription": "Activating your modules...",
     "onboardingPreparingFinishingDescription": "Finishing the setup...",
+    "onboardingPreparingSequencesDescription": "Generating organization sequences...",
     "onboardingPreparingTaxesDescription": "Configuring taxes for your country...",
     "onboardingReadinessFailed": "The environment was created, but it is not ready for invoicing yet: {reasons}",
     "onboardingReadinessSession": "The ERP session is not ready.",

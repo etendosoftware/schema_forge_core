@@ -37,6 +37,8 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
   - Register/login calls the `/sws/go/register` or `/sws/go/login` endpoints.
   - After platform auth, the page fetches `/sws/go/environments`.
   - If at least one environment exists, it auto-enters the first one, stores `sf_auth_token`, user, role, and org context, clears caches, and redirects to `/dashboard`.
+  - During new-environment creation, the onboarding backend runs the sequence generator for the selected organization using the new client's admin user/role context, seeds a default customer programmatically, and only then returns success; the page then logs in, checks Sales Invoice readiness, and redirects.
+  - The curated onboarding dataset skips business partner rows and locations while still importing shared setup catalogs such as BP groups, payment terms, and accounting foundations.
   - If no environments exist, the page switches to the environment creation flow.
 - **Failure or edge behavior:**
   - An invalid stored platform token is removed and the page falls back to the register view.
@@ -45,6 +47,7 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
 - **Automated evidence:**
   - `tools/app-shell/test/pwa.test.js` verifies that `OnboardingPage.jsx` clears caches on environment login.
   - Route protection and onboarding branching are code-backed in `tools/app-shell/src/App.jsx` and `tools/app-shell/src/pages/OnboardingPage.jsx`, but are not covered by a full browser test.
+  - `etendo_core/modules/com.etendoerp.go/src-test/src/com/etendoerp/go/onboarding/OnboardingDefaultCustomerServiceTest.java` verifies the default customer seed behavior, and `EtendoGoJwtServletOnboardingDatasetTest.java` verifies the seed runs after sequence generation and fails honestly if customer creation fails.
 - **Manual verification path:**
   1. Open `/onboarding` with no `sf_platform_token` or `sf_auth_token` in `localStorage`.
   2. Complete register or login.
