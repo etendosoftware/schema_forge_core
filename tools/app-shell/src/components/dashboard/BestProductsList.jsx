@@ -386,19 +386,55 @@ export function BestProductsList({ sellers = [], products = [], currencyLabel = 
                 >
                   <TrendPill pct={row.trendPct ?? null} />
                 </div>
-                <span
+                <div
                   style={{
-                    fontSize: '12px',
-                    fontWeight: 400,
-                    lineHeight: '24px',
-                    color: '#6C6C89',
-                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'flex-start',
+                    padding: '0px 8px 0px 0px',
+                    height: '24px',
                     flexShrink: 0,
                   }}
                 >
-                  {value}
-                </span>
-                <ChevronRight style={{ width: '16px', height: '16px', color: '#C4C9D4', flexShrink: 0, marginLeft: '4px' }} />
+                  <div
+                    style={{
+                      boxSizing: 'border-box',
+                      display: 'flex',
+                      flexDirection: 'row',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      padding: '0px 8px',
+                      height: '24px',
+                      border: '1px solid #D1D4DB',
+                      borderRadius: '360px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: '12px',
+                        fontWeight: 400,
+                        lineHeight: '24px',
+                        color: '#6C6C89',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {value}
+                    </span>
+                  </div>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'flex-start',
+                    padding: '0px 4px 0px 0px',
+                    width: '28px',
+                    height: '24px',
+                    flexShrink: 0,
+                  }}
+                >
+                  <ChevronRight style={{ width: '16px', height: '16px', color: '#828FA3' }} />
+                </div>
               </div>
             );
           })
