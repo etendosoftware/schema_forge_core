@@ -1,8 +1,8 @@
 {
   "version": "0.18.0",
   "generatedAt": "2026-04-30T15:42:46.497Z",
-  "updatedAt": "2026-04-30T17:19:38.035Z",
-  "checksum": "638a7dd31fed1d9f",
+  "updatedAt": "2026-05-04T16:16:54.708Z",
+  "checksum": "4b5df648881f2661",
   "frontendContract": {
     "window": {
       "id": "181",
@@ -3763,14 +3763,6 @@
             "required": true
           },
           {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
             "name": "organization",
             "apiKey": "organization",
             "column": "AD_Org_ID",
@@ -3782,6 +3774,14 @@
             "name": "salesOrder",
             "apiKey": "salesOrder",
             "column": "C_Order_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": true
@@ -3898,20 +3898,20 @@
             "required": false
           },
           {
-            "name": "id",
-            "apiKey": "id",
-            "column": "M_Reservation_Stock_ID",
-            "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
             "name": "salesOrderLine",
             "apiKey": "salesOrderLine",
             "column": "C_Orderline_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": false
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
           },
           {
             "name": "active",
@@ -3922,17 +3922,17 @@
             "required": true
           },
           {
-            "name": "organization",
-            "apiKey": "organization",
-            "column": "AD_Org_ID",
-            "type": "foreignKey",
+            "name": "id",
+            "apiKey": "id",
+            "column": "M_Reservation_Stock_ID",
+            "type": "id",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": true
@@ -4105,12 +4105,12 @@
             "required": true
           },
           {
-            "name": "finPaymentDetailVID",
-            "apiKey": "finPaymentDetailVID",
-            "column": "Fin_Payment_Detail_V_ID",
-            "type": "id",
+            "name": "invoiceAmount",
+            "apiKey": "invoiceAmount",
+            "column": "Invoicedamt",
+            "type": "amount",
             "visibility": "system",
-            "required": true
+            "required": false
           },
           {
             "name": "orderPaymentPlan",
@@ -4121,20 +4121,20 @@
             "required": false
           },
           {
-            "name": "invoiceAmount",
-            "apiKey": "invoiceAmount",
-            "column": "Invoicedamt",
-            "type": "amount",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
+            "name": "finPaymentDetailVID",
+            "apiKey": "finPaymentDetailVID",
+            "column": "Fin_Payment_Detail_V_ID",
+            "type": "id",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "orderno",
+            "apiKey": "orderno",
+            "column": "Orderno",
+            "type": "string",
+            "visibility": "system",
+            "required": false
           },
           {
             "name": "invoiceno",
@@ -4161,12 +4161,12 @@
             "required": true
           },
           {
-            "name": "orderno",
-            "apiKey": "orderno",
-            "column": "Orderno",
-            "type": "string",
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
             "visibility": "system",
-            "required": false
+            "required": true
           },
           {
             "name": "organization",
@@ -8327,25 +8327,25 @@
         "id": "t-416",
         "category": "system-field",
         "entity": "lineTax",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for lineTax"
-      },
-      {
-        "id": "t-417",
-        "category": "system-field",
-        "entity": "lineTax",
         "field": "organization",
         "runner": "node",
         "description": "System field 'organization' should exist in backend but not frontend for lineTax"
       },
       {
-        "id": "t-418",
+        "id": "t-417",
         "category": "system-field",
         "entity": "lineTax",
         "field": "salesOrder",
         "runner": "node",
         "description": "System field 'salesOrder' should exist in backend but not frontend for lineTax"
+      },
+      {
+        "id": "t-418",
+        "category": "system-field",
+        "entity": "lineTax",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for lineTax"
       },
       {
         "id": "t-419",
@@ -8399,17 +8399,17 @@
         "id": "t-425",
         "category": "system-field",
         "entity": "reservedStock",
-        "field": "id",
+        "field": "salesOrderLine",
         "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for reservedStock"
+        "description": "System field 'salesOrderLine' should exist in backend but not frontend for reservedStock"
       },
       {
         "id": "t-426",
         "category": "system-field",
         "entity": "reservedStock",
-        "field": "salesOrderLine",
+        "field": "client",
         "runner": "node",
-        "description": "System field 'salesOrderLine' should exist in backend but not frontend for reservedStock"
+        "description": "System field 'client' should exist in backend but not frontend for reservedStock"
       },
       {
         "id": "t-427",
@@ -8423,17 +8423,17 @@
         "id": "t-428",
         "category": "system-field",
         "entity": "reservedStock",
-        "field": "organization",
+        "field": "id",
         "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for reservedStock"
+        "description": "System field 'id' should exist in backend but not frontend for reservedStock"
       },
       {
         "id": "t-429",
         "category": "system-field",
         "entity": "reservedStock",
-        "field": "client",
+        "field": "organization",
         "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for reservedStock"
+        "description": "System field 'organization' should exist in backend but not frontend for reservedStock"
       },
       {
         "id": "t-430",
@@ -8495,9 +8495,9 @@
         "id": "t-437",
         "category": "system-field",
         "entity": "paymentDetails",
-        "field": "finPaymentDetailVID",
+        "field": "invoiceAmount",
         "runner": "node",
-        "description": "System field 'finPaymentDetailVID' should exist in backend but not frontend for paymentDetails"
+        "description": "System field 'invoiceAmount' should exist in backend but not frontend for paymentDetails"
       },
       {
         "id": "t-438",
@@ -8511,17 +8511,17 @@
         "id": "t-439",
         "category": "system-field",
         "entity": "paymentDetails",
-        "field": "invoiceAmount",
+        "field": "finPaymentDetailVID",
         "runner": "node",
-        "description": "System field 'invoiceAmount' should exist in backend but not frontend for paymentDetails"
+        "description": "System field 'finPaymentDetailVID' should exist in backend but not frontend for paymentDetails"
       },
       {
         "id": "t-440",
         "category": "system-field",
         "entity": "paymentDetails",
-        "field": "client",
+        "field": "orderno",
         "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for paymentDetails"
+        "description": "System field 'orderno' should exist in backend but not frontend for paymentDetails"
       },
       {
         "id": "t-441",
@@ -8551,9 +8551,9 @@
         "id": "t-444",
         "category": "system-field",
         "entity": "paymentDetails",
-        "field": "orderno",
+        "field": "client",
         "runner": "node",
-        "description": "System field 'orderno' should exist in backend but not frontend for paymentDetails"
+        "description": "System field 'client' should exist in backend but not frontend for paymentDetails"
       },
       {
         "id": "t-445",
@@ -8798,58 +8798,58 @@
       {
         "id": "t-477",
         "category": "rule-declared",
-        "rule": "SE_Order_BPartner_C_BPartner_ID",
-        "runner": "node",
-        "description": "Rule 'SE_Order_BPartner_C_BPartner_ID' (callout) should be declared"
-      },
-      {
-        "id": "t-478",
-        "category": "rule-declared",
-        "rule": "SE_Order_BPartnerLocation_C_BPartner_Location_ID",
-        "runner": "node",
-        "description": "Rule 'SE_Order_BPartnerLocation_C_BPartner_Location_ID' (callout) should be declared"
-      },
-      {
-        "id": "t-479",
-        "category": "rule-declared",
         "rule": "SE_Order_Organization_AD_Org_ID",
         "runner": "node",
         "description": "Rule 'SE_Order_Organization_AD_Org_ID' (callout) should be declared"
       },
       {
-        "id": "t-480",
+        "id": "t-478",
         "category": "rule-declared",
         "rule": "SL_Order_DocType_C_DocTypeTarget_ID",
         "runner": "node",
         "description": "Rule 'SL_Order_DocType_C_DocTypeTarget_ID' (callout) should be declared"
       },
       {
-        "id": "t-481",
+        "id": "t-479",
         "category": "rule-declared",
         "rule": "SL_Order_UpdateLinesDate_DateOrdered",
         "runner": "node",
         "description": "Rule 'SL_Order_UpdateLinesDate_DateOrdered' (callout) should be declared"
       },
       {
-        "id": "t-482",
+        "id": "t-480",
         "category": "rule-declared",
         "rule": "SL_Order_UpdateLinesDate_DatePromised",
         "runner": "node",
         "description": "Rule 'SL_Order_UpdateLinesDate_DatePromised' (callout) should be declared"
       },
       {
-        "id": "t-483",
+        "id": "t-481",
         "category": "rule-declared",
         "rule": "SL_Order_PriceList_M_PriceList_ID",
         "runner": "node",
         "description": "Rule 'SL_Order_PriceList_M_PriceList_ID' (callout) should be declared"
       },
       {
-        "id": "t-484",
+        "id": "t-482",
+        "category": "rule-declared",
+        "rule": "SE_Order_BPartner_C_BPartner_ID",
+        "runner": "node",
+        "description": "Rule 'SE_Order_BPartner_C_BPartner_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-483",
         "category": "rule-declared",
         "rule": "SL_Charge_C_Charge_ID",
         "runner": "node",
         "description": "Rule 'SL_Charge_C_Charge_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-484",
+        "category": "rule-declared",
+        "rule": "SE_Order_BPartnerLocation_C_BPartner_Location_ID",
+        "runner": "node",
+        "description": "Rule 'SE_Order_BPartnerLocation_C_BPartner_Location_ID' (callout) should be declared"
       },
       {
         "id": "t-485",

@@ -1,7 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T18:11:17.025Z",
-  "checksum": "f6a2f55b926c9fc2",
+  "updatedAt": "2026-05-04T16:17:07.804Z",
+  "checksum": "31d22c214cb89545",
   "frontendContract": {
     "window": {
       "id": "273673D2ED914C399A6C51DB758BE0F9",
@@ -806,20 +807,20 @@
             "required": true
           },
           {
-            "name": "mConditionGoodsID",
-            "apiKey": "mConditionGoodsID",
-            "column": "M_Condition_Goods_ID",
-            "type": "foreignKey",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
             "name": "documentNo",
             "apiKey": "documentNo",
             "column": "DocumentNo",
             "type": "string",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "mConditionGoodsID",
+            "apiKey": "mConditionGoodsID",
+            "column": "M_Condition_Goods_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
           },
           {
             "name": "orderReference",
@@ -3031,17 +3032,17 @@
         "id": "t-136",
         "category": "system-field",
         "entity": "header",
-        "field": "mConditionGoodsID",
+        "field": "documentNo",
         "runner": "node",
-        "description": "System field 'mConditionGoodsID' should exist in backend but not frontend for header"
+        "description": "System field 'documentNo' should exist in backend but not frontend for header"
       },
       {
         "id": "t-137",
         "category": "system-field",
         "entity": "header",
-        "field": "documentNo",
+        "field": "mConditionGoodsID",
         "runner": "node",
-        "description": "System field 'documentNo' should exist in backend but not frontend for header"
+        "description": "System field 'mConditionGoodsID' should exist in backend but not frontend for header"
       },
       {
         "id": "t-138",

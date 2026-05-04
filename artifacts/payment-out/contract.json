@@ -1,7 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T18:11:46.137Z",
-  "checksum": "ebafeaf1b11a5c81",
+  "updatedAt": "2026-05-04T16:17:27.929Z",
+  "checksum": "71de9f118a82504d",
   "frontendContract": {
     "window": {
       "id": "6F8F913FA60F4CBD93DC1D3AA696E76E",
@@ -2695,18 +2696,18 @@
             "required": true
           },
           {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
             "name": "id",
             "apiKey": "id",
             "column": "FIN_Payment_Credit_ID",
             "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
@@ -6340,17 +6341,17 @@
         "id": "t-317",
         "category": "system-field",
         "entity": "usedCreditSource",
-        "field": "client",
+        "field": "id",
         "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for usedCreditSource"
+        "description": "System field 'id' should exist in backend but not frontend for usedCreditSource"
       },
       {
         "id": "t-318",
         "category": "system-field",
         "entity": "usedCreditSource",
-        "field": "id",
+        "field": "client",
         "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for usedCreditSource"
+        "description": "System field 'client' should exist in backend but not frontend for usedCreditSource"
       },
       {
         "id": "t-319",

@@ -177,14 +177,6 @@ export const api = {
     },
     {
       "entity": "goodsShipment",
-      "field": "sendMaterials",
-      "column": "RM_Shipment_Pickedit",
-      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/sendMaterials",
-      "processId": "4AD70293357245AB96E59C2CDB43A35D",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "goodsShipment",
       "field": "updateLines",
       "column": "UpdateLines",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/updateLines",
@@ -197,6 +189,14 @@ export const api = {
       "column": "RM_Receipt_PickEdit",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/receiveMaterials",
       "processId": "5E9F9D7EECC24E4FBB2C60840FF613BE",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "goodsShipment",
+      "field": "sendMaterials",
+      "column": "RM_Shipment_Pickedit",
+      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/sendMaterials",
+      "processId": "4AD70293357245AB96E59C2CDB43A35D",
       "processType": "obuiapp"
     },
     {

@@ -1,7 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T19:05:52.312Z",
-  "checksum": "5b1ab28d7d8afb26",
+  "updatedAt": "2026-05-04T16:17:25.350Z",
+  "checksum": "e7c4eae0840fd6ca",
   "frontendContract": {
     "window": {
       "id": "E547CE89D4C04429B6340FFA44E70716",
@@ -763,34 +764,10 @@
             "required": false
           },
           {
-            "name": "active",
-            "apiKey": "active",
-            "column": "Isactive",
-            "type": "boolean",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
-            "name": "receipt",
-            "apiKey": "receipt",
-            "column": "Isreceipt",
-            "type": "boolean",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "processed",
-            "apiKey": "processed",
-            "column": "Processed",
-            "type": "boolean",
+            "name": "payment",
+            "apiKey": "payment",
+            "column": "Fin_Payment_ID",
+            "type": "id",
             "visibility": "system",
             "required": true
           },
@@ -803,6 +780,14 @@
             "required": false
           },
           {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
             "name": "processNow",
             "apiKey": "processNow",
             "column": "Processing",
@@ -811,12 +796,28 @@
             "required": true
           },
           {
-            "name": "payment",
-            "apiKey": "payment",
-            "column": "Fin_Payment_ID",
-            "type": "id",
+            "name": "processed",
+            "apiKey": "processed",
+            "column": "Processed",
+            "type": "boolean",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "receipt",
+            "apiKey": "receipt",
+            "column": "Isreceipt",
+            "type": "boolean",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "Isactive",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": false
           },
           {
             "name": "creationDate",
@@ -1956,17 +1957,17 @@
         "id": "t-74",
         "category": "system-field",
         "entity": "finPayment",
-        "field": "active",
+        "field": "payment",
         "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for finPayment"
+        "description": "System field 'payment' should exist in backend but not frontend for finPayment"
       },
       {
         "id": "t-75",
         "category": "system-field",
         "entity": "finPayment",
-        "field": "receipt",
+        "field": "aPRMReconcilePayment",
         "runner": "node",
-        "description": "System field 'receipt' should exist in backend but not frontend for finPayment"
+        "description": "System field 'aPRMReconcilePayment' should exist in backend but not frontend for finPayment"
       },
       {
         "id": "t-76",
@@ -1980,33 +1981,33 @@
         "id": "t-77",
         "category": "system-field",
         "entity": "finPayment",
-        "field": "processed",
-        "runner": "node",
-        "description": "System field 'processed' should exist in backend but not frontend for finPayment"
-      },
-      {
-        "id": "t-78",
-        "category": "system-field",
-        "entity": "finPayment",
-        "field": "aPRMReconcilePayment",
-        "runner": "node",
-        "description": "System field 'aPRMReconcilePayment' should exist in backend but not frontend for finPayment"
-      },
-      {
-        "id": "t-79",
-        "category": "system-field",
-        "entity": "finPayment",
         "field": "processNow",
         "runner": "node",
         "description": "System field 'processNow' should exist in backend but not frontend for finPayment"
       },
       {
+        "id": "t-78",
+        "category": "system-field",
+        "entity": "finPayment",
+        "field": "processed",
+        "runner": "node",
+        "description": "System field 'processed' should exist in backend but not frontend for finPayment"
+      },
+      {
+        "id": "t-79",
+        "category": "system-field",
+        "entity": "finPayment",
+        "field": "receipt",
+        "runner": "node",
+        "description": "System field 'receipt' should exist in backend but not frontend for finPayment"
+      },
+      {
         "id": "t-80",
         "category": "system-field",
         "entity": "finPayment",
-        "field": "payment",
+        "field": "active",
         "runner": "node",
-        "description": "System field 'payment' should exist in backend but not frontend for finPayment"
+        "description": "System field 'active' should exist in backend but not frontend for finPayment"
       },
       {
         "id": "t-81",

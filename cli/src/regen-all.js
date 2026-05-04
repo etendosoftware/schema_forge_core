@@ -44,13 +44,23 @@ function parseArgs(argv) {
 async function getActiveWindows() {
   const menu = JSON.parse(await readFile(MENU_PATH, 'utf8'));
   const windows = [];
+  const skipped = [];
   for (const group of menu.menu) {
     if (group.hidden) continue;
     for (const item of group.items || []) {
       if (item.hidden) continue;
       if (!item.windowId) continue;
-      windows.push({ name: item.name, windowId: item.windowId });
+      const decisionsPath = join(ARTIFACTS, item.name, 'decisions.json');
+      try {
+        await access(decisionsPath);
+        windows.push({ name: item.name, windowId: item.windowId });
+      } catch {
+        skipped.push(item.name);
+      }
     }
+  }
+  if (skipped.length > 0) {
+    console.log(`Skipping ${skipped.length} window(s) without decisions.json: ${skipped.join(', ')}`);
   }
   return windows;
 }

@@ -1,7 +1,8 @@
 {
   "version": "0.6.0",
   "generatedAt": "2026-04-29T19:04:55.657Z",
-  "checksum": "a00e75d791a39aee",
+  "updatedAt": "2026-05-04T16:16:42.525Z",
+  "checksum": "28c9bb1110a57073",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -493,20 +494,20 @@
             "required": true
           },
           {
-            "name": "mConditionGoodsID",
-            "apiKey": "mConditionGoodsID",
-            "column": "M_Condition_Goods_ID",
-            "type": "foreignKey",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
             "name": "documentNo",
             "apiKey": "documentNo",
             "column": "DocumentNo",
             "type": "string",
             "visibility": "readOnly",
             "required": true
+          },
+          {
+            "name": "mConditionGoodsID",
+            "apiKey": "mConditionGoodsID",
+            "column": "M_Condition_Goods_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
           },
           {
             "name": "warehouse",
@@ -605,19 +606,19 @@
             "required": false
           },
           {
-            "name": "externalBusinessPartnerReference",
-            "apiKey": "externalBusinessPartnerReference",
-            "column": "Bpartner_Extref",
-            "type": "string",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
             "name": "orderDate",
             "apiKey": "orderDate",
             "column": "DateOrdered",
             "type": "date",
             "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "externalBusinessPartnerReference",
+            "apiKey": "externalBusinessPartnerReference",
+            "column": "Bpartner_Extref",
+            "type": "string",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -949,14 +950,6 @@
             "required": false
           },
           {
-            "name": "sendMaterials",
-            "apiKey": "sendMaterials",
-            "column": "RM_Shipment_Pickedit",
-            "type": "button",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
             "name": "updateLines",
             "apiKey": "updateLines",
             "column": "UpdateLines",
@@ -976,6 +969,14 @@
             "name": "receiveMaterials",
             "apiKey": "receiveMaterials",
             "column": "RM_Receipt_PickEdit",
+            "type": "button",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "sendMaterials",
+            "apiKey": "sendMaterials",
+            "column": "RM_Shipment_Pickedit",
             "type": "button",
             "visibility": "discarded",
             "required": false
@@ -1506,14 +1507,6 @@
       },
       {
         "entity": "goodsShipment",
-        "field": "sendMaterials",
-        "column": "RM_Shipment_Pickedit",
-        "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/sendMaterials",
-        "processId": "4AD70293357245AB96E59C2CDB43A35D",
-        "processType": "obuiapp"
-      },
-      {
-        "entity": "goodsShipment",
         "field": "updateLines",
         "column": "UpdateLines",
         "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/updateLines",
@@ -1526,6 +1519,14 @@
         "column": "RM_Receipt_PickEdit",
         "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/receiveMaterials",
         "processId": "5E9F9D7EECC24E4FBB2C60840FF613BE",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "goodsShipment",
+        "field": "sendMaterials",
+        "column": "RM_Shipment_Pickedit",
+        "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/sendMaterials",
+        "processId": "4AD70293357245AB96E59C2CDB43A35D",
         "processType": "obuiapp"
       },
       {
@@ -2086,17 +2087,17 @@
         "id": "t-66",
         "category": "system-field",
         "entity": "goodsShipment",
-        "field": "externalBusinessPartnerReference",
+        "field": "orderDate",
         "runner": "node",
-        "description": "System field 'externalBusinessPartnerReference' should exist in backend but not frontend for goodsShipment"
+        "description": "System field 'orderDate' should exist in backend but not frontend for goodsShipment"
       },
       {
         "id": "t-67",
         "category": "system-field",
         "entity": "goodsShipment",
-        "field": "orderDate",
+        "field": "externalBusinessPartnerReference",
         "runner": "node",
-        "description": "System field 'orderDate' should exist in backend but not frontend for goodsShipment"
+        "description": "System field 'externalBusinessPartnerReference' should exist in backend but not frontend for goodsShipment"
       },
       {
         "id": "t-68",
@@ -2414,20 +2415,12 @@
         "id": "t-107",
         "category": "system-field",
         "entity": "goodsShipment",
-        "field": "sendMaterials",
-        "runner": "node",
-        "description": "System field 'sendMaterials' should exist in backend but not frontend for goodsShipment"
-      },
-      {
-        "id": "t-108",
-        "category": "system-field",
-        "entity": "goodsShipment",
         "field": "updateLines",
         "runner": "node",
         "description": "System field 'updateLines' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-109",
+        "id": "t-108",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "logistic",
@@ -2435,12 +2428,20 @@
         "description": "System field 'logistic' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-110",
+        "id": "t-109",
         "category": "system-field",
         "entity": "goodsShipment",
         "field": "receiveMaterials",
         "runner": "node",
         "description": "System field 'receiveMaterials' should exist in backend but not frontend for goodsShipment"
+      },
+      {
+        "id": "t-110",
+        "category": "system-field",
+        "entity": "goodsShipment",
+        "field": "sendMaterials",
+        "runner": "node",
+        "description": "System field 'sendMaterials' should exist in backend but not frontend for goodsShipment"
       },
       {
         "id": "t-111",
@@ -2857,25 +2858,25 @@
         "id": "t-163",
         "category": "action-endpoint",
         "entity": "goodsShipment",
-        "field": "sendMaterials",
-        "runner": "node",
-        "description": "Action endpoint for 'sendMaterials' in goodsShipment should exist"
-      },
-      {
-        "id": "t-164",
-        "category": "action-endpoint",
-        "entity": "goodsShipment",
         "field": "updateLines",
         "runner": "node",
         "description": "Action endpoint for 'updateLines' in goodsShipment should exist"
       },
       {
-        "id": "t-165",
+        "id": "t-164",
         "category": "action-endpoint",
         "entity": "goodsShipment",
         "field": "receiveMaterials",
         "runner": "node",
         "description": "Action endpoint for 'receiveMaterials' in goodsShipment should exist"
+      },
+      {
+        "id": "t-165",
+        "category": "action-endpoint",
+        "entity": "goodsShipment",
+        "field": "sendMaterials",
+        "runner": "node",
+        "description": "Action endpoint for 'sendMaterials' in goodsShipment should exist"
       },
       {
         "id": "t-166",

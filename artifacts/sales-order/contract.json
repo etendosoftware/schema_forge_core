@@ -914,14 +914,6 @@
             "required": true
           },
           {
-            "name": "rMPickFromShipment",
-            "apiKey": "rMPickFromShipment",
-            "column": "RM_PickFromShipment",
-            "type": "button",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
             "name": "partnerAddress",
             "apiKey": "partnerAddress",
             "column": "C_BPartner_Location_ID",
@@ -930,11 +922,27 @@
             "required": true
           },
           {
+            "name": "rMPickFromShipment",
+            "apiKey": "rMPickFromShipment",
+            "column": "RM_PickFromShipment",
+            "type": "button",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
             "name": "priceList",
             "apiKey": "priceList",
             "column": "M_PriceList_ID",
             "type": "foreignKey",
             "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "scheduledDeliveryDate",
+            "apiKey": "scheduledDeliveryDate",
+            "column": "DatePromised",
+            "type": "date",
+            "visibility": "discarded",
             "required": true
           },
           {
@@ -946,12 +954,12 @@
             "required": false
           },
           {
-            "name": "scheduledDeliveryDate",
-            "apiKey": "scheduledDeliveryDate",
-            "column": "DatePromised",
-            "type": "date",
-            "visibility": "discarded",
-            "required": true
+            "name": "paymentMethod",
+            "apiKey": "paymentMethod",
+            "column": "FIN_Paymentmethod_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
           },
           {
             "name": "rMCreateInvoice",
@@ -959,14 +967,6 @@
             "column": "RM_CreateInvoice",
             "type": "button",
             "visibility": "discarded",
-            "required": false
-          },
-          {
-            "name": "paymentMethod",
-            "apiKey": "paymentMethod",
-            "column": "FIN_Paymentmethod_ID",
-            "type": "foreignKey",
-            "visibility": "editable",
             "required": false
           },
           {
@@ -1240,14 +1240,6 @@
             "type": "boolean",
             "visibility": "discarded",
             "required": true
-          },
-          {
-            "name": "invoiceStatus",
-            "apiKey": "invoiceStatus",
-            "column": "InvoiceStatus",
-            "type": "integer",
-            "visibility": "readOnly",
-            "required": false
           },
           {
             "name": "calculatePromotions",
@@ -3479,17 +3471,17 @@
         "id": "t-105",
         "category": "system-field",
         "entity": "header",
-        "field": "rMReceiveMaterials",
+        "field": "scheduledDeliveryDate",
         "runner": "node",
-        "description": "System field 'rMReceiveMaterials' should exist in backend but not frontend for header"
+        "description": "System field 'scheduledDeliveryDate' should exist in backend but not frontend for header"
       },
       {
         "id": "t-106",
         "category": "system-field",
         "entity": "header",
-        "field": "scheduledDeliveryDate",
+        "field": "rMReceiveMaterials",
         "runner": "node",
-        "description": "System field 'scheduledDeliveryDate' should exist in backend but not frontend for header"
+        "description": "System field 'rMReceiveMaterials' should exist in backend but not frontend for header"
       },
       {
         "id": "t-107",
@@ -3946,6 +3938,54 @@
         "field": "formOfPayment",
         "runner": "node",
         "description": "System field 'formOfPayment' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-158",
+        "category": "system-field",
+        "entity": "header",
+        "field": "dropShipLocation",
+        "runner": "node",
+        "description": "System field 'dropShipLocation' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-159",
+        "category": "system-field",
+        "entity": "header",
+        "field": "selfService",
+        "runner": "node",
+        "description": "System field 'selfService' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-160",
+        "category": "system-field",
+        "entity": "header",
+        "field": "generateTemplate",
+        "runner": "node",
+        "description": "System field 'generateTemplate' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-161",
+        "category": "system-field",
+        "entity": "header",
+        "field": "dropShipContact",
+        "runner": "node",
+        "description": "System field 'dropShipContact' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-162",
+        "category": "system-field",
+        "entity": "header",
+        "field": "deliveryNotes",
+        "runner": "node",
+        "description": "System field 'deliveryNotes' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-163",
+        "category": "system-field",
+        "entity": "header",
+        "field": "incoterms",
+        "runner": "node",
+        "description": "System field 'incoterms' should exist in backend but not frontend for header"
       },
       {
         "id": "t-164",
