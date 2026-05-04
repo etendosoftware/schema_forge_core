@@ -18,6 +18,26 @@ function buildSelectPlaceholder(ui, label) {
   return `${ui('selectLabelPrefix')} ${label}...`;
 }
 
+function evalReadOnlyLogic(field, data) {
+  if (typeof field?.readOnlyLogic !== 'function') return false;
+  try {
+    return !!field.readOnlyLogic(data ?? {});
+  } catch (err) {
+    console.error(`[readOnlyLogic] field='${field.key}' threw:`, err, '| record:', data);
+    return false;
+  }
+}
+
+function evalDisplayLogic(field, data) {
+  if (typeof field?.displayLogic !== 'function') return true;
+  try {
+    return !!field.displayLogic(data ?? {});
+  } catch (err) {
+    console.error(`[displayLogic] field='${field.key}' threw:`, err, '| record:', data);
+    return true;
+  }
+}
+
 function buildSearchPlaceholder(ui, label) {
   return `${ui('searchLabelPrefix')} ${label}...`;
 }
@@ -445,9 +465,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   // Apply function-based displayLogic evaluated client-side against current data.
   // This mirrors the readOnlyLogic pattern and handles fields like customer/vendor
   // tabs where visibility depends on a sibling checkbox value (no server round-trip needed).
-  displayFields = displayFields.filter(f =>
-    typeof f.displayLogic !== 'function' || !!f.displayLogic(data ?? {})
-  );
+  displayFields = displayFields.filter(f => evalDisplayLogic(f, data));
 
   if (displayFields.length === 0) return null;
 
@@ -469,7 +487,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     const isReadOnly = formReadOnly
       || f.readOnly
       || displayLogic?.readOnly?.[f.key] === true
-      || (typeof f.readOnlyLogic === 'function' && !!f.readOnlyLogic(data ?? {}));
+      || evalReadOnlyLogic(f, data);
     const rawDisplayValue = resolveIdentifier(data, f.key) ?? data?.[f.key] ?? '';
     // Strip floating-point noise (e.g. 243.20999999999998 → 243.21) for read-only number fields.
     // toFixed(10) preserves up to 10 significant decimal places while eliminating IEEE 754 drift.
@@ -486,26 +504,30 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       </div>
     );
     if (f.type === 'checkbox') {
+      // YESNO fields can arrive as boolean true, 'Y', 'true' (checked) or false/'N'/'false'/null/undefined (unchecked).
+      // Plain `!!value` is wrong because `!!'N'` === true.
+      const isCheckedYN = (v) => v === true || v === 'Y' || v === 'true';
+      const checked = isCheckedYN(data?.[f.key]);
       return (
         <div key={f.key} className="flex items-center gap-2 pt-6">
           <button
             type="button"
             role="checkbox"
-            aria-checked={!!data?.[f.key]}
+            aria-checked={checked}
             disabled={isReadOnly}
             id={f.key}
             data-testid={`field-${f.key}`}
-            onClick={() => !isReadOnly && onChange?.(f.key, !data?.[f.key], f.column)}
+            onClick={() => !isReadOnly && onChange?.(f.key, !checked, f.column)}
             className={[
               'peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow',
               'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
               'disabled:cursor-not-allowed disabled:opacity-50',
-              !!data?.[f.key]
+              checked
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-transparent',
             ].join(' ')}
           >
-            {!!data?.[f.key] && (
+            {checked && (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -811,7 +833,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     const imgReadOnly = formReadOnly
       || imageField.readOnly
       || displayLogic?.readOnly?.[imageField.key] === true
-      || (typeof imageField.readOnlyLogic === 'function' && !!imageField.readOnlyLogic(data ?? {}));
+      || evalReadOnlyLogic(imageField, data);
     return (
       <div className="flex gap-6 items-start">
         <div className={`flex-1 min-w-0 ${gridClass}`} style={gridStyle}>

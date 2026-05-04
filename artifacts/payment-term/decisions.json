@@ -2,10 +2,9 @@
   "$schema": "decisions-v2",
   "version": 2,
   "window": {
-    "category": "Settings",
+    "category": "settings",
     "name": "Payment Term",
     "detailEntity": null,
-    "breadcrumb": "Settings / Payment Term",
     "hidePrint": true,
     "hideMoreMenu": true,
     "labelOverrides": {

@@ -33,7 +33,7 @@ const draftMode = null;
 
 
 
-const api = {
+export const api = {
   "specName": "warehouse",
   "baseUrl": "/sws/neo/warehouse",
   "crud": {
@@ -217,16 +217,18 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=warehouseDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "inventory"
   }
 };
 
 // @sf-generated-start component:WarehousePage
 export default function WarehousePage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView

@@ -4,7 +4,7 @@ import { DataTable } from '@/components/contract-ui';
 const columns = [
   { key: 'movementDate', column: 'MovementDate', type: 'date', label: 'Movement Date' },
   { key: 'name', column: 'Name', type: 'string', label: 'Name' },
-  { key: 'status', column: 'Status', type: 'status', label: 'Status' },
+  { key: 'status', column: 'Status', type: 'status', label: 'Status', enumLabels: { 'DR': 'Draft', 'CO': 'Completed', 'VO': 'Voided' } },
 ];
 // @sf-generated-end columns:internalConsumption
 

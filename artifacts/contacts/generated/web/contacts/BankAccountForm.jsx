@@ -17,5 +17,5 @@ const fields = [
 export default function BankAccountForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-BankAccountForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:BankAccountForm

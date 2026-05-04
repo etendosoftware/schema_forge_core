@@ -47,6 +47,7 @@
   },
   "entities": {
     "header": {
+      "javaQualifier": "salesInvoiceHeaderHandler",
       "fields": {
         "businessPartner": {
           "grid": true,
@@ -269,6 +270,7 @@
       }
     },
     "lines": {
+      "javaQualifier": "invoiceLineHandler",
       "fields": {
         "lineNo": {
           "visibility": "system"

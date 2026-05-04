@@ -127,17 +127,19 @@ async function runPipeline(name, windowId, { pushToNeo, skipExtract }) {
   const processes = JSON.parse(await readFile(processesPath, 'utf8'));
 
   let prevVersion = null;
+  let prevContract = null;
   try {
     const existingRaw = await readFile(join(ARTIFACTS, name, 'contract.json'), 'utf-8');
     const existing = JSON.parse(existingRaw);
     let rawV = existing.version ?? null;
     while (rawV !== null && typeof rawV === 'object') rawV = rawV.version ?? null;
     prevVersion = rawV;
+    prevContract = existing;
     await wf2(join(ARTIFACTS, name, 'contract.prev.json'), existingRaw, 'utf-8');
   } catch { /* first generation */ }
 
   const rules = Array.isArray(resolved.rules) ? resolved.rules : resolved.rules?.rules || [];
-  const contract = generateContract(resolved.schema, rules, processes.processes || [], prevVersion);
+  const contract = generateContract(resolved.schema, rules, processes.processes || [], prevVersion, prevContract);
   await wf2(join(ARTIFACTS, name, 'contract.json'), JSON.stringify(contract, null, 2));
   console.log(`    Contract: ${contract.testManifest.summary.total} tests`);
 

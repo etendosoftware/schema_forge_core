@@ -752,11 +752,13 @@ async function runCli() {
     } catch { /* no processes.json */ }
 
     let prevVersion = null;
+    let prevContract = null;
     try {
       const existing = JSON.parse(await readFile(join(artifactsDir, 'contract.json'), 'utf-8'));
       let v = existing.version ?? null;
       while (v !== null && typeof v === 'object') v = v.version ?? null;
       prevVersion = v;
+      prevContract = existing;
     } catch { /* no existing contract */ }
 
     const contract = generateContract(
@@ -764,6 +766,7 @@ async function runCli() {
       Array.isArray(rules) ? rules : rules.rules || [],
       processes.processes || [],
       prevVersion,
+      prevContract,
     );
 
     const contractPath = join(artifactsDir, 'contract.json');

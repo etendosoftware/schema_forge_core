@@ -12,6 +12,7 @@ const labelOverrides = {
   "es_ES": {
     "Name": "Nombre",
     "Description": "Descripción",
+    "Isactive": "Activo",
     "Payin_Allow": "Cobro permitido",
     "Automatic_Receipt": "Cobro automático",
     "Automatic_Deposit": "Depósito automático",
@@ -46,7 +47,7 @@ const draftMode = null;
 
 
 
-const api = {
+export const api = {
   "specName": "payment-method",
   "baseUrl": "/sws/neo/payment-method",
   "crud": {
@@ -74,16 +75,31 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=name"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "settings"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "Name": "Nombre",
+      "Description": "Descripción",
+      "Isactive": "Activo",
+      "Payin_Allow": "Cobro permitido",
+      "Automatic_Receipt": "Cobro automático",
+      "Automatic_Deposit": "Depósito automático",
+      "Payout_Allow": "Pago permitido",
+      "Automatic_Payment": "Pago automático",
+      "Automatic_Withdrawn": "Retiro automático"
+    }
   }
 };
 
 // @sf-generated-start component:PaymentMethodPage
 export default function PaymentMethodPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView

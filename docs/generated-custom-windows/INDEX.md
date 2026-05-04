@@ -86,6 +86,7 @@ This folder is the entry point for documentation that describes how generated an
 | [tax.md](tax.md) | Generated tax-rate maintenance window |
 | [unit-of-measure.md](unit-of-measure.md) | Generated unit-of-measure window with conversion metadata notes |
 | [user.md](user.md) | Generated user window with roles child surface and defaults dependencies |
+| [fiscal-config.md](fiscal-config.md) | Custom fiscal configuration window — onboarding wizard (SII/TBAI/Verifactu) and ongoing config maintenance |
 
 ## Scope
 

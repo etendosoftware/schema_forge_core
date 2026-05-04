@@ -21,7 +21,15 @@ describe('onboardingState', () => {
     assert.equal(second[0].name, 'setup');
     assert.equal(second[0].status, 'pending');
     assert.notEqual(first[0], second[0]);
+    assert.deepEqual(second.map(step => step.name), [
+      'setup',
+      'client',
+      'organization',
+      'sequences',
+      'finalize',
+    ]);
   });
+
 
   it('mapBackendStepStatus preserves frontend status vocabulary', () => {
     assert.equal(mapBackendStepStatus('in_progress'), 'running');

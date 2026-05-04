@@ -36,9 +36,9 @@ const draftMode = null;
 // @sf-generated-start addLineFields:internalConsumptionLine
 const addLineFields = {
   entry: [
-    { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.' },
+    { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.', defaultValue: '@SQL=SELECT COALESCE(MAX(LINE),0)+10 AS DefaultValue FROM M_INTERNAL_CONSUMPTIONLINE WHERE M_INTERNAL_CONSUMPTION_ID=@M_INTERNAL_CONSUMPTION_ID@' },
     { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity' },
+    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity', defaultValue: 0 },
     { key: 'storageBin', column: 'M_Locator_ID', type: 'search', required: true, label: 'Warehouse', reference: 'Locator', inputMode: 'search' },
   ],
   derived: [
@@ -50,7 +50,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:internalConsumptionLine
 
-const api = {
+export const api = {
   "specName": "internal-consumption",
   "baseUrl": "/sws/neo/internal-consumption",
   "crud": {
@@ -131,16 +131,18 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=internal-consumptionDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "inventory"
   }
 };
 
 // @sf-generated-start component:InternalConsumptionPage
 export default function InternalConsumptionPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView

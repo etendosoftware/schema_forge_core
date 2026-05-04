@@ -12,5 +12,5 @@ const fields = [
 export default function InternalConsumptionForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-InternalConsumptionForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:InternalConsumptionForm

@@ -16,5 +16,5 @@ const fields = [
 export default function TransactionsForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-TransactionsForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:TransactionsForm

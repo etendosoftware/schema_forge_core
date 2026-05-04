@@ -1,13 +1,13 @@
 {
-  "version": "0.1.0",
-  "generatedAt": "2026-04-22T19:00:03.582Z",
-  "checksum": "97507b74aa5ebb0c",
+  "version": "0.2.0",
+  "generatedAt": "2026-04-29T18:12:11.134Z",
+  "checksum": "ce9c88025d677215",
   "frontendContract": {
     "window": {
       "id": "146",
       "name": "Price List",
       "primaryEntity": "priceList",
-      "category": "reference",
+      "category": "settings",
       "hidePrint": true,
       "hideMoreMenu": true,
       "labelOverrides": {
@@ -39,6 +39,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "section": "principal",
             "seq": 1
           },
@@ -53,6 +54,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "Currency",
             "inputMode": "selector",
             "section": "principal",
@@ -83,6 +85,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "section": "principal",
             "seq": 4,
             "badge": true,
@@ -119,6 +122,11 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N",
             "section": "principal",
             "seq": 5,
@@ -138,6 +146,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "section": "principal",
             "seq": 6,
             "validationRule": {
@@ -159,6 +168,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "section": "principal",
             "seq": 7
           }
@@ -193,6 +203,11 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            },
             "defaultValue": "@#Date@"
           },
           {
@@ -206,6 +221,11 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            },
             "defaultValue": "@#Date@"
           },
           {
@@ -219,6 +239,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "DiscountSchema",
             "inputMode": "selector",
             "validationRule": {
@@ -301,6 +322,7 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
             "reference": "Product",
             "inputMode": "selector"
           },
@@ -314,7 +336,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "listPrice",
@@ -326,7 +349,8 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "cost",
@@ -339,6 +363,11 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0",
             "displayLogic": {
               "raw": "@Costbased@='Y'",
@@ -356,6 +385,11 @@
             "required": true,
             "grid": false,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "S"
+            },
             "enumValues": [
               {
                 "value": "S",
@@ -394,7 +428,7 @@
       "id": "146",
       "name": "Price List",
       "primaryEntity": "priceList",
-      "category": "reference",
+      "category": "settings",
       "hidePrint": true,
       "hideMoreMenu": true,
       "labelOverrides": {
@@ -1010,13 +1044,13 @@
       },
       "sorting": {
         "param": "_sortBy",
-        "example": "_sortBy=price-listDate"
+        "example": "_sortBy=creationDate desc"
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
     },
     "window": {
-      "category": "reference"
+      "category": "settings"
     },
     "labelOverrides": {
       "es_ES": {

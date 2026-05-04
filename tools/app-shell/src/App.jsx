@@ -99,6 +99,7 @@ async function loadAllMockData() {
     import('@generated/document/generated/web/document/mockData.js'),
     import('@generated/recurring-invoice/generated/web/recurring-invoice/mockData.js'),
     import('@generated/unit-of-measure/generated/web/unit-of-measure/mockData.js'),
+    import('@generated/fiscal-config/custom/mockData.js'),
   ]);
 
   const merged = {};

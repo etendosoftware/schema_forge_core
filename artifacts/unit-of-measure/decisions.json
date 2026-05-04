@@ -1,7 +1,7 @@
 {
   "$schema": "decisions-v2",
   "window": {
-    "category": "configuracion",
+    "category": "settings",
     "name": "Unit of Measure",
     "hidePrint": true,
     "hideMoreMenu": true
@@ -10,8 +10,8 @@
     "unitOfMeasure": {
       "fields": {
         "eDICode": {
-          "grid": true,
-          "searchable": true,
+          "grid": false,
+          "searchable": false,
           "section": "principal",
           "seq": 1
         },
@@ -30,7 +30,7 @@
           "grid": true,
           "form": true,
           "section": "principal",
-          "seq": 4,
+          "seq": 7,
           "columnType": "enum",
           "enumLabels": {
             "A": "uomTypeArea",
@@ -55,27 +55,30 @@
         },
         "standardPrecision": {
           "section": "principal",
-          "seq": 5
+          "seq": 4
         },
         "costingPrecision": {
           "section": "principal",
-          "seq": 6
+          "seq": 5
         },
         "default": {
           "section": "principal",
-          "seq": 7
+          "seq": 6
         },
         "description": {
           "visibility": "editable",
+          "form": false,
           "section": "other",
           "seq": 8
         },
         "breakdown": {
           "visibility": "editable",
+          "form": false,
           "section": "other",
           "seq": 9
         },
         "useinproduction": {
+          "form": false,
           "section": "other",
           "seq": 10
         }

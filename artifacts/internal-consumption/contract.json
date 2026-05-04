@@ -1,7 +1,7 @@
 {
-  "version": "0.2.0",
-  "generatedAt": "2026-04-14T17:37:16.943Z",
-  "checksum": "4ccba30706d8b0c3",
+  "version": "0.3.0",
+  "generatedAt": "2026-04-29T19:05:49.589Z",
+  "checksum": "1c3c7f35ed7992cd",
   "frontendContract": {
     "window": {
       "id": "800076",
@@ -13,6 +13,7 @@
         "moreMenuContent": "InternalConsumptionActions"
       },
       "statusField": "status",
+      "dateFilterKey": "movementDate",
       "layoutType": "default"
     },
     "entities": {
@@ -33,6 +34,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -49,7 +51,8 @@
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "sourceRequired": true
           },
           {
             "name": "description",
@@ -75,6 +78,11 @@
             "required": true,
             "grid": true,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "DR"
+            },
             "columnType": "status",
             "enumValues": [
               {
@@ -123,6 +131,10 @@
             "required": false,
             "grid": true,
             "form": true,
+            "derivation": {
+              "type": "lookup",
+              "source": "SELECT COALESCE(MAX(LINE),0)+10 AS DefaultValue FROM M_INTERNAL_CONSUMPTIONLINE WHERE M_INTERNAL_CONSUMPTION_ID=@M_INTERNAL_CONSUMPTION_ID@"
+            },
             "defaultValue": "@SQL=SELECT COALESCE(MAX(LINE),0)+10 AS DefaultValue FROM M_INTERNAL_CONSUMPTIONLINE WHERE M_INTERNAL_CONSUMPTION_ID=@M_INTERNAL_CONSUMPTION_ID@"
           },
           {
@@ -136,6 +148,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "Product",
             "inputMode": "search",
             "lookup": true,
@@ -154,6 +167,11 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
             "defaultValue": "0"
           },
           {
@@ -181,6 +199,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "reference": "Locator",
             "inputMode": "search"
           }
@@ -218,7 +237,8 @@
       "customComponents": {
         "moreMenuContent": "InternalConsumptionActions"
       },
-      "statusField": "status"
+      "statusField": "status",
+      "dateFilterKey": "movementDate"
     },
     "entities": {
       "internalConsumption": {
@@ -714,10 +734,13 @@
       },
       "sorting": {
         "param": "_sortBy",
-        "example": "_sortBy=internal-consumptionDate"
+        "example": "_sortBy=creationDate desc"
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
+    },
+    "window": {
+      "category": "inventory"
     }
   },
   "testManifest": {

@@ -42,6 +42,7 @@
   },
   "entities": {
     "header": {
+      "javaQualifier": "purchaseInvoiceHeaderHandler",
       "fields": {
         "documentNo": {
           "visibility": "readOnly",
@@ -317,6 +318,7 @@
       }
     },
     "lines": {
+      "javaQualifier": "invoiceLineHandler",
       "fields": {
         "lineNo": {
           "visibility": "system"

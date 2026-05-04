@@ -222,8 +222,8 @@ export const api = {
       "listUrl": "/sws/neo/contacts/contact",
       "detailUrl": "/sws/neo/contacts/contact/{id}",
       "supportedFilters": [
-        "name",
-        "email"
+        "email",
+        "name"
       ]
     },
     "basicDiscount": {
@@ -624,7 +624,7 @@ export const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=contactsDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"

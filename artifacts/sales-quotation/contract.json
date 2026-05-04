@@ -1,7 +1,8 @@
 {
-  "version": "0.2.0",
-  "generatedAt": "2026-04-30T16:29:32.691Z",
-  "checksum": "c04d6587f9fafaab",
+  "version": "0.3.0",
+  "generatedAt": "2026-04-30T15:42:46.907Z",
+  "updatedAt": "2026-04-30T18:38:03.244Z",
+  "checksum": "69b2dbf5989e25df",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -330,6 +331,10 @@
               {
                 "value": "CL",
                 "name": "Closed"
+              },
+              {
+                "value": "ETGO_CI",
+                "name": "Closed - Invoice Created"
               },
               {
                 "value": "CA",
@@ -2628,7 +2633,7 @@
       },
       "sorting": {
         "param": "_sortBy",
-        "example": "_sortBy=sales-quotationDate"
+        "example": "_sortBy=creationDate desc"
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"

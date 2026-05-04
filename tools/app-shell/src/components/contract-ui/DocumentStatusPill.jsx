@@ -1,32 +1,53 @@
-import { useUI, useLocale } from '@/i18n';
-import { statusLabel } from '@/lib/statusBadge.js';
+import { Clock, Check, X } from 'lucide-react';
+import { useLocale } from '@/i18n';
+import { getStatusTone, statusLabel } from '@/lib/statusBadge.js';
+import { TONE_STYLES } from '@/components/ui/status-tag-tokens.js';
 
-const DOC_STATUS = {
-  CO: { bg: '#d1fae5', color: '#065f46', dot: '#10b981' },
-  DR: { bg: '#f3f4f6', color: '#374151', dot: '#9ca3af' },
-  VO: { bg: '#fee2e2', color: '#991b1b', dot: '#ef4444' },
-  CL: { bg: '#dbeafe', color: '#1e40af', dot: '#3b82f6' },
-  IP: { bg: '#fef3c7', color: '#78350f', dot: '#f59e0b' },
+const TONE_ICON = {
+  success: Check,
+  warning: Clock,
+  destructive: X,
+  neutral: null,
 };
 
-export default function DocumentStatusPill({ data }) {
-  const ui = useUI();
-  const dictionary = useLocale();
-  const docStatus = data?.documentStatus;
-  if (!docStatus) return null;
+const TONE_ICON_COLOR = {
+  success: '#17663A',
+  warning: '#C28800',
+  destructive: '#D50B3E',
+  neutral: '#3F3F50',
+};
 
-  const ds = DOC_STATUS[docStatus] || { bg: '#f3f4f6', color: '#374151', dot: '#9ca3af' };
-  const label = statusLabel(docStatus, dictionary);
+const PILL_STYLE = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  padding: '4px 8px',
+  borderRadius: '8px',
+  fontFamily: 'Inter, system-ui, sans-serif',
+  fontSize: '14px',
+  lineHeight: '20px',
+  fontWeight: 400,
+  whiteSpace: 'nowrap',
+};
+
+const LABEL_STYLE = { padding: '0 4px' };
+
+export default function DocumentStatusPill({ status, label, enumLabels, tone: toneProp }) {
+  const dictionary = useLocale();
+  if (!status) return null;
+
+  const tone = toneProp ?? getStatusTone(status);
+  const Icon = TONE_ICON[tone];
+  const text = label ?? enumLabels?.[status] ?? statusLabel(status, dictionary);
+  const palette = TONE_STYLES[tone] ?? TONE_STYLES.neutral;
 
   return (
     <span
-      className="inline-flex items-center gap-1.5 text-[13px] font-medium"
-      style={{ padding: '4px 12px', borderRadius: '6px', backgroundColor: ds.bg, color: ds.color }}
+      data-testid="document-status-pill"
+      data-tone={tone}
+      style={{ ...PILL_STYLE, background: palette.background, color: palette.color }}
     >
-      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: ds.dot }} />
-      {ui('documentStatus')}
-      <span style={{ opacity: 0.4 }}>&middot;</span>
-      <span className="font-semibold">{label}</span>
+      {Icon ? <Icon size={16} color={TONE_ICON_COLOR[tone]} aria-hidden="true" /> : null}
+      <span style={LABEL_STYLE}>{text}</span>
     </span>
   );
 }

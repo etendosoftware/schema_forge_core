@@ -6,10 +6,10 @@ const columns = [
   { key: 'username', column: 'UserName', type: 'string', label: 'Username' },
   { key: 'firstName', column: 'Firstname', type: 'string', label: 'First Name' },
   { key: 'lastName', column: 'Lastname', type: 'string', label: 'Last Name' },
-  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string', label: 'Business Partner' },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner' },
   { key: 'email', column: 'Email', type: 'string', label: 'Email' },
   { key: 'locked', column: 'IsLocked', type: 'boolean', label: 'Locked' },
-  { key: 'defaultRole', column: 'Default_Ad_Role_ID', type: 'string', label: 'Default Role' },
+  { key: 'defaultRole', column: 'Default_Ad_Role_ID', type: 'selector', label: 'Default Role' },
 ];
 // @sf-generated-end columns:user
 

@@ -7,19 +7,29 @@ Authentication, authorization, session management, and security hardening for th
 ### Current Implementation
 
 ```
-User  -->  OnboardingPage.jsx  -->  POST /sws/go/login  (environment selection)
+User  -->  OnboardingPage.jsx  -->  POST /sws/go/onboarding  (new environment)
                                               |
                                               v
-                                  NEO validates credentials
-                                  Returns { token, roleList, ... }
+                                  Backend creates client/org, imports dataset,
+                                  runs sequence generation with the new
+                                  client's admin user/role context, and seeds
+                                  a default customer before the first readiness
+                                  checks run
+                                  The curated onboarding dataset excludes business
+                                  partner rows and locations; it only keeps shared
+                                  setup catalogs such as BP groups and payment terms
                                               |
                                               v
-                                  AuthContext stores token in state + localStorage
-                                  All subsequent API calls include:
+                                  OnboardingPage.jsx  -->  GET /sws/go/login?userId=...
+                                              |
+                                              v
+                                  NEO returns { token, roleList, ... }
+                                              |
+                                              v
+                                  OnboardingPage stores token, role, and org in localStorage
+                                  AuthContext restores token from localStorage
+                                  Subsequent API calls include:
                                     Authorization: Bearer <token>
-                                              |
-                                              v
-                                  RequestHandler validates token on each request
                                   401 response  -->  onUnauthorized() clears auth state and throws
                                                       Protected routes redirect to /onboarding on the next render
 ```
@@ -28,6 +38,8 @@ User  -->  OnboardingPage.jsx  -->  POST /sws/go/login  (environment selection)
 - `src/auth/api.js` -- `createApiFetch()` with auto-401 handling, `buildHeaders()`
 - `src/auth/AuthContext.jsx` -- React context providing `token`, `username`, `isAuthenticated`, `logout()`
 - `src/pages/OnboardingPage.jsx` -- Onboarding and environment login UI
+- `src/pages/onboarding/onboardingApi.js` -- API helpers for platform login, environment login, and onboarding stream
+- `com.etendoerp.go.onboarding.OnboardingSequenceGeneratorService` -- backend service that runs sequence generation during onboarding with explicit client admin context
 
 ### Base URL Detection
 

@@ -5,8 +5,8 @@ const fields = [
   { key: 'orderReference', column: 'POReference', type: 'text', label: 'RMA vendor ref.', section: 'principal' },
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'search', label: 'Business Partner', required: true, section: 'principal', reference: 'BPartner', inputMode: 'search', readOnlySource: 'server', readOnlyLogicReason: 'session-variable' },
   { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'selector', label: 'Partner Address', required: true, section: 'principal', reference: 'BPartner_Location', inputMode: 'selector', readOnlyLogic: (record) => record['processed'] === true },
-  { key: 'movementDate', column: 'MovementDate', type: 'date', label: 'Movement Date', required: true, section: 'principal', defaultValue: '@#Date@', readOnlyLogic: (record) => record['processed'] === true },
-  { key: 'accountingDate', column: 'DateAcct', type: 'date', label: 'Accounting Date', required: true, section: 'other', defaultValue: '@#Date@', readOnlyLogic: (record) => record['posted'] === 'Y' },
+  { key: 'movementDate', column: 'MovementDate', type: 'date', label: 'Movement Date', required: true, section: 'principal', readOnlyLogic: (record) => record['processed'] === true },
+  { key: 'accountingDate', column: 'DateAcct', type: 'date', label: 'Accounting Date', required: true, section: 'other', readOnlyLogic: (record) => record['posted'] === 'Y' },
   { key: 'warehouse', column: 'M_Warehouse_ID', type: 'selector', label: 'Warehouse', required: true, section: 'other', reference: 'Warehouse', inputMode: 'selector', readOnlyLogic: (record) => record['processed'] === true },
   { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'other' },
   { key: 'documentStatus', column: 'DocStatus', type: 'select', label: 'Document Status', required: true, readOnly: true, section: 'other', options: [{ value: 'CL', label: 'Closed' }, { value: 'CO', label: 'Completed' }, { value: 'DR', label: 'Draft' }, { value: 'NA', label: 'Not Accepted' }, { value: 'WP', label: 'Not Paid' }, { value: 'RE', label: 'Re-Opened' }, { value: 'TEMP', label: 'Temporal' }, { value: 'IP', label: 'Under Way' }, { value: '??', label: 'Unknown' }, { value: 'VO', label: 'Voided' }], defaultValue: 'DR' },
@@ -21,5 +21,5 @@ const fields = [
 export default function HeaderForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-HeaderForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:HeaderForm

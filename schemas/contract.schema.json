@@ -14,6 +14,7 @@
   "properties": {
     "version": { "type": "string" },
     "generatedAt": { "type": "string" },
+    "updatedAt": { "type": "string" },
     "checksum": { "type": "string" },
     "frontendContract": {
       "type": "object",

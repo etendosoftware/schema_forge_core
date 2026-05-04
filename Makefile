@@ -1,4 +1,4 @@
-.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate
+.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate sonar sonar-coverage menu-cache
 
 # --- Testing ---
 
@@ -22,7 +22,7 @@ test-e2e: ## Run E2E tests with visible browser
 	cd e2e && npx playwright test --headed
 
 test-e2e-headless: ## Run E2E tests headless (CI mode)
-	cd e2e && npx playwright test --headed=false
+	cd e2e && CI=true npx playwright test
 
 test-e2e-debug: ## Run E2E tests in debug mode (step by step)
 	cd e2e && npx playwright test --debug
@@ -48,12 +48,32 @@ PUSH_TO_NEO ?= 0
 SKIP_EXTRACT ?= 0
 ONLY ?=
 
-regen: ## Re-run full pipeline for all active windows (PUSH_TO_NEO=1 to push, ONLY=a,b to filter)
-	@REGEN_ARGS=""; \
+regen: ## Re-run full pipeline for all active windows (HELP=1 or `make regen-help` for options)
+	@if [ "$(HELP)" = "1" ]; then $(MAKE) -s regen-help; exit 0; fi; \
+	REGEN_ARGS=""; \
 	if [ "$(PUSH_TO_NEO)" = "1" ]; then REGEN_ARGS="$$REGEN_ARGS --push-to-neo"; fi; \
 	if [ "$(SKIP_EXTRACT)" = "1" ]; then REGEN_ARGS="$$REGEN_ARGS --skip-extract"; fi; \
 	if [ -n "$(ONLY)" ]; then REGEN_ARGS="$$REGEN_ARGS --only $(ONLY)"; fi; \
 	node cli/src/regen-all.js $$REGEN_ARGS
+
+regen-help: ## Show usage and examples for `make regen`
+	@echo "Usage: make regen [VAR=value ...]"
+	@echo ""
+	@echo "Variables:"
+	@echo "  ONLY=<spec>[,<spec>...]   Run only the given window spec(s) (kebab-case, matches artifacts/<spec>/)"
+	@echo "  PUSH_TO_NEO=1             Push the resulting config to NEO Headless after regenerating"
+	@echo "  SKIP_EXTRACT=1            Skip the DB extraction step (reuse existing schema-raw.json)"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make regen                                # all active windows"
+	@echo "  make regen ONLY=tax                       # only the tax window"
+	@echo "  make regen ONLY=tax,product               # tax + product"
+	@echo "  make regen ONLY=tax SKIP_EXTRACT=1        # only tax, skip DB extraction"
+	@echo "  make regen ONLY=tax PUSH_TO_NEO=1         # only tax + push to NEO"
+	@echo ""
+	@echo "Notes:"
+	@echo "  - Window specs are the directory names under artifacts/ (kebab-case)."
+	@echo "  - For a single window, you can also run: node cli/src/resolve-curated.js --window <spec> --write"
 
 # --- Dev Server ---
 
@@ -68,6 +88,9 @@ build: ## Build app-shell for production
 	node cli/src/generate-reports-manifest.js
 
 # --- Setup ---
+
+menu-cache: ## Refresh the AD menu cache from the database
+	node cli/src/menu-cache.js refresh
 
 install: ## Install all workspace dependencies and activate git hooks
 	npm install
@@ -116,6 +139,18 @@ report-stop: ## Stop jsreport Docker container
 report-preview: ## Preview Business Partner listing report
 	node cli/src/report-preview.js --artifact business-partner --report listing
 
+# --- Static Analysis (SonarQube) ---
+
+sonar: ## Run SonarQube analysis on Schema Forge JS/JSX code
+	sonar-scanner -Dproject.settings=sonar-project.properties
+
+sonar-coverage: ## Run all tests with coverage then SonarQube analysis
+	@mkdir -p coverage
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/cli-lcov.info 'cli/test/*.test.js'
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-lcov.info 'tools/app-shell/src/**/__tests__/*.test.js'
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-test-lcov.info 'tools/app-shell/test/*.test.js'
+	sonar-scanner -Dproject.settings=sonar-project.properties
+
 # --- Cleanup ---
 
 clean: ## Remove generated artifacts and build output
@@ -124,6 +159,11 @@ clean: ## Remove generated artifacts and build output
 # --- Help ---
 
 help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-18s\033[0m %s\n", $$1, $$2}'
+	@echo ""; \
+	echo "\033[1mSchema Forge — Available targets\033[0m"; \
+	echo ""; \
+	awk '/^# ---/{gsub(/^# --- | ---$$/,"");printf "\033[1;33m%s\033[0m\n",$$0;next} \
+	     /^[a-zA-Z][a-zA-Z0-9_-]*:.*## /{n=index($$0,": ## ");if(n>0){printf "  \033[36m%-22s\033[0m %s\n",substr($$0,1,n-1),substr($$0,n+5)}}' Makefile; \
+	echo ""
 
 .DEFAULT_GOAL := help

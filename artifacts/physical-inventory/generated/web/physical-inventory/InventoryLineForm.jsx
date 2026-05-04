@@ -17,5 +17,5 @@ const fields = [
 export default function InventoryLineForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-InventoryLineForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:InventoryLineForm
