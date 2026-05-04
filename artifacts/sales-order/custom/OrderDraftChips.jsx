@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUI } from '@/i18n';
+import { getProgressTone } from '@/lib/progressTone';
+import { TONE_STYLES } from '@/components/ui/status-tag-tokens.js';
 
 const CRITERIA = (field, value) =>
   encodeURIComponent(JSON.stringify([{ fieldName: field, operator: 'equals', value }]));
@@ -58,10 +60,10 @@ export default function OrderDraftChips({ data, recordId, token, apiBaseUrl }) {
       const totalInvoiced = invoicesComplete.reduce((s, i) => s + (Number(i.grandTotalAmount) || 0), 0);
       const totalPending  = Math.max(0, totalOrder - totalInvoiced);
 
-      const allDelivered = qtyPending === 0 && shipmentsDraft.length === 0 && shipmentsComplete.length > 0;
-      const allInvoiced  = totalPending < 0.01 && !invoiceDraft && invoicesComplete.length > 0;
+      const deliveredPct = qtyOrdered > 0 ? qtyDelivered / qtyOrdered : 0;
+      const invoicedPct = totalOrder > 0 ? totalInvoiced / totalOrder : 0;
 
-      setState({ shipmentsDraft, invoiceDraft, allDelivered, allInvoiced });
+      setState({ shipmentsDraft, invoiceDraft, deliveredPct, invoicedPct });
     });
 
     return () => { cancelled = true; };
@@ -69,15 +71,13 @@ export default function OrderDraftChips({ data, recordId, token, apiBaseUrl }) {
 
   if (!isCompleted || !state) return null;
 
-  const { shipmentsDraft, invoiceDraft, allDelivered, allInvoiced } = state;
-
-  if (shipmentsDraft.length === 0 && !invoiceDraft && !allDelivered && !allInvoiced) return null;
+  const { shipmentsDraft, invoiceDraft, deliveredPct, invoicedPct } = state;
 
   return (
     <>
-      {/* Completion badges — same pill shape as ● Completado, secondary colors */}
-      {allDelivered && <CompletionBadge label={ui('soAllDelivered')} />}
-      {allInvoiced  && <CompletionBadge label={ui('soAllInvoiced')} />}
+      {/* Progress badges — tone reflects completion: green @100%, orange in progress, gray @0% */}
+      <ProgressBadge label={ui('soAllDelivered')} pct={deliveredPct} />
+      <ProgressBadge label={ui('soAllInvoiced')} pct={invoicedPct} />
 
       {/* Draft chips — only visible when not yet complete */}
       {shipmentsDraft.length === 1 && (
@@ -110,17 +110,25 @@ export default function OrderDraftChips({ data, recordId, token, apiBaseUrl }) {
   );
 }
 
-function CompletionBadge({ label }) {
+function ProgressBadge({ label, pct }) {
+  const tone = getProgressTone(pct);
+  const palette = TONE_STYLES[tone];
+  const safePct = Number.isFinite(pct) ? Math.max(0, Math.min(1, pct)) : 0;
+  const percent = Math.round(safePct * 100);
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 5,
-      padding: '4px 12px', borderRadius: 6,
-      fontSize: 12, fontWeight: 500,
-      background: '#F3F4F6', color: '#374151',
-      border: '1px solid #E5E7EB',
-    }}>
-      <span style={{ color: '#16A34A' }}>✓</span>
+    <span
+      data-testid="order-progress-badge"
+      data-tone={tone}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 5,
+        padding: '4px 12px', borderRadius: 6,
+        fontSize: 12, fontWeight: 500,
+        background: palette.background,
+        color: palette.color,
+      }}
+    >
       {label}
+      <span style={{ fontVariantNumeric: 'tabular-nums' }}>{percent}%</span>
     </span>
   );
 }

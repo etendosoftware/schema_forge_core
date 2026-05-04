@@ -13,10 +13,11 @@ import { useDisplayLogic } from '@/hooks/useDisplayLogic';
 import { useCallout } from '@/hooks/useCallout';
 import { useLineGrossAmount, ORDER_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import { useDocumentAction } from '@/hooks/useDocumentAction';
-import { useMenuLabel, useUI, useLocale } from '@/i18n';
+import { useMenuLabel, useUI } from '@/i18n';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
 import { SummaryBar } from './SummaryBar.jsx';
+import DocumentTotalsPanel from './DocumentTotalsPanel.jsx';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import {
   buildCalloutFormState, extractAuxValues, normalizeCalloutQty,
@@ -25,7 +26,7 @@ import {
 } from '@/lib/lineFieldChange.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { formatAmount } from '@/lib/formatAmount.js';
-import { getStatusBadgeProps, getStatusDotColor, getStatusPillClass, statusLabel } from '@/lib/statusBadge.js';
+import DocumentStatusPill from './DocumentStatusPill.jsx';
 
 /**
  * Evaluate a simple Etendo display-logic expression (@Field@='Value') against record data.
@@ -233,8 +234,10 @@ export function DetailView({
   const embedded = searchParams.get('embedded') === '1';
   const tMenu = useMenuLabel();
   const ui = useUI();
-  const dictionary = useLocale();
   const [addingLine, setAddingLine] = useState(false);
+  // Live snapshot of the in-progress add-row values — updated on every keystroke
+  // so DocumentTotalsPanel can compute real-time totals before the line is saved.
+  const [pendingLineValues, setPendingLineValues] = useState(null);
   const [addingSecondaryLine, setAddingSecondaryLine] = useState({});
   const [forceOpenImport, setForceOpenImport] = useState(false);
   // Imperative handles to in-progress inline add rows so we can commit them
@@ -887,6 +890,13 @@ export function DetailView({
   const [showOthers, setShowOthers] = useState(primaryTabs ? false : null);
   const [activePrimaryTab, setActivePrimaryTab] = useState(primaryTabs?.[0]?.key ?? 'general');
   const [notesFocused, setNotesFocused] = useState(false);
+  const [discountPerProductEnabled, setDiscountPerProductEnabled] = useState(false);
+
+  // Reset discount column visibility when all lines are removed.
+  useEffect(() => {
+    if (hook.children.length === 0) setDiscountPerProductEnabled(false);
+  }, [hook.children.length]);
+
   const othersRef = useRef(null);
 
   useEffect(() => {
@@ -945,12 +955,10 @@ export function DetailView({
         {embedded ? (
           statusField && data[statusField] ? (
             <div className="flex items-center gap-3 px-6 py-3 border-b border-border/30">
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[13px] font-medium ${getStatusPillClass(data[statusField])}`}>
-                <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(data[statusField])}`} />
-                {statusFieldLabel || ui('documentStatus')}
-                <span style={{ opacity: 0.4 }}>&middot;</span>
-                <span className="font-semibold">{statusEnumLabels?.[data[statusField]] || statusLabel(data[statusField])}</span>
-              </span>
+              <DocumentStatusPill
+                status={data[statusField]}
+                enumLabels={statusEnumLabels}
+              />
             </div>
           ) : null
         ) : (
@@ -966,17 +974,12 @@ export function DetailView({
               <X className="h-3.5 w-3.5" />
               {ui('cancel')}
             </Button>
-            {statusField && data[statusField] != null && (() => {
-              const _s = data[statusField];
-              return (
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[13px] font-medium ${getStatusPillClass(_s)}`}>
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(_s)}`} />
-                  {statusFieldLabel || ui('documentStatus')}
-                  <span style={{ opacity: 0.4 }}>&middot;</span>
-                  <span className="font-semibold">{statusEnumLabels?.[_s] || statusLabel(_s, dictionary)}</span>
-                </span>
-              );
-            })()}
+            {statusField && data[statusField] != null && (
+              <DocumentStatusPill
+                status={data[statusField]}
+                enumLabels={statusEnumLabels}
+              />
+            )}
             {extraBadges.map(b => {
               const when = b.when !== undefined ? b.when : true;
               const show = when ? !!data[b.key] : !data[b.key];
@@ -1487,6 +1490,7 @@ export function DetailView({
                         onSelectionChange={setSelectedChildRows}
                         showFooterTotals={showDetailFooterTotals ?? !summary.some(f => f.type === 'amount')}
                         selectorContext={selectorContextByEntity[detailEntity]}
+                        hiddenColumns={lineConfig?.discountField && !discountPerProductEnabled ? [lineConfig.discountField] : []}
                         onDeleteRow={(api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly ? async (row) => {
                           if (!window.confirm(ui('deleteConfirmMessage'))) return;
                           try {
@@ -1525,11 +1529,13 @@ export function DetailView({
                             // Derive unitPrice = listPrice × (1-discount/100) before POST.
                             // For invoice config (priceField='unitPrice') this is a no-op.
                             prepareLineForPost(lineData);
+                            setPendingLineValues(null);
                             return hook.handleAddChild?.(lineData);
                           },
-                          onCancel: () => setAddingLine(false),
+                          onCancel: () => { setAddingLine(false); setPendingLineValues(null); },
                           catalogs,
                           onFieldChange: handleLineFieldChange,
+                          onValuesChange: setPendingLineValues,
                         }}
                       />
 
@@ -2052,42 +2058,34 @@ export function DetailView({
                   onFieldChange={handleChangeWithCallout}
                   notesFocused={notesFocused}
                   setNotesFocused={setNotesFocused}
+                  lines={hook.children}
+                  pendingLine={pendingLineValues}
+                  editingLine={lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine}
+                  lineConfig={lineConfig}
+                  discountPerProductEnabled={discountPerProductEnabled}
+                  onDiscountPerProductChange={setDiscountPerProductEnabled}
                 />
               );
             })() : (
               <>
-                {/* Totals block: Subtotal / Tax / Total */}
+                {/* Totals block: DocumentTotalsPanel with optional discount expansion */}
                 {(() => {
                   const subtotalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('summed') || f.key.toLowerCase().includes('totallines') || f.key.toLowerCase().includes('lineamount')));
                   const totalField = summary.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || (f.key.toLowerCase().includes('total') && !f.key.toLowerCase().includes('line'))));
                   if (!subtotalField && !totalField) return null;
-                  const subtotal = subtotalField ? data[subtotalField.key] : null;
-                  const total = totalField ? data[totalField.key] : null;
-                  const taxes = (subtotal != null && total != null) ? total - subtotal : null;
                   const currency = data['currency$_identifier'];
                   return (
-                    <div className="mt-1 flex justify-end">
-                      <div className="w-64 text-sm" style={{ borderTopWidth: '0.5px' }}>
-                        {subtotal != null && (
-                          <div className="flex justify-between py-1.5 px-2">
-                            <span className="text-muted-foreground">{ui('subtotal')}</span>
-                            <span className="tabular-nums">{formatAmount(subtotal, currency)}</span>
-                          </div>
-                        )}
-                        {taxes != null && taxes !== 0 && (
-                          <div className="flex justify-between py-1.5 px-2">
-                            <span className="text-muted-foreground">{ui('tax')}</span>
-                            <span className="tabular-nums">{formatAmount(taxes, currency)}</span>
-                          </div>
-                        )}
-                        {total != null && (
-                          <div className="flex justify-between py-1.5 px-2 border-t border-border/40 font-semibold" style={{ borderTopWidth: '0.5px' }}>
-                            <span>{ui('total')}</span>
-                            <span className="tabular-nums">{formatAmount(total, currency)}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <DocumentTotalsPanel
+                      lines={hook.children}
+                      pendingLine={pendingLineValues}
+                      editingLine={lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine}
+                      lineConfig={lineConfig}
+                      formatAmount={formatAmount}
+                      currency={currency}
+                      discountPerProductEnabled={discountPerProductEnabled}
+                      onDiscountPerProductChange={setDiscountPerProductEnabled}
+                      readOnly={isDocumentReadOnly}
+                    />
                   );
                 })()}
 
