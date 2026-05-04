@@ -39,10 +39,9 @@ describe('PurchaseOrderDraftChips', () => {
     assert.match(src, /<ProgressBadge[^>]*poAllInvoiced[^>]*pct=\{invoicedPct\}/s);
   });
 
-  it('keeps the draft-pill chips for clickable navigation to in-progress documents', () => {
-    assert.match(src, /<DraftPill/);
-    assert.match(src, /goods-receipt\/\$\{receiptsDraft\[0\]\.id\}/);
-    assert.match(src, /purchase-invoice\/\$\{invoiceDraft\.id\}/);
+  it('does not render draft navigation pills (related docs panel covers it)', () => {
+    assert.doesNotMatch(src, /<DraftPill/);
+    assert.doesNotMatch(src, /goods-receipt/);
   });
 
   it('drops the legacy CompletionBadge gray-only treatment', () => {
@@ -50,10 +49,9 @@ describe('PurchaseOrderDraftChips', () => {
     assert.doesNotMatch(src, /background:\s*'#F3F4F6'/);
   });
 
-  it('renders the rounded integer percent in the badge instead of a check icon', () => {
+  it('renders the rounded integer percent in the badge', () => {
     assert.match(src, /Math\.round\(safePct \* 100\)/);
     assert.match(src, /\{percent\}%/);
-    assert.doesNotMatch(src, /aria-hidden="true">✓<\/span>/);
   });
 
   it('clamps the percentage to the 0..1 range before rendering', () => {
