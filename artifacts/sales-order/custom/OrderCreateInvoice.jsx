@@ -246,8 +246,8 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
   const [lineCount,       setLineCount]       = useState(null);
   const [freshData,       setFreshData]       = useState(null);
   const [orderConfirmed,  setOrderConfirmed]  = useState(false);
-  const [shipmentCreated, setShipmentCreated] = useState(false);
-  const [invoiceCreated,  setInvoiceCreated]  = useState(false);
+  const [shipmentResult,  setShipmentResult]  = useState(null);
+  const [invoiceResult,   setInvoiceResult]   = useState(null);
 
   // Fetch fresh record + line count on mount
   useEffect(() => {
@@ -299,10 +299,8 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
       }
 
       // Step 2: Create shipment if checked and not already done
-      let shipmentId = null;
-      let shipmentDocNo = '';
-      let shipmentAmount = null;
-      if (createShipment && !shipmentCreated) {
+      let currentShipment = null;
+      if (createShipment && !shipmentResult) {
         const res = await fetch(`${apiBaseUrl}/header/${orderId}/action/createShipment`,
           { method: 'POST', headers, body: JSON.stringify({}) });
         if (!res.ok) {
@@ -310,18 +308,14 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
           throw new Error(ui('soOrderConfirmedShipmentError') + (e?.response?.message || `Error (${res.status})`));
         }
         const doc = (await res.json())?.response?.data;
-        setShipmentCreated(true);
-        shipmentId     = doc?.id ?? null;
-        shipmentDocNo  = doc?.documentNo ?? '';
-        shipmentAmount = doc?.grandTotalAmount ?? null;
+        currentShipment = { id: doc?.id ?? null, documentNo: doc?.documentNo ?? '', amount: doc?.grandTotalAmount ?? null };
+        setShipmentResult(currentShipment);
       }
 
       // Step 3: Create invoice if checked and not already done.
       // Uses order quantities (ordered - already invoiced), independent of the shipment above.
-      let invoiceId = null;
-      let invoiceDocNo = '';
-      let invoiceAmount = null;
-      if (createInvoice && !invoiceCreated) {
+      let currentInvoice = null;
+      if (createInvoice && !invoiceResult) {
         const res = await fetch(`${apiBaseUrl}/header/${orderId}/action/createDraftInvoice`,
           { method: 'POST', headers, body: JSON.stringify({}) });
         if (!res.ok) {
@@ -329,16 +323,15 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
           throw new Error(ui('soOrderConfirmedInvoiceError') + (e?.response?.message || `Error (${res.status})`));
         }
         const doc = (await res.json())?.response?.data;
-        setInvoiceCreated(true);
-        invoiceId     = doc?.id ?? null;
-        invoiceDocNo  = doc?.documentNo ?? '';
-        invoiceAmount = doc?.grandTotalAmount ?? null;
+        currentInvoice = { id: doc?.id ?? null, documentNo: doc?.documentNo ?? '', amount: doc?.grandTotalAmount ?? null };
+        setInvoiceResult(currentInvoice);
       }
 
-      // Always show the result modal — never navigate from here
+      // Always show the result modal — never navigate from here.
+      // Use the current attempt's result first; fall back to persisted result from a prior attempt.
       onConfirmed({
-        shipment: shipmentId ? { id: shipmentId, documentNo: shipmentDocNo, amount: shipmentAmount } : null,
-        invoice:  invoiceId  ? { id: invoiceId,  documentNo: invoiceDocNo,  amount: invoiceAmount  } : null,
+        shipment: currentShipment ?? shipmentResult,
+        invoice:  currentInvoice  ?? invoiceResult,
       });
 
     } catch (e) {
@@ -400,20 +393,20 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
             {ui('soGenerateDocs')}
           </div>
           <SoCheckboxCard
-            checked={createShipment || shipmentCreated}
-            onChange={() => !shipmentCreated && setCreateShipment(v => !v)}
+            checked={createShipment || Boolean(shipmentResult)}
+            onChange={() => !shipmentResult && setCreateShipment(v => !v)}
             icon="🚚"
             title={ui('soCreateShipmentTitle')}
-            subtitle={shipmentCreated ? ui('soAlreadyCreated') : ui('soCreateShipmentCheckDesc')}
-            disabled={shipmentCreated}
+            subtitle={shipmentResult ? ui('soAlreadyCreated') : ui('soCreateShipmentCheckDesc')}
+            disabled={Boolean(shipmentResult)}
           />
           <SoCheckboxCard
-            checked={createInvoice || invoiceCreated}
-            onChange={() => !invoiceCreated && setCreateInvoice(v => !v)}
+            checked={createInvoice || Boolean(invoiceResult)}
+            onChange={() => !invoiceResult && setCreateInvoice(v => !v)}
             icon="🧾"
             title={ui('soCreateInvoiceTitle')}
-            subtitle={invoiceCreated ? ui('soAlreadyCreated') : ui('soCreateInvoiceCheckDesc')}
-            disabled={invoiceCreated}
+            subtitle={invoiceResult ? ui('soAlreadyCreated') : ui('soCreateInvoiceCheckDesc')}
+            disabled={Boolean(invoiceResult)}
           />
         </div>
 
