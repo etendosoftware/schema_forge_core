@@ -150,10 +150,10 @@ function DashboardContent({ apiBaseUrl }) {
             <div className="flex flex-col w-full h-[234px] min-w-0" style={{ flex: '672 1 0' }}>
               <PendingTasksRail tasks={pendingTasks} />
             </div>
-            <div className="flex flex-col w-full h-[234px] min-w-0" style={{ flex: '328 1 0' }}>
+            <div className="flex flex-col w-full h-[234px] min-w-0" style={{ flex: '213 1 0' }}>
               <QuickActionsList actions={quickActions} />
             </div>
-            <div className="flex flex-col w-full h-[234px] min-w-0" style={{ flex: '328 1 0' }}>
+            <div className="flex flex-col w-full h-[234px] min-w-0" style={{ flex: '435 1 0' }}>
               <TopClientsList
                 clients={topClients}
                 currencyLabel={dashboardCurrency}

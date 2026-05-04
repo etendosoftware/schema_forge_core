@@ -114,6 +114,7 @@ export function RecentSalesList({ invoices = [], currencyLabel = '' }) {
         </div>
       ) : (
       <div
+        className="dashboard-scroll"
         style={{
           display: 'flex',
           flexDirection: 'column',
@@ -132,7 +133,7 @@ export function RecentSalesList({ invoices = [], currencyLabel = '' }) {
                 <Link
                   key={inv.id || i}
                   to={target}
-                  className="hover:bg-muted/50 transition-colors"
+                  className="hover:bg-[#F5F7F9] transition-colors"
                   style={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -275,7 +276,7 @@ export function RecentSalesList({ invoices = [], currencyLabel = '' }) {
                       flexShrink: 0,
                     }}
                   >
-                    <ChevronRight style={{ width: '24px', height: '24px', color: '#828FA3' }} />
+                    <ChevronRight style={{ width: '16px', height: '16px', color: '#828FA3' }} />
                   </div>
                 </Link>
               );

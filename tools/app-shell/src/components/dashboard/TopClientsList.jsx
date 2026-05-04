@@ -97,14 +97,14 @@ export function TopClientsList({ clients = [], currencyLabel = '', token = '', a
           </div>
         </div>
       ) : (
-        <div style={{ padding: '8px 0', display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, overflowY: 'auto' }}>
-          {clients.map((c, i) => (
+        <div className="dashboard-scroll" style={{ padding: '8px 0', display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, overflowY: 'auto' }}>
+          {clients.slice(0, 5).map((c, i) => (
             <button
               key={c.name || i}
               type="button"
               onClick={() => handleClick(c)}
-              className="hover:bg-muted/50 transition-colors w-full text-left"
-              style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', padding: '4px 8px', height: '32px', background: 'none', border: 'none', cursor: 'pointer' }}
+              className="bg-transparent hover:bg-[#F5F7F9] transition-colors w-full text-left"
+              style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', padding: '4px 8px', height: '32px', border: 'none', cursor: 'pointer' }}
             >
               {/* Value: nombre del cliente, padding 0 16px 0 8px, flex-grow */}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '0 16px 0 8px', flex: 1, minWidth: 0 }}>
@@ -122,7 +122,7 @@ export function TopClientsList({ clients = [], currencyLabel = '', token = '', a
 
               {/* Trailing: chevron 24x24, padding 0 4px 0 0 */}
               <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', padding: '0 4px 0 0', width: '28px', height: '24px', flexShrink: 0 }}>
-                <ChevronRight style={{ width: '24px', height: '24px', color: '#828FA3' }} />
+                <ChevronRight style={{ width: '16px', height: '16px', color: '#828FA3' }} />
               </div>
             </button>
           ))
