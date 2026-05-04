@@ -154,7 +154,8 @@ function DashboardContent({ apiBaseUrl }) {
             className="px-2 pt-2 pb-0 flex-shrink-0"
             style={{
               borderBottom: scrolled ? '1px solid #E8EAEF' : '1px solid transparent',
-              transition: 'border-color 0.2s ease',
+              filter: scrolled ? 'drop-shadow(0px 4px 6px rgba(18, 18, 23, 0.1))' : 'none',
+              transition: 'border-color 0.2s ease, filter 0.2s ease',
             }}
           >
             <DashboardGreeting username={username || ''} onAskCopilot={openCopilot} />
