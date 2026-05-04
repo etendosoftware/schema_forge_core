@@ -4,6 +4,32 @@ import { useLocaleSwitch } from '@/i18n';
 import { formatDashboardAmount, localeFromUi } from '@/lib/dashboardNumberFormat.js';
 import { createDashboardNavigation, resolveDashboardNavigation } from '@/lib/dashboardNavigation.js';
 
+function CountBadge({ count }) {
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxSizing: 'border-box',
+        minWidth: '27px',
+        height: '24px',
+        padding: '0 8px',
+        background: '#F5F7F9',
+        borderRadius: '8px',
+        fontFamily: 'Inter',
+        fontWeight: 400,
+        fontSize: '12px',
+        lineHeight: '16px',
+        color: '#3F3F50',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {count}
+    </span>
+  );
+}
+
 export function CollectionsPaymentsCard({ pendingAmounts = {}, currencyLabel = '' }) {
   const ui = useUI();
   const { locale } = useLocaleSwitch();
@@ -142,27 +168,7 @@ export function CollectionsPaymentsCard({ pendingAmounts = {}, currencyLabel = '
             >
               {ui('toCollectLabel')}
             </span>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxSizing: 'border-box',
-                minWidth: '27px',
-                height: '24px',
-                padding: '0 8px',
-                background: '#F5F7F9',
-                borderRadius: '8px',
-                fontFamily: 'Inter',
-                fontWeight: 400,
-                fontSize: '12px',
-                lineHeight: '16px',
-                color: '#3F3F50',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {toCollect.count}
-            </span>
+            <CountBadge count={toCollect.count} />
           </div>
           <div
             style={{
@@ -278,27 +284,7 @@ export function CollectionsPaymentsCard({ pendingAmounts = {}, currencyLabel = '
             >
               {ui('toPayLabel')}
             </span>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxSizing: 'border-box',
-                minWidth: '26px',
-                height: '24px',
-                padding: '0 8px',
-                background: '#F5F7F9',
-                borderRadius: '8px',
-                fontFamily: 'Inter',
-                fontWeight: 400,
-                fontSize: '12px',
-                lineHeight: '16px',
-                color: '#3F3F50',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {toPay.count}
-            </span>
+            <CountBadge count={toPay.count} />
           </div>
           <div
             style={{
