@@ -142,8 +142,14 @@ function DashboardContent({ apiBaseUrl }) {
   return (
     <div className="h-full flex flex-col">
       {(loading || !isCurrencyReady) ? <DashboardSkeleton /> : (
-        <div className="p-2 bg-white rounded-tl-2xl flex-1 overflow-y-auto space-y-4">
-          <DashboardGreeting username={username || ''} onAskCopilot={openCopilot} />
+        <div className="bg-white rounded-tl-2xl flex-1 flex flex-col overflow-hidden">
+          {/* Fixed header — always visible */}
+          <div className="px-2 pt-2 pb-0 flex-shrink-0">
+            <DashboardGreeting username={username || ''} onAskCopilot={openCopilot} />
+          </div>
+
+          {/* Scrollable content */}
+          <div className="px-2 pb-2 flex-1 overflow-y-auto space-y-4">
 
           {/* Row 1: Pending tasks | Quick access | Top clients */}
           <div className="flex flex-col gap-4 lg:flex-row" style={dashboardRowStyle}>
@@ -195,6 +201,7 @@ function DashboardContent({ apiBaseUrl }) {
             </div>
           </div>
         </div>
+      </div>
       )}
     </div>
   );
