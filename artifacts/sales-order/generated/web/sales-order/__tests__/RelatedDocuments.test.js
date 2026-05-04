@@ -22,9 +22,9 @@ describe('RelatedDocuments', () => {
     assert.match(src, /URLSearchParams.*criteria/);
   });
 
-  it('fetches payments via Payment Plan → Payment Details chain', () => {
-    assert.match(src, /Payment Plan/);
-    assert.match(src, /Payment Details/);
+  it('fetches payments via paymentPlan → paymentDetails chain', () => {
+    assert.match(src, /paymentPlan/);
+    assert.match(src, /paymentDetails/);
   });
 
   it('renders nothing when all sections are empty', () => {
