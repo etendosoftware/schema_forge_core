@@ -17,7 +17,7 @@ import DocumentTotalsPanel from '@/components/contract-ui/DocumentTotalsPanel.js
 export default function PurchaseInvoiceBottomPanel({
   recordId, data, token, apiBaseUrl, api, summary,
   notesField, onFieldChange, notesFocused, setNotesFocused,
-  lines, pendingLine, editingLine, lineConfig, discountPerProductEnabled, onDiscountPerProductChange,
+  lines, pendingLine, editingLine, lineConfig,
 }) {
   const ui = useUI();
   const currency = data?.['currency$_identifier'] || '';
@@ -103,8 +103,6 @@ export default function PurchaseInvoiceBottomPanel({
             lineConfig={lineConfig}
             formatAmount={(val, curr) => formatCurrency(curr || currency || 'USD', val)}
             currency={currency}
-            discountPerProductEnabled={discountPerProductEnabled ?? false}
-            onDiscountPerProductChange={onDiscountPerProductChange}
             readOnly={isReadOnly}
           />
         </div>

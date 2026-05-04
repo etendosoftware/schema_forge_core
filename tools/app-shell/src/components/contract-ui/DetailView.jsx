@@ -891,12 +891,6 @@ export function DetailView({
   const [showOthers, setShowOthers] = useState(primaryTabs ? false : null);
   const [activePrimaryTab, setActivePrimaryTab] = useState(primaryTabs?.[0]?.key ?? 'general');
   const [notesFocused, setNotesFocused] = useState(false);
-  const [discountPerProductEnabled, setDiscountPerProductEnabled] = useState(false);
-
-  // Reset discount column visibility when all lines are removed.
-  useEffect(() => {
-    if (hook.children.length === 0) setDiscountPerProductEnabled(false);
-  }, [hook.children.length]);
 
   const othersRef = useRef(null);
 
@@ -1498,7 +1492,7 @@ export function DetailView({
                         onSelectionChange={setSelectedChildRows}
                         showFooterTotals={showDetailFooterTotals ?? !summary.some(f => f.type === 'amount')}
                         selectorContext={selectorContextByEntity[detailEntity]}
-                        hiddenColumns={lineConfig?.discountField && !discountPerProductEnabled ? [lineConfig.discountField] : []}
+                        hiddenColumns={[]}
                         onDeleteRow={(api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly ? async (row) => {
                           if (!window.confirm(ui('deleteConfirmMessage'))) return;
                           try {
@@ -2070,8 +2064,6 @@ export function DetailView({
                   pendingLine={pendingLineValues}
                   editingLine={lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine}
                   lineConfig={lineConfig}
-                  discountPerProductEnabled={discountPerProductEnabled}
-                  onDiscountPerProductChange={setDiscountPerProductEnabled}
                 />
               );
             })() : (
@@ -2090,8 +2082,6 @@ export function DetailView({
                       lineConfig={lineConfig}
                       formatAmount={formatAmount}
                       currency={currency}
-                      discountPerProductEnabled={discountPerProductEnabled}
-                      onDiscountPerProductChange={setDiscountPerProductEnabled}
                       readOnly={isDocumentReadOnly}
                     />
                   );
