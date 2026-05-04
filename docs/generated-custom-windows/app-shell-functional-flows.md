@@ -184,13 +184,13 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
 **How it works:**
 - Receives `lines` (saved child rows), `pendingLine` (live in-progress add-row values), and `editingLine` (live sidebar editing values).
 - Computes all amounts client-side: `grossSubtotal = Σ(qty × listPrice)`, `netSubtotal = Σ(qty × listPrice × (1 − discount/100))`, `grandTotal = Σ(line.grossField)` (server-computed line gross), `discountAmt = grossSubtotal − netSubtotal`, `taxAmt = grandTotal − netSubtotal`.
-- Three visual states: **simple** (subtotal, IVA, total); **expanded-unchecked** (breakdown visible, discount checkbox off); **expanded-checked** (same, discount checkbox on → discount column visible in grid).
-
-**Discount column visibility:**
-- Controlled by `discountPerProductEnabled` state in `DetailView.jsx`.
-- When enabled, `hiddenColumns={[]}` → discount column visible in `DataTable` and the inline add-row.
-- When disabled, `hiddenColumns={[lineConfig.discountField]}` → column hidden in both.
-- `DetailView.jsx` resets `discountPerProductEnabled` to `false` only when `hook.children.length === 0` (all lines deleted), avoiding the race condition where `pendingLine` clears before the server confirms the first line save.
+- The discount column is always visible (`hiddenColumns={[]}` is static — there is no per-product toggle).
+- "Subtotal sin descuento" and "Descuento por producto" rows appear automatically when `discountAmt > 0` (at least one line carries a non-zero discount). They disappear again when all discount amounts drop back to zero. No manual expansion is needed.
+- "Descuento por producto" is a **read-only display row** showing the computed discount amount — it is not an interactive checkbox.
+- A `+ Añadir descuento total` button (i18n key `addTotalDiscount`) appears below the totals block when no total discount is currently active AND at least one line exists (saved or in the inline add-row). The button is hidden when the document is `readOnly` or there are no lines.
+- Clicking the button shows an interactive "Descuento total" row: checkbox (checked by default) + computed amount + number input + static "%" label below. Unchecking the checkbox collapses the section and restores the button. The calculation is a **UI placeholder only** — no backend persistence yet.
+- `totalDiscountOpen` is local state inside `DocumentTotalsPanel`; it is not lifted to `DetailView`.
+- `discountPerProductEnabled` and `onDiscountPerProductChange` props have been removed from both `DetailView.jsx` and `PurchaseInvoiceBottomPanel`.
 
 **Live preview wiring:**
 - `DataTable`'s `InlineAddRow` calls `onValuesChange(values)` on every keystroke → `DetailView` stores it as `pendingLineValues` → passed as `pendingLine` to the panel → totals include the in-progress row before any save.
@@ -200,7 +200,8 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
 - `InlineAddRow` uses `document.addEventListener('mousedown', handler, true)` (capture phase) to auto-save when the user clicks outside the row. Panels with `data-inline-add-portal="true"` on their root element are whitelisted — the handler skips the save. Both root `<div>` elements of `DocumentTotalsPanel` carry this attribute.
 
 **i18n keys** (both `en_US.json` and `es_ES.json`):
-- `addDiscount` — "+ Añadir descuento"
+- `addTotalDiscount` — "+ Añadir descuento total" (renamed from `addDiscount`)
+- `totalDiscount` — "Descuento total" (new key for the interactive total-discount row)
 - `subtotalWithoutDiscount` — "Subtotal sin descuento"
 - `discountPerProduct` — "Descuento por producto"
 
