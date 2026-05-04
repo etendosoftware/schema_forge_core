@@ -35,9 +35,14 @@ describe('PurchaseInvoiceHeaderTable', () => {
     assert.match(src, /POReference/);
   });
 
-  it('includes a custom _dueDate column with red, amber, and green dot logic', () => {
+  it('includes a custom _dueDate column driven by paid/overdue/soon/ok state', () => {
     assert.match(src, /key.*_dueDate/);
-    assert.match(src, /getDueDateDotColor/);
+    assert.match(src, /getDueDateState/);
+    assert.match(src, /getDueDateDotStyle/);
+  });
+
+  it('feeds outstandingAmount into the due-date state to flip overdue→paid', () => {
+    assert.match(src, /getDueDateState\(\s*d\s*,\s*row\.outstandingAmount/);
   });
 
   it('shows a dash when no due date is available', () => {

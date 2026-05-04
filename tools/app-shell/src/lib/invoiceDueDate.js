@@ -1,4 +1,4 @@
-import { getCalendarDateRelation, parseCalendarDate } from './dateOnly.js';
+import { parseCalendarDate } from './dateOnly.js';
 
 export function getLatestInstallmentDueDate(installments = []) {
   const timestamps = installments
@@ -8,9 +8,49 @@ export function getLatestInstallmentDueDate(installments = []) {
   return timestamps.length > 0 ? new Date(Math.max(...timestamps)) : null;
 }
 
-export function getDueDateDotColor(raw, reference) {
-  const relation = getCalendarDateRelation(raw, reference);
-  if (relation === 'past') return 'bg-red-500';
-  if (relation === 'today') return 'bg-amber-500';
-  return 'bg-emerald-500';
+const SOON_DAYS_THRESHOLD = 7;
+
+// Etendo Figma tokens — see Due Date — Final spec.
+const DOT_COLOR = {
+  paid: '#26A95F',     // green-600
+  overdue: '#F53D6B',  // red-500
+  soon: '#FAAF00',     // yellow-600
+  ok: '#8A8AA3',       // gray-400
+};
+
+const TEXT_COLOR = {
+  overdue: '#D50B3E',  // red-700 — only overdue with balance reinforces with red text
+};
+
+/**
+ * Resolve the due-date state for an invoice row.
+ * Priority: paid wins over any date-based state — once outstanding is 0
+ * the invoice is no longer at risk regardless of the calendar.
+ */
+export function getDueDateState(rawDueDate, outstanding, reference = new Date()) {
+  const out = Number(outstanding);
+  if (Number.isFinite(out) && out <= 0) return 'paid';
+
+  const due = parseCalendarDate(rawDueDate);
+  if (!due) return 'ok';
+
+  const today = new Date(reference.getFullYear(), reference.getMonth(), reference.getDate());
+  const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+
+  if (dueDay.getTime() < today.getTime()) return 'overdue';
+
+  const soonLimit = new Date(today);
+  soonLimit.setDate(today.getDate() + SOON_DAYS_THRESHOLD);
+  if (dueDay.getTime() <= soonLimit.getTime()) return 'soon';
+
+  return 'ok';
+}
+
+export function getDueDateDotStyle(state) {
+  return { backgroundColor: DOT_COLOR[state] ?? DOT_COLOR.ok };
+}
+
+export function getDueDateTextStyle(state) {
+  const color = TEXT_COLOR[state];
+  return color ? { color } : undefined;
 }

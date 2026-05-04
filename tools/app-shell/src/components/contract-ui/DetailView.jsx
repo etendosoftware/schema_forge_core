@@ -13,7 +13,7 @@ import { useDisplayLogic } from '@/hooks/useDisplayLogic';
 import { useCallout } from '@/hooks/useCallout';
 import { useLineGrossAmount, ORDER_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import { useDocumentAction } from '@/hooks/useDocumentAction';
-import { useMenuLabel, useUI, useLocale } from '@/i18n';
+import { useMenuLabel, useUI } from '@/i18n';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
 import { SummaryBar } from './SummaryBar.jsx';
@@ -26,7 +26,7 @@ import {
 } from '@/lib/lineFieldChange.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { formatAmount } from '@/lib/formatAmount.js';
-import { getStatusBadgeProps, getStatusDotColor, getStatusPillClass, statusLabel } from '@/lib/statusBadge.js';
+import DocumentStatusPill from './DocumentStatusPill.jsx';
 
 /**
  * Evaluate a simple Etendo display-logic expression (@Field@='Value') against record data.
@@ -234,7 +234,6 @@ export function DetailView({
   const embedded = searchParams.get('embedded') === '1';
   const tMenu = useMenuLabel();
   const ui = useUI();
-  const dictionary = useLocale();
   const [addingLine, setAddingLine] = useState(false);
   // Live snapshot of the in-progress add-row values — updated on every keystroke
   // so DocumentTotalsPanel can compute real-time totals before the line is saved.
@@ -956,12 +955,10 @@ export function DetailView({
         {embedded ? (
           statusField && data[statusField] ? (
             <div className="flex items-center gap-3 px-6 py-3 border-b border-border/30">
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[13px] font-medium ${getStatusPillClass(data[statusField])}`}>
-                <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(data[statusField])}`} />
-                {statusFieldLabel || ui('documentStatus')}
-                <span style={{ opacity: 0.4 }}>&middot;</span>
-                <span className="font-semibold">{statusEnumLabels?.[data[statusField]] || statusLabel(data[statusField])}</span>
-              </span>
+              <DocumentStatusPill
+                status={data[statusField]}
+                enumLabels={statusEnumLabels}
+              />
             </div>
           ) : null
         ) : (
@@ -977,17 +974,12 @@ export function DetailView({
               <X className="h-3.5 w-3.5" />
               {ui('cancel')}
             </Button>
-            {statusField && data[statusField] != null && (() => {
-              const _s = data[statusField];
-              return (
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[13px] font-medium ${getStatusPillClass(_s)}`}>
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${getStatusDotColor(_s)}`} />
-                  {statusFieldLabel || ui('documentStatus')}
-                  <span style={{ opacity: 0.4 }}>&middot;</span>
-                  <span className="font-semibold">{statusEnumLabels?.[_s] || statusLabel(_s, dictionary)}</span>
-                </span>
-              );
-            })()}
+            {statusField && data[statusField] != null && (
+              <DocumentStatusPill
+                status={data[statusField]}
+                enumLabels={statusEnumLabels}
+              />
+            )}
             {extraBadges.map(b => {
               const when = b.when !== undefined ? b.when : true;
               const show = when ? !!data[b.key] : !data[b.key];
