@@ -172,6 +172,18 @@ describe('OrderCreateInvoice', () => {
     it('renders the error region with whiteSpace: pre-line so multiple errors keep their newline', () => {
       assert.match(src, /whiteSpace:\s*'pre-line'/);
     });
+
+    it('routes close-after-partial-success through onConfirmed so the page reloads on the result modal', () => {
+      // handleClose forwards to onConfirmed if any work was done; otherwise plain onClose
+      assert.match(
+        src,
+        /const handleClose\s*=\s*\(\)\s*=>\s*\{[\s\S]*?if\s*\(orderConfirmed\s*\|\|\s*shipmentResult\s*\|\|\s*invoiceResult\)[\s\S]*?onConfirmed\(\{[\s\S]*?shipment:\s*shipmentResult[\s\S]*?invoice:\s*invoiceResult[\s\S]*?\}\)[\s\S]*?return;[\s\S]*?\}[\s\S]*?onClose\(\);/,
+      );
+      // Cancel button + X button + overlay click all use handleClose, not onClose directly
+      assert.match(src, /<div onClick=\{handleClose\} style=\{overlayStyle\}>/);
+      assert.match(src, /onClick=\{handleClose\} style=\{closeBtn\}/);
+      assert.match(src, /onClick=\{handleClose\} disabled=\{loading\}/);
+    });
   });
 
   describe('SoCheckboxCard — disabled (already-done) treatment', () => {

@@ -368,8 +368,24 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
     return ui('soConfirmActionOnly');
   })();
 
+  // If the user closes the modal AFTER step 1 succeeded (or any document was
+  // already created), route the close through `onConfirmed` so the result
+  // modal opens with whatever exists and the page reloads on its own close.
+  // Otherwise the order is silently in CO state but the UI keeps showing DR,
+  // and reopening the modal would re-attempt step 1 → @AlreadyPosted@.
+  const handleClose = () => {
+    if (orderConfirmed || receiptResult || invoiceResult) {
+      const result = {};
+      if (receiptResult) result.receipt = receiptResult;
+      if (invoiceResult) result.invoice = invoiceResult;
+      onConfirmed(result);
+      return;
+    }
+    onClose();
+  };
+
   return (
-    <div onClick={onClose} style={overlayStyle}>
+    <div onClick={handleClose} style={overlayStyle}>
       <div onClick={e => e.stopPropagation()} style={{ ...cardStyle, width: 460 }}>
 
         {/* Title row */}
@@ -377,7 +393,7 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
           <div style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>
             {ui('poConfirmTitle', { number: documentNo })}
           </div>
-          <button type="button" onClick={onClose} style={closeBtn}>&times;</button>
+          <button type="button" onClick={handleClose} style={closeBtn}>&times;</button>
         </div>
 
         {/* Blue summary card */}
@@ -438,7 +454,7 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
         )}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '12px 20px', borderTop: '0.5px solid #E5E7EB' }}>
-          <button type="button" onClick={onClose} disabled={loading}
+          <button type="button" onClick={handleClose} disabled={loading}
             style={{ ...btnSecondary, opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
             {ui('cancel')}
           </button>

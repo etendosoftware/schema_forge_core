@@ -164,6 +164,16 @@ describe('PurchaseOrderActions', () => {
     it('renders the error region with whiteSpace: pre-line so multiple errors keep their newline', () => {
       assert.match(src, /whiteSpace:\s*'pre-line'/);
     });
+
+    it('routes close-after-partial-success through onConfirmed so the page reloads on the result modal', () => {
+      assert.match(
+        src,
+        /const handleClose\s*=\s*\(\)\s*=>\s*\{[\s\S]*?if\s*\(orderConfirmed\s*\|\|\s*receiptResult\s*\|\|\s*invoiceResult\)[\s\S]*?onConfirmed\(result\)[\s\S]*?return;[\s\S]*?\}[\s\S]*?onClose\(\);/,
+      );
+      assert.match(src, /<div onClick=\{handleClose\} style=\{overlayStyle\}>/);
+      assert.match(src, /onClick=\{handleClose\} style=\{closeBtn\}/);
+      assert.match(src, /onClick=\{handleClose\} disabled=\{loading\}/);
+    });
   });
 
   describe('PoCheckboxCard — disabled (already-done) treatment', () => {
