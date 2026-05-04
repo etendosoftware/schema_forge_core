@@ -152,13 +152,17 @@ function DashboardContent({ apiBaseUrl }) {
           {/* Fixed header — always visible */}
           <div
             className="px-2 pt-2 pb-0 flex-shrink-0"
-            style={{ boxShadow: scrolled ? '0px 4px 8px rgba(18, 18, 23, 0.08)' : 'none', transition: 'box-shadow 0.2s ease' }}
           >
             <DashboardGreeting username={username || ''} onAskCopilot={openCopilot} />
           </div>
 
           {/* Scrollable content */}
-          <div ref={scrollRef} onScroll={handleScroll} className="dashboard-scroll px-2 pb-2 flex-1 overflow-y-auto space-y-4">
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="dashboard-scroll px-2 pb-2 flex-1 overflow-y-auto space-y-4"
+            style={{ boxShadow: scrolled ? 'inset 0 8px 8px -8px rgba(18, 18, 23, 0.12)' : 'none', transition: 'box-shadow 0.2s ease' }}
+          >
 
           {/* Row 1: Pending tasks | Quick access | Top clients */}
           <div className="flex flex-col gap-4 lg:flex-row" style={dashboardRowStyle}>
