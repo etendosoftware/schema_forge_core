@@ -8,8 +8,8 @@ import { computeDocumentTotals } from '@/lib/documentTotals';
  * Default (collapsed) state: shows Subtotal / Tax / Total rows + a "+ Add discount"
  * text link below.
  *
- * Expanded state (after clicking "+ Add discount" or when any line has a non-zero
- * discount on mount): shows a breakdown with a "Discount per product" checkbox.
+ * Expanded state (after clicking "+ Add discount" or when lines load from the server
+ * with a non-zero discount): shows a breakdown with a "Discount per product" checkbox.
  * When the checkbox is enabled the discount column becomes visible in the lines
  * grid; when disabled it is hidden. The discount amount row shows a negative value
  * when discountPerProductEnabled is true and the computed discount is positive.
@@ -42,27 +42,34 @@ export default function DocumentTotalsPanel({
   const ui = useUI();
   const [discountPanelOpen, setDiscountPanelOpen] = useState(false);
 
-  // Auto-expand the panel on mount if any existing line already has a non-zero discount.
+  // Auto-expand once when lines first arrive from the server with a non-zero discount.
+  // A ref guard ensures this fires only once per document: the guard resets whenever
+  // lines goes back to empty (document navigation clears lines before loading new ones).
+  const hasAutoExpandedRef = useRef(false);
   useEffect(() => {
-    if (!lineConfig?.discountField) return;
+    if (lines.length === 0) {
+      hasAutoExpandedRef.current = false;
+      return;
+    }
+    if (hasAutoExpandedRef.current || !lineConfig?.discountField) return;
+    hasAutoExpandedRef.current = true;
     const hasDiscount = lines.some(l => parseFloat(l[lineConfig.discountField] ?? 0) > 0);
     if (hasDiscount) {
       setDiscountPanelOpen(true);
       onDiscountPerProductChange?.(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // intentionally run only on mount
+  }, [lines.length, lineConfig?.discountField]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Collapse the panel when the parent resets discountPerProductEnabled to false.
-  // This only happens when DetailView confirms all saved lines are gone (hook.children.length === 0),
-  // avoiding the race condition where pendingLine clears before hook.children updates after a save.
+  // Collapse the panel only when the parent resets discountPerProductEnabled to false AND there are
+  // no lines left. This distinguishes document navigation (all lines gone) from the user manually
+  // unchecking the checkbox — in the latter case the panel stays expanded, only the checkbox changes.
   const prevDiscountEnabled = useRef(discountPerProductEnabled);
   useEffect(() => {
-    if (prevDiscountEnabled.current && !discountPerProductEnabled) {
+    if (prevDiscountEnabled.current && !discountPerProductEnabled && lines.length === 0) {
       setDiscountPanelOpen(false);
     }
     prevDiscountEnabled.current = discountPerProductEnabled;
-  }, [discountPerProductEnabled]);
+  }, [discountPerProductEnabled, lines.length]);
 
   // --- Computations (client-side, real-time) ---
 
@@ -146,7 +153,7 @@ export default function DocumentTotalsPanel({
               </span>
             </label>
             <span className="tabular-nums text-muted-foreground">
-              {discountAmt != null && discountPerProductEnabled && discountAmt > 0
+              {discountAmt != null && discountAmt > 0
                 ? `-${fmt(discountAmt)}`
                 : fmt(0)}
             </span>
