@@ -139,14 +139,16 @@
           "form": true,
           "grid": false,
           "section": "principal",
-          "order": 3
+          "order": 3,
+          "required": true
         },
         "etgoLastname": {
           "visibility": "editable",
           "form": true,
           "grid": false,
           "section": "principal",
-          "order": 4
+          "order": 4,
+          "required": true
         },
         "etgoIsperson": {
           "visibility": "editable",

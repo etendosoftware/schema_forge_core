@@ -186,7 +186,7 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
     ? fieldDecision.searchable
     : defaults.searchable;
 
-  const required = rawField.mandatory || false;
+  const required = fieldDecision.required !== undefined ? fieldDecision.required : (rawField.mandatory || false);
 
   // Apply optional name override from decision
   const fieldName = fieldDecision.name || rawField.name;
