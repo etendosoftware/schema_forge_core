@@ -142,45 +142,27 @@ export function CollectionsPaymentsCard({ pendingAmounts = {}, currencyLabel = '
             >
               {ui('toCollectLabel')}
             </span>
-            <div
+            <span
               style={{
-                display: 'flex',
-                flexDirection: 'row',
+                display: 'inline-flex',
                 alignItems: 'center',
-                padding: '4px 8px',
-                width: '27px',
+                justifyContent: 'center',
+                boxSizing: 'border-box',
+                minWidth: '27px',
                 height: '24px',
+                padding: '0 8px',
                 background: '#F5F7F9',
                 borderRadius: '8px',
+                fontFamily: 'Inter',
+                fontWeight: 400,
+                fontSize: '12px',
+                lineHeight: '16px',
+                color: '#3F3F50',
+                whiteSpace: 'nowrap',
               }}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  alignItems: 'flex-start',
-                  padding: '0px 2px',
-                  width: '11px',
-                  height: '16px',
-                  borderRadius: '0px',
-                }}
-              >
-                <span
-                  style={{
-                    width: '7px',
-                    height: '16px',
-                    fontFamily: 'Inter',
-                    fontStyle: 'normal',
-                    fontWeight: 400,
-                    fontSize: '12px',
-                    lineHeight: '16px',
-                    color: '#3F3F50',
-                  }}
-                >
-                  {toCollect.count}
-                </span>
-              </div>
-            </div>
+              {toCollect.count}
+            </span>
           </div>
           <div
             style={{
@@ -240,17 +222,17 @@ export function CollectionsPaymentsCard({ pendingAmounts = {}, currencyLabel = '
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            alignItems: 'flex-start',
+            alignItems: 'stretch',
             padding: '16px 0px',
-            width: '189.33px',
+            width: '100%',
             height: '32px',
           }}
         >
           <div
             style={{
-              width: '189.33px',
+              width: '100%',
               height: '0px',
-              border: '1px solid #E8EAEF',
+              borderTop: '1px solid #E8EAEF',
             }}
           />
         </div>
@@ -296,45 +278,27 @@ export function CollectionsPaymentsCard({ pendingAmounts = {}, currencyLabel = '
             >
               {ui('toPayLabel')}
             </span>
-            <div
+            <span
               style={{
-                display: 'flex',
-                flexDirection: 'row',
+                display: 'inline-flex',
                 alignItems: 'center',
-                padding: '4px 8px',
-                width: '26px',
+                justifyContent: 'center',
+                boxSizing: 'border-box',
+                minWidth: '26px',
                 height: '24px',
+                padding: '0 8px',
                 background: '#F5F7F9',
                 borderRadius: '8px',
+                fontFamily: 'Inter',
+                fontWeight: 400,
+                fontSize: '12px',
+                lineHeight: '16px',
+                color: '#3F3F50',
+                whiteSpace: 'nowrap',
               }}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  alignItems: 'flex-start',
-                  padding: '0px 2px',
-                  width: '10px',
-                  height: '16px',
-                  borderRadius: '0px',
-                }}
-              >
-                <span
-                  style={{
-                    width: '6px',
-                    height: '16px',
-                    fontFamily: 'Inter',
-                    fontStyle: 'normal',
-                    fontWeight: 400,
-                    fontSize: '12px',
-                    lineHeight: '16px',
-                    color: '#3F3F50',
-                  }}
-                >
-                  {toPay.count}
-                </span>
-              </div>
-            </div>
+              {toPay.count}
+            </span>
           </div>
           <div
             style={{

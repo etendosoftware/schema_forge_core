@@ -126,7 +126,7 @@ export function RecentSalesList({ invoices = [], currencyLabel = '' }) {
           overflowY: 'scroll',
         }}
       >
-          {invoices.map((inv, i) => {
+          {invoices.slice(0, 5).map((inv, i) => {
               const target = resolveDashboardNavigation(inv.navigation) || (inv.id ? `/sales-invoice/${inv.id}` : '/sales-invoice');
               const docNum = resolveDocumentNumber(inv);
               return (
