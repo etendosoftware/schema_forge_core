@@ -35,7 +35,7 @@ pipeline {
         NODE_VERSION        = '22'
 
         // --- GitHub commit status ---
-        CONTEXT_BUILD            = 'Schema Forge Pipeline'
+        CONTEXT_BUILD            = 'Etendo GO Regeneration check'
         COMMIT_INPROGRESS_STATUS = 'pending'
         COMMIT_SUCCESS_STATUS    = 'success'
         COMMIT_FAILED_STATUS     = 'failure'
