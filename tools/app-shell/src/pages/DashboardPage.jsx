@@ -149,7 +149,7 @@ function DashboardContent({ apiBaseUrl }) {
           </div>
 
           {/* Scrollable content */}
-          <div className="px-2 pb-2 flex-1 overflow-y-auto space-y-4">
+          <div className="dashboard-scroll px-2 pb-2 flex-1 overflow-y-auto space-y-4">
 
           {/* Row 1: Pending tasks | Quick access | Top clients */}
           <div className="flex flex-col gap-4 lg:flex-row" style={dashboardRowStyle}>
