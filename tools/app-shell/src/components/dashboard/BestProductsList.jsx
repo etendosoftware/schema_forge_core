@@ -156,14 +156,18 @@ export function BestProductsList({ sellers = [], products = [], currencyLabel = 
       >
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', height: '24px' }}>
           {hasPositiveTrend && (
-            <div className="flex items-center gap-1.5 text-xs" style={{ color: '#1E874C' }}>
-              <Check className="h-3.5 w-3.5 shrink-0" />
+            <div className="flex items-center gap-2 text-xs" style={{ color: '#1E874C' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '20px', height: '20px', background: '#EEFBF4', borderRadius: '10px', flexShrink: 0 }}>
+                <Check style={{ width: '12.5px', height: '12.5px', color: '#17663A' }} />
+              </div>
               <span>{ui('bestProductsTrendPositive')}</span>
             </div>
           )}
           {hasNegativeTrend && (
-            <div className="flex items-center gap-1.5 text-xs" style={{ color: '#D50B3E' }}>
-              <TrendingDown className="h-3.5 w-3.5 shrink-0" />
+            <div className="flex items-center gap-2 text-xs" style={{ color: '#D50B3E' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '20px', height: '20px', background: '#FEF0F4', borderRadius: '10px', flexShrink: 0 }}>
+                <TrendingDown style={{ width: '12.5px', height: '12.5px', color: '#D50B3E' }} />
+              </div>
               <span>{ui('bestProductsTrendNegative')}</span>
             </div>
           )}
