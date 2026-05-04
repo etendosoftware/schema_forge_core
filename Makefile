@@ -1,4 +1,4 @@
-.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate
+.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate sonar sonar-coverage menu-cache
 
 # --- Testing ---
 
@@ -22,7 +22,7 @@ test-e2e: ## Run E2E tests with visible browser
 	cd e2e && npx playwright test --headed
 
 test-e2e-headless: ## Run E2E tests headless (CI mode)
-	cd e2e && npx playwright test --headed=false
+	cd e2e && CI=true npx playwright test
 
 test-e2e-debug: ## Run E2E tests in debug mode (step by step)
 	cd e2e && npx playwright test --debug
@@ -89,6 +89,9 @@ build: ## Build app-shell for production
 
 # --- Setup ---
 
+menu-cache: ## Refresh the AD menu cache from the database
+	node cli/src/menu-cache.js refresh
+
 install: ## Install all workspace dependencies and activate git hooks
 	npm install
 	git config core.hooksPath .githooks
@@ -136,6 +139,18 @@ report-stop: ## Stop jsreport Docker container
 report-preview: ## Preview Business Partner listing report
 	node cli/src/report-preview.js --artifact business-partner --report listing
 
+# --- Static Analysis (SonarQube) ---
+
+sonar: ## Run SonarQube analysis on Schema Forge JS/JSX code
+	sonar-scanner -Dproject.settings=sonar-project.properties
+
+sonar-coverage: ## Run all tests with coverage then SonarQube analysis
+	@mkdir -p coverage
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/cli-lcov.info 'cli/test/*.test.js'
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-lcov.info 'tools/app-shell/src/**/__tests__/*.test.js'
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-test-lcov.info 'tools/app-shell/test/*.test.js'
+	sonar-scanner -Dproject.settings=sonar-project.properties
+
 # --- Cleanup ---
 
 clean: ## Remove generated artifacts and build output
@@ -144,6 +159,11 @@ clean: ## Remove generated artifacts and build output
 # --- Help ---
 
 help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-18s\033[0m %s\n", $$1, $$2}'
+	@echo ""; \
+	echo "\033[1mSchema Forge — Available targets\033[0m"; \
+	echo ""; \
+	awk '/^# ---/{gsub(/^# --- | ---$$/,"");printf "\033[1;33m%s\033[0m\n",$$0;next} \
+	     /^[a-zA-Z][a-zA-Z0-9_-]*:.*## /{n=index($$0,": ## ");if(n>0){printf "  \033[36m%-22s\033[0m %s\n",substr($$0,1,n-1),substr($$0,n+5)}}' Makefile; \
+	echo ""
 
 .DEFAULT_GOAL := help

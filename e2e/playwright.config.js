@@ -24,7 +24,7 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
-    headless: false,              // "con ventanita" by default
+    headless: !!process.env.CI,   // headless en CI, con ventana en local
     viewport: { width: 1440, height: 900 },
     actionTimeout: 15_000,
   },
