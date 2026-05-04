@@ -45,7 +45,7 @@ export function PendingTasksRail({ tasks = [] }) {
   };
 
   return (
-    <div className="rounded-xl border overflow-hidden bg-white flex flex-col h-full">
+    <div className="rounded-lg border overflow-hidden bg-white flex flex-col h-full">
       {/* Cabecera: #F5F7F9 bg, 48px, border-bottom #E8EAEF, padding 8px 12px */}
       <div
         className="flex items-center justify-between border-b"
@@ -59,14 +59,14 @@ export function PendingTasksRail({ tasks = [] }) {
             <button
               type="button"
               onClick={() => scroll(-1)}
-              className="h-7 w-7 rounded-full border bg-white flex items-center justify-center hover:bg-gray-50 transition-colors"
+              className="h-8 w-8 rounded-full border bg-white flex items-center justify-center hover:bg-gray-50 transition-colors"
             >
               <ChevronLeft className="h-3.5 w-3.5" style={{ color: '#6C6C89' }} />
             </button>
             <button
               type="button"
               onClick={() => scroll(1)}
-              className="h-7 w-7 rounded-full border bg-white flex items-center justify-center hover:bg-gray-50 transition-colors"
+              className="h-8 w-8 rounded-full border bg-white flex items-center justify-center hover:bg-gray-50 transition-colors"
             >
               <ChevronRight className="h-3.5 w-3.5" style={{ color: '#6C6C89' }} />
             </button>
@@ -87,7 +87,7 @@ export function PendingTasksRail({ tasks = [] }) {
           </div>
         </div>
       ) : (
-        <div className="p-3">
+        <div className="p-4">
           <div
             ref={railRef}
             className="flex gap-3 overflow-x-auto"
@@ -105,8 +105,8 @@ export function PendingTasksRail({ tasks = [] }) {
                 <Link
                   key={i}
                   to={target}
-                  className="flex-none flex flex-col rounded-lg border hover:shadow-sm transition-shadow"
-                  style={{ width: '185px', height: '154px', backgroundColor: '#FFFFFF', borderColor: '#E8EAEF' }}
+                  className="flex-none flex flex-col rounded-lg border bg-white hover:bg-[#F5F7F9] hover:shadow-sm transition-colors transition-shadow"
+                  style={{ minWidth: '185px', height: '154px', borderColor: '#E8EAEF' }}
                 >
                   {/* Cabecera de tarjeta: 44px fijo, padding top 4px / right 4px / left 16px, gap 10px */}
                   <div
@@ -119,7 +119,7 @@ export function PendingTasksRail({ tasks = [] }) {
                     >
                       <Icon className="h-3.5 w-3.5" style={{ color: '#3F3F50' }} />
                     </div>
-                    <span className="text-sm font-normal truncate" style={{ color: '#3F3F50' }}>
+                    <span className="text-sm font-normal" style={{ color: '#3F3F50' }}>
                       {subjectLabel}
                     </span>
                   </div>
@@ -129,11 +129,11 @@ export function PendingTasksRail({ tasks = [] }) {
                     className="flex flex-col justify-between flex-1"
                     style={{ padding: '0 16px 16px 16px' }}
                   >
-                    <p className="text-5xl font-bold tabular-nums leading-none" style={{ color: '#121217' }}>
+                    <p className="text-5xl font-medium tabular-nums leading-none" style={{ color: '#121217' }}>
                       {task.count ?? 0}
                     </p>
                     <span
-                      className="inline-flex self-start items-center rounded-full border px-2.5 py-0.5 text-xs font-medium"
+                      className="inline-flex self-start items-center rounded-lg border px-2.5 py-0.5 text-xs font-medium"
                       style={badgeStyle}
                     >
                       {stateLabel}

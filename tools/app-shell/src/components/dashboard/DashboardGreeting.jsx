@@ -56,7 +56,7 @@ export function DashboardGreeting({ username = '', onAskCopilot }) {
       <div className="flex items-center gap-2 shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-1.5 text-sm">
+            <Button variant="outline" size="sm" className="h-10 gap-1.5 text-sm bg-white hover:bg-[#F5F7F9]">
               <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
               <span>{currentRangeLabel}</span>
               <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -77,7 +77,7 @@ export function DashboardGreeting({ username = '', onAskCopilot }) {
 
         <Button
           size="sm"
-          className="gap-1.5 bg-foreground text-background hover:bg-foreground/90"
+          className="h-10 gap-1.5 bg-[#121217] text-white hover:bg-[#FFD500] hover:text-[#121217]"
           onClick={onAskCopilot}
         >
           <Sparkles className="h-3.5 w-3.5" />
