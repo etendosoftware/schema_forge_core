@@ -286,6 +286,13 @@ export function DetailView({
   const [showPrint, setShowPrint] = useState(false);
   // showNotes state removed — notes panel is always visible in side-by-side layout
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // Promise-based confirm for line/child deletions; replaces native window.confirm
+  // so the dialog matches the styled "Eliminar registro" modal used elsewhere.
+  const [pendingDeleteConfirm, setPendingDeleteConfirm] = useState(null);
+  const confirmDelete = useCallback(
+    () => new Promise((resolve) => setPendingDeleteConfirm({ resolve })),
+    [],
+  );
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const moreMenuRef = useRef(null);
   const handledOpenAddLineRef = useRef(false);
@@ -1435,7 +1442,7 @@ export function DetailView({
                             <button
                               disabled={deletingChildren}
                               onClick={async () => {
-                                if (!window.confirm(ui('deleteConfirmMessage'))) return;
+                                if (!(await confirmDelete())) return;
                                 setDeletingChildren(true);
                                 try {
                                   const results = await Promise.allSettled(
@@ -1486,7 +1493,7 @@ export function DetailView({
                         selectorContext={selectorContextByEntity[detailEntity]}
                         hiddenColumns={[]}
                         onDeleteRow={(api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly ? async (row) => {
-                          if (!window.confirm(ui('deleteConfirmMessage'))) return;
+                          if (!(await confirmDelete())) return;
                           try {
                             const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', row.id)
                               || `${apiBaseUrl}/${detailEntity}/${row.id}`;
@@ -1586,7 +1593,7 @@ export function DetailView({
                             <button
                               disabled={savingChild}
                               onClick={async () => {
-                                if (!window.confirm(ui('deleteConfirmMessage'))) return;
+                                if (!(await confirmDelete())) return;
                                 setSavingChild(true);
                                 try {
                                   const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', editingChild.id)
@@ -1756,7 +1763,7 @@ export function DetailView({
                               <button
                                 disabled={savingLine}
                                 onClick={async () => {
-                                  if (!window.confirm(ui('deleteConfirmMessage'))) return;
+                                  if (!(await confirmDelete())) return;
                                   setSavingLine(true);
                                   try {
                                     const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', selectedLine.id)
@@ -2233,6 +2240,44 @@ export function DetailView({
                 } finally {
                   setSavingSecondaryLine(false);
                 }
+              }}
+            >
+              {ui('delete')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={Boolean(pendingDeleteConfirm)}
+        onOpenChange={(open) => {
+          if (!open && pendingDeleteConfirm) {
+            pendingDeleteConfirm.resolve(false);
+            setPendingDeleteConfirm(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{ui('deleteConfirmTitle')}</DialogTitle>
+            <DialogDescription>{ui('deleteConfirmMessage')}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                pendingDeleteConfirm?.resolve(false);
+                setPendingDeleteConfirm(null);
+              }}
+            >
+              {ui('cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                pendingDeleteConfirm?.resolve(true);
+                setPendingDeleteConfirm(null);
               }}
             >
               {ui('delete')}
