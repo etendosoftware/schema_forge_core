@@ -2,8 +2,9 @@ import { useMemo, useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button.jsx';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.jsx';
 import { Calendar } from '@/components/ui/calendar.jsx';
-import { ChevronDown, CalendarDays, Filter, Check, Loader2 } from 'lucide-react';
-import { useLocale, useUI } from '@/i18n';
+import { ChevronDown, ChevronLeft, ChevronRight, CalendarDays, Filter, Check, Loader2 } from 'lucide-react';
+import { useLocale, useLocaleSwitch, useUI } from '@/i18n';
+import { cn } from '@/lib/utils';
 import { useDistinctValues } from '@/hooks/useDistinctValues.js';
 import { AdvancedFilterBuilder } from './AdvancedFilterBuilder.jsx';
 import { DistinctValuesList } from './DistinctValuesList.jsx';
@@ -388,41 +389,21 @@ export function ListFilterBar({
               {/* Right panel — two calendars + footer */}
               <div className="flex flex-col">
                 <div className="flex border-b border-[#E8EAEF]">
-                  <Calendar
-                    mode="single"
+                  <CalendarWithPicker
                     month={leftMonth}
                     onMonthChange={setLeftMonth}
                     selected={fromDate ?? undefined}
                     onSelect={handleFromPick}
                     modifiers={inRangeModifier ? { inRange: inRangeModifier } : undefined}
-                    classNames={{
-                      week: 'flex justify-center',
-                      weekdays: 'flex justify-center py-2',
-                      month_caption: 'flex flex-row items-center gap-0 h-8',
-                      dropdowns: 'flex flex-row items-center gap-4',
-                      dropdown_root: 'relative inline-flex items-center gap-2 px-2 py-1 rounded-md hover:bg-[rgba(18,18,23,0.05)]',
-                      caption_label: 'inline-flex items-center text-sm leading-6 font-medium text-[#121217]',
-                      chevron: 'h-3.5 w-3.5 fill-[#6B7280]',
-                    }}
                     modifiersClassNames={{ inRange: 'bg-[#F5F7F9] [&>button]:rounded-none' }}
                   />
                   <div className="border-l border-[#E8EAEF]" />
-                  <Calendar
-                    mode="single"
+                  <CalendarWithPicker
                     month={rightMonth}
                     onMonthChange={setRightMonth}
                     selected={toDate ?? undefined}
                     onSelect={handleToPick}
                     modifiers={inRangeModifier ? { inRange: inRangeModifier } : undefined}
-                    classNames={{
-                      week: 'flex justify-center',
-                      weekdays: 'flex justify-center py-2',
-                      month_caption: 'flex flex-row items-center gap-0 h-8',
-                      dropdowns: 'flex flex-row items-center gap-4',
-                      dropdown_root: 'relative inline-flex items-center gap-2 px-2 py-1 rounded-md hover:bg-[rgba(18,18,23,0.05)]',
-                      caption_label: 'inline-flex items-center text-sm leading-6 font-medium text-[#121217]',
-                      chevron: 'h-3.5 w-3.5 fill-[#6B7280]',
-                    }}
                     modifiersClassNames={{ inRange: 'bg-[#F5F7F9] [&>button]:rounded-none' }}
                   />
                 </div>
@@ -485,6 +466,190 @@ export function ListFilterBar({
           />
         </PopoverContent>
       </Popover>
+    </div>
+  );
+}
+
+// ── CalendarWithPicker ─────────────────────────────────────────────────────
+// Same UX as DateField: click header → picker (Mes / Año tabs) → click a
+// month or year → immediately applies and returns to the days calendar.
+// Each calendar in the date range filter is independent.
+
+function FilterNavBtn({ onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="h-6 w-6 inline-flex items-center justify-center bg-white border border-[#D1D4DB] rounded-full shadow-[0px_1px_2px_rgba(18,18,23,0.05)] hover:bg-[rgba(18,18,23,0.05)] transition-colors"
+    >
+      {children}
+    </button>
+  );
+}
+
+function CalendarWithPicker({ month, onMonthChange, selected, onSelect, modifiers, modifiersClassNames }) {
+  const ui = useUI();
+  const { locale: appLocale } = useLocaleSwitch();
+  const [view, setView] = useState('calendar'); // 'calendar' | 'picker'
+  const [pickerTab, setPickerTab] = useState('month');
+  const [yearAnchor, setYearAnchor] = useState(() => month.getFullYear());
+
+  const localeStr = (appLocale || 'es_ES').replace('_', '-');
+
+  const headerLabel = useMemo(
+    () => new Intl.DateTimeFormat(localeStr, { month: 'long', year: 'numeric' }).format(month),
+    [month, localeStr],
+  );
+
+  const monthNames = useMemo(() => {
+    const fmt = new Intl.DateTimeFormat(localeStr, { month: 'short' });
+    return Array.from({ length: 12 }, (_, i) => {
+      const raw = fmt.format(new Date(2024, i, 1)).replace(/\.$/, '');
+      return raw.charAt(0).toUpperCase() + raw.slice(1);
+    });
+  }, [localeStr]);
+
+  const yearItems = useMemo(() => {
+    const anchor = yearAnchor - 4;
+    return Array.from({ length: 12 }, (_, i) => ({ value: anchor + i, label: String(anchor + i) }));
+  }, [yearAnchor]);
+
+  const openPicker = () => {
+    setYearAnchor(month.getFullYear());
+    setPickerTab('month');
+    setView('picker');
+  };
+
+  const navPrev = () => {
+    if (view === 'calendar') {
+      onMonthChange(new Date(month.getFullYear(), month.getMonth() - 1, 1));
+    } else if (pickerTab === 'year') {
+      setYearAnchor((y) => y - 12);
+    } else {
+      onMonthChange(new Date(month.getFullYear() - 1, month.getMonth(), 1));
+    }
+  };
+
+  const navNext = () => {
+    if (view === 'calendar') {
+      onMonthChange(new Date(month.getFullYear(), month.getMonth() + 1, 1));
+    } else if (pickerTab === 'year') {
+      setYearAnchor((y) => y + 12);
+    } else {
+      onMonthChange(new Date(month.getFullYear() + 1, month.getMonth(), 1));
+    }
+  };
+
+  // Clicking a month/year immediately applies and returns to the calendar —
+  // no "Ok" step needed per designer spec.
+  const handleMonthSelect = (idx) => {
+    onMonthChange(new Date(month.getFullYear(), idx, 1));
+    setView('calendar');
+  };
+
+  const handleYearSelect = (year) => {
+    onMonthChange(new Date(year, month.getMonth(), 1));
+    setView('calendar');
+  };
+
+  return (
+    <div>
+      {/* Header row: label (clickable) + nav arrows */}
+      <div className="flex items-center justify-between h-8 px-2">
+        <button
+          type="button"
+          onClick={view === 'calendar' ? openPicker : () => setView('calendar')}
+          className="inline-flex items-center gap-2 px-2 py-1 rounded-md text-sm font-medium text-[#121217] hover:bg-[rgba(18,18,23,0.05)] capitalize"
+        >
+          <span>{headerLabel}</span>
+          <ChevronDown className="h-3.5 w-3.5 text-[#6B7280]" aria-hidden="true" />
+        </button>
+        <div className="flex items-center gap-2">
+          <FilterNavBtn onClick={navPrev}>
+            <ChevronLeft className="h-4 w-4 text-[#828FA3]" aria-hidden="true" />
+          </FilterNavBtn>
+          <FilterNavBtn onClick={navNext}>
+            <ChevronRight className="h-4 w-4 text-[#828FA3]" aria-hidden="true" />
+          </FilterNavBtn>
+        </div>
+      </div>
+
+      {view === 'calendar' ? (
+        <Calendar
+          mode="single"
+          month={month}
+          onMonthChange={onMonthChange}
+          selected={selected}
+          onSelect={onSelect}
+          modifiers={modifiers}
+          modifiersClassNames={modifiersClassNames}
+          hideNavigation
+          className="p-0 pt-1"
+          classNames={{
+            month_caption: 'hidden',
+            nav: 'hidden',
+            week: 'flex justify-center',
+            weekdays: 'flex justify-center py-2',
+          }}
+        />
+      ) : (
+        <div className="pt-1 px-2 space-y-2">
+          {/* Tabs — Mes / Año */}
+          <div className="flex h-10 p-1 gap-1 bg-[#F5F7F9] rounded-xl">
+            {[
+              { key: 'month', label: ui('datePickerMonth') },
+              { key: 'year',  label: ui('datePickerYear') },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setPickerTab(tab.key)}
+                className={cn(
+                  'flex-1 h-8 px-2 rounded-lg text-sm font-medium transition-colors',
+                  pickerTab === tab.key
+                    ? 'bg-white text-[#121217] shadow-[0px_1px_3px_rgba(18,18,23,0.1),0px_1px_2px_rgba(18,18,23,0.06)]'
+                    : 'text-[#121217] hover:bg-[rgba(18,18,23,0.05)]',
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Month / Year grid */}
+          <div className="grid grid-cols-3 gap-2 pt-2">
+            {(pickerTab === 'month'
+              ? monthNames.map((label, i) => ({ value: i, label }))
+              : yearItems
+            ).map((item) => {
+              const isSelected = pickerTab === 'month'
+                ? item.value === month.getMonth()
+                : item.value === month.getFullYear();
+              return (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() =>
+                    pickerTab === 'month'
+                      ? handleMonthSelect(item.value)
+                      : handleYearSelect(item.value)
+                  }
+                  className={cn(
+                    'h-8 px-2 rounded-lg text-sm font-medium transition-colors',
+                    isSelected
+                      ? 'bg-[#121217] text-white hover:bg-[#FFD500] hover:text-[#121217]'
+                      : 'text-[#121217] hover:bg-[rgba(18,18,23,0.05)]',
+                  )}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="pb-2" />
+        </div>
+      )}
     </div>
   );
 }
