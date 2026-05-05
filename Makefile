@@ -1,4 +1,4 @@
-.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate sonar sonar-coverage menu-cache
+.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-with-shell dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate sonar sonar-coverage menu-cache
 
 # --- Testing ---
 
@@ -79,6 +79,9 @@ regen-help: ## Show usage and examples for `make regen`
 
 dev: ## Start app-shell dev server (http://localhost:3100)
 	cd tools/app-shell && npm run dev
+
+dev-with-shell: ## Start app-shell + spike-hello-app together (shell 3100, UI 5173, API 4100)
+	cd tools/spike-hello-app && npm run dev:with-shell
 
 dev-mock: ## Start app-shell dev server with mock data (http://localhost:3100) — required for E2E tests
 	cd tools/app-shell && npm run dev:mock

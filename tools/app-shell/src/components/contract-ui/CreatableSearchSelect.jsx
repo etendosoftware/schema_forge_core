@@ -139,10 +139,17 @@ export function CreatableSearchSelect({
           ...i,
         }));
         setOptions(items);
-        // Auto-select first when current value is no longer in the refreshed list
+        // When the parent changes and the previous selection is no longer valid,
+        // auto-select the first available option (FIC parity — the user explicitly
+        // chose the parent so auto-filling the dependent is helpful, not silent).
+        // Only clear when there are no options and the field had a stale value.
         const currentValid = valueRef.current && items.some(o => o.id === valueRef.current);
-        if (!currentValid && items.length > 0 && parentValue) {
-          onChangeRef.current(items[0].id, items[0].name);
+        if (!currentValid && parentValue) {
+          if (items.length > 0) {
+            onChangeRef.current(items[0].id, items[0].name);
+          } else if (valueRef.current) {
+            onChangeRef.current('', '');
+          }
         }
       })
       .catch(() => { setOptions([]); })
