@@ -1,7 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T19:05:48.778Z",
-  "checksum": "8c7844ec3968b230",
+  "updatedAt": "2026-05-05T18:50:37.564Z",
+  "checksum": "cd42cf269dce416d",
   "frontendContract": {
     "window": {
       "id": "170",
@@ -942,831 +943,7 @@
   "testManifest": {
     "tests": [
       {
-        "id": "t-1",
-        "category": "field-presence",
-        "entity": "movement",
-        "field": "name",
-        "runner": "node",
-        "description": "Field 'name' should be present in movement"
-      },
-      {
-        "id": "t-2",
-        "category": "field-presence",
-        "entity": "movement",
-        "field": "movementDate",
-        "runner": "node",
-        "description": "Field 'movementDate' should be present in movement"
-      },
-      {
-        "id": "t-3",
-        "category": "field-presence",
-        "entity": "movement",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should be present in movement"
-      },
-      {
-        "id": "t-4",
-        "category": "field-presence",
-        "entity": "movement",
-        "field": "processNow",
-        "runner": "node",
-        "description": "Field 'processNow' should be present in movement"
-      },
-      {
-        "id": "t-5",
-        "category": "field-presence",
-        "entity": "movement",
-        "field": "documentNo",
-        "runner": "node",
-        "description": "Field 'documentNo' should be present in movement"
-      },
-      {
-        "id": "t-6",
-        "category": "field-presence",
-        "entity": "movement",
-        "field": "processed",
-        "runner": "node",
-        "description": "Field 'processed' should be present in movement"
-      },
-      {
-        "id": "t-7",
-        "category": "field-type",
-        "entity": "movement",
-        "field": "name",
-        "runner": "node",
-        "description": "Field 'name' should have type 'string' in movement"
-      },
-      {
-        "id": "t-8",
-        "category": "field-type",
-        "entity": "movement",
-        "field": "movementDate",
-        "runner": "node",
-        "description": "Field 'movementDate' should have type 'string' in movement"
-      },
-      {
-        "id": "t-9",
-        "category": "field-type",
-        "entity": "movement",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should have type 'string' in movement"
-      },
-      {
-        "id": "t-10",
-        "category": "field-type",
-        "entity": "movement",
-        "field": "processNow",
-        "runner": "node",
-        "description": "Field 'processNow' should have type 'string' in movement"
-      },
-      {
-        "id": "t-11",
-        "category": "field-type",
-        "entity": "movement",
-        "field": "documentNo",
-        "runner": "node",
-        "description": "Field 'documentNo' should have type 'string' in movement"
-      },
-      {
-        "id": "t-12",
-        "category": "field-type",
-        "entity": "movement",
-        "field": "processed",
-        "runner": "node",
-        "description": "Field 'processed' should have type 'boolean' in movement"
-      },
-      {
-        "id": "t-13",
-        "category": "searchable-filters",
-        "entity": "movement",
-        "field": "name",
-        "runner": "node",
-        "description": "Field 'name' should be a supported filter for movement"
-      },
-      {
-        "id": "t-14",
-        "category": "searchable-filters",
-        "entity": "movement",
-        "field": "movementDate",
-        "runner": "node",
-        "description": "Field 'movementDate' should be a supported filter for movement"
-      },
-      {
-        "id": "t-15",
-        "category": "visibility",
-        "entity": "movement",
-        "runner": "node",
-        "description": "Entity 'movement' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-16",
-        "category": "displaylogic-valid",
-        "entity": "movement",
-        "field": "processNow",
-        "runner": "node",
-        "description": "Display logic for 'processNow' in movement should be valid JS"
-      },
-      {
-        "id": "t-17",
-        "category": "readonlylogic-valid",
-        "entity": "movement",
-        "field": "movementDate",
-        "runner": "node",
-        "description": "Read-only logic for 'movementDate' in movement should be valid JS"
-      },
-      {
-        "id": "t-18",
-        "category": "readonlylogic-valid",
-        "entity": "movement",
-        "field": "documentNo",
-        "runner": "node",
-        "description": "Read-only logic for 'documentNo' in movement should be valid JS"
-      },
-      {
-        "id": "t-19",
-        "category": "displaylogic-evaluable",
-        "entity": "movement",
-        "field": "processNow",
-        "runner": "node",
-        "description": "Display logic for 'processNow' in movement should have evaluable flag"
-      },
-      {
-        "id": "t-20",
-        "category": "readonlylogic-evaluable",
-        "entity": "movement",
-        "field": "movementDate",
-        "runner": "node",
-        "description": "Read-only logic for 'movementDate' in movement should have evaluable flag"
-      },
-      {
-        "id": "t-21",
-        "category": "readonlylogic-evaluable",
-        "entity": "movement",
-        "field": "documentNo",
-        "runner": "node",
-        "description": "Read-only logic for 'documentNo' in movement should have evaluable flag"
-      },
-      {
-        "id": "t-22",
-        "category": "default-value-type",
-        "entity": "movement",
-        "field": "name",
-        "runner": "node",
-        "description": "Default value for 'name' in movement should be a string"
-      },
-      {
-        "id": "t-23",
-        "category": "default-value-type",
-        "entity": "movement",
-        "field": "movementDate",
-        "runner": "node",
-        "description": "Default value for 'movementDate' in movement should be a string"
-      },
-      {
-        "id": "t-24",
-        "category": "field-presence",
-        "entity": "movementLine",
-        "field": "lineNo",
-        "runner": "node",
-        "description": "Field 'lineNo' should be present in movementLine"
-      },
-      {
-        "id": "t-25",
-        "category": "field-presence",
-        "entity": "movementLine",
-        "field": "product",
-        "runner": "node",
-        "description": "Field 'product' should be present in movementLine"
-      },
-      {
-        "id": "t-26",
-        "category": "field-presence",
-        "entity": "movementLine",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should be present in movementLine"
-      },
-      {
-        "id": "t-27",
-        "category": "field-presence",
-        "entity": "movementLine",
-        "field": "movementQuantity",
-        "runner": "node",
-        "description": "Field 'movementQuantity' should be present in movementLine"
-      },
-      {
-        "id": "t-28",
-        "category": "field-presence",
-        "entity": "movementLine",
-        "field": "uOM",
-        "runner": "node",
-        "description": "Field 'uOM' should be present in movementLine"
-      },
-      {
-        "id": "t-29",
-        "category": "field-presence",
-        "entity": "movementLine",
-        "field": "storageBin",
-        "runner": "node",
-        "description": "Field 'storageBin' should be present in movementLine"
-      },
-      {
-        "id": "t-30",
-        "category": "field-presence",
-        "entity": "movementLine",
-        "field": "newStorageBin",
-        "runner": "node",
-        "description": "Field 'newStorageBin' should be present in movementLine"
-      },
-      {
-        "id": "t-31",
-        "category": "field-type",
-        "entity": "movementLine",
-        "field": "lineNo",
-        "runner": "node",
-        "description": "Field 'lineNo' should have type 'number' in movementLine"
-      },
-      {
-        "id": "t-32",
-        "category": "field-type",
-        "entity": "movementLine",
-        "field": "product",
-        "runner": "node",
-        "description": "Field 'product' should have type 'string' in movementLine"
-      },
-      {
-        "id": "t-33",
-        "category": "field-type",
-        "entity": "movementLine",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should have type 'string' in movementLine"
-      },
-      {
-        "id": "t-34",
-        "category": "field-type",
-        "entity": "movementLine",
-        "field": "movementQuantity",
-        "runner": "node",
-        "description": "Field 'movementQuantity' should have type 'number' in movementLine"
-      },
-      {
-        "id": "t-35",
-        "category": "field-type",
-        "entity": "movementLine",
-        "field": "uOM",
-        "runner": "node",
-        "description": "Field 'uOM' should have type 'string' in movementLine"
-      },
-      {
-        "id": "t-36",
-        "category": "field-type",
-        "entity": "movementLine",
-        "field": "storageBin",
-        "runner": "node",
-        "description": "Field 'storageBin' should have type 'string' in movementLine"
-      },
-      {
-        "id": "t-37",
-        "category": "field-type",
-        "entity": "movementLine",
-        "field": "newStorageBin",
-        "runner": "node",
-        "description": "Field 'newStorageBin' should have type 'string' in movementLine"
-      },
-      {
-        "id": "t-38",
-        "category": "searchable-filters",
-        "entity": "movementLine",
-        "field": "product",
-        "runner": "node",
-        "description": "Field 'product' should be a supported filter for movementLine"
-      },
-      {
-        "id": "t-39",
-        "category": "visibility",
-        "entity": "movementLine",
-        "runner": "node",
-        "description": "Entity 'movementLine' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-40",
-        "category": "readonlylogic-valid",
-        "entity": "movementLine",
-        "field": "lineNo",
-        "runner": "node",
-        "description": "Read-only logic for 'lineNo' in movementLine should be valid JS"
-      },
-      {
-        "id": "t-41",
-        "category": "readonlylogic-valid",
-        "entity": "movementLine",
-        "field": "product",
-        "runner": "node",
-        "description": "Read-only logic for 'product' in movementLine should be valid JS"
-      },
-      {
-        "id": "t-42",
-        "category": "readonlylogic-valid",
-        "entity": "movementLine",
-        "field": "description",
-        "runner": "node",
-        "description": "Read-only logic for 'description' in movementLine should be valid JS"
-      },
-      {
-        "id": "t-43",
-        "category": "readonlylogic-valid",
-        "entity": "movementLine",
-        "field": "movementQuantity",
-        "runner": "node",
-        "description": "Read-only logic for 'movementQuantity' in movementLine should be valid JS"
-      },
-      {
-        "id": "t-44",
-        "category": "readonlylogic-valid",
-        "entity": "movementLine",
-        "field": "storageBin",
-        "runner": "node",
-        "description": "Read-only logic for 'storageBin' in movementLine should be valid JS"
-      },
-      {
-        "id": "t-45",
-        "category": "readonlylogic-valid",
-        "entity": "movementLine",
-        "field": "newStorageBin",
-        "runner": "node",
-        "description": "Read-only logic for 'newStorageBin' in movementLine should be valid JS"
-      },
-      {
-        "id": "t-46",
-        "category": "readonlylogic-evaluable",
-        "entity": "movementLine",
-        "field": "lineNo",
-        "runner": "node",
-        "description": "Read-only logic for 'lineNo' in movementLine should have evaluable flag"
-      },
-      {
-        "id": "t-47",
-        "category": "readonlylogic-evaluable",
-        "entity": "movementLine",
-        "field": "product",
-        "runner": "node",
-        "description": "Read-only logic for 'product' in movementLine should have evaluable flag"
-      },
-      {
-        "id": "t-48",
-        "category": "readonlylogic-evaluable",
-        "entity": "movementLine",
-        "field": "description",
-        "runner": "node",
-        "description": "Read-only logic for 'description' in movementLine should have evaluable flag"
-      },
-      {
-        "id": "t-49",
-        "category": "readonlylogic-evaluable",
-        "entity": "movementLine",
-        "field": "movementQuantity",
-        "runner": "node",
-        "description": "Read-only logic for 'movementQuantity' in movementLine should have evaluable flag"
-      },
-      {
-        "id": "t-50",
-        "category": "readonlylogic-evaluable",
-        "entity": "movementLine",
-        "field": "storageBin",
-        "runner": "node",
-        "description": "Read-only logic for 'storageBin' in movementLine should have evaluable flag"
-      },
-      {
-        "id": "t-51",
-        "category": "readonlylogic-evaluable",
-        "entity": "movementLine",
-        "field": "newStorageBin",
-        "runner": "node",
-        "description": "Read-only logic for 'newStorageBin' in movementLine should have evaluable flag"
-      },
-      {
-        "id": "t-52",
-        "category": "default-value-type",
-        "entity": "movementLine",
-        "field": "lineNo",
-        "runner": "node",
-        "description": "Default value for 'lineNo' in movementLine should be a string"
-      },
-      {
-        "id": "t-53",
-        "category": "default-value-type",
-        "entity": "movementLine",
-        "field": "movementQuantity",
-        "runner": "node",
-        "description": "Default value for 'movementQuantity' in movementLine should be a string"
-      },
-      {
-        "id": "t-54",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-55",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "moveBetweenLocators",
-        "runner": "node",
-        "description": "System field 'moveBetweenLocators' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-56",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "posted",
-        "runner": "node",
-        "description": "System field 'posted' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-57",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "active",
-        "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-58",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "trxOrganization",
-        "runner": "node",
-        "description": "System field 'trxOrganization' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-59",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "project",
-        "runner": "node",
-        "description": "System field 'project' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-60",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "costCenter",
-        "runner": "node",
-        "description": "System field 'costCenter' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-61",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "asset",
-        "runner": "node",
-        "description": "System field 'asset' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-62",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "activity",
-        "runner": "node",
-        "description": "System field 'activity' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-63",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "salesCampaign",
-        "runner": "node",
-        "description": "System field 'salesCampaign' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-64",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "System field 'stDimension' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-65",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "System field 'ndDimension' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-66",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "id",
-        "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-67",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-68",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-69",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-70",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-71",
-        "category": "system-field",
-        "entity": "movement",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for movement"
-      },
-      {
-        "id": "t-72",
-        "category": "system-field",
-        "entity": "movementLine",
-        "field": "attributeSetValue",
-        "runner": "node",
-        "description": "System field 'attributeSetValue' should exist in backend but not frontend for movementLine"
-      },
-      {
-        "id": "t-73",
-        "category": "system-field",
-        "entity": "movementLine",
-        "field": "operativeQuantity",
-        "runner": "node",
-        "description": "System field 'operativeQuantity' should exist in backend but not frontend for movementLine"
-      },
-      {
-        "id": "t-74",
-        "category": "system-field",
-        "entity": "movementLine",
-        "field": "alternativeUOM",
-        "runner": "node",
-        "description": "System field 'alternativeUOM' should exist in backend but not frontend for movementLine"
-      },
-      {
-        "id": "t-75",
-        "category": "system-field",
-        "entity": "movementLine",
-        "field": "active",
-        "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for movementLine"
-      },
-      {
-        "id": "t-76",
-        "category": "system-field",
-        "entity": "movementLine",
-        "field": "orderUOM",
-        "runner": "node",
-        "description": "System field 'orderUOM' should exist in backend but not frontend for movementLine"
-      },
-      {
-        "id": "t-77",
-        "category": "system-field",
-        "entity": "movementLine",
-        "field": "orderQuantity",
-        "runner": "node",
-        "description": "System field 'orderQuantity' should exist in backend but not frontend for movementLine"
-      },
-      {
-        "id": "t-78",
-        "category": "system-field",
-        "entity": "movementLine",
-        "field": "stockReservation",
-        "runner": "node",
-        "description": "System field 'stockReservation' should exist in backend but not frontend for movementLine"
-      },
-      {
-        "id": "t-79",
-        "category": "system-field",
-        "entity": "movementLine",
-        "field": "mAttributeSetInstanceToID",
-        "runner": "node",
-        "description": "System field 'mAttributeSetInstanceToID' should exist in backend but not frontend for movementLine"
-      },
-      {
-        "id": "t-80",
-        "category": "system-field",
-        "entity": "movementLine",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for movementLine"
-      },
-      {
-        "id": "t-81",
-        "category": "system-field",
-        "entity": "movementLine",
-        "field": "movement",
-        "runner": "node",
-        "description": "System field 'movement' should exist in backend but not frontend for movementLine"
-      },
-      {
-        "id": "t-82",
-        "category": "system-field",
-        "entity": "movementLine",
-        "field": "id",
-        "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for movementLine"
-      },
-      {
-        "id": "t-83",
-        "category": "system-field",
-        "entity": "movementLine",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for movementLine"
-      },
-      {
-        "id": "t-84",
-        "category": "system-field",
-        "entity": "movementLine",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for movementLine"
-      },
-      {
-        "id": "t-85",
-        "category": "system-field",
-        "entity": "movementLine",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for movementLine"
-      },
-      {
-        "id": "t-86",
-        "category": "system-field",
-        "entity": "movementLine",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for movementLine"
-      },
-      {
-        "id": "t-87",
-        "category": "system-field",
-        "entity": "movementLine",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for movementLine"
-      },
-      {
-        "id": "t-88",
-        "category": "rule-declared",
-        "rule": "SL_Movement_Conversion_QuantityOrder",
-        "runner": "node",
-        "description": "Rule 'SL_Movement_Conversion_QuantityOrder' (callout) should be declared"
-      },
-      {
-        "id": "t-89",
-        "category": "rule-declared",
-        "rule": "SL_Movement_Conversion_M_Product_Uom_Id",
-        "runner": "node",
-        "description": "Rule 'SL_Movement_Conversion_M_Product_Uom_Id' (callout) should be declared"
-      },
-      {
-        "id": "t-90",
-        "category": "rule-declared",
-        "rule": "SL_Movement_Product",
-        "runner": "node",
-        "description": "Rule 'SL_Movement_Product' (callout) should be declared"
-      },
-      {
-        "id": "t-91",
-        "category": "rule-declared",
-        "rule": "OperativeQuantity_To_BaseQuantity_C_Aum",
-        "runner": "node",
-        "description": "Rule 'OperativeQuantity_To_BaseQuantity_C_Aum' (callout) should be declared"
-      },
-      {
-        "id": "t-92",
-        "category": "rule-declared",
-        "rule": "OperativeQuantity_To_BaseQuantity_Aumqty",
-        "runner": "node",
-        "description": "Rule 'OperativeQuantity_To_BaseQuantity_Aumqty' (callout) should be declared"
-      },
-      {
-        "id": "t-93",
-        "category": "rule-declared",
-        "rule": "AD_Org show child organizations",
-        "runner": "node",
-        "description": "Rule 'AD_Org show child organizations' (validation) should be declared"
-      },
-      {
-        "id": "t-94",
-        "category": "rule-declared",
-        "rule": "Available UOM's for Product for Logistics flow",
-        "runner": "node",
-        "description": "Rule 'Available UOM's for Product for Logistics flow' (validation) should be declared"
-      },
-      {
-        "id": "t-95",
-        "category": "rule-declared",
-        "rule": "READONLY_Processed_Header",
-        "runner": "node",
-        "description": "Rule 'READONLY_Processed_Header' (readOnlyLogic) should be declared"
-      },
-      {
-        "id": "t-96",
-        "category": "rule-declared",
-        "rule": "READONLY_Processed_Lines",
-        "runner": "node",
-        "description": "Rule 'READONLY_Processed_Lines' (readOnlyLogic) should be declared"
-      },
-      {
-        "id": "t-97",
-        "category": "rule-declared",
-        "rule": "PROCESS_ProcessMovements",
-        "runner": "node",
-        "description": "Rule 'PROCESS_ProcessMovements' (process) should be declared"
-      },
-      {
-        "id": "t-98",
-        "category": "rule-declared",
-        "rule": "PROCESS_MoveStorageBin",
-        "runner": "node",
-        "description": "Rule 'PROCESS_MoveStorageBin' (process) should be declared"
-      },
-      {
-        "id": "t-99",
-        "category": "rule-declared",
-        "rule": "PROCESS_Posted",
-        "runner": "node",
-        "description": "Rule 'PROCESS_Posted' (process) should be declared"
-      },
-      {
-        "id": "t-100",
-        "category": "crud-flags",
-        "entity": "movement",
-        "runner": "node",
-        "description": "CRUD flags for 'movement' should all be booleans"
-      },
-      {
-        "id": "t-101",
-        "category": "crud-flags",
-        "entity": "movementLine",
-        "runner": "node",
-        "description": "CRUD flags for 'movementLine' should all be booleans"
-      },
-      {
-        "id": "t-102",
-        "category": "selector-endpoint",
-        "entity": "movementLine",
-        "field": "product",
-        "runner": "node",
-        "description": "Selector endpoint for 'product' in movementLine should exist"
-      },
-      {
-        "id": "t-103",
-        "category": "selector-endpoint",
-        "entity": "movementLine",
-        "field": "uOM",
-        "runner": "node",
-        "description": "Selector endpoint for 'uOM' in movementLine should exist"
-      },
-      {
-        "id": "t-104",
-        "category": "selector-endpoint",
-        "entity": "movementLine",
-        "field": "storageBin",
-        "runner": "node",
-        "description": "Selector endpoint for 'storageBin' in movementLine should exist"
-      },
-      {
-        "id": "t-105",
-        "category": "selector-endpoint",
-        "entity": "movementLine",
-        "field": "newStorageBin",
-        "runner": "node",
-        "description": "Selector endpoint for 'newStorageBin' in movementLine should exist"
-      },
-      {
-        "id": "t-106",
+        "id": "t-action-endpoint-movement-moveBetweenLocators",
         "category": "action-endpoint",
         "entity": "movement",
         "field": "moveBetweenLocators",
@@ -1774,7 +951,15 @@
         "description": "Action endpoint for 'moveBetweenLocators' in movement should exist"
       },
       {
-        "id": "t-107",
+        "id": "t-action-endpoint-movement-posted",
+        "category": "action-endpoint",
+        "entity": "movement",
+        "field": "posted",
+        "runner": "node",
+        "description": "Action endpoint for 'posted' in movement should exist"
+      },
+      {
+        "id": "t-action-endpoint-movement-processNow",
         "category": "action-endpoint",
         "entity": "movement",
         "field": "processNow",
@@ -1782,31 +967,847 @@
         "description": "Action endpoint for 'processNow' in movement should exist"
       },
       {
-        "id": "t-108",
-        "category": "action-endpoint",
+        "id": "t-crud-flags-movement",
+        "category": "crud-flags",
+        "entity": "movement",
+        "runner": "node",
+        "description": "CRUD flags for 'movement' should all be booleans"
+      },
+      {
+        "id": "t-crud-flags-movementLine",
+        "category": "crud-flags",
+        "entity": "movementLine",
+        "runner": "node",
+        "description": "CRUD flags for 'movementLine' should all be booleans"
+      },
+      {
+        "id": "t-default-value-type-movement-movementDate",
+        "category": "default-value-type",
+        "entity": "movement",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Default value for 'movementDate' in movement should be a string"
+      },
+      {
+        "id": "t-default-value-type-movement-name",
+        "category": "default-value-type",
+        "entity": "movement",
+        "field": "name",
+        "runner": "node",
+        "description": "Default value for 'name' in movement should be a string"
+      },
+      {
+        "id": "t-default-value-type-movementLine-lineNo",
+        "category": "default-value-type",
+        "entity": "movementLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Default value for 'lineNo' in movementLine should be a string"
+      },
+      {
+        "id": "t-default-value-type-movementLine-movementQuantity",
+        "category": "default-value-type",
+        "entity": "movementLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Default value for 'movementQuantity' in movementLine should be a string"
+      },
+      {
+        "id": "t-displaylogic-evaluable-movement-processNow",
+        "category": "displaylogic-evaluable",
+        "entity": "movement",
+        "field": "processNow",
+        "runner": "node",
+        "description": "Display logic for 'processNow' in movement should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-valid-movement-processNow",
+        "category": "displaylogic-valid",
+        "entity": "movement",
+        "field": "processNow",
+        "runner": "node",
+        "description": "Display logic for 'processNow' in movement should be valid JS"
+      },
+      {
+        "id": "t-field-presence-movement-description",
+        "category": "field-presence",
+        "entity": "movement",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in movement"
+      },
+      {
+        "id": "t-field-presence-movement-documentNo",
+        "category": "field-presence",
+        "entity": "movement",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should be present in movement"
+      },
+      {
+        "id": "t-field-presence-movement-movementDate",
+        "category": "field-presence",
+        "entity": "movement",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Field 'movementDate' should be present in movement"
+      },
+      {
+        "id": "t-field-presence-movement-name",
+        "category": "field-presence",
+        "entity": "movement",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be present in movement"
+      },
+      {
+        "id": "t-field-presence-movement-processed",
+        "category": "field-presence",
+        "entity": "movement",
+        "field": "processed",
+        "runner": "node",
+        "description": "Field 'processed' should be present in movement"
+      },
+      {
+        "id": "t-field-presence-movement-processNow",
+        "category": "field-presence",
+        "entity": "movement",
+        "field": "processNow",
+        "runner": "node",
+        "description": "Field 'processNow' should be present in movement"
+      },
+      {
+        "id": "t-field-presence-movementLine-description",
+        "category": "field-presence",
+        "entity": "movementLine",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in movementLine"
+      },
+      {
+        "id": "t-field-presence-movementLine-lineNo",
+        "category": "field-presence",
+        "entity": "movementLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should be present in movementLine"
+      },
+      {
+        "id": "t-field-presence-movementLine-movementQuantity",
+        "category": "field-presence",
+        "entity": "movementLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Field 'movementQuantity' should be present in movementLine"
+      },
+      {
+        "id": "t-field-presence-movementLine-newStorageBin",
+        "category": "field-presence",
+        "entity": "movementLine",
+        "field": "newStorageBin",
+        "runner": "node",
+        "description": "Field 'newStorageBin' should be present in movementLine"
+      },
+      {
+        "id": "t-field-presence-movementLine-product",
+        "category": "field-presence",
+        "entity": "movementLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be present in movementLine"
+      },
+      {
+        "id": "t-field-presence-movementLine-storageBin",
+        "category": "field-presence",
+        "entity": "movementLine",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "Field 'storageBin' should be present in movementLine"
+      },
+      {
+        "id": "t-field-presence-movementLine-uOM",
+        "category": "field-presence",
+        "entity": "movementLine",
+        "field": "uOM",
+        "runner": "node",
+        "description": "Field 'uOM' should be present in movementLine"
+      },
+      {
+        "id": "t-field-type-movement-description",
+        "category": "field-type",
+        "entity": "movement",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in movement"
+      },
+      {
+        "id": "t-field-type-movement-documentNo",
+        "category": "field-type",
+        "entity": "movement",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should have type 'string' in movement"
+      },
+      {
+        "id": "t-field-type-movement-movementDate",
+        "category": "field-type",
+        "entity": "movement",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Field 'movementDate' should have type 'string' in movement"
+      },
+      {
+        "id": "t-field-type-movement-name",
+        "category": "field-type",
+        "entity": "movement",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should have type 'string' in movement"
+      },
+      {
+        "id": "t-field-type-movement-processed",
+        "category": "field-type",
+        "entity": "movement",
+        "field": "processed",
+        "runner": "node",
+        "description": "Field 'processed' should have type 'boolean' in movement"
+      },
+      {
+        "id": "t-field-type-movement-processNow",
+        "category": "field-type",
+        "entity": "movement",
+        "field": "processNow",
+        "runner": "node",
+        "description": "Field 'processNow' should have type 'string' in movement"
+      },
+      {
+        "id": "t-field-type-movementLine-description",
+        "category": "field-type",
+        "entity": "movementLine",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in movementLine"
+      },
+      {
+        "id": "t-field-type-movementLine-lineNo",
+        "category": "field-type",
+        "entity": "movementLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should have type 'number' in movementLine"
+      },
+      {
+        "id": "t-field-type-movementLine-movementQuantity",
+        "category": "field-type",
+        "entity": "movementLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Field 'movementQuantity' should have type 'number' in movementLine"
+      },
+      {
+        "id": "t-field-type-movementLine-newStorageBin",
+        "category": "field-type",
+        "entity": "movementLine",
+        "field": "newStorageBin",
+        "runner": "node",
+        "description": "Field 'newStorageBin' should have type 'string' in movementLine"
+      },
+      {
+        "id": "t-field-type-movementLine-product",
+        "category": "field-type",
+        "entity": "movementLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should have type 'string' in movementLine"
+      },
+      {
+        "id": "t-field-type-movementLine-storageBin",
+        "category": "field-type",
+        "entity": "movementLine",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "Field 'storageBin' should have type 'string' in movementLine"
+      },
+      {
+        "id": "t-field-type-movementLine-uOM",
+        "category": "field-type",
+        "entity": "movementLine",
+        "field": "uOM",
+        "runner": "node",
+        "description": "Field 'uOM' should have type 'string' in movementLine"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-movement-documentNo",
+        "category": "readonlylogic-evaluable",
+        "entity": "movement",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Read-only logic for 'documentNo' in movement should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-movement-movementDate",
+        "category": "readonlylogic-evaluable",
+        "entity": "movement",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Read-only logic for 'movementDate' in movement should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-movementLine-description",
+        "category": "readonlylogic-evaluable",
+        "entity": "movementLine",
+        "field": "description",
+        "runner": "node",
+        "description": "Read-only logic for 'description' in movementLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-movementLine-lineNo",
+        "category": "readonlylogic-evaluable",
+        "entity": "movementLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Read-only logic for 'lineNo' in movementLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-movementLine-movementQuantity",
+        "category": "readonlylogic-evaluable",
+        "entity": "movementLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Read-only logic for 'movementQuantity' in movementLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-movementLine-newStorageBin",
+        "category": "readonlylogic-evaluable",
+        "entity": "movementLine",
+        "field": "newStorageBin",
+        "runner": "node",
+        "description": "Read-only logic for 'newStorageBin' in movementLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-movementLine-product",
+        "category": "readonlylogic-evaluable",
+        "entity": "movementLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Read-only logic for 'product' in movementLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-movementLine-storageBin",
+        "category": "readonlylogic-evaluable",
+        "entity": "movementLine",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "Read-only logic for 'storageBin' in movementLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-valid-movement-documentNo",
+        "category": "readonlylogic-valid",
+        "entity": "movement",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Read-only logic for 'documentNo' in movement should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-movement-movementDate",
+        "category": "readonlylogic-valid",
+        "entity": "movement",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Read-only logic for 'movementDate' in movement should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-movementLine-description",
+        "category": "readonlylogic-valid",
+        "entity": "movementLine",
+        "field": "description",
+        "runner": "node",
+        "description": "Read-only logic for 'description' in movementLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-movementLine-lineNo",
+        "category": "readonlylogic-valid",
+        "entity": "movementLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Read-only logic for 'lineNo' in movementLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-movementLine-movementQuantity",
+        "category": "readonlylogic-valid",
+        "entity": "movementLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Read-only logic for 'movementQuantity' in movementLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-movementLine-newStorageBin",
+        "category": "readonlylogic-valid",
+        "entity": "movementLine",
+        "field": "newStorageBin",
+        "runner": "node",
+        "description": "Read-only logic for 'newStorageBin' in movementLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-movementLine-product",
+        "category": "readonlylogic-valid",
+        "entity": "movementLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Read-only logic for 'product' in movementLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-movementLine-storageBin",
+        "category": "readonlylogic-valid",
+        "entity": "movementLine",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "Read-only logic for 'storageBin' in movementLine should be valid JS"
+      },
+      {
+        "id": "t-rule-declared-AD-Org-show-child-organizations",
+        "category": "rule-declared",
+        "rule": "AD_Org show child organizations",
+        "runner": "node",
+        "description": "Rule 'AD_Org show child organizations' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Available-UOM-s-for-Product-for-Logistics-flow",
+        "category": "rule-declared",
+        "rule": "Available UOM's for Product for Logistics flow",
+        "runner": "node",
+        "description": "Rule 'Available UOM's for Product for Logistics flow' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-OperativeQuantity-To-BaseQuantity-Aumqty",
+        "category": "rule-declared",
+        "rule": "OperativeQuantity_To_BaseQuantity_Aumqty",
+        "runner": "node",
+        "description": "Rule 'OperativeQuantity_To_BaseQuantity_Aumqty' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-OperativeQuantity-To-BaseQuantity-C-Aum",
+        "category": "rule-declared",
+        "rule": "OperativeQuantity_To_BaseQuantity_C_Aum",
+        "runner": "node",
+        "description": "Rule 'OperativeQuantity_To_BaseQuantity_C_Aum' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-PROCESS-MoveStorageBin",
+        "category": "rule-declared",
+        "rule": "PROCESS_MoveStorageBin",
+        "runner": "node",
+        "description": "Rule 'PROCESS_MoveStorageBin' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-PROCESS-Posted",
+        "category": "rule-declared",
+        "rule": "PROCESS_Posted",
+        "runner": "node",
+        "description": "Rule 'PROCESS_Posted' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-PROCESS-ProcessMovements",
+        "category": "rule-declared",
+        "rule": "PROCESS_ProcessMovements",
+        "runner": "node",
+        "description": "Rule 'PROCESS_ProcessMovements' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-READONLY-Processed-Header",
+        "category": "rule-declared",
+        "rule": "READONLY_Processed_Header",
+        "runner": "node",
+        "description": "Rule 'READONLY_Processed_Header' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-READONLY-Processed-Lines",
+        "category": "rule-declared",
+        "rule": "READONLY_Processed_Lines",
+        "runner": "node",
+        "description": "Rule 'READONLY_Processed_Lines' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Movement-Conversion-M-Product-Uom-Id",
+        "category": "rule-declared",
+        "rule": "SL_Movement_Conversion_M_Product_Uom_Id",
+        "runner": "node",
+        "description": "Rule 'SL_Movement_Conversion_M_Product_Uom_Id' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Movement-Conversion-QuantityOrder",
+        "category": "rule-declared",
+        "rule": "SL_Movement_Conversion_QuantityOrder",
+        "runner": "node",
+        "description": "Rule 'SL_Movement_Conversion_QuantityOrder' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-Movement-Product",
+        "category": "rule-declared",
+        "rule": "SL_Movement_Product",
+        "runner": "node",
+        "description": "Rule 'SL_Movement_Product' (callout) should be declared"
+      },
+      {
+        "id": "t-searchable-filters-movement-movementDate",
+        "category": "searchable-filters",
+        "entity": "movement",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Field 'movementDate' should be a supported filter for movement"
+      },
+      {
+        "id": "t-searchable-filters-movement-name",
+        "category": "searchable-filters",
+        "entity": "movement",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be a supported filter for movement"
+      },
+      {
+        "id": "t-searchable-filters-movementLine-product",
+        "category": "searchable-filters",
+        "entity": "movementLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be a supported filter for movementLine"
+      },
+      {
+        "id": "t-selector-endpoint-movementLine-newStorageBin",
+        "category": "selector-endpoint",
+        "entity": "movementLine",
+        "field": "newStorageBin",
+        "runner": "node",
+        "description": "Selector endpoint for 'newStorageBin' in movementLine should exist"
+      },
+      {
+        "id": "t-selector-endpoint-movementLine-product",
+        "category": "selector-endpoint",
+        "entity": "movementLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Selector endpoint for 'product' in movementLine should exist"
+      },
+      {
+        "id": "t-selector-endpoint-movementLine-storageBin",
+        "category": "selector-endpoint",
+        "entity": "movementLine",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "Selector endpoint for 'storageBin' in movementLine should exist"
+      },
+      {
+        "id": "t-selector-endpoint-movementLine-uOM",
+        "category": "selector-endpoint",
+        "entity": "movementLine",
+        "field": "uOM",
+        "runner": "node",
+        "description": "Selector endpoint for 'uOM' in movementLine should exist"
+      },
+      {
+        "id": "t-system-field-movement-active",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-system-field-movement-activity",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "activity",
+        "runner": "node",
+        "description": "System field 'activity' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-system-field-movement-asset",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "asset",
+        "runner": "node",
+        "description": "System field 'asset' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-system-field-movement-client",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-system-field-movement-costCenter",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "costCenter",
+        "runner": "node",
+        "description": "System field 'costCenter' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-system-field-movement-createdBy",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-system-field-movement-creationDate",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-system-field-movement-id",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-system-field-movement-moveBetweenLocators",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "moveBetweenLocators",
+        "runner": "node",
+        "description": "System field 'moveBetweenLocators' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-system-field-movement-ndDimension",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "System field 'ndDimension' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-system-field-movement-organization",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-system-field-movement-posted",
+        "category": "system-field",
         "entity": "movement",
         "field": "posted",
         "runner": "node",
-        "description": "Action endpoint for 'posted' in movement should exist"
+        "description": "System field 'posted' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-system-field-movement-project",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "project",
+        "runner": "node",
+        "description": "System field 'project' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-system-field-movement-salesCampaign",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "salesCampaign",
+        "runner": "node",
+        "description": "System field 'salesCampaign' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-system-field-movement-stDimension",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "System field 'stDimension' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-system-field-movement-trxOrganization",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "trxOrganization",
+        "runner": "node",
+        "description": "System field 'trxOrganization' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-system-field-movement-updated",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-system-field-movement-updatedBy",
+        "category": "system-field",
+        "entity": "movement",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for movement"
+      },
+      {
+        "id": "t-system-field-movementLine-active",
+        "category": "system-field",
+        "entity": "movementLine",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for movementLine"
+      },
+      {
+        "id": "t-system-field-movementLine-alternativeUOM",
+        "category": "system-field",
+        "entity": "movementLine",
+        "field": "alternativeUOM",
+        "runner": "node",
+        "description": "System field 'alternativeUOM' should exist in backend but not frontend for movementLine"
+      },
+      {
+        "id": "t-system-field-movementLine-attributeSetValue",
+        "category": "system-field",
+        "entity": "movementLine",
+        "field": "attributeSetValue",
+        "runner": "node",
+        "description": "System field 'attributeSetValue' should exist in backend but not frontend for movementLine"
+      },
+      {
+        "id": "t-system-field-movementLine-client",
+        "category": "system-field",
+        "entity": "movementLine",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for movementLine"
+      },
+      {
+        "id": "t-system-field-movementLine-createdBy",
+        "category": "system-field",
+        "entity": "movementLine",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for movementLine"
+      },
+      {
+        "id": "t-system-field-movementLine-creationDate",
+        "category": "system-field",
+        "entity": "movementLine",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for movementLine"
+      },
+      {
+        "id": "t-system-field-movementLine-id",
+        "category": "system-field",
+        "entity": "movementLine",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for movementLine"
+      },
+      {
+        "id": "t-system-field-movementLine-mAttributeSetInstanceToID",
+        "category": "system-field",
+        "entity": "movementLine",
+        "field": "mAttributeSetInstanceToID",
+        "runner": "node",
+        "description": "System field 'mAttributeSetInstanceToID' should exist in backend but not frontend for movementLine"
+      },
+      {
+        "id": "t-system-field-movementLine-movement",
+        "category": "system-field",
+        "entity": "movementLine",
+        "field": "movement",
+        "runner": "node",
+        "description": "System field 'movement' should exist in backend but not frontend for movementLine"
+      },
+      {
+        "id": "t-system-field-movementLine-operativeQuantity",
+        "category": "system-field",
+        "entity": "movementLine",
+        "field": "operativeQuantity",
+        "runner": "node",
+        "description": "System field 'operativeQuantity' should exist in backend but not frontend for movementLine"
+      },
+      {
+        "id": "t-system-field-movementLine-orderQuantity",
+        "category": "system-field",
+        "entity": "movementLine",
+        "field": "orderQuantity",
+        "runner": "node",
+        "description": "System field 'orderQuantity' should exist in backend but not frontend for movementLine"
+      },
+      {
+        "id": "t-system-field-movementLine-orderUOM",
+        "category": "system-field",
+        "entity": "movementLine",
+        "field": "orderUOM",
+        "runner": "node",
+        "description": "System field 'orderUOM' should exist in backend but not frontend for movementLine"
+      },
+      {
+        "id": "t-system-field-movementLine-organization",
+        "category": "system-field",
+        "entity": "movementLine",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for movementLine"
+      },
+      {
+        "id": "t-system-field-movementLine-stockReservation",
+        "category": "system-field",
+        "entity": "movementLine",
+        "field": "stockReservation",
+        "runner": "node",
+        "description": "System field 'stockReservation' should exist in backend but not frontend for movementLine"
+      },
+      {
+        "id": "t-system-field-movementLine-updated",
+        "category": "system-field",
+        "entity": "movementLine",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for movementLine"
+      },
+      {
+        "id": "t-system-field-movementLine-updatedBy",
+        "category": "system-field",
+        "entity": "movementLine",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for movementLine"
+      },
+      {
+        "id": "t-visibility-movement",
+        "category": "visibility",
+        "entity": "movement",
+        "runner": "node",
+        "description": "Entity 'movement' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-visibility-movementLine",
+        "category": "visibility",
+        "entity": "movementLine",
+        "runner": "node",
+        "description": "Entity 'movementLine' should only expose visible fields in frontend"
       }
     ],
     "summary": {
       "total": 108,
       "byCategory": {
+        "action-endpoint": 3,
+        "crud-flags": 2,
+        "default-value-type": 4,
+        "displaylogic-evaluable": 1,
+        "displaylogic-valid": 1,
         "field-presence": 13,
         "field-type": 13,
-        "searchable-filters": 3,
-        "visibility": 2,
-        "displaylogic-valid": 1,
-        "readonlylogic-valid": 8,
-        "displaylogic-evaluable": 1,
         "readonlylogic-evaluable": 8,
-        "default-value-type": 4,
-        "system-field": 34,
+        "readonlylogic-valid": 8,
         "rule-declared": 12,
-        "crud-flags": 2,
+        "searchable-filters": 3,
         "selector-endpoint": 4,
-        "action-endpoint": 3
+        "system-field": 34,
+        "visibility": 2
       },
       "byRunner": {
         "node": 108,

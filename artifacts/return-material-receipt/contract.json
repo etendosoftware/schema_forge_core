@@ -1,7 +1,8 @@
 {
   "version": "0.2.0",
   "generatedAt": "2026-04-29T18:11:05.114Z",
-  "checksum": "875962c579684caf",
+  "updatedAt": "2026-05-05T18:49:51.766Z",
+  "checksum": "9cf67c27b4345633",
   "frontendContract": {
     "window": {
       "id": "123271B9AD60469BAE8A924841456B63",
@@ -1599,1383 +1600,7 @@
   "testManifest": {
     "tests": [
       {
-        "id": "t-1",
-        "category": "field-presence",
-        "entity": "returnMaterialReceipt",
-        "field": "documentNo",
-        "runner": "node",
-        "description": "Field 'documentNo' should be present in returnMaterialReceipt"
-      },
-      {
-        "id": "t-2",
-        "category": "field-presence",
-        "entity": "returnMaterialReceipt",
-        "field": "movementDate",
-        "runner": "node",
-        "description": "Field 'movementDate' should be present in returnMaterialReceipt"
-      },
-      {
-        "id": "t-3",
-        "category": "field-presence",
-        "entity": "returnMaterialReceipt",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Field 'businessPartner' should be present in returnMaterialReceipt"
-      },
-      {
-        "id": "t-4",
-        "category": "field-presence",
-        "entity": "returnMaterialReceipt",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should be present in returnMaterialReceipt"
-      },
-      {
-        "id": "t-5",
-        "category": "field-presence",
-        "entity": "returnMaterialReceipt",
-        "field": "warehouse",
-        "runner": "node",
-        "description": "Field 'warehouse' should be present in returnMaterialReceipt"
-      },
-      {
-        "id": "t-6",
-        "category": "field-presence",
-        "entity": "returnMaterialReceipt",
-        "field": "partnerAddress",
-        "runner": "node",
-        "description": "Field 'partnerAddress' should be present in returnMaterialReceipt"
-      },
-      {
-        "id": "t-7",
-        "category": "field-presence",
-        "entity": "returnMaterialReceipt",
-        "field": "documentStatus",
-        "runner": "node",
-        "description": "Field 'documentStatus' should be present in returnMaterialReceipt"
-      },
-      {
-        "id": "t-8",
-        "category": "field-presence",
-        "entity": "returnMaterialReceipt",
-        "field": "salesOrder",
-        "runner": "node",
-        "description": "Field 'salesOrder' should be present in returnMaterialReceipt"
-      },
-      {
-        "id": "t-9",
-        "category": "field-presence",
-        "entity": "returnMaterialReceipt",
-        "field": "trackingNo",
-        "runner": "node",
-        "description": "Field 'trackingNo' should be present in returnMaterialReceipt"
-      },
-      {
-        "id": "t-10",
-        "category": "field-type",
-        "entity": "returnMaterialReceipt",
-        "field": "documentNo",
-        "runner": "node",
-        "description": "Field 'documentNo' should have type 'string' in returnMaterialReceipt"
-      },
-      {
-        "id": "t-11",
-        "category": "field-type",
-        "entity": "returnMaterialReceipt",
-        "field": "movementDate",
-        "runner": "node",
-        "description": "Field 'movementDate' should have type 'string' in returnMaterialReceipt"
-      },
-      {
-        "id": "t-12",
-        "category": "field-type",
-        "entity": "returnMaterialReceipt",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Field 'businessPartner' should have type 'string' in returnMaterialReceipt"
-      },
-      {
-        "id": "t-13",
-        "category": "field-type",
-        "entity": "returnMaterialReceipt",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should have type 'string' in returnMaterialReceipt"
-      },
-      {
-        "id": "t-14",
-        "category": "field-type",
-        "entity": "returnMaterialReceipt",
-        "field": "warehouse",
-        "runner": "node",
-        "description": "Field 'warehouse' should have type 'string' in returnMaterialReceipt"
-      },
-      {
-        "id": "t-15",
-        "category": "field-type",
-        "entity": "returnMaterialReceipt",
-        "field": "partnerAddress",
-        "runner": "node",
-        "description": "Field 'partnerAddress' should have type 'string' in returnMaterialReceipt"
-      },
-      {
-        "id": "t-16",
-        "category": "field-type",
-        "entity": "returnMaterialReceipt",
-        "field": "documentStatus",
-        "runner": "node",
-        "description": "Field 'documentStatus' should have type 'string' in returnMaterialReceipt"
-      },
-      {
-        "id": "t-17",
-        "category": "field-type",
-        "entity": "returnMaterialReceipt",
-        "field": "salesOrder",
-        "runner": "node",
-        "description": "Field 'salesOrder' should have type 'string' in returnMaterialReceipt"
-      },
-      {
-        "id": "t-18",
-        "category": "field-type",
-        "entity": "returnMaterialReceipt",
-        "field": "trackingNo",
-        "runner": "node",
-        "description": "Field 'trackingNo' should have type 'string' in returnMaterialReceipt"
-      },
-      {
-        "id": "t-19",
-        "category": "searchable-filters",
-        "entity": "returnMaterialReceipt",
-        "field": "documentNo",
-        "runner": "node",
-        "description": "Field 'documentNo' should be a supported filter for returnMaterialReceipt"
-      },
-      {
-        "id": "t-20",
-        "category": "searchable-filters",
-        "entity": "returnMaterialReceipt",
-        "field": "movementDate",
-        "runner": "node",
-        "description": "Field 'movementDate' should be a supported filter for returnMaterialReceipt"
-      },
-      {
-        "id": "t-21",
-        "category": "searchable-filters",
-        "entity": "returnMaterialReceipt",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Field 'businessPartner' should be a supported filter for returnMaterialReceipt"
-      },
-      {
-        "id": "t-22",
-        "category": "searchable-filters",
-        "entity": "returnMaterialReceipt",
-        "field": "documentStatus",
-        "runner": "node",
-        "description": "Field 'documentStatus' should be a supported filter for returnMaterialReceipt"
-      },
-      {
-        "id": "t-23",
-        "category": "visibility",
-        "entity": "returnMaterialReceipt",
-        "runner": "node",
-        "description": "Entity 'returnMaterialReceipt' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-24",
-        "category": "displaylogic-valid",
-        "entity": "returnMaterialReceipt",
-        "field": "trackingNo",
-        "runner": "node",
-        "description": "Display logic for 'trackingNo' in returnMaterialReceipt should be valid JS"
-      },
-      {
-        "id": "t-25",
-        "category": "readonlylogic-valid",
-        "entity": "returnMaterialReceipt",
-        "field": "documentNo",
-        "runner": "node",
-        "description": "Read-only logic for 'documentNo' in returnMaterialReceipt should be valid JS"
-      },
-      {
-        "id": "t-26",
-        "category": "readonlylogic-valid",
-        "entity": "returnMaterialReceipt",
-        "field": "movementDate",
-        "runner": "node",
-        "description": "Read-only logic for 'movementDate' in returnMaterialReceipt should be valid JS"
-      },
-      {
-        "id": "t-27",
-        "category": "readonlylogic-valid",
-        "entity": "returnMaterialReceipt",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Read-only logic for 'businessPartner' in returnMaterialReceipt should be valid JS"
-      },
-      {
-        "id": "t-28",
-        "category": "readonlylogic-valid",
-        "entity": "returnMaterialReceipt",
-        "field": "warehouse",
-        "runner": "node",
-        "description": "Read-only logic for 'warehouse' in returnMaterialReceipt should be valid JS"
-      },
-      {
-        "id": "t-29",
-        "category": "readonlylogic-valid",
-        "entity": "returnMaterialReceipt",
-        "field": "partnerAddress",
-        "runner": "node",
-        "description": "Read-only logic for 'partnerAddress' in returnMaterialReceipt should be valid JS"
-      },
-      {
-        "id": "t-30",
-        "category": "displaylogic-evaluable",
-        "entity": "returnMaterialReceipt",
-        "field": "trackingNo",
-        "runner": "node",
-        "description": "Display logic for 'trackingNo' in returnMaterialReceipt should have evaluable flag"
-      },
-      {
-        "id": "t-31",
-        "category": "readonlylogic-evaluable",
-        "entity": "returnMaterialReceipt",
-        "field": "documentNo",
-        "runner": "node",
-        "description": "Read-only logic for 'documentNo' in returnMaterialReceipt should have evaluable flag"
-      },
-      {
-        "id": "t-32",
-        "category": "readonlylogic-evaluable",
-        "entity": "returnMaterialReceipt",
-        "field": "movementDate",
-        "runner": "node",
-        "description": "Read-only logic for 'movementDate' in returnMaterialReceipt should have evaluable flag"
-      },
-      {
-        "id": "t-33",
-        "category": "readonlylogic-evaluable",
-        "entity": "returnMaterialReceipt",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Read-only logic for 'businessPartner' in returnMaterialReceipt should have evaluable flag"
-      },
-      {
-        "id": "t-34",
-        "category": "readonlylogic-evaluable",
-        "entity": "returnMaterialReceipt",
-        "field": "warehouse",
-        "runner": "node",
-        "description": "Read-only logic for 'warehouse' in returnMaterialReceipt should have evaluable flag"
-      },
-      {
-        "id": "t-35",
-        "category": "readonlylogic-evaluable",
-        "entity": "returnMaterialReceipt",
-        "field": "partnerAddress",
-        "runner": "node",
-        "description": "Read-only logic for 'partnerAddress' in returnMaterialReceipt should have evaluable flag"
-      },
-      {
-        "id": "t-36",
-        "category": "default-value-type",
-        "entity": "returnMaterialReceipt",
-        "field": "movementDate",
-        "runner": "node",
-        "description": "Default value for 'movementDate' in returnMaterialReceipt should be a string"
-      },
-      {
-        "id": "t-37",
-        "category": "default-value-type",
-        "entity": "returnMaterialReceipt",
-        "field": "documentStatus",
-        "runner": "node",
-        "description": "Default value for 'documentStatus' in returnMaterialReceipt should be a string"
-      },
-      {
-        "id": "t-38",
-        "category": "field-presence",
-        "entity": "returnMaterialReceiptLine",
-        "field": "lineNo",
-        "runner": "node",
-        "description": "Field 'lineNo' should be present in returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-39",
-        "category": "field-presence",
-        "entity": "returnMaterialReceiptLine",
-        "field": "product",
-        "runner": "node",
-        "description": "Field 'product' should be present in returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-40",
-        "category": "field-presence",
-        "entity": "returnMaterialReceiptLine",
-        "field": "movementQuantity",
-        "runner": "node",
-        "description": "Field 'movementQuantity' should be present in returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-41",
-        "category": "field-presence",
-        "entity": "returnMaterialReceiptLine",
-        "field": "uOM",
-        "runner": "node",
-        "description": "Field 'uOM' should be present in returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-42",
-        "category": "field-presence",
-        "entity": "returnMaterialReceiptLine",
-        "field": "salesOrderLine",
-        "runner": "node",
-        "description": "Field 'salesOrderLine' should be present in returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-43",
-        "category": "field-presence",
-        "entity": "returnMaterialReceiptLine",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should be present in returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-44",
-        "category": "field-presence",
-        "entity": "returnMaterialReceiptLine",
-        "field": "orderQuantity",
-        "runner": "node",
-        "description": "Field 'orderQuantity' should be present in returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-45",
-        "category": "field-type",
-        "entity": "returnMaterialReceiptLine",
-        "field": "lineNo",
-        "runner": "node",
-        "description": "Field 'lineNo' should have type 'number' in returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-46",
-        "category": "field-type",
-        "entity": "returnMaterialReceiptLine",
-        "field": "product",
-        "runner": "node",
-        "description": "Field 'product' should have type 'string' in returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-47",
-        "category": "field-type",
-        "entity": "returnMaterialReceiptLine",
-        "field": "movementQuantity",
-        "runner": "node",
-        "description": "Field 'movementQuantity' should have type 'number' in returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-48",
-        "category": "field-type",
-        "entity": "returnMaterialReceiptLine",
-        "field": "uOM",
-        "runner": "node",
-        "description": "Field 'uOM' should have type 'string' in returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-49",
-        "category": "field-type",
-        "entity": "returnMaterialReceiptLine",
-        "field": "salesOrderLine",
-        "runner": "node",
-        "description": "Field 'salesOrderLine' should have type 'string' in returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-50",
-        "category": "field-type",
-        "entity": "returnMaterialReceiptLine",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should have type 'string' in returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-51",
-        "category": "field-type",
-        "entity": "returnMaterialReceiptLine",
-        "field": "orderQuantity",
-        "runner": "node",
-        "description": "Field 'orderQuantity' should have type 'number' in returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-52",
-        "category": "searchable-filters",
-        "entity": "returnMaterialReceiptLine",
-        "field": "product",
-        "runner": "node",
-        "description": "Field 'product' should be a supported filter for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-53",
-        "category": "visibility",
-        "entity": "returnMaterialReceiptLine",
-        "runner": "node",
-        "description": "Entity 'returnMaterialReceiptLine' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-54",
-        "category": "displaylogic-valid",
-        "entity": "returnMaterialReceiptLine",
-        "field": "orderQuantity",
-        "runner": "node",
-        "description": "Display logic for 'orderQuantity' in returnMaterialReceiptLine should be valid JS"
-      },
-      {
-        "id": "t-55",
-        "category": "readonlylogic-valid",
-        "entity": "returnMaterialReceiptLine",
-        "field": "lineNo",
-        "runner": "node",
-        "description": "Read-only logic for 'lineNo' in returnMaterialReceiptLine should be valid JS"
-      },
-      {
-        "id": "t-56",
-        "category": "readonlylogic-valid",
-        "entity": "returnMaterialReceiptLine",
-        "field": "product",
-        "runner": "node",
-        "description": "Read-only logic for 'product' in returnMaterialReceiptLine should be valid JS"
-      },
-      {
-        "id": "t-57",
-        "category": "readonlylogic-valid",
-        "entity": "returnMaterialReceiptLine",
-        "field": "movementQuantity",
-        "runner": "node",
-        "description": "Read-only logic for 'movementQuantity' in returnMaterialReceiptLine should be valid JS"
-      },
-      {
-        "id": "t-58",
-        "category": "readonlylogic-valid",
-        "entity": "returnMaterialReceiptLine",
-        "field": "uOM",
-        "runner": "node",
-        "description": "Read-only logic for 'uOM' in returnMaterialReceiptLine should be valid JS"
-      },
-      {
-        "id": "t-59",
-        "category": "readonlylogic-valid",
-        "entity": "returnMaterialReceiptLine",
-        "field": "orderQuantity",
-        "runner": "node",
-        "description": "Read-only logic for 'orderQuantity' in returnMaterialReceiptLine should be valid JS"
-      },
-      {
-        "id": "t-60",
-        "category": "displaylogic-evaluable",
-        "entity": "returnMaterialReceiptLine",
-        "field": "orderQuantity",
-        "runner": "node",
-        "description": "Display logic for 'orderQuantity' in returnMaterialReceiptLine should have evaluable flag"
-      },
-      {
-        "id": "t-61",
-        "category": "readonlylogic-evaluable",
-        "entity": "returnMaterialReceiptLine",
-        "field": "lineNo",
-        "runner": "node",
-        "description": "Read-only logic for 'lineNo' in returnMaterialReceiptLine should have evaluable flag"
-      },
-      {
-        "id": "t-62",
-        "category": "readonlylogic-evaluable",
-        "entity": "returnMaterialReceiptLine",
-        "field": "product",
-        "runner": "node",
-        "description": "Read-only logic for 'product' in returnMaterialReceiptLine should have evaluable flag"
-      },
-      {
-        "id": "t-63",
-        "category": "readonlylogic-evaluable",
-        "entity": "returnMaterialReceiptLine",
-        "field": "movementQuantity",
-        "runner": "node",
-        "description": "Read-only logic for 'movementQuantity' in returnMaterialReceiptLine should have evaluable flag"
-      },
-      {
-        "id": "t-64",
-        "category": "readonlylogic-evaluable",
-        "entity": "returnMaterialReceiptLine",
-        "field": "uOM",
-        "runner": "node",
-        "description": "Read-only logic for 'uOM' in returnMaterialReceiptLine should have evaluable flag"
-      },
-      {
-        "id": "t-65",
-        "category": "readonlylogic-evaluable",
-        "entity": "returnMaterialReceiptLine",
-        "field": "orderQuantity",
-        "runner": "node",
-        "description": "Read-only logic for 'orderQuantity' in returnMaterialReceiptLine should have evaluable flag"
-      },
-      {
-        "id": "t-66",
-        "category": "default-value-type",
-        "entity": "returnMaterialReceiptLine",
-        "field": "lineNo",
-        "runner": "node",
-        "description": "Default value for 'lineNo' in returnMaterialReceiptLine should be a string"
-      },
-      {
-        "id": "t-67",
-        "category": "default-value-type",
-        "entity": "returnMaterialReceiptLine",
-        "field": "movementQuantity",
-        "runner": "node",
-        "description": "Default value for 'movementQuantity' in returnMaterialReceiptLine should be a string"
-      },
-      {
-        "id": "t-68",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "receiveMaterials",
-        "runner": "node",
-        "description": "System field 'receiveMaterials' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-69",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-70",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "documentType",
-        "runner": "node",
-        "description": "System field 'documentType' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-71",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "mConditionGoodsID",
-        "runner": "node",
-        "description": "System field 'mConditionGoodsID' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-72",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "deliveryLocation",
-        "runner": "node",
-        "description": "System field 'deliveryLocation' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-73",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "userContact",
-        "runner": "node",
-        "description": "System field 'userContact' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-74",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "accountingDate",
-        "runner": "node",
-        "description": "System field 'accountingDate' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-75",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "orderReference",
-        "runner": "node",
-        "description": "System field 'orderReference' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-76",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "orderDate",
-        "runner": "node",
-        "description": "System field 'orderDate' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-77",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "salesRepresentative",
-        "runner": "node",
-        "description": "System field 'salesRepresentative' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-78",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "createLinesFrom",
-        "runner": "node",
-        "description": "System field 'createLinesFrom' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-79",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "documentAction",
-        "runner": "node",
-        "description": "System field 'documentAction' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-80",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "posted",
-        "runner": "node",
-        "description": "System field 'posted' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-81",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "deliveryTerms",
-        "runner": "node",
-        "description": "System field 'deliveryTerms' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-82",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "deliveryMethod",
-        "runner": "node",
-        "description": "System field 'deliveryMethod' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-83",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "freightAmount",
-        "runner": "node",
-        "description": "System field 'freightAmount' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-84",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "freightCostRule",
-        "runner": "node",
-        "description": "System field 'freightCostRule' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-85",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "shippingCompany",
-        "runner": "node",
-        "description": "System field 'shippingCompany' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-86",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "priority",
-        "runner": "node",
-        "description": "System field 'priority' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-87",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "pickDate",
-        "runner": "node",
-        "description": "System field 'pickDate' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-88",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "numberOfPackages",
-        "runner": "node",
-        "description": "System field 'numberOfPackages' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-89",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "movementType",
-        "runner": "node",
-        "description": "System field 'movementType' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-90",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "charge",
-        "runner": "node",
-        "description": "System field 'charge' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-91",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "chargeAmount",
-        "runner": "node",
-        "description": "System field 'chargeAmount' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-92",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "shipDate",
-        "runner": "node",
-        "description": "System field 'shipDate' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-93",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "freightCategory",
-        "runner": "node",
-        "description": "System field 'freightCategory' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-94",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "calculateFreight",
-        "runner": "node",
-        "description": "System field 'calculateFreight' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-95",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "freightCurrency",
-        "runner": "node",
-        "description": "System field 'freightCurrency' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-96",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "invoiceStatus",
-        "runner": "node",
-        "description": "System field 'invoiceStatus' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-97",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "activity",
-        "runner": "node",
-        "description": "System field 'activity' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-98",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "salesCampaign",
-        "runner": "node",
-        "description": "System field 'salesCampaign' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-99",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "trxOrganization",
-        "runner": "node",
-        "description": "System field 'trxOrganization' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-100",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "project",
-        "runner": "node",
-        "description": "System field 'project' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-101",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "costcenter",
-        "runner": "node",
-        "description": "System field 'costcenter' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-102",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "System field 'stDimension' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-103",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "System field 'ndDimension' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-104",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "invoice",
-        "runner": "node",
-        "description": "System field 'invoice' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-105",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "processed",
-        "runner": "node",
-        "description": "System field 'processed' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-106",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "salesTransaction",
-        "runner": "node",
-        "description": "System field 'salesTransaction' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-107",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "datePrinted",
-        "runner": "node",
-        "description": "System field 'datePrinted' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-108",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "sendMaterials",
-        "runner": "node",
-        "description": "System field 'sendMaterials' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-109",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "active",
-        "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-110",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "print",
-        "runner": "node",
-        "description": "System field 'print' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-111",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "processNow",
-        "runner": "node",
-        "description": "System field 'processNow' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-112",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "id",
-        "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-113",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "generateTo",
-        "runner": "node",
-        "description": "System field 'generateTo' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-114",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "updateLines",
-        "runner": "node",
-        "description": "System field 'updateLines' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-115",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "logistic",
-        "runner": "node",
-        "description": "System field 'logistic' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-116",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-117",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "asset",
-        "runner": "node",
-        "description": "System field 'asset' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-118",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "externalBusinessPartnerReference",
-        "runner": "node",
-        "description": "System field 'externalBusinessPartnerReference' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-119",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-120",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-121",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "invoicefromshipment",
-        "runner": "node",
-        "description": "System field 'invoicefromshipment' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-122",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "completelyInvoiced",
-        "runner": "node",
-        "description": "System field 'completelyInvoiced' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-123",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "isnettingshipment",
-        "runner": "node",
-        "description": "System field 'isnettingshipment' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-124",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "processGoodsJava",
-        "runner": "node",
-        "description": "System field 'processGoodsJava' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-125",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-126",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
-        "id": "t-127",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "attributeSetValue",
-        "runner": "node",
-        "description": "System field 'attributeSetValue' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-128",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "mConditionGoodsID",
-        "runner": "node",
-        "description": "System field 'mConditionGoodsID' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-129",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "operativeQuantity",
-        "runner": "node",
-        "description": "System field 'operativeQuantity' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-130",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "operativeUOM",
-        "runner": "node",
-        "description": "System field 'operativeUOM' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-131",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "storageBin",
-        "runner": "node",
-        "description": "System field 'storageBin' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-132",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "orderUOM",
-        "runner": "node",
-        "description": "System field 'orderUOM' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-133",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "descriptionOnly",
-        "runner": "node",
-        "description": "System field 'descriptionOnly' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-134",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "project",
-        "runner": "node",
-        "description": "System field 'project' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-135",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "costcenter",
-        "runner": "node",
-        "description": "System field 'costcenter' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-136",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "System field 'stDimension' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-137",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "System field 'ndDimension' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-138",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "reinvoice",
-        "runner": "node",
-        "description": "System field 'reinvoice' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-139",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-140",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "active",
-        "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-141",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "id",
-        "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-142",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-143",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "shipmentReceipt",
-        "runner": "node",
-        "description": "System field 'shipmentReceipt' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-144",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "asset",
-        "runner": "node",
-        "description": "System field 'asset' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-145",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "bOMParentID",
-        "runner": "node",
-        "description": "System field 'bOMParentID' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-146",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "canceledInoutLine",
-        "runner": "node",
-        "description": "System field 'canceledInoutLine' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-147",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "System field 'businessPartner' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-148",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-149",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-150",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "explode",
-        "runner": "node",
-        "description": "System field 'explode' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-151",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "managePrereservation",
-        "runner": "node",
-        "description": "System field 'managePrereservation' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-152",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "invoiceQuantity",
-        "runner": "node",
-        "description": "System field 'invoiceQuantity' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-153",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-154",
-        "category": "system-field",
-        "entity": "returnMaterialReceiptLine",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for returnMaterialReceiptLine"
-      },
-      {
-        "id": "t-155",
-        "category": "rule-declared",
-        "rule": "ReadOnly_When_Processed",
-        "runner": "node",
-        "description": "Rule 'ReadOnly_When_Processed' (displayLogic) should be declared"
-      },
-      {
-        "id": "t-156",
-        "category": "rule-declared",
-        "rule": "RMA_AutoFill_Lines",
-        "runner": "node",
-        "description": "Rule 'RMA_AutoFill_Lines' (callout) should be declared"
-      },
-      {
-        "id": "t-157",
-        "category": "rule-declared",
-        "rule": "BP_AutoFill_Address",
-        "runner": "node",
-        "description": "Rule 'BP_AutoFill_Address' (callout) should be declared"
-      },
-      {
-        "id": "t-158",
-        "category": "rule-declared",
-        "rule": "Product_AutoFill_UOM",
-        "runner": "node",
-        "description": "Rule 'Product_AutoFill_UOM' (callout) should be declared"
-      },
-      {
-        "id": "t-159",
-        "category": "process-happy",
-        "process": "Process Receipt",
-        "entity": "returnMaterialReceipt",
-        "runner": "junit",
-        "description": "Process 'Process Receipt' should complete successfully with valid preconditions"
-      },
-      {
-        "id": "t-160",
-        "category": "process-failure",
-        "process": "Process Receipt",
-        "entity": "returnMaterialReceipt",
-        "runner": "junit",
-        "description": "Process 'Process Receipt' should fail when preconditions are not met"
-      },
-      {
-        "id": "t-161",
-        "category": "crud-flags",
-        "entity": "returnMaterialReceipt",
-        "runner": "node",
-        "description": "CRUD flags for 'returnMaterialReceipt' should all be booleans"
-      },
-      {
-        "id": "t-162",
-        "category": "crud-flags",
-        "entity": "returnMaterialReceiptLine",
-        "runner": "node",
-        "description": "CRUD flags for 'returnMaterialReceiptLine' should all be booleans"
-      },
-      {
-        "id": "t-163",
-        "category": "selector-endpoint",
-        "entity": "returnMaterialReceipt",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Selector endpoint for 'businessPartner' in returnMaterialReceipt should exist"
-      },
-      {
-        "id": "t-164",
-        "category": "selector-endpoint",
-        "entity": "returnMaterialReceipt",
-        "field": "warehouse",
-        "runner": "node",
-        "description": "Selector endpoint for 'warehouse' in returnMaterialReceipt should exist"
-      },
-      {
-        "id": "t-165",
-        "category": "selector-endpoint",
-        "entity": "returnMaterialReceipt",
-        "field": "partnerAddress",
-        "runner": "node",
-        "description": "Selector endpoint for 'partnerAddress' in returnMaterialReceipt should exist"
-      },
-      {
-        "id": "t-166",
-        "category": "selector-endpoint",
-        "entity": "returnMaterialReceipt",
-        "field": "salesOrder",
-        "runner": "node",
-        "description": "Selector endpoint for 'salesOrder' in returnMaterialReceipt should exist"
-      },
-      {
-        "id": "t-167",
-        "category": "selector-endpoint",
-        "entity": "returnMaterialReceiptLine",
-        "field": "product",
-        "runner": "node",
-        "description": "Selector endpoint for 'product' in returnMaterialReceiptLine should exist"
-      },
-      {
-        "id": "t-168",
-        "category": "selector-endpoint",
-        "entity": "returnMaterialReceiptLine",
-        "field": "uOM",
-        "runner": "node",
-        "description": "Selector endpoint for 'uOM' in returnMaterialReceiptLine should exist"
-      },
-      {
-        "id": "t-169",
-        "category": "selector-endpoint",
-        "entity": "returnMaterialReceiptLine",
-        "field": "salesOrderLine",
-        "runner": "node",
-        "description": "Selector endpoint for 'salesOrderLine' in returnMaterialReceiptLine should exist"
-      },
-      {
-        "id": "t-170",
-        "category": "action-endpoint",
-        "entity": "returnMaterialReceipt",
-        "field": "receiveMaterials",
-        "runner": "node",
-        "description": "Action endpoint for 'receiveMaterials' in returnMaterialReceipt should exist"
-      },
-      {
-        "id": "t-171",
-        "category": "action-endpoint",
-        "entity": "returnMaterialReceipt",
-        "field": "createLinesFrom",
-        "runner": "node",
-        "description": "Action endpoint for 'createLinesFrom' in returnMaterialReceipt should exist"
-      },
-      {
-        "id": "t-172",
-        "category": "action-endpoint",
-        "entity": "returnMaterialReceipt",
-        "field": "documentAction",
-        "runner": "node",
-        "description": "Action endpoint for 'documentAction' in returnMaterialReceipt should exist"
-      },
-      {
-        "id": "t-173",
-        "category": "action-endpoint",
-        "entity": "returnMaterialReceipt",
-        "field": "posted",
-        "runner": "node",
-        "description": "Action endpoint for 'posted' in returnMaterialReceipt should exist"
-      },
-      {
-        "id": "t-174",
+        "id": "t-action-endpoint-returnMaterialReceipt-calculateFreight",
         "category": "action-endpoint",
         "entity": "returnMaterialReceipt",
         "field": "calculateFreight",
@@ -2983,15 +1608,23 @@
         "description": "Action endpoint for 'calculateFreight' in returnMaterialReceipt should exist"
       },
       {
-        "id": "t-175",
+        "id": "t-action-endpoint-returnMaterialReceipt-createLinesFrom",
         "category": "action-endpoint",
         "entity": "returnMaterialReceipt",
-        "field": "sendMaterials",
+        "field": "createLinesFrom",
         "runner": "node",
-        "description": "Action endpoint for 'sendMaterials' in returnMaterialReceipt should exist"
+        "description": "Action endpoint for 'createLinesFrom' in returnMaterialReceipt should exist"
       },
       {
-        "id": "t-176",
+        "id": "t-action-endpoint-returnMaterialReceipt-documentAction",
+        "category": "action-endpoint",
+        "entity": "returnMaterialReceipt",
+        "field": "documentAction",
+        "runner": "node",
+        "description": "Action endpoint for 'documentAction' in returnMaterialReceipt should exist"
+      },
+      {
+        "id": "t-action-endpoint-returnMaterialReceipt-generateTo",
         "category": "action-endpoint",
         "entity": "returnMaterialReceipt",
         "field": "generateTo",
@@ -2999,15 +1632,7 @@
         "description": "Action endpoint for 'generateTo' in returnMaterialReceipt should exist"
       },
       {
-        "id": "t-177",
-        "category": "action-endpoint",
-        "entity": "returnMaterialReceipt",
-        "field": "updateLines",
-        "runner": "node",
-        "description": "Action endpoint for 'updateLines' in returnMaterialReceipt should exist"
-      },
-      {
-        "id": "t-178",
+        "id": "t-action-endpoint-returnMaterialReceipt-invoicefromshipment",
         "category": "action-endpoint",
         "entity": "returnMaterialReceipt",
         "field": "invoicefromshipment",
@@ -3015,7 +1640,15 @@
         "description": "Action endpoint for 'invoicefromshipment' in returnMaterialReceipt should exist"
       },
       {
-        "id": "t-179",
+        "id": "t-action-endpoint-returnMaterialReceipt-posted",
+        "category": "action-endpoint",
+        "entity": "returnMaterialReceipt",
+        "field": "posted",
+        "runner": "node",
+        "description": "Action endpoint for 'posted' in returnMaterialReceipt should exist"
+      },
+      {
+        "id": "t-action-endpoint-returnMaterialReceipt-processGoodsJava",
         "category": "action-endpoint",
         "entity": "returnMaterialReceipt",
         "field": "processGoodsJava",
@@ -3023,7 +1656,31 @@
         "description": "Action endpoint for 'processGoodsJava' in returnMaterialReceipt should exist"
       },
       {
-        "id": "t-180",
+        "id": "t-action-endpoint-returnMaterialReceipt-receiveMaterials",
+        "category": "action-endpoint",
+        "entity": "returnMaterialReceipt",
+        "field": "receiveMaterials",
+        "runner": "node",
+        "description": "Action endpoint for 'receiveMaterials' in returnMaterialReceipt should exist"
+      },
+      {
+        "id": "t-action-endpoint-returnMaterialReceipt-sendMaterials",
+        "category": "action-endpoint",
+        "entity": "returnMaterialReceipt",
+        "field": "sendMaterials",
+        "runner": "node",
+        "description": "Action endpoint for 'sendMaterials' in returnMaterialReceipt should exist"
+      },
+      {
+        "id": "t-action-endpoint-returnMaterialReceipt-updateLines",
+        "category": "action-endpoint",
+        "entity": "returnMaterialReceipt",
+        "field": "updateLines",
+        "runner": "node",
+        "description": "Action endpoint for 'updateLines' in returnMaterialReceipt should exist"
+      },
+      {
+        "id": "t-action-endpoint-returnMaterialReceiptLine-explode",
         "category": "action-endpoint",
         "entity": "returnMaterialReceiptLine",
         "field": "explode",
@@ -3031,33 +1688,1377 @@
         "description": "Action endpoint for 'explode' in returnMaterialReceiptLine should exist"
       },
       {
-        "id": "t-181",
+        "id": "t-action-endpoint-returnMaterialReceiptLine-managePrereservation",
         "category": "action-endpoint",
         "entity": "returnMaterialReceiptLine",
         "field": "managePrereservation",
         "runner": "node",
         "description": "Action endpoint for 'managePrereservation' in returnMaterialReceiptLine should exist"
+      },
+      {
+        "id": "t-crud-flags-returnMaterialReceipt",
+        "category": "crud-flags",
+        "entity": "returnMaterialReceipt",
+        "runner": "node",
+        "description": "CRUD flags for 'returnMaterialReceipt' should all be booleans"
+      },
+      {
+        "id": "t-crud-flags-returnMaterialReceiptLine",
+        "category": "crud-flags",
+        "entity": "returnMaterialReceiptLine",
+        "runner": "node",
+        "description": "CRUD flags for 'returnMaterialReceiptLine' should all be booleans"
+      },
+      {
+        "id": "t-default-value-type-returnMaterialReceipt-documentStatus",
+        "category": "default-value-type",
+        "entity": "returnMaterialReceipt",
+        "field": "documentStatus",
+        "runner": "node",
+        "description": "Default value for 'documentStatus' in returnMaterialReceipt should be a string"
+      },
+      {
+        "id": "t-default-value-type-returnMaterialReceipt-movementDate",
+        "category": "default-value-type",
+        "entity": "returnMaterialReceipt",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Default value for 'movementDate' in returnMaterialReceipt should be a string"
+      },
+      {
+        "id": "t-default-value-type-returnMaterialReceiptLine-lineNo",
+        "category": "default-value-type",
+        "entity": "returnMaterialReceiptLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Default value for 'lineNo' in returnMaterialReceiptLine should be a string"
+      },
+      {
+        "id": "t-default-value-type-returnMaterialReceiptLine-movementQuantity",
+        "category": "default-value-type",
+        "entity": "returnMaterialReceiptLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Default value for 'movementQuantity' in returnMaterialReceiptLine should be a string"
+      },
+      {
+        "id": "t-displaylogic-evaluable-returnMaterialReceipt-trackingNo",
+        "category": "displaylogic-evaluable",
+        "entity": "returnMaterialReceipt",
+        "field": "trackingNo",
+        "runner": "node",
+        "description": "Display logic for 'trackingNo' in returnMaterialReceipt should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-evaluable-returnMaterialReceiptLine-orderQuantity",
+        "category": "displaylogic-evaluable",
+        "entity": "returnMaterialReceiptLine",
+        "field": "orderQuantity",
+        "runner": "node",
+        "description": "Display logic for 'orderQuantity' in returnMaterialReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-valid-returnMaterialReceipt-trackingNo",
+        "category": "displaylogic-valid",
+        "entity": "returnMaterialReceipt",
+        "field": "trackingNo",
+        "runner": "node",
+        "description": "Display logic for 'trackingNo' in returnMaterialReceipt should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-returnMaterialReceiptLine-orderQuantity",
+        "category": "displaylogic-valid",
+        "entity": "returnMaterialReceiptLine",
+        "field": "orderQuantity",
+        "runner": "node",
+        "description": "Display logic for 'orderQuantity' in returnMaterialReceiptLine should be valid JS"
+      },
+      {
+        "id": "t-field-presence-returnMaterialReceipt-businessPartner",
+        "category": "field-presence",
+        "entity": "returnMaterialReceipt",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should be present in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-presence-returnMaterialReceipt-description",
+        "category": "field-presence",
+        "entity": "returnMaterialReceipt",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-presence-returnMaterialReceipt-documentNo",
+        "category": "field-presence",
+        "entity": "returnMaterialReceipt",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should be present in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-presence-returnMaterialReceipt-documentStatus",
+        "category": "field-presence",
+        "entity": "returnMaterialReceipt",
+        "field": "documentStatus",
+        "runner": "node",
+        "description": "Field 'documentStatus' should be present in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-presence-returnMaterialReceipt-movementDate",
+        "category": "field-presence",
+        "entity": "returnMaterialReceipt",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Field 'movementDate' should be present in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-presence-returnMaterialReceipt-partnerAddress",
+        "category": "field-presence",
+        "entity": "returnMaterialReceipt",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "Field 'partnerAddress' should be present in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-presence-returnMaterialReceipt-salesOrder",
+        "category": "field-presence",
+        "entity": "returnMaterialReceipt",
+        "field": "salesOrder",
+        "runner": "node",
+        "description": "Field 'salesOrder' should be present in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-presence-returnMaterialReceipt-trackingNo",
+        "category": "field-presence",
+        "entity": "returnMaterialReceipt",
+        "field": "trackingNo",
+        "runner": "node",
+        "description": "Field 'trackingNo' should be present in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-presence-returnMaterialReceipt-warehouse",
+        "category": "field-presence",
+        "entity": "returnMaterialReceipt",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Field 'warehouse' should be present in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-presence-returnMaterialReceiptLine-description",
+        "category": "field-presence",
+        "entity": "returnMaterialReceiptLine",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-field-presence-returnMaterialReceiptLine-lineNo",
+        "category": "field-presence",
+        "entity": "returnMaterialReceiptLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should be present in returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-field-presence-returnMaterialReceiptLine-movementQuantity",
+        "category": "field-presence",
+        "entity": "returnMaterialReceiptLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Field 'movementQuantity' should be present in returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-field-presence-returnMaterialReceiptLine-orderQuantity",
+        "category": "field-presence",
+        "entity": "returnMaterialReceiptLine",
+        "field": "orderQuantity",
+        "runner": "node",
+        "description": "Field 'orderQuantity' should be present in returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-field-presence-returnMaterialReceiptLine-product",
+        "category": "field-presence",
+        "entity": "returnMaterialReceiptLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be present in returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-field-presence-returnMaterialReceiptLine-salesOrderLine",
+        "category": "field-presence",
+        "entity": "returnMaterialReceiptLine",
+        "field": "salesOrderLine",
+        "runner": "node",
+        "description": "Field 'salesOrderLine' should be present in returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-field-presence-returnMaterialReceiptLine-uOM",
+        "category": "field-presence",
+        "entity": "returnMaterialReceiptLine",
+        "field": "uOM",
+        "runner": "node",
+        "description": "Field 'uOM' should be present in returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-field-type-returnMaterialReceipt-businessPartner",
+        "category": "field-type",
+        "entity": "returnMaterialReceipt",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should have type 'string' in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-type-returnMaterialReceipt-description",
+        "category": "field-type",
+        "entity": "returnMaterialReceipt",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-type-returnMaterialReceipt-documentNo",
+        "category": "field-type",
+        "entity": "returnMaterialReceipt",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should have type 'string' in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-type-returnMaterialReceipt-documentStatus",
+        "category": "field-type",
+        "entity": "returnMaterialReceipt",
+        "field": "documentStatus",
+        "runner": "node",
+        "description": "Field 'documentStatus' should have type 'string' in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-type-returnMaterialReceipt-movementDate",
+        "category": "field-type",
+        "entity": "returnMaterialReceipt",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Field 'movementDate' should have type 'string' in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-type-returnMaterialReceipt-partnerAddress",
+        "category": "field-type",
+        "entity": "returnMaterialReceipt",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "Field 'partnerAddress' should have type 'string' in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-type-returnMaterialReceipt-salesOrder",
+        "category": "field-type",
+        "entity": "returnMaterialReceipt",
+        "field": "salesOrder",
+        "runner": "node",
+        "description": "Field 'salesOrder' should have type 'string' in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-type-returnMaterialReceipt-trackingNo",
+        "category": "field-type",
+        "entity": "returnMaterialReceipt",
+        "field": "trackingNo",
+        "runner": "node",
+        "description": "Field 'trackingNo' should have type 'string' in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-type-returnMaterialReceipt-warehouse",
+        "category": "field-type",
+        "entity": "returnMaterialReceipt",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Field 'warehouse' should have type 'string' in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-type-returnMaterialReceiptLine-description",
+        "category": "field-type",
+        "entity": "returnMaterialReceiptLine",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-field-type-returnMaterialReceiptLine-lineNo",
+        "category": "field-type",
+        "entity": "returnMaterialReceiptLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should have type 'number' in returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-field-type-returnMaterialReceiptLine-movementQuantity",
+        "category": "field-type",
+        "entity": "returnMaterialReceiptLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Field 'movementQuantity' should have type 'number' in returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-field-type-returnMaterialReceiptLine-orderQuantity",
+        "category": "field-type",
+        "entity": "returnMaterialReceiptLine",
+        "field": "orderQuantity",
+        "runner": "node",
+        "description": "Field 'orderQuantity' should have type 'number' in returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-field-type-returnMaterialReceiptLine-product",
+        "category": "field-type",
+        "entity": "returnMaterialReceiptLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should have type 'string' in returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-field-type-returnMaterialReceiptLine-salesOrderLine",
+        "category": "field-type",
+        "entity": "returnMaterialReceiptLine",
+        "field": "salesOrderLine",
+        "runner": "node",
+        "description": "Field 'salesOrderLine' should have type 'string' in returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-field-type-returnMaterialReceiptLine-uOM",
+        "category": "field-type",
+        "entity": "returnMaterialReceiptLine",
+        "field": "uOM",
+        "runner": "node",
+        "description": "Field 'uOM' should have type 'string' in returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-process-failure-Process-Receipt",
+        "category": "process-failure",
+        "process": "Process Receipt",
+        "entity": "returnMaterialReceipt",
+        "runner": "junit",
+        "description": "Process 'Process Receipt' should fail when preconditions are not met"
+      },
+      {
+        "id": "t-process-happy-Process-Receipt",
+        "category": "process-happy",
+        "process": "Process Receipt",
+        "entity": "returnMaterialReceipt",
+        "runner": "junit",
+        "description": "Process 'Process Receipt' should complete successfully with valid preconditions"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-returnMaterialReceipt-businessPartner",
+        "category": "readonlylogic-evaluable",
+        "entity": "returnMaterialReceipt",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Read-only logic for 'businessPartner' in returnMaterialReceipt should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-returnMaterialReceipt-documentNo",
+        "category": "readonlylogic-evaluable",
+        "entity": "returnMaterialReceipt",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Read-only logic for 'documentNo' in returnMaterialReceipt should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-returnMaterialReceipt-movementDate",
+        "category": "readonlylogic-evaluable",
+        "entity": "returnMaterialReceipt",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Read-only logic for 'movementDate' in returnMaterialReceipt should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-returnMaterialReceipt-partnerAddress",
+        "category": "readonlylogic-evaluable",
+        "entity": "returnMaterialReceipt",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "Read-only logic for 'partnerAddress' in returnMaterialReceipt should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-returnMaterialReceipt-warehouse",
+        "category": "readonlylogic-evaluable",
+        "entity": "returnMaterialReceipt",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Read-only logic for 'warehouse' in returnMaterialReceipt should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-returnMaterialReceiptLine-lineNo",
+        "category": "readonlylogic-evaluable",
+        "entity": "returnMaterialReceiptLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Read-only logic for 'lineNo' in returnMaterialReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-returnMaterialReceiptLine-movementQuantity",
+        "category": "readonlylogic-evaluable",
+        "entity": "returnMaterialReceiptLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Read-only logic for 'movementQuantity' in returnMaterialReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-returnMaterialReceiptLine-orderQuantity",
+        "category": "readonlylogic-evaluable",
+        "entity": "returnMaterialReceiptLine",
+        "field": "orderQuantity",
+        "runner": "node",
+        "description": "Read-only logic for 'orderQuantity' in returnMaterialReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-returnMaterialReceiptLine-product",
+        "category": "readonlylogic-evaluable",
+        "entity": "returnMaterialReceiptLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Read-only logic for 'product' in returnMaterialReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-returnMaterialReceiptLine-uOM",
+        "category": "readonlylogic-evaluable",
+        "entity": "returnMaterialReceiptLine",
+        "field": "uOM",
+        "runner": "node",
+        "description": "Read-only logic for 'uOM' in returnMaterialReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-valid-returnMaterialReceipt-businessPartner",
+        "category": "readonlylogic-valid",
+        "entity": "returnMaterialReceipt",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Read-only logic for 'businessPartner' in returnMaterialReceipt should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-returnMaterialReceipt-documentNo",
+        "category": "readonlylogic-valid",
+        "entity": "returnMaterialReceipt",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Read-only logic for 'documentNo' in returnMaterialReceipt should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-returnMaterialReceipt-movementDate",
+        "category": "readonlylogic-valid",
+        "entity": "returnMaterialReceipt",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Read-only logic for 'movementDate' in returnMaterialReceipt should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-returnMaterialReceipt-partnerAddress",
+        "category": "readonlylogic-valid",
+        "entity": "returnMaterialReceipt",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "Read-only logic for 'partnerAddress' in returnMaterialReceipt should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-returnMaterialReceipt-warehouse",
+        "category": "readonlylogic-valid",
+        "entity": "returnMaterialReceipt",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Read-only logic for 'warehouse' in returnMaterialReceipt should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-returnMaterialReceiptLine-lineNo",
+        "category": "readonlylogic-valid",
+        "entity": "returnMaterialReceiptLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Read-only logic for 'lineNo' in returnMaterialReceiptLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-returnMaterialReceiptLine-movementQuantity",
+        "category": "readonlylogic-valid",
+        "entity": "returnMaterialReceiptLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Read-only logic for 'movementQuantity' in returnMaterialReceiptLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-returnMaterialReceiptLine-orderQuantity",
+        "category": "readonlylogic-valid",
+        "entity": "returnMaterialReceiptLine",
+        "field": "orderQuantity",
+        "runner": "node",
+        "description": "Read-only logic for 'orderQuantity' in returnMaterialReceiptLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-returnMaterialReceiptLine-product",
+        "category": "readonlylogic-valid",
+        "entity": "returnMaterialReceiptLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Read-only logic for 'product' in returnMaterialReceiptLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-returnMaterialReceiptLine-uOM",
+        "category": "readonlylogic-valid",
+        "entity": "returnMaterialReceiptLine",
+        "field": "uOM",
+        "runner": "node",
+        "description": "Read-only logic for 'uOM' in returnMaterialReceiptLine should be valid JS"
+      },
+      {
+        "id": "t-rule-declared-BP-AutoFill-Address",
+        "category": "rule-declared",
+        "rule": "BP_AutoFill_Address",
+        "runner": "node",
+        "description": "Rule 'BP_AutoFill_Address' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Product-AutoFill-UOM",
+        "category": "rule-declared",
+        "rule": "Product_AutoFill_UOM",
+        "runner": "node",
+        "description": "Rule 'Product_AutoFill_UOM' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-ReadOnly-When-Processed",
+        "category": "rule-declared",
+        "rule": "ReadOnly_When_Processed",
+        "runner": "node",
+        "description": "Rule 'ReadOnly_When_Processed' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-RMA-AutoFill-Lines",
+        "category": "rule-declared",
+        "rule": "RMA_AutoFill_Lines",
+        "runner": "node",
+        "description": "Rule 'RMA_AutoFill_Lines' (callout) should be declared"
+      },
+      {
+        "id": "t-searchable-filters-returnMaterialReceipt-businessPartner",
+        "category": "searchable-filters",
+        "entity": "returnMaterialReceipt",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should be a supported filter for returnMaterialReceipt"
+      },
+      {
+        "id": "t-searchable-filters-returnMaterialReceipt-documentNo",
+        "category": "searchable-filters",
+        "entity": "returnMaterialReceipt",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should be a supported filter for returnMaterialReceipt"
+      },
+      {
+        "id": "t-searchable-filters-returnMaterialReceipt-documentStatus",
+        "category": "searchable-filters",
+        "entity": "returnMaterialReceipt",
+        "field": "documentStatus",
+        "runner": "node",
+        "description": "Field 'documentStatus' should be a supported filter for returnMaterialReceipt"
+      },
+      {
+        "id": "t-searchable-filters-returnMaterialReceipt-movementDate",
+        "category": "searchable-filters",
+        "entity": "returnMaterialReceipt",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Field 'movementDate' should be a supported filter for returnMaterialReceipt"
+      },
+      {
+        "id": "t-searchable-filters-returnMaterialReceiptLine-product",
+        "category": "searchable-filters",
+        "entity": "returnMaterialReceiptLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be a supported filter for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-selector-endpoint-returnMaterialReceipt-businessPartner",
+        "category": "selector-endpoint",
+        "entity": "returnMaterialReceipt",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Selector endpoint for 'businessPartner' in returnMaterialReceipt should exist"
+      },
+      {
+        "id": "t-selector-endpoint-returnMaterialReceipt-partnerAddress",
+        "category": "selector-endpoint",
+        "entity": "returnMaterialReceipt",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "Selector endpoint for 'partnerAddress' in returnMaterialReceipt should exist"
+      },
+      {
+        "id": "t-selector-endpoint-returnMaterialReceipt-salesOrder",
+        "category": "selector-endpoint",
+        "entity": "returnMaterialReceipt",
+        "field": "salesOrder",
+        "runner": "node",
+        "description": "Selector endpoint for 'salesOrder' in returnMaterialReceipt should exist"
+      },
+      {
+        "id": "t-selector-endpoint-returnMaterialReceipt-warehouse",
+        "category": "selector-endpoint",
+        "entity": "returnMaterialReceipt",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Selector endpoint for 'warehouse' in returnMaterialReceipt should exist"
+      },
+      {
+        "id": "t-selector-endpoint-returnMaterialReceiptLine-product",
+        "category": "selector-endpoint",
+        "entity": "returnMaterialReceiptLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Selector endpoint for 'product' in returnMaterialReceiptLine should exist"
+      },
+      {
+        "id": "t-selector-endpoint-returnMaterialReceiptLine-salesOrderLine",
+        "category": "selector-endpoint",
+        "entity": "returnMaterialReceiptLine",
+        "field": "salesOrderLine",
+        "runner": "node",
+        "description": "Selector endpoint for 'salesOrderLine' in returnMaterialReceiptLine should exist"
+      },
+      {
+        "id": "t-selector-endpoint-returnMaterialReceiptLine-uOM",
+        "category": "selector-endpoint",
+        "entity": "returnMaterialReceiptLine",
+        "field": "uOM",
+        "runner": "node",
+        "description": "Selector endpoint for 'uOM' in returnMaterialReceiptLine should exist"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-accountingDate",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "accountingDate",
+        "runner": "node",
+        "description": "System field 'accountingDate' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-active",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-activity",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "activity",
+        "runner": "node",
+        "description": "System field 'activity' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-asset",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "asset",
+        "runner": "node",
+        "description": "System field 'asset' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-calculateFreight",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "calculateFreight",
+        "runner": "node",
+        "description": "System field 'calculateFreight' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-charge",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "charge",
+        "runner": "node",
+        "description": "System field 'charge' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-chargeAmount",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "chargeAmount",
+        "runner": "node",
+        "description": "System field 'chargeAmount' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-client",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-completelyInvoiced",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "completelyInvoiced",
+        "runner": "node",
+        "description": "System field 'completelyInvoiced' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-costcenter",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "System field 'costcenter' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-createdBy",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-createLinesFrom",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "createLinesFrom",
+        "runner": "node",
+        "description": "System field 'createLinesFrom' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-creationDate",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-datePrinted",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "datePrinted",
+        "runner": "node",
+        "description": "System field 'datePrinted' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-deliveryLocation",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "deliveryLocation",
+        "runner": "node",
+        "description": "System field 'deliveryLocation' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-deliveryMethod",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "deliveryMethod",
+        "runner": "node",
+        "description": "System field 'deliveryMethod' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-deliveryTerms",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "deliveryTerms",
+        "runner": "node",
+        "description": "System field 'deliveryTerms' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-documentAction",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "documentAction",
+        "runner": "node",
+        "description": "System field 'documentAction' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-documentType",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "documentType",
+        "runner": "node",
+        "description": "System field 'documentType' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-externalBusinessPartnerReference",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "externalBusinessPartnerReference",
+        "runner": "node",
+        "description": "System field 'externalBusinessPartnerReference' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-freightAmount",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "freightAmount",
+        "runner": "node",
+        "description": "System field 'freightAmount' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-freightCategory",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "freightCategory",
+        "runner": "node",
+        "description": "System field 'freightCategory' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-freightCostRule",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "freightCostRule",
+        "runner": "node",
+        "description": "System field 'freightCostRule' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-freightCurrency",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "freightCurrency",
+        "runner": "node",
+        "description": "System field 'freightCurrency' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-generateTo",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "generateTo",
+        "runner": "node",
+        "description": "System field 'generateTo' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-id",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-invoice",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "invoice",
+        "runner": "node",
+        "description": "System field 'invoice' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-invoicefromshipment",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "invoicefromshipment",
+        "runner": "node",
+        "description": "System field 'invoicefromshipment' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-invoiceStatus",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "invoiceStatus",
+        "runner": "node",
+        "description": "System field 'invoiceStatus' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-isnettingshipment",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "isnettingshipment",
+        "runner": "node",
+        "description": "System field 'isnettingshipment' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-logistic",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "logistic",
+        "runner": "node",
+        "description": "System field 'logistic' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-mConditionGoodsID",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "mConditionGoodsID",
+        "runner": "node",
+        "description": "System field 'mConditionGoodsID' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-movementType",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "movementType",
+        "runner": "node",
+        "description": "System field 'movementType' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-ndDimension",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "System field 'ndDimension' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-numberOfPackages",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "numberOfPackages",
+        "runner": "node",
+        "description": "System field 'numberOfPackages' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-orderDate",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "orderDate",
+        "runner": "node",
+        "description": "System field 'orderDate' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-orderReference",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "orderReference",
+        "runner": "node",
+        "description": "System field 'orderReference' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-organization",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-pickDate",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "pickDate",
+        "runner": "node",
+        "description": "System field 'pickDate' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-posted",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "posted",
+        "runner": "node",
+        "description": "System field 'posted' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-print",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "print",
+        "runner": "node",
+        "description": "System field 'print' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-priority",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "priority",
+        "runner": "node",
+        "description": "System field 'priority' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-processed",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "processed",
+        "runner": "node",
+        "description": "System field 'processed' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-processGoodsJava",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "processGoodsJava",
+        "runner": "node",
+        "description": "System field 'processGoodsJava' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-processNow",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "processNow",
+        "runner": "node",
+        "description": "System field 'processNow' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-project",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "project",
+        "runner": "node",
+        "description": "System field 'project' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-receiveMaterials",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "receiveMaterials",
+        "runner": "node",
+        "description": "System field 'receiveMaterials' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-salesCampaign",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "salesCampaign",
+        "runner": "node",
+        "description": "System field 'salesCampaign' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-salesRepresentative",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "salesRepresentative",
+        "runner": "node",
+        "description": "System field 'salesRepresentative' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-salesTransaction",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "salesTransaction",
+        "runner": "node",
+        "description": "System field 'salesTransaction' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-sendMaterials",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "sendMaterials",
+        "runner": "node",
+        "description": "System field 'sendMaterials' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-shipDate",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "shipDate",
+        "runner": "node",
+        "description": "System field 'shipDate' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-shippingCompany",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "shippingCompany",
+        "runner": "node",
+        "description": "System field 'shippingCompany' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-stDimension",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "System field 'stDimension' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-trxOrganization",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "trxOrganization",
+        "runner": "node",
+        "description": "System field 'trxOrganization' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-updated",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-updatedBy",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-updateLines",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "updateLines",
+        "runner": "node",
+        "description": "System field 'updateLines' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceipt-userContact",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "userContact",
+        "runner": "node",
+        "description": "System field 'userContact' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-active",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-asset",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "asset",
+        "runner": "node",
+        "description": "System field 'asset' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-attributeSetValue",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "attributeSetValue",
+        "runner": "node",
+        "description": "System field 'attributeSetValue' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-bOMParentID",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "bOMParentID",
+        "runner": "node",
+        "description": "System field 'bOMParentID' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-businessPartner",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "System field 'businessPartner' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-canceledInoutLine",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "canceledInoutLine",
+        "runner": "node",
+        "description": "System field 'canceledInoutLine' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-client",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-costcenter",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "System field 'costcenter' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-createdBy",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-creationDate",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-descriptionOnly",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "descriptionOnly",
+        "runner": "node",
+        "description": "System field 'descriptionOnly' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-explode",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "explode",
+        "runner": "node",
+        "description": "System field 'explode' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-id",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-invoiceQuantity",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "invoiceQuantity",
+        "runner": "node",
+        "description": "System field 'invoiceQuantity' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-managePrereservation",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "managePrereservation",
+        "runner": "node",
+        "description": "System field 'managePrereservation' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-mConditionGoodsID",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "mConditionGoodsID",
+        "runner": "node",
+        "description": "System field 'mConditionGoodsID' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-ndDimension",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "System field 'ndDimension' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-operativeQuantity",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "operativeQuantity",
+        "runner": "node",
+        "description": "System field 'operativeQuantity' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-operativeUOM",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "operativeUOM",
+        "runner": "node",
+        "description": "System field 'operativeUOM' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-orderUOM",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "orderUOM",
+        "runner": "node",
+        "description": "System field 'orderUOM' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-organization",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-project",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "project",
+        "runner": "node",
+        "description": "System field 'project' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-reinvoice",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "reinvoice",
+        "runner": "node",
+        "description": "System field 'reinvoice' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-shipmentReceipt",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "shipmentReceipt",
+        "runner": "node",
+        "description": "System field 'shipmentReceipt' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-stDimension",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "System field 'stDimension' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-storageBin",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "System field 'storageBin' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-updated",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-system-field-returnMaterialReceiptLine-updatedBy",
+        "category": "system-field",
+        "entity": "returnMaterialReceiptLine",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for returnMaterialReceiptLine"
+      },
+      {
+        "id": "t-visibility-returnMaterialReceipt",
+        "category": "visibility",
+        "entity": "returnMaterialReceipt",
+        "runner": "node",
+        "description": "Entity 'returnMaterialReceipt' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-visibility-returnMaterialReceiptLine",
+        "category": "visibility",
+        "entity": "returnMaterialReceiptLine",
+        "runner": "node",
+        "description": "Entity 'returnMaterialReceiptLine' should only expose visible fields in frontend"
       }
     ],
     "summary": {
       "total": 181,
       "byCategory": {
+        "action-endpoint": 12,
+        "crud-flags": 2,
+        "default-value-type": 4,
+        "displaylogic-evaluable": 2,
+        "displaylogic-valid": 2,
         "field-presence": 16,
         "field-type": 16,
-        "searchable-filters": 5,
-        "visibility": 2,
-        "displaylogic-valid": 2,
-        "readonlylogic-valid": 10,
-        "displaylogic-evaluable": 2,
-        "readonlylogic-evaluable": 10,
-        "default-value-type": 4,
-        "system-field": 87,
-        "rule-declared": 4,
-        "process-happy": 1,
         "process-failure": 1,
-        "crud-flags": 2,
+        "process-happy": 1,
+        "readonlylogic-evaluable": 10,
+        "readonlylogic-valid": 10,
+        "rule-declared": 4,
+        "searchable-filters": 5,
         "selector-endpoint": 7,
-        "action-endpoint": 12
+        "system-field": 87,
+        "visibility": 2
       },
       "byRunner": {
         "node": 179,

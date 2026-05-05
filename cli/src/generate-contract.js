@@ -364,8 +364,17 @@ export function generateBackendContract(schema, rules = [], processes = []) {
  */
 export function generateTestManifest(frontendContract, backendContract, rules = [], processes = []) {
   const tests = [];
-  let idCounter = 0;
-  const nextId = () => `t-${++idCounter}`;
+  const slug = (s) => String(s ?? '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const seenIds = new Set();
+  const makeId = (...parts) => {
+    const base = `t-${parts.map(slug).filter(Boolean).join('-')}`;
+    if (!seenIds.has(base)) { seenIds.add(base); return base; }
+    let n = 2;
+    while (seenIds.has(`${base}-${n}`)) n++;
+    const id = `${base}-${n}`;
+    seenIds.add(id);
+    return id;
+  };
 
   // Derive system fields from backend minus frontend
   for (const [entityName, entityData] of Object.entries(frontendContract.entities)) {
@@ -374,7 +383,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     // field-presence: one per visible field
     for (const field of visibleFields) {
       tests.push({
-        id: nextId(),
+        id: makeId('field-presence', entityName, field.name),
         category: 'field-presence',
         entity: entityName,
         field: field.name,
@@ -386,7 +395,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     // field-type: one per visible field
     for (const field of visibleFields) {
       tests.push({
-        id: nextId(),
+        id: makeId('field-type', entityName, field.name),
         category: 'field-type',
         entity: entityName,
         field: field.name,
@@ -398,7 +407,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     // searchable-filters: one per searchable field
     for (const fieldName of entityData.searchableFields) {
       tests.push({
-        id: nextId(),
+        id: makeId('searchable-filters', entityName, fieldName),
         category: 'searchable-filters',
         entity: entityName,
         field: fieldName,
@@ -409,7 +418,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
 
     // visibility: one per entity
     tests.push({
-      id: nextId(),
+      id: makeId('visibility', entityName),
       category: 'visibility',
       entity: entityName,
       runner: 'node',
@@ -420,7 +429,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     for (const field of visibleFields) {
       if (field.displayLogic) {
         tests.push({
-          id: nextId(),
+          id: makeId('displaylogic-valid', entityName, field.name),
           category: 'displaylogic-valid',
           entity: entityName,
           field: field.name,
@@ -434,7 +443,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     for (const field of visibleFields) {
       if (field.readOnlyLogic) {
         tests.push({
-          id: nextId(),
+          id: makeId('readonlylogic-valid', entityName, field.name),
           category: 'readonlylogic-valid',
           entity: entityName,
           field: field.name,
@@ -448,7 +457,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     for (const field of visibleFields) {
       if (field.displayLogic) {
         tests.push({
-          id: nextId(),
+          id: makeId('displaylogic-evaluable', entityName, field.name),
           category: 'displaylogic-evaluable',
           entity: entityName,
           field: field.name,
@@ -462,7 +471,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     for (const field of visibleFields) {
       if (field.readOnlyLogic) {
         tests.push({
-          id: nextId(),
+          id: makeId('readonlylogic-evaluable', entityName, field.name),
           category: 'readonlylogic-evaluable',
           entity: entityName,
           field: field.name,
@@ -476,7 +485,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     for (const field of visibleFields) {
       if (field.defaultValue !== undefined) {
         tests.push({
-          id: nextId(),
+          id: makeId('default-value-type', entityName, field.name),
           category: 'default-value-type',
           entity: entityName,
           field: field.name,
@@ -495,7 +504,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     for (const field of beEntity.fields) {
       if (!feFieldNames.has(field.name)) {
         tests.push({
-          id: nextId(),
+          id: makeId('system-field', entityName, field.name),
           category: 'system-field',
           entity: entityName,
           field: field.name,
@@ -509,7 +518,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
   // rule-declared: one per kept rule
   for (const rule of rules) {
     tests.push({
-      id: nextId(),
+      id: makeId('rule-declared', rule.name),
       category: 'rule-declared',
       rule: rule.name,
       runner: 'node',
@@ -521,7 +530,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
   for (const proc of processes) {
     // process-happy
     tests.push({
-      id: nextId(),
+      id: makeId('process-happy', proc.name),
       category: 'process-happy',
       process: proc.name,
       entity: proc.entity,
@@ -531,7 +540,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
 
     // process-failure
     tests.push({
-      id: nextId(),
+      id: makeId('process-failure', proc.name),
       category: 'process-failure',
       process: proc.name,
       entity: proc.entity,
@@ -543,7 +552,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     if (proc.edgeCases) {
       for (const edge of proc.edgeCases) {
         tests.push({
-          id: nextId(),
+          id: makeId('process-edge', proc.name, edge.name),
           category: 'process-edge',
           process: proc.name,
           entity: proc.entity,
@@ -557,7 +566,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     // process-rollback: only if transactional
     if (proc.transactional) {
       tests.push({
-        id: nextId(),
+        id: makeId('process-rollback', proc.name),
         category: 'process-rollback',
         process: proc.name,
         entity: proc.entity,
@@ -566,6 +575,9 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
       });
     }
   }
+
+  // Sort by id for deterministic ordering across regens
+  tests.sort((a, b) => a.id.localeCompare(b.id));
 
   // Build summary
   const byCategory = {};
@@ -582,6 +594,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
       byCategory,
       byRunner,
     },
+    _makeId: makeId,
   };
 }
 
@@ -700,10 +713,11 @@ export function generateContract(schema, rules = [], processes = [], previousVer
   const testManifest = generateTestManifest(frontendContract, backendContract, rules, processes);
   const apiPrediction = generateApiPrediction(schema, frontendContract, backendContract);
 
-  // Append apiPrediction-based tests to testManifest
+  // Append apiPrediction-based tests to testManifest using stable IDs
+  const makeId = testManifest._makeId;
   for (const [entityName, crud] of Object.entries(apiPrediction.crud)) {
     testManifest.tests.push({
-      id: `t-${testManifest.tests.length + 1}`,
+      id: makeId('crud-flags', entityName),
       category: 'crud-flags',
       entity: entityName,
       runner: 'node',
@@ -713,7 +727,7 @@ export function generateContract(schema, rules = [], processes = [], previousVer
 
   for (const sel of apiPrediction.selectors) {
     testManifest.tests.push({
-      id: `t-${testManifest.tests.length + 1}`,
+      id: makeId('selector-endpoint', sel.entity, sel.field),
       category: 'selector-endpoint',
       entity: sel.entity,
       field: sel.field,
@@ -724,7 +738,7 @@ export function generateContract(schema, rules = [], processes = [], previousVer
 
   for (const action of apiPrediction.actions) {
     testManifest.tests.push({
-      id: `t-${testManifest.tests.length + 1}`,
+      id: makeId('action-endpoint', action.entity, action.field),
       category: 'action-endpoint',
       entity: action.entity,
       field: action.field,
@@ -732,6 +746,10 @@ export function generateContract(schema, rules = [], processes = [], previousVer
       description: `Action endpoint for '${action.field}' in ${action.entity} should exist`,
     });
   }
+  delete testManifest._makeId;
+
+  // Re-sort after appending apiPrediction tests
+  testManifest.tests.sort((a, b) => a.id.localeCompare(b.id));
 
   // Update summary counts after adding apiPrediction tests
   const updatedByCategory = {};
@@ -832,14 +850,23 @@ export function generateProcessContract(processRaw, previousContract = null) {
     execute: `POST /sws/neo/${specName}`,
   };
 
-  // Build test manifest
+  // Build test manifest with deterministic IDs
   const tests = [];
-  let idCounter = 0;
-  const nextId = () => `t-${++idCounter}`;
+  const slug = (s) => String(s ?? '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const seenIds = new Set();
+  const makeId = (...parts) => {
+    const base = `t-${parts.map(slug).filter(Boolean).join('-')}`;
+    if (!seenIds.has(base)) { seenIds.add(base); return base; }
+    let n = 2;
+    while (seenIds.has(`${base}-${n}`)) n++;
+    const id = `${base}-${n}`;
+    seenIds.add(id);
+    return id;
+  };
 
   for (const param of parameters) {
     tests.push({
-      id: nextId(),
+      id: makeId('param-presence', param.name),
       category: 'param-presence',
       param: param.name,
       runner: 'node',
@@ -849,7 +876,7 @@ export function generateProcessContract(processRaw, previousContract = null) {
 
   for (const param of parameters) {
     tests.push({
-      id: nextId(),
+      id: makeId('param-type', param.name),
       category: 'param-type',
       param: param.name,
       expectedType: param.tsType,
@@ -859,18 +886,20 @@ export function generateProcessContract(processRaw, previousContract = null) {
   }
 
   tests.push({
-    id: nextId(),
+    id: makeId('execution-happy'),
     category: 'execution-happy',
     runner: 'junit',
     description: `Process '${proc.name}' should execute successfully with valid parameters`,
   });
 
   tests.push({
-    id: nextId(),
+    id: makeId('execution-failure'),
     category: 'execution-failure',
     runner: 'junit',
     description: `Process '${proc.name}' should fail with invalid parameters`,
   });
+
+  tests.sort((a, b) => a.id.localeCompare(b.id));
 
   const byCategory = {};
   const byRunner = { node: 0, junit: 0 };

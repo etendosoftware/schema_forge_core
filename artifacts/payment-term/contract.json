@@ -1,7 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T19:06:55.269Z",
-  "checksum": "8caf54be2cec9c93",
+  "updatedAt": "2026-05-05T18:51:13.168Z",
+  "checksum": "41bc87f1b0f35514",
   "frontendContract": {
     "window": {
       "id": "141",
@@ -424,39 +425,14 @@
   "testManifest": {
     "tests": [
       {
-        "id": "t-1",
-        "category": "field-presence",
+        "id": "t-crud-flags-header",
+        "category": "crud-flags",
         "entity": "header",
-        "field": "searchKey",
         "runner": "node",
-        "description": "Field 'searchKey' should be present in header"
+        "description": "CRUD flags for 'header' should all be booleans"
       },
       {
-        "id": "t-2",
-        "category": "field-presence",
-        "entity": "header",
-        "field": "name",
-        "runner": "node",
-        "description": "Field 'name' should be present in header"
-      },
-      {
-        "id": "t-3",
-        "category": "field-presence",
-        "entity": "header",
-        "field": "offsetMonthDue",
-        "runner": "node",
-        "description": "Field 'offsetMonthDue' should be present in header"
-      },
-      {
-        "id": "t-4",
-        "category": "field-presence",
-        "entity": "header",
-        "field": "overduePaymentDaysRule",
-        "runner": "node",
-        "description": "Field 'overduePaymentDaysRule' should be present in header"
-      },
-      {
-        "id": "t-5",
+        "id": "t-field-presence-header-default",
         "category": "field-presence",
         "entity": "header",
         "field": "default",
@@ -464,39 +440,39 @@
         "description": "Field 'default' should be present in header"
       },
       {
-        "id": "t-6",
-        "category": "field-type",
-        "entity": "header",
-        "field": "searchKey",
-        "runner": "node",
-        "description": "Field 'searchKey' should have type 'string' in header"
-      },
-      {
-        "id": "t-7",
-        "category": "field-type",
+        "id": "t-field-presence-header-name",
+        "category": "field-presence",
         "entity": "header",
         "field": "name",
         "runner": "node",
-        "description": "Field 'name' should have type 'string' in header"
+        "description": "Field 'name' should be present in header"
       },
       {
-        "id": "t-8",
-        "category": "field-type",
+        "id": "t-field-presence-header-offsetMonthDue",
+        "category": "field-presence",
         "entity": "header",
         "field": "offsetMonthDue",
         "runner": "node",
-        "description": "Field 'offsetMonthDue' should have type 'number' in header"
+        "description": "Field 'offsetMonthDue' should be present in header"
       },
       {
-        "id": "t-9",
-        "category": "field-type",
+        "id": "t-field-presence-header-overduePaymentDaysRule",
+        "category": "field-presence",
         "entity": "header",
         "field": "overduePaymentDaysRule",
         "runner": "node",
-        "description": "Field 'overduePaymentDaysRule' should have type 'number' in header"
+        "description": "Field 'overduePaymentDaysRule' should be present in header"
       },
       {
-        "id": "t-10",
+        "id": "t-field-presence-header-searchKey",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "searchKey",
+        "runner": "node",
+        "description": "Field 'searchKey' should be present in header"
+      },
+      {
+        "id": "t-field-type-header-default",
         "category": "field-type",
         "entity": "header",
         "field": "default",
@@ -504,15 +480,52 @@
         "description": "Field 'default' should have type 'boolean' in header"
       },
       {
-        "id": "t-11",
-        "category": "searchable-filters",
+        "id": "t-field-type-header-name",
+        "category": "field-type",
+        "entity": "header",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-offsetMonthDue",
+        "category": "field-type",
+        "entity": "header",
+        "field": "offsetMonthDue",
+        "runner": "node",
+        "description": "Field 'offsetMonthDue' should have type 'number' in header"
+      },
+      {
+        "id": "t-field-type-header-overduePaymentDaysRule",
+        "category": "field-type",
+        "entity": "header",
+        "field": "overduePaymentDaysRule",
+        "runner": "node",
+        "description": "Field 'overduePaymentDaysRule' should have type 'number' in header"
+      },
+      {
+        "id": "t-field-type-header-searchKey",
+        "category": "field-type",
         "entity": "header",
         "field": "searchKey",
         "runner": "node",
-        "description": "Field 'searchKey' should be a supported filter for header"
+        "description": "Field 'searchKey' should have type 'string' in header"
       },
       {
-        "id": "t-12",
+        "id": "t-rule-declared",
+        "category": "rule-declared",
+        "runner": "node",
+        "description": "Rule 'undefined' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-FIN-PaymentMethodsWithAccount",
+        "category": "rule-declared",
+        "rule": "FIN_PaymentMethodsWithAccount",
+        "runner": "node",
+        "description": "Rule 'FIN_PaymentMethodsWithAccount' (validation) should be declared"
+      },
+      {
+        "id": "t-searchable-filters-header-name",
         "category": "searchable-filters",
         "entity": "header",
         "field": "name",
@@ -520,30 +533,15 @@
         "description": "Field 'name' should be a supported filter for header"
       },
       {
-        "id": "t-13",
-        "category": "visibility",
+        "id": "t-searchable-filters-header-searchKey",
+        "category": "searchable-filters",
         "entity": "header",
+        "field": "searchKey",
         "runner": "node",
-        "description": "Entity 'header' should only expose visible fields in frontend"
+        "description": "Field 'searchKey' should be a supported filter for header"
       },
       {
-        "id": "t-14",
-        "category": "system-field",
-        "entity": "header",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-15",
-        "category": "system-field",
-        "entity": "header",
-        "field": "description",
-        "runner": "node",
-        "description": "System field 'description' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-16",
+        "id": "t-system-field-header-active",
         "category": "system-field",
         "entity": "header",
         "field": "active",
@@ -551,71 +549,7 @@
         "description": "System field 'active' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-17",
-        "category": "system-field",
-        "entity": "header",
-        "field": "fixedDueDate",
-        "runner": "node",
-        "description": "System field 'fixedDueDate' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-18",
-        "category": "system-field",
-        "entity": "header",
-        "field": "maturityDate1",
-        "runner": "node",
-        "description": "System field 'maturityDate1' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-19",
-        "category": "system-field",
-        "entity": "header",
-        "field": "maturityDate2",
-        "runner": "node",
-        "description": "System field 'maturityDate2' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-20",
-        "category": "system-field",
-        "entity": "header",
-        "field": "maturityDate3",
-        "runner": "node",
-        "description": "System field 'maturityDate3' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-21",
-        "category": "system-field",
-        "entity": "header",
-        "field": "nextBusinessDay",
-        "runner": "node",
-        "description": "System field 'nextBusinessDay' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-22",
-        "category": "system-field",
-        "entity": "header",
-        "field": "overduePaymentDayRule",
-        "runner": "node",
-        "description": "System field 'overduePaymentDayRule' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-23",
-        "category": "system-field",
-        "entity": "header",
-        "field": "comments",
-        "runner": "node",
-        "description": "System field 'comments' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-24",
-        "category": "system-field",
-        "entity": "header",
-        "field": "valid",
-        "runner": "node",
-        "description": "System field 'valid' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-25",
+        "id": "t-system-field-header-client",
         "category": "system-field",
         "entity": "header",
         "field": "client",
@@ -623,23 +557,15 @@
         "description": "System field 'client' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-26",
+        "id": "t-system-field-header-comments",
         "category": "system-field",
         "entity": "header",
-        "field": "id",
+        "field": "comments",
         "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for header"
+        "description": "System field 'comments' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-27",
-        "category": "system-field",
-        "entity": "header",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-28",
+        "id": "t-system-field-header-createdBy",
         "category": "system-field",
         "entity": "header",
         "field": "createdBy",
@@ -647,7 +573,87 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-29",
+        "id": "t-system-field-header-creationDate",
+        "category": "system-field",
+        "entity": "header",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-description",
+        "category": "system-field",
+        "entity": "header",
+        "field": "description",
+        "runner": "node",
+        "description": "System field 'description' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-fixedDueDate",
+        "category": "system-field",
+        "entity": "header",
+        "field": "fixedDueDate",
+        "runner": "node",
+        "description": "System field 'fixedDueDate' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-id",
+        "category": "system-field",
+        "entity": "header",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-maturityDate1",
+        "category": "system-field",
+        "entity": "header",
+        "field": "maturityDate1",
+        "runner": "node",
+        "description": "System field 'maturityDate1' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-maturityDate2",
+        "category": "system-field",
+        "entity": "header",
+        "field": "maturityDate2",
+        "runner": "node",
+        "description": "System field 'maturityDate2' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-maturityDate3",
+        "category": "system-field",
+        "entity": "header",
+        "field": "maturityDate3",
+        "runner": "node",
+        "description": "System field 'maturityDate3' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-nextBusinessDay",
+        "category": "system-field",
+        "entity": "header",
+        "field": "nextBusinessDay",
+        "runner": "node",
+        "description": "System field 'nextBusinessDay' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-organization",
+        "category": "system-field",
+        "entity": "header",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-overduePaymentDayRule",
+        "category": "system-field",
+        "entity": "header",
+        "field": "overduePaymentDayRule",
+        "runner": "node",
+        "description": "System field 'overduePaymentDayRule' should exist in backend but not frontend for header"
+      },
+      {
+        "id": "t-system-field-header-updated",
         "category": "system-field",
         "entity": "header",
         "field": "updated",
@@ -655,7 +661,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-30",
+        "id": "t-system-field-header-updatedBy",
         "category": "system-field",
         "entity": "header",
         "field": "updatedBy",
@@ -663,36 +669,31 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-31",
-        "category": "rule-declared",
-        "rule": "FIN_PaymentMethodsWithAccount",
+        "id": "t-system-field-header-valid",
+        "category": "system-field",
+        "entity": "header",
+        "field": "valid",
         "runner": "node",
-        "description": "Rule 'FIN_PaymentMethodsWithAccount' (validation) should be declared"
+        "description": "System field 'valid' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-32",
-        "category": "rule-declared",
-        "runner": "node",
-        "description": "Rule 'undefined' (displayLogic) should be declared"
-      },
-      {
-        "id": "t-33",
-        "category": "crud-flags",
+        "id": "t-visibility-header",
+        "category": "visibility",
         "entity": "header",
         "runner": "node",
-        "description": "CRUD flags for 'header' should all be booleans"
+        "description": "Entity 'header' should only expose visible fields in frontend"
       }
     ],
     "summary": {
       "total": 33,
       "byCategory": {
+        "crud-flags": 1,
         "field-presence": 5,
         "field-type": 5,
-        "searchable-filters": 2,
-        "visibility": 1,
-        "system-field": 17,
         "rule-declared": 2,
-        "crud-flags": 1
+        "searchable-filters": 2,
+        "system-field": 17,
+        "visibility": 1
       },
       "byRunner": {
         "node": 33,
