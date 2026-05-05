@@ -1,20 +1,16 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useLookup } from '../hooks/useLookup.js';
 
 const BP_LOOKUP_PATH = '/neo/bp-location/business-partner';
 
 export default function CustomerSelector({ shell, cfg, value, onChange }) {
   const [query, setQuery] = useState('');
-  const bps = useLookup(shell, { path: BP_LOOKUP_PATH, criteria: cfg.bpCriteria });
-
-  const filtered = useMemo(() => {
-    if (!query.trim()) return bps.items;
-    const q = query.toLowerCase();
-    return bps.items.filter((bp) => {
-      const label = (bp._identifier || bp.name || '').toLowerCase();
-      return label.includes(q);
-    });
-  }, [bps.items, query]);
+  const bps = useLookup(shell, {
+    path: BP_LOOKUP_PATH,
+    criteria: cfg.bpCriteria,
+    query,
+    searchFields: ['_identifier', 'name', 'searchKey'],
+  });
 
   const selected = bps.items.find((bp) => bp.id === value);
   const label = cfg.type === 'sales' ? 'Customer' : 'Vendor';
@@ -35,7 +31,7 @@ export default function CustomerSelector({ shell, cfg, value, onChange }) {
       </label>
       {query && !bps.loading && (
         <ul className="qo-selector-results">
-          {filtered.slice(0, 8).map((bp) => (
+          {bps.items.slice(0, 8).map((bp) => (
             <li key={bp.id}>
               <button
                 type="button"
@@ -46,7 +42,7 @@ export default function CustomerSelector({ shell, cfg, value, onChange }) {
               </button>
             </li>
           ))}
-          {filtered.length === 0 && <li className="qo-muted qo-selector-empty">No matches.</li>}
+          {bps.items.length === 0 && <li className="qo-muted qo-selector-empty">No matches.</li>}
         </ul>
       )}
       {selected && !query && (

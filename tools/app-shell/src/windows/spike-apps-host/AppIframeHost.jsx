@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from 'react';
 
+function resolveAppTokenUrl(appId) {
+  const envBase = import.meta.env.VITE_API_BASE;
+  const path = window.location.pathname;
+  const webIdx = path.indexOf('/web/');
+  const apiBase = envBase || (webIdx === -1 ? '' : path.substring(0, webIdx));
+  return `${apiBase}/sws/apps/token?appId=${encodeURIComponent(appId)}`;
+}
+
 async function fetchAppToken(appId, etendoToken) {
-  const res = await fetch(`/sws/apps/token?appId=${encodeURIComponent(appId)}`, {
+  const res = await fetch(resolveAppTokenUrl(appId), {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${etendoToken}`,

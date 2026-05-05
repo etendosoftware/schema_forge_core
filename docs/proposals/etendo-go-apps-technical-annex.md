@@ -347,7 +347,7 @@ Fixed stack rationale: v1 prioritises a tight, supported feedback loop. Every to
 | Threat | Control |
 |--------|---------|
 | Malicious app registers with a legitimate `id` | Descriptor URL must be HTTPS with valid TLS; first-time registration requires admin confirmation; marketplace (F5) adds signed vendor identity |
-| JWT leakage | 5-min TTL; JWKS rotation; no JWT in browser URL bar (passed via postMessage after initial load, not as query param — to be confirmed in F1 spike) |
+| JWT leakage | 5-min TTL; JWKS rotation; the F1 spike passes the app JWT in the iframe URL query string, not the top-level browser URL; production hardening must decide whether to keep query-string launch or move to a fragment/postMessage handshake |
 | Scope escalation | Scopes are snapshot at install; new scopes require re-consent by admin |
 | Compromised app exfiltrates tenant data | Scopes limit NEO access; per-app audit log; admin can suspend (`ETGO_APP_INSTALL.STATUS = 'suspended'`) → all tokens reject immediately |
 | Replay attacks | `jti` + short `exp` + optional nonce on lifecycle webhooks |
@@ -355,7 +355,7 @@ Fixed stack rationale: v1 prioritises a tight, supported feedback loop. Every to
 
 ### 8.1 Open security questions (to close in F1 spike)
 
-- JWT transport into the iframe: URL fragment vs. `postMessage` handshake. The spike must decide.
+- JWT transport into the iframe: the F1 spike uses a query-string token. Before production, decide whether to keep that launch shape or move to a fragment/postMessage handshake.
 - Descriptor origin verification: do we require a DNS TXT record for the vendor domain, or only TLS?
 - Scope catalogue: who defines the initial list of scopes NEO honours? F1 ships a minimal set; F3 formalises the catalogue.
 
@@ -380,7 +380,7 @@ Apps and NeoHandlers are complementary, not competitive:
 
 These are decisions deferred to the F1 plan, not blockers to approving the proposal:
 
-1. JWT transport into the iframe (URL fragment vs postMessage handshake)
+1. JWT transport into the iframe (keep query-string launch or move to fragment/postMessage handshake)
 2. Concrete NEO proxy allowlist format and default policy
 3. Initial NEO scope catalogue
 4. Descriptor schema JSON Schema file location and versioning process

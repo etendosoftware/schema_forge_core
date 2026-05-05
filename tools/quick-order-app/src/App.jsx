@@ -30,6 +30,8 @@ export default function App() {
     if (!bpId) { setSaveError(`Select a ${cfg.type === 'sales' ? 'customer' : 'vendor'}.`); return; }
     if (lines.length === 0) { setSaveError('Cart is empty.'); return; }
     setSaving(true); setSaveError(null); setSavedId(null);
+    let orderId = null;
+    const createdLineIds = [];
     try {
       const headerBody = { data: { businessPartner: bpId, orderDate, documentStatus: 'DR' } };
       const headerResp = await shell.fetch(cfg.headerPath, {
@@ -37,30 +39,37 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(headerBody),
       });
-      const orderId = headerResp.response?.data?.[0]?.id;
+      orderId = headerResp.response?.data?.[0]?.id;
       if (!orderId) throw new Error('Header saved but no id returned');
 
       for (const line of lines) {
         const lineBody = {
           data: {
-            salesOrder: cfg.type === 'sales' ? orderId : undefined,
-            purchaseOrder: cfg.type === 'purchase' ? orderId : undefined,
+            [cfg.lineParentField]: orderId,
             product: line.productId,
             orderedQuantity: Number(line.qty),
             unitPrice: Number(line.unitPrice),
           },
         };
-        await shell.fetch(cfg.linesPath, {
+        const lineResp = await shell.fetch(cfg.linesPath, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(lineBody),
         });
+        const lineId = lineResp.response?.data?.[0]?.id;
+        if (lineId) createdLineIds.push(lineId);
       }
 
       setSavedId(orderId);
       dispatch({ type: 'CLEAR_CART' });
       setBpId('');
     } catch (e) {
+      if (orderId) {
+        await Promise.allSettled([
+          ...createdLineIds.map(lineId => shell.fetch(`${cfg.linesPath}/${lineId}`, { method: 'DELETE' })),
+          shell.fetch(`${cfg.headerPath}/${orderId}`, { method: 'DELETE' }),
+        ]);
+      }
       setSaveError(e.message);
     } finally {
       setSaving(false);

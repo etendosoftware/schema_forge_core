@@ -35,6 +35,10 @@ function isTestDirectory(path) {
   return /(test\/|tests\/|__tests__\/)/.test(path);
 }
 
+function isGeneratedDependencyManifest(path) {
+  return /(^|\/)(package-lock|npm-shrinkwrap)\.json$/.test(path);
+}
+
 function normalizeDuplicateLine(line) {
   const trimmed = line.trim();
   if (!trimmed) return '';
@@ -46,6 +50,12 @@ function normalizeDuplicateLine(line) {
 
 function stripStringLiterals(line) {
   return line.replace(/(["'`])(?:\\.|(?!\1)[^\\])*\1/g, '');
+}
+
+function stripComments(line) {
+  return line
+    .replace(/\/\/.*$/, '')
+    .replace(/\/\*.*?\*\//g, '');
 }
 
 function parseAddedRuns(diffText) {
@@ -131,6 +141,7 @@ export function detectDuplicatedBlocks(diffText, { minLines = DUPLICATE_MIN_LINE
 
   for (const run of runs) {
     if (run.path.startsWith('artifacts/')) continue;
+    if (isGeneratedDependencyManifest(run.path)) continue;
     const normalizedLines = run.lines
       .map((entry) => ({ ...entry, normalized: normalizeDuplicateLine(entry.text) }))
       .filter((entry) => entry.normalized);
@@ -193,6 +204,7 @@ function analyzeCommonJsUsage(changedFiles, fileContents, addedLineContents) {
     if (!isSourceFile(path)) return false;
     return getRelevantLines(path, addedLineContents, fileContents)
       .map((line) => stripStringLiterals(line))
+      .map((line) => stripComments(line))
       .some((line) => commonJsPattern.test(line));
   });
 
