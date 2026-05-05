@@ -158,6 +158,74 @@ async function setGoModuleInDevelopment(client) {
   }
 }
 
+/**
+ * Detect duplicate (entity_id, ad_column_id) rows in etgo_sf_field for a given spec.
+ *
+ * Duplicates make `populateSpec` and the field lookup in pushToNeo non-deterministic:
+ * each run picks a different row to update, producing a Y/N flip on every push and
+ * a noisy diff in `src-db/database/sourcedata/ETGO_SF_FIELD.xml`.
+ *
+ * Scoped to the spec being pushed so unrelated dirty data does not block the work.
+ * Returns an array of `{ entityName, columnName, fieldIds[] }` — empty if clean.
+ *
+ * @param {import('pg').PoolClient} client
+ * @param {string} specName
+ */
+export async function checkDuplicateFields(client, specName) {
+  const res = await client.query(
+    `SELECT e.name AS entity_name,
+            c.columnname AS column_name,
+            ARRAY_AGG(f.etgo_sf_field_id ORDER BY f.created, f.etgo_sf_field_id) AS field_ids
+       FROM etgo_sf_field f
+       JOIN etgo_sf_entity e ON e.etgo_sf_entity_id = f.etgo_sf_entity_id
+       JOIN etgo_sf_spec   s ON s.etgo_sf_spec_id   = e.etgo_sf_spec_id
+       JOIN ad_column      c ON c.ad_column_id      = f.ad_column_id
+      WHERE s.name = $1
+      GROUP BY e.name, c.columnname
+     HAVING COUNT(*) > 1
+      ORDER BY e.name, c.columnname`,
+    [specName],
+  );
+  return res.rows.map(r => ({
+    entityName: r.entity_name,
+    columnName: r.column_name,
+    fieldIds: r.field_ids,
+  }));
+}
+
+/**
+ * Format duplicates as a human-readable error message for fail-fast reporting.
+ *
+ * fieldIds inside each duplicate are sorted (oldest first) by checkDuplicateFields,
+ * so the first ID is the suggested "keep" and the rest are the suggested "delete".
+ * push-to-neo will UPDATE the surviving row in the next run.
+ */
+export function formatDuplicateFieldsError(specName, duplicates) {
+  const idsToDelete = [];
+  const lines = [
+    `Duplicate ETGO_SF_FIELD rows detected for spec '${specName}'.`,
+    `Push aborted — keep ONE row per (entity, column) and delete the rest, then retry.`,
+    ``,
+  ];
+  for (const d of duplicates) {
+    lines.push(`  - entity='${d.entityName}' column='${d.columnName}'`);
+    const [keepId, ...dropIds] = d.fieldIds;
+    lines.push(`      keep:    ${keepId}`);
+    for (const id of dropIds) {
+      lines.push(`      delete:  ${id}`);
+      idsToDelete.push(id);
+    }
+  }
+  lines.push(``);
+  lines.push(`Suggested SQL (review before running — adjust which row to keep if needed):`);
+  lines.push(`  DELETE FROM etgo_sf_field WHERE etgo_sf_field_id IN (`);
+  lines.push(idsToDelete.map(id => `    '${id}'`).join(',\n'));
+  lines.push(`  );`);
+  lines.push(``);
+  lines.push(`The surviving row will be updated by the next \`make regen ONLY=${specName} PUSH_TO_NEO=1\`.`);
+  return lines.join('\n');
+}
+
 // ---------------------------------------------------------------------------
 // Main push function
 // ---------------------------------------------------------------------------
@@ -291,6 +359,15 @@ export async function pushToNeo(windowName, options = {}) {
   const client = await pool.connect();
 
   try {
+    // Pre-flight: fail fast if the spec already has duplicate (entity, column)
+    // field rows. Running the push on duplicated data produces a non-deterministic
+    // Y/N flip across runs and a noisy ETGO_SF_FIELD.xml diff — better to surface
+    // it before any write so the developer can clean it up first.
+    const duplicates = await checkDuplicateFields(client, specName);
+    if (duplicates.length > 0) {
+      throw new Error(formatDuplicateFieldsError(specName, duplicates));
+    }
+
     await client.query('BEGIN');
     await setGoModuleInDevelopment(client);
 
@@ -449,12 +526,15 @@ export async function pushToNeo(windowName, options = {}) {
 
       const vis = mapVisibility(f.visibility);
 
-      // Find the field by entity + column name (look up column ID first)
+      // Find the field by entity + column name (look up column ID first).
+      // ORDER BY makes the choice deterministic when duplicates exist;
+      // duplicates are also caught up-front by checkDuplicateFields() below.
       const colLookup = await client.query(
         `SELECT sf.etgo_sf_field_id
          FROM etgo_sf_field sf
          JOIN ad_column c ON c.ad_column_id = sf.ad_column_id
-         WHERE sf.etgo_sf_entity_id = $1 AND c.columnname = $2`,
+         WHERE sf.etgo_sf_entity_id = $1 AND c.columnname = $2
+         ORDER BY sf.created, sf.etgo_sf_field_id`,
         [entityId, f.column],
       );
 

@@ -420,9 +420,14 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
     if (entityCreated) changes.entities.created++;
     else changes.entities.updated++;
 
-    // Load existing fields for this entity, indexed by ad_column_id
+    // Load existing fields for this entity, indexed by ad_column_id.
+    // ORDER BY is required: without it Postgres can return duplicate
+    // (entity_id, ad_column_id) rows in any order, and Map.set() keeps the
+    // last one — producing a non-deterministic flip across runs.
     const existingFieldsResult = await client.query(
-      `SELECT etgo_sf_field_id, ad_column_id FROM etgo_sf_field WHERE etgo_sf_entity_id = $1`,
+      `SELECT etgo_sf_field_id, ad_column_id FROM etgo_sf_field
+       WHERE etgo_sf_entity_id = $1
+       ORDER BY created, etgo_sf_field_id`,
       [entityId],
     );
     const existingFieldByColumn = new Map();
