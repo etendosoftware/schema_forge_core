@@ -140,6 +140,23 @@ describe('analyzeChangedFiles', () => {
 
     assert.ok(!findings.some((finding) => finding.code === 'COMMONJS_USAGE'));
   });
+
+  it('does not flag block comments that mention CommonJS exports', () => {
+    const findings = analyzeChangedFiles({
+      changedFiles: ['packages/apps-sdk/src/index.js'],
+      newSourceFiles: [],
+      newTestFiles: [],
+      fileContents: {
+        'packages/apps-sdk/src/index.js': '/* module.exports is mentioned only in docs */\nexport { createShellClient } from "./shellClient.js";\n',
+      },
+      packageJsonChanges: [],
+      addedLineContents: {
+        'packages/apps-sdk/src/index.js': ['/* module.exports is mentioned only in docs */'],
+      },
+    });
+
+    assert.ok(!findings.some((finding) => finding.code === 'COMMONJS_USAGE'));
+  });
 });
 
 describe('summarizeReview', () => {

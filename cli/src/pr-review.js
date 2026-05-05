@@ -53,9 +53,21 @@ function stripStringLiterals(line) {
 }
 
 function stripComments(line) {
-  return line
-    .replace(/\/\/.*$/, '')
-    .replace(/\/\*.*?\*\//g, '');
+  const lineCommentStart = line.indexOf('//');
+  let cleaned = lineCommentStart === -1 ? line : line.slice(0, lineCommentStart);
+
+  let blockStart = cleaned.indexOf('/*');
+  while (blockStart !== -1) {
+    const blockEnd = cleaned.indexOf('*/', blockStart + 2);
+    if (blockEnd === -1) {
+      cleaned = cleaned.slice(0, blockStart);
+      break;
+    }
+    cleaned = cleaned.slice(0, blockStart) + cleaned.slice(blockEnd + 2);
+    blockStart = cleaned.indexOf('/*', blockStart);
+  }
+
+  return cleaned;
 }
 
 function parseAddedRuns(diffText) {
