@@ -21,6 +21,22 @@
   background-clip: padding-box;
 }
 
+.dashboard-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.dashboard-scroll::-webkit-scrollbar-track {
+  background: transparent;
+  padding: 4px;
+}
+.dashboard-scroll::-webkit-scrollbar-thumb {
+  background-color: #E8EAEF;
+  border-radius: 200px;
+}
+.dashboard-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #E8EAEF transparent;
+}
+
 .address-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
