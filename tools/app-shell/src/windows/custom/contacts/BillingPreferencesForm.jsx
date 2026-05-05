@@ -77,6 +77,11 @@ export default function BillingPreferencesForm(props) {
     if (pOPaymentMethodId) ctx.PO_Paymentmethod_ID = pOPaymentMethodId;
     return ctx;
   }, [organizationId, clientId, bpId, paymentMethodId, pOPaymentMethodId]);
+
+  // FIN_Paymentmethod_ID validationRule uses @FIN_ISRECEIPT@ to filter by direction:
+  // 'Y' = incoming (customer pays us), 'N' = outgoing (we pay vendor).
+  const customerSelectorContext = useMemo(() => ({ ...selectorContext, FIN_ISRECEIPT: 'Y' }), [selectorContext]);
+  const vendorSelectorContext   = useMemo(() => ({ ...selectorContext, FIN_ISRECEIPT: 'N' }), [selectorContext]);
   // Available discount catalog
   const [discountOptions, setDiscountOptions] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -230,17 +235,17 @@ export default function BillingPreferencesForm(props) {
         <>
           {/* ── Cliente ───────────────────────────────────────────────────── */}
           <div className="bg-[#F5F7F9] rounded-lg p-3 flex flex-col gap-3">
-            <EntityForm {...props} fields={customerCheckboxField} selectorContext={selectorContext} />
+            <EntityForm {...props} fields={customerCheckboxField} selectorContext={customerSelectorContext} />
             {data?.customer && (
-              <EntityForm {...props} fields={customerBillingFields} selectorContext={selectorContext} />
+              <EntityForm {...props} fields={customerBillingFields} selectorContext={customerSelectorContext} />
             )}
           </div>
 
           {/* ── Proveedor ─────────────────────────────────────────────────── */}
           <div className="bg-[#F5F7F9] rounded-lg p-3 flex flex-col gap-3">
-            <EntityForm {...props} fields={vendorCheckboxField} selectorContext={selectorContext} />
+            <EntityForm {...props} fields={vendorCheckboxField} selectorContext={vendorSelectorContext} />
             {data?.vendor && (
-              <EntityForm {...props} fields={vendorBillingFields} selectorContext={selectorContext} />
+              <EntityForm {...props} fields={vendorBillingFields} selectorContext={vendorSelectorContext} />
             )}
           </div>
         </>

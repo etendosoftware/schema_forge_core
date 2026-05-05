@@ -67,6 +67,10 @@ export function SelectorInput({
           setServerOptions(prev => offset === 0 ? mapped : [...(prev ?? []), ...mapped]);
           offsetRef.current = offset + items.length;
           if (items.length < SELECTOR_PAGE) { setHasMore(false); hasMoreRef.current = false; }
+        } else {
+          setHasMore(false);
+          hasMoreRef.current = false;
+          if (offset === 0) setServerOptions([]);
         }
         loadingRef.current = false;
         setFetching(false);
