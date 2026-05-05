@@ -354,7 +354,8 @@ export function ListFilterBar({
           </PopoverTrigger>
           <PopoverContent align="start" className="w-auto p-0">
             <div className="flex">
-              <div className="flex flex-col py-2 border-r border-[#E8EAEF] min-w-[180px]">
+              {/* Left panel — presets (193px per Figma) */}
+              <div className="flex flex-col py-1 border-r border-[#E8EAEF] w-[193px]">
                 {datePresets.map(preset => {
                   const active = preset.id === 'allTime' ? (!hasActiveDate && !customMode) : (activeDatePresetId === preset.id && !customMode);
                   return (
@@ -362,10 +363,13 @@ export function ListFilterBar({
                       key={preset.id}
                       type="button"
                       onClick={() => handlePresetSelect(preset.id)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-left hover:bg-muted/50 transition-colors"
+                      className={[
+                        'relative flex items-center h-8 px-2 text-sm leading-6 text-[#121217] text-left transition-colors',
+                        active ? 'bg-[rgba(18,18,23,0.05)]' : 'hover:bg-[rgba(18,18,23,0.05)]',
+                      ].join(' ')}
                     >
                       <span className="flex-1">{preset.label}</span>
-                      {active && <Check className="h-3.5 w-3.5 shrink-0" />}
+                      {active && <Check className="h-4 w-4 shrink-0 mr-3" />}
                     </button>
                   );
                 })}
@@ -373,16 +377,17 @@ export function ListFilterBar({
                   type="button"
                   onClick={() => setCustomMode(true)}
                   className={[
-                    'flex items-center gap-2 px-4 py-2 text-sm text-left transition-colors',
-                    customMode ? 'bg-muted/60 hover:bg-muted/60' : 'hover:bg-muted/50',
+                    'relative flex items-center h-8 px-2 text-sm leading-6 text-[#121217] text-left transition-colors',
+                    customMode ? 'bg-[rgba(18,18,23,0.05)]' : 'hover:bg-[rgba(18,18,23,0.05)]',
                   ].join(' ')}
                 >
                   <span className="flex-1">{ui('dateRangeCustom')}</span>
-                  {customMode && <Check className="h-3.5 w-3.5 shrink-0" />}
+                  {customMode && <Check className="h-4 w-4 shrink-0 mr-3" />}
                 </button>
               </div>
+              {/* Right panel — two calendars + footer */}
               <div className="flex flex-col">
-                <div className="flex">
+                <div className="flex border-b border-[#E8EAEF]">
                   <Calendar
                     mode="single"
                     month={leftMonth}
@@ -390,7 +395,11 @@ export function ListFilterBar({
                     selected={fromDate ?? undefined}
                     onSelect={handleFromPick}
                     modifiers={inRangeModifier ? { inRange: inRangeModifier } : undefined}
-                    modifiersClassNames={{ inRange: 'bg-muted/60 rounded-none [&>button]:rounded-none [&>button]:hover:bg-muted' }}
+                    classNames={{
+                      week: 'flex justify-center',
+                      weekdays: 'flex justify-center py-2',
+                    }}
+                    modifiersClassNames={{ inRange: 'bg-[#F5F7F9] [&>button]:rounded-none' }}
                   />
                   <div className="border-l border-[#E8EAEF]" />
                   <Calendar
@@ -400,16 +409,20 @@ export function ListFilterBar({
                     selected={toDate ?? undefined}
                     onSelect={handleToPick}
                     modifiers={inRangeModifier ? { inRange: inRangeModifier } : undefined}
-                    modifiersClassNames={{ inRange: 'bg-[#F5F7F9] rounded-none [&>button]:rounded-none [&>button]:hover:bg-[#EEF1F4]' }}
+                    classNames={{
+                      week: 'flex justify-center',
+                      weekdays: 'flex justify-center py-2',
+                    }}
+                    modifiersClassNames={{ inRange: 'bg-[#F5F7F9] [&>button]:rounded-none' }}
                   />
                 </div>
-                <div className="flex items-center justify-between gap-2 h-16 px-5 py-3 border-t border-[#E8EAEF]">
+                <div className="flex items-center justify-between gap-2 h-16 px-5 py-3">
                   <span className="text-sm font-medium text-[#3F3F50]">{rangeSummary}</span>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setDateMenuOpen(false)}
-                      className="inline-flex items-center justify-center h-10 px-3 rounded-full bg-white border border-[#D1D4DB] shadow-[0_1px_2px_rgba(18,18,23,0.05)] text-sm font-medium text-[#121217] hover:bg-[#F5F7F9] transition-colors"
+                      className="inline-flex items-center justify-center h-10 px-3 rounded-full bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_rgba(18,18,23,0.05)] text-sm font-medium text-[#121217] hover:bg-[rgba(18,18,23,0.05)] transition-colors"
                     >
                       {ui('dateRangeCancel')}
                     </button>
@@ -417,7 +430,7 @@ export function ListFilterBar({
                       type="button"
                       onClick={handleApplyCustom}
                       disabled={!canApplyCustom}
-                      className="inline-flex items-center justify-center h-10 px-3 rounded-full bg-[#121217] text-sm font-medium text-white hover:bg-[#2A2A33] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      className="inline-flex items-center justify-center h-10 px-3 rounded-full bg-[#121217] text-sm font-medium text-white hover:bg-[#FFD500] hover:text-[#121217] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                     >
                       {ui('dateRangeApply')}
                     </button>
