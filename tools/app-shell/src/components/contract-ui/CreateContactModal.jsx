@@ -269,7 +269,12 @@ export default function CreateContactModal({
   }, [contactType]);
 
   const requiredFields = useMemo(
-    () => (contactType === 'company' ? ['name', 'taxID', 'country'] : ['taxID', 'country']),
+    () => {
+      const addressRequired = ['address', 'postalCode', 'city', 'country', 'region'];
+      return contactType === 'company'
+        ? ['name', 'taxID', ...addressRequired]
+        : ['taxID', ...addressRequired];
+    },
     [contactType],
   );
 
