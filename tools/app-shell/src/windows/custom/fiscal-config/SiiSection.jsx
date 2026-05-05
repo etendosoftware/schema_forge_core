@@ -1,6 +1,7 @@
 import { useState, forwardRef, useImperativeHandle } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DateField } from '@/components/ui/date-field';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -86,11 +87,11 @@ const SiiSection = forwardRef(function SiiSection({ record, token, apiBaseUrl, o
         </div>
         <div className="space-y-1">
           <Label>{ui('fiscal.sii.field.enrollDate')}</Label>
-          <Input type="date" value={form.fechaAcogidaSII} onChange={e => set('fechaAcogidaSII', e.target.value)} />
+          <DateField value={form.fechaAcogidaSII} onChange={(iso) => set('fechaAcogidaSII', iso)} />
         </div>
         <div className="space-y-1">
           <Label>{ui('fiscal.sii.field.monitorDate')}</Label>
-          <Input type="date" value={form.monitordate} onChange={e => set('monitordate', e.target.value)} />
+          <DateField value={form.monitordate} onChange={(iso) => set('monitordate', iso)} />
         </div>
       </fieldset>
 
