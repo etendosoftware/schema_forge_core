@@ -16,8 +16,8 @@ describe('DateField — exports and dependencies', () => {
     assert.match(src, /export default DateField/);
   });
 
-  it('imports the Calendar icon from lucide-react', () => {
-    assert.match(src, /Calendar as CalendarIcon[\s\S]*?from\s+['"]lucide-react['"]/);
+  it('imports the Calendar icon plus chevron icons from lucide-react', () => {
+    assert.match(src, /Calendar as CalendarIcon[\s\S]*?ChevronDown[\s\S]*?ChevronLeft[\s\S]*?ChevronRight[\s\S]*?from\s+['"]lucide-react['"]/);
   });
 
   it('imports Popover primitives', () => {
@@ -27,41 +27,6 @@ describe('DateField — exports and dependencies', () => {
   it('reuses the existing Calendar component (single-month, simple date picker)', () => {
     assert.match(src, /import\s*\{\s*Calendar\s*\}\s*from\s+['"]@\/components\/ui\/calendar['"]/);
     assert.match(src, /<Calendar[\s\S]*?mode="single"/);
-  });
-
-  it('overrides the Calendar dropdown with a Radix Select to avoid the unstyled native <select>', () => {
-    assert.match(src, /captionLayout="dropdown"/);
-    assert.match(src, /components=\{\{\s*Dropdown:\s*CalendarDropdown\s*\}\}/);
-    assert.match(src, /function CalendarDropdown\(/);
-    // The custom Dropdown wraps SelectTrigger / SelectContent / SelectItem
-    assert.match(src, /<SelectTrigger/);
-    assert.match(src, /<SelectContent/);
-    assert.match(src, /<SelectItem/);
-    // It bridges react-day-picker's onChange (event-based) and Radix's onValueChange
-    assert.match(src, /onChange\?\.\(\{\s*target:\s*\{\s*value:\s*next\s*\}\s*\}\)/);
-  });
-
-  it('lays out month_caption and nav on the same row via CSS grid', () => {
-    // month uses a 2-column grid: dropdowns on the left, nav on the right
-    assert.match(src, /month:\s*'grid grid-cols-\[1fr_auto\]/);
-    assert.match(src, /month_caption:\s*'col-start-1 row-start-1/);
-    assert.match(src, /nav:\s*'col-start-2 row-start-1/);
-    // month_grid spans both columns below
-    assert.match(src, /month_grid:\s*'col-span-2 row-start-2/);
-  });
-
-  it('shows a Today button that selects today without typing', () => {
-    assert.match(src, /handleSelect\(new Date\(\)\)/);
-    assert.match(src, /ui\('dateRangeToday'\)/);
-  });
-
-  it('shows a Clear button that emits empty string and closes the popover', () => {
-    assert.match(src, /const handleClear\s*=\s*\(\)\s*=>\s*\{[\s\S]*?onChange\?\.\(''\)[\s\S]*?setOpen\(false\)/);
-    assert.match(src, /ui\('clear'\)/);
-  });
-
-  it('disables the Clear button when there is no value to clear', () => {
-    assert.match(src, /onClick=\{handleClear\}[\s\S]*?disabled=\{!parsedValue\}/);
   });
 
   it('uses dateOnly helpers (no UTC shift)', () => {
@@ -77,7 +42,7 @@ describe('DateField — exports and dependencies', () => {
   });
 });
 
-describe('DateField — Figma styling', () => {
+describe('DateField — input (trigger button) Figma styling', () => {
   it('renders a 40px tall white card with 1px #D1D4DB border and rounded-lg', () => {
     assert.match(src, /h-10/);
     assert.match(src, /rounded-lg/);
@@ -98,12 +63,10 @@ describe('DateField — Figma styling', () => {
   });
 });
 
-describe('DateField — behavior', () => {
+describe('DateField — popover behavior', () => {
   it('always renders the calendar icon (never hidden when value is empty)', () => {
-    // The icon is unconditional — only the text node is conditional on displayText
     const iconOccurrences = (src.match(/<CalendarIcon\b/g) || []).length;
     assert.ok(iconOccurrences >= 1, 'expected CalendarIcon to be rendered');
-    // No conditional wrapper around the icon
     assert.doesNotMatch(src, /\{[^}]*(?:value|displayText|parsedValue)[^}]*&&[\s\S]*?<CalendarIcon/);
   });
 
@@ -121,17 +84,149 @@ describe('DateField — behavior', () => {
     assert.match(src, /\{!disabled\s*&&\s*\(\s*<PopoverContent/);
   });
 
-  it('blocks open changes and skips popover on the trigger when disabled', () => {
+  it('blocks open changes when disabled', () => {
     assert.match(src, /if\s*\(disabled\)\s*return;/);
-    // The trigger button must propagate the disabled attribute
     assert.match(src, /<button[\s\S]*?disabled=\{disabled\}/);
   });
 
   it('fires onBlur when the popover closes', () => {
-    assert.match(src, /if\s*\(!next\)\s*onBlur\?\.\(\);/);
+    assert.match(src, /onBlur\?\.\(\);/);
+  });
+
+  it('resets to the calendar view whenever the popover closes', () => {
+    assert.match(src, /if\s*\(!next\)\s*\{[\s\S]*?setView\('calendar'\)/);
   });
 
   it('closes the popover after a date is selected', () => {
     assert.match(src, /handleSelect\s*=\s*\(date\)\s*=>\s*\{[\s\S]*?setOpen\(false\)/);
+  });
+});
+
+describe('DateField — calendar view (default)', () => {
+  it('controls the displayed month internally with state', () => {
+    assert.match(src, /\[displayedMonth,\s*setDisplayedMonth\]\s*=\s*React\.useState/);
+    assert.match(src, /<Calendar[\s\S]*?month=\{displayedMonth\}[\s\S]*?onMonthChange=\{setDisplayedMonth\}/);
+  });
+
+  it('hides the built-in caption and nav (custom HeaderRow renders them instead)', () => {
+    assert.match(src, /hideNavigation/);
+    assert.match(src, /month_caption:\s*'hidden'/);
+    assert.match(src, /nav:\s*'hidden'/);
+  });
+
+  it('renders today as outlined circle with #282833 border (no yellow on day cell hover)', () => {
+    assert.match(src, /today:[\s\S]*?\[&>button\]:border[\s\S]*?border-\[#282833\]/);
+    assert.doesNotMatch(src, /today:[\s\S]*?hover:bg-\[#FFD500\]/);
+  });
+
+  it('filled PillButton (Hoy/Ok) hovers to Etendo yellow #FFD500 (active-button hover convention)', () => {
+    assert.match(src, /variant === 'filled'[\s\S]*?hover:bg-\[#FFD500\][\s\S]*?hover:text-\[#121217\]/);
+  });
+
+  it('selected picker cell (Feb/2025) hovers to Etendo yellow #FFD500 (active-button hover convention)', () => {
+    assert.match(src, /isSelected[\s\S]*?bg-\[#121217\] text-white hover:bg-\[#FFD500\] hover:text-\[#121217\]/);
+  });
+});
+
+describe('DateField — header row', () => {
+  it('declares a HeaderRow subcomponent with label + chevron + nav arrows', () => {
+    assert.match(src, /function HeaderRow\(/);
+    assert.match(src, /<ChevronDown/);
+    assert.match(src, /<ChevronLeft/);
+    assert.match(src, /<ChevronRight/);
+  });
+
+  it('renders the label as a button with capitalize and locale-aware month/year', () => {
+    assert.match(src, /Intl\.DateTimeFormat[\s\S]*?month:\s*'long'[\s\S]*?year:\s*'numeric'/);
+    assert.match(src, /capitalize/);
+  });
+
+  it('renders the prev/next arrows as circular pill buttons (24x24, border, shadow-xs)', () => {
+    assert.match(src, /h-6 w-6[\s\S]*?bg-white[\s\S]*?border border-\[#D1D4DB\][\s\S]*?rounded-full[\s\S]*?shadow-\[0px_1px_2px_rgba\(18,18,23,0\.05\)\]/);
+  });
+});
+
+describe('DateField — month/year picker view', () => {
+  it('declares a "view" state that toggles between calendar and picker', () => {
+    assert.match(src, /\[view,\s*setView\]\s*=\s*React\.useState\('calendar'\)/);
+    assert.match(src, /\{view === 'calendar' && \(/);
+    assert.match(src, /\{view === 'picker' && \(/);
+  });
+
+  it('clicking the header label switches to the picker view', () => {
+    assert.match(src, /onLabelClick=\{view === 'calendar'\s*\?\s*openPicker\s*:\s*cancelPicker\}/);
+    assert.match(src, /const openPicker\s*=\s*\(\)\s*=>\s*\{[\s\S]*?setView\('picker'\)/);
+  });
+
+  it('keeps a tab state to switch between Mes / Año tabs in the picker', () => {
+    assert.match(src, /\[pickerTab,\s*setPickerTab\]\s*=\s*React\.useState\('month'\)/);
+    assert.match(src, /<PickerTabs/);
+  });
+
+  it('renders the month grid (12 short month names, locale-aware)', () => {
+    assert.match(src, /function getMonthShortNames\(/);
+    assert.match(src, /Array\.from\(\{\s*length:\s*12\s*\}/);
+  });
+
+  it('renders the year grid (12 years anchored around the temp year)', () => {
+    assert.match(src, /yearItems\s*=\s*React\.useMemo/);
+    assert.match(src, /Array\.from\(\{\s*length:\s*12\s*\}/);
+  });
+
+  it('uses tracked temp values that are committed to displayedMonth on Ok', () => {
+    assert.match(src, /\[tempMonth,\s*setTempMonth\]/);
+    assert.match(src, /\[tempYear,\s*setTempYear\]/);
+    assert.match(src, /const commitPicker\s*=\s*\(\)\s*=>\s*\{[\s\S]*?setDisplayedMonth\(new Date\(tempYear,\s*tempMonth,\s*1\)\)/);
+  });
+
+  it('Volver/Back returns to the calendar view without committing temp values', () => {
+    assert.match(src, /const cancelPicker\s*=\s*\(\)\s*=>\s*setView\('calendar'\)/);
+  });
+
+  it('selected month/year cell uses the Figma filled-black style', () => {
+    assert.match(src, /isSelected[\s\S]*?bg-\[#121217\]\s*text-white/);
+  });
+});
+
+describe('DateField — footer buttons', () => {
+  it('declares a PillButton subcomponent supporting filled and outlined variants', () => {
+    assert.match(src, /function PillButton\(/);
+    assert.match(src, /variant === 'filled'/);
+  });
+
+  it('Calendar view footer shows Limpiar (outlined) + Hoy (filled)', () => {
+    assert.match(src, /ui\('clear'\)/);
+    assert.match(src, /ui\('dateRangeToday'\)/);
+    assert.match(src, /<PillButton onClick=\{handleClear\} disabled=\{!parsedValue\}/);
+  });
+
+  it('Picker view footer shows Volver (outlined) + Ok (filled)', () => {
+    assert.match(src, /ui\('datePickerBack'\)/);
+    assert.match(src, /ui\('datePickerOk'\)/);
+    assert.match(src, /<PillButton onClick=\{cancelPicker\}/);
+    assert.match(src, /<PillButton variant="filled" onClick=\{commitPicker\}/);
+  });
+
+  it('renders pill-shaped buttons (rounded-full, h-8, border for outlined, black for filled)', () => {
+    assert.match(src, /rounded-full/);
+    assert.match(src, /h-8 px-3/);
+    assert.match(src, /bg-\[#121217\] text-white/);
+    assert.match(src, /bg-white border border-\[#D1D4DB\] text-\[#121217\]/);
+  });
+});
+
+describe('DateField — header navigation arrows', () => {
+  it('navigates by month in calendar view', () => {
+    assert.match(src, /if\s*\(view === 'calendar'\)[\s\S]*?setDisplayedMonth\([\s\S]*?getMonth\(\)\s*-\s*1/);
+    assert.match(src, /getMonth\(\)\s*\+\s*1/);
+  });
+
+  it('navigates year grid page via yearPageAnchor (independent of selected year)', () => {
+    // Arrows on year tab shift yearPageAnchor ±12 — NOT tempYear
+    assert.match(src, /setYearPageAnchor\(\(a\)\s*=>\s*a\s*-\s*12\)/);
+    assert.match(src, /setYearPageAnchor\(\(a\)\s*=>\s*a\s*\+\s*12\)/);
+    // yearItems derived from yearPageAnchor, NOT tempYear
+    assert.match(src, /yearItems\s*=\s*React\.useMemo[\s\S]*?yearPageAnchor/);
+    assert.doesNotMatch(src, /yearItems\s*=\s*React\.useMemo[\s\S]*?\[tempYear\]/);
   });
 });
