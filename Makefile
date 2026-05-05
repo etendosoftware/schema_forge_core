@@ -1,4 +1,4 @@
-.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate sonar sonar-coverage menu-cache
+.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate sonar sonar-coverage menu-cache uuid
 
 # --- Testing ---
 
@@ -91,6 +91,9 @@ build: ## Build app-shell for production
 
 menu-cache: ## Refresh the AD menu cache from the database
 	node cli/src/menu-cache.js refresh
+
+uuid: ## Generate a new Etendo-format UUID (32 uppercase hex chars, no hyphens)
+	@uuidgen | tr -d '-' | tr '[:lower:]' '[:upper:]'
 
 install: ## Install all workspace dependencies and activate git hooks
 	npm install

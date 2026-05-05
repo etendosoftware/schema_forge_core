@@ -378,6 +378,16 @@ Legacy override: `make deploy LEGACY_DEPLOY=1 MODULE_WEB={path}`. No Tomcat rest
 - Default approach: always treat `_ID` columns as strings first. Quote values in SQL: `IN ('18', '19', '30')` not `IN (18, 19, 30)`.
 - This applies to `AD_Reference_ID`, `AD_Reference_Value_ID`, `AD_Table_ID`, `AD_Column_ID`, and all other `_ID` columns.
 
+### Generating new Etendo UUIDs (MANDATORY)
+
+**Never invent, hand-type, or copy-paste a UUID.** Etendo IDs are 32 uppercase hex chars without hyphens (e.g., `95E2A8B50A254B2AAE6774B8C2F28120`). When inserting a NEW AD record (window, tab, field, reference, message, module DB prefix, etc.) and you need to create a fresh primary key, run:
+
+```bash
+make uuid
+```
+
+This is the ONLY accepted way to generate a new ID. Existing IDs must always be looked up via `cli/src/menu-cache.js`, `resolve-menu.js --menu-name`, or a DB query — never guessed. Agents that fabricate UUIDs cause silent collisions and broken FK references.
+
 ## Knowledge Persistence
 
 Project knowledge → this CLAUDE.md or `docs/`. Bugs/issues → `feedback.md`. Per-window → `artifacts/`.
