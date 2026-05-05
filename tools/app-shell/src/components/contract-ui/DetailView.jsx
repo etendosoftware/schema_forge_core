@@ -1034,7 +1034,7 @@ export function DetailView({
                 </button>
               )}
               {/* More actions */}
-              {!hideMoreMenu && <div className="relative" ref={moreMenuRef}>
+              {!(typeof hideMoreMenu === 'function' ? hideMoreMenu({ data }) : hideMoreMenu) && <div className="relative" ref={moreMenuRef}>
                 <button
                   onClick={() => setShowMoreMenu(v => !v)}
                   className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
