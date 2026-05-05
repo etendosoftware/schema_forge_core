@@ -22,14 +22,14 @@ On `origin/develop`, the generated contract was expanded to model `priceListVers
 ## Reactive behavior and dependencies
 - The pricing area depends on the header being saved first. When the record has no persistent id yet, the UI shows a save-first message instead of allowing line maintenance.
 - After the header exists, the version id is read directly from `data.priceListVersion` on the header record. `PriceListHeaderHandler` (registered via `javaQualifier: "priceListHeaderHandler"` in `decisions.json`) injects this field into every GET response — both single-record and list — eliminating a second round-trip to `/priceListVersion?parentId=<priceListId>`.
-- The one-price-list-one-version invariant is enforced at the backend by `PriceListVersionEventHandler`, which rejects any attempt to insert a second `PriceListVersion` for the same price list. `PriceListVersionResolver` is the single source of truth for resolving that version programmatically.
+- The one-price-list-one-version expectation in Etendo Go is sustained by `PriceListEventHandler` (auto-creates the first version) and the GO UI not exposing a version selector. It is intentionally not hard-enforced at the persistence layer, so Etendo Classic / Enterprise users keep their ability to manage multiple versions. `PriceListVersionResolver` returns the first version and logs a warning if more than one is found.
 - If no hidden version exists yet (e.g., price list was created outside Etendo Go), the UI shows an explicit empty state: product prices cannot be shown until that hidden version exists.
 - Adding a row depends on that hidden version id. The add flow requires `Product`, `Unit Price`, and `List Price`, scopes the product selector with `parentId=<versionId>`, and posts `priceLimit: 0` together with the visible values.
 - Selecting a row opens a `Price Detail` side panel with `Product` shown read-only and `Unit Price` / `List Price` editable. Saving or deleting from that panel refreshes the table immediately afterward.
 - The merged generated contract now contains separate `priceListVersion` and `productPrice` entities, including version-level fields such as `Valid From Date`, `Price List Schema`, and `Base Version (Default)`, plus classic actions for `create` and `generatePriceListVersion`. The current custom wrapper suppresses those generated version surfaces, so those fields and actions are not visible from the live price-list page.
 
 ## Gap assessment
-- The one-price-list-one-version invariant is now enforced at the backend (`PriceListVersionEventHandler`), so multiple-version scenarios are blocked. Price lists created outside Etendo Go before this invariant was introduced may still have multiple versions; in that case the frontend shows the empty state and a migration would be needed.
+- Etendo Go assumes one version per price list but does not block multi-version scenarios at the persistence layer (so Classic / Enterprise users are not affected). If a price list created or edited in Classic ends up with multiple versions, the GO frontend silently picks the first one and a warning is logged in the server.
 - `origin/develop` now models `productPrice` with additional generated fields such as `Cost` and `Algorithm`, but the custom workspace still exposes only `Product`, `Unit Price`, and `List Price`.
 - The custom add flow still hardcodes `priceLimit: 0`. The current inspected code does not explain whether that is a business rule or just a technical default.
 - The generated contract now declares version-level classic actions, but the current custom SPA does not surface any visible control for creating or generating price-list versions.
@@ -41,7 +41,7 @@ On `origin/develop`, the generated contract was expanded to model `priceListVers
 4. Open `/price-list/<recordId>` for a record with product prices and confirm the detail area behaves as a custom `Product Price` workspace, not as a generated `Price List Version` grid.
 5. Click `+ Add Product` and confirm the add row captures `Product`, `Unit Price`, and `List Price` only.
 6. Select an existing row and confirm the `Price Detail` side panel shows read-only `Product` plus editable `Unit Price` and `List Price`, with save and delete actions.
-7. Confirm there is no version switcher; the backend now enforces one-version-per-price-list via `PriceListVersionEventHandler`. Attempting to create a second version for the same price list through any channel should return an error.
+7. Confirm there is no version switcher in the GO UI. If extra versions exist (e.g., created via Classic), the GO page transparently uses the first one returned by `PriceListVersionResolver` and the server logs a warning.
 
 ## Automated evidence
 - `origin/develop` commit `19f31dd4` regenerated the price-list window to add generated `priceListVersion` / `productPrice` entities and version-level actions.
@@ -49,7 +49,6 @@ On `origin/develop`, the generated contract was expanded to model `priceListVers
 - `artifacts/price-list/decisions.json` now sets `javaQualifier: "priceListHeaderHandler"` on the `priceList` entity, wiring the GET response through `PriceListHeaderHandler`.
 - `tools/app-shell/src/windows/custom/price-list/PriceListProductPrices.jsx` reads `data.priceListVersion` directly from the header record (no separate `/priceListVersion` fetch); shows the visible behavior: save-first gating, version-id-from-record, product-scoped add row, `Price Detail` side panel, and refresh-after-save/delete.
 - `modules/com.etendoerp.go/src/.../PriceListHeaderHandler.java` injects `priceListVersion` into GET responses (both single-record and batch).
-- `modules/com.etendoerp.go/src/.../PriceListVersionResolver.java` centralizes the single-version lookup used by the handler.
-- `modules/com.etendoerp.go/src/.../PriceListVersionEventHandler.java` rejects duplicate `PriceListVersion` inserts, enforcing the one-price-list-one-version invariant at the persistence layer.
+- `modules/com.etendoerp.go/src/.../PriceListVersionResolver.java` centralizes the single-version lookup used by the handler and warns when more than one version is found, without blocking Classic functionality.
 - `artifacts/price-list/contract.json` now defines `priceListVersion`, `productPrice`, their selectors, and the version-level classic actions that exist in generated metadata but are not exposed by the custom wrapper.
 - `artifacts/price-list/generated/web/price-list/PriceListPage.jsx`, `PriceListVersionForm.jsx`, and `ProductPriceForm.jsx` show the regenerated baseline the custom wrapper is bypassing.
