@@ -530,11 +530,14 @@ function PaymentRegisterForm({ invoiceId, invoiceData, scheduleId, outstanding, 
         let mapped = [];
         let defaultAccountId = null;
 
-        const res = await fetch(`${base}/payment-in/finPayment/selectors/Fin_Financial_Account_ID?_startRow=0&_endRow=50`, { headers });
+        const res = await fetch(
+          `${base}/sales-invoice/header/${invoiceId}/action/invoiceAccounts`,
+          { method: 'POST', headers, body: '{}' },
+        );
         if (res.ok) {
           const json = await res.json();
-          const items = json.items || json?.response?.data || [];
-          mapped = items.map(a => ({ id: a.id, name: a.label || a._identifier || a.name }));
+          const items = json.items || [];
+          mapped = items.map(a => ({ id: a.id, name: a.label || a.name }));
         }
 
         if (pmId && bpId) {
