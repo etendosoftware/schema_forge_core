@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { FileText, Printer, FileDown, FileSpreadsheet, Eye, Loader2, X, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DateField } from '@/components/ui/date-field';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI, useMenuLabel, useLocaleSwitch } from '@/i18n';
@@ -814,12 +815,26 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
       );
     }
 
-    // date, number, text
+    if (p.type === 'date') {
+      return (
+        <div key={p.name}>
+          {labelEl}
+          <DateField
+            value={params[p.name] || ''}
+            onChange={(iso) => handleChange(p.name, iso)}
+            className={errorBorder}
+          />
+          {hasError && <p className="text-[10px] text-destructive mt-1">Required</p>}
+        </div>
+      );
+    }
+
+    // number, text
     return (
       <div key={p.name}>
         {labelEl}
         <input
-          type={p.type === 'date' ? 'date' : p.type === 'number' ? 'number' : 'text'}
+          type={p.type === 'number' ? 'number' : 'text'}
           value={params[p.name] || ''}
           onChange={e => handleChange(p.name, e.target.value)}
           className={`w-full h-9 px-2 text-sm rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30 border ${errorBorder}`}

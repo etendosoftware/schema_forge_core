@@ -64,6 +64,7 @@ Changing the territory in either the main wizard screen or the manual screen res
 - Visibility: visible in the Settings menu.
 - Implementation type: `layoutType: "custom"` — loaded from `customLoaders` in `tools/app-shell/src/windows/registry.js`.
 - Entry point: `FiscalConfigPage.jsx` — determines profile and delegates to wizard or section components.
+- Date fields: `SiiSection.jsx` (`fechaAcogidaSII`, `monitordate`) and `TbaiSection.jsx` (`tbaisystemdate`) use the generic `DateField` component (`tools/app-shell/src/components/ui/date-field.jsx`) instead of a native `<Input type="date">`. This gives the Figma-aligned calendar popover with month/year picker.
 
 ## Data model
 

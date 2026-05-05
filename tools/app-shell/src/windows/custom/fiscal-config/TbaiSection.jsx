@@ -1,6 +1,7 @@
 import { useState, forwardRef, useImperativeHandle } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DateField } from '@/components/ui/date-field';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -93,7 +94,7 @@ const TbaiSection = forwardRef(function TbaiSection({ record, token, apiBaseUrl,
 
       <div className="space-y-1">
         <Label>{ui('fiscal.tbai.field.enrollDate')}</Label>
-        <Input type="date" value={form.tbaisystemdate} onChange={e => set('tbaisystemdate', e.target.value)} />
+        <DateField value={form.tbaisystemdate} onChange={(iso) => set('tbaisystemdate', iso)} />
       </div>
 
       <fieldset className="space-y-4 border-0 p-0 m-0">
