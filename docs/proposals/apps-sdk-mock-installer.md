@@ -1,0 +1,124 @@
+# Apps SDK — Mock Installer
+
+**Status:** Draft · 2026-04-20
+**Related:** [etendo-apps-sdk.md](etendo-apps-sdk.md), [apps-sdk-styling.md](apps-sdk-styling.md)
+
+## Context
+
+SDK-hosted apps (`quick-order`, `spike-hello-app`) used to live as hardcoded
+entries in `tools/app-shell/src/menu.json`. That made them look like any
+other first-class shell window, which hides the fact that they are
+**external artifacts** — served by their own Vite+BFF processes, talking to
+Etendo through the JWT bridge.
+
+We need a visible boundary: users (and demos) should see these apps as
+*installable extensions*, not as shell features.
+
+## Objective
+
+Ship a minimal, mocked installer that makes the external nature of SDK apps
+obvious, without building any backend. A real app lifecycle (upload,
+permissions, registry sync) is out of scope — the goal is only to change
+*what the shell shows* based on an install toggle.
+
+## Design
+
+### App catalog (single source of truth)
+
+`tools/app-shell/src/apps-registry.js` exposes `APP_CATALOG`:
+
+```js
+{
+  appId: 'quick-order',
+  displayName: 'Quick Order',
+  description: '...',
+  version: '0.2.0',
+  author: 'Etendo Apps SDK team',
+  icon: 'ShoppingCart',
+  iframeUrl: 'http://localhost:5174',
+  menuGroup: 'Marketplace',
+  menuEntries: [
+    { name: 'quick-order-sales', label: 'Quick Order — Sales', menuGroup: 'Sales' },
+    { name: 'quick-order-purchase', label: 'Quick Order — Purchase', menuGroup: 'Purchases' },
+  ],
+}
+```
+
+Each entry may override the app-level `menuGroup`. This lets a single app
+surface its items across multiple shell sections (e.g. Quick Order lives
+alongside the built-in Sales Order under Sales and alongside Purchase
+Order under Purchases) instead of being forced into one container group.
+The app-level `menuGroup` is used as the fallback when an entry omits it
+(e.g. the Hello App lands in Marketplace because every entry inherits
+the default).
+
+`INTERNAL_APPS` and `findAppById` are kept as backward-compat exports for
+the Vite token-minting plugin and the iframe-host windows.
+
+### Installed state
+
+`tools/app-shell/src/hooks/useInstalledApps.js` persists a list of
+installed `appId`s in `localStorage` under `etendo.installedApps`. It
+exposes:
+
+- `useInstalledApps()` — React hook using `useSyncExternalStore`
+- `installApp(appId)` / `uninstallApp(appId)` / `isInstalled(appId)`
+
+Cross-tab syncing uses the browser's native `storage` event; same-tab
+updates dispatch a custom `etendo:installed-apps-changed` event (the
+`storage` event does not fire in the writing tab).
+
+### Dynamic menu
+
+`buildMenuGroups(installedAppIds)` merges catalog-declared menu entries
+into the shell menu at the group named by `entry.menuGroup` (falling back
+to `app.menuGroup`). `App.jsx` subscribes via `useInstalledApps()` and
+rebuilds `menuGroups` on every change, so installing or uninstalling
+takes effect immediately.
+
+`buildWindowMap()` still registers loaders for every SDK app entry even
+when the app is not installed, so a stale link or direct URL navigation
+never falls through to `PlaceholderWindow`.
+
+### App Store page
+
+`tools/app-shell/src/pages/AppStorePage.jsx` renders the catalog as cards:
+description, version, author, iframe origin, menu entries it will inject,
+and an Install / Uninstall toggle with a simulated spinner (~900 ms). The
+route `/app-store` is always present; the menu entry lives in the new
+`Marketplace` group.
+
+### Magic unlock ("playstore" easter-egg)
+
+The Marketplace group is `hidden: true` in `menu.json` — normal shell
+users never see an App Store entry. To reveal it, the user types the
+magic phrase `playstoreon` anywhere in the shell (outside editable
+fields). Typing `playstoreoff`, or clicking "Hide App Store" inside the
+store, locks it again.
+
+Implementation lives in `tools/app-shell/src/hooks/useAppStoreUnlock.js`:
+
+- A global `keydown` listener, installed once by `<AppStoreKeyWatcher />`
+  inside `App.jsx`, maintains a rolling buffer of characters. A 3 s
+  inactivity timeout resets the buffer so unrelated typing cannot
+  accidentally spell the phrase.
+- Editable targets (`INPUT`, `TEXTAREA`, contenteditable) are ignored so
+  typing these words in a form field does not trigger anything.
+- The unlock flag is persisted under `localStorage.etendo.appStoreUnlocked`
+  so a page reload keeps the Marketplace visible.
+- On unlock the watcher also navigates to `/app-store` and surfaces a
+  sonner toast, making the "new surface appeared" moment obvious.
+
+## Out of scope
+
+- Real backend registry, descriptor uploads, permissions, signatures
+- Third-party origin support (catalog is hardcoded to our own dev servers)
+- Version/update flows
+- Per-user install state (localStorage is per-browser)
+
+## Migration
+
+- Removed `Spike Apps` group and `quick-order-sales`/`quick-order-purchase`
+  items from `menu.json`
+- Added `Marketplace` group with the single `App Store` entry
+- SDK app menu entries now come from `APP_CATALOG` via `buildMenuGroups`
