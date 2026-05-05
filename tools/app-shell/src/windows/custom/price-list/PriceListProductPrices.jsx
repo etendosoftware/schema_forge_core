@@ -73,19 +73,22 @@ export default function PriceListProductPrices({ recordId, data, token, apiBaseU
   const parentId = data?.id || (recordId !== 'new' ? recordId : null);
   const selectorContext = useMemo(() => (versionId ? { parentId: versionId } : {}), [versionId]);
 
+  // The price list GET response carries the single version id under `priceListVersion`
+  // (injected by PriceListHeaderHandler.afterHandle). One list = one version, enforced
+  // by PriceListVersionEventHandler — no need to fetch and pick versions[0].
+  const versionFromRecord = data?.priceListVersion || null;
+
   const loadProductPrices = useCallback(async () => {
     if (!parentId || !token || !apiBaseUrl) {
       setVersionId(null); setLines([]); setLoading(false); return;
     }
+    if (!versionFromRecord) {
+      setVersionId(null); setLines([]); setLoading(false); return;
+    }
     setLoading(true); setError(null);
     try {
-      const versionRes = await fetch(`${apiBaseUrl}/priceListVersion?parentId=${parentId}&_startRow=0&_endRow=10`, { headers });
-      if (!versionRes.ok) throw new Error(await readErrorMessage(versionRes));
-      const versions = rowsFrom(await versionRes.json());
-      const version = versions[0] ?? null;
-      if (!version?.id) { setVersionId(null); setLines([]); setLoading(false); return; }
-      setVersionId(version.id);
-      const lineRes = await fetch(`${apiBaseUrl}/productPrice?parentId=${version.id}&_startRow=0&_endRow=200`, { headers });
+      setVersionId(versionFromRecord);
+      const lineRes = await fetch(`${apiBaseUrl}/productPrice?parentId=${versionFromRecord}&_startRow=0&_endRow=200`, { headers });
       if (!lineRes.ok) throw new Error(await readErrorMessage(lineRes));
       setLines(rowsFrom(await lineRes.json()));
       setLoading(false);
@@ -93,7 +96,7 @@ export default function PriceListProductPrices({ recordId, data, token, apiBaseU
       setError(err?.message || 'Failed to load product prices');
       setVersionId(null); setLines([]); setLoading(false);
     }
-  }, [apiBaseUrl, headers, parentId, token]);
+  }, [apiBaseUrl, headers, parentId, token, versionFromRecord]);
 
   useEffect(() => { void loadProductPrices(); }, [loadProductPrices]);
 

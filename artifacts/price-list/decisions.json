@@ -19,6 +19,7 @@
   },
   "entities": {
     "priceList": {
+      "javaQualifier": "priceListHeaderHandler",
       "fields": {
         "name": {
           "grid": true,
