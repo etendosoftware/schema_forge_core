@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DateField } from '@/components/ui/date-field';
 import { useUI } from '@/i18n';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
 
@@ -589,8 +590,7 @@ function PaymentRegisterForm({ invoiceId, invoiceData, scheduleId, outstanding, 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         <div>
           <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>{ui('date')}</label>
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="text-sm tabular-nums"
-            style={{ width: '100%', border: '0.5px solid #E5E7EB', borderRadius: 4, padding: '6px 10px', outline: 'none', boxSizing: 'border-box' }} />
+          <DateField value={date} onChange={setDate} />
         </div>
         <div>
           <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>{`${ui('amount')} (${currency})`}</label>
