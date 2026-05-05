@@ -359,12 +359,16 @@ export async function populateSpec(client, params) {
  * Incremental: matches entities by ad_tab_id, fields by ad_column_id.
  */
 async function populateWindowSpec(client, { specId, windowId, moduleId, excludeSystemColumns, includeAllMethods, audit }) {
-  // Get active tabs ordered by seqno
+  // Get active tabs ordered by seqno. name + ad_tab_id are tiebreakers:
+  // when two modules attach tabs to the same window with the same SeqNo the
+  // primary sort is ambiguous, and the entity SEQNO assigned below is derived
+  // from iteration order — so without a stable tiebreaker the output flips
+  // across runs and pollutes ETGO_SF_ENTITY.xml.
   const tabsResult = await client.query(
     `SELECT ad_tab_id, name, ad_table_id, seqno
      FROM ad_tab
      WHERE ad_window_id = $1 AND isactive = 'Y'
-     ORDER BY seqno`,
+     ORDER BY seqno, name, ad_tab_id`,
     [windowId],
   );
 

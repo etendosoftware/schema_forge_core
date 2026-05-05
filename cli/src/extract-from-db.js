@@ -73,7 +73,7 @@ SELECT * FROM (
       WHERE f2.AD_Tab_ID = t.AD_Tab_ID AND f2.AD_Column_ID = c.AD_Column_ID
     )
 ) combined
-ORDER BY tab_seq, field_seq`,
+ORDER BY tab_seq, field_seq, ColumnName`,
 
   callouts: `
 SELECT co.AD_Callout_ID, co.Name AS callout_name,
