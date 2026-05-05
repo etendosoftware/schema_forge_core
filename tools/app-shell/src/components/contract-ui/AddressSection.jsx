@@ -171,7 +171,7 @@ export default function AddressSection({ form, onChange, opts, requiredFields = 
           </button>
         </div>
         <div className="space-y-1.5">
-          <label style={MODAL_STYLES.fieldLabel}>{ui('regionLabel')}{isRequired('region') && <RequiredMark />}</label>
+          <label style={MODAL_STYLES.fieldLabel}>{ui('regionLabel')}</label>
           <button
             type="button"
             onClick={() => form.country && setRegionPickerOpen(true)}

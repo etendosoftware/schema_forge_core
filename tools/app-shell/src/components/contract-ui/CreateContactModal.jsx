@@ -244,6 +244,7 @@ export default function CreateContactModal({
         labelKey: 'taxIdTypeField',
         type: 'dynamicSelect',
         optionsKey: 'taxIdTypes',
+        required: true,
       },
       {
         id: 'taxID',
@@ -256,8 +257,8 @@ export default function CreateContactModal({
 
     if (contactType === 'person') {
       return [
-        { id: 'etgoFirstname', labelKey: 'contactFirstName', type: 'text' },
-        { id: 'etgoLastname', labelKey: 'contactLastName', type: 'text' },
+        { id: 'etgoFirstname', labelKey: 'contactFirstName', type: 'text', required: true },
+        { id: 'etgoLastname', labelKey: 'contactLastName', type: 'text', required: true },
         ...commonFields,
       ];
     }
@@ -270,10 +271,10 @@ export default function CreateContactModal({
 
   const requiredFields = useMemo(
     () => {
-      const addressRequired = ['address', 'postalCode', 'city', 'country', 'region'];
+      const addressRequired = ['address', 'postalCode', 'city', 'country'];
       return contactType === 'company'
-        ? ['name', 'taxID', ...addressRequired]
-        : ['taxID', ...addressRequired];
+        ? ['name', 'taxIdType', 'taxID', ...addressRequired]
+        : ['etgoFirstname', 'etgoLastname', 'taxIdType', 'taxID', ...addressRequired];
     },
     [contactType],
   );
