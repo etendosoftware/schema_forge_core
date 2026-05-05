@@ -1344,6 +1344,8 @@ export function DetailView({
                   apiBaseUrl={apiBaseUrl}
                   selectorContext={selectorContextByEntity[entity]}
                   labelOverrides={labelOverrides}
+                  registerFields={hook.registerFields}
+                  fieldErrors={hook.fieldErrors}
                 />
               </div>
 
@@ -1365,6 +1367,7 @@ export function DetailView({
                       apiBaseUrl={apiBaseUrl}
                       selectorContext={selectorContextByEntity[entity]}
                       labelOverrides={labelOverrides}
+                      fieldErrors={hook.fieldErrors}
                     />
                   </div>
                 </CollapsibleSection>
@@ -2013,6 +2016,7 @@ export function DetailView({
                       apiBaseUrl={apiBaseUrl}
                       selectorContext={selectorContextByEntity[entity]}
                       labelOverrides={labelOverrides}
+                      fieldErrors={hook.fieldErrors}
                     />
                   </div>
                 )}

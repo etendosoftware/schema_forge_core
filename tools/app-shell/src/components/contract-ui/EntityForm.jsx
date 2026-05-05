@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { DateField } from '@/components/ui/date-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Check, ChevronsUpDown, Loader2, Search, X } from 'lucide-react';
@@ -326,11 +327,17 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
         if (data?.items) {
           const items = data.items.map(i => ({ id: i.id, name: i.label || i.name || i.id, ...i }));
           setDynamicOptions(items);
-          // Auto-select first option if current value is empty or not in the new options
-          // (e.g., BP changed → old address no longer valid)
+          // ETP-3894: when the parent changes and the previous value is no longer in
+          // the new options list, auto-select the first available option (FIC parity —
+          // the user explicitly chose the parent, so filling the dependent is helpful).
+          // If no options exist and the field had a stale value, clear it.
           const currentValid = value && items.some(i => i.id === value);
-          if (!currentValid && items.length > 0) {
-            onChange(items[0].id, items[0].name);
+          if (!currentValid) {
+            if (items.length > 0) {
+              onChange(items[0].id, items[0].name);
+            } else if (value) {
+              onChange('', '');
+            }
           }
         }
       })
@@ -432,7 +439,7 @@ function LookupFormField({ field, value, displayValue, selectorUrl, selectorCont
  *  - catalogs: Record<string, Array<{ id, name, ... }>> for FK reference data
  *  - displayLogic: { readOnly: { fieldName: bool }, visibility: { fieldName: bool } }
  */
-export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, cols, section, excludeFields = [], displayLogic, api, token, apiBaseUrl, selectorContext = {}, readOnly: formReadOnly = false, onFieldBlur, savingField = null, labelOverrides }) {
+export function EntityForm({ entity, fields = [], data, onChange, catalogs, layout, cols, section, excludeFields = [], displayLogic, api, token, apiBaseUrl, selectorContext = {}, readOnly: formReadOnly = false, onFieldBlur, savingField = null, labelOverrides, registerFields, fieldErrors }) {
   const t = useLabel(labelOverrides ?? api?.labelOverrides);
   const tMenu = useMenuLabel();
   const ui = useUI();
@@ -466,6 +473,17 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   // This mirrors the readOnlyLogic pattern and handles fields like customer/vendor
   // tabs where visibility depends on a sibling checkbox value (no server round-trip needed).
   displayFields = displayFields.filter(f => evalDisplayLogic(f, data));
+
+  // Register only the currently visible fields with useEntity so handleSave validates
+  // what the user can actually see and fill — not hidden fields controlled by displayLogic.
+  React.useEffect(() => {
+    if (typeof registerFields === 'function') {
+      registerFields(displayFields);
+    }
+  // displayFields is recomputed on every render; the effect intentionally re-runs
+  // whenever visibility changes so the validation set stays in sync with the form.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [registerFields, data, displayLogic, fields, excludeFields, section, layout]);
 
   if (displayFields.length === 0) return null;
 
@@ -806,7 +824,26 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
         </div>
       );
     }
-    const inputType = f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text';
+    if (f.type === 'date') {
+      return (
+        <div key={f.key} className="space-y-1.5">
+          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+            {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
+          </Label>
+          <DateField
+            id={f.key}
+            name={f.key}
+            data-testid={`field-${f.key}`}
+            value={data?.[f.key] ?? ''}
+            onChange={(iso) => onChange?.(f.key, iso, f.column)}
+            onBlur={() => onFieldBlur?.(f.key)}
+            disabled={isReadOnly || savingField === f.key}
+            required={f.required && !isReadOnly}
+          />
+        </div>
+      );
+    }
+    const inputType = f.type === 'number' ? 'number' : 'text';
     return (
       <div key={f.key} className="space-y-1.5">
         <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
@@ -828,6 +865,26 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     );
   };
 
+  // ETP-3894: append an inline error message under any field whose key appears in
+  // fieldErrors. Uses cloneElement so we don't have to thread the prop through every
+  // branch in renderField — the wrapper <div key={f.key}> already exists for each.
+  const renderFieldWithError = (f) => {
+    const node = renderField(f);
+    const err = fieldErrors?.[f.key];
+    if (!err || !React.isValidElement(node)) return node;
+    const existing = node.props.children;
+    return React.cloneElement(
+      node,
+      { className: `${node.props.className ?? ''}`.trim() },
+      existing,
+      React.createElement(
+        'p',
+        { key: '__err', className: 'text-xs text-red-500 mt-0.5', 'data-testid': `error-${f.key}` },
+        err
+      )
+    );
+  };
+
   if (imageField) {
     const imgLabel = imageField.label ?? t(imageField.column) ?? imageField.key;
     const imgReadOnly = formReadOnly
@@ -837,7 +894,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     return (
       <div className="flex gap-6 items-start">
         <div className={`flex-1 min-w-0 ${gridClass}`} style={gridStyle}>
-          {fieldsToRender.map(renderField)}
+          {fieldsToRender.map(renderFieldWithError)}
         </div>
         <div className="shrink-0 w-56">
           <Label className="text-sm text-foreground font-medium block mb-1.5">{imgLabel}</Label>
@@ -856,7 +913,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
 
   return (
     <div className={gridClass} style={gridStyle}>
-      {displayFields.map(renderField)}
+      {displayFields.map(renderFieldWithError)}
     </div>
   );
 }

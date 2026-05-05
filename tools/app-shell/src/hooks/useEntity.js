@@ -320,6 +320,10 @@ export function useEntity(entity, childEntity, {
   const [isSaving, setIsSaving] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [saveError, setSaveError] = useState(null);
+  // ETP-3894: per-field error map. Set when handleSave fails because mandatory fields
+  // are empty (either client-side or via backend MISSING_REQUIRED_FIELDS) so EntityForm
+  // can highlight each input. Cleared on successful save and on field change.
+  const [fieldErrors, setFieldErrors] = useState({});
   const [sortColumn, setSortColumn] = useState('creationDate');
   const [sortDirection, setSortDirection] = useState('desc');
   const startRowRef = useRef(0);
@@ -328,6 +332,9 @@ export function useEntity(entity, childEntity, {
   const backendDefaultKeysRef = useRef(new Set());
   // Fields explicitly changed by the user (via handleChange) in the current new-record session.
   const userChangedKeysRef = useRef(new Set());
+  // ETP-3894: snapshot of the form-level fields contract registered by EntityForm.
+  // Used in handleSave to validate required+editable fields before posting to the backend.
+  const formFieldsRef = useRef([]);
 
   const headers = buildHeaders(token);
 
@@ -464,6 +471,7 @@ export function useEntity(entity, childEntity, {
   const handleNew = useCallback(async () => {
     backendDefaultKeysRef.current = new Set();
     userChangedKeysRef.current = new Set();
+    setFieldErrors({});
     setSelected(null);
     setEditing({}); // Start with empty so UI is responsive
     try {
@@ -508,6 +516,19 @@ export function useEntity(entity, childEntity, {
   const handleChange = useCallback((field, value) => {
     userChangedKeysRef.current.add(field);
     setEditing(prev => ({ ...prev, [field]: value }));
+    // ETP-3894: clear the field-level error as soon as the user touches the field.
+    setFieldErrors(prev => {
+      if (!prev || !prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  }, []);
+
+  // ETP-3894: EntityForm calls this on mount with its `fields` array so handleSave
+  // can validate required+editable fields client-side before hitting the backend.
+  const registerFields = useCallback((fields) => {
+    formFieldsRef.current = Array.isArray(fields) ? fields : [];
   }, []);
 
   const handleSave = useCallback(async () => {
@@ -515,6 +536,44 @@ export function useEntity(entity, childEntity, {
     setIsSaving(true);
     setSaveError(null);
     const isNew = !editing.id;
+    // ETP-3894: client-side check for required+editable fields. Skips the network
+    // round-trip and shows per-field errors immediately. Only runs on create — for
+    // existing records, `editing` already includes server-resolved values.
+    if (isNew) {
+      const fields = formFieldsRef.current || [];
+      const isReadOnly = (f) => {
+        if (f.readOnly === true) return true;
+        try {
+          return typeof f.readOnlyLogic === 'function'
+            ? Boolean(f.readOnlyLogic(editing))
+            : false;
+        } catch {
+          return false;
+        }
+      };
+      const isVisible = (f) => {
+        if (typeof f.displayLogic !== 'function') return true;
+        try { return !!f.displayLogic(editing ?? {}); } catch { return true; }
+      };
+      const missing = fields
+        .filter(f => f.required && !isReadOnly(f) && isVisible(f) && f.type !== 'checkbox' && f.section !== 'summary')
+        .filter(f => {
+          const v = editing?.[f.key];
+          return v == null || v === '' || (typeof v === 'string' && v.trim() === '');
+        })
+        .map(f => f.key);
+      if (missing.length > 0) {
+        const fieldsErr = {};
+        for (const k of missing) fieldsErr[k] = ui('fieldRequired');
+        setFieldErrors(fieldsErr);
+        const msg = ui('requiredFieldsMissing');
+        setSaveError(msg);
+        toast.error(msg);
+        setIsSaving(false);
+        return null;
+      }
+      setFieldErrors({});
+    }
     const url = isNew ? `${apiBaseUrl}/${entity}` : `${apiBaseUrl}/${entity}/${editing.id}`;
     // Use PATCH for existing records (partial update), POST for new
     const method = isNew ? 'POST' : 'PATCH';
@@ -587,6 +646,7 @@ export function useEntity(entity, childEntity, {
         setSelected(saved);
         setEditing({ ...saved });
         setSaveError(null);
+        setFieldErrors({});
         toast.success(isNew ? ui('recordCreated') : ui('recordSaved'));
         // NOTE: deliberately do NOT call refresh() here — the POST response already
         // contains the full saved record and we feed it to setSelected/setEditing above.
@@ -594,6 +654,29 @@ export function useEntity(entity, childEntity, {
         // refresh() themselves. See docs/plans/sales-order-save-performance.md (Etapa 1.1).
         return saved;
       } else {
+        // ETP-3894: parse a structured MISSING_REQUIRED_FIELDS 400 from the backend so
+        // the UI can highlight the missing fields. Falls back to the regular error
+        // extraction for any other error shape.
+        let backendFieldErrors = null;
+        try {
+          const cloned = res.clone();
+          const body = await cloned.json();
+          const errCode = body?.error?.code;
+          const errFields = body?.error?.fields;
+          if (errCode === 'MISSING_REQUIRED_FIELDS' && Array.isArray(errFields)) {
+            backendFieldErrors = {};
+            for (const k of errFields) backendFieldErrors[k] = ui('fieldRequired');
+          }
+        } catch {
+          // ignore — fall through to the legacy extractor
+        }
+        if (backendFieldErrors) {
+          setFieldErrors(backendFieldErrors);
+          const msg = ui('requiredFieldsMissing');
+          setSaveError(msg);
+          toast.error(msg);
+          return null;
+        }
         const msg = await extractErrorMessage(res, ui);
         setSaveError(msg);
         toast.error(msg);
@@ -617,7 +700,7 @@ export function useEntity(entity, childEntity, {
         setSelected(null);
         setEditing(null);
         setChildren([]);
-        toast.success('Record deleted');
+        toast.success(ui('recordDeleted'));
         refresh();
       } else {
         const msg = await extractErrorMessage(res, ui);
@@ -762,6 +845,7 @@ export function useEntity(entity, childEntity, {
 
   return {
     items, selected, editing, children, childrenLoading, loading, loadingMore, hasMore, saveError, isSaving,
+    fieldErrors, registerFields,
     handleSelect, handleNew, handleChange, handleSave, handleSaveAndProcess, handleDelete, handleProcess,
     handleAddChild, handleUpdateChild, handleDeleteChild, primeSaved,
     refresh, fetchById, fetchChildren, loadMore,

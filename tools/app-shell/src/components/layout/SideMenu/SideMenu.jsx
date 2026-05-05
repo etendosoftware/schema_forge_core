@@ -57,6 +57,7 @@ import {
   SquaresFour,
   Eye,
   FileCode,
+  Storefront,
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils.js';
 import { useMenuLabel, useUI, useLocaleSwitch } from '@/i18n';
@@ -82,6 +83,7 @@ const ICON_MAP = {
   LayoutDashboard: SquaresFour,
   Eye,
   FileJson:       FileCode,
+  Store:          Storefront,
 };
 
 function CollapsedGroupPopover({
