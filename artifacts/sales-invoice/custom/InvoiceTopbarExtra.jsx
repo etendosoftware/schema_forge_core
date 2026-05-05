@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUI } from '@/i18n';
+import { useUI, useMenuLabel } from '@/i18n';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
 
 const STATUS_LABELS = {
@@ -60,6 +60,7 @@ const BADGE_STYLES = {
  */
 export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, api }) {
   const ui = useUI();
+  const tMenu = useMenuLabel();
   const [showPaymentsModal, setShowPaymentsModal] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
   const [installments, setInstallments] = useState([]);
@@ -172,10 +173,11 @@ export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, 
         <SendDocumentButton onClick={() => setShowSendModal(true)} />
         {showSendModal && (
           <SendDocumentModal
-            documentType="Invoice"
+            documentType={tMenu('Sales Invoice')}
             documentNo={data?.documentNo}
             bpName={data?.['businessPartner$_identifier']}
-            bpEmail={data?.['userContact$_identifier']}
+            bPartnerId={data?.businessPartner}
+            apiBaseUrl={apiBaseUrl}
             documentId={data?.id}
             windowName="sales-invoice"
             token={token}
@@ -281,10 +283,11 @@ export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, 
       {/* Send Invoice modal */}
       {showSendModal && (
         <SendDocumentModal
-          documentType="Invoice"
+          documentType={tMenu('Sales Invoice')}
           documentNo={data?.documentNo}
           bpName={data?.['businessPartner$_identifier']}
-          bpEmail={data?.['userContact$_identifier']}
+          bPartnerId={data?.businessPartner}
+          apiBaseUrl={apiBaseUrl}
           documentId={data?.id}
           windowName="sales-invoice"
           token={token}

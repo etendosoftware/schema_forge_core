@@ -495,7 +495,8 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
           documentType={tMenu(specName === 'purchase-invoice' ? 'Purchase Invoice' : 'Sales Invoice')}
           documentNo={displayInvoice.documentNo}
           bpName={partnerName}
-          bpEmail={displayInvoice.bpEmail || displayInvoice.partnerEmail || ''}
+          bPartnerId={displayInvoice.businessPartner}
+          apiBaseUrl={apiBaseUrl}
           documentId={displayInvoice.id}
           windowName={specName}
           token={token}
