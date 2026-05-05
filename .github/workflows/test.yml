@@ -22,6 +22,11 @@ jobs:
       - name: Run all tests
         run: node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-results.xml 'cli/test/*.test.js'
 
+      - name: Run app-shell unit tests
+        run: |
+          node --test tools/app-shell/src/lib/__tests__/*.test.js
+          node --test tools/app-shell/src/pages/onboarding/__tests__/*.test.js
+
       - name: Publish test results
         uses: dorny/test-reporter@v1
         if: always()

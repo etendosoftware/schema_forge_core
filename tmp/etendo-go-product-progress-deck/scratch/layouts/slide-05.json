@@ -1,0 +1,4948 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/wee1xn",
+    "id": "wee1xn",
+    "slide": 5,
+    "layoutId": "1c85cf4a-e538-49a1-8861-167c0b9f715f",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "ca8a00e3-18db-4409-9091-373b7d031557",
+    "masterLayoutName": "Master",
+    "backgroundColor": "#F5F7F9",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1920,
+      "height": 1080
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Inter"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "1c85cf4a-e538-49a1-8861-167c0b9f715f",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "ca8a00e3-18db-4409-9091-373b7d031557",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "ca8a00e3-18db-4409-9091-373b7d031557",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/6hcrmhk3",
+      "id": "1",
+      "name": "left-rail-5",
+      "bbox": [
+        50,
+        42,
+        86,
+        996
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.0"
+      },
+      "geometry": "roundRect",
+      "fillColor": "#FFFFFF",
+      "lineColor": "#E8EAEF",
+      "lineWidth": 1
+    },
+    {
+      "order": 2,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/47y1kre1",
+      "id": "2",
+      "name": "favicon-5",
+      "bbox": [
+        76,
+        60,
+        36,
+        36
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.0.0.0"
+      },
+      "alt": "Etendo",
+      "contentType": "image/png",
+      "asset": {
+        "assetId": "61958627-d18a-4745-8967-ef3df5f5372d",
+        "contentType": "image/png",
+        "uri": "/Users/sebastianbarrozo/Documents/work/epic/schema-forge/tools/app-shell/public/favicon.png",
+        "byteLength": 6349
+      }
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/onyd0z61",
+      "id": "3",
+      "name": "rail-accent-5",
+      "bbox": [
+        88,
+        464,
+        8,
+        120
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.0.0.1.0"
+      },
+      "geometry": "roundRect",
+      "fillColor": "#FFD500",
+      "lineColor": "#FFD500",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/vahoza1g",
+      "id": "4",
+      "name": "rail-section-5",
+      "bbox": [
+        62,
+        600,
+        66,
+        32
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.0.0.1.1"
+      },
+      "geometry": "rect",
+      "text": "Por qué importa",
+      "textPreview": "Por qué importa",
+      "resolvedFontSize": 13,
+      "resolvedTextStyle": {
+        "fontSize": 13,
+        "typeface": "Inter",
+        "bold": true,
+        "alignment": "center"
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Por qué"
+          },
+          {
+            "index": 2,
+            "text": "importa"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Por qué importa",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Por qué importa",
+              "fontSize": 13,
+              "typeface": "Inter",
+              "color": "#6C6C89",
+              "bold": true,
+              "alignment": "center"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/6tovahoz",
+      "id": "5",
+      "name": "rail-number-5",
+      "bbox": [
+        64,
+        1000,
+        60,
+        20
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.0.0.2"
+      },
+      "geometry": "rect",
+      "text": "05",
+      "textPreview": "05",
+      "resolvedFontSize": 16,
+      "resolvedTextStyle": {
+        "fontSize": 16,
+        "typeface": "Inter",
+        "bold": true,
+        "alignment": "center"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "05"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "05",
+          "runs": [
+            {
+              "index": 1,
+              "text": "05",
+              "fontSize": 16,
+              "typeface": "Inter",
+              "color": "#828FA3",
+              "bold": true,
+              "alignment": "center"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/dg7adsji",
+      "id": "6",
+      "name": "section-pill-5",
+      "bbox": [
+        170,
+        44,
+        159.23,
+        36
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.1.0.0"
+      },
+      "geometry": "roundRect",
+      "fillColor": "#FFD500",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 1
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ovahoza1",
+      "id": "7",
+      "name": "section-pill-5-text",
+      "bbox": [
+        188,
+        52,
+        124,
+        20
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.1.0.0.0"
+      },
+      "geometry": "rect",
+      "text": "Por qué importa",
+      "textPreview": "Por qué importa",
+      "resolvedFontSize": 16,
+      "resolvedTextStyle": {
+        "fontSize": 16,
+        "typeface": "Inter",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Por qué importa"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Por qué importa",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Por qué importa",
+              "fontSize": 16,
+              "typeface": "Inter",
+              "color": "#121217",
+              "bold": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/vmtwra5g",
+      "id": "8",
+      "name": "search-pill-5",
+      "bbox": [
+        1350,
+        42,
+        520,
+        40
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.1.0.1"
+      },
+      "geometry": "roundRect",
+      "fillColor": "#E8EAEF"
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/61032lsz",
+      "id": "9",
+      "name": "search-text-5",
+      "bbox": [
+        1372,
+        52,
+        476,
+        18
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.1.0.1.0"
+      },
+      "geometry": "rect",
+      "text": "Buscar en Etendo GO / preguntar al agente",
+      "textPreview": "Buscar en Etendo GO / preguntar al agente",
+      "resolvedFontSize": 15,
+      "resolvedTextStyle": {
+        "fontSize": 15,
+        "typeface": "Inter",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Buscar en Etendo GO / preguntar al agente"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Buscar en Etendo GO / preguntar al agente",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Buscar en Etendo GO / preguntar al agente",
+              "fontSize": 15,
+              "typeface": "Inter",
+              "color": "#555B6D"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/wval87ed",
+      "id": "10",
+      "name": "slide-title-5",
+      "bbox": [
+        170,
+        92,
+        1700,
+        64
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.1.1"
+      },
+      "geometry": "rect",
+      "text": "El ERP no escala si cada pantalla se redescubre a mano",
+      "textPreview": "El ERP no escala si cada pantalla se redescubre a mano",
+      "resolvedFontSize": 52,
+      "resolvedTextStyle": {
+        "fontSize": 52,
+        "typeface": "Inter",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "El ERP no escala si cada pantalla se redescubre a mano"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "El ERP no escala si cada pantalla se redescubre a mano",
+          "runs": [
+            {
+              "index": 1,
+              "text": "El ERP no escala si cada pantalla se redescubre a mano",
+              "fontSize": 52,
+              "typeface": "Inter",
+              "color": "#121217",
+              "bold": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/pg3ex0nu",
+      "id": "11",
+      "name": "slide-subtitle-5",
+      "bbox": [
+        170,
+        166,
+        1178,
+        74
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.1.2"
+      },
+      "geometry": "rect",
+      "text": "La superficie funcional es demasiado amplia para depender de análisis, diseño, implementación y documentación artesanal en cada ventana.",
+      "textPreview": "La superficie funcional es demasiado amplia para depender de análisis, diseño, implementación y documentación artesanal en cada ventana.",
+      "resolvedFontSize": 27,
+      "resolvedTextStyle": {
+        "fontSize": 27,
+        "typeface": "Inter",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "La superficie funcional es demasiado amplia para depender de análisis, diseño, implementación y"
+          },
+          {
+            "index": 2,
+            "text": "documentación artesanal en cada ventana."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "La superficie funcional es demasiado amplia para depender de análisis, diseño, implementación y documentación artesanal en cada ventana.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "La superficie funcional es demasiado amplia para depender de análisis, diseño, implementación y documentación artesanal en cada ventana.",
+              "fontSize": 27,
+              "typeface": "Inter",
+              "color": "#6C6C89"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/epkzupwb",
+      "id": "12",
+      "name": "s5-pill",
+      "bbox": [
+        170,
+        505.32,
+        150.36,
+        37.2
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.0.0"
+      },
+      "geometry": "roundRect",
+      "fillColor": "#FFD500",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 1
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/7adsji5s",
+      "id": "13",
+      "name": "s5-pill-text",
+      "bbox": [
+        188,
+        514,
+        116,
+        20
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.0.0.0"
+      },
+      "geometry": "rect",
+      "text": "Superficie ERP",
+      "textPreview": "Superficie ERP",
+      "resolvedFontSize": 16,
+      "resolvedTextStyle": {
+        "fontSize": 16,
+        "typeface": "Inter",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Superficie ERP"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Superficie ERP",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Superficie ERP",
+              "fontSize": 16,
+              "typeface": "Inter",
+              "color": "#121217",
+              "bold": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/w7mp0bi9",
+      "id": "14",
+      "name": "s5-b1-dot",
+      "bbox": [
+        170,
+        562,
+        10,
+        10
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.0.1.0"
+      },
+      "geometry": "ellipse",
+      "fillColor": "#FFD500",
+      "lineColor": "#FFD500",
+      "lineWidth": 0
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/psfil0rq",
+      "id": "15",
+      "name": "s5-b1-text",
+      "bbox": [
+        196,
+        562,
+        760,
+        34
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.0.1.1"
+      },
+      "geometry": "rect",
+      "text": "Ventas, compras, inventario, finanzas y contactos.",
+      "textPreview": "Ventas, compras, inventario, finanzas y contactos.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Inter",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Ventas, compras, inventario, finanzas y contactos."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Ventas, compras, inventario, finanzas y contactos.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Ventas, compras, inventario, finanzas y contactos.",
+              "fontSize": 24,
+              "typeface": "Inter",
+              "color": "#6C6C89"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/e1w7mp0b",
+      "id": "16",
+      "name": "s5-b2-dot",
+      "bbox": [
+        170,
+        616,
+        10,
+        10
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.0.2.0"
+      },
+      "geometry": "ellipse",
+      "fillColor": "#FFD500",
+      "lineColor": "#FFD500",
+      "lineWidth": 0
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/7mp0bi9s",
+      "id": "17",
+      "name": "s5-b2-text",
+      "bbox": [
+        196,
+        616,
+        760,
+        34
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.0.2.1"
+      },
+      "geometry": "rect",
+      "text": "Procesos, reportes, estados y documentos relacionados.",
+      "textPreview": "Procesos, reportes, estados y documentos relacionados.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Inter",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Procesos, reportes, estados y documentos relacionados."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Procesos, reportes, estados y documentos relacionados.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Procesos, reportes, estados y documentos relacionados.",
+              "fontSize": 24,
+              "typeface": "Inter",
+              "color": "#6C6C89"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/wfyxobm5",
+      "id": "18",
+      "name": "s5-b3-dot",
+      "bbox": [
+        170,
+        670,
+        10,
+        10
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.0.3.0"
+      },
+      "geometry": "ellipse",
+      "fillColor": "#FFD500",
+      "lineColor": "#FFD500",
+      "lineWidth": 0
+    },
+    {
+      "order": 19,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/l0rqd4vm",
+      "id": "19",
+      "name": "s5-b3-text",
+      "bbox": [
+        196,
+        670,
+        760,
+        34
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.0.3.1"
+      },
+      "geometry": "rect",
+      "text": "Reglas contables, permisos, defaults y validaciones.",
+      "textPreview": "Reglas contables, permisos, defaults y validaciones.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Inter",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Reglas contables, permisos, defaults y validaciones."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Reglas contables, permisos, defaults y validaciones.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Reglas contables, permisos, defaults y validaciones.",
+              "fontSize": 24,
+              "typeface": "Inter",
+              "color": "#6C6C89"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 20,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/pwb2hwfy",
+      "id": "20",
+      "name": "s5-b4-dot",
+      "bbox": [
+        170,
+        722,
+        10,
+        10
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.0.4.0"
+      },
+      "geometry": "ellipse",
+      "fillColor": "#FFD500",
+      "lineColor": "#FFD500",
+      "lineWidth": 0
+    },
+    {
+      "order": 21,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/0bi9s36h",
+      "id": "21",
+      "name": "s5-b4-text",
+      "bbox": [
+        196,
+        722,
+        760,
+        34
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.0.4.1"
+      },
+      "geometry": "rect",
+      "text": "Decisiones de producto que deben quedar auditables.",
+      "textPreview": "Decisiones de producto que deben quedar auditables.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Inter",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Decisiones de producto que deben quedar auditables."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Decisiones de producto que deben quedar auditables.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Decisiones de producto que deben quedar auditables.",
+              "fontSize": 24,
+              "typeface": "Inter",
+              "color": "#6C6C89"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 22,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/7qpg3ex0",
+      "id": "22",
+      "name": "s5-trace-panel",
+      "bbox": [
+        1001.65,
+        268.27,
+        868.35,
+        724.93
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.1"
+      },
+      "geometry": "roundRect",
+      "fillColor": "#FFFFFF",
+      "lineColor": "#E8EAEF",
+      "lineWidth": 1
+    },
+    {
+      "order": 23,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/i5sneloj",
+      "id": "23",
+      "name": "s5-trace-title",
+      "bbox": [
+        1042,
+        442,
+        788,
+        54
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.1.0.0"
+      },
+      "geometry": "rect",
+      "text": "Trazabilidad",
+      "textPreview": "Trazabilidad",
+      "resolvedFontSize": 44,
+      "resolvedTextStyle": {
+        "fontSize": 44,
+        "typeface": "Inter",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Trazabilidad"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Trazabilidad",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Trazabilidad",
+              "fontSize": 44,
+              "typeface": "Inter",
+              "color": "#121217",
+              "bold": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 24,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/p4r65wju",
+      "id": "24",
+      "name": "s5-t1-badge",
+      "bbox": [
+        1041.65,
+        522.74,
+        44,
+        44
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.1.0.1.0"
+      },
+      "geometry": "roundRect",
+      "fillColor": "#FFD500"
+    },
+    {
+      "order": 25,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/wjudg7ad",
+      "id": "25",
+      "name": "s5-t1-badge-text",
+      "bbox": [
+        1042,
+        534,
+        44,
+        20
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.1.0.1.0.0"
+      },
+      "geometry": "rect",
+      "text": "1",
+      "textPreview": "1",
+      "resolvedFontSize": 18,
+      "resolvedTextStyle": {
+        "fontSize": 18,
+        "typeface": "Inter",
+        "bold": true,
+        "alignment": "center"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "1"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "1",
+          "runs": [
+            {
+              "index": 1,
+              "text": "1",
+              "fontSize": 18,
+              "typeface": "Inter",
+              "color": "#121217",
+              "bold": true,
+              "alignment": "center"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 26,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/7y1kre1w",
+      "id": "26",
+      "name": "s5-t1-label",
+      "bbox": [
+        1104,
+        522,
+        726,
+        30
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.1.0.1.1.0"
+      },
+      "geometry": "rect",
+      "text": "Dato original",
+      "textPreview": "Dato original",
+      "resolvedFontSize": 25,
+      "resolvedTextStyle": {
+        "fontSize": 25,
+        "typeface": "Inter",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Dato original"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Dato original",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Dato original",
+              "fontSize": 25,
+              "typeface": "Inter",
+              "color": "#121217",
+              "bold": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 27,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ed8v6psf",
+      "id": "27",
+      "name": "s5-t1-detail",
+      "bbox": [
+        1104,
+        556,
+        726,
+        20
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.1.0.1.1.1"
+      },
+      "geometry": "rect",
+      "text": "metadata del ERP",
+      "textPreview": "metadata del ERP",
+      "resolvedFontSize": 16,
+      "resolvedTextStyle": {
+        "fontSize": 16,
+        "typeface": "Inter",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "metadata del ERP"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "metadata del ERP",
+          "runs": [
+            {
+              "index": 1,
+              "text": "metadata del ERP",
+              "fontSize": 16,
+              "typeface": "Inter",
+              "color": "#6C6C89"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 28,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/p8nqxs72",
+      "id": "28",
+      "name": "s5-t2-badge",
+      "bbox": [
+        1041.65,
+        603.94,
+        44,
+        44
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.1.0.2.0"
+      },
+      "geometry": "roundRect",
+      "fillColor": "#E8EAEF"
+    },
+    {
+      "order": 29,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/0nuxc3yl",
+      "id": "29",
+      "name": "s5-t2-badge-text",
+      "bbox": [
+        1042,
+        616,
+        44,
+        20
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.1.0.2.0.0"
+      },
+      "geometry": "rect",
+      "text": "2",
+      "textPreview": "2",
+      "resolvedFontSize": 18,
+      "resolvedTextStyle": {
+        "fontSize": 18,
+        "typeface": "Inter",
+        "bold": true,
+        "alignment": "center"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "2"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "2",
+          "runs": [
+            {
+              "index": 1,
+              "text": "2",
+              "fontSize": 18,
+              "typeface": "Inter",
+              "color": "#121217",
+              "bold": true,
+              "alignment": "center"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 30,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/q5o7qpg3",
+      "id": "30",
+      "name": "s5-t2-label",
+      "bbox": [
+        1104,
+        604,
+        726,
+        30
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.1.0.2.1.0"
+      },
+      "geometry": "rect",
+      "text": "Decisión de Producto",
+      "textPreview": "Decisión de Producto",
+      "resolvedFontSize": 25,
+      "resolvedTextStyle": {
+        "fontSize": 25,
+        "typeface": "Inter",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Decisión de Producto"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Decisión de Producto",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Decisión de Producto",
+              "fontSize": 25,
+              "typeface": "Inter",
+              "color": "#121217",
+              "bold": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 31,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/jqh0fepk",
+      "id": "31",
+      "name": "s5-t2-detail",
+      "bbox": [
+        1104,
+        638,
+        726,
+        20
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.1.0.2.1.1"
+      },
+      "geometry": "rect",
+      "text": "curación y simplificación",
+      "textPreview": "curación y simplificación",
+      "resolvedFontSize": 16,
+      "resolvedTextStyle": {
+        "fontSize": 16,
+        "typeface": "Inter",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "curación y simplificación"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "curación y simplificación",
+          "runs": [
+            {
+              "index": 1,
+              "text": "curación y simplificación",
+              "fontSize": 16,
+              "typeface": "Inter",
+              "color": "#6C6C89"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 32,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/8bat47y1",
+      "id": "32",
+      "name": "s5-t3-badge",
+      "bbox": [
+        1041.65,
+        685.14,
+        44,
+        44
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.1.0.3.0"
+      },
+      "geometry": "roundRect",
+      "fillColor": "#FFD500"
+    },
+    {
+      "order": 33,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/1w7mp0bi",
+      "id": "33",
+      "name": "s5-t3-badge-text",
+      "bbox": [
+        1042,
+        698,
+        44,
+        20
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.1.0.3.0.0"
+      },
+      "geometry": "rect",
+      "text": "3",
+      "textPreview": "3",
+      "resolvedFontSize": 18,
+      "resolvedTextStyle": {
+        "fontSize": 18,
+        "typeface": "Inter",
+        "bold": true,
+        "alignment": "center"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "3"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "3",
+          "runs": [
+            {
+              "index": 1,
+              "text": "3",
+              "fontSize": 18,
+              "typeface": "Inter",
+              "color": "#121217",
+              "bold": true,
+              "alignment": "center"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 34,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/qh0fepkz",
+      "id": "34",
+      "name": "s5-t3-label",
+      "bbox": [
+        1104,
+        686,
+        726,
+        30
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.1.0.3.1.0"
+      },
+      "geometry": "rect",
+      "text": "Contrato y runtime",
+      "textPreview": "Contrato y runtime",
+      "resolvedFontSize": 25,
+      "resolvedTextStyle": {
+        "fontSize": 25,
+        "typeface": "Inter",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Contrato y runtime"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Contrato y runtime",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Contrato y runtime",
+              "fontSize": 25,
+              "typeface": "Inter",
+              "color": "#121217",
+              "bold": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 35,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/j2t83itg",
+      "id": "35",
+      "name": "s5-t3-detail",
+      "bbox": [
+        1104,
+        720,
+        726,
+        20
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.1.0.3.1.1"
+      },
+      "geometry": "rect",
+      "text": "NEO + UI + tools",
+      "textPreview": "NEO + UI + tools",
+      "resolvedFontSize": 16,
+      "resolvedTextStyle": {
+        "fontSize": 16,
+        "typeface": "Inter",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "NEO + UI + tools"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "NEO + UI + tools",
+          "runs": [
+            {
+              "index": 1,
+              "text": "NEO + UI + tools",
+              "fontSize": 16,
+              "typeface": "Inter",
+              "color": "#6C6C89"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 36,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/8nqxs72x",
+      "id": "36",
+      "name": "s5-t4-badge",
+      "bbox": [
+        1041.65,
+        766.34,
+        44,
+        44
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.1.0.4.0"
+      },
+      "geometry": "roundRect",
+      "fillColor": "#E8EAEF"
+    },
+    {
+      "order": 37,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/18jqh0fe",
+      "id": "37",
+      "name": "s5-t4-badge-text",
+      "bbox": [
+        1042,
+        778,
+        44,
+        20
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.1.0.4.0.0"
+      },
+      "geometry": "rect",
+      "text": "4",
+      "textPreview": "4",
+      "resolvedFontSize": 18,
+      "resolvedTextStyle": {
+        "fontSize": 18,
+        "typeface": "Inter",
+        "bold": true,
+        "alignment": "center"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "4"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "4",
+          "runs": [
+            {
+              "index": 1,
+              "text": "4",
+              "fontSize": 18,
+              "typeface": "Inter",
+              "color": "#121217",
+              "bold": true,
+              "alignment": "center"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 38,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ulwval87",
+      "id": "38",
+      "name": "s5-t4-label",
+      "bbox": [
+        1104,
+        766,
+        726,
+        30
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.1.0.4.1.0"
+      },
+      "geometry": "rect",
+      "text": "Evidencia funcional",
+      "textPreview": "Evidencia funcional",
+      "resolvedFontSize": 25,
+      "resolvedTextStyle": {
+        "fontSize": 25,
+        "typeface": "Inter",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Evidencia funcional"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Evidencia funcional",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Evidencia funcional",
+              "fontSize": 25,
+              "typeface": "Inter",
+              "color": "#121217",
+              "bold": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 39,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/j6tovaho",
+      "id": "39",
+      "name": "s5-t4-detail",
+      "bbox": [
+        1104,
+        800,
+        726,
+        20
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.1.0.4.1.1"
+      },
+      "geometry": "rect",
+      "text": "tests + documentación",
+      "textPreview": "tests + documentación",
+      "resolvedFontSize": 16,
+      "resolvedTextStyle": {
+        "fontSize": 16,
+        "typeface": "Inter",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "tests + documentación"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "tests + documentación",
+          "runs": [
+            {
+              "index": 1,
+              "text": "tests + documentación",
+              "fontSize": 16,
+              "typeface": "Inter",
+              "color": "#6C6C89"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 40,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/nuxc3ylc",
+      "id": "40",
+      "name": "footer-left-5",
+      "bbox": [
+        170,
+        1022,
+        620,
+        16
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.3.0"
+      },
+      "geometry": "rect",
+      "text": "Etendo GO · Producto · 2026-04-30",
+      "textPreview": "Etendo GO · Producto · 2026-04-30",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "fontSize": 14,
+        "typeface": "Inter",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Etendo GO · Producto · 2026-04-30"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Etendo GO · Producto · 2026-04-30",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Etendo GO · Producto · 2026-04-30",
+              "fontSize": 14,
+              "typeface": "Inter",
+              "color": "#828FA3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 41,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/y90je9cv",
+      "id": "41",
+      "name": "footer-right-5",
+      "bbox": [
+        1610,
+        1022,
+        260,
+        16
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.3.1"
+      },
+      "geometry": "rect",
+      "text": "Schema Forge snapshot",
+      "textPreview": "Schema Forge snapshot",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "fontSize": 14,
+        "typeface": "Inter",
+        "alignment": "right"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Schema Forge snapshot"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Schema Forge snapshot",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Schema Forge snapshot",
+              "fontSize": 14,
+              "typeface": "Inter",
+              "color": "#828FA3",
+              "alignment": "right"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "composeRuns": [
+    {
+      "index": 1,
+      "frame": {
+        "left": 0,
+        "top": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "baseUnit": 8,
+      "root": {
+        "path": "0",
+        "kind": "grid",
+        "name": "slide-5-root",
+        "requestedSize": {
+          "width": {
+            "mode": "fill",
+            "value": 1
+          },
+          "height": {
+            "mode": "fill",
+            "value": 1
+          }
+        },
+        "intrinsicSize": {
+          "width": 220,
+          "height": 355.07
+        },
+        "frame": {
+          "left": 0,
+          "top": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "children": [
+          {
+            "path": "0.0",
+            "kind": "panel",
+            "name": "left-rail-5",
+            "requestedSize": {
+              "width": {
+                "mode": "fill",
+                "value": 1
+              },
+              "height": {
+                "mode": "fill",
+                "value": 1
+              }
+            },
+            "intrinsicSize": {
+              "width": 26,
+              "height": 36
+            },
+            "frame": {
+              "left": 50,
+              "top": 42,
+              "width": 86,
+              "height": 996
+            },
+            "snappedFrame": {
+              "left": 50,
+              "top": 42,
+              "width": 86,
+              "height": 996
+            },
+            "children": [
+              {
+                "path": "0.0.0",
+                "kind": "column",
+                "name": "left-rail-stack-5",
+                "requestedSize": {
+                  "width": {
+                    "mode": "fill",
+                    "value": 1
+                  },
+                  "height": {
+                    "mode": "fill",
+                    "value": 1
+                  }
+                },
+                "intrinsicSize": {
+                  "width": 36,
+                  "height": 220.4
+                },
+                "frame": {
+                  "left": 64,
+                  "top": 60,
+                  "width": 60,
+                  "height": 960
+                },
+                "children": [
+                  {
+                    "path": "0.0.0.0",
+                    "kind": "image",
+                    "name": "favicon-5",
+                    "requestedSize": {
+                      "width": {
+                        "mode": "fixed",
+                        "value": 36
+                      },
+                      "height": {
+                        "mode": "fixed",
+                        "value": 36
+                      }
+                    },
+                    "intrinsicSize": {
+                      "width": 36,
+                      "height": 36
+                    },
+                    "frame": {
+                      "left": 76,
+                      "top": 60,
+                      "width": 36,
+                      "height": 36
+                    },
+                    "snappedFrame": {
+                      "left": 76,
+                      "top": 60,
+                      "width": 36,
+                      "height": 36
+                    },
+                    "children": [],
+                    "source": {
+                      "kind": "path",
+                      "path": "/Users/sebastianbarrozo/Documents/work/epic/schema-forge/tools/app-shell/public/favicon.png"
+                    },
+                    "fit": "contain",
+                    "alt": "Etendo",
+                    "element": {
+                      "aid": "im/47y1kre1",
+                      "id": "2",
+                      "kind": "image"
+                    }
+                  },
+                  {
+                    "path": "0.0.0.1",
+                    "kind": "column",
+                    "name": "rail-mid-5",
+                    "requestedSize": {
+                      "width": {
+                        "mode": "fill",
+                        "value": 1
+                      },
+                      "height": {
+                        "mode": "hug"
+                      }
+                    },
+                    "intrinsicSize": {
+                      "width": 66,
+                      "height": 165.2
+                    },
+                    "frame": {
+                      "left": 64,
+                      "top": 465.8,
+                      "width": 60,
+                      "height": 165.2
+                    },
+                    "children": [
+                      {
+                        "path": "0.0.0.1.0",
+                        "kind": "shape",
+                        "name": "rail-accent-5",
+                        "requestedSize": {
+                          "width": {
+                            "mode": "fixed",
+                            "value": 8
+                          },
+                          "height": {
+                            "mode": "fixed",
+                            "value": 120
+                          }
+                        },
+                        "intrinsicSize": {
+                          "width": 8,
+                          "height": 120
+                        },
+                        "frame": {
+                          "left": 90,
+                          "top": 465.8,
+                          "width": 8,
+                          "height": 120
+                        },
+                        "snappedFrame": {
+                          "left": 88,
+                          "top": 464,
+                          "width": 8,
+                          "height": 120
+                        },
+                        "children": [],
+                        "geometry": "rect",
+                        "element": {
+                          "aid": "sh/onyd0z61",
+                          "id": "3",
+                          "kind": "shape"
+                        }
+                      },
+                      {
+                        "path": "0.0.0.1.1",
+                        "kind": "text",
+                        "name": "rail-section-5",
+                        "requestedSize": {
+                          "width": {
+                            "mode": "fixed",
+                            "value": 66
+                          },
+                          "height": {
+                            "mode": "hug"
+                          }
+                        },
+                        "intrinsicSize": {
+                          "width": 66,
+                          "height": 31.2
+                        },
+                        "frame": {
+                          "left": 62,
+                          "top": 599.8,
+                          "width": 66,
+                          "height": 31.2
+                        },
+                        "snappedFrame": {
+                          "left": 62,
+                          "top": 600,
+                          "width": 66,
+                          "height": 32
+                        },
+                        "children": [],
+                        "text": "Por qué importa",
+                        "transform": "none",
+                        "element": {
+                          "aid": "sh/vahoza1g",
+                          "id": "4",
+                          "kind": "shape"
+                        }
+                      }
+                    ],
+                    "padding": {
+                      "top": 0,
+                      "right": 0,
+                      "bottom": 0,
+                      "left": 0
+                    },
+                    "gap": 14,
+                    "effectiveGap": 14,
+                    "justifyOffset": 0,
+                    "align": "center",
+                    "justify": "start",
+                    "contentFrame": {
+                      "left": 64,
+                      "top": 465.8,
+                      "width": 60,
+                      "height": 165.2
+                    },
+                    "items": [
+                      {
+                        "path": "0.0.0.1.0",
+                        "frame": {
+                          "left": 90,
+                          "top": 465.8,
+                          "width": 8,
+                          "height": 120
+                        }
+                      },
+                      {
+                        "path": "0.0.0.1.1",
+                        "frame": {
+                          "left": 62,
+                          "top": 599.8,
+                          "width": 66,
+                          "height": 31.2
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "path": "0.0.0.2",
+                    "kind": "text",
+                    "name": "rail-number-5",
+                    "requestedSize": {
+                      "width": {
+                        "mode": "fill",
+                        "value": 1
+                      },
+                      "height": {
+                        "mode": "hug"
+                      }
+                    },
+                    "intrinsicSize": {
+                      "width": 0,
+                      "height": 19.2
+                    },
+                    "frame": {
+                      "left": 64,
+                      "top": 1000.8,
+                      "width": 60,
+                      "height": 19.2
+                    },
+                    "snappedFrame": {
+                      "left": 64,
+                      "top": 1000,
+                      "width": 60,
+                      "height": 20
+                    },
+                    "children": [],
+                    "text": "05",
+                    "transform": "none",
+                    "element": {
+                      "aid": "sh/6tovahoz",
+                      "id": "5",
+                      "kind": "shape"
+                    }
+                  }
+                ],
+                "padding": {
+                  "top": 0,
+                  "right": 0,
+                  "bottom": 0,
+                  "left": 0
+                },
+                "gap": 0,
+                "effectiveGap": 369.8,
+                "justifyOffset": 0,
+                "align": "center",
+                "justify": "between",
+                "contentFrame": {
+                  "left": 64,
+                  "top": 60,
+                  "width": 60,
+                  "height": 960
+                },
+                "items": [
+                  {
+                    "path": "0.0.0.0",
+                    "frame": {
+                      "left": 76,
+                      "top": 60,
+                      "width": 36,
+                      "height": 36
+                    }
+                  },
+                  {
+                    "path": "0.0.0.1",
+                    "frame": {
+                      "left": 64,
+                      "top": 465.8,
+                      "width": 60,
+                      "height": 165.2
+                    }
+                  },
+                  {
+                    "path": "0.0.0.2",
+                    "frame": {
+                      "left": 64,
+                      "top": 1000.8,
+                      "width": 60,
+                      "height": 19.2
+                    }
+                  }
+                ]
+              }
+            ],
+            "padding": {
+              "top": 18,
+              "right": 13,
+              "bottom": 18,
+              "left": 13
+            },
+            "align": "center",
+            "justify": "start",
+            "contentFrame": {
+              "left": 63,
+              "top": 60,
+              "width": 60,
+              "height": 960
+            },
+            "element": {
+              "aid": "sh/6hcrmhk3",
+              "id": "1",
+              "kind": "shape"
+            }
+          },
+          {
+            "path": "0.1",
+            "kind": "column",
+            "name": "header-5",
+            "requestedSize": {
+              "width": {
+                "mode": "fill",
+                "value": 1
+              },
+              "height": {
+                "mode": "hug"
+              }
+            },
+            "intrinsicSize": {
+              "width": 1177.84,
+              "height": 198.27
+            },
+            "frame": {
+              "left": 170,
+              "top": 42,
+              "width": 1700,
+              "height": 198.27
+            },
+            "children": [
+              {
+                "path": "0.1.0",
+                "kind": "row",
+                "name": "topline-5",
+                "requestedSize": {
+                  "width": {
+                    "mode": "fill",
+                    "value": 1
+                  },
+                  "height": {
+                    "mode": "hug"
+                  }
+                },
+                "intrinsicSize": {
+                  "width": 679.23,
+                  "height": 38
+                },
+                "frame": {
+                  "left": 170,
+                  "top": 42,
+                  "width": 1700,
+                  "height": 38
+                },
+                "children": [
+                  {
+                    "path": "0.1.0.0",
+                    "kind": "panel",
+                    "name": "section-pill-5",
+                    "requestedSize": {
+                      "width": {
+                        "mode": "hug"
+                      },
+                      "height": {
+                        "mode": "hug"
+                      }
+                    },
+                    "intrinsicSize": {
+                      "width": 159.23,
+                      "height": 37.2
+                    },
+                    "frame": {
+                      "left": 170,
+                      "top": 44,
+                      "width": 159.23,
+                      "height": 36
+                    },
+                    "snappedFrame": {
+                      "left": 170,
+                      "top": 44,
+                      "width": 159.23,
+                      "height": 36
+                    },
+                    "children": [
+                      {
+                        "path": "0.1.0.0.0",
+                        "kind": "text",
+                        "name": "section-pill-5-text",
+                        "requestedSize": {
+                          "width": {
+                            "mode": "hug"
+                          },
+                          "height": {
+                            "mode": "hug"
+                          }
+                        },
+                        "intrinsicSize": {
+                          "width": 123.23,
+                          "height": 19.2
+                        },
+                        "frame": {
+                          "left": 188,
+                          "top": 52,
+                          "width": 124,
+                          "height": 20
+                        },
+                        "snappedFrame": {
+                          "left": 188,
+                          "top": 52,
+                          "width": 124,
+                          "height": 20
+                        },
+                        "children": [],
+                        "text": "Por qué importa",
+                        "transform": "none",
+                        "element": {
+                          "aid": "sh/ovahoza1",
+                          "id": "7",
+                          "kind": "shape"
+                        }
+                      }
+                    ],
+                    "padding": {
+                      "top": 9,
+                      "right": 18,
+                      "bottom": 9,
+                      "left": 18
+                    },
+                    "align": "center",
+                    "justify": "center",
+                    "contentFrame": {
+                      "left": 188,
+                      "top": 53,
+                      "width": 123.23,
+                      "height": 18
+                    },
+                    "element": {
+                      "aid": "sh/dg7adsji",
+                      "id": "6",
+                      "kind": "shape"
+                    }
+                  },
+                  {
+                    "path": "0.1.0.1",
+                    "kind": "panel",
+                    "name": "search-pill-5",
+                    "requestedSize": {
+                      "width": {
+                        "mode": "fixed",
+                        "value": 520
+                      },
+                      "height": {
+                        "mode": "hug"
+                      }
+                    },
+                    "intrinsicSize": {
+                      "width": 44,
+                      "height": 38
+                    },
+                    "frame": {
+                      "left": 1350,
+                      "top": 42,
+                      "width": 520,
+                      "height": 40
+                    },
+                    "snappedFrame": {
+                      "left": 1350,
+                      "top": 42,
+                      "width": 520,
+                      "height": 40
+                    },
+                    "children": [
+                      {
+                        "path": "0.1.0.1.0",
+                        "kind": "text",
+                        "name": "search-text-5",
+                        "requestedSize": {
+                          "width": {
+                            "mode": "fill",
+                            "value": 1
+                          },
+                          "height": {
+                            "mode": "hug"
+                          }
+                        },
+                        "intrinsicSize": {
+                          "width": 0,
+                          "height": 18
+                        },
+                        "frame": {
+                          "left": 1372,
+                          "top": 52,
+                          "width": 476,
+                          "height": 18
+                        },
+                        "snappedFrame": {
+                          "left": 1372,
+                          "top": 52,
+                          "width": 476,
+                          "height": 18
+                        },
+                        "children": [],
+                        "text": "Buscar en Etendo GO / preguntar al agente",
+                        "transform": "none",
+                        "element": {
+                          "aid": "sh/61032lsz",
+                          "id": "9",
+                          "kind": "shape"
+                        }
+                      }
+                    ],
+                    "padding": {
+                      "top": 10,
+                      "right": 22,
+                      "bottom": 10,
+                      "left": 22
+                    },
+                    "align": "center",
+                    "justify": "start",
+                    "contentFrame": {
+                      "left": 1372,
+                      "top": 52,
+                      "width": 476,
+                      "height": 20
+                    },
+                    "element": {
+                      "aid": "sh/vmtwra5g",
+                      "id": "8",
+                      "kind": "shape"
+                    }
+                  }
+                ],
+                "padding": {
+                  "top": 0,
+                  "right": 0,
+                  "bottom": 0,
+                  "left": 0
+                },
+                "gap": 0,
+                "effectiveGap": 1020.77,
+                "justifyOffset": 0,
+                "align": "center",
+                "justify": "between",
+                "contentFrame": {
+                  "left": 170,
+                  "top": 42,
+                  "width": 1700,
+                  "height": 38
+                },
+                "items": [
+                  {
+                    "path": "0.1.0.0",
+                    "frame": {
+                      "left": 170,
+                      "top": 44,
+                      "width": 159.23,
+                      "height": 36
+                    }
+                  },
+                  {
+                    "path": "0.1.0.1",
+                    "frame": {
+                      "left": 1350,
+                      "top": 42,
+                      "width": 520,
+                      "height": 40
+                    }
+                  }
+                ]
+              },
+              {
+                "path": "0.1.1",
+                "kind": "text",
+                "name": "slide-title-5",
+                "requestedSize": {
+                  "width": {
+                    "mode": "fill",
+                    "value": 1
+                  },
+                  "height": {
+                    "mode": "hug"
+                  }
+                },
+                "intrinsicSize": {
+                  "width": 0,
+                  "height": 62.4
+                },
+                "frame": {
+                  "left": 170,
+                  "top": 92,
+                  "width": 1700,
+                  "height": 62.4
+                },
+                "snappedFrame": {
+                  "left": 170,
+                  "top": 92,
+                  "width": 1700,
+                  "height": 64
+                },
+                "children": [],
+                "text": "El ERP no escala si cada pantalla se redescubre a mano",
+                "transform": "none",
+                "element": {
+                  "aid": "sh/wval87ed",
+                  "id": "10",
+                  "kind": "shape"
+                }
+              },
+              {
+                "path": "0.1.2",
+                "kind": "text",
+                "name": "slide-subtitle-5",
+                "requestedSize": {
+                  "width": {
+                    "mode": "wrap",
+                    "max": 1200
+                  },
+                  "height": {
+                    "mode": "hug"
+                  }
+                },
+                "intrinsicSize": {
+                  "width": 1177.84,
+                  "height": 73.87
+                },
+                "frame": {
+                  "left": 170,
+                  "top": 166.4,
+                  "width": 1177.84,
+                  "height": 73.87
+                },
+                "snappedFrame": {
+                  "left": 170,
+                  "top": 166,
+                  "width": 1178,
+                  "height": 74
+                },
+                "children": [],
+                "text": "La superficie funcional es demasiado amplia para depender de análisis, diseño, implementación y documentación artesanal en cada ventana.",
+                "transform": "none",
+                "element": {
+                  "aid": "sh/pg3ex0nu",
+                  "id": "11",
+                  "kind": "shape"
+                }
+              }
+            ],
+            "padding": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "gap": 12,
+            "effectiveGap": 12,
+            "justifyOffset": 0,
+            "align": "start",
+            "justify": "start",
+            "contentFrame": {
+              "left": 170,
+              "top": 42,
+              "width": 1700,
+              "height": 198.27
+            },
+            "items": [
+              {
+                "path": "0.1.0",
+                "frame": {
+                  "left": 170,
+                  "top": 42,
+                  "width": 1700,
+                  "height": 38
+                }
+              },
+              {
+                "path": "0.1.1",
+                "frame": {
+                  "left": 170,
+                  "top": 92,
+                  "width": 1700,
+                  "height": 62.4
+                }
+              },
+              {
+                "path": "0.1.2",
+                "frame": {
+                  "left": 170,
+                  "top": 166.4,
+                  "width": 1177.84,
+                  "height": 73.87
+                }
+              }
+            ]
+          },
+          {
+            "path": "0.2",
+            "kind": "grid",
+            "name": "slide-5-body",
+            "requestedSize": {
+              "width": {
+                "mode": "fill",
+                "value": 1
+              },
+              "height": {
+                "mode": "fill",
+                "value": 1
+              }
+            },
+            "intrinsicSize": {
+              "width": 46,
+              "height": 0
+            },
+            "frame": {
+              "left": 170,
+              "top": 268.27,
+              "width": 1700,
+              "height": 724.93
+            },
+            "children": [
+              {
+                "path": "0.2.0",
+                "kind": "column",
+                "name": "s5-left",
+                "requestedSize": {
+                  "width": {
+                    "mode": "fill",
+                    "value": 1
+                  },
+                  "height": {
+                    "mode": "fill",
+                    "value": 1
+                  }
+                },
+                "intrinsicSize": {
+                  "width": 150.36,
+                  "height": 250.83
+                },
+                "frame": {
+                  "left": 170,
+                  "top": 268.27,
+                  "width": 785.65,
+                  "height": 724.93
+                },
+                "children": [
+                  {
+                    "path": "0.2.0.0",
+                    "kind": "panel",
+                    "name": "s5-pill",
+                    "requestedSize": {
+                      "width": {
+                        "mode": "hug"
+                      },
+                      "height": {
+                        "mode": "hug"
+                      }
+                    },
+                    "intrinsicSize": {
+                      "width": 150.36,
+                      "height": 37.2
+                    },
+                    "frame": {
+                      "left": 170,
+                      "top": 505.32,
+                      "width": 150.36,
+                      "height": 37.2
+                    },
+                    "snappedFrame": {
+                      "left": 170,
+                      "top": 505.32,
+                      "width": 150.36,
+                      "height": 37.2
+                    },
+                    "children": [
+                      {
+                        "path": "0.2.0.0.0",
+                        "kind": "text",
+                        "name": "s5-pill-text",
+                        "requestedSize": {
+                          "width": {
+                            "mode": "hug"
+                          },
+                          "height": {
+                            "mode": "hug"
+                          }
+                        },
+                        "intrinsicSize": {
+                          "width": 114.36,
+                          "height": 19.2
+                        },
+                        "frame": {
+                          "left": 188,
+                          "top": 514,
+                          "width": 116,
+                          "height": 20
+                        },
+                        "snappedFrame": {
+                          "left": 188,
+                          "top": 514,
+                          "width": 116,
+                          "height": 20
+                        },
+                        "children": [],
+                        "text": "Superficie ERP",
+                        "transform": "none",
+                        "element": {
+                          "aid": "sh/7adsji5s",
+                          "id": "13",
+                          "kind": "shape"
+                        }
+                      }
+                    ],
+                    "padding": {
+                      "top": 9,
+                      "right": 18,
+                      "bottom": 9,
+                      "left": 18
+                    },
+                    "align": "center",
+                    "justify": "center",
+                    "contentFrame": {
+                      "left": 188,
+                      "top": 514.32,
+                      "width": 114.36,
+                      "height": 19.2
+                    },
+                    "element": {
+                      "aid": "sh/epkzupwb",
+                      "id": "12",
+                      "kind": "shape"
+                    }
+                  },
+                  {
+                    "path": "0.2.0.1",
+                    "kind": "row",
+                    "name": "s5-b1",
+                    "requestedSize": {
+                      "width": {
+                        "mode": "fill",
+                        "value": 1
+                      },
+                      "height": {
+                        "mode": "hug"
+                      }
+                    },
+                    "intrinsicSize": {
+                      "width": 26,
+                      "height": 33.41
+                    },
+                    "frame": {
+                      "left": 170,
+                      "top": 562.52,
+                      "width": 785.65,
+                      "height": 33.41
+                    },
+                    "children": [
+                      {
+                        "path": "0.2.0.1.0",
+                        "kind": "shape",
+                        "name": "s5-b1-dot",
+                        "requestedSize": {
+                          "width": {
+                            "mode": "fixed",
+                            "value": 10
+                          },
+                          "height": {
+                            "mode": "fixed",
+                            "value": 10
+                          }
+                        },
+                        "intrinsicSize": {
+                          "width": 10,
+                          "height": 10
+                        },
+                        "frame": {
+                          "left": 170,
+                          "top": 562.52,
+                          "width": 10,
+                          "height": 10
+                        },
+                        "snappedFrame": {
+                          "left": 170,
+                          "top": 562,
+                          "width": 10,
+                          "height": 10
+                        },
+                        "children": [],
+                        "geometry": "ellipse",
+                        "element": {
+                          "aid": "sh/w7mp0bi9",
+                          "id": "14",
+                          "kind": "shape"
+                        }
+                      },
+                      {
+                        "path": "0.2.0.1.1",
+                        "kind": "text",
+                        "name": "s5-b1-text",
+                        "requestedSize": {
+                          "width": {
+                            "mode": "fill",
+                            "value": 1
+                          },
+                          "height": {
+                            "mode": "hug"
+                          }
+                        },
+                        "intrinsicSize": {
+                          "width": 0,
+                          "height": 33.41
+                        },
+                        "frame": {
+                          "left": 196,
+                          "top": 562.52,
+                          "width": 759.65,
+                          "height": 33.41
+                        },
+                        "snappedFrame": {
+                          "left": 196,
+                          "top": 562,
+                          "width": 760,
+                          "height": 34
+                        },
+                        "children": [],
+                        "text": "Ventas, compras, inventario, finanzas y contactos.",
+                        "transform": "none",
+                        "element": {
+                          "aid": "sh/psfil0rq",
+                          "id": "15",
+                          "kind": "shape"
+                        }
+                      }
+                    ],
+                    "padding": {
+                      "top": 0,
+                      "right": 0,
+                      "bottom": 0,
+                      "left": 0
+                    },
+                    "gap": 16,
+                    "effectiveGap": 16,
+                    "justifyOffset": 0,
+                    "align": "start",
+                    "justify": "start",
+                    "contentFrame": {
+                      "left": 170,
+                      "top": 562.52,
+                      "width": 785.65,
+                      "height": 33.41
+                    },
+                    "items": [
+                      {
+                        "path": "0.2.0.1.0",
+                        "frame": {
+                          "left": 170,
+                          "top": 562.52,
+                          "width": 10,
+                          "height": 10
+                        }
+                      },
+                      {
+                        "path": "0.2.0.1.1",
+                        "frame": {
+                          "left": 196,
+                          "top": 562.52,
+                          "width": 759.65,
+                          "height": 33.41
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "path": "0.2.0.2",
+                    "kind": "row",
+                    "name": "s5-b2",
+                    "requestedSize": {
+                      "width": {
+                        "mode": "fill",
+                        "value": 1
+                      },
+                      "height": {
+                        "mode": "hug"
+                      }
+                    },
+                    "intrinsicSize": {
+                      "width": 26,
+                      "height": 33.41
+                    },
+                    "frame": {
+                      "left": 170,
+                      "top": 615.93,
+                      "width": 785.65,
+                      "height": 33.41
+                    },
+                    "children": [
+                      {
+                        "path": "0.2.0.2.0",
+                        "kind": "shape",
+                        "name": "s5-b2-dot",
+                        "requestedSize": {
+                          "width": {
+                            "mode": "fixed",
+                            "value": 10
+                          },
+                          "height": {
+                            "mode": "fixed",
+                            "value": 10
+                          }
+                        },
+                        "intrinsicSize": {
+                          "width": 10,
+                          "height": 10
+                        },
+                        "frame": {
+                          "left": 170,
+                          "top": 615.93,
+                          "width": 10,
+                          "height": 10
+                        },
+                        "snappedFrame": {
+                          "left": 170,
+                          "top": 616,
+                          "width": 10,
+                          "height": 10
+                        },
+                        "children": [],
+                        "geometry": "ellipse",
+                        "element": {
+                          "aid": "sh/e1w7mp0b",
+                          "id": "16",
+                          "kind": "shape"
+                        }
+                      },
+                      {
+                        "path": "0.2.0.2.1",
+                        "kind": "text",
+                        "name": "s5-b2-text",
+                        "requestedSize": {
+                          "width": {
+                            "mode": "fill",
+                            "value": 1
+                          },
+                          "height": {
+                            "mode": "hug"
+                          }
+                        },
+                        "intrinsicSize": {
+                          "width": 0,
+                          "height": 33.41
+                        },
+                        "frame": {
+                          "left": 196,
+                          "top": 615.93,
+                          "width": 759.65,
+                          "height": 33.41
+                        },
+                        "snappedFrame": {
+                          "left": 196,
+                          "top": 616,
+                          "width": 760,
+                          "height": 34
+                        },
+                        "children": [],
+                        "text": "Procesos, reportes, estados y documentos relacionados.",
+                        "transform": "none",
+                        "element": {
+                          "aid": "sh/7mp0bi9s",
+                          "id": "17",
+                          "kind": "shape"
+                        }
+                      }
+                    ],
+                    "padding": {
+                      "top": 0,
+                      "right": 0,
+                      "bottom": 0,
+                      "left": 0
+                    },
+                    "gap": 16,
+                    "effectiveGap": 16,
+                    "justifyOffset": 0,
+                    "align": "start",
+                    "justify": "start",
+                    "contentFrame": {
+                      "left": 170,
+                      "top": 615.93,
+                      "width": 785.65,
+                      "height": 33.41
+                    },
+                    "items": [
+                      {
+                        "path": "0.2.0.2.0",
+                        "frame": {
+                          "left": 170,
+                          "top": 615.93,
+                          "width": 10,
+                          "height": 10
+                        }
+                      },
+                      {
+                        "path": "0.2.0.2.1",
+                        "frame": {
+                          "left": 196,
+                          "top": 615.93,
+                          "width": 759.65,
+                          "height": 33.41
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "path": "0.2.0.3",
+                    "kind": "row",
+                    "name": "s5-b3",
+                    "requestedSize": {
+                      "width": {
+                        "mode": "fill",
+                        "value": 1
+                      },
+                      "height": {
+                        "mode": "hug"
+                      }
+                    },
+                    "intrinsicSize": {
+                      "width": 26,
+                      "height": 33.41
+                    },
+                    "frame": {
+                      "left": 170,
+                      "top": 669.34,
+                      "width": 785.65,
+                      "height": 33.41
+                    },
+                    "children": [
+                      {
+                        "path": "0.2.0.3.0",
+                        "kind": "shape",
+                        "name": "s5-b3-dot",
+                        "requestedSize": {
+                          "width": {
+                            "mode": "fixed",
+                            "value": 10
+                          },
+                          "height": {
+                            "mode": "fixed",
+                            "value": 10
+                          }
+                        },
+                        "intrinsicSize": {
+                          "width": 10,
+                          "height": 10
+                        },
+                        "frame": {
+                          "left": 170,
+                          "top": 669.34,
+                          "width": 10,
+                          "height": 10
+                        },
+                        "snappedFrame": {
+                          "left": 170,
+                          "top": 670,
+                          "width": 10,
+                          "height": 10
+                        },
+                        "children": [],
+                        "geometry": "ellipse",
+                        "element": {
+                          "aid": "sh/wfyxobm5",
+                          "id": "18",
+                          "kind": "shape"
+                        }
+                      },
+                      {
+                        "path": "0.2.0.3.1",
+                        "kind": "text",
+                        "name": "s5-b3-text",
+                        "requestedSize": {
+                          "width": {
+                            "mode": "fill",
+                            "value": 1
+                          },
+                          "height": {
+                            "mode": "hug"
+                          }
+                        },
+                        "intrinsicSize": {
+                          "width": 0,
+                          "height": 33.41
+                        },
+                        "frame": {
+                          "left": 196,
+                          "top": 669.34,
+                          "width": 759.65,
+                          "height": 33.41
+                        },
+                        "snappedFrame": {
+                          "left": 196,
+                          "top": 670,
+                          "width": 760,
+                          "height": 34
+                        },
+                        "children": [],
+                        "text": "Reglas contables, permisos, defaults y validaciones.",
+                        "transform": "none",
+                        "element": {
+                          "aid": "sh/l0rqd4vm",
+                          "id": "19",
+                          "kind": "shape"
+                        }
+                      }
+                    ],
+                    "padding": {
+                      "top": 0,
+                      "right": 0,
+                      "bottom": 0,
+                      "left": 0
+                    },
+                    "gap": 16,
+                    "effectiveGap": 16,
+                    "justifyOffset": 0,
+                    "align": "start",
+                    "justify": "start",
+                    "contentFrame": {
+                      "left": 170,
+                      "top": 669.34,
+                      "width": 785.65,
+                      "height": 33.41
+                    },
+                    "items": [
+                      {
+                        "path": "0.2.0.3.0",
+                        "frame": {
+                          "left": 170,
+                          "top": 669.34,
+                          "width": 10,
+                          "height": 10
+                        }
+                      },
+                      {
+                        "path": "0.2.0.3.1",
+                        "frame": {
+                          "left": 196,
+                          "top": 669.34,
+                          "width": 759.65,
+                          "height": 33.41
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "path": "0.2.0.4",
+                    "kind": "row",
+                    "name": "s5-b4",
+                    "requestedSize": {
+                      "width": {
+                        "mode": "fill",
+                        "value": 1
+                      },
+                      "height": {
+                        "mode": "hug"
+                      }
+                    },
+                    "intrinsicSize": {
+                      "width": 26,
+                      "height": 33.41
+                    },
+                    "frame": {
+                      "left": 170,
+                      "top": 722.74,
+                      "width": 785.65,
+                      "height": 33.41
+                    },
+                    "children": [
+                      {
+                        "path": "0.2.0.4.0",
+                        "kind": "shape",
+                        "name": "s5-b4-dot",
+                        "requestedSize": {
+                          "width": {
+                            "mode": "fixed",
+                            "value": 10
+                          },
+                          "height": {
+                            "mode": "fixed",
+                            "value": 10
+                          }
+                        },
+                        "intrinsicSize": {
+                          "width": 10,
+                          "height": 10
+                        },
+                        "frame": {
+                          "left": 170,
+                          "top": 722.74,
+                          "width": 10,
+                          "height": 10
+                        },
+                        "snappedFrame": {
+                          "left": 170,
+                          "top": 722,
+                          "width": 10,
+                          "height": 10
+                        },
+                        "children": [],
+                        "geometry": "ellipse",
+                        "element": {
+                          "aid": "sh/pwb2hwfy",
+                          "id": "20",
+                          "kind": "shape"
+                        }
+                      },
+                      {
+                        "path": "0.2.0.4.1",
+                        "kind": "text",
+                        "name": "s5-b4-text",
+                        "requestedSize": {
+                          "width": {
+                            "mode": "fill",
+                            "value": 1
+                          },
+                          "height": {
+                            "mode": "hug"
+                          }
+                        },
+                        "intrinsicSize": {
+                          "width": 0,
+                          "height": 33.41
+                        },
+                        "frame": {
+                          "left": 196,
+                          "top": 722.74,
+                          "width": 759.65,
+                          "height": 33.41
+                        },
+                        "snappedFrame": {
+                          "left": 196,
+                          "top": 722,
+                          "width": 760,
+                          "height": 34
+                        },
+                        "children": [],
+                        "text": "Decisiones de producto que deben quedar auditables.",
+                        "transform": "none",
+                        "element": {
+                          "aid": "sh/0bi9s36h",
+                          "id": "21",
+                          "kind": "shape"
+                        }
+                      }
+                    ],
+                    "padding": {
+                      "top": 0,
+                      "right": 0,
+                      "bottom": 0,
+                      "left": 0
+                    },
+                    "gap": 16,
+                    "effectiveGap": 16,
+                    "justifyOffset": 0,
+                    "align": "start",
+                    "justify": "start",
+                    "contentFrame": {
+                      "left": 170,
+                      "top": 722.74,
+                      "width": 785.65,
+                      "height": 33.41
+                    },
+                    "items": [
+                      {
+                        "path": "0.2.0.4.0",
+                        "frame": {
+                          "left": 170,
+                          "top": 722.74,
+                          "width": 10,
+                          "height": 10
+                        }
+                      },
+                      {
+                        "path": "0.2.0.4.1",
+                        "frame": {
+                          "left": 196,
+                          "top": 722.74,
+                          "width": 759.65,
+                          "height": 33.41
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "padding": {
+                  "top": 0,
+                  "right": 0,
+                  "bottom": 0,
+                  "left": 0
+                },
+                "gap": 20,
+                "effectiveGap": 20,
+                "justifyOffset": 237.05,
+                "align": "start",
+                "justify": "center",
+                "contentFrame": {
+                  "left": 170,
+                  "top": 268.27,
+                  "width": 785.65,
+                  "height": 724.93
+                },
+                "items": [
+                  {
+                    "path": "0.2.0.0",
+                    "frame": {
+                      "left": 170,
+                      "top": 505.32,
+                      "width": 150.36,
+                      "height": 37.2
+                    }
+                  },
+                  {
+                    "path": "0.2.0.1",
+                    "frame": {
+                      "left": 170,
+                      "top": 562.52,
+                      "width": 785.65,
+                      "height": 33.41
+                    }
+                  },
+                  {
+                    "path": "0.2.0.2",
+                    "frame": {
+                      "left": 170,
+                      "top": 615.93,
+                      "width": 785.65,
+                      "height": 33.41
+                    }
+                  },
+                  {
+                    "path": "0.2.0.3",
+                    "frame": {
+                      "left": 170,
+                      "top": 669.34,
+                      "width": 785.65,
+                      "height": 33.41
+                    }
+                  },
+                  {
+                    "path": "0.2.0.4",
+                    "frame": {
+                      "left": 170,
+                      "top": 722.74,
+                      "width": 785.65,
+                      "height": 33.41
+                    }
+                  }
+                ]
+              },
+              {
+                "path": "0.2.1",
+                "kind": "panel",
+                "name": "s5-trace-panel",
+                "requestedSize": {
+                  "width": {
+                    "mode": "fill",
+                    "value": 1
+                  },
+                  "height": {
+                    "mode": "fill",
+                    "value": 1
+                  }
+                },
+                "intrinsicSize": {
+                  "width": 80,
+                  "height": 92
+                },
+                "frame": {
+                  "left": 1001.65,
+                  "top": 268.27,
+                  "width": 868.35,
+                  "height": 724.93
+                },
+                "snappedFrame": {
+                  "left": 1001.65,
+                  "top": 268.27,
+                  "width": 868.35,
+                  "height": 724.93
+                },
+                "children": [
+                  {
+                    "path": "0.2.1.0",
+                    "kind": "column",
+                    "name": "s5-trace",
+                    "requestedSize": {
+                      "width": {
+                        "mode": "fill",
+                        "value": 1
+                      },
+                      "height": {
+                        "mode": "fill",
+                        "value": 1
+                      }
+                    },
+                    "intrinsicSize": {
+                      "width": 0,
+                      "height": 377.6
+                    },
+                    "frame": {
+                      "left": 1041.65,
+                      "top": 314.27,
+                      "width": 788.35,
+                      "height": 632.93
+                    },
+                    "children": [
+                      {
+                        "path": "0.2.1.0.0",
+                        "kind": "text",
+                        "name": "s5-trace-title",
+                        "requestedSize": {
+                          "width": {
+                            "mode": "fill",
+                            "value": 1
+                          },
+                          "height": {
+                            "mode": "hug"
+                          }
+                        },
+                        "intrinsicSize": {
+                          "width": 0,
+                          "height": 52.8
+                        },
+                        "frame": {
+                          "left": 1041.65,
+                          "top": 441.94,
+                          "width": 788.35,
+                          "height": 52.8
+                        },
+                        "snappedFrame": {
+                          "left": 1042,
+                          "top": 442,
+                          "width": 788,
+                          "height": 54
+                        },
+                        "children": [],
+                        "text": "Trazabilidad",
+                        "transform": "none",
+                        "element": {
+                          "aid": "sh/i5sneloj",
+                          "id": "23",
+                          "kind": "shape"
+                        }
+                      },
+                      {
+                        "path": "0.2.1.0.1",
+                        "kind": "row",
+                        "name": "s5-t1",
+                        "requestedSize": {
+                          "width": {
+                            "mode": "fill",
+                            "value": 1
+                          },
+                          "height": {
+                            "mode": "hug"
+                          }
+                        },
+                        "intrinsicSize": {
+                          "width": 62,
+                          "height": 53.2
+                        },
+                        "frame": {
+                          "left": 1041.65,
+                          "top": 522.74,
+                          "width": 788.35,
+                          "height": 53.2
+                        },
+                        "children": [
+                          {
+                            "path": "0.2.1.0.1.0",
+                            "kind": "panel",
+                            "name": "s5-t1-badge",
+                            "requestedSize": {
+                              "width": {
+                                "mode": "fixed",
+                                "value": 44
+                              },
+                              "height": {
+                                "mode": "fixed",
+                                "value": 44
+                              }
+                            },
+                            "intrinsicSize": {
+                              "width": 0,
+                              "height": 21.6
+                            },
+                            "frame": {
+                              "left": 1041.65,
+                              "top": 522.74,
+                              "width": 44,
+                              "height": 44
+                            },
+                            "snappedFrame": {
+                              "left": 1041.65,
+                              "top": 522.74,
+                              "width": 44,
+                              "height": 44
+                            },
+                            "children": [
+                              {
+                                "path": "0.2.1.0.1.0.0",
+                                "kind": "text",
+                                "name": "s5-t1-badge-text",
+                                "requestedSize": {
+                                  "width": {
+                                    "mode": "fill",
+                                    "value": 1
+                                  },
+                                  "height": {
+                                    "mode": "hug"
+                                  }
+                                },
+                                "intrinsicSize": {
+                                  "width": 0,
+                                  "height": 21.6
+                                },
+                                "frame": {
+                                  "left": 1042,
+                                  "top": 534,
+                                  "width": 44,
+                                  "height": 20
+                                },
+                                "snappedFrame": {
+                                  "left": 1042,
+                                  "top": 534,
+                                  "width": 44,
+                                  "height": 20
+                                },
+                                "children": [],
+                                "text": "1",
+                                "transform": "none",
+                                "element": {
+                                  "aid": "sh/wjudg7ad",
+                                  "id": "25",
+                                  "kind": "shape"
+                                }
+                              }
+                            ],
+                            "padding": {
+                              "top": 0,
+                              "right": 0,
+                              "bottom": 0,
+                              "left": 0
+                            },
+                            "align": "center",
+                            "justify": "center",
+                            "contentFrame": {
+                              "left": 1041.65,
+                              "top": 522.74,
+                              "width": 44,
+                              "height": 44
+                            },
+                            "element": {
+                              "aid": "sh/p4r65wju",
+                              "id": "24",
+                              "kind": "shape"
+                            }
+                          },
+                          {
+                            "path": "0.2.1.0.1.1",
+                            "kind": "column",
+                            "name": "s5-t1-copy",
+                            "requestedSize": {
+                              "width": {
+                                "mode": "fill",
+                                "value": 1
+                              },
+                              "height": {
+                                "mode": "hug"
+                              }
+                            },
+                            "intrinsicSize": {
+                              "width": 0,
+                              "height": 53.2
+                            },
+                            "frame": {
+                              "left": 1103.65,
+                              "top": 522.74,
+                              "width": 726.35,
+                              "height": 53.2
+                            },
+                            "children": [
+                              {
+                                "path": "0.2.1.0.1.1.0",
+                                "kind": "text",
+                                "name": "s5-t1-label",
+                                "requestedSize": {
+                                  "width": {
+                                    "mode": "fill",
+                                    "value": 1
+                                  },
+                                  "height": {
+                                    "mode": "hug"
+                                  }
+                                },
+                                "intrinsicSize": {
+                                  "width": 0,
+                                  "height": 30
+                                },
+                                "frame": {
+                                  "left": 1103.65,
+                                  "top": 522.74,
+                                  "width": 726.35,
+                                  "height": 30
+                                },
+                                "snappedFrame": {
+                                  "left": 1104,
+                                  "top": 522,
+                                  "width": 726,
+                                  "height": 30
+                                },
+                                "children": [],
+                                "text": "Dato original",
+                                "transform": "none",
+                                "element": {
+                                  "aid": "sh/7y1kre1w",
+                                  "id": "26",
+                                  "kind": "shape"
+                                }
+                              },
+                              {
+                                "path": "0.2.1.0.1.1.1",
+                                "kind": "text",
+                                "name": "s5-t1-detail",
+                                "requestedSize": {
+                                  "width": {
+                                    "mode": "fill",
+                                    "value": 1
+                                  },
+                                  "height": {
+                                    "mode": "hug"
+                                  }
+                                },
+                                "intrinsicSize": {
+                                  "width": 0,
+                                  "height": 19.2
+                                },
+                                "frame": {
+                                  "left": 1103.65,
+                                  "top": 556.74,
+                                  "width": 726.35,
+                                  "height": 19.2
+                                },
+                                "snappedFrame": {
+                                  "left": 1104,
+                                  "top": 556,
+                                  "width": 726,
+                                  "height": 20
+                                },
+                                "children": [],
+                                "text": "metadata del ERP",
+                                "transform": "none",
+                                "element": {
+                                  "aid": "sh/ed8v6psf",
+                                  "id": "27",
+                                  "kind": "shape"
+                                }
+                              }
+                            ],
+                            "padding": {
+                              "top": 0,
+                              "right": 0,
+                              "bottom": 0,
+                              "left": 0
+                            },
+                            "gap": 4,
+                            "effectiveGap": 4,
+                            "justifyOffset": 0,
+                            "align": "start",
+                            "justify": "start",
+                            "contentFrame": {
+                              "left": 1103.65,
+                              "top": 522.74,
+                              "width": 726.35,
+                              "height": 53.2
+                            },
+                            "items": [
+                              {
+                                "path": "0.2.1.0.1.1.0",
+                                "frame": {
+                                  "left": 1103.65,
+                                  "top": 522.74,
+                                  "width": 726.35,
+                                  "height": 30
+                                }
+                              },
+                              {
+                                "path": "0.2.1.0.1.1.1",
+                                "frame": {
+                                  "left": 1103.65,
+                                  "top": 556.74,
+                                  "width": 726.35,
+                                  "height": 19.2
+                                }
+                              }
+                            ]
+                          }
+                        ],
+                        "padding": {
+                          "top": 0,
+                          "right": 0,
+                          "bottom": 0,
+                          "left": 0
+                        },
+                        "gap": 18,
+                        "effectiveGap": 18,
+                        "justifyOffset": 0,
+                        "align": "start",
+                        "justify": "start",
+                        "contentFrame": {
+                          "left": 1041.65,
+                          "top": 522.74,
+                          "width": 788.35,
+                          "height": 53.2
+                        },
+                        "items": [
+                          {
+                            "path": "0.2.1.0.1.0",
+                            "frame": {
+                              "left": 1041.65,
+                              "top": 522.74,
+                              "width": 44,
+                              "height": 44
+                            }
+                          },
+                          {
+                            "path": "0.2.1.0.1.1",
+                            "frame": {
+                              "left": 1103.65,
+                              "top": 522.74,
+                              "width": 726.35,
+                              "height": 53.2
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "path": "0.2.1.0.2",
+                        "kind": "row",
+                        "name": "s5-t2",
+                        "requestedSize": {
+                          "width": {
+                            "mode": "fill",
+                            "value": 1
+                          },
+                          "height": {
+                            "mode": "hug"
+                          }
+                        },
+                        "intrinsicSize": {
+                          "width": 62,
+                          "height": 53.2
+                        },
+                        "frame": {
+                          "left": 1041.65,
+                          "top": 603.94,
+                          "width": 788.35,
+                          "height": 53.2
+                        },
+                        "children": [
+                          {
+                            "path": "0.2.1.0.2.0",
+                            "kind": "panel",
+                            "name": "s5-t2-badge",
+                            "requestedSize": {
+                              "width": {
+                                "mode": "fixed",
+                                "value": 44
+                              },
+                              "height": {
+                                "mode": "fixed",
+                                "value": 44
+                              }
+                            },
+                            "intrinsicSize": {
+                              "width": 0,
+                              "height": 21.6
+                            },
+                            "frame": {
+                              "left": 1041.65,
+                              "top": 603.94,
+                              "width": 44,
+                              "height": 44
+                            },
+                            "snappedFrame": {
+                              "left": 1041.65,
+                              "top": 603.94,
+                              "width": 44,
+                              "height": 44
+                            },
+                            "children": [
+                              {
+                                "path": "0.2.1.0.2.0.0",
+                                "kind": "text",
+                                "name": "s5-t2-badge-text",
+                                "requestedSize": {
+                                  "width": {
+                                    "mode": "fill",
+                                    "value": 1
+                                  },
+                                  "height": {
+                                    "mode": "hug"
+                                  }
+                                },
+                                "intrinsicSize": {
+                                  "width": 0,
+                                  "height": 21.6
+                                },
+                                "frame": {
+                                  "left": 1042,
+                                  "top": 616,
+                                  "width": 44,
+                                  "height": 20
+                                },
+                                "snappedFrame": {
+                                  "left": 1042,
+                                  "top": 616,
+                                  "width": 44,
+                                  "height": 20
+                                },
+                                "children": [],
+                                "text": "2",
+                                "transform": "none",
+                                "element": {
+                                  "aid": "sh/0nuxc3yl",
+                                  "id": "29",
+                                  "kind": "shape"
+                                }
+                              }
+                            ],
+                            "padding": {
+                              "top": 0,
+                              "right": 0,
+                              "bottom": 0,
+                              "left": 0
+                            },
+                            "align": "center",
+                            "justify": "center",
+                            "contentFrame": {
+                              "left": 1041.65,
+                              "top": 603.94,
+                              "width": 44,
+                              "height": 44
+                            },
+                            "element": {
+                              "aid": "sh/p8nqxs72",
+                              "id": "28",
+                              "kind": "shape"
+                            }
+                          },
+                          {
+                            "path": "0.2.1.0.2.1",
+                            "kind": "column",
+                            "name": "s5-t2-copy",
+                            "requestedSize": {
+                              "width": {
+                                "mode": "fill",
+                                "value": 1
+                              },
+                              "height": {
+                                "mode": "hug"
+                              }
+                            },
+                            "intrinsicSize": {
+                              "width": 0,
+                              "height": 53.2
+                            },
+                            "frame": {
+                              "left": 1103.65,
+                              "top": 603.94,
+                              "width": 726.35,
+                              "height": 53.2
+                            },
+                            "children": [
+                              {
+                                "path": "0.2.1.0.2.1.0",
+                                "kind": "text",
+                                "name": "s5-t2-label",
+                                "requestedSize": {
+                                  "width": {
+                                    "mode": "fill",
+                                    "value": 1
+                                  },
+                                  "height": {
+                                    "mode": "hug"
+                                  }
+                                },
+                                "intrinsicSize": {
+                                  "width": 0,
+                                  "height": 30
+                                },
+                                "frame": {
+                                  "left": 1103.65,
+                                  "top": 603.94,
+                                  "width": 726.35,
+                                  "height": 30
+                                },
+                                "snappedFrame": {
+                                  "left": 1104,
+                                  "top": 604,
+                                  "width": 726,
+                                  "height": 30
+                                },
+                                "children": [],
+                                "text": "Decisión de Producto",
+                                "transform": "none",
+                                "element": {
+                                  "aid": "sh/q5o7qpg3",
+                                  "id": "30",
+                                  "kind": "shape"
+                                }
+                              },
+                              {
+                                "path": "0.2.1.0.2.1.1",
+                                "kind": "text",
+                                "name": "s5-t2-detail",
+                                "requestedSize": {
+                                  "width": {
+                                    "mode": "fill",
+                                    "value": 1
+                                  },
+                                  "height": {
+                                    "mode": "hug"
+                                  }
+                                },
+                                "intrinsicSize": {
+                                  "width": 0,
+                                  "height": 19.2
+                                },
+                                "frame": {
+                                  "left": 1103.65,
+                                  "top": 637.94,
+                                  "width": 726.35,
+                                  "height": 19.2
+                                },
+                                "snappedFrame": {
+                                  "left": 1104,
+                                  "top": 638,
+                                  "width": 726,
+                                  "height": 20
+                                },
+                                "children": [],
+                                "text": "curación y simplificación",
+                                "transform": "none",
+                                "element": {
+                                  "aid": "sh/jqh0fepk",
+                                  "id": "31",
+                                  "kind": "shape"
+                                }
+                              }
+                            ],
+                            "padding": {
+                              "top": 0,
+                              "right": 0,
+                              "bottom": 0,
+                              "left": 0
+                            },
+                            "gap": 4,
+                            "effectiveGap": 4,
+                            "justifyOffset": 0,
+                            "align": "start",
+                            "justify": "start",
+                            "contentFrame": {
+                              "left": 1103.65,
+                              "top": 603.94,
+                              "width": 726.35,
+                              "height": 53.2
+                            },
+                            "items": [
+                              {
+                                "path": "0.2.1.0.2.1.0",
+                                "frame": {
+                                  "left": 1103.65,
+                                  "top": 603.94,
+                                  "width": 726.35,
+                                  "height": 30
+                                }
+                              },
+                              {
+                                "path": "0.2.1.0.2.1.1",
+                                "frame": {
+                                  "left": 1103.65,
+                                  "top": 637.94,
+                                  "width": 726.35,
+                                  "height": 19.2
+                                }
+                              }
+                            ]
+                          }
+                        ],
+                        "padding": {
+                          "top": 0,
+                          "right": 0,
+                          "bottom": 0,
+                          "left": 0
+                        },
+                        "gap": 18,
+                        "effectiveGap": 18,
+                        "justifyOffset": 0,
+                        "align": "start",
+                        "justify": "start",
+                        "contentFrame": {
+                          "left": 1041.65,
+                          "top": 603.94,
+                          "width": 788.35,
+                          "height": 53.2
+                        },
+                        "items": [
+                          {
+                            "path": "0.2.1.0.2.0",
+                            "frame": {
+                              "left": 1041.65,
+                              "top": 603.94,
+                              "width": 44,
+                              "height": 44
+                            }
+                          },
+                          {
+                            "path": "0.2.1.0.2.1",
+                            "frame": {
+                              "left": 1103.65,
+                              "top": 603.94,
+                              "width": 726.35,
+                              "height": 53.2
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "path": "0.2.1.0.3",
+                        "kind": "row",
+                        "name": "s5-t3",
+                        "requestedSize": {
+                          "width": {
+                            "mode": "fill",
+                            "value": 1
+                          },
+                          "height": {
+                            "mode": "hug"
+                          }
+                        },
+                        "intrinsicSize": {
+                          "width": 62,
+                          "height": 53.2
+                        },
+                        "frame": {
+                          "left": 1041.65,
+                          "top": 685.14,
+                          "width": 788.35,
+                          "height": 53.2
+                        },
+                        "children": [
+                          {
+                            "path": "0.2.1.0.3.0",
+                            "kind": "panel",
+                            "name": "s5-t3-badge",
+                            "requestedSize": {
+                              "width": {
+                                "mode": "fixed",
+                                "value": 44
+                              },
+                              "height": {
+                                "mode": "fixed",
+                                "value": 44
+                              }
+                            },
+                            "intrinsicSize": {
+                              "width": 0,
+                              "height": 21.6
+                            },
+                            "frame": {
+                              "left": 1041.65,
+                              "top": 685.14,
+                              "width": 44,
+                              "height": 44
+                            },
+                            "snappedFrame": {
+                              "left": 1041.65,
+                              "top": 685.14,
+                              "width": 44,
+                              "height": 44
+                            },
+                            "children": [
+                              {
+                                "path": "0.2.1.0.3.0.0",
+                                "kind": "text",
+                                "name": "s5-t3-badge-text",
+                                "requestedSize": {
+                                  "width": {
+                                    "mode": "fill",
+                                    "value": 1
+                                  },
+                                  "height": {
+                                    "mode": "hug"
+                                  }
+                                },
+                                "intrinsicSize": {
+                                  "width": 0,
+                                  "height": 21.6
+                                },
+                                "frame": {
+                                  "left": 1042,
+                                  "top": 698,
+                                  "width": 44,
+                                  "height": 20
+                                },
+                                "snappedFrame": {
+                                  "left": 1042,
+                                  "top": 698,
+                                  "width": 44,
+                                  "height": 20
+                                },
+                                "children": [],
+                                "text": "3",
+                                "transform": "none",
+                                "element": {
+                                  "aid": "sh/1w7mp0bi",
+                                  "id": "33",
+                                  "kind": "shape"
+                                }
+                              }
+                            ],
+                            "padding": {
+                              "top": 0,
+                              "right": 0,
+                              "bottom": 0,
+                              "left": 0
+                            },
+                            "align": "center",
+                            "justify": "center",
+                            "contentFrame": {
+                              "left": 1041.65,
+                              "top": 685.14,
+                              "width": 44,
+                              "height": 44
+                            },
+                            "element": {
+                              "aid": "sh/8bat47y1",
+                              "id": "32",
+                              "kind": "shape"
+                            }
+                          },
+                          {
+                            "path": "0.2.1.0.3.1",
+                            "kind": "column",
+                            "name": "s5-t3-copy",
+                            "requestedSize": {
+                              "width": {
+                                "mode": "fill",
+                                "value": 1
+                              },
+                              "height": {
+                                "mode": "hug"
+                              }
+                            },
+                            "intrinsicSize": {
+                              "width": 0,
+                              "height": 53.2
+                            },
+                            "frame": {
+                              "left": 1103.65,
+                              "top": 685.14,
+                              "width": 726.35,
+                              "height": 53.2
+                            },
+                            "children": [
+                              {
+                                "path": "0.2.1.0.3.1.0",
+                                "kind": "text",
+                                "name": "s5-t3-label",
+                                "requestedSize": {
+                                  "width": {
+                                    "mode": "fill",
+                                    "value": 1
+                                  },
+                                  "height": {
+                                    "mode": "hug"
+                                  }
+                                },
+                                "intrinsicSize": {
+                                  "width": 0,
+                                  "height": 30
+                                },
+                                "frame": {
+                                  "left": 1103.65,
+                                  "top": 685.14,
+                                  "width": 726.35,
+                                  "height": 30
+                                },
+                                "snappedFrame": {
+                                  "left": 1104,
+                                  "top": 686,
+                                  "width": 726,
+                                  "height": 30
+                                },
+                                "children": [],
+                                "text": "Contrato y runtime",
+                                "transform": "none",
+                                "element": {
+                                  "aid": "sh/qh0fepkz",
+                                  "id": "34",
+                                  "kind": "shape"
+                                }
+                              },
+                              {
+                                "path": "0.2.1.0.3.1.1",
+                                "kind": "text",
+                                "name": "s5-t3-detail",
+                                "requestedSize": {
+                                  "width": {
+                                    "mode": "fill",
+                                    "value": 1
+                                  },
+                                  "height": {
+                                    "mode": "hug"
+                                  }
+                                },
+                                "intrinsicSize": {
+                                  "width": 0,
+                                  "height": 19.2
+                                },
+                                "frame": {
+                                  "left": 1103.65,
+                                  "top": 719.14,
+                                  "width": 726.35,
+                                  "height": 19.2
+                                },
+                                "snappedFrame": {
+                                  "left": 1104,
+                                  "top": 720,
+                                  "width": 726,
+                                  "height": 20
+                                },
+                                "children": [],
+                                "text": "NEO + UI + tools",
+                                "transform": "none",
+                                "element": {
+                                  "aid": "sh/j2t83itg",
+                                  "id": "35",
+                                  "kind": "shape"
+                                }
+                              }
+                            ],
+                            "padding": {
+                              "top": 0,
+                              "right": 0,
+                              "bottom": 0,
+                              "left": 0
+                            },
+                            "gap": 4,
+                            "effectiveGap": 4,
+                            "justifyOffset": 0,
+                            "align": "start",
+                            "justify": "start",
+                            "contentFrame": {
+                              "left": 1103.65,
+                              "top": 685.14,
+                              "width": 726.35,
+                              "height": 53.2
+                            },
+                            "items": [
+                              {
+                                "path": "0.2.1.0.3.1.0",
+                                "frame": {
+                                  "left": 1103.65,
+                                  "top": 685.14,
+                                  "width": 726.35,
+                                  "height": 30
+                                }
+                              },
+                              {
+                                "path": "0.2.1.0.3.1.1",
+                                "frame": {
+                                  "left": 1103.65,
+                                  "top": 719.14,
+                                  "width": 726.35,
+                                  "height": 19.2
+                                }
+                              }
+                            ]
+                          }
+                        ],
+                        "padding": {
+                          "top": 0,
+                          "right": 0,
+                          "bottom": 0,
+                          "left": 0
+                        },
+                        "gap": 18,
+                        "effectiveGap": 18,
+                        "justifyOffset": 0,
+                        "align": "start",
+                        "justify": "start",
+                        "contentFrame": {
+                          "left": 1041.65,
+                          "top": 685.14,
+                          "width": 788.35,
+                          "height": 53.2
+                        },
+                        "items": [
+                          {
+                            "path": "0.2.1.0.3.0",
+                            "frame": {
+                              "left": 1041.65,
+                              "top": 685.14,
+                              "width": 44,
+                              "height": 44
+                            }
+                          },
+                          {
+                            "path": "0.2.1.0.3.1",
+                            "frame": {
+                              "left": 1103.65,
+                              "top": 685.14,
+                              "width": 726.35,
+                              "height": 53.2
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "path": "0.2.1.0.4",
+                        "kind": "row",
+                        "name": "s5-t4",
+                        "requestedSize": {
+                          "width": {
+                            "mode": "fill",
+                            "value": 1
+                          },
+                          "height": {
+                            "mode": "hug"
+                          }
+                        },
+                        "intrinsicSize": {
+                          "width": 62,
+                          "height": 53.2
+                        },
+                        "frame": {
+                          "left": 1041.65,
+                          "top": 766.34,
+                          "width": 788.35,
+                          "height": 53.2
+                        },
+                        "children": [
+                          {
+                            "path": "0.2.1.0.4.0",
+                            "kind": "panel",
+                            "name": "s5-t4-badge",
+                            "requestedSize": {
+                              "width": {
+                                "mode": "fixed",
+                                "value": 44
+                              },
+                              "height": {
+                                "mode": "fixed",
+                                "value": 44
+                              }
+                            },
+                            "intrinsicSize": {
+                              "width": 0,
+                              "height": 21.6
+                            },
+                            "frame": {
+                              "left": 1041.65,
+                              "top": 766.34,
+                              "width": 44,
+                              "height": 44
+                            },
+                            "snappedFrame": {
+                              "left": 1041.65,
+                              "top": 766.34,
+                              "width": 44,
+                              "height": 44
+                            },
+                            "children": [
+                              {
+                                "path": "0.2.1.0.4.0.0",
+                                "kind": "text",
+                                "name": "s5-t4-badge-text",
+                                "requestedSize": {
+                                  "width": {
+                                    "mode": "fill",
+                                    "value": 1
+                                  },
+                                  "height": {
+                                    "mode": "hug"
+                                  }
+                                },
+                                "intrinsicSize": {
+                                  "width": 0,
+                                  "height": 21.6
+                                },
+                                "frame": {
+                                  "left": 1042,
+                                  "top": 778,
+                                  "width": 44,
+                                  "height": 20
+                                },
+                                "snappedFrame": {
+                                  "left": 1042,
+                                  "top": 778,
+                                  "width": 44,
+                                  "height": 20
+                                },
+                                "children": [],
+                                "text": "4",
+                                "transform": "none",
+                                "element": {
+                                  "aid": "sh/18jqh0fe",
+                                  "id": "37",
+                                  "kind": "shape"
+                                }
+                              }
+                            ],
+                            "padding": {
+                              "top": 0,
+                              "right": 0,
+                              "bottom": 0,
+                              "left": 0
+                            },
+                            "align": "center",
+                            "justify": "center",
+                            "contentFrame": {
+                              "left": 1041.65,
+                              "top": 766.34,
+                              "width": 44,
+                              "height": 44
+                            },
+                            "element": {
+                              "aid": "sh/8nqxs72x",
+                              "id": "36",
+                              "kind": "shape"
+                            }
+                          },
+                          {
+                            "path": "0.2.1.0.4.1",
+                            "kind": "column",
+                            "name": "s5-t4-copy",
+                            "requestedSize": {
+                              "width": {
+                                "mode": "fill",
+                                "value": 1
+                              },
+                              "height": {
+                                "mode": "hug"
+                              }
+                            },
+                            "intrinsicSize": {
+                              "width": 0,
+                              "height": 53.2
+                            },
+                            "frame": {
+                              "left": 1103.65,
+                              "top": 766.34,
+                              "width": 726.35,
+                              "height": 53.2
+                            },
+                            "children": [
+                              {
+                                "path": "0.2.1.0.4.1.0",
+                                "kind": "text",
+                                "name": "s5-t4-label",
+                                "requestedSize": {
+                                  "width": {
+                                    "mode": "fill",
+                                    "value": 1
+                                  },
+                                  "height": {
+                                    "mode": "hug"
+                                  }
+                                },
+                                "intrinsicSize": {
+                                  "width": 0,
+                                  "height": 30
+                                },
+                                "frame": {
+                                  "left": 1103.65,
+                                  "top": 766.34,
+                                  "width": 726.35,
+                                  "height": 30
+                                },
+                                "snappedFrame": {
+                                  "left": 1104,
+                                  "top": 766,
+                                  "width": 726,
+                                  "height": 30
+                                },
+                                "children": [],
+                                "text": "Evidencia funcional",
+                                "transform": "none",
+                                "element": {
+                                  "aid": "sh/ulwval87",
+                                  "id": "38",
+                                  "kind": "shape"
+                                }
+                              },
+                              {
+                                "path": "0.2.1.0.4.1.1",
+                                "kind": "text",
+                                "name": "s5-t4-detail",
+                                "requestedSize": {
+                                  "width": {
+                                    "mode": "fill",
+                                    "value": 1
+                                  },
+                                  "height": {
+                                    "mode": "hug"
+                                  }
+                                },
+                                "intrinsicSize": {
+                                  "width": 0,
+                                  "height": 19.2
+                                },
+                                "frame": {
+                                  "left": 1103.65,
+                                  "top": 800.34,
+                                  "width": 726.35,
+                                  "height": 19.2
+                                },
+                                "snappedFrame": {
+                                  "left": 1104,
+                                  "top": 800,
+                                  "width": 726,
+                                  "height": 20
+                                },
+                                "children": [],
+                                "text": "tests + documentación",
+                                "transform": "none",
+                                "element": {
+                                  "aid": "sh/j6tovaho",
+                                  "id": "39",
+                                  "kind": "shape"
+                                }
+                              }
+                            ],
+                            "padding": {
+                              "top": 0,
+                              "right": 0,
+                              "bottom": 0,
+                              "left": 0
+                            },
+                            "gap": 4,
+                            "effectiveGap": 4,
+                            "justifyOffset": 0,
+                            "align": "start",
+                            "justify": "start",
+                            "contentFrame": {
+                              "left": 1103.65,
+                              "top": 766.34,
+                              "width": 726.35,
+                              "height": 53.2
+                            },
+                            "items": [
+                              {
+                                "path": "0.2.1.0.4.1.0",
+                                "frame": {
+                                  "left": 1103.65,
+                                  "top": 766.34,
+                                  "width": 726.35,
+                                  "height": 30
+                                }
+                              },
+                              {
+                                "path": "0.2.1.0.4.1.1",
+                                "frame": {
+                                  "left": 1103.65,
+                                  "top": 800.34,
+                                  "width": 726.35,
+                                  "height": 19.2
+                                }
+                              }
+                            ]
+                          }
+                        ],
+                        "padding": {
+                          "top": 0,
+                          "right": 0,
+                          "bottom": 0,
+                          "left": 0
+                        },
+                        "gap": 18,
+                        "effectiveGap": 18,
+                        "justifyOffset": 0,
+                        "align": "start",
+                        "justify": "start",
+                        "contentFrame": {
+                          "left": 1041.65,
+                          "top": 766.34,
+                          "width": 788.35,
+                          "height": 53.2
+                        },
+                        "items": [
+                          {
+                            "path": "0.2.1.0.4.0",
+                            "frame": {
+                              "left": 1041.65,
+                              "top": 766.34,
+                              "width": 44,
+                              "height": 44
+                            }
+                          },
+                          {
+                            "path": "0.2.1.0.4.1",
+                            "frame": {
+                              "left": 1103.65,
+                              "top": 766.34,
+                              "width": 726.35,
+                              "height": 53.2
+                            }
+                          }
+                        ]
+                      }
+                    ],
+                    "padding": {
+                      "top": 0,
+                      "right": 0,
+                      "bottom": 0,
+                      "left": 0
+                    },
+                    "gap": 28,
+                    "effectiveGap": 28,
+                    "justifyOffset": 127.66,
+                    "align": "start",
+                    "justify": "center",
+                    "contentFrame": {
+                      "left": 1041.65,
+                      "top": 314.27,
+                      "width": 788.35,
+                      "height": 632.93
+                    },
+                    "items": [
+                      {
+                        "path": "0.2.1.0.0",
+                        "frame": {
+                          "left": 1041.65,
+                          "top": 441.94,
+                          "width": 788.35,
+                          "height": 52.8
+                        }
+                      },
+                      {
+                        "path": "0.2.1.0.1",
+                        "frame": {
+                          "left": 1041.65,
+                          "top": 522.74,
+                          "width": 788.35,
+                          "height": 53.2
+                        }
+                      },
+                      {
+                        "path": "0.2.1.0.2",
+                        "frame": {
+                          "left": 1041.65,
+                          "top": 603.94,
+                          "width": 788.35,
+                          "height": 53.2
+                        }
+                      },
+                      {
+                        "path": "0.2.1.0.3",
+                        "frame": {
+                          "left": 1041.65,
+                          "top": 685.14,
+                          "width": 788.35,
+                          "height": 53.2
+                        }
+                      },
+                      {
+                        "path": "0.2.1.0.4",
+                        "frame": {
+                          "left": 1041.65,
+                          "top": 766.34,
+                          "width": 788.35,
+                          "height": 53.2
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "padding": {
+                  "top": 46,
+                  "right": 40,
+                  "bottom": 46,
+                  "left": 40
+                },
+                "align": "start",
+                "justify": "start",
+                "contentFrame": {
+                  "left": 1041.65,
+                  "top": 314.27,
+                  "width": 788.35,
+                  "height": 632.93
+                },
+                "element": {
+                  "aid": "sh/7qpg3ex0",
+                  "id": "22",
+                  "kind": "shape"
+                }
+              }
+            ],
+            "padding": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "columnGap": 46,
+            "rowGap": 0,
+            "alignItems": "stretch",
+            "justifyItems": "stretch",
+            "contentFrame": {
+              "left": 170,
+              "top": 268.27,
+              "width": 1700,
+              "height": 724.93
+            },
+            "columns": [
+              {
+                "mode": "fr",
+                "value": 0.95
+              },
+              {
+                "mode": "fr",
+                "value": 1.05
+              }
+            ],
+            "autoRows": "auto",
+            "resolvedRows": [
+              "auto"
+            ],
+            "columnSizes": [
+              785.65,
+              868.35
+            ],
+            "rowSizes": [
+              724.93
+            ],
+            "cells": [
+              {
+                "path": "0.2.0",
+                "column": 0,
+                "row": 0,
+                "columnSpan": 1,
+                "rowSpan": 1,
+                "cellFrame": {
+                  "left": 170,
+                  "top": 268.27,
+                  "width": 785.65,
+                  "height": 724.93
+                }
+              },
+              {
+                "path": "0.2.1",
+                "column": 1,
+                "row": 0,
+                "columnSpan": 1,
+                "rowSpan": 1,
+                "cellFrame": {
+                  "left": 1001.65,
+                  "top": 268.27,
+                  "width": 868.35,
+                  "height": 724.93
+                }
+              }
+            ]
+          },
+          {
+            "path": "0.3",
+            "kind": "row",
+            "name": "footer-5",
+            "requestedSize": {
+              "width": {
+                "mode": "fill",
+                "value": 1
+              },
+              "height": {
+                "mode": "hug"
+              }
+            },
+            "intrinsicSize": {
+              "width": 880,
+              "height": 16.8
+            },
+            "frame": {
+              "left": 170,
+              "top": 1021.2,
+              "width": 1700,
+              "height": 16.8
+            },
+            "children": [
+              {
+                "path": "0.3.0",
+                "kind": "text",
+                "name": "footer-left-5",
+                "requestedSize": {
+                  "width": {
+                    "mode": "fixed",
+                    "value": 620
+                  },
+                  "height": {
+                    "mode": "hug"
+                  }
+                },
+                "intrinsicSize": {
+                  "width": 620,
+                  "height": 16.8
+                },
+                "frame": {
+                  "left": 170,
+                  "top": 1022,
+                  "width": 620,
+                  "height": 16
+                },
+                "snappedFrame": {
+                  "left": 170,
+                  "top": 1022,
+                  "width": 620,
+                  "height": 16
+                },
+                "children": [],
+                "text": "Etendo GO · Producto · 2026-04-30",
+                "transform": "none",
+                "element": {
+                  "aid": "sh/nuxc3ylc",
+                  "id": "40",
+                  "kind": "shape"
+                }
+              },
+              {
+                "path": "0.3.1",
+                "kind": "text",
+                "name": "footer-right-5",
+                "requestedSize": {
+                  "width": {
+                    "mode": "fixed",
+                    "value": 260
+                  },
+                  "height": {
+                    "mode": "hug"
+                  }
+                },
+                "intrinsicSize": {
+                  "width": 260,
+                  "height": 16.8
+                },
+                "frame": {
+                  "left": 1610,
+                  "top": 1022,
+                  "width": 260,
+                  "height": 16
+                },
+                "snappedFrame": {
+                  "left": 1610,
+                  "top": 1022,
+                  "width": 260,
+                  "height": 16
+                },
+                "children": [],
+                "text": "Schema Forge snapshot",
+                "transform": "none",
+                "element": {
+                  "aid": "sh/y90je9cv",
+                  "id": "41",
+                  "kind": "shape"
+                }
+              }
+            ],
+            "padding": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "gap": 0,
+            "effectiveGap": 820,
+            "justifyOffset": 0,
+            "align": "center",
+            "justify": "between",
+            "contentFrame": {
+              "left": 170,
+              "top": 1021.2,
+              "width": 1700,
+              "height": 16.8
+            },
+            "items": [
+              {
+                "path": "0.3.0",
+                "frame": {
+                  "left": 170,
+                  "top": 1022,
+                  "width": 620,
+                  "height": 16
+                }
+              },
+              {
+                "path": "0.3.1",
+                "frame": {
+                  "left": 1610,
+                  "top": 1022,
+                  "width": 260,
+                  "height": 16
+                }
+              }
+            ]
+          }
+        ],
+        "padding": {
+          "top": 42,
+          "right": 50,
+          "bottom": 42,
+          "left": 50
+        },
+        "columnGap": 34,
+        "rowGap": 28,
+        "alignItems": "stretch",
+        "justifyItems": "stretch",
+        "contentFrame": {
+          "left": 50,
+          "top": 42,
+          "width": 1820,
+          "height": 996
+        },
+        "columns": [
+          {
+            "mode": "fixed",
+            "value": 86
+          },
+          {
+            "mode": "fr",
+            "value": 1
+          }
+        ],
+        "rows": [
+          "auto",
+          {
+            "mode": "fr",
+            "value": 1
+          },
+          "auto"
+        ],
+        "autoRows": "auto",
+        "resolvedRows": [
+          "auto",
+          {
+            "mode": "fr",
+            "value": 1
+          },
+          "auto"
+        ],
+        "columnSizes": [
+          86,
+          1700
+        ],
+        "rowSizes": [
+          198.27,
+          724.93,
+          16.8
+        ],
+        "cells": [
+          {
+            "path": "0.0",
+            "column": 0,
+            "row": 0,
+            "columnSpan": 1,
+            "rowSpan": 3,
+            "cellFrame": {
+              "left": 50,
+              "top": 42,
+              "width": 86,
+              "height": 996
+            }
+          },
+          {
+            "path": "0.1",
+            "column": 1,
+            "row": 0,
+            "columnSpan": 1,
+            "rowSpan": 1,
+            "cellFrame": {
+              "left": 170,
+              "top": 42,
+              "width": 1700,
+              "height": 198.27
+            }
+          },
+          {
+            "path": "0.2",
+            "column": 1,
+            "row": 1,
+            "columnSpan": 1,
+            "rowSpan": 1,
+            "cellFrame": {
+              "left": 170,
+              "top": 268.27,
+              "width": 1700,
+              "height": 724.93
+            }
+          },
+          {
+            "path": "0.3",
+            "column": 1,
+            "row": 2,
+            "columnSpan": 1,
+            "rowSpan": 1,
+            "cellFrame": {
+              "left": 170,
+              "top": 1021.2,
+              "width": 1700,
+              "height": 16.8
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

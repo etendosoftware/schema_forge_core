@@ -27,7 +27,7 @@ export function applyProgressMessage(steps, message) {
     ? {
       ...step,
       status: mapBackendStepStatus(message.status),
-      ms: message.ms || null,
+      ms: message.ms ?? null,
       error: message.status === 'error' ? message.message : null,
     }
     : step);

@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 const RUN_ONBOARDING_E2E = process.env.RUN_ONBOARDING_E2E === '1';
+const ONBOARDING_E2E_EMAIL_DOMAIN = process.env.ONBOARDING_E2E_EMAIL_DOMAIN || 'example.invalid';
+
 function buildDisposablePassword(suffix) {
   return `Qa-${suffix}-Pass!42`;
 }
@@ -12,7 +14,7 @@ test.describe('Onboarding invoice readiness', () => {
 
   test('new onboarding seeds a payment term available to Sales Invoice', async ({ page }) => {
     const suffix = `${Date.now()}`;
-    const email = `sbarrozo+onboarding-payment-term-${suffix}@gmail.com`;
+    const email = `onboarding-payment-term-${suffix}@${ONBOARDING_E2E_EMAIL_DOMAIN}`;
     const clientName = `QA Payment Term Seed ${suffix}`;
     const password = buildDisposablePassword(suffix);
 

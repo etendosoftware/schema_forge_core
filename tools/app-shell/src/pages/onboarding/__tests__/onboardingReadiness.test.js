@@ -47,6 +47,19 @@ describe('checkSalesInvoiceReadiness', () => {
     assert.equal(fetchImpl.calls[0].options.headers.Authorization, 'Bearer env-token');
   });
 
+  it('accepts selector items with name or identifier display values', async () => {
+    const fetchImpl = createFetchByUrl([
+      readyResponses[0],
+      readyResponses[1],
+      { includes: READINESS_ENDPOINTS.paymentTerms, status: 200, body: { items: [{ id: 'TERM_1', name: 'Immediate' }] } },
+      { includes: READINESS_ENDPOINTS.customers, status: 200, body: { items: [{ id: 'BP_1', _identifier: 'QA Customer' }] } },
+    ]);
+
+    const result = await checkSalesInvoiceReadiness(fetchImpl, '', 'env-token');
+
+    assert.equal(result.ready, true);
+  });
+
   it('fails when the session endpoint is unauthorized', async () => {
     const fetchImpl = createFetchByUrl([
       { includes: READINESS_ENDPOINTS.session, status: 401, body: {} },

@@ -1,0 +1,6 @@
+projectKey=etendosoftware_etendo_schema_forge_133209fc-d4ea-4f26-8699-8c76cb26648c
+serverUrl=https://sonar.etendo.cloud
+serverVersion=25.1.0.102122
+dashboardUrl=https://sonar.etendo.cloud/dashboard?id=etendosoftware_etendo_schema_forge_133209fc-d4ea-4f26-8699-8c76cb26648c
+ceTaskId=4c7bd435-842b-4ac4-98f7-38c53b679efd
+ceTaskUrl=https://sonar.etendo.cloud/api/ce/task?id=4c7bd435-842b-4ac4-98f7-38c53b679efd

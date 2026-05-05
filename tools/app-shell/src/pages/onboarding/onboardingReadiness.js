@@ -30,7 +30,14 @@ async function fetchJson(fetchImpl, baseUrl, token, endpoint, label) {
 
 function hasUsableSelectorItem(body) {
   return Array.isArray(body?.items)
-    && body.items.some(item => typeof item.id === 'string' && item.id && typeof item.label === 'string' && item.label.trim());
+    && body.items.some((item) => {
+      const displayValue = item?.label || item?.name || item?._identifier;
+
+      return typeof item?.id === 'string'
+        && item.id.trim()
+        && typeof displayValue === 'string'
+        && displayValue.trim();
+    });
 }
 
 function readDocumentType(defaultsBody) {

@@ -44,6 +44,17 @@ describe('onboardingState', () => {
     assert.equal(next.find(step => step.name === 'organization').status, 'pending');
   });
 
+  it('applyProgressMessage preserves zero millisecond durations', () => {
+    const next = applyProgressMessage(initialSetupSteps(), {
+      type: 'progress',
+      step: 'setup',
+      status: 'done',
+      ms: 0,
+    });
+
+    assert.equal(next.find(step => step.name === 'setup').ms, 0);
+  });
+
   it('applyProgressMessage stores error text for failed steps', () => {
     const next = applyProgressMessage(initialSetupSteps(), {
       type: 'progress',

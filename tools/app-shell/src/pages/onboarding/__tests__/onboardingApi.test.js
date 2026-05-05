@@ -114,6 +114,22 @@ describe('onboardingApi', () => {
     assert.deepEqual(envs, []);
   });
 
+  it('uses the fallback error code when an error response is not JSON', async () => {
+    const fetchImpl = async () => ({
+      ok: false,
+      status: 502,
+      async json() {
+        throw new SyntaxError('Unexpected token <');
+      },
+    });
+
+    await assert.rejects(
+      () => fetchEnvironments(fetchImpl, '', 'platform-token'),
+      error => error.code === 'onboardingLoadEnvironmentsFailed'
+        && error.message === 'onboardingLoadEnvironmentsFailed'
+    );
+  });
+
   it('loginEnvironment calls /sws/go/login with the environment admin user id', async () => {
     const calls = [];
     const fetchImpl = async (url, options) => {

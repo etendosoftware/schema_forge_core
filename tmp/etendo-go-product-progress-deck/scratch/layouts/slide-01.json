@@ -1,0 +1,2015 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/sw7fc6",
+    "id": "sw7fc6",
+    "slide": 1,
+    "layoutId": "1c85cf4a-e538-49a1-8861-167c0b9f715f",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "ca8a00e3-18db-4409-9091-373b7d031557",
+    "masterLayoutName": "Master",
+    "backgroundColor": "#F5F7F9",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1920,
+      "height": 1080
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Inter"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "1c85cf4a-e538-49a1-8861-167c0b9f715f",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "ca8a00e3-18db-4409-9091-373b7d031557",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "ca8a00e3-18db-4409-9091-373b7d031557",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/tcj6tova",
+      "id": "1",
+      "name": "cover-logo",
+      "bbox": [
+        78,
+        58,
+        170,
+        44
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.0.0"
+      },
+      "alt": "Etendo",
+      "contentType": "image/png",
+      "asset": {
+        "assetId": "faa25b09-58d6-4f72-abe2-07dce92397ef",
+        "contentType": "image/png",
+        "uri": "/Users/sebastianbarrozo/Documents/work/epic/schema-forge/tools/app-shell/public/logo-etendo.png",
+        "byteLength": 1203
+      }
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/3ex0nuxc",
+      "id": "2",
+      "name": "cover-date",
+      "bbox": [
+        1647.15,
+        62,
+        194.85,
+        36
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.0.1"
+      },
+      "geometry": "roundRect",
+      "fillColor": "#FFFFFF",
+      "lineColor": "#E8EAEF",
+      "lineWidth": 1
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/at47y1kr",
+      "id": "3",
+      "name": "cover-date-text",
+      "bbox": [
+        1664,
+        70,
+        160,
+        20
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.0.1.0"
+      },
+      "geometry": "rect",
+      "text": "Producto · Abril 2026",
+      "textPreview": "Producto · Abril 2026",
+      "resolvedFontSize": 16,
+      "resolvedTextStyle": {
+        "fontSize": 16,
+        "typeface": "Inter",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Producto · Abril 2026"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Producto · Abril 2026",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Producto · Abril 2026",
+              "fontSize": 16,
+              "typeface": "Inter",
+              "color": "#555B6D",
+              "bold": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/l87ed8ba",
+      "id": "4",
+      "name": "cover-pill",
+      "bbox": [
+        78,
+        311.39,
+        292.3,
+        37.2
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.1.0"
+      },
+      "geometry": "roundRect",
+      "fillColor": "#FFD500",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 1
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/sneloj2t",
+      "id": "5",
+      "name": "cover-pill-text",
+      "bbox": [
+        96,
+        320,
+        256,
+        20
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.1.0.0"
+      },
+      "geometry": "rect",
+      "text": "Nueva capa sobre Etendo Classic",
+      "textPreview": "Nueva capa sobre Etendo Classic",
+      "resolvedFontSize": 16,
+      "resolvedTextStyle": {
+        "fontSize": 16,
+        "typeface": "Inter",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Nueva capa sobre Etendo Classic"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Nueva capa sobre Etendo Classic",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Nueva capa sobre Etendo Classic",
+              "fontSize": 16,
+              "typeface": "Inter",
+              "color": "#121217",
+              "bold": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/32lszqtc",
+      "id": "6",
+      "name": "cover-title",
+      "bbox": [
+        78,
+        376,
+        900,
+        142
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.1.1"
+      },
+      "geometry": "rect",
+      "text": "Etendo GO",
+      "textPreview": "Etendo GO",
+      "resolvedFontSize": 118,
+      "resolvedTextStyle": {
+        "fontSize": 118,
+        "typeface": "Inter",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Etendo GO"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Etendo GO",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Etendo GO",
+              "fontSize": 118,
+              "typeface": "Inter",
+              "color": "#121217",
+              "bold": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ahoza1gv",
+      "id": "7",
+      "name": "cover-subtitle",
+      "bbox": [
+        78,
+        546,
+        632,
+        102
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.1.2"
+      },
+      "geometry": "rect",
+      "text": "Agéntico, simple y configurable",
+      "textPreview": "Agéntico, simple y configurable",
+      "resolvedFontSize": 42,
+      "resolvedTextStyle": {
+        "fontSize": 42,
+        "typeface": "Inter",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Agéntico, simple y configurable"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Agéntico, simple y configurable",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Agéntico, simple y configurable",
+              "fontSize": 42,
+              "typeface": "Inter",
+              "color": "#121217",
+              "bold": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/lwval87e",
+      "id": "8",
+      "name": "cover-rule",
+      "bbox": [
+        78,
+        674,
+        240,
+        8
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.1.3"
+      },
+      "geometry": "rect",
+      "fillColor": "#FFD500",
+      "lineColor": "#FFD500",
+      "lineWidth": 0
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/wb2hwfyx",
+      "id": "9",
+      "name": "cover-copy",
+      "bbox": [
+        78,
+        710,
+        684,
+        86
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.1.4"
+      },
+      "geometry": "rect",
+      "text": "Una versión más operable y atractiva del ERP, sin reescribir Etendo Classic desde cero.",
+      "textPreview": "Una versión más operable y atractiva del ERP, sin reescribir Etendo Classic desde cero.",
+      "resolvedFontSize": 31,
+      "resolvedTextStyle": {
+        "fontSize": 31,
+        "typeface": "Inter",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Una versión más operable y atractiva del ERP,"
+          },
+          {
+            "index": 2,
+            "text": "sin reescribir Etendo Classic desde cero."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Una versión más operable y atractiva del ERP, sin reescribir Etendo Classic desde cero.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Una versión más operable y atractiva del ERP, sin reescribir Etendo Classic desde cero.",
+              "fontSize": 31,
+              "typeface": "Inter",
+              "color": "#6C6C89"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/2lszqtcj",
+      "id": "10",
+      "name": "cover-preview-panel",
+      "bbox": [
+        1026.9,
+        132,
+        815.1,
+        843.2
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2"
+      },
+      "geometry": "roundRect",
+      "fillColor": "#FFFFFF",
+      "lineColor": "#E8EAEF",
+      "lineWidth": 1
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/v6psfil0",
+      "id": "11",
+      "name": "dot-1",
+      "bbox": [
+        1050,
+        166,
+        12,
+        12
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.0.0.0.0"
+      },
+      "geometry": "ellipse",
+      "fillColor": "#FFD500",
+      "lineColor": "#FFD500",
+      "lineWidth": 0
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/knih4byh",
+      "id": "12",
+      "name": "dot-2",
+      "bbox": [
+        1070,
+        166,
+        12,
+        12
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.0.0.0.1"
+      },
+      "geometry": "ellipse",
+      "fillColor": "#E8EAEF",
+      "lineColor": "#E8EAEF",
+      "lineWidth": 0
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/d8bat47y",
+      "id": "13",
+      "name": "dot-3",
+      "bbox": [
+        1090,
+        166,
+        12,
+        12
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.0.0.0.2"
+      },
+      "geometry": "ellipse",
+      "fillColor": "#E8EAEF",
+      "lineColor": "#E8EAEF",
+      "lineWidth": 0
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/29gr2p8n",
+      "id": "14",
+      "name": "cover-search",
+      "bbox": [
+        1508,
+        156,
+        310,
+        32
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.0.0.1"
+      },
+      "geometry": "roundRect",
+      "fillColor": "#E8EAEF"
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/vu9knih4",
+      "id": "15",
+      "name": "cover-search-text",
+      "bbox": [
+        1526,
+        164,
+        274,
+        18
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.0.0.1.0"
+      },
+      "geometry": "rect",
+      "text": "Comando / agente",
+      "textPreview": "Comando / agente",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "fontSize": 14,
+        "typeface": "Inter",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Comando / agente"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Comando / agente",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Comando / agente",
+              "fontSize": 14,
+              "typeface": "Inter",
+              "color": "#555B6D"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 16,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/fil0rqd4",
+      "id": "16",
+      "name": "cover-dashboard-preview",
+      "bbox": [
+        1050.9,
+        206.8,
+        767.1,
+        744.4
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.2.0.1"
+      },
+      "geometry": "roundRect",
+      "alt": "Etendo GO UI preview",
+      "contentType": "image/png",
+      "asset": {
+        "assetId": "81ac22b5-ae18-48f4-933e-b4b4b2a1cc43",
+        "contentType": "image/png",
+        "uri": "/Users/sebastianbarrozo/Documents/work/epic/schema-forge/tools/app-shell/public/auth-dashboard-preview.png",
+        "byteLength": 222150
+      }
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/d0z61032",
+      "id": "17",
+      "name": "footer-left-1",
+      "bbox": [
+        78,
+        1006,
+        620,
+        16
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.3.0"
+      },
+      "geometry": "rect",
+      "text": "Etendo GO · Producto · 2026-04-30",
+      "textPreview": "Etendo GO · Producto · 2026-04-30",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "fontSize": 14,
+        "typeface": "Inter",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Etendo GO · Producto · 2026-04-30"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Etendo GO · Producto · 2026-04-30",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Etendo GO · Producto · 2026-04-30",
+              "fontSize": 14,
+              "typeface": "Inter",
+              "color": "#828FA3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/2x4nap4r",
+      "id": "18",
+      "name": "footer-right-1",
+      "bbox": [
+        1582,
+        1006,
+        260,
+        16
+      ],
+      "composeSource": {
+        "run": 1,
+        "path": "0.3.1"
+      },
+      "geometry": "rect",
+      "text": "Schema Forge snapshot",
+      "textPreview": "Schema Forge snapshot",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "fontSize": 14,
+        "typeface": "Inter",
+        "alignment": "right"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Schema Forge snapshot"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Schema Forge snapshot",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Schema Forge snapshot",
+              "fontSize": 14,
+              "typeface": "Inter",
+              "color": "#828FA3",
+              "alignment": "right"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "composeRuns": [
+    {
+      "index": 1,
+      "frame": {
+        "left": 0,
+        "top": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "baseUnit": 8,
+      "root": {
+        "path": "0",
+        "kind": "grid",
+        "name": "cover-root",
+        "requestedSize": {
+          "width": {
+            "mode": "fill",
+            "value": 1
+          },
+          "height": {
+            "mode": "fill",
+            "value": 1
+          }
+        },
+        "intrinsicSize": {
+          "width": 204,
+          "height": 236.8
+        },
+        "frame": {
+          "left": 0,
+          "top": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "children": [
+          {
+            "path": "0.0",
+            "kind": "row",
+            "name": "cover-top",
+            "requestedSize": {
+              "width": {
+                "mode": "fill",
+                "value": 1
+              },
+              "height": {
+                "mode": "hug"
+              }
+            },
+            "intrinsicSize": {
+              "width": 364.85,
+              "height": 44
+            },
+            "frame": {
+              "left": 78,
+              "top": 58,
+              "width": 1764,
+              "height": 44
+            },
+            "children": [
+              {
+                "path": "0.0.0",
+                "kind": "image",
+                "name": "cover-logo",
+                "requestedSize": {
+                  "width": {
+                    "mode": "fixed",
+                    "value": 170
+                  },
+                  "height": {
+                    "mode": "fixed",
+                    "value": 44
+                  }
+                },
+                "intrinsicSize": {
+                  "width": 170,
+                  "height": 44
+                },
+                "frame": {
+                  "left": 78,
+                  "top": 58,
+                  "width": 170,
+                  "height": 44
+                },
+                "snappedFrame": {
+                  "left": 78,
+                  "top": 58,
+                  "width": 170,
+                  "height": 44
+                },
+                "children": [],
+                "source": {
+                  "kind": "path",
+                  "path": "/Users/sebastianbarrozo/Documents/work/epic/schema-forge/tools/app-shell/public/logo-etendo.png"
+                },
+                "fit": "contain",
+                "alt": "Etendo",
+                "element": {
+                  "aid": "im/tcj6tova",
+                  "id": "1",
+                  "kind": "image"
+                }
+              },
+              {
+                "path": "0.0.1",
+                "kind": "panel",
+                "name": "cover-date",
+                "requestedSize": {
+                  "width": {
+                    "mode": "hug"
+                  },
+                  "height": {
+                    "mode": "hug"
+                  }
+                },
+                "intrinsicSize": {
+                  "width": 194.85,
+                  "height": 37.2
+                },
+                "frame": {
+                  "left": 1647.15,
+                  "top": 62,
+                  "width": 194.85,
+                  "height": 36
+                },
+                "snappedFrame": {
+                  "left": 1647.15,
+                  "top": 62,
+                  "width": 194.85,
+                  "height": 36
+                },
+                "children": [
+                  {
+                    "path": "0.0.1.0",
+                    "kind": "text",
+                    "name": "cover-date-text",
+                    "requestedSize": {
+                      "width": {
+                        "mode": "hug"
+                      },
+                      "height": {
+                        "mode": "hug"
+                      }
+                    },
+                    "intrinsicSize": {
+                      "width": 158.85,
+                      "height": 19.2
+                    },
+                    "frame": {
+                      "left": 1664,
+                      "top": 70,
+                      "width": 160,
+                      "height": 20
+                    },
+                    "snappedFrame": {
+                      "left": 1664,
+                      "top": 70,
+                      "width": 160,
+                      "height": 20
+                    },
+                    "children": [],
+                    "text": "Producto · Abril 2026",
+                    "transform": "none",
+                    "element": {
+                      "aid": "sh/at47y1kr",
+                      "id": "3",
+                      "kind": "shape"
+                    }
+                  }
+                ],
+                "padding": {
+                  "top": 9,
+                  "right": 18,
+                  "bottom": 9,
+                  "left": 18
+                },
+                "align": "center",
+                "justify": "center",
+                "contentFrame": {
+                  "left": 1665.15,
+                  "top": 71,
+                  "width": 158.85,
+                  "height": 18
+                },
+                "element": {
+                  "aid": "sh/3ex0nuxc",
+                  "id": "2",
+                  "kind": "shape"
+                }
+              }
+            ],
+            "padding": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "gap": 0,
+            "effectiveGap": 1399.15,
+            "justifyOffset": 0,
+            "align": "center",
+            "justify": "between",
+            "contentFrame": {
+              "left": 78,
+              "top": 58,
+              "width": 1764,
+              "height": 44
+            },
+            "items": [
+              {
+                "path": "0.0.0",
+                "frame": {
+                  "left": 78,
+                  "top": 58,
+                  "width": 170,
+                  "height": 44
+                }
+              },
+              {
+                "path": "0.0.1",
+                "frame": {
+                  "left": 1647.15,
+                  "top": 62,
+                  "width": 194.85,
+                  "height": 36
+                }
+              }
+            ]
+          },
+          {
+            "path": "0.1",
+            "kind": "column",
+            "name": "cover-left",
+            "requestedSize": {
+              "width": {
+                "mode": "fill",
+                "value": 1
+              },
+              "height": {
+                "mode": "fill",
+                "value": 1
+              }
+            },
+            "intrinsicSize": {
+              "width": 684.6,
+              "height": 434.02
+            },
+            "frame": {
+              "left": 78,
+              "top": 132,
+              "width": 900.9,
+              "height": 843.2
+            },
+            "children": [
+              {
+                "path": "0.1.0",
+                "kind": "panel",
+                "name": "cover-pill",
+                "requestedSize": {
+                  "width": {
+                    "mode": "hug"
+                  },
+                  "height": {
+                    "mode": "hug"
+                  }
+                },
+                "intrinsicSize": {
+                  "width": 292.3,
+                  "height": 37.2
+                },
+                "frame": {
+                  "left": 78,
+                  "top": 311.39,
+                  "width": 292.3,
+                  "height": 37.2
+                },
+                "snappedFrame": {
+                  "left": 78,
+                  "top": 311.39,
+                  "width": 292.3,
+                  "height": 37.2
+                },
+                "children": [
+                  {
+                    "path": "0.1.0.0",
+                    "kind": "text",
+                    "name": "cover-pill-text",
+                    "requestedSize": {
+                      "width": {
+                        "mode": "hug"
+                      },
+                      "height": {
+                        "mode": "hug"
+                      }
+                    },
+                    "intrinsicSize": {
+                      "width": 256.3,
+                      "height": 19.2
+                    },
+                    "frame": {
+                      "left": 96,
+                      "top": 320,
+                      "width": 256,
+                      "height": 20
+                    },
+                    "snappedFrame": {
+                      "left": 96,
+                      "top": 320,
+                      "width": 256,
+                      "height": 20
+                    },
+                    "children": [],
+                    "text": "Nueva capa sobre Etendo Classic",
+                    "transform": "none",
+                    "element": {
+                      "aid": "sh/sneloj2t",
+                      "id": "5",
+                      "kind": "shape"
+                    }
+                  }
+                ],
+                "padding": {
+                  "top": 9,
+                  "right": 18,
+                  "bottom": 9,
+                  "left": 18
+                },
+                "align": "center",
+                "justify": "center",
+                "contentFrame": {
+                  "left": 96,
+                  "top": 320.39,
+                  "width": 256.3,
+                  "height": 19.2
+                },
+                "element": {
+                  "aid": "sh/l87ed8ba",
+                  "id": "4",
+                  "kind": "shape"
+                }
+              },
+              {
+                "path": "0.1.1",
+                "kind": "text",
+                "name": "cover-title",
+                "requestedSize": {
+                  "width": {
+                    "mode": "fill",
+                    "value": 1
+                  },
+                  "height": {
+                    "mode": "hug"
+                  }
+                },
+                "intrinsicSize": {
+                  "width": 0,
+                  "height": 141.6
+                },
+                "frame": {
+                  "left": 78,
+                  "top": 376.59,
+                  "width": 900.9,
+                  "height": 141.6
+                },
+                "snappedFrame": {
+                  "left": 78,
+                  "top": 376,
+                  "width": 900,
+                  "height": 142
+                },
+                "children": [],
+                "text": "Etendo GO",
+                "transform": "none",
+                "element": {
+                  "aid": "sh/32lszqtc",
+                  "id": "6",
+                  "kind": "shape"
+                }
+              },
+              {
+                "path": "0.1.2",
+                "kind": "text",
+                "name": "cover-subtitle",
+                "requestedSize": {
+                  "width": {
+                    "mode": "wrap",
+                    "max": 870
+                  },
+                  "height": {
+                    "mode": "hug"
+                  }
+                },
+                "intrinsicSize": {
+                  "width": 631.33,
+                  "height": 50.4
+                },
+                "frame": {
+                  "left": 78,
+                  "top": 546.19,
+                  "width": 631.33,
+                  "height": 100.8
+                },
+                "snappedFrame": {
+                  "left": 78,
+                  "top": 546,
+                  "width": 632,
+                  "height": 102
+                },
+                "children": [],
+                "text": "Agéntico, simple y configurable",
+                "transform": "none",
+                "element": {
+                  "aid": "sh/ahoza1gv",
+                  "id": "7",
+                  "kind": "shape"
+                }
+              },
+              {
+                "path": "0.1.3",
+                "kind": "rule",
+                "name": "cover-rule",
+                "requestedSize": {
+                  "width": {
+                    "mode": "fixed",
+                    "value": 240
+                  },
+                  "height": {
+                    "mode": "fixed",
+                    "value": 8
+                  }
+                },
+                "intrinsicSize": {
+                  "width": 240,
+                  "height": 8
+                },
+                "frame": {
+                  "left": 78,
+                  "top": 674.99,
+                  "width": 240,
+                  "height": 8
+                },
+                "snappedFrame": {
+                  "left": 78,
+                  "top": 674,
+                  "width": 240,
+                  "height": 8
+                },
+                "children": [],
+                "weight": 8,
+                "element": {
+                  "aid": "sh/lwval87e",
+                  "id": "8",
+                  "kind": "shape"
+                }
+              },
+              {
+                "path": "0.1.4",
+                "kind": "text",
+                "name": "cover-copy",
+                "requestedSize": {
+                  "width": {
+                    "mode": "wrap",
+                    "max": 820
+                  },
+                  "height": {
+                    "mode": "hug"
+                  }
+                },
+                "intrinsicSize": {
+                  "width": 684.6,
+                  "height": 84.82
+                },
+                "frame": {
+                  "left": 78,
+                  "top": 710.99,
+                  "width": 684.6,
+                  "height": 84.82
+                },
+                "snappedFrame": {
+                  "left": 78,
+                  "top": 710,
+                  "width": 684,
+                  "height": 86
+                },
+                "children": [],
+                "text": "Una versión más operable y atractiva del ERP, sin reescribir Etendo Classic desde cero.",
+                "transform": "none",
+                "element": {
+                  "aid": "sh/wb2hwfyx",
+                  "id": "9",
+                  "kind": "shape"
+                }
+              }
+            ],
+            "padding": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "gap": 28,
+            "effectiveGap": 28,
+            "justifyOffset": 179.39,
+            "align": "start",
+            "justify": "center",
+            "contentFrame": {
+              "left": 78,
+              "top": 132,
+              "width": 900.9,
+              "height": 843.2
+            },
+            "items": [
+              {
+                "path": "0.1.0",
+                "frame": {
+                  "left": 78,
+                  "top": 311.39,
+                  "width": 292.3,
+                  "height": 37.2
+                }
+              },
+              {
+                "path": "0.1.1",
+                "frame": {
+                  "left": 78,
+                  "top": 376.59,
+                  "width": 900.9,
+                  "height": 141.6
+                }
+              },
+              {
+                "path": "0.1.2",
+                "frame": {
+                  "left": 78,
+                  "top": 546.19,
+                  "width": 631.33,
+                  "height": 100.8
+                }
+              },
+              {
+                "path": "0.1.3",
+                "frame": {
+                  "left": 78,
+                  "top": 674.99,
+                  "width": 240,
+                  "height": 8
+                }
+              },
+              {
+                "path": "0.1.4",
+                "frame": {
+                  "left": 78,
+                  "top": 710.99,
+                  "width": 684.6,
+                  "height": 84.82
+                }
+              }
+            ]
+          },
+          {
+            "path": "0.2",
+            "kind": "panel",
+            "name": "cover-preview-panel",
+            "requestedSize": {
+              "width": {
+                "mode": "fill",
+                "value": 1
+              },
+              "height": {
+                "mode": "fill",
+                "value": 1
+              }
+            },
+            "intrinsicSize": {
+              "width": 48,
+              "height": 48
+            },
+            "frame": {
+              "left": 1026.9,
+              "top": 132,
+              "width": 815.1,
+              "height": 843.2
+            },
+            "snappedFrame": {
+              "left": 1026.9,
+              "top": 132,
+              "width": 815.1,
+              "height": 843.2
+            },
+            "children": [
+              {
+                "path": "0.2.0",
+                "kind": "column",
+                "name": "cover-preview-stack",
+                "requestedSize": {
+                  "width": {
+                    "mode": "fill",
+                    "value": 1
+                  },
+                  "height": {
+                    "mode": "fill",
+                    "value": 1
+                  }
+                },
+                "intrinsicSize": {
+                  "width": 0,
+                  "height": 50.8
+                },
+                "frame": {
+                  "left": 1050.9,
+                  "top": 156,
+                  "width": 767.1,
+                  "height": 795.2
+                },
+                "children": [
+                  {
+                    "path": "0.2.0.0",
+                    "kind": "row",
+                    "name": "cover-ui-topbar",
+                    "requestedSize": {
+                      "width": {
+                        "mode": "fill",
+                        "value": 1
+                      },
+                      "height": {
+                        "mode": "hug"
+                      }
+                    },
+                    "intrinsicSize": {
+                      "width": 362,
+                      "height": 32.8
+                    },
+                    "frame": {
+                      "left": 1050.9,
+                      "top": 156,
+                      "width": 767.1,
+                      "height": 32.8
+                    },
+                    "children": [
+                      {
+                        "path": "0.2.0.0.0",
+                        "kind": "row",
+                        "name": "cover-ui-buttons",
+                        "requestedSize": {
+                          "width": {
+                            "mode": "hug"
+                          },
+                          "height": {
+                            "mode": "hug"
+                          }
+                        },
+                        "intrinsicSize": {
+                          "width": 52,
+                          "height": 12
+                        },
+                        "frame": {
+                          "left": 1050.9,
+                          "top": 166,
+                          "width": 52,
+                          "height": 12
+                        },
+                        "children": [
+                          {
+                            "path": "0.2.0.0.0.0",
+                            "kind": "shape",
+                            "name": "dot-1",
+                            "requestedSize": {
+                              "width": {
+                                "mode": "fixed",
+                                "value": 12
+                              },
+                              "height": {
+                                "mode": "fixed",
+                                "value": 12
+                              }
+                            },
+                            "intrinsicSize": {
+                              "width": 12,
+                              "height": 12
+                            },
+                            "frame": {
+                              "left": 1050.9,
+                              "top": 166,
+                              "width": 12,
+                              "height": 12
+                            },
+                            "snappedFrame": {
+                              "left": 1050,
+                              "top": 166,
+                              "width": 12,
+                              "height": 12
+                            },
+                            "children": [],
+                            "geometry": "ellipse",
+                            "element": {
+                              "aid": "sh/v6psfil0",
+                              "id": "11",
+                              "kind": "shape"
+                            }
+                          },
+                          {
+                            "path": "0.2.0.0.0.1",
+                            "kind": "shape",
+                            "name": "dot-2",
+                            "requestedSize": {
+                              "width": {
+                                "mode": "fixed",
+                                "value": 12
+                              },
+                              "height": {
+                                "mode": "fixed",
+                                "value": 12
+                              }
+                            },
+                            "intrinsicSize": {
+                              "width": 12,
+                              "height": 12
+                            },
+                            "frame": {
+                              "left": 1070.9,
+                              "top": 166,
+                              "width": 12,
+                              "height": 12
+                            },
+                            "snappedFrame": {
+                              "left": 1070,
+                              "top": 166,
+                              "width": 12,
+                              "height": 12
+                            },
+                            "children": [],
+                            "geometry": "ellipse",
+                            "element": {
+                              "aid": "sh/knih4byh",
+                              "id": "12",
+                              "kind": "shape"
+                            }
+                          },
+                          {
+                            "path": "0.2.0.0.0.2",
+                            "kind": "shape",
+                            "name": "dot-3",
+                            "requestedSize": {
+                              "width": {
+                                "mode": "fixed",
+                                "value": 12
+                              },
+                              "height": {
+                                "mode": "fixed",
+                                "value": 12
+                              }
+                            },
+                            "intrinsicSize": {
+                              "width": 12,
+                              "height": 12
+                            },
+                            "frame": {
+                              "left": 1090.9,
+                              "top": 166,
+                              "width": 12,
+                              "height": 12
+                            },
+                            "snappedFrame": {
+                              "left": 1090,
+                              "top": 166,
+                              "width": 12,
+                              "height": 12
+                            },
+                            "children": [],
+                            "geometry": "ellipse",
+                            "element": {
+                              "aid": "sh/d8bat47y",
+                              "id": "13",
+                              "kind": "shape"
+                            }
+                          }
+                        ],
+                        "padding": {
+                          "top": 0,
+                          "right": 0,
+                          "bottom": 0,
+                          "left": 0
+                        },
+                        "gap": 8,
+                        "effectiveGap": 8,
+                        "justifyOffset": 0,
+                        "align": "start",
+                        "justify": "start",
+                        "contentFrame": {
+                          "left": 1050.9,
+                          "top": 166,
+                          "width": 52,
+                          "height": 12
+                        },
+                        "items": [
+                          {
+                            "path": "0.2.0.0.0.0",
+                            "frame": {
+                              "left": 1050.9,
+                              "top": 166,
+                              "width": 12,
+                              "height": 12
+                            }
+                          },
+                          {
+                            "path": "0.2.0.0.0.1",
+                            "frame": {
+                              "left": 1070.9,
+                              "top": 166,
+                              "width": 12,
+                              "height": 12
+                            }
+                          },
+                          {
+                            "path": "0.2.0.0.0.2",
+                            "frame": {
+                              "left": 1090.9,
+                              "top": 166,
+                              "width": 12,
+                              "height": 12
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "path": "0.2.0.0.1",
+                        "kind": "panel",
+                        "name": "cover-search",
+                        "requestedSize": {
+                          "width": {
+                            "mode": "fixed",
+                            "value": 310
+                          },
+                          "height": {
+                            "mode": "hug"
+                          }
+                        },
+                        "intrinsicSize": {
+                          "width": 36,
+                          "height": 32.8
+                        },
+                        "frame": {
+                          "left": 1508,
+                          "top": 156,
+                          "width": 310,
+                          "height": 32
+                        },
+                        "snappedFrame": {
+                          "left": 1508,
+                          "top": 156,
+                          "width": 310,
+                          "height": 32
+                        },
+                        "children": [
+                          {
+                            "path": "0.2.0.0.1.0",
+                            "kind": "text",
+                            "name": "cover-search-text",
+                            "requestedSize": {
+                              "width": {
+                                "mode": "fill",
+                                "value": 1
+                              },
+                              "height": {
+                                "mode": "hug"
+                              }
+                            },
+                            "intrinsicSize": {
+                              "width": 0,
+                              "height": 16.8
+                            },
+                            "frame": {
+                              "left": 1526,
+                              "top": 164,
+                              "width": 274,
+                              "height": 16.8
+                            },
+                            "snappedFrame": {
+                              "left": 1526,
+                              "top": 164,
+                              "width": 274,
+                              "height": 18
+                            },
+                            "children": [],
+                            "text": "Comando / agente",
+                            "transform": "none",
+                            "element": {
+                              "aid": "sh/vu9knih4",
+                              "id": "15",
+                              "kind": "shape"
+                            }
+                          }
+                        ],
+                        "padding": {
+                          "top": 8,
+                          "right": 18,
+                          "bottom": 8,
+                          "left": 18
+                        },
+                        "align": "start",
+                        "justify": "start",
+                        "contentFrame": {
+                          "left": 1526,
+                          "top": 164,
+                          "width": 274,
+                          "height": 16
+                        },
+                        "element": {
+                          "aid": "sh/29gr2p8n",
+                          "id": "14",
+                          "kind": "shape"
+                        }
+                      }
+                    ],
+                    "padding": {
+                      "top": 0,
+                      "right": 0,
+                      "bottom": 0,
+                      "left": 0
+                    },
+                    "gap": 0,
+                    "effectiveGap": 405.1,
+                    "justifyOffset": 0,
+                    "align": "center",
+                    "justify": "between",
+                    "contentFrame": {
+                      "left": 1050.9,
+                      "top": 156,
+                      "width": 767.1,
+                      "height": 32.8
+                    },
+                    "items": [
+                      {
+                        "path": "0.2.0.0.0",
+                        "frame": {
+                          "left": 1050.9,
+                          "top": 166,
+                          "width": 52,
+                          "height": 12
+                        }
+                      },
+                      {
+                        "path": "0.2.0.0.1",
+                        "frame": {
+                          "left": 1508,
+                          "top": 156,
+                          "width": 310,
+                          "height": 32
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "path": "0.2.0.1",
+                    "kind": "image",
+                    "name": "cover-dashboard-preview",
+                    "requestedSize": {
+                      "width": {
+                        "mode": "fill",
+                        "value": 1
+                      },
+                      "height": {
+                        "mode": "fill",
+                        "value": 1
+                      }
+                    },
+                    "intrinsicSize": {
+                      "width": 0,
+                      "height": 0
+                    },
+                    "frame": {
+                      "left": 1050.9,
+                      "top": 206.8,
+                      "width": 767.1,
+                      "height": 744.4
+                    },
+                    "snappedFrame": {
+                      "left": 1050.9,
+                      "top": 206.8,
+                      "width": 767.1,
+                      "height": 744.4
+                    },
+                    "children": [],
+                    "source": {
+                      "kind": "path",
+                      "path": "/Users/sebastianbarrozo/Documents/work/epic/schema-forge/tools/app-shell/public/auth-dashboard-preview.png"
+                    },
+                    "fit": "cover",
+                    "alt": "Etendo GO UI preview",
+                    "element": {
+                      "aid": "im/fil0rqd4",
+                      "id": "16",
+                      "kind": "image"
+                    }
+                  }
+                ],
+                "padding": {
+                  "top": 0,
+                  "right": 0,
+                  "bottom": 0,
+                  "left": 0
+                },
+                "gap": 18,
+                "effectiveGap": 18,
+                "justifyOffset": 0,
+                "align": "start",
+                "justify": "start",
+                "contentFrame": {
+                  "left": 1050.9,
+                  "top": 156,
+                  "width": 767.1,
+                  "height": 795.2
+                },
+                "items": [
+                  {
+                    "path": "0.2.0.0",
+                    "frame": {
+                      "left": 1050.9,
+                      "top": 156,
+                      "width": 767.1,
+                      "height": 32.8
+                    }
+                  },
+                  {
+                    "path": "0.2.0.1",
+                    "frame": {
+                      "left": 1050.9,
+                      "top": 206.8,
+                      "width": 767.1,
+                      "height": 744.4
+                    }
+                  }
+                ]
+              }
+            ],
+            "padding": {
+              "top": 24,
+              "right": 24,
+              "bottom": 24,
+              "left": 24
+            },
+            "align": "start",
+            "justify": "start",
+            "contentFrame": {
+              "left": 1050.9,
+              "top": 156,
+              "width": 767.1,
+              "height": 795.2
+            },
+            "element": {
+              "aid": "sh/2lszqtcj",
+              "id": "10",
+              "kind": "shape"
+            }
+          },
+          {
+            "path": "0.3",
+            "kind": "row",
+            "name": "footer-1",
+            "requestedSize": {
+              "width": {
+                "mode": "fill",
+                "value": 1
+              },
+              "height": {
+                "mode": "hug"
+              }
+            },
+            "intrinsicSize": {
+              "width": 880,
+              "height": 16.8
+            },
+            "frame": {
+              "left": 78,
+              "top": 1005.2,
+              "width": 1764,
+              "height": 16.8
+            },
+            "children": [
+              {
+                "path": "0.3.0",
+                "kind": "text",
+                "name": "footer-left-1",
+                "requestedSize": {
+                  "width": {
+                    "mode": "fixed",
+                    "value": 620
+                  },
+                  "height": {
+                    "mode": "hug"
+                  }
+                },
+                "intrinsicSize": {
+                  "width": 620,
+                  "height": 16.8
+                },
+                "frame": {
+                  "left": 78,
+                  "top": 1006,
+                  "width": 620,
+                  "height": 16
+                },
+                "snappedFrame": {
+                  "left": 78,
+                  "top": 1006,
+                  "width": 620,
+                  "height": 16
+                },
+                "children": [],
+                "text": "Etendo GO · Producto · 2026-04-30",
+                "transform": "none",
+                "element": {
+                  "aid": "sh/d0z61032",
+                  "id": "17",
+                  "kind": "shape"
+                }
+              },
+              {
+                "path": "0.3.1",
+                "kind": "text",
+                "name": "footer-right-1",
+                "requestedSize": {
+                  "width": {
+                    "mode": "fixed",
+                    "value": 260
+                  },
+                  "height": {
+                    "mode": "hug"
+                  }
+                },
+                "intrinsicSize": {
+                  "width": 260,
+                  "height": 16.8
+                },
+                "frame": {
+                  "left": 1582,
+                  "top": 1006,
+                  "width": 260,
+                  "height": 16
+                },
+                "snappedFrame": {
+                  "left": 1582,
+                  "top": 1006,
+                  "width": 260,
+                  "height": 16
+                },
+                "children": [],
+                "text": "Schema Forge snapshot",
+                "transform": "none",
+                "element": {
+                  "aid": "sh/2x4nap4r",
+                  "id": "18",
+                  "kind": "shape"
+                }
+              }
+            ],
+            "padding": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            },
+            "gap": 0,
+            "effectiveGap": 884,
+            "justifyOffset": 0,
+            "align": "center",
+            "justify": "between",
+            "contentFrame": {
+              "left": 78,
+              "top": 1005.2,
+              "width": 1764,
+              "height": 16.8
+            },
+            "items": [
+              {
+                "path": "0.3.0",
+                "frame": {
+                  "left": 78,
+                  "top": 1006,
+                  "width": 620,
+                  "height": 16
+                }
+              },
+              {
+                "path": "0.3.1",
+                "frame": {
+                  "left": 1582,
+                  "top": 1006,
+                  "width": 260,
+                  "height": 16
+                }
+              }
+            ]
+          }
+        ],
+        "padding": {
+          "top": 58,
+          "right": 78,
+          "bottom": 58,
+          "left": 78
+        },
+        "columnGap": 48,
+        "rowGap": 30,
+        "alignItems": "stretch",
+        "justifyItems": "stretch",
+        "contentFrame": {
+          "left": 78,
+          "top": 58,
+          "width": 1764,
+          "height": 964
+        },
+        "columns": [
+          {
+            "mode": "fr",
+            "value": 1.05
+          },
+          {
+            "mode": "fr",
+            "value": 0.95
+          }
+        ],
+        "rows": [
+          "auto",
+          {
+            "mode": "fr",
+            "value": 1
+          },
+          "auto"
+        ],
+        "autoRows": "auto",
+        "resolvedRows": [
+          "auto",
+          {
+            "mode": "fr",
+            "value": 1
+          },
+          "auto"
+        ],
+        "columnSizes": [
+          900.9,
+          815.1
+        ],
+        "rowSizes": [
+          44,
+          843.2,
+          16.8
+        ],
+        "cells": [
+          {
+            "path": "0.0",
+            "column": 0,
+            "row": 0,
+            "columnSpan": 2,
+            "rowSpan": 1,
+            "cellFrame": {
+              "left": 78,
+              "top": 58,
+              "width": 1764,
+              "height": 44
+            }
+          },
+          {
+            "path": "0.1",
+            "column": 0,
+            "row": 1,
+            "columnSpan": 1,
+            "rowSpan": 1,
+            "cellFrame": {
+              "left": 78,
+              "top": 132,
+              "width": 900.9,
+              "height": 843.2
+            }
+          },
+          {
+            "path": "0.2",
+            "column": 1,
+            "row": 1,
+            "columnSpan": 1,
+            "rowSpan": 1,
+            "cellFrame": {
+              "left": 1026.9,
+              "top": 132,
+              "width": 815.1,
+              "height": 843.2
+            }
+          },
+          {
+            "path": "0.3",
+            "column": 0,
+            "row": 2,
+            "columnSpan": 2,
+            "rowSpan": 1,
+            "cellFrame": {
+              "left": 78,
+              "top": 1005.2,
+              "width": 1764,
+              "height": 16.8
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
