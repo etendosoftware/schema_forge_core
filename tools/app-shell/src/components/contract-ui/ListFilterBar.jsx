@@ -398,6 +398,7 @@ export function ListFilterBar({
                     classNames={{
                       week: 'flex justify-center',
                       weekdays: 'flex justify-center py-2',
+                      dropdown_root: 'relative inline-flex items-center gap-3 px-2 py-1 rounded-md hover:bg-[rgba(18,18,23,0.05)]',
                     }}
                     modifiersClassNames={{ inRange: 'bg-[#F5F7F9] [&>button]:rounded-none' }}
                   />
@@ -412,6 +413,7 @@ export function ListFilterBar({
                     classNames={{
                       week: 'flex justify-center',
                       weekdays: 'flex justify-center py-2',
+                      dropdown_root: 'relative inline-flex items-center gap-3 px-2 py-1 rounded-md hover:bg-[rgba(18,18,23,0.05)]',
                     }}
                     modifiersClassNames={{ inRange: 'bg-[#F5F7F9] [&>button]:rounded-none' }}
                   />
