@@ -271,10 +271,9 @@ export default function CreateContactModal({
 
   const requiredFields = useMemo(
     () => {
-      const addressRequired = ['address', 'postalCode', 'city', 'country'];
       return contactType === 'company'
-        ? ['name', 'taxIdType', 'taxID', ...addressRequired]
-        : ['etgoFirstname', 'etgoLastname', 'taxIdType', 'taxID', ...addressRequired];
+        ? ['name', 'taxIdType', 'taxID', 'country']
+        : ['etgoFirstname', 'etgoLastname', 'taxIdType', 'taxID', 'country'];
     },
     [contactType],
   );
