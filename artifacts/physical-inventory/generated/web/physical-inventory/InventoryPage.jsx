@@ -37,8 +37,8 @@ const draftMode = null;
 // @sf-generated-start addLineFields:inventoryLine
 const addLineFields = {
   entry: [
-    { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.' },
-    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
+    { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.', defaultValue: '@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM M_InventoryLine WHERE M_Inventory_ID=@M_Inventory_ID@' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["quantityCount","bookQuantity"] },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
     { key: 'quantityCount', column: 'QtyCount', type: 'number', required: true, label: 'User Count' },
   ],
@@ -46,12 +46,12 @@ const addLineFields = {
     { key: 'cost', column: 'Cost', type: 'number', label: 'Cost' },
   ],
   hidden: [
-    { key: 'storageBin', value: '@SQL=SELECT M_LOCATOR_ID AS DEFAULTVALUE FROM M_LOCATOR WHERE AD_ISORGINCLUDED(@AD_Org_ID@, M_LOCATOR.AD_Org_ID, @#AD_Client_ID@) <> -1 AND ISACTIVE=\'Y\' AND M_WAREHOUSE_ID=@M_WAREHOUSE_ID@  ORDER BY M_LOCATOR.ISDEFAULT DESC' },
+
   ],
 };
 // @sf-generated-end addLineFields:inventoryLine
 
-const api = {
+export const api = {
   "specName": "physical-inventory",
   "baseUrl": "/sws/neo/physical-inventory",
   "crud": {
@@ -164,16 +164,18 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=physical-inventoryDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "inventory"
   }
 };
 
 // @sf-generated-start component:InventoryPage
 export default function InventoryPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -208,6 +210,7 @@ export default function InventoryPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="movementDate"
       {...props}
     />
   );

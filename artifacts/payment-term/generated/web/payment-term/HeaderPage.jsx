@@ -44,7 +44,7 @@ const draftMode = null;
 
 
 
-const api = {
+export const api = {
   "specName": "payment-term",
   "baseUrl": "/sws/neo/payment-term",
   "crud": {
@@ -73,16 +73,29 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=name"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "settings"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "Value": "Clave",
+      "Name": "Nombre",
+      "Description": "Descripción",
+      "FixMonthOffset": "Meses de desplazamiento",
+      "NetDays": "Días",
+      "IsDefault": "Por defecto",
+      "IsActive": "Activo"
+    }
   }
 };
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView

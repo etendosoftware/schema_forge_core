@@ -75,19 +75,22 @@ Max rejection cycles per phase: 3
 
 ## Orientation Before Action (MANDATORY)
 Before starting ANY task, agents MUST investigate their environment:
-1. **Where am I?** — Check the current branch, working directory, and repo state (`git branch --show-current`, `pwd`)
-2. **What exists?** — Read relevant existing files before modifying or creating anything. Never assume file contents or structure.
-3. **What's the DB state?** — If the task involves DB access, verify connectivity works (DB credentials auto-resolve from `gradle.properties` — see `cli/src/db.js`)
-4. **What's already done?** — Check `artifacts/` for existing work on the window/process. Check `docs/feedback.md` for known issues.
-5. **What are the IDs?** — Never hardcode or guess window/process/menu IDs. Always query the DB or use `resolve-menu.js --menu-name`.
+1. **Where is the functional guide?** — If the task touches a window, start by locating its guide through `docs/generated-custom-windows/INDEX.md` and open `docs/generated-custom-windows/<window>.md`.
+2. **Where am I?** — Check the current branch, working directory, and repo state (`git branch --show-current`, `pwd`)
+3. **What exists?** — Read relevant existing files before modifying or creating anything. Never assume file contents or structure.
+4. **What's the DB state?** — If the task involves DB access, verify connectivity works (DB credentials auto-resolve from `gradle.properties` — see `cli/src/db.js`)
+5. **What's already done?** — Check `artifacts/` for existing work on the window/process. Check `docs/feedback.md` for known issues.
+6. **What are the IDs?** — Never hardcode or guess window/process/menu IDs. Always query the DB or use `resolve-menu.js --menu-name`.
 
 This prevents wasted cycles from wrong assumptions (wrong IDs, stale data, broken connections).
 
 ## Task Execution
 Every task passes through the active phases IN ORDER. No exceptions.
 
+
 ## Branching & Merging
 Delegate all branch operations to Clerk. See `docs/branch-workflow.md` for full rules.
+
 
 ## Reject Cycle
 1. Coordinator receives rejection report
@@ -98,6 +101,7 @@ Delegate all branch operations to Clerk. See `docs/branch-workflow.md` for full 
 
 ## Documentation Freshness (MANDATORY)
 **CRITICAL POLICY:** Code change + doc update = one atomic unit. REVIEW must reject PRs that change behavior without updating docs. Full checklist and trigger list: `docs/self-documentation-policy.md`.
+Window-specific changes MUST update the matching `docs/generated-custom-windows/<window>.md` guide in the same change.
 
 ## Commit Conventions (MANDATORY)
 All commits MUST follow Etendo Git Police conventions as defined by the `/etendo-workflow-manager` skill.
@@ -232,6 +236,23 @@ Contract tests (Node.js), Unit tests (JUnit in Etendo Go), Integration tests (OB
 Run `make test` for CLI tests. See `docs/e2e-testing-guide.md` for E2E setup, conventions, and `data-testid` patterns.
 Every process must declare >=3 edge cases. Every kept rule must have a behavioral test.
 
+## Pipeline Validation
+
+`cli/src/validate-pipeline.js` enforces consistency across the artifact pipeline (decisions → contract → generated → registry). Runs without DB access. Defined rules: F1–F10, full table in `docs/pipeline-validator-reference.md`.
+
+**Three integration points:**
+- **Manual:** `make validate-pipeline` (whole repo) or `node cli/src/validate-pipeline.js --scope=<window>` (single window)
+- **Pre-commit:** `make install` activates `.githooks/pre-commit` — runs only on staged artifact/generator/registry files
+- **CI:** `.github/workflows/pipeline-validate.yml` runs in shadow mode (annotates, doesn't block) until P3 backfill lands
+
+**Bypass:** `git commit --no-verify` (WIP only — never on epic-branch PRs).
+
+**Adding a new rule (F11+):** implement in `cli/src/validate-pipeline.js`, add fixture under `cli/test/fixtures/pipeline-validator/`, add tests in `cli/test/validate-pipeline.test.js`, AND update the rules table in `docs/pipeline-validator-reference.md`. The reference doc is canonical — if a rule is not documented there, it doesn't exist.
+
+**Pipeline phases that touch the validator:**
+- DEV: any change to `decisions.json` or `generated/` must keep `validate-pipeline.js` clean for that artifact
+- REVIEW: Alex must run `node cli/src/validate-pipeline.js --scope=<windows-touched-by-PR>` and confirm 0 violations
+
 ## Static Analysis (SonarQube)
 
 Run `cli/sonar-check.sh` to analyze specific Java files with SonarQube and get results inline.
@@ -262,6 +283,8 @@ A "worked" window has `artifacts/{name}/decisions.json`. Legacy `schema-curated.
 `resolve-curated.js` merges raw + decisions → curated **in memory** (no intermediate files).
 See `docs/decisions-versioning.md` for migration guide.
 
+**Iterating on decisions or regenerating UI:** use `make regen ONLY=<window>` (add `PUSH_TO_NEO=1` to push to NEO). It is the canonical wrapper around extract → resolve → generate (→ push). Reach for `resolve-curated.js`, `pipeline.js`, or `push-to-neo.js` directly only when debugging a single phase or using flags `make regen` does not expose. See the Window Change Integrity Protocol below for the full command reference.
+
 ## Window Change Integrity Protocol (MANDATORY)
 
 **EVERY change to a window** (decisions.json, generator, contract, or generated files) MUST complete ALL steps below before considering the task done. No exceptions.
@@ -270,11 +293,24 @@ See `docs/decisions-versioning.md` for migration guide.
 Never edit `contract.json` or generated files directly. `decisions.json` is the single source of truth.
 If a change cannot be expressed in `decisions.json`, fix the generator (`generate-frontend.js`, `generate-contract.js`, `resolve-curated.js`) instead.
 
-### Step 2 — Regenerate via `--write`
+### Step 2 — Regenerate via `make regen` (CANONICAL)
 ```bash
-node cli/src/resolve-curated.js --window <name> --write
+make regen ONLY=<name>                      # iterate on decisions / regenerate UI
+make regen ONLY=<name> PUSH_TO_NEO=1        # same + push config to NEO Headless
+make regen ONLY=<name> SKIP_EXTRACT=1       # reuse existing schema-raw.json (skip DB hit)
+make regen ONLY=tax,product                 # multiple windows in one run
+make regen-help                             # full option list
 ```
-This runs: `decisions.json + schema-raw.json → contract.json → generated/web/<name>/`
+This runs: `decisions.json + schema-raw.json → contract.json → generated/web/<name>/` (and optionally `push-to-neo` at the end). **`make regen` is the default command for every iterative loop on decisions or UI regeneration** — agents must reach for it first.
+
+**Lower-level commands (use only when `make regen` does not fit):**
+```bash
+node cli/src/resolve-curated.js --window <name> --write             # single phase, no extract, no push
+node cli/src/pipeline.js --menu-name "..." --skip-to resolve-curated --skip-interactive
+node cli/src/push-to-neo.js <spec> [--dry-run]                      # push only (after a regen without it)
+node cli/src/extract-from-db.js --menu-name "..."                   # re-extract raw schema only
+```
+Reach for these when debugging a single phase, dry-running, or using flags `make regen` does not expose (e.g. `--dry-run`, custom `--skip-to`). After any direct `push-to-neo.js`, remind the user to run `./gradlew export.database` in Etendo root — `make regen PUSH_TO_NEO=1` follows the same rule.
 
 ### Step 3 — Verify contract integrity (MANDATORY after every --write)
 Run this and confirm **no field shows `false` for readOnly when it should be locked**:

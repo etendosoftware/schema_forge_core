@@ -1,14 +1,17 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { useEntity } from '@/hooks/useEntity';
 import { useMenuLabel, useLabel, useUI } from '@/i18n';
-import { Search, ArrowUpDown, SlidersHorizontal, ChevronDown, MoreVertical, Plus, CalendarDays, Link2, Sparkles, Bell, Mic, Printer, LayoutGrid, LayoutList, RefreshCw, Eye } from 'lucide-react';
-import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
-import { UserAvatarButton } from '@/components/UserAvatarButton.jsx';
+import { useSetPageMeta } from '@/components/layout/PageMetaContext';
+import { useFavorites } from '@/components/layout/FavoritesContext';
+import { Search, ArrowUpDown, ChevronDown, MoreVertical, Plus, Link2, Printer, LayoutGrid, LayoutList, RefreshCw, Eye, Copy } from 'lucide-react';
 import ReportDrawer from './ReportDrawer.jsx';
 import DocumentPrintDrawer, { printDocuments } from './DocumentPrintDrawer.jsx';
+import { ListFilterBar } from './ListFilterBar.jsx';
+import { buildAdvancedFilterCriteria } from '@/lib/gridQuery';
+import { useWindowFilterPresets } from '@/hooks/useWindowFilterPresets';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,30 +44,248 @@ export function ListView({
   listViewOptions = {},
   baseFilter = null,
   quickFilters = null,
-  initialQuickFilterIndex = 0,
+  initialQuickFilterIndex = null,
+  subsetFilters = null,
+  initialSubsetIndex = 0,
   onNew = null,
   newActions = [],
   labelOverrides,
   onCloneRow = null,
   initialColumnFilters,
   rowFilter,
+  dateFilterKey = null,
+  refreshTrigger = 0,
 }) {
-  const [activeFilterIndex, setActiveFilterIndex] = useState(initialQuickFilterIndex ?? 0);
-  const effectiveFilter = quickFilters
-    ? (quickFilters[activeFilterIndex]?.filter ?? baseFilter)
-    : baseFilter;
-  const effectiveRowFilter = quickFilters?.[activeFilterIndex]?.rowFilter ?? rowFilter;
-  const hook = useEntity(entity, null, { token, apiBaseUrl, baseFilter: effectiveFilter });
+  // Subset filters — radio-style, always one active, applied first.
+  const [activeSubsetIndex, setActiveSubsetIndex] = useState(() => {
+    if (!subsetFilters?.length) return null;
+    const idx = initialSubsetIndex != null && subsetFilters[initialSubsetIndex] ? initialSubsetIndex : 0;
+    return idx;
+  });
+
+  const selectSubset = useCallback((i) => {
+    setActiveSubsetIndex(i);
+  }, []);
+
+  // Quick filters — independent toggles, refine the current subset.
+  const [activeFilterIndices, setActiveFilterIndices] = useState(() =>
+    initialQuickFilterIndex != null && quickFilters?.[initialQuickFilterIndex]
+      ? new Set([initialQuickFilterIndex])
+      : new Set(),
+  );
+
+  const toggleQuickFilter = useCallback((i) => {
+    setActiveFilterIndices(prev => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+  }, []);
+
+  // Advanced filter (funnel popover) — ephemeral state, lost on page refresh.
+  const [advancedFilter, setAdvancedFilter] = useState(null);
+
+  const [tableColumns, setTableColumns] = useState([]);
+
+  const advancedFilterPart = useMemo(() => {
+    const criteria = buildAdvancedFilterCriteria(advancedFilter, tableColumns);
+    if (!criteria || criteria.length === 0) return null;
+    return `criteria=${encodeURIComponent(JSON.stringify(criteria))}`;
+  }, [advancedFilter, tableColumns]);
+
+  const effectiveFilter = useMemo(() => {
+    // Composition here covers window-scope filters only:
+    //   baseFilter AND subset AND quick[]
+    // Column filters (status/date/search) and the funnel are applied downstream
+    // by useEntity so they sort after this block in the final criteria array.
+    const parts = [];
+    if (baseFilter) parts.push(baseFilter);
+    if (subsetFilters && activeSubsetIndex != null) {
+      const f = subsetFilters[activeSubsetIndex]?.filter;
+      if (f) parts.push(f);
+    }
+    if (quickFilters && activeFilterIndices.size > 0) {
+      const qfParts = [...activeFilterIndices]
+        .sort()
+        .map(i => quickFilters[i]?.filter)
+        .filter(Boolean);
+      parts.push(...qfParts);
+    }
+    if (parts.length === 0) return null;
+
+    // Split each part into criteria payload + passthrough query params.
+    const allCriteria = [];
+    const passthrough = new URLSearchParams();
+    for (const filterStr of parts) {
+      const params = new URLSearchParams(filterStr);
+      for (const [k, v] of params.entries()) {
+        if (k === 'criteria') {
+          try {
+            const parsed = JSON.parse(v);
+            allCriteria.push(...(Array.isArray(parsed) ? parsed : [parsed]));
+          } catch {}
+        } else {
+          passthrough.append(k, v);
+        }
+      }
+    }
+
+    const segments = [];
+    if (allCriteria.length > 0) {
+      // If any part introduced an AdvancedCriteria (e.g. the funnel's OR block),
+      // wrap the whole outer merge in an AdvancedCriteria AND so the OR stays
+      // parenthesized instead of leaking into the top-level AND array.
+      const hasAdvanced = allCriteria.some((c) => c && c._constructor === 'AdvancedCriteria');
+      const finalCriteria = hasAdvanced
+        ? { _constructor: 'AdvancedCriteria', operator: 'and', criteria: allCriteria }
+        : allCriteria;
+      segments.push(`criteria=${encodeURIComponent(JSON.stringify(finalCriteria))}`);
+    }
+    const passthroughStr = passthrough.toString();
+    if (passthroughStr) segments.push(passthroughStr);
+    return segments.length > 0 ? segments.join('&') : null;
+  }, [subsetFilters, activeSubsetIndex, quickFilters, activeFilterIndices, baseFilter]);
+
+  const effectiveRowFilter = useMemo(() => {
+    const fns = [];
+    if (subsetFilters && activeSubsetIndex != null) {
+      const fn = subsetFilters[activeSubsetIndex]?.rowFilter;
+      if (fn) fns.push(fn);
+    }
+    if (quickFilters && activeFilterIndices.size > 0) {
+      const qfFns = [...activeFilterIndices]
+        .map(i => quickFilters[i]?.rowFilter)
+        .filter(Boolean);
+      fns.push(...qfFns);
+    }
+    if (rowFilter) fns.push(rowFilter);
+    if (fns.length === 0) return null;
+    if (fns.length === 1) return fns[0];
+    return (item) => fns.every(fn => fn(item));
+  }, [subsetFilters, activeSubsetIndex, quickFilters, activeFilterIndices, rowFilter]);
+
+  const [columnFilters, setColumnFilters] = useState(initialColumnFilters ?? {});
+  const columnDefs = useMemo(
+    () => Object.fromEntries(tableColumns.map(c => [c.key, c])),
+    [tableColumns],
+  );
+
+  const handleFilterChange = useCallback((key, parsed) => {
+    setColumnFilters(prev => {
+      const next = { ...prev };
+      if (parsed) next[key] = parsed;
+      else delete next[key];
+      return next;
+    });
+  }, []);
+
+  const handleClearAllFilters = useCallback(() => {
+    setColumnFilters({});
+  }, []);
+
+  // Named filter presets — per-user, per-window, persisted via AD_Preference.
+  const { presets: filterPresets, savePreset, deletePreset } = useWindowFilterPresets(windowName);
+
+  const applyPreset = useCallback((name) => {
+    const preset = filterPresets?.[name];
+    if (!preset) return;
+    setColumnFilters(preset.columnFilters && typeof preset.columnFilters === 'object' ? preset.columnFilters : {});
+    setAdvancedFilter(preset.advancedFilter ?? null);
+
+    // Subset and quick filters are stored by label (stable across prop
+    // reorderings); resolve back to the current prop index, falling back to
+    // the default if a label no longer exists.
+    if (subsetFilters?.length) {
+      const target = preset.subsetLabel
+        ? subsetFilters.findIndex((f) => f?.label === preset.subsetLabel)
+        : -1;
+      setActiveSubsetIndex(target >= 0 ? target : (subsetFilters[0] ? 0 : null));
+    }
+
+    if (quickFilters?.length) {
+      const labels = Array.isArray(preset.quickFilterLabels) ? preset.quickFilterLabels : [];
+      const next = new Set();
+      for (const label of labels) {
+        const idx = quickFilters.findIndex((f) => f?.label === label);
+        if (idx >= 0) next.add(idx);
+      }
+      setActiveFilterIndices(next);
+    } else {
+      setActiveFilterIndices(new Set());
+    }
+  }, [filterPresets, subsetFilters, quickFilters]);
+
+  const saveCurrentAsPreset = useCallback((name) => {
+    const subsetLabel = (subsetFilters && activeSubsetIndex != null)
+      ? (subsetFilters[activeSubsetIndex]?.label ?? null)
+      : null;
+    const quickFilterLabels = quickFilters
+      ? [...activeFilterIndices]
+          .map((i) => quickFilters[i]?.label)
+          .filter(Boolean)
+      : [];
+    savePreset(name, {
+      columnFilters,
+      advancedFilter,
+      subsetLabel,
+      quickFilterLabels,
+    });
+  }, [savePreset, columnFilters, advancedFilter, subsetFilters, activeSubsetIndex, quickFilters, activeFilterIndices]);
+
+  const didInitialFetchRef = useRef(false);
+
+  const hook = useEntity(entity, null, {
+    token,
+    apiBaseUrl,
+    baseFilter: effectiveFilter,
+    columnDefs,
+    columnFilters,
+    trailingFilter: advancedFilterPart,
+  });
+
+  const refreshRef = useRef(hook.refresh);
+  refreshRef.current = hook.refresh;
+
+  useEffect(() => {
+    if (!didInitialFetchRef.current) {
+      didInitialFetchRef.current = true;
+      return;
+    }
+    refreshRef.current?.();
+  }, [columnFilters, effectiveFilter, advancedFilterPart, hook.sortColumn, hook.sortDirection]);
+
+  // External refresh signal — increments when the host wants to force a reload
+  // (e.g. after cloning records via CloneOrderModal).
+  const lastRefreshTriggerRef = useRef(refreshTrigger);
+  useEffect(() => {
+    if (refreshTrigger === lastRefreshTriggerRef.current) return;
+    lastRefreshTriggerRef.current = refreshTrigger;
+    refreshRef.current?.();
+  }, [refreshTrigger]);
+
   const navigate = useNavigate();
   const tMenu = useMenuLabel();
   const t = useLabel();
   const ui = useUI();
   const label = tMenu(entityLabel) || entityLabel || entity;
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const favKey = windowName || entity || '';
+  const favActive = isFavorite(favKey);
+  const fullBreadcrumb = breadcrumb
+    ? breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')
+    : label;
+  useSetPageMeta({
+    title: label,
+    breadcrumb: fullBreadcrumb,
+    recordCount: hook.items.length,
+    onAddToFavorites: favKey ? () => toggleFavorite(favKey, entityLabel || entity) : undefined,
+    isFavorite: favActive,
+  }, [favActive, hook.items.length]);
   const [selectedRows, setSelectedRows] = useState([]);
   const [showSortPopover, setShowSortPopover] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showDocPrint, setShowDocPrint] = useState(false);
-  const [tableColumns, setTableColumns] = useState([]);
   const [viewMode, setViewMode] = useState(() =>
     localStorage.getItem(`viewMode:${entity}`) || 'list'
   );
@@ -130,63 +351,7 @@ export function ListView({
   }, [hook.hasMore, hook.loadingMore, hook.loadMore]);
 
   return (
-    <div className="h-full flex flex-col" data-testid="list-view">
-      {/* Top bar area (gray background, inherited from parent) */}
-      <div className="px-6 pt-3 pb-3">
-        {/* Row 1: Title + Global search + action icons */}
-        <div className="flex items-center gap-4">
-          {/* Left: title + count + menu */}
-          <div className="shrink-0">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-foreground">{label}</h1>
-              {!hideEyeCount && !hook.loading && (
-                <span className="inline-flex items-center justify-center h-6 min-w-[1.5rem] px-2 text-xs font-medium text-muted-foreground bg-white/60 rounded-full">
-                  {hook.items.length}
-                </span>
-              )}
-              {!hideMoreMenu && (
-                <button className="text-muted-foreground hover:text-foreground">
-                  <MoreVertical className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-            {breadcrumb && (
-              <p className="text-sm text-muted-foreground mt-0.5">{breadcrumb.split(' / ').map(s => tMenu(s.trim())).join(' / ')}</p>
-            )}
-          </div>
-
-          {/* Center: global search */}
-          <div className="flex-1 flex justify-center">
-            <div className="relative w-full max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder={ui('searchPlaceholder')}
-                readOnly
-                tabIndex={-1}
-                className="w-full h-9 rounded-lg border border-border/50 bg-white/60 pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors cursor-default"
-              />
-              <Mic className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
-            </div>
-          </div>
-
-          {/* Right: action icons */}
-          <div className="flex items-center gap-1 shrink-0">
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-              <Sparkles className="h-4 w-4" />
-            </button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-              <Plus className="h-4 w-4" />
-            </button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-              <Bell className="h-4 w-4" />
-            </button>
-            <LocaleSwitcher />
-            <UserAvatarButton />
-          </div>
-        </div>
-      </div>
-
+    <div className="flex-1 min-h-0 flex flex-col" data-testid="list-view">
       {/* White content card with rounded top-left corner */}
       <div className="flex-1 flex flex-col bg-white rounded-tl-2xl overflow-hidden min-h-0">
         {/* Selection bar or filter bar */}
@@ -213,24 +378,51 @@ export function ListView({
                 <Printer className="h-3.5 w-3.5" />
                 {ui('print')} ({selectedRows.length})
               </Button>
+              {onCloneRow && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => onCloneRow(selectedRows)}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  {ui('cloneOrderBtn')} ({selectedRows.length})
+                </Button>
+              )}
               {bulkActions && bulkActions({ selectedRows, clearSelection: () => setSelectedRows([]), token, apiBaseUrl, windowName, api })}
-              <Button variant="outline" size="sm" className="text-muted-foreground" onClick={() => setSelectedRows([])}>
-                {ui('clear')}
-              </Button>
             </div>
           </div>
         ) : (
           <div className="flex items-center justify-between px-6 py-3">
             <div className="flex items-center gap-2">
+              {subsetFilters && (
+                <div className="inline-flex items-center rounded-lg border border-border overflow-hidden">
+                  {subsetFilters.map((sf, i) => (
+                    <button
+                      key={i}
+                      onClick={() => selectSubset(i)}
+                      className={[
+                        'h-9 px-3 text-xs transition-colors',
+                        i > 0 ? 'border-l border-border' : '',
+                        activeSubsetIndex === i
+                          ? 'bg-primary/5 text-primary font-medium'
+                          : 'text-muted-foreground hover:text-foreground',
+                      ].join(' ')}
+                    >
+                      {ui(sf.label)}
+                    </button>
+                  ))}
+                </div>
+              )}
               {quickFilters && (
                 <div className="flex items-center gap-1">
                   {quickFilters.map((qf, i) => (
                     <button
                       key={i}
-                      onClick={() => setActiveFilterIndex(i)}
+                      onClick={() => toggleQuickFilter(i)}
                       className={[
-                        'h-9 px-4 text-sm rounded-lg border transition-colors',
-                        activeFilterIndex === i
+                        'h-9 px-3 text-xs rounded-lg border bg-white transition-colors',
+                        activeFilterIndices.has(i)
                           ? 'border-primary text-primary bg-primary/5 font-medium'
                           : 'border-border text-muted-foreground hover:text-foreground',
                       ].join(' ')}
@@ -241,20 +433,21 @@ export function ListView({
                 </div>
               )}
               {!(listViewOptions?.hideFilters ?? hideListFilters) && (
-                <>
-                  <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground font-normal h-9 px-3 rounded-lg bg-white">
-                    {ui('allStatuses')}
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button variant="outline" size="sm" className="gap-1.5 text-muted-foreground font-normal h-9 px-3 rounded-lg bg-white">
-                    <CalendarDays className="h-3.5 w-3.5" />
-                    {ui('lastYear')}
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  </Button>
-                  <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors">
-                    <SlidersHorizontal className="h-4 w-4" />
-                  </button>
-                </>
+                <ListFilterBar
+                  entity={entity}
+                  apiBaseUrl={apiBaseUrl}
+                  columns={tableColumns}
+                  columnFilters={columnFilters}
+                  onFilterChange={handleFilterChange}
+                  advancedFilter={advancedFilter}
+                  onAdvancedFilterChange={setAdvancedFilter}
+                  rows={hook.items}
+                  dateFilterKey={dateFilterKey}
+                  presets={windowName ? filterPresets : null}
+                  onApplyPreset={windowName ? applyPreset : null}
+                  onSavePreset={windowName ? saveCurrentAsPreset : null}
+                  onDeletePreset={windowName ? deletePreset : null}
+                />
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -398,9 +591,22 @@ export function ListView({
           </div>
         )}
 
+        {/* Indeterminate top progress bar — visible while refreshing existing data */}
+        {hook.loading && hook.items.length > 0 && (
+          <>
+            <div className="h-0.5 w-full overflow-hidden bg-primary/10">
+              <div
+                className="h-full w-1/3 bg-primary"
+                style={{ animation: 'sf-list-progress 1.1s ease-in-out infinite' }}
+              />
+            </div>
+            <style>{`@keyframes sf-list-progress { 0% { transform: translateX(-100%) } 100% { transform: translateX(400%) } }`}</style>
+          </>
+        )}
+
         {/* Table */}
         <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-auto px-6 pb-6">
-          {hook.loading ? (
+          {hook.loading && hook.items.length === 0 ? (
             <div className="space-y-3">
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-8 w-full" />
@@ -408,7 +614,7 @@ export function ListView({
               <Skeleton className="h-8 w-full" />
             </div>
           ) : (
-            <>
+            <div className={hook.loading ? 'opacity-70 transition-opacity duration-200' : 'transition-opacity duration-200'}>
               {viewMode === 'gallery' && galleryRenderer
                 ? galleryRenderer({ data: hook.items, onNavigate: (id) => navigate(`/${windowName}/${id}`), token, apiBaseUrl })
                 : (
@@ -428,8 +634,10 @@ export function ListView({
                     token={token}
                     apiBaseUrl={apiBaseUrl}
                     labelOverrides={labelOverrides}
+                    onFilterChange={handleFilterChange}
+                    onClearAllFilters={handleClearAllFilters}
+                    columnFilters={columnFilters}
                     onCloneRow={onCloneRow}
-                    initialColumnFilters={initialColumnFilters}
                     rowFilter={effectiveRowFilter}
                   />
                 )
@@ -443,7 +651,7 @@ export function ListView({
               {!hook.hasMore && hook.items.length > 0 && !hook.loadingMore && (
                 <p className="text-center text-xs text-muted-foreground/60 py-3">{ui('allRecordsLoaded')}</p>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>

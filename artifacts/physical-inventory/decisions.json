@@ -11,7 +11,8 @@
     },
     "customComponents": {
       "moreMenuContent": "InventoryMenuContent"
-    }
+    },
+    "dateFilterKey": "movementDate"
   },
   "entities": {
     "header": {
@@ -68,6 +69,7 @@
     },
     "lines": {
       "name": "inventoryLine",
+      "javaQualifier": "inventoryLine",
       "fields": {
         "storageBin": {
           "form": false,
@@ -76,6 +78,7 @@
         "product": {
           "grid": true,
           "lookup": true,
+          "forceCalloutFields": ["quantityCount", "bookQuantity"],
           "readOnlyLogic": null
         },
         "lineNo": {

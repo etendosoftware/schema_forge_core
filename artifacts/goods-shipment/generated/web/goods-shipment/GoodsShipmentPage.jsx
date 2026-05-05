@@ -29,8 +29,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:goodsShipment
 const processes = [
-  { name: 'eTBLKCBulkcompletion', label: 'Bulk Completion', style: 'positive',
-    displayLogicRaw: "@DocStatus@!'CL'&@DocStatus@!'VO'" },
+
 ];
 // @sf-generated-end processes:goodsShipment
 
@@ -42,7 +41,7 @@ const draftMode = null;
 const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity' },
+    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity', defaultValue: 0 },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
@@ -54,7 +53,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:goodsShipmentLine
 
-const api = {
+export const api = {
   "specName": "goods-shipment",
   "baseUrl": "/sws/neo/goods-shipment",
   "crud": {
@@ -170,11 +169,11 @@ const api = {
     },
     {
       "entity": "goodsShipment",
-      "field": "eTBLKCBulkcompletion",
-      "column": "EM_Etblkc_Bulkcompletion",
-      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/eTBLKCBulkcompletion",
-      "processId": "33338B1F2C4F499EBA4F5547BE0B2A4E",
-      "processType": "obuiapp"
+      "field": "generateTo",
+      "column": "GenerateTo",
+      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/generateTo",
+      "processId": "154",
+      "processType": "classic"
     },
     {
       "entity": "goodsShipment",
@@ -201,14 +200,6 @@ const api = {
       "processType": "obuiapp"
     },
     {
-      "entity": "goodsShipment",
-      "field": "generateTo",
-      "column": "GenerateTo",
-      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/generateTo",
-      "processId": "154",
-      "processType": "classic"
-    },
-    {
       "entity": "goodsShipmentLine",
       "field": "explode",
       "column": "Explode",
@@ -233,16 +224,18 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=goods-shipmentDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "sales"
   }
 };
 
 // @sf-generated-start component:GoodsShipmentPage
 export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -286,6 +279,7 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="movementDate"
       bulkActions={(ctx) => <BulkInvoiceFromShipment {...ctx} />}
       hidePrint
       {...props}

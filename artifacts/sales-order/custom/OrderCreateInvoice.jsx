@@ -51,6 +51,13 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
   }), [token]);
 
 
+  // draftMode confirm button (DetailView) dispatches this event to open the confirm modal
+  useEffect(() => {
+    const handler = () => setShowConfirm(true);
+    window.addEventListener('sales-order:open-confirm-modal', handler);
+    return () => window.removeEventListener('sales-order:open-confirm-modal', handler);
+  }, []);
+
   // OrderDraftChips (topbarExtra) dispatches this event when a grouped chip is clicked
   useEffect(() => {
     const handler = (e) => {
@@ -176,11 +183,6 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
 
   return (
     <>
-      {isDraft && (
-        <button type="button" onClick={() => setShowConfirm(true)} style={btnPrimaryStyle}>
-          {ui('soConfirmBtn')}
-        </button>
-      )}
       {/* Main action button — only shown when action is still pending */}
       {isCompleted && buttonLabel && (
         <button type="button" onClick={() => openModal(null)} style={btnPrimaryStyle}>

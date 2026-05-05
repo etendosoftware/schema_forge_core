@@ -23,6 +23,7 @@ import { useLocaleState } from './i18n/useLocaleState.js';
 import { useServiceWorker } from './hooks/useServiceWorker.js';
 import { useInstalledApps } from './hooks/useInstalledApps.js';
 import { useAppStoreUnlock, attachKeySequenceWatcher } from './hooks/useAppStoreUnlock.js';
+import { CurrencyProvider } from './hooks/useCurrency.jsx';
 
 import ArtifactViewerPage from './pages/ArtifactViewerPage.jsx';
 
@@ -102,6 +103,7 @@ async function loadAllMockData() {
     import('@generated/document/generated/web/document/mockData.js'),
     import('@generated/recurring-invoice/generated/web/recurring-invoice/mockData.js'),
     import('@generated/unit-of-measure/generated/web/unit-of-measure/mockData.js'),
+    import('@generated/fiscal-config/custom/mockData.js'),
   ]);
 
   const merged = {};
@@ -250,7 +252,9 @@ export default function App() {
       <AppStoreKeyWatcher />
       <LocaleProvider locale={locale} setLocale={setLocale}>
         <AuthProvider>
-          <AppRoutes menuGroups={menuGroups} windowMap={windowMap} />
+          <CurrencyProvider>
+            <AppRoutes menuGroups={menuGroups} windowMap={windowMap} />
+          </CurrencyProvider>
         </AuthProvider>
       </LocaleProvider>
     </BrowserRouter>

@@ -4,7 +4,7 @@ import { DataTable } from '@/components/contract-ui';
 const columns = [
   { key: 'movementDate', column: 'MovementDate', type: 'date', label: 'Movement Date' },
   { key: 'name', column: 'Name', type: 'string', label: 'Name' },
-  { key: 'warehouse', column: 'M_Warehouse_ID', type: 'string', label: 'Warehouse' },
+  { key: 'warehouse', column: 'M_Warehouse_ID', type: 'selector', label: 'Warehouse' },
   { key: 'inventoryType', column: 'Inventory_Type', type: 'enum', label: 'Inventory Type', enumLabels: { 'C': 'Closing Inventory', 'N': 'Normal', 'O': 'Opening Inventory' } },
   { key: 'processed', column: 'Processed', type: 'status', label: 'Status' },
 ];

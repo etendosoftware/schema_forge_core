@@ -12,5 +12,5 @@ const fields = [
 export default function UsedCreditSourceForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-UsedCreditSourceForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:UsedCreditSourceForm

@@ -20,6 +20,7 @@
     "secondaryTabs": {}
   },
   "entities": {
+    "intrastat": { "exclude": true },
     "product": {
       "fields": {
         "searchKey": {
@@ -46,7 +47,13 @@
           "inputMode": "selector",
           "section": "principal",
           "displayLogic": null,
-          "seq": 4
+          "seq": 4,
+          "enumVariants": {
+            "I": "blue",
+            "S": "purple",
+            "R": "teal",
+            "E": "orange"
+          }
         },
         "productCategory": {
           "grid": true,
@@ -218,6 +225,7 @@
       }
     },
     "price": {
+      "javaQualifier": "productPriceHandler",
       "fields": {
         "cost": {
           "visibility": "editable",
@@ -289,6 +297,7 @@
       }
     },
     "stock": {
+      "javaQualifier": "productStockWarehouseHandler",
       "fields": {
         "storageBin": {
           "visibility": "readOnly",
@@ -544,6 +553,6 @@
     }
   },
   "rules": {},
-  "discardPatterns": [],
+  "discardPatterns": ["EM_Aeat347_*"],
   "version": 2
 }

@@ -3,7 +3,7 @@ import { DataTable } from '@/components/contract-ui';
 // @sf-generated-start columns:basicDiscount
 const columns = [
   { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.' },
-  { key: 'discount', column: 'C_Discount_ID', type: 'string', label: 'Basic Discount' },
+  { key: 'discount', column: 'C_Discount_ID', type: 'selector', label: 'Basic Discount' },
   { key: 'customer', column: 'IsCustomer', type: 'boolean', label: 'Customer' },
   { key: 'vendor', column: 'IsVendor', type: 'boolean', label: 'Vendor' },
 ];

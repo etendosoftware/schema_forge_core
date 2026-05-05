@@ -4,6 +4,7 @@ import GoodsReceiptTable from './GoodsReceiptTable';
 import GoodsReceiptForm from './GoodsReceiptForm';
 import GoodsReceiptLineTable from './GoodsReceiptLineTable';
 import GoodsReceiptLineForm from './GoodsReceiptLineForm';
+import RelatedDocuments from '@/windows/custom/goods-receipt/RelatedDocuments';
 import catalogs from './mockCatalogs';
 
 
@@ -18,7 +19,6 @@ const summary = [
 const statusField = 'documentStatus';
 // @sf-generated-end summary:goodsReceipt
 
-// @sf-custom-slot extraBadges:goodsReceipt
 // @sf-generated-start extraBadges:goodsReceipt
 const extraBadges = [];
 // @sf-generated-end extraBadges:goodsReceipt
@@ -43,20 +43,20 @@ const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
     { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text', label: 'Attribute Set Value' },
-    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity' },
-    { key: 'storageBin', column: 'M_Locator_ID', type: 'selector', label: 'Storage Bin', reference: 'Locator', inputMode: 'selector' },
+    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity', defaultValue: 0 },
+    { key: 'storageBin', column: 'M_Locator_ID', type: 'selector', label: 'Storage Bin', reference: 'Locator', inputMode: 'selector', defaultValue: '@OnHandLocatorDefault@' },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
 
   ],
   hidden: [
-    { key: 'lineNo', value: '@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM M_InOutLine WHERE M_InOut_ID=@M_InOut_ID@' },
+    { key: 'invoiceQuantity', value: '0' },
   ],
 };
 // @sf-generated-end addLineFields:goodsReceiptLine
 
-const api = {
+export const api = {
   "specName": "goods-receipt",
   "baseUrl": "/sws/neo/goods-receipt",
   "crud": {
@@ -268,18 +268,18 @@ const api = {
     },
     {
       "entity": "goodsReceipt",
-      "field": "documentAction",
-      "column": "DocAction",
-      "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/documentAction",
-      "processId": "109",
-      "processType": "classic"
-    },
-    {
-      "entity": "goodsReceipt",
       "field": "processGoodsJava",
       "column": "Process_Goods_Java",
       "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/processGoodsJava",
       "processId": "49DEE812BF0545269781FCEBF2235924",
+      "processType": "classic"
+    },
+    {
+      "entity": "goodsReceipt",
+      "field": "documentAction",
+      "column": "DocAction",
+      "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/documentAction",
+      "processId": "109",
       "processType": "classic"
     },
     {
@@ -298,19 +298,19 @@ const api = {
     },
     {
       "entity": "goodsReceipt",
-      "field": "updateLines",
-      "column": "UpdateLines",
-      "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/updateLines",
-      "processId": "800010",
-      "processType": "classic"
-    },
-    {
-      "entity": "goodsReceipt",
       "field": "sendMaterials",
       "column": "RM_Shipment_Pickedit",
       "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/sendMaterials",
       "processId": "4AD70293357245AB96E59C2CDB43A35D",
       "processType": "obuiapp"
+    },
+    {
+      "entity": "goodsReceipt",
+      "field": "updateLines",
+      "column": "UpdateLines",
+      "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/updateLines",
+      "processId": "800010",
+      "processType": "classic"
     },
     {
       "entity": "goodsReceipt",
@@ -353,17 +353,18 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=goods-receiptDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "purchases"
   }
 };
 
 // @sf-generated-start component:GoodsReceiptPage
 export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
-  // @sf-custom-slot hooks:GoodsReceiptPage
-  
   if (recordId) {
     return (
       <DetailView
@@ -384,6 +385,7 @@ export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         draftMode={draftMode}
         {...props}
       />
@@ -398,10 +400,9 @@ export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="movementDate"
       {...props}
     />
   );
 }
 // @sf-generated-end component:GoodsReceiptPage
-
-// @sf-custom-slot section:GoodsReceiptPage-custom

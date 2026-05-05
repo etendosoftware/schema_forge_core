@@ -147,6 +147,8 @@ export function generateFrontendContract(schema, rules = []) {
         grid: f.grid,
         form: f.form,
       };
+      if (f.sourceRequired === true) mapped.sourceRequired = true;
+      if (f.derivation) mapped.derivation = f.derivation;
       if (f.columnType) mapped.columnType = f.columnType;
       if (f.reference) mapped.reference = f.reference;
       if (f.enumValues) mapped.enumValues = f.enumValues;
@@ -154,9 +156,10 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.dependsOn) mapped.dependsOn = f.dependsOn;
       if (f.lookup) mapped.lookup = true;
       if (f.popup) mapped.popup = true;
+      if (Array.isArray(f.forceCalloutFields) && f.forceCalloutFields.length > 0) mapped.forceCalloutFields = f.forceCalloutFields;
 
       // UI hints
-      if (f.defaultValue) mapped.defaultValue = f.defaultValue;
+      if (f.defaultValue !== undefined) mapped.defaultValue = f.defaultValue;
       if (f.isIdentifier) mapped.isIdentifier = true;
       if (f.help) mapped.help = f.help;
       if (f.fieldGroup) mapped.fieldGroup = f.fieldGroup;
@@ -169,6 +172,9 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.statusBar) mapped.statusBar = true;
       if (f.badge) mapped.badge = true;
       if (f.badgeLabels) mapped.badgeLabels = f.badgeLabels;
+      if (f.badgeColors) mapped.badgeColors = f.badgeColors;
+      if (f.badgeVariants) mapped.badgeVariants = f.badgeVariants;
+      if (f.enumVariants) mapped.enumVariants = f.enumVariants;
       if (f.labels) mapped.labels = f.labels;
       if (f.summable) mapped.summable = true;
       if (f.display) mapped.display = f.display;
@@ -666,7 +672,7 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
     actions: dedupedActions,
     queryParams: {
       pagination: { startRow: '_startRow', endRow: '_endRow', default: '0-100' },
-      sorting: { param: '_sortBy', example: `_sortBy=${specName}Date` },
+      sorting: { param: '_sortBy', example: '_sortBy=creationDate desc' },
       filtering: 'Use field name as query param: ?fieldName=value',
       parentFilter: 'parentId={id} for child entities',
     },
@@ -688,7 +694,7 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
 /**
  * Main orchestrator: generates the full contract object.
  */
-export function generateContract(schema, rules = [], processes = [], previousVersion = null) {
+export function generateContract(schema, rules = [], processes = [], previousVersion = null, previousContract = null) {
   const frontendContract = generateFrontendContract(schema, rules);
   const backendContract = generateBackendContract(schema, rules, processes);
   const testManifest = generateTestManifest(frontendContract, backendContract, rules, processes);
@@ -746,12 +752,21 @@ export function generateContract(schema, rules = [], processes = [], previousVer
     .digest('hex')
     .slice(0, 16);
 
-  return {
+  const now = new Date().toISOString();
+  const generatedAt = previousContract?.generatedAt ?? now;
+  const checksumChanged = previousContract && previousContract.checksum !== checksum;
+  const result = {
     version: previousVersion ?? schema.version ?? '0.1.0',
-    generatedAt: new Date().toISOString(),
-    checksum,
-    ...contractData,
+    generatedAt,
   };
+  if (checksumChanged) {
+    result.updatedAt = now;
+  } else if (previousContract?.updatedAt) {
+    result.updatedAt = previousContract.updatedAt;
+  }
+  result.checksum = checksum;
+  Object.assign(result, contractData);
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -790,7 +805,7 @@ export function mapProcessReference(referenceId) {
  * @param {object} processRaw - The process-raw.json structure
  * @returns {object} Process contract
  */
-export function generateProcessContract(processRaw) {
+export function generateProcessContract(processRaw, previousContract = null) {
   const { process: proc, parameters: rawParams } = processRaw;
   const specName = toSpecName(proc.name);
 
@@ -889,10 +904,19 @@ export function generateProcessContract(processRaw) {
     .digest('hex')
     .slice(0, 16);
 
-  return {
+  const now = new Date().toISOString();
+  const generatedAt = previousContract?.generatedAt ?? now;
+  const checksumChanged = previousContract && previousContract.checksum !== checksum;
+  const result = {
     version: '0.1.0',
-    generatedAt: new Date().toISOString(),
-    checksum,
-    ...contractData,
+    generatedAt,
   };
+  if (checksumChanged) {
+    result.updatedAt = now;
+  } else if (previousContract?.updatedAt) {
+    result.updatedAt = previousContract.updatedAt;
+  }
+  result.checksum = checksum;
+  Object.assign(result, contractData);
+  return result;
 }

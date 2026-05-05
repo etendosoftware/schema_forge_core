@@ -17,4 +17,5 @@ const fields = [
 export default function CostingForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
+
 // @sf-generated-end component:CostingForm

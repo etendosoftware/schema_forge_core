@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import { toast } from 'sonner';
+import { INVOICE_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import HeaderTable from '../../../custom/InvoiceHeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
@@ -19,7 +20,6 @@ const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
-  { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
 ];
 
 const statusField = 'documentStatus';
@@ -47,23 +47,23 @@ const draftMode = {
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
   entry: [
-    { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity', defaultValue: 1 },
-    { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["listPrice","unitPrice","tax","uOM","grossUnitPrice"] },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
+    { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity', defaultValue: 1 },
+    { key: 'listPrice', column: 'PriceList', type: 'number', required: true, label: 'List Price' },
+    { key: 'etgoDiscount', column: 'EM_Etgo_Discount', type: 'number', label: 'Discount %', defaultValue: 0 },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineNetAmount"] },
   ],
   derived: [
 
   ],
   hidden: [
     { key: 'grossUnitPrice', value: '0' },
-    { key: 'grossAmount', value: '0' },
   ],
 };
 // @sf-generated-end addLineFields:lines
 
-const api = {
+export const api = {
   "specName": "sales-invoice",
   "baseUrl": "/sws/neo/sales-invoice",
   "crud": {
@@ -303,18 +303,18 @@ const api = {
     },
     {
       "entity": "header",
-      "field": "generateTo",
-      "column": "GenerateTo",
-      "url": "/sws/neo/sales-invoice/header/{id}/action/generateTo",
-      "processId": "142",
-      "processType": "classic"
-    },
-    {
-      "entity": "header",
       "field": "processNow",
       "column": "Processing",
       "url": "/sws/neo/sales-invoice/header/{id}/action/processNow",
       "processId": "111",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "generateTo",
+      "column": "GenerateTo",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/generateTo",
+      "processId": "142",
       "processType": "classic"
     },
     {
@@ -388,7 +388,7 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=sales-invoiceDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
@@ -428,10 +428,12 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         topbarRight={InvoiceTopbarExtra}
         menuActions={({ status }) => [
           { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
-          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
+          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', labelKey: 'cancel', onClick: () => {}, },
+          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
         ]}
         draftMode={draftMode}
         salesTheme
+        lineConfig={INVOICE_LINE_CONFIG}
         {...props}
       />
     );
@@ -445,6 +447,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="invoiceDate"
       hidePrint
       {...props}
     />

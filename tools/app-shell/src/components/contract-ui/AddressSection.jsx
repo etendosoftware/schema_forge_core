@@ -58,14 +58,14 @@ function OptionPicker({ open, onClose, title, options, loading, failed, loadErro
 
         <div className="px-4 py-3 border-b border-gray-100">
           <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
             <input
               ref={searchRef}
               type="text"
               value={query}
               onChange={e => onQuery(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="option-picker-search w-full border border-gray-300 rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -134,10 +134,9 @@ export default function AddressSection({ form, onChange, opts }) {
   return (
     <>
       {/*
-        Layout: 4 equal columns, no spans.
+        Layout: 4 equal columns.
         Row 1: Primera línea | Segunda línea | Código postal | Ciudad
-        Row 2: País | Región | Correo electrónico* | Teléfono*
-        Row 3: Página web* | (3 empty)
+        Row 2: País | Región | — | —
       */}
       <div className="address-grid">
         {/* Row 1 */}
@@ -180,21 +179,7 @@ export default function AddressSection({ form, onChange, opts }) {
             <ChevronDown size={14} className="text-muted-foreground shrink-0" />
           </button>
         </div>
-        <div className="space-y-1.5">
-          <label style={MODAL_STYLES.fieldLabel}>{ui('contactEmail')}</label>
-          <input type="email" className={INPUT_CLS} value={form.etgoEmail ?? ''} onChange={e => onChange('etgoEmail', e.target.value)} />
-        </div>
-        <div className="space-y-1.5">
-          <label style={MODAL_STYLES.fieldLabel}>{ui('contactPhone')}</label>
-          <input type="tel" className={INPUT_CLS} value={form.etgoPhone ?? ''} onChange={e => onChange('etgoPhone', e.target.value.replace(/[^\d\s+\-().]/g, ''))} />
-        </div>
-
-        {/* Row 3 */}
-        <div className="space-y-1.5">
-          <label style={MODAL_STYLES.fieldLabel}>{ui('websiteField')}</label>
-          <input type="text" className={INPUT_CLS} value={form.etgoWeb ?? ''} onChange={e => onChange('etgoWeb', e.target.value)} />
-        </div>
-        <div /><div /><div />
+        <div /><div />
       </div>
 
       {/* Country picker */}

@@ -14,7 +14,7 @@ const breadcrumb = 'Sales / Return Material Receipt';
 // @sf-generated-start summary:returnMaterialReceipt
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'salesOrder', column: 'C_Order_ID', type: 'string' },
+  { key: 'salesOrder', column: 'C_Order_ID', type: 'selector' },
 ];
 
 const statusField = 'documentStatus';
@@ -48,7 +48,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:returnMaterialReceiptLine
 
-const api = {
+export const api = {
   "specName": "return-material-receipt",
   "baseUrl": "/sws/neo/return-material-receipt",
   "crud": {
@@ -145,7 +145,9 @@ const api = {
       "entity": "returnMaterialReceipt",
       "field": "receiveMaterials",
       "column": "RM_Receipt_PickEdit",
-      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/receiveMaterials"
+      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/receiveMaterials",
+      "processId": "5E9F9D7EECC24E4FBB2C60840FF613BE",
+      "processType": "obuiapp"
     },
     {
       "entity": "returnMaterialReceipt",
@@ -157,7 +159,9 @@ const api = {
       "entity": "returnMaterialReceipt",
       "field": "documentAction",
       "column": "DocAction",
-      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/documentAction"
+      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/documentAction",
+      "processId": "109",
+      "processType": "classic"
     },
     {
       "entity": "returnMaterialReceipt",
@@ -169,49 +173,65 @@ const api = {
       "entity": "returnMaterialReceipt",
       "field": "calculateFreight",
       "column": "Calculate_Freight",
-      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/calculateFreight"
+      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/calculateFreight",
+      "processId": "800141",
+      "processType": "classic"
     },
     {
       "entity": "returnMaterialReceipt",
       "field": "sendMaterials",
       "column": "RM_Shipment_Pickedit",
-      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/sendMaterials"
+      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/sendMaterials",
+      "processId": "4AD70293357245AB96E59C2CDB43A35D",
+      "processType": "obuiapp"
     },
     {
       "entity": "returnMaterialReceipt",
       "field": "generateTo",
       "column": "GenerateTo",
-      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/generateTo"
+      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/generateTo",
+      "processId": "154",
+      "processType": "classic"
     },
     {
       "entity": "returnMaterialReceipt",
       "field": "updateLines",
       "column": "UpdateLines",
-      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/updateLines"
+      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/updateLines",
+      "processId": "800010",
+      "processType": "classic"
     },
     {
       "entity": "returnMaterialReceipt",
       "field": "invoicefromshipment",
       "column": "Invoicefromshipment",
-      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/invoicefromshipment"
+      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/invoicefromshipment",
+      "processId": "62250E8866EA4D96A66C309878DC039E",
+      "processType": "obuiapp"
     },
     {
       "entity": "returnMaterialReceipt",
       "field": "processGoodsJava",
       "column": "Process_Goods_Java",
-      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/processGoodsJava"
+      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/processGoodsJava",
+      "processId": "49DEE812BF0545269781FCEBF2235924",
+      "processType": "classic"
     },
     {
       "entity": "returnMaterialReceiptLine",
       "field": "explode",
       "column": "Explode",
-      "url": "/sws/neo/return-material-receipt/returnMaterialReceiptLine/{id}/action/explode"
+      "url": "/sws/neo/return-material-receipt/returnMaterialReceiptLine/{id}/action/explode",
+      "processId": "DAE719940FE9463F8A3E3C401BBAFC53",
+      "processType": "classic"
     },
     {
       "entity": "returnMaterialReceiptLine",
       "field": "managePrereservation",
       "column": "Manage_Prereservation",
-      "url": "/sws/neo/return-material-receipt/returnMaterialReceiptLine/{id}/action/managePrereservation"
+      "url": "/sws/neo/return-material-receipt/returnMaterialReceiptLine/{id}/action/managePrereservation",
+      "processId": "70E42AD47E5F4698A9ACCCAF3EB72B9E",
+      "processType": "obuiapp"
     }
   ],
   "queryParams": {
@@ -222,16 +242,18 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=return-material-receiptDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "sales"
   }
 };
 
 // @sf-generated-start component:ReturnMaterialReceiptPage
 export default function ReturnMaterialReceiptPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -267,6 +289,7 @@ export default function ReturnMaterialReceiptPage({ windowName, recordId, ...pro
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="movementDate"
       {...props}
     />
   );

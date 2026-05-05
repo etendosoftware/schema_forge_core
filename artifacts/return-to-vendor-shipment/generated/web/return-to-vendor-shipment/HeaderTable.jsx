@@ -2,7 +2,7 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:header
 const columns = [
-
+  { key: 'movementDate', column: 'MovementDate', type: 'date', label: 'Movement Date' },
 ];
 // @sf-generated-end columns:header
 

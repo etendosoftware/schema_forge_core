@@ -12,7 +12,7 @@ const fields = [
   { key: 'taxCategory', column: 'C_TaxCategory_ID', type: 'selector', label: 'Tax Category', required: true, section: 'other', reference: 'TaxCategory', inputMode: 'selector' },
   { key: 'purchase', column: 'IsPurchased', type: 'checkbox', label: 'Purchase', required: true, section: 'other', defaultValue: 'Y' },
   { key: 'sale', column: 'IsSold', type: 'checkbox', label: 'Sale', required: true, section: 'other', defaultValue: 'Y' },
-  { key: 'stocked', column: 'IsStocked', type: 'checkbox', label: 'Stocked', required: true, section: 'other', defaultValue: 'Y' },
+  { key: 'stocked', column: 'IsStocked', type: 'checkbox', label: 'Stocked', required: true, section: 'other', defaultValue: 'Y', readOnlyLogic: (record) => record['productType'] === 'R' || record['productType'] === 'E' || record['productType'] === 'O' },
   { key: 'weight', column: 'Weight', type: 'number', label: 'Weight', section: 'other' },
   { key: 'uOMForWeight', column: 'C_Uom_Weight_ID', type: 'selector', label: 'UOM for Weight', section: 'other', reference: 'UOM', inputMode: 'selector' },
   { key: 'attributeSet', column: 'M_AttributeSet_ID', type: 'selector', label: 'Attribute Set', section: 'other', reference: 'AttributeSet', inputMode: 'selector' },
@@ -27,4 +27,5 @@ const fields = [
 export default function ProductForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
+
 // @sf-generated-end component:ProductForm

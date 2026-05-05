@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Schema Forge Quality Gate Config",
+  "type": "object",
+  "required": ["checks", "gate", "blastRadius", "invariants"],
+  "properties": {
+    "checks": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["severity", "enabled"],
+        "properties": {
+          "severity": { "enum": ["blocker", "warning"] },
+          "enabled": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "gate": {
+      "type": "object",
+      "required": ["onBlockerFail", "regressionPolicy", "baselineRef"],
+      "properties": {
+        "onBlockerFail": { "enum": ["fail"] },
+        "regressionPolicy": { "enum": ["no-worse-than-main"] },
+        "baselineRef": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "blastRadius": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["pattern", "scope"],
+        "properties": {
+          "pattern": { "type": "string", "minLength": 1 },
+          "scope": { "enum": ["touched-window", "all-windows", "named-target"] },
+          "target": { "type": "string", "minLength": 1 },
+          "excludePatterns": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        },
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": { "properties": { "scope": { "const": "named-target" } } },
+            "then": { "required": ["target"] }
+          }
+        ]
+      }
+    },
+    "invariants": {
+      "type": "object",
+      "required": ["addLineFields", "draftModeReadOnlyLogic", "notNullRequiresRequired", "customFormPathRoot"],
+      "properties": {
+        "addLineFields": {
+          "type": "object",
+          "required": ["requiredProductLookup", "quantityDefaultOne", "hiddenContainsGrossUnitPriceAndPriceList"],
+          "properties": {
+            "requiredProductLookup": { "type": "boolean" },
+            "quantityDefaultOne": { "type": "boolean" },
+            "hiddenContainsGrossUnitPriceAndPriceList": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
+        "draftModeReadOnlyLogic": { "type": "boolean" },
+        "notNullRequiresRequired": { "type": "boolean" },
+        "customFormPathRoot": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

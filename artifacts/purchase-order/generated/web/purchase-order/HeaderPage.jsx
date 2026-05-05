@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
+import { toast } from 'sonner';
 import HeaderTable from './HeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
@@ -7,6 +8,7 @@ import LinesForm from './LinesForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
 import PurchaseOrderActions from '../../../custom/PurchaseOrderActions';
 import PurchaseOrderDraftChips from '../../../custom/PurchaseOrderDraftChips';
+import PurchaseOrderReactivateBulkAction from '../../../custom/PurchaseOrderReactivateBulkAction';
 import catalogs from './mockCatalogs';
 
 
@@ -15,11 +17,13 @@ const breadcrumb = 'Purchases / Purchase Order';
 const labelOverrides = {
   "es_ES": {
     "C_BPartner_ID": "Contacto",
-    "DatePromised": "Fecha de entrega esperada"
+    "DatePromised": "Fecha de entrega esperada",
+    "DeliveryStatusPurchase": "Estado de entrega"
   },
   "en_US": {
     "C_BPartner_ID": "Contact",
-    "DatePromised": "Expected Delivery Date"
+    "DatePromised": "Expected Delivery Date",
+    "DeliveryStatusPurchase": "Delivery Status"
   }
 };
 
@@ -27,6 +31,8 @@ const labelOverrides = {
 // @sf-generated-start summary:header
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
+  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
 ];
 
 const statusField = 'documentStatus';
@@ -43,20 +49,26 @@ const processes = [
 // @sf-generated-end processes:header
 
 // @sf-generated-start draftMode:header
-const draftMode = null;
+const draftMode = {
+  "enabled": true,
+  "processField": "documentAction",
+  "processValue": "CO",
+  "label": "poConfirmBtn"
+};
 // @sf-generated-end draftMode:header
 
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
   entry: [
-    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["listPrice","unitPrice","tax","uOM","grossUnitPrice","discount"] },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
     { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity', defaultValue: 1 },
-    { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'search', required: true, label: 'Tax', reference: 'Tax', inputMode: 'search' },
+    { key: 'listPrice', column: 'PriceList', type: 'number', required: true, label: 'Net List Price' },
+    { key: 'discount', column: 'Discount', type: 'number', label: 'Discount %', defaultValue: 0 },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineGrossAmount","grossUnitPrice","lineNetAmount"] },
   ],
   derived: [
-    { key: 'discount', column: 'Discount', type: 'number', label: 'Discount %' },
+
   ],
   hidden: [
     { key: 'grossUnitPrice', value: '0' },
@@ -70,7 +82,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:lines
 
-const api = {
+export const api = {
   "specName": "purchase-order",
   "baseUrl": "/sws/neo/purchase-order",
   "crud": {
@@ -284,7 +296,7 @@ const api = {
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
-      "inputMode": "search",
+      "inputMode": "selector",
       "url": "/sws/neo/purchase-order/lines/selectors/tax"
     },
     {
@@ -596,7 +608,7 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=purchase-orderDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
@@ -607,11 +619,13 @@ const api = {
   "labelOverrides": {
     "es_ES": {
       "C_BPartner_ID": "Contacto",
-      "DatePromised": "Fecha de entrega esperada"
+      "DatePromised": "Fecha de entrega esperada",
+      "DeliveryStatusPurchase": "Estado de entrega"
     },
     "en_US": {
       "C_BPartner_ID": "Contact",
-      "DatePromised": "Expected Delivery Date"
+      "DatePromised": "Expected Delivery Date",
+      "DeliveryStatusPurchase": "Delivery Status"
     }
   }
 };
@@ -646,6 +660,11 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         topbarRight={PurchaseOrderActions}
         topbarExtra={PurchaseOrderDraftChips}
+        menuActions={({ data, status }) => [
+          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', labelKey: 'cancel', onClick: () => {}, },
+          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO' && !data?.hasLinkedDocuments, labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
+        ]}
+        draftMode={draftMode}
         labelOverrides={labelOverrides}
         {...props}
       />
@@ -660,6 +679,8 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="orderDate"
+      bulkActions={(ctx) => <PurchaseOrderReactivateBulkAction {...ctx} />}
       hidePrint
       labelOverrides={labelOverrides}
       {...props}

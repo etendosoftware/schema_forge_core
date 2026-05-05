@@ -5,24 +5,52 @@
     "name": "Purchase Invoice",
     "relatedDocuments": true,
     "notesField": "description",
+    "menuActions": [
+      {
+        "key": "cancel",
+        "label": "Cancel",
+        "labelKey": "cancel",
+        "destructive": true,
+        "visibleWhenStatus": "CO"
+      },
+      {
+        "key": "reactivate",
+        "label": "Reactivate",
+        "labelKey": "reactivate",
+        "visibleWhenStatus": "CO",
+        "documentAction": "RE",
+        "successKey": "actionCompleted"
+      }
+    ],
     "processOverrides": {},
     "draftMode": {
       "enabled": true,
       "processField": "documentAction",
       "processValue": "CO",
       "label": "Confirm"
+    },
+    "dateFilterKey": "invoiceDate",
+    "lineEntityConfig": "invoice",
+    "labelOverrides": {
+      "es_ES": {
+        "POReference": "Nº documento"
+      },
+      "en_US": {
+        "POReference": "Document No."
+      }
     }
   },
   "entities": {
     "header": {
+      "javaQualifier": "purchaseInvoiceHeaderHandler",
       "fields": {
         "documentNo": {
           "visibility": "readOnly",
           "section": "principal",
-          "grid": true,
+          "grid": false,
+          "form": false,
           "searchable": true,
-          "readOnlyLogic": null,
-          "seq": 20
+          "readOnlyLogic": null
         },
         "transactionDocument": {
           "visibility": "editable",
@@ -34,6 +62,7 @@
         },
         "invoiceDate": {
           "grid": true,
+          "gridOrder": 1,
           "searchable": true,
           "section": "principal",
           "readOnlyLogic": null,
@@ -41,6 +70,7 @@
         },
         "businessPartner": {
           "grid": true,
+          "gridOrder": 3,
           "searchable": true,
           "section": "principal",
           "reference": "BusinessPartner",
@@ -63,7 +93,7 @@
           "visibility": "editable",
           "section": "other",
           "form": false,
-          "grid": true
+          "grid": false
         },
         "accountingDate": {
           "section": "other",
@@ -72,7 +102,7 @@
         },
         "paymentTerms": {
           "section": "principal",
-          "grid": true,
+          "grid": false,
           "reference": "PaymentTerm",
           "inputMode": "selector",
           "readOnlyLogic": null,
@@ -94,7 +124,13 @@
           "readOnlyLogic": "@Processed@='Y'"
         },
         "orderReference": {
-          "visibility": "discarded"
+          "visibility": "editable",
+          "section": "principal",
+          "grid": true,
+          "gridOrder": 2,
+          "searchable": true,
+          "readOnlyLogic": "@Processed@='Y'",
+          "seq": 20
         },
         "taxDate": {
           "visibility": "discarded"
@@ -163,20 +199,22 @@
           "visibility": "readOnly",
           "form": false,
           "grid": true,
+          "gridOrder": 4,
           "searchable": true
         },
         "grandTotalAmount": {
           "visibility": "readOnly",
           "form": false,
-          "grid": true
+          "grid": true,
+          "gridOrder": 5
         },
         "summedLineAmount": {
           "visibility": "readOnly",
           "form": false,
-          "grid": true
+          "grid": false
         },
         "description": {
-          "section": "principal"
+          "form": false
         },
         "salesOrder": {
           "section": "other",
@@ -186,25 +224,26 @@
         "paymentComplete": {
           "visibility": "readOnly",
           "form": false,
-          "grid": true,
+          "grid": false,
           "displayLogic": null
         },
         "totalPaid": {
           "visibility": "readOnly",
           "form": false,
-          "grid": true,
+          "grid": false,
           "displayLogic": null
         },
         "outstandingAmount": {
           "visibility": "readOnly",
           "form": false,
           "grid": true,
+          "gridOrder": 6,
           "displayLogic": null
         },
         "dueAmount": {
           "visibility": "readOnly",
           "form": false,
-          "grid": true,
+          "grid": false,
           "displayLogic": null
         },
         "prepaymentamt": {
@@ -279,16 +318,27 @@
       }
     },
     "lines": {
+      "javaQualifier": "invoiceLineHandler",
       "fields": {
         "lineNo": {
           "visibility": "system"
         },
         "product": {
           "grid": true,
+          "lookup": true,
+          "order": 1,
+          "gridOrder": 1,
           "section": "principal",
           "inputMode": "search",
           "readOnlyLogic": null,
-          "displayLogic": null
+          "displayLogic": null,
+          "forceCalloutFields": ["listPrice", "unitPrice", "tax", "uOM", "grossUnitPrice"]
+        },
+        "description": {
+          "grid": true,
+          "order": 2,
+          "gridOrder": 2,
+          "section": "principal"
         },
         "account": {
           "form": false,
@@ -313,6 +363,8 @@
         },
         "invoicedQuantity": {
           "grid": true,
+          "order": 3,
+          "gridOrder": 3,
           "section": "principal",
           "readOnlyLogic": null
         },
@@ -320,27 +372,44 @@
           "visibility": "system"
         },
         "unitPrice": {
-          "grid": true,
-          "section": "principal",
-          "readOnlyLogic": null
+          "grid": false,
+          "form": false
         },
         "listPrice": {
-          "visibility": "readOnly",
-          "form": false,
-          "readOnlyLogic": null,
-          "displayLogic": null
+          "visibility": "editable",
+          "grid": true,
+          "form": true,
+          "inputMode": "number",
+          "order": 4,
+          "gridOrder": 4,
+          "section": "principal",
+          "columnType": "amount"
+        },
+        "etgoDiscount": {
+          "visibility": "editable",
+          "grid": true,
+          "form": true,
+          "inputMode": "number",
+          "order": 5,
+          "gridOrder": 5,
+          "section": "principal",
+          "derivation": null,
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "lineNetAmount": {
-          "visibility": "readOnly",
-          "grid": true,
+          "visibility": "system",
+          "grid": false,
           "section": "principal",
           "readOnlyLogic": null
         },
         "tax": {
           "grid": true,
+          "order": 6,
+          "gridOrder": 6,
           "section": "principal",
           "inputMode": "selector",
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "forceCalloutFields": ["lineNetAmount"]
         },
         "taxableAmount": {
           "visibility": "readOnly",
@@ -392,8 +461,11 @@
         },
         "grossAmount": {
           "visibility": "readOnly",
-          "form": false,
-          "grid": false
+          "grid": true,
+          "gridOrder": 7,
+          "form": true,
+          "section": "principal",
+          "displayLogic": null
         },
         "grossListPrice": {
           "visibility": "discarded",

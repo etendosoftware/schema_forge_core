@@ -1,0 +1,9 @@
+{
+  "$schema": "decisions-v2",
+  "window": {
+    "category": "configuration",
+    "name": "Configuración Fiscal",
+    "layoutType": "custom"
+  },
+  "entities": {}
+}

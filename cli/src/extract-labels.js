@@ -45,9 +45,10 @@ FROM ad_ref_list rl
 LEFT JOIN ad_ref_list_trl rlt
   ON rl.ad_ref_list_id = rlt.ad_ref_list_id AND rlt.ad_language = $1
 WHERE rl.value IN (
-  'DR', 'CO', 'VO', 'IP', 'CL', 'PA', 'UE', 'CA',
+  'DR', 'CO', 'VO', 'IP', 'CL', 'PA', 'UE', 'CA', 'CJ',
   'RPR', 'RPAE', 'RPAP', 'RPPC', 'RPVOID',
-  'PPM', 'PWNC', 'RDNC'
+  'PPM', 'PWNC', 'RDNC',
+  'ETGO_CI'
 )
 AND rl.isactive = 'Y'
 ORDER BY rl.value, rlt.name NULLS LAST`,

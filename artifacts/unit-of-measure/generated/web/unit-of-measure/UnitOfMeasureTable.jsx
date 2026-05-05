@@ -1,32 +1,10 @@
 import { DataTable } from '@/components/contract-ui';
-import { useUI } from '@/i18n';
-
-const TYPE_KEYS = { A: 'uomTypeArea', L: 'uomTypeLength', T: 'uomTypeTime', V: 'uomTypeVolume', W: 'uomTypeWeight' };
-const TYPE_COLORS = {
-  A: 'bg-orange-100 text-orange-700',
-  L: 'bg-blue-100 text-blue-700',
-  T: 'bg-purple-100 text-purple-700',
-  V: 'bg-cyan-100 text-cyan-700',
-  W: 'bg-amber-100 text-amber-700',
-};
-
-const TypeBadge = ({ value }) => {
-  const ui = useUI();
-  if (!value) return null;
-  const label = ui(TYPE_KEYS[value] ?? value);
-  const color = TYPE_COLORS[value] ?? 'bg-gray-100 text-gray-700';
-  return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${color}`}>
-      {label}
-    </span>
-  );
-};
 
 // @sf-generated-start columns:unitOfMeasure
 const columns = [
-  { key: 'name', column: 'Name', type: 'string' },
-  { key: 'symbol', column: 'UOMSymbol', type: 'string' },
-  { key: 'uOMType', column: 'UOM_Type', type: 'string', render: (row) => <TypeBadge value={row?.uOMType} /> },
+  { key: 'name', column: 'Name', type: 'string', label: 'Name' },
+  { key: 'symbol', column: 'UOMSymbol', type: 'string', label: 'Symbol' },
+  { key: 'uOMType', column: 'UOM_Type', type: 'enum', label: 'UOM Type', enumLabels: { 'A': 'Area', 'L': 'Length', 'T': 'Time', 'V': 'Volume', 'W': 'Weight' }, enumVariants: {"A":"orange","L":"blue","T":"purple","V":"teal","W":"yellow"} },
 ];
 // @sf-generated-end columns:unitOfMeasure
 

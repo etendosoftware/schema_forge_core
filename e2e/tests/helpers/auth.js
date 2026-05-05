@@ -1,21 +1,28 @@
 /**
  * Authentication and navigation helpers for E2E tests.
  *
- * Login flow discovered via agent-browser:
- *   - /login page: textbox "Username", textbox "Password", button "Sign in"
- *   - After login: redirects to /dashboard
+ * Two modes, selected automatically based on the BASE_URL env var:
  *
- * Context switch discovered via agent-browser:
- *   - Click Etendo logo (always visible) → opens popover
- *   - Popover has two <select>: Role + Organization, and an "Apply" button
+ * Mock mode (default — no BASE_URL set, server started with make dev or make dev-mock):
+ *   Seeds localStorage with a fake token before React boots and intercepts /sws/*
+ *   so useEntity never receives a 401 and never calls logout().
+ *
+ * Real Etendo mode (BASE_URL=http://localhost:8080/...):
+ *   Uses the original login form + switchContext flow.
+ *   Route interception is NOT applied so real API calls go through unchanged.
  */
 
-/** Default role/org for all E2E tests */
+const IS_MOCK_MODE = !process.env.BASE_URL;
+
+/** Default role/org for real-backend tests */
 export const DEFAULT_ROLE = 'F&B International Group Admin';
 export const DEFAULT_ORG = 'F&B España - Región Norte';
 
 /**
- * Login and switch to the default role/org context.
+ * Authenticate for E2E tests.
+ *
+ * In mock mode: seeds localStorage + intercepts /sws/* API calls.
+ * In real mode: fills the login form and switches role/org context.
  */
 export async function login(page, {
   user = 'admin',
@@ -23,14 +30,60 @@ export async function login(page, {
   role = DEFAULT_ROLE,
   org = DEFAULT_ORG,
 } = {}) {
-  await page.goto('/login');
-  await page.getByRole('textbox', { name: 'Username' }).fill(user);
-  await page.getByRole('textbox', { name: 'Password' }).fill(password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.waitForURL('**/dashboard', { timeout: 15_000 });
+  if (IS_MOCK_MODE) {
+    // Inject token before React boots so AuthContext.isAuthenticated = true.
+    await page.addInitScript(() => {
+      localStorage.setItem('sf_auth_token', 'e2e-mock-token');
+      localStorage.setItem('sf_auth_user', 'admin');
+    });
 
-  // Switch role/org context
-  await switchContext(page, role, org);
+    // Intercept /sws/* to prevent the real Etendo backend receiving our fake
+    // token (which would return 401 and trigger logout()).
+    // - GET /selectors/**  → single synthetic item so product search dropdowns populate
+    // - POST /**/callout   → synthetic updates so forceCalloutFields can override user values
+    // - POST/PUT/PATCH     → synthetic saved record so the UI can navigate to detail
+    // - GET (other)        → empty list
+    await page.route('**/sws/**', (route) => {
+      const url = route.request().url();
+      const method = route.request().method();
+      if (url.includes('/selectors/')) {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ items: [{ id: 'prod-e2e', label: 'Test Product', name: 'Test Product', _identifier: 'Test Product' }] }),
+        });
+      } else if (method === 'POST' && url.includes('/callout')) {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ updates: { quantityCount: 42, bookQuantity: 42 }, combos: {}, messages: [] }),
+        });
+      } else if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: 'e2e-record-id', data: {}, success: true }),
+        });
+      } else {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ data: [], totalRows: 0 }),
+        });
+      }
+    });
+
+    await page.goto('/dashboard');
+    await page.waitForURL('**/dashboard', { timeout: 10_000 });
+  } else {
+    // Real Etendo mode: login form + context switch
+    await page.goto('/login');
+    await page.getByRole('textbox', { name: 'Username' }).fill(user);
+    await page.getByRole('textbox', { name: 'Password' }).fill(password);
+    await page.getByRole('button', { name: 'Sign in' }).click();
+    await page.waitForURL('**/dashboard', { timeout: 15_000 });
+    await switchContext(page, role, org);
+  }
 }
 
 /**

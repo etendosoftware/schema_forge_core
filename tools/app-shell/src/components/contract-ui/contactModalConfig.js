@@ -1,19 +1,18 @@
 export const contactModalConfig = {
   headerFields: [
-    { id: 'searchKey', labelKey: 'identifier', type: 'text', required: true },
     { id: 'name', labelKey: 'contactName', type: 'text', required: true },
-    { id: 'taxID', labelKey: 'taxIDField', type: 'text', placeholder: 'B-12345678', required: true },
     {
       id: 'taxIdType',
       labelKey: 'taxIdTypeField',
       type: 'dynamicSelect',
       optionsKey: 'taxIdTypes',
     },
+    { id: 'taxID', labelKey: 'taxIDField', type: 'text', placeholder: 'B-12345678', required: true },
   ],
   sections: [
     {
       id: 'general',
-      labelKey: 'generalTab',
+      labelKey: 'direccionTab',
       component: 'AddressSection',
     },
     {
@@ -27,7 +26,6 @@ export const contactModalConfig = {
       repeatable: true,
       initialRows: 1,
       noHeaders: true,
-      countsToProgress: true,
       emptyTextKey: 'noContactsYet',
       addLabelKey: 'addContactPerson',
       fields: [
@@ -43,7 +41,6 @@ export const contactModalConfig = {
       repeatable: true,
       initialRows: 1,
       noHeaders: true,
-      countsToProgress: true,
       emptyTextKey: 'noBankAccountsYet',
       addLabelKey: 'addBankAccount',
       fields: [
@@ -58,7 +55,17 @@ export const contactModalConfig = {
         { id: 'iban', labelKey: 'ibanField', type: 'text' },
       ],
     },
+    {
+      id: 'more',
+      labelKey: 'masTab',
+      plain: true,
+      fields: [
+        { id: 'etgoEmail', labelKey: 'contactEmail', type: 'email' },
+        { id: 'etgoPhone', labelKey: 'contactPhone', type: 'tel' },
+        { id: 'etgoWeb', labelKey: 'websiteField', type: 'text' },
+      ],
+    },
   ],
-  requiredFields: ['searchKey', 'name', 'taxID', 'country'],
-  progressFields: ['searchKey', 'name', 'taxID', 'taxIdType', 'address', 'country', 'city'],
+  requiredFields: ['name', 'taxID', 'country'],
+  progressFields: ['name', 'taxID', 'address', 'country', 'city'],
 };

@@ -81,7 +81,7 @@ export function useCallout(entity, { token, apiBaseUrl }) {
         const hasUpdates = Object.keys(updates).length > 0;
         const hasCombos = Object.keys(combos).length > 0;
         if (hasUpdates || hasCombos) {
-          setCalloutResult({ updates, combos });
+          setCalloutResult({ updates, combos, triggerField: field });
         } else {
           setCalloutResult(null);
         }

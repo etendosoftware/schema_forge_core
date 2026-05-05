@@ -1,14 +1,19 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { useUI } from '@/i18n';
 import RelatedDocuments from './RelatedDocuments';
 import ImportFromShipmentModal from './ImportFromShipmentModal';
+import DocumentTotalsPanel from '@/components/contract-ui/DocumentTotalsPanel.jsx';
 
 function fmt(val, curr) {
   const n = typeof val === 'string' ? parseFloat(val) : (val ?? 0);
   const s = n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return curr ? `${s} ${curr}` : s;
+}
+
+function fmtForPanel(val, currency) {
+  return fmt(val, currency);
 }
 
 /**
@@ -22,15 +27,12 @@ function fmt(val, curr) {
 export default function InvoiceBottomPanel({
   recordId, data, token, apiBaseUrl, api, summary,
   notesField, onFieldChange, notesFocused, setNotesFocused,
+  lines, pendingLine, editingLine, lineConfig, discountPerProductEnabled, onDiscountPerProductChange,
 }) {
   const ui = useUI();
   const currency = data?.['currency$_identifier'] || '';
 
-  const subtotalField = summary?.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('summed') || f.key.toLowerCase().includes('totallines') || f.key.toLowerCase().includes('lineamount')));
-  const totalField = summary?.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || (f.key.toLowerCase().includes('total') && !f.key.toLowerCase().includes('line'))));
-  const subtotal = subtotalField ? data?.[subtotalField.key] : null;
-  const total = totalField ? data?.[totalField.key] : null;
-  const taxes = (subtotal != null && total != null) ? total - subtotal : null;
+  const isReadOnly = data?.documentStatus !== 'DR';
 
   return (
     <div className="flex flex-col">
@@ -91,41 +93,44 @@ export default function InvoiceBottomPanel({
       {/* ── Vertical separator ── */}
       <div className="border-l border-border/50" style={{ borderLeftWidth: '0.5px' }} />
 
-      {/* ── Right column: Totals only ── */}
-      <div className="w-[280px] shrink-0 py-4 px-4">
-        <div className="text-sm space-y-0.5">
-          {subtotal != null && (
-            <div className="flex justify-between py-1 px-1">
-              <span className="text-muted-foreground">{ui('subtotal')}</span>
-              <span className="tabular-nums">{fmt(subtotal, currency)}</span>
-            </div>
-          )}
-          {taxes != null && taxes !== 0 && (
-            <div className="flex justify-between py-1 px-1">
-              <span className="text-muted-foreground">{ui('tax')}</span>
-              <span className="tabular-nums">{fmt(taxes, currency)}</span>
-            </div>
-          )}
-          {total != null && (
-            <div className="flex justify-between py-1.5 px-1 border-t border-border/40 font-semibold text-base" style={{ borderTopWidth: '0.5px' }}>
-              <span>{ui('total')}</span>
-              <span className="tabular-nums">{fmt(total, currency)}</span>
-            </div>
-          )}
-        </div>
+      {/* ── Right column: Totals ── */}
+      <div className="w-[340px] shrink-0 py-4 px-4 flex flex-col justify-start">
+        <DocumentTotalsPanel
+          lines={lines ?? []}
+          pendingLine={pendingLine ?? null}
+          editingLine={editingLine ?? null}
+          lineConfig={lineConfig}
+          formatAmount={fmtForPanel}
+          currency={currency}
+          discountPerProductEnabled={discountPerProductEnabled ?? false}
+          onDiscountPerProductChange={onDiscountPerProductChange}
+          readOnly={isReadOnly}
+        />
       </div>
       </div>
     </div>
   );
 }
 
-function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, token, apiBaseUrl }) {
+function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, token, apiBaseUrl, onSave, forceOpen, onForceOpenHandled }) {
   const ui = useUI();
   const [showImportModal, setShowImportModal] = useState(false);
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
+
+  useEffect(() => {
+    if (forceOpen) { setShowImportModal(true); onForceOpenHandled?.(); }
+  }, [forceOpen, onForceOpenHandled]);
+
+  const handleImportClick = async () => {
+    if (onSave) {
+      const shouldOpen = await onSave();
+      if (!shouldOpen) return;
+    }
+    setShowImportModal(true);
+  };
 
   return (
     <div style={{ margin: '24px 16px', padding: '32px 24px', background: 'var(--color-background-secondary)', borderRadius: 'var(--border-radius-lg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
@@ -145,7 +150,7 @@ function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, 
             + {ui('addLines')}
           </button>
           {bpId && (
-            <button type="button" onClick={() => setShowImportModal(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
+            <button type="button" onClick={handleImportClick} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
@@ -171,7 +176,7 @@ function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, 
   );
 }
 
-function InvoiceLineActions({ data, recordId, token, apiBaseUrl }) {
+function InvoiceLineActions({ data, recordId, token, apiBaseUrl, onSave, forceOpen, onForceOpenHandled }) {
   const ui = useUI();
   const [showImportModal, setShowImportModal] = useState(false);
   const isDraft = data?.documentStatus === 'DR';
@@ -179,13 +184,25 @@ function InvoiceLineActions({ data, recordId, token, apiBaseUrl }) {
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
+  useEffect(() => {
+    if (forceOpen) { setShowImportModal(true); onForceOpenHandled?.(); }
+  }, [forceOpen, onForceOpenHandled]);
+
   if (!isDraft || !bpId) return null;
+
+  const handleClick = async () => {
+    if (onSave) {
+      const shouldOpen = await onSave();
+      if (!shouldOpen) return;
+    }
+    setShowImportModal(true);
+  };
 
   return (
     <>
       <button
         type="button"
-        onClick={() => setShowImportModal(true)}
+        onClick={handleClick}
         style={{ all: 'unset', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-secondary, #6b7280)', cursor: 'pointer' }}
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

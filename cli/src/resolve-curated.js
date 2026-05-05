@@ -203,6 +203,7 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
     form,
     searchable,
   };
+  if (rawField.mandatory === true) field.sourceRequired = true;
 
   // Section (only for visible fields)
   const section = fieldDecision.section || null;
@@ -215,6 +216,8 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
   if (fieldDecision.badge) field.badge = true;
   if (fieldDecision.badgeLabels) field.badgeLabels = fieldDecision.badgeLabels;
   if (fieldDecision.badgeColors) field.badgeColors = fieldDecision.badgeColors;
+  if (fieldDecision.badgeVariants) field.badgeVariants = fieldDecision.badgeVariants;
+  if (fieldDecision.enumVariants) field.enumVariants = fieldDecision.enumVariants;
   if (fieldDecision.labels) field.labels = fieldDecision.labels;
   if (fieldDecision.summable) field.summable = true;
   if (fieldDecision.columnType) field.columnType = fieldDecision.columnType;
@@ -252,6 +255,11 @@ function buildCuratedField(rawField, fieldDecision, discardPatterns) {
     if (fieldDecision.lookup) field.lookup = true;
     if (fieldDecision.popup) field.popup = true;
   }
+
+  // forceCalloutFields is not FK-specific — any visible field that triggers a callout
+  // may declare which fields the callout result should always override.
+  if (isVisible && Array.isArray(fieldDecision.forceCalloutFields) && fieldDecision.forceCalloutFields.length > 0)
+    field.forceCalloutFields = fieldDecision.forceCalloutFields;
 
   // derivation — carry from raw field
   if (rawField.derivation) {
@@ -502,6 +510,9 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
         processValue: entityDecision.draftMode.processValue || 'CO',
         label: entityDecision.draftMode.label || 'Process',
       };
+      if (Array.isArray(entityDecision.draftMode.completedStatuses)) {
+        entity.draftMode.completedStatuses = entityDecision.draftMode.completedStatuses;
+      }
     }
 
     if (entityDecision.formCols != null) {
@@ -648,11 +659,20 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   if (windowDecisions.quickFilters) {
     schema.window.quickFilters = windowDecisions.quickFilters;
   }
+  if (windowDecisions.subsetFilters) {
+    schema.window.subsetFilters = windowDecisions.subsetFilters;
+  }
+  if (windowDecisions.dateFilterKey) {
+    schema.window.dateFilterKey = windowDecisions.dateFilterKey;
+  }
   if (windowDecisions.statusEnumLabels) {
     schema.window.statusEnumLabels = windowDecisions.statusEnumLabels;
   }
   if (windowDecisions.noHeaderBorder) {
     schema.window.noHeaderBorder = true;
+  }
+  if (windowDecisions.lineEntityConfig) {
+    schema.window.lineEntityConfig = windowDecisions.lineEntityConfig;
   }
 
   // Propagate window-level draftMode to the primary (header) entity so generate-contract
@@ -667,6 +687,9 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
         processValue: windowDecisions.draftMode.processValue || 'CO',
         label: windowDecisions.draftMode.label || 'Process',
       };
+      if (Array.isArray(windowDecisions.draftMode.completedStatuses)) {
+        primaryEntity.draftMode.completedStatuses = windowDecisions.draftMode.completedStatuses;
+      }
     }
   }
 
@@ -729,11 +752,13 @@ async function runCli() {
     } catch { /* no processes.json */ }
 
     let prevVersion = null;
+    let prevContract = null;
     try {
       const existing = JSON.parse(await readFile(join(artifactsDir, 'contract.json'), 'utf-8'));
       let v = existing.version ?? null;
       while (v !== null && typeof v === 'object') v = v.version ?? null;
       prevVersion = v;
+      prevContract = existing;
     } catch { /* no existing contract */ }
 
     const contract = generateContract(
@@ -741,6 +766,7 @@ async function runCli() {
       Array.isArray(rules) ? rules : rules.rules || [],
       processes.processes || [],
       prevVersion,
+      prevContract,
     );
 
     const contractPath = join(artifactsDir, 'contract.json');

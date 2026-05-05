@@ -2,9 +2,9 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:usedCreditSource
 const columns = [
-  { key: 'creditPaymentUsed', column: 'FIN_Payment_Id_Used', type: 'string', label: 'Credit Payment Used' },
+  { key: 'creditPaymentUsed', column: 'FIN_Payment_Id_Used', type: 'selector', label: 'Credit Payment Used' },
   { key: 'amount', column: 'Amount', type: 'number', label: 'Amount' },
-  { key: 'currency', column: 'C_Currency_ID', type: 'string', label: 'Currency' },
+  { key: 'currency', column: 'C_Currency_ID', type: 'selector', label: 'Currency' },
 ];
 // @sf-generated-end columns:usedCreditSource
 

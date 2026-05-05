@@ -7,6 +7,7 @@
     "sidebarLayout": true,
     "breadcrumb": "Contact",
     "detailEntity": null,
+    "summaryFields": [],
     "primaryTabs": [
       {
         "key": "general",
@@ -33,10 +34,30 @@
       }
     ],
     "customComponents": {
-      "headerTable": "ContactsTable"
+      "headerTable": "ContactsTable",
+      "topbarRight": "ContactTypeToggle"
     },
     "hidePrint": true,
     "hideMoreMenu": true,
+    "labelOverrides": {
+      "en_US": {
+        "Name": "Legal Name",
+        "FIN_Financial_Account_ID": "Account",
+        "PO_Financial_Account_ID": "Account",
+        "EM_Etgo_Web": "Website",
+        "EM_Etgo_Firstname": "First Name",
+        "EM_Etgo_Lastname": "Last Name"
+      },
+      "es_ES": {
+        "Name": "Razón Social",
+        "EM_Etgo_Identifier": "Identificador",
+        "FIN_Financial_Account_ID": "Cuenta",
+        "PO_Financial_Account_ID": "Cuenta",
+        "EM_Etgo_Web": "Página web",
+        "EM_Etgo_Firstname": "Nombre",
+        "EM_Etgo_Lastname": "Apellidos"
+      }
+    },
     "processOverrides": {
       "setNewCurrency": {
         "exclude": true
@@ -113,10 +134,38 @@
           "section": "principal",
           "order": 2
         },
+        "etgoFirstname": {
+          "visibility": "editable",
+          "form": true,
+          "grid": false,
+          "section": "principal",
+          "order": 3
+        },
+        "etgoLastname": {
+          "visibility": "editable",
+          "form": true,
+          "grid": false,
+          "section": "principal",
+          "order": 4
+        },
+        "etgoIsperson": {
+          "visibility": "editable",
+          "form": false,
+          "grid": false
+        },
+        "etgoIdentifier": {
+          "visibility": "readOnly",
+          "form": true,
+          "grid": false,
+          "label": "Identifier",
+          "section": "principal",
+          "order": 0
+        },
         "searchKey": {
           "visibility": "editable",
+          "form": false,
           "grid": false,
-          "searchable": true,
+          "required": false,
           "section": "principal",
           "order": 1
         },
@@ -138,11 +187,11 @@
         "taxID": {
           "visibility": "editable",
           "section": "principal",
-          "order": 4
+          "order": 6
         },
         "oBTIKTaxIDKey": {
           "visibility": "editable",
-          "order": 3
+          "order": 5
         },
         "etgoWeb": {
           "visibility": "editable",
@@ -150,7 +199,7 @@
           "grid": true,
           "label": "Web",
           "section": "principal",
-          "order": 5
+          "order": 7
         },
         "etgoEmail": {
           "visibility": "editable",
@@ -158,7 +207,7 @@
           "grid": true,
           "label": "Email",
           "section": "principal",
-          "order": 6
+          "order": 8
         },
         "etgoPhone": {
           "visibility": "editable",
@@ -166,7 +215,7 @@
           "grid": true,
           "label": "Phone",
           "section": "principal",
-          "order": 7
+          "order": 9
         },
         "creditLimit": {
           "visibility": "editable",
@@ -306,7 +355,8 @@
           "section": "principal",
           "displayLogic": "record.customer"
         }
-      }
+      },
+      "javaQualifier": "businessPartnerHandler"
     },
     "locationAddress": {
       "fields": {

@@ -13,5 +13,5 @@ const fields = [
 export default function BatuzForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-BatuzForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:BatuzForm

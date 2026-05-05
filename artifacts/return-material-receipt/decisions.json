@@ -1,13 +1,14 @@
 {
-  "$schema": "decisions-v1",
+  "$schema": "decisions-v2",
   "window": {
     "category": "sales",
     "name": "Return Material Receipt",
     "relatedDocuments": true,
-    "notesField": "description"
+    "notesField": "description",
+    "dateFilterKey": "movementDate"
   },
   "entities": {
-    "mInOut": {
+    "header": {
       "name": "returnMaterialReceipt",
       "fields": {
         "documentNo": {
@@ -248,7 +249,7 @@
         }
       }
     },
-    "mInOutLine": {
+    "lines": {
       "name": "returnMaterialReceiptLine",
       "fields": {
         "lineNo": {
@@ -378,7 +379,7 @@
         }
       }
     },
-    "factAcct": {
+    "accounting": {
       "exclude": true
     }
   },
@@ -408,5 +409,6 @@
       "description": "When selecting a product on a line, auto-fill UOM from product default"
     }
   },
-  "discardPatterns": []
+  "discardPatterns": [],
+  "version": 2
 }

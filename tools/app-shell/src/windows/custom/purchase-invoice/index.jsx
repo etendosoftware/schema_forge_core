@@ -3,13 +3,16 @@ import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
 import { useUI } from '@/i18n';
-import HeaderTable from '@generated/purchase-invoice/generated/web/purchase-invoice/HeaderTable';
+import BulkDocumentAction from '@/components/contract-ui/BulkDocumentAction';
+import { useBulkActionToast } from '@/hooks/useBulkActionToast';
+import PurchaseInvoiceHeaderTable from './PurchaseInvoiceHeaderTable.jsx';
 import HeaderPage from '@generated/purchase-invoice/generated/web/purchase-invoice/HeaderPage';
 import InvoiceLineTableCustom from './InvoiceLineTableCustom.jsx';
-import InvoicePreviewModal from './InvoicePreviewModal.jsx';
+import InvoicePreviewModal from '../shared/InvoicePreviewModal.jsx';
 import PurchaseInvoiceTopbar from './PurchaseInvoiceTopbar.jsx';
 import PurchaseInvoiceBottomPanel from './PurchaseInvoiceBottomPanel.jsx';
 import RelatedDocuments from './RelatedDocuments.jsx';
+import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
@@ -19,20 +22,26 @@ import { useCreateContactModal } from '@/components/contract-ui/useCreateContact
 const LIST_COLUMNS = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string', label: 'Document No.' },
   { key: 'invoiceDate', column: 'DateInvoiced', type: 'date', label: 'Invoice Date' },
-  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string', label: 'Business Partner' },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner' },
   { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
 ];
+// Mirrors artifacts/purchase-invoice/generated/web/purchase-invoice/HeaderPage.jsx
+// Kept in sync manually because the generator does not expose it yet.
+const LABEL_OVERRIDES = {
+  es_ES: { POReference: 'Nº documento' },
+  en_US: { POReference: 'Document No.' },
+};
 
 let previewRowSetterRef = null;
 
 /**
  * PurchaseInvoiceTable — generated table wrapper that opens the preview modal.
+ * Columns are driven by decisions.json via the generated HeaderTable.
  */
 function PurchaseInvoiceTable(props) {
   return (
-    <HeaderTable
-      columns={LIST_COLUMNS}
+    <PurchaseInvoiceHeaderTable
       {...props}
       onNavigate={(row) => previewRowSetterRef?.(row)}
     />
@@ -47,6 +56,7 @@ function PurchaseInvoiceTable(props) {
  *   - no recordId       → custom list view with preview modal
  */
 export default function PurchaseInvoiceWindow(props) {
+  useBulkActionToast();
   const { recordId, token, apiBaseUrl, windowName } = props;
   const navigate = useNavigate();
   const location = useLocation();
@@ -54,6 +64,8 @@ export default function PurchaseInvoiceWindow(props) {
   const ui = useUI();
   const [savedRecord, setSavedRecord] = useState(null);
   const [previewRow, setPreviewRow] = useState(null);
+  const [cloneTargets, setCloneTargets] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
     useCreateContactModal({ apiBaseUrl, token });
   const breadcrumb = 'Purchases / Purchase Invoice';
@@ -119,10 +131,14 @@ export default function PurchaseInvoiceWindow(props) {
   const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
 
   const INVOICE_QUICK_FILTERS = [
-    { label: 'all' },
-    { label: 'overdueOnly', rowFilter: (row) => Number(row.outstandingAmount ?? 0) > 0 },
+    {
+      label: 'overdueOnly',
+      filter: `criteria=${encodeURIComponent(JSON.stringify([
+        { fieldName: 'outstandingAmount', operator: 'greaterThan', value: 0 },
+      ]))}`,
+    },
   ];
-  const initialQuickFilterIndex = filterParam === 'overdue' ? 1 : 0;
+  const initialQuickFilterIndex = filterParam === 'overdue' ? 0 : null;
 
   return (
     <>
@@ -132,10 +148,28 @@ export default function PurchaseInvoiceWindow(props) {
         Table={PurchaseInvoiceTable}
         entityLabel="Purchase Invoice"
         breadcrumb={breadcrumb}
+        labelOverrides={LABEL_OVERRIDES}
         initialColumnFilters={initialColumnFilters}
         quickFilters={INVOICE_QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}
+        dateFilterKey="invoiceDate"
+        onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
+        bulkActions={(ctx) => <BulkDocumentAction {...ctx} />}
+        refreshTrigger={refreshKey}
       />
+      {cloneTargets && createPortal(
+        <CloneOrderModal
+          records={cloneTargets}
+          apiBaseUrl={apiBaseUrl}
+          headers={headers}
+          routePrefix="/purchase-invoice/"
+          errorKey="cloneInvoiceError"
+          processingKey="invoiceProcessing"
+          onClose={() => setCloneTargets(null)}
+          onCloned={() => setRefreshKey(k => k + 1)}
+        />,
+        document.body,
+      )}
       {(previewRow || effectiveRecord) && (
         <InvoicePreviewModal
           invoice={previewRow || effectiveRecord}

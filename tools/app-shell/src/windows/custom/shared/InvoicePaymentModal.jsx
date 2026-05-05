@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUI } from '@/i18n';
+import { formatCurrency } from '@/lib/formatCurrency';
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
@@ -11,12 +12,7 @@ const STATUS_LABELS = {
 
 function fmt(val, curr) {
   const n = typeof val === 'string' ? parseFloat(val) : (val ?? 0);
-  if (curr) {
-    try {
-      return new Intl.NumberFormat(undefined, { style: 'currency', currency: curr }).format(n);
-    } catch { /* fallback if currency code is invalid */ }
-  }
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return formatCurrency(curr || 'USD', n);
 }
 
 function fmtDate(raw) {
@@ -372,9 +368,6 @@ export default function InvoicePaymentModal({
                         <span style={{ fontSize: 12, fontWeight: 500, color: '#374151' }}>{ui('installment')} {idx + 1}</span>
                         <span style={{ color: '#d1d5db' }}>&middot;</span>
                         <span className="tabular-nums" style={{ fontSize: 12, fontWeight: 500, color: '#111827' }}>{fmt(instAmount, currency)}</span>
-                        <span style={{ fontSize: 11, color: '#9ca3af' }}>
-                          {Math.round(instAmount / (localTotal || grandTotal || 1) * 100)}%
-                        </span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span className="tabular-nums" style={{ fontSize: 11, color: '#6B7280' }}>{fmtDate(inst.dueDate)}</span>
@@ -413,7 +406,7 @@ export default function InvoicePaymentModal({
                                   </div>
                                   <button type="button" onClick={() => navToPayment(p.id)}
                                     style={{ fontSize: 11, fontWeight: 500, color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                                    View &rarr;
+                                    {ui('viewArrow')}
                                   </button>
                                 </div>
                                 <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -464,6 +457,21 @@ export default function InvoicePaymentModal({
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Register another payment — shown between list and confirmation when partially paid */}
+          {confirmation && !fullyPaid && (
+            <div style={{ marginTop: 8 }}>
+              <button type="button" onClick={() => {
+                const nextInst = sorted.find(i => parseFloat(i.outstandingAmount) > 0);
+                const nextScheduleId = nextInst ? (nextInst.finPaymentScheduleID || nextInst.id) : null;
+                setConfirmation(null);
+                if (nextScheduleId) setActiveFormScheduleId(nextScheduleId);
+              }}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '0.5px dashed #d1d5db', background: 'transparent', fontSize: 12, color: '#6B7280', cursor: 'pointer', textAlign: 'center' }}>
+                + {ui('registerPayment')} &middot; {fmt(localOutstanding, currency)} {ui('outstandingLabel').toLowerCase()}
+              </button>
             </div>
           )}
 

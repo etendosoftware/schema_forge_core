@@ -1,29 +1,19 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { DataTable } from '@/components/contract-ui';
-import { useLocale } from '@/i18n';
+import { useLocale, useLocaleSwitch } from '@/i18n';
+import { formatCalendarDate, getCalendarDateRelation } from '@/lib/dateOnly';
+import {
+  getDueDateState,
+  getDueDateDotStyle,
+  getDueDateTextStyle,
+  getLatestInstallmentDueDate,
+} from '@/lib/invoiceDueDate';
 
 // ─── Invoice-specific status logic ───────────────────────────────
 
 function isCreditNote(row) {
   return (row['transactionDocument$_identifier'] || '').toLowerCase().includes('credit');
 }
-
-// Status classNames — locale-independent
-const STATUS_CLASS = {
-  draft:   'bg-gray-100 text-gray-600 border border-gray-200',
-  paid:    'bg-emerald-600 text-white border-transparent',
-  partial: 'bg-blue-50 text-blue-700 border border-blue-300',
-  pending: 'bg-amber-50 text-amber-700 border border-amber-300',
-  overdue: 'bg-red-50 text-red-700 border border-red-300',
-  voided:  'bg-red-100 text-red-600 border border-red-200',
-  closed:  'bg-gray-100 text-gray-600 border border-gray-200',
-};
-
-// i18n keys for each status / UI element
-const STATUS_KEYS = {
-  draft: 'statusDraft', paid: 'statusPaid', partial: 'statusPartial',
-  pending: 'statusPending', overdue: 'statusOverdue', voided: 'statusVoided', closed: 'statusClosed',
-};
 
 function getInvoiceStatus(row) {
   const docStatus = row.documentStatus;
@@ -36,8 +26,7 @@ function getInvoiceStatus(row) {
   if (outstanding <= 0 || row.paymentComplete === true || row.paymentComplete === 'Y')
     return 'paid';
   if (row.dueDate) {
-    const due = new Date(row.dueDate);
-    if (due < new Date() && outstanding > 0) return 'overdue';
+    if (getCalendarDateRelation(row.dueDate) === 'past' && outstanding > 0) return 'overdue';
   }
   if (paid > 0) return 'partial';
   return 'pending';
@@ -57,11 +46,33 @@ const filters = ['documentNo', 'invoiceDate', 'businessPartner'];
 
 export default function InvoiceHeaderTable(props) {
   const dictionary = useLocale();
+  const { locale } = useLocaleSwitch();
   const gl = dictionary?.genericLabels || {};
   const t = (key) => gl[key] || key;
 
+  // ─── Batch-fetch max dueDate per invoice from payment plan ────
+  const [dueDates, setDueDates] = useState({});
+  useEffect(() => {
+    const rows = props.data;
+    if (!rows?.length || !props.apiBaseUrl || !props.token) return;
+    const headers = { Authorization: `Bearer ${props.token}` };
+    const ids = rows.map(r => r.id).filter(Boolean);
+    Promise.all(
+      ids.map(id =>
+        fetch(`${props.apiBaseUrl}/paymentPlan?parentId=${id}`, { headers })
+          .then(r => r.ok ? r.json() : {})
+          .then(d => {
+            const installments = d?.response?.data ?? d?.data ?? [];
+            return [id, getLatestInstallmentDueDate(installments)];
+          })
+          .catch(() => [id, null])
+      )
+    ).then(entries => setDueDates(Object.fromEntries(entries)));
+  }, [props.data, props.apiBaseUrl, props.token]);
+
   // ─── Custom columns (override generated ones) ─────────────────
   const columns = useMemo(() => [
+    { key: 'invoiceDate', column: 'DateInvoiced', type: 'date', dot: false },
     {
       key: 'documentNo', column: 'DocumentNo', type: 'string',
       pill: {
@@ -70,18 +81,25 @@ export default function InvoiceHeaderTable(props) {
         className: 'bg-purple-50 text-purple-700 border-purple-200',
       },
     },
-    { key: 'invoiceDate', column: 'DateInvoiced', type: 'date' },
-    { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
-    { key: '_status', column: '_status', type: 'custom', label: t('statusColumn'),
+    {
+      key: '_dueDate', column: '_dueDate', type: 'custom', label: t('dueDate'),
       render: (row) => {
-        const statusKey = getInvoiceStatus(row);
-        const className = STATUS_CLASS[statusKey] || STATUS_CLASS.pending;
-        const label = gl[STATUS_KEYS[statusKey]] || statusKey;
-        return <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${className}`} style={{ borderWidth: '0.5px' }}>{label}</span>;
+        const d = dueDates[row.id];
+        if (!d) return <span className="text-muted-foreground">—</span>;
+        const state = getDueDateState(d, row.outstandingAmount);
+        return (
+          <span className="inline-flex items-center gap-1.5" style={getDueDateTextStyle(state)}>
+            <span className="inline-block h-2 w-2 rounded-full shrink-0" style={getDueDateDotStyle(state)} />
+            {formatCalendarDate(d, locale)}
+          </span>
+        );
       },
     },
+    { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
+    { key: 'documentStatus', column: 'DocStatus', type: 'status', label: t('statusColumn') },
     { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
-  ], [gl]);
+    { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
+  ], [gl, dueDates, locale]);
 
   // ─── Filter options ───────────────────────────────────────────
   const TYPE_OPTIONS = useMemo(() => [

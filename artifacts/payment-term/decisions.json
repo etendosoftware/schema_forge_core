@@ -2,10 +2,9 @@
   "$schema": "decisions-v2",
   "version": 2,
   "window": {
-    "category": "configuracion",
+    "category": "settings",
     "name": "Payment Term",
     "detailEntity": null,
-    "breadcrumb": "Settings / Payment Term",
     "hidePrint": true,
     "hideMoreMenu": true,
     "labelOverrides": {
@@ -57,10 +56,6 @@
           "badgeLabels": {
             "true": { "es_ES": "Sí", "en_US": "Yes" },
             "false": { "es_ES": "No", "en_US": "No" }
-          },
-          "badgeColors": {
-            "true": "bg-blue-100 text-blue-800",
-            "false": "bg-gray-100 text-gray-500"
           }
         },
         "active": {

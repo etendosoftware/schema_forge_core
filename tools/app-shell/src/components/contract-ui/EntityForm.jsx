@@ -3,7 +3,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Check, ChevronsUpDown, Search, X } from 'lucide-react';
+import { Check, ChevronsUpDown, Loader2, Search, X } from 'lucide-react';
 import { useLabel, useLocaleSwitch, useMenuLabel, useUI } from '@/i18n';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
@@ -11,9 +11,31 @@ import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { ImageField } from './ImageField.jsx';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import { CreateContactContext } from './CreateContactContext.js';
+import { PartnerAddressPicker } from './PartnerAddressPicker.jsx';
+import { SelectorInput } from './SelectorInput.jsx';
 
 function buildSelectPlaceholder(ui, label) {
   return `${ui('selectLabelPrefix')} ${label}...`;
+}
+
+function evalReadOnlyLogic(field, data) {
+  if (typeof field?.readOnlyLogic !== 'function') return false;
+  try {
+    return !!field.readOnlyLogic(data ?? {});
+  } catch (err) {
+    console.error(`[readOnlyLogic] field='${field.key}' threw:`, err, '| record:', data);
+    return false;
+  }
+}
+
+function evalDisplayLogic(field, data) {
+  if (typeof field?.displayLogic !== 'function') return true;
+  try {
+    return !!field.displayLogic(data ?? {});
+  } catch (err) {
+    console.error(`[displayLogic] field='${field.key}' threw:`, err, '| record:', data);
+    return true;
+  }
 }
 
 function buildSearchPlaceholder(ui, label) {
@@ -87,6 +109,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
   const catalogOptions = selectorUrl ? null : catalogs?.[field.reference];
 
   // If we have an initial value but no label yet (and no catalog), try to fetch the single record
+  const searchContextKey = JSON.stringify(selectorContext ?? {});
   React.useEffect(() => {
     if (!value || displayValue || isEditingRef.current) return;
     // Try local catalog
@@ -107,7 +130,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
         }
       })
       .catch(() => { });
-  }, [value, displayValue, selectorUrl, selectorContext, token, catalogs, entityName, field]);
+  }, [value, displayValue, selectorUrl, searchContextKey, token, catalogs, entityName, field]);
 
   // Server-side search triggered on typing or on focus (empty query = load initial options).
   const triggerServerSearch = (searchQuery) => {
@@ -171,7 +194,8 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
   const createBtn = canCreate ? (
     <button
       type="button"
-      className="w-full text-left px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 border-b border-border/40 transition-colors"
+      className="w-full text-left px-3 py-2 text-sm font-medium hover:bg-blue-50 border-b border-border/40 transition-colors"
+      style={{ color: '#202452' }}
       onMouseDown={e => { e.preventDefault(); setOpen(false); createCtx.onOpen(query, handleSelect); }}
     >
       + {ui('createContact')}
@@ -216,7 +240,10 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
           required={field.required}
           autoComplete="off"
         />
-        {hasSelection && (
+        {fetching && (
+          <Loader2 className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground animate-spin pointer-events-none" />
+        )}
+        {!fetching && hasSelection && (
           <button
             type="button"
             onMouseDown={(e) => { e.preventDefault(); handleClear(); }}
@@ -244,11 +271,6 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
           ))}
         </div>
       )}
-      {open && query.length > 0 && fetching && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg">
-          <div className="px-3 py-2 text-xs text-muted-foreground">{ui('searching')}</div>
-        </div>
-      )}
       {open && query.length > 0 && !fetching && filtered.length === 0 && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
           {createBtn}
@@ -266,113 +288,8 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
   );
 }
 
-const SELECTOR_PAGE = 50;
-
-/**
- * Dropdown selector for FK fields with few options (inputMode: selector).
- * Fetches options from the server with lazy pagination triggered by scrolling.
- * Falls back to catalog when no selectorUrl is provided.
- */
-function SelectorInput({ entityName, field, value, displayValue, onChange, catalogs, resolvedLabel, selectorUrl, selectorContext, token }) {
-  const ui = useUI();
-  const catalogOptions = getCatalogOptions(catalogs, entityName, field);
-  const [serverOptions, setServerOptions] = useState(null);
-  const [hasMore, setHasMore] = useState(true);
-  const loadingRef = useRef(false);
-  const hasMoreRef = useRef(true);
-  const offsetRef = useRef(0);
-
-  const fetchPage = useCallback((offset) => {
-    if (!selectorUrl || !token || loadingRef.current || !hasMoreRef.current) return;
-    loadingRef.current = true;
-    const url = buildUrlWithParams(selectorUrl, {
-      ...selectorContext,
-      limit: SELECTOR_PAGE,
-      offset,
-    });
-    fetch(url, {
-      headers: { 'Authorization': `Bearer ${token}` },
-    })
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        const items = data?.items ?? data?.response?.data ?? (Array.isArray(data) ? data : null);
-        if (items) {
-          const mapped = items.map(i => ({ id: i.id, name: i.label ?? i.name ?? i.id }));
-          setServerOptions(prev => offset === 0 ? mapped : [...(prev ?? []), ...mapped]);
-          offsetRef.current = offset + items.length;
-          if (items.length < SELECTOR_PAGE) { setHasMore(false); hasMoreRef.current = false; }
-        }
-        loadingRef.current = false;
-      })
-      .catch(() => { loadingRef.current = false; });
-  }, [selectorUrl, selectorContext, token]);
-
-  // Load first page when selectorUrl/token available
-  useEffect(() => {
-    if (!selectorUrl || !token) return;
-    offsetRef.current = 0;
-    hasMoreRef.current = true;
-    setHasMore(true);
-    setServerOptions(null);
-    fetchPage(0);
-  }, [selectorUrl, token, fetchPage]);
-
-  // Callback ref: fires when SelectContent mounts (dropdown opens) — attaches scroll listener
-  const contentCallbackRef = useCallback((node) => {
-    if (!node || !selectorUrl) return;
-    // Radix renders [data-radix-select-viewport] as the actual scrollable element
-    const viewport = node.querySelector('[data-radix-select-viewport]') ?? node;
-    viewport.addEventListener('scroll', () => {
-      const { scrollTop, scrollHeight, clientHeight } = viewport;
-      if (scrollHeight - scrollTop - clientHeight < 100) fetchPage(offsetRef.current);
-    }, { passive: true });
-  }, [fetchPage, selectorUrl]);
-
-  const baseOptions = serverOptions ?? catalogOptions;
-  // Whether the current value is among the (possibly filtered) server options.
-  const hasValue = value && baseOptions.some(opt => opt.id === value);
-
-  return (
-    <Select
-      value={value || '__empty__'}
-      onValueChange={(val) => {
-        if (val === '__empty__') {
-          onChange('', '', null);
-          return;
-        }
-        const opt = baseOptions.find(o => o.id === val);
-        onChange(val, opt?.name, opt);
-      }}
-      required={field.required}
-    >
-      <SelectTrigger id={field.key} data-testid={`field-${field.key}`} className="focus:ring-2 focus:ring-primary">
-        <SelectValue placeholder={buildSelectPlaceholder(ui, resolvedLabel)} />
-      </SelectTrigger>
-      <SelectContent ref={contentCallbackRef}>
-        {!field.required && <SelectItem value="__empty__">&nbsp;</SelectItem>}
-        {/* When the current value is not among the filtered options (e.g. a purchase price list
-            on a sales invoice), render a hidden item so Radix can display the current label in
-            the trigger — but the user cannot re-select it from the dropdown. */}
-        {!hasValue && value && displayValue && (
-          <SelectItem
-            key={`__current__${value}`}
-            value={value}
-            style={{ display: 'none', height: 0, padding: 0, overflow: 'hidden' }}
-            aria-hidden="true"
-          >
-            {displayValue}
-          </SelectItem>
-        )}
-        {baseOptions.map(opt => (
-          <SelectItem key={opt.id} value={opt.id} data-testid={`option-${field.key}-${opt.id}`}>{opt.name}</SelectItem>
-        ))}
-        {hasMore && selectorUrl && (
-          <div className="py-1 text-center text-xs text-muted-foreground select-none pointer-events-none">{ui('loading')}</div>
-        )}
-      </SelectContent>
-    </Select>
-  );
-}
+// SelectorInput moved to './SelectorInput.jsx' to be reused by both the form view
+// here and the inline add-row in DataTable.
 
 /**
  * Dependent Select for FK fields that require a parent context.
@@ -385,6 +302,10 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
 
   const parentKey = field.dependsOn?.field;
   const parentValue = formData?.[parentKey];
+  // Compare selectorContext by content, not by reference. DetailView recreates the
+  // context object on every editing mutation even when values are identical, which
+  // would otherwise refetch options on every callout cascade.
+  const contextKey = JSON.stringify(selectorContext ?? {});
 
   React.useEffect(() => {
     if (!parentValue || !selectorUrl || !token) {
@@ -414,10 +335,10 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
         }
       })
       .catch(() => {
-        setLoading(false);
         setDynamicOptions([]);
-      });
-  }, [parentValue, selectorUrl, selectorContext, token, field.dependsOn?.filterKey]);
+      })
+      .finally(() => setLoading(false));
+  }, [parentValue, selectorUrl, contextKey, token, field.dependsOn?.filterKey]);
 
   // If the current value isn't in options (real data from existing record), add it
   const hasValue = value && dynamicOptions.some(opt => opt.id === value);
@@ -450,6 +371,7 @@ function DependentSelect({ field, value, displayValue, onChange, catalogs, formD
         <SelectValue
           placeholder={loading ? ui('loading') : (parentValue ? buildSelectPlaceholder(ui, resolvedLabel) : ui('selectParentFirst'))}
         />
+        {loading && <Loader2 className="h-4 w-4 text-muted-foreground animate-spin ml-auto mr-1" />}
       </SelectTrigger>
       <SelectContent>
         {!field.required && <SelectItem value="__empty__">&nbsp;</SelectItem>}
@@ -543,9 +465,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   // Apply function-based displayLogic evaluated client-side against current data.
   // This mirrors the readOnlyLogic pattern and handles fields like customer/vendor
   // tabs where visibility depends on a sibling checkbox value (no server round-trip needed).
-  displayFields = displayFields.filter(f =>
-    typeof f.displayLogic !== 'function' || !!f.displayLogic(data ?? {})
-  );
+  displayFields = displayFields.filter(f => evalDisplayLogic(f, data));
 
   if (displayFields.length === 0) return null;
 
@@ -567,8 +487,13 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     const isReadOnly = formReadOnly
       || f.readOnly
       || displayLogic?.readOnly?.[f.key] === true
-      || (typeof f.readOnlyLogic === 'function' && !!f.readOnlyLogic(data ?? {}));
-    const displayValue = resolveIdentifier(data, f.key) ?? data?.[f.key] ?? '';
+      || evalReadOnlyLogic(f, data);
+    const rawDisplayValue = resolveIdentifier(data, f.key) ?? data?.[f.key] ?? '';
+    // Strip floating-point noise (e.g. 243.20999999999998 → 243.21) for read-only number fields.
+    // toFixed(10) preserves up to 10 significant decimal places while eliminating IEEE 754 drift.
+    const displayValue = f.type === 'number' && isReadOnly && Number.isFinite(Number(rawDisplayValue))
+      ? parseFloat(Number(rawDisplayValue).toFixed(10))
+      : rawDisplayValue;
     // Shared read-only rendering for FK-style fields (dependent, selector, search)
     const renderReadOnlyFk = () => (
       <div key={f.key} className="space-y-1.5">
@@ -579,26 +504,30 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       </div>
     );
     if (f.type === 'checkbox') {
+      // YESNO fields can arrive as boolean true, 'Y', 'true' (checked) or false/'N'/'false'/null/undefined (unchecked).
+      // Plain `!!value` is wrong because `!!'N'` === true.
+      const isCheckedYN = (v) => v === true || v === 'Y' || v === 'true';
+      const checked = isCheckedYN(data?.[f.key]);
       return (
         <div key={f.key} className="flex items-center gap-2 pt-6">
           <button
             type="button"
             role="checkbox"
-            aria-checked={!!data?.[f.key]}
+            aria-checked={checked}
             disabled={isReadOnly}
             id={f.key}
             data-testid={`field-${f.key}`}
-            onClick={() => !isReadOnly && onChange?.(f.key, !data?.[f.key], f.column)}
+            onClick={() => !isReadOnly && onChange?.(f.key, !checked, f.column)}
             className={[
               'peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow',
               'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
               'disabled:cursor-not-allowed disabled:opacity-50',
-              !!data?.[f.key]
+              checked
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-transparent',
             ].join(' ')}
           >
-            {!!data?.[f.key] && (
+            {checked && (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -621,26 +550,44 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     }
     if (f.type === 'dependent') {
       if (isReadOnly) return renderReadOnlyFk();
+      const fieldSelectorUrl = apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null;
+      const fieldOnChange = (val, lbl) => {
+        onChange?.(f.key, val, f.column);
+        if (lbl) onChange?.(f.key + '$_identifier', lbl);
+        else if (!val) onChange?.(f.key + '$_identifier', '');
+      };
       return (
         <div key={f.key} className="space-y-1.5">
           <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
             {label}{f.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
           </Label>
-          <DependentSelect
-            field={f}
-            value={data?.[f.key] ?? ''}
-            displayValue={data?.[f.key + '$_identifier']}
-            onChange={(val, label) => {
-              onChange?.(f.key, val, f.column);
-              if (label) onChange?.(f.key + '$_identifier', label);
-            }}
-            catalogs={catalogs}
-            formData={data}
-            resolvedLabel={label}
-            selectorUrl={apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${f.column}` : null}
-            selectorContext={effectiveSelectorContext}
-            token={token}
-          />
+          {f.column === 'C_BPartner_Location_ID' ? (
+            <PartnerAddressPicker
+              field={f}
+              value={data?.[f.key] ?? ''}
+              displayValue={data?.[f.key + '$_identifier']}
+              onChange={fieldOnChange}
+              formData={data}
+              resolvedLabel={label}
+              selectorUrl={fieldSelectorUrl}
+              selectorContext={effectiveSelectorContext}
+              token={token}
+              apiBaseUrl={apiBaseUrl}
+            />
+          ) : (
+            <DependentSelect
+              field={f}
+              value={data?.[f.key] ?? ''}
+              displayValue={data?.[f.key + '$_identifier']}
+              onChange={fieldOnChange}
+              catalogs={catalogs}
+              formData={data}
+              resolvedLabel={label}
+              selectorUrl={fieldSelectorUrl}
+              selectorContext={effectiveSelectorContext}
+              token={token}
+            />
+          )}
         </div>
       );
     }
@@ -659,6 +606,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
             onChange={(val, label, auxData) => {
               onChange?.(f.key, val, f.column);
               if (label) onChange?.(f.key + '$_identifier', label);
+              else if (!val) onChange?.(f.key + '$_identifier', '');
               if (auxData) {
                 for (const [suffix, auxVal] of Object.entries(auxData)) {
                   if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
@@ -706,12 +654,22 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
       const searchOnChange = (val, lbl, auxData) => {
         onChange?.(f.key, val, f.column);
         if (lbl) onChange?.(f.key + '$_identifier', lbl);
+        else if (!val) onChange?.(f.key + '$_identifier', '');
         if (auxData) {
+          const isGross = auxData.isTaxIncluded !== false;
           for (const [suffix, auxVal] of Object.entries(auxData)) {
-            // Gross price from price list — map directly to grossUnitPrice so the DB trigger
-            // can derive priceActual (net). Do NOT set unitPrice/priceActual from the frontend.
+            // Price from the document's price list. Mapping depends on price list type:
+            //   - Gross list (isTaxIncluded=true): standardPrice is the gross price → grossUnitPrice
+            //   - Net list   (isTaxIncluded=false): standardPrice is the net price   → unitPrice
             if (suffix === 'standardPrice' && auxVal != null) {
-              onChange?.('grossUnitPrice', auxVal);
+              if (isGross) {
+                onChange?.('grossUnitPrice', auxVal);
+              } else {
+                // Mirror InlineAddRow: for net price lists, standardPrice is the net price →
+                // populate both unitPrice and listPrice so sidebar and add-row behave identically.
+                onChange?.('unitPrice', auxVal);
+                onChange?.('listPrice', auxVal);
+              }
             } else if (suffix === '_aux' && auxVal && typeof auxVal === 'object') {
               for (const [auxSuffix, auxSuffixVal] of Object.entries(auxVal)) {
                 onChange?.(f.key + auxSuffix, auxSuffixVal);
@@ -875,7 +833,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     const imgReadOnly = formReadOnly
       || imageField.readOnly
       || displayLogic?.readOnly?.[imageField.key] === true
-      || (typeof imageField.readOnlyLogic === 'function' && !!imageField.readOnlyLogic(data ?? {}));
+      || evalReadOnlyLogic(imageField, data);
     return (
       <div className="flex gap-6 items-start">
         <div className={`flex-1 min-w-0 ${gridClass}`} style={gridStyle}>

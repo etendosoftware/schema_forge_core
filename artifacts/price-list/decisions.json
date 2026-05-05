@@ -2,7 +2,7 @@
   "$schema": "decisions-v2",
   "version": 2,
   "window": {
-    "category": "reference",
+    "category": "settings",
     "name": "Price List",
     "hidePrint": true,
     "hideMoreMenu": true,
@@ -46,9 +46,9 @@
             "true": { "es_ES": "Venta", "en_US": "Sales" },
             "false": { "es_ES": "Compra", "en_US": "Purchase" }
           },
-          "badgeColors": {
-            "true": "bg-emerald-100 text-emerald-800",
-            "false": "bg-indigo-100 text-indigo-700"
+          "badgeVariants": {
+            "true": "blue",
+            "false": "purple"
           }
         },
         "costBasedPriceList": {

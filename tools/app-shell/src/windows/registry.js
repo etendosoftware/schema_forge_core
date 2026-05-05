@@ -12,7 +12,7 @@ import { APP_CATALOG } from '../apps-registry.js';
 const windowLoaders = {
   'sales-order': () => import('@generated/sales-order/generated/web/sales-order/index.jsx'),
   'business-partner': () => import('@generated/business-partner/generated/web/business-partner/index.jsx'),
-  'contacts': () => import('@generated/contacts/generated/web/contacts/index.jsx'),
+  'contacts': () => import('@/windows/custom/contacts/index.jsx'),
   'warehouse': () => import('@generated/warehouse/generated/web/warehouse/index.jsx'),
   'price-list': () => import('@generated/price-list/generated/web/price-list/index.jsx'),
   'payment-term': () => import('@generated/payment-term/generated/web/payment-term/index.jsx'),
@@ -110,6 +110,18 @@ export function getAllWindowNames() {
 }
 
 /**
+ * API-only sub-windows: have a contract.json and NEO spec but are never loaded
+ * as standalone UI windows. They are consumed directly via fetch by other custom
+ * components (e.g. FiscalConfigPage fetches sii-config / tbai-config / verifactu-config).
+ * Listed here so pipeline F3 validation knows they are intentionally registry-free.
+ */
+export const apiOnlyWindows = new Set([
+  'sii-config',
+  'tbai-config',
+  'verifactu-config',
+]);
+
+/**
  * Hand-written custom window loaders.
  * Each entry maps a window slug to a dynamic import of its custom component.
  * Entries are auto-registered by the pipeline when layoutType is "custom".
@@ -117,14 +129,18 @@ export function getAllWindowNames() {
  */
 const customLoaders = {
   // Auto-registered by pipeline when layoutType: "custom"
+  'fiscal-config': () => import('./custom/fiscal-config/index.jsx'),
   'sales-order': () => import('./custom/sales-order/index.jsx'),
   'price-list': () => import('./custom/price-list/index.jsx'),
   'purchase-invoice': () => import('./custom/purchase-invoice/index.jsx'),
   'purchase-order': () => import('./custom/purchase-order/index.jsx'),
   'goods-receipt': () => import('./custom/goods-receipt/index.jsx'),
+  'physical-inventory': () => import('./custom/physical-inventory/index.jsx'),
+  'goods-movements': () => import('./custom/goods-movements/index.jsx'),
   'payment-out': () => import('./custom/payment-out/index.jsx'),
   'sales-order': () => import('./custom/sales-order/index.jsx'),
   'sales-invoice': () => import('./custom/sales-invoice/index.jsx'),
+  'sales-quotation': () => import('./custom/sales-quotation/index.jsx'),
   'warehouse': () => import('./custom/warehouse/index.jsx'),
   'spike-hello-app': () => import('./spike-apps-host/index.jsx'),
   'quick-order-sales': () => import('./quick-order/index.jsx'),

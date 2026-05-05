@@ -8,7 +8,8 @@
       "processNow": {
         "requiresLines": true
       }
-    }
+    },
+    "dateFilterKey": "movementDate"
   },
   "entities": {
     "header": {
@@ -16,12 +17,14 @@
       "fields": {
         "name": {
           "grid": true,
-          "searchable": true
+          "searchable": true,
+          "gridOrder": 1
         },
         "movementDate": {
           "grid": true,
           "searchable": true,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "gridOrder": 2
         },
         "description": {
           "section": "other",
@@ -36,12 +39,14 @@
           "label": "Status",
           "grid": true,
           "form": false,
-          "columnType": "status"
+          "columnType": "status",
+          "gridOrder": 4
         },
         "documentNo": {
           "visibility": "readOnly",
           "grid": true,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "gridOrder": 3
         },
         "processNow": {
           "visibility": "editable"
@@ -101,7 +106,8 @@
         },
         "movementQuantity": {
           "grid": true,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "defaultValue": "1"
         },
         "uOM": {
           "visibility": "readOnly",

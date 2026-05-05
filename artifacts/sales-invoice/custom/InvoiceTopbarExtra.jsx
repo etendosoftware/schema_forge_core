@@ -298,6 +298,7 @@ export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, 
 // ─── VIEW PAYMENTS MODAL (v2 — per-installment) ─────────────────────────────
 
 function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, totalPaid, outstanding, currency, base, headers, isCompleted, onClose, onPaymentAdded }) {
+  const ui = useUI();
   const [localInstallments, setLocalInstallments] = useState(installments);
   const [payments, setPayments] = useState([]);
   const [loadingPayments, setLoadingPayments] = useState(true);
@@ -362,8 +363,8 @@ function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, to
         <div style={{ padding: '12px 14px', borderBottom: '1px solid #E5E7EB' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 2 }}>Invoice #{docNo}</div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>Payments</div>
+              <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 2 }}>{ui('invoiceNumber')}{docNo}</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>{ui('payments')}</div>
             </div>
             <button type="button" onClick={onClose} style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, border: '0.5px solid #E5E7EB', background: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 14, lineHeight: 1 }}>&times;</button>
           </div>
@@ -373,9 +374,9 @@ function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, to
         <div style={{ padding: '12px 14px', borderBottom: '0.5px solid #d1d5db', background: '#F8F9FA' }}>
           <div className="tabular-nums" style={{ fontSize: 20, fontWeight: 500, color: '#111827' }}>{fmt(localTotal || grandTotal, currency)}</div>
           <div style={{ fontSize: 12, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ color: '#10b981' }}>Paid {fmt(localPaid, currency)}</span>
+            <span style={{ color: '#10b981' }}>{ui('paidAmount')} {fmt(localPaid, currency)}</span>
             <span style={{ color: '#9ca3af' }}>&middot;</span>
-            <span style={{ color: localOutstanding > 0 ? '#f59e0b' : '#9ca3af' }}>Outstanding {fmt(localOutstanding, currency)}</span>
+            <span style={{ color: localOutstanding > 0 ? '#f59e0b' : '#9ca3af' }}>{ui('outstanding')} {fmt(localOutstanding, currency)}</span>
           </div>
         </div>
 
@@ -397,10 +398,9 @@ function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, to
                   {/* Card header */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 14px', background: '#F8F9FA', flexWrap: 'wrap', gap: 4 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 12, fontWeight: 500, color: '#374151' }}>Vencimiento {idx + 1}</span>
+                      <span style={{ fontSize: 12, fontWeight: 500, color: '#374151' }}>{ui('dueDate')} {idx + 1}</span>
                       <span style={{ color: '#d1d5db' }}>&middot;</span>
                       <span className="tabular-nums" style={{ fontSize: 12, fontWeight: 500, color: '#111827' }}>{fmt(instAmount, currency)}</span>
-                      <span style={{ fontSize: 11, color: '#9ca3af' }}>{Math.round(instAmount / (localTotal || grandTotal || 1) * 100)}%</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span className="tabular-nums" style={{ fontSize: 11, color: '#6B7280' }}>{fmtDate(inst.dueDate)}</span>
@@ -428,10 +428,10 @@ function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, to
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                   <span className="tabular-nums" style={{ fontSize: 13, fontWeight: 500 }}>{fmt(p.amount, currency)}</span>
-                                  <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 8px', borderRadius: 9999, backgroundColor: pBadge.bg, color: pBadge.color }}>{isPaid ? 'Paid' : 'Pending'}</span>
+                                  <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 8px', borderRadius: 9999, backgroundColor: pBadge.bg, color: pBadge.color }}>{isPaid ? ui('paid') : ui('pending')}</span>
                                   <span className="tabular-nums" style={{ fontSize: 11, color: '#6B7280' }}>{fmtDate(p.paymentDate)}</span>
                                 </div>
-                                <button type="button" onClick={() => navToPayment(p.id)} style={{ fontSize: 11, fontWeight: 500, color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>View &rarr;</button>
+                                <button type="button" onClick={() => navToPayment(p.id)} style={{ fontSize: 11, fontWeight: 500, color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{ui('viewArrow')}</button>
                               </div>
                               <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 #{p.documentNo || p.id}{acctLabel ? ` \u00b7 ${acctLabel}` : ''}
@@ -447,7 +447,7 @@ function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, to
                       <div style={{ padding: '10px 14px' }}>
                         <button type="button" onClick={() => setActiveFormScheduleId(scheduleId)}
                           style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '0.5px dashed #d1d5db', background: 'transparent', fontSize: 12, color: '#6B7280', cursor: 'pointer', textAlign: 'center' }}>
-                          + Register payment &middot; {fmt(instOutstanding, currency)} outstanding
+                          {ui('registerPaymentLabel')} {fmt(instOutstanding, currency)} {ui('outstandingLower')}
                         </button>
                       </div>
                     )}
@@ -471,7 +471,7 @@ function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, to
 
                     {/* Empty state for paid installments with no payment data */}
                     {instPayments.length === 0 && instOutstanding <= 0 && (
-                      <div style={{ padding: '10px 14px', fontSize: 12, color: '#9ca3af' }}>Fully paid</div>
+                      <div style={{ padding: '10px 14px', fontSize: 12, color: '#9ca3af' }}>{ui('fullyPaid')}</div>
                     )}
                   </div>
                 </div>
@@ -485,7 +485,7 @@ function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, to
               <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#d1fae5', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
               </div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>{fullyPaid ? 'Invoice fully paid' : 'Payment registered'}</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>{fullyPaid ? ui('invoiceFullyPaid') : ui('paymentRegistered')}</div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 6 }}>
                 <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 9999, background: '#f3f4f6', color: '#374151' }}>{fmt(confirmation.amount, currency)}</span>
                 {paymentMethodName && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 9999, background: '#f3f4f6', color: '#374151' }}>{paymentMethodName}</span>}
@@ -497,9 +497,9 @@ function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, to
 
         {/* Footer */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: confirmation ? 'space-between' : 'flex-end', background: '#fff', borderTop: '0.5px solid #d1d5db', padding: '10px 14px' }}>
-          <button type="button" onClick={onClose} style={{ fontSize: 13, padding: '5px 14px', borderRadius: 6, border: '0.5px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>Close</button>
+          <button type="button" onClick={onClose} style={{ fontSize: 13, padding: '5px 14px', borderRadius: 6, border: '0.5px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>{ui('close')}</button>
           {confirmation && (
-            <button type="button" onClick={() => navToPayment(confirmation.id)} style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: 'pointer' }}>View payment &rarr;</button>
+            <button type="button" onClick={() => navToPayment(confirmation.id)} style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: 'pointer' }}>{ui('viewPaymentArrow')}</button>
           )}
         </div>
       </div>
@@ -510,6 +510,7 @@ function ViewPaymentsModal({ recordId, invoiceData, installments, grandTotal, to
 // ─── PAYMENT REGISTER FORM (per-installment) ────────────────────────────────
 
 function PaymentRegisterForm({ invoiceId, invoiceData, scheduleId, outstanding, currency, base, headers, onCancel, onSuccess }) {
+  const ui = useUI();
   const [amount, setAmount] = useState(outstanding);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [accountId, setAccountId] = useState('');
@@ -587,29 +588,29 @@ function PaymentRegisterForm({ invoiceId, invoiceData, scheduleId, outstanding, 
     <div style={{ marginTop: 4, marginBottom: 4, border: '0.5px solid #E5E7EB', borderRadius: 8, padding: 12, background: '#FAFBFC' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         <div>
-          <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>Date</label>
+          <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>{ui('date')}</label>
           <input type="date" value={date} onChange={e => setDate(e.target.value)} className="text-sm tabular-nums"
             style={{ width: '100%', border: '0.5px solid #E5E7EB', borderRadius: 4, padding: '6px 10px', outline: 'none', boxSizing: 'border-box' }} />
         </div>
         <div>
-          <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>Amount ({currency})</label>
+          <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>{`${ui('amount')} (${currency})`}</label>
           <input type="number" min={0} step="0.01" value={amount} onChange={e => setAmount(Number(e.target.value))} className="text-sm tabular-nums"
             style={{ width: '100%', border: '0.5px solid #E5E7EB', borderRadius: 4, padding: '6px 10px', outline: 'none', boxSizing: 'border-box' }} />
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#92400e', marginTop: 6 }}>
         <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />
-        Outstanding: {fmt(outstanding, currency)}
+        {ui('outstandingColon')} {fmt(outstanding, currency)}
       </div>
-      {amountExceeded && <div style={{ fontSize: 10, color: '#dc2626', marginTop: 3 }}>Amount exceeds outstanding</div>}
+      {amountExceeded && <div style={{ fontSize: 10, color: '#dc2626', marginTop: 3 }}>{ui('amountExceedsOutstanding')}</div>}
       <div style={{ marginTop: 8 }}>
-        <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>Account</label>
+        <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>{ui('account')}</label>
         {loadingAccounts ? (
-          <div style={{ fontSize: 12, color: '#9ca3af', padding: '6px 10px' }}>Loading...</div>
+          <div style={{ fontSize: 12, color: '#9ca3af', padding: '6px 10px' }}>{ui('loading')}</div>
         ) : (
           <Select value={accountId} onValueChange={setAccountId} required>
             <SelectTrigger className="focus:ring-2 focus:ring-primary" style={{ height: 32, fontSize: 13 }}>
-              <SelectValue placeholder="Select account..." />
+              <SelectValue placeholder={ui('selectAccount')} />
             </SelectTrigger>
             <SelectContent>
               {accounts.map(acc => (<SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>))}
@@ -619,10 +620,10 @@ function PaymentRegisterForm({ invoiceId, invoiceData, scheduleId, outstanding, 
       </div>
       {error && <div style={{ fontSize: 11, color: '#dc2626', marginTop: 6 }}>{error}</div>}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 10 }}>
-        <button type="button" onClick={onCancel} style={{ fontSize: 12, fontWeight: 500, padding: '5px 12px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>Cancel</button>
+        <button type="button" onClick={onCancel} style={{ fontSize: 12, fontWeight: 500, padding: '5px 12px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>{ui('cancel')}</button>
         <button type="button" onClick={handleSubmit} disabled={saving || amountExceeded}
           style={{ fontSize: 12, fontWeight: 500, padding: '5px 12px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: (saving || amountExceeded) ? 'not-allowed' : 'pointer', opacity: (saving || amountExceeded) ? 0.4 : 1 }}>
-          {saving ? 'Processing...' : 'Confirm payment'}
+          {saving ? ui('processing') : ui('confirmPayment')}
         </button>
       </div>
     </div>
@@ -632,6 +633,7 @@ function PaymentRegisterForm({ invoiceId, invoiceData, scheduleId, outstanding, 
 // SendInvoiceModal moved to shared SendDocumentModal component
 // Kept here as dead code marker — safe to delete
 function _REMOVED_SendInvoiceModal({ invoiceData, token, onClose }) {
+  const ui = useUI();
   const docNo = invoiceData?.documentNo || '';
   const bpName = invoiceData?.['businessPartner$_identifier'] || '';
   const bpEmail = invoiceData?.['userContact$_identifier'] || '';
@@ -722,7 +724,7 @@ function _REMOVED_SendInvoiceModal({ invoiceData, token, onClose }) {
               <line x1="22" y1="2" x2="11" y2="13" />
               <polygon points="22 2 15 22 11 13 2 9 22 2" />
             </svg>
-            <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>Send Invoice #{docNo}</span>
+            <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>{ui('send')} {ui('invoice')} #{docNo}</span>
           </div>
           <button type="button" onClick={onClose} style={{ fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}>&times;</button>
         </div>
@@ -733,16 +735,16 @@ function _REMOVED_SendInvoiceModal({ invoiceData, token, onClose }) {
           <div style={{ width: '60%', display: 'flex', flexDirection: 'column', borderRight: '0.5px solid #E5E7EB' }}>
             <div style={{ flex: 1, position: 'relative', background: '#EFEFEF' }}>
               {pdfLoading && (
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13 }}>Loading preview...</div>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13 }}>{ui('loadingPreview')}</div>
               )}
               {pdfError && (
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', padding: 24, textAlign: 'center', gap: 8 }}>
                   <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                  <span style={{ fontSize: 14, fontWeight: 500, color: '#6B7280' }}>PDF preview</span>
-                  <span style={{ fontSize: 13, color: '#9ca3af', maxWidth: 200 }}>The invoice PDF will appear here once document templates are configured</span>
+                  <span style={{ fontSize: 14, fontWeight: 500, color: '#6B7280' }}>{ui('pdfPreview')}</span>
+                  <span style={{ fontSize: 13, color: '#9ca3af', maxWidth: 200 }}>{ui('pdfPreviewPlaceholder')}</span>
                 </div>
               )}
-              <iframe ref={iframeRef} style={{ width: '100%', height: '100%', border: 'none', opacity: pdfLoading ? 0 : 1 }} title="Invoice preview" />
+              <iframe ref={iframeRef} style={{ width: '100%', height: '100%', border: 'none', opacity: pdfLoading ? 0 : 1 }} title={ui('documentPreview')} />
             </div>
             <button
               type="button"
@@ -763,15 +765,15 @@ function _REMOVED_SendInvoiceModal({ invoiceData, token, onClose }) {
                 type="email"
                 value={to}
                 onChange={e => setTo(e.target.value)}
-                placeholder="email@company.com"
+                placeholder={ui('emailPlaceholder')}
                 style={{ width: '100%', fontSize: 13, padding: '8px 10px', border: `0.5px solid ${!to && !hasEmail ? '#ef4444' : '#d1d5db'}`, borderRadius: 6, outline: 'none', color: '#111827', boxSizing: 'border-box' }}
               />
               {!to && !hasEmail && (
-                <span style={{ fontSize: 11, color: '#ef4444', marginTop: 3, display: 'block' }}>No email found for this contact</span>
+                <span style={{ fontSize: 11, color: '#ef4444', marginTop: 3, display: 'block' }}>{ui('noEmailFound')}</span>
               )}
             </div>
             <div>
-              <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>Subject</label>
+              <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('subject')}</label>
               <input
                 type="text"
                 value={subject}
@@ -780,11 +782,11 @@ function _REMOVED_SendInvoiceModal({ invoiceData, token, onClose }) {
               />
             </div>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>Message</label>
+              <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('message')}</label>
               <textarea
                 value={message}
                 onChange={e => setMessage(e.target.value)}
-                placeholder="Add a personal message..."
+                placeholder={ui('addMessage')}
                 style={{ width: '100%', flex: 1, minHeight: 80, fontSize: 13, padding: '8px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#111827', resize: 'none', boxSizing: 'border-box' }}
               />
             </div>
@@ -793,16 +795,16 @@ function _REMOVED_SendInvoiceModal({ invoiceData, token, onClose }) {
 
         {/* Footer */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F5F5F5', borderTop: '1px solid #E5E5E5', padding: '10px 16px', flexShrink: 0 }}>
-          <button type="button" onClick={onClose} style={{ fontSize: 13, padding: '6px 14px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>Cancel</button>
+          <button type="button" onClick={onClose} style={{ fontSize: 13, padding: '6px 14px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>{ui('cancel')}</button>
           <button
             type="button"
             onClick={handleSend}
             disabled={!to.trim() || sending}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, padding: '6px 16px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: (!to.trim() || sending) ? 'not-allowed' : 'pointer', opacity: (!to.trim() || sending) ? 0.4 : 1 }}
           >
-            {sending ? 'Sending...' : (
+            {sending ? ui('sending') : (
               <>
-                Send
+                {ui('send')}
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
               </>
             )}

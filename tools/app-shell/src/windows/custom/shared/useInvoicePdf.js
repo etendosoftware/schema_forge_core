@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useUI } from '@/i18n';
+import { buildLocationAddressLines } from '@/lib/locationAddress.js';
 
 // ---------------------------------------------------------------------------
 // Handlebars helpers (CommonJS for jsreport context)
@@ -25,143 +26,197 @@ function add(a, b) { return (Number(a)||0) + (Number(b)||0); }
 // CSS
 // ---------------------------------------------------------------------------
 const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --gray-100:#E8E8ED; --gray-400:#8A8AA3; --gray-500:#6C6C89; --gray-700:#3F3F50; --gray-900:#121217;
+  --fg-1:var(--gray-900); --fg-2:var(--gray-700); --fg-3:var(--gray-500); --fg-4:var(--gray-400);
+  --border-1:var(--gray-100);
+  --radius-lg:12px;
+  --font-sans:'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; color: #1a1a1a; }
-.page { padding: 12mm 15mm; max-width: 210mm; }
+body { font-family: var(--font-sans); font-size: 13px; line-height: 18px; color: var(--fg-2); background:#fff; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
 
-/* Header */
-.header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6mm; }
-.company-info h1 { font-size:13pt; font-weight:700; color:#1a2e5a; margin-bottom:1mm; }
-.company-info p { font-size:8pt; color:#555; line-height:1.5; }
-.invoice-box { background:#1a2e5a; color:#fff; border-radius:4px; padding:6mm 8mm; text-align:center; min-width:45mm; }
-.invoice-box .label { font-size:9pt; letter-spacing:1px; opacity:0.85; }
-.invoice-box .number { font-size:20pt; font-weight:700; margin-top:1mm; letter-spacing:1px; }
+.invoice {
+  width: 794px;
+  min-height: 1123px;
+  padding: 56px 56px 48px;
+  background:#fff;
+  color: var(--fg-1);
+  display:flex;
+  flex-direction:column;
+  gap:24px;
+}
 
-/* Info row */
-.info-row { display:flex; gap:6mm; margin-bottom:5mm; }
-.info-block { flex:1; border:1px solid #d0d0d0; border-radius:3px; padding:3mm 4mm; }
-.info-block .section-title { font-size:7pt; font-weight:700; color:#1a2e5a; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2mm; border-bottom:1px solid #e0e0e0; padding-bottom:1mm; }
-.info-block p { font-size:8pt; line-height:1.6; color:#333; }
-.info-block span.label { color:#666; font-size:7.5pt; }
+/* Shared company atom */
+.inv-company-name { font-weight:700; font-size:16px; line-height:22px; letter-spacing:-0.01em; color:var(--fg-1); }
+.inv-company-lines { color:var(--fg-2); font-size:12px; line-height:18px; }
+.inv-company-lines .muted { color:var(--fg-3); }
+
+/* Logo */
+.inv-logo-img { max-width:140px; max-height:56px; object-fit:contain; object-position:left center; flex-shrink:0; display:block; }
+
+/* Eyebrow */
+.eyebrow {
+  font-size:10px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  color:var(--fg-3);
+}
+
+/* Header B — full-width bar */
+.inv-header-b {
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  gap:28px;
+  align-items:center;
+  padding:20px 24px;
+  background:#fff;
+  border:1px solid var(--border-1);
+  border-radius:var(--radius-lg);
+}
+.inv-header-b.no-logo { grid-template-columns:1fr auto; }
+.inv-header-b .meta { text-align:right; border-left:1px solid var(--border-1); padding-left:24px; }
+.inv-header-b .meta .label { font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--fg-3); font-weight:600; }
+.inv-header-b .meta .doc-type { font-size:12px; color:var(--fg-2); margin-top:2px; }
+.inv-header-b .meta .num { font-size:22px; font-weight:700; line-height:28px; letter-spacing:-0.01em; color:var(--fg-1); margin-top:2px; font-variant-numeric:tabular-nums; }
+
+/* Info grid */
+.inv-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.inv-info-card { border:1px solid var(--border-1); border-radius:var(--radius-lg); padding:16px 18px; background:#fff; }
+.inv-info-card .eyebrow { margin-bottom:8px; }
+.inv-info-card .row { font-size:13px; line-height:20px; color:var(--fg-2); }
+.inv-info-card .row strong { color:var(--fg-1); font-weight:600; }
+.inv-address-lines { margin-top:2px; display:flex; flex-direction:column; gap:2px; }
 
 /* Lines table */
-.lines-table { width:100%; border-collapse:collapse; margin-bottom:5mm; }
-.lines-table thead tr { background:#1a2e5a; color:#fff; }
-.lines-table thead th { padding:2.5mm 3mm; text-align:left; font-size:8pt; font-weight:600; letter-spacing:0.3px; }
-.lines-table thead th.right { text-align:right; }
-.lines-table tbody tr:nth-child(even) { background:#f4f7fc; }
-.lines-table tbody td { padding:2mm 3mm; font-size:8.5pt; border-bottom:1px solid #e8e8e8; vertical-align:top; }
-.lines-table tbody td.right { text-align:right; }
-.lines-table tbody td.center { text-align:center; }
-.lines-table .empty-row td { height:8mm; }
+.inv-table { width:100%; border-collapse:collapse; font-size:13px; margin-top:4px; }
+.inv-table thead th { text-align:left; font-size:10px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--fg-3); padding:10px 8px; border-bottom:1px solid var(--border-1); }
+.inv-table thead th.num, .inv-table tbody td.num { text-align:right; font-variant-numeric:tabular-nums; }
+.inv-table tbody td { padding:14px 8px; color:var(--fg-2); vertical-align:top; }
+.inv-table tbody tr + tr td { border-top:1px solid var(--border-1); }
+.inv-table tbody td.code { color:var(--fg-3); font-variant-numeric:tabular-nums; }
+.inv-table tbody td.desc { color:var(--fg-1); font-weight:500; }
+.inv-table .iva-pill { display:inline-block; font-size:11px; color:var(--fg-2); white-space:nowrap; }
 
 /* Totals */
-.bottom-section { display:flex; gap:6mm; margin-top:2mm; }
-.notes-block { flex:1; }
-.notes-block .section-title { font-size:7pt; font-weight:700; color:#1a2e5a; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2mm; }
-.notes-block p { font-size:8pt; color:#555; border:1px solid #e0e0e0; border-radius:3px; padding:3mm; min-height:18mm; }
-.totals-block { width:68mm; }
-.totals-table { width:100%; border-collapse:collapse; }
-.totals-table td { padding:1.5mm 3mm; font-size:8.5pt; }
-.totals-table td.label-col { color:#555; }
-.totals-table td.amount-col { text-align:right; font-family:'Courier New', monospace; }
-.totals-table tr.total-row { background:#1a2e5a; color:#fff; font-weight:700; font-size:9.5pt; }
-.totals-table tr.subtotal-row td { border-top:1px solid #d0d0d0; }
+.inv-totals { display:flex; justify-content:flex-end; padding-top:12px; border-top:1px solid var(--border-1); }
+.inv-totals-inner { width:300px; display:flex; flex-direction:column; gap:8px; }
+.inv-totals .row { display:flex; justify-content:space-between; font-size:13px; color:var(--fg-2); font-variant-numeric:tabular-nums; }
+.inv-totals .row.grand { margin-top:8px; padding-top:10px; border-top:1px solid var(--border-1); font-size:15px; font-weight:700; color:var(--fg-1); }
+
+/* Observations */
+.inv-observ { border:1px solid var(--border-1); border-radius:var(--radius-lg); padding:14px 18px; display:grid; grid-template-columns:120px 1fr; gap:16px; margin-top:8px; }
+.inv-observ .eyebrow { padding-top:2px; }
+.inv-observ .body { font-size:12px; line-height:18px; color:var(--fg-2); }
+
+/* Footer */
+.inv-footer { margin-top:auto; padding-top:24px; border-top:1px solid var(--border-1); display:flex; justify-content:space-between; font-size:10px; color:var(--fg-4); text-transform:uppercase; letter-spacing:0.08em; }
 
 @page { size:A4 portrait; margin:0; }
-@media print { .page { padding:12mm 15mm; } }
 `;
 
 // ---------------------------------------------------------------------------
 // Handlebars template
 // ---------------------------------------------------------------------------
 const TEMPLATE = `<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><style>{{{css}}}</style></head>
-<body><div class="page">
+<html lang="es"><head><meta charset="UTF-8"><style>{{{css}}}</style></head>
+<body>
+<div class="invoice">
 
-  <!-- Header -->
-  <div class="header">
-    <div class="company-info">
-      <h1>{{orgName}}</h1>
-      <p>{{#if orgAddress}}{{orgAddress}}<br>{{/if}}{{#if orgPhone}}Tel: {{orgPhone}}{{/if}}</p>
+  <!-- Header B: logo | company data | invoice meta -->
+  <div class="inv-header-b{{#unless companyLogoDataUrl}} no-logo{{/unless}}">
+    {{#if companyLogoDataUrl}}
+    <img class="inv-logo-img" src="{{companyLogoDataUrl}}" alt="{{companyName}}">
+    {{/if}}
+    <div class="inv-company-lines">
+      <div class="inv-company-name">{{companyName}}</div>
+      {{#if companyAddress1}}<div style="margin-top:6px">{{companyAddress1}}</div>{{/if}}
+      {{#if companyAddress2}}<div>{{companyAddress2}}</div>{{/if}}
+      {{#if companyCityLine}}<div>{{companyCityLine}}</div>{{/if}}
+      {{#if companyTaxId}}<div class="muted">{{labels.taxId}} {{companyTaxId}}</div>{{/if}}
     </div>
-    <div class="invoice-box">
+    <div class="meta">
       <div class="label">{{labels.title}}</div>
-      <div class="number">{{documentNo}}</div>
+      <div class="doc-type">{{labels.documentNo}}</div>
+      <div class="num">{{documentNo}}</div>
     </div>
   </div>
 
-  <!-- Info row -->
-  <div class="info-row">
-    <!-- Customer info -->
-    <div class="info-block" style="flex:1.3">
-      <div class="section-title">{{labels.customerSection}}</div>
-      <p><span class="label">{{labels.customer}} </span>{{customerName}}</p>
-      {{#if customerAddress}}<p><span class="label">{{labels.address}} </span>{{customerAddress}}</p>{{/if}}
+  <!-- Info cards -->
+  <div class="inv-info-grid">
+    <div class="inv-info-card">
+      <div class="eyebrow">{{labels.customerSection}}</div>
+      <div class="row"><strong>{{labels.customer}}</strong> {{customerName}}</div>
+      {{#if hasCustomerAddress}}
+      <div class="row"><strong>{{labels.address}}</strong></div>
+      <div class="inv-address-lines">
+        {{#each customerAddressLines}}<div class="row">{{this}}</div>{{/each}}
+      </div>
+      {{/if}}
     </div>
-    <!-- Invoice details -->
-    <div class="info-block" style="flex:1">
-      <div class="section-title">{{labels.invoiceSection}}</div>
-      <p><span class="label">{{labels.date}} </span>{{fmtDate invoiceDate}}</p>
-      {{#if paymentTerms}}<p><span class="label">{{labels.paymentTerms}} </span>{{paymentTerms}}</p>{{/if}}
-      {{#if paymentMethod}}<p><span class="label">{{labels.paymentMethod}} </span>{{paymentMethod}}</p>{{/if}}
+    <div class="inv-info-card">
+      <div class="eyebrow">{{labels.invoiceSection}}</div>
+      <div class="row"><strong>{{labels.date}}</strong> {{fmtDate invoiceDate}}</div>
+      {{#if paymentTerms}}<div class="row"><strong>{{labels.paymentTerms}}</strong> {{paymentTerms}}</div>{{/if}}
+      {{#if paymentMethod}}<div class="row"><strong>{{labels.paymentMethod}}</strong> {{paymentMethod}}</div>{{/if}}
     </div>
   </div>
 
   <!-- Lines table -->
-  <table class="lines-table">
+  <table class="inv-table">
     <thead>
       <tr>
-        <th style="width:8%">{{labels.colCode}}</th>
-        <th style="width:38%">{{labels.colDescription}}</th>
-        <th class="right" style="width:9%">{{labels.colQty}}</th>
-        <th class="right" style="width:13%">{{labels.colUnitPrice}}</th>
-        <th class="right" style="width:8%">{{labels.colDiscount}}</th>
-        <th class="right" style="width:10%">{{labels.colTax}}</th>
-        <th class="right" style="width:14%">{{labels.colTotal}}</th>
+        <th style="width:56px">{{labels.colCode}}</th>
+        <th>{{labels.colDescription}}</th>
+        <th class="num" style="width:90px">{{labels.colQty}}</th>
+        <th class="num" style="width:96px">{{labels.colUnitPrice}}</th>
+        <th class="num" style="width:70px">{{labels.colDiscount}}</th>
+        <th style="width:90px">{{labels.colTax}}</th>
+        <th class="num" style="width:80px">{{labels.colTotal}}</th>
       </tr>
     </thead>
     <tbody>
       {{#each lines}}
       <tr>
-        <td>{{this.lineNo}}</td>
-        <td>{{this.productName}}</td>
-        <td class="right">{{fmt this.quantity}}</td>
-        <td class="right">{{fmt this.unitPrice}}</td>
-        <td class="center">{{#if this.discount}}{{this.discount}}%{{else}}—{{/if}}</td>
-        <td class="center">{{this.taxName}}</td>
-        <td class="right">{{fmt this.lineTotal}}</td>
+        <td class="code">{{this.lineNo}}</td>
+        <td class="desc">{{this.productName}}</td>
+        <td class="num">{{fmt this.quantity}}</td>
+        <td class="num">{{fmt this.unitPrice}}</td>
+        <td class="num">{{#if this.discount}}{{this.discount}}%{{else}}–{{/if}}</td>
+        <td><span class="iva-pill">{{this.taxName}}</span></td>
+        <td class="num">{{fmt this.lineTotal}}</td>
       </tr>
       {{/each}}
-      {{#each emptyRows}}<tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>{{/each}}
     </tbody>
   </table>
 
-  <!-- Bottom: notes + totals -->
-  <div class="bottom-section">
-    <div class="notes-block">
-      <div class="section-title">{{labels.notes}}</div>
-      <p>{{#if notes}}{{notes}}{{/if}}</p>
-    </div>
-    <div class="totals-block">
-      <table class="totals-table">
-        <tr class="subtotal-row">
-          <td class="label-col">{{labels.subtotal}}</td>
-          <td class="amount-col">{{fmt netAmount}}</td>
-        </tr>
-        <tr>
-          <td class="label-col">{{labels.tax}}</td>
-          <td class="amount-col">{{fmt taxAmount}}</td>
-        </tr>
-        <tr class="total-row">
-          <td>{{labels.grandTotal}}</td>
-          <td class="amount-col">{{fmt grandTotal}}</td>
-        </tr>
-      </table>
+  <!-- Totals -->
+  <div class="inv-totals">
+    <div class="inv-totals-inner">
+      <div class="row"><span>{{labels.subtotal}}</span><span>{{fmt netAmount}}</span></div>
+      <div class="row"><span>{{labels.tax}}</span><span>{{fmt taxAmount}}</span></div>
+      <div class="row grand"><span>{{labels.grandTotal}}</span><span>{{fmt grandTotal}}</span></div>
     </div>
   </div>
 
-</div></body></html>`;
+  <!-- Observations -->
+  <div class="inv-observ">
+    <div class="eyebrow">{{labels.notes}}</div>
+    <div class="body">{{notes}}</div>
+  </div>
+
+  <!-- Footer -->
+  <div class="inv-footer">
+    <span>{{companyName}}</span>
+    <span>{{labels.page}} 1</span>
+  </div>
+
+</div>
+</body></html>`;
 
 // ---------------------------------------------------------------------------
 // Data fetching helpers
@@ -184,17 +239,66 @@ async function fetchAll(url, token) {
   return d?.response?.data ?? (Array.isArray(d) ? d : []);
 }
 
+async function fetchOptionalJson(url, token) {
+  try {
+    return await fetchJson(url, token);
+  } catch {
+    return null;
+  }
+}
+
+async function fetchLocationAddress(locationId, base, token) {
+  if (!locationId) return null;
+  try {
+    return await fetchJson(`${base}/contacts/locationAddress/${locationId}`, token);
+  } catch {
+    return null;
+  }
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Failed to read company logo'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function fetchImageDataUrl(imageId, base, token) {
+  if (!imageId) return null;
+  try {
+    const res = await fetch(`${base}/image/${imageId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await blobToDataUrl(blob);
+  } catch {
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Build invoice data for the template
 // ---------------------------------------------------------------------------
 async function buildInvoiceData(invoiceId, base, token) {
   // Fetch header and lines in parallel
-  const [header, linesRaw] = await Promise.all([
+  const [header, linesRaw, session] = await Promise.all([
     fetchJson(`${base}/sales-invoice/header/${invoiceId}`, token),
     fetchAll(`${base}/sales-invoice/lines?parentId=${invoiceId}`, token),
+    fetchOptionalJson(`${base}/session`, token),
+  ]);
+  const [companyLogoDataUrl, partnerLocation] = await Promise.all([
+    fetchImageDataUrl(session?.yourCompanyDocumentImageId, base, token),
+    fetchLocationAddress(header.partnerAddress, base, token),
   ]);
 
-  const lines = linesRaw.map((l, idx) => ({
+  // Sort by ERP lineNo so the rows always appear in the order the user created them
+  const linesSorted = [...linesRaw].sort(
+    (a, b) => (Number(a.lineNo) || 0) - (Number(b.lineNo) || 0)
+  );
+  const lines = linesSorted.map((l, idx) => ({
     lineNo: l.lineNo || (idx + 1),
     productName: l.product$_identifier || l.description || '—',
     quantity: l.invoicedQuantity ?? l.qtyInvoiced ?? 0,
@@ -204,27 +308,31 @@ async function buildInvoiceData(invoiceId, base, token) {
     lineTotal: l.lineNetAmount ?? l.lineAmount ?? 0,
   }));
 
-  // Pad to at least 8 rows for a clean look
-  const MIN_ROWS = 8;
-  const emptyRows = lines.length < MIN_ROWS
-    ? Array(MIN_ROWS - lines.length).fill(null)
-    : [];
-
   const grandTotal = Number(header.grandTotalAmount ?? 0);
   const netAmount  = Number(header.summedLineAmount ?? header.totalLines ?? 0);
   const taxAmount  = grandTotal - netAmount;
 
+  const org = session?.organization ?? {};
+  const customerAddressLines = buildLocationAddressLines(
+    partnerLocation,
+    header.partnerAddress$_identifier || header.bpAddress || null,
+  );
+
   return {
-    // Org info — use what's available in the header
-    orgName: header.organization$_identifier || header.organization || 'Empresa',
-    orgAddress: null,
-    orgPhone: null,
+    // Company (issuer) — from session.organization with header fallback
+    companyName:     org.name        || header.organization$_identifier || header.organization || 'Empresa',
+    companyAddress1: org.address1    || null,
+    companyAddress2: org.address2    || null,
+    companyCityLine: org.cityLine    || null,
+    companyTaxId:    org.taxId       || null,
+    companyLogoDataUrl,
     // Invoice
     documentNo: header.documentNo || '',
     invoiceDate: header.invoiceDate || header.dateInvoiced || '',
     // Customer
     customerName: header.businessPartner$_identifier || header.businessPartner || '—',
-    customerAddress: header.partnerAddress$_identifier || header.bpAddress || null,
+    hasCustomerAddress: customerAddressLines.length > 0,
+    customerAddressLines,
     // Payment
     paymentMethod: header.paymentMethod$_identifier || null,
     paymentTerms: header.paymentTerms$_identifier || null,
@@ -232,7 +340,6 @@ async function buildInvoiceData(invoiceId, base, token) {
     notes: header.description || null,
     // Lines
     lines,
-    emptyRows,
     // Totals
     netAmount,
     taxAmount,
@@ -301,6 +408,9 @@ export function useInvoicePdf(invoiceId, apiBaseUrl, token) {
     // Build labels from i18n for the current locale
     const labels = {
       title:           ui('invoicePdfTitle'),
+      documentNo:      ui('invoicePdfDocumentNo'),
+      taxId:           ui('invoicePdfTaxId'),
+      page:            ui('invoicePdfPage'),
       customerSection: ui('invoicePdfCustomerSection'),
       invoiceSection:  ui('invoicePdfInvoiceSection'),
       customer:        ui('invoicePdfCustomer'),

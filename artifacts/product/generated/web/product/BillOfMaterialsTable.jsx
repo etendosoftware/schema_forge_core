@@ -3,7 +3,7 @@ import { DataTable } from '@/components/contract-ui';
 // @sf-generated-start columns:billOfMaterials
 const columns = [
   { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.' },
-  { key: 'bOMProduct', column: 'M_ProductBOM_ID', type: 'string', label: 'BOM Product' },
+  { key: 'bOMProduct', column: 'M_ProductBOM_ID', type: 'selector', label: 'BOM Product' },
   { key: 'bOMQuantity', column: 'BOMQty', type: 'number', label: 'BOM Quantity' },
 ];
 // @sf-generated-end columns:billOfMaterials

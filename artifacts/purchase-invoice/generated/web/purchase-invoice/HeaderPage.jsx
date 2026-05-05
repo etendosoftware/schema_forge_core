@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
+import { toast } from 'sonner';
+import { INVOICE_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import HeaderTable from './HeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
@@ -18,10 +20,19 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Purchases / Purchase Invoice';
 
+const labelOverrides = {
+  "es_ES": {
+    "POReference": "Nº documento"
+  },
+  "en_US": {
+    "POReference": "Document No."
+  }
+};
+
 
 // @sf-generated-start summary:header
 const summary = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+
 ];
 
 const statusField = 'documentStatus';
@@ -49,23 +60,23 @@ const draftMode = {
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
   entry: [
-    { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity', defaultValue: 1 },
-    { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["listPrice","unitPrice","tax","uOM","grossUnitPrice"] },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector' },
+    { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity', defaultValue: 1 },
+    { key: 'listPrice', column: 'PriceList', type: 'number', required: true, label: 'List Price' },
+    { key: 'etgoDiscount', column: 'EM_Etgo_Discount', type: 'number', label: 'Discount %', defaultValue: 0 },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineNetAmount"] },
   ],
   derived: [
 
   ],
   hidden: [
     { key: 'grossUnitPrice', value: '0' },
-    { key: 'grossAmount', value: '0' },
   ],
 };
 // @sf-generated-end addLineFields:lines
 
-const api = {
+export const api = {
   "specName": "purchase-invoice",
   "baseUrl": "/sws/neo/purchase-invoice",
   "crud": {
@@ -82,6 +93,7 @@ const api = {
         "documentNo",
         "invoiceDate",
         "businessPartner",
+        "orderReference",
         "documentStatus"
       ]
     },
@@ -118,17 +130,6 @@ const api = {
       "detailUrl": "/sws/neo/purchase-invoice/tax/{id}",
       "supportedFilters": []
     },
-    "cashVat": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/cashVat",
-      "detailUrl": "/sws/neo/purchase-invoice/cashVat/{id}",
-      "supportedFilters": []
-    },
     "basicDiscounts": {
       "get": true,
       "getById": true,
@@ -138,6 +139,17 @@ const api = {
       "delete": true,
       "listUrl": "/sws/neo/purchase-invoice/basicDiscounts",
       "detailUrl": "/sws/neo/purchase-invoice/basicDiscounts/{id}",
+      "supportedFilters": []
+    },
+    "cashVat": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/purchase-invoice/cashVat",
+      "detailUrl": "/sws/neo/purchase-invoice/cashVat/{id}",
       "supportedFilters": []
     },
     "paymentPlan": {
@@ -314,19 +326,19 @@ const api = {
     },
     {
       "entity": "lines",
-      "field": "account",
-      "column": "Account_ID",
-      "reference": "GLAccount",
-      "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/lines/selectors/account"
-    },
-    {
-      "entity": "lines",
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
       "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/lines/selectors/tax"
+    },
+    {
+      "entity": "lines",
+      "field": "account",
+      "column": "Account_ID",
+      "reference": "GLAccount",
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/lines/selectors/account"
     },
     {
       "entity": "lines",
@@ -433,20 +445,20 @@ const api = {
       "url": "/sws/neo/purchase-invoice/tax/selectors/tax"
     },
     {
-      "entity": "cashVat",
-      "field": "payment",
-      "column": "FIN_Payment_ID",
-      "reference": "Payment",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/cashVat/selectors/payment"
-    },
-    {
       "entity": "basicDiscounts",
       "field": "discount",
       "column": "C_Discount_ID",
       "reference": "Discount",
       "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/basicDiscounts/selectors/discount"
+    },
+    {
+      "entity": "cashVat",
+      "field": "payment",
+      "column": "FIN_Payment_ID",
+      "reference": "Payment",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/cashVat/selectors/payment"
     },
     {
       "entity": "paymentPlan",
@@ -781,13 +793,21 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=purchase-invoiceDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
   },
   "window": {
     "category": "purchases"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "POReference": "Nº documento"
+    },
+    "en_US": {
+      "POReference": "Document No."
+    }
   }
 };
 
@@ -821,7 +841,13 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         ]}
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        menuActions={({ status }) => [
+          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', labelKey: 'cancel', onClick: () => {}, },
+          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
+        ]}
         draftMode={draftMode}
+        labelOverrides={labelOverrides}
+        lineConfig={INVOICE_LINE_CONFIG}
         {...props}
       />
     );
@@ -835,6 +861,8 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="invoiceDate"
+      labelOverrides={labelOverrides}
       {...props}
     />
   );

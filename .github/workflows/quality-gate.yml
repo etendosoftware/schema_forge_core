@@ -1,0 +1,87 @@
+name: Schema Forge Quality Gate
+
+on:
+  pull_request:
+    branches: [develop, epic/ETP-3504]
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  sfqg:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: actions/cache@v4
+        with:
+          path: .quality-gate-cache
+          key: sfqg-baseline-${{ github.base_ref }}-${{ hashFiles('quality-gate.config.json') }}
+
+      - name: Run quality gate
+        run: >-
+          node cli/src/quality-gate.js
+          --pr-affected
+          --baseline-ref ${{ github.event.pull_request.base.sha }}
+          --head-ref ${{ github.event.pull_request.head.sha }}
+          --format md
+          --output qg-report.md
+          --json qg-report.json
+
+      - name: Post PR comment
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          REPORT_PATH: qg-report.md
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- sfqg-report -->';
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.issue.number;
+            const body = fs.readFileSync(process.env.REPORT_PATH, 'utf8');
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            const managedComments = comments.filter((comment) =>
+              comment.user?.login === 'github-actions[bot]' && comment.body?.includes(marker)
+            );
+
+            for (const comment of managedComments) {
+              await github.rest.issues.deleteComment({
+                owner,
+                repo,
+                comment_id: comment.id,
+              });
+            }
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number,
+              body,
+            });
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sfqg-report
+          path: qg-report.json

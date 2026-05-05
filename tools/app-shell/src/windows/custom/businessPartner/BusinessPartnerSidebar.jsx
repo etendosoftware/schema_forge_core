@@ -2,22 +2,13 @@ import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Maximize2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useUI, useLocaleSwitch } from '@/i18n';
+import { niceScale, formatDashboardAxisTick, toBezierPath, toBezierFillPath } from '@/lib/dashboardNumberFormat';
+import { useCurrency } from '@/hooks/useCurrency';
+import { formatCurrency } from '@/lib/formatCurrency';
 
-function formatCurrency(value) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency', currency: 'USD',
-    minimumFractionDigits: 0, maximumFractionDigits: 2,
-  }).format(value);
-}
 
-function formatY(v) {
-  if (v === 0) return '0';
-  if (Math.abs(v) >= 1000) return `${(v / 1000).toFixed(0)}k`;
-  return `${Math.round(v)}`;
-}
-
-function MiniKPICard({ label, value, trend, format, accentColor }) {
-  const display = format === 'currency' ? formatCurrency(value) : value;
+function MiniKPICard({ label, value, trend, format, accentColor, orgCurrency }) {
+  const display = format === 'currency' ? formatCurrency(orgCurrency ?? 'USD', value) : value;
   const hasTrend = trend !== null && trend !== 0;
   const up = trend > 0;
 
@@ -42,10 +33,11 @@ const PERIOD_OPTIONS = [
   { label: '6M', months: 6 },
 ];
 
-function BPChartSVGContent({
+export function BPChartSVGContent({
   labels = [], revenue = [], expenses = [],
-  CW, CH, PX, PY, PB, fontSize = 9, chartId = 'bp',
+  CW, CH, PX, PY, PB, fontSize = 9, chartId = 'bp', orgCurrency = 'USD',
 }) {
+  const ui = useUI();
   const [hoveredIdx, setHoveredIdx] = useState(null);
 
   const plotW = CW - PX * 2;
@@ -53,30 +45,16 @@ function BPChartSVGContent({
 
   const allVals = [...revenue, ...expenses];
   const maxVal = Math.max(...allVals, 0);
-  const minVal = Math.min(...allVals, 0);
-  const range = maxVal - minVal || 1;
+  const { niceMax, ticks: yTicks } = niceScale(maxVal);
+  const baseY = PY + plotH;
 
   const toPoint = (v, i, len) => ({
     x: PX + (len <= 1 ? plotW / 2 : (i / (len - 1)) * plotW),
-    y: PY + plotH - ((v - minVal) / range) * plotH,
+    y: PY + plotH - (v / niceMax) * plotH,
   });
 
   const revPts = revenue.map((v, i) => toPoint(v, i, revenue.length));
   const expPts = expenses.map((v, i) => toPoint(v, i, expenses.length));
-
-  const toLine = (pts) =>
-    pts.length === 0 ? '' : pts.map((p) => `${p.x},${p.y}`).join(' ');
-
-  const toArea = (pts) => {
-    if (pts.length === 0) return '';
-    return [
-      `M ${pts[0].x},${pts[0].y}`,
-      ...pts.slice(1).map((p) => `L ${p.x},${p.y}`),
-      `L ${pts[pts.length - 1].x},${PY + plotH}`,
-      `L ${pts[0].x},${PY + plotH}`,
-      'Z',
-    ].join(' ');
-  };
 
   const hasData = allVals.some((v) => v > 0);
 
@@ -110,7 +88,7 @@ function BPChartSVGContent({
       viewBox={`0 0 ${CW} ${CH}`}
       className="w-full h-auto cursor-crosshair"
       role="img"
-      aria-label="Sales and purchases trend"
+      aria-label={ui('bpSalesPurchasesChartAria')}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => setHoveredIdx(null)}
     >
@@ -125,38 +103,35 @@ function BPChartSVGContent({
         </linearGradient>
       </defs>
 
-      {[0, 0.5, 1].map((frac) => {
-        const y = PY + plotH - frac * plotH;
-        const val = minVal + frac * range;
+      {yTicks.map((val) => {
+        const y = PY + plotH - (val / niceMax) * plotH;
         return (
-          <g key={frac}>
+          <g key={val}>
             <line x1={PX} y1={y} x2={CW - PX} y2={y}
               stroke="hsl(var(--border))" strokeWidth="1" strokeDasharray="3 3" />
             <text x={PX - 4} y={y + 3} textAnchor="end" className="fill-muted-foreground" fontSize={fontSize}>
-              {formatY(val)}
+              {formatDashboardAxisTick(val)}
             </text>
           </g>
         );
       })}
 
-      <path d={toArea(expPts)} fill={`url(#${expGradId})`} />
-      <polyline points={toLine(expPts)} fill="none"
+      <path d={toBezierFillPath(expPts, baseY)} fill={`url(#${expGradId})`} />
+      <path d={toBezierPath(expPts)} fill="none"
         stroke="hsl(var(--destructive))" strokeWidth="1.5"
-        strokeLinecap="round" strokeLinejoin="round" strokeDasharray="4 2" />
-      {expPts.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y}
-          r={hoveredIdx === i ? 3.5 : 2}
-          fill="hsl(var(--background))" stroke="hsl(var(--destructive))" strokeWidth="1.5" />
-      ))}
+        strokeLinecap="round" strokeLinejoin="round" />
+      {hoveredIdx !== null && expPts[hoveredIdx] && (
+        <circle cx={expPts[hoveredIdx].x} cy={expPts[hoveredIdx].y}
+          r={3.5} fill="hsl(var(--background))" stroke="hsl(var(--destructive))" strokeWidth="1.5" />
+      )}
 
-      <path d={toArea(revPts)} fill={`url(#${revGradId})`} />
-      <polyline points={toLine(revPts)} fill="none"
+      <path d={toBezierFillPath(revPts, baseY)} fill={`url(#${revGradId})`} />
+      <path d={toBezierPath(revPts)} fill="none"
         stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      {revPts.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y}
-          r={hoveredIdx === i ? 4 : 2.5}
-          fill="hsl(var(--background))" stroke="#10b981" strokeWidth="1.5" />
-      ))}
+      {hoveredIdx !== null && revPts[hoveredIdx] && (
+        <circle cx={revPts[hoveredIdx].x} cy={revPts[hoveredIdx].y}
+          r={4} fill="hsl(var(--background))" stroke="#10b981" strokeWidth="1.5" />
+      )}
 
       {labels.map((lbl, i) => {
         const x = PX + (labels.length <= 1 ? plotW / 2 : (i / (labels.length - 1)) * plotW);
@@ -169,7 +144,7 @@ function BPChartSVGContent({
 
       {!hasData && (
         <text x={CW / 2} y={PY + plotH / 2 + 4} textAnchor="middle" className="fill-muted-foreground" fontSize={fontSize}>
-          No invoice data
+          {ui('bpNoInvoiceData')}
         </text>
       )}
 
@@ -188,13 +163,13 @@ function BPChartSVGContent({
           <circle cx={tooltipX + 8} cy={tooltipY + fontSize * 2.6} r={fontSize * 0.4} fill="#10b981" />
           <text x={tooltipX + 15} y={tooltipY + fontSize * 2.6 + fontSize * 0.38}
             fontSize={fontSize} fontWeight="600" fill="white">
-            {formatCurrency(revenue[hoveredIdx] ?? 0)}
+            {formatCurrency(orgCurrency, revenue[hoveredIdx] ?? 0)}
           </text>
           {/* Expenses row */}
           <circle cx={tooltipX + 8} cy={tooltipY + fontSize * 4.2} r={fontSize * 0.4} fill="#ef4444" />
           <text x={tooltipX + 15} y={tooltipY + fontSize * 4.2 + fontSize * 0.38}
             fontSize={fontSize} fontWeight="600" fill="white">
-            {formatCurrency(expenses[hoveredIdx] ?? 0)}
+            {formatCurrency(orgCurrency, expenses[hoveredIdx] ?? 0)}
           </text>
         </>
       )}
@@ -218,7 +193,7 @@ function ChartLegend() {
   );
 }
 
-function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
+function BPTrendChart({ labels = [], revenue = [], expenses = [], orgCurrency = 'USD' }) {
   const ui = useUI();
   const { locale } = useLocaleSwitch();
   const [expanded, setExpanded] = useState(false);
@@ -246,7 +221,7 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
           <button
             onClick={() => setExpanded(true)}
             className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-            title="Expand chart"
+            title={ui('bpExpandChart')}
           >
             <Maximize2 size={12} />
           </button>
@@ -256,7 +231,7 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
       <BPChartSVGContent
         labels={localizedLabels} revenue={revenue} expenses={expenses}
         CW={320} CH={200} PX={32} PY={12} PB={22}
-        fontSize={9} chartId="bp-mini"
+        fontSize={9} chartId="bp-mini" orgCurrency={orgCurrency}
       />
 
       <ChartLegend />
@@ -288,7 +263,7 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
           <BPChartSVGContent
             labels={sl(localizedLabels)} revenue={sl(revenue)} expenses={sl(expenses)}
             CW={580} CH={280} PX={48} PY={16} PB={28}
-            fontSize={12} chartId="bp-expanded"
+            fontSize={12} chartId="bp-expanded" orgCurrency={orgCurrency}
           />
           <ChartLegend />
         </DialogContent>
@@ -299,6 +274,7 @@ function BPTrendChart({ labels = [], revenue = [], expenses = [] }) {
 
 export default function BusinessPartnerSidebar({ recordId, token, apiBaseUrl }) {
   const ui = useUI();
+  const orgCurrency = useCurrency() ?? 'USD';
   const [kpis, setKpis] = useState(null);
   const [trend, setTrend] = useState(null);
 
@@ -343,6 +319,7 @@ export default function BusinessPartnerSidebar({ recordId, token, apiBaseUrl }) 
               trend={kpi.trend || null}
               format={kpi.format}
               accentColor={kpiConfig[kpi.key]?.accent ?? 'text-foreground'}
+              orgCurrency={orgCurrency}
             />
           ))}
         </div>
@@ -357,6 +334,7 @@ export default function BusinessPartnerSidebar({ recordId, token, apiBaseUrl }) 
           labels={trend.labels ?? []}
           revenue={trend.revenue ?? []}
           expenses={trend.expenses ?? []}
+          orgCurrency={orgCurrency}
         />
       )}
     </div>

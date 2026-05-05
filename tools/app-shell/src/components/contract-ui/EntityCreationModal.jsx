@@ -344,36 +344,39 @@ function CollapsibleFieldSection({ section, form, onChange, opts, ui }) {
  * Props:
  *   title          string — modal heading
  *   saveLabel      string — save button text (defaults to genericLabels.save)
+ *   titleRightContent ReactNode — optional content rendered in title bar right side
+ *   headerContent  ReactNode — optional content rendered above header fields
  *   headerFields   FieldConfig[] — always-visible fields above the tabs
  *   sections       SectionConfig[] — one tab per section
  *   requiredFields string[] — field IDs that must be non-empty to show Save
- *   progressFields string[] — field IDs counted toward the progress %
  *   onSave         async (form, repeatables) => void
  *   onCancel       () => void
  *   initialValues  object — pre-filled form values
  *   opts           { [optionsKey]: { options, loading, error, onRetry } }
  *   componentMap   { [name]: ReactComponent } — resolves section.component
  *   onFieldChange  (id, value) => void — called after every field change
+ *   validate       (form, repeatables) => string | null — optional validation before save
  *
  * FieldConfig: { id, labelKey, type, required?, placeholder?, optionsKey?,
  *               dependsOn?, clearOnDependencyChange?, inSummary?, fullWidth? }
  * SectionConfig: { id, labelKey, contentLabelKey?, emptyTextKey?,
- *                  fields?, repeatable?, addLabelKey?, component?,
- *                  countsToProgress? }
+ *                  fields?, repeatable?, addLabelKey?, component? }
  */
 export default function EntityCreationModal({
   title,
   saveLabel,
+  titleRightContent = null,
+  headerContent = null,
   headerFields = [],
   sections = [],
   requiredFields = [],
-  progressFields = [],
   onSave,
   onCancel,
   initialValues = {},
   opts = {},
   componentMap = {},
   onFieldChange,
+  validate,
 }) {
   const ui = useUI();
   const [tab, setTab] = useState(sections[0]?.id ?? '');
@@ -406,18 +409,6 @@ export default function EntityCreationModal({
     onFieldChange?.(id, value);
   }, [allDeclaredFields, onFieldChange]);
 
-  const progress = useMemo(() => {
-    const fieldsFilled = progressFields.filter(id => {
-      const val = form[id];
-      return val !== undefined && val !== null && val !== '' && val !== false;
-    }).length;
-    const sectionsFilled = sections
-      .filter(s => s.countsToProgress && (repeatables[s.id] ?? []).length > 0)
-      .length;
-    const total = progressFields.length + sections.filter(s => s.countsToProgress).length;
-    if (!total) return 0;
-    return Math.round(((fieldsFilled + sectionsFilled) / total) * 100);
-  }, [form, progressFields, sections, repeatables]);
 
   const isSaveDisabled = loading || !requiredFields.every(id => {
     const val = form[id];
@@ -425,6 +416,12 @@ export default function EntityCreationModal({
   });
 
   const handleSave = async () => {
+    const validationError = validate?.(form, repeatables);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -501,20 +498,19 @@ export default function EntityCreationModal({
         {/* Title */}
         <div style={{ boxSizing: 'border-box', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: '8px 20px 16px 20px', gap: '20px', width: '100%', height: '64px', borderBottom: '1px solid #E8EAEF', flexShrink: 0 }}>
           <h2 style={MODAL_STYLES.title}>{title}</h2>
-          <button
-            type="button"
-            onClick={onCancel}
-            aria-label={ui('cancel')}
-            className="h-7 w-7 flex items-center justify-center rounded-full text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors text-lg leading-none"
-          >
-            ×
-          </button>
+          {titleRightContent}
         </div>
 
         {/* Body */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '12px 0px 0px', width: '100%', flex: 1, overflow: 'auto', alignSelf: 'stretch' }}>
 
         {/* Header fields — always visible, 4-col grid */}
+        {headerContent && (
+          <div style={{ padding: '0px 20px 12px 20px', width: '100%', alignSelf: 'stretch' }}>
+            {headerContent}
+          </div>
+        )}
+
         {headerFields.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', padding: '0px 20px 12px 20px', gap: '20px', width: '100%', alignSelf: 'stretch' }}>
             {headerFields.map((f, idx) => (
@@ -561,13 +557,6 @@ export default function EntityCreationModal({
                 </button>
               );
             })}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', fontSize: '12px', color: '#374151', flexShrink: 0 }}>
-            <span style={{ whiteSpace: 'nowrap' }}>{ui('profileComplete')}</span>
-            <div style={{ width: '64px', height: '6px', background: '#e5e7eb', borderRadius: '999px', overflow: 'hidden' }}>
-              <div style={{ height: '100%', background: '#121217', borderRadius: '999px', width: `${progress}%`, transition: 'width 0.3s' }} />
-            </div>
-            <span style={{ fontWeight: 500, fontVariantNumeric: 'tabular-nums', width: '28px', textAlign: 'right' }}>{progress}%</span>
           </div>
         </div>
 

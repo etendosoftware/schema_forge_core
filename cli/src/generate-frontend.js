@@ -90,6 +90,15 @@ export function getReadOnlyFields(contract, entityName) {
 }
 
 /**
+ * Etendo session/system macros (`@#Date@`, `@#User@`, `@#Client@`, ...) are
+ * resolved server-side by NeoDefaultsService. Emitting them as a frontend
+ * defaultValue would leak the literal token into inputs, so skip them here.
+ */
+function isEtendoSessionMacro(value) {
+  return typeof value === 'string' && /^@#[\w]+@$/.test(value);
+}
+
+/**
  * Map a contract field type to a column/field type for the declarative config.
  */
 function mapFieldType(field) {
@@ -107,6 +116,7 @@ function mapFieldType(field) {
   if (field.type === 'amount') return 'amount';
   if (['number', 'integer', 'quantity', 'price', 'decimal'].includes(field.type)) return 'number';
   if (field.type === 'date') return 'date';
+  if (field.type === 'foreignKey') return 'selector';
   return 'string';
 }
 
@@ -154,7 +164,7 @@ export function generateTableComponent(entityName, contract) {
   const columnsArray = gridFields.map(f => {
     const type = mapFieldType(f);
     const selectionPart = f.isSelectionColumn ? ', isSelectionColumn: true' : '';
-    const enumLabelsPart = (type === 'enum' && f.enumValues?.length)
+    const enumLabelsPart = ((type === 'enum' || type === 'status') && f.enumValues?.length)
       ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${o.name.replace(/'/g, "\\'")}'`).join(', ')} }`
       : '';
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
@@ -162,11 +172,16 @@ export function generateTableComponent(entityName, contract) {
     const badgePart = (f.badge && !f.cellType) ? ', badge: true' : '';
     const badgeLabelsPart = f.badgeLabels ? `, badgeLabels: ${JSON.stringify(f.badgeLabels)}` : '';
     const badgeColorsPart = f.badgeColors ? `, badgeColors: ${JSON.stringify(f.badgeColors)}` : '';
+    const badgeVariantsPart = f.badgeVariants ? `, badgeVariants: ${JSON.stringify(f.badgeVariants)}` : '';
+    const enumVariantsPart = f.enumVariants ? `, enumVariants: ${JSON.stringify(f.enumVariants)}` : '';
     const labelsPart = f.labels ? `, labels: ${JSON.stringify(f.labels)}` : '';
     const summablePart = f.summable ? ', summable: true' : '';
     const displayPart = f.display ? `, display: '${f.display}'` : '';
-    const renderPart = f.cellType === 'depreciationProgress' ? ', render: renderDepreciationProgress' : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${summablePart}${displayPart}${renderPart} },`;
+    let renderPart = '';
+    if (f.cellType === 'depreciationProgress') renderPart = ', render: renderDepreciationProgress';
+    else if (f.cellType === 'taxRate') renderPart = ', render: renderTaxRate';
+    else if (f.cellType === 'taxScope') renderPart = `, render: (row) => renderTaxScope(row, '${f.name}')`;
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -190,8 +205,37 @@ function renderDepreciationProgress(row) {
 }
 ` : '';
 
+  const taxRateHelper = neededCellTypes.has('taxRate') ? `
+function renderTaxRate(row) {
+  const val = row?.rate;
+  if (val == null) return '';
+  return <Tag variant="green" label={\`+\${val} %\`} />;
+}
+` : '';
+
+  const taxScopeHelper = neededCellTypes.has('taxScope') ? `
+function TaxScopeCell({ row, fieldKey }) {
+  const ui = useUI();
+  const value = fieldKey ? row?.[fieldKey] : (row?.applicableTo ?? row?.salesPurchaseType);
+  const showSales    = value === 'B' || value === 'S';
+  const showPurchase = value === 'B' || value === 'P';
+  if (!showSales && !showPurchase) return value ?? '';
+  return (
+    <span className="inline-flex items-center gap-1">
+      {showSales    && <Tag variant="blue"   label={ui('taxScopeSales')} />}
+      {showPurchase && <Tag variant="purple" label={ui('taxScopePurchase')} />}
+    </span>
+  );
+}
+` : '';
+
+  const needsTagImport = neededCellTypes.has('taxRate') || neededCellTypes.has('taxScope');
+  const tagImport = needsTagImport ? `import { Tag } from '@/components/ui/tag';\n` : '';
+  const needsUiImport = neededCellTypes.has('taxScope');
+  const uiImport = needsUiImport ? `import { useUI } from '@/i18n';\n` : '';
+
   return `import { DataTable } from '@/components/contract-ui';
-${depreciationProgressHelper}
+${tagImport}${uiImport}${depreciationProgressHelper}${taxRateHelper}${taxScopeHelper}
 ${MARKERS.GENERATED_START(`columns:${entityName}`)}
 const columns = [
 ${columnsArray}
@@ -258,7 +302,15 @@ export function generateFormComponent(entityName, contract) {
     // Section classification
     const sectionPart = `, section: '${fieldSections[idx]}'`;
     // UI hints
-    const defaultValuePart = f.defaultValue ? `, defaultValue: '${f.defaultValue.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
+    // Skip redundant unchecked defaults on YESNO/checkbox fields: backend NeoDefaultsService
+    // already coerces missing/'N'/false to false, so emitting them only bloats generated files.
+    const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
+    const skipServerMacro = isEtendoSessionMacro(f.defaultValue);
+    const defaultValuePart = (!skipCheckboxDefault && !skipServerMacro && f.defaultValue !== undefined && f.defaultValue !== null && f.defaultValue !== '')
+      ? (typeof f.defaultValue === 'number'
+          ? `, defaultValue: ${f.defaultValue}`
+          : `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'`)
+      : '';
     const helpPart = f.help ? `, help: '${f.help.replace(/'/g, "\\'")}'` : '';
     const fieldGroupPart = f.fieldGroup ? `, fieldGroup: '${f.fieldGroup.replace(/'/g, "\\'")}'` : '';
     const precisionPart = f.precision ? `, precision: ${f.precision}` : '';
@@ -307,7 +359,7 @@ ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}(props) {
   return <EntityForm fields={fields}${colsProp} {...props} />;
 }
-${compName}.hasCollapsedFields = ${hasCollapsed};
+${hasCollapsed ? `${compName}.hasCollapsedFields = true;\n` : ''}
 ${MARKERS.GENERATED_END(`component:${compName}`)}
 `;
 }
@@ -521,8 +573,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       }),
   ].join('\n');
 
-  // Separate entry fields (user types) from auto-derived fields (price, tax, discount, amount)
-  const autoPatterns = /price|tax|discount|amount|total|cost|net/i;
+  // Separate entry fields (user types) from auto-derived fields (price, tax, amount)
+  // Note: discount is intentionally excluded — it is user-editable and triggers SL_Order_Amt recalculation.
+  const autoPatterns = /price|tax|amount|total|cost|net/i;
   const derivedFields = detailEditableFields.filter(f =>
     autoPatterns.test(f.name) && !f.required && !f.reference
   );
@@ -545,14 +598,20 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
-    // Include defaultValue for quantity/numeric fields so the add-line form starts with a sensible value
+    // Include defaultValue for quantity/numeric fields so the add-line form starts with a sensible value.
+    // Skip redundant unchecked defaults on YESNO/checkbox fields (backend coerces to false anyway).
     const rawDv = f.defaultValue;
     let defaultValuePart = '';
-    if (rawDv !== undefined && rawDv !== null && rawDv !== '') {
+    const skipCheckboxDefault = type === 'checkbox' && (rawDv === 'N' || rawDv === false);
+    const skipServerMacro = isEtendoSessionMacro(rawDv);
+    if (!skipCheckboxDefault && !skipServerMacro && rawDv !== undefined && rawDv !== null && rawDv !== '') {
       const numDv = Number(rawDv);
       defaultValuePart = `, defaultValue: ${(!isNaN(numDv) && String(rawDv).trim() !== '') ? numDv : `'${String(rawDv).replace(/'/g, "\\'")}'`}`;
     }
-    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart} },`;
+    const forceCalloutFieldsPart = Array.isArray(f.forceCalloutFields) && f.forceCalloutFields.length > 0
+      ? `, forceCalloutFields: ${JSON.stringify(f.forceCalloutFields)}`
+      : '';
+    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart} },`;
   }).join('\n');
 
   const derivedArray = derivedFields.map(f => {
@@ -563,7 +622,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${referencePart}${inputModePart} },`;
   }).join('\n');
 
-  const hiddenDefaultsArray = hiddenDefaultFields.map(f => {
+  const hiddenDefaultsArray = hiddenDefaultFields
+    .filter(f => !String(f.defaultValue).startsWith('@SQL=') && !isEtendoSessionMacro(f.defaultValue))
+    .map(f => {
     const rawDefault = String(f.defaultValue);
     const parentColMatch = rawDefault.match(/^@(\w+)@$/);
     if (parentColMatch) {
@@ -580,7 +641,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // API prediction config
   const apiPrediction = contract.apiPrediction;
   const apiBlock = apiPrediction
-    ? `\nconst api = ${JSON.stringify(apiPrediction, null, 2)};\n`
+    ? `\nexport const api = ${JSON.stringify(apiPrediction, null, 2)};\n`
     : '';
   const apiProp = apiPrediction ? '\n      api={api}' : '';
 
@@ -602,6 +663,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const listViewOptions = windowConfig.listViewOptions ?? null;
   const listBaseFilter = windowConfig.listBaseFilter ?? null;
   const quickFilters = windowConfig.quickFilters ?? null;
+  const subsetFilters = windowConfig.subsetFilters ?? null;
+  const dateFilterKey = windowConfig.dateFilterKey ?? null;
   const contentBg = windowConfig.contentBg ?? null;
   const hideListFilters = windowConfig.hideListFilters ?? false;
   const hideLink = windowConfig.hideLink ?? false;
@@ -613,6 +676,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const detailSortBy = windowConfig.detailSortBy ?? null;
   const titleField = windowConfig.titleField ?? null;
   const salesTheme = windowConfig.salesTheme ?? false;
+  const lineEntityConfig = windowConfig.lineEntityConfig ?? null;
 
   // Detect secondary child entities for additional tabs
   const secondaryTabsDecl = windowConfig.secondaryTabs;
@@ -640,7 +704,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
           const labelPart = f.label ? `, label: '${f.label}'` : '';
           const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
           const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
-          const defaultValuePart = f.defaultValue ? `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
+          // Skip redundant unchecked defaults on YESNO/checkbox fields (backend coerces to false anyway).
+          const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
+          const defaultValuePart = (!skipCheckboxDefault && f.defaultValue) ? `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
           const optionsPart = (type === 'select' && f.enumValues?.length)
             ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
             : '';
@@ -763,8 +829,18 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const quickFiltersProp = quickFilters
     ? `\n      quickFilters={${JSON.stringify(quickFilters)}}`
     : '';
+  const subsetFiltersProp = subsetFilters
+    ? `\n      subsetFilters={${JSON.stringify(subsetFilters)}}`
+    : '';
+  const dateFilterKeyProp = dateFilterKey
+    ? `\n      dateFilterKey="${dateFilterKey}"`
+    : '';
   // contentBg prop
   const contentBgProp = contentBg ? `\n        contentBg="${contentBg}"` : '';
+  // lineConfig prop — emitted when the window uses a non-default line pricing config
+  const LINE_CONFIG_SYMBOLS = { invoice: 'INVOICE_LINE_CONFIG', returnOrder: 'RETURN_ORDER_LINE_CONFIG' };
+  const lineConfigSymbol = lineEntityConfig ? (LINE_CONFIG_SYMBOLS[lineEntityConfig] ?? null) : null;
+  const lineConfigProp = lineConfigSymbol ? `\n        lineConfig={${lineConfigSymbol}}` : '';
   // ListView toolbar props
   const hidePrintListProp = hidePrint ? '\n      hidePrint' : '';
   const hideMoreMenuListProp = hideMoreMenu ? '\n      hideMoreMenu' : '';
@@ -821,17 +897,33 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     : `import ${headerName}Table from './${headerName}Table';`;
 
   // menuActions prop
+  const menuActionsNeedsData = menuActionsConfig.some(a => a.visibleWhenFieldFalse);
+  const menuActionsFnParams = menuActionsNeedsData ? '({ data, status })' : '({ status })';
   const menuActionsProp = menuActionsConfig.length > 0
-    ? `\n        menuActions={({ status }) => [\n${menuActionsConfig.map(a => {
-        const vis = a.visibleWhenStatus
+    ? `\n        menuActions={${menuActionsFnParams} => [\n${menuActionsConfig.map(a => {
+        const statusVis = a.visibleWhenStatus
           ? Array.isArray(a.visibleWhenStatus)
-            ? `visible: ${JSON.stringify(a.visibleWhenStatus)}.includes(status)`
-            : `visible: status === '${a.visibleWhenStatus}'`
+            ? `${JSON.stringify(a.visibleWhenStatus)}.includes(status)`
+            : `status === '${a.visibleWhenStatus}'`
           : '';
+        const fieldVis = a.visibleWhenFieldFalse ? `!data?.${a.visibleWhenFieldFalse}` : '';
+        const visParts = [statusVis, fieldVis].filter(Boolean);
+        const vis = visParts.length > 0 ? `visible: ${visParts.join(' && ')}, ` : '';
         const destr = a.destructive ? 'destructive: true, ' : '';
-        const col = a.columnName ? `columnName: '${a.columnName}', ` : `onClick: () => {},`;
-        const visPart = vis ? `${vis}, ` : '';
-        return `          { key: '${a.key}', label: '${a.label}', ${destr}${visPart}${col} }`;
+        // Handler precedence: documentAction (declarative DocAction) > columnName (AD process button) > onClick placeholder
+        let handler;
+        if (a.documentAction) {
+          handler = `documentAction: '${a.documentAction}', `;
+        } else if (a.columnName) {
+          handler = `columnName: '${a.columnName}', `;
+        } else {
+          handler = `onClick: () => {},`;
+        }
+        const labelKeyPart = a.labelKey ? `labelKey: '${a.labelKey}', ` : '';
+        const successPart = a.successKey
+          ? `successKey: '${a.successKey}', `
+          : a.successMessage ? `successMessage: '${String(a.successMessage).replace(/'/g, "\\'")}', ` : '';
+        return `          { key: '${a.key}', label: '${a.label}', ${destr}${vis}${labelKeyPart}${successPart}${handler} }`;
       }).join(',\n')}\n        ]}`
     : '';
 
@@ -986,7 +1078,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const needsFragment = customComponents.newRecordComponent || newActionsWithComponents.length > 0;
 
   return `import { ${needsUseState ? 'useState, ' : ''}useEffect } from 'react';
-import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
+import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}${lineConfigSymbol ? `\nimport { ${lineConfigSymbol} } from '@/hooks/useLineGrossAmount';` : ''}
 ${headerTableImport}
 import ${headerName}Form from './${headerName}Form';${detailEntity ? `
 import ${detailName}Table from './${detailName}Table';
@@ -1056,7 +1148,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}
         {...props}${sidebarContentProp}
       />
     );
@@ -1070,7 +1162,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}
       {...props}${customComponents.newRecordComponent ? `
       onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}
     />${customComponents.newRecordComponent ? `
@@ -1092,14 +1184,12 @@ export function generateIndexComponent(headerEntity, detailEntity, contract) {
   const windowName = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
   const apiPrediction = contract?.apiPrediction;
 
-  const apiBlock = apiPrediction
-    ? `\nconst api = ${JSON.stringify(apiPrediction, null, 2)};\n`
-    : '';
   const apiProp = apiPrediction ? ' api={api}' : '';
-  return `import ${headerName}Page from './${headerName}Page';
+  const apiImport = apiPrediction ? `, { api }` : '';
+  return `import ${headerName}Page${apiImport} from './${headerName}Page';
 
 const windowMeta = { category: '${category}', name: '${windowName}' };
-${apiBlock}
+
 ${MARKERS.GENERATED_START('component:App')}
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
   return <${headerName}Page windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta}${apiProp} {...rest} />;
@@ -1108,129 +1198,24 @@ ${MARKERS.GENERATED_END('component:App')}
 `;
 }
 
-// --- Mock Catalog Data Pools ---
-
-const CATALOG_DATA = {
-  BusinessPartner: Array.from({ length: 15 }, (_, i) => ({
-    id: `bp-${String(i + 1).padStart(3, '0')}`,
-    name: [
-      'Acme Corp', 'TechFlow Inc', 'Global Trade Ltd', 'Summit Industries',
-      'Pacific Partners', 'Alpine Solutions', 'Meridian Group', 'Vertex Systems',
-      'Atlas Manufacturing', 'Nova Enterprises', 'Pinnacle Services', 'Horizon Labs',
-      'Cedar Holdings', 'Sterling & Co', 'Quantum Logistics',
-    ][i],
-  })),
-  Product: Array.from({ length: 20 }, (_, i) => ({
-    id: `prod-${String(i + 1).padStart(3, '0')}`,
-    name: [
-      'Laptop Pro 15', 'USB-C Cable', 'Wireless Mouse', 'Mechanical Keyboard',
-      'Monitor 27"', 'Webcam HD', 'Headset Pro', 'Docking Station',
-      'SSD 1TB', 'RAM 16GB', 'Power Supply 750W', 'Network Switch',
-      'Printer Laser', 'Scanner Flatbed', 'External HDD 2TB', 'Tablet 10"',
-      'Router Pro', 'UPS Battery', 'Graphics Card', 'CPU Cooler',
-    ][i],
-    price: [1299, 15, 29, 89, 549, 79, 149, 199, 109, 65, 95, 45, 299, 189, 79, 449, 129, 159, 699, 49][i],
-    uomId: 'uom-001',
-  })),
-  User: Array.from({ length: 8 }, (_, i) => ({
-    id: `user-${String(i + 1).padStart(3, '0')}`,
-    name: [
-      'Alice Johnson', 'Bob Smith', 'Carol Williams', 'David Brown',
-      'Eva Martinez', 'Frank Lee', 'Grace Kim', 'Henry Davis',
-    ][i],
-  })),
-  Warehouse: Array.from({ length: 5 }, (_, i) => ({
-    id: `wh-${String(i + 1).padStart(3, '0')}`,
-    name: ['Main Warehouse', 'East Distribution Center', 'West Hub', 'North Storage', 'South Logistics'][i],
-  })),
-  Currency: [
-    { id: 'USD', name: 'US Dollar', symbol: '$' },
-    { id: 'EUR', name: 'Euro', symbol: 'EUR' },
-    { id: 'GBP', name: 'Pound Sterling', symbol: 'GBP' },
-    { id: 'ARS', name: 'Argentine Peso', symbol: 'ARS' },
-  ],
-  PriceList: Array.from({ length: 4 }, (_, i) => ({
-    id: `pl-${String(i + 1).padStart(3, '0')}`,
-    name: ['Standard Price List', 'Wholesale Prices', 'Retail Prices', 'VIP Pricing'][i],
-  })),
-  PaymentTerm: Array.from({ length: 5 }, (_, i) => ({
-    id: `pt-${String(i + 1).padStart(3, '0')}`,
-    name: ['Immediate', 'Net 15', 'Net 30', 'Net 60', '2/10 Net 30'][i],
-  })),
-  PaymentMethod: Array.from({ length: 4 }, (_, i) => ({
-    id: `pm-${String(i + 1).padStart(3, '0')}`,
-    name: ['Wire Transfer', 'Credit Card', 'Check', 'Cash'][i],
-  })),
-  Tax: Array.from({ length: 6 }, (_, i) => ({
-    id: `tax-${String(i + 1).padStart(3, '0')}`,
-    name: ['VAT 21%', 'VAT 10%', 'VAT 0%', 'Sales Tax 8.5%', 'Exempt', 'Reduced Rate 5%'][i],
-    rate: [21, 10, 0, 8.5, 0, 5][i],
-  })),
-  UOM: Array.from({ length: 5 }, (_, i) => ({
-    id: `uom-${String(i + 1).padStart(3, '0')}`,
-    name: ['Each', 'Box', 'Kg', 'Meter', 'Liter'][i],
-  })),
-  StorageBin: Array.from({ length: 10 }, (_, i) => ({
-    id: `sb-${String(i + 1).padStart(3, '0')}`,
-    name: ['A-01-01', 'A-01-02', 'A-02-01', 'A-02-02', 'B-01-01', 'B-01-02', 'B-02-01', 'B-02-02', 'C-01-01', 'C-01-02'][i],
-    warehouseId: `wh-${String(Math.floor(i / 2) + 1).padStart(3, '0')}`,
-  })),
-  ProductCategory: Array.from({ length: 9 }, (_, i) => ({
-    id: `cat-${String(i + 1).padStart(3, '0')}`,
-    name: ['Electronics', 'Accessories', 'Peripherals', 'Displays', 'Audio', 'Storage', 'Components', 'Networking', 'Power'][i],
-  })),
-  BusinessPartnerLocation: Array.from({ length: 20 }, (_, i) => ({
-    id: `bploc-${String(i + 1).padStart(3, '0')}`,
-    name: [
-      'HQ - 100 Main St', 'Branch - 200 Oak Ave', 'Warehouse - 300 Elm Dr',
-      'Office - 50 Pine Rd', 'Factory - 400 Maple Ln', 'Store - 150 Cedar Blvd',
-      'Depot - 250 Birch Way', 'Lab - 75 Spruce Ct', 'HQ - 500 Willow St',
-      'Branch - 600 Ash Ave', 'Office - 10 Palm Dr', 'Store - 20 Ivy Rd',
-      'Depot - 30 Fern Ln', 'Lab - 40 Sage Blvd', 'HQ - 55 Rose Way',
-      'Branch - 65 Lily Ct', 'Office - 70 Daisy St', 'Store - 80 Tulip Ave',
-      'Depot - 90 Orchid Dr', 'Lab - 95 Violet Rd',
-    ][i],
-    businessPartnerId: `bp-${String(Math.floor(i / 2) + 1).padStart(3, '0')}`,
-  })),
-};
-
 /**
- * Collect all unique reference names from a contract's frontend entities.
+ * Generate a mockCatalogs.js stub.
+ *
+ * Historically this emitted fake FK reference data (e.g. "Acme Corp", "Wire Transfer")
+ * as a fallback for selector dropdowns. Those fakes leaked into production UIs and
+ * caused a visible "flash of wrong values" when opening a dropdown before the real
+ * `/selector` response arrived. The file is kept (still imported by HeaderPage.jsx)
+ * but now exports an empty catalog — all selector data comes from the real backend.
  */
-function collectReferences(contract) {
-  const refs = new Set();
-  for (const entity of Object.values(contract.frontendContract.entities)) {
-    for (const field of entity.fields) {
-      if (field.reference) refs.add(field.reference);
-    }
-  }
-  return refs;
-}
-
-/**
- * Generate a mockCatalogs.js file with reference data for all FK fields in the contract.
- */
-export function generateMockCatalogs(contract) {
-  const refs = collectReferences(contract);
-  const lines = [
-    '// Auto-generated mock catalogs for FK reference data - do not edit manually',
+export function generateMockCatalogs(_contract) {
+  return [
+    '// Auto-generated - intentionally empty. Selector data comes from the real backend.',
     '',
     'const catalogs = {};',
     '',
-  ];
-
-  for (const ref of refs) {
-    const data = CATALOG_DATA[ref];
-    if (data) {
-      lines.push(`catalogs['${ref}'] = ${JSON.stringify(data, null, 2)};`);
-      lines.push('');
-    }
-  }
-
-  lines.push('export default catalogs;');
-  lines.push('');
-
-  return lines.join('\n');
+    'export default catalogs;',
+    '',
+  ].join('\n');
 }
 
 /**
