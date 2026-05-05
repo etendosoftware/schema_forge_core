@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { DateField } from '@/components/ui/date-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Check, ChevronsUpDown, Loader2, Search, X } from 'lucide-react';
@@ -823,7 +824,26 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
         </div>
       );
     }
-    const inputType = f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text';
+    if (f.type === 'date') {
+      return (
+        <div key={f.key} className="space-y-1.5">
+          <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
+            {label}{f.required && !isReadOnly ? <span className="text-red-500 ml-0.5">*</span> : ''}
+          </Label>
+          <DateField
+            id={f.key}
+            name={f.key}
+            data-testid={`field-${f.key}`}
+            value={data?.[f.key] ?? ''}
+            onChange={(iso) => onChange?.(f.key, iso, f.column)}
+            onBlur={() => onFieldBlur?.(f.key)}
+            disabled={isReadOnly || savingField === f.key}
+            required={f.required && !isReadOnly}
+          />
+        </div>
+      );
+    }
+    const inputType = f.type === 'number' ? 'number' : 'text';
     return (
       <div key={f.key} className="space-y-1.5">
         <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
