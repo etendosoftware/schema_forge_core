@@ -17084,6 +17084,8 @@
     "lineAdded": "Línea añadida",
     "recordCreated": "Registro creado",
     "recordSaved": "Registro guardado",
+    "requiredFieldsMissing": "Completá todos los campos requeridos",
+    "fieldRequired": "Requerido",
     "invoicePdfGenerating": "Generando factura...",
     "invoicePdfError": "No se pudo generar el PDF de la factura.",
     "invoicePdfTitle": "Factura de venta",
