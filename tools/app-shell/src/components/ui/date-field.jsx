@@ -226,6 +226,14 @@ export function DateField({
 
   const commitPicker = () => {
     setDisplayedMonth(new Date(tempYear, tempMonth, 1));
+    if (parsedValue) {
+      // Preserve the selected day, only swap month/year. If the day does not
+      // exist in the target month (e.g. Mar 31 → Feb), clear the selection
+      // rather than silently clamping to a different day.
+      const lastDay = new Date(tempYear, tempMonth + 1, 0).getDate();
+      const day = parsedValue.getDate();
+      onChange?.(day <= lastDay ? toIsoDate(new Date(tempYear, tempMonth, day)) : '');
+    }
     setView('calendar');
   };
 

@@ -39,6 +39,8 @@ export function ListFilterBar({
 }) {
   const ui = useUI();
   const dictionary = useLocale();
+  const { locale: appLocale } = useLocaleSwitch();
+  const bcpLocale = (appLocale || 'es_ES').replace('_', '-');
 
   const statusCol = useMemo(
     () => columns.find(c => c.type === 'status') || null,
@@ -285,7 +287,7 @@ export function ListFilterBar({
     };
   }, [fromDate, toDate]);
 
-  const fmtDay = (d) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  const fmtDay = (d) => d.toLocaleDateString(bcpLocale, { day: 'numeric', month: 'short', year: 'numeric' });
   const rangeSummary = (() => {
     if (fromDate && toDate) return `${fmtDay(fromDate)} – ${fmtDay(toDate)}`;
     if (fromDate) return fmtDay(fromDate);
@@ -541,14 +543,25 @@ function CalendarWithPicker({ month, onMonthChange, selected, onSelect, modifier
   };
 
   // Clicking a month/year immediately applies and returns to the calendar —
-  // no "Ok" step needed per designer spec.
+  // no "Ok" step needed per designer spec. If a date is already selected,
+  // preserve its day and only swap the month/year. If that day does not
+  // exist in the target month (e.g. Mar 31 → Feb), clear the selection.
+  const reselectWithSameDay = (year, monthIdx) => {
+    if (!selected) return;
+    const lastDay = new Date(year, monthIdx + 1, 0).getDate();
+    const day = selected.getDate();
+    onSelect?.(day <= lastDay ? new Date(year, monthIdx, day) : undefined);
+  };
+
   const handleMonthSelect = (idx) => {
     onMonthChange(new Date(month.getFullYear(), idx, 1));
+    reselectWithSameDay(month.getFullYear(), idx);
     setView('calendar');
   };
 
   const handleYearSelect = (year) => {
     onMonthChange(new Date(year, month.getMonth(), 1));
+    reselectWithSameDay(year, month.getMonth());
     setView('calendar');
   };
 
