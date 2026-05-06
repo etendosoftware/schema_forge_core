@@ -26,7 +26,7 @@ SELECT pp.AD_Process_Para_ID, pp.Name, pp.ColumnName, pp.Description,
 FROM AD_Process_Para pp
 JOIN AD_Reference r ON r.AD_Reference_ID = pp.AD_Reference_ID
 WHERE pp.AD_Process_ID = $1 AND pp.IsActive = 'Y'
-ORDER BY pp.SeqNo`,
+ORDER BY pp.SeqNo, pp.Name, pp.AD_Process_Para_ID`,
 };
 
 export function rowsToCsv(rows) {

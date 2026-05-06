@@ -705,105 +705,6 @@ export const lineTax = [
   }
 ];
 
-export const tax = [
-  {
-    "id": "mock-tax-001",
-    "lineNo": 10,
-    "tax": "VAT 21%",
-    "taxAmount": "VAT 21%",
-    "taxableAmount": "VAT 21%",
-    "headerId": "mock-header-001"
-  },
-  {
-    "id": "mock-tax-002",
-    "lineNo": 20,
-    "tax": "VAT 10%",
-    "taxAmount": "VAT 10%",
-    "taxableAmount": "VAT 10%",
-    "headerId": "mock-header-002"
-  },
-  {
-    "id": "mock-tax-003",
-    "lineNo": 30,
-    "tax": "VAT 0%",
-    "taxAmount": "VAT 0%",
-    "taxableAmount": "VAT 0%",
-    "headerId": "mock-header-003"
-  },
-  {
-    "id": "mock-tax-004",
-    "lineNo": 40,
-    "tax": "Sales Tax 8.5%",
-    "taxAmount": "Sales Tax 8.5%",
-    "taxableAmount": "Sales Tax 8.5%",
-    "headerId": "mock-header-004"
-  },
-  {
-    "id": "mock-tax-005",
-    "lineNo": 50,
-    "tax": "Exempt",
-    "taxAmount": "Exempt",
-    "taxableAmount": "Exempt",
-    "headerId": "mock-header-005"
-  },
-  {
-    "id": "mock-tax-006",
-    "lineNo": 60,
-    "tax": "Reduced Rate 5%",
-    "taxAmount": "Reduced Rate 5%",
-    "taxableAmount": "Reduced Rate 5%",
-    "headerId": "mock-header-006"
-  },
-  {
-    "id": "mock-tax-007",
-    "lineNo": 70,
-    "tax": "Standard Rate 20%",
-    "taxAmount": "Standard Rate 20%",
-    "taxableAmount": "Standard Rate 20%",
-    "headerId": "mock-header-007"
-  },
-  {
-    "id": "mock-tax-008",
-    "lineNo": 80,
-    "tax": "VAT 21%",
-    "taxAmount": "VAT 21%",
-    "taxableAmount": "VAT 21%",
-    "headerId": "mock-header-008"
-  },
-  {
-    "id": "mock-tax-009",
-    "lineNo": 90,
-    "tax": "VAT 10%",
-    "taxAmount": "VAT 10%",
-    "taxableAmount": "VAT 10%",
-    "headerId": "mock-header-009"
-  },
-  {
-    "id": "mock-tax-010",
-    "lineNo": 100,
-    "tax": "VAT 0%",
-    "taxAmount": "VAT 0%",
-    "taxableAmount": "VAT 0%",
-    "headerId": "mock-header-010"
-  },
-  {
-    "id": "mock-tax-011",
-    "lineNo": 110,
-    "tax": "Sales Tax 8.5%",
-    "taxAmount": "Sales Tax 8.5%",
-    "taxableAmount": "Sales Tax 8.5%",
-    "headerId": "mock-header-011"
-  },
-  {
-    "id": "mock-tax-012",
-    "lineNo": 120,
-    "tax": "Exempt",
-    "taxAmount": "Exempt",
-    "taxableAmount": "Exempt",
-    "headerId": "mock-header-012"
-  }
-];
-
 export const basicDiscounts = [
   {
     "id": "mock-basicDiscounts-001",
@@ -899,6 +800,105 @@ export const basicDiscounts = [
     "discount": 12,
     "cascade": "Sample cascade",
     "active": "Sample active",
+    "headerId": "mock-header-012"
+  }
+];
+
+export const tax = [
+  {
+    "id": "mock-tax-001",
+    "lineNo": 10,
+    "tax": "VAT 21%",
+    "taxAmount": "VAT 21%",
+    "taxableAmount": "VAT 21%",
+    "headerId": "mock-header-001"
+  },
+  {
+    "id": "mock-tax-002",
+    "lineNo": 20,
+    "tax": "VAT 10%",
+    "taxAmount": "VAT 10%",
+    "taxableAmount": "VAT 10%",
+    "headerId": "mock-header-002"
+  },
+  {
+    "id": "mock-tax-003",
+    "lineNo": 30,
+    "tax": "VAT 0%",
+    "taxAmount": "VAT 0%",
+    "taxableAmount": "VAT 0%",
+    "headerId": "mock-header-003"
+  },
+  {
+    "id": "mock-tax-004",
+    "lineNo": 40,
+    "tax": "Sales Tax 8.5%",
+    "taxAmount": "Sales Tax 8.5%",
+    "taxableAmount": "Sales Tax 8.5%",
+    "headerId": "mock-header-004"
+  },
+  {
+    "id": "mock-tax-005",
+    "lineNo": 50,
+    "tax": "Exempt",
+    "taxAmount": "Exempt",
+    "taxableAmount": "Exempt",
+    "headerId": "mock-header-005"
+  },
+  {
+    "id": "mock-tax-006",
+    "lineNo": 60,
+    "tax": "Reduced Rate 5%",
+    "taxAmount": "Reduced Rate 5%",
+    "taxableAmount": "Reduced Rate 5%",
+    "headerId": "mock-header-006"
+  },
+  {
+    "id": "mock-tax-007",
+    "lineNo": 70,
+    "tax": "Standard Rate 20%",
+    "taxAmount": "Standard Rate 20%",
+    "taxableAmount": "Standard Rate 20%",
+    "headerId": "mock-header-007"
+  },
+  {
+    "id": "mock-tax-008",
+    "lineNo": 80,
+    "tax": "VAT 21%",
+    "taxAmount": "VAT 21%",
+    "taxableAmount": "VAT 21%",
+    "headerId": "mock-header-008"
+  },
+  {
+    "id": "mock-tax-009",
+    "lineNo": 90,
+    "tax": "VAT 10%",
+    "taxAmount": "VAT 10%",
+    "taxableAmount": "VAT 10%",
+    "headerId": "mock-header-009"
+  },
+  {
+    "id": "mock-tax-010",
+    "lineNo": 100,
+    "tax": "VAT 0%",
+    "taxAmount": "VAT 0%",
+    "taxableAmount": "VAT 0%",
+    "headerId": "mock-header-010"
+  },
+  {
+    "id": "mock-tax-011",
+    "lineNo": 110,
+    "tax": "Sales Tax 8.5%",
+    "taxAmount": "Sales Tax 8.5%",
+    "taxableAmount": "Sales Tax 8.5%",
+    "headerId": "mock-header-011"
+  },
+  {
+    "id": "mock-tax-012",
+    "lineNo": 120,
+    "tax": "Exempt",
+    "taxAmount": "Exempt",
+    "taxableAmount": "Exempt",
     "headerId": "mock-header-012"
   }
 ];

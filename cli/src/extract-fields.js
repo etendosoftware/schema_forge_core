@@ -559,7 +559,7 @@ LEFT JOIN obuisel_selector sel ON sel.ad_reference_id = c.ad_reference_value_id
 LEFT JOIN ad_table sel_tgt ON sel.ad_table_id = sel_tgt.ad_table_id
 WHERE w.AD_Window_ID = $1
   AND t.IsActive = 'Y'
-ORDER BY t.SeqNo, f.SeqNo
+ORDER BY t.SeqNo, t.Name, t.AD_Tab_ID, f.SeqNo, f.AD_Field_ID
 `;
 
 /**
@@ -631,7 +631,7 @@ WHERE w.AD_Window_ID = $1
     SELECT 1 FROM AD_Field f2
     WHERE f2.AD_Tab_ID = t.AD_Tab_ID AND f2.AD_Column_ID = c.AD_Column_ID
   )
-ORDER BY t.SeqNo, c.ColumnName
+ORDER BY t.SeqNo, t.Name, t.AD_Tab_ID, c.ColumnName, c.AD_Column_ID
 `;
 
 /**

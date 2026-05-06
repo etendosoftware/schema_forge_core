@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T19:46:13.628Z",
-  "updatedAt": "2026-05-05T18:50:08.285Z",
-  "checksum": "d7c7e11b0742bc8f",
+  "updatedAt": "2026-05-06T12:21:43.853Z",
+  "checksum": "11d15e4d2247f595",
   "frontendContract": {
     "window": {
       "id": "C50A8AEE6F044825B5EF54FAAE76826F",
@@ -1204,94 +1204,6 @@
           }
         ]
       },
-      "tax": {
-        "tableName": "C_OrderTax",
-        "tabId": "D173CDA24A0C431A94CEE845DC1E6290",
-        "tabName": "Tax",
-        "uiPattern": "STD",
-        "fields": [
-          {
-            "name": "lineNo",
-            "apiKey": "lineNo",
-            "column": "Line",
-            "label": "Line No.",
-            "type": "integer",
-            "tsType": "number",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "derivation": {
-              "type": "lookup",
-              "source": "SELECT COALESCE(MAX(LINE),0)+10 AS DefaultValue FROM C_ORDERTAX WHERE C_Order_ID=@C_Order_ID@"
-            },
-            "defaultValue": "@SQL=SELECT COALESCE(MAX(LINE),0)+10 AS DefaultValue FROM C_ORDERTAX WHERE C_Order_ID=@C_Order_ID@"
-          },
-          {
-            "name": "tax",
-            "apiKey": "tax",
-            "column": "C_Tax_ID",
-            "label": "Tax",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "readOnly",
-            "required": true,
-            "grid": false,
-            "form": true,
-            "sourceRequired": true,
-            "reference": "Tax",
-            "inputMode": "selector"
-          },
-          {
-            "name": "taxAmount",
-            "apiKey": "taxAmount",
-            "column": "TaxAmt",
-            "label": "Tax Amount",
-            "type": "amount",
-            "tsType": "number",
-            "visibility": "readOnly",
-            "required": true,
-            "grid": false,
-            "form": true,
-            "sourceRequired": true
-          },
-          {
-            "name": "taxableAmount",
-            "apiKey": "taxableAmount",
-            "column": "TaxBaseAmt",
-            "label": "Taxable Amount",
-            "type": "amount",
-            "tsType": "number",
-            "visibility": "readOnly",
-            "required": true,
-            "grid": false,
-            "form": true,
-            "sourceRequired": true,
-            "derivation": {
-              "type": "computed",
-              "source": "0"
-            },
-            "defaultValue": "0"
-          }
-        ],
-        "searchableFields": [],
-        "computedFields": [
-          {
-            "name": "lineNo",
-            "derivation": {
-              "type": "lookup",
-              "source": "SELECT COALESCE(MAX(LINE),0)+10 AS DefaultValue FROM C_ORDERTAX WHERE C_Order_ID=@C_Order_ID@"
-            }
-          },
-          {
-            "name": "taxableAmount",
-            "derivation": {
-              "type": "computed",
-              "source": "0"
-            }
-          }
-        ]
-      },
       "basicDiscounts": {
         "tableName": "C_Order_Discount",
         "tabId": "A0F74205D11848FAB0393A11B0CFB515",
@@ -1409,6 +1321,94 @@
             "derivation": {
               "type": "computed",
               "source": "Y"
+            }
+          }
+        ]
+      },
+      "tax": {
+        "tableName": "C_OrderTax",
+        "tabId": "D173CDA24A0C431A94CEE845DC1E6290",
+        "tabName": "Tax",
+        "uiPattern": "STD",
+        "fields": [
+          {
+            "name": "lineNo",
+            "apiKey": "lineNo",
+            "column": "Line",
+            "label": "Line No.",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "derivation": {
+              "type": "lookup",
+              "source": "SELECT COALESCE(MAX(LINE),0)+10 AS DefaultValue FROM C_ORDERTAX WHERE C_Order_ID=@C_Order_ID@"
+            },
+            "defaultValue": "@SQL=SELECT COALESCE(MAX(LINE),0)+10 AS DefaultValue FROM C_ORDERTAX WHERE C_Order_ID=@C_Order_ID@"
+          },
+          {
+            "name": "tax",
+            "apiKey": "tax",
+            "column": "C_Tax_ID",
+            "label": "Tax",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "reference": "Tax",
+            "inputMode": "selector"
+          },
+          {
+            "name": "taxAmount",
+            "apiKey": "taxAmount",
+            "column": "TaxAmt",
+            "label": "Tax Amount",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true
+          },
+          {
+            "name": "taxableAmount",
+            "apiKey": "taxableAmount",
+            "column": "TaxBaseAmt",
+            "label": "Taxable Amount",
+            "type": "amount",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
+            "defaultValue": "0"
+          }
+        ],
+        "searchableFields": [],
+        "computedFields": [
+          {
+            "name": "lineNo",
+            "derivation": {
+              "type": "lookup",
+              "source": "SELECT COALESCE(MAX(LINE),0)+10 AS DefaultValue FROM C_ORDERTAX WHERE C_Order_ID=@C_Order_ID@"
+            }
+          },
+          {
+            "name": "taxableAmount",
+            "derivation": {
+              "type": "computed",
+              "source": "0"
             }
           }
         ]
@@ -3288,6 +3288,109 @@
           }
         ]
       },
+      "basicDiscounts": {
+        "tableName": "C_Order_Discount",
+        "tabId": "A0F74205D11848FAB0393A11B0CFB515",
+        "tabName": "Basic Discounts",
+        "fields": [
+          {
+            "name": "lineNo",
+            "apiKey": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "discount",
+            "apiKey": "discount",
+            "column": "C_Discount_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "cascade",
+            "apiKey": "cascade",
+            "column": "Cascade",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "Isactive",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "id",
+            "apiKey": "id",
+            "column": "C_Order_Discount_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "salesOrder",
+            "apiKey": "salesOrder",
+            "column": "C_Order_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "Createdby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "apiKey": "updated",
+            "column": "Updated",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "Updatedby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      },
       "tax": {
         "tableName": "C_OrderTax",
         "tabId": "D173CDA24A0C431A94CEE845DC1E6290",
@@ -3393,109 +3496,6 @@
             "name": "updatedBy",
             "apiKey": "updatedBy",
             "column": "UpdatedBy",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          }
-        ]
-      },
-      "basicDiscounts": {
-        "tableName": "C_Order_Discount",
-        "tabId": "A0F74205D11848FAB0393A11B0CFB515",
-        "tabName": "Basic Discounts",
-        "fields": [
-          {
-            "name": "lineNo",
-            "apiKey": "lineNo",
-            "column": "Line",
-            "type": "integer",
-            "visibility": "editable",
-            "required": true
-          },
-          {
-            "name": "discount",
-            "apiKey": "discount",
-            "column": "C_Discount_ID",
-            "type": "foreignKey",
-            "visibility": "editable",
-            "required": true
-          },
-          {
-            "name": "cascade",
-            "apiKey": "cascade",
-            "column": "Cascade",
-            "type": "boolean",
-            "visibility": "editable",
-            "required": true
-          },
-          {
-            "name": "active",
-            "apiKey": "active",
-            "column": "Isactive",
-            "type": "boolean",
-            "visibility": "editable",
-            "required": true
-          },
-          {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "id",
-            "apiKey": "id",
-            "column": "C_Order_Discount_ID",
-            "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "salesOrder",
-            "apiKey": "salesOrder",
-            "column": "C_Order_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "organization",
-            "apiKey": "organization",
-            "column": "AD_Org_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "creationDate",
-            "apiKey": "creationDate",
-            "column": "Created",
-            "type": "dateTime",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "createdBy",
-            "apiKey": "createdBy",
-            "column": "Createdby",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "updated",
-            "apiKey": "updated",
-            "column": "Updated",
-            "type": "dateTime",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "updatedBy",
-            "apiKey": "updatedBy",
-            "column": "Updatedby",
             "type": "foreignKey",
             "visibility": "system",
             "required": true
@@ -4090,36 +4090,6 @@
       },
       {
         "method": "GET",
-        "path": "/tax",
-        "entity": "tax",
-        "supportedFilters": []
-      },
-      {
-        "method": "GET",
-        "path": "/tax/:id",
-        "entity": "tax",
-        "supportedFilters": []
-      },
-      {
-        "method": "POST",
-        "path": "/tax",
-        "entity": "tax",
-        "supportedFilters": []
-      },
-      {
-        "method": "PUT",
-        "path": "/tax/:id",
-        "entity": "tax",
-        "supportedFilters": []
-      },
-      {
-        "method": "DELETE",
-        "path": "/tax/:id",
-        "entity": "tax",
-        "supportedFilters": []
-      },
-      {
-        "method": "GET",
         "path": "/basicDiscounts",
         "entity": "basicDiscounts",
         "supportedFilters": []
@@ -4146,6 +4116,36 @@
         "method": "DELETE",
         "path": "/basicDiscounts/:id",
         "entity": "basicDiscounts",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/tax",
+        "entity": "tax",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/tax/:id",
+        "entity": "tax",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/tax",
+        "entity": "tax",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/tax/:id",
+        "entity": "tax",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/tax/:id",
+        "entity": "tax",
         "supportedFilters": []
       },
       {
@@ -4248,17 +4248,6 @@
         "detailUrl": "/sws/neo/return-to-vendor/lineTax/{id}",
         "supportedFilters": []
       },
-      "tax": {
-        "get": true,
-        "getById": true,
-        "post": true,
-        "put": true,
-        "patch": true,
-        "delete": true,
-        "listUrl": "/sws/neo/return-to-vendor/tax",
-        "detailUrl": "/sws/neo/return-to-vendor/tax/{id}",
-        "supportedFilters": []
-      },
       "basicDiscounts": {
         "get": true,
         "getById": true,
@@ -4268,6 +4257,17 @@
         "delete": true,
         "listUrl": "/sws/neo/return-to-vendor/basicDiscounts",
         "detailUrl": "/sws/neo/return-to-vendor/basicDiscounts/{id}",
+        "supportedFilters": []
+      },
+      "tax": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/return-to-vendor/tax",
+        "detailUrl": "/sws/neo/return-to-vendor/tax/{id}",
         "supportedFilters": []
       },
       "paymentOutPlan": {
@@ -4479,20 +4479,20 @@
         "url": "/sws/neo/return-to-vendor/lineTax/selectors/tax"
       },
       {
-        "entity": "tax",
-        "field": "tax",
-        "column": "C_Tax_ID",
-        "reference": "Tax",
-        "inputMode": "selector",
-        "url": "/sws/neo/return-to-vendor/tax/selectors/tax"
-      },
-      {
         "entity": "basicDiscounts",
         "field": "discount",
         "column": "C_Discount_ID",
         "reference": "Discount",
         "inputMode": "selector",
         "url": "/sws/neo/return-to-vendor/basicDiscounts/selectors/discount"
+      },
+      {
+        "entity": "tax",
+        "field": "tax",
+        "column": "C_Tax_ID",
+        "reference": "Tax",
+        "inputMode": "selector",
+        "url": "/sws/neo/return-to-vendor/tax/selectors/tax"
       },
       {
         "entity": "paymentOutPlan",

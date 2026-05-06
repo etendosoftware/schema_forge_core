@@ -442,11 +442,16 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
     }
 
     // Get active columns for this tab's table
+    // ORDER BY needs a tiebreaker: AD_Column.position is not unique within a
+    // table. When two columns share the same position, the row order is
+    // undefined — and since fieldSeqCounter assigns SEQNO = counter * 10, any
+    // flip across runs produces SEQNO churn in ETGO_SF_FIELD.xml. columnname
+    // + ad_column_id pin the order deterministically.
     const colsResult = await client.query(
       `SELECT ad_column_id, columnname, position
        FROM ad_column
        WHERE ad_table_id = $1 AND isactive = 'Y'
-       ORDER BY position`,
+       ORDER BY position, columnname, ad_column_id`,
       [tab.ad_table_id],
     );
 
@@ -580,12 +585,14 @@ async function populateProcessSpec(client, { specId, processId, moduleId, audit 
     }
   }
 
-  // Get active process parameters
+  // Get active process parameters. AD_Process_Para.SeqNo is not unique per
+  // process — name + ad_process_para_id pin the order so SEQNO assigned via
+  // fieldCount doesn't flip across runs.
   const parasResult = await client.query(
     `SELECT ad_process_para_id, name, defaultvalue, seqno
      FROM ad_process_para
      WHERE ad_process_id = $1 AND isactive = 'Y'
-     ORDER BY seqno`,
+     ORDER BY seqno, name, ad_process_para_id`,
     [processId],
   );
 

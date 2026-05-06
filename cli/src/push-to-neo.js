@@ -448,13 +448,16 @@ async function buildEntityLookupMaps(client, popResult, specId, schemaRawData) {
     entityMapByName[ent.name] = ent.entityId;
   }
   if (popResult.entities.length > 0) {
+    // tab.seqno can repeat when multiple modules attach tabs to the same
+    // window. The first row wins in entityMapByTableName below, so without a
+    // tiebreaker the winning entity flips across runs.
     const tableNameQuery = await client.query(
       `SELECT e.etgo_sf_entity_id, t.tablename, tab.seqno
        FROM etgo_sf_entity e
        JOIN ad_tab tab ON tab.ad_tab_id = e.ad_tab_id
        JOIN ad_table t ON t.ad_table_id = tab.ad_table_id
        WHERE e.etgo_sf_spec_id = $1
-       ORDER BY tab.seqno`,
+       ORDER BY tab.seqno, t.tablename, tab.ad_tab_id`,
       [specId],
     );
     for (const row of tableNameQuery.rows) {
