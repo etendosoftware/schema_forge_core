@@ -73,6 +73,49 @@ export const salesOrderDetail = {
   },
 };
 
+// --- Sales Invoice: List View ---
+// Column headers come from labelOverrides in artifacts/sales-invoice/decisions.json
+// (es_ES). The order is enforced by InvoiceHeaderTable.jsx. Locale-sensitive
+// labels are resolved per-environment via SALES_INVOICE_GRID_COLUMNS below.
+export const salesInvoiceList = {
+  // Generic "any h1" — the visible text depends on session locale.
+  heading: { role: 'heading', level: 1 },
+};
+
+// --- Purchase Invoice: List View ---
+export const purchaseInvoiceList = {
+  heading: { role: 'heading', level: 1 },
+};
+
+/**
+ * Expected grid column labels per locale, in order, for both invoice grids.
+ * Sales and purchase share the same final list because labelOverrides + the
+ * customs are aligned. If a locale's session is active, the grid renders
+ * using that set.
+ */
+export const INVOICE_GRID_COLUMNS = {
+  es_ES: [
+    'Fecha de la factura',
+    'Nº documento',
+    'Vencimiento',
+    'Contacto',
+    'Estado doc.',
+    'Imp.total',
+    'Pendiente de pago',
+    'Estado de entrega',
+  ],
+  en_US: [
+    'Invoice Date',
+    'Document No.',
+    'Due Date',
+    'Business Partner',
+    'Document Status',
+    'Total Gross Amount',
+    'Pending Payment',
+    'Delivery Status',
+  ],
+};
+
 // --- Purchase Order: List View ---
 export const purchaseOrderList = {
   heading: { role: 'heading', name: 'Orders', level: 1 },
