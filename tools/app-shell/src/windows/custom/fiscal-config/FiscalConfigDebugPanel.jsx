@@ -173,7 +173,7 @@ const btnBase = {
 export default function FiscalConfigDebugPanel({ orgId, token, apiBaseUrl, onDeleted, onSetMock, activeMockKey }) {
   const [collapsed, setCollapsed] = useState(false);
   const [status, setStatus] = useState({});
-  const [certDebug, setCertDebug] = useState(null); // { state, context }
+  const [certDebug, setCertDebug] = useState(null);
 
   async function handleDelete(cfg) {
     if (!orgId) return;

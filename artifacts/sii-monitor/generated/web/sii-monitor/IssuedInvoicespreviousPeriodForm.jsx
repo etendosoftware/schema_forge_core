@@ -23,9 +23,9 @@ const fields = [
 ];
 // @sf-generated-end fields:issuedInvoices(previousPeriod)
 
-// @sf-generated-start component:IssuedInvoices(previousPeriod)Form
-export default function IssuedInvoices(previousPeriod)Form(props) {
+// @sf-generated-start component:IssuedInvoicespreviousPeriodForm
+export default function IssuedInvoicespreviousPeriodForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
 
-// @sf-generated-end component:IssuedInvoices(previousPeriod)Form
+// @sf-generated-end component:IssuedInvoicespreviousPeriodForm

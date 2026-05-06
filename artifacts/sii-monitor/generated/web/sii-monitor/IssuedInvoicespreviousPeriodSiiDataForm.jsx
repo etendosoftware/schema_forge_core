@@ -14,9 +14,9 @@ const fields = [
 ];
 // @sf-generated-end fields:issuedInvoices(previousPeriod)SiiData
 
-// @sf-generated-start component:IssuedInvoices(previousPeriod)SiiDataForm
-export default function IssuedInvoices(previousPeriod)SiiDataForm(props) {
+// @sf-generated-start component:IssuedInvoicespreviousPeriodSiiDataForm
+export default function IssuedInvoicespreviousPeriodSiiDataForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
 
-// @sf-generated-end component:IssuedInvoices(previousPeriod)SiiDataForm
+// @sf-generated-end component:IssuedInvoicespreviousPeriodSiiDataForm

@@ -88,6 +88,9 @@ This folder is the entry point for documentation that describes how generated an
 | [user.md](user.md) | Generated user window with roles child surface and defaults dependencies |
 | [fiscal-config.md](fiscal-config.md) | Custom fiscal configuration window — onboarding wizard (SII/TBAI/Verifactu) and ongoing config maintenance |
 | [fiscal-monitor.md](fiscal-monitor.md) | Custom fiscal monitor window — real-time invoice submission status for SII, TBAI, and Verifactu |
+| [sii-monitor.md](sii-monitor.md) | API-only sub-window — SII invoice submission records consumed by FiscalMonitorPage |
+| [monitor-verifactu.md](monitor-verifactu.md) | API-only sub-window — Verifactu invoice submission records consumed by FiscalMonitorPage |
+| [tbai-facturas-enviadas.md](tbai-facturas-enviadas.md) | API-only sub-window — TBAI invoice submission records consumed by FiscalMonitorPage |
 
 ## Scope
 

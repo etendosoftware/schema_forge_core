@@ -74,9 +74,12 @@ export default function SiiMonitorSection({ orgId, token, apiBaseUrl, initialTab
     }
   }, [initialTab]);
 
-  const entityKey = tab === 'issued'
-    ? (period === 'current' ? 'issued' : 'issuedPrevious')
-    : (period === 'current' ? 'received' : 'receivedPrevious');
+  let entityKey;
+  if (tab === 'issued') {
+    entityKey = period === 'current' ? 'issued' : 'issuedPrevious';
+  } else {
+    entityKey = period === 'current' ? 'received' : 'receivedPrevious';
+  }
 
   useEffect(() => {
     if (mockRows) {

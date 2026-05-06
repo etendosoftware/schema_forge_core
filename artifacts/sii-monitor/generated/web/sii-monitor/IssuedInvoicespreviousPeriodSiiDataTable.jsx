@@ -8,8 +8,8 @@ const columns = [
 
 const filters = [];
 
-// @sf-generated-start component:IssuedInvoices(previousPeriod)SiiDataTable
-export default function IssuedInvoices(previousPeriod)SiiDataTable(props) {
+// @sf-generated-start component:IssuedInvoicespreviousPeriodSiiDataTable
+export default function IssuedInvoicespreviousPeriodSiiDataTable(props) {
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
-// @sf-generated-end component:IssuedInvoices(previousPeriod)SiiDataTable
+// @sf-generated-end component:IssuedInvoicespreviousPeriodSiiDataTable

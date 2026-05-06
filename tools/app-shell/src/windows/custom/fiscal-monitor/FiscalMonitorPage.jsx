@@ -79,47 +79,69 @@ const FmEmpty = ({ ui }) => {
   );
 };
 
-export default function FiscalMonitorPage({ token, apiBaseUrl }) {
-  const ui = useUI();
-  const { selectedOrg } = useAuth();
-  const orgId = selectedOrg?.id ?? null;
+function useDebugState(orgId, token, apiBaseUrl) {
   const debugMode = useDebugMode();
-
-  const [siiInitialTab,     setSiiInitialTab]     = useState('issued');
-  const [tbaiInitialFilter, setTbaiInitialFilter] = useState('all');
-  const [veriInitialTab,    setVeriInitialTab]    = useState('accepted');
   const [debugProfile, setDebugProfile] = useState(null);
   const [mockData,     setMockData]     = useState(false);
 
   const { loading, error, profile: realProfile, kpis: realKpis } = useFiscalMonitor(orgId, token, apiBaseUrl);
 
   const profile = (debugMode && debugProfile) ? debugProfile : realProfile;
-  const kpis    = (debugMode && mockData)
-    ? computeKpis(profile, MOCK_MONITOR_DATA)
-    : (debugMode && debugProfile) ? computeKpis(debugProfile, {}) : realKpis;
+
+  let kpis;
+  if (debugMode && mockData) {
+    kpis = computeKpis(profile, MOCK_MONITOR_DATA);
+  } else if (debugMode && debugProfile) {
+    kpis = computeKpis(debugProfile, {});
+  } else {
+    kpis = realKpis;
+  }
 
   const siiMockRows  = (debugMode && mockData) ? MOCK_SII_ROWS  : null;
   const tbaiMockRows = (debugMode && mockData) ? MOCK_TBAI_ROWS : null;
   const vfMockRows   = (debugMode && mockData) ? MOCK_VF_ROWS   : null;
-
   const debugOverrideActive = debugMode && !!debugProfile;
 
-  const WipBadge = () => (
-    <div className="absolute top-3 right-4 z-10">
-      <TooltipProvider delayDuration={600}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300 cursor-default select-none">
-              ⚠ {ui('fiscal.wip.badge')}
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="max-w-[260px] text-center">
-            {ui('fiscal.wip.tooltip')}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </div>
-  );
+  return {
+    loading, error, profile, kpis,
+    siiMockRows, tbaiMockRows, vfMockRows,
+    debugMode, debugProfile, setDebugProfile,
+    mockData, setMockData, debugOverrideActive,
+  };
+}
+
+const WipBadge = ({ ui }) => (
+  <div className="absolute top-3 right-4 z-10">
+    <TooltipProvider delayDuration={600}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300 cursor-default select-none">
+            ⚠ {ui('fiscal.wip.badge')}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="max-w-[260px] text-center">
+          {ui('fiscal.wip.tooltip')}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  </div>
+);
+
+export default function FiscalMonitorPage({ token, apiBaseUrl }) {
+  const ui = useUI();
+  const { selectedOrg } = useAuth();
+  const orgId = selectedOrg?.id ?? null;
+
+  const [siiInitialTab,     setSiiInitialTab]     = useState('issued');
+  const [tbaiInitialFilter, setTbaiInitialFilter] = useState('all');
+  const [veriInitialTab,    setVeriInitialTab]    = useState('accepted');
+
+  const {
+    loading, error, profile, kpis,
+    siiMockRows, tbaiMockRows, vfMockRows,
+    debugMode, debugProfile, setDebugProfile,
+    mockData, setMockData, debugOverrideActive,
+  } = useDebugState(orgId, token, apiBaseUrl);
 
   const DebugPanel = debugMode ? (
     <FiscalMonitorDebugPanel
@@ -135,7 +157,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
       <>
         {DebugPanel}
         <div className="relative fm-wrap fm-page" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <WipBadge />
+          <WipBadge ui={ui} />
           <div className="fm-skeleton" style={{ height: 64, borderRadius: 12 }} />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
             {[1,2,3,4].map(i => <div key={i} className="fm-skeleton" style={{ height: 100, borderRadius: 12 }} />)}
@@ -151,7 +173,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
       <>
         {DebugPanel}
         <div className="relative fm-wrap fm-page">
-          <WipBadge />
+          <WipBadge ui={ui} />
           <div className="fm-empty">
             <div className="ill" style={{ background: '#FEF0F4', color: '#D50B3E' }}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -170,7 +192,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
     return (
       <>
         {DebugPanel}
-        <div className="relative fm-wrap fm-page"><WipBadge /><FmEmpty ui={ui} /></div>
+        <div className="relative fm-wrap fm-page"><WipBadge ui={ui} /><FmEmpty ui={ui} /></div>
       </>
     );
   }
@@ -180,7 +202,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
       <>
         {DebugPanel}
         <div className="relative fm-wrap fm-page">
-          <WipBadge />
+          <WipBadge ui={ui} />
           <div className="fm-empty">
             <div className="ill" style={{ background: '#FEF0F4', color: '#D50B3E' }}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -202,7 +224,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
     <>
       {DebugPanel}
     <div className="relative fm-wrap fm-page">
-      <WipBadge />
+      <WipBadge ui={ui} />
       <OrgLead org={org} profile={profile} ui={ui} />
 
       {(profile === 'sii' || profile === 'sii-navarra' || profile === 'sii+tbai') && (

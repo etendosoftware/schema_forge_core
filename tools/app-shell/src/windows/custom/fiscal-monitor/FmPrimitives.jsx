@@ -46,6 +46,9 @@ export const NumFactura = ({ n, onOpen }) => {
   );
 };
 
+const ChevLeft  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>;
+const ChevRight = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>;
+
 export const Pager = ({ total, page = 1, pageSize = 20, onPage }) => {
   const ui = useUI();
   const start = (page - 1) * pageSize + 1;
@@ -53,9 +56,6 @@ export const Pager = ({ total, page = 1, pageSize = 20, onPage }) => {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const pages = [];
   for (let i = 1; i <= Math.min(totalPages, 5); i++) pages.push(i);
-
-  const ChevLeft  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>;
-  const ChevRight = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>;
 
   return (
     <div className="fm-pager">
