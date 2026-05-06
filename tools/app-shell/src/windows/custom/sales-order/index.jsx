@@ -93,15 +93,17 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
   const filterParam = searchParams.get('filter');
   const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
 
-  const QUICK_FILTERS = [
-    {
-      label: 'pendingDeliveryOnly',
-      filter: `criteria=${encodeURIComponent(JSON.stringify([
-        { fieldName: 'deliveryStatus', operator: 'lessThan', value: 100 },
-      ]))}`,
-    },
-  ];
-  const initialQuickFilterIndex = filterParam === 'pendingDelivery' ? 0 : null;
+  const isPendingDelivery = filterParam === 'pendingDelivery';
+
+  const initialAdvancedFilter = isPendingDelivery
+    ? {
+        rowOperator: 'and',
+        conditions: [
+          { field: 'documentStatus', operator: 'equals', value: 'CO' },
+          { field: 'deliveryStatus', operator: 'lessThan', value: 100 },
+        ],
+      }
+    : null;
 
   return (
     <>
@@ -123,8 +125,8 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
           </>
         )}
         initialColumnFilters={initialColumnFilters}
-        quickFilters={QUICK_FILTERS}
-        initialQuickFilterIndex={initialQuickFilterIndex}
+        initialAdvancedFilter={initialAdvancedFilter}
+        initialColumns={isPendingDelivery ? LIST_COLUMNS : null}
         dateFilterKey="orderDate"
         refreshTrigger={refreshKey}
         {...rest}
