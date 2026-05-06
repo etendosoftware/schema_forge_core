@@ -78,6 +78,9 @@
         }
       }
     },
+    "priceListVersion": {
+      "javaQualifier": "priceListVersionHandler"
+    },
     "priceListLine": {
       "fields": {
         "product": {

@@ -1,8 +1,8 @@
 {
   "version": "0.2.0",
   "generatedAt": "2026-04-29T18:12:11.134Z",
-  "updatedAt": "2026-05-05T19:07:48.258Z",
-  "checksum": "480aa141d84db198",
+  "updatedAt": "2026-05-05T19:58:51.411Z",
+  "checksum": "38d99f1f9756ae18",
   "frontendContract": {
     "window": {
       "id": "146",
@@ -305,7 +305,8 @@
               "source": "@#Date@"
             }
           }
-        ]
+        ],
+        "javaQualifier": "priceListVersionHandler"
       },
       "productPrice": {
         "tableName": "M_ProductPrice",
@@ -721,7 +722,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "priceListVersionHandler"
       },
       "productPrice": {
         "tableName": "M_ProductPrice",
