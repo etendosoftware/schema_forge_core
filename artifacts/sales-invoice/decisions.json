@@ -43,7 +43,11 @@
       "processValue": "CO",
       "label": "Confirm"
     },
-    "dateFilterKey": "invoiceDate"
+    "dateFilterKey": "invoiceDate",
+    "labelOverrides": {
+      "es_ES": { "OutstandingAmt": "Pendiente de pago" },
+      "en_US": { "OutstandingAmt": "Pending Payment" }
+    }
   },
   "entities": {
     "header": {

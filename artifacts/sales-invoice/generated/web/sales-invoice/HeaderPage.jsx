@@ -14,6 +14,15 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Sales Invoice';
 
+const labelOverrides = {
+  "es_ES": {
+    "OutstandingAmt": "Pendiente de pago"
+  },
+  "en_US": {
+    "OutstandingAmt": "Pending Payment"
+  }
+};
+
 
 // @sf-generated-start summary:header
 const summary = [
@@ -395,6 +404,14 @@ export const api = {
   },
   "window": {
     "category": "sales"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "OutstandingAmt": "Pendiente de pago"
+    },
+    "en_US": {
+      "OutstandingAmt": "Pending Payment"
+    }
   }
 };
 
@@ -433,6 +450,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         ]}
         draftMode={draftMode}
         salesTheme
+        labelOverrides={labelOverrides}
         lineConfig={INVOICE_LINE_CONFIG}
         {...props}
       />
@@ -449,6 +467,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       api={api}
       dateFilterKey="invoiceDate"
       hidePrint
+      labelOverrides={labelOverrides}
       {...props}
     />
   );

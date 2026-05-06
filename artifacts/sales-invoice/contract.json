@@ -1,8 +1,8 @@
 {
   "version": "0.16.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
-  "updatedAt": "2026-05-05T18:49:45.489Z",
-  "checksum": "43e3f1830696ee94",
+  "updatedAt": "2026-05-06T18:08:33.534Z",
+  "checksum": "d885a13446565052",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -42,6 +42,14 @@
       "processOverrides": {},
       "secondaryTabs": {},
       "salesTheme": true,
+      "labelOverrides": {
+        "es_ES": {
+          "OutstandingAmt": "Pendiente de pago"
+        },
+        "en_US": {
+          "OutstandingAmt": "Pending Payment"
+        }
+      },
       "dateFilterKey": "invoiceDate",
       "lineEntityConfig": "invoice",
       "layoutType": "default"
@@ -1077,6 +1085,14 @@
       "processOverrides": {},
       "secondaryTabs": {},
       "salesTheme": true,
+      "labelOverrides": {
+        "es_ES": {
+          "OutstandingAmt": "Pendiente de pago"
+        },
+        "en_US": {
+          "OutstandingAmt": "Pending Payment"
+        }
+      },
       "dateFilterKey": "invoiceDate",
       "lineEntityConfig": "invoice"
     },
@@ -3466,6 +3482,14 @@
     },
     "window": {
       "category": "sales"
+    },
+    "labelOverrides": {
+      "es_ES": {
+        "OutstandingAmt": "Pendiente de pago"
+      },
+      "en_US": {
+        "OutstandingAmt": "Pending Payment"
+      }
     }
   },
   "testManifest": {

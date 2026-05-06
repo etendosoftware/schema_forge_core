@@ -22,10 +22,12 @@ const breadcrumb = 'Purchases / Purchase Invoice';
 
 const labelOverrides = {
   "es_ES": {
-    "POReference": "Nº documento"
+    "POReference": "Nº documento",
+    "OutstandingAmt": "Pendiente de pago"
   },
   "en_US": {
-    "POReference": "Document No."
+    "POReference": "Document No.",
+    "OutstandingAmt": "Pending Payment"
   }
 };
 
@@ -803,10 +805,12 @@ export const api = {
   },
   "labelOverrides": {
     "es_ES": {
-      "POReference": "Nº documento"
+      "POReference": "Nº documento",
+      "OutstandingAmt": "Pendiente de pago"
     },
     "en_US": {
-      "POReference": "Document No."
+      "POReference": "Document No.",
+      "OutstandingAmt": "Pending Payment"
     }
   }
 };

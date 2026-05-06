@@ -1,8 +1,8 @@
 {
-  "version": "0.15.0",
+  "version": "0.16.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-05T18:50:00.921Z",
-  "checksum": "96fd3f4849c91a13",
+  "updatedAt": "2026-05-06T18:11:35.791Z",
+  "checksum": "4fd86a74588f7815",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -31,10 +31,12 @@
       "processOverrides": {},
       "labelOverrides": {
         "es_ES": {
-          "POReference": "Nº documento"
+          "POReference": "Nº documento",
+          "OutstandingAmt": "Pendiente de pago"
         },
         "en_US": {
-          "POReference": "Document No."
+          "POReference": "Document No.",
+          "OutstandingAmt": "Pending Payment"
         }
       },
       "dateFilterKey": "invoiceDate",
@@ -1604,20 +1606,20 @@
                 "name": "MURCIA AEROPUERTO"
               },
               {
-                "value": "INTRES_1711",
-                "name": "PALAMOS MARITIMA"
-              },
-              {
-                "value": "INTRES_2011",
-                "name": "PASAJES MARITIMA"
+                "value": "INTRES_0711",
+                "name": "P . MALLORCA MARITIMA"
               },
               {
                 "value": "INTRES_0701",
                 "name": "P. MALLORCA AEROPUERTO"
               },
               {
-                "value": "INTRES_0711",
-                "name": "P . MALLORCA MARITIMA"
+                "value": "INTRES_1711",
+                "name": "PALAMOS MARITIMA"
+              },
+              {
+                "value": "INTRES_2011",
+                "name": "PASAJES MARITIMA"
               },
               {
                 "value": "INTRES_1121",
@@ -3173,10 +3175,12 @@
       "processOverrides": {},
       "labelOverrides": {
         "es_ES": {
-          "POReference": "Nº documento"
+          "POReference": "Nº documento",
+          "OutstandingAmt": "Pendiente de pago"
         },
         "en_US": {
-          "POReference": "Document No."
+          "POReference": "Document No.",
+          "OutstandingAmt": "Pending Payment"
         }
       },
       "dateFilterKey": "invoiceDate",
@@ -8009,10 +8013,12 @@
     },
     "labelOverrides": {
       "es_ES": {
-        "POReference": "Nº documento"
+        "POReference": "Nº documento",
+        "OutstandingAmt": "Pendiente de pago"
       },
       "en_US": {
-        "POReference": "Document No."
+        "POReference": "Document No.",
+        "OutstandingAmt": "Pending Payment"
       }
     }
   },

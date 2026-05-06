@@ -26,11 +26,13 @@ const LIST_COLUMNS = [
   { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
 ];
-// Mirrors artifacts/purchase-invoice/generated/web/purchase-invoice/HeaderPage.jsx
-// Kept in sync manually because the generator does not expose it yet.
+// Mirrors artifacts/purchase-invoice/decisions.json → window.labelOverrides.
+// The list view here bypasses the generated HeaderPage and renders ListView
+// directly, so the generator-emitted labelOverrides do not reach it. Mirror
+// here until the wrapper consumes the spec's labelOverrides at runtime.
 const LABEL_OVERRIDES = {
-  es_ES: { POReference: 'Nº documento' },
-  en_US: { POReference: 'Document No.' },
+  es_ES: { POReference: 'Nº documento', OutstandingAmt: 'Pendiente de pago' },
+  en_US: { POReference: 'Document No.', OutstandingAmt: 'Pending Payment' },
 };
 
 let previewRowSetterRef = null;

@@ -26,6 +26,14 @@ const LIST_COLUMNS = [
   { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
 ];
+// Mirrors artifacts/sales-invoice/decisions.json → window.labelOverrides.
+// The list view here bypasses the generated HeaderPage and renders ListView
+// directly, so the generator-emitted labelOverrides do not reach it. Mirror
+// here until the wrapper consumes the spec's labelOverrides at runtime.
+const LABEL_OVERRIDES = {
+  es_ES: { OutstandingAmt: 'Pendiente de pago' },
+  en_US: { OutstandingAmt: 'Pending Payment' },
+};
 
 let previewRowSetterRef = null;
 
@@ -137,6 +145,7 @@ export default function SalesInvoiceWindow(props) {
         Table={SalesInvoiceTable}
         entityLabel="Sales Invoice"
         breadcrumb={breadcrumb}
+        labelOverrides={LABEL_OVERRIDES}
         initialColumnFilters={initialColumnFilters}
         quickFilters={INVOICE_QUICK_FILTERS}
         initialQuickFilterIndex={initialQuickFilterIndex}

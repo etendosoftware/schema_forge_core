@@ -14,8 +14,8 @@ const LIST_COLUMNS = [
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner' },
   { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
-  { key: 'deliveryStatus', column: 'DeliveryStatus', type: 'percent', label: 'Shipment Status' },
   { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'percent', label: 'Invoice Status' },
+  { key: 'deliveryStatus', column: 'DeliveryStatus', type: 'percent', label: 'Shipment Status' },
 ];
 
 function CustomHeaderTable(props) {
@@ -27,17 +27,20 @@ import { CreateContactContext } from '@/components/contract-ui/CreateContactCont
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 import LinesEmptyState from '@/components/contract-ui/LinesEmptyState.jsx';
 
-// Mirrors artifacts/sales-order/generated/web/sales-order/HeaderPage.jsx.
-// Kept in sync manually because the generator does not expose labelOverrides yet,
-// and the list view bulkActions prop is hand-rolled here (drift with decisions.json).
+// Mirrors artifacts/sales-order/decisions.json → window.labelOverrides.
+// The list view here bypasses the generated HeaderPage and renders ListView
+// directly, so the generator-emitted labelOverrides do not reach it. Mirror
+// here until the wrapper consumes the spec's labelOverrides at runtime.
 const LABEL_OVERRIDES = {
   es_ES: {
     C_BPartner_ID: 'Contacto',
     DeliveryStatus: 'Estado de entrega',
+    InvoiceStatus: 'Estado de facturación',
   },
   en_US: {
     C_BPartner_ID: 'Contact',
     DeliveryStatus: 'Delivery Status',
+    InvoiceStatus: 'Invoicing Status',
   },
 };
 
