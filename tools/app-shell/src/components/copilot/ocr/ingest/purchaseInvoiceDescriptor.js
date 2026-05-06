@@ -178,7 +178,7 @@ export async function buildPurchaseInvoiceBatch(extracted, ctx) {
   }
 
   const headerBody = {};
-  if (nonBlank(safe.document_no)) headerBody.documentNo = String(safe.document_no).trim();
+  if (nonBlank(safe.document_no)) headerBody.orderReference = String(safe.document_no).trim();
   if (nonBlank(safe.invoice_date)) headerBody.invoiceDate = toIsoDate(safe.invoice_date);
   headerBody.businessPartner = bpId || '$ref:bp';
   if (partnerAddress) headerBody.partnerAddress = partnerAddress;
