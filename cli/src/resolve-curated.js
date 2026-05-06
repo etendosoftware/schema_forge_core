@@ -746,7 +746,7 @@ async function runCli() {
     );
 
     const contractPath = join(artifactsDir, 'contract.json');
-    await writeFile(contractPath, JSON.stringify(contract, null, 2));
+    await writeFile(contractPath, JSON.stringify(contract, null, 2) + '\n');
     console.log(`✓ contract.json written for ${windowName}`);
 
     // Regenerate frontend

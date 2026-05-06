@@ -174,7 +174,7 @@ async function runProcessPipeline({ processId, processName, dryRun, isReport, sp
             prevContract = JSON.parse(await readFile(`artifacts/${processName}/contract.json`, 'utf8'));
           } catch { /* first generation */ }
           const contract = generateProcessContract(processRaw, prevContract);
-          await writeFile(`artifacts/${processName}/contract.json`, JSON.stringify(contract, null, 2));
+          await writeFile(`artifacts/${processName}/contract.json`, JSON.stringify(contract, null, 2) + '\n');
           console.log(`  ✓ Process contract generated (${contract.testManifest.summary.total} tests)`);
           break;
         }
@@ -428,7 +428,7 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
             // No existing contract — first generation, no prev needed
           }
           const contract = generateContract(schema, Array.isArray(rules) ? rules : rules.rules || [], processes.processes || [], prevVersion, prevContract);
-          await writeFile(`artifacts/${windowName}/contract.json`, JSON.stringify(contract, null, 2));
+          await writeFile(`artifacts/${windowName}/contract.json`, JSON.stringify(contract, null, 2) + '\n');
           console.log(`  ✓ Contract generated (${contract.testManifest.summary.total} tests)`);
           // Version check
           try {
