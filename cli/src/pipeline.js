@@ -401,7 +401,7 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
             await access(processesPath);
           } catch {
             await mkdir(`artifacts/${windowName}`, { recursive: true });
-            await writeFile(processesPath, JSON.stringify({ processes: [] }, null, 2));
+            await writeFile(processesPath, JSON.stringify({ processes: [] }, null, 2) + '\n');
           }
           const schema = pipelineContext.schema;
           const rules = pipelineContext.rules || [];

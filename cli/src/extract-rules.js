@@ -469,7 +469,7 @@ export async function main(windowId, windowName) {
     const artifactsDir = join(ROOT, 'artifacts', windowName);
     await mkdir(artifactsDir, { recursive: true });
     const outputPath = join(artifactsDir, 'rules-raw.json');
-    await writeFile(outputPath, JSON.stringify(output, null, 2), 'utf-8');
+    await writeFile(outputPath, JSON.stringify(output, null, 2) + '\n', 'utf-8');
 
     console.log(`Rules written to ${outputPath}`);
     console.log(`  Total rules: ${rules.length}`);

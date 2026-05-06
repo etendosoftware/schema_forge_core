@@ -689,7 +689,7 @@ export async function main(windowId, windowName) {
     const artifactsDir = join(ROOT, 'artifacts', resolvedName);
     await mkdir(artifactsDir, { recursive: true });
     const outputPath = join(artifactsDir, 'schema-raw.json');
-    await writeFile(outputPath, JSON.stringify(schema, null, 2), 'utf-8');
+    await writeFile(outputPath, JSON.stringify(schema, null, 2) + '\n', 'utf-8');
 
     console.log(`Schema written to ${outputPath}`);
     console.log(`  Entities: ${schema.entities.length}`);

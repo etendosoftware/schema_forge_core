@@ -16,5 +16,5 @@ export async function loadManifest(path) {
 }
 
 export async function saveManifest(path, manifest) {
-  await writeFile(path, JSON.stringify(manifest, null, 2));
+  await writeFile(path, JSON.stringify(manifest, null, 2) + '\n');
 }

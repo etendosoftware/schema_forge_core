@@ -274,7 +274,7 @@ if (isMain) {
     } else {
       // Generate mode
       const contract = generateReportContract(schema, reportType);
-      await writeFile(contractPath, JSON.stringify(contract, null, 2), 'utf8');
+      await writeFile(contractPath, JSON.stringify(contract, null, 2) + '\n', 'utf8');
       console.log(`Report contract written to ${contractPath}`);
       console.log(`  reportId : ${contract.reportId}`);
       console.log(`  columns  : ${contract.columns.length}`);

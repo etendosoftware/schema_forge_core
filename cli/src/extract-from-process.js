@@ -109,7 +109,7 @@ export async function main(processId, processSlug) {
     // Build and write process-raw.json
     const processRaw = buildProcessRaw(metadataResult.rows, paramsResult.rows);
     const jsonPath = join(ROOT, 'artifacts', processSlug, 'process-raw.json');
-    await writeFile(jsonPath, JSON.stringify(processRaw, null, 2), 'utf-8');
+    await writeFile(jsonPath, JSON.stringify(processRaw, null, 2) + '\n', 'utf-8');
     console.log(`  process-raw.json written`);
 
     console.log(`\nArtifacts written to artifacts/${processSlug}/`);

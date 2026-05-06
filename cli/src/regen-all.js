@@ -132,7 +132,7 @@ async function runPipeline(name, windowId, { pushToNeo, skipExtract }) {
   const processesPath = join(ARTIFACTS, name, 'processes.json');
   try { await acc2(processesPath); } catch {
     await mk2(join(ARTIFACTS, name), { recursive: true });
-    await wf2(processesPath, JSON.stringify({ processes: [] }, null, 2));
+    await wf2(processesPath, JSON.stringify({ processes: [] }, null, 2) + '\n');
   }
   const processes = JSON.parse(await readFile(processesPath, 'utf8'));
 
@@ -150,7 +150,7 @@ async function runPipeline(name, windowId, { pushToNeo, skipExtract }) {
 
   const rules = Array.isArray(resolved.rules) ? resolved.rules : resolved.rules?.rules || [];
   const contract = generateContract(resolved.schema, rules, processes.processes || [], prevVersion, prevContract);
-  await wf2(join(ARTIFACTS, name, 'contract.json'), JSON.stringify(contract, null, 2));
+  await wf2(join(ARTIFACTS, name, 'contract.json'), JSON.stringify(contract, null, 2) + '\n');
   console.log(`    Contract: ${contract.testManifest.summary.total} tests`);
 
   // Version check (advisory)
