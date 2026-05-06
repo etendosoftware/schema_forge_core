@@ -13,6 +13,10 @@ function CustomInventoryTable(props) {
   return <InventoryTable columns={COLUMNS} {...props} />;
 }
 
+function hideMenuActions({ data }) {
+  return !data?.id || data?.processed === true || data?.processed === 'Y';
+}
+
 export default function PhysicalInventoryWindow(props) {
-  return <GeneratedApp {...props} Table={CustomInventoryTable} />;
+  return <GeneratedApp {...props} Table={CustomInventoryTable} hideMoreMenu={hideMenuActions} />;
 }

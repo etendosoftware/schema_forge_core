@@ -15,7 +15,7 @@ Physical Inventory should let a warehouse user create an inventory count session
 ## Interaction model
 - Route: `/physical-inventory` for the list and `/physical-inventory/:recordId` for a specific count session.
 - Visibility: visible from the Inventory menu as `Physical Inventory`.
-- Implementation type: custom window wrapper at `tools/app-shell/src/windows/custom/physical-inventory/index.jsx`, registered in `customLoaders` in `tools/app-shell/src/windows/registry.js`. The wrapper supplies an explicit `COLUMNS` array to `InventoryTable` (`dot: false` on `movementDate`) and passes a `CustomInventoryTable` to `GeneratedApp`. Custom more-menu actions for count-list generation and system-count refresh come from the generated window.
+- Implementation type: custom window wrapper at `tools/app-shell/src/windows/custom/physical-inventory/index.jsx`, registered in `customLoaders` in `tools/app-shell/src/windows/registry.js`. The wrapper supplies an explicit `COLUMNS` array to `InventoryTable` (`dot: false` on `movementDate`), passes a `CustomInventoryTable` to `GeneratedApp`, and passes a `hideMoreMenu` function that hides the ⋮ button when `!data?.id` (unsaved record) or `data?.processed` (completed record).
 - Window shape: master-child. The header entity is `inventory`, and the detail entity is `inventoryLine`.
 - List/detail behavior: the list page opens inventory headers; the record page shows the header form plus the child line table and line form.
 
@@ -31,7 +31,7 @@ Physical Inventory should let a warehouse user create an inventory count session
 - The business intent implies reconciliation between user count and system count, but the current evidence only proves that both values are present and that system counts can be refreshed. It does not clearly show any explicit variance field, reconciliation formula, or review workflow in the UI.
 - Processing semantics are partially evidenced: the window exposes `processNow`, requires lines before processing, hides the process button once processed, and locks the document for editing. Current repo evidence does not show the downstream accounting or stock-adjustment effects of processing, so those effects remain backend behavior rather than proven UI behavior.
 - The modal receives `warehouseId` from the more-menu component, but the current modal implementation does not include it in the frontend request payload. If warehouse scoping is required during list generation, that dependency is not explicit in the current UI code.
-- The current frontend does not explicitly hide the custom more-menu actions when `processed = true`; only `Process Inventory Count` is status-gated in the inspected source. If processed records must reject create-list or update-system-count actions, that guarantee is not proven on the frontend and would need backend verification.
+- The ⋮ button and its custom actions are now hidden by the frontend in two cases: when the header has not yet been saved (`!data?.id`) and when `processed = true`. Enforced at two levels — the `hideMoreMenu` function in the custom wrapper hides the button entirely; `InventoryMenuContent` also returns `null` as a secondary guard.
 - There is still no browser-level automated evidence for the full create-list -> update system count -> process lifecycle; current proof is source-level and component-test level.
 
 ## Manual verification
@@ -42,20 +42,20 @@ Physical Inventory should let a warehouse user create an inventory count session
 5. Open a generated or manually added line and confirm `User Count` is editable while `System Count` and `UOM` are read-only before processing.
 6. Run `Update List System Count` and confirm the action disables while pending, then the page reloads and the line-level system counts refresh.
 7. Confirm `Process Inventory Count` is absent until at least one line exists, then process the record and confirm the processed status badge is visible and line editing becomes read-only.
-8. If the business expects the more-menu actions to disappear after processing, verify that behavior explicitly against a live backend. The inspected frontend source does not prove it.
+8. Confirm the ⋮ button is absent on a new (unsaved) header. After saving, confirm it appears. After processing, confirm it disappears again.
 
 ## Automated evidence
 - `docs/generated-custom-windows/app-shell-functional-flows.md` documents the shared generated-window routing model for `/:windowName` and `/:windowName/:recordId`.
 - `tools/app-shell/src/menu.json` includes the visible Inventory menu entry for `physical-inventory`.
-- `tools/app-shell/src/windows/registry.js` maps `physical-inventory` in `customLoaders` to `tools/app-shell/src/windows/custom/physical-inventory/index.jsx`, which wraps `InventoryTable` with a custom `COLUMNS` array before forwarding to the generated `GeneratedApp`.
+- `tools/app-shell/src/windows/registry.js` maps `physical-inventory` in `customLoaders` to `tools/app-shell/src/windows/custom/physical-inventory/index.jsx`, which wraps `InventoryTable` with a custom `COLUMNS` array and passes a `hideMoreMenu` function before forwarding to the generated `GeneratedApp`.
 - `tools/app-shell/src/components/contract-ui/DetailView.jsx` saves new headers before opening line entry, injects `selectorContextByEntity[detailEntity]` into child selectors/forms/tables, filters process buttons with `requiresLines`, and locks the document when `processed === true`.
 - `artifacts/physical-inventory/contract.json` defines the master-child contract, `processed` status field, `processNow` line requirement, header defaults, line fields including `QtyCount` and `QtyBook`, and action endpoints for `generateList`, `updateQuantities`, and `processNow`.
 - `artifacts/physical-inventory/generated/web/physical-inventory/InventoryPage.jsx` binds `inventory` + `inventoryLine`, exposes the processed status summary, wires `Process Inventory Count` with `requiresLines`, and injects the custom more-menu content.
 - `artifacts/physical-inventory/generated/web/physical-inventory/InventoryTable.jsx` adds the visible `Status` column for the header list.
 - `artifacts/physical-inventory/generated/web/physical-inventory/InventoryLineForm.jsx` and `InventoryLineTable.jsx` show `User Count` as the editable count input, keep `System Count`/`UOM` read-only, and add field-level read-only guards for Description and Cost while processed records are globally locked by `DetailView`.
-- `artifacts/physical-inventory/custom/InventoryMenuContent.jsx` implements the current more-menu behavior: modal launch, update-system-count POST, disabled pending state, toast feedback, reload on success, and pass-through of `warehouseId` to the modal.
+- `artifacts/physical-inventory/custom/InventoryMenuContent.jsx` implements the current more-menu behavior: modal launch, update-system-count POST, disabled pending state, toast feedback, reload on success, and pass-through of `warehouseId` to the modal. Returns `null` when `recordId === 'new'` or `data?.processed` (secondary guard; primary guard is `hideMoreMenu` in the wrapper).
 - `artifacts/physical-inventory/custom/InventoryCreateListModal.jsx` implements the create-list modal defaults, category loading, quantity-range options, dismiss behavior, disabled submit state, and `generateList` POST body.
-- `artifacts/physical-inventory/custom/__tests__/InventoryMenuContent.test.js` verifies the custom menu wiring, create-list entry, update-system-count entry, update endpoint, modal launch, and `warehouseId` handoff.
+- `artifacts/physical-inventory/custom/__tests__/InventoryMenuContent.test.js` verifies the custom menu wiring, create-list entry, update-system-count entry, update endpoint, modal launch, `warehouseId` handoff, and the two visibility guards (`recordId === 'new'` and `data?.processed`).
 - `artifacts/physical-inventory/custom/__tests__/InventoryCreateListModal.test.js` verifies the generation endpoint, quantity-range options, category loading, wildcard default for product search key, success callback, and disabled submit state.
 
 ## Merge refresh notes

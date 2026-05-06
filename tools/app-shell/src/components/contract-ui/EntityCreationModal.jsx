@@ -437,7 +437,7 @@ export default function EntityCreationModal({
     if (section.component) {
       const Component = componentMap[section.component];
       if (!Component) return null;
-      return <Component form={form} onChange={onChange} opts={opts} />;
+      return <Component form={form} onChange={onChange} opts={opts} requiredFields={requiredFields} />;
     }
     if (section.plain && section.fields) {
       return (

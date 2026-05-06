@@ -185,7 +185,8 @@
               "source": "N"
             }
           }
-        ]
+        ],
+        "javaQualifier": "priceListHeaderHandler"
       },
       "priceListVersion": {
         "tableName": "M_PriceList_Version",
@@ -304,7 +305,8 @@
               "source": "@#Date@"
             }
           }
-        ]
+        ],
+        "javaQualifier": "priceListVersionHandler"
       },
       "productPrice": {
         "tableName": "M_ProductPrice",
@@ -584,7 +586,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "priceListHeaderHandler"
       },
       "priceListVersion": {
         "tableName": "M_PriceList_Version",
@@ -719,7 +722,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "priceListVersionHandler"
       },
       "productPrice": {
         "tableName": "M_ProductPrice",
