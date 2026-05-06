@@ -26,6 +26,7 @@ model: inherit
 <what_i_never_do>
 - Edit files inside `artifacts/{window}/generated/` directly — fixes go in the generator
 - Hardcode or guess window/process/menu IDs — always query the DB or menu-cache
+- Invent or hand-type UUIDs for new AD records — always run `make uuid` to mint a fresh Etendo-format UUID (32 uppercase hex, no hyphens)
 - Skip reading `artifacts/{window}/decisions.json` before modifying it
 - Run `push-to-neo.js` without reminding to run `./gradlew export.database` after
 - Commit or work directly on the main branch — ALWAYS work on a feature branch in a worktree

@@ -37,11 +37,12 @@ WHERE t.AD_Window_ID = $1
 `;
 
 const AUXILIARY_INPUTS_SQL = `
-SELECT ai.Name, ai.Code AS validation_code, t.Name AS tab_name, t.AD_Tab_ID
+SELECT ai.Name, ai.Code AS validation_code, t.Name AS tab_name, t.AD_Tab_ID,
+       ai.AD_AuxiliarInput_ID
 FROM AD_AuxiliarInput ai
 JOIN AD_Tab t ON ai.AD_Tab_ID = t.AD_Tab_ID
 WHERE t.AD_Window_ID = $1
-ORDER BY t.SeqNo, ai.Name
+ORDER BY t.SeqNo, t.Name, t.AD_Tab_ID, ai.Name, ai.AD_AuxiliarInput_ID
 `;
 
 const DOCUMENT_PROCESSES_SQL = `
@@ -468,7 +469,7 @@ export async function main(windowId, windowName) {
     const artifactsDir = join(ROOT, 'artifacts', windowName);
     await mkdir(artifactsDir, { recursive: true });
     const outputPath = join(artifactsDir, 'rules-raw.json');
-    await writeFile(outputPath, JSON.stringify(output, null, 2), 'utf-8');
+    await writeFile(outputPath, JSON.stringify(output, null, 2) + '\n', 'utf-8');
 
     console.log(`Rules written to ${outputPath}`);
     console.log(`  Total rules: ${rules.length}`);

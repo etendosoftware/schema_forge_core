@@ -1,7 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T18:12:34.035Z",
-  "checksum": "1570eed6659e22bc",
+  "updatedAt": "2026-05-05T18:51:35.307Z",
+  "checksum": "43eb66f58e0f74a8",
   "frontendContract": {
     "window": {
       "id": "108",
@@ -1670,1289 +1671,15 @@
   "testManifest": {
     "tests": [
       {
-        "id": "t-1",
-        "category": "field-presence",
-        "entity": "user",
-        "field": "name",
-        "runner": "node",
-        "description": "Field 'name' should be present in user"
-      },
-      {
-        "id": "t-2",
-        "category": "field-presence",
-        "entity": "user",
-        "field": "username",
-        "runner": "node",
-        "description": "Field 'username' should be present in user"
-      },
-      {
-        "id": "t-3",
-        "category": "field-presence",
-        "entity": "user",
-        "field": "firstName",
-        "runner": "node",
-        "description": "Field 'firstName' should be present in user"
-      },
-      {
-        "id": "t-4",
-        "category": "field-presence",
-        "entity": "user",
-        "field": "lastName",
-        "runner": "node",
-        "description": "Field 'lastName' should be present in user"
-      },
-      {
-        "id": "t-5",
-        "category": "field-presence",
-        "entity": "user",
-        "field": "password",
-        "runner": "node",
-        "description": "Field 'password' should be present in user"
-      },
-      {
-        "id": "t-6",
-        "category": "field-presence",
-        "entity": "user",
-        "field": "isPasswordExpired",
-        "runner": "node",
-        "description": "Field 'isPasswordExpired' should be present in user"
-      },
-      {
-        "id": "t-7",
-        "category": "field-presence",
-        "entity": "user",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should be present in user"
-      },
-      {
-        "id": "t-8",
-        "category": "field-presence",
-        "entity": "user",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Field 'businessPartner' should be present in user"
-      },
-      {
-        "id": "t-9",
-        "category": "field-presence",
-        "entity": "user",
-        "field": "email",
-        "runner": "node",
-        "description": "Field 'email' should be present in user"
-      },
-      {
-        "id": "t-10",
-        "category": "field-presence",
-        "entity": "user",
-        "field": "locked",
-        "runner": "node",
-        "description": "Field 'locked' should be present in user"
-      },
-      {
-        "id": "t-11",
-        "category": "field-presence",
-        "entity": "user",
-        "field": "position",
-        "runner": "node",
-        "description": "Field 'position' should be present in user"
-      },
-      {
-        "id": "t-12",
-        "category": "field-presence",
-        "entity": "user",
-        "field": "phone",
-        "runner": "node",
-        "description": "Field 'phone' should be present in user"
-      },
-      {
-        "id": "t-13",
-        "category": "field-presence",
-        "entity": "user",
-        "field": "supervisor",
-        "runner": "node",
-        "description": "Field 'supervisor' should be present in user"
-      },
-      {
-        "id": "t-14",
-        "category": "field-presence",
-        "entity": "user",
-        "field": "defaultRole",
-        "runner": "node",
-        "description": "Field 'defaultRole' should be present in user"
-      },
-      {
-        "id": "t-15",
-        "category": "field-presence",
-        "entity": "user",
-        "field": "defaultLanguage",
-        "runner": "node",
-        "description": "Field 'defaultLanguage' should be present in user"
-      },
-      {
-        "id": "t-16",
-        "category": "field-presence",
-        "entity": "user",
-        "field": "defaultClient",
-        "runner": "node",
-        "description": "Field 'defaultClient' should be present in user"
-      },
-      {
-        "id": "t-17",
-        "category": "field-presence",
-        "entity": "user",
-        "field": "defaultOrganization",
-        "runner": "node",
-        "description": "Field 'defaultOrganization' should be present in user"
-      },
-      {
-        "id": "t-18",
-        "category": "field-presence",
-        "entity": "user",
-        "field": "defaultWarehouse",
-        "runner": "node",
-        "description": "Field 'defaultWarehouse' should be present in user"
-      },
-      {
-        "id": "t-19",
-        "category": "field-presence",
-        "entity": "user",
-        "field": "lastPasswordUpdate",
-        "runner": "node",
-        "description": "Field 'lastPasswordUpdate' should be present in user"
-      },
-      {
-        "id": "t-20",
-        "category": "field-type",
-        "entity": "user",
-        "field": "name",
-        "runner": "node",
-        "description": "Field 'name' should have type 'string' in user"
-      },
-      {
-        "id": "t-21",
-        "category": "field-type",
-        "entity": "user",
-        "field": "username",
-        "runner": "node",
-        "description": "Field 'username' should have type 'string' in user"
-      },
-      {
-        "id": "t-22",
-        "category": "field-type",
-        "entity": "user",
-        "field": "firstName",
-        "runner": "node",
-        "description": "Field 'firstName' should have type 'string' in user"
-      },
-      {
-        "id": "t-23",
-        "category": "field-type",
-        "entity": "user",
-        "field": "lastName",
-        "runner": "node",
-        "description": "Field 'lastName' should have type 'string' in user"
-      },
-      {
-        "id": "t-24",
-        "category": "field-type",
-        "entity": "user",
-        "field": "password",
-        "runner": "node",
-        "description": "Field 'password' should have type 'string' in user"
-      },
-      {
-        "id": "t-25",
-        "category": "field-type",
-        "entity": "user",
-        "field": "isPasswordExpired",
-        "runner": "node",
-        "description": "Field 'isPasswordExpired' should have type 'boolean' in user"
-      },
-      {
-        "id": "t-26",
-        "category": "field-type",
-        "entity": "user",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should have type 'string' in user"
-      },
-      {
-        "id": "t-27",
-        "category": "field-type",
-        "entity": "user",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Field 'businessPartner' should have type 'string' in user"
-      },
-      {
-        "id": "t-28",
-        "category": "field-type",
-        "entity": "user",
-        "field": "email",
-        "runner": "node",
-        "description": "Field 'email' should have type 'string' in user"
-      },
-      {
-        "id": "t-29",
-        "category": "field-type",
-        "entity": "user",
-        "field": "locked",
-        "runner": "node",
-        "description": "Field 'locked' should have type 'boolean' in user"
-      },
-      {
-        "id": "t-30",
-        "category": "field-type",
-        "entity": "user",
-        "field": "position",
-        "runner": "node",
-        "description": "Field 'position' should have type 'string' in user"
-      },
-      {
-        "id": "t-31",
-        "category": "field-type",
-        "entity": "user",
-        "field": "phone",
-        "runner": "node",
-        "description": "Field 'phone' should have type 'string' in user"
-      },
-      {
-        "id": "t-32",
-        "category": "field-type",
-        "entity": "user",
-        "field": "supervisor",
-        "runner": "node",
-        "description": "Field 'supervisor' should have type 'string' in user"
-      },
-      {
-        "id": "t-33",
-        "category": "field-type",
-        "entity": "user",
-        "field": "defaultRole",
-        "runner": "node",
-        "description": "Field 'defaultRole' should have type 'string' in user"
-      },
-      {
-        "id": "t-34",
-        "category": "field-type",
-        "entity": "user",
-        "field": "defaultLanguage",
-        "runner": "node",
-        "description": "Field 'defaultLanguage' should have type 'string' in user"
-      },
-      {
-        "id": "t-35",
-        "category": "field-type",
-        "entity": "user",
-        "field": "defaultClient",
-        "runner": "node",
-        "description": "Field 'defaultClient' should have type 'string' in user"
-      },
-      {
-        "id": "t-36",
-        "category": "field-type",
-        "entity": "user",
-        "field": "defaultOrganization",
-        "runner": "node",
-        "description": "Field 'defaultOrganization' should have type 'string' in user"
-      },
-      {
-        "id": "t-37",
-        "category": "field-type",
-        "entity": "user",
-        "field": "defaultWarehouse",
-        "runner": "node",
-        "description": "Field 'defaultWarehouse' should have type 'string' in user"
-      },
-      {
-        "id": "t-38",
-        "category": "field-type",
-        "entity": "user",
-        "field": "lastPasswordUpdate",
-        "runner": "node",
-        "description": "Field 'lastPasswordUpdate' should have type 'string' in user"
-      },
-      {
-        "id": "t-39",
-        "category": "searchable-filters",
-        "entity": "user",
-        "field": "name",
-        "runner": "node",
-        "description": "Field 'name' should be a supported filter for user"
-      },
-      {
-        "id": "t-40",
-        "category": "searchable-filters",
-        "entity": "user",
-        "field": "username",
-        "runner": "node",
-        "description": "Field 'username' should be a supported filter for user"
-      },
-      {
-        "id": "t-41",
-        "category": "searchable-filters",
-        "entity": "user",
-        "field": "email",
-        "runner": "node",
-        "description": "Field 'email' should be a supported filter for user"
-      },
-      {
-        "id": "t-42",
-        "category": "visibility",
-        "entity": "user",
-        "runner": "node",
-        "description": "Entity 'user' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-43",
-        "category": "default-value-type",
-        "entity": "user",
-        "field": "isPasswordExpired",
-        "runner": "node",
-        "description": "Default value for 'isPasswordExpired' in user should be a string"
-      },
-      {
-        "id": "t-44",
-        "category": "default-value-type",
-        "entity": "user",
-        "field": "locked",
-        "runner": "node",
-        "description": "Default value for 'locked' in user should be a string"
-      },
-      {
-        "id": "t-45",
-        "category": "default-value-type",
-        "entity": "user",
-        "field": "lastPasswordUpdate",
-        "runner": "node",
-        "description": "Default value for 'lastPasswordUpdate' in user should be a string"
-      },
-      {
-        "id": "t-46",
-        "category": "field-presence",
-        "entity": "userRoles",
-        "field": "role",
-        "runner": "node",
-        "description": "Field 'role' should be present in userRoles"
-      },
-      {
-        "id": "t-47",
-        "category": "field-presence",
-        "entity": "userRoles",
-        "field": "roleAdmin",
-        "runner": "node",
-        "description": "Field 'roleAdmin' should be present in userRoles"
-      },
-      {
-        "id": "t-48",
-        "category": "field-type",
-        "entity": "userRoles",
-        "field": "role",
-        "runner": "node",
-        "description": "Field 'role' should have type 'string' in userRoles"
-      },
-      {
-        "id": "t-49",
-        "category": "field-type",
-        "entity": "userRoles",
-        "field": "roleAdmin",
-        "runner": "node",
-        "description": "Field 'roleAdmin' should have type 'boolean' in userRoles"
-      },
-      {
-        "id": "t-50",
-        "category": "searchable-filters",
-        "entity": "userRoles",
-        "field": "role",
-        "runner": "node",
-        "description": "Field 'role' should be a supported filter for userRoles"
-      },
-      {
-        "id": "t-51",
-        "category": "visibility",
-        "entity": "userRoles",
-        "runner": "node",
-        "description": "Entity 'userRoles' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-52",
-        "category": "default-value-type",
-        "entity": "userRoles",
-        "field": "roleAdmin",
-        "runner": "node",
-        "description": "Default value for 'roleAdmin' in userRoles should be a string"
-      },
-      {
-        "id": "t-53",
-        "category": "field-presence",
-        "entity": "emailConfiguration",
-        "field": "active",
-        "runner": "node",
-        "description": "Field 'active' should be present in emailConfiguration"
-      },
-      {
-        "id": "t-54",
-        "category": "field-presence",
-        "entity": "emailConfiguration",
-        "field": "smtpServer",
-        "runner": "node",
-        "description": "Field 'smtpServer' should be present in emailConfiguration"
-      },
-      {
-        "id": "t-55",
-        "category": "field-presence",
-        "entity": "emailConfiguration",
-        "field": "sMTPAuthentification",
-        "runner": "node",
-        "description": "Field 'sMTPAuthentification' should be present in emailConfiguration"
-      },
-      {
-        "id": "t-56",
-        "category": "field-presence",
-        "entity": "emailConfiguration",
-        "field": "smtpServerAccount",
-        "runner": "node",
-        "description": "Field 'smtpServerAccount' should be present in emailConfiguration"
-      },
-      {
-        "id": "t-57",
-        "category": "field-presence",
-        "entity": "emailConfiguration",
-        "field": "smtpServerPassword",
-        "runner": "node",
-        "description": "Field 'smtpServerPassword' should be present in emailConfiguration"
-      },
-      {
-        "id": "t-58",
-        "category": "field-presence",
-        "entity": "emailConfiguration",
-        "field": "smtpServerSenderAddress",
-        "runner": "node",
-        "description": "Field 'smtpServerSenderAddress' should be present in emailConfiguration"
-      },
-      {
-        "id": "t-59",
-        "category": "field-presence",
-        "entity": "emailConfiguration",
-        "field": "smtpConnectionSecurity",
-        "runner": "node",
-        "description": "Field 'smtpConnectionSecurity' should be present in emailConfiguration"
-      },
-      {
-        "id": "t-60",
-        "category": "field-presence",
-        "entity": "emailConfiguration",
-        "field": "smtpPort",
-        "runner": "node",
-        "description": "Field 'smtpPort' should be present in emailConfiguration"
-      },
-      {
-        "id": "t-61",
-        "category": "field-presence",
-        "entity": "emailConfiguration",
-        "field": "smtpConnectionTimeout",
-        "runner": "node",
-        "description": "Field 'smtpConnectionTimeout' should be present in emailConfiguration"
-      },
-      {
-        "id": "t-62",
-        "category": "field-presence",
-        "entity": "emailConfiguration",
-        "field": "fromName",
-        "runner": "node",
-        "description": "Field 'fromName' should be present in emailConfiguration"
-      },
-      {
-        "id": "t-63",
-        "category": "field-presence",
-        "entity": "emailConfiguration",
-        "field": "replyToAddress",
-        "runner": "node",
-        "description": "Field 'replyToAddress' should be present in emailConfiguration"
-      },
-      {
-        "id": "t-64",
-        "category": "field-presence",
-        "entity": "emailConfiguration",
-        "field": "testSuccessful",
-        "runner": "node",
-        "description": "Field 'testSuccessful' should be present in emailConfiguration"
-      },
-      {
-        "id": "t-65",
-        "category": "field-presence",
-        "entity": "emailConfiguration",
-        "field": "lastTestDate",
-        "runner": "node",
-        "description": "Field 'lastTestDate' should be present in emailConfiguration"
-      },
-      {
-        "id": "t-66",
-        "category": "field-presence",
-        "entity": "emailConfiguration",
-        "field": "smtpconnectiontest",
-        "runner": "node",
-        "description": "Field 'smtpconnectiontest' should be present in emailConfiguration"
-      },
-      {
-        "id": "t-67",
-        "category": "field-presence",
-        "entity": "emailConfiguration",
-        "field": "defaultConfiguration",
-        "runner": "node",
-        "description": "Field 'defaultConfiguration' should be present in emailConfiguration"
-      },
-      {
-        "id": "t-68",
-        "category": "field-type",
-        "entity": "emailConfiguration",
-        "field": "active",
-        "runner": "node",
-        "description": "Field 'active' should have type 'boolean' in emailConfiguration"
-      },
-      {
-        "id": "t-69",
-        "category": "field-type",
-        "entity": "emailConfiguration",
-        "field": "smtpServer",
-        "runner": "node",
-        "description": "Field 'smtpServer' should have type 'string' in emailConfiguration"
-      },
-      {
-        "id": "t-70",
-        "category": "field-type",
-        "entity": "emailConfiguration",
-        "field": "sMTPAuthentification",
-        "runner": "node",
-        "description": "Field 'sMTPAuthentification' should have type 'boolean' in emailConfiguration"
-      },
-      {
-        "id": "t-71",
-        "category": "field-type",
-        "entity": "emailConfiguration",
-        "field": "smtpServerAccount",
-        "runner": "node",
-        "description": "Field 'smtpServerAccount' should have type 'string' in emailConfiguration"
-      },
-      {
-        "id": "t-72",
-        "category": "field-type",
-        "entity": "emailConfiguration",
-        "field": "smtpServerPassword",
-        "runner": "node",
-        "description": "Field 'smtpServerPassword' should have type 'string' in emailConfiguration"
-      },
-      {
-        "id": "t-73",
-        "category": "field-type",
-        "entity": "emailConfiguration",
-        "field": "smtpServerSenderAddress",
-        "runner": "node",
-        "description": "Field 'smtpServerSenderAddress' should have type 'string' in emailConfiguration"
-      },
-      {
-        "id": "t-74",
-        "category": "field-type",
-        "entity": "emailConfiguration",
-        "field": "smtpConnectionSecurity",
-        "runner": "node",
-        "description": "Field 'smtpConnectionSecurity' should have type 'string' in emailConfiguration"
-      },
-      {
-        "id": "t-75",
-        "category": "field-type",
-        "entity": "emailConfiguration",
-        "field": "smtpPort",
-        "runner": "node",
-        "description": "Field 'smtpPort' should have type 'number' in emailConfiguration"
-      },
-      {
-        "id": "t-76",
-        "category": "field-type",
-        "entity": "emailConfiguration",
-        "field": "smtpConnectionTimeout",
-        "runner": "node",
-        "description": "Field 'smtpConnectionTimeout' should have type 'number' in emailConfiguration"
-      },
-      {
-        "id": "t-77",
-        "category": "field-type",
-        "entity": "emailConfiguration",
-        "field": "fromName",
-        "runner": "node",
-        "description": "Field 'fromName' should have type 'string' in emailConfiguration"
-      },
-      {
-        "id": "t-78",
-        "category": "field-type",
-        "entity": "emailConfiguration",
-        "field": "replyToAddress",
-        "runner": "node",
-        "description": "Field 'replyToAddress' should have type 'string' in emailConfiguration"
-      },
-      {
-        "id": "t-79",
-        "category": "field-type",
-        "entity": "emailConfiguration",
-        "field": "testSuccessful",
-        "runner": "node",
-        "description": "Field 'testSuccessful' should have type 'boolean' in emailConfiguration"
-      },
-      {
-        "id": "t-80",
-        "category": "field-type",
-        "entity": "emailConfiguration",
-        "field": "lastTestDate",
-        "runner": "node",
-        "description": "Field 'lastTestDate' should have type 'string' in emailConfiguration"
-      },
-      {
-        "id": "t-81",
-        "category": "field-type",
-        "entity": "emailConfiguration",
-        "field": "smtpconnectiontest",
-        "runner": "node",
-        "description": "Field 'smtpconnectiontest' should have type 'string' in emailConfiguration"
-      },
-      {
-        "id": "t-82",
-        "category": "field-type",
-        "entity": "emailConfiguration",
-        "field": "defaultConfiguration",
-        "runner": "node",
-        "description": "Field 'defaultConfiguration' should have type 'boolean' in emailConfiguration"
-      },
-      {
-        "id": "t-83",
-        "category": "searchable-filters",
-        "entity": "emailConfiguration",
-        "field": "smtpServer",
-        "runner": "node",
-        "description": "Field 'smtpServer' should be a supported filter for emailConfiguration"
-      },
-      {
-        "id": "t-84",
-        "category": "visibility",
-        "entity": "emailConfiguration",
-        "runner": "node",
-        "description": "Entity 'emailConfiguration' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-85",
-        "category": "default-value-type",
-        "entity": "emailConfiguration",
-        "field": "smtpPort",
-        "runner": "node",
-        "description": "Default value for 'smtpPort' in emailConfiguration should be a string"
-      },
-      {
-        "id": "t-86",
-        "category": "default-value-type",
-        "entity": "emailConfiguration",
-        "field": "smtpConnectionTimeout",
-        "runner": "node",
-        "description": "Default value for 'smtpConnectionTimeout' in emailConfiguration should be a string"
-      },
-      {
-        "id": "t-87",
-        "category": "default-value-type",
-        "entity": "emailConfiguration",
-        "field": "testSuccessful",
-        "runner": "node",
-        "description": "Default value for 'testSuccessful' in emailConfiguration should be a string"
-      },
-      {
-        "id": "t-88",
-        "category": "default-value-type",
-        "entity": "emailConfiguration",
-        "field": "smtpconnectiontest",
-        "runner": "node",
-        "description": "Default value for 'smtpconnectiontest' in emailConfiguration should be a string"
-      },
-      {
-        "id": "t-89",
-        "category": "default-value-type",
-        "entity": "emailConfiguration",
-        "field": "defaultConfiguration",
-        "runner": "node",
-        "description": "Default value for 'defaultConfiguration' in emailConfiguration should be a string"
-      },
-      {
-        "id": "t-90",
-        "category": "system-field",
-        "entity": "user",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-91",
-        "category": "system-field",
-        "entity": "user",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-92",
-        "category": "system-field",
-        "entity": "user",
-        "field": "comments",
-        "runner": "node",
-        "description": "System field 'comments' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-93",
-        "category": "system-field",
-        "entity": "user",
-        "field": "active",
-        "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-94",
-        "category": "system-field",
-        "entity": "user",
-        "field": "partnerAddress",
-        "runner": "node",
-        "description": "System field 'partnerAddress' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-95",
-        "category": "system-field",
-        "entity": "user",
-        "field": "birthday",
-        "runner": "node",
-        "description": "System field 'birthday' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-96",
-        "category": "system-field",
-        "entity": "user",
-        "field": "alternativePhone",
-        "runner": "node",
-        "description": "System field 'alternativePhone' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-97",
-        "category": "system-field",
-        "entity": "user",
-        "field": "fax",
-        "runner": "node",
-        "description": "System field 'fax' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-98",
-        "category": "system-field",
-        "entity": "user",
-        "field": "emailServerUsername",
-        "runner": "node",
-        "description": "System field 'emailServerUsername' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-99",
-        "category": "system-field",
-        "entity": "user",
-        "field": "emailServerPassword",
-        "runner": "node",
-        "description": "System field 'emailServerPassword' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-100",
-        "category": "system-field",
-        "entity": "user",
-        "field": "smfswsDefaultWsRole",
-        "runner": "node",
-        "description": "System field 'smfswsDefaultWsRole' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-101",
-        "category": "system-field",
-        "entity": "user",
-        "field": "greeting",
-        "runner": "node",
-        "description": "System field 'greeting' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-102",
-        "category": "system-field",
-        "entity": "user",
-        "field": "lastContactDate",
-        "runner": "node",
-        "description": "System field 'lastContactDate' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-103",
-        "category": "system-field",
-        "entity": "user",
-        "field": "lastContactResult",
-        "runner": "node",
-        "description": "System field 'lastContactResult' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-104",
-        "category": "system-field",
-        "entity": "user",
-        "field": "trxOrganization",
-        "runner": "node",
-        "description": "System field 'trxOrganization' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-105",
-        "category": "system-field",
-        "entity": "user",
-        "field": "image",
-        "runner": "node",
-        "description": "System field 'image' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-106",
-        "category": "system-field",
-        "entity": "user",
-        "field": "processNow",
-        "runner": "node",
-        "description": "System field 'processNow' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-107",
-        "category": "system-field",
-        "entity": "user",
-        "field": "id",
-        "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-108",
-        "category": "system-field",
-        "entity": "user",
-        "field": "commercialauth",
-        "runner": "node",
-        "description": "System field 'commercialauth' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-109",
-        "category": "system-field",
-        "entity": "user",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-110",
-        "category": "system-field",
-        "entity": "user",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-111",
-        "category": "system-field",
-        "entity": "user",
-        "field": "grantPortalAccess",
-        "runner": "node",
-        "description": "System field 'grantPortalAccess' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-112",
-        "category": "system-field",
-        "entity": "user",
-        "field": "isdefaultfordocs",
-        "runner": "node",
-        "description": "System field 'isdefaultfordocs' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-113",
-        "category": "system-field",
-        "entity": "user",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-114",
-        "category": "system-field",
-        "entity": "user",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-115",
-        "category": "system-field",
-        "entity": "user",
-        "field": "viaemail",
-        "runner": "node",
-        "description": "System field 'viaemail' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-116",
-        "category": "system-field",
-        "entity": "user",
-        "field": "viasms",
-        "runner": "node",
-        "description": "System field 'viasms' should exist in backend but not frontend for user"
-      },
-      {
-        "id": "t-117",
-        "category": "system-field",
-        "entity": "userRoles",
-        "field": "active",
-        "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for userRoles"
-      },
-      {
-        "id": "t-118",
-        "category": "system-field",
-        "entity": "userRoles",
-        "field": "userContact",
-        "runner": "node",
-        "description": "System field 'userContact' should exist in backend but not frontend for userRoles"
-      },
-      {
-        "id": "t-119",
-        "category": "system-field",
-        "entity": "userRoles",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for userRoles"
-      },
-      {
-        "id": "t-120",
-        "category": "system-field",
-        "entity": "userRoles",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for userRoles"
-      },
-      {
-        "id": "t-121",
-        "category": "system-field",
-        "entity": "userRoles",
-        "field": "id",
-        "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for userRoles"
-      },
-      {
-        "id": "t-122",
-        "category": "system-field",
-        "entity": "userRoles",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for userRoles"
-      },
-      {
-        "id": "t-123",
-        "category": "system-field",
-        "entity": "userRoles",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for userRoles"
-      },
-      {
-        "id": "t-124",
-        "category": "system-field",
-        "entity": "userRoles",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for userRoles"
-      },
-      {
-        "id": "t-125",
-        "category": "system-field",
-        "entity": "userRoles",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for userRoles"
-      },
-      {
-        "id": "t-126",
-        "category": "system-field",
-        "entity": "emailConfiguration",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for emailConfiguration"
-      },
-      {
-        "id": "t-127",
-        "category": "system-field",
-        "entity": "emailConfiguration",
-        "field": "emailConfigOrganization",
-        "runner": "node",
-        "description": "System field 'emailConfigOrganization' should exist in backend but not frontend for emailConfiguration"
-      },
-      {
-        "id": "t-128",
-        "category": "system-field",
-        "entity": "emailConfiguration",
-        "field": "userContact",
-        "runner": "node",
-        "description": "System field 'userContact' should exist in backend but not frontend for emailConfiguration"
-      },
-      {
-        "id": "t-129",
-        "category": "system-field",
-        "entity": "emailConfiguration",
-        "field": "emailConfigClient",
-        "runner": "node",
-        "description": "System field 'emailConfigClient' should exist in backend but not frontend for emailConfiguration"
-      },
-      {
-        "id": "t-130",
-        "category": "system-field",
-        "entity": "emailConfiguration",
-        "field": "cPocConfigurationID",
-        "runner": "node",
-        "description": "System field 'cPocConfigurationID' should exist in backend but not frontend for emailConfiguration"
-      },
-      {
-        "id": "t-131",
-        "category": "system-field",
-        "entity": "emailConfiguration",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for emailConfiguration"
-      },
-      {
-        "id": "t-132",
-        "category": "system-field",
-        "entity": "emailConfiguration",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for emailConfiguration"
-      },
-      {
-        "id": "t-133",
-        "category": "system-field",
-        "entity": "emailConfiguration",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for emailConfiguration"
-      },
-      {
-        "id": "t-134",
-        "category": "system-field",
-        "entity": "emailConfiguration",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for emailConfiguration"
-      },
-      {
-        "id": "t-135",
-        "category": "system-field",
-        "entity": "emailConfiguration",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for emailConfiguration"
-      },
-      {
-        "id": "t-136",
-        "category": "rule-declared",
-        "rule": "SL_User_Name_Lastname",
-        "runner": "node",
-        "description": "Rule 'SL_User_Name_Lastname' (callout) should be declared"
-      },
-      {
-        "id": "t-137",
-        "category": "rule-declared",
-        "rule": "SL_User_Name_Firstname",
-        "runner": "node",
-        "description": "Rule 'SL_User_Name_Firstname' (callout) should be declared"
-      },
-      {
-        "id": "t-138",
-        "category": "rule-declared",
-        "rule": "SL_User_Name_Name",
-        "runner": "node",
-        "description": "Rule 'SL_User_Name_Name' (callout) should be declared"
-      },
-      {
-        "id": "t-139",
-        "category": "rule-declared",
-        "rule": "EmailConfiguration_Port_Smtpconnectionsecurity",
-        "runner": "node",
-        "description": "Rule 'EmailConfiguration_Port_Smtpconnectionsecurity' (callout) should be declared"
-      },
-      {
-        "id": "t-140",
-        "category": "rule-declared",
-        "rule": "AD_Client_Security_validation",
-        "runner": "node",
-        "description": "Rule 'AD_Client_Security_validation' (validation) should be declared"
-      },
-      {
-        "id": "t-141",
-        "category": "rule-declared",
-        "rule": "C_BPartner_Location",
-        "runner": "node",
-        "description": "Rule 'C_BPartner_Location' (validation) should be declared"
-      },
-      {
-        "id": "t-142",
-        "category": "rule-declared",
-        "rule": "AD_Role_of_User",
-        "runner": "node",
-        "description": "Rule 'AD_Role_of_User' (validation) should be declared"
-      },
-      {
-        "id": "t-143",
-        "category": "rule-declared",
-        "rule": "AD_Client_of_Role",
-        "runner": "node",
-        "description": "Rule 'AD_Client_of_Role' (validation) should be declared"
-      },
-      {
-        "id": "t-144",
-        "category": "rule-declared",
-        "rule": "AD_Org_of_Role",
-        "runner": "node",
-        "description": "Rule 'AD_Org_of_Role' (validation) should be declared"
-      },
-      {
-        "id": "t-145",
-        "category": "rule-declared",
-        "rule": "M_Warehouse_of_Role",
-        "runner": "node",
-        "description": "Rule 'M_Warehouse_of_Role' (validation) should be declared"
-      },
-      {
-        "id": "t-146",
-        "category": "rule-declared",
-        "rule": "AD_Role_of_Client",
-        "runner": "node",
-        "description": "Rule 'AD_Role_of_Client' (validation) should be declared"
-      },
-      {
-        "id": "t-147",
-        "category": "rule-declared",
-        "rule": "Display_Password",
-        "runner": "node",
-        "description": "Rule 'Display_Password' (displayLogic) should be declared"
-      },
-      {
-        "id": "t-148",
-        "category": "rule-declared",
-        "rule": "Display_EmailServerPassword",
-        "runner": "node",
-        "description": "Rule 'Display_EmailServerPassword' (displayLogic) should be declared"
-      },
-      {
-        "id": "t-149",
-        "category": "rule-declared",
-        "rule": "Processing",
-        "runner": "node",
-        "description": "Rule 'Processing' (process) should be declared"
-      },
-      {
-        "id": "t-150",
-        "category": "rule-declared",
-        "rule": "Grant_Portal_Access",
-        "runner": "node",
-        "description": "Rule 'Grant_Portal_Access' (process) should be declared"
-      },
-      {
-        "id": "t-151",
-        "category": "rule-declared",
-        "rule": "Test_SMTP_Connection",
-        "runner": "node",
-        "description": "Rule 'Test_SMTP_Connection' (process) should be declared"
-      },
-      {
-        "id": "t-152",
-        "category": "crud-flags",
-        "entity": "user",
-        "runner": "node",
-        "description": "CRUD flags for 'user' should all be booleans"
-      },
-      {
-        "id": "t-153",
-        "category": "crud-flags",
-        "entity": "userRoles",
-        "runner": "node",
-        "description": "CRUD flags for 'userRoles' should all be booleans"
-      },
-      {
-        "id": "t-154",
-        "category": "crud-flags",
-        "entity": "emailConfiguration",
-        "runner": "node",
-        "description": "CRUD flags for 'emailConfiguration' should all be booleans"
-      },
-      {
-        "id": "t-155",
-        "category": "selector-endpoint",
-        "entity": "user",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Selector endpoint for 'businessPartner' in user should exist"
-      },
-      {
-        "id": "t-156",
-        "category": "selector-endpoint",
-        "entity": "user",
-        "field": "supervisor",
-        "runner": "node",
-        "description": "Selector endpoint for 'supervisor' in user should exist"
-      },
-      {
-        "id": "t-157",
-        "category": "selector-endpoint",
-        "entity": "user",
-        "field": "defaultRole",
-        "runner": "node",
-        "description": "Selector endpoint for 'defaultRole' in user should exist"
-      },
-      {
-        "id": "t-158",
-        "category": "selector-endpoint",
-        "entity": "user",
-        "field": "defaultLanguage",
-        "runner": "node",
-        "description": "Selector endpoint for 'defaultLanguage' in user should exist"
-      },
-      {
-        "id": "t-159",
-        "category": "selector-endpoint",
-        "entity": "user",
-        "field": "defaultClient",
-        "runner": "node",
-        "description": "Selector endpoint for 'defaultClient' in user should exist"
-      },
-      {
-        "id": "t-160",
-        "category": "selector-endpoint",
-        "entity": "user",
-        "field": "defaultOrganization",
-        "runner": "node",
-        "description": "Selector endpoint for 'defaultOrganization' in user should exist"
-      },
-      {
-        "id": "t-161",
-        "category": "selector-endpoint",
-        "entity": "user",
-        "field": "defaultWarehouse",
-        "runner": "node",
-        "description": "Selector endpoint for 'defaultWarehouse' in user should exist"
-      },
-      {
-        "id": "t-162",
-        "category": "selector-endpoint",
-        "entity": "userRoles",
-        "field": "role",
-        "runner": "node",
-        "description": "Selector endpoint for 'role' in userRoles should exist"
-      },
-      {
-        "id": "t-163",
+        "id": "t-action-endpoint-emailConfiguration-smtpconnectiontest",
         "category": "action-endpoint",
-        "entity": "user",
-        "field": "processNow",
+        "entity": "emailConfiguration",
+        "field": "smtpconnectiontest",
         "runner": "node",
-        "description": "Action endpoint for 'processNow' in user should exist"
+        "description": "Action endpoint for 'smtpconnectiontest' in emailConfiguration should exist"
       },
       {
-        "id": "t-164",
+        "id": "t-action-endpoint-user-grantPortalAccess",
         "category": "action-endpoint",
         "entity": "user",
         "field": "grantPortalAccess",
@@ -2960,27 +1687,1301 @@
         "description": "Action endpoint for 'grantPortalAccess' in user should exist"
       },
       {
-        "id": "t-165",
+        "id": "t-action-endpoint-user-processNow",
         "category": "action-endpoint",
+        "entity": "user",
+        "field": "processNow",
+        "runner": "node",
+        "description": "Action endpoint for 'processNow' in user should exist"
+      },
+      {
+        "id": "t-crud-flags-emailConfiguration",
+        "category": "crud-flags",
+        "entity": "emailConfiguration",
+        "runner": "node",
+        "description": "CRUD flags for 'emailConfiguration' should all be booleans"
+      },
+      {
+        "id": "t-crud-flags-user",
+        "category": "crud-flags",
+        "entity": "user",
+        "runner": "node",
+        "description": "CRUD flags for 'user' should all be booleans"
+      },
+      {
+        "id": "t-crud-flags-userRoles",
+        "category": "crud-flags",
+        "entity": "userRoles",
+        "runner": "node",
+        "description": "CRUD flags for 'userRoles' should all be booleans"
+      },
+      {
+        "id": "t-default-value-type-emailConfiguration-defaultConfiguration",
+        "category": "default-value-type",
+        "entity": "emailConfiguration",
+        "field": "defaultConfiguration",
+        "runner": "node",
+        "description": "Default value for 'defaultConfiguration' in emailConfiguration should be a string"
+      },
+      {
+        "id": "t-default-value-type-emailConfiguration-smtpconnectiontest",
+        "category": "default-value-type",
         "entity": "emailConfiguration",
         "field": "smtpconnectiontest",
         "runner": "node",
-        "description": "Action endpoint for 'smtpconnectiontest' in emailConfiguration should exist"
+        "description": "Default value for 'smtpconnectiontest' in emailConfiguration should be a string"
+      },
+      {
+        "id": "t-default-value-type-emailConfiguration-smtpConnectionTimeout",
+        "category": "default-value-type",
+        "entity": "emailConfiguration",
+        "field": "smtpConnectionTimeout",
+        "runner": "node",
+        "description": "Default value for 'smtpConnectionTimeout' in emailConfiguration should be a string"
+      },
+      {
+        "id": "t-default-value-type-emailConfiguration-smtpPort",
+        "category": "default-value-type",
+        "entity": "emailConfiguration",
+        "field": "smtpPort",
+        "runner": "node",
+        "description": "Default value for 'smtpPort' in emailConfiguration should be a string"
+      },
+      {
+        "id": "t-default-value-type-emailConfiguration-testSuccessful",
+        "category": "default-value-type",
+        "entity": "emailConfiguration",
+        "field": "testSuccessful",
+        "runner": "node",
+        "description": "Default value for 'testSuccessful' in emailConfiguration should be a string"
+      },
+      {
+        "id": "t-default-value-type-user-isPasswordExpired",
+        "category": "default-value-type",
+        "entity": "user",
+        "field": "isPasswordExpired",
+        "runner": "node",
+        "description": "Default value for 'isPasswordExpired' in user should be a string"
+      },
+      {
+        "id": "t-default-value-type-user-lastPasswordUpdate",
+        "category": "default-value-type",
+        "entity": "user",
+        "field": "lastPasswordUpdate",
+        "runner": "node",
+        "description": "Default value for 'lastPasswordUpdate' in user should be a string"
+      },
+      {
+        "id": "t-default-value-type-user-locked",
+        "category": "default-value-type",
+        "entity": "user",
+        "field": "locked",
+        "runner": "node",
+        "description": "Default value for 'locked' in user should be a string"
+      },
+      {
+        "id": "t-default-value-type-userRoles-roleAdmin",
+        "category": "default-value-type",
+        "entity": "userRoles",
+        "field": "roleAdmin",
+        "runner": "node",
+        "description": "Default value for 'roleAdmin' in userRoles should be a string"
+      },
+      {
+        "id": "t-field-presence-emailConfiguration-active",
+        "category": "field-presence",
+        "entity": "emailConfiguration",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should be present in emailConfiguration"
+      },
+      {
+        "id": "t-field-presence-emailConfiguration-defaultConfiguration",
+        "category": "field-presence",
+        "entity": "emailConfiguration",
+        "field": "defaultConfiguration",
+        "runner": "node",
+        "description": "Field 'defaultConfiguration' should be present in emailConfiguration"
+      },
+      {
+        "id": "t-field-presence-emailConfiguration-fromName",
+        "category": "field-presence",
+        "entity": "emailConfiguration",
+        "field": "fromName",
+        "runner": "node",
+        "description": "Field 'fromName' should be present in emailConfiguration"
+      },
+      {
+        "id": "t-field-presence-emailConfiguration-lastTestDate",
+        "category": "field-presence",
+        "entity": "emailConfiguration",
+        "field": "lastTestDate",
+        "runner": "node",
+        "description": "Field 'lastTestDate' should be present in emailConfiguration"
+      },
+      {
+        "id": "t-field-presence-emailConfiguration-replyToAddress",
+        "category": "field-presence",
+        "entity": "emailConfiguration",
+        "field": "replyToAddress",
+        "runner": "node",
+        "description": "Field 'replyToAddress' should be present in emailConfiguration"
+      },
+      {
+        "id": "t-field-presence-emailConfiguration-sMTPAuthentification",
+        "category": "field-presence",
+        "entity": "emailConfiguration",
+        "field": "sMTPAuthentification",
+        "runner": "node",
+        "description": "Field 'sMTPAuthentification' should be present in emailConfiguration"
+      },
+      {
+        "id": "t-field-presence-emailConfiguration-smtpConnectionSecurity",
+        "category": "field-presence",
+        "entity": "emailConfiguration",
+        "field": "smtpConnectionSecurity",
+        "runner": "node",
+        "description": "Field 'smtpConnectionSecurity' should be present in emailConfiguration"
+      },
+      {
+        "id": "t-field-presence-emailConfiguration-smtpconnectiontest",
+        "category": "field-presence",
+        "entity": "emailConfiguration",
+        "field": "smtpconnectiontest",
+        "runner": "node",
+        "description": "Field 'smtpconnectiontest' should be present in emailConfiguration"
+      },
+      {
+        "id": "t-field-presence-emailConfiguration-smtpConnectionTimeout",
+        "category": "field-presence",
+        "entity": "emailConfiguration",
+        "field": "smtpConnectionTimeout",
+        "runner": "node",
+        "description": "Field 'smtpConnectionTimeout' should be present in emailConfiguration"
+      },
+      {
+        "id": "t-field-presence-emailConfiguration-smtpPort",
+        "category": "field-presence",
+        "entity": "emailConfiguration",
+        "field": "smtpPort",
+        "runner": "node",
+        "description": "Field 'smtpPort' should be present in emailConfiguration"
+      },
+      {
+        "id": "t-field-presence-emailConfiguration-smtpServer",
+        "category": "field-presence",
+        "entity": "emailConfiguration",
+        "field": "smtpServer",
+        "runner": "node",
+        "description": "Field 'smtpServer' should be present in emailConfiguration"
+      },
+      {
+        "id": "t-field-presence-emailConfiguration-smtpServerAccount",
+        "category": "field-presence",
+        "entity": "emailConfiguration",
+        "field": "smtpServerAccount",
+        "runner": "node",
+        "description": "Field 'smtpServerAccount' should be present in emailConfiguration"
+      },
+      {
+        "id": "t-field-presence-emailConfiguration-smtpServerPassword",
+        "category": "field-presence",
+        "entity": "emailConfiguration",
+        "field": "smtpServerPassword",
+        "runner": "node",
+        "description": "Field 'smtpServerPassword' should be present in emailConfiguration"
+      },
+      {
+        "id": "t-field-presence-emailConfiguration-smtpServerSenderAddress",
+        "category": "field-presence",
+        "entity": "emailConfiguration",
+        "field": "smtpServerSenderAddress",
+        "runner": "node",
+        "description": "Field 'smtpServerSenderAddress' should be present in emailConfiguration"
+      },
+      {
+        "id": "t-field-presence-emailConfiguration-testSuccessful",
+        "category": "field-presence",
+        "entity": "emailConfiguration",
+        "field": "testSuccessful",
+        "runner": "node",
+        "description": "Field 'testSuccessful' should be present in emailConfiguration"
+      },
+      {
+        "id": "t-field-presence-user-businessPartner",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should be present in user"
+      },
+      {
+        "id": "t-field-presence-user-defaultClient",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "defaultClient",
+        "runner": "node",
+        "description": "Field 'defaultClient' should be present in user"
+      },
+      {
+        "id": "t-field-presence-user-defaultLanguage",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "defaultLanguage",
+        "runner": "node",
+        "description": "Field 'defaultLanguage' should be present in user"
+      },
+      {
+        "id": "t-field-presence-user-defaultOrganization",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "defaultOrganization",
+        "runner": "node",
+        "description": "Field 'defaultOrganization' should be present in user"
+      },
+      {
+        "id": "t-field-presence-user-defaultRole",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "defaultRole",
+        "runner": "node",
+        "description": "Field 'defaultRole' should be present in user"
+      },
+      {
+        "id": "t-field-presence-user-defaultWarehouse",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "defaultWarehouse",
+        "runner": "node",
+        "description": "Field 'defaultWarehouse' should be present in user"
+      },
+      {
+        "id": "t-field-presence-user-description",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in user"
+      },
+      {
+        "id": "t-field-presence-user-email",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "email",
+        "runner": "node",
+        "description": "Field 'email' should be present in user"
+      },
+      {
+        "id": "t-field-presence-user-firstName",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "firstName",
+        "runner": "node",
+        "description": "Field 'firstName' should be present in user"
+      },
+      {
+        "id": "t-field-presence-user-isPasswordExpired",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "isPasswordExpired",
+        "runner": "node",
+        "description": "Field 'isPasswordExpired' should be present in user"
+      },
+      {
+        "id": "t-field-presence-user-lastName",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "lastName",
+        "runner": "node",
+        "description": "Field 'lastName' should be present in user"
+      },
+      {
+        "id": "t-field-presence-user-lastPasswordUpdate",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "lastPasswordUpdate",
+        "runner": "node",
+        "description": "Field 'lastPasswordUpdate' should be present in user"
+      },
+      {
+        "id": "t-field-presence-user-locked",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "locked",
+        "runner": "node",
+        "description": "Field 'locked' should be present in user"
+      },
+      {
+        "id": "t-field-presence-user-name",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be present in user"
+      },
+      {
+        "id": "t-field-presence-user-password",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "password",
+        "runner": "node",
+        "description": "Field 'password' should be present in user"
+      },
+      {
+        "id": "t-field-presence-user-phone",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "phone",
+        "runner": "node",
+        "description": "Field 'phone' should be present in user"
+      },
+      {
+        "id": "t-field-presence-user-position",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "position",
+        "runner": "node",
+        "description": "Field 'position' should be present in user"
+      },
+      {
+        "id": "t-field-presence-user-supervisor",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "supervisor",
+        "runner": "node",
+        "description": "Field 'supervisor' should be present in user"
+      },
+      {
+        "id": "t-field-presence-user-username",
+        "category": "field-presence",
+        "entity": "user",
+        "field": "username",
+        "runner": "node",
+        "description": "Field 'username' should be present in user"
+      },
+      {
+        "id": "t-field-presence-userRoles-role",
+        "category": "field-presence",
+        "entity": "userRoles",
+        "field": "role",
+        "runner": "node",
+        "description": "Field 'role' should be present in userRoles"
+      },
+      {
+        "id": "t-field-presence-userRoles-roleAdmin",
+        "category": "field-presence",
+        "entity": "userRoles",
+        "field": "roleAdmin",
+        "runner": "node",
+        "description": "Field 'roleAdmin' should be present in userRoles"
+      },
+      {
+        "id": "t-field-type-emailConfiguration-active",
+        "category": "field-type",
+        "entity": "emailConfiguration",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should have type 'boolean' in emailConfiguration"
+      },
+      {
+        "id": "t-field-type-emailConfiguration-defaultConfiguration",
+        "category": "field-type",
+        "entity": "emailConfiguration",
+        "field": "defaultConfiguration",
+        "runner": "node",
+        "description": "Field 'defaultConfiguration' should have type 'boolean' in emailConfiguration"
+      },
+      {
+        "id": "t-field-type-emailConfiguration-fromName",
+        "category": "field-type",
+        "entity": "emailConfiguration",
+        "field": "fromName",
+        "runner": "node",
+        "description": "Field 'fromName' should have type 'string' in emailConfiguration"
+      },
+      {
+        "id": "t-field-type-emailConfiguration-lastTestDate",
+        "category": "field-type",
+        "entity": "emailConfiguration",
+        "field": "lastTestDate",
+        "runner": "node",
+        "description": "Field 'lastTestDate' should have type 'string' in emailConfiguration"
+      },
+      {
+        "id": "t-field-type-emailConfiguration-replyToAddress",
+        "category": "field-type",
+        "entity": "emailConfiguration",
+        "field": "replyToAddress",
+        "runner": "node",
+        "description": "Field 'replyToAddress' should have type 'string' in emailConfiguration"
+      },
+      {
+        "id": "t-field-type-emailConfiguration-sMTPAuthentification",
+        "category": "field-type",
+        "entity": "emailConfiguration",
+        "field": "sMTPAuthentification",
+        "runner": "node",
+        "description": "Field 'sMTPAuthentification' should have type 'boolean' in emailConfiguration"
+      },
+      {
+        "id": "t-field-type-emailConfiguration-smtpConnectionSecurity",
+        "category": "field-type",
+        "entity": "emailConfiguration",
+        "field": "smtpConnectionSecurity",
+        "runner": "node",
+        "description": "Field 'smtpConnectionSecurity' should have type 'string' in emailConfiguration"
+      },
+      {
+        "id": "t-field-type-emailConfiguration-smtpconnectiontest",
+        "category": "field-type",
+        "entity": "emailConfiguration",
+        "field": "smtpconnectiontest",
+        "runner": "node",
+        "description": "Field 'smtpconnectiontest' should have type 'string' in emailConfiguration"
+      },
+      {
+        "id": "t-field-type-emailConfiguration-smtpConnectionTimeout",
+        "category": "field-type",
+        "entity": "emailConfiguration",
+        "field": "smtpConnectionTimeout",
+        "runner": "node",
+        "description": "Field 'smtpConnectionTimeout' should have type 'number' in emailConfiguration"
+      },
+      {
+        "id": "t-field-type-emailConfiguration-smtpPort",
+        "category": "field-type",
+        "entity": "emailConfiguration",
+        "field": "smtpPort",
+        "runner": "node",
+        "description": "Field 'smtpPort' should have type 'number' in emailConfiguration"
+      },
+      {
+        "id": "t-field-type-emailConfiguration-smtpServer",
+        "category": "field-type",
+        "entity": "emailConfiguration",
+        "field": "smtpServer",
+        "runner": "node",
+        "description": "Field 'smtpServer' should have type 'string' in emailConfiguration"
+      },
+      {
+        "id": "t-field-type-emailConfiguration-smtpServerAccount",
+        "category": "field-type",
+        "entity": "emailConfiguration",
+        "field": "smtpServerAccount",
+        "runner": "node",
+        "description": "Field 'smtpServerAccount' should have type 'string' in emailConfiguration"
+      },
+      {
+        "id": "t-field-type-emailConfiguration-smtpServerPassword",
+        "category": "field-type",
+        "entity": "emailConfiguration",
+        "field": "smtpServerPassword",
+        "runner": "node",
+        "description": "Field 'smtpServerPassword' should have type 'string' in emailConfiguration"
+      },
+      {
+        "id": "t-field-type-emailConfiguration-smtpServerSenderAddress",
+        "category": "field-type",
+        "entity": "emailConfiguration",
+        "field": "smtpServerSenderAddress",
+        "runner": "node",
+        "description": "Field 'smtpServerSenderAddress' should have type 'string' in emailConfiguration"
+      },
+      {
+        "id": "t-field-type-emailConfiguration-testSuccessful",
+        "category": "field-type",
+        "entity": "emailConfiguration",
+        "field": "testSuccessful",
+        "runner": "node",
+        "description": "Field 'testSuccessful' should have type 'boolean' in emailConfiguration"
+      },
+      {
+        "id": "t-field-type-user-businessPartner",
+        "category": "field-type",
+        "entity": "user",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should have type 'string' in user"
+      },
+      {
+        "id": "t-field-type-user-defaultClient",
+        "category": "field-type",
+        "entity": "user",
+        "field": "defaultClient",
+        "runner": "node",
+        "description": "Field 'defaultClient' should have type 'string' in user"
+      },
+      {
+        "id": "t-field-type-user-defaultLanguage",
+        "category": "field-type",
+        "entity": "user",
+        "field": "defaultLanguage",
+        "runner": "node",
+        "description": "Field 'defaultLanguage' should have type 'string' in user"
+      },
+      {
+        "id": "t-field-type-user-defaultOrganization",
+        "category": "field-type",
+        "entity": "user",
+        "field": "defaultOrganization",
+        "runner": "node",
+        "description": "Field 'defaultOrganization' should have type 'string' in user"
+      },
+      {
+        "id": "t-field-type-user-defaultRole",
+        "category": "field-type",
+        "entity": "user",
+        "field": "defaultRole",
+        "runner": "node",
+        "description": "Field 'defaultRole' should have type 'string' in user"
+      },
+      {
+        "id": "t-field-type-user-defaultWarehouse",
+        "category": "field-type",
+        "entity": "user",
+        "field": "defaultWarehouse",
+        "runner": "node",
+        "description": "Field 'defaultWarehouse' should have type 'string' in user"
+      },
+      {
+        "id": "t-field-type-user-description",
+        "category": "field-type",
+        "entity": "user",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in user"
+      },
+      {
+        "id": "t-field-type-user-email",
+        "category": "field-type",
+        "entity": "user",
+        "field": "email",
+        "runner": "node",
+        "description": "Field 'email' should have type 'string' in user"
+      },
+      {
+        "id": "t-field-type-user-firstName",
+        "category": "field-type",
+        "entity": "user",
+        "field": "firstName",
+        "runner": "node",
+        "description": "Field 'firstName' should have type 'string' in user"
+      },
+      {
+        "id": "t-field-type-user-isPasswordExpired",
+        "category": "field-type",
+        "entity": "user",
+        "field": "isPasswordExpired",
+        "runner": "node",
+        "description": "Field 'isPasswordExpired' should have type 'boolean' in user"
+      },
+      {
+        "id": "t-field-type-user-lastName",
+        "category": "field-type",
+        "entity": "user",
+        "field": "lastName",
+        "runner": "node",
+        "description": "Field 'lastName' should have type 'string' in user"
+      },
+      {
+        "id": "t-field-type-user-lastPasswordUpdate",
+        "category": "field-type",
+        "entity": "user",
+        "field": "lastPasswordUpdate",
+        "runner": "node",
+        "description": "Field 'lastPasswordUpdate' should have type 'string' in user"
+      },
+      {
+        "id": "t-field-type-user-locked",
+        "category": "field-type",
+        "entity": "user",
+        "field": "locked",
+        "runner": "node",
+        "description": "Field 'locked' should have type 'boolean' in user"
+      },
+      {
+        "id": "t-field-type-user-name",
+        "category": "field-type",
+        "entity": "user",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should have type 'string' in user"
+      },
+      {
+        "id": "t-field-type-user-password",
+        "category": "field-type",
+        "entity": "user",
+        "field": "password",
+        "runner": "node",
+        "description": "Field 'password' should have type 'string' in user"
+      },
+      {
+        "id": "t-field-type-user-phone",
+        "category": "field-type",
+        "entity": "user",
+        "field": "phone",
+        "runner": "node",
+        "description": "Field 'phone' should have type 'string' in user"
+      },
+      {
+        "id": "t-field-type-user-position",
+        "category": "field-type",
+        "entity": "user",
+        "field": "position",
+        "runner": "node",
+        "description": "Field 'position' should have type 'string' in user"
+      },
+      {
+        "id": "t-field-type-user-supervisor",
+        "category": "field-type",
+        "entity": "user",
+        "field": "supervisor",
+        "runner": "node",
+        "description": "Field 'supervisor' should have type 'string' in user"
+      },
+      {
+        "id": "t-field-type-user-username",
+        "category": "field-type",
+        "entity": "user",
+        "field": "username",
+        "runner": "node",
+        "description": "Field 'username' should have type 'string' in user"
+      },
+      {
+        "id": "t-field-type-userRoles-role",
+        "category": "field-type",
+        "entity": "userRoles",
+        "field": "role",
+        "runner": "node",
+        "description": "Field 'role' should have type 'string' in userRoles"
+      },
+      {
+        "id": "t-field-type-userRoles-roleAdmin",
+        "category": "field-type",
+        "entity": "userRoles",
+        "field": "roleAdmin",
+        "runner": "node",
+        "description": "Field 'roleAdmin' should have type 'boolean' in userRoles"
+      },
+      {
+        "id": "t-rule-declared-AD-Client-of-Role",
+        "category": "rule-declared",
+        "rule": "AD_Client_of_Role",
+        "runner": "node",
+        "description": "Rule 'AD_Client_of_Role' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-AD-Client-Security-validation",
+        "category": "rule-declared",
+        "rule": "AD_Client_Security_validation",
+        "runner": "node",
+        "description": "Rule 'AD_Client_Security_validation' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-AD-Org-of-Role",
+        "category": "rule-declared",
+        "rule": "AD_Org_of_Role",
+        "runner": "node",
+        "description": "Rule 'AD_Org_of_Role' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-AD-Role-of-Client",
+        "category": "rule-declared",
+        "rule": "AD_Role_of_Client",
+        "runner": "node",
+        "description": "Rule 'AD_Role_of_Client' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-AD-Role-of-User",
+        "category": "rule-declared",
+        "rule": "AD_Role_of_User",
+        "runner": "node",
+        "description": "Rule 'AD_Role_of_User' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-BPartner-Location",
+        "category": "rule-declared",
+        "rule": "C_BPartner_Location",
+        "runner": "node",
+        "description": "Rule 'C_BPartner_Location' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Display-EmailServerPassword",
+        "category": "rule-declared",
+        "rule": "Display_EmailServerPassword",
+        "runner": "node",
+        "description": "Rule 'Display_EmailServerPassword' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Display-Password",
+        "category": "rule-declared",
+        "rule": "Display_Password",
+        "runner": "node",
+        "description": "Rule 'Display_Password' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-EmailConfiguration-Port-Smtpconnectionsecurity",
+        "category": "rule-declared",
+        "rule": "EmailConfiguration_Port_Smtpconnectionsecurity",
+        "runner": "node",
+        "description": "Rule 'EmailConfiguration_Port_Smtpconnectionsecurity' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Grant-Portal-Access",
+        "category": "rule-declared",
+        "rule": "Grant_Portal_Access",
+        "runner": "node",
+        "description": "Rule 'Grant_Portal_Access' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-M-Warehouse-of-Role",
+        "category": "rule-declared",
+        "rule": "M_Warehouse_of_Role",
+        "runner": "node",
+        "description": "Rule 'M_Warehouse_of_Role' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Processing",
+        "category": "rule-declared",
+        "rule": "Processing",
+        "runner": "node",
+        "description": "Rule 'Processing' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-User-Name-Firstname",
+        "category": "rule-declared",
+        "rule": "SL_User_Name_Firstname",
+        "runner": "node",
+        "description": "Rule 'SL_User_Name_Firstname' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-User-Name-Lastname",
+        "category": "rule-declared",
+        "rule": "SL_User_Name_Lastname",
+        "runner": "node",
+        "description": "Rule 'SL_User_Name_Lastname' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-User-Name-Name",
+        "category": "rule-declared",
+        "rule": "SL_User_Name_Name",
+        "runner": "node",
+        "description": "Rule 'SL_User_Name_Name' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Test-SMTP-Connection",
+        "category": "rule-declared",
+        "rule": "Test_SMTP_Connection",
+        "runner": "node",
+        "description": "Rule 'Test_SMTP_Connection' (process) should be declared"
+      },
+      {
+        "id": "t-searchable-filters-emailConfiguration-smtpServer",
+        "category": "searchable-filters",
+        "entity": "emailConfiguration",
+        "field": "smtpServer",
+        "runner": "node",
+        "description": "Field 'smtpServer' should be a supported filter for emailConfiguration"
+      },
+      {
+        "id": "t-searchable-filters-user-email",
+        "category": "searchable-filters",
+        "entity": "user",
+        "field": "email",
+        "runner": "node",
+        "description": "Field 'email' should be a supported filter for user"
+      },
+      {
+        "id": "t-searchable-filters-user-name",
+        "category": "searchable-filters",
+        "entity": "user",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be a supported filter for user"
+      },
+      {
+        "id": "t-searchable-filters-user-username",
+        "category": "searchable-filters",
+        "entity": "user",
+        "field": "username",
+        "runner": "node",
+        "description": "Field 'username' should be a supported filter for user"
+      },
+      {
+        "id": "t-searchable-filters-userRoles-role",
+        "category": "searchable-filters",
+        "entity": "userRoles",
+        "field": "role",
+        "runner": "node",
+        "description": "Field 'role' should be a supported filter for userRoles"
+      },
+      {
+        "id": "t-selector-endpoint-user-businessPartner",
+        "category": "selector-endpoint",
+        "entity": "user",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Selector endpoint for 'businessPartner' in user should exist"
+      },
+      {
+        "id": "t-selector-endpoint-user-defaultClient",
+        "category": "selector-endpoint",
+        "entity": "user",
+        "field": "defaultClient",
+        "runner": "node",
+        "description": "Selector endpoint for 'defaultClient' in user should exist"
+      },
+      {
+        "id": "t-selector-endpoint-user-defaultLanguage",
+        "category": "selector-endpoint",
+        "entity": "user",
+        "field": "defaultLanguage",
+        "runner": "node",
+        "description": "Selector endpoint for 'defaultLanguage' in user should exist"
+      },
+      {
+        "id": "t-selector-endpoint-user-defaultOrganization",
+        "category": "selector-endpoint",
+        "entity": "user",
+        "field": "defaultOrganization",
+        "runner": "node",
+        "description": "Selector endpoint for 'defaultOrganization' in user should exist"
+      },
+      {
+        "id": "t-selector-endpoint-user-defaultRole",
+        "category": "selector-endpoint",
+        "entity": "user",
+        "field": "defaultRole",
+        "runner": "node",
+        "description": "Selector endpoint for 'defaultRole' in user should exist"
+      },
+      {
+        "id": "t-selector-endpoint-user-defaultWarehouse",
+        "category": "selector-endpoint",
+        "entity": "user",
+        "field": "defaultWarehouse",
+        "runner": "node",
+        "description": "Selector endpoint for 'defaultWarehouse' in user should exist"
+      },
+      {
+        "id": "t-selector-endpoint-user-supervisor",
+        "category": "selector-endpoint",
+        "entity": "user",
+        "field": "supervisor",
+        "runner": "node",
+        "description": "Selector endpoint for 'supervisor' in user should exist"
+      },
+      {
+        "id": "t-selector-endpoint-userRoles-role",
+        "category": "selector-endpoint",
+        "entity": "userRoles",
+        "field": "role",
+        "runner": "node",
+        "description": "Selector endpoint for 'role' in userRoles should exist"
+      },
+      {
+        "id": "t-system-field-emailConfiguration-client",
+        "category": "system-field",
+        "entity": "emailConfiguration",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for emailConfiguration"
+      },
+      {
+        "id": "t-system-field-emailConfiguration-cPocConfigurationID",
+        "category": "system-field",
+        "entity": "emailConfiguration",
+        "field": "cPocConfigurationID",
+        "runner": "node",
+        "description": "System field 'cPocConfigurationID' should exist in backend but not frontend for emailConfiguration"
+      },
+      {
+        "id": "t-system-field-emailConfiguration-createdBy",
+        "category": "system-field",
+        "entity": "emailConfiguration",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for emailConfiguration"
+      },
+      {
+        "id": "t-system-field-emailConfiguration-creationDate",
+        "category": "system-field",
+        "entity": "emailConfiguration",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for emailConfiguration"
+      },
+      {
+        "id": "t-system-field-emailConfiguration-emailConfigClient",
+        "category": "system-field",
+        "entity": "emailConfiguration",
+        "field": "emailConfigClient",
+        "runner": "node",
+        "description": "System field 'emailConfigClient' should exist in backend but not frontend for emailConfiguration"
+      },
+      {
+        "id": "t-system-field-emailConfiguration-emailConfigOrganization",
+        "category": "system-field",
+        "entity": "emailConfiguration",
+        "field": "emailConfigOrganization",
+        "runner": "node",
+        "description": "System field 'emailConfigOrganization' should exist in backend but not frontend for emailConfiguration"
+      },
+      {
+        "id": "t-system-field-emailConfiguration-organization",
+        "category": "system-field",
+        "entity": "emailConfiguration",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for emailConfiguration"
+      },
+      {
+        "id": "t-system-field-emailConfiguration-updated",
+        "category": "system-field",
+        "entity": "emailConfiguration",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for emailConfiguration"
+      },
+      {
+        "id": "t-system-field-emailConfiguration-updatedBy",
+        "category": "system-field",
+        "entity": "emailConfiguration",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for emailConfiguration"
+      },
+      {
+        "id": "t-system-field-emailConfiguration-userContact",
+        "category": "system-field",
+        "entity": "emailConfiguration",
+        "field": "userContact",
+        "runner": "node",
+        "description": "System field 'userContact' should exist in backend but not frontend for emailConfiguration"
+      },
+      {
+        "id": "t-system-field-user-active",
+        "category": "system-field",
+        "entity": "user",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-alternativePhone",
+        "category": "system-field",
+        "entity": "user",
+        "field": "alternativePhone",
+        "runner": "node",
+        "description": "System field 'alternativePhone' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-birthday",
+        "category": "system-field",
+        "entity": "user",
+        "field": "birthday",
+        "runner": "node",
+        "description": "System field 'birthday' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-client",
+        "category": "system-field",
+        "entity": "user",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-comments",
+        "category": "system-field",
+        "entity": "user",
+        "field": "comments",
+        "runner": "node",
+        "description": "System field 'comments' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-commercialauth",
+        "category": "system-field",
+        "entity": "user",
+        "field": "commercialauth",
+        "runner": "node",
+        "description": "System field 'commercialauth' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-createdBy",
+        "category": "system-field",
+        "entity": "user",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-creationDate",
+        "category": "system-field",
+        "entity": "user",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-emailServerPassword",
+        "category": "system-field",
+        "entity": "user",
+        "field": "emailServerPassword",
+        "runner": "node",
+        "description": "System field 'emailServerPassword' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-emailServerUsername",
+        "category": "system-field",
+        "entity": "user",
+        "field": "emailServerUsername",
+        "runner": "node",
+        "description": "System field 'emailServerUsername' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-fax",
+        "category": "system-field",
+        "entity": "user",
+        "field": "fax",
+        "runner": "node",
+        "description": "System field 'fax' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-grantPortalAccess",
+        "category": "system-field",
+        "entity": "user",
+        "field": "grantPortalAccess",
+        "runner": "node",
+        "description": "System field 'grantPortalAccess' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-greeting",
+        "category": "system-field",
+        "entity": "user",
+        "field": "greeting",
+        "runner": "node",
+        "description": "System field 'greeting' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-id",
+        "category": "system-field",
+        "entity": "user",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-image",
+        "category": "system-field",
+        "entity": "user",
+        "field": "image",
+        "runner": "node",
+        "description": "System field 'image' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-isdefaultfordocs",
+        "category": "system-field",
+        "entity": "user",
+        "field": "isdefaultfordocs",
+        "runner": "node",
+        "description": "System field 'isdefaultfordocs' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-lastContactDate",
+        "category": "system-field",
+        "entity": "user",
+        "field": "lastContactDate",
+        "runner": "node",
+        "description": "System field 'lastContactDate' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-lastContactResult",
+        "category": "system-field",
+        "entity": "user",
+        "field": "lastContactResult",
+        "runner": "node",
+        "description": "System field 'lastContactResult' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-organization",
+        "category": "system-field",
+        "entity": "user",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-partnerAddress",
+        "category": "system-field",
+        "entity": "user",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "System field 'partnerAddress' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-processNow",
+        "category": "system-field",
+        "entity": "user",
+        "field": "processNow",
+        "runner": "node",
+        "description": "System field 'processNow' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-smfswsDefaultWsRole",
+        "category": "system-field",
+        "entity": "user",
+        "field": "smfswsDefaultWsRole",
+        "runner": "node",
+        "description": "System field 'smfswsDefaultWsRole' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-trxOrganization",
+        "category": "system-field",
+        "entity": "user",
+        "field": "trxOrganization",
+        "runner": "node",
+        "description": "System field 'trxOrganization' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-updated",
+        "category": "system-field",
+        "entity": "user",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-updatedBy",
+        "category": "system-field",
+        "entity": "user",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-viaemail",
+        "category": "system-field",
+        "entity": "user",
+        "field": "viaemail",
+        "runner": "node",
+        "description": "System field 'viaemail' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-user-viasms",
+        "category": "system-field",
+        "entity": "user",
+        "field": "viasms",
+        "runner": "node",
+        "description": "System field 'viasms' should exist in backend but not frontend for user"
+      },
+      {
+        "id": "t-system-field-userRoles-active",
+        "category": "system-field",
+        "entity": "userRoles",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for userRoles"
+      },
+      {
+        "id": "t-system-field-userRoles-client",
+        "category": "system-field",
+        "entity": "userRoles",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for userRoles"
+      },
+      {
+        "id": "t-system-field-userRoles-createdBy",
+        "category": "system-field",
+        "entity": "userRoles",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for userRoles"
+      },
+      {
+        "id": "t-system-field-userRoles-creationDate",
+        "category": "system-field",
+        "entity": "userRoles",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for userRoles"
+      },
+      {
+        "id": "t-system-field-userRoles-id",
+        "category": "system-field",
+        "entity": "userRoles",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for userRoles"
+      },
+      {
+        "id": "t-system-field-userRoles-organization",
+        "category": "system-field",
+        "entity": "userRoles",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for userRoles"
+      },
+      {
+        "id": "t-system-field-userRoles-updated",
+        "category": "system-field",
+        "entity": "userRoles",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for userRoles"
+      },
+      {
+        "id": "t-system-field-userRoles-updatedBy",
+        "category": "system-field",
+        "entity": "userRoles",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for userRoles"
+      },
+      {
+        "id": "t-system-field-userRoles-userContact",
+        "category": "system-field",
+        "entity": "userRoles",
+        "field": "userContact",
+        "runner": "node",
+        "description": "System field 'userContact' should exist in backend but not frontend for userRoles"
+      },
+      {
+        "id": "t-visibility-emailConfiguration",
+        "category": "visibility",
+        "entity": "emailConfiguration",
+        "runner": "node",
+        "description": "Entity 'emailConfiguration' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-visibility-user",
+        "category": "visibility",
+        "entity": "user",
+        "runner": "node",
+        "description": "Entity 'user' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-visibility-userRoles",
+        "category": "visibility",
+        "entity": "userRoles",
+        "runner": "node",
+        "description": "Entity 'userRoles' should only expose visible fields in frontend"
       }
     ],
     "summary": {
       "total": 165,
       "byCategory": {
+        "action-endpoint": 3,
+        "crud-flags": 3,
+        "default-value-type": 9,
         "field-presence": 36,
         "field-type": 36,
-        "searchable-filters": 5,
-        "visibility": 3,
-        "default-value-type": 9,
-        "system-field": 46,
         "rule-declared": 16,
-        "crud-flags": 3,
+        "searchable-filters": 5,
         "selector-endpoint": 8,
-        "action-endpoint": 3
+        "system-field": 46,
+        "visibility": 3
       },
       "byRunner": {
         "node": 165,
