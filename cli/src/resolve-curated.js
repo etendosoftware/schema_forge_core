@@ -569,7 +569,9 @@ export function reorderKeys(obj, canonicalOrder) {
       seen.add(key);
     }
   }
-  const leftover = Object.keys(obj).filter(k => !seen.has(k)).sort();
+  const leftover = Object.keys(obj)
+    .filter(k => !seen.has(k))
+    .sort((a, b) => a.localeCompare(b));
   for (const key of leftover) result[key] = obj[key];
   return result;
 }
