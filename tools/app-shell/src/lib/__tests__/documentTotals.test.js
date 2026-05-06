@@ -117,4 +117,54 @@ describe('computeDocumentTotals', () => {
     assert.equal(result.discountAmt, 0);
     assert.equal(result.taxAmt, 0);
   });
+
+  it('returns totalDiscountAmt as null when lineConfig is absent', () => {
+    const result = computeDocumentTotals([line(1, 100, 0, 121)], null, null, null, 10);
+    assert.equal(result.totalDiscountAmt, null);
+  });
+
+  it('returns totalDiscountAmt of zero when totalDiscountPct is 0', () => {
+    const result = computeDocumentTotals([line(1, 100, 0, 121)], null, null, CONFIG, 0);
+    assert.equal(result.totalDiscountAmt, 0);
+    assert.equal(result.grandTotal, 121); // unchanged
+  });
+
+  it('applies totalDiscountPct to netSubtotal to compute totalDiscountAmt', () => {
+    // netSubtotal = 1 × 100 × (1 − 0) = 100
+    // totalDiscountAmt = 100 × 10 / 100 = 10
+    const result = computeDocumentTotals([line(1, 100, 0, 121)], null, null, CONFIG, 10);
+    assert.equal(result.totalDiscountAmt, 10);
+  });
+
+  it('scales grandTotal proportionally when totalDiscountPct > 0', () => {
+    // baseGrandTotal = 121, pct = 10 → grandTotal = 121 × 0.9 = 108.9
+    const result = computeDocumentTotals([line(1, 100, 0, 121)], null, null, CONFIG, 10);
+    assert.ok(Math.abs(result.grandTotal - 108.9) < 0.001);
+  });
+
+  it('scales taxAmt proportionally when totalDiscountPct > 0', () => {
+    // baseTaxAmt = 121 - 100 = 21, factor = 0.9 → taxAmt = 21 × 0.9 = 18.9
+    const result = computeDocumentTotals([line(1, 100, 0, 121)], null, null, CONFIG, 10);
+    assert.ok(Math.abs(result.taxAmt - 18.9) < 0.001);
+  });
+
+  it('clamps totalDiscountPct to 0–100 range', () => {
+    const overMax = computeDocumentTotals([line(1, 100, 0, 121)], null, null, CONFIG, 150);
+    assert.equal(overMax.totalDiscountAmt, 100); // 100% of netSubtotal
+    assert.equal(overMax.grandTotal, 0);
+
+    const underMin = computeDocumentTotals([line(1, 100, 0, 121)], null, null, CONFIG, -10);
+    assert.equal(underMin.totalDiscountAmt, 0);
+    assert.equal(underMin.grandTotal, 121);
+  });
+
+  it('combines per-product discount and total discount correctly', () => {
+    // line: qty=1, price=100, disc=10 → netSubtotal=90, baseGrandTotal=108.9 (assuming tax)
+    // totalDiscountPct=5 → totalDiscountAmt = 90 × 5/100 = 4.5
+    // grandTotal = 108.9 × 0.95 = 103.455
+    const result = computeDocumentTotals([line(1, 100, 10, 108.9)], null, null, CONFIG, 5);
+    assert.equal(result.discountAmt, 10);       // per-product discount
+    assert.ok(Math.abs(result.totalDiscountAmt - 4.5) < 0.001);
+    assert.ok(Math.abs(result.grandTotal - 103.455) < 0.001);
+  });
 });

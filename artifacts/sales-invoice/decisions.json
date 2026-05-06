@@ -281,6 +281,10 @@
         },
         "cashVAT": {
           "visibility": "discarded"
+        },
+        "etgoTotalDiscount": {
+          "visibility": "editable",
+          "form": false
         }
       }
     },
@@ -299,7 +303,13 @@
           "section": "principal",
           "inputMode": "search",
           "displayLogic": null,
-          "forceCalloutFields": ["listPrice", "unitPrice", "tax", "uOM", "grossUnitPrice"]
+          "forceCalloutFields": [
+            "listPrice",
+            "unitPrice",
+            "tax",
+            "uOM",
+            "grossUnitPrice"
+          ]
         },
         "description": {
           "grid": true,
@@ -347,7 +357,9 @@
           "gridOrder": 6,
           "section": "principal",
           "inputMode": "selector",
-          "forceCalloutFields": ["lineNetAmount"]
+          "forceCalloutFields": [
+            "lineNetAmount"
+          ]
         },
         "lineNetAmount": {
           "visibility": "system",

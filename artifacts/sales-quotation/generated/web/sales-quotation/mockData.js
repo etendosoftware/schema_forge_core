@@ -17,6 +17,7 @@ export const quotation = [
     "summedLineAmount": 38907,
     "currency": "USD",
     "description": "Standard order for Q1 delivery",
+    "etgoTotalDiscount": 99.44,
     "processed": "Sample processed"
   },
   {
@@ -35,6 +36,7 @@ export const quotation = [
     "summedLineAmount": 9306,
     "currency": "EUR",
     "description": "Rush order - priority shipping required",
+    "etgoTotalDiscount": 96.94,
     "processed": "Sample processed"
   },
   {
@@ -53,6 +55,7 @@ export const quotation = [
     "summedLineAmount": 11544,
     "currency": "GBP",
     "description": "Bulk purchase for warehouse restocking",
+    "etgoTotalDiscount": 12.48,
     "processed": "Sample processed"
   },
   {
@@ -71,6 +74,7 @@ export const quotation = [
     "summedLineAmount": 11872,
     "currency": "USD",
     "description": "Sample order for client evaluation",
+    "etgoTotalDiscount": 96.31,
     "processed": "Sample processed"
   },
   {
@@ -89,6 +93,7 @@ export const quotation = [
     "summedLineAmount": 48460,
     "currency": "EUR",
     "description": "Recurring monthly supply order",
+    "etgoTotalDiscount": 31.27,
     "processed": "Sample processed"
   },
   {
@@ -107,6 +112,7 @@ export const quotation = [
     "summedLineAmount": 45418,
     "currency": "GBP",
     "description": "Special pricing agreement applies",
+    "etgoTotalDiscount": 76.52,
     "processed": "Sample processed"
   },
   {
@@ -125,6 +131,7 @@ export const quotation = [
     "summedLineAmount": 33840,
     "currency": "USD",
     "description": "Consolidated order from multiple requests",
+    "etgoTotalDiscount": 2.66,
     "processed": "Sample processed"
   },
   {
@@ -143,6 +150,7 @@ export const quotation = [
     "summedLineAmount": 25716,
     "currency": "EUR",
     "description": "Trial order for new product line",
+    "etgoTotalDiscount": 10.03,
     "processed": "Sample processed"
   },
   {
@@ -161,6 +169,7 @@ export const quotation = [
     "summedLineAmount": 44780,
     "currency": "GBP",
     "description": "Replacement for damaged goods",
+    "etgoTotalDiscount": 93.97,
     "processed": "Sample processed"
   },
   {
@@ -179,6 +188,7 @@ export const quotation = [
     "summedLineAmount": 12483,
     "currency": "USD",
     "description": "Pre-season inventory build-up",
+    "etgoTotalDiscount": 1.1,
     "processed": "Sample processed"
   },
   {
@@ -197,6 +207,7 @@ export const quotation = [
     "summedLineAmount": 46022,
     "currency": "EUR",
     "description": "Customer-specific configuration",
+    "etgoTotalDiscount": 79.99,
     "processed": "Sample processed"
   },
   {
@@ -215,6 +226,7 @@ export const quotation = [
     "summedLineAmount": 38634,
     "currency": "GBP",
     "description": "Government contract fulfillment",
+    "etgoTotalDiscount": 53.61,
     "processed": "Sample processed"
   }
 ];

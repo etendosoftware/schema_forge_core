@@ -27,7 +27,9 @@ function fmtForPanel(val, currency) {
 export default function InvoiceBottomPanel({
   recordId, data, token, apiBaseUrl, api, summary,
   notesField, onFieldChange, notesFocused, setNotesFocused,
-  lines, pendingLine, editingLine, lineConfig, discountPerProductEnabled, onDiscountPerProductChange,
+  lines, pendingLine, editingLine, lineConfig,
+  discountPerProductEnabled, onDiscountPerProductChange,
+  totalDiscountPct, onTotalDiscountChange,
 }) {
   const ui = useUI();
   const currency = data?.['currency$_identifier'] || '';
@@ -105,6 +107,8 @@ export default function InvoiceBottomPanel({
           discountPerProductEnabled={discountPerProductEnabled ?? false}
           onDiscountPerProductChange={onDiscountPerProductChange}
           readOnly={isReadOnly}
+          totalDiscountPct={Number(data?.etgoTotalDiscount ?? totalDiscountPct ?? 0)}
+          onTotalDiscountChange={onTotalDiscountChange}
         />
       </div>
       </div>

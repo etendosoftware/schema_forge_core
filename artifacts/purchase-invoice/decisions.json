@@ -323,6 +323,10 @@
         },
         "activity": {
           "visibility": "discarded"
+        },
+        "etgoTotalDiscount": {
+          "visibility": "editable",
+          "form": false
         }
       }
     },
@@ -341,7 +345,13 @@
           "inputMode": "search",
           "readOnlyLogic": null,
           "displayLogic": null,
-          "forceCalloutFields": ["listPrice", "unitPrice", "tax", "uOM", "grossUnitPrice"]
+          "forceCalloutFields": [
+            "listPrice",
+            "unitPrice",
+            "tax",
+            "uOM",
+            "grossUnitPrice"
+          ]
         },
         "description": {
           "grid": true,
@@ -418,7 +428,9 @@
           "section": "principal",
           "inputMode": "selector",
           "readOnlyLogic": null,
-          "forceCalloutFields": ["lineNetAmount"]
+          "forceCalloutFields": [
+            "lineNetAmount"
+          ]
         },
         "taxableAmount": {
           "visibility": "readOnly",
