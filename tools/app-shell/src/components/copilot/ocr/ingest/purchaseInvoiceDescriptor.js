@@ -31,6 +31,33 @@ function toIsoDate(value) {
 }
 
 /**
+ * Fetch the BP's first active location id. The invoice header requires
+ * partnerAddress (C_BPartner_Location_ID) NOT NULL, and the SE_Invoice_BPartner
+ * callout only sets it when the BP has a primary location flagged in a way the
+ * callout recognizes — which isn't reliable through /batch. So we resolve it
+ * client-side and embed it in the header body.
+ */
+async function findBpLocation({ token, apiBaseUrl, bpId }) {
+  if (!apiBaseUrl || !token || !bpId) return null;
+  const contactsBase = apiBaseUrl.replace(/\/[^/]+$/, '/contacts');
+  const where = encodeURIComponent(`businessPartner.id = '${bpId}' and active = true`);
+  const url = `${contactsBase}/locationAddress?_neoWhere=${where}&limit=1`;
+  try {
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) {
+      console.warn('[OCR][findBpLocation] non-OK', res.status, url);
+      return null;
+    }
+    const json = await res.json().catch(() => null);
+    const data = json?.response?.data ?? json?.data ?? [];
+    return data[0]?.id || null;
+  } catch (e) {
+    console.warn('[OCR][findBpLocation] fetch failed', e);
+    return null;
+  }
+}
+
+/**
  * Look up an existing BusinessPartner by taxID then name, using the contacts
  * spec selector. Returns the BP id when a single active match is found,
  * otherwise null. Multiple-candidate disambiguation is intentionally left to
@@ -139,10 +166,22 @@ export async function buildPurchaseInvoiceBatch(extracted, ctx) {
   if (bpCreate) ops.push(bpCreate);
   if (locationCreate) ops.push(locationCreate);
 
+  // partnerAddress is NOT NULL on C_Invoice. For a freshly-created BP it
+  // points at the location op via $ref; for an existing BP we look up the
+  // BP's first active location ourselves (the SE_Invoice_BPartner callout
+  // doesn't reliably populate it through the /batch path).
+  let partnerAddress = null;
+  if (bpId) {
+    partnerAddress = await findBpLocation({ token, apiBaseUrl, bpId });
+  } else if (locationCreate) {
+    partnerAddress = '$ref:loc';
+  }
+
   const headerBody = {};
   if (nonBlank(safe.document_no)) headerBody.documentNo = String(safe.document_no).trim();
   if (nonBlank(safe.invoice_date)) headerBody.invoiceDate = toIsoDate(safe.invoice_date);
   headerBody.businessPartner = bpId || '$ref:bp';
+  if (partnerAddress) headerBody.partnerAddress = partnerAddress;
 
   ops.push({
     id: 'inv',
