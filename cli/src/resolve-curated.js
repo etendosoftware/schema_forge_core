@@ -189,7 +189,7 @@ function buildBaseField(rawField, fieldDecision, visibility) {
     label: fieldDecision.label || rawField.label,
     type: fieldDecision.type || (rawField.type === 'id' ? 'id' : rawField.type),
     visibility,
-    required: rawField.mandatory || false,
+    required: fieldDecision.required !== undefined ? fieldDecision.required : (rawField.mandatory || false),
     grid: decisionOrDefault(fieldDecision, 'grid', defaults),
     form: decisionOrDefault(fieldDecision, 'form', defaults),
     searchable: decisionOrDefault(fieldDecision, 'searchable', defaults),

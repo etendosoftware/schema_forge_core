@@ -1,8 +1,7 @@
 {
-  "version": "0.2.0",
-  "generatedAt": "2026-04-29T19:04:26.206Z",
-  "updatedAt": "2026-05-05T18:49:35.031Z",
-  "checksum": "711500c77755088d",
+  "version": "0.3.0",
+  "generatedAt": "2026-05-06T15:52:09.982Z",
+  "checksum": "82f6502c17a07f1d",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -168,7 +167,7 @@
             "type": "string",
             "tsType": "string",
             "visibility": "editable",
-            "required": false,
+            "required": true,
             "grid": false,
             "form": true,
             "section": "principal"
@@ -181,7 +180,7 @@
             "type": "string",
             "tsType": "string",
             "visibility": "editable",
-            "required": false,
+            "required": true,
             "grid": false,
             "form": true,
             "section": "principal"
@@ -3330,19 +3329,6 @@
             }
           },
           {
-            "name": "email",
-            "apiKey": "email",
-            "column": "Email",
-            "label": "Email",
-            "type": "string",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": true,
-            "form": true,
-            "section": "principal"
-          },
-          {
             "name": "name",
             "apiKey": "name",
             "column": "Name",
@@ -3358,6 +3344,19 @@
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_User_Name"
             }
+          },
+          {
+            "name": "email",
+            "apiKey": "email",
+            "column": "Email",
+            "label": "Email",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "section": "principal"
           },
           {
             "name": "phone",
@@ -3536,8 +3535,8 @@
           }
         ],
         "searchableFields": [
-          "email",
-          "name"
+          "name",
+          "email"
         ],
         "computedFields": [
           {
@@ -3885,7 +3884,7 @@
             "column": "EM_Etgo_Firstname",
             "type": "string",
             "visibility": "editable",
-            "required": false
+            "required": true
           },
           {
             "name": "etgoLastname",
@@ -3893,7 +3892,7 @@
             "column": "EM_Etgo_Lastname",
             "type": "string",
             "visibility": "editable",
-            "required": false
+            "required": true
           },
           {
             "name": "oBTIKTaxIDKey",
@@ -4176,20 +4175,20 @@
             "required": false
           },
           {
-            "name": "tbaiIssimplifiedinv",
-            "apiKey": "tbaiIssimplifiedinv",
-            "column": "EM_Tbai_Issimplifiedinv",
-            "type": "boolean",
-            "visibility": "discarded",
-            "required": true
-          },
-          {
             "name": "aeatsiiRepTaxid",
             "apiKey": "aeatsiiRepTaxid",
             "column": "EM_Aeatsii_Rep_Taxid",
             "type": "string",
             "visibility": "system",
             "required": false
+          },
+          {
+            "name": "tbaiIssimplifiedinv",
+            "apiKey": "tbaiIssimplifiedinv",
+            "column": "EM_Tbai_Issimplifiedinv",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": true
           },
           {
             "name": "etgoIsperson",
@@ -4200,65 +4199,9 @@
             "required": true
           },
           {
-            "name": "pricesShownInOrder",
-            "apiKey": "pricesShownInOrder",
-            "column": "ShowPriceInOrder",
-            "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "oneTimeTransaction",
-            "apiKey": "oneTimeTransaction",
-            "column": "IsOneTime",
-            "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "nAICSSIC",
-            "apiKey": "nAICSSIC",
-            "column": "NAICS",
-            "type": "string",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "dUNS",
-            "apiKey": "dUNS",
-            "column": "DUNS",
-            "type": "string",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "creditStatus",
-            "apiKey": "creditStatus",
-            "column": "SOCreditStatus",
-            "type": "enum",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
-            "name": "id",
-            "apiKey": "id",
-            "column": "C_BPartner_ID",
-            "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "invoiceGrouping",
-            "apiKey": "invoiceGrouping",
-            "column": "Invoicegrouping",
+            "name": "invoiceTerms",
+            "apiKey": "invoiceTerms",
+            "column": "InvoiceRule",
             "type": "enum",
             "visibility": "system",
             "required": false
@@ -4272,12 +4215,52 @@
             "required": false
           },
           {
-            "name": "invoiceTerms",
-            "apiKey": "invoiceTerms",
-            "column": "InvoiceRule",
+            "name": "invoiceGrouping",
+            "apiKey": "invoiceGrouping",
+            "column": "Invoicegrouping",
             "type": "enum",
             "visibility": "system",
             "required": false
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "id",
+            "apiKey": "id",
+            "column": "C_BPartner_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "dUNS",
+            "apiKey": "dUNS",
+            "column": "DUNS",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "nAICSSIC",
+            "apiKey": "nAICSSIC",
+            "column": "NAICS",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "oneTimeTransaction",
+            "apiKey": "oneTimeTransaction",
+            "column": "IsOneTime",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
           },
           {
             "name": "creditUsed",
@@ -4285,6 +4268,22 @@
             "column": "SO_CreditUsed",
             "type": "amount",
             "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "forcedOrg",
+            "apiKey": "forcedOrg",
+            "column": "AD_Forced_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "pricesShownInOrder",
+            "apiKey": "pricesShownInOrder",
+            "column": "ShowPriceInOrder",
+            "type": "boolean",
+            "visibility": "system",
             "required": true
           },
           {
@@ -4296,11 +4295,11 @@
             "required": false
           },
           {
-            "name": "forcedOrg",
-            "apiKey": "forcedOrg",
-            "column": "AD_Forced_Org_ID",
-            "type": "foreignKey",
-            "visibility": "system",
+            "name": "creditStatus",
+            "apiKey": "creditStatus",
+            "column": "SOCreditStatus",
+            "type": "enum",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -5008,6 +5007,30 @@
             "required": false
           },
           {
+            "name": "incotermsPO",
+            "apiKey": "incotermsPO",
+            "column": "PO_C_Incoterms_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
             "name": "id",
             "apiKey": "id",
             "column": "C_BPartner_ID",
@@ -5016,12 +5039,12 @@
             "required": true
           },
           {
-            "name": "transactionalBankAccount",
-            "apiKey": "transactionalBankAccount",
-            "column": "SO_Bankaccount_ID",
-            "type": "foreignKey",
+            "name": "searchKey",
+            "apiKey": "searchKey",
+            "column": "Value",
+            "type": "string",
             "visibility": "system",
-            "required": false
+            "required": true
           },
           {
             "name": "orderReference",
@@ -5040,36 +5063,12 @@
             "required": true
           },
           {
-            "name": "organization",
-            "apiKey": "organization",
-            "column": "AD_Org_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "incotermsPO",
-            "apiKey": "incotermsPO",
-            "column": "PO_C_Incoterms_ID",
+            "name": "transactionalBankAccount",
+            "apiKey": "transactionalBankAccount",
+            "column": "SO_Bankaccount_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": false
-          },
-          {
-            "name": "searchKey",
-            "apiKey": "searchKey",
-            "column": "Value",
-            "type": "string",
-            "visibility": "system",
-            "required": true
           },
           {
             "name": "acquisitionCost",
@@ -5671,6 +5670,14 @@
             "required": false
           },
           {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
             "name": "businessPartner",
             "apiKey": "businessPartner",
             "column": "C_BPartner_ID",
@@ -5679,9 +5686,9 @@
             "required": true
           },
           {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": true
@@ -5691,14 +5698,6 @@
             "apiKey": "cBpCustomerAcctID",
             "column": "C_Bp_Customer_Acct_ID",
             "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "organization",
-            "apiKey": "organization",
-            "column": "AD_Org_ID",
-            "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
@@ -5798,30 +5797,6 @@
             "required": true
           },
           {
-            "name": "intrCBpartner",
-            "apiKey": "intrCBpartner",
-            "column": "Intr_C_Bpartner_ID",
-            "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "country",
-            "apiKey": "country",
-            "column": "C_Country_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "portAirport",
-            "apiKey": "portAirport",
-            "column": "PO_Port",
-            "type": "enum",
-            "visibility": "system",
-            "required": false
-          },
-          {
             "name": "transportationType",
             "apiKey": "transportationType",
             "column": "PO_Transportation_Type",
@@ -5836,6 +5811,30 @@
             "type": "boolean",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "portAirport",
+            "apiKey": "portAirport",
+            "column": "PO_Port",
+            "type": "enum",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "intrCBpartner",
+            "apiKey": "intrCBpartner",
+            "column": "Intr_C_Bpartner_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "country",
+            "apiKey": "country",
+            "column": "C_Country_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
           },
           {
             "name": "creationDate",
@@ -5893,20 +5892,20 @@
             "required": true
           },
           {
-            "name": "purchasePricelist",
-            "apiKey": "purchasePricelist",
-            "column": "PO_PriceList_ID",
-            "type": "foreignKey",
-            "visibility": "editable",
-            "required": false
-          },
-          {
             "name": "name",
             "apiKey": "name",
             "column": "Name",
             "type": "string",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "purchasePricelist",
+            "apiKey": "purchasePricelist",
+            "column": "PO_PriceList_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
           },
           {
             "name": "pOPaymentMethod",
@@ -6029,10 +6028,10 @@
             "required": false
           },
           {
-            "name": "id",
-            "apiKey": "id",
-            "column": "C_BPartner_ID",
-            "type": "id",
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
@@ -6045,34 +6044,10 @@
             "required": true
           },
           {
-            "name": "bankAccount",
-            "apiKey": "bankAccount",
-            "column": "PO_Bankaccount_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "active",
-            "apiKey": "active",
-            "column": "IsActive",
-            "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "incotermsSO",
-            "apiKey": "incotermsSO",
-            "column": "SO_C_Incoterms_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
+            "name": "id",
+            "apiKey": "id",
+            "column": "C_BPartner_ID",
+            "type": "id",
             "visibility": "system",
             "required": true
           },
@@ -6083,6 +6058,30 @@
             "type": "string",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "bankAccount",
+            "apiKey": "bankAccount",
+            "column": "PO_Bankaccount_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "incotermsSO",
+            "apiKey": "incotermsSO",
+            "column": "SO_C_Incoterms_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
           },
           {
             "name": "acquisitionCost",
@@ -6828,10 +6827,10 @@
             "required": true
           },
           {
-            "name": "cBpVendorAcctID",
-            "apiKey": "cBpVendorAcctID",
-            "column": "C_Bp_Vendor_Acct_ID",
-            "type": "id",
+            "name": "businessPartner",
+            "apiKey": "businessPartner",
+            "column": "C_BPartner_ID",
+            "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
@@ -6844,10 +6843,10 @@
             "required": true
           },
           {
-            "name": "businessPartner",
-            "apiKey": "businessPartner",
-            "column": "C_BPartner_ID",
-            "type": "foreignKey",
+            "name": "cBpVendorAcctID",
+            "apiKey": "cBpVendorAcctID",
+            "column": "C_Bp_Vendor_Acct_ID",
+            "type": "id",
             "visibility": "system",
             "required": true
           },
@@ -6963,18 +6962,18 @@
             "required": false
           },
           {
-            "name": "intrCBpartner",
-            "apiKey": "intrCBpartner",
-            "column": "Intr_C_Bpartner_ID",
-            "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
             "name": "active",
             "apiKey": "active",
             "column": "Isactive",
             "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "intrCBpartner",
+            "apiKey": "intrCBpartner",
+            "column": "Intr_C_Bpartner_ID",
+            "type": "id",
             "visibility": "system",
             "required": true
           },
@@ -7042,19 +7041,19 @@
             "required": true
           },
           {
-            "name": "name",
-            "apiKey": "name",
-            "column": "Name",
-            "type": "string",
-            "visibility": "system",
-            "required": true
-          },
-          {
             "name": "isSalesRepresentative",
             "apiKey": "isSalesRepresentative",
             "column": "IsSalesRep",
             "type": "boolean",
             "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "name",
+            "apiKey": "name",
+            "column": "Name",
+            "type": "string",
+            "visibility": "system",
             "required": true
           },
           {
@@ -7074,18 +7073,18 @@
             "required": false
           },
           {
-            "name": "organization",
-            "apiKey": "organization",
-            "column": "AD_Org_ID",
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "active",
-            "apiKey": "active",
-            "column": "IsActive",
-            "type": "boolean",
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
@@ -7106,10 +7105,10 @@
             "required": true
           },
           {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
+            "type": "boolean",
             "visibility": "system",
             "required": true
           },
@@ -7953,9 +7952,9 @@
             "required": false
           },
           {
-            "name": "organization",
-            "apiKey": "organization",
-            "column": "AD_Org_ID",
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": true
@@ -7969,18 +7968,18 @@
             "required": true
           },
           {
-            "name": "id",
-            "apiKey": "id",
-            "column": "C_BP_Employee_Acct_ID",
-            "type": "id",
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
+            "name": "id",
+            "apiKey": "id",
+            "column": "C_BP_Employee_Acct_ID",
+            "type": "id",
             "visibility": "system",
             "required": true
           },
@@ -8048,6 +8047,14 @@
             "required": true
           },
           {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
             "name": "organization",
             "apiKey": "organization",
             "column": "AD_Org_ID",
@@ -8076,14 +8083,6 @@
             "apiKey": "cBpSalcategoryID",
             "column": "C_Bp_Salcategory_ID",
             "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
@@ -8319,17 +8318,17 @@
             "required": false
           },
           {
-            "name": "id",
-            "apiKey": "id",
-            "column": "C_BP_BankAccount_ID",
-            "type": "id",
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "businessPartner",
-            "apiKey": "businessPartner",
-            "column": "C_BPartner_ID",
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": true
@@ -8343,17 +8342,17 @@
             "required": true
           },
           {
-            "name": "creationDate",
-            "apiKey": "creationDate",
-            "column": "Created",
-            "type": "dateTime",
+            "name": "id",
+            "apiKey": "id",
+            "column": "C_BP_BankAccount_ID",
+            "type": "id",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
+            "name": "businessPartner",
+            "apiKey": "businessPartner",
+            "column": "C_BPartner_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": true
@@ -8438,6 +8437,14 @@
             "required": true
           },
           {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
             "name": "businessPartner",
             "apiKey": "businessPartner",
             "column": "C_Bpartner_ID",
@@ -8450,14 +8457,6 @@
             "apiKey": "cBpartnerDoctypeID",
             "column": "C_Bpartner_Doctype_ID",
             "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
@@ -8613,17 +8612,17 @@
             "required": true
           },
           {
-            "name": "businessPartner",
-            "apiKey": "businessPartner",
-            "column": "C_BPartner_ID",
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "organization",
-            "apiKey": "organization",
-            "column": "AD_Org_ID",
+            "name": "businessPartner",
+            "apiKey": "businessPartner",
+            "column": "C_BPartner_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": true
@@ -8693,20 +8692,20 @@
             "required": false
           },
           {
-            "name": "email",
-            "apiKey": "email",
-            "column": "Email",
-            "type": "string",
-            "visibility": "editable",
-            "required": false
-          },
-          {
             "name": "name",
             "apiKey": "name",
             "column": "Name",
             "type": "string",
             "visibility": "readOnly",
             "required": true
+          },
+          {
+            "name": "email",
+            "apiKey": "email",
+            "column": "Email",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
           },
           {
             "name": "phone",
@@ -8845,10 +8844,34 @@
             "required": true
           },
           {
+            "name": "trxOrganization",
+            "apiKey": "trxOrganization",
+            "column": "AD_OrgTrx_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
             "name": "businessPartner",
             "apiKey": "businessPartner",
             "column": "C_BPartner_ID",
             "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "supervisor",
+            "apiKey": "supervisor",
+            "column": "Supervisor_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "processNow",
+            "apiKey": "processNow",
+            "column": "Processing",
+            "type": "button",
             "visibility": "system",
             "required": false
           },
@@ -8898,30 +8921,6 @@
             "column": "EmailUser",
             "type": "string",
             "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "processNow",
-            "apiKey": "processNow",
-            "column": "Processing",
-            "type": "button",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "supervisor",
-            "apiKey": "supervisor",
-            "column": "Supervisor_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "trxOrganization",
-            "apiKey": "trxOrganization",
-            "column": "AD_OrgTrx_ID",
-            "type": "foreignKey",
-            "visibility": "discarded",
             "required": false
           },
           {
@@ -9108,9 +9107,17 @@
             "required": true
           },
           {
-            "name": "businessPartner",
-            "apiKey": "businessPartner",
-            "column": "C_BPartner_ID",
+            "name": "cBpartnerDiscountID",
+            "apiKey": "cBpartnerDiscountID",
+            "column": "C_Bpartner_Discount_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": true
@@ -9124,18 +9131,10 @@
             "required": true
           },
           {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
+            "name": "businessPartner",
+            "apiKey": "businessPartner",
+            "column": "C_BPartner_ID",
             "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "cBpartnerDiscountID",
-            "apiKey": "cBpartnerDiscountID",
-            "column": "C_Bpartner_Discount_ID",
-            "type": "id",
             "visibility": "system",
             "required": true
           },
@@ -9574,8 +9573,8 @@
         "path": "/contact",
         "entity": "contact",
         "supportedFilters": [
-          "email",
-          "name"
+          "name",
+          "email"
         ]
       },
       {
@@ -9796,8 +9795,8 @@
         "listUrl": "/sws/neo/contacts/contact",
         "detailUrl": "/sws/neo/contacts/contact/{id}",
         "supportedFilters": [
-          "email",
-          "name"
+          "name",
+          "email"
         ]
       },
       "basicDiscount": {
