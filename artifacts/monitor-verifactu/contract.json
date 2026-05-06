@@ -1,0 +1,3250 @@
+{
+  "version": "0.1.0",
+  "generatedAt": "2026-05-04T17:02:25.021Z",
+  "checksum": "9b84b60a4e830309",
+  "frontendContract": {
+    "window": {
+      "id": "F4675DAB02134762B66881DAE4672AD0",
+      "name": "Monitor Verifactu",
+      "primaryEntity": "cabeceraDeEmisor",
+      "category": "monitor",
+      "layoutType": "default"
+    },
+    "entities": {
+      "cabeceraDeEmisor": {
+        "tableName": "etvfac_verifactu_config",
+        "tabId": "89F4FF892CD7468DBF90DF9DA54C93DB",
+        "tabName": "Cabecera de Emisor",
+        "uiPattern": "STD",
+        "fields": [
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "Isactive",
+            "label": "Activo",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "Y"
+            },
+            "defaultValue": "Y"
+          },
+          {
+            "name": "tAXType",
+            "apiKey": "tAXType",
+            "column": "TAX_Type",
+            "label": "Impuesto de Aplicación",
+            "type": "enum",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "enumValues": [
+              {
+                "value": "03",
+                "name": "IGIC"
+              },
+              {
+                "value": "02",
+                "name": "IPSI"
+              },
+              {
+                "value": "01",
+                "name": "IVA"
+              }
+            ],
+            "readOnlyLogic": {
+              "raw": "@IS_Ready@='Y'",
+              "evaluable": true,
+              "js": "record['isReady'] === 'Y'"
+            }
+          },
+          {
+            "name": "refreshData",
+            "apiKey": "refreshData",
+            "column": "Refresh_Data",
+            "label": "Refrescar Datos",
+            "type": "button",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
+            "defaultValue": "N"
+          },
+          {
+            "name": "issuerNIF",
+            "apiKey": "issuerNIF",
+            "column": "Issuer_Nif",
+            "label": "NIF de Emisor",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "nextSendWaitTime",
+            "apiKey": "nextSendWaitTime",
+            "column": "Next_Send_Wait_Time",
+            "label": "Tiempo de Espera para el Siguiente Envío",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "60"
+            },
+            "defaultValue": "60"
+          }
+        ],
+        "searchableFields": [],
+        "computedFields": [
+          {
+            "name": "active",
+            "derivation": {
+              "type": "computed",
+              "source": "Y"
+            }
+          },
+          {
+            "name": "refreshData",
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            }
+          },
+          {
+            "name": "nextSendWaitTime",
+            "derivation": {
+              "type": "computed",
+              "source": "60"
+            }
+          }
+        ]
+      },
+      "facturasRechazadas": {
+        "tableName": "etvfac_inv_sent_status_mv",
+        "tabId": "F26C18F5EF6C4DB5B94A97F36B45CF7B",
+        "tabName": "Facturas rechazadas",
+        "uiPattern": "STD",
+        "fields": [
+          {
+            "name": "issuerTaxID",
+            "apiKey": "issuerTaxID",
+            "column": "Legal_Entity_Nif",
+            "label": "NIF de Entidad Legal",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "Isactive",
+            "label": "Activo",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "sentToVerifactu",
+            "apiKey": "sentToVerifactu",
+            "column": "EM_Etvfac_Senttoverifac",
+            "label": "Enviado a Verifactu",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "errorReason",
+            "apiKey": "errorReason",
+            "column": "Error_Reason",
+            "label": "Descripción Error Registro",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "cSV",
+            "apiKey": "cSV",
+            "column": "Csv",
+            "label": "CSV",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "typeOperation",
+            "apiKey": "typeOperation",
+            "column": "Type_Operation",
+            "label": "Tipo de Operación",
+            "type": "enum",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "enumValues": [
+              {
+                "value": "AL",
+                "name": "ALTA"
+              },
+              {
+                "value": "BA",
+                "name": "BAJA"
+              }
+            ]
+          },
+          {
+            "name": "codeError",
+            "apiKey": "codeError",
+            "column": "Code_Error",
+            "label": "Código de Error",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "isSubsanation",
+            "apiKey": "isSubsanation",
+            "column": "Issubsanation",
+            "label": "Es Subsanación",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "invoice",
+            "apiKey": "invoice",
+            "column": "C_Invoice_ID",
+            "label": "Factura",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "Invoice",
+            "inputMode": "selector"
+          },
+          {
+            "name": "verifactuSendingStatus",
+            "apiKey": "verifactuSendingStatus",
+            "column": "EM_Etvfac_Invoice_Status",
+            "label": "Estado de Envío a Verifactu",
+            "type": "enum",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "enumValues": [
+              {
+                "value": "AC",
+                "name": "Aceptada"
+              },
+              {
+                "value": "AE",
+                "name": "Aceptada con Errores"
+              },
+              {
+                "value": "IN",
+                "name": "Inválida"
+              },
+              {
+                "value": "PE",
+                "name": "Pendiente"
+              },
+              {
+                "value": "ER",
+                "name": "Rechazada"
+              }
+            ]
+          }
+        ],
+        "searchableFields": [],
+        "computedFields": []
+      },
+      "facturasParcialmenteAceptadas": {
+        "tableName": "etvfac_inv_sent_status_mv",
+        "tabId": "126EBD2F625344E1A22C11219217F551",
+        "tabName": "Facturas Parcialmente Aceptadas",
+        "uiPattern": "STD",
+        "fields": [
+          {
+            "name": "issuerTaxID",
+            "apiKey": "issuerTaxID",
+            "column": "Legal_Entity_Nif",
+            "label": "NIF de Entidad Legal",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "Isactive",
+            "label": "Activo",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "sentToVerifactu",
+            "apiKey": "sentToVerifactu",
+            "column": "EM_Etvfac_Senttoverifac",
+            "label": "Enviado a Verifactu",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "errorReason",
+            "apiKey": "errorReason",
+            "column": "Error_Reason",
+            "label": "Descripción Error Registro",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "typeOperation",
+            "apiKey": "typeOperation",
+            "column": "Type_Operation",
+            "label": "Tipo de Operación",
+            "type": "enum",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "enumValues": [
+              {
+                "value": "AL",
+                "name": "ALTA"
+              },
+              {
+                "value": "BA",
+                "name": "BAJA"
+              }
+            ]
+          },
+          {
+            "name": "codeError",
+            "apiKey": "codeError",
+            "column": "Code_Error",
+            "label": "Código de Error",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "isSubsanation",
+            "apiKey": "isSubsanation",
+            "column": "Issubsanation",
+            "label": "Es Subsanación",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "invoice",
+            "apiKey": "invoice",
+            "column": "C_Invoice_ID",
+            "label": "Factura",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "Invoice",
+            "inputMode": "selector"
+          },
+          {
+            "name": "verifactuSendingStatus",
+            "apiKey": "verifactuSendingStatus",
+            "column": "EM_Etvfac_Invoice_Status",
+            "label": "Estado de Envío a Verifactu",
+            "type": "enum",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "enumValues": [
+              {
+                "value": "AC",
+                "name": "Aceptada"
+              },
+              {
+                "value": "AE",
+                "name": "Aceptada con Errores"
+              },
+              {
+                "value": "IN",
+                "name": "Inválida"
+              },
+              {
+                "value": "PE",
+                "name": "Pendiente"
+              },
+              {
+                "value": "ER",
+                "name": "Rechazada"
+              }
+            ]
+          }
+        ],
+        "searchableFields": [],
+        "computedFields": []
+      },
+      "facturasAceptadas": {
+        "tableName": "etvfac_inv_sent_status_mv",
+        "tabId": "9DE45A800ACB4FDB944B05B80D565543",
+        "tabName": "Facturas Aceptadas",
+        "uiPattern": "STD",
+        "fields": [
+          {
+            "name": "issuerTaxID",
+            "apiKey": "issuerTaxID",
+            "column": "Legal_Entity_Nif",
+            "label": "NIF de Entidad Legal",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "Isactive",
+            "label": "Activo",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "sentToVerifactu",
+            "apiKey": "sentToVerifactu",
+            "column": "EM_Etvfac_Senttoverifac",
+            "label": "Enviado a Verifactu",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "errorReason",
+            "apiKey": "errorReason",
+            "column": "Error_Reason",
+            "label": "Descripción Error Registro",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "cSV",
+            "apiKey": "cSV",
+            "column": "Csv",
+            "label": "CSV",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "typeOperation",
+            "apiKey": "typeOperation",
+            "column": "Type_Operation",
+            "label": "Tipo de Operación",
+            "type": "enum",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "enumValues": [
+              {
+                "value": "AL",
+                "name": "ALTA"
+              },
+              {
+                "value": "BA",
+                "name": "BAJA"
+              }
+            ]
+          },
+          {
+            "name": "codeError",
+            "apiKey": "codeError",
+            "column": "Code_Error",
+            "label": "Código de Error",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "isSubsanation",
+            "apiKey": "isSubsanation",
+            "column": "Issubsanation",
+            "label": "Es Subsanación",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "invoice",
+            "apiKey": "invoice",
+            "column": "C_Invoice_ID",
+            "label": "Factura",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "Invoice",
+            "inputMode": "selector"
+          },
+          {
+            "name": "verifactuSendingStatus",
+            "apiKey": "verifactuSendingStatus",
+            "column": "EM_Etvfac_Invoice_Status",
+            "label": "Estado de Envío a Verifactu",
+            "type": "enum",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "enumValues": [
+              {
+                "value": "AC",
+                "name": "Aceptada"
+              },
+              {
+                "value": "AE",
+                "name": "Aceptada con Errores"
+              },
+              {
+                "value": "IN",
+                "name": "Inválida"
+              },
+              {
+                "value": "PE",
+                "name": "Pendiente"
+              },
+              {
+                "value": "ER",
+                "name": "Rechazada"
+              }
+            ]
+          }
+        ],
+        "searchableFields": [],
+        "computedFields": []
+      },
+      "facturasInválidas": {
+        "tableName": "etvfac_inv_sent_status_mv",
+        "tabId": "6055C2356AEE43D4B1CEC16994DC3E5F",
+        "tabName": "Facturas Inválidas",
+        "uiPattern": "STD",
+        "fields": [
+          {
+            "name": "issuerTaxID",
+            "apiKey": "issuerTaxID",
+            "column": "Legal_Entity_Nif",
+            "label": "NIF de Entidad Legal",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "Isactive",
+            "label": "Activo",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "errorReason",
+            "apiKey": "errorReason",
+            "column": "Error_Reason",
+            "label": "Descripción Error Registro",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "typeOperation",
+            "apiKey": "typeOperation",
+            "column": "Type_Operation",
+            "label": "Tipo de Operación",
+            "type": "enum",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "enumValues": [
+              {
+                "value": "AL",
+                "name": "ALTA"
+              },
+              {
+                "value": "BA",
+                "name": "BAJA"
+              }
+            ]
+          },
+          {
+            "name": "isSubsanation",
+            "apiKey": "isSubsanation",
+            "column": "Issubsanation",
+            "label": "Es Subsanación",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "invoice",
+            "apiKey": "invoice",
+            "column": "C_Invoice_ID",
+            "label": "Factura",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "Invoice",
+            "inputMode": "selector"
+          },
+          {
+            "name": "verifactuSendingStatus",
+            "apiKey": "verifactuSendingStatus",
+            "column": "EM_Etvfac_Invoice_Status",
+            "label": "Estado de Envío a Verifactu",
+            "type": "enum",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "enumValues": [
+              {
+                "value": "AC",
+                "name": "Aceptada"
+              },
+              {
+                "value": "AE",
+                "name": "Aceptada con Errores"
+              },
+              {
+                "value": "IN",
+                "name": "Inválida"
+              },
+              {
+                "value": "PE",
+                "name": "Pendiente"
+              },
+              {
+                "value": "ER",
+                "name": "Rechazada"
+              }
+            ]
+          },
+          {
+            "name": "correctInvoice",
+            "apiKey": "correctInvoice",
+            "column": "Correct_Invoice",
+            "label": "Corregir Factura",
+            "type": "button",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "displayLogic": {
+              "raw": "@etvfac_corrected_invoice@='Y'",
+              "evaluable": true
+            }
+          }
+        ],
+        "searchableFields": [],
+        "computedFields": []
+      }
+    }
+  },
+  "backendContract": {
+    "window": {
+      "id": "F4675DAB02134762B66881DAE4672AD0",
+      "name": "Monitor Verifactu",
+      "primaryEntity": "cabeceraDeEmisor",
+      "category": "monitor"
+    },
+    "entities": {
+      "cabeceraDeEmisor": {
+        "tableName": "etvfac_verifactu_config",
+        "tabId": "89F4FF892CD7468DBF90DF9DA54C93DB",
+        "tabName": "Cabecera de Emisor",
+        "fields": [
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "Isactive",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "tAXType",
+            "apiKey": "tAXType",
+            "column": "TAX_Type",
+            "type": "enum",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "refreshData",
+            "apiKey": "refreshData",
+            "column": "Refresh_Data",
+            "type": "button",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "issuerNIF",
+            "apiKey": "issuerNIF",
+            "column": "Issuer_Nif",
+            "type": "string",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "nextSendWaitTime",
+            "apiKey": "nextSendWaitTime",
+            "column": "Next_Send_Wait_Time",
+            "type": "integer",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "verifactuConfig",
+            "apiKey": "verifactuConfig",
+            "column": "Etvfac_Verifactu_Config_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "Createdby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "defaultQR",
+            "apiKey": "defaultQR",
+            "column": "Default_Qr",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "inVfactuSystem",
+            "apiKey": "inVfactuSystem",
+            "column": "IN_Vfactu_System",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "incidentReport",
+            "apiKey": "incidentReport",
+            "column": "Incident_Report",
+            "type": "text",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "isDevEnv",
+            "apiKey": "isDevEnv",
+            "column": "IS_Dev_Env",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "isReady",
+            "apiKey": "isReady",
+            "column": "IS_Ready",
+            "type": "button",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "systemStartat",
+            "apiKey": "systemStartat",
+            "column": "System_Startat",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "systemStopat",
+            "apiKey": "systemStopat",
+            "column": "System_Stopat",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "updated",
+            "apiKey": "updated",
+            "column": "Updated",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "Updatedby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      },
+      "facturasRechazadas": {
+        "tableName": "etvfac_inv_sent_status_mv",
+        "tabId": "F26C18F5EF6C4DB5B94A97F36B45CF7B",
+        "tabName": "Facturas rechazadas",
+        "fields": [
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "issuerTaxID",
+            "apiKey": "issuerTaxID",
+            "column": "Legal_Entity_Nif",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "Isactive",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "sentToVerifactu",
+            "apiKey": "sentToVerifactu",
+            "column": "EM_Etvfac_Senttoverifac",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "errorReason",
+            "apiKey": "errorReason",
+            "column": "Error_Reason",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "cSV",
+            "apiKey": "cSV",
+            "column": "Csv",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "typeOperation",
+            "apiKey": "typeOperation",
+            "column": "Type_Operation",
+            "type": "enum",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "codeError",
+            "apiKey": "codeError",
+            "column": "Code_Error",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "isSubsanation",
+            "apiKey": "isSubsanation",
+            "column": "Issubsanation",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "invoice",
+            "apiKey": "invoice",
+            "column": "C_Invoice_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "verifactuSendingStatus",
+            "apiKey": "verifactuSendingStatus",
+            "column": "EM_Etvfac_Invoice_Status",
+            "type": "enum",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "invoiceSentStatusID",
+            "apiKey": "invoiceSentStatusID",
+            "column": "Etvfac_Inv_Sent_Status_Mv_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "correctInvoice",
+            "apiKey": "correctInvoice",
+            "column": "Correct_Invoice",
+            "type": "button",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "Createdby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "hash",
+            "apiKey": "hash",
+            "column": "EM_Etvfac_Hash",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "updated",
+            "apiKey": "updated",
+            "column": "Updated",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "Updatedby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          }
+        ]
+      },
+      "facturasParcialmenteAceptadas": {
+        "tableName": "etvfac_inv_sent_status_mv",
+        "tabId": "126EBD2F625344E1A22C11219217F551",
+        "tabName": "Facturas Parcialmente Aceptadas",
+        "fields": [
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "issuerTaxID",
+            "apiKey": "issuerTaxID",
+            "column": "Legal_Entity_Nif",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "Isactive",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "sentToVerifactu",
+            "apiKey": "sentToVerifactu",
+            "column": "EM_Etvfac_Senttoverifac",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "errorReason",
+            "apiKey": "errorReason",
+            "column": "Error_Reason",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "typeOperation",
+            "apiKey": "typeOperation",
+            "column": "Type_Operation",
+            "type": "enum",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "codeError",
+            "apiKey": "codeError",
+            "column": "Code_Error",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "isSubsanation",
+            "apiKey": "isSubsanation",
+            "column": "Issubsanation",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "invoice",
+            "apiKey": "invoice",
+            "column": "C_Invoice_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "verifactuSendingStatus",
+            "apiKey": "verifactuSendingStatus",
+            "column": "EM_Etvfac_Invoice_Status",
+            "type": "enum",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "invoiceSentStatusID",
+            "apiKey": "invoiceSentStatusID",
+            "column": "Etvfac_Inv_Sent_Status_Mv_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "correctInvoice",
+            "apiKey": "correctInvoice",
+            "column": "Correct_Invoice",
+            "type": "button",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "Createdby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "cSV",
+            "apiKey": "cSV",
+            "column": "Csv",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "hash",
+            "apiKey": "hash",
+            "column": "EM_Etvfac_Hash",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "updated",
+            "apiKey": "updated",
+            "column": "Updated",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "Updatedby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          }
+        ]
+      },
+      "facturasAceptadas": {
+        "tableName": "etvfac_inv_sent_status_mv",
+        "tabId": "9DE45A800ACB4FDB944B05B80D565543",
+        "tabName": "Facturas Aceptadas",
+        "fields": [
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "issuerTaxID",
+            "apiKey": "issuerTaxID",
+            "column": "Legal_Entity_Nif",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "Isactive",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "sentToVerifactu",
+            "apiKey": "sentToVerifactu",
+            "column": "EM_Etvfac_Senttoverifac",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "errorReason",
+            "apiKey": "errorReason",
+            "column": "Error_Reason",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "cSV",
+            "apiKey": "cSV",
+            "column": "Csv",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "typeOperation",
+            "apiKey": "typeOperation",
+            "column": "Type_Operation",
+            "type": "enum",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "codeError",
+            "apiKey": "codeError",
+            "column": "Code_Error",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "isSubsanation",
+            "apiKey": "isSubsanation",
+            "column": "Issubsanation",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "invoice",
+            "apiKey": "invoice",
+            "column": "C_Invoice_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "verifactuSendingStatus",
+            "apiKey": "verifactuSendingStatus",
+            "column": "EM_Etvfac_Invoice_Status",
+            "type": "enum",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "invoiceSentStatusID",
+            "apiKey": "invoiceSentStatusID",
+            "column": "Etvfac_Inv_Sent_Status_Mv_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "correctInvoice",
+            "apiKey": "correctInvoice",
+            "column": "Correct_Invoice",
+            "type": "button",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "Createdby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "hash",
+            "apiKey": "hash",
+            "column": "EM_Etvfac_Hash",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "updated",
+            "apiKey": "updated",
+            "column": "Updated",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "Updatedby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          }
+        ]
+      },
+      "facturasInválidas": {
+        "tableName": "etvfac_inv_sent_status_mv",
+        "tabId": "6055C2356AEE43D4B1CEC16994DC3E5F",
+        "tabName": "Facturas Inválidas",
+        "fields": [
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "issuerTaxID",
+            "apiKey": "issuerTaxID",
+            "column": "Legal_Entity_Nif",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "Isactive",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "errorReason",
+            "apiKey": "errorReason",
+            "column": "Error_Reason",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "typeOperation",
+            "apiKey": "typeOperation",
+            "column": "Type_Operation",
+            "type": "enum",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "isSubsanation",
+            "apiKey": "isSubsanation",
+            "column": "Issubsanation",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "invoice",
+            "apiKey": "invoice",
+            "column": "C_Invoice_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "verifactuSendingStatus",
+            "apiKey": "verifactuSendingStatus",
+            "column": "EM_Etvfac_Invoice_Status",
+            "type": "enum",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "correctInvoice",
+            "apiKey": "correctInvoice",
+            "column": "Correct_Invoice",
+            "type": "button",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "invoiceSentStatusID",
+            "apiKey": "invoiceSentStatusID",
+            "column": "Etvfac_Inv_Sent_Status_Mv_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "codeError",
+            "apiKey": "codeError",
+            "column": "Code_Error",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "Createdby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "cSV",
+            "apiKey": "cSV",
+            "column": "Csv",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "hash",
+            "apiKey": "hash",
+            "column": "EM_Etvfac_Hash",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "sentToVerifactu",
+            "apiKey": "sentToVerifactu",
+            "column": "EM_Etvfac_Senttoverifac",
+            "type": "boolean",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "updated",
+            "apiKey": "updated",
+            "column": "Updated",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "Updatedby",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          }
+        ]
+      }
+    },
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/cabeceraDeEmisor",
+        "entity": "cabeceraDeEmisor",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/cabeceraDeEmisor/:id",
+        "entity": "cabeceraDeEmisor",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/cabeceraDeEmisor",
+        "entity": "cabeceraDeEmisor",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/cabeceraDeEmisor/:id",
+        "entity": "cabeceraDeEmisor",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/cabeceraDeEmisor/:id",
+        "entity": "cabeceraDeEmisor",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/facturasRechazadas",
+        "entity": "facturasRechazadas",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/facturasRechazadas/:id",
+        "entity": "facturasRechazadas",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/facturasRechazadas",
+        "entity": "facturasRechazadas",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/facturasRechazadas/:id",
+        "entity": "facturasRechazadas",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/facturasRechazadas/:id",
+        "entity": "facturasRechazadas",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/facturasParcialmenteAceptadas",
+        "entity": "facturasParcialmenteAceptadas",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/facturasParcialmenteAceptadas/:id",
+        "entity": "facturasParcialmenteAceptadas",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/facturasParcialmenteAceptadas",
+        "entity": "facturasParcialmenteAceptadas",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/facturasParcialmenteAceptadas/:id",
+        "entity": "facturasParcialmenteAceptadas",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/facturasParcialmenteAceptadas/:id",
+        "entity": "facturasParcialmenteAceptadas",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/facturasAceptadas",
+        "entity": "facturasAceptadas",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/facturasAceptadas/:id",
+        "entity": "facturasAceptadas",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/facturasAceptadas",
+        "entity": "facturasAceptadas",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/facturasAceptadas/:id",
+        "entity": "facturasAceptadas",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/facturasAceptadas/:id",
+        "entity": "facturasAceptadas",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/facturasInválidas",
+        "entity": "facturasInválidas",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/facturasInválidas/:id",
+        "entity": "facturasInválidas",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/facturasInválidas",
+        "entity": "facturasInválidas",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/facturasInválidas/:id",
+        "entity": "facturasInválidas",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/facturasInválidas/:id",
+        "entity": "facturasInválidas",
+        "supportedFilters": []
+      }
+    ],
+    "processEndpoints": []
+  },
+  "apiPrediction": {
+    "specName": "monitor-verifactu",
+    "baseUrl": "/sws/neo/monitor-verifactu",
+    "crud": {
+      "cabeceraDeEmisor": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/monitor-verifactu/cabeceraDeEmisor",
+        "detailUrl": "/sws/neo/monitor-verifactu/cabeceraDeEmisor/{id}",
+        "supportedFilters": []
+      },
+      "facturasRechazadas": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/monitor-verifactu/facturasRechazadas",
+        "detailUrl": "/sws/neo/monitor-verifactu/facturasRechazadas/{id}",
+        "supportedFilters": []
+      },
+      "facturasParcialmenteAceptadas": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/monitor-verifactu/facturasParcialmenteAceptadas",
+        "detailUrl": "/sws/neo/monitor-verifactu/facturasParcialmenteAceptadas/{id}",
+        "supportedFilters": []
+      },
+      "facturasAceptadas": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/monitor-verifactu/facturasAceptadas",
+        "detailUrl": "/sws/neo/monitor-verifactu/facturasAceptadas/{id}",
+        "supportedFilters": []
+      },
+      "facturasInválidas": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/monitor-verifactu/facturasInválidas",
+        "detailUrl": "/sws/neo/monitor-verifactu/facturasInválidas/{id}",
+        "supportedFilters": []
+      }
+    },
+    "selectors": [
+      {
+        "entity": "facturasRechazadas",
+        "field": "invoice",
+        "column": "C_Invoice_ID",
+        "reference": "Invoice",
+        "inputMode": "selector",
+        "url": "/sws/neo/monitor-verifactu/facturasRechazadas/selectors/invoice"
+      },
+      {
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "invoice",
+        "column": "C_Invoice_ID",
+        "reference": "Invoice",
+        "inputMode": "selector",
+        "url": "/sws/neo/monitor-verifactu/facturasParcialmenteAceptadas/selectors/invoice"
+      },
+      {
+        "entity": "facturasAceptadas",
+        "field": "invoice",
+        "column": "C_Invoice_ID",
+        "reference": "Invoice",
+        "inputMode": "selector",
+        "url": "/sws/neo/monitor-verifactu/facturasAceptadas/selectors/invoice"
+      },
+      {
+        "entity": "facturasInválidas",
+        "field": "invoice",
+        "column": "C_Invoice_ID",
+        "reference": "Invoice",
+        "inputMode": "selector",
+        "url": "/sws/neo/monitor-verifactu/facturasInválidas/selectors/invoice"
+      }
+    ],
+    "actions": [
+      {
+        "entity": "cabeceraDeEmisor",
+        "field": "refreshData",
+        "column": "Refresh_Data",
+        "url": "/sws/neo/monitor-verifactu/cabeceraDeEmisor/{id}/action/refreshData",
+        "processId": "E0D681117A1843C5B9D525701087D7DC",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "cabeceraDeEmisor",
+        "field": "isReady",
+        "column": "IS_Ready",
+        "url": "/sws/neo/monitor-verifactu/cabeceraDeEmisor/{id}/action/isReady",
+        "processId": "D995FA46EEDB4DAF9F414E661FB13E43",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "facturasRechazadas",
+        "field": "correctInvoice",
+        "column": "Correct_Invoice",
+        "url": "/sws/neo/monitor-verifactu/facturasRechazadas/{id}/action/correctInvoice",
+        "processId": "F353F2A7307B464CA2C6515CBEFB0D93",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "correctInvoice",
+        "column": "Correct_Invoice",
+        "url": "/sws/neo/monitor-verifactu/facturasParcialmenteAceptadas/{id}/action/correctInvoice",
+        "processId": "F353F2A7307B464CA2C6515CBEFB0D93",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "facturasAceptadas",
+        "field": "correctInvoice",
+        "column": "Correct_Invoice",
+        "url": "/sws/neo/monitor-verifactu/facturasAceptadas/{id}/action/correctInvoice",
+        "processId": "F353F2A7307B464CA2C6515CBEFB0D93",
+        "processType": "obuiapp"
+      },
+      {
+        "entity": "facturasInválidas",
+        "field": "correctInvoice",
+        "column": "Correct_Invoice",
+        "url": "/sws/neo/monitor-verifactu/facturasInválidas/{id}/action/correctInvoice",
+        "processId": "F353F2A7307B464CA2C6515CBEFB0D93",
+        "processType": "obuiapp"
+      }
+    ],
+    "queryParams": {
+      "pagination": {
+        "startRow": "_startRow",
+        "endRow": "_endRow",
+        "default": "0-100"
+      },
+      "sorting": {
+        "param": "_sortBy",
+        "example": "_sortBy=creationDate desc"
+      },
+      "filtering": "Use field name as query param: ?fieldName=value",
+      "parentFilter": "parentId={id} for child entities"
+    },
+    "window": {
+      "category": "monitor"
+    }
+  },
+  "testManifest": {
+    "tests": [
+      {
+        "id": "t-1",
+        "category": "field-presence",
+        "entity": "cabeceraDeEmisor",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should be present in cabeceraDeEmisor"
+      },
+      {
+        "id": "t-2",
+        "category": "field-presence",
+        "entity": "cabeceraDeEmisor",
+        "field": "tAXType",
+        "runner": "node",
+        "description": "Field 'tAXType' should be present in cabeceraDeEmisor"
+      },
+      {
+        "id": "t-3",
+        "category": "field-presence",
+        "entity": "cabeceraDeEmisor",
+        "field": "refreshData",
+        "runner": "node",
+        "description": "Field 'refreshData' should be present in cabeceraDeEmisor"
+      },
+      {
+        "id": "t-4",
+        "category": "field-presence",
+        "entity": "cabeceraDeEmisor",
+        "field": "issuerNIF",
+        "runner": "node",
+        "description": "Field 'issuerNIF' should be present in cabeceraDeEmisor"
+      },
+      {
+        "id": "t-5",
+        "category": "field-presence",
+        "entity": "cabeceraDeEmisor",
+        "field": "nextSendWaitTime",
+        "runner": "node",
+        "description": "Field 'nextSendWaitTime' should be present in cabeceraDeEmisor"
+      },
+      {
+        "id": "t-6",
+        "category": "field-type",
+        "entity": "cabeceraDeEmisor",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should have type 'boolean' in cabeceraDeEmisor"
+      },
+      {
+        "id": "t-7",
+        "category": "field-type",
+        "entity": "cabeceraDeEmisor",
+        "field": "tAXType",
+        "runner": "node",
+        "description": "Field 'tAXType' should have type 'string' in cabeceraDeEmisor"
+      },
+      {
+        "id": "t-8",
+        "category": "field-type",
+        "entity": "cabeceraDeEmisor",
+        "field": "refreshData",
+        "runner": "node",
+        "description": "Field 'refreshData' should have type 'string' in cabeceraDeEmisor"
+      },
+      {
+        "id": "t-9",
+        "category": "field-type",
+        "entity": "cabeceraDeEmisor",
+        "field": "issuerNIF",
+        "runner": "node",
+        "description": "Field 'issuerNIF' should have type 'string' in cabeceraDeEmisor"
+      },
+      {
+        "id": "t-10",
+        "category": "field-type",
+        "entity": "cabeceraDeEmisor",
+        "field": "nextSendWaitTime",
+        "runner": "node",
+        "description": "Field 'nextSendWaitTime' should have type 'number' in cabeceraDeEmisor"
+      },
+      {
+        "id": "t-11",
+        "category": "visibility",
+        "entity": "cabeceraDeEmisor",
+        "runner": "node",
+        "description": "Entity 'cabeceraDeEmisor' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-12",
+        "category": "readonlylogic-valid",
+        "entity": "cabeceraDeEmisor",
+        "field": "tAXType",
+        "runner": "node",
+        "description": "Read-only logic for 'tAXType' in cabeceraDeEmisor should be valid JS"
+      },
+      {
+        "id": "t-13",
+        "category": "readonlylogic-evaluable",
+        "entity": "cabeceraDeEmisor",
+        "field": "tAXType",
+        "runner": "node",
+        "description": "Read-only logic for 'tAXType' in cabeceraDeEmisor should have evaluable flag"
+      },
+      {
+        "id": "t-14",
+        "category": "default-value-type",
+        "entity": "cabeceraDeEmisor",
+        "field": "active",
+        "runner": "node",
+        "description": "Default value for 'active' in cabeceraDeEmisor should be a string"
+      },
+      {
+        "id": "t-15",
+        "category": "default-value-type",
+        "entity": "cabeceraDeEmisor",
+        "field": "refreshData",
+        "runner": "node",
+        "description": "Default value for 'refreshData' in cabeceraDeEmisor should be a string"
+      },
+      {
+        "id": "t-16",
+        "category": "default-value-type",
+        "entity": "cabeceraDeEmisor",
+        "field": "nextSendWaitTime",
+        "runner": "node",
+        "description": "Default value for 'nextSendWaitTime' in cabeceraDeEmisor should be a string"
+      },
+      {
+        "id": "t-17",
+        "category": "field-presence",
+        "entity": "facturasRechazadas",
+        "field": "issuerTaxID",
+        "runner": "node",
+        "description": "Field 'issuerTaxID' should be present in facturasRechazadas"
+      },
+      {
+        "id": "t-18",
+        "category": "field-presence",
+        "entity": "facturasRechazadas",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should be present in facturasRechazadas"
+      },
+      {
+        "id": "t-19",
+        "category": "field-presence",
+        "entity": "facturasRechazadas",
+        "field": "sentToVerifactu",
+        "runner": "node",
+        "description": "Field 'sentToVerifactu' should be present in facturasRechazadas"
+      },
+      {
+        "id": "t-20",
+        "category": "field-presence",
+        "entity": "facturasRechazadas",
+        "field": "errorReason",
+        "runner": "node",
+        "description": "Field 'errorReason' should be present in facturasRechazadas"
+      },
+      {
+        "id": "t-21",
+        "category": "field-presence",
+        "entity": "facturasRechazadas",
+        "field": "cSV",
+        "runner": "node",
+        "description": "Field 'cSV' should be present in facturasRechazadas"
+      },
+      {
+        "id": "t-22",
+        "category": "field-presence",
+        "entity": "facturasRechazadas",
+        "field": "typeOperation",
+        "runner": "node",
+        "description": "Field 'typeOperation' should be present in facturasRechazadas"
+      },
+      {
+        "id": "t-23",
+        "category": "field-presence",
+        "entity": "facturasRechazadas",
+        "field": "codeError",
+        "runner": "node",
+        "description": "Field 'codeError' should be present in facturasRechazadas"
+      },
+      {
+        "id": "t-24",
+        "category": "field-presence",
+        "entity": "facturasRechazadas",
+        "field": "isSubsanation",
+        "runner": "node",
+        "description": "Field 'isSubsanation' should be present in facturasRechazadas"
+      },
+      {
+        "id": "t-25",
+        "category": "field-presence",
+        "entity": "facturasRechazadas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Field 'invoice' should be present in facturasRechazadas"
+      },
+      {
+        "id": "t-26",
+        "category": "field-presence",
+        "entity": "facturasRechazadas",
+        "field": "verifactuSendingStatus",
+        "runner": "node",
+        "description": "Field 'verifactuSendingStatus' should be present in facturasRechazadas"
+      },
+      {
+        "id": "t-27",
+        "category": "field-type",
+        "entity": "facturasRechazadas",
+        "field": "issuerTaxID",
+        "runner": "node",
+        "description": "Field 'issuerTaxID' should have type 'string' in facturasRechazadas"
+      },
+      {
+        "id": "t-28",
+        "category": "field-type",
+        "entity": "facturasRechazadas",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should have type 'boolean' in facturasRechazadas"
+      },
+      {
+        "id": "t-29",
+        "category": "field-type",
+        "entity": "facturasRechazadas",
+        "field": "sentToVerifactu",
+        "runner": "node",
+        "description": "Field 'sentToVerifactu' should have type 'boolean' in facturasRechazadas"
+      },
+      {
+        "id": "t-30",
+        "category": "field-type",
+        "entity": "facturasRechazadas",
+        "field": "errorReason",
+        "runner": "node",
+        "description": "Field 'errorReason' should have type 'string' in facturasRechazadas"
+      },
+      {
+        "id": "t-31",
+        "category": "field-type",
+        "entity": "facturasRechazadas",
+        "field": "cSV",
+        "runner": "node",
+        "description": "Field 'cSV' should have type 'string' in facturasRechazadas"
+      },
+      {
+        "id": "t-32",
+        "category": "field-type",
+        "entity": "facturasRechazadas",
+        "field": "typeOperation",
+        "runner": "node",
+        "description": "Field 'typeOperation' should have type 'string' in facturasRechazadas"
+      },
+      {
+        "id": "t-33",
+        "category": "field-type",
+        "entity": "facturasRechazadas",
+        "field": "codeError",
+        "runner": "node",
+        "description": "Field 'codeError' should have type 'string' in facturasRechazadas"
+      },
+      {
+        "id": "t-34",
+        "category": "field-type",
+        "entity": "facturasRechazadas",
+        "field": "isSubsanation",
+        "runner": "node",
+        "description": "Field 'isSubsanation' should have type 'boolean' in facturasRechazadas"
+      },
+      {
+        "id": "t-35",
+        "category": "field-type",
+        "entity": "facturasRechazadas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Field 'invoice' should have type 'string' in facturasRechazadas"
+      },
+      {
+        "id": "t-36",
+        "category": "field-type",
+        "entity": "facturasRechazadas",
+        "field": "verifactuSendingStatus",
+        "runner": "node",
+        "description": "Field 'verifactuSendingStatus' should have type 'string' in facturasRechazadas"
+      },
+      {
+        "id": "t-37",
+        "category": "visibility",
+        "entity": "facturasRechazadas",
+        "runner": "node",
+        "description": "Entity 'facturasRechazadas' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-38",
+        "category": "field-presence",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "issuerTaxID",
+        "runner": "node",
+        "description": "Field 'issuerTaxID' should be present in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-39",
+        "category": "field-presence",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should be present in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-40",
+        "category": "field-presence",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "sentToVerifactu",
+        "runner": "node",
+        "description": "Field 'sentToVerifactu' should be present in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-41",
+        "category": "field-presence",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "errorReason",
+        "runner": "node",
+        "description": "Field 'errorReason' should be present in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-42",
+        "category": "field-presence",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "typeOperation",
+        "runner": "node",
+        "description": "Field 'typeOperation' should be present in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-43",
+        "category": "field-presence",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "codeError",
+        "runner": "node",
+        "description": "Field 'codeError' should be present in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-44",
+        "category": "field-presence",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "isSubsanation",
+        "runner": "node",
+        "description": "Field 'isSubsanation' should be present in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-45",
+        "category": "field-presence",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Field 'invoice' should be present in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-46",
+        "category": "field-presence",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "verifactuSendingStatus",
+        "runner": "node",
+        "description": "Field 'verifactuSendingStatus' should be present in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-47",
+        "category": "field-type",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "issuerTaxID",
+        "runner": "node",
+        "description": "Field 'issuerTaxID' should have type 'string' in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-48",
+        "category": "field-type",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should have type 'boolean' in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-49",
+        "category": "field-type",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "sentToVerifactu",
+        "runner": "node",
+        "description": "Field 'sentToVerifactu' should have type 'boolean' in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-50",
+        "category": "field-type",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "errorReason",
+        "runner": "node",
+        "description": "Field 'errorReason' should have type 'string' in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-51",
+        "category": "field-type",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "typeOperation",
+        "runner": "node",
+        "description": "Field 'typeOperation' should have type 'string' in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-52",
+        "category": "field-type",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "codeError",
+        "runner": "node",
+        "description": "Field 'codeError' should have type 'string' in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-53",
+        "category": "field-type",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "isSubsanation",
+        "runner": "node",
+        "description": "Field 'isSubsanation' should have type 'boolean' in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-54",
+        "category": "field-type",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Field 'invoice' should have type 'string' in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-55",
+        "category": "field-type",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "verifactuSendingStatus",
+        "runner": "node",
+        "description": "Field 'verifactuSendingStatus' should have type 'string' in facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-56",
+        "category": "visibility",
+        "entity": "facturasParcialmenteAceptadas",
+        "runner": "node",
+        "description": "Entity 'facturasParcialmenteAceptadas' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-57",
+        "category": "field-presence",
+        "entity": "facturasAceptadas",
+        "field": "issuerTaxID",
+        "runner": "node",
+        "description": "Field 'issuerTaxID' should be present in facturasAceptadas"
+      },
+      {
+        "id": "t-58",
+        "category": "field-presence",
+        "entity": "facturasAceptadas",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should be present in facturasAceptadas"
+      },
+      {
+        "id": "t-59",
+        "category": "field-presence",
+        "entity": "facturasAceptadas",
+        "field": "sentToVerifactu",
+        "runner": "node",
+        "description": "Field 'sentToVerifactu' should be present in facturasAceptadas"
+      },
+      {
+        "id": "t-60",
+        "category": "field-presence",
+        "entity": "facturasAceptadas",
+        "field": "errorReason",
+        "runner": "node",
+        "description": "Field 'errorReason' should be present in facturasAceptadas"
+      },
+      {
+        "id": "t-61",
+        "category": "field-presence",
+        "entity": "facturasAceptadas",
+        "field": "cSV",
+        "runner": "node",
+        "description": "Field 'cSV' should be present in facturasAceptadas"
+      },
+      {
+        "id": "t-62",
+        "category": "field-presence",
+        "entity": "facturasAceptadas",
+        "field": "typeOperation",
+        "runner": "node",
+        "description": "Field 'typeOperation' should be present in facturasAceptadas"
+      },
+      {
+        "id": "t-63",
+        "category": "field-presence",
+        "entity": "facturasAceptadas",
+        "field": "codeError",
+        "runner": "node",
+        "description": "Field 'codeError' should be present in facturasAceptadas"
+      },
+      {
+        "id": "t-64",
+        "category": "field-presence",
+        "entity": "facturasAceptadas",
+        "field": "isSubsanation",
+        "runner": "node",
+        "description": "Field 'isSubsanation' should be present in facturasAceptadas"
+      },
+      {
+        "id": "t-65",
+        "category": "field-presence",
+        "entity": "facturasAceptadas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Field 'invoice' should be present in facturasAceptadas"
+      },
+      {
+        "id": "t-66",
+        "category": "field-presence",
+        "entity": "facturasAceptadas",
+        "field": "verifactuSendingStatus",
+        "runner": "node",
+        "description": "Field 'verifactuSendingStatus' should be present in facturasAceptadas"
+      },
+      {
+        "id": "t-67",
+        "category": "field-type",
+        "entity": "facturasAceptadas",
+        "field": "issuerTaxID",
+        "runner": "node",
+        "description": "Field 'issuerTaxID' should have type 'string' in facturasAceptadas"
+      },
+      {
+        "id": "t-68",
+        "category": "field-type",
+        "entity": "facturasAceptadas",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should have type 'boolean' in facturasAceptadas"
+      },
+      {
+        "id": "t-69",
+        "category": "field-type",
+        "entity": "facturasAceptadas",
+        "field": "sentToVerifactu",
+        "runner": "node",
+        "description": "Field 'sentToVerifactu' should have type 'boolean' in facturasAceptadas"
+      },
+      {
+        "id": "t-70",
+        "category": "field-type",
+        "entity": "facturasAceptadas",
+        "field": "errorReason",
+        "runner": "node",
+        "description": "Field 'errorReason' should have type 'string' in facturasAceptadas"
+      },
+      {
+        "id": "t-71",
+        "category": "field-type",
+        "entity": "facturasAceptadas",
+        "field": "cSV",
+        "runner": "node",
+        "description": "Field 'cSV' should have type 'string' in facturasAceptadas"
+      },
+      {
+        "id": "t-72",
+        "category": "field-type",
+        "entity": "facturasAceptadas",
+        "field": "typeOperation",
+        "runner": "node",
+        "description": "Field 'typeOperation' should have type 'string' in facturasAceptadas"
+      },
+      {
+        "id": "t-73",
+        "category": "field-type",
+        "entity": "facturasAceptadas",
+        "field": "codeError",
+        "runner": "node",
+        "description": "Field 'codeError' should have type 'string' in facturasAceptadas"
+      },
+      {
+        "id": "t-74",
+        "category": "field-type",
+        "entity": "facturasAceptadas",
+        "field": "isSubsanation",
+        "runner": "node",
+        "description": "Field 'isSubsanation' should have type 'boolean' in facturasAceptadas"
+      },
+      {
+        "id": "t-75",
+        "category": "field-type",
+        "entity": "facturasAceptadas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Field 'invoice' should have type 'string' in facturasAceptadas"
+      },
+      {
+        "id": "t-76",
+        "category": "field-type",
+        "entity": "facturasAceptadas",
+        "field": "verifactuSendingStatus",
+        "runner": "node",
+        "description": "Field 'verifactuSendingStatus' should have type 'string' in facturasAceptadas"
+      },
+      {
+        "id": "t-77",
+        "category": "visibility",
+        "entity": "facturasAceptadas",
+        "runner": "node",
+        "description": "Entity 'facturasAceptadas' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-78",
+        "category": "field-presence",
+        "entity": "facturasInválidas",
+        "field": "issuerTaxID",
+        "runner": "node",
+        "description": "Field 'issuerTaxID' should be present in facturasInválidas"
+      },
+      {
+        "id": "t-79",
+        "category": "field-presence",
+        "entity": "facturasInválidas",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should be present in facturasInválidas"
+      },
+      {
+        "id": "t-80",
+        "category": "field-presence",
+        "entity": "facturasInválidas",
+        "field": "errorReason",
+        "runner": "node",
+        "description": "Field 'errorReason' should be present in facturasInválidas"
+      },
+      {
+        "id": "t-81",
+        "category": "field-presence",
+        "entity": "facturasInválidas",
+        "field": "typeOperation",
+        "runner": "node",
+        "description": "Field 'typeOperation' should be present in facturasInválidas"
+      },
+      {
+        "id": "t-82",
+        "category": "field-presence",
+        "entity": "facturasInválidas",
+        "field": "isSubsanation",
+        "runner": "node",
+        "description": "Field 'isSubsanation' should be present in facturasInválidas"
+      },
+      {
+        "id": "t-83",
+        "category": "field-presence",
+        "entity": "facturasInválidas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Field 'invoice' should be present in facturasInválidas"
+      },
+      {
+        "id": "t-84",
+        "category": "field-presence",
+        "entity": "facturasInválidas",
+        "field": "verifactuSendingStatus",
+        "runner": "node",
+        "description": "Field 'verifactuSendingStatus' should be present in facturasInválidas"
+      },
+      {
+        "id": "t-85",
+        "category": "field-presence",
+        "entity": "facturasInválidas",
+        "field": "correctInvoice",
+        "runner": "node",
+        "description": "Field 'correctInvoice' should be present in facturasInválidas"
+      },
+      {
+        "id": "t-86",
+        "category": "field-type",
+        "entity": "facturasInválidas",
+        "field": "issuerTaxID",
+        "runner": "node",
+        "description": "Field 'issuerTaxID' should have type 'string' in facturasInválidas"
+      },
+      {
+        "id": "t-87",
+        "category": "field-type",
+        "entity": "facturasInválidas",
+        "field": "active",
+        "runner": "node",
+        "description": "Field 'active' should have type 'boolean' in facturasInválidas"
+      },
+      {
+        "id": "t-88",
+        "category": "field-type",
+        "entity": "facturasInválidas",
+        "field": "errorReason",
+        "runner": "node",
+        "description": "Field 'errorReason' should have type 'string' in facturasInválidas"
+      },
+      {
+        "id": "t-89",
+        "category": "field-type",
+        "entity": "facturasInválidas",
+        "field": "typeOperation",
+        "runner": "node",
+        "description": "Field 'typeOperation' should have type 'string' in facturasInválidas"
+      },
+      {
+        "id": "t-90",
+        "category": "field-type",
+        "entity": "facturasInválidas",
+        "field": "isSubsanation",
+        "runner": "node",
+        "description": "Field 'isSubsanation' should have type 'boolean' in facturasInválidas"
+      },
+      {
+        "id": "t-91",
+        "category": "field-type",
+        "entity": "facturasInválidas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Field 'invoice' should have type 'string' in facturasInválidas"
+      },
+      {
+        "id": "t-92",
+        "category": "field-type",
+        "entity": "facturasInválidas",
+        "field": "verifactuSendingStatus",
+        "runner": "node",
+        "description": "Field 'verifactuSendingStatus' should have type 'string' in facturasInválidas"
+      },
+      {
+        "id": "t-93",
+        "category": "field-type",
+        "entity": "facturasInválidas",
+        "field": "correctInvoice",
+        "runner": "node",
+        "description": "Field 'correctInvoice' should have type 'string' in facturasInválidas"
+      },
+      {
+        "id": "t-94",
+        "category": "visibility",
+        "entity": "facturasInválidas",
+        "runner": "node",
+        "description": "Entity 'facturasInválidas' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-95",
+        "category": "displaylogic-valid",
+        "entity": "facturasInválidas",
+        "field": "correctInvoice",
+        "runner": "node",
+        "description": "Display logic for 'correctInvoice' in facturasInválidas should be valid JS"
+      },
+      {
+        "id": "t-96",
+        "category": "displaylogic-evaluable",
+        "entity": "facturasInválidas",
+        "field": "correctInvoice",
+        "runner": "node",
+        "description": "Display logic for 'correctInvoice' in facturasInválidas should have evaluable flag"
+      },
+      {
+        "id": "t-97",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-98",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "verifactuConfig",
+        "runner": "node",
+        "description": "System field 'verifactuConfig' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-99",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-100",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-101",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-102",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "defaultQR",
+        "runner": "node",
+        "description": "System field 'defaultQR' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-103",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "inVfactuSystem",
+        "runner": "node",
+        "description": "System field 'inVfactuSystem' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-104",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "incidentReport",
+        "runner": "node",
+        "description": "System field 'incidentReport' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-105",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "isDevEnv",
+        "runner": "node",
+        "description": "System field 'isDevEnv' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-106",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "isReady",
+        "runner": "node",
+        "description": "System field 'isReady' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-107",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "systemStartat",
+        "runner": "node",
+        "description": "System field 'systemStartat' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-108",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "systemStopat",
+        "runner": "node",
+        "description": "System field 'systemStopat' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-109",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-110",
+        "category": "system-field",
+        "entity": "cabeceraDeEmisor",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for cabeceraDeEmisor"
+      },
+      {
+        "id": "t-111",
+        "category": "system-field",
+        "entity": "facturasRechazadas",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for facturasRechazadas"
+      },
+      {
+        "id": "t-112",
+        "category": "system-field",
+        "entity": "facturasRechazadas",
+        "field": "invoiceSentStatusID",
+        "runner": "node",
+        "description": "System field 'invoiceSentStatusID' should exist in backend but not frontend for facturasRechazadas"
+      },
+      {
+        "id": "t-113",
+        "category": "system-field",
+        "entity": "facturasRechazadas",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for facturasRechazadas"
+      },
+      {
+        "id": "t-114",
+        "category": "system-field",
+        "entity": "facturasRechazadas",
+        "field": "correctInvoice",
+        "runner": "node",
+        "description": "System field 'correctInvoice' should exist in backend but not frontend for facturasRechazadas"
+      },
+      {
+        "id": "t-115",
+        "category": "system-field",
+        "entity": "facturasRechazadas",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for facturasRechazadas"
+      },
+      {
+        "id": "t-116",
+        "category": "system-field",
+        "entity": "facturasRechazadas",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for facturasRechazadas"
+      },
+      {
+        "id": "t-117",
+        "category": "system-field",
+        "entity": "facturasRechazadas",
+        "field": "hash",
+        "runner": "node",
+        "description": "System field 'hash' should exist in backend but not frontend for facturasRechazadas"
+      },
+      {
+        "id": "t-118",
+        "category": "system-field",
+        "entity": "facturasRechazadas",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for facturasRechazadas"
+      },
+      {
+        "id": "t-119",
+        "category": "system-field",
+        "entity": "facturasRechazadas",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for facturasRechazadas"
+      },
+      {
+        "id": "t-120",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-121",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-122",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "invoiceSentStatusID",
+        "runner": "node",
+        "description": "System field 'invoiceSentStatusID' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-123",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "correctInvoice",
+        "runner": "node",
+        "description": "System field 'correctInvoice' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-124",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-125",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-126",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "cSV",
+        "runner": "node",
+        "description": "System field 'cSV' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-127",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "hash",
+        "runner": "node",
+        "description": "System field 'hash' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-128",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-129",
+        "category": "system-field",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+      },
+      {
+        "id": "t-130",
+        "category": "system-field",
+        "entity": "facturasAceptadas",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for facturasAceptadas"
+      },
+      {
+        "id": "t-131",
+        "category": "system-field",
+        "entity": "facturasAceptadas",
+        "field": "invoiceSentStatusID",
+        "runner": "node",
+        "description": "System field 'invoiceSentStatusID' should exist in backend but not frontend for facturasAceptadas"
+      },
+      {
+        "id": "t-132",
+        "category": "system-field",
+        "entity": "facturasAceptadas",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for facturasAceptadas"
+      },
+      {
+        "id": "t-133",
+        "category": "system-field",
+        "entity": "facturasAceptadas",
+        "field": "correctInvoice",
+        "runner": "node",
+        "description": "System field 'correctInvoice' should exist in backend but not frontend for facturasAceptadas"
+      },
+      {
+        "id": "t-134",
+        "category": "system-field",
+        "entity": "facturasAceptadas",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for facturasAceptadas"
+      },
+      {
+        "id": "t-135",
+        "category": "system-field",
+        "entity": "facturasAceptadas",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for facturasAceptadas"
+      },
+      {
+        "id": "t-136",
+        "category": "system-field",
+        "entity": "facturasAceptadas",
+        "field": "hash",
+        "runner": "node",
+        "description": "System field 'hash' should exist in backend but not frontend for facturasAceptadas"
+      },
+      {
+        "id": "t-137",
+        "category": "system-field",
+        "entity": "facturasAceptadas",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for facturasAceptadas"
+      },
+      {
+        "id": "t-138",
+        "category": "system-field",
+        "entity": "facturasAceptadas",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for facturasAceptadas"
+      },
+      {
+        "id": "t-139",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-140",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "invoiceSentStatusID",
+        "runner": "node",
+        "description": "System field 'invoiceSentStatusID' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-141",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-142",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "codeError",
+        "runner": "node",
+        "description": "System field 'codeError' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-143",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-144",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-145",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "cSV",
+        "runner": "node",
+        "description": "System field 'cSV' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-146",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "hash",
+        "runner": "node",
+        "description": "System field 'hash' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-147",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "sentToVerifactu",
+        "runner": "node",
+        "description": "System field 'sentToVerifactu' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-148",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-149",
+        "category": "system-field",
+        "entity": "facturasInválidas",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for facturasInválidas"
+      },
+      {
+        "id": "t-150",
+        "category": "rule-declared",
+        "rule": "AddNIFToVFactuConfig_AD_Org_ID",
+        "runner": "node",
+        "description": "Rule 'AddNIFToVFactuConfig_AD_Org_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-151",
+        "category": "rule-declared",
+        "runner": "node",
+        "description": "Rule 'undefined' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-152",
+        "category": "rule-declared",
+        "rule": "Corregir Factura",
+        "runner": "node",
+        "description": "Rule 'Corregir Factura' (process) should be declared"
+      },
+      {
+        "id": "t-153",
+        "category": "rule-declared",
+        "rule": "Marcar Como Listo",
+        "runner": "node",
+        "description": "Rule 'Marcar Como Listo' (process) should be declared"
+      },
+      {
+        "id": "t-154",
+        "category": "rule-declared",
+        "rule": "Refrescar monitor Verifactu",
+        "runner": "node",
+        "description": "Rule 'Refrescar monitor Verifactu' (process) should be declared"
+      },
+      {
+        "id": "t-155",
+        "category": "crud-flags",
+        "entity": "cabeceraDeEmisor",
+        "runner": "node",
+        "description": "CRUD flags for 'cabeceraDeEmisor' should all be booleans"
+      },
+      {
+        "id": "t-156",
+        "category": "crud-flags",
+        "entity": "facturasRechazadas",
+        "runner": "node",
+        "description": "CRUD flags for 'facturasRechazadas' should all be booleans"
+      },
+      {
+        "id": "t-157",
+        "category": "crud-flags",
+        "entity": "facturasParcialmenteAceptadas",
+        "runner": "node",
+        "description": "CRUD flags for 'facturasParcialmenteAceptadas' should all be booleans"
+      },
+      {
+        "id": "t-158",
+        "category": "crud-flags",
+        "entity": "facturasAceptadas",
+        "runner": "node",
+        "description": "CRUD flags for 'facturasAceptadas' should all be booleans"
+      },
+      {
+        "id": "t-159",
+        "category": "crud-flags",
+        "entity": "facturasInválidas",
+        "runner": "node",
+        "description": "CRUD flags for 'facturasInválidas' should all be booleans"
+      },
+      {
+        "id": "t-160",
+        "category": "selector-endpoint",
+        "entity": "facturasRechazadas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Selector endpoint for 'invoice' in facturasRechazadas should exist"
+      },
+      {
+        "id": "t-161",
+        "category": "selector-endpoint",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Selector endpoint for 'invoice' in facturasParcialmenteAceptadas should exist"
+      },
+      {
+        "id": "t-162",
+        "category": "selector-endpoint",
+        "entity": "facturasAceptadas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Selector endpoint for 'invoice' in facturasAceptadas should exist"
+      },
+      {
+        "id": "t-163",
+        "category": "selector-endpoint",
+        "entity": "facturasInválidas",
+        "field": "invoice",
+        "runner": "node",
+        "description": "Selector endpoint for 'invoice' in facturasInválidas should exist"
+      },
+      {
+        "id": "t-164",
+        "category": "action-endpoint",
+        "entity": "cabeceraDeEmisor",
+        "field": "refreshData",
+        "runner": "node",
+        "description": "Action endpoint for 'refreshData' in cabeceraDeEmisor should exist"
+      },
+      {
+        "id": "t-165",
+        "category": "action-endpoint",
+        "entity": "cabeceraDeEmisor",
+        "field": "isReady",
+        "runner": "node",
+        "description": "Action endpoint for 'isReady' in cabeceraDeEmisor should exist"
+      },
+      {
+        "id": "t-166",
+        "category": "action-endpoint",
+        "entity": "facturasRechazadas",
+        "field": "correctInvoice",
+        "runner": "node",
+        "description": "Action endpoint for 'correctInvoice' in facturasRechazadas should exist"
+      },
+      {
+        "id": "t-167",
+        "category": "action-endpoint",
+        "entity": "facturasParcialmenteAceptadas",
+        "field": "correctInvoice",
+        "runner": "node",
+        "description": "Action endpoint for 'correctInvoice' in facturasParcialmenteAceptadas should exist"
+      },
+      {
+        "id": "t-168",
+        "category": "action-endpoint",
+        "entity": "facturasAceptadas",
+        "field": "correctInvoice",
+        "runner": "node",
+        "description": "Action endpoint for 'correctInvoice' in facturasAceptadas should exist"
+      },
+      {
+        "id": "t-169",
+        "category": "action-endpoint",
+        "entity": "facturasInválidas",
+        "field": "correctInvoice",
+        "runner": "node",
+        "description": "Action endpoint for 'correctInvoice' in facturasInválidas should exist"
+      }
+    ],
+    "summary": {
+      "total": 169,
+      "byCategory": {
+        "field-presence": 42,
+        "field-type": 42,
+        "visibility": 5,
+        "readonlylogic-valid": 1,
+        "readonlylogic-evaluable": 1,
+        "default-value-type": 3,
+        "displaylogic-valid": 1,
+        "displaylogic-evaluable": 1,
+        "system-field": 53,
+        "rule-declared": 5,
+        "crud-flags": 5,
+        "selector-endpoint": 4,
+        "action-endpoint": 6
+      },
+      "byRunner": {
+        "node": 169,
+        "junit": 0
+      }
+    }
+  }
+}

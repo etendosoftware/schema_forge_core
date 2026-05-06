@@ -1,0 +1,21 @@
+{
+  "$schema": "decisions-v2",
+  "window": {
+    "category": "monitor",
+    "name": "TBAI Facturas Enviadas"
+  },
+  "entities": {
+    "sincronización": {
+      "fields": {
+        "organization": { "visibility": "system", "derivation": "fromParent" },
+        "client": { "visibility": "system", "derivation": "fromParent" }
+      }
+    },
+    "resultadoValidación": {
+      "fields": {
+        "organization": { "visibility": "system", "derivation": "fromParent" },
+        "client": { "visibility": "system", "derivation": "fromParent" }
+      }
+    }
+  }
+}

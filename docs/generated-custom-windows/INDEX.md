@@ -9,7 +9,6 @@ This folder is the entry point for documentation that describes how generated an
 | File | Description |
 |------|-------------|
 | [app-shell-functional-flows.md](app-shell-functional-flows.md) | Cross-window functional guide for app-shell routes, generated/custom window loading, shared entity behavior, OAuth2 screens, and PWA update/recovery flows |
-| [app-store.md](app-store.md) | Hidden App Store surface for installing SDK apps and injecting their menu entries |
 
 | [2026-04-23-epic-etp-3504-merge-changelog.md](2026-04-23-epic-etp-3504-merge-changelog.md) | Window-level change log for the `epic/ETP-3504` -> `develop` merge, focused on user-visible generated/custom window deltas |
 
@@ -88,6 +87,7 @@ This folder is the entry point for documentation that describes how generated an
 | [unit-of-measure.md](unit-of-measure.md) | Generated unit-of-measure window with conversion metadata notes |
 | [user.md](user.md) | Generated user window with roles child surface and defaults dependencies |
 | [fiscal-config.md](fiscal-config.md) | Custom fiscal configuration window — onboarding wizard (SII/TBAI/Verifactu) and ongoing config maintenance |
+| [fiscal-monitor.md](fiscal-monitor.md) | Custom fiscal monitor window — real-time invoice submission status for SII, TBAI, and Verifactu |
 
 ## Scope
 

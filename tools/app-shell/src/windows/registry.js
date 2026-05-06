@@ -1,5 +1,4 @@
 import menuConfig from '../menu.json' with { type: 'json' };
-import { APP_CATALOG } from '../apps-registry.js';
 
 /**
  * Known window loaders -- maps slug to dynamic import.
@@ -52,61 +51,23 @@ const windowLoaders = {
 };
 
 /**
- * Return the 2-level menu groups, merging installed SDK apps into the
- * group declared by each menu entry. Groups or items with hidden: true
- * are excluded by default; the `Marketplace` group is force-shown when
- * the easter-egg flag `appStoreUnlocked` is true.
- *
- * @param {string[]} [installedAppIds] — appIds present in the installed-apps
- *   store. External apps only appear in the menu when their id is here.
- * @param {{ appStoreUnlocked?: boolean }} [options]
+ * Return the 2-level menu groups from menu.json.
+ * Groups or items with hidden: true are excluded.
  */
-export function buildMenuGroups(installedAppIds = [], options = {}) {
-  const { appStoreUnlocked = false } = options;
-  const installedSet = new Set(installedAppIds);
-  const extraByGroup = new Map();
-  for (const app of APP_CATALOG) {
-    if (!installedSet.has(app.appId)) continue;
-    for (const entry of app.menuEntries) {
-      // Each entry may override the app's default menuGroup so one app
-      // can add a sales item under Sales and a purchase item under
-      // Purchases without needing a single shared group.
-      const targetGroup = entry.menuGroup || app.menuGroup;
-      if (!extraByGroup.has(targetGroup)) extraByGroup.set(targetGroup, []);
-      extraByGroup.get(targetGroup).push({ ...entry });
-    }
-  }
-
+export function buildMenuGroups() {
   return menuConfig.menu
-    .filter(group => {
-      if (group.hidden && group.group === 'Marketplace' && appStoreUnlocked) return true;
-      return !group.hidden;
-    })
-    .map(group => {
-      const extras = extraByGroup.get(group.group) || [];
-      return {
-        ...group,
-        items: [
-          ...group.items.filter(item => !item.hidden),
-          ...extras,
-        ],
-      };
-    });
+    .filter(group => !group.hidden)
+    .map(group => ({
+      ...group,
+      items: group.items.filter(item => !item.hidden),
+    }));
 }
 
 /**
- * Flat list of all window slugs from menu.json plus every potential menu
- * entry from the app catalog (so route resolution never fails for an app
- * that happens to be installed).
+ * Flat list of all window slugs from menu.json.
  */
 export function getAllWindowNames() {
-  const names = menuConfig.menu.flatMap(g => g.items.map(i => i.name));
-  for (const app of APP_CATALOG) {
-    for (const entry of app.menuEntries) {
-      if (!names.includes(entry.name)) names.push(entry.name);
-    }
-  }
-  return names;
+  return menuConfig.menu.flatMap(g => g.items.map(i => i.name));
 }
 
 /**
@@ -119,6 +80,9 @@ export const apiOnlyWindows = new Set([
   'sii-config',
   'tbai-config',
   'verifactu-config',
+  'sii-monitor',
+  'monitor-verifactu',
+  'tbai-facturas-enviadas',
 ]);
 
 /**
@@ -130,6 +94,7 @@ export const apiOnlyWindows = new Set([
 const customLoaders = {
   // Auto-registered by pipeline when layoutType: "custom"
   'fiscal-config': () => import('./custom/fiscal-config/index.jsx'),
+  'fiscal-monitor': () => import('./custom/fiscal-monitor/index.jsx'),
   'sales-order': () => import('./custom/sales-order/index.jsx'),
   'price-list': () => import('./custom/price-list/index.jsx'),
   'purchase-invoice': () => import('./custom/purchase-invoice/index.jsx'),
@@ -142,37 +107,24 @@ const customLoaders = {
   'sales-invoice': () => import('./custom/sales-invoice/index.jsx'),
   'sales-quotation': () => import('./custom/sales-quotation/index.jsx'),
   'warehouse': () => import('./custom/warehouse/index.jsx'),
-  'spike-hello-app': () => import('./spike-apps-host/index.jsx'),
-  'quick-order-sales': () => import('./quick-order/index.jsx'),
-  'quick-order-purchase': () => import('./quick-order/index.jsx'),
 };
 
 /**
- * Build window map with loaders for all windows in menu.json plus every
- * SDK-app menu entry from the catalog (so installing an app from the
- * App Store never hits PlaceholderWindow on first render).
- *
+ * Build window map with loaders for all windows in menu.json.
  * Resolution order: customLoaders > windowLoaders > PlaceholderWindow
  */
 export function buildWindowMap() {
   const map = {};
-  const register = (item) => {
-    map[item.name] = {
-      name: item.name,
-      label: item.label,
-      contract: null,
-      loader: customLoaders[item.name]
-        || windowLoaders[item.name]
-        || (() => import('./PlaceholderWindow.jsx')),
-    };
-  };
-
   for (const group of menuConfig.menu) {
-    for (const item of group.items) register(item);
-  }
-  for (const app of APP_CATALOG) {
-    for (const entry of app.menuEntries) {
-      if (!map[entry.name]) register(entry);
+    for (const item of group.items) {
+      map[item.name] = {
+        name: item.name,
+        label: item.label,
+        contract: null,
+        loader: customLoaders[item.name]
+          || windowLoaders[item.name]
+          || (() => import('./PlaceholderWindow.jsx')),
+      };
     }
   }
   return map;
