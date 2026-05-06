@@ -1229,9 +1229,10 @@ export function DataTable({
               {visibleColumns.map(col => {
                 const colLabel = resolveColumnLabel(col, locale, t);
                 const isSorted = sortColumn === col.key;
+                const isSortable = col.sortable !== false;
                 return (
                   <TableHead key={col.key} className="align-middle">
-                    {onSort ? (
+                    {onSort && isSortable ? (
                         <button
                           type="button"
                           className="text-xs leading-4 font-semibold text-text-primary tracking-normal cursor-pointer select-none transition-colors bg-transparent border-0 p-0 text-left"

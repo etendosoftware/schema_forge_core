@@ -43,7 +43,15 @@
       "processValue": "CO",
       "label": "Confirm"
     },
-    "dateFilterKey": "invoiceDate"
+    "dateFilterKey": "invoiceDate",
+    "labelOverrides": {
+      "en_US": {
+        "EM_Etgo_Due_Date": "Due Date"
+      },
+      "es_ES": {
+        "EM_Etgo_Due_Date": "Vencimiento"
+      }
+    }
   },
   "entities": {
     "header": {
@@ -178,6 +186,13 @@
           "gridOrder": 6,
           "form": false,
           "section": "summary"
+        },
+        "eTGODueDate": {
+          "visibility": "readOnly",
+          "grid": true,
+          "gridOrder": 7,
+          "form": false,
+          "searchable": true
         },
         "isPaid": {
           "visibility": "readOnly",

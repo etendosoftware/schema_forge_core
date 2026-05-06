@@ -22,10 +22,12 @@ const breadcrumb = 'Purchases / Purchase Invoice';
 
 const labelOverrides = {
   "es_ES": {
-    "POReference": "Nº documento"
+    "POReference": "Nº documento",
+    "EM_Etgo_Due_Date": "Vencimiento"
   },
   "en_US": {
-    "POReference": "Document No."
+    "POReference": "Document No.",
+    "EM_Etgo_Due_Date": "Due Date"
   }
 };
 
@@ -94,7 +96,8 @@ export const api = {
         "invoiceDate",
         "businessPartner",
         "orderReference",
-        "documentStatus"
+        "documentStatus",
+        "eTGODueDate"
       ]
     },
     "lines": {
@@ -803,10 +806,12 @@ export const api = {
   },
   "labelOverrides": {
     "es_ES": {
-      "POReference": "Nº documento"
+      "POReference": "Nº documento",
+      "EM_Etgo_Due_Date": "Vencimiento"
     },
     "en_US": {
-      "POReference": "Document No."
+      "POReference": "Document No.",
+      "EM_Etgo_Due_Date": "Due Date"
     }
   }
 };

@@ -57,6 +57,11 @@ Per-locale field label overrides. When the simplified interface needs to rename 
 **How to use:**
 - Pass `spec?.window?.labelOverrides` to `useLabel()` in components that have access to the loaded spec
 - `resolve-curated.js` forwards `labelOverrides` to `schema.window.labelOverrides` automatically
+- Generated pages forward `labelOverrides` to `ListView`, which threads it down to:
+  - `DataTable` (column headers)
+  - The sort dropdown ("Ordenar por")
+  - `ListFilterBar` → `AdvancedFilterBuilder` (column selector and "Selector de {label}" header in the funnel popover)
+  - `DetailView` and `EntityForm` (form labels)
 
 ## Window Properties (`window.*`)
 
