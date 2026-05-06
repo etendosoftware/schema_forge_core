@@ -1,8 +1,8 @@
 {
-  "version": "0.16.0",
+  "version": "0.17.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-06T14:48:46.877Z",
-  "checksum": "6bb778657bea4850",
+  "updatedAt": "2026-05-06T18:53:41.264Z",
+  "checksum": "c467ef8dbf089d54",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -684,17 +684,16 @@
             "defaultValue": "0"
           },
           {
-            "name": "eTGODueDate",
-            "apiKey": "eTGODueDate",
-            "column": "em_etgo_due_date",
-            "label": "em_etgo_due_date",
-            "type": "date",
-            "tsType": "string",
-            "visibility": "readOnly",
+            "name": "etgoTotalDiscount",
+            "apiKey": "etgoTotalDiscount",
+            "column": "EM_Etgo_Total_Discount",
+            "label": "Total Discount %",
+            "type": "decimal",
+            "tsType": "number",
+            "visibility": "editable",
             "required": false,
-            "grid": true,
-            "form": false,
-            "gridOrder": 7
+            "grid": false,
+            "form": false
           }
         ],
         "searchableFields": [
@@ -702,8 +701,7 @@
           "invoiceDate",
           "businessPartner",
           "orderReference",
-          "documentStatus",
-          "eTGODueDate"
+          "documentStatus"
         ],
         "computedFields": [
           {
@@ -1338,12 +1336,12 @@
                 "name": "Arrendamiento financiero (alquiler­compra)"
               },
               {
-                "value": "INTRES_14",
-                "name": "Compras por particulares"
-              },
-              {
                 "value": "INTRES_11",
                 "name": "Compra/venta en firme"
+              },
+              {
+                "value": "INTRES_14",
+                "name": "Compras por particulares"
               },
               {
                 "value": "INTRES_21",
@@ -1370,12 +1368,12 @@
                 "name": "Operaciones tras el trabajo por encargo"
               },
               {
-                "value": "INTRES_32",
-                "name": "Otras entregas de ayuda gubernamental"
-              },
-              {
                 "value": "INTRES_33",
                 "name": "Otras entregas de ayuda (particulares, orgs. no gubernamenta"
+              },
+              {
+                "value": "INTRES_32",
+                "name": "Otras entregas de ayuda gubernamental"
               },
               {
                 "value": "INTRES_90",
@@ -1620,20 +1618,20 @@
                 "name": "MURCIA AEROPUERTO"
               },
               {
-                "value": "INTRES_1711",
-                "name": "PALAMOS MARITIMA"
-              },
-              {
-                "value": "INTRES_2011",
-                "name": "PASAJES MARITIMA"
+                "value": "INTRES_0711",
+                "name": "P . MALLORCA MARITIMA"
               },
               {
                 "value": "INTRES_0701",
                 "name": "P. MALLORCA AEROPUERTO"
               },
               {
-                "value": "INTRES_0711",
-                "name": "P . MALLORCA MARITIMA"
+                "value": "INTRES_1711",
+                "name": "PALAMOS MARITIMA"
+              },
+              {
+                "value": "INTRES_2011",
+                "name": "PASAJES MARITIMA"
               },
               {
                 "value": "INTRES_1121",
@@ -4455,11 +4453,11 @@
             "required": true
           },
           {
-            "name": "eTGODueDate",
-            "apiKey": "eTGODueDate",
-            "column": "em_etgo_due_date",
-            "type": "date",
-            "visibility": "readOnly",
+            "name": "etgoTotalDiscount",
+            "apiKey": "etgoTotalDiscount",
+            "column": "EM_Etgo_Total_Discount",
+            "type": "decimal",
+            "visibility": "editable",
             "required": false
           }
         ],
@@ -6948,8 +6946,7 @@
           "invoiceDate",
           "businessPartner",
           "orderReference",
-          "documentStatus",
-          "eTGODueDate"
+          "documentStatus"
         ]
       },
       {
@@ -7327,8 +7324,7 @@
           "invoiceDate",
           "businessPartner",
           "orderReference",
-          "documentStatus",
-          "eTGODueDate"
+          "documentStatus"
         ]
       },
       "lines": {
@@ -8965,12 +8961,12 @@
         "description": "Field 'dueAmount' should be present in header"
       },
       {
-        "id": "t-field-presence-header-eTGODueDate",
+        "id": "t-field-presence-header-etgoTotalDiscount",
         "category": "field-presence",
         "entity": "header",
-        "field": "eTGODueDate",
+        "field": "etgoTotalDiscount",
         "runner": "node",
-        "description": "Field 'eTGODueDate' should be present in header"
+        "description": "Field 'etgoTotalDiscount' should be present in header"
       },
       {
         "id": "t-field-presence-header-grandTotalAmount",
@@ -9949,12 +9945,12 @@
         "description": "Field 'dueAmount' should have type 'number' in header"
       },
       {
-        "id": "t-field-type-header-eTGODueDate",
+        "id": "t-field-type-header-etgoTotalDiscount",
         "category": "field-type",
         "entity": "header",
-        "field": "eTGODueDate",
+        "field": "etgoTotalDiscount",
         "runner": "node",
-        "description": "Field 'eTGODueDate' should have type 'string' in header"
+        "description": "Field 'etgoTotalDiscount' should have type 'number' in header"
       },
       {
         "id": "t-field-type-header-grandTotalAmount",
@@ -11542,14 +11538,6 @@
         "field": "documentStatus",
         "runner": "node",
         "description": "Field 'documentStatus' should be a supported filter for header"
-      },
-      {
-        "id": "t-searchable-filters-header-eTGODueDate",
-        "category": "searchable-filters",
-        "entity": "header",
-        "field": "eTGODueDate",
-        "runner": "node",
-        "description": "Field 'eTGODueDate' should be a supported filter for header"
       },
       {
         "id": "t-searchable-filters-header-invoiceDate",
@@ -14693,7 +14681,7 @@
       }
     ],
     "summary": {
-      "total": 836,
+      "total": 835,
       "byCategory": {
         "action-endpoint": 24,
         "crud-flags": 12,
@@ -14705,13 +14693,13 @@
         "readonlylogic-evaluable": 48,
         "readonlylogic-valid": 48,
         "rule-declared": 21,
-        "searchable-filters": 6,
+        "searchable-filters": 5,
         "selector-endpoint": 47,
         "system-field": 333,
         "visibility": 12
       },
       "byRunner": {
-        "node": 836,
+        "node": 835,
         "junit": 0
       }
     }
