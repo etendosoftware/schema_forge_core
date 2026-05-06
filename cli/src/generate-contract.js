@@ -2,6 +2,26 @@ import { createHash } from 'node:crypto';
 import { toSpecName } from './push-to-neo.js';
 import { autoSimplifyEntityName } from './resolve-curated.js';
 
+// Slug helper for deterministic test IDs: collapse non-alphanumerics to hyphens, trim.
+const slug = (s) => String(s ?? '')
+  .replace(/[^A-Za-z0-9]+/g, '-')
+  .replace(/(?:^-)|(?:-$)/g, '');
+
+// Factory for monotonically-disambiguating ID maker. Each call returns a fresh closure
+// so different generators don't share state.
+function createIdMaker() {
+  const seenIds = new Set();
+  return (...parts) => {
+    const base = `t-${parts.map(slug).filter(Boolean).join('-')}`;
+    if (!seenIds.has(base)) { seenIds.add(base); return base; }
+    let n = 2;
+    while (seenIds.has(`${base}-${n}`)) n++;
+    const id = `${base}-${n}`;
+    seenIds.add(id);
+    return id;
+  };
+}
+
 const TS_TYPE_MAP = {
   string: 'string',
   integer: 'number',
@@ -364,17 +384,7 @@ export function generateBackendContract(schema, rules = [], processes = []) {
  */
 export function generateTestManifest(frontendContract, backendContract, rules = [], processes = []) {
   const tests = [];
-  const slug = (s) => String(s ?? '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const seenIds = new Set();
-  const makeId = (...parts) => {
-    const base = `t-${parts.map(slug).filter(Boolean).join('-')}`;
-    if (!seenIds.has(base)) { seenIds.add(base); return base; }
-    let n = 2;
-    while (seenIds.has(`${base}-${n}`)) n++;
-    const id = `${base}-${n}`;
-    seenIds.add(id);
-    return id;
-  };
+  const makeId = createIdMaker();
 
   // Derive system fields from backend minus frontend
   for (const [entityName, entityData] of Object.entries(frontendContract.entities)) {
@@ -705,28 +715,52 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
 }
 
 /**
+ * Lock field order per entity to the previous contract so UI generation stays stable
+ * across re-extractions. Uses the previous backend contract as canonical order (superset
+ * including system/discarded fields). New fields land at the end (alpha-sorted); removed
+ * fields drop out naturally. Duplicate field names are matched sequentially.
+ */
+function lockFieldOrderToPreviousContract(schema, previousContract) {
+  const prevBE = previousContract?.backendContract?.entities;
+  if (!prevBE) return;
+  for (const entity of schema.entities ?? []) {
+    const prevFields = prevBE[entity.name]?.fields;
+    if (!Array.isArray(entity.fields) || !Array.isArray(prevFields) || prevFields.length === 0) continue;
+    entity.fields = reorderFieldsByPrev(entity.fields, prevFields);
+  }
+}
+
+function reorderFieldsByPrev(currentFields, prevFields) {
+  const positionsByName = new Map();
+  prevFields.forEach((f, i) => {
+    if (!positionsByName.has(f.name)) positionsByName.set(f.name, []);
+    positionsByName.get(f.name).push(i);
+  });
+  const consumed = new Map();
+  const rank = new WeakMap();
+  for (const f of currentFields) {
+    const positions = positionsByName.get(f.name);
+    const used = consumed.get(f.name) ?? 0;
+    if (positions && used < positions.length) {
+      rank.set(f, positions[used]);
+      consumed.set(f.name, used + 1);
+    } else {
+      rank.set(f, Infinity);
+    }
+  }
+  return currentFields.slice().sort((a, b) => {
+    const ia = rank.get(a);
+    const ib = rank.get(b);
+    if (ia !== ib) return ia - ib;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+}
+
+/**
  * Main orchestrator: generates the full contract object.
  */
 export function generateContract(schema, rules = [], processes = [], previousVersion = null, previousContract = null) {
-  // Lock field order per entity to the previous contract so UI generation stays stable
-  // across re-extractions. Use the previous backend contract as the canonical order
-  // (it is the superset including system/discarded fields). New fields land at the end
-  // (alpha-sorted as tiebreaker); removed fields drop out naturally.
-  if (previousContract?.backendContract?.entities) {
-    const prevBE = previousContract.backendContract.entities;
-    for (const entity of schema.entities ?? []) {
-      if (!Array.isArray(entity.fields)) continue;
-      const prevFields = prevBE[entity.name]?.fields;
-      if (!Array.isArray(prevFields) || prevFields.length === 0) continue;
-      const prevIdx = new Map(prevFields.map((f, i) => [f.name, i]));
-      entity.fields = entity.fields.slice().sort((a, b) => {
-        const ia = prevIdx.has(a.name) ? prevIdx.get(a.name) : Infinity;
-        const ib = prevIdx.has(b.name) ? prevIdx.get(b.name) : Infinity;
-        if (ia !== ib) return ia - ib;
-        return (a.name || '').localeCompare(b.name || '');
-      });
-    }
-  }
+  lockFieldOrderToPreviousContract(schema, previousContract);
 
   const frontendContract = generateFrontendContract(schema, rules);
   const backendContract = generateBackendContract(schema, rules, processes);
@@ -872,17 +906,7 @@ export function generateProcessContract(processRaw, previousContract = null) {
 
   // Build test manifest with deterministic IDs
   const tests = [];
-  const slug = (s) => String(s ?? '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const seenIds = new Set();
-  const makeId = (...parts) => {
-    const base = `t-${parts.map(slug).filter(Boolean).join('-')}`;
-    if (!seenIds.has(base)) { seenIds.add(base); return base; }
-    let n = 2;
-    while (seenIds.has(`${base}-${n}`)) n++;
-    const id = `${base}-${n}`;
-    seenIds.add(id);
-    return id;
-  };
+  const makeId = createIdMaker();
 
   for (const param of parameters) {
     tests.push({

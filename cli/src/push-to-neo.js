@@ -249,7 +249,35 @@ export async function pushToNeo(windowName, options = {}) {
   const projectRoot = options.projectRoot || ROOT;
   const artifactsDir = join(projectRoot, 'artifacts', windowName);
 
-  // Load artifacts
+  const { contract, schemaRawData, decisionsData } = await loadPushArtifacts(artifactsDir, windowName);
+  const windowId = resolveWindowId(schemaRawData, contract, options);
+  const windowDisplayName = schemaRawData.window.name;
+  const specName = windowName;
+  const fieldDefaultExprs = buildFieldDefaultExprMap(decisionsData);
+  const allFields = extractFieldsFromContract(contract.backendContract);
+
+  if (options.dryRun === true) {
+    return reportDryRunPlan({ allFields, specName, windowId, windowDisplayName, windowName });
+  }
+
+  return executePushTransaction({
+    contract,
+    schemaRawData,
+    allFields,
+    fieldDefaultExprs,
+    specName,
+    windowId,
+    moduleId: options.moduleId || '94E1B433CF55451EABB764750AC5902A',
+    auditOpts: options.audit || {},
+    dbConfig: options.dbConfig,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// pushToNeo helpers (private)
+// ---------------------------------------------------------------------------
+
+async function loadPushArtifacts(artifactsDir, windowName) {
   let contractRaw, schemaRawJson;
   try {
     contractRaw = await readFile(join(artifactsDir, 'contract.json'), 'utf-8');
@@ -261,350 +289,110 @@ export async function pushToNeo(windowName, options = {}) {
   } catch (err) {
     throw new Error(`Cannot read schema-raw.json for window '${windowName}': ${err.message}`);
   }
-
-  const contract = JSON.parse(contractRaw);
-  const schemaRawData = JSON.parse(schemaRawJson);
-
-  let windowId = schemaRawData.window.id;
-  if (options.overrideWindow) {
-    windowId = options.overrideWindow;
-  } else if (contract.backendContract?.window?.id) {
-    windowId = contract.backendContract.window.id;
-  }
-  const windowDisplayName = schemaRawData.window.name;
-  // Use the artifact slug (windowName) as spec name so it matches the frontend route
-  const specName = windowName;
-
-  // Load decisions.json for per-field overrides (e.g. defaultExpr)
   let decisionsData = {};
   try {
     const decisionsRaw = await readFile(join(artifactsDir, 'decisions.json'), 'utf-8');
     decisionsData = JSON.parse(decisionsRaw);
   } catch { /* optional — not all windows have decisions.json */ }
+  return {
+    contract: JSON.parse(contractRaw),
+    schemaRawData: JSON.parse(schemaRawJson),
+    decisionsData,
+  };
+}
 
-  // Build map: "entityName.fieldName" -> defaultExpr (from decisions.json)
-  const fieldDefaultExprs = {};
+function resolveWindowId(schemaRawData, contract, options) {
+  if (options.overrideWindow) return options.overrideWindow;
+  if (contract.backendContract?.window?.id) return contract.backendContract.window.id;
+  return schemaRawData.window.id;
+}
+
+function buildFieldDefaultExprMap(decisionsData) {
+  const map = {};
   for (const [entityKey, entityConf] of Object.entries(decisionsData.entities || {})) {
     const entityName = entityConf.name || entityKey;
     for (const [fieldName, fieldConf] of Object.entries(entityConf.fields || {})) {
       if (fieldConf.defaultExpr != null) {
-        fieldDefaultExprs[`${entityName}.${fieldName}`] = fieldConf.defaultExpr;
+        map[`${entityName}.${fieldName}`] = fieldConf.defaultExpr;
       }
     }
   }
+  return map;
+}
 
-  // Extract all fields from backend contract
-  const allFields = extractFieldsFromContract(contract.backendContract);
+function reportDryRunPlan({ allFields, specName, windowId, windowDisplayName, windowName }) {
+  const plan = {
+    spec: { action: 'upsertSpec', params: { windowId, name: specName, specType: 'W' } },
+    populate: { action: 'populateSpec', params: { specId: '(from step 1)' } },
+    fields: allFields.map(f => {
+      const vis = mapVisibility(f.visibility);
+      return {
+        action: 'upsertField',
+        entityName: f.entityName,
+        params: { entityId: '(from populate)', column: f.column, isIncluded: vis.isIncluded, isReadOnly: vis.isReadOnly },
+      };
+    }),
+  };
 
-  // Dry run mode — plan generation without DB writes
-  if (options.dryRun === true) {
-    const plan = {
-      spec: {
-        action: 'upsertSpec',
-        params: { windowId, name: specName, specType: 'W' },
-      },
-      populate: {
-        action: 'populateSpec',
-        params: { specId: '(from step 1)' },
-      },
-      fields: allFields.map(f => {
-        const vis = mapVisibility(f.visibility);
-        return {
-          action: 'upsertField',
-          entityName: f.entityName,
-          params: {
-            entityId: '(from populate)',
-            column: f.column,
-            isIncluded: vis.isIncluded,
-            isReadOnly: vis.isReadOnly,
-          },
-        };
-      }),
-    };
+  console.log(`[DRY RUN] Push to NEO for window: ${windowDisplayName} (${windowName})`);
+  console.log(`  Spec name: ${specName}`);
+  console.log(`  Window ID: ${windowId}`);
+  console.log(`  Method: direct DB write`);
+  console.log(`\n  Step 1: upsertSpec`);
+  console.log(`    Params:`, plan.spec.params);
+  console.log(`\n  Step 2: populateSpec`);
+  console.log(`    Params: { specId: <returned from step 1> }`);
+  console.log(`\n  Step 3: ${plan.fields.length} field updates via upsertField`);
 
-    console.log(`[DRY RUN] Push to NEO for window: ${windowDisplayName} (${windowName})`);
-    console.log(`  Spec name: ${specName}`);
-    console.log(`  Window ID: ${windowId}`);
-    console.log(`  Method: direct DB write`);
-    console.log(`\n  Step 1: upsertSpec`);
-    console.log(`    Params:`, plan.spec.params);
-    console.log(`\n  Step 2: populateSpec`);
-    console.log(`    Params: { specId: <returned from step 1> }`);
-    console.log(`\n  Step 3: ${plan.fields.length} field updates via upsertField`);
+  const included = plan.fields.filter(f => f.params.isIncluded === 'Y');
+  const excluded = plan.fields.filter(f => f.params.isIncluded === 'N');
+  const readOnly = plan.fields.filter(f => f.params.isReadOnly === 'Y');
+  console.log(`    Included: ${included.length}, Excluded: ${excluded.length}, ReadOnly: ${readOnly.length}`);
 
-    const included = plan.fields.filter(f => f.params.isIncluded === 'Y');
-    const excluded = plan.fields.filter(f => f.params.isIncluded === 'N');
-    const readOnly = plan.fields.filter(f => f.params.isReadOnly === 'Y');
+  return {
+    dryRun: true,
+    specName,
+    windowId,
+    plan,
+    summary: {
+      totalFields: allFields.length,
+      included: included.length,
+      excluded: excluded.length,
+      readOnly: readOnly.length,
+    },
+  };
+}
 
-    console.log(`    Included: ${included.length}, Excluded: ${excluded.length}, ReadOnly: ${readOnly.length}`);
-
-    return {
-      dryRun: true,
-      specName,
-      windowId,
-      plan,
-      summary: {
-        totalFields: allFields.length,
-        included: included.length,
-        excluded: excluded.length,
-        readOnly: readOnly.length,
-      },
-    };
-  }
-
-  // Live mode — write to DB via transaction
-  const moduleId = options.moduleId || '94E1B433CF55451EABB764750AC5902A';
-  const auditOpts = options.audit || {};
-  const pool = createDbPool(options.dbConfig);
+async function executePushTransaction(ctx) {
+  const pool = createDbPool(ctx.dbConfig);
   const client = await pool.connect();
-
   try {
-    // Pre-flight: fail fast if the spec already has duplicate (entity, column)
-    // field rows. Running the push on duplicated data produces a non-deterministic
-    // Y/N flip across runs and a noisy ETGO_SF_FIELD.xml diff — better to surface
-    // it before any write so the developer can clean it up first.
-    const duplicates = await checkDuplicateFields(client, specName);
+    const duplicates = await checkDuplicateFields(client, ctx.specName);
     if (duplicates.length > 0) {
-      throw new Error(formatDuplicateFieldsError(specName, duplicates));
+      throw new Error(formatDuplicateFieldsError(ctx.specName, duplicates));
     }
 
     await client.query('BEGIN');
     await setGoModuleInDevelopment(client);
 
-    // Step 1: Upsert spec (look up existing spec first for idempotent updates)
-    const existingSpec = await client.query(
-      'SELECT etgo_sf_spec_id FROM etgo_sf_spec WHERE name = $1',
-      [specName],
-    );
-    const existingSpecId = existingSpec.rows.length > 0
-      ? existingSpec.rows[0].etgo_sf_spec_id
-      : null;
-    console.log(`[1/4] Upserting spec '${specName}' for window ${windowId}...`);
-    const specResult = await writerUpsertSpec(client, {
-      name: specName,
-      moduleId,
-      windowId,
-      specType: 'W',
-      specId: existingSpecId,
-      audit: auditOpts,
-    });
-    const specId = specResult.specId;
-    console.log(`       Spec ID: ${specId} (${specResult.created ? 'created' : 'updated'})`);
+    const specId = await stepUpsertSpec(client, ctx);
+    const popResult = await stepPopulateSpec(client, { ...ctx, specId });
+    const entityMaps = await buildEntityLookupMaps(client, popResult, specId, ctx.schemaRawData);
+    await renameEntitiesToContractNames(client, ctx, entityMaps);
 
-    // Step 2: Populate spec from AD metadata
-    console.log(`[2/4] Populating spec from AD metadata...`);
-    const popResult = await writerPopulateSpec(client, {
-      specId,
-      moduleId,
-      includeAllMethods: true,
-      audit: auditOpts,
-    });
+    const { successCount, errorCount, fieldResults } =
+      await stepUpdateFieldVisibility(client, ctx, entityMaps);
 
-    // Build entity lookup maps from populate result
-    // Primary: by tabId (exact match, safe for tabs sharing same table)
-    // Fallback 1: by tab name (AD tab display name, e.g. "Header", "Lines")
-    // Fallback 2: by tableName (e.g. "C_Order") — bridges curated names to AD tab names
-    const entityMapByTabId = {};
-    const entityMapByName = {};
-    const entityMapByTableName = {};
-    for (const ent of popResult.entities) {
-      if (ent.tabId) entityMapByTabId[ent.tabId] = ent.entityId;
-      entityMapByName[ent.name] = ent.entityId;
-    }
-
-    // Query DB to map populated entities to their table names (via ad_tab -> ad_table)
-    if (popResult.entities.length > 0) {
-      const tableNameQuery = await client.query(
-        `SELECT e.etgo_sf_entity_id, t.tablename, tab.seqno
-         FROM etgo_sf_entity e
-         JOIN ad_tab tab ON tab.ad_tab_id = e.ad_tab_id
-         JOIN ad_table t ON t.ad_table_id = tab.ad_table_id
-         WHERE e.etgo_sf_spec_id = $1
-         ORDER BY tab.seqno`,
-        [specId],
-      );
-      for (const row of tableNameQuery.rows) {
-        // If multiple entities share a table, keep the first one (lowest seqno)
-        if (!entityMapByTableName[row.tablename]) {
-          entityMapByTableName[row.tablename] = row.etgo_sf_entity_id;
-        }
-      }
-    }
-
-    // Build entity name -> tableName map from schema-raw (used for entity matching)
-    const curatedToTable = {};
-    if (schemaRawData.entities) {
-      for (const ent of schemaRawData.entities) {
-        if (ent.name && ent.tableName) {
-          curatedToTable[ent.name] = ent.tableName;
-        }
-      }
-    }
-
-    console.log(`       Entities populated: ${popResult.entityCount}, Fields: ${popResult.fieldCount}`);
-
-    // Rename entities to match contract names (e.g. "Header" → "order")
-    // Uses tabName (AD tab display name) as the primary key — unique within a window
-    // and handles tabs that share the same DB table correctly.
-    // Read entity names from the backend contract which reflects the resolved curated schema.
-    // java_qualifier is a CDI bean name (@Named) used by NeoServlet.lookupHandler
-    // to route to a specific NeoHandler. It is NOT the Hibernate entity FQN —
-    // schema-raw's entityFullClass would never match any @Named bean and would
-    // silently override hand-wired handlers. Only propagate values explicitly
-    // declared in decisions.json (which flow through backendContract).
-    const schemaEntities = (schemaRawData.entities || []).map((ent) => ({
-      name: ent.name,
-      tabName: ent.tabName,
-      tableName: ent.tableName,
-    }));
-    const desiredEntities = new Map(
-      schemaEntities
-        .filter((ent) => ent.tabName || ent.tableName)
-        .map((ent) => [ent.tabName || ent.tableName, { ...ent, javaQualifier: undefined }]),
-    );
-
-    if (contract.backendContract?.entities) {
-      for (const [name, data] of Object.entries(contract.backendContract.entities)) {
-        const schemaFallback = schemaEntities.find((ent) =>
-          ent.name === name
-          || (data.tabName && ent.tabName === data.tabName)
-          || (data.tableName && ent.tableName === data.tableName)
-        );
-        const tabOrTableKey = data.tabName || schemaFallback?.tabName || data.tableName || schemaFallback?.tableName;
-        if (!tabOrTableKey) continue;
-        desiredEntities.set(tabOrTableKey, {
-          name,
-          tabName: data.tabName || schemaFallback?.tabName || null,
-          tableName: data.tableName || schemaFallback?.tableName || null,
-          javaQualifier: data.javaQualifier ?? undefined,
-        });
-      }
-    }
-
-    if (desiredEntities.size > 0) {
-      for (const ent of desiredEntities.values()) {
-        const entityId = (ent.tabName && entityMapByName[ent.tabName])
-          || (ent.tableName && entityMapByTableName[ent.tableName]);
-        if (!entityId) continue;
-        if (ent.javaQualifier !== undefined) {
-          await client.query(
-            'UPDATE etgo_sf_entity SET name = $1, java_qualifier = $2 WHERE etgo_sf_entity_id = $3',
-            [ent.name, ent.javaQualifier, entityId],
-          );
-        } else {
-          // Preserve any existing java_qualifier set manually or by a NeoHandler wiring.
-          await client.query(
-            'UPDATE etgo_sf_entity SET name = $1 WHERE etgo_sf_entity_id = $2',
-            [ent.name, entityId],
-          );
-        }
-        entityMapByName[ent.name] = entityId;
-      }
-      console.log('       Entity names updated to contract names');
-    }
-
-    // Step 3: Update field visibility from contract
-    console.log(`[3/4] Updating ${allFields.length} fields from contract visibility...`);
-    let successCount = 0;
-    let errorCount = 0;
-    const fieldResults = [];
-
-    for (const f of allFields) {
-      // Match by tabId first (exact, handles same-table tabs),
-      // then by curated name (if AD tab name matches),
-      // then by tableName (bridges curated name -> table -> populated entity)
-      const tableForEntity = f.tableName || curatedToTable[f.entityName];
-      const entityId = (f.tabId && entityMapByTabId[f.tabId])
-        || entityMapByName[f.entityName]
-        || (tableForEntity && entityMapByTableName[tableForEntity]);
-      if (!entityId) {
-        console.warn(`  Warning: No entity ID found for '${f.entityName}', skipping field '${f.column}'`);
-        errorCount++;
-        fieldResults.push({ column: f.column, entityName: f.entityName, success: false, error: 'no entity' });
-        continue;
-      }
-
-      const vis = mapVisibility(f.visibility);
-
-      // Find the field by entity + column name (look up column ID first).
-      // ORDER BY makes the choice deterministic when duplicates exist;
-      // duplicates are also caught up-front by checkDuplicateFields() below.
-      const colLookup = await client.query(
-        `SELECT sf.etgo_sf_field_id
-         FROM etgo_sf_field sf
-         JOIN ad_column c ON c.ad_column_id = sf.ad_column_id
-         WHERE sf.etgo_sf_entity_id = $1 AND c.columnname = $2
-         ORDER BY sf.created, sf.etgo_sf_field_id`,
-        [entityId, f.column],
-      );
-
-      if (colLookup.rows.length === 0) {
-        // Field might have been excluded as a system column — skip silently
-        fieldResults.push({ column: f.column, entityName: f.entityName, success: true, skipped: true });
-        successCount++;
-        continue;
-      }
-
-      const fieldId = colLookup.rows[0].etgo_sf_field_id;
-      const defaultExprKey = `${f.entityName}.${f.fieldName}`;
-      // java_qualifier on a field is an API-key alias used by NeoFieldFilter ONLY when
-      // it differs from the DAL propName. Since f.fieldName comes from toPropertyName()
-      // and matches the DAL propName by construction, persisting it adds zero runtime
-      // effect, generates an UPDATE per field, and bloats sourcedata XML on export.
-      // upsertField() ignores undefined params and preserves the existing value, so
-      // explicit aliasing (if introduced later) can re-enable it via a different path.
-      const fieldParams = {
-        entityId,
-        fieldId,
-        moduleId,
-        isIncluded: vis.isIncluded,
-        isReadOnly: vis.isReadOnly,
-        audit: auditOpts,
-      };
-      if (defaultExprKey in fieldDefaultExprs) {
-        fieldParams.defaultValue = fieldDefaultExprs[defaultExprKey] || null;
-      }
-      await writerUpsertField(client, fieldParams);
-      fieldResults.push({ column: f.column, entityName: f.entityName, success: true });
-      successCount++;
-    }
-
-    // Step 4: Exclude all fields NOT in the contract
-    console.log(`[4/4] Excluding non-contract fields...`);
-    const contractColumns = new Set(allFields.map(f => f.column));
-    let excludedCount = 0;
-
-    for (const ent of popResult.entities) {
-      const entityId = ent.entityId;
-      const allEntityFields = await client.query(
-        `SELECT sf.etgo_sf_field_id, c.columnname
-         FROM etgo_sf_field sf
-         JOIN ad_column c ON c.ad_column_id = sf.ad_column_id
-         WHERE sf.etgo_sf_entity_id = $1 AND sf.isincluded = 'Y'`,
-        [entityId],
-      );
-
-      for (const row of allEntityFields.rows) {
-        if (!contractColumns.has(row.columnname)) {
-          await client.query(
-            `UPDATE etgo_sf_field SET isincluded = 'N', updated = now() WHERE etgo_sf_field_id = $1`,
-            [row.etgo_sf_field_id],
-          );
-          excludedCount++;
-        }
-      }
-    }
-    console.log(`       ${excludedCount} non-contract fields excluded.`);
+    const excludedCount = await stepExcludeNonContractFields(client, popResult, ctx.allFields);
 
     await client.query('COMMIT');
 
     console.log(`\nDone. ${successCount} fields updated, ${errorCount} errors, ${excludedCount} excluded.`);
-
     return {
       dryRun: false,
-      specName,
+      specName: ctx.specName,
       specId,
-      windowId,
+      windowId: ctx.windowId,
       entitiesPopulated: popResult.entityCount,
       fieldsUpdated: successCount,
       fieldsErrored: errorCount,
@@ -618,6 +406,201 @@ export async function pushToNeo(windowName, options = {}) {
     client.release();
     await closePool(pool);
   }
+}
+
+async function stepUpsertSpec(client, ctx) {
+  const existingSpec = await client.query(
+    'SELECT etgo_sf_spec_id FROM etgo_sf_spec WHERE name = $1',
+    [ctx.specName],
+  );
+  const existingSpecId = existingSpec.rows.length > 0 ? existingSpec.rows[0].etgo_sf_spec_id : null;
+  console.log(`[1/4] Upserting spec '${ctx.specName}' for window ${ctx.windowId}...`);
+  const specResult = await writerUpsertSpec(client, {
+    name: ctx.specName,
+    moduleId: ctx.moduleId,
+    windowId: ctx.windowId,
+    specType: 'W',
+    specId: existingSpecId,
+    audit: ctx.auditOpts,
+  });
+  console.log(`       Spec ID: ${specResult.specId} (${specResult.created ? 'created' : 'updated'})`);
+  return specResult.specId;
+}
+
+async function stepPopulateSpec(client, { specId, moduleId, auditOpts }) {
+  console.log(`[2/4] Populating spec from AD metadata...`);
+  const popResult = await writerPopulateSpec(client, {
+    specId,
+    moduleId,
+    includeAllMethods: true,
+    audit: auditOpts,
+  });
+  console.log(`       Entities populated: ${popResult.entityCount}, Fields: ${popResult.fieldCount}`);
+  return popResult;
+}
+
+async function buildEntityLookupMaps(client, popResult, specId, schemaRawData) {
+  const entityMapByTabId = {};
+  const entityMapByName = {};
+  const entityMapByTableName = {};
+  for (const ent of popResult.entities) {
+    if (ent.tabId) entityMapByTabId[ent.tabId] = ent.entityId;
+    entityMapByName[ent.name] = ent.entityId;
+  }
+  if (popResult.entities.length > 0) {
+    const tableNameQuery = await client.query(
+      `SELECT e.etgo_sf_entity_id, t.tablename, tab.seqno
+       FROM etgo_sf_entity e
+       JOIN ad_tab tab ON tab.ad_tab_id = e.ad_tab_id
+       JOIN ad_table t ON t.ad_table_id = tab.ad_table_id
+       WHERE e.etgo_sf_spec_id = $1
+       ORDER BY tab.seqno`,
+      [specId],
+    );
+    for (const row of tableNameQuery.rows) {
+      if (!entityMapByTableName[row.tablename]) {
+        entityMapByTableName[row.tablename] = row.etgo_sf_entity_id;
+      }
+    }
+  }
+  const curatedToTable = {};
+  for (const ent of (schemaRawData.entities || [])) {
+    if (ent.name && ent.tableName) curatedToTable[ent.name] = ent.tableName;
+  }
+  return { entityMapByTabId, entityMapByName, entityMapByTableName, curatedToTable };
+}
+
+function buildDesiredEntitiesMap(schemaRawData, contract) {
+  const schemaEntities = (schemaRawData.entities || []).map((ent) => ({
+    name: ent.name,
+    tabName: ent.tabName,
+    tableName: ent.tableName,
+  }));
+  const desired = new Map(
+    schemaEntities
+      .filter((ent) => ent.tabName || ent.tableName)
+      .map((ent) => [ent.tabName || ent.tableName, { ...ent, javaQualifier: undefined }]),
+  );
+  if (!contract.backendContract?.entities) return desired;
+  for (const [name, data] of Object.entries(contract.backendContract.entities)) {
+    const schemaFallback = schemaEntities.find((ent) =>
+      ent.name === name
+      || (data.tabName && ent.tabName === data.tabName)
+      || (data.tableName && ent.tableName === data.tableName)
+    );
+    const tabOrTableKey = data.tabName || schemaFallback?.tabName || data.tableName || schemaFallback?.tableName;
+    if (!tabOrTableKey) continue;
+    desired.set(tabOrTableKey, {
+      name,
+      tabName: data.tabName || schemaFallback?.tabName || null,
+      tableName: data.tableName || schemaFallback?.tableName || null,
+      javaQualifier: data.javaQualifier ?? undefined,
+    });
+  }
+  return desired;
+}
+
+async function renameEntitiesToContractNames(client, ctx, entityMaps) {
+  const desiredEntities = buildDesiredEntitiesMap(ctx.schemaRawData, ctx.contract);
+  if (desiredEntities.size === 0) return;
+  for (const ent of desiredEntities.values()) {
+    const entityId = (ent.tabName && entityMaps.entityMapByName[ent.tabName])
+      || (ent.tableName && entityMaps.entityMapByTableName[ent.tableName]);
+    if (!entityId) continue;
+    if (ent.javaQualifier !== undefined) {
+      await client.query(
+        'UPDATE etgo_sf_entity SET name = $1, java_qualifier = $2 WHERE etgo_sf_entity_id = $3',
+        [ent.name, ent.javaQualifier, entityId],
+      );
+    } else {
+      await client.query(
+        'UPDATE etgo_sf_entity SET name = $1 WHERE etgo_sf_entity_id = $2',
+        [ent.name, entityId],
+      );
+    }
+    entityMaps.entityMapByName[ent.name] = entityId;
+  }
+  console.log('       Entity names updated to contract names');
+}
+
+function resolveEntityIdForField(f, entityMaps) {
+  const tableForEntity = f.tableName || entityMaps.curatedToTable[f.entityName];
+  return (f.tabId && entityMaps.entityMapByTabId[f.tabId])
+    || entityMaps.entityMapByName[f.entityName]
+    || (tableForEntity && entityMaps.entityMapByTableName[tableForEntity]);
+}
+
+async function stepUpdateFieldVisibility(client, ctx, entityMaps) {
+  console.log(`[3/4] Updating ${ctx.allFields.length} fields from contract visibility...`);
+  let successCount = 0;
+  let errorCount = 0;
+  const fieldResults = [];
+  for (const f of ctx.allFields) {
+    const result = await upsertSingleField(client, f, ctx, entityMaps);
+    fieldResults.push(result);
+    if (result.success) successCount++; else errorCount++;
+  }
+  return { successCount, errorCount, fieldResults };
+}
+
+async function upsertSingleField(client, f, ctx, entityMaps) {
+  const entityId = resolveEntityIdForField(f, entityMaps);
+  if (!entityId) {
+    console.warn(`  Warning: No entity ID found for '${f.entityName}', skipping field '${f.column}'`);
+    return { column: f.column, entityName: f.entityName, success: false, error: 'no entity' };
+  }
+  const colLookup = await client.query(
+    `SELECT sf.etgo_sf_field_id
+     FROM etgo_sf_field sf
+     JOIN ad_column c ON c.ad_column_id = sf.ad_column_id
+     WHERE sf.etgo_sf_entity_id = $1 AND c.columnname = $2
+     ORDER BY sf.created, sf.etgo_sf_field_id`,
+    [entityId, f.column],
+  );
+  if (colLookup.rows.length === 0) {
+    return { column: f.column, entityName: f.entityName, success: true, skipped: true };
+  }
+  const vis = mapVisibility(f.visibility);
+  const fieldParams = {
+    entityId,
+    fieldId: colLookup.rows[0].etgo_sf_field_id,
+    moduleId: ctx.moduleId,
+    isIncluded: vis.isIncluded,
+    isReadOnly: vis.isReadOnly,
+    audit: ctx.auditOpts,
+  };
+  const defaultExprKey = `${f.entityName}.${f.fieldName}`;
+  if (defaultExprKey in ctx.fieldDefaultExprs) {
+    fieldParams.defaultValue = ctx.fieldDefaultExprs[defaultExprKey] || null;
+  }
+  await writerUpsertField(client, fieldParams);
+  return { column: f.column, entityName: f.entityName, success: true };
+}
+
+async function stepExcludeNonContractFields(client, popResult, allFields) {
+  console.log(`[4/4] Excluding non-contract fields...`);
+  const contractColumns = new Set(allFields.map(f => f.column));
+  let excludedCount = 0;
+  for (const ent of popResult.entities) {
+    const allEntityFields = await client.query(
+      `SELECT sf.etgo_sf_field_id, c.columnname
+       FROM etgo_sf_field sf
+       JOIN ad_column c ON c.ad_column_id = sf.ad_column_id
+       WHERE sf.etgo_sf_entity_id = $1 AND sf.isincluded = 'Y'`,
+      [ent.entityId],
+    );
+    for (const row of allEntityFields.rows) {
+      if (!contractColumns.has(row.columnname)) {
+        await client.query(
+          `UPDATE etgo_sf_field SET isincluded = 'N', updated = now() WHERE etgo_sf_field_id = $1`,
+          [row.etgo_sf_field_id],
+        );
+        excludedCount++;
+      }
+    }
+  }
+  console.log(`       ${excludedCount} non-contract fields excluded.`);
+  return excludedCount;
 }
 
 // ---------------------------------------------------------------------------
