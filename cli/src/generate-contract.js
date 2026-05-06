@@ -708,6 +708,26 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
  * Main orchestrator: generates the full contract object.
  */
 export function generateContract(schema, rules = [], processes = [], previousVersion = null, previousContract = null) {
+  // Lock field order per entity to the previous contract so UI generation stays stable
+  // across re-extractions. Use the previous backend contract as the canonical order
+  // (it is the superset including system/discarded fields). New fields land at the end
+  // (alpha-sorted as tiebreaker); removed fields drop out naturally.
+  if (previousContract?.backendContract?.entities) {
+    const prevBE = previousContract.backendContract.entities;
+    for (const entity of schema.entities ?? []) {
+      if (!Array.isArray(entity.fields)) continue;
+      const prevFields = prevBE[entity.name]?.fields;
+      if (!Array.isArray(prevFields) || prevFields.length === 0) continue;
+      const prevIdx = new Map(prevFields.map((f, i) => [f.name, i]));
+      entity.fields = entity.fields.slice().sort((a, b) => {
+        const ia = prevIdx.has(a.name) ? prevIdx.get(a.name) : Infinity;
+        const ib = prevIdx.has(b.name) ? prevIdx.get(b.name) : Infinity;
+        if (ia !== ib) return ia - ib;
+        return (a.name || '').localeCompare(b.name || '');
+      });
+    }
+  }
+
   const frontendContract = generateFrontendContract(schema, rules);
   const backendContract = generateBackendContract(schema, rules, processes);
   const testManifest = generateTestManifest(frontendContract, backendContract, rules, processes);

@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T19:05:52.312Z",
-  "updatedAt": "2026-05-05T18:50:47.097Z",
-  "checksum": "2c527152cd3acdf9",
+  "updatedAt": "2026-05-06T11:41:39.123Z",
+  "checksum": "26d437cfb33b6035",
   "frontendContract": {
     "window": {
       "id": "E547CE89D4C04429B6340FFA44E70716",
@@ -923,14 +923,6 @@
             "required": true
           },
           {
-            "name": "documentNo2",
-            "apiKey": "documentNo2",
-            "column": "DocumentNo",
-            "type": "string",
-            "visibility": "discarded",
-            "required": true
-          },
-          {
             "name": "active",
             "apiKey": "active",
             "column": "Isactive",
@@ -945,6 +937,14 @@
             "type": "foreignKey",
             "visibility": "discarded",
             "required": false
+          },
+          {
+            "name": "documentNo2",
+            "apiKey": "documentNo2",
+            "column": "DocumentNo",
+            "type": "string",
+            "visibility": "discarded",
+            "required": true
           },
           {
             "name": "documentNo2",
