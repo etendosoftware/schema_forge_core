@@ -1485,7 +1485,7 @@ export const paymentsSiiData = [
   }
 ];
 
-export const issuedInvoices(previousPeriod) = [
+export const issuedInvoicespreviousPeriod = [
   {
     "id": "mock-issuedInvoices(previousPeriod)-001",
     "aeatsiiInvoice": "Sample aeatsiiInvoice",
@@ -1788,7 +1788,7 @@ export const issuedInvoices(previousPeriod) = [
   }
 ];
 
-export const issuedInvoices(previousPeriod)SiiData = [
+export const issuedInvoicespreviousPeriodSiiData = [
   {
     "id": "mock-issuedInvoices(previousPeriod)SiiData-001",
     "invoice": "Sample invoice",
@@ -1947,7 +1947,7 @@ export const issuedInvoices(previousPeriod)SiiData = [
   }
 ];
 
-export const receivedInvoices(previousPeriod) = [
+export const receivedInvoicespreviousPeriod = [
   {
     "id": "mock-receivedInvoices(previousPeriod)-001",
     "aeatsiiInvoice": "Sample aeatsiiInvoice",
@@ -2262,7 +2262,7 @@ export const receivedInvoices(previousPeriod) = [
   }
 ];
 
-export const receivedInvoices(previousPeriod)SiiData = [
+export const receivedInvoicespreviousPeriodSiiData = [
   {
     "id": "mock-receivedInvoices(previousPeriod)SiiData-001",
     "invoice": "Sample invoice",
