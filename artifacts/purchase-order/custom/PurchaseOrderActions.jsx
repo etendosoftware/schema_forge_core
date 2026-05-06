@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { useUI } from '@/i18n';
+import { useUI, useMenuLabel } from '@/i18n';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -31,6 +31,7 @@ function Spinner() {
 export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl, onProcess }) {
   const navigate = useNavigate();
   const ui = useUI();
+  const tMenu = useMenuLabel();
   const [showConfirm,   setShowConfirm]   = useState(false);
   const [showSend,      setShowSend]      = useState(false);
   const [showActions,   setShowActions]   = useState(false);
@@ -203,10 +204,11 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
       )}
       {(isDraft || isCompleted) && showSend && createPortal(
         <SendDocumentModal
-          documentType="PurchaseOrder"
+          documentType={tMenu('Purchase Order')}
           documentNo={data?.documentNo}
           bpName={data?.['businessPartner$_identifier']}
-          bpEmail={data?.['userContact$_identifier']}
+          bPartnerId={data?.businessPartner}
+          apiBaseUrl={apiBaseUrl}
           documentId={recordId}
           windowName="purchase-order"
           token={token}

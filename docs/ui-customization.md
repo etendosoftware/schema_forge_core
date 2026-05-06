@@ -302,6 +302,31 @@ The generic `LinesEmptyState` component lives at `tools/app-shell/src/components
 
 ---
 
+### 12. `hideMoreMenu` — hide the "more" (⋮) button conditionally
+
+Hides the three-dot kebab button in the detail toolbar. Accepts either a **boolean** (static hide) or a **function** `({ data }) => boolean` (data-driven hide). The function form is evaluated on every render with the current record data.
+
+Passed directly as a JSX prop on `GeneratedApp` from the custom window wrapper — **not** a `decisions.json` option.
+
+```jsx
+// custom/index.jsx
+
+// Static — always hide:
+<GeneratedApp {...props} hideMoreMenu={true} />
+
+// Data-driven — hide when record is new or already processed:
+function hideMenu({ data }) {
+  return !data?.id || data?.processed === true || data?.processed === 'Y';
+}
+<GeneratedApp {...props} hideMoreMenu={hideMenu} />
+```
+
+Use this when menu actions are only valid for persisted, non-completed records (e.g. count-list generation on a Physical Inventory, actions that would produce invalid API calls with `recordId = 'new'`).
+
+**Real examples:** `physical-inventory` (hides ⋮ when `!data.id` or `data.processed`).
+
+---
+
 ## Decision tree: which option to use?
 
 ```
@@ -344,7 +369,8 @@ I need to customize the UI of a window
     ├─ → window.hideDeleteWhenComplete
     ├─ → window.relatedDocuments
     ├─ Empty state when lines tab is empty → linesEmptyState prop + addLineGuard
-    └─ Gate add-line button on header field → addLineGuard prop
+    ├─ Gate add-line button on header field → addLineGuard prop
+    └─ Hide ⋮ menu on new/processed records → hideMoreMenu prop (boolean or function)
 ```
 
 ---

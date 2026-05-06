@@ -153,159 +153,141 @@ function inferCategory(windowName) {
 // Field builder
 // ---------------------------------------------------------------------------
 
+const FIELD_DECISION_COPY_PROPS = [
+  'badgeLabels',
+  'badgeColors',
+  'badgeVariants',
+  'enumVariants',
+  'labels',
+  'columnType',
+  'display',
+  'cellType',
+];
+
+const FIELD_RAW_COPY_PROPS = [
+  'derivation',
+  'enumValues',
+  'processId',
+  'processType',
+];
+
+function resolveFieldVisibility(rawField, fieldDecision, discardPatterns) {
+  const columnName = rawField.columnName || rawField.column || '';
+  const discardedByPattern = isDiscardedByPattern(columnName, discardPatterns);
+  return fieldDecision.visibility || (discardedByPattern ? 'discarded' : rawField.visibility);
+}
+
+function decisionOrDefault(fieldDecision, key, defaults) {
+  return fieldDecision[key] !== undefined ? fieldDecision[key] : defaults[key];
+}
+
+function buildBaseField(rawField, fieldDecision, visibility) {
+  const defaults = visibilityDefaults(visibility);
+  const field = {
+    name: fieldDecision.name || rawField.name,
+    column: rawField.columnName,
+    label: fieldDecision.label || rawField.label,
+    type: fieldDecision.type || (rawField.type === 'id' ? 'id' : rawField.type),
+    visibility,
+    required: fieldDecision.required !== undefined ? fieldDecision.required : (rawField.mandatory || false),
+    grid: decisionOrDefault(fieldDecision, 'grid', defaults),
+    form: decisionOrDefault(fieldDecision, 'form', defaults),
+    searchable: decisionOrDefault(fieldDecision, 'searchable', defaults),
+  };
+  if (rawField.mandatory === true) field.sourceRequired = true;
+  return field;
+}
+
+function copyTruthyDecisionProps(field, fieldDecision, props) {
+  for (const prop of props) {
+    if (fieldDecision[prop]) field[prop] = fieldDecision[prop];
+  }
+}
+
+function copyRawProps(field, rawField, props) {
+  for (const prop of props) {
+    if (rawField[prop]) field[prop] = rawField[prop];
+  }
+}
+
+function applyFieldDecisionProps(field, fieldDecision) {
+  if (fieldDecision.section) field.section = fieldDecision.section;
+  if (fieldDecision.seq != null) field.seq = fieldDecision.seq;
+  if (fieldDecision.badge) field.badge = true;
+  if (fieldDecision.summable) field.summable = true;
+  if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
+  copyTruthyDecisionProps(field, fieldDecision, FIELD_DECISION_COPY_PROPS);
+}
+
+function applyForeignKeyProps(field, rawField, fieldDecision) {
+  if (rawField.type !== 'foreignKey') return;
+
+  if (fieldDecision.reference !== null) {
+    const catalogName = fieldDecision.reference
+      || autoDeriveCatalogName(rawField.reference?.targetTable)
+      || null;
+    if (catalogName) field.reference = catalogName;
+  }
+
+  if (fieldDecision.inputMode !== null) {
+    const dependsOn = fieldDecision.dependsOn || null;
+    field.inputMode = dependsOn ? 'dependent' : fieldDecision.inputMode || defaultInputMode(rawField);
+  }
+
+  const dependsOn = fieldDecision.dependsOn || null;
+  if (dependsOn) field.dependsOn = dependsOn;
+  if (fieldDecision.lookup) field.lookup = true;
+  if (fieldDecision.popup) field.popup = true;
+}
+
+function applyVisibleFieldProps(field, rawField, fieldDecision) {
+  const readOnlyLogic = fieldDecision.readOnlyLogic !== undefined
+    ? (fieldDecision.readOnlyLogic || rawField.readOnlyLogic || null)
+    : (rawField.readOnlyLogic || null);
+  if (readOnlyLogic) field.readOnlyLogic = readOnlyLogic;
+
+  if (fieldDecision.displayLogic !== null) {
+    const displayLogic = fieldDecision.displayLogic || rawField.displayLogic || null;
+    if (displayLogic) field.displayLogic = displayLogic;
+  }
+
+  if (fieldDecision.displayLogicJs != null) {
+    field.displayLogicJs = fieldDecision.displayLogicJs;
+  }
+  if (fieldDecision.readOnlyLogicJs != null) {
+    field.readOnlyLogicJs = fieldDecision.readOnlyLogicJs;
+  }
+  if (rawField.callout) field.callout = rawField.callout;
+  if (rawField.validationRule) field.validationRule = rawField.validationRule;
+}
+
+function isVisibleField(visibility) {
+  return visibility !== 'system' && visibility !== 'discarded';
+}
+
 /**
  * Build a curated field object from a raw field + merged decisions.
  * Prunes all null/undefined properties before returning.
  */
 function buildCuratedField(rawField, fieldDecision, discardPatterns) {
-  const columnName = rawField.columnName || rawField.column || '';
+  const visibility = resolveFieldVisibility(rawField, fieldDecision, discardPatterns);
+  const field = buildBaseField(rawField, fieldDecision, visibility);
+  const isVisible = isVisibleField(visibility);
 
-  // Check discard patterns first
-  const discardedByPattern = isDiscardedByPattern(columnName, discardPatterns);
-
-  let visibility = discardedByPattern ? 'discarded' : rawField.visibility;
-
-  // Apply decision visibility override — explicit decisions always win, even over discard patterns.
-  // This lets human decisions rescue specific EM_* fields that should remain visible.
-  if (fieldDecision.visibility) {
-    visibility = fieldDecision.visibility;
-  }
-
-  const defaults = visibilityDefaults(visibility);
-
-  // Merge: defaults <- raw overrides <- decision overrides
-  const grid = fieldDecision.grid !== undefined
-    ? fieldDecision.grid
-    : defaults.grid;
-
-  const form = fieldDecision.form !== undefined
-    ? fieldDecision.form
-    : defaults.form;
-
-  const searchable = fieldDecision.searchable !== undefined
-    ? fieldDecision.searchable
-    : defaults.searchable;
-
-  const required = fieldDecision.required !== undefined ? fieldDecision.required : (rawField.mandatory || false);
-
-  // Apply optional name override from decision
-  const fieldName = fieldDecision.name || rawField.name;
-
-  // Build the field object
-  const field = {
-    name: fieldName,
-    column: rawField.columnName,
-    label: fieldDecision.label || rawField.label,
-    type: fieldDecision.type || (rawField.type === 'id' ? 'id' : rawField.type),
-    visibility,
-    required,
-    grid,
-    form,
-    searchable,
-  };
-  if (rawField.mandatory === true) field.sourceRequired = true;
-
-  // Section (only for visible fields)
-  const section = fieldDecision.section || null;
-  if (section) field.section = section;
-
-  // Optional sequence override for UI ordering within section
-  if (fieldDecision.seq != null) field.seq = fieldDecision.seq;
-
-  // Visual hints — badge (boolean pill), summable (numeric footer total), columnType override
-  if (fieldDecision.badge) field.badge = true;
-  if (fieldDecision.badgeLabels) field.badgeLabels = fieldDecision.badgeLabels;
-  if (fieldDecision.badgeColors) field.badgeColors = fieldDecision.badgeColors;
-  if (fieldDecision.badgeVariants) field.badgeVariants = fieldDecision.badgeVariants;
-  if (fieldDecision.enumVariants) field.enumVariants = fieldDecision.enumVariants;
-  if (fieldDecision.labels) field.labels = fieldDecision.labels;
-  if (fieldDecision.summable) field.summable = true;
-  if (fieldDecision.columnType) field.columnType = fieldDecision.columnType;
-  if (fieldDecision.display) field.display = fieldDecision.display;
-  if (fieldDecision.cellType) field.cellType = fieldDecision.cellType;
-  if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
-
-  const isVisible = visibility !== 'system' && visibility !== 'discarded';
-
-  // FK-specific fields: only for visible fields
-  // Explicit null in decision means "omit this property" (migration carries over intentional removals)
-  if (rawField.type === 'foreignKey' && isVisible) {
-    if (fieldDecision.reference !== null) {
-      const catalogName = fieldDecision.reference
-        || autoDeriveCatalogName(rawField.reference?.targetTable)
-        || null;
-      if (catalogName) field.reference = catalogName;
-    }
-
-    // inputMode: explicit null in decision → omit; decision value → use it; otherwise auto
-    if (fieldDecision.inputMode !== null) {
-      const dependsOn = fieldDecision.dependsOn || null;
-      let inputMode;
-      if (dependsOn) {
-        inputMode = 'dependent';
-      } else {
-        inputMode = fieldDecision.inputMode || defaultInputMode(rawField);
-      }
-      field.inputMode = inputMode;
-    }
-
-    const dependsOn = fieldDecision.dependsOn || null;
-    if (dependsOn) field.dependsOn = dependsOn;
-
-    if (fieldDecision.lookup) field.lookup = true;
-    if (fieldDecision.popup) field.popup = true;
-  }
+  applyFieldDecisionProps(field, fieldDecision);
+  if (isVisible) applyForeignKeyProps(field, rawField, fieldDecision);
 
   // forceCalloutFields is not FK-specific — any visible field that triggers a callout
   // may declare which fields the callout result should always override.
   if (isVisible && Array.isArray(fieldDecision.forceCalloutFields) && fieldDecision.forceCalloutFields.length > 0)
     field.forceCalloutFields = fieldDecision.forceCalloutFields;
 
-  // derivation — carry from raw field
-  if (rawField.derivation) {
-    field.derivation = rawField.derivation;
-  }
-
   if (rawField.defaultValue !== undefined) {
     field.defaultValue = rawField.defaultValue;
   }
 
-  // readOnlyLogic and displayLogic: only for visible fields.
-  // Explicit null in decisions previously meant "omit this property", which silenced
-  // the raw schema value. Changed: null in decisions now falls back to the raw value
-  // so that readOnlyLogic from the AD is never accidentally lost.
-  if (isVisible) {
-    const readOnlyLogic = fieldDecision.readOnlyLogic !== undefined
-      ? (fieldDecision.readOnlyLogic || rawField.readOnlyLogic || null)
-      : (rawField.readOnlyLogic || null);
-    if (readOnlyLogic) field.readOnlyLogic = readOnlyLogic;
-
-    if (fieldDecision.displayLogic !== null) {
-      const displayLogic = fieldDecision.displayLogic || rawField.displayLogic || null;
-      if (displayLogic) field.displayLogic = displayLogic;
-    }
-
-    if (fieldDecision.displayLogicJs != null) {
-      field.displayLogicJs = fieldDecision.displayLogicJs;
-    }
-
-    if (fieldDecision.readOnlyLogicJs != null) {
-      field.readOnlyLogicJs = fieldDecision.readOnlyLogicJs;
-    }
-
-    // callout — carry from raw
-    if (rawField.callout) field.callout = rawField.callout;
-
-    // validationRule — carry from raw so selector filtering (e.g. isSOTrx for PriceList) works
-    if (rawField.validationRule) field.validationRule = rawField.validationRule;
-  }
-
-  // enumValues
-  if (rawField.enumValues) field.enumValues = rawField.enumValues;
-
-  // Passthrough process metadata for button fields
-  if (rawField.processId) field.processId = rawField.processId;
-  if (rawField.processType) field.processType = rawField.processType;
+  if (isVisible) applyVisibleFieldProps(field, rawField, fieldDecision);
+  copyRawProps(field, rawField, FIELD_RAW_COPY_PROPS);
 
   return field;
 }
@@ -417,6 +399,195 @@ function findEntityDecision(rawEntity, entitiesDecisions) {
 }
 
 // ---------------------------------------------------------------------------
+// Entity resolver helpers
+// ---------------------------------------------------------------------------
+
+function findFieldDecision(rawField, fieldsDecisions) {
+  const fieldDecision = fieldsDecisions[rawField.name];
+  if (fieldDecision || !rawField.columnName) return fieldDecision || {};
+
+  for (const [, decVal] of Object.entries(fieldsDecisions)) {
+    if (decVal.name === rawField.name) return decVal;
+  }
+
+  return {};
+}
+
+function buildCuratedFields(rawEntity, fieldsDecisions, discardPatterns) {
+  return (rawEntity.fields || []).map(rawField => {
+    const fieldDecision = findFieldDecision(rawField, fieldsDecisions);
+    return buildCuratedField(rawField, fieldDecision, discardPatterns);
+  });
+}
+
+function orderCuratedFields(curatedFields, fieldsDecisions) {
+  const hasOrderOverrides = Object.values(fieldsDecisions).some(decision => decision.order != null);
+  if (!hasOrderOverrides) return curatedFields;
+
+  return curatedFields.slice().sort((a, b) => {
+    const oa = fieldsDecisions[a.name]?.order ?? Infinity;
+    const ob = fieldsDecisions[b.name]?.order ?? Infinity;
+    return oa - ob;
+  });
+}
+
+function buildDraftMode(draftModeDecision, enabled) {
+  const draftMode = {
+    enabled,
+    processField: draftModeDecision.processField || 'documentAction',
+    processValue: draftModeDecision.processValue || 'CO',
+    label: draftModeDecision.label || 'Process',
+  };
+  if (Array.isArray(draftModeDecision.completedStatuses)) {
+    draftMode.completedStatuses = draftModeDecision.completedStatuses;
+  }
+  return draftMode;
+}
+
+function applyEntityDecisions(entity, entityDecision) {
+  if (entityDecision.javaQualifier) {
+    entity.javaQualifier = entityDecision.javaQualifier;
+  }
+  if (entityDecision.draftMode) {
+    entity.draftMode = buildDraftMode(
+      entityDecision.draftMode,
+      entityDecision.draftMode.enabled === true,
+    );
+  }
+  if (entityDecision.formCols != null) {
+    entity.formCols = entityDecision.formCols;
+  }
+}
+
+function buildCuratedEntity(rawEntity, entityDecision, discardPatterns) {
+  const fieldsDecisions = entityDecision.fields || {};
+  const curatedFields = buildCuratedFields(rawEntity, fieldsDecisions, discardPatterns);
+  const entity = {
+    name: entityDecision.name || autoSimplifyEntityName(rawEntity.name),
+    tableName: rawEntity.tableName,
+    tabId: rawEntity.tabId,
+    tabName: rawEntity.tabName,
+    fields: orderCuratedFields(curatedFields, fieldsDecisions),
+  };
+
+  applyEntityDecisions(entity, entityDecision);
+  return entity;
+}
+
+function buildCuratedEntities(schemaRaw, entitiesDecisions, discardPatterns) {
+  const curatedEntities = [];
+
+  for (const rawEntity of (schemaRaw.entities || [])) {
+    const entityDecision = findEntityDecision(rawEntity, entitiesDecisions);
+    if (entityDecision.exclude === true) continue;
+
+    curatedEntities.push(buildCuratedEntity(rawEntity, entityDecision, discardPatterns));
+  }
+
+  return curatedEntities;
+}
+
+// ---------------------------------------------------------------------------
+// Window resolver helpers
+// ---------------------------------------------------------------------------
+
+const WINDOW_TRUTHY_PROPS = [
+  'layoutType',
+  'sidebarLayout',
+  'templateConfig',
+  'documentPreview',
+  'notesField',
+  'relatedDocuments',
+  'customComponents',
+  'menuActions',
+  'processOverrides',
+  'entityLabel',
+  'detailLabel',
+  'secondaryTabs',
+  'statusBar',
+  'statusField',
+  'detailSortBy',
+  'listKpiCards',
+  'headerExtra',
+  'labelOverrides',
+  'primaryTabs',
+  'othersLabel',
+  'titleField',
+  'listViewOptions',
+  'listBaseFilter',
+  'quickFilters',
+  'subsetFilters',
+  'dateFilterKey',
+  'statusEnumLabels',
+  'lineEntityConfig',
+];
+
+const WINDOW_BOOLEAN_TRUE_PROPS = [
+  'hideDeleteWhenComplete',
+  'hidePrint',
+  'hideMoreMenu',
+  'hideMoreDetails',
+  'hideListFilters',
+  'hideLink',
+  'hideEyeCount',
+  'disableProcessedLock',
+  'noHeaderBorder',
+];
+
+const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb'];
+const WINDOW_NOT_NULL_PROPS = ['detailTabIndex', 'salesTheme'];
+
+function copyTruthyProps(target, source, props) {
+  for (const prop of props) {
+    if (source[prop]) target[prop] = source[prop];
+  }
+}
+
+function copyBooleanTrueProps(target, source, props) {
+  for (const prop of props) {
+    if (source[prop]) target[prop] = true;
+  }
+}
+
+function copyDefinedProps(target, source, props) {
+  for (const prop of props) {
+    if (source[prop] !== undefined) target[prop] = source[prop];
+  }
+}
+
+function copyNotNullProps(target, source, props) {
+  for (const prop of props) {
+    if (source[prop] != null) target[prop] = source[prop];
+  }
+}
+
+function applyWindowDecisions(window, windowDecisions) {
+  copyTruthyProps(window, windowDecisions, WINDOW_TRUTHY_PROPS);
+  copyBooleanTrueProps(window, windowDecisions, WINDOW_BOOLEAN_TRUE_PROPS);
+  copyDefinedProps(window, windowDecisions, WINDOW_DEFINED_PROPS);
+  copyNotNullProps(window, windowDecisions, WINDOW_NOT_NULL_PROPS);
+
+  if (windowDecisions.hideSaveStatuses?.length) {
+    window.hideSaveStatuses = windowDecisions.hideSaveStatuses;
+  }
+  if (Array.isArray(windowDecisions.summaryFields)) {
+    window.summaryFields = windowDecisions.summaryFields;
+  }
+  if ('detailEntity' in windowDecisions) {
+    window.detailEntity = windowDecisions.detailEntity;
+  }
+}
+
+function applyWindowDraftModeToPrimaryEntity(curatedEntities, windowDecisions) {
+  if (!windowDecisions.draftMode?.enabled) return;
+
+  const primaryEntity = curatedEntities[0];
+  if (primaryEntity && !primaryEntity.draftMode) {
+    primaryEntity.draftMode = buildDraftMode(windowDecisions.draftMode, true);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Main resolver
 // ---------------------------------------------------------------------------
 
@@ -439,88 +610,7 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
 
   const discardPatterns = decisions.discardPatterns || [];
   const entitiesDecisions = decisions.entities || {};
-
-  const curatedEntities = [];
-
-  for (const rawEntity of (schemaRaw.entities || [])) {
-    const rawEntityName = rawEntity.name;
-    const entityDecision = findEntityDecision(rawEntity, entitiesDecisions);
-
-    // Skip entities explicitly excluded via decisions
-    if (entityDecision.exclude === true) continue;
-
-    const simplifiedName = entityDecision.name || autoSimplifyEntityName(rawEntityName);
-    const fieldsDecisions = entityDecision.fields || {};
-
-    // Build a column-name index for decision fallback lookup.
-    // Decision keys may use an older raw naming convention (e.g. cBpartnerLocationId)
-    // while the current raw uses a simplified name (e.g. partnerAddress).
-    // The column name (e.g. C_BPartner_Location_ID) is stable across extractions.
-    const fieldDecisionsByColumn = {};
-    for (const [decKey, decVal] of Object.entries(fieldsDecisions)) {
-      // We don't know the column from the key alone, so we'll match below
-      fieldDecisionsByColumn[decKey] = decVal;
-    }
-
-    const curatedFields = (rawEntity.fields || []).map(rawField => {
-      const fieldKey = rawField.name;
-      let fieldDecision = fieldsDecisions[fieldKey];
-      if (!fieldDecision && rawField.columnName) {
-        // Fallback: find a decision whose 'name' override matches rawField.name,
-        // or whose key matches a camelCase derivation of the column name
-        for (const [decKey, decVal] of Object.entries(fieldsDecisions)) {
-          if (decVal.name === rawField.name) {
-            fieldDecision = decVal;
-            break;
-          }
-        }
-      }
-      fieldDecision = fieldDecision || {};
-      return buildCuratedField(rawField, fieldDecision, discardPatterns);
-    });
-
-    // Apply explicit field ordering from decisions (order: number on individual fields)
-    const hasOrderOverrides = Object.values(fieldsDecisions).some(d => d.order != null);
-    const orderedFields = hasOrderOverrides
-      ? curatedFields.slice().sort((a, b) => {
-          const oa = fieldsDecisions[a.name]?.order ?? fieldsDecisions[a.columnName]?.order ?? Infinity;
-          const ob = fieldsDecisions[b.name]?.order ?? fieldsDecisions[b.columnName]?.order ?? Infinity;
-          return oa - ob;
-        })
-      : curatedFields;
-
-    const entity = {
-      name: simplifiedName,
-      tableName: rawEntity.tableName,
-      tabId: rawEntity.tabId,
-      tabName: rawEntity.tabName,
-      fields: orderedFields,
-    };
-
-    // Propagate javaQualifier from decisions (e.g., FactAcctHandler for Accounting tabs)
-    if (entityDecision.javaQualifier) {
-      entity.javaQualifier = entityDecision.javaQualifier;
-    }
-
-    // Propagate draftMode from decisions (enables Save Draft + Save & Process buttons)
-    if (entityDecision.draftMode) {
-      entity.draftMode = {
-        enabled: entityDecision.draftMode.enabled === true,
-        processField: entityDecision.draftMode.processField || 'documentAction',
-        processValue: entityDecision.draftMode.processValue || 'CO',
-        label: entityDecision.draftMode.label || 'Process',
-      };
-      if (Array.isArray(entityDecision.draftMode.completedStatuses)) {
-        entity.draftMode.completedStatuses = entityDecision.draftMode.completedStatuses;
-      }
-    }
-
-    if (entityDecision.formCols != null) {
-      entity.formCols = entityDecision.formCols;
-    }
-
-    curatedEntities.push(entity);
-  }
+  const curatedEntities = buildCuratedEntities(schemaRaw, entitiesDecisions, discardPatterns);
 
   const windowDecisions = decisions.window || {};
   const rawWindow = schemaRaw.window || {};
@@ -536,162 +626,8 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
     entities: curatedEntities,
   };
 
-  // Only include layoutType/templateConfig if set
-  if (windowDecisions.layoutType) {
-    schema.window.layoutType = windowDecisions.layoutType;
-  }
-  if (windowDecisions.sidebarLayout) {
-    schema.window.sidebarLayout = windowDecisions.sidebarLayout;
-  }
-  if (windowDecisions.templateConfig) {
-    schema.window.templateConfig = windowDecisions.templateConfig;
-  }
-  // Pass through optional window-level UI config from decisions
-  if (windowDecisions.documentPreview) {
-    schema.window.documentPreview = windowDecisions.documentPreview;
-  }
-  if (windowDecisions.notesField) {
-    schema.window.notesField = windowDecisions.notesField;
-  }
-  if (windowDecisions.relatedDocuments) {
-    schema.window.relatedDocuments = windowDecisions.relatedDocuments;
-  }
-  if (windowDecisions.hideDeleteWhenComplete) {
-    schema.window.hideDeleteWhenComplete = true;
-  }
-  if (windowDecisions.hidePrint) {
-    schema.window.hidePrint = true;
-  }
-  if (windowDecisions.hideSaveStatuses?.length) {
-    schema.window.hideSaveStatuses = windowDecisions.hideSaveStatuses;
-  }
-  if (windowDecisions.hideMoreMenu) {
-    schema.window.hideMoreMenu = true;
-  }
-  if (windowDecisions.hideMoreDetails) {
-    schema.window.hideMoreDetails = true;
-  }
-  if (windowDecisions.contentBg !== undefined) {
-    schema.window.contentBg = windowDecisions.contentBg;
-  }
-  if (windowDecisions.hideListFilters) {
-    schema.window.hideListFilters = true;
-  }
-  if (windowDecisions.hideLink) {
-    schema.window.hideLink = true;
-  }
-  if (windowDecisions.hideEyeCount) {
-    schema.window.hideEyeCount = true;
-  }
-  if (windowDecisions.breadcrumb !== undefined) {
-    schema.window.breadcrumb = windowDecisions.breadcrumb;
-  }
-  if (windowDecisions.customComponents) {
-    schema.window.customComponents = windowDecisions.customComponents;
-  }
-  if (windowDecisions.menuActions) {
-    schema.window.menuActions = windowDecisions.menuActions;
-  }
-  if (windowDecisions.processOverrides) {
-    schema.window.processOverrides = windowDecisions.processOverrides;
-  }
-  // Forward secondary tab config and label overrides from decisions
-  if (windowDecisions.entityLabel) {
-    schema.window.entityLabel = windowDecisions.entityLabel;
-  }
-  if (windowDecisions.detailLabel) {
-    schema.window.detailLabel = windowDecisions.detailLabel;
-  }
-  if (windowDecisions.detailTabIndex != null) {
-    schema.window.detailTabIndex = windowDecisions.detailTabIndex;
-  }
-  if (windowDecisions.secondaryTabs) {
-    schema.window.secondaryTabs = windowDecisions.secondaryTabs;
-  }
-  if ('detailEntity' in windowDecisions) {
-    schema.window.detailEntity = windowDecisions.detailEntity;
-  }
-  if (windowDecisions.statusBar) {
-    schema.window.statusBar = windowDecisions.statusBar;
-  }
-  if (windowDecisions.statusField) {
-    schema.window.statusField = windowDecisions.statusField;
-  }
-  if (Array.isArray(windowDecisions.summaryFields)) {
-    schema.window.summaryFields = windowDecisions.summaryFields;
-  }
-  if (windowDecisions.detailSortBy) {
-    schema.window.detailSortBy = windowDecisions.detailSortBy;
-  }
-  if (windowDecisions.salesTheme != null) {
-    schema.window.salesTheme = windowDecisions.salesTheme;
-  }
-  if (windowDecisions.listKpiCards) {
-    schema.window.listKpiCards = windowDecisions.listKpiCards;
-  }
-  if (windowDecisions.headerExtra) {
-    schema.window.headerExtra = windowDecisions.headerExtra;
-  }
-  if (windowDecisions.labelOverrides) {
-    schema.window.labelOverrides = windowDecisions.labelOverrides;
-  }
-  if (windowDecisions.primaryTabs) {
-    schema.window.primaryTabs = windowDecisions.primaryTabs;
-  }
-  if (windowDecisions.othersLabel) {
-    schema.window.othersLabel = windowDecisions.othersLabel;
-  }
-  if (windowDecisions.disableProcessedLock) {
-    schema.window.disableProcessedLock = true;
-  }
-  if (windowDecisions.titleField) {
-    schema.window.titleField = windowDecisions.titleField;
-  }
-  if (windowDecisions.hideMoreMenu) {
-    schema.window.hideMoreMenu = true;
-  }
-  if (windowDecisions.listViewOptions) {
-    schema.window.listViewOptions = windowDecisions.listViewOptions;
-  }
-  if (windowDecisions.listBaseFilter) {
-    schema.window.listBaseFilter = windowDecisions.listBaseFilter;
-  }
-  if (windowDecisions.quickFilters) {
-    schema.window.quickFilters = windowDecisions.quickFilters;
-  }
-  if (windowDecisions.subsetFilters) {
-    schema.window.subsetFilters = windowDecisions.subsetFilters;
-  }
-  if (windowDecisions.dateFilterKey) {
-    schema.window.dateFilterKey = windowDecisions.dateFilterKey;
-  }
-  if (windowDecisions.statusEnumLabels) {
-    schema.window.statusEnumLabels = windowDecisions.statusEnumLabels;
-  }
-  if (windowDecisions.noHeaderBorder) {
-    schema.window.noHeaderBorder = true;
-  }
-  if (windowDecisions.lineEntityConfig) {
-    schema.window.lineEntityConfig = windowDecisions.lineEntityConfig;
-  }
-
-  // Propagate window-level draftMode to the primary (header) entity so generate-contract
-  // can emit the correct draftMode block. draftMode lives in decisions.window but
-  // generate-contract reads it from entity.draftMode.
-  if (windowDecisions.draftMode?.enabled) {
-    const primaryEntity = curatedEntities[0];
-    if (primaryEntity && !primaryEntity.draftMode) {
-      primaryEntity.draftMode = {
-        enabled: true,
-        processField: windowDecisions.draftMode.processField || 'documentAction',
-        processValue: windowDecisions.draftMode.processValue || 'CO',
-        label: windowDecisions.draftMode.label || 'Process',
-      };
-      if (Array.isArray(windowDecisions.draftMode.completedStatuses)) {
-        primaryEntity.draftMode.completedStatuses = windowDecisions.draftMode.completedStatuses;
-      }
-    }
-  }
+  applyWindowDecisions(schema.window, windowDecisions);
+  applyWindowDraftModeToPrimaryEntity(curatedEntities, windowDecisions);
 
   const rules = resolveRules(rulesRaw, decisions);
 

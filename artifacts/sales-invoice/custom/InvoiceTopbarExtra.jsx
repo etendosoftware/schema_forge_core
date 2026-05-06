@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUI } from '@/i18n';
+import { DateField } from '@/components/ui/date-field';
+import { useUI, useMenuLabel } from '@/i18n';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
 
 const STATUS_LABELS = {
@@ -60,6 +61,7 @@ const BADGE_STYLES = {
  */
 export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, api }) {
   const ui = useUI();
+  const tMenu = useMenuLabel();
   const [showPaymentsModal, setShowPaymentsModal] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
   const [installments, setInstallments] = useState([]);
@@ -172,10 +174,11 @@ export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, 
         <SendDocumentButton onClick={() => setShowSendModal(true)} />
         {showSendModal && (
           <SendDocumentModal
-            documentType="Invoice"
+            documentType={tMenu('Sales Invoice')}
             documentNo={data?.documentNo}
             bpName={data?.['businessPartner$_identifier']}
-            bpEmail={data?.['userContact$_identifier']}
+            bPartnerId={data?.businessPartner}
+            apiBaseUrl={apiBaseUrl}
             documentId={data?.id}
             windowName="sales-invoice"
             token={token}
@@ -281,10 +284,11 @@ export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, 
       {/* Send Invoice modal */}
       {showSendModal && (
         <SendDocumentModal
-          documentType="Invoice"
+          documentType={tMenu('Sales Invoice')}
           documentNo={data?.documentNo}
           bpName={data?.['businessPartner$_identifier']}
-          bpEmail={data?.['userContact$_identifier']}
+          bPartnerId={data?.businessPartner}
+          apiBaseUrl={apiBaseUrl}
           documentId={data?.id}
           windowName="sales-invoice"
           token={token}
@@ -527,11 +531,14 @@ function PaymentRegisterForm({ invoiceId, invoiceData, scheduleId, outstanding, 
         let mapped = [];
         let defaultAccountId = null;
 
-        const res = await fetch(`${base}/payment-in/finPayment/selectors/Fin_Financial_Account_ID?_startRow=0&_endRow=50`, { headers });
+        const res = await fetch(
+          `${base}/sales-invoice/header/${invoiceId}/action/invoiceAccounts`,
+          { method: 'POST', headers, body: '{}' },
+        );
         if (res.ok) {
           const json = await res.json();
-          const items = json.items || json?.response?.data || [];
-          mapped = items.map(a => ({ id: a.id, name: a.label || a._identifier || a.name }));
+          const items = json.items || [];
+          mapped = items.map(a => ({ id: a.id, name: a.label || a.name }));
         }
 
         if (pmId && bpId) {
@@ -589,8 +596,7 @@ function PaymentRegisterForm({ invoiceId, invoiceData, scheduleId, outstanding, 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         <div>
           <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>{ui('date')}</label>
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="text-sm tabular-nums"
-            style={{ width: '100%', border: '0.5px solid #E5E7EB', borderRadius: 4, padding: '6px 10px', outline: 'none', boxSizing: 'border-box' }} />
+          <DateField value={date} onChange={setDate} />
         </div>
         <div>
           <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>{`${ui('amount')} (${currency})`}</label>
