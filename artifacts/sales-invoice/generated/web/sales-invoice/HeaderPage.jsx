@@ -17,11 +17,13 @@ const breadcrumb = 'Sales / Sales Invoice';
 const labelOverrides = {
   "es_ES": {
     "OutstandingAmt": "Pendiente de pago",
-    "EM_Etgo_Due_Date": "Vencimiento"
+    "EM_Etgo_Due_Date": "Vencimiento",
+    "em_etgo_delivery_status": "Estado de entrega"
   },
   "en_US": {
     "OutstandingAmt": "Pending Payment",
-    "EM_Etgo_Due_Date": "Due Date"
+    "EM_Etgo_Due_Date": "Due Date",
+    "em_etgo_delivery_status": "Delivery Status"
   }
 };
 
@@ -411,11 +413,13 @@ export const api = {
   "labelOverrides": {
     "es_ES": {
       "OutstandingAmt": "Pendiente de pago",
-      "EM_Etgo_Due_Date": "Vencimiento"
+      "EM_Etgo_Due_Date": "Vencimiento",
+      "em_etgo_delivery_status": "Estado de entrega"
     },
     "en_US": {
       "OutstandingAmt": "Pending Payment",
-      "EM_Etgo_Due_Date": "Due Date"
+      "EM_Etgo_Due_Date": "Due Date",
+      "em_etgo_delivery_status": "Delivery Status"
     }
   }
 };

@@ -24,12 +24,14 @@ const labelOverrides = {
   "es_ES": {
     "POReference": "Nº documento",
     "OutstandingAmt": "Pendiente de pago",
-    "EM_Etgo_Due_Date": "Vencimiento"
+    "EM_Etgo_Due_Date": "Vencimiento",
+    "em_etgo_delivery_status": "Estado de entrega"
   },
   "en_US": {
     "POReference": "Document No.",
     "OutstandingAmt": "Pending Payment",
-    "EM_Etgo_Due_Date": "Due Date"
+    "EM_Etgo_Due_Date": "Due Date",
+    "em_etgo_delivery_status": "Delivery Status"
   }
 };
 
@@ -810,12 +812,14 @@ export const api = {
     "es_ES": {
       "POReference": "Nº documento",
       "OutstandingAmt": "Pendiente de pago",
-      "EM_Etgo_Due_Date": "Vencimiento"
+      "EM_Etgo_Due_Date": "Vencimiento",
+      "em_etgo_delivery_status": "Estado de entrega"
     },
     "en_US": {
       "POReference": "Document No.",
       "OutstandingAmt": "Pending Payment",
-      "EM_Etgo_Due_Date": "Due Date"
+      "EM_Etgo_Due_Date": "Due Date",
+      "em_etgo_delivery_status": "Delivery Status"
     }
   }
 };

@@ -1,8 +1,8 @@
 {
-  "version": "0.17.0",
+  "version": "0.19.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-06T22:04:27.354Z",
-  "checksum": "5ad78b32baca2f43",
+  "updatedAt": "2026-05-06T23:06:06.942Z",
+  "checksum": "334c2e3a2983f9ab",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -33,12 +33,14 @@
         "es_ES": {
           "POReference": "Nº documento",
           "OutstandingAmt": "Pendiente de pago",
-          "EM_Etgo_Due_Date": "Vencimiento"
+          "EM_Etgo_Due_Date": "Vencimiento",
+          "em_etgo_delivery_status": "Estado de entrega"
         },
         "en_US": {
           "POReference": "Document No.",
           "OutstandingAmt": "Pending Payment",
-          "EM_Etgo_Due_Date": "Due Date"
+          "EM_Etgo_Due_Date": "Due Date",
+          "em_etgo_delivery_status": "Delivery Status"
         }
       },
       "dateFilterKey": "invoiceDate",
@@ -697,6 +699,19 @@
             "grid": true,
             "form": false,
             "gridOrder": 7
+          },
+          {
+            "name": "eTGODeliveryStatus",
+            "apiKey": "eTGODeliveryStatus",
+            "column": "em_etgo_delivery_status",
+            "label": "em_etgo_delivery_status",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": false,
+            "gridOrder": 8
           }
         ],
         "searchableFields": [
@@ -3193,12 +3208,14 @@
         "es_ES": {
           "POReference": "Nº documento",
           "OutstandingAmt": "Pendiente de pago",
-          "EM_Etgo_Due_Date": "Vencimiento"
+          "EM_Etgo_Due_Date": "Vencimiento",
+          "em_etgo_delivery_status": "Estado de entrega"
         },
         "en_US": {
           "POReference": "Document No.",
           "OutstandingAmt": "Pending Payment",
-          "EM_Etgo_Due_Date": "Due Date"
+          "EM_Etgo_Due_Date": "Due Date",
+          "em_etgo_delivery_status": "Delivery Status"
         }
       },
       "dateFilterKey": "invoiceDate",
@@ -4463,6 +4480,14 @@
             "apiKey": "eTGODueDate",
             "column": "em_etgo_due_date",
             "type": "date",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "eTGODeliveryStatus",
+            "apiKey": "eTGODeliveryStatus",
+            "column": "em_etgo_delivery_status",
+            "type": "integer",
             "visibility": "readOnly",
             "required": false
           }
@@ -8043,12 +8068,14 @@
       "es_ES": {
         "POReference": "Nº documento",
         "OutstandingAmt": "Pendiente de pago",
-        "EM_Etgo_Due_Date": "Vencimiento"
+        "EM_Etgo_Due_Date": "Vencimiento",
+        "em_etgo_delivery_status": "Estado de entrega"
       },
       "en_US": {
         "POReference": "Document No.",
         "OutstandingAmt": "Pending Payment",
-        "EM_Etgo_Due_Date": "Due Date"
+        "EM_Etgo_Due_Date": "Due Date",
+        "em_etgo_delivery_status": "Delivery Status"
       }
     }
   },
@@ -8969,6 +8996,14 @@
         "field": "dueAmount",
         "runner": "node",
         "description": "Field 'dueAmount' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-eTGODeliveryStatus",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "eTGODeliveryStatus",
+        "runner": "node",
+        "description": "Field 'eTGODeliveryStatus' should be present in header"
       },
       {
         "id": "t-field-presence-header-eTGODueDate",
@@ -9953,6 +9988,14 @@
         "field": "dueAmount",
         "runner": "node",
         "description": "Field 'dueAmount' should have type 'number' in header"
+      },
+      {
+        "id": "t-field-type-header-eTGODeliveryStatus",
+        "category": "field-type",
+        "entity": "header",
+        "field": "eTGODeliveryStatus",
+        "runner": "node",
+        "description": "Field 'eTGODeliveryStatus' should have type 'number' in header"
       },
       {
         "id": "t-field-type-header-eTGODueDate",
@@ -14699,15 +14742,15 @@
       }
     ],
     "summary": {
-      "total": 836,
+      "total": 838,
       "byCategory": {
         "action-endpoint": 24,
         "crud-flags": 12,
         "default-value-type": 27,
         "displaylogic-evaluable": 6,
         "displaylogic-valid": 6,
-        "field-presence": 123,
-        "field-type": 123,
+        "field-presence": 124,
+        "field-type": 124,
         "readonlylogic-evaluable": 48,
         "readonlylogic-valid": 48,
         "rule-declared": 21,
@@ -14717,7 +14760,7 @@
         "visibility": 12
       },
       "byRunner": {
-        "node": 836,
+        "node": 838,
         "junit": 0
       }
     }

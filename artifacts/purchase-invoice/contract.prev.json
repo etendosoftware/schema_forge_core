@@ -1,8 +1,8 @@
 {
-  "version": "0.16.0",
+  "version": "0.18.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-06T14:48:46.877Z",
-  "checksum": "6bb778657bea4850",
+  "updatedAt": "2026-05-06T23:04:37.578Z",
+  "checksum": "2984023154233f87",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -32,10 +32,12 @@
       "labelOverrides": {
         "es_ES": {
           "POReference": "Nº documento",
+          "OutstandingAmt": "Pendiente de pago",
           "EM_Etgo_Due_Date": "Vencimiento"
         },
         "en_US": {
           "POReference": "Document No.",
+          "OutstandingAmt": "Pending Payment",
           "EM_Etgo_Due_Date": "Due Date"
         }
       },
@@ -1620,20 +1622,20 @@
                 "name": "MURCIA AEROPUERTO"
               },
               {
-                "value": "INTRES_1711",
-                "name": "PALAMOS MARITIMA"
-              },
-              {
-                "value": "INTRES_2011",
-                "name": "PASAJES MARITIMA"
+                "value": "INTRES_0711",
+                "name": "P . MALLORCA MARITIMA"
               },
               {
                 "value": "INTRES_0701",
                 "name": "P. MALLORCA AEROPUERTO"
               },
               {
-                "value": "INTRES_0711",
-                "name": "P . MALLORCA MARITIMA"
+                "value": "INTRES_1711",
+                "name": "PALAMOS MARITIMA"
+              },
+              {
+                "value": "INTRES_2011",
+                "name": "PASAJES MARITIMA"
               },
               {
                 "value": "INTRES_1121",
@@ -3190,10 +3192,12 @@
       "labelOverrides": {
         "es_ES": {
           "POReference": "Nº documento",
+          "OutstandingAmt": "Pendiente de pago",
           "EM_Etgo_Due_Date": "Vencimiento"
         },
         "en_US": {
           "POReference": "Document No.",
+          "OutstandingAmt": "Pending Payment",
           "EM_Etgo_Due_Date": "Due Date"
         }
       },
@@ -4460,6 +4464,14 @@
             "column": "em_etgo_due_date",
             "type": "date",
             "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "eTGODeliveryStatus",
+            "apiKey": "eTGODeliveryStatus",
+            "column": "em_etgo_delivery_status",
+            "type": "integer",
+            "visibility": "discarded",
             "required": false
           }
         ],
@@ -8038,10 +8050,12 @@
     "labelOverrides": {
       "es_ES": {
         "POReference": "Nº documento",
+        "OutstandingAmt": "Pendiente de pago",
         "EM_Etgo_Due_Date": "Vencimiento"
       },
       "en_US": {
         "POReference": "Document No.",
+        "OutstandingAmt": "Pending Payment",
         "EM_Etgo_Due_Date": "Due Date"
       }
     }
@@ -12944,6 +12958,14 @@
         "description": "System field 'etcopagCopilotFeedback' should exist in backend but not frontend for header"
       },
       {
+        "id": "t-system-field-header-eTGODeliveryStatus",
+        "category": "system-field",
+        "entity": "header",
+        "field": "eTGODeliveryStatus",
+        "runner": "node",
+        "description": "System field 'eTGODeliveryStatus' should exist in backend but not frontend for header"
+      },
+      {
         "id": "t-system-field-header-etsgDateOperation",
         "category": "system-field",
         "entity": "header",
@@ -14693,7 +14715,7 @@
       }
     ],
     "summary": {
-      "total": 836,
+      "total": 837,
       "byCategory": {
         "action-endpoint": 24,
         "crud-flags": 12,
@@ -14707,11 +14729,11 @@
         "rule-declared": 21,
         "searchable-filters": 6,
         "selector-endpoint": 47,
-        "system-field": 333,
+        "system-field": 334,
         "visibility": 12
       },
       "byRunner": {
-        "node": 836,
+        "node": 837,
         "junit": 0
       }
     }

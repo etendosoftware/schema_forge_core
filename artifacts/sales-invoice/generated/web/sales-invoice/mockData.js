@@ -19,7 +19,8 @@ export const header = [
     "outstandingAmount": 38907,
     "priceList": "Sample priceList",
     "processed": "Sample processed",
-    "eTGODueDate": "2026-01-15"
+    "eTGODueDate": "2026-01-15",
+    "eTGODeliveryStatus": "DR"
   },
   {
     "id": "mock-header-002",
@@ -39,7 +40,8 @@ export const header = [
     "outstandingAmount": 9306,
     "priceList": "Sample priceList",
     "processed": "Sample processed",
-    "eTGODueDate": "2026-01-16"
+    "eTGODueDate": "2026-01-16",
+    "eTGODeliveryStatus": "CO"
   },
   {
     "id": "mock-header-003",
@@ -59,7 +61,8 @@ export const header = [
     "outstandingAmount": 11544,
     "priceList": "Sample priceList",
     "processed": "Sample processed",
-    "eTGODueDate": "2026-01-17"
+    "eTGODueDate": "2026-01-17",
+    "eTGODeliveryStatus": "VO"
   },
   {
     "id": "mock-header-004",
@@ -79,7 +82,8 @@ export const header = [
     "outstandingAmount": 11872,
     "priceList": "Sample priceList",
     "processed": "Sample processed",
-    "eTGODueDate": "2026-01-18"
+    "eTGODueDate": "2026-01-18",
+    "eTGODeliveryStatus": "IP"
   },
   {
     "id": "mock-header-005",
@@ -99,7 +103,8 @@ export const header = [
     "outstandingAmount": 48460,
     "priceList": "Sample priceList",
     "processed": "Sample processed",
-    "eTGODueDate": "2026-01-19"
+    "eTGODueDate": "2026-01-19",
+    "eTGODeliveryStatus": "DR"
   },
   {
     "id": "mock-header-006",
@@ -119,7 +124,8 @@ export const header = [
     "outstandingAmount": 45418,
     "priceList": "Sample priceList",
     "processed": "Sample processed",
-    "eTGODueDate": "2026-01-20"
+    "eTGODueDate": "2026-01-20",
+    "eTGODeliveryStatus": "CO"
   },
   {
     "id": "mock-header-007",
@@ -139,7 +145,8 @@ export const header = [
     "outstandingAmount": 33840,
     "priceList": "Sample priceList",
     "processed": "Sample processed",
-    "eTGODueDate": "2026-01-21"
+    "eTGODueDate": "2026-01-21",
+    "eTGODeliveryStatus": "VO"
   },
   {
     "id": "mock-header-008",
@@ -159,7 +166,8 @@ export const header = [
     "outstandingAmount": 25716,
     "priceList": "Sample priceList",
     "processed": "Sample processed",
-    "eTGODueDate": "2026-01-22"
+    "eTGODueDate": "2026-01-22",
+    "eTGODeliveryStatus": "IP"
   },
   {
     "id": "mock-header-009",
@@ -179,7 +187,8 @@ export const header = [
     "outstandingAmount": 44780,
     "priceList": "Sample priceList",
     "processed": "Sample processed",
-    "eTGODueDate": "2026-01-23"
+    "eTGODueDate": "2026-01-23",
+    "eTGODeliveryStatus": "DR"
   },
   {
     "id": "mock-header-010",
@@ -199,7 +208,8 @@ export const header = [
     "outstandingAmount": 12483,
     "priceList": "Sample priceList",
     "processed": "Sample processed",
-    "eTGODueDate": "2026-01-24"
+    "eTGODueDate": "2026-01-24",
+    "eTGODeliveryStatus": "CO"
   },
   {
     "id": "mock-header-011",
@@ -219,7 +229,8 @@ export const header = [
     "outstandingAmount": 46022,
     "priceList": "Sample priceList",
     "processed": "Sample processed",
-    "eTGODueDate": "2026-01-25"
+    "eTGODueDate": "2026-01-25",
+    "eTGODeliveryStatus": "VO"
   },
   {
     "id": "mock-header-012",
@@ -239,7 +250,8 @@ export const header = [
     "outstandingAmount": 38634,
     "priceList": "Sample priceList",
     "processed": "Sample processed",
-    "eTGODueDate": "2026-01-26"
+    "eTGODueDate": "2026-01-26",
+    "eTGODeliveryStatus": "IP"
   }
 ];
 

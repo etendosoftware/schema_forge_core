@@ -31,8 +31,14 @@ const LIST_COLUMNS = [
 // directly, so the generator-emitted labelOverrides do not reach it. Mirror
 // here until the wrapper consumes the spec's labelOverrides at runtime.
 const LABEL_OVERRIDES = {
-  es_ES: { OutstandingAmt: 'Pendiente de pago' },
-  en_US: { OutstandingAmt: 'Pending Payment' },
+  es_ES: {
+    OutstandingAmt: 'Pendiente de pago',
+    em_etgo_delivery_status: 'Estado de entrega',
+  },
+  en_US: {
+    OutstandingAmt: 'Pending Payment',
+    em_etgo_delivery_status: 'Delivery Status',
+  },
 };
 
 let previewRowSetterRef = null;

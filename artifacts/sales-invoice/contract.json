@@ -1,8 +1,8 @@
 {
-  "version": "0.17.0",
+  "version": "0.19.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
-  "updatedAt": "2026-05-06T22:04:25.101Z",
-  "checksum": "ca9844a2661d0165",
+  "updatedAt": "2026-05-06T23:06:06.419Z",
+  "checksum": "e8230c77d4809138",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -45,11 +45,13 @@
       "labelOverrides": {
         "es_ES": {
           "OutstandingAmt": "Pendiente de pago",
-          "EM_Etgo_Due_Date": "Vencimiento"
+          "EM_Etgo_Due_Date": "Vencimiento",
+          "em_etgo_delivery_status": "Estado de entrega"
         },
         "en_US": {
           "OutstandingAmt": "Pending Payment",
-          "EM_Etgo_Due_Date": "Due Date"
+          "EM_Etgo_Due_Date": "Due Date",
+          "em_etgo_delivery_status": "Delivery Status"
         }
       },
       "dateFilterKey": "invoiceDate",
@@ -486,6 +488,19 @@
             "grid": true,
             "form": false,
             "gridOrder": 7
+          },
+          {
+            "name": "eTGODeliveryStatus",
+            "apiKey": "eTGODeliveryStatus",
+            "column": "em_etgo_delivery_status",
+            "label": "em_etgo_delivery_status",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": false,
+            "gridOrder": 8
           }
         ],
         "searchableFields": [
@@ -1104,11 +1119,13 @@
       "labelOverrides": {
         "es_ES": {
           "OutstandingAmt": "Pendiente de pago",
-          "EM_Etgo_Due_Date": "Vencimiento"
+          "EM_Etgo_Due_Date": "Vencimiento",
+          "em_etgo_delivery_status": "Estado de entrega"
         },
         "en_US": {
           "OutstandingAmt": "Pending Payment",
-          "EM_Etgo_Due_Date": "Due Date"
+          "EM_Etgo_Due_Date": "Due Date",
+          "em_etgo_delivery_status": "Delivery Status"
         }
       },
       "dateFilterKey": "invoiceDate",
@@ -2375,6 +2392,14 @@
             "type": "date",
             "visibility": "readOnly",
             "required": false
+          },
+          {
+            "name": "eTGODeliveryStatus",
+            "apiKey": "eTGODeliveryStatus",
+            "column": "em_etgo_delivery_status",
+            "type": "integer",
+            "visibility": "readOnly",
+            "required": false
           }
         ],
         "javaQualifier": "salesInvoiceHeaderHandler"
@@ -3514,11 +3539,13 @@
     "labelOverrides": {
       "es_ES": {
         "OutstandingAmt": "Pendiente de pago",
-        "EM_Etgo_Due_Date": "Vencimiento"
+        "EM_Etgo_Due_Date": "Vencimiento",
+        "em_etgo_delivery_status": "Estado de entrega"
       },
       "en_US": {
         "OutstandingAmt": "Pending Payment",
-        "EM_Etgo_Due_Date": "Due Date"
+        "EM_Etgo_Due_Date": "Due Date",
+        "em_etgo_delivery_status": "Delivery Status"
       }
     }
   },
@@ -3970,6 +3997,14 @@
         "description": "Field 'documentStatus' should be present in header"
       },
       {
+        "id": "t-field-presence-header-eTGODeliveryStatus",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "eTGODeliveryStatus",
+        "runner": "node",
+        "description": "Field 'eTGODeliveryStatus' should be present in header"
+      },
+      {
         "id": "t-field-presence-header-eTGODueDate",
         "category": "field-presence",
         "entity": "header",
@@ -4280,6 +4315,14 @@
         "field": "documentStatus",
         "runner": "node",
         "description": "Field 'documentStatus' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-eTGODeliveryStatus",
+        "category": "field-type",
+        "entity": "header",
+        "field": "eTGODeliveryStatus",
+        "runner": "node",
+        "description": "Field 'eTGODeliveryStatus' should have type 'number' in header"
       },
       {
         "id": "t-field-type-header-eTGODueDate",
@@ -6608,15 +6651,15 @@
       }
     ],
     "summary": {
-      "total": 387,
+      "total": 389,
       "byCategory": {
         "action-endpoint": 24,
         "crud-flags": 3,
         "default-value-type": 14,
         "displaylogic-evaluable": 5,
         "displaylogic-valid": 5,
-        "field-presence": 39,
-        "field-type": 39,
+        "field-presence": 40,
+        "field-type": 40,
         "readonlylogic-evaluable": 14,
         "readonlylogic-valid": 14,
         "rule-declared": 8,
@@ -6626,7 +6669,7 @@
         "visibility": 3
       },
       "byRunner": {
-        "node": 387,
+        "node": 389,
         "junit": 0
       }
     }

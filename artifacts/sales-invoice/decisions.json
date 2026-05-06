@@ -47,11 +47,13 @@
     "labelOverrides": {
       "es_ES": {
         "OutstandingAmt": "Pendiente de pago",
-        "EM_Etgo_Due_Date": "Vencimiento"
+        "EM_Etgo_Due_Date": "Vencimiento",
+        "em_etgo_delivery_status": "Estado de entrega"
       },
       "en_US": {
         "OutstandingAmt": "Pending Payment",
-        "EM_Etgo_Due_Date": "Due Date"
+        "EM_Etgo_Due_Date": "Due Date",
+        "em_etgo_delivery_status": "Delivery Status"
       }
     }
   },
@@ -195,6 +197,12 @@
           "gridOrder": 7,
           "form": false,
           "searchable": true
+        },
+        "eTGODeliveryStatus": {
+          "visibility": "readOnly",
+          "grid": true,
+          "gridOrder": 8,
+          "form": false
         },
         "isPaid": {
           "visibility": "readOnly",
