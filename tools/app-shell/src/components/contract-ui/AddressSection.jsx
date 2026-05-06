@@ -101,8 +101,13 @@ function OptionPicker({ open, onClose, title, options, loading, failed, loadErro
   );
 }
 
-export default function AddressSection({ form, onChange, opts }) {
+const RequiredMark = () => (
+  <span style={{ color: '#ef4444', marginLeft: '2px' }}>*</span>
+);
+
+export default function AddressSection({ form, onChange, opts, requiredFields = [] }) {
   const ui = useUI();
+  const isRequired = (id) => requiredFields.includes(id);
   const [countryPickerOpen, setCountryPickerOpen] = useState(false);
   const [countryQuery, setCountryQuery] = useState('');
   const [regionPickerOpen, setRegionPickerOpen] = useState(false);
@@ -141,25 +146,25 @@ export default function AddressSection({ form, onChange, opts }) {
       <div className="address-grid">
         {/* Row 1 */}
         <div className="space-y-1.5">
-          <label style={MODAL_STYLES.fieldLabel}>{ui('addressLine1')}</label>
+          <label style={MODAL_STYLES.fieldLabel}>{ui('addressLine1')}{isRequired('address') && <RequiredMark />}</label>
           <input type="text" className={INPUT_CLS} value={form.address ?? ''} onChange={e => onChange('address', e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <label style={MODAL_STYLES.fieldLabel}>{ui('addressLine2')}</label>
+          <label style={MODAL_STYLES.fieldLabel}>{ui('addressLine2')}{isRequired('address2') && <RequiredMark />}</label>
           <input type="text" className={INPUT_CLS} value={form.address2 ?? ''} onChange={e => onChange('address2', e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <label style={MODAL_STYLES.fieldLabel}>{ui('postalCodeLabel')}</label>
+          <label style={MODAL_STYLES.fieldLabel}>{ui('postalCodeLabel')}{isRequired('postalCode') && <RequiredMark />}</label>
           <input type="text" className={INPUT_CLS} value={form.postalCode ?? ''} onChange={e => onChange('postalCode', e.target.value.replace(/[^\d\s-]/g, ''))} />
         </div>
         <div className="space-y-1.5">
-          <label style={MODAL_STYLES.fieldLabel}>{ui('cityLabel')}</label>
+          <label style={MODAL_STYLES.fieldLabel}>{ui('cityLabel')}{isRequired('city') && <RequiredMark />}</label>
           <input type="text" className={INPUT_CLS} value={form.city ?? ''} onChange={e => onChange('city', e.target.value)} />
         </div>
 
         {/* Row 2 */}
         <div className="space-y-1.5">
-          <label style={MODAL_STYLES.fieldLabel}>{ui('countryLabel')}</label>
+          <label style={MODAL_STYLES.fieldLabel}>{ui('countryLabel')}{isRequired('country') && <RequiredMark />}</label>
           <button type="button" onClick={() => setCountryPickerOpen(true)} className={`picker-btn ${PICKER_BTN_CLS}`}>
             <span className={`truncate ${form.country ? 'text-foreground' : 'text-muted-foreground'}`}>{countryLabel || '—'}</span>
             <ChevronDown size={14} className="text-muted-foreground shrink-0" />

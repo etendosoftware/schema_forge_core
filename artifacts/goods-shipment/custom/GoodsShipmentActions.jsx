@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
-import { useUI } from '@/i18n';
+import { useUI, useMenuLabel } from '@/i18n';
 import ReturnWizard from './ReturnWizard';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
 
 export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl, api }) {
   const ui = useUI();
+  const tMenu = useMenuLabel();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [showInvoicePreview, setShowInvoicePreview] = useState(false);
   const [creatingInvoice, setCreatingInvoice] = useState(false);
@@ -152,10 +153,11 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
 
       {showSend && createPortal(
         <SendDocumentModal
-          documentType="Shipment"
+          documentType={tMenu('Goods Shipment')}
           documentNo={data?.documentNo}
           bpName={data?.['businessPartner$_identifier']}
-          bpEmail={data?.['userContact$_identifier']}
+          bPartnerId={data?.businessPartner}
+          apiBaseUrl={apiBaseUrl}
           documentId={recordId}
           windowName="goods-shipment"
           token={token}

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DateField } from '@/components/ui/date-field';
-import { useUI } from '@/i18n';
+import { useUI, useMenuLabel } from '@/i18n';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
 
 const STATUS_LABELS = {
@@ -61,6 +61,7 @@ const BADGE_STYLES = {
  */
 export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, api }) {
   const ui = useUI();
+  const tMenu = useMenuLabel();
   const [showPaymentsModal, setShowPaymentsModal] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
   const [installments, setInstallments] = useState([]);
@@ -173,10 +174,11 @@ export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, 
         <SendDocumentButton onClick={() => setShowSendModal(true)} />
         {showSendModal && (
           <SendDocumentModal
-            documentType="Invoice"
+            documentType={tMenu('Sales Invoice')}
             documentNo={data?.documentNo}
             bpName={data?.['businessPartner$_identifier']}
-            bpEmail={data?.['userContact$_identifier']}
+            bPartnerId={data?.businessPartner}
+            apiBaseUrl={apiBaseUrl}
             documentId={data?.id}
             windowName="sales-invoice"
             token={token}
@@ -282,10 +284,11 @@ export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, 
       {/* Send Invoice modal */}
       {showSendModal && (
         <SendDocumentModal
-          documentType="Invoice"
+          documentType={tMenu('Sales Invoice')}
           documentNo={data?.documentNo}
           bpName={data?.['businessPartner$_identifier']}
-          bpEmail={data?.['userContact$_identifier']}
+          bPartnerId={data?.businessPartner}
+          apiBaseUrl={apiBaseUrl}
           documentId={data?.id}
           windowName="sales-invoice"
           token={token}
@@ -528,11 +531,14 @@ function PaymentRegisterForm({ invoiceId, invoiceData, scheduleId, outstanding, 
         let mapped = [];
         let defaultAccountId = null;
 
-        const res = await fetch(`${base}/payment-in/finPayment/selectors/Fin_Financial_Account_ID?_startRow=0&_endRow=50`, { headers });
+        const res = await fetch(
+          `${base}/sales-invoice/header/${invoiceId}/action/invoiceAccounts`,
+          { method: 'POST', headers, body: '{}' },
+        );
         if (res.ok) {
           const json = await res.json();
-          const items = json.items || json?.response?.data || [];
-          mapped = items.map(a => ({ id: a.id, name: a.label || a._identifier || a.name }));
+          const items = json.items || [];
+          mapped = items.map(a => ({ id: a.id, name: a.label || a.name }));
         }
 
         if (pmId && bpId) {

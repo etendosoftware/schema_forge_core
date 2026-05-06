@@ -6,7 +6,7 @@ import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import QuotationConfirmModal from './QuotationConfirmModal';
 import SendToEvaluationModal from './SendToEvaluationModal';
 import RejectQuotationModal from './RejectQuotationModal';
-import { useUI } from '@/i18n';
+import { useUI, useMenuLabel } from '@/i18n';
 
 function CopyIcon() {
   return (
@@ -34,6 +34,7 @@ const btnCloneStyle = {
 export default function QuotationTopbarActions({ data, recordId, token, apiBaseUrl }) {
   const navigate = useNavigate();
   const ui = useUI();
+  const tMenu = useMenuLabel();
   const [showSend, setShowSend] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showSendToEval, setShowSendToEval] = useState(false);
@@ -119,10 +120,11 @@ export default function QuotationTopbarActions({ data, recordId, token, apiBaseU
 
       {showSend && createPortal(
         <SendDocumentModal
-          documentType="Quotation"
+          documentType={tMenu('Sales Quotation')}
           documentNo={data?.documentNo}
           bpName={data?.['businessPartner$_identifier']}
-          bpEmail={data?.['userContact$_identifier']}
+          bPartnerId={data?.businessPartner}
+          apiBaseUrl={apiBaseUrl}
           documentId={recordId}
           windowName="sales-quotation"
           token={token}
