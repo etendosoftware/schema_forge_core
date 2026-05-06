@@ -238,6 +238,31 @@ export async function sendQuestion(token, { app_id, question, conversation_id, f
 }
 
 /**
+ * Invoke a registered copilot tool directly, bypassing the agent layer.
+ * Faster than {@link sendQuestion} because it skips agent reasoning and
+ * response formatting — use when the caller already knows which tool to run.
+ *
+ * When the tool needs a file, upload it first with {@link uploadFile} and
+ * pass the returned path inside `params` (e.g. `params.path`).
+ *
+ * @param {string} token
+ * @param {{
+ *   toolName: string,
+ *   params?: Record<string, unknown>,
+ *   agentId?: string,
+ * }} input
+ * @returns {Promise<object>} payload with `answer` containing the tool output
+ */
+export async function executeTool(token, { toolName, params, agentId }) {
+  const body = { tool_name: toolName, params: params || {} };
+  if (agentId) body.agent_id = agentId;
+  return copilotRequest('executeTool', token, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+/**
  * Upload a file to the copilot service and return the response (contains fileId).
  *
  * @param {string} token

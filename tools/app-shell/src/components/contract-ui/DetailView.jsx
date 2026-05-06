@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
@@ -21,6 +21,9 @@ import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { getStatusBadgeProps, getStatusDotColor, getStatusPillClass, statusLabel } from '@/lib/statusBadge.js';
 import { useRegisterWindowContext } from '@/components/CurrentWindowContext';
+import { matchOcrDocType } from '@/components/copilot/ocr/ocrDocTypes';
+
+const LazyOcrInlineUploader = lazy(() => import('@/components/copilot/ocr/OcrInlineUploader.jsx'));
 
 /**
  * Evaluate a simple Etendo display-logic expression (@Field@='Value') against record data.
@@ -106,6 +109,7 @@ export function DetailView({
   formFooter = null,
   draftMode = null,
   headerContent = null,
+  headerExtra = null,
   customTabs = [],
   documentPreview,
   notesField,
@@ -1587,6 +1591,49 @@ export function DetailView({
         })() : null}
         <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6'}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
+          {(() => {
+            const slotProps = {
+              data,
+              isNew,
+              entity,
+              recordId: data?.id || recordId,
+              token,
+              apiBaseUrl,
+              api,
+              detailEntity,
+              onFieldChange: handleChangeWithCallout,
+              onSave: async () => {
+                if (!(await flushPendingLines())) return null;
+                const saved = await hook.handleSave(data);
+                if (saved?.id && isNew) {
+                  hook.primeSaved?.(saved);
+                }
+                return saved;
+              },
+              onAddChild: hook.handleAddChild,
+              onRefresh: (parentId = data?.id || recordId) => {
+                if (!parentId) return;
+                hook.fetchChildren?.(parentId);
+                hook.fetchById?.(parentId);
+              },
+              onRefreshChildren: () => hook.fetchChildren?.(data?.id || recordId),
+            };
+            const ocrDocType = matchOcrDocType(location.pathname);
+            return (
+              <>
+                {headerExtra && (
+                  typeof headerExtra === 'function'
+                    ? headerExtra(slotProps)
+                    : headerExtra
+                )}
+                {!headerExtra && ocrDocType && (
+                  <Suspense fallback={null}>
+                    <LazyOcrInlineUploader {...slotProps} docTypeId={ocrDocType.id} />
+                  </Suspense>
+                )}
+              </>
+            );
+          })()}
           <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-2`}>
             {/* Principal + collapsed fields wrapped in a card */}

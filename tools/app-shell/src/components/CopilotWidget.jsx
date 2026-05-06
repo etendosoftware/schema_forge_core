@@ -227,7 +227,7 @@ export function CopilotWidget({ hideTrigger = false }) {
           'fixed z-50 transition-all duration-300 ease-out',
           maximized
             ? 'inset-4'
-            : 'bottom-20 left-6 w-full max-w-md h-[min(36rem,calc(100vh-6rem))] translate-x-[var(--copilot-shift)]',
+            : 'bottom-6 left-6 w-full max-w-md h-[min(36rem,calc(100vh-6rem))] translate-x-[var(--copilot-shift)]',
           open
             ? 'translate-y-0 opacity-100 pointer-events-auto'
             : 'translate-y-4 opacity-0 pointer-events-none'
