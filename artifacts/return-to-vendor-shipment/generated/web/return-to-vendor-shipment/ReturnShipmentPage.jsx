@@ -1,19 +1,39 @@
+import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import ReturnShipmentTable from './ReturnShipmentTable';
 import ReturnShipmentForm from './ReturnShipmentForm';
 import ReturnShipmentLineTable from './ReturnShipmentLineTable';
+import ReturnShipmentLineForm from './ReturnShipmentLineForm';
+import RelatedDocuments from '../../../custom/RelatedDocuments';
 import catalogs from './mockCatalogs';
 
+
+const breadcrumb = 'Purchases / Return to Vendor Shipment';
+
+
+// @sf-generated-start summary:returnShipment
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
 ];
 
 const statusField = 'docStatus';
+// @sf-generated-end summary:returnShipmentnono 
 
+// @sf-generated-start extraBadges:returnShipment
+const extraBadges = [];
+// @sf-generated-end extraBadges:returnShipment
+
+// @sf-generated-start processes:returnShipment
 const processes = [
 
 ];
+// @sf-generated-end processes:returnShipment
 
+// @sf-generated-start draftMode:returnShipment
+const draftMode = null;
+// @sf-generated-end draftMode:returnShipment
+
+// @sf-generated-start addLineFields:returnShipmentLine
 const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, reference: 'Product', inputMode: 'search' },
@@ -27,9 +47,15 @@ const addLineFields = {
   derived: [
 
   ],
-};
+  hidden: [
 
+  ],
+};
+// @sf-generated-end addLineFields:returnShipmentLine
+
+// @sf-generated-start component:ReturnShipmentPage
 export default function ReturnShipmentPage({ windowName, recordId, ...props }) {
+  
   if (recordId) {
     return (
       <DetailView
@@ -37,8 +63,10 @@ export default function ReturnShipmentPage({ windowName, recordId, ...props }) {
         detailEntity="returnShipmentLine"
         Form={ReturnShipmentForm}
         DetailTable={ReturnShipmentLineTable}
+        DetailForm={ReturnShipmentLineForm}
         summary={summary}
         statusField={statusField}
+        extraBadges={extraBadges}
         processes={processes}
         addLineFields={addLineFields}
         catalogs={catalogs}
@@ -46,6 +74,9 @@ export default function ReturnShipmentPage({ windowName, recordId, ...props }) {
         detailLabel="Return Shipment Line"
         windowName={windowName}
         recordId={recordId}
+        breadcrumb={breadcrumb}
+        notesField="description"
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         {...props}
       />
     );
@@ -55,9 +86,11 @@ export default function ReturnShipmentPage({ windowName, recordId, ...props }) {
     <ListView
       entity="returnShipment"
       Table={ReturnShipmentTable}
-      entityLabel="Return Shipment"
+      entityLabel="Return to Vendor Shipment"
       windowName={windowName}
+      breadcrumb={breadcrumb}
       {...props}
     />
   );
 }
+// @sf-generated-end component:ReturnShipmentPage

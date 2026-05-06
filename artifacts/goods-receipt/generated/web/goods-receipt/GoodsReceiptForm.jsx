@@ -1,18 +1,21 @@
 import { EntityForm } from '@/components/contract-ui';
 
+// @sf-generated-start fields:goodsReceipt
 const fields = [
-  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'search', required: true, reference: 'BusinessPartner', inputMode: 'search' },
-  { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'dependent', required: true, reference: 'BusinessPartnerLocation', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'businessPartnerId' } },
-  { key: 'movementDate', column: 'MovementDate', type: 'date', required: true },
-  { key: 'dateAcct', column: 'DateAcct', type: 'date', required: true },
-  { key: 'warehouse', column: 'M_Warehouse_ID', type: 'selector', required: true, reference: 'Warehouse', inputMode: 'selector' },
-  { key: 'description', column: 'Description', type: 'textarea' },
-  { key: 'poReference', column: 'POReference', type: 'text' },
-  { key: 'isActive', column: 'IsActive', type: 'checkbox', required: true },
-  { key: 'documentNo', column: 'DocumentNo', type: 'text', required: true, readOnly: true },
-  { key: 'docStatus', column: 'DocStatus', type: 'text', required: true, readOnly: true },
+  { key: 'documentNo', column: 'DocumentNo', type: 'text', label: 'Document No.', required: true, readOnly: true, section: 'principal', readOnlyLogic: (record) => record['processed'] === true },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'search', label: 'Business Partner', required: true, section: 'principal', reference: 'BusinessPartner', inputMode: 'search', readOnlyLogic: (record) => record['processed'] === true },
+  { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'dependent', label: 'Partner Address', required: true, section: 'principal', reference: 'BusinessPartnerLocation', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'C_BPartner_ID' }, readOnlyLogic: (record) => record['processed'] === true },
+  { key: 'warehouse', column: 'M_Warehouse_ID', type: 'selector', label: 'Warehouse', required: true, section: 'principal', reference: 'Warehouse', inputMode: 'selector', readOnlyLogic: (record) => record['processed'] === true },
+  { key: 'movementDate', column: 'MovementDate', type: 'date', label: 'Movement Date', required: true, section: 'principal', readOnlyLogic: (record) => record['processed'] === true },
+  { key: 'orderReference', column: 'POReference', type: 'text', label: 'Order Reference', section: 'principal', readOnlyLogic: (record) => record['processed'] === true },
+  { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'collapsed', readOnlyLogic: (record) => record['processed'] === true },
 ];
+// @sf-generated-end fields:goodsReceipt
 
+// @sf-generated-start component:GoodsReceiptForm
 export default function GoodsReceiptForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
+GoodsReceiptForm.hasCollapsedFields = true;
+
+// @sf-generated-end component:GoodsReceiptForm

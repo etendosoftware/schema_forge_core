@@ -199,13 +199,13 @@ describe('buildSchema', () => {
     // Header entity
     const header = schema.entities[0];
     assert.equal(header.tableName, 'C_Order');
-    assert.equal(header.level, 0);
+    assert.equal(header.level, 'header');
     assert.equal(header.fields.length, 2);
 
     // Line entity
     const line = schema.entities[1];
     assert.equal(line.tableName, 'C_OrderLine');
-    assert.equal(line.level, 1);
+    assert.equal(line.level, 'line');
     assert.equal(line.fields.length, 2);
 
     // Meta

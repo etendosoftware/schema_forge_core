@@ -1,54 +1,100 @@
 // Auto-generated mock data - do not edit manually
 
-export const paymentTerm = [
+export const header = [
   {
-    "id": "pt-001",
-    "name": "Immediate",
-    "searchKey": "IMM",
-    "description": "Payment due immediately",
-    "netDays": 0,
-    "discountDays": 0,
-    "discount": 0,
-    "isActive": true
+    "id": "mock-header-001",
+    "searchKey": "Sample searchKey",
+    "name": "Sample name",
+    "offsetMonthDue": 90,
+    "overduePaymentDaysRule": 90,
+    "default": "Sample default"
   },
   {
-    "id": "pt-002",
-    "name": "Net 15",
-    "searchKey": "N15",
-    "description": "Payment due in 15 days",
-    "netDays": 15,
-    "discountDays": 0,
-    "discount": 0,
-    "isActive": true
+    "id": "mock-header-002",
+    "searchKey": "Sample searchKey",
+    "name": "Sample name",
+    "offsetMonthDue": 93,
+    "overduePaymentDaysRule": 93,
+    "default": "Sample default"
   },
   {
-    "id": "pt-003",
-    "name": "Net 30",
-    "searchKey": "N30",
-    "description": "Payment due in 30 days",
-    "netDays": 30,
-    "discountDays": 0,
-    "discount": 0,
-    "isActive": true
+    "id": "mock-header-003",
+    "searchKey": "Sample searchKey",
+    "name": "Sample name",
+    "offsetMonthDue": 8,
+    "overduePaymentDaysRule": 8,
+    "default": "Sample default"
   },
   {
-    "id": "pt-004",
-    "name": "Net 60",
-    "searchKey": "N60",
-    "description": "Payment due in 60 days",
-    "netDays": 60,
-    "discountDays": 0,
-    "discount": 0,
-    "isActive": true
+    "id": "mock-header-004",
+    "searchKey": "Sample searchKey",
+    "name": "Sample name",
+    "offsetMonthDue": 91,
+    "overduePaymentDaysRule": 91,
+    "default": "Sample default"
   },
   {
-    "id": "pt-005",
-    "name": "2/10 Net 30",
-    "searchKey": "210N30",
-    "description": "2% discount if paid in 10 days, otherwise net 30",
-    "netDays": 30,
-    "discountDays": 10,
-    "discount": 2,
-    "isActive": true
+    "id": "mock-header-005",
+    "searchKey": "Sample searchKey",
+    "name": "Sample name",
+    "offsetMonthDue": 72,
+    "overduePaymentDaysRule": 72,
+    "default": "Sample default"
+  },
+  {
+    "id": "mock-header-006",
+    "searchKey": "Sample searchKey",
+    "name": "Sample name",
+    "offsetMonthDue": 78,
+    "overduePaymentDaysRule": 78,
+    "default": "Sample default"
+  },
+  {
+    "id": "mock-header-007",
+    "searchKey": "Sample searchKey",
+    "name": "Sample name",
+    "offsetMonthDue": 31,
+    "overduePaymentDaysRule": 31,
+    "default": "Sample default"
+  },
+  {
+    "id": "mock-header-008",
+    "searchKey": "Sample searchKey",
+    "name": "Sample name",
+    "offsetMonthDue": 97,
+    "overduePaymentDaysRule": 97,
+    "default": "Sample default"
+  },
+  {
+    "id": "mock-header-009",
+    "searchKey": "Sample searchKey",
+    "name": "Sample name",
+    "offsetMonthDue": 70,
+    "overduePaymentDaysRule": 70,
+    "default": "Sample default"
+  },
+  {
+    "id": "mock-header-010",
+    "searchKey": "Sample searchKey",
+    "name": "Sample name",
+    "offsetMonthDue": 77,
+    "overduePaymentDaysRule": 77,
+    "default": "Sample default"
+  },
+  {
+    "id": "mock-header-011",
+    "searchKey": "Sample searchKey",
+    "name": "Sample name",
+    "offsetMonthDue": 32,
+    "overduePaymentDaysRule": 32,
+    "default": "Sample default"
+  },
+  {
+    "id": "mock-header-012",
+    "searchKey": "Sample searchKey",
+    "name": "Sample name",
+    "offsetMonthDue": 26,
+    "overduePaymentDaysRule": 26,
+    "default": "Sample default"
   }
 ];

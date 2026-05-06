@@ -25,16 +25,31 @@ export const kpisConfig = [
     "label": "Net Profit",
     "format": "currency",
     "icon": "TrendingUp"
-  },
-  {
-    "key": "pendingInvoices",
-    "label": "Pending Invoices",
-    "format": "number",
-    "icon": "Clock"
   }
 ];
 
 export const sections = {
+  "kpi-revenue": {
+    "type": "kpi-single",
+    "key": "revenueThisMonth",
+    "label": "Revenue this month",
+    "format": "currency",
+    "icon": "DollarSign"
+  },
+  "kpi-expenses": {
+    "type": "kpi-single",
+    "key": "expensesThisMonth",
+    "label": "Expenses this month",
+    "format": "currency",
+    "icon": "CreditCard"
+  },
+  "kpi-profit": {
+    "type": "kpi-single",
+    "key": "netProfit",
+    "label": "Net Profit",
+    "format": "currency",
+    "icon": "TrendingUp"
+  },
   "revenue-trend": {
     "type": "chart",
     "chartType": "line",
@@ -60,24 +75,32 @@ export const sections = {
 
 export const layout = [
   {
-    "section": "kpi-header",
-    "span": "full"
+    "section": "kpi-revenue",
+    "span": "1/4"
   },
   {
-    "section": "revenue-trend",
-    "span": "2/3"
+    "section": "kpi-expenses",
+    "span": "1/4"
+  },
+  {
+    "section": "kpi-profit",
+    "span": "1/4"
   },
   {
     "section": "quick-actions",
-    "span": "2/3"
+    "span": "1/4"
+  },
+  {
+    "section": "revenue-trend",
+    "span": "2/4"
   },
   {
     "section": "pending-tasks",
-    "span": "1/3"
+    "span": "1/4"
   },
   {
     "section": "recent-messages",
-    "span": "1/3"
+    "span": "1/4"
   }
 ];
 
@@ -94,12 +117,7 @@ export const actions = [
   },
   {
     "label": "+ Contact",
-    "route": "/business-partner",
+    "route": "/contacts",
     "icon": "Users"
-  },
-  {
-    "label": "+ Product",
-    "route": "/product",
-    "icon": "Box"
   }
 ];

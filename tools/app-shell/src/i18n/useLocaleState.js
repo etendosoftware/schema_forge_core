@@ -1,13 +1,13 @@
 import { useState, useCallback } from 'react';
 
 const STORAGE_KEY = 'schema-forge-locale';
-const DEFAULT_LOCALE = 'en_US';
+const DEFAULT_LOCALE = 'es_ES';
 
 /**
  * Hook that manages the active locale with localStorage persistence.
  * Returns [locale, setLocale] similar to useState.
  *
- * On mount, reads from localStorage (falls back to 'en_US').
+ * On mount, reads from localStorage (falls back to 'es_ES').
  * On setLocale, writes to localStorage and updates state.
  */
 export function useLocaleState() {

@@ -1,298 +1,847 @@
 {
-  "version": "0.1.0",
-  "generatedAt": "2026-03-06T15:32:55.015Z",
-  "checksum": "8fe64c499e01e967",
+  "version": "0.2.0",
+  "generatedAt": "2026-04-29T18:12:11.134Z",
+  "checksum": "ce9c88025d677215",
   "frontendContract": {
     "window": {
-      "id": "203",
+      "id": "146",
       "name": "Price List",
       "primaryEntity": "priceList",
-      "category": "reference"
+      "category": "settings",
+      "hidePrint": true,
+      "hideMoreMenu": true,
+      "labelOverrides": {
+        "es_ES": {
+          "Name": "Nombre",
+          "C_Currency_ID": "Moneda",
+          "Costbased": "Basado en coste",
+          "IsTaxIncluded": "Precio incluye impuesto",
+          "IsDefault": "Por defecto"
+        }
+      },
+      "layoutType": "default"
     },
     "entities": {
       "priceList": {
+        "tableName": "M_PriceList",
+        "tabId": "191",
+        "tabName": "Price List",
+        "uiPattern": "STD",
         "fields": [
           {
             "name": "name",
+            "apiKey": "name",
             "column": "Name",
+            "label": "Name",
             "type": "string",
             "tsType": "string",
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
-          },
-          {
-            "name": "description",
-            "column": "Description",
-            "type": "string",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true
+            "form": true,
+            "sourceRequired": true,
+            "section": "principal",
+            "seq": 1
           },
           {
             "name": "currency",
+            "apiKey": "currency",
             "column": "C_Currency_ID",
-            "type": "string",
+            "label": "Currency",
+            "type": "foreignKey",
             "tsType": "string",
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "sourceRequired": true,
+            "reference": "Currency",
+            "inputMode": "selector",
+            "section": "principal",
+            "seq": 2
           },
           {
-            "name": "isDefault",
-            "column": "IsDefault",
-            "type": "boolean",
-            "tsType": "boolean",
+            "name": "description",
+            "apiKey": "description",
+            "column": "Description",
+            "label": "Description",
+            "type": "string",
+            "tsType": "string",
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": true
+            "form": true,
+            "section": "principal",
+            "seq": 3
           },
           {
-            "name": "isSalesPrice",
+            "name": "salesPriceList",
+            "apiKey": "salesPriceList",
             "column": "IsSOPriceList",
+            "label": "Sales Price List",
             "type": "boolean",
             "tsType": "boolean",
-            "visibility": "readOnly",
-            "required": false,
-            "grid": true,
-            "form": true
-          },
-          {
-            "name": "isActive",
-            "column": "IsActive",
-            "type": "boolean",
-            "tsType": "boolean",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "sourceRequired": true,
+            "section": "principal",
+            "seq": 4,
+            "badge": true,
+            "badgeLabels": {
+              "true": {
+                "es_ES": "Venta",
+                "en_US": "Sales"
+              },
+              "false": {
+                "es_ES": "Compra",
+                "en_US": "Purchase"
+              }
+            },
+            "badgeVariants": {
+              "true": "blue",
+              "false": "purple"
+            },
+            "labels": {
+              "es_ES": "Tipo",
+              "en_US": "Type"
+            },
+            "callout": {
+              "className": "org.openbravo.erpCommon.ad_callouts.SE_Sales_Pricelist"
+            }
+          },
+          {
+            "name": "costBasedPriceList",
+            "apiKey": "costBasedPriceList",
+            "column": "Costbased",
+            "label": "Price list based on cost",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
+            "defaultValue": "N",
+            "section": "principal",
+            "seq": 5,
+            "displayLogic": {
+              "raw": "@IsSOPriceList@='Y'",
+              "evaluable": true
+            }
+          },
+          {
+            "name": "priceIncludesTax",
+            "apiKey": "priceIncludesTax",
+            "column": "IsTaxIncluded",
+            "label": "Price includes Tax",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "section": "principal",
+            "seq": 6,
+            "validationRule": {
+              "code": "AD_Client.AD_Client_ID in (@#User_Client@)",
+              "contextParams": [
+                "User_Client"
+              ],
+              "cascadeParams": []
+            }
+          },
+          {
+            "name": "default",
+            "apiKey": "default",
+            "column": "IsDefault",
+            "label": "Default",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "section": "principal",
+            "seq": 7
           }
         ],
         "searchableFields": [
           "name"
         ],
-        "computedFields": []
+        "computedFields": [
+          {
+            "name": "costBasedPriceList",
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            }
+          }
+        ]
       },
-      "priceListLine": {
+      "priceListVersion": {
+        "tableName": "M_PriceList_Version",
+        "tabId": "238",
+        "tabName": "Price List Version",
+        "uiPattern": "STD",
         "fields": [
           {
-            "name": "product",
-            "column": "M_Product_ID",
+            "name": "name",
+            "apiKey": "name",
+            "column": "Name",
+            "label": "Name",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            },
+            "defaultValue": "@#Date@"
+          },
+          {
+            "name": "validFromDate",
+            "apiKey": "validFromDate",
+            "column": "ValidFrom",
+            "label": "Valid From Date",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            },
+            "defaultValue": "@#Date@"
+          },
+          {
+            "name": "priceListSchema",
+            "apiKey": "priceListSchema",
+            "column": "M_DiscountSchema_ID",
+            "label": "Price List Schema",
             "type": "foreignKey",
             "tsType": "string",
             "visibility": "editable",
             "required": true,
-            "grid": true,
+            "grid": false,
             "form": true,
-            "reference": "Product",
+            "sourceRequired": true,
+            "reference": "DiscountSchema",
+            "inputMode": "selector",
+            "validationRule": {
+              "code": "M_DiscountSchema.DiscountType='P'",
+              "contextParams": [],
+              "cascadeParams": []
+            }
+          },
+          {
+            "name": "basePriceListVersion",
+            "apiKey": "basePriceListVersion",
+            "column": "M_Pricelist_Version_Base_ID",
+            "label": "Base Version (Default)",
+            "type": "foreignKey",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true,
+            "reference": "PriceList_Version",
             "inputMode": "search"
           },
           {
-            "name": "listPrice",
-            "column": "PriceList",
-            "type": "amount",
-            "tsType": "number",
+            "name": "description",
+            "apiKey": "description",
+            "column": "Description",
+            "label": "Description",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          },
+          {
+            "name": "create",
+            "apiKey": "create",
+            "column": "ProcCreate",
+            "label": "Create Price List",
+            "type": "button",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": true
+          }
+        ],
+        "searchableFields": [],
+        "computedFields": [
+          {
+            "name": "name",
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            }
+          },
+          {
+            "name": "validFromDate",
+            "derivation": {
+              "type": "computed",
+              "source": "@#Date@"
+            }
+          }
+        ]
+      },
+      "productPrice": {
+        "tableName": "M_ProductPrice",
+        "tabId": "192",
+        "tabName": "Product Price",
+        "uiPattern": "STD",
+        "fields": [
+          {
+            "name": "product",
+            "apiKey": "product",
+            "column": "M_Product_ID",
+            "label": "Product",
+            "type": "foreignKey",
+            "tsType": "string",
             "visibility": "editable",
             "required": true,
-            "grid": true,
-            "form": true
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "reference": "Product",
+            "inputMode": "selector"
           },
           {
             "name": "standardPrice",
+            "apiKey": "standardPrice",
             "column": "PriceStd",
-            "type": "amount",
+            "label": "Unit Price",
+            "type": "price",
             "tsType": "number",
             "visibility": "editable",
             "required": true,
-            "grid": true,
-            "form": true
+            "grid": false,
+            "form": true,
+            "sourceRequired": true
           },
           {
-            "name": "limitPrice",
-            "column": "PriceLimit",
-            "type": "amount",
+            "name": "listPrice",
+            "apiKey": "listPrice",
+            "column": "PriceList",
+            "label": "List Price",
+            "type": "price",
             "tsType": "number",
             "visibility": "editable",
-            "required": false,
-            "grid": true,
-            "form": true
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true
           },
           {
-            "name": "uom",
-            "column": "C_UOM_ID",
-            "type": "foreignKey",
+            "name": "cost",
+            "apiKey": "cost",
+            "column": "Cost",
+            "label": "Cost",
+            "type": "string",
             "tsType": "string",
-            "visibility": "readOnly",
-            "required": false,
-            "grid": true,
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
             "form": true,
-            "reference": "UOM",
-            "inputMode": "selector"
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
+            "defaultValue": "0",
+            "displayLogic": {
+              "raw": "@Costbased@='Y'",
+              "evaluable": true
+            }
+          },
+          {
+            "name": "algorithm",
+            "apiKey": "algorithm",
+            "column": "Algorithm",
+            "label": "Algorithm",
+            "type": "enum",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "S"
+            },
+            "enumValues": [
+              {
+                "value": "S",
+                "name": "Standard"
+              }
+            ],
+            "defaultValue": "S",
+            "displayLogic": {
+              "raw": "(@numberOfAlgorithms@>1)",
+              "evaluable": true
+            }
           }
         ],
-        "searchableFields": [
-          "product"
-        ],
-        "computedFields": []
+        "searchableFields": [],
+        "computedFields": [
+          {
+            "name": "cost",
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            }
+          },
+          {
+            "name": "algorithm",
+            "derivation": {
+              "type": "computed",
+              "source": "S"
+            }
+          }
+        ]
       }
     }
   },
   "backendContract": {
     "window": {
-      "id": "203",
+      "id": "146",
       "name": "Price List",
       "primaryEntity": "priceList",
-      "category": "reference"
+      "category": "settings",
+      "hidePrint": true,
+      "hideMoreMenu": true,
+      "labelOverrides": {
+        "es_ES": {
+          "Name": "Nombre",
+          "C_Currency_ID": "Moneda",
+          "Costbased": "Basado en coste",
+          "IsTaxIncluded": "Precio incluye impuesto",
+          "IsDefault": "Por defecto"
+        }
+      }
     },
     "entities": {
       "priceList": {
+        "tableName": "M_PriceList",
+        "tabId": "191",
+        "tabName": "Price List",
         "fields": [
           {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
             "name": "name",
+            "apiKey": "name",
             "column": "Name",
             "type": "string",
             "visibility": "editable",
             "required": true
           },
           {
+            "name": "currency",
+            "apiKey": "currency",
+            "column": "C_Currency_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
             "name": "description",
+            "apiKey": "description",
             "column": "Description",
             "type": "string",
             "visibility": "editable",
             "required": false
           },
           {
-            "name": "currency",
-            "column": "C_Currency_ID",
-            "type": "string",
+            "name": "salesPriceList",
+            "apiKey": "salesPriceList",
+            "column": "IsSOPriceList",
+            "type": "boolean",
             "visibility": "editable",
             "required": true
           },
           {
-            "name": "isDefault",
+            "name": "costBasedPriceList",
+            "apiKey": "costBasedPriceList",
+            "column": "Costbased",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "basePricelist",
+            "apiKey": "basePricelist",
+            "column": "BasePriceList_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "enforcePriceLimit",
+            "apiKey": "enforcePriceLimit",
+            "column": "EnforcePriceLimit",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "priceIncludesTax",
+            "apiKey": "priceIncludesTax",
+            "column": "IsTaxIncluded",
+            "type": "boolean",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "default",
+            "apiKey": "default",
             "column": "IsDefault",
             "type": "boolean",
             "visibility": "editable",
-            "required": false
-          },
-          {
-            "name": "isSalesPrice",
-            "column": "IsSOPriceList",
-            "type": "boolean",
-            "visibility": "readOnly",
-            "required": false
-          },
-          {
-            "name": "isActive",
-            "column": "IsActive",
-            "type": "boolean",
-            "visibility": "readOnly",
             "required": true
           },
           {
-            "name": "adClientId",
+            "name": "client",
+            "apiKey": "client",
             "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "id",
+            "apiKey": "id",
+            "column": "M_PriceList_ID",
             "type": "id",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "adOrgId",
-            "column": "AD_Org_ID",
-            "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "created",
+            "name": "creationDate",
+            "apiKey": "creationDate",
             "column": "Created",
-            "type": "datetime",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "CreatedBy",
+            "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
           {
             "name": "updated",
+            "apiKey": "updated",
             "column": "Updated",
-            "type": "datetime",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "UpdatedBy",
+            "type": "foreignKey",
             "visibility": "system",
             "required": true
           }
         ]
       },
-      "priceListLine": {
+      "priceListVersion": {
+        "tableName": "M_PriceList_Version",
+        "tabId": "238",
+        "tabName": "Price List Version",
         "fields": [
           {
-            "name": "product",
-            "column": "M_Product_ID",
+            "name": "name",
+            "apiKey": "name",
+            "column": "Name",
+            "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "validFromDate",
+            "apiKey": "validFromDate",
+            "column": "ValidFrom",
+            "type": "date",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "priceListSchema",
+            "apiKey": "priceListSchema",
+            "column": "M_DiscountSchema_ID",
             "type": "foreignKey",
             "visibility": "editable",
             "required": true
           },
           {
-            "name": "listPrice",
-            "column": "PriceList",
-            "type": "amount",
-            "visibility": "editable",
-            "required": true
-          },
-          {
-            "name": "standardPrice",
-            "column": "PriceStd",
-            "type": "amount",
-            "visibility": "editable",
-            "required": true
-          },
-          {
-            "name": "limitPrice",
-            "column": "PriceLimit",
-            "type": "amount",
-            "visibility": "editable",
-            "required": false
-          },
-          {
-            "name": "uom",
-            "column": "C_UOM_ID",
+            "name": "basePriceListVersion",
+            "apiKey": "basePriceListVersion",
+            "column": "M_Pricelist_Version_Base_ID",
             "type": "foreignKey",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": false
           },
           {
-            "name": "adClientId",
-            "column": "AD_Client_ID",
-            "type": "id",
+            "name": "description",
+            "apiKey": "description",
+            "column": "Description",
+            "type": "string",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
+            "type": "boolean",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "adOrgId",
-            "column": "AD_Org_ID",
-            "type": "id",
+            "name": "create",
+            "apiKey": "create",
+            "column": "ProcCreate",
+            "type": "button",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "generatePriceListVersion",
+            "apiKey": "generatePriceListVersion",
+            "column": "M_Pricelist_Version_Generate",
+            "type": "button",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "mPricelistId",
+            "name": "priceList",
+            "apiKey": "priceList",
             "column": "M_PriceList_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "created",
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "id",
+            "apiKey": "id",
+            "column": "M_PriceList_Version_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
             "column": "Created",
-            "type": "datetime",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "CreatedBy",
+            "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
           {
             "name": "updated",
+            "apiKey": "updated",
             "column": "Updated",
-            "type": "datetime",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "UpdatedBy",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          }
+        ]
+      },
+      "productPrice": {
+        "tableName": "M_ProductPrice",
+        "tabId": "192",
+        "tabName": "Product Price",
+        "fields": [
+          {
+            "name": "product",
+            "apiKey": "product",
+            "column": "M_Product_ID",
+            "type": "foreignKey",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "standardPrice",
+            "apiKey": "standardPrice",
+            "column": "PriceStd",
+            "type": "price",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "listPrice",
+            "apiKey": "listPrice",
+            "column": "PriceList",
+            "type": "price",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "priceLimit",
+            "apiKey": "priceLimit",
+            "column": "PriceLimit",
+            "type": "price",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "cost",
+            "apiKey": "cost",
+            "column": "Cost",
+            "type": "string",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "algorithm",
+            "apiKey": "algorithm",
+            "column": "Algorithm",
+            "type": "enum",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "priceListVersion",
+            "apiKey": "priceListVersion",
+            "column": "M_PriceList_Version_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "id",
+            "apiKey": "id",
+            "column": "M_ProductPrice_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
+            "column": "Created",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "CreatedBy",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updated",
+            "apiKey": "updated",
+            "column": "Updated",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "UpdatedBy",
+            "type": "foreignKey",
             "visibility": "system",
             "required": true
           }
@@ -334,38 +883,184 @@
       },
       {
         "method": "GET",
-        "path": "/priceListLine",
-        "entity": "priceListLine",
-        "supportedFilters": [
-          "product"
-        ]
+        "path": "/priceListVersion",
+        "entity": "priceListVersion",
+        "supportedFilters": []
       },
       {
         "method": "GET",
-        "path": "/priceListLine/:id",
-        "entity": "priceListLine",
+        "path": "/priceListVersion/:id",
+        "entity": "priceListVersion",
         "supportedFilters": []
       },
       {
         "method": "POST",
-        "path": "/priceListLine",
-        "entity": "priceListLine",
+        "path": "/priceListVersion",
+        "entity": "priceListVersion",
         "supportedFilters": []
       },
       {
         "method": "PUT",
-        "path": "/priceListLine/:id",
-        "entity": "priceListLine",
+        "path": "/priceListVersion/:id",
+        "entity": "priceListVersion",
         "supportedFilters": []
       },
       {
         "method": "DELETE",
-        "path": "/priceListLine/:id",
-        "entity": "priceListLine",
+        "path": "/priceListVersion/:id",
+        "entity": "priceListVersion",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/productPrice",
+        "entity": "productPrice",
+        "supportedFilters": []
+      },
+      {
+        "method": "GET",
+        "path": "/productPrice/:id",
+        "entity": "productPrice",
+        "supportedFilters": []
+      },
+      {
+        "method": "POST",
+        "path": "/productPrice",
+        "entity": "productPrice",
+        "supportedFilters": []
+      },
+      {
+        "method": "PUT",
+        "path": "/productPrice/:id",
+        "entity": "productPrice",
+        "supportedFilters": []
+      },
+      {
+        "method": "DELETE",
+        "path": "/productPrice/:id",
+        "entity": "productPrice",
         "supportedFilters": []
       }
     ],
     "processEndpoints": []
+  },
+  "apiPrediction": {
+    "specName": "price-list",
+    "baseUrl": "/sws/neo/price-list",
+    "crud": {
+      "priceList": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/price-list/priceList",
+        "detailUrl": "/sws/neo/price-list/priceList/{id}",
+        "supportedFilters": [
+          "name"
+        ]
+      },
+      "priceListVersion": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/price-list/priceListVersion",
+        "detailUrl": "/sws/neo/price-list/priceListVersion/{id}",
+        "supportedFilters": []
+      },
+      "productPrice": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/price-list/productPrice",
+        "detailUrl": "/sws/neo/price-list/productPrice/{id}",
+        "supportedFilters": []
+      }
+    },
+    "selectors": [
+      {
+        "entity": "priceList",
+        "field": "currency",
+        "column": "C_Currency_ID",
+        "reference": "Currency",
+        "inputMode": "selector",
+        "url": "/sws/neo/price-list/priceList/selectors/currency"
+      },
+      {
+        "entity": "priceListVersion",
+        "field": "priceListSchema",
+        "column": "M_DiscountSchema_ID",
+        "reference": "DiscountSchema",
+        "inputMode": "selector",
+        "url": "/sws/neo/price-list/priceListVersion/selectors/priceListSchema"
+      },
+      {
+        "entity": "priceListVersion",
+        "field": "basePriceListVersion",
+        "column": "M_Pricelist_Version_Base_ID",
+        "reference": "PriceList_Version",
+        "inputMode": "search",
+        "url": "/sws/neo/price-list/priceListVersion/selectors/basePriceListVersion"
+      },
+      {
+        "entity": "productPrice",
+        "field": "product",
+        "column": "M_Product_ID",
+        "reference": "Product",
+        "inputMode": "selector",
+        "url": "/sws/neo/price-list/productPrice/selectors/product"
+      }
+    ],
+    "actions": [
+      {
+        "entity": "priceListVersion",
+        "field": "create",
+        "column": "ProcCreate",
+        "url": "/sws/neo/price-list/priceListVersion/{id}/action/create",
+        "processId": "103",
+        "processType": "classic"
+      },
+      {
+        "entity": "priceListVersion",
+        "field": "generatePriceListVersion",
+        "column": "M_Pricelist_Version_Generate",
+        "url": "/sws/neo/price-list/priceListVersion/{id}/action/generatePriceListVersion",
+        "processId": "800069",
+        "processType": "classic"
+      }
+    ],
+    "queryParams": {
+      "pagination": {
+        "startRow": "_startRow",
+        "endRow": "_endRow",
+        "default": "0-100"
+      },
+      "sorting": {
+        "param": "_sortBy",
+        "example": "_sortBy=creationDate desc"
+      },
+      "filtering": "Use field name as query param: ?fieldName=value",
+      "parentFilter": "parentId={id} for child entities"
+    },
+    "window": {
+      "category": "settings"
+    },
+    "labelOverrides": {
+      "es_ES": {
+        "Name": "Nombre",
+        "C_Currency_ID": "Moneda",
+        "Costbased": "Basado en coste",
+        "IsTaxIncluded": "Precio incluye impuesto",
+        "IsDefault": "Por defecto"
+      }
+    }
   },
   "testManifest": {
     "tests": [
@@ -381,57 +1076,57 @@
         "id": "t-2",
         "category": "field-presence",
         "entity": "priceList",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should be present in priceList"
-      },
-      {
-        "id": "t-3",
-        "category": "field-presence",
-        "entity": "priceList",
         "field": "currency",
         "runner": "node",
         "description": "Field 'currency' should be present in priceList"
       },
       {
+        "id": "t-3",
+        "category": "field-presence",
+        "entity": "priceList",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in priceList"
+      },
+      {
         "id": "t-4",
         "category": "field-presence",
         "entity": "priceList",
-        "field": "isDefault",
+        "field": "salesPriceList",
         "runner": "node",
-        "description": "Field 'isDefault' should be present in priceList"
+        "description": "Field 'salesPriceList' should be present in priceList"
       },
       {
         "id": "t-5",
         "category": "field-presence",
         "entity": "priceList",
-        "field": "isSalesPrice",
+        "field": "costBasedPriceList",
         "runner": "node",
-        "description": "Field 'isSalesPrice' should be present in priceList"
+        "description": "Field 'costBasedPriceList' should be present in priceList"
       },
       {
         "id": "t-6",
         "category": "field-presence",
         "entity": "priceList",
-        "field": "isActive",
+        "field": "priceIncludesTax",
         "runner": "node",
-        "description": "Field 'isActive' should be present in priceList"
+        "description": "Field 'priceIncludesTax' should be present in priceList"
       },
       {
         "id": "t-7",
-        "category": "field-type",
+        "category": "field-presence",
         "entity": "priceList",
-        "field": "name",
+        "field": "default",
         "runner": "node",
-        "description": "Field 'name' should have type 'string' in priceList"
+        "description": "Field 'default' should be present in priceList"
       },
       {
         "id": "t-8",
         "category": "field-type",
         "entity": "priceList",
-        "field": "description",
+        "field": "name",
         "runner": "node",
-        "description": "Field 'description' should have type 'string' in priceList"
+        "description": "Field 'name' should have type 'string' in priceList"
       },
       {
         "id": "t-9",
@@ -445,28 +1140,44 @@
         "id": "t-10",
         "category": "field-type",
         "entity": "priceList",
-        "field": "isDefault",
+        "field": "description",
         "runner": "node",
-        "description": "Field 'isDefault' should have type 'boolean' in priceList"
+        "description": "Field 'description' should have type 'string' in priceList"
       },
       {
         "id": "t-11",
         "category": "field-type",
         "entity": "priceList",
-        "field": "isSalesPrice",
+        "field": "salesPriceList",
         "runner": "node",
-        "description": "Field 'isSalesPrice' should have type 'boolean' in priceList"
+        "description": "Field 'salesPriceList' should have type 'boolean' in priceList"
       },
       {
         "id": "t-12",
         "category": "field-type",
         "entity": "priceList",
-        "field": "isActive",
+        "field": "costBasedPriceList",
         "runner": "node",
-        "description": "Field 'isActive' should have type 'boolean' in priceList"
+        "description": "Field 'costBasedPriceList' should have type 'boolean' in priceList"
       },
       {
         "id": "t-13",
+        "category": "field-type",
+        "entity": "priceList",
+        "field": "priceIncludesTax",
+        "runner": "node",
+        "description": "Field 'priceIncludesTax' should have type 'boolean' in priceList"
+      },
+      {
+        "id": "t-14",
+        "category": "field-type",
+        "entity": "priceList",
+        "field": "default",
+        "runner": "node",
+        "description": "Field 'default' should have type 'boolean' in priceList"
+      },
+      {
+        "id": "t-15",
         "category": "searchable-filters",
         "entity": "priceList",
         "field": "name",
@@ -474,133 +1185,356 @@
         "description": "Field 'name' should be a supported filter for priceList"
       },
       {
-        "id": "t-14",
+        "id": "t-16",
         "category": "visibility",
         "entity": "priceList",
         "runner": "node",
         "description": "Entity 'priceList' should only expose visible fields in frontend"
       },
       {
-        "id": "t-15",
-        "category": "field-presence",
-        "entity": "priceListLine",
-        "field": "product",
-        "runner": "node",
-        "description": "Field 'product' should be present in priceListLine"
-      },
-      {
-        "id": "t-16",
-        "category": "field-presence",
-        "entity": "priceListLine",
-        "field": "listPrice",
-        "runner": "node",
-        "description": "Field 'listPrice' should be present in priceListLine"
-      },
-      {
         "id": "t-17",
-        "category": "field-presence",
-        "entity": "priceListLine",
-        "field": "standardPrice",
+        "category": "displaylogic-valid",
+        "entity": "priceList",
+        "field": "costBasedPriceList",
         "runner": "node",
-        "description": "Field 'standardPrice' should be present in priceListLine"
+        "description": "Display logic for 'costBasedPriceList' in priceList should be valid JS"
       },
       {
         "id": "t-18",
-        "category": "field-presence",
-        "entity": "priceListLine",
-        "field": "limitPrice",
+        "category": "displaylogic-evaluable",
+        "entity": "priceList",
+        "field": "costBasedPriceList",
         "runner": "node",
-        "description": "Field 'limitPrice' should be present in priceListLine"
+        "description": "Display logic for 'costBasedPriceList' in priceList should have evaluable flag"
       },
       {
         "id": "t-19",
-        "category": "field-presence",
-        "entity": "priceListLine",
-        "field": "uom",
+        "category": "default-value-type",
+        "entity": "priceList",
+        "field": "costBasedPriceList",
         "runner": "node",
-        "description": "Field 'uom' should be present in priceListLine"
+        "description": "Default value for 'costBasedPriceList' in priceList should be a string"
       },
       {
         "id": "t-20",
-        "category": "field-type",
-        "entity": "priceListLine",
-        "field": "product",
+        "category": "field-presence",
+        "entity": "priceListVersion",
+        "field": "name",
         "runner": "node",
-        "description": "Field 'product' should have type 'string' in priceListLine"
+        "description": "Field 'name' should be present in priceListVersion"
       },
       {
         "id": "t-21",
-        "category": "field-type",
-        "entity": "priceListLine",
-        "field": "listPrice",
+        "category": "field-presence",
+        "entity": "priceListVersion",
+        "field": "validFromDate",
         "runner": "node",
-        "description": "Field 'listPrice' should have type 'number' in priceListLine"
+        "description": "Field 'validFromDate' should be present in priceListVersion"
       },
       {
         "id": "t-22",
-        "category": "field-type",
-        "entity": "priceListLine",
-        "field": "standardPrice",
+        "category": "field-presence",
+        "entity": "priceListVersion",
+        "field": "priceListSchema",
         "runner": "node",
-        "description": "Field 'standardPrice' should have type 'number' in priceListLine"
+        "description": "Field 'priceListSchema' should be present in priceListVersion"
       },
       {
         "id": "t-23",
-        "category": "field-type",
-        "entity": "priceListLine",
-        "field": "limitPrice",
+        "category": "field-presence",
+        "entity": "priceListVersion",
+        "field": "basePriceListVersion",
         "runner": "node",
-        "description": "Field 'limitPrice' should have type 'number' in priceListLine"
+        "description": "Field 'basePriceListVersion' should be present in priceListVersion"
       },
       {
         "id": "t-24",
-        "category": "field-type",
-        "entity": "priceListLine",
-        "field": "uom",
+        "category": "field-presence",
+        "entity": "priceListVersion",
+        "field": "description",
         "runner": "node",
-        "description": "Field 'uom' should have type 'string' in priceListLine"
+        "description": "Field 'description' should be present in priceListVersion"
       },
       {
         "id": "t-25",
-        "category": "searchable-filters",
-        "entity": "priceListLine",
-        "field": "product",
+        "category": "field-presence",
+        "entity": "priceListVersion",
+        "field": "create",
         "runner": "node",
-        "description": "Field 'product' should be a supported filter for priceListLine"
+        "description": "Field 'create' should be present in priceListVersion"
       },
       {
         "id": "t-26",
-        "category": "visibility",
-        "entity": "priceListLine",
+        "category": "field-type",
+        "entity": "priceListVersion",
+        "field": "name",
         "runner": "node",
-        "description": "Entity 'priceListLine' should only expose visible fields in frontend"
+        "description": "Field 'name' should have type 'string' in priceListVersion"
       },
       {
         "id": "t-27",
-        "category": "system-field",
-        "entity": "priceList",
-        "field": "adClientId",
+        "category": "field-type",
+        "entity": "priceListVersion",
+        "field": "validFromDate",
         "runner": "node",
-        "description": "System field 'adClientId' should exist in backend but not frontend for priceList"
+        "description": "Field 'validFromDate' should have type 'string' in priceListVersion"
       },
       {
         "id": "t-28",
-        "category": "system-field",
-        "entity": "priceList",
-        "field": "adOrgId",
+        "category": "field-type",
+        "entity": "priceListVersion",
+        "field": "priceListSchema",
         "runner": "node",
-        "description": "System field 'adOrgId' should exist in backend but not frontend for priceList"
+        "description": "Field 'priceListSchema' should have type 'string' in priceListVersion"
       },
       {
         "id": "t-29",
-        "category": "system-field",
-        "entity": "priceList",
-        "field": "created",
+        "category": "field-type",
+        "entity": "priceListVersion",
+        "field": "basePriceListVersion",
         "runner": "node",
-        "description": "System field 'created' should exist in backend but not frontend for priceList"
+        "description": "Field 'basePriceListVersion' should have type 'string' in priceListVersion"
       },
       {
         "id": "t-30",
+        "category": "field-type",
+        "entity": "priceListVersion",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in priceListVersion"
+      },
+      {
+        "id": "t-31",
+        "category": "field-type",
+        "entity": "priceListVersion",
+        "field": "create",
+        "runner": "node",
+        "description": "Field 'create' should have type 'string' in priceListVersion"
+      },
+      {
+        "id": "t-32",
+        "category": "visibility",
+        "entity": "priceListVersion",
+        "runner": "node",
+        "description": "Entity 'priceListVersion' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-33",
+        "category": "default-value-type",
+        "entity": "priceListVersion",
+        "field": "name",
+        "runner": "node",
+        "description": "Default value for 'name' in priceListVersion should be a string"
+      },
+      {
+        "id": "t-34",
+        "category": "default-value-type",
+        "entity": "priceListVersion",
+        "field": "validFromDate",
+        "runner": "node",
+        "description": "Default value for 'validFromDate' in priceListVersion should be a string"
+      },
+      {
+        "id": "t-35",
+        "category": "field-presence",
+        "entity": "productPrice",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be present in productPrice"
+      },
+      {
+        "id": "t-36",
+        "category": "field-presence",
+        "entity": "productPrice",
+        "field": "standardPrice",
+        "runner": "node",
+        "description": "Field 'standardPrice' should be present in productPrice"
+      },
+      {
+        "id": "t-37",
+        "category": "field-presence",
+        "entity": "productPrice",
+        "field": "listPrice",
+        "runner": "node",
+        "description": "Field 'listPrice' should be present in productPrice"
+      },
+      {
+        "id": "t-38",
+        "category": "field-presence",
+        "entity": "productPrice",
+        "field": "cost",
+        "runner": "node",
+        "description": "Field 'cost' should be present in productPrice"
+      },
+      {
+        "id": "t-39",
+        "category": "field-presence",
+        "entity": "productPrice",
+        "field": "algorithm",
+        "runner": "node",
+        "description": "Field 'algorithm' should be present in productPrice"
+      },
+      {
+        "id": "t-40",
+        "category": "field-type",
+        "entity": "productPrice",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should have type 'string' in productPrice"
+      },
+      {
+        "id": "t-41",
+        "category": "field-type",
+        "entity": "productPrice",
+        "field": "standardPrice",
+        "runner": "node",
+        "description": "Field 'standardPrice' should have type 'number' in productPrice"
+      },
+      {
+        "id": "t-42",
+        "category": "field-type",
+        "entity": "productPrice",
+        "field": "listPrice",
+        "runner": "node",
+        "description": "Field 'listPrice' should have type 'number' in productPrice"
+      },
+      {
+        "id": "t-43",
+        "category": "field-type",
+        "entity": "productPrice",
+        "field": "cost",
+        "runner": "node",
+        "description": "Field 'cost' should have type 'string' in productPrice"
+      },
+      {
+        "id": "t-44",
+        "category": "field-type",
+        "entity": "productPrice",
+        "field": "algorithm",
+        "runner": "node",
+        "description": "Field 'algorithm' should have type 'string' in productPrice"
+      },
+      {
+        "id": "t-45",
+        "category": "visibility",
+        "entity": "productPrice",
+        "runner": "node",
+        "description": "Entity 'productPrice' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-46",
+        "category": "displaylogic-valid",
+        "entity": "productPrice",
+        "field": "cost",
+        "runner": "node",
+        "description": "Display logic for 'cost' in productPrice should be valid JS"
+      },
+      {
+        "id": "t-47",
+        "category": "displaylogic-valid",
+        "entity": "productPrice",
+        "field": "algorithm",
+        "runner": "node",
+        "description": "Display logic for 'algorithm' in productPrice should be valid JS"
+      },
+      {
+        "id": "t-48",
+        "category": "displaylogic-evaluable",
+        "entity": "productPrice",
+        "field": "cost",
+        "runner": "node",
+        "description": "Display logic for 'cost' in productPrice should have evaluable flag"
+      },
+      {
+        "id": "t-49",
+        "category": "displaylogic-evaluable",
+        "entity": "productPrice",
+        "field": "algorithm",
+        "runner": "node",
+        "description": "Display logic for 'algorithm' in productPrice should have evaluable flag"
+      },
+      {
+        "id": "t-50",
+        "category": "default-value-type",
+        "entity": "productPrice",
+        "field": "cost",
+        "runner": "node",
+        "description": "Default value for 'cost' in productPrice should be a string"
+      },
+      {
+        "id": "t-51",
+        "category": "default-value-type",
+        "entity": "productPrice",
+        "field": "algorithm",
+        "runner": "node",
+        "description": "Default value for 'algorithm' in productPrice should be a string"
+      },
+      {
+        "id": "t-52",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-53",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "basePricelist",
+        "runner": "node",
+        "description": "System field 'basePricelist' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-54",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-55",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "enforcePriceLimit",
+        "runner": "node",
+        "description": "System field 'enforcePriceLimit' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-56",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-57",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-58",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-59",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-60",
         "category": "system-field",
         "entity": "priceList",
         "field": "updated",
@@ -608,57 +1542,323 @@
         "description": "System field 'updated' should exist in backend but not frontend for priceList"
       },
       {
-        "id": "t-31",
+        "id": "t-61",
         "category": "system-field",
-        "entity": "priceListLine",
-        "field": "adClientId",
+        "entity": "priceList",
+        "field": "updatedBy",
         "runner": "node",
-        "description": "System field 'adClientId' should exist in backend but not frontend for priceListLine"
+        "description": "System field 'updatedBy' should exist in backend but not frontend for priceList"
       },
       {
-        "id": "t-32",
+        "id": "t-62",
         "category": "system-field",
-        "entity": "priceListLine",
-        "field": "adOrgId",
+        "entity": "priceListVersion",
+        "field": "active",
         "runner": "node",
-        "description": "System field 'adOrgId' should exist in backend but not frontend for priceListLine"
+        "description": "System field 'active' should exist in backend but not frontend for priceListVersion"
       },
       {
-        "id": "t-33",
+        "id": "t-63",
         "category": "system-field",
-        "entity": "priceListLine",
-        "field": "mPricelistId",
+        "entity": "priceListVersion",
+        "field": "generatePriceListVersion",
         "runner": "node",
-        "description": "System field 'mPricelistId' should exist in backend but not frontend for priceListLine"
+        "description": "System field 'generatePriceListVersion' should exist in backend but not frontend for priceListVersion"
       },
       {
-        "id": "t-34",
+        "id": "t-64",
         "category": "system-field",
-        "entity": "priceListLine",
-        "field": "created",
+        "entity": "priceListVersion",
+        "field": "priceList",
         "runner": "node",
-        "description": "System field 'created' should exist in backend but not frontend for priceListLine"
+        "description": "System field 'priceList' should exist in backend but not frontend for priceListVersion"
       },
       {
-        "id": "t-35",
+        "id": "t-65",
         "category": "system-field",
-        "entity": "priceListLine",
+        "entity": "priceListVersion",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for priceListVersion"
+      },
+      {
+        "id": "t-66",
+        "category": "system-field",
+        "entity": "priceListVersion",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for priceListVersion"
+      },
+      {
+        "id": "t-67",
+        "category": "system-field",
+        "entity": "priceListVersion",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for priceListVersion"
+      },
+      {
+        "id": "t-68",
+        "category": "system-field",
+        "entity": "priceListVersion",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for priceListVersion"
+      },
+      {
+        "id": "t-69",
+        "category": "system-field",
+        "entity": "priceListVersion",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for priceListVersion"
+      },
+      {
+        "id": "t-70",
+        "category": "system-field",
+        "entity": "priceListVersion",
         "field": "updated",
         "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for priceListLine"
+        "description": "System field 'updated' should exist in backend but not frontend for priceListVersion"
+      },
+      {
+        "id": "t-71",
+        "category": "system-field",
+        "entity": "priceListVersion",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for priceListVersion"
+      },
+      {
+        "id": "t-72",
+        "category": "system-field",
+        "entity": "productPrice",
+        "field": "priceLimit",
+        "runner": "node",
+        "description": "System field 'priceLimit' should exist in backend but not frontend for productPrice"
+      },
+      {
+        "id": "t-73",
+        "category": "system-field",
+        "entity": "productPrice",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for productPrice"
+      },
+      {
+        "id": "t-74",
+        "category": "system-field",
+        "entity": "productPrice",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for productPrice"
+      },
+      {
+        "id": "t-75",
+        "category": "system-field",
+        "entity": "productPrice",
+        "field": "priceListVersion",
+        "runner": "node",
+        "description": "System field 'priceListVersion' should exist in backend but not frontend for productPrice"
+      },
+      {
+        "id": "t-76",
+        "category": "system-field",
+        "entity": "productPrice",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for productPrice"
+      },
+      {
+        "id": "t-77",
+        "category": "system-field",
+        "entity": "productPrice",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for productPrice"
+      },
+      {
+        "id": "t-78",
+        "category": "system-field",
+        "entity": "productPrice",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for productPrice"
+      },
+      {
+        "id": "t-79",
+        "category": "system-field",
+        "entity": "productPrice",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for productPrice"
+      },
+      {
+        "id": "t-80",
+        "category": "system-field",
+        "entity": "productPrice",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for productPrice"
+      },
+      {
+        "id": "t-81",
+        "category": "system-field",
+        "entity": "productPrice",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for productPrice"
+      },
+      {
+        "id": "t-82",
+        "category": "rule-declared",
+        "rule": "SE_Pricelist_Active_IsActive",
+        "runner": "node",
+        "description": "Rule 'SE_Pricelist_Active_IsActive' (callout) should be declared"
+      },
+      {
+        "id": "t-83",
+        "category": "rule-declared",
+        "rule": "SE_Sales_Pricelist_IsSOPriceList",
+        "runner": "node",
+        "description": "Rule 'SE_Sales_Pricelist_IsSOPriceList' (callout) should be declared"
+      },
+      {
+        "id": "t-84",
+        "category": "rule-declared",
+        "rule": "AD_Client Security validation",
+        "runner": "node",
+        "description": "Rule 'AD_Client Security validation' (validation) should be declared"
+      },
+      {
+        "id": "t-85",
+        "category": "rule-declared",
+        "rule": "M_PriceList Base",
+        "runner": "node",
+        "description": "Rule 'M_PriceList Base' (validation) should be declared"
+      },
+      {
+        "id": "t-86",
+        "category": "rule-declared",
+        "rule": "Records belonging to any org declared in the role",
+        "runner": "node",
+        "description": "Rule 'Records belonging to any org declared in the role' (validation) should be declared"
+      },
+      {
+        "id": "t-87",
+        "category": "rule-declared",
+        "rule": "M_DiscountSchema only PriceList",
+        "runner": "node",
+        "description": "Rule 'M_DiscountSchema only PriceList' (validation) should be declared"
+      },
+      {
+        "id": "t-88",
+        "category": "rule-declared",
+        "runner": "node",
+        "description": "Rule 'undefined' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-89",
+        "category": "rule-declared",
+        "rule": "Create Price List",
+        "runner": "node",
+        "description": "Rule 'Create Price List' (process) should be declared"
+      },
+      {
+        "id": "t-90",
+        "category": "rule-declared",
+        "rule": "Create Price List Version",
+        "runner": "node",
+        "description": "Rule 'Create Price List Version' (process) should be declared"
+      },
+      {
+        "id": "t-91",
+        "category": "crud-flags",
+        "entity": "priceList",
+        "runner": "node",
+        "description": "CRUD flags for 'priceList' should all be booleans"
+      },
+      {
+        "id": "t-92",
+        "category": "crud-flags",
+        "entity": "priceListVersion",
+        "runner": "node",
+        "description": "CRUD flags for 'priceListVersion' should all be booleans"
+      },
+      {
+        "id": "t-93",
+        "category": "crud-flags",
+        "entity": "productPrice",
+        "runner": "node",
+        "description": "CRUD flags for 'productPrice' should all be booleans"
+      },
+      {
+        "id": "t-94",
+        "category": "selector-endpoint",
+        "entity": "priceList",
+        "field": "currency",
+        "runner": "node",
+        "description": "Selector endpoint for 'currency' in priceList should exist"
+      },
+      {
+        "id": "t-95",
+        "category": "selector-endpoint",
+        "entity": "priceListVersion",
+        "field": "priceListSchema",
+        "runner": "node",
+        "description": "Selector endpoint for 'priceListSchema' in priceListVersion should exist"
+      },
+      {
+        "id": "t-96",
+        "category": "selector-endpoint",
+        "entity": "priceListVersion",
+        "field": "basePriceListVersion",
+        "runner": "node",
+        "description": "Selector endpoint for 'basePriceListVersion' in priceListVersion should exist"
+      },
+      {
+        "id": "t-97",
+        "category": "selector-endpoint",
+        "entity": "productPrice",
+        "field": "product",
+        "runner": "node",
+        "description": "Selector endpoint for 'product' in productPrice should exist"
+      },
+      {
+        "id": "t-98",
+        "category": "action-endpoint",
+        "entity": "priceListVersion",
+        "field": "create",
+        "runner": "node",
+        "description": "Action endpoint for 'create' in priceListVersion should exist"
+      },
+      {
+        "id": "t-99",
+        "category": "action-endpoint",
+        "entity": "priceListVersion",
+        "field": "generatePriceListVersion",
+        "runner": "node",
+        "description": "Action endpoint for 'generatePriceListVersion' in priceListVersion should exist"
       }
     ],
     "summary": {
-      "total": 35,
+      "total": 99,
       "byCategory": {
-        "field-presence": 11,
-        "field-type": 11,
-        "searchable-filters": 2,
-        "visibility": 2,
-        "system-field": 9
+        "field-presence": 18,
+        "field-type": 18,
+        "searchable-filters": 1,
+        "visibility": 3,
+        "displaylogic-valid": 3,
+        "displaylogic-evaluable": 3,
+        "default-value-type": 5,
+        "system-field": 30,
+        "rule-declared": 9,
+        "crud-flags": 3,
+        "selector-endpoint": 4,
+        "action-endpoint": 2
       },
       "byRunner": {
-        "node": 35,
+        "node": 99,
         "junit": 0
       }
     }

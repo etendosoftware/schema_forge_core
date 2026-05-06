@@ -1,13 +1,12 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
-import LoginPage from './auth/LoginPage.jsx';
 import AppLayout from './layout/AppLayout.jsx';
 import WindowLoader from './windows/WindowLoader.jsx';
 import PreviewPage from './preview/PreviewPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
+import FirstStepsPage from './pages/FirstStepsPage.jsx';
 import SalesPage from './pages/SalesPage.jsx';
-import ContactsPage from './pages/ContactsPage.jsx';
 import InventoryPage from './pages/InventoryPage.jsx';
 import PurchasesPage from './pages/PurchasesPage.jsx';
 import AccountingPage from './pages/AccountingPage.jsx';
@@ -15,22 +14,36 @@ import ReportsPage from './pages/ReportsPage.jsx';
 import CrmPage from './pages/CrmPage.jsx';
 import HrPage from './pages/HrPage.jsx';
 import ProjectsPage from './pages/ProjectsPage.jsx';
+import ReportViewerPage from './pages/ReportViewerPage.jsx';
 import { buildMenuGroups, buildWindowMap } from './windows/registry.js';
 import { createMockFetch } from './lib/mockFetch.js';
 import { LocaleProvider } from './i18n/index.js';
 import { useLocaleState } from './i18n/useLocaleState.js';
 import { useServiceWorker } from './hooks/useServiceWorker.js';
-import { showUpdateToast } from './components/UpdateToast.jsx';
+import { CurrencyProvider } from './hooks/useCurrency.jsx';
 
 import ArtifactViewerPage from './pages/ArtifactViewerPage.jsx';
 
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage.jsx'));
 const SmartScanPage = lazy(() => import('./pages/SmartScanPage.jsx'));
+const OAuth2ClientsPage = lazy(() => import('./pages/OAuth2ClientsPage.jsx'));
+const AuthorizePage = lazy(() => import('./pages/AuthorizePage.jsx'));
+const QuickSalesOrderPage = lazy(() => import('./pages/QuickSalesOrderPage.jsx'));
+const QuickPurchaseOrderPage = lazy(() => import('./pages/QuickPurchaseOrderPage.jsx'));
 
 function detectBasePath() {
+  const envBase = import.meta.env.VITE_API_BASE;
   const path = window.location.pathname;
   const webIdx = path.indexOf('/web/');
-  if (webIdx === -1) return { apiBase: import.meta.env.VITE_API_BASE || '', routerBase: '/' };
+
+  if (envBase) {
+    const routerBase = webIdx !== -1
+      ? `${path.substring(0, webIdx)}/${path.substring(webIdx + 1).split('/').slice(0, 2).join('/')}`
+      : '/';
+    return { apiBase: envBase, routerBase };
+  }
+
+  if (webIdx === -1) return { apiBase: '', routerBase: '/' };
   const contextPath = path.substring(0, webIdx);
   const moduleSegment = path.substring(webIdx + 1).split('/').slice(0, 2).join('/');
   return {
@@ -40,11 +53,13 @@ function detectBasePath() {
 }
 
 const { apiBase, routerBase } = detectBasePath();
-const API_BASE_URL = `${apiBase}/api`;
+const API_BASE_URL = import.meta.env.VITE_MOCK === 'true'
+  ? `${apiBase}/api`
+  : `${apiBase}/sws/neo`;
 
 async function loadAllMockData() {
   const modules = await Promise.all([
-    import('@generated/sales-order/generated/web/sales-order/mockData.js'),
+    import('@generated/sales-order/custom/mockData.js'),
     import('@generated/business-partner/generated/web/business-partner/mockData.js'),
     import('@generated/warehouse/generated/web/warehouse/mockData.js'),
     import('@generated/price-list/generated/web/price-list/mockData.js'),
@@ -53,25 +68,27 @@ async function loadAllMockData() {
     import('@generated/product/generated/web/product/mockData.js'),
     import('@generated/product-category/generated/web/product-category/mockData.js'),
     import('@generated/tax/generated/web/tax/mockData.js'),
-    import('@generated/uom/generated/web/uom/mockData.js'),
+    import('@generated/unit-of-measure/generated/web/unit-of-measure/mockData.js'),
     import('@generated/user/generated/web/user/mockData.js'),
     import('@generated/purchase-order/generated/web/purchase-order/mockData.js'),
     import('@generated/goods-receipt/generated/web/goods-receipt/mockData.js'),
-    import('@generated/purchase-invoice/generated/web/purchase-invoice/mockData.js'),
     import('@generated/return-to-vendor/generated/web/return-to-vendor/mockData.js'),
     import('@generated/return-to-vendor-shipment/generated/web/return-to-vendor-shipment/mockData.js'),
     import('@generated/physical-inventory/generated/web/physical-inventory/mockData.js'),
+    import('@generated/internal-consumption/generated/web/internal-consumption/mockData.js'),
     import('@generated/goods-movements/generated/web/goods-movements/mockData.js'),
     import('@generated/warehouse-storage-bins/generated/web/warehouse-storage-bins/mockData.js'),
-    import('@generated/sales-quotation/generated/web/sales-quotation/mockData.js'),
-    import('@generated/goods-shipment/generated/web/goods-shipment/mockData.js'),
+    import('@generated/sales-quotation/custom/mockData.js'),
+    import('@generated/goods-shipment/custom/mockData.js'),
     import('@generated/return-from-customer/generated/web/return-from-customer/mockData.js'),
     import('@generated/return-material-receipt/generated/web/return-material-receipt/mockData.js'),
-    import('@generated/sales-invoice/generated/web/sales-invoice/mockData.js'),
-    import('@generated/payment-in/generated/web/payment-in/mockData.js'),
+    import('@generated/sales-invoice/custom/mockData.js'),
+    import('@generated/purchase-invoice/generated/web/purchase-invoice/mockData.js'),
+    import('@generated/payment-in/custom/mockData.js'),
     import('@generated/payment-out/generated/web/payment-out/mockData.js'),
     import('@generated/bank-reconciliation/generated/web/bank-reconciliation/mockData.js'),
     import('@generated/chart-of-accounts/generated/web/chart-of-accounts/mockData.js'),
+    import('@generated/assets/generated/web/assets/mockData.js'),
     import('@generated/deal/generated/web/deal/mockData.js'),
     import('@generated/activity/generated/web/activity/mockData.js'),
     import('@generated/lead/generated/web/lead/mockData.js'),
@@ -81,6 +98,7 @@ async function loadAllMockData() {
     import('@generated/project/generated/web/project/mockData.js'),
     import('@generated/document/generated/web/document/mockData.js'),
     import('@generated/recurring-invoice/generated/web/recurring-invoice/mockData.js'),
+    import('@generated/unit-of-measure/generated/web/unit-of-measure/mockData.js'),
   ]);
 
   const merged = {};
@@ -96,23 +114,32 @@ async function loadAllMockData() {
 
 function AuthGuard({ children }) {
   const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/onboarding" replace />;
   return children;
 }
 
 function AppRoutes({ menuGroups, windowMap }) {
-  const { isAuthenticated } = useAuth();
+  const location = useLocation();
 
-  if (menuGroups.length === 0) {
+  // Public routes render without waiting for menu data
+  const publicPaths = ['/onboarding'];
+  const isPublicRoute = publicPaths.some(p => location.pathname.startsWith(p));
+
+  if (!isPublicRoute && menuGroups.length === 0) {
     return <div className="p-8 text-muted-foreground">Loading...</div>;
   }
 
   return (
     <Routes>
       <Route
-        path="/login"
-        element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
+        path="/onboarding"
+        element={
+          <Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}>
+            <OnboardingPage />
+          </Suspense>
+        }
       />
+      <Route path="/login" element={<Navigate to="/onboarding" replace />} />
       <Route
         element={
           <AuthGuard>
@@ -121,19 +148,23 @@ function AppRoutes({ menuGroups, windowMap }) {
         }
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="dashboard" element={<DashboardPage apiBaseUrl={API_BASE_URL} />} />
+        <Route path="first-steps" element={<FirstStepsPage />} />
         <Route path="preview" element={<PreviewPage />} />
         <Route path="sales" element={<SalesPage />} />
-        <Route path="contacts" element={<ContactsPage />} />
         <Route path="inventory" element={<InventoryPage />} />
         <Route path="purchases" element={<PurchasesPage />} />
         <Route path="accounting" element={<AccountingPage />} />
         <Route path="reports" element={<ReportsPage />} />
+        <Route path="report-viewer" element={<ReportViewerPage />} />
         <Route path="crm" element={<CrmPage />} />
         <Route path="hr" element={<HrPage />} />
         <Route path="projects" element={<ProjectsPage />} />
-        <Route path="onboarding" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><OnboardingPage /></Suspense>} />
         <Route path="smart-scan" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><SmartScanPage /></Suspense>} />
+        <Route path="oauth2-clients" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><OAuth2ClientsPage /></Suspense>} />
+        <Route path="authorize" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><AuthorizePage /></Suspense>} />
+        <Route path="quick-sales-order" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><QuickSalesOrderPage apiBaseUrl={API_BASE_URL} /></Suspense>} />
+        <Route path="quick-purchase-order" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><QuickPurchaseOrderPage apiBaseUrl={API_BASE_URL} /></Suspense>} />
         <Route path="artifacts" element={<ArtifactViewerPage />} />
         <Route path="artifacts/:windowName" element={<ArtifactViewerPage />} />
         <Route
@@ -149,24 +180,10 @@ function AppRoutes({ menuGroups, windowMap }) {
   );
 }
 
-/** Registers the service worker and checks for updates on route changes */
+/** Checks for SW updates on route changes; reload is automatic via controllerchange */
 function ServiceWorkerManager() {
   const location = useLocation();
-
-  const onUpdateAvailable = useCallback(() => {
-    showUpdateToast(() => {
-      // applyUpdate is called inside the toast action via closure below
-      window.__swApplyUpdate?.();
-    });
-  }, []);
-
-  const { applyUpdate, checkForUpdate } = useServiceWorker({ onUpdateAvailable });
-
-  // Expose applyUpdate so the toast action can call it
-  useEffect(() => {
-    window.__swApplyUpdate = applyUpdate;
-    return () => { delete window.__swApplyUpdate; };
-  }, [applyUpdate]);
+  const { checkForUpdate } = useServiceWorker();
 
   // Check for updates on every route change
   useEffect(() => {
@@ -200,7 +217,9 @@ export default function App() {
       <ServiceWorkerManager />
       <LocaleProvider locale={locale} setLocale={setLocale}>
         <AuthProvider>
-          <AppRoutes menuGroups={menuGroups} windowMap={windowMap} />
+          <CurrencyProvider>
+            <AppRoutes menuGroups={menuGroups} windowMap={windowMap} />
+          </CurrencyProvider>
         </AuthProvider>
       </LocaleProvider>
     </BrowserRouter>

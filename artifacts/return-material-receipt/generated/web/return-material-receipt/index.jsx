@@ -1,12 +1,9 @@
-import ReturnReceiptPage from './ReturnReceiptPage';
+import ReturnMaterialReceiptPage, { api } from './ReturnMaterialReceiptPage';
 
 const windowMeta = { category: 'sales', name: 'Return Material Receipt' };
 
-<<<<<<< HEAD
+// @sf-generated-start component:App
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  return <ReturnReceiptPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} {...rest} />;
-=======
-export default function App({ token, apiBaseUrl, window }) {
-  return <ReturnReceiptPage token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} />;
->>>>>>> origin/main
+  return <ReturnMaterialReceiptPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
 }
+// @sf-generated-end component:App

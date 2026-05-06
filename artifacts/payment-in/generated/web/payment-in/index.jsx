@@ -1,40 +1,9 @@
-import { ListView, DetailView } from '@/components/contract-ui';
-import PaymentInTable from './PaymentInTable';
-import PaymentInForm from './PaymentInForm';
-import catalogs from './mockCatalogs';
+import FinPaymentPage, { api } from './FinPaymentPage';
 
-const windowMeta = { category: 'accounting', name: 'Payment In' };
+const windowMeta = { category: 'finance', name: 'Payment In' };
 
-export default function App({ windowName, recordId, ...props }) {
-  if (recordId) {
-    return (
-      <DetailView
-        entity="paymentIn"
-        Form={PaymentInForm}
-        catalogs={catalogs}
-        entityLabel="Payment In"
-        windowName={windowName}
-        recordId={recordId}
-<<<<<<< HEAD
-        window={windowMeta}
-=======
->>>>>>> origin/main
-        {...props}
-      />
-    );
-  }
-
-  return (
-    <ListView
-      entity="paymentIn"
-      Table={PaymentInTable}
-      entityLabel="Payment In"
-      windowName={windowName}
-<<<<<<< HEAD
-      window={windowMeta}
-=======
->>>>>>> origin/main
-      {...props}
-    />
-  );
+// @sf-generated-start component:App
+export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
+  return <FinPaymentPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
 }
+// @sf-generated-end component:App

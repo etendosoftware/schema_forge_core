@@ -1,12 +1,9 @@
-import PriceListPage from './PriceListPage';
+import PriceListPage, { api } from './PriceListPage';
 
-const windowMeta = { category: 'reference', name: 'Price List' };
+const windowMeta = { category: 'settings', name: 'Price List' };
 
-<<<<<<< HEAD
+// @sf-generated-start component:App
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  return <PriceListPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} {...rest} />;
-=======
-export default function App({ token, apiBaseUrl, window }) {
-  return <PriceListPage token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} />;
->>>>>>> origin/main
+  return <PriceListPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
 }
+// @sf-generated-end component:App

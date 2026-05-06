@@ -1,19 +1,23 @@
 import { EntityForm } from '@/components/contract-ui';
 
+// @sf-generated-start fields:customerReturn
 const fields = [
-  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'search', required: true, reference: 'BusinessPartner', inputMode: 'search' },
-  { key: 'documentDate', column: 'DateOrdered', type: 'date', required: true },
-  { key: 'returnDate', column: 'DateDelivered', type: 'date' },
-  { key: 'originalShipment', column: 'InOut_ID', type: 'search', required: true, reference: 'Shipment', inputMode: 'search' },
-  { key: 'warehouse', column: 'M_Warehouse_ID', type: 'selector', required: true, reference: 'Warehouse', inputMode: 'selector' },
-  { key: 'returnReason', column: 'Description', type: 'text' },
-  { key: 'salesRepresentative', column: 'SalesRep_ID', type: 'search', reference: 'User', inputMode: 'search' },
-  { key: 'documentNo', column: 'DocumentNo', type: 'text', required: true, readOnly: true },
-  { key: 'docStatus', column: 'DocStatus', type: 'text', required: true, readOnly: true },
-  { key: 'totalAmount', column: 'Amt', type: 'number', readOnly: true },
-  { key: 'isApproved', column: 'IsApproved', type: 'checkbox', readOnly: true },
+  { key: 'summedLineAmount', column: 'TotalLines', type: 'number', label: 'Total Net Amount', required: true, readOnly: true, section: 'other' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'text', label: 'Document No.', required: true, readOnly: true, section: 'principal', readOnlyLogic: (record) => record['processed'] === true || record['documentStatus'] === 'TMP' },
+  { key: 'cReturnReasonID', column: 'C_Return_Reason_ID', type: 'search', label: 'Return Reason', section: 'principal', reference: 'Return_Reason', inputMode: 'search' },
+  { key: 'orderDate', column: 'DateOrdered', type: 'date', label: 'Order Date', required: true, section: 'principal', readOnlyLogic: (record) => record['processed'] === true },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'search', label: 'Business Partner', required: true, section: 'principal', reference: 'BPartner', inputMode: 'search', readOnlyLogic: (record) => record['processed'] === true || record['documentStatus'] === 'TMP' },
+  { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'dependent', label: 'Partner Address', required: true, section: 'other', reference: 'BPartner_Location', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'C_BPartner_ID' }, readOnlyLogic: (record) => record['processed'] === true || record['documentStatus'] === 'TMP' },
+  { key: 'warehouse', column: 'M_Warehouse_ID', type: 'search', label: 'Warehouse', required: true, section: 'other', reference: 'Warehouse', inputMode: 'search', readOnlyLogic: (record) => record['processed'] === true },
+  { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'other' },
+  { key: 'etvfacReversedInvoice', column: 'EM_Etvfac_Reversed_Invoice', type: 'search', label: 'Factura Rectificada', section: 'principal', reference: 'Invoice', inputMode: 'search' },
+  { key: 'salesRepresentative', column: 'SalesRep_ID', type: 'selector', label: 'Sales Representative', section: 'other', reference: 'User', inputMode: 'selector' },
 ];
+// @sf-generated-end fields:customerReturn
 
+// @sf-generated-start component:CustomerReturnForm
 export default function CustomerReturnForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
+
+// @sf-generated-end component:CustomerReturnForm

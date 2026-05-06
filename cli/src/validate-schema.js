@@ -11,7 +11,7 @@ const VALID_VISIBILITY = ['editable', 'readOnly', 'system', 'discarded'];
 const VALID_TYPES = [
   'string', 'integer', 'decimal', 'boolean', 'date', 'dateTime',
   'id', 'foreignKey', 'enum', 'text', 'binary', 'image', 'button',
-  'amount', 'quantity', 'price', 'number',
+  'amount', 'quantity', 'price', 'number', 'productAttribute',
 ];
 const VALID_LEVELS = ['header', 'line', 'subline'];
 const VALID_CATEGORIES = [
@@ -159,8 +159,8 @@ function validateLevel2(schema) {
       for (const field of entity.fields) {
         const fPath = `${ePath}.fields.${field.name}`;
 
-        // FK fields must have reference object
-        if (field.type === 'foreignKey' && !field.reference) {
+        // FK fields must have reference object (skip system/discarded — they don't reach the UI)
+        if (field.type === 'foreignKey' && !field.reference && field.visibility !== 'system' && field.visibility !== 'discarded') {
           errors.push(issue(2, 'FK_MISSING_REF', `Foreign key field '${field.name}' missing reference object`, `${fPath}.reference`));
         }
 

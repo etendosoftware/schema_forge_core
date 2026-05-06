@@ -17,7 +17,7 @@ const SheetPortal = SheetPrimitive.Portal
 const SheetOverlay = React.forwardRef(({ className, ...props }, ref) => (
   <SheetPrimitive.Overlay
     className={cn(
-      "fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-50 bg-black/30 data-[state=open]:[animation:scrim-fade-in_0.2s_ease-out] data-[state=closed]:[animation:scrim-fade-out_0.2s_ease-out_forwards]",
       className
     )}
     {...props}
@@ -26,16 +26,16 @@ const SheetOverlay = React.forwardRef(({ className, ...props }, ref) => (
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName
 
 const sheetVariants = cva(
-  "fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out",
+  "fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out",
   {
     variants: {
       side: {
-        top: "inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
+        top: "inset-x-0 top-0 border-b data-[state=open]:[animation:slide-in-from-top_0.3s_ease-out] data-[state=closed]:[animation:slide-out-to-top_0.25s_ease-in_forwards]",
         bottom:
-          "inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
-        left: "inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
+          "inset-x-0 bottom-0 border-t data-[state=open]:[animation:slide-in-from-bottom_0.3s_ease-out] data-[state=closed]:[animation:slide-out-to-bottom_0.25s_ease-in_forwards]",
+        left: "inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm data-[state=open]:[animation:slide-in-from-left_0.3s_ease-out] data-[state=closed]:[animation:slide-out-to-left_0.25s_ease-in_forwards]",
         right:
-          "inset-y-0 right-0 h-full w-3/4 border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
+          "inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm data-[state=open]:[animation:slide-in-from-right_0.3s_ease-out] data-[state=closed]:[animation:slide-out-to-right_0.25s_ease-in_forwards]",
       },
     },
     defaultVariants: {

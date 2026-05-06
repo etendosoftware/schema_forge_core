@@ -1,12 +1,9 @@
-import GoodsMovementPage from './GoodsMovementPage';
+import MovementPage, { api } from './MovementPage';
 
-const windowMeta = { category: 'warehouseManagement', name: 'Goods Movements' };
+const windowMeta = { category: 'inventory', name: 'Goods Movements' };
 
-<<<<<<< HEAD
+// @sf-generated-start component:App
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  return <GoodsMovementPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} {...rest} />;
-=======
-export default function App({ token, apiBaseUrl, window }) {
-  return <GoodsMovementPage token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} />;
->>>>>>> origin/main
+  return <MovementPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
 }
+// @sf-generated-end component:App

@@ -1,286 +1,213 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { KPIHeader } from '@/components/contract-ui/KPIHeader';
-import { Chatter } from '@/components/contract-ui/Chatter';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { useState, useEffect, useMemo } from 'react';
 import {
-  DollarSign,
-  CreditCard,
-  TrendingUp,
   FileText,
   ShoppingCart,
   Users,
-  Box,
-  AlertTriangle,
-  Info,
-  ChevronRight,
-  Clock,
+  DollarSign,
+  TrendingUp,
 } from 'lucide-react';
-import { kpisConfig, actions } from '@generated/dashboard/generated/config';
-import * as mockData from '@generated/dashboard/generated/mockData';
+import { useDashboardData } from '@/hooks/useDashboardData';
+import { useCopilot } from '@/components/CopilotContext';
+import { useSetPageMeta } from '@/components/layout/PageMetaContext';
+import { useUI } from '@/i18n';
+import { useMenuLabel, useLocaleSwitch } from '@/i18n';
+import { useAuth } from '@/auth/AuthContext.jsx';
+import { resolveDashboardNavigation } from '@/lib/dashboardNavigation.js';
+import { localeFromUi } from '@/lib/dashboardNumberFormat.js';
+import { DashboardDateRangeProvider } from '@/components/dashboard/DashboardDateRangeContext';
+import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
+import { PendingTasksRail } from '@/components/dashboard/PendingTasksRail';
+import { QuickActionsList } from '@/components/dashboard/QuickActionsList';
+import { TopClientsList } from '@/components/dashboard/TopClientsList';
+import { FinancialSummaryCard } from '@/components/dashboard/FinancialSummaryCard';
+import { RecentSalesList } from '@/components/dashboard/RecentSalesList';
+import { CollectionsPaymentsCard } from '@/components/dashboard/CollectionsPaymentsCard';
+import { FinancialTrendChart } from '@/components/dashboard/FinancialTrendChart';
+import { BestProductsList } from '@/components/dashboard/BestProductsList';
+import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
 
 /* ------------------------------------------------------------------
- * Data derived from aggregate contract
+ * Icon lookup
  * ----------------------------------------------------------------*/
 
-const ICON_MAP = { DollarSign, CreditCard, TrendingUp, Clock, FileText, ShoppingCart, Users, Box };
-
-const kpis = kpisConfig.map((k) => ({
-  ...k,
-  value: mockData.kpis[k.key].value,
-  trend: mockData.kpis[k.key].trend,
-  icon: ICON_MAP[k.icon] || DollarSign,
-}));
-
-const chartMonths = mockData.revenueTrend.labels;
-const chartValues = mockData.revenueTrend.values;
-
-const quickActions = actions.map((a) => ({
-  label: a.label,
-  to: a.route,
-  icon: ICON_MAP[a.icon] || FileText,
-}));
-
-const pendingTasks = mockData.pendingTasks;
-
-const recentMessages = mockData.recentMessages;
+const ICON_MAP = {
+  DollarSign, FileText, ShoppingCart, Users, TrendingUp,
+};
 
 /* ------------------------------------------------------------------
- * SVG Revenue Chart
+ * Currency hook
  * ----------------------------------------------------------------*/
 
-const CHART_W = 600;
-const CHART_H = 220;
-const PAD_X = 40;
-const PAD_Y = 20;
-const PAD_BOTTOM = 30;
+function useDashboardCurrency(token, selectedOrg, apiBaseUrl = '') {
+  const [currencyLabel, setCurrencyLabel] = useState('');
+  const [isCurrencyReady, setIsCurrencyReady] = useState(false);
 
-function RevenueChart() {
-  const maxVal = Math.max(...chartValues);
-  const minVal = Math.min(...chartValues);
-  const range = maxVal - minVal || 1;
+  useEffect(() => {
+    let cancelled = false;
+    setIsCurrencyReady(false);
 
-  const plotW = CHART_W - PAD_X * 2;
-  const plotH = CHART_H - PAD_Y - PAD_BOTTOM;
+    async function loadCurrency() {
+      if (!token) {
+        if (!cancelled) { setCurrencyLabel(''); setIsCurrencyReady(true); }
+        return;
+      }
+      try {
+        const headers = { Authorization: `Bearer ${token}` };
+        const base = apiBaseUrl || '/sws/neo';
+        const endpoints = [
+          `${base}/sales-invoice/header/defaults`,
+          `${base}/sales-order/header/defaults`,
+          `${base}/purchase-invoice/header/defaults`,
+        ];
+        for (const endpoint of endpoints) {
+          const res = await fetch(endpoint, { headers });
+          if (!res.ok) continue;
+          const data = await res.json();
+          const defaults = data?.defaults ?? {};
+          const value = defaults['currency$_identifier']
+            ?? defaults.currency$_identifier
+            ?? defaults.currencyIdentifier
+            ?? defaults.currency
+            ?? defaults.C_Currency_ID$_identifier;
+          if (value) {
+            if (!cancelled) { setCurrencyLabel(String(value)); setIsCurrencyReady(true); }
+            return;
+          }
+        }
+      } catch { /* best-effort */ }
+      if (!cancelled) { setCurrencyLabel(''); setIsCurrencyReady(true); }
+    }
 
-  const points = chartValues.map((v, i) => {
-    const x = PAD_X + (i / (chartValues.length - 1)) * plotW;
-    const y = PAD_Y + plotH - ((v - minVal) / range) * plotH;
-    return { x, y };
+    loadCurrency();
+    return () => { cancelled = true; };
+  }, [token, selectedOrg?.id, apiBaseUrl]);
+
+  return { currencyLabel, isCurrencyReady };
+}
+
+/* ------------------------------------------------------------------
+ * Quick actions resolution
+ * ----------------------------------------------------------------*/
+
+function useQuickActions(ui) {
+  return useMemo(() => [
+    { label: ui('quickAccessSalesOrders'),  to: '/sales-order/new',   icon: TrendingUp },
+    { label: ui('quickAccessSalesInvoices'), to: '/sales-invoice/new', icon: FileText   },
+    { label: ui('quickAccessContacts'),      to: '/contacts/new',      icon: Users      },
+  ], [ui]);
+}
+
+/* ------------------------------------------------------------------
+ * Dashboard inner — must be a child of DashboardDateRangeProvider
+ * ----------------------------------------------------------------*/
+
+function DashboardContent({ apiBaseUrl }) {
+  const ui = useUI();
+  const { token, username, selectedOrg } = useAuth();
+  const { open: openCopilot } = useCopilot();
+  const {
+    kpis, revenueTrend, expenseTrend, topClients, pendingTasks,
+    recentInvoices, bestProducts, bestSellers, pendingAmounts, loading,
+  } = useDashboardData();
+
+  const { currencyLabel: dashboardCurrency, isCurrencyReady } = useDashboardCurrency(token, selectedOrg, apiBaseUrl);
+  const resolvedKpis = kpis.map((k) => ({ ...k, icon: ICON_MAP[k.icon] || DollarSign }));
+  const quickActions = useQuickActions(ui);
+
+  useSetPageMeta({
+    title: ui('dashboardTitle'),
+    breadcrumb: ui('dashboardTitle'),
+    onAIClick: openCopilot,
   });
+  const dashboardRowStyle = {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: '0px',
+    gap: '16px',
+    width: '100%',
+    minHeight: '234px',
+  };
 
-  const polyline = points.map((p) => `${p.x},${p.y}`).join(' ');
-
-  // Closed polygon for gradient fill (goes down to bottom, back along x-axis)
-  const fillPath = [
-    `M ${points[0].x},${points[0].y}`,
-    ...points.slice(1).map((p) => `L ${p.x},${p.y}`),
-    `L ${points[points.length - 1].x},${PAD_Y + plotH}`,
-    `L ${points[0].x},${PAD_Y + plotH}`,
-    'Z',
-  ].join(' ');
+  const dashboardRow3Style = {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: '0px',
+    gap: '16px',
+    width: '100%',
+    minHeight: '328px',
+  };
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">Revenue Trend (12 months)</CardTitle>
-      </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <svg
-          viewBox={`0 0 ${CHART_W} ${CHART_H}`}
-          className="w-full h-auto"
-          role="img"
-          aria-label="Revenue trend line chart for the last 12 months"
-        >
-          <defs>
-            <linearGradient id="chart-gradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.02" />
-            </linearGradient>
-          </defs>
+    <div className="h-full flex flex-col">
+      {(loading || !isCurrencyReady) ? <DashboardSkeleton /> : (
+        <div className="p-6 bg-white rounded-tl-2xl flex-1 overflow-y-auto space-y-4">
+          <DashboardGreeting username={username || ''} onAskCopilot={openCopilot} />
 
-          {/* Grid lines */}
-          {[0, 0.25, 0.5, 0.75, 1].map((frac) => {
-            const y = PAD_Y + plotH - frac * plotH;
-            const val = minVal + frac * range;
-            return (
-              <g key={frac}>
-                <line
-                  x1={PAD_X}
-                  y1={y}
-                  x2={CHART_W - PAD_X}
-                  y2={y}
-                  stroke="hsl(var(--border))"
-                  strokeWidth="1"
-                  strokeDasharray="4 4"
-                />
-                <text
-                  x={PAD_X - 6}
-                  y={y + 3}
-                  textAnchor="end"
-                  className="fill-muted-foreground"
-                  fontSize="9"
-                >
-                  {(val / 1000).toFixed(0)}k
-                </text>
-              </g>
-            );
-          })}
+          {/* Row 1: Pending tasks | Quick access | Top clients */}
+          <div className="flex flex-col gap-4 lg:flex-row" style={dashboardRowStyle}>
+            <div className="flex flex-col w-full h-[234px] min-w-0" style={{ flex: '672 1 0' }}>
+              <PendingTasksRail tasks={pendingTasks} />
+            </div>
+            <div className="flex flex-col w-full h-[234px] min-w-0" style={{ flex: '328 1 0' }}>
+              <QuickActionsList actions={quickActions} />
+            </div>
+            <div className="flex flex-col w-full h-[234px] min-w-0" style={{ flex: '328 1 0' }}>
+              <TopClientsList
+                clients={topClients}
+                currencyLabel={dashboardCurrency}
+                token={token}
+                apiBaseUrl={apiBaseUrl}
+              />
+            </div>
+          </div>
 
-          {/* Fill area */}
-          <path d={fillPath} fill="url(#chart-gradient)" />
+          {/* Row 2: Financial summary | Recent sales | Collections & payments */}
+          <div className="flex flex-col gap-4 lg:flex-row" style={dashboardRowStyle}>
+            <div className="flex flex-col w-full h-[234px] min-w-0" style={{ flex: '672 1 0' }}>
+              <FinancialSummaryCard kpis={resolvedKpis} currencyLabel={dashboardCurrency} />
+            </div>
+            <div className="flex flex-col w-full h-[234px] min-w-0" style={{ flex: '443 1 0' }}>
+              <RecentSalesList invoices={recentInvoices} currencyLabel={dashboardCurrency} />
+            </div>
+            <div className="flex flex-col w-full h-[234px] min-w-0" style={{ flex: '213.33 1 0' }}>
+              <CollectionsPaymentsCard pendingAmounts={pendingAmounts} currencyLabel={dashboardCurrency} />
+            </div>
+          </div>
 
-          {/* Line */}
-          <polyline
-            points={polyline}
-            fill="none"
-            stroke="hsl(var(--primary))"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-
-          {/* Data dots */}
-          {points.map((p, i) => (
-            <circle
-              key={i}
-              cx={p.x}
-              cy={p.y}
-              r="3"
-              fill="hsl(var(--background))"
-              stroke="hsl(var(--primary))"
-              strokeWidth="2"
-            />
-          ))}
-
-          {/* X-axis labels */}
-          {chartMonths.map((m, i) => {
-            const x = PAD_X + (i / (chartMonths.length - 1)) * plotW;
-            return (
-              <text
-                key={m}
-                x={x}
-                y={CHART_H - 6}
-                textAnchor="middle"
-                className="fill-muted-foreground"
-                fontSize="10"
-              >
-                {m}
-              </text>
-            );
-          })}
-        </svg>
-      </CardContent>
-    </Card>
-  );
-}
-
-/* ------------------------------------------------------------------
- * Quick Actions
- * ----------------------------------------------------------------*/
-
-function QuickActions() {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
-      </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <div className="flex flex-wrap gap-2">
-          {quickActions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <Button key={action.to} variant="outline" size="sm" asChild>
-                <Link to={action.to}>
-                  <Icon className="h-4 w-4 mr-1.5" />
-                  {action.label}
-                </Link>
-              </Button>
-            );
-          })}
+          {/* Row 3: Financial trend | Best products */}
+          <div className="flex flex-col gap-4 lg:flex-row" style={dashboardRow3Style}>
+            <div className="flex flex-col w-full h-[328px] min-w-0" style={{ flex: '901 1 0' }}>
+              <FinancialTrendChart
+                labels={revenueTrend.labels}
+                values={revenueTrend.values}
+                expenseValues={expenseTrend}
+                currencyLabel={dashboardCurrency}
+              />
+            </div>
+            <div className="flex flex-col w-full h-[328px] min-w-0" style={{ flex: '443.33 1 0' }}>
+              <BestProductsList
+                sellers={bestSellers}
+                products={bestProducts}
+                currencyLabel={dashboardCurrency}
+              />
+            </div>
+          </div>
         </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-/* ------------------------------------------------------------------
- * Pending Tasks
- * ----------------------------------------------------------------*/
-
-function PendingTasks() {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
-      </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <div className="space-y-1">
-          {pendingTasks.map((task, i) => {
-            const isWarning = task.type === 'warning';
-            return (
-              <React.Fragment key={i}>
-                {i > 0 && <Separator />}
-                <Link
-                  to={task.link}
-                  className="flex items-center gap-3 py-2 px-1 rounded-md hover:bg-muted/50 transition-colors group"
-                >
-                  {isWarning ? (
-                    <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
-                  ) : (
-                    <Info className="h-4 w-4 shrink-0 text-blue-500" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm truncate">{task.text}</p>
-                    {(task.amount || task.detail) && (
-                      <p className="text-xs text-muted-foreground truncate">
-                        {task.amount || task.detail}
-                      </p>
-                    )}
-                  </div>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                </Link>
-              </React.Fragment>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-/* ------------------------------------------------------------------
- * Dashboard Page
- * ----------------------------------------------------------------*/
-
-export default function DashboardPage() {
-  return (
-    <div className="space-y-6">
-      {/* KPI Row */}
-      <KPIHeader kpis={kpis} />
-
-      {/* Two-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column - 2/3 */}
-        <div className="lg:col-span-2 space-y-6">
-          <RevenueChart />
-          <QuickActions />
-        </div>
-
-        {/* Right column - 1/3 */}
-        <div className="space-y-6">
-          <PendingTasks />
-          <Chatter
-            entityType="dashboard"
-            entityId="home"
-            messages={recentMessages}
-            collapsed={false}
-          />
-        </div>
-      </div>
+      )}
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------
+ * Dashboard Page — provides the date-range context before any hook reads it
+ * ----------------------------------------------------------------*/
+
+export default function DashboardPage({ apiBaseUrl = '' }) {
+  return (
+    <DashboardDateRangeProvider>
+      <DashboardContent apiBaseUrl={apiBaseUrl} />
+    </DashboardDateRangeProvider>
   );
 }

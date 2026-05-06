@@ -2,29 +2,35 @@ import { EntityForm } from '@/components/contract-ui';
 
 // @sf-generated-start fields:invoiceLine
 const fields = [
-  { key: 'product', column: 'M_Product_ID', type: 'search', reference: 'Product', inputMode: 'search' },
-  { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true },
-  { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true },
-  { key: 'tax', column: 'C_Tax_ID', type: 'selector', reference: 'Tax', inputMode: 'selector' },
-  { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', required: true },
-  { key: 'description', column: 'Description', type: 'textarea' },
-  { key: 'account', column: 'Account_ID', type: 'selector', reference: 'Account', inputMode: 'selector' },
-  { key: 'financialInvoiceLine', column: 'Financial_Invoice_Line', type: 'checkbox', required: true },
-  { key: 'operativeQuantity', column: 'Aumqty', type: 'number' },
-  { key: 'alternativeUOM', column: 'C_Aum', type: 'selector', reference: 'UOM', inputMode: 'selector' },
-  { key: 'grossUnitPrice', column: 'Gross_Unit_Price', type: 'number' },
-  { key: 'listPrice', column: 'PriceList', type: 'number', required: true },
-  { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'selector', reference: 'AttributeSetInstance', inputMode: 'selector' },
-  { key: 'deferredExpense', column: 'IsDeferred', type: 'checkbox', required: true },
-  { key: 'taxableAmount', column: 'Taxbaseamt', type: 'number' },
-  { key: 'lineNo', column: 'Line', type: 'number', required: true, readOnly: true },
-  { key: 'uom', column: 'C_UOM_ID', type: 'search', readOnly: true, reference: 'UOM' },
-  { key: 'lineGrossAmount', column: 'Line_Gross_Amount', type: 'number', readOnly: true },
-  { key: 'purchaseOrderLine', column: 'C_OrderLine_ID', type: 'search', readOnly: true, reference: 'OrderLine' },
-  { key: 'goodsReceiptLine', column: 'M_InOutLine_ID', type: 'search', readOnly: true, reference: 'InOutLine' },
-  { key: 'baseGrossUnitPrice', column: 'grosspricestd', type: 'number', required: true, readOnly: true },
-  { key: 'baseNetUnitPrice', column: 'PriceStd', type: 'number', required: true, readOnly: true },
-  { key: 'grossListPrice', column: 'Grosspricelist', type: 'number', required: true, readOnly: true },
+  { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.', required: true, section: 'principal', defaultValue: '@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM C_InvoiceLine WHERE C_Invoice_ID=@C_Invoice_ID@' },
+  // @sf-custom-slot callout:SL_Invoice_Product
+  { key: 'product', column: 'M_Product_ID', type: 'search', label: 'Product', section: 'principal', reference: 'Product', inputMode: 'search' },
+  // @sf-custom-slot callout:SL_Invoice_Glitem
+  { key: 'account', column: 'Account_ID', type: 'search', label: 'Account', section: 'principal', reference: 'GLAccount', inputMode: 'search' },
+  // @sf-custom-slot callout:OperativeQuantity_To_BaseQuantity
+  { key: 'operativeQuantity', column: 'Aumqty', type: 'number', label: 'Operative Quantity', section: 'principal' },
+  // @sf-custom-slot callout:OperativeQuantity_To_BaseQuantity
+  { key: 'operativeUOM', column: 'C_Aum', type: 'selector', label: 'Alternative UOM', section: 'other', reference: 'UOM', inputMode: 'selector' },
+  // @sf-custom-slot callout:SL_Invoice_Amt
+  { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', label: 'Invoiced Quantity', required: true, section: 'other', defaultValue: '1' },
+  { key: 'uOM', column: 'C_UOM_ID', type: 'selector', label: 'UOM', readOnly: true, section: 'other', reference: 'UOM', inputMode: 'selector' },
+  // @sf-custom-slot callout:SL_Invoice_Amt
+  { key: 'unitPrice', column: 'PriceActual', type: 'number', label: 'Net Unit Price', required: true, section: 'other' },
+  // @sf-custom-slot callout:SL_Invoice_Amt
+  { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', label: 'Line Net Amount', required: true, readOnly: true, section: 'other' },
+  { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'other' },
+  // @sf-custom-slot callout:SL_Invoice_Amt
+  { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', section: 'other', reference: 'Tax', inputMode: 'selector' },
+  { key: 'listPrice', column: 'PriceList', type: 'number', label: 'List Price', required: true, readOnly: true, section: 'other' },
+  { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text', label: 'Attribute Set Value', section: 'other' },
+  { key: 'salesOrderLine', column: 'C_OrderLine_ID', type: 'selector', label: 'Purchase Order Line', readOnly: true, section: 'other', reference: 'OrderLine', inputMode: 'selector' },
+  { key: 'goodsShipmentLine', column: 'M_InOutLine_ID', type: 'selector', label: 'Goods Receipt Line', readOnly: true, section: 'other', reference: 'GoodsShipmentLine', inputMode: 'selector' },
+  { key: 'taxableAmount', column: 'Taxbaseamt', type: 'number', label: 'Alternate Taxable Amount', readOnly: true, section: 'other' },
+  { key: 'project', column: 'C_Project_ID', type: 'search', label: 'Project', section: 'other', reference: 'Project', inputMode: 'search' },
+  { key: 'costcenter', column: 'C_Costcenter_ID', type: 'selector', label: 'Cost Center', section: 'other', reference: 'CostCenter', inputMode: 'selector' },
+  { key: 'asset', column: 'A_Asset_ID', type: 'selector', label: 'Asset', section: 'other', reference: 'Asset', inputMode: 'selector' },
+  { key: 'stDimension', column: 'User1_ID', type: 'selector', label: '1st Dimension', section: 'other', reference: 'UserDimension1', inputMode: 'selector' },
+  { key: 'ndDimension', column: 'User2_ID', type: 'selector', label: '2nd Dimension', section: 'other', reference: 'UserDimension2', inputMode: 'selector' },
 ];
 // @sf-generated-end fields:invoiceLine
 

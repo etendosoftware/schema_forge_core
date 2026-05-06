@@ -2,9 +2,7 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:invoiceDiscount
 const columns = [
-  { key: 'lineNo', column: 'Line', type: 'number' },
-  { key: 'discount', column: 'C_Discount_ID', type: 'string' },
-  { key: 'cascade', column: 'Cascade', type: 'boolean' },
+
 ];
 // @sf-generated-end columns:invoiceDiscount
 

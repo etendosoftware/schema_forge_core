@@ -1,12 +1,9 @@
-import GoodsReceiptPage from './GoodsReceiptPage';
+import GoodsReceiptPage, { api } from './GoodsReceiptPage';
 
-const windowMeta = { category: 'procurement', name: 'Goods Receipt' };
+const windowMeta = { category: 'purchases', name: 'Goods Receipt' };
 
-<<<<<<< HEAD
+// @sf-generated-start component:App
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  return <GoodsReceiptPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} {...rest} />;
-=======
-export default function App({ token, apiBaseUrl, window }) {
-  return <GoodsReceiptPage token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} />;
->>>>>>> origin/main
+  return <GoodsReceiptPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
 }
+// @sf-generated-end component:App

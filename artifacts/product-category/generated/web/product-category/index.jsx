@@ -1,40 +1,9 @@
-import { ListView, DetailView } from '@/components/contract-ui';
-import ProductCategoryTable from './ProductCategoryTable';
-import ProductCategoryForm from './ProductCategoryForm';
-import catalogs from './mockCatalogs';
+import ProductCategoryPage, { api } from './ProductCategoryPage';
 
-const windowMeta = { category: 'reference', name: 'Product Category' };
+const windowMeta = { category: 'inventory', name: 'Product Category' };
 
-export default function App({ windowName, recordId, ...props }) {
-  if (recordId) {
-    return (
-      <DetailView
-        entity="productCategory"
-        Form={ProductCategoryForm}
-        catalogs={catalogs}
-        entityLabel="Product Category"
-        windowName={windowName}
-        recordId={recordId}
-<<<<<<< HEAD
-        window={windowMeta}
-=======
->>>>>>> origin/main
-        {...props}
-      />
-    );
-  }
-
-  return (
-    <ListView
-      entity="productCategory"
-      Table={ProductCategoryTable}
-      entityLabel="Product Category"
-      windowName={windowName}
-<<<<<<< HEAD
-      window={windowMeta}
-=======
->>>>>>> origin/main
-      {...props}
-    />
-  );
+// @sf-generated-start component:App
+export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
+  return <ProductCategoryPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
 }
+// @sf-generated-end component:App

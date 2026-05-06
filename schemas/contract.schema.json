@@ -1,17 +1,146 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Contract",
-  "description": "Generation contract artifact. TDD 2.4.",
+  "description": "Generation contract artifact.",
   "type": "object",
-  "required": ["version", "schemaChecksum", "rulesChecksum", "processesChecksum", "frontendContract", "backendContract", "testManifest"],
+  "required": [
+    "version",
+    "generatedAt",
+    "checksum",
+    "frontendContract",
+    "backendContract",
+    "testManifest"
+  ],
   "properties": {
     "version": { "type": "string" },
-    "schemaChecksum": { "type": "string" },
-    "rulesChecksum": { "type": "string" },
-    "processesChecksum": { "type": "string" },
-    "frontendContract": { "type": "object" },
-    "backendContract": { "type": "object" },
-    "testManifest": { "type": "object" }
+    "generatedAt": { "type": "string" },
+    "updatedAt": { "type": "string" },
+    "checksum": { "type": "string" },
+    "frontendContract": {
+      "type": "object",
+      "required": ["window", "entities"],
+      "properties": {
+        "window": {
+          "type": "object",
+          "required": ["primaryEntity"],
+          "properties": {
+            "primaryEntity": { "type": ["string", "null"] }
+          },
+          "additionalProperties": true
+        },
+        "entities": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["fields", "searchableFields", "computedFields"],
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "type", "visibility", "required", "grid", "form"],
+                  "properties": {
+                    "name": { "type": "string" },
+                    "apiKey": { "type": "string" },
+                    "column": { "type": "string" },
+                    "label": { "type": "string" },
+                    "type": { "type": "string" },
+                    "tsType": { "type": "string" },
+                    "visibility": { "type": "string" },
+                    "required": { "type": "boolean" },
+                    "sourceRequired": { "type": "boolean" },
+                    "grid": { "type": "boolean" },
+                    "form": { "type": "boolean" },
+                    "defaultValue": {},
+                    "reference": { "type": "string" },
+                    "inputMode": { "type": "string" },
+                    "lookup": { "type": "boolean" },
+                    "popup": { "type": "boolean" },
+                    "section": { "type": "string" },
+                    "seq": { "type": "number" },
+                    "derivation": {
+                      "type": "object",
+                      "required": ["type"],
+                      "properties": {
+                        "type": { "type": "string" },
+                        "source": {}
+                      },
+                      "additionalProperties": true
+                    },
+                    "callout": {
+                      "type": "object",
+                      "properties": {
+                        "className": { "type": "string" }
+                      },
+                      "additionalProperties": true
+                    },
+                    "displayLogic": { "type": "object", "additionalProperties": true },
+                    "readOnlyLogic": { "type": "object", "additionalProperties": true }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "searchableFields": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "computedFields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "derivation"],
+                  "properties": {
+                    "name": { "type": "string" },
+                    "derivation": {
+                      "type": "object",
+                      "required": ["type"],
+                      "properties": {
+                        "type": { "type": "string" },
+                        "source": {}
+                      },
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "draftMode": { "type": "object", "additionalProperties": true }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "backendContract": {
+      "type": "object",
+      "required": ["window", "entities"],
+      "properties": {
+        "window": { "type": "object", "additionalProperties": true },
+        "entities": { "type": "object", "additionalProperties": true },
+        "endpoints": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "processEndpoints": { "type": "array", "items": { "type": "object", "additionalProperties": true } }
+      },
+      "additionalProperties": true
+    },
+    "apiPrediction": {
+      "type": "object",
+      "properties": {
+        "selectors": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "actions": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "crud": { "type": "object", "additionalProperties": { "type": "object", "additionalProperties": true } }
+      },
+      "additionalProperties": true
+    },
+    "testManifest": {
+      "type": "object",
+      "required": ["tests", "summary"],
+      "properties": {
+        "tests": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+        "summary": { "type": "object", "additionalProperties": true }
+      },
+      "additionalProperties": true
+    }
   },
   "additionalProperties": false
 }

@@ -1,14 +1,17 @@
 import { DataTable } from '@/components/contract-ui';
 
+// @sf-generated-start columns:priceList
 const columns = [
-  { key: 'name', column: 'Name', type: 'string' },
-  { key: 'currency', column: 'C_Currency_ID', type: 'string' },
-  { key: 'isSalesPrice', column: 'IsSOPriceList', type: 'boolean' },
-  { key: 'isActive', column: 'IsActive', type: 'boolean' },
+  { key: 'name', column: 'Name', type: 'string', label: 'Name' },
+  { key: 'currency', column: 'C_Currency_ID', type: 'selector', label: 'Currency' },
+  { key: 'salesPriceList', column: 'IsSOPriceList', type: 'boolean', labels: {"es_ES":"Tipo","en_US":"Type"}, label: 'Sales Price List', badge: true, badgeLabels: {"true":{"es_ES":"Venta","en_US":"Sales"},"false":{"es_ES":"Compra","en_US":"Purchase"}}, badgeVariants: {"true":"blue","false":"purple"} },
 ];
+// @sf-generated-end columns:priceList
 
 const filters = ['name'];
 
+// @sf-generated-start component:PriceListTable
 export default function PriceListTable(props) {
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
+// @sf-generated-end component:PriceListTable

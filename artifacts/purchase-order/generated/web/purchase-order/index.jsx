@@ -1,12 +1,9 @@
-import OrderPage from './OrderPage';
+import HeaderPage, { api } from './HeaderPage';
 
-const windowMeta = { category: 'procurement', name: 'Purchase Order' };
+const windowMeta = { category: 'purchases', name: 'Purchase Order' };
 
-<<<<<<< HEAD
+// @sf-generated-start component:App
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  return <OrderPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} {...rest} />;
-=======
-export default function App({ token, apiBaseUrl, window }) {
-  return <OrderPage token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} />;
->>>>>>> origin/main
+  return <HeaderPage windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta} api={api} {...rest} />;
 }
+// @sf-generated-end component:App

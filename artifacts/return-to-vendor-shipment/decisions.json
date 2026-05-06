@@ -1,0 +1,22 @@
+{
+  "$schema": "decisions-v2",
+  "window": {
+    "category": "purchases",
+    "name": "Return to Vendor Shipment",
+    "relatedDocuments": true,
+    "notesField": "description",
+    "dateFilterKey": "movementDate"
+  },
+  "entities": {
+    "header": {
+      "fields": {
+        "movementDate": {
+          "grid": true
+        }
+      }
+    }
+  },
+  "rules": {},
+  "discardPatterns": [],
+  "version": 2
+}
