@@ -1,8 +1,8 @@
 {
-  "version": "0.17.0",
+  "version": "0.18.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-06T18:53:41.264Z",
-  "checksum": "c467ef8dbf089d54",
+  "updatedAt": "2026-05-06T19:55:04.605Z",
+  "checksum": "82bd527c159d88b8",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -694,6 +694,19 @@
             "required": false,
             "grid": false,
             "form": false
+          },
+          {
+            "name": "eTGODueDate",
+            "apiKey": "eTGODueDate",
+            "column": "em_etgo_due_date",
+            "label": "em_etgo_due_date",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": false,
+            "gridOrder": 7
           }
         ],
         "searchableFields": [
@@ -701,7 +714,8 @@
           "invoiceDate",
           "businessPartner",
           "orderReference",
-          "documentStatus"
+          "documentStatus",
+          "eTGODueDate"
         ],
         "computedFields": [
           {
@@ -4459,6 +4473,14 @@
             "type": "decimal",
             "visibility": "editable",
             "required": false
+          },
+          {
+            "name": "eTGODueDate",
+            "apiKey": "eTGODueDate",
+            "column": "em_etgo_due_date",
+            "type": "date",
+            "visibility": "readOnly",
+            "required": false
           }
         ],
         "javaQualifier": "purchaseInvoiceHeaderHandler"
@@ -6946,7 +6968,8 @@
           "invoiceDate",
           "businessPartner",
           "orderReference",
-          "documentStatus"
+          "documentStatus",
+          "eTGODueDate"
         ]
       },
       {
@@ -7324,7 +7347,8 @@
           "invoiceDate",
           "businessPartner",
           "orderReference",
-          "documentStatus"
+          "documentStatus",
+          "eTGODueDate"
         ]
       },
       "lines": {
@@ -8961,6 +8985,14 @@
         "description": "Field 'dueAmount' should be present in header"
       },
       {
+        "id": "t-field-presence-header-eTGODueDate",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "eTGODueDate",
+        "runner": "node",
+        "description": "Field 'eTGODueDate' should be present in header"
+      },
+      {
         "id": "t-field-presence-header-etgoTotalDiscount",
         "category": "field-presence",
         "entity": "header",
@@ -9943,6 +9975,14 @@
         "field": "dueAmount",
         "runner": "node",
         "description": "Field 'dueAmount' should have type 'number' in header"
+      },
+      {
+        "id": "t-field-type-header-eTGODueDate",
+        "category": "field-type",
+        "entity": "header",
+        "field": "eTGODueDate",
+        "runner": "node",
+        "description": "Field 'eTGODueDate' should have type 'string' in header"
       },
       {
         "id": "t-field-type-header-etgoTotalDiscount",
@@ -11538,6 +11578,14 @@
         "field": "documentStatus",
         "runner": "node",
         "description": "Field 'documentStatus' should be a supported filter for header"
+      },
+      {
+        "id": "t-searchable-filters-header-eTGODueDate",
+        "category": "searchable-filters",
+        "entity": "header",
+        "field": "eTGODueDate",
+        "runner": "node",
+        "description": "Field 'eTGODueDate' should be a supported filter for header"
       },
       {
         "id": "t-searchable-filters-header-invoiceDate",
@@ -14681,25 +14729,25 @@
       }
     ],
     "summary": {
-      "total": 835,
+      "total": 838,
       "byCategory": {
         "action-endpoint": 24,
         "crud-flags": 12,
         "default-value-type": 27,
         "displaylogic-evaluable": 6,
         "displaylogic-valid": 6,
-        "field-presence": 123,
-        "field-type": 123,
+        "field-presence": 124,
+        "field-type": 124,
         "readonlylogic-evaluable": 48,
         "readonlylogic-valid": 48,
         "rule-declared": 21,
-        "searchable-filters": 5,
+        "searchable-filters": 6,
         "selector-endpoint": 47,
         "system-field": 333,
         "visibility": 12
       },
       "byRunner": {
-        "node": 835,
+        "node": 838,
         "junit": 0
       }
     }
