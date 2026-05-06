@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { DataTable } from '@/components/contract-ui';
+import { AddLineButton } from '@/components/ui/add-line-button';
+import { useUI, useMenuLabel } from '@/i18n';
 import { Trash2, X } from 'lucide-react';
 
 function ConfirmDeleteModal({ onConfirm, onCancel }) {
@@ -54,6 +56,8 @@ function toNumber(value) {
 }
 
 export default function PriceListProductPrices({ recordId, data, token, apiBaseUrl, editing }) {
+  const ui = useUI();
+  const tMenu = useMenuLabel();
   const [versionId, setVersionId] = useState(null);
   const [lines, setLines] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -213,12 +217,12 @@ export default function PriceListProductPrices({ recordId, data, token, apiBaseU
           )}
 
           {canAddProducts && !adding && (
-            <button
-              onClick={() => { setAdding(true); closeSidePanel(); }}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium px-1 py-1 transition-colors"
-            >
-              + Add Product
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, borderTop: '0.5px solid var(--color-border-tertiary, #e5e7eb)', padding: '10px 16px' }}>
+              <AddLineButton
+                onClick={() => { setAdding(true); closeSidePanel(); }}
+                label={ui('addEntity', { label: tMenu('Product') })}
+              />
+            </div>
           )}
         </div>
 
