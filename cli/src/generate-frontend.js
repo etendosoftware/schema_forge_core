@@ -42,6 +42,17 @@ export function capitalize(s) {
 }
 
 /**
+ * Capitalize and strip characters that are invalid in a JS identifier.
+ * Needed when entity/tab names contain parens, accents or spaces
+ * (e.g. "issuedInvoices(previousPeriod)" → "IssuedInvoicespreviousPeriod").
+ */
+export function toJsIdentifier(s) {
+  if (!s) return '';
+  const capped = s.charAt(0).toUpperCase() + s.slice(1);
+  return capped.replace(/[^a-zA-Z0-9_$]/g, '');
+}
+
+/**
  * Convert camelCase name to "Title Case" label.
  * e.g., 'orderLine' -> 'Order Line'
  */
@@ -156,7 +167,7 @@ export function generateTableComponent(entityName, contract) {
     gridFields.splice(pos - 1, 0, f);
   }
   const searchableFields = entity.searchableFields ?? [];
-  const compName = `${capitalize(entityName)}Table`;
+  const compName = `${toJsIdentifier(entityName)}Table`;
 
   // Collect known cell type render helpers needed by this table
   const neededCellTypes = new Set(gridFields.map(f => f.cellType).filter(Boolean));
@@ -270,7 +281,7 @@ export function generateFormComponent(entityName, contract) {
       if (b.seq != null) return 1;
       return 0;
     });
-  const compName = `${capitalize(entityName)}Form`;
+  const compName = `${toJsIdentifier(entityName)}Form`;
 
   // Classify fields into sections: first N editable non-readOnly fields are 'principal', rest are 'other'.
   // Fields with explicit section in the contract take precedence.
@@ -369,7 +380,7 @@ ${MARKERS.GENERATED_END(`component:${compName}`)}
  * Returns an object with { componentCode, lucideImports } strings.
  */
 function generateStatusBarComponent(headerEntity, statusBarConfig) {
-  const headerName = capitalize(headerEntity);
+  const headerName = toJsIdentifier(headerEntity);
   const { cards = [], progress } = statusBarConfig;
 
   // Collect unique lucide icon names
@@ -492,8 +503,8 @@ ${MARKERS.GENERATED_END(`statusBar:${headerEntity}`)}`;
  * Produces a thin declarative component that routes by recordId.
  */
 export function generatePageComponent(headerEntity, detailEntity, contract) {
-  const headerName = capitalize(headerEntity);
-  const detailName = detailEntity ? capitalize(detailEntity) : null;
+  const headerName = toJsIdentifier(headerEntity);
+  const detailName = detailEntity ? toJsIdentifier(detailEntity) : null;
   const compName = `${headerName}Page`;
   const layoutType = contract?.frontendContract?.window?.layoutType ?? 'default';
   const isGallery = layoutType === 'gallery';
@@ -690,8 +701,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
         const isFormTab = cfg.tabMode === 'form-only';
         const isPanelTab = !!cfg.customPanel;
         const PanelName = cfg.customPanel ?? null;
-        const FormName = cfg.customForm ?? `${capitalize(key)}Form`;
-        const TableName = cfg.customTable ?? `${capitalize(key)}Table`;
+        const FormName = cfg.customForm ?? `${toJsIdentifier(key)}Form`;
+        const TableName = cfg.customTable ?? `${toJsIdentifier(key)}Table`;
         const addLineFieldKeys = cfg.addLineFields ?? [];
         const requireSavedRecord = cfg.requireSavedRecord === true;
         const customAddModalName = cfg.customAddModal ?? null;
@@ -739,8 +750,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
         key: name,
         label: entity.tabName || toLabel(name),
         isFormTab: false,
-        TableName: `${capitalize(name)}Table`,
-        FormName: `${capitalize(name)}Form`,
+        TableName: `${toJsIdentifier(name)}Table`,
+        FormName: `${toJsIdentifier(name)}Form`,
         addLineEntries: [],
       }));
 
@@ -1179,7 +1190,7 @@ ${MARKERS.GENERATED_END(`component:${compName}`)}
  * Accepts { token, apiBaseUrl, window } props.
  */
 export function generateIndexComponent(headerEntity, detailEntity, contract) {
-  const headerName = capitalize(headerEntity);
+  const headerName = toJsIdentifier(headerEntity);
   const category = contract?.frontendContract?.window?.category ?? 'general';
   const windowName = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
   const apiPrediction = contract?.apiPrediction;
@@ -1235,7 +1246,7 @@ export function generateAll(contract) {
 
   // Generate Table + Form for each entity
   for (const entityName of entityNames) {
-    const capName = capitalize(entityName);
+    const capName = toJsIdentifier(entityName);
     files[`${capName}Table.jsx`] = generateTableComponent(entityName, contract);
     files[`${capName}Form.jsx`] = generateFormComponent(entityName, contract);
   }
