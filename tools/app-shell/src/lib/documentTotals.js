@@ -85,11 +85,8 @@ export function computeDocumentTotals(
     ? baseGrandTotal * factor
     : null;
 
-  const baseTaxAmt = baseGrandTotal != null && netSubtotal != null
-    ? baseGrandTotal - netSubtotal
-    : null;
-  const taxAmt = baseTaxAmt != null
-    ? baseTaxAmt * factor
+  const taxAmt = baseGrandTotal != null && netSubtotal != null
+    ? (baseGrandTotal - netSubtotal) * factor
     : null;
 
   return { grossSubtotal, netSubtotal, grandTotal, discountAmt, taxAmt, totalDiscountAmt };
