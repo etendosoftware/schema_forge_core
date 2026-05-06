@@ -4,9 +4,9 @@ import { DataTable } from '@/components/contract-ui';
 const columns = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string', label: 'Document No.' },
   { key: 'paymentDate', column: 'Paymentdate', type: 'date', label: 'Payment Date' },
-  { key: 'businessPartner', column: 'C_Bpartner_ID', type: 'string', label: 'Received From' },
+  { key: 'businessPartner', column: 'C_Bpartner_ID', type: 'selector', label: 'Received From' },
   { key: 'amount', column: 'Amount', type: 'amount', label: 'Amount' },
-  { key: 'status', column: 'Status', type: 'status', label: 'Status' },
+  { key: 'status', column: 'Status', type: 'status', label: 'Status', enumLabels: { 'RPAP': 'Awaiting Payment', 'RPAE': 'Awaiting Execution', 'RPVOID': 'Void', 'PPM': 'Payment Made', 'RPR': 'Payment Received', 'RDNC': 'Deposited not Cleared', 'PWNC': 'Withdrawn not Cleared', 'RPPC': 'Payment Cleared' } },
 ];
 // @sf-generated-end columns:finPayment
 

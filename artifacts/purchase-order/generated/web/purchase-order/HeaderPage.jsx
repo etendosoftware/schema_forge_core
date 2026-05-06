@@ -31,6 +31,8 @@ const labelOverrides = {
 // @sf-generated-start summary:header
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
+  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
 ];
 
 const statusField = 'documentStatus';
@@ -58,10 +60,10 @@ const draftMode = {
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
   entry: [
-    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["unitPrice","tax","uOM","grossUnitPrice","discount"] },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["listPrice","unitPrice","tax","uOM","grossUnitPrice","discount"] },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
     { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity', defaultValue: 1 },
-    { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
+    { key: 'listPrice', column: 'PriceList', type: 'number', required: true, label: 'Net List Price' },
     { key: 'discount', column: 'Discount', type: 'number', label: 'Discount %', defaultValue: 0 },
     { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineGrossAmount","grossUnitPrice","lineNetAmount"] },
   ],
@@ -606,7 +608,7 @@ export const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=purchase-orderDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
@@ -658,9 +660,9 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         topbarRight={PurchaseOrderActions}
         topbarExtra={PurchaseOrderDraftChips}
-        menuActions={({ status }) => [
+        menuActions={({ data, status }) => [
           { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', labelKey: 'cancel', onClick: () => {}, },
-          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
+          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO' && !data?.hasLinkedDocuments, labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
         ]}
         draftMode={draftMode}
         labelOverrides={labelOverrides}

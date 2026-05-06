@@ -14,5 +14,5 @@ const fields = [
 export default function BillOfMaterialsForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-BillOfMaterialsForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:BillOfMaterialsForm

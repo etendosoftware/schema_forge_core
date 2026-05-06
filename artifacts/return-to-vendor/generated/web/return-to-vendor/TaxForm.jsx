@@ -13,5 +13,5 @@ const fields = [
 export default function TaxForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-TaxForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:TaxForm

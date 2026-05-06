@@ -2,64 +2,357 @@
 
 export const priceList = [
   {
-    "id": "pl-001",
-    "name": "Standard Price List",
-    "description": "Default pricing for all customers",
+    "id": "mock-priceList-001",
+    "name": "Sample name",
     "currency": "USD",
-    "isDefault": true,
-    "isSalesPrice": true,
-    "isActive": true
+    "description": "Standard order for Q1 delivery",
+    "salesPriceList": "Sample salesPriceList",
+    "costBasedPriceList": "Sample costBasedPriceList",
+    "priceIncludesTax": "VAT 21%",
+    "default": "Sample default"
   },
   {
-    "id": "pl-002",
-    "name": "Wholesale Prices",
-    "description": "Bulk purchase pricing",
-    "currency": "USD",
-    "isDefault": false,
-    "isSalesPrice": true,
-    "isActive": true
-  },
-  {
-    "id": "pl-003",
-    "name": "Retail Prices",
-    "description": "End consumer pricing",
+    "id": "mock-priceList-002",
+    "name": "Sample name",
     "currency": "EUR",
-    "isDefault": false,
-    "isSalesPrice": true,
-    "isActive": true
+    "description": "Rush order - priority shipping required",
+    "salesPriceList": "Sample salesPriceList",
+    "costBasedPriceList": "Sample costBasedPriceList",
+    "priceIncludesTax": "VAT 10%",
+    "default": "Sample default"
   },
   {
-    "id": "pl-004",
-    "name": "VIP Pricing",
-    "description": "Special pricing for key accounts",
+    "id": "mock-priceList-003",
+    "name": "Sample name",
+    "currency": "GBP",
+    "description": "Bulk purchase for warehouse restocking",
+    "salesPriceList": "Sample salesPriceList",
+    "costBasedPriceList": "Sample costBasedPriceList",
+    "priceIncludesTax": "VAT 0%",
+    "default": "Sample default"
+  },
+  {
+    "id": "mock-priceList-004",
+    "name": "Sample name",
     "currency": "USD",
-    "isDefault": false,
-    "isSalesPrice": false,
-    "isActive": true
+    "description": "Sample order for client evaluation",
+    "salesPriceList": "Sample salesPriceList",
+    "costBasedPriceList": "Sample costBasedPriceList",
+    "priceIncludesTax": "Sales Tax 8.5%",
+    "default": "Sample default"
+  },
+  {
+    "id": "mock-priceList-005",
+    "name": "Sample name",
+    "currency": "EUR",
+    "description": "Recurring monthly supply order",
+    "salesPriceList": "Sample salesPriceList",
+    "costBasedPriceList": "Sample costBasedPriceList",
+    "priceIncludesTax": "Exempt",
+    "default": "Sample default"
+  },
+  {
+    "id": "mock-priceList-006",
+    "name": "Sample name",
+    "currency": "GBP",
+    "description": "Special pricing agreement applies",
+    "salesPriceList": "Sample salesPriceList",
+    "costBasedPriceList": "Sample costBasedPriceList",
+    "priceIncludesTax": "Reduced Rate 5%",
+    "default": "Sample default"
+  },
+  {
+    "id": "mock-priceList-007",
+    "name": "Sample name",
+    "currency": "USD",
+    "description": "Consolidated order from multiple requests",
+    "salesPriceList": "Sample salesPriceList",
+    "costBasedPriceList": "Sample costBasedPriceList",
+    "priceIncludesTax": "Standard Rate 20%",
+    "default": "Sample default"
+  },
+  {
+    "id": "mock-priceList-008",
+    "name": "Sample name",
+    "currency": "EUR",
+    "description": "Trial order for new product line",
+    "salesPriceList": "Sample salesPriceList",
+    "costBasedPriceList": "Sample costBasedPriceList",
+    "priceIncludesTax": "VAT 21%",
+    "default": "Sample default"
+  },
+  {
+    "id": "mock-priceList-009",
+    "name": "Sample name",
+    "currency": "GBP",
+    "description": "Replacement for damaged goods",
+    "salesPriceList": "Sample salesPriceList",
+    "costBasedPriceList": "Sample costBasedPriceList",
+    "priceIncludesTax": "VAT 10%",
+    "default": "Sample default"
+  },
+  {
+    "id": "mock-priceList-010",
+    "name": "Sample name",
+    "currency": "USD",
+    "description": "Pre-season inventory build-up",
+    "salesPriceList": "Sample salesPriceList",
+    "costBasedPriceList": "Sample costBasedPriceList",
+    "priceIncludesTax": "VAT 0%",
+    "default": "Sample default"
+  },
+  {
+    "id": "mock-priceList-011",
+    "name": "Sample name",
+    "currency": "EUR",
+    "description": "Customer-specific configuration",
+    "salesPriceList": "Sample salesPriceList",
+    "costBasedPriceList": "Sample costBasedPriceList",
+    "priceIncludesTax": "Sales Tax 8.5%",
+    "default": "Sample default"
+  },
+  {
+    "id": "mock-priceList-012",
+    "name": "Sample name",
+    "currency": "GBP",
+    "description": "Government contract fulfillment",
+    "salesPriceList": "Sample salesPriceList",
+    "costBasedPriceList": "Sample costBasedPriceList",
+    "priceIncludesTax": "Exempt",
+    "default": "Sample default"
   }
 ];
 
-export const priceListLine = [
-  { "id": "pll-001", "priceListId": "pl-001", "product": "Laptop Pro 15", "listPrice": 1499.00, "standardPrice": 1299.00, "limitPrice": 1100.00, "uom": "Each" },
-  { "id": "pll-002", "priceListId": "pl-001", "product": "USB-C Cable", "listPrice": 19.99, "standardPrice": 14.99, "limitPrice": 10.00, "uom": "Each" },
-  { "id": "pll-003", "priceListId": "pl-001", "product": "Wireless Mouse", "listPrice": 39.99, "standardPrice": 29.99, "limitPrice": 22.00, "uom": "Each" },
-  { "id": "pll-004", "priceListId": "pl-001", "product": "Mechanical Keyboard", "listPrice": 109.00, "standardPrice": 89.00, "limitPrice": 70.00, "uom": "Each" },
-  { "id": "pll-005", "priceListId": "pl-001", "product": "Monitor 27\"", "listPrice": 649.00, "standardPrice": 549.00, "limitPrice": 450.00, "uom": "Each" },
-  { "id": "pll-006", "priceListId": "pl-002", "product": "Laptop Pro 15", "listPrice": 1299.00, "standardPrice": 1150.00, "limitPrice": 1000.00, "uom": "Each" },
-  { "id": "pll-007", "priceListId": "pl-002", "product": "USB-C Cable", "listPrice": 12.99, "standardPrice": 9.99, "limitPrice": 7.50, "uom": "Each" },
-  { "id": "pll-008", "priceListId": "pl-002", "product": "Wireless Mouse", "listPrice": 29.99, "standardPrice": 22.00, "limitPrice": 18.00, "uom": "Each" },
-  { "id": "pll-009", "priceListId": "pl-002", "product": "SSD 1TB", "listPrice": 129.00, "standardPrice": 99.00, "limitPrice": 80.00, "uom": "Each" },
-  { "id": "pll-010", "priceListId": "pl-002", "product": "RAM 16GB", "listPrice": 79.00, "standardPrice": 59.00, "limitPrice": 45.00, "uom": "Each" },
-  { "id": "pll-011", "priceListId": "pl-002", "product": "Headset Pro", "listPrice": 159.00, "standardPrice": 129.00, "limitPrice": 100.00, "uom": "Each" },
-  { "id": "pll-012", "priceListId": "pl-003", "product": "Laptop Pro 15", "listPrice": 1599.00, "standardPrice": 1499.00, "limitPrice": 1300.00, "uom": "Each" },
-  { "id": "pll-013", "priceListId": "pl-003", "product": "Webcam HD", "listPrice": 99.00, "standardPrice": 79.00, "limitPrice": 60.00, "uom": "Each" },
-  { "id": "pll-014", "priceListId": "pl-003", "product": "Docking Station", "listPrice": 249.00, "standardPrice": 199.00, "limitPrice": 160.00, "uom": "Each" },
-  { "id": "pll-015", "priceListId": "pl-003", "product": "Tablet 10\"", "listPrice": 549.00, "standardPrice": 449.00, "limitPrice": 380.00, "uom": "Each" },
-  { "id": "pll-016", "priceListId": "pl-003", "product": "Printer Laser", "listPrice": 379.00, "standardPrice": 299.00, "limitPrice": 250.00, "uom": "Each" },
-  { "id": "pll-017", "priceListId": "pl-004", "product": "Laptop Pro 15", "listPrice": 1199.00, "standardPrice": 1050.00, "limitPrice": 950.00, "uom": "Each" },
-  { "id": "pll-018", "priceListId": "pl-004", "product": "Monitor 27\"", "listPrice": 499.00, "standardPrice": 450.00, "limitPrice": 400.00, "uom": "Each" },
-  { "id": "pll-019", "priceListId": "pl-004", "product": "Mechanical Keyboard", "listPrice": 79.00, "standardPrice": 69.00, "limitPrice": 55.00, "uom": "Each" },
-  { "id": "pll-020", "priceListId": "pl-004", "product": "Graphics Card", "listPrice": 599.00, "standardPrice": 549.00, "limitPrice": 480.00, "uom": "Each" },
-  { "id": "pll-021", "priceListId": "pl-004", "product": "Power Supply 750W", "listPrice": 89.00, "standardPrice": 79.00, "limitPrice": 65.00, "uom": "Each" },
-  { "id": "pll-022", "priceListId": "pl-004", "product": "CPU Cooler", "listPrice": 45.00, "standardPrice": 39.00, "limitPrice": 30.00, "uom": "Each" }
+export const priceListVersion = [
+  {
+    "id": "mock-priceListVersion-001",
+    "name": "Sample name",
+    "validFromDate": "2026-01-15",
+    "priceListSchema": "Sample priceListSchema",
+    "basePriceListVersion": "Sample basePriceListVersion",
+    "description": "Standard order for Q1 delivery",
+    "create": "Sample create",
+    "priceListId": "mock-priceList-001"
+  },
+  {
+    "id": "mock-priceListVersion-002",
+    "name": "Sample name",
+    "validFromDate": "2026-01-16",
+    "priceListSchema": "Sample priceListSchema",
+    "basePriceListVersion": "Sample basePriceListVersion",
+    "description": "Rush order - priority shipping required",
+    "create": "Sample create",
+    "priceListId": "mock-priceList-002"
+  },
+  {
+    "id": "mock-priceListVersion-003",
+    "name": "Sample name",
+    "validFromDate": "2026-01-17",
+    "priceListSchema": "Sample priceListSchema",
+    "basePriceListVersion": "Sample basePriceListVersion",
+    "description": "Bulk purchase for warehouse restocking",
+    "create": "Sample create",
+    "priceListId": "mock-priceList-003"
+  },
+  {
+    "id": "mock-priceListVersion-004",
+    "name": "Sample name",
+    "validFromDate": "2026-01-18",
+    "priceListSchema": "Sample priceListSchema",
+    "basePriceListVersion": "Sample basePriceListVersion",
+    "description": "Sample order for client evaluation",
+    "create": "Sample create",
+    "priceListId": "mock-priceList-004"
+  },
+  {
+    "id": "mock-priceListVersion-005",
+    "name": "Sample name",
+    "validFromDate": "2026-01-19",
+    "priceListSchema": "Sample priceListSchema",
+    "basePriceListVersion": "Sample basePriceListVersion",
+    "description": "Recurring monthly supply order",
+    "create": "Sample create",
+    "priceListId": "mock-priceList-005"
+  },
+  {
+    "id": "mock-priceListVersion-006",
+    "name": "Sample name",
+    "validFromDate": "2026-01-20",
+    "priceListSchema": "Sample priceListSchema",
+    "basePriceListVersion": "Sample basePriceListVersion",
+    "description": "Special pricing agreement applies",
+    "create": "Sample create",
+    "priceListId": "mock-priceList-006"
+  },
+  {
+    "id": "mock-priceListVersion-007",
+    "name": "Sample name",
+    "validFromDate": "2026-01-21",
+    "priceListSchema": "Sample priceListSchema",
+    "basePriceListVersion": "Sample basePriceListVersion",
+    "description": "Consolidated order from multiple requests",
+    "create": "Sample create",
+    "priceListId": "mock-priceList-007"
+  },
+  {
+    "id": "mock-priceListVersion-008",
+    "name": "Sample name",
+    "validFromDate": "2026-01-22",
+    "priceListSchema": "Sample priceListSchema",
+    "basePriceListVersion": "Sample basePriceListVersion",
+    "description": "Trial order for new product line",
+    "create": "Sample create",
+    "priceListId": "mock-priceList-008"
+  },
+  {
+    "id": "mock-priceListVersion-009",
+    "name": "Sample name",
+    "validFromDate": "2026-01-23",
+    "priceListSchema": "Sample priceListSchema",
+    "basePriceListVersion": "Sample basePriceListVersion",
+    "description": "Replacement for damaged goods",
+    "create": "Sample create",
+    "priceListId": "mock-priceList-009"
+  },
+  {
+    "id": "mock-priceListVersion-010",
+    "name": "Sample name",
+    "validFromDate": "2026-01-24",
+    "priceListSchema": "Sample priceListSchema",
+    "basePriceListVersion": "Sample basePriceListVersion",
+    "description": "Pre-season inventory build-up",
+    "create": "Sample create",
+    "priceListId": "mock-priceList-010"
+  },
+  {
+    "id": "mock-priceListVersion-011",
+    "name": "Sample name",
+    "validFromDate": "2026-01-25",
+    "priceListSchema": "Sample priceListSchema",
+    "basePriceListVersion": "Sample basePriceListVersion",
+    "description": "Customer-specific configuration",
+    "create": "Sample create",
+    "priceListId": "mock-priceList-011"
+  },
+  {
+    "id": "mock-priceListVersion-012",
+    "name": "Sample name",
+    "validFromDate": "2026-01-26",
+    "priceListSchema": "Sample priceListSchema",
+    "basePriceListVersion": "Sample basePriceListVersion",
+    "description": "Government contract fulfillment",
+    "create": "Sample create",
+    "priceListId": "mock-priceList-012"
+  }
+];
+
+export const productPrice = [
+  {
+    "id": "mock-productPrice-001",
+    "product": "Laptop Pro 15",
+    "standardPrice": "Sample standardPrice",
+    "listPrice": "Sample listPrice",
+    "cost": "Sample cost",
+    "algorithm": "Sample algorithm",
+    "priceListId": "mock-priceList-001"
+  },
+  {
+    "id": "mock-productPrice-002",
+    "product": "USB-C Cable",
+    "standardPrice": "Sample standardPrice",
+    "listPrice": "Sample listPrice",
+    "cost": "Sample cost",
+    "algorithm": "Sample algorithm",
+    "priceListId": "mock-priceList-002"
+  },
+  {
+    "id": "mock-productPrice-003",
+    "product": "Wireless Mouse",
+    "standardPrice": "Sample standardPrice",
+    "listPrice": "Sample listPrice",
+    "cost": "Sample cost",
+    "algorithm": "Sample algorithm",
+    "priceListId": "mock-priceList-003"
+  },
+  {
+    "id": "mock-productPrice-004",
+    "product": "Mechanical Keyboard",
+    "standardPrice": "Sample standardPrice",
+    "listPrice": "Sample listPrice",
+    "cost": "Sample cost",
+    "algorithm": "Sample algorithm",
+    "priceListId": "mock-priceList-004"
+  },
+  {
+    "id": "mock-productPrice-005",
+    "product": "Monitor 27\"",
+    "standardPrice": "Sample standardPrice",
+    "listPrice": "Sample listPrice",
+    "cost": "Sample cost",
+    "algorithm": "Sample algorithm",
+    "priceListId": "mock-priceList-005"
+  },
+  {
+    "id": "mock-productPrice-006",
+    "product": "Webcam HD",
+    "standardPrice": "Sample standardPrice",
+    "listPrice": "Sample listPrice",
+    "cost": "Sample cost",
+    "algorithm": "Sample algorithm",
+    "priceListId": "mock-priceList-006"
+  },
+  {
+    "id": "mock-productPrice-007",
+    "product": "Headset Pro",
+    "standardPrice": "Sample standardPrice",
+    "listPrice": "Sample listPrice",
+    "cost": "Sample cost",
+    "algorithm": "Sample algorithm",
+    "priceListId": "mock-priceList-007"
+  },
+  {
+    "id": "mock-productPrice-008",
+    "product": "Docking Station",
+    "standardPrice": "Sample standardPrice",
+    "listPrice": "Sample listPrice",
+    "cost": "Sample cost",
+    "algorithm": "Sample algorithm",
+    "priceListId": "mock-priceList-008"
+  },
+  {
+    "id": "mock-productPrice-009",
+    "product": "SSD 1TB",
+    "standardPrice": "Sample standardPrice",
+    "listPrice": "Sample listPrice",
+    "cost": "Sample cost",
+    "algorithm": "Sample algorithm",
+    "priceListId": "mock-priceList-009"
+  },
+  {
+    "id": "mock-productPrice-010",
+    "product": "RAM 16GB",
+    "standardPrice": "Sample standardPrice",
+    "listPrice": "Sample listPrice",
+    "cost": "Sample cost",
+    "algorithm": "Sample algorithm",
+    "priceListId": "mock-priceList-010"
+  },
+  {
+    "id": "mock-productPrice-011",
+    "product": "Power Supply 750W",
+    "standardPrice": "Sample standardPrice",
+    "listPrice": "Sample listPrice",
+    "cost": "Sample cost",
+    "algorithm": "Sample algorithm",
+    "priceListId": "mock-priceList-011"
+  },
+  {
+    "id": "mock-productPrice-012",
+    "product": "Network Switch",
+    "standardPrice": "Sample standardPrice",
+    "listPrice": "Sample listPrice",
+    "cost": "Sample cost",
+    "algorithm": "Sample algorithm",
+    "priceListId": "mock-priceList-012"
+  }
 ];

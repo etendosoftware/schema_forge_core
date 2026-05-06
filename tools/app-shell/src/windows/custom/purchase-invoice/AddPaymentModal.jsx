@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
+import { DateField } from '@/components/ui/date-field';
 import { useUI } from '@/i18n';
 
 const ACCOUNT_OPTIONS = [
@@ -81,12 +82,7 @@ export default function AddPaymentModal({ invoice, outstanding, onClose, onSave 
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {ui('date')}
             </label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <DateField value={date} onChange={setDate} />
           </div>
 
           {/* Account */}

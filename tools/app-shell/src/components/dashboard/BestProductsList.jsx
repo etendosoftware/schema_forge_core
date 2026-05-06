@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, TrendingUp, TrendingDown, Check, Minus } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
+import { ChevronRight, TrendingUp, TrendingDown, Check, Minus, Sparkles, Plus } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { useLocaleSwitch } from '@/i18n';
+import { useCopilot } from '@/components/CopilotContext';
 import { formatDashboardAmount, formatDashboardNumber, localeFromUi } from '@/lib/dashboardNumberFormat.js';
 
 function TrendPill({ pct }) {
@@ -26,15 +26,43 @@ function TrendPill({ pct }) {
   );
 }
 
+const BTN_SHADOW = '0px 1px 3px rgba(18, 18, 23, 0.1), 0px 1px 2px rgba(18, 18, 23, 0.06)';
+
+function ViewToggle({ viewMode, onToggle, ui }) {
+  const isQty = viewMode === 'quantity';
+  const isRev = viewMode === 'revenue';
+  return (
+    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', padding: '4px', gap: '4px', width: '175.33px', height: '40px', background: '#F5F7F9', borderRadius: '12px', flex: 'none', order: 1, flexGrow: 0 }}>
+      <button type="button" onClick={() => onToggle('quantity')} style={{ boxSizing: 'border-box', display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: '4px 8px', width: '81.33px', height: '32px', background: isQty ? '#FFFFFF' : 'transparent', boxShadow: isQty ? BTN_SHADOW : 'none', borderRadius: '8px', flex: 'none', order: 0, flexGrow: 0, border: 'none', cursor: 'pointer' }}>
+        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', padding: '0px 4px', width: '72px', height: '24px', flex: 'none', order: 1, flexGrow: 0 }}>
+          <span style={{ width: '64px', height: '24px', fontFamily: 'Inter', fontStyle: 'normal', fontWeight: 500, fontSize: '14px', lineHeight: '24px', color: isQty ? '#121217' : '#6C6C89', flex: 'none', order: 0, flexGrow: 0 }}>
+            {ui('bestProductsToggleUnits')}
+          </span>
+        </div>
+      </button>
+      <button type="button" onClick={() => onToggle('revenue')} style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: '4px 8px', width: '82px', height: '32px', background: isRev ? '#FFFFFF' : 'transparent', boxShadow: isRev ? BTN_SHADOW : 'none', borderRadius: '8px', flex: 'none', order: 1, flexGrow: 0, border: 'none', cursor: 'pointer' }}>
+        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', padding: '0px 4px', width: '66px', height: '24px', flex: 'none', order: 1, flexGrow: 0 }}>
+          <span style={{ width: '58px', height: '24px', fontFamily: 'Inter', fontStyle: 'normal', fontWeight: 500, fontSize: '14px', lineHeight: '24px', color: isRev ? '#121217' : '#6C6C89', flex: 'none', order: 0, flexGrow: 0 }}>
+            {ui('bestProductsToggleRevenue')}
+          </span>
+        </div>
+      </button>
+    </div>
+  );
+}
+
 export function BestProductsList({ sellers = [], products = [], currencyLabel = '' }) {
   const ui = useUI();
   const navigate = useNavigate();
   const { locale } = useLocaleSwitch();
   const numberLocale = localeFromUi(locale);
+  const { open: openCopilot } = useCopilot();
   const [viewMode, setViewMode] = useState('quantity');
 
+  const hasNoData = sellers.length === 0 && products.length === 0;
   const rows = viewMode === 'quantity' ? sellers : products;
   const hasPositiveTrend = rows.some((r) => (r.trendPct ?? 0) > 0);
+  const hasNegativeTrend = !hasPositiveTrend && rows.some((r) => (r.trendPct ?? 0) < 0);
 
   return (
     <div
@@ -97,6 +125,44 @@ export function BestProductsList({ sellers = [], products = [], currencyLabel = 
         </div>
       </div>
 
+      {hasNoData ? (
+        <div className="flex-1 flex items-center justify-center w-full">
+          <div className="flex flex-col items-center" style={{ gap: '12px', width: '340px' }}>
+            <div className="flex flex-col items-center" style={{ gap: '4px' }}>
+              <p style={{ fontSize: '20px', fontWeight: 600, lineHeight: '28px', textAlign: 'center', color: '#121217' }}>
+                {ui('bestProductsEmptyTitle')}
+              </p>
+              <p style={{ fontSize: '12px', fontWeight: 400, lineHeight: '16px', textAlign: 'center', color: '#282833' }}>
+                {ui('bestProductsEmptySubtitle')}
+              </p>
+            </div>
+            <div className="flex flex-row items-center" style={{ gap: '12px' }}>
+              <button
+                type="button"
+                onClick={openCopilot}
+                className="flex items-center justify-center"
+                style={{ padding: '4px 8px', height: '32px', background: '#FFFFFF', border: '1px solid #D1D4DB', boxShadow: '0px 1px 2px rgba(18,18,23,0.05)', borderRadius: '8px', gap: '4px', cursor: 'pointer' }}
+              >
+                <Sparkles style={{ width: '20px', height: '20px', color: '#828FA3' }} />
+                <span style={{ fontSize: '14px', fontWeight: 500, lineHeight: '24px', color: '#121217' }}>
+                  {ui('createWithCopilot')}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/sales-invoice/new')}
+                className="flex items-center justify-center"
+                style={{ padding: '4px 8px', height: '32px', background: '#121217', borderRadius: '8px', gap: '4px', cursor: 'pointer', border: 'none' }}
+              >
+                <Plus style={{ width: '20px', height: '20px', color: 'rgba(255,255,255,0.9)' }} />
+                <span style={{ fontSize: '14px', fontWeight: 500, lineHeight: '24px', color: '#FFFFFF' }}>
+                  {ui('newSale')}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (<>
       <div
         style={{
           display: 'flex',
@@ -115,137 +181,24 @@ export function BestProductsList({ sellers = [], products = [], currencyLabel = 
       >
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', height: '24px' }}>
           {hasPositiveTrend && (
-            <div className="flex items-center gap-1.5 text-xs" style={{ color: '#1E874C' }}>
-              <Check className="h-3.5 w-3.5 shrink-0" />
+            <div className="flex items-center gap-2 text-xs" style={{ color: '#1E874C' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '20px', height: '20px', background: '#EEFBF4', borderRadius: '10px', flexShrink: 0 }}>
+                <Check style={{ width: '12.5px', height: '12.5px', color: '#17663A' }} />
+              </div>
               <span>{ui('bestProductsTrendPositive')}</span>
+            </div>
+          )}
+          {hasNegativeTrend && (
+            <div className="flex items-center gap-2 text-xs" style={{ color: '#D50B3E' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '20px', height: '20px', background: '#FEF0F4', borderRadius: '10px', flexShrink: 0 }}>
+                <TrendingDown style={{ width: '12.5px', height: '12.5px', color: '#D50B3E' }} />
+              </div>
+              <span>{ui('bestProductsTrendNegative')}</span>
             </div>
           )}
         </div>
         
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            padding: '4px',
-            gap: '4px',
-            width: '175.33px',
-            height: '40px',
-            background: '#F5F7F9',
-            borderRadius: '12px',
-            flex: 'none',
-            order: 1,
-            flexGrow: 0,
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setViewMode('quantity')}
-            style={{
-              boxSizing: 'border-box',
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: '4px 8px',
-              width: '81.33px',
-              height: '32px',
-              background: viewMode === 'quantity' ? '#FFFFFF' : 'transparent',
-              boxShadow: viewMode === 'quantity' ? '0px 1px 3px rgba(18, 18, 23, 0.1), 0px 1px 2px rgba(18, 18, 23, 0.06)' : 'none',
-              borderRadius: '8px',
-              flex: 'none',
-              order: 0,
-              flexGrow: 0,
-              border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'flex-start',
-                padding: '0px 4px',
-                width: '72px',
-                height: '24px',
-                flex: 'none',
-                order: 1,
-                flexGrow: 0,
-              }}
-            >
-              <span
-                style={{
-                  width: '64px',
-                  height: '24px',
-                  fontFamily: 'Inter',
-                  fontStyle: 'normal',
-                  fontWeight: 500,
-                  fontSize: '14px',
-                  lineHeight: '24px',
-                  color: viewMode === 'quantity' ? '#121217' : '#6C6C89',
-                  flex: 'none',
-                  order: 0,
-                  flexGrow: 0,
-                }}
-              >
-                {ui('bestProductsToggleUnits')}
-              </span>
-            </div>
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('revenue')}
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: '4px 8px',
-              width: '82px',
-              height: '32px',
-              background: viewMode === 'revenue' ? '#FFFFFF' : 'transparent',
-              boxShadow: viewMode === 'revenue' ? '0px 1px 3px rgba(18, 18, 23, 0.1), 0px 1px 2px rgba(18, 18, 23, 0.06)' : 'none',
-              borderRadius: '8px',
-              flex: 'none',
-              order: 1,
-              flexGrow: 0,
-              border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'flex-start',
-                padding: '0px 4px',
-                width: '66px',
-                height: '24px',
-                flex: 'none',
-                order: 1,
-                flexGrow: 0,
-              }}
-            >
-              <span
-                style={{
-                  width: '58px',
-                  height: '24px',
-                  fontFamily: 'Inter',
-                  fontStyle: 'normal',
-                  fontWeight: 500,
-                  fontSize: '14px',
-                  lineHeight: '24px',
-                  color: viewMode === 'revenue' ? '#121217' : '#6C6C89',
-                  flex: 'none',
-                  order: 0,
-                  flexGrow: 0,
-                }}
-              >
-                {ui('bestProductsToggleRevenue')}
-              </span>
-            </div>
-          </button>
-        </div>
+        <ViewToggle viewMode={viewMode} onToggle={setViewMode} ui={ui} />
       </div>
 
       <div
@@ -335,24 +288,61 @@ export function BestProductsList({ sellers = [], products = [], currencyLabel = 
                 >
                   <TrendPill pct={row.trendPct ?? null} />
                 </div>
-                <span
+                <div
                   style={{
-                    fontSize: '12px',
-                    fontWeight: 400,
-                    lineHeight: '24px',
-                    color: '#6C6C89',
-                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'flex-start',
+                    padding: '0px 8px 0px 0px',
+                    height: '24px',
                     flexShrink: 0,
                   }}
                 >
-                  {value}
-                </span>
-                <ChevronRight style={{ width: '16px', height: '16px', color: '#C4C9D4', flexShrink: 0, marginLeft: '4px' }} />
+                  <div
+                    style={{
+                      boxSizing: 'border-box',
+                      display: 'flex',
+                      flexDirection: 'row',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      padding: '0px 8px',
+                      height: '24px',
+                      border: '1px solid #D1D4DB',
+                      borderRadius: '360px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: '12px',
+                        fontWeight: 400,
+                        lineHeight: '24px',
+                        color: '#6C6C89',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {value}
+                    </span>
+                  </div>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'flex-start',
+                    padding: '0px 4px 0px 0px',
+                    width: '28px',
+                    height: '24px',
+                    flexShrink: 0,
+                  }}
+                >
+                  <ChevronRight style={{ width: '16px', height: '16px', color: '#828FA3' }} />
+                </div>
               </div>
             );
           })
         )}
       </div>
+      </>)}
     </div>
   );
 }

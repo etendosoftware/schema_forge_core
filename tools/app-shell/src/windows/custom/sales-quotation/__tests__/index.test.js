@@ -52,4 +52,67 @@ describe('SalesQuotationWindow custom wrapper', () => {
   it('imports CloneOrderModal from contract-ui', () => {
     assert.match(src, /import\s+CloneOrderModal\s+from\s+['"]@\/components\/contract-ui\/CloneOrderModal['"]/);
   });
+
+  describe('draftMode override for the Confirmar button', () => {
+    it('defines a draftModeWithModal with enabled and the soConfirmBtn label', () => {
+      assert.match(src, /draftModeWithModal\s*=\s*\{[^}]*enabled:\s*true/);
+      assert.match(src, /label:\s*['"]soConfirmBtn['"]/);
+    });
+
+    it('routes onConfirm through a custom DOM event so QuotationTopbarActions can pick the right modal', () => {
+      assert.match(
+        src,
+        /onConfirm:\s*\(\)\s*=>\s*window\.dispatchEvent\(\s*new\s+CustomEvent\(\s*['"]sales-quotation:open-confirm-modal['"]/,
+      );
+    });
+
+    it('passes draftModeWithModal to GeneratedApp on the record view', () => {
+      assert.match(src, /draftMode=\{draftModeWithModal\}/);
+    });
+
+    it('keeps Save/Confirm visible during UE by setting completedStatuses to the terminal statuses only', () => {
+      assert.match(src, /completedStatuses:\s*\[[^\]]*['"]CA['"]/);
+      assert.match(src, /completedStatuses:\s*\[[^\]]*['"]ETGO_CI['"]/);
+      assert.match(src, /completedStatuses:\s*\[[^\]]*['"]CL['"]/);
+      assert.match(src, /completedStatuses:\s*\[[^\]]*['"]VO['"]/);
+      assert.match(src, /completedStatuses:\s*\[[^\]]*['"]CJ['"]/);
+      assert.doesNotMatch(src, /completedStatuses:\s*\[[^\]]*['"]UE['"]/);
+      assert.doesNotMatch(src, /completedStatuses:\s*\[[^\]]*['"]DR['"]/);
+    });
+  });
+
+  describe('customMenuActions override (kebab reject)', () => {
+    it('exports a customMenuActions function', () => {
+      assert.match(src, /customMenuActions\s*=\s*\(\{\s*status\s*\}\)\s*=>/);
+    });
+
+    it('declares a reject entry visible only in UE', () => {
+      assert.match(src, /key:\s*['"]reject['"]/);
+      assert.match(src, /visible:\s*status\s*===\s*['"]UE['"]/);
+    });
+
+    it('does NOT mark the reject entry as destructive (regression: text was red, Figma uses neutral dark-gray)', () => {
+      assert.doesNotMatch(src, /key:\s*['"]reject['"][\s\S]{0,200}destructive:\s*true/);
+    });
+
+    it('routes onClick through the open-reject-modal custom event', () => {
+      assert.match(
+        src,
+        /onClick:\s*\(\)\s*=>\s*window\.dispatchEvent\(\s*new\s+CustomEvent\(\s*['"]sales-quotation:open-reject-modal['"]/,
+      );
+    });
+
+    it('passes customMenuActions to GeneratedApp on the record view', () => {
+      assert.match(src, /menuActions=\{customMenuActions\}/);
+    });
+
+    it('does not expose a cancel entry in the kebab anymore', () => {
+      assert.doesNotMatch(src, /key:\s*['"]cancel['"]/);
+    });
+
+    it('renders the reject entry with the XCircle icon (Figma redesign)', () => {
+      assert.match(src, /import\s*\{\s*XCircle\s*\}\s*from\s*['"]lucide-react['"]/);
+      assert.match(src, /key:\s*['"]reject['"][\s\S]{0,200}icon:\s*XCircle/);
+    });
+  });
 });

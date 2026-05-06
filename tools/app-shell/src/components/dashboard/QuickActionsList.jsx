@@ -27,6 +27,7 @@ export function QuickActionsList({ actions = [] }) {
                 display: 'flex',
                 flexDirection: 'row',
                 alignItems: 'center',
+                alignSelf: 'flex-start',
                 padding: '4px 8px',
                 height: '28px',
                 backgroundColor: '#F5F7F9',

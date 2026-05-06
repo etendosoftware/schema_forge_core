@@ -3,7 +3,7 @@ import { DataTable } from '@/components/contract-ui';
 // @sf-generated-start columns:executionHistory
 const columns = [
   { key: 'executionDate', column: 'Executiondate', type: 'date', label: 'Execution Date' },
-  { key: 'paymentRunStatus', column: 'Prun_Status', type: 'status', label: 'Payment Out Run Status' },
+  { key: 'paymentRunStatus', column: 'Prun_Status', type: 'status', label: 'Payment Out Run Status', enumLabels: { 'E': 'Executed', 'PE': 'Partially Executed', 'P': 'Pending' } },
   { key: 'paymentExecutionResult', column: 'Paymentexec_Result', type: 'enum', label: 'Payment Out Execution Result', enumLabels: { 'E': 'Error', 'P': 'Pending', 'S': 'Successful' } },
   { key: 'paymentExecutionMessage', column: 'Paymentexec_Message', type: 'string', label: 'Payment Out Execution Message' },
 ];

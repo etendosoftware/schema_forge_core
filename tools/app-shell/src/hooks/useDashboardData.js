@@ -66,7 +66,8 @@ function fmtAmount(n) {
  * Handler returns: [{key, label, value, format, trend, icon}, ...]
  */
 function mapKpis(handlerData) {
-  if (!handlerData || handlerData.length === 0) return null;
+  if (!handlerData) return null;
+  if (handlerData.length === 0) return [];
 
   // Build a lookup from handler data keyed by `key`
   const byKey = {};
@@ -441,7 +442,7 @@ export function useDashboardData() {
       const mappedTrends = mapTrends(trendsData);
 
       setData({
-        kpis: mappedKpis ?? empty.kpis,
+        kpis: mappedKpis !== null ? mappedKpis : empty.kpis,
         revenueTrend: mappedTrends ?? empty.revenueTrend,
         expenseTrend: mappedTrends?.expenseValues ?? [],
         topClients: mapTopClients(topClientsData) ?? [],

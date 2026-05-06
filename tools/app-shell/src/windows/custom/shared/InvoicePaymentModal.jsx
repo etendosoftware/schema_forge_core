@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DateField } from '@/components/ui/date-field';
 import { useUI } from '@/i18n';
 import { formatCurrency } from '@/lib/formatCurrency';
 
@@ -140,8 +141,7 @@ export function PaymentRegisterForm({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         <div>
           <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>{ui('paymentDate')}</label>
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="text-sm tabular-nums"
-            style={{ width: '100%', border: '0.5px solid #E5E7EB', borderRadius: 4, padding: '6px 10px', outline: 'none', boxSizing: 'border-box' }} />
+          <DateField value={date} onChange={setDate} />
         </div>
         <div>
           <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>{ui('paymentAmount')} ({currency})</label>
@@ -368,9 +368,6 @@ export default function InvoicePaymentModal({
                         <span style={{ fontSize: 12, fontWeight: 500, color: '#374151' }}>{ui('installment')} {idx + 1}</span>
                         <span style={{ color: '#d1d5db' }}>&middot;</span>
                         <span className="tabular-nums" style={{ fontSize: 12, fontWeight: 500, color: '#111827' }}>{fmt(instAmount, currency)}</span>
-                        <span style={{ fontSize: 11, color: '#9ca3af' }}>
-                          {Math.round(instAmount / (localTotal || grandTotal || 1) * 100)}%
-                        </span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span className="tabular-nums" style={{ fontSize: 11, color: '#6B7280' }}>{fmtDate(inst.dueDate)}</span>

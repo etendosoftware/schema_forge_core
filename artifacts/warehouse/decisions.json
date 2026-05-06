@@ -1,9 +1,8 @@
 {
   "$schema": "decisions-v2",
   "window": {
-    "category": "warehouse",
+    "category": "inventory",
     "name": "Warehouse",
-    "breadcrumb": "Inventory / Warehouse",
     "detailEntity": null,
     "secondaryTabs": {
       "productTransactions": {

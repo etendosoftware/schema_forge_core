@@ -1,74 +1,46 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { StatusTag } from '@/components/ui/status-tag';
 import { useUI } from '@/i18n';
+import {
+  DocChip,
+  RelatedDocumentsShell,
+  CHIP_ICONS,
+  CHIP_COLORS,
+  fetchByCriteria,
+  fetchChild,
+  neoBase,
+} from '@/components/related-documents';
 
-const STATUS_LABELS = {
-  CO: 'Completed', DR: 'Draft', VO: 'Voided', CL: 'Closed',
-  RPPC: 'Received', RPR: 'Received', PWNC: 'Pending', RDNC: 'Deposited',
-};
-
-const CHIP_ICONS = {
-  shipments: (
-    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <rect x="1" y="3" width="22" height="5" rx="1" />
-      <path d="M1 8l2 13h18l2-13" />
-    </svg>
-  ),
-  invoices: (
-    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-      <path d="M14 2v6h6M8 13h8M8 17h8M8 9h2" />
-    </svg>
-  ),
-  payments: (
-    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M16 8h-4a2 2 0 100 4h2a2 2 0 110 4H8M12 6v2m0 8v2" />
-    </svg>
-  ),
-  quotation: (
-    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
-      <rect x="9" y="3" width="6" height="4" rx="1" />
-      <path d="M9 14l2 2 4-4" />
-    </svg>
-  ),
-};
-
-const CHIP_COLORS = {
-  shipments: 'text-blue-600',
-  invoices: 'text-purple-600',
-  payments: 'text-emerald-600',
-  quotation: 'text-amber-600',
+const STATUS_LABEL_KEYS = {
+  CO: 'statusComplete',
+  DR: 'statusDraft',
+  VO: 'statusVoid',
+  CL: 'statusClosed',
+  CA: 'statusOrderCreated',
+  RPPC: 'statusPaymentCleared',
+  RPR: 'statusPaymentReceived',
+  PWNC: 'statusWithdrawnNotCleared',
+  RDNC: 'statusDepositedNotCleared',
 };
 
 const RELATED_SPECS = [
   {
     key: 'goods-shipment',
-    label: 'Shipments',
-    icon: 'shipments',
-    specName: 'goods-shipment',
-    entityName: 'goodsShipment',
-    filterColumn: 'salesOrder',
+    icon: 'shipment',
     route: '/goods-shipment',
     format: (row) => ({
-      title: `Shipment #${row.documentNo}`,
-      date: row.movementDate,
+      titleKey: 'shipmentDoc',
+      titleParams: { number: row.documentNo },
       status: row.documentStatus,
     }),
   },
   {
     key: 'sales-invoice',
-    label: 'Invoices',
-    icon: 'invoices',
-    specName: 'sales-invoice',
-    entityName: 'invoice',
-    filterColumn: 'salesOrder',
+    icon: 'invoice',
     route: '/sales-invoice',
     format: (row) => ({
-      title: `Invoice #${row.documentNo}`,
-      date: row.invoiceDate,
+      titleKey: 'invoiceDoc',
+      titleParams: { number: row.documentNo },
       amount: row.grandTotalAmount,
       currency: row['currency$_identifier'],
       status: row.documentStatus,
@@ -76,37 +48,17 @@ const RELATED_SPECS = [
   },
 ];
 
-function neoBase(apiBaseUrl) {
-  return (apiBaseUrl || '').replace(/\/[^/]+$/, '');
-}
-
-function fetchByCriteria(specName, entityName, fieldName, value, token, apiBaseUrl) {
-  const base = neoBase(apiBaseUrl);
-  const criteria = JSON.stringify([{ fieldName, operator: 'equals', value }]);
-  const params = new URLSearchParams({ criteria, _limit: '50' });
-  return fetch(`${base}/${specName}/${entityName}?${params}`, {
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-  })
-    .then(r => r.ok ? r.json() : { response: { data: [] } })
-    .then(j => j.response?.data || [])
-    .catch(() => []);
-}
-
-function fetchChild(specName, entityName, parentId, token, apiBaseUrl) {
-  const base = neoBase(apiBaseUrl);
-  return fetch(`${base}/${specName}/${encodeURIComponent(entityName)}?parentId=${parentId}&_limit=50`, {
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-  })
-    .then(r => r.ok ? r.json() : { response: { data: [] } })
-    .then(j => j.response?.data || [])
-    .catch(() => []);
+function resolveStatusLabel(status, ui) {
+  if (!status) return null;
+  const key = STATUS_LABEL_KEYS[status];
+  return key ? ui(key) : status;
 }
 
 async function fetchPayments(orderId, token, apiBaseUrl) {
-  const plans = await fetchChild('sales-order', 'Payment Plan', orderId, token, apiBaseUrl);
+  const plans = await fetchChild('sales-order', 'paymentPlan', orderId, token, apiBaseUrl);
   if (plans.length === 0) return [];
   const detailResults = await Promise.all(
-    plans.map(plan => fetchChild('sales-order', 'Payment Details', plan.id, token, apiBaseUrl))
+    plans.map(plan => fetchChild('sales-order', 'paymentDetails', plan.id, token, apiBaseUrl))
   );
   const paymentIds = [...new Set(
     detailResults.flat().filter(d => d.payment).map(d => d.payment)
@@ -122,31 +74,6 @@ async function fetchPayments(orderId, token, apiBaseUrl) {
       .catch(() => null)
   ));
   return results.filter(Boolean);
-}
-
-function formatAmount(val, currency) {
-  if (val == null) return '';
-  const num = typeof val === 'string' ? parseFloat(val) : val;
-  const formatted = num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return currency ? `${formatted} ${currency}` : formatted;
-}
-
-function DocChip({ icon, iconColor, title, amount, currency, status, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 border border-border/40 rounded-full bg-white hover:bg-muted/30 transition-colors text-sm cursor-pointer"
-      style={{ borderWidth: '0.5px' }}
-    >
-      <span className={`shrink-0 ${iconColor}`}>{icon}</span>
-      <span className="font-medium text-foreground/80">{title}</span>
-      {amount != null && (
-        <span className="text-xs text-muted-foreground tabular-nums">{formatAmount(amount, currency)}</span>
-      )}
-      {status && <StatusTag status={status} label={STATUS_LABELS[status] || status} />}
-    </button>
-  );
 }
 
 export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) {
@@ -205,72 +132,6 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
       });
   }, [recordId, token, apiBaseUrl, refreshKey]);
 
-  if (loading) {
-    return <span className="text-xs text-muted-foreground">{ui('loading')}</span>;
-  }
-
-  const chips = [];
-
-  const quotationId = data?.quotation;
-  const quotationLabel = data?.['quotation$_identifier'];
-  if (quotationId) {
-    // Parse backend _identifier: "1000373 - 07-04-2026 - 191.80"
-    let qTitle = 'Quotation';
-    let qAmount = null;
-    let qStatus = 'CO'; // quotations linked to orders are always confirmed
-    if (quotationLabel) {
-      const parts = quotationLabel.split(' - ');
-      if (parts.length >= 1) qTitle = `Quotation #${parts[0].trim()}`;
-      if (parts.length >= 3) qAmount = parseFloat(parts[2].trim()) || null;
-    }
-    chips.push(
-      <DocChip
-        key="quotation"
-        icon={CHIP_ICONS.quotation}
-        iconColor={CHIP_COLORS.quotation}
-        title={qTitle}
-        amount={qAmount}
-        currency={data?.['currency$_identifier']}
-        status={qStatus}
-        onClick={() => navigate(`/sales-quotation/${quotationId}`)}
-      />
-    );
-  }
-
-  for (const spec of RELATED_SPECS) {
-    const rows = related[spec.key] || [];
-    for (const row of rows) {
-      const f = spec.format(row);
-      chips.push(
-        <DocChip
-          key={`${spec.key}-${row.id}`}
-          icon={CHIP_ICONS[spec.icon]}
-          iconColor={CHIP_COLORS[spec.icon]}
-          title={f.title}
-          amount={f.amount}
-          currency={f.currency}
-          status={f.status}
-          onClick={() => navigate(`${spec.route}/${row.id}`)}
-        />
-      );
-    }
-  }
-
-  for (const p of payments) {
-    chips.push(
-      <DocChip
-        key={`payment-${p.id}`}
-        icon={CHIP_ICONS.payments}
-        iconColor={CHIP_COLORS.payments}
-        title={`Payment #${p.documentNo || p.id}`}
-        amount={p.amount}
-        currency={p['currency$_identifier']}
-        status={p.status}
-        onClick={() => navigate(`/payment-in/${p.id}`)}
-      />
-    );
-  }
-
   const refreshBtn = (
     <button
       type="button"
@@ -284,6 +145,78 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
       </svg>
     </button>
   );
+
+  if (loading) {
+    return <RelatedDocumentsShell loading />;
+  }
+
+  const chips = [];
+
+  const quotationId = data?.quotation;
+  const quotationLabel = data?.['quotation$_identifier'];
+  if (quotationId) {
+    // Parse backend _identifier: "1000373 - 07-04-2026 - 191.80"
+    // ConvertQuotationIntoOrder sets the source quotation to CA (Closed - Order Created)
+    // when the order is generated, so any quotation reachable through this chip is in CA.
+    let qTitle = ui('quotation');
+    let qAmount = null;
+    const qStatus = 'CA';
+    if (quotationLabel) {
+      const parts = quotationLabel.split(' - ');
+      if (parts.length >= 1) qTitle = ui('quotationDoc', { number: parts[0].trim() });
+      if (parts.length >= 3) qAmount = parseFloat(parts[2].trim()) || null;
+    }
+    chips.push(
+      <DocChip
+        key="quotation"
+        icon={CHIP_ICONS.quotation}
+        iconColor={CHIP_COLORS.quotation}
+        title={qTitle}
+        amount={qAmount}
+        currency={data?.['currency$_identifier']}
+        status={qStatus}
+        statusLabel={resolveStatusLabel(qStatus, ui)}
+        onClick={() => navigate(`/sales-quotation/${quotationId}`)}
+      />
+    );
+  }
+
+  for (const spec of RELATED_SPECS) {
+    const rows = related[spec.key] || [];
+    for (const row of rows) {
+      const f = spec.format(row);
+      const title = f.titleKey ? ui(f.titleKey, f.titleParams) : f.title;
+      chips.push(
+        <DocChip
+          key={`${spec.key}-${row.id}`}
+          icon={CHIP_ICONS[spec.icon]}
+          iconColor={CHIP_COLORS[spec.icon]}
+          title={title}
+          amount={f.amount}
+          currency={f.currency}
+          status={f.status}
+          statusLabel={resolveStatusLabel(f.status, ui)}
+          onClick={() => navigate(`${spec.route}/${row.id}`)}
+        />
+      );
+    }
+  }
+
+  for (const p of payments) {
+    chips.push(
+      <DocChip
+        key={`payment-${p.id}`}
+        icon={CHIP_ICONS.payment}
+        iconColor={CHIP_COLORS.payment}
+        title={ui('paymentDoc', { number: p.documentNo || p.id })}
+        amount={p.amount}
+        currency={p['currency$_identifier']}
+        status={p.status}
+        statusLabel={resolveStatusLabel(p.status, ui)}
+        onClick={() => navigate(`/payment-in/${p.id}`)}
+      />
+    );
+  }
 
   if (chips.length === 0) {
     return (

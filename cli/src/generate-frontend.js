@@ -90,6 +90,15 @@ export function getReadOnlyFields(contract, entityName) {
 }
 
 /**
+ * Etendo session/system macros (`@#Date@`, `@#User@`, `@#Client@`, ...) are
+ * resolved server-side by NeoDefaultsService. Emitting them as a frontend
+ * defaultValue would leak the literal token into inputs, so skip them here.
+ */
+function isEtendoSessionMacro(value) {
+  return typeof value === 'string' && /^@#[\w]+@$/.test(value);
+}
+
+/**
  * Map a contract field type to a column/field type for the declarative config.
  */
 function mapFieldType(field) {
@@ -171,7 +180,7 @@ export function generateTableComponent(entityName, contract) {
     let renderPart = '';
     if (f.cellType === 'depreciationProgress') renderPart = ', render: renderDepreciationProgress';
     else if (f.cellType === 'taxRate') renderPart = ', render: renderTaxRate';
-    else if (f.cellType === 'taxScope') renderPart = ', render: renderTaxScope';
+    else if (f.cellType === 'taxScope') renderPart = `, render: (row) => renderTaxScope(row, '${f.name}')`;
     return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart} },`;
   }).join('\n');
 
@@ -205,15 +214,16 @@ function renderTaxRate(row) {
 ` : '';
 
   const taxScopeHelper = neededCellTypes.has('taxScope') ? `
-function renderTaxScope(row) {
-  const value = row?.applicableTo;
+function TaxScopeCell({ row, fieldKey }) {
+  const ui = useUI();
+  const value = fieldKey ? row?.[fieldKey] : (row?.applicableTo ?? row?.salesPurchaseType);
   const showSales    = value === 'B' || value === 'S';
   const showPurchase = value === 'B' || value === 'P';
   if (!showSales && !showPurchase) return value ?? '';
   return (
     <span className="inline-flex items-center gap-1">
-      {showSales    && <Tag variant="blue"   label="Sales" />}
-      {showPurchase && <Tag variant="purple" label="Purchase" />}
+      {showSales    && <Tag variant="blue"   label={ui('taxScopeSales')} />}
+      {showPurchase && <Tag variant="purple" label={ui('taxScopePurchase')} />}
     </span>
   );
 }
@@ -221,9 +231,11 @@ function renderTaxScope(row) {
 
   const needsTagImport = neededCellTypes.has('taxRate') || neededCellTypes.has('taxScope');
   const tagImport = needsTagImport ? `import { Tag } from '@/components/ui/tag';\n` : '';
+  const needsUiImport = neededCellTypes.has('taxScope');
+  const uiImport = needsUiImport ? `import { useUI } from '@/i18n';\n` : '';
 
   return `import { DataTable } from '@/components/contract-ui';
-${tagImport}${depreciationProgressHelper}${taxRateHelper}${taxScopeHelper}
+${tagImport}${uiImport}${depreciationProgressHelper}${taxRateHelper}${taxScopeHelper}
 ${MARKERS.GENERATED_START(`columns:${entityName}`)}
 const columns = [
 ${columnsArray}
@@ -290,7 +302,11 @@ export function generateFormComponent(entityName, contract) {
     // Section classification
     const sectionPart = `, section: '${fieldSections[idx]}'`;
     // UI hints
-    const defaultValuePart = (f.defaultValue !== undefined && f.defaultValue !== null && f.defaultValue !== '')
+    // Skip redundant unchecked defaults on YESNO/checkbox fields: backend NeoDefaultsService
+    // already coerces missing/'N'/false to false, so emitting them only bloats generated files.
+    const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
+    const skipServerMacro = isEtendoSessionMacro(f.defaultValue);
+    const defaultValuePart = (!skipCheckboxDefault && !skipServerMacro && f.defaultValue !== undefined && f.defaultValue !== null && f.defaultValue !== '')
       ? (typeof f.defaultValue === 'number'
           ? `, defaultValue: ${f.defaultValue}`
           : `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'`)
@@ -343,7 +359,7 @@ ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}(props) {
   return <EntityForm fields={fields}${colsProp} {...props} />;
 }
-${compName}.hasCollapsedFields = ${hasCollapsed};
+${hasCollapsed ? `${compName}.hasCollapsedFields = true;\n` : ''}
 ${MARKERS.GENERATED_END(`component:${compName}`)}
 `;
 }
@@ -582,10 +598,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
-    // Include defaultValue for quantity/numeric fields so the add-line form starts with a sensible value
+    // Include defaultValue for quantity/numeric fields so the add-line form starts with a sensible value.
+    // Skip redundant unchecked defaults on YESNO/checkbox fields (backend coerces to false anyway).
     const rawDv = f.defaultValue;
     let defaultValuePart = '';
-    if (rawDv !== undefined && rawDv !== null && rawDv !== '') {
+    const skipCheckboxDefault = type === 'checkbox' && (rawDv === 'N' || rawDv === false);
+    const skipServerMacro = isEtendoSessionMacro(rawDv);
+    if (!skipCheckboxDefault && !skipServerMacro && rawDv !== undefined && rawDv !== null && rawDv !== '') {
       const numDv = Number(rawDv);
       defaultValuePart = `, defaultValue: ${(!isNaN(numDv) && String(rawDv).trim() !== '') ? numDv : `'${String(rawDv).replace(/'/g, "\\'")}'`}`;
     }
@@ -604,7 +623,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   }).join('\n');
 
   const hiddenDefaultsArray = hiddenDefaultFields
-    .filter(f => !String(f.defaultValue).startsWith('@SQL='))
+    .filter(f => !String(f.defaultValue).startsWith('@SQL=') && !isEtendoSessionMacro(f.defaultValue))
     .map(f => {
     const rawDefault = String(f.defaultValue);
     const parentColMatch = rawDefault.match(/^@(\w+)@$/);
@@ -657,6 +676,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const detailSortBy = windowConfig.detailSortBy ?? null;
   const titleField = windowConfig.titleField ?? null;
   const salesTheme = windowConfig.salesTheme ?? false;
+  const lineEntityConfig = windowConfig.lineEntityConfig ?? null;
 
   // Detect secondary child entities for additional tabs
   const secondaryTabsDecl = windowConfig.secondaryTabs;
@@ -684,7 +704,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
           const labelPart = f.label ? `, label: '${f.label}'` : '';
           const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
           const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
-          const defaultValuePart = f.defaultValue ? `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
+          // Skip redundant unchecked defaults on YESNO/checkbox fields (backend coerces to false anyway).
+          const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
+          const defaultValuePart = (!skipCheckboxDefault && f.defaultValue) ? `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
           const optionsPart = (type === 'select' && f.enumValues?.length)
             ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
             : '';
@@ -815,6 +837,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     : '';
   // contentBg prop
   const contentBgProp = contentBg ? `\n        contentBg="${contentBg}"` : '';
+  // lineConfig prop — emitted when the window uses a non-default line pricing config
+  const LINE_CONFIG_SYMBOLS = { invoice: 'INVOICE_LINE_CONFIG', returnOrder: 'RETURN_ORDER_LINE_CONFIG' };
+  const lineConfigSymbol = lineEntityConfig ? (LINE_CONFIG_SYMBOLS[lineEntityConfig] ?? null) : null;
+  const lineConfigProp = lineConfigSymbol ? `\n        lineConfig={${lineConfigSymbol}}` : '';
   // ListView toolbar props
   const hidePrintListProp = hidePrint ? '\n      hidePrint' : '';
   const hideMoreMenuListProp = hideMoreMenu ? '\n      hideMoreMenu' : '';
@@ -871,13 +897,18 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     : `import ${headerName}Table from './${headerName}Table';`;
 
   // menuActions prop
+  const menuActionsNeedsData = menuActionsConfig.some(a => a.visibleWhenFieldFalse);
+  const menuActionsFnParams = menuActionsNeedsData ? '({ data, status })' : '({ status })';
   const menuActionsProp = menuActionsConfig.length > 0
-    ? `\n        menuActions={({ status }) => [\n${menuActionsConfig.map(a => {
-        const vis = a.visibleWhenStatus
+    ? `\n        menuActions={${menuActionsFnParams} => [\n${menuActionsConfig.map(a => {
+        const statusVis = a.visibleWhenStatus
           ? Array.isArray(a.visibleWhenStatus)
-            ? `visible: ${JSON.stringify(a.visibleWhenStatus)}.includes(status)`
-            : `visible: status === '${a.visibleWhenStatus}'`
+            ? `${JSON.stringify(a.visibleWhenStatus)}.includes(status)`
+            : `status === '${a.visibleWhenStatus}'`
           : '';
+        const fieldVis = a.visibleWhenFieldFalse ? `!data?.${a.visibleWhenFieldFalse}` : '';
+        const visParts = [statusVis, fieldVis].filter(Boolean);
+        const vis = visParts.length > 0 ? `visible: ${visParts.join(' && ')}, ` : '';
         const destr = a.destructive ? 'destructive: true, ' : '';
         // Handler precedence: documentAction (declarative DocAction) > columnName (AD process button) > onClick placeholder
         let handler;
@@ -892,8 +923,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
         const successPart = a.successKey
           ? `successKey: '${a.successKey}', `
           : a.successMessage ? `successMessage: '${String(a.successMessage).replace(/'/g, "\\'")}', ` : '';
-        const visPart = vis ? `${vis}, ` : '';
-        return `          { key: '${a.key}', label: '${a.label}', ${destr}${visPart}${labelKeyPart}${successPart}${handler} }`;
+        return `          { key: '${a.key}', label: '${a.label}', ${destr}${vis}${labelKeyPart}${successPart}${handler} }`;
       }).join(',\n')}\n        ]}`
     : '';
 
@@ -1048,7 +1078,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const needsFragment = customComponents.newRecordComponent || newActionsWithComponents.length > 0;
 
   return `import { ${needsUseState ? 'useState, ' : ''}useEffect } from 'react';
-import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
+import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}${lineConfigSymbol ? `\nimport { ${lineConfigSymbol} } from '@/hooks/useLineGrossAmount';` : ''}
 ${headerTableImport}
 import ${headerName}Form from './${headerName}Form';${detailEntity ? `
 import ${detailName}Table from './${detailName}Table';
@@ -1118,7 +1148,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}
         {...props}${sidebarContentProp}
       />
     );

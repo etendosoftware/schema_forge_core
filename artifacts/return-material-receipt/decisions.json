@@ -8,7 +8,7 @@
     "dateFilterKey": "movementDate"
   },
   "entities": {
-    "mInOut": {
+    "header": {
       "name": "returnMaterialReceipt",
       "fields": {
         "documentNo": {
@@ -249,7 +249,7 @@
         }
       }
     },
-    "mInOutLine": {
+    "lines": {
       "name": "returnMaterialReceiptLine",
       "fields": {
         "lineNo": {
@@ -379,7 +379,7 @@
         }
       }
     },
-    "factAcct": {
+    "accounting": {
       "exclude": true
     }
   },

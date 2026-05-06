@@ -21,14 +21,11 @@
     },
     "menuActions": [
       {
-        "key": "duplicate",
-        "label": "Duplicate"
-      },
-      {
-        "key": "cancel",
-        "label": "Cancel",
+        "key": "reject",
+        "label": "Reject",
+        "labelKey": "rejectQuotation",
         "destructive": true,
-        "visibleWhenStatus": ["CO", "UE"]
+        "visibleWhenStatus": ["UE"]
       }
     ],
     "processOverrides": {
@@ -49,13 +46,18 @@
       }
     },
     "noHeaderBorder": true,
-    "dateFilterKey": "orderDate"
+    "dateFilterKey": "orderDate",
+    "hideSaveStatuses": ["CA", "ETGO_CI", "CL", "VO", "CJ"]
   },
   "entities": {
     "header": {
       "name": "quotation",
       "draftMode": {
-        "enabled": false
+        "enabled": true,
+        "processField": "documentAction",
+        "processValue": "CO",
+        "label": "soConfirmBtn",
+        "completedStatuses": ["CA", "ETGO_CI", "CL", "VO", "CJ"]
       },
       "fields": {
         "documentNo": {
@@ -100,7 +102,8 @@
           "gridOrder": 5,
           "searchable": true,
           "inputMode": "date",
-          "section": "principal"
+          "section": "principal",
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "scheduledDeliveryDate": {
           "visibility": "discarded"
@@ -126,6 +129,12 @@
         "orderReference": {
           "visibility": "discarded"
         },
+        "rejectReason": {
+          "visibility": "editable",
+          "form": false,
+          "grid": false,
+          "readOnlyLogic": "@DocStatus@='CJ'|@DocStatus@='CA'"
+        },
         "summedLineAmount": {
           "visibility": "readOnly",
           "section": "summary"
@@ -148,7 +157,8 @@
         },
         "description": {
           "inputMode": "textarea",
-          "section": "collapsed"
+          "section": "collapsed",
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "client": {
           "visibility": "system"
@@ -233,9 +243,6 @@
         "isSotrx": {
           "visibility": "discarded"
         },
-        "rejectReason": {
-          "visibility": "discarded"
-        },
         "documentAction": {
           "visibility": "system"
         },
@@ -262,7 +269,7 @@
           "lookup": true,
           "order": 1,
           "gridOrder": 1,
-          "forceCalloutFields": ["unitPrice", "tax", "uOM", "grossUnitPrice", "discount"]
+          "forceCalloutFields": ["listPrice", "unitPrice", "tax", "uOM", "grossUnitPrice", "discount"]
         },
         "orderedQuantity": {
           "grid": true,
@@ -274,11 +281,8 @@
           "visibility": "system"
         },
         "unitPrice": {
-          "grid": true,
-          "form": true,
-          "inputMode": "number",
-          "order": 4,
-          "gridOrder": 4
+          "grid": false,
+          "form": false
         },
         "discount": {
           "grid": true,
@@ -385,7 +389,12 @@
           "visibility": "discarded"
         },
         "listPrice": {
-          "visibility": "discarded"
+          "grid": true,
+          "form": true,
+          "inputMode": "number",
+          "order": 4,
+          "gridOrder": 4,
+          "columnType": "amount"
         },
         "grossListPrice": {
           "visibility": "discarded"

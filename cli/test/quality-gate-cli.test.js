@@ -30,7 +30,8 @@ describe('parseQualityGateArgs', () => {
       '--format', 'json',
       '--output', 'report.md',
       '--json', 'report.json',
-      '--analysis-dir', 'analysis-bundle'
+      '--analysis-dir', 'analysis-bundle',
+      '--head-ref', 'feature/head-sha'
     ]);
 
     assert.equal(options.mode, 'window');
@@ -40,6 +41,7 @@ describe('parseQualityGateArgs', () => {
     assert.equal(options.outputPath, 'report.md');
     assert.equal(options.jsonPath, 'report.json');
     assert.equal(options.analysisDir, 'analysis-bundle');
+    assert.equal(options.headRef, 'feature/head-sha');
   });
 });
 
@@ -64,7 +66,9 @@ describe('runQualityGateCli', () => {
 
       assert.equal(result.exitCode, 0);
       assert.equal(result.summary, null);
+      assert.match(result.stdout, /<!-- sfqg-report -->/);
       assert.match(result.stdout, /No windows affected; gate skipped/);
+      assert.match(readFileSync(markdownPath, 'utf8'), /<!-- sfqg-report -->/);
       assert.match(readFileSync(markdownPath, 'utf8'), /No windows affected; gate skipped/);
       const json = JSON.parse(readFileSync(jsonPath, 'utf8'));
       assert.equal(json.skipped, true);
@@ -72,6 +76,84 @@ describe('runQualityGateCli', () => {
     } finally {
       rmSync(rootDir, { recursive: true, force: true });
     }
+  });
+
+  it('uses the full PR comparison range from baseline ref to explicit head ref', async () => {
+    const calls = [];
+
+    const result = await runQualityGateCli({
+      args: ['--pr-affected', '--baseline-ref', 'base-sha', '--head-ref', 'head-sha'],
+      rootDir: '/repo',
+      deps: {
+        loadConfig: async () => CONFIG,
+        collectDecisionWindows: () => ['purchase-order', 'sales-order'],
+        getChangedFiles: async (params) => {
+          calls.push(params);
+          return ['artifacts/purchase-order/decisions.json'];
+        },
+        detectAffectedWindows: ({ changedFiles }) => {
+          assert.deepEqual(changedFiles, ['artifacts/purchase-order/decisions.json']);
+          return ['purchase-order'];
+        },
+        detectAffectedWindowsDetailed: () => [{ window: 'purchase-order', source: 'direct' }],
+        runQualityGate: async ({ windowNames }) => ({
+          summary: { gateVerdict: 'PASS', affectedWindows: windowNames.length },
+          windows: [{
+            window: 'purchase-order',
+            verdict: 'PASS',
+            score: { passed: 1, total: 1 },
+            blockerFailures: [],
+            checks: [{ check: 'parse', severity: 'blocker', status: 'pass', detail: 'ok' }],
+          }],
+        }),
+        resolveBaseline: async () => ({
+          source: 'cache',
+          baselineSha: 'base-sha',
+          data: { windows: [{ window: 'purchase-order', score: { passed: 1, total: 1 } }] },
+        }),
+      },
+    });
+
+    assert.equal(result.exitCode, 0);
+    assert.equal(calls.length, 1);
+    assert.deepEqual(calls[0], { rootDir: '/repo', baselineRef: 'base-sha', headRef: 'head-sha' });
+  });
+
+  it('does not skip when app-shell onboarding files change without touching generated windows', async () => {
+    const result = await runQualityGateCli({
+      args: ['--pr-affected'],
+      rootDir: '/repo',
+      deps: {
+        loadConfig: async () => CONFIG,
+        collectDecisionWindows: () => ['purchase-order', 'sales-order'],
+        getChangedFiles: async () => ['tools/app-shell/src/pages/onboarding/onboardingState.js'],
+        detectAffectedWindows: () => ['app-shell:onboarding'],
+        detectAffectedWindowsDetailed: () => [{ window: 'app-shell:onboarding', source: 'direct' }],
+        runQualityGate: async ({ windowNames }) => ({
+          summary: { gateVerdict: 'PASS', affectedWindows: windowNames.length },
+          windows: [{
+            window: 'app-shell:onboarding',
+            verdict: 'PASS',
+            score: { passed: 3, total: 3 },
+            blockerFailures: [],
+            checks: [
+              { check: 'parse', severity: 'blocker', status: 'pass', detail: 'ok' },
+              { check: 'imports', severity: 'blocker', status: 'pass', detail: 'ok' },
+              { check: 'i18n', severity: 'blocker', status: 'pass', detail: 'ok' },
+            ],
+          }],
+        }),
+        resolveBaseline: async () => ({
+          source: 'cache',
+          baselineSha: 'abc1234',
+          data: { windows: [{ window: 'app-shell:onboarding', score: { passed: 3, total: 3 } }] },
+        }),
+      },
+    });
+
+    assert.equal(result.exitCode, 0);
+    assert.match(result.stdout, /Affected windows: 1/);
+    assert.doesNotMatch(result.stdout, /No windows affected; gate skipped/);
   });
 
   it('writes markdown and json outputs and returns a failing exit code when the gate fails', async () => {

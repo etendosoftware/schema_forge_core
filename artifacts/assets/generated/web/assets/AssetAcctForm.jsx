@@ -12,5 +12,5 @@ const fields = [
 export default function AssetAcctForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-AssetAcctForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:AssetAcctForm

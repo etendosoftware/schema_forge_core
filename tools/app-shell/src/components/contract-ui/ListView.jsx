@@ -403,9 +403,6 @@ export function ListView({
                 </Button>
               )}
               {bulkActions && bulkActions({ selectedRows, clearSelection: () => setSelectedRows([]), token, apiBaseUrl, windowName, api })}
-              <Button variant="outline" size="sm" className="text-muted-foreground" onClick={() => setSelectedRows([])}>
-                {ui('clear')}
-              </Button>
             </div>
           </div>
         ) : (

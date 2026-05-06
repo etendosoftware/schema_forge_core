@@ -350,6 +350,11 @@
           "label": "OAuth2 Clients",
           "favname": "OAuth2 Clients",
           "icon": "Shield"
+        },
+        {
+          "name": "fiscal-config",
+          "label": "Fiscal Configuration",
+          "favname": "Fiscal Configuration"
         }
       ]
     },
@@ -368,6 +373,14 @@
           "label": "Quick Purchase Order",
           "favname": "Quick Purchase Order"
         }
+      ]
+    },
+    {
+      "group": "Marketplace",
+      "icon": "Store",
+      "hidden": true,
+      "items": [
+        { "name": "app-store", "label": "App Store", "path": "app-store" }
       ]
     }
   ]

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useUI } from '@/i18n';
 
@@ -9,21 +9,46 @@ import { useUI } from '@/i18n';
  * - documentType: display label e.g. "Invoice", "Order", "Quotation", "Shipment"
  * - documentNo: document number
  * - bpName: business partner name
- * - bpEmail: pre-filled email (optional)
+ * - bpEmail: pre-filled email (optional, falls back to fetched email if absent)
+ * - bPartnerId: business partner record id; used to fetch etgoEmail from /contacts
+ * - apiBaseUrl: NEO Headless API base URL (required if bPartnerId is provided)
  * - documentId: record ID for PDF rendering
  * - windowName: for report ID resolution (e.g. "sales-invoice")
  * - token: auth token
  * - onClose: callback to close modal
- */
-/**
+ *
  * pdfBlobUrl — optional blob URL from jsreport (e.g. from useInvoicePdf).
  * When provided, the preview uses it directly and download triggers on the blob,
  * bypassing the /api/reports render endpoint entirely.
  */
-export default function SendDocumentModal({ documentType = 'Document', documentNo, bpName, bpEmail, documentId, windowName, token, onClose, pdfBlobUrl, isClosing = false }) {
+export default function SendDocumentModal({ documentType = 'Document', documentNo, bpName, bpEmail, bPartnerId, apiBaseUrl, documentId, windowName, token, onClose, pdfBlobUrl, isClosing = false }) {
   const ui = useUI();
   const hasEmail = bpEmail && bpEmail.includes('@');
   const [to, setTo] = useState(hasEmail ? bpEmail : '');
+  const [emailLoading, setEmailLoading] = useState(false);
+
+  // Auto-fetch etgoEmail from the contacts endpoint when bpEmail is not pre-filled.
+  useEffect(() => {
+    if (hasEmail || !bPartnerId || !apiBaseUrl || !token) return;
+    let cancelled = false;
+    setEmailLoading(true);
+    // Replace the trailing spec name in apiBaseUrl with "contacts" to hit the contacts spec.
+    const contactsBaseUrl = apiBaseUrl.replace(/\/[^/]+$/, '/contacts');
+    fetch(`${contactsBaseUrl}/businessPartner/${bPartnerId}`, {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled) return;
+        const record = d?.response?.data?.[0] ?? d?.data?.[0];
+        const fetched = record?.etgoEmail;
+        if (fetched && fetched.includes('@')) setTo(fetched);
+      })
+      .catch(() => { /* keep field empty on error */ })
+      .finally(() => { if (!cancelled) setEmailLoading(false); });
+    return () => { cancelled = true; };
+  }, [hasEmail, bPartnerId, apiBaseUrl, token]);
+
   const [subject, setSubject] = useState(`${documentType} #${documentNo} — ${bpName}`);
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -171,9 +196,9 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
                 value={to}
                 onChange={e => setTo(e.target.value)}
                 placeholder="email@company.com"
-                style={{ width: '100%', fontSize: 13, padding: '8px 10px', border: `0.5px solid ${!to && !hasEmail ? '#ef4444' : '#d1d5db'}`, borderRadius: 6, outline: 'none', color: '#111827', boxSizing: 'border-box' }}
+                style={{ width: '100%', fontSize: 13, padding: '8px 10px', border: `0.5px solid ${!to && !emailLoading ? '#ef4444' : '#d1d5db'}`, borderRadius: 6, outline: 'none', color: '#111827', boxSizing: 'border-box' }}
               />
-              {!to && !hasEmail && (
+              {!to && !emailLoading && (
                 <span style={{ fontSize: 11, color: '#ef4444', marginTop: 3, display: 'block' }}>{ui('sendModalNoEmail')}</span>
               )}
             </div>

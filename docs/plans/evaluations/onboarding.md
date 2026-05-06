@@ -351,4 +351,33 @@ Within each wave, the 4 developers work in parallel. Between waves, there is an 
 
 ---
 
+## Onboarding QA Validation
+
+The onboarding material is validated through a documentation-led QA flow rather than strict numeric code coverage.
+
+Use these QA assets:
+
+- `docs/qa/user-onboarding-checklist.md` — manual validation checklist for a new user's first onboarding journey.
+- `docs/qa/user-onboarding-rubric.md` — scoring rubric for conceptual understanding, repository orientation, and safety rules.
+- `docs/qa/user-onboarding-session-template.md` — moderated session notes template for capturing friction and follow-up actions.
+- `docs/qa/user-onboarding-multi-repo-analysis.md` — expanded analysis across Schema Forge, Etendo Core, and the NEO Headless module.
+
+A successful onboarding session proves that a new user can:
+
+1. Explain Schema Forge and the generated-module methodology.
+2. Describe the extraction, decision, contract, generation, and validation pipeline.
+3. Locate the main repository areas without ad hoc verbal guidance, including `schema-forge/`, `etendo_core/`, and `etendo_core/modules/com.etendoerp.go/`.
+4. Complete one first-success journey using an existing generated window.
+5. State the main safety rules, including not editing `artifacts/*/generated/` manually and not putting window-specific NEO behavior into shared NEO services.
+6. Identify the next validation step for a generated window and the backend/runtime layer it depends on.
+
+The QA result should be recorded as one of:
+
+- Pass
+- Pass with documentation fixes
+- Needs another onboarding iteration
+- Blocked
+
+---
+
 *Document produced as part of the Day-1 Evaluation Pipeline. Companion document: day-1-decisions.md (this directory).*

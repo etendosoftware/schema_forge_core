@@ -38,7 +38,7 @@ const draftMode = null;
 
 
 
-const api = {
+export const api = {
   "specName": "payment-in",
   "baseUrl": "/sws/neo/payment-in",
   "crud": {
@@ -173,10 +173,13 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=payment-inDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "finance"
   }
 };
 

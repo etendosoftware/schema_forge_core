@@ -46,7 +46,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:assignedProducts
 
-const api = {
+export const api = {
   "specName": "product-category",
   "baseUrl": "/sws/neo/product-category",
   "crud": {
@@ -155,16 +155,18 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=product-categoryDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "inventory"
   }
 };
 
 // @sf-generated-start component:ProductCategoryPage
 export default function ProductCategoryPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView

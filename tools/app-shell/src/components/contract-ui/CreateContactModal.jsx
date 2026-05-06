@@ -244,6 +244,7 @@ export default function CreateContactModal({
         labelKey: 'taxIdTypeField',
         type: 'dynamicSelect',
         optionsKey: 'taxIdTypes',
+        required: true,
       },
       {
         id: 'taxID',
@@ -256,8 +257,8 @@ export default function CreateContactModal({
 
     if (contactType === 'person') {
       return [
-        { id: 'etgoFirstname', labelKey: 'contactFirstName', type: 'text' },
-        { id: 'etgoLastname', labelKey: 'contactLastName', type: 'text' },
+        { id: 'etgoFirstname', labelKey: 'contactFirstName', type: 'text', required: true },
+        { id: 'etgoLastname', labelKey: 'contactLastName', type: 'text', required: true },
         ...commonFields,
       ];
     }
@@ -269,7 +270,11 @@ export default function CreateContactModal({
   }, [contactType]);
 
   const requiredFields = useMemo(
-    () => (contactType === 'company' ? ['name', 'taxID', 'country'] : ['taxID', 'country']),
+    () => {
+      return contactType === 'company'
+        ? ['name', 'taxIdType', 'taxID', 'country']
+        : ['etgoFirstname', 'etgoLastname', 'taxIdType', 'taxID', 'country'];
+    },
     [contactType],
   );
 
@@ -314,6 +319,7 @@ export default function CreateContactModal({
       ...(contactType === 'company' && legalName && { name: legalName }),
       ...(contactType === 'person' && firstName && { etgoFirstname: firstName }),
       ...(contactType === 'person' && lastName && { etgoLastname: lastName }),
+      etgoIsperson: contactType === 'person',
       taxID: form.taxID?.trim(),
       oBTIKTaxIDKey: form.taxIdType || '1',
       creditLimit: Number(form.creditLimit) || 0,

@@ -2,7 +2,7 @@
   "$schema": "decisions-v2",
   "version": 2,
   "window": {
-    "category": "configuracion",
+    "category": "settings",
     "name": "Tax Rate",
     "detailEntity": null,
     "breadcrumb": "Settings / Tax",
@@ -28,6 +28,10 @@
     }
   },
   "entities": {
+    "taxZone": { "exclude": true },
+    "translation": { "exclude": true },
+    "accounting": { "exclude": true },
+    "taxParameter": { "exclude": true },
     "tax": {
       "fields": {
         "name": {
@@ -42,13 +46,13 @@
           "seq": 2,
           "cellType": "taxRate"
         },
-        "applicableTo": {
+        "salesPurchaseType": {
           "grid": true,
           "section": "principal",
           "seq": 3,
           "cellType": "taxScope"
         },
-        "validFrom": {
+        "validFromDate": {
           "grid": false,
           "form": true,
           "section": "principal",
@@ -71,9 +75,47 @@
           "section": "principal",
           "seq": 6
         },
-        "description": {
-          "visibility": "discarded"
-        }
+        "description": { "visibility": "discarded" },
+        "taxCategory": { "visibility": "discarded" },
+        "summaryLevel": { "visibility": "discarded" },
+        "country": { "visibility": "discarded" },
+        "destinationCountry": { "visibility": "discarded" },
+        "taxBase": { "visibility": "discarded" },
+        "region": { "visibility": "discarded" },
+        "destinationRegion": { "visibility": "discarded" },
+        "aeatsiiIsprorate": { "visibility": "discarded" },
+        "lineNo": { "visibility": "discarded" },
+        "oBSPTITaxBookType": { "visibility": "discarded" },
+        "parentTaxRate": { "visibility": "discarded" },
+        "oBSPTIReverseCharge": { "visibility": "discarded" },
+        "oBSPTIEquivalentCharge": { "visibility": "discarded" },
+        "businessPartnerTaxCategory": { "visibility": "discarded" },
+        "default": { "visibility": "discarded" },
+        "cascade": { "visibility": "discarded" },
+        "withholdingTax": { "visibility": "discarded" },
+        "notTaxable": { "visibility": "discarded" },
+        "notTaxdeductable": { "visibility": "discarded" },
+        "istaxdeductable": { "visibility": "discarded" },
+        "obsptiReagyp": { "visibility": "discarded" },
+        "oBSPTIIsintracommunity": { "visibility": "discarded" },
+        "isCashVAT": { "visibility": "discarded" },
+        "obsptiIslease": { "visibility": "discarded" },
+        "obsptiIsrealestate": { "visibility": "discarded" },
+        "taxExempt": { "visibility": "discarded" },
+        "obsptiIsrebu": { "visibility": "discarded" },
+        "obsptiIsexport": { "visibility": "discarded" },
+        "obsptiIsimplicitcharge": { "visibility": "discarded" },
+        "obsptiReceiveOss": { "visibility": "discarded" },
+        "tbaiClaveregimeniva": { "visibility": "discarded" },
+        "aeatsiiIsproratexml": { "visibility": "discarded" },
+        "etvfacIGICRegime": { "visibility": "discarded" },
+        "tbaiNonsubjectcause": { "visibility": "discarded" },
+        "etvfacVatRegime": { "visibility": "discarded" },
+        "etvfacExemptionCause": { "visibility": "discarded" },
+        "etvfacCauseNotTaxable": { "visibility": "discarded" },
+        "aeatsiiCauseExemption": { "visibility": "discarded" },
+        "tBAICausaDeExencion": { "visibility": "discarded" },
+        "etvfacIPSIRegime": { "visibility": "discarded" }
       }
     }
   }

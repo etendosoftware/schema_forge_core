@@ -1,5 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
 import AppLayout from './layout/AppLayout.jsx';
 import WindowLoader from './windows/WindowLoader.jsx';
@@ -20,6 +21,8 @@ import { createMockFetch } from './lib/mockFetch.js';
 import { LocaleProvider } from './i18n/index.js';
 import { useLocaleState } from './i18n/useLocaleState.js';
 import { useServiceWorker } from './hooks/useServiceWorker.js';
+import { useInstalledApps } from './hooks/useInstalledApps.js';
+import { useAppStoreUnlock, attachKeySequenceWatcher } from './hooks/useAppStoreUnlock.js';
 import { CurrencyProvider } from './hooks/useCurrency.jsx';
 
 import ArtifactViewerPage from './pages/ArtifactViewerPage.jsx';
@@ -30,6 +33,7 @@ const OAuth2ClientsPage = lazy(() => import('./pages/OAuth2ClientsPage.jsx'));
 const AuthorizePage = lazy(() => import('./pages/AuthorizePage.jsx'));
 const QuickSalesOrderPage = lazy(() => import('./pages/QuickSalesOrderPage.jsx'));
 const QuickPurchaseOrderPage = lazy(() => import('./pages/QuickPurchaseOrderPage.jsx'));
+const AppStorePage = lazy(() => import('./pages/AppStorePage.jsx'));
 
 function detectBasePath() {
   const envBase = import.meta.env.VITE_API_BASE;
@@ -99,6 +103,7 @@ async function loadAllMockData() {
     import('@generated/document/generated/web/document/mockData.js'),
     import('@generated/recurring-invoice/generated/web/recurring-invoice/mockData.js'),
     import('@generated/unit-of-measure/generated/web/unit-of-measure/mockData.js'),
+    import('@generated/fiscal-config/custom/mockData.js'),
   ]);
 
   const merged = {};
@@ -165,6 +170,7 @@ function AppRoutes({ menuGroups, windowMap }) {
         <Route path="authorize" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><AuthorizePage /></Suspense>} />
         <Route path="quick-sales-order" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><QuickSalesOrderPage apiBaseUrl={API_BASE_URL} /></Suspense>} />
         <Route path="quick-purchase-order" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><QuickPurchaseOrderPage apiBaseUrl={API_BASE_URL} /></Suspense>} />
+        <Route path="app-store" element={<Suspense fallback={<div className="p-8 text-muted-foreground">Loading...</div>}><AppStorePage /></Suspense>} />
         <Route path="artifacts" element={<ArtifactViewerPage />} />
         <Route path="artifacts/:windowName" element={<ArtifactViewerPage />} />
         <Route
@@ -178,6 +184,29 @@ function AppRoutes({ menuGroups, windowMap }) {
       </Route>
     </Routes>
   );
+}
+
+/**
+ * Listens for the magic phrases "playstoreon" / "playstoreoff" anywhere in
+ * the shell and toggles the Marketplace group visibility. When unlocking,
+ * navigates straight to /app-store so the new surface is visible.
+ */
+function AppStoreKeyWatcher() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    return attachKeySequenceWatcher({
+      onUnlock: () => {
+        toast.success('App Store unlocked', {
+          description: 'Type "playstoreoff" to hide it again.',
+        });
+        navigate('/app-store');
+      },
+      onLock: () => {
+        toast('App Store hidden');
+      },
+    });
+  }, [navigate]);
+  return null;
 }
 
 /** Checks for SW updates on route changes; reload is automatic via controllerchange */
@@ -194,7 +223,12 @@ function ServiceWorkerManager() {
 }
 
 export default function App() {
-  const [menuGroups] = useState(() => buildMenuGroups());
+  const installedApps = useInstalledApps();
+  const appStoreUnlocked = useAppStoreUnlock();
+  // Rebuild the menu whenever the installed-apps set or the App Store
+  // unlock flag changes; windowMap is static because it already registers
+  // loaders for every known SDK app.
+  const menuGroups = buildMenuGroups(installedApps, { appStoreUnlocked });
   const [windowMap] = useState(() => buildWindowMap());
   const [locale, setLocale] = useLocaleState();
 
@@ -215,6 +249,7 @@ export default function App() {
   return (
     <BrowserRouter basename={routerBase}>
       <ServiceWorkerManager />
+      <AppStoreKeyWatcher />
       <LocaleProvider locale={locale} setLocale={setLocale}>
         <AuthProvider>
           <CurrencyProvider>

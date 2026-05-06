@@ -20,6 +20,7 @@
     "secondaryTabs": {}
   },
   "entities": {
+    "intrastat": { "exclude": true },
     "product": {
       "fields": {
         "searchKey": {
@@ -224,6 +225,7 @@
       }
     },
     "price": {
+      "javaQualifier": "productPriceHandler",
       "fields": {
         "cost": {
           "visibility": "editable",
@@ -295,6 +297,7 @@
       }
     },
     "stock": {
+      "javaQualifier": "productStockWarehouseHandler",
       "fields": {
         "storageBin": {
           "visibility": "readOnly",
@@ -550,6 +553,6 @@
     }
   },
   "rules": {},
-  "discardPatterns": [],
+  "discardPatterns": ["EM_Aeat347_*"],
   "version": 2
 }

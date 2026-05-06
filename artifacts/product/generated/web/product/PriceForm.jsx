@@ -12,5 +12,5 @@ const fields = [
 export default function PriceForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-PriceForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:PriceForm

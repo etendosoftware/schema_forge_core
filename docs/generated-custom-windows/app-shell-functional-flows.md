@@ -37,6 +37,8 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
   - Register/login calls the `/sws/go/register` or `/sws/go/login` endpoints.
   - After platform auth, the page fetches `/sws/go/environments`.
   - If at least one environment exists, it auto-enters the first one, stores `sf_auth_token`, user, role, and org context, clears caches, and redirects to `/dashboard`.
+  - During new-environment creation, the onboarding backend runs the sequence generator for the selected organization using the new client's admin user/role context, seeds a default customer programmatically, and only then returns success; the page then logs in, checks Sales Invoice readiness, and redirects.
+  - The curated onboarding dataset skips business partner rows and locations while still importing shared setup catalogs such as BP groups, payment terms, and accounting foundations.
   - If no environments exist, the page switches to the environment creation flow.
 - **Failure or edge behavior:**
   - An invalid stored platform token is removed and the page falls back to the register view.
@@ -45,6 +47,7 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
 - **Automated evidence:**
   - `tools/app-shell/test/pwa.test.js` verifies that `OnboardingPage.jsx` clears caches on environment login.
   - Route protection and onboarding branching are code-backed in `tools/app-shell/src/App.jsx` and `tools/app-shell/src/pages/OnboardingPage.jsx`, but are not covered by a full browser test.
+  - `etendo_core/modules/com.etendoerp.go/src-test/src/com/etendoerp/go/onboarding/OnboardingDefaultCustomerServiceTest.java` verifies the default customer seed behavior, and `EtendoGoJwtServletOnboardingDatasetTest.java` verifies the seed runs after sequence generation and fails honestly if customer creation fails.
 - **Manual verification path:**
   1. Open `/onboarding` with no `sf_platform_token` or `sf_auth_token` in `localStorage`.
   2. Complete register or login.
@@ -98,23 +101,29 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
   - `useEntity` fetches the first page in batches of 75 rows and exposes `loadMore()` for infinite pagination.
   - Sorting is tracked in hook state and can switch to the companion `$_identifier` field when present so foreign-key sorts are alphabetical.
   - Selecting a row uses the record data already present in the list and fetches that record's children; loading by id is the path that fetches the full record and its children.
-  - `handleNew()` requests `/<entity>/defaults`, normalizes returned values, and pre-fills the form when defaults exist.
+  - `handleNew()` requests `/<entity>/defaults`, normalizes returned values, and pre-fills the form when defaults exist. Combo-style fields (Price List, Payment Terms) are pre-selected by the backend; Search-type fields (Contact, Business Partner) are left empty for the user to fill explicitly.
+  - Before a `POST`, `handleSave()` validates that all visible required fields have a value. `EntityForm` registers only currently-visible fields via `registerFields(displayFields)` so hidden fields never block the save. If any required field is empty, `fieldErrors` is set and each offending field renders a red border with an inline "Required" message — the POST is not sent.
+  - If the backend still returns a structured `400 MISSING_REQUIRED_FIELDS` response, the `fields` array is parsed and mapped to `fieldErrors` as a second validation layer.
   - New records use `POST`; existing records use `PATCH` with changed fields only.
   - Child-row creation posts `parentId`, then refreshes both children and the header record so derived totals stay current.
 - **Failure or edge behavior:**
   - List refresh and pagination logout on HTTP 401.
   - If the defaults endpoint fails, the form still opens with an empty object.
   - Partial or empty batches stop pagination.
+  - Save blocked by missing required fields surfaces per-field `fieldErrors` highlights and a toast; the record is not created.
   - Save and child-row creation failures surface `saveError` and toast feedback; delete and process failures surface toast feedback.
 - **Automated evidence:**
   - `tools/app-shell/src/hooks/__tests__/useEntity-pagination.test.js` verifies first-page and subsequent-page batch windows, sort handling, retry behavior for the default `creationDate` sort, empty datasets, and fetch failures.
   - `tools/app-shell/src/hooks/__tests__/useEntity-defaults.test.js` verifies the defaults URL, bearer header use, non-OK handling, network-error fallback, and missing-defaults fallback.
+  - `tools/app-shell/src/hooks/__tests__/useEntity-required-validation.test.js` verifies the required-field validation logic: empty required fields are flagged, readOnly and summary-section fields are skipped, whitespace-only strings are treated as empty, and `readOnlyLogic` functions are respected for completed documents.
 - **Manual verification path:**
   1. Open a generated window such as `/sales-order`.
   2. Scroll past the first page and confirm additional rows load after the first 75.
-  3. Start a new record and confirm defaults appear when the backend exposes them; if the endpoint is unavailable, confirm the form still opens.
-  4. Open a record with child lines, add a line, and confirm both the child list and header data refresh.
-  5. Expire or remove the auth token, trigger a list refresh, and confirm the session is forced back through the auth flow.
+  3. Start a new record and confirm defaults appear when the backend exposes them (Price List and Payment Terms pre-selected); Contact must remain empty.
+  4. Click Save without filling Contact — confirm a red border and "Required" message appear on the field and no record is created.
+  5. Fill Contact, confirm the dependent Address auto-selects, then Save — confirm the record is created with the chosen Contact.
+  6. Open a record with child lines, add a line, and confirm both the child list and header data refresh.
+  7. Expire or remove the auth token, trigger a list refresh, and confirm the session is forced back through the auth flow.
 
 ### 5. OAuth2 authorization consent
 
@@ -176,6 +185,38 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
   2. Deploy or serve a newer build.
   3. Navigate to another route or refocus the tab and confirm the app reloads onto the new assets.
   4. Re-enter an environment from `/onboarding` and confirm the browser reaches `/dashboard` without serving stale cached shell assets.
+
+## DocumentTotalsPanel — real-time totals and discount breakdown
+
+`tools/app-shell/src/components/contract-ui/DocumentTotalsPanel.jsx` is a generic totals block shared by sales-order, purchase-order, sales-invoice, purchase-invoice, and sales-quotation.
+
+**How it works:**
+- Receives `lines` (saved child rows), `pendingLine` (live in-progress add-row values), and `editingLine` (live sidebar editing values).
+- Computes all amounts client-side: `grossSubtotal = Σ(qty × listPrice)`, `netSubtotal = Σ(qty × listPrice × (1 − discount/100))`, `grandTotal = Σ(line.grossField)` (server-computed line gross), `discountAmt = grossSubtotal − netSubtotal`, `taxAmt = grandTotal − netSubtotal`.
+- The discount column is always visible (`hiddenColumns={[]}` is static — there is no per-product toggle).
+- "Subtotal sin descuento" and "Descuento por producto" rows appear automatically when `discountAmt > 0` (at least one line carries a non-zero discount). They disappear again when all discount amounts drop back to zero. No manual expansion is needed.
+- "Descuento por producto" is a **read-only display row** showing the computed discount amount — it is not an interactive checkbox.
+- A `+ Añadir descuento total` button (i18n key `addTotalDiscount`) appears below the totals block when no total discount is currently active AND at least one line exists (saved or in the inline add-row). The button is hidden when the document is `readOnly` or there are no lines.
+- Clicking the button shows an interactive "Descuento total" row: checkbox (checked by default) + computed amount + number input + static "%" label below. Unchecking the checkbox collapses the section and restores the button. The calculation is a **UI placeholder only** — no backend persistence yet.
+- `totalDiscountOpen` is local state inside `DocumentTotalsPanel`; it is not lifted to `DetailView`.
+- `discountPerProductEnabled` and `onDiscountPerProductChange` props have been removed from both `DetailView.jsx` and `PurchaseInvoiceBottomPanel`.
+
+**Live preview wiring:**
+- `DataTable`'s `InlineAddRow` calls `onValuesChange(values)` on every keystroke → `DetailView` stores it as `pendingLineValues` → passed as `pendingLine` to the panel → totals include the in-progress row before any save.
+- Sidebar editing: `DetailView` merges `selectedLine + lineEdits` into `editingLine` → panel replaces the matching saved line with live values in the computation.
+
+**Preventing line save on panel click:**
+- `InlineAddRow` uses `document.addEventListener('mousedown', handler, true)` (capture phase) to auto-save when the user clicks outside the row. Panels with `data-inline-add-portal="true"` on their root element are whitelisted — the handler skips the save. Both root `<div>` elements of `DocumentTotalsPanel` carry this attribute.
+
+**i18n keys** (both `en_US.json` and `es_ES.json`):
+- `addTotalDiscount` — "+ Añadir descuento total" (renamed from `addDiscount`)
+- `totalDiscount` — "Descuento total" (new key for the interactive total-discount row)
+- `subtotalWithoutDiscount` — "Subtotal sin descuento"
+- `discountPerProduct` — "Descuento por producto"
+
+**Where it renders:**
+- Sales-order, purchase-order, sales-quotation: directly inside `DetailView` at the bottom-right of the detail layout (uses `lineConfig` built from the summary + line fields).
+- Sales-invoice, purchase-invoice: inside the custom `InvoiceBottomPanel` / `PurchaseInvoiceBottomPanel` which hosts the right column of the docs/notes/totals footer.
 
 ## Current coverage gaps worth knowing
 

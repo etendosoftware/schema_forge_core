@@ -25,7 +25,7 @@ export function DashboardGreeting({ username = '', onAskCopilot }) {
   const greeting = ui('dashboardGreetingHello').replace('{name}', username || '');
 
   return (
-    <div className="flex items-start justify-between gap-4 mb-2">
+    <div className="flex items-center justify-between gap-4 mb-2">
       <div className="flex items-center gap-3 min-w-0">
         <div
           style={{
@@ -48,15 +48,15 @@ export function DashboardGreeting({ username = '', onAskCopilot }) {
           </svg>
         </div>
         <div className="min-w-0">
-          <p className="text-sm text-muted-foreground leading-tight">{greeting}</p>
-          <h1 className="text-xl font-bold leading-tight truncate">{ui('dashboardGreetingHeadline')}</h1>
+          <p className="text-xs text-foreground leading-tight">{greeting}</p>
+          <h1 className="text-lg font-semibold leading-8 truncate">{ui('dashboardGreetingHeadline')}</h1>
         </div>
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-1.5 text-sm">
+            <Button variant="outline" size="sm" className="h-10 gap-1.5 text-sm bg-white hover:bg-[#F5F7F9]">
               <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
               <span>{currentRangeLabel}</span>
               <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -77,7 +77,7 @@ export function DashboardGreeting({ username = '', onAskCopilot }) {
 
         <Button
           size="sm"
-          className="gap-1.5 bg-foreground text-background hover:bg-foreground/90"
+          className="h-10 gap-1.5 bg-[#121217] text-white hover:bg-[#FFD500] hover:text-[#121217]"
           onClick={onAskCopilot}
         >
           <Sparkles className="h-3.5 w-3.5" />

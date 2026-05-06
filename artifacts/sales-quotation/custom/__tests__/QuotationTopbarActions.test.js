@@ -57,4 +57,43 @@ describe('QuotationTopbarActions', () => {
   it('navigates to the new sales-quotation record after cloning', () => {
     assert.match(src, /navigate\(`\/sales-quotation\/\$\{newId\}`\)/);
   });
+
+  describe('confirm flow via draftMode event (regression: button order)', () => {
+    it('does not render an inline blue Confirmar button anymore', () => {
+      assert.doesNotMatch(src, /background:\s*'#185FA5'/);
+    });
+
+    it('listens for the sales-quotation:open-confirm-modal custom event', () => {
+      assert.match(src, /addEventListener\(\s*['"]sales-quotation:open-confirm-modal['"]/);
+      assert.match(src, /removeEventListener\(\s*['"]sales-quotation:open-confirm-modal['"]/);
+    });
+
+    it('opens SendToEvaluationModal when status is DR', () => {
+      assert.match(src, /status\s*===\s*'DR'.*setShowSendToEval\(true\)/s);
+    });
+
+    it('opens QuotationConfirmModal when status is UE', () => {
+      assert.match(src, /status\s*===\s*'UE'.*setShowConfirm\(true\)/s);
+    });
+  });
+
+  describe('reject flow via kebab event', () => {
+    it('imports RejectQuotationModal', () => {
+      assert.match(src, /import\s+RejectQuotationModal\s+from\s+['"]\.\/RejectQuotationModal['"]/);
+    });
+
+    it('listens for the sales-quotation:open-reject-modal custom event', () => {
+      assert.match(src, /addEventListener\(\s*['"]sales-quotation:open-reject-modal['"]/);
+      assert.match(src, /removeEventListener\(\s*['"]sales-quotation:open-reject-modal['"]/);
+    });
+
+    it('renders RejectQuotationModal via createPortal when triggered', () => {
+      assert.match(src, /showReject\s*&&\s*createPortal\(\s*<RejectQuotationModal/);
+    });
+
+    it('has a setShowReject state setter wired to onClose', () => {
+      assert.match(src, /setShowReject\(true\)/);
+      assert.match(src, /onClose=\{\(\)\s*=>\s*setShowReject\(false\)\}/);
+    });
+  });
 });

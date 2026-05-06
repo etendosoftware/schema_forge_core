@@ -58,7 +58,7 @@ function renderRegressionDetails(window) {
   }).join('\n');
 }
 
-function renderNextActions({ gateVerdict, baselineRef, regressionWindows, regressionChecks }) {
+function renderNextActions({ gateVerdict, baselineRef, headRef, regressionWindows, regressionChecks }) {
   if (gateVerdict !== 'FAIL') {
     return [
       '### What to do next',
@@ -85,7 +85,7 @@ function renderNextActions({ gateVerdict, baselineRef, regressionWindows, regres
   }
 
   lines.push(
-    `- Re-run \`node cli/src/quality-gate.js --pr-affected --baseline-ref ${baselineRef}\` locally before pushing.`,
+    `- Re-run \`node cli/src/quality-gate.js --pr-affected --baseline-ref ${baselineRef} --head-ref ${headRef}\` locally before pushing.`,
     '- Use the regression details below to jump directly to the failing files or score drops introduced by this PR.',
     '',
   );
@@ -95,6 +95,7 @@ function renderNextActions({ gateVerdict, baselineRef, regressionWindows, regres
 
 export function buildQualityGateReport({
   baselineRef,
+  headRef = 'HEAD',
   baselineSha,
   headResult,
   baselineResult,
@@ -187,6 +188,7 @@ export function buildQualityGateReport({
   lines.push('', renderNextActions({
     gateVerdict,
     baselineRef,
+    headRef,
     regressionWindows,
     regressionChecks,
   }));

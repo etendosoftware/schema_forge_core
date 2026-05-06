@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { collectSourceFiles, isJavaScriptModule, parseModuleSource, repoRelative, walkAst } from './shared.js';
+import { collectSourceFiles, collectTargetSourceFiles, isJavaScriptModule, parseModuleSource, repoRelative, walkAst } from './shared.js';
 
 function isRelativeSpecifier(specifier) {
   return specifier.startsWith('./') || specifier.startsWith('../');
@@ -38,10 +38,12 @@ function collectRelativeImports(ast) {
   return imports;
 }
 
-export async function runImportsCheck(_windowName, { rootDir, windowDir }) {
-  const files = collectSourceFiles(join(windowDir, 'generated'), isJavaScriptModule);
+export async function runImportsCheck(targetName, { rootDir, windowDir }) {
+  const files = targetName.startsWith('app-shell:')
+    ? collectTargetSourceFiles(rootDir, targetName)
+    : collectSourceFiles(join(windowDir, 'generated'), isJavaScriptModule);
   if (files.length === 0) {
-    return { status: 'skip', detail: 'No generated .js or .jsx files found.' };
+    return { status: 'skip', detail: 'No generated or targeted .js/.jsx files found.' };
   }
 
   let resolvedCount = 0;

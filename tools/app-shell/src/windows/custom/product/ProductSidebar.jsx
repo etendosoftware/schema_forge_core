@@ -2,14 +2,7 @@ import { useState, useEffect } from 'react';
 import { Boxes, Lock, PackageCheck } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useUI } from '@/i18n';
-
-function formatCompact(v) {
-  if (v === null || v === undefined) return null;
-  const abs = Math.abs(v);
-  if (abs >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
-  if (abs >= 1_000) return `${(v / 1_000).toFixed(0)}k`;
-  return String(Math.round(v));
-}
+import { formatDashboardAxisTick } from '@/lib/dashboardNumberFormat';
 
 const DOT_COLORS = ['#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#14b8a6', '#f97316', '#6366f1'];
 
@@ -106,9 +99,9 @@ function ChartSVG({ months, values, W, H, PAD_X, PAD_Y, gradId, fontSize = 10 })
   const areaPts = `${toX(0)},${H} ${pts} ${toX(values.length - 1)},${H}`;
 
   const yLabels = [
-    { v: maxVal, label: formatCompact(maxVal) },
-    { v: Math.round((maxVal + Math.max(minVal, 0)) / 2), label: formatCompact(Math.round((maxVal + Math.max(minVal, 0)) / 2)) },
-    ...(minVal < 0 ? [{ v: minVal, label: formatCompact(minVal) }] : []),
+    { v: maxVal, label: formatDashboardAxisTick(maxVal) },
+    { v: Math.round((maxVal + Math.max(minVal, 0)) / 2), label: formatDashboardAxisTick(Math.round((maxVal + Math.max(minVal, 0)) / 2)) },
+    ...(minVal < 0 ? [{ v: minVal, label: formatDashboardAxisTick(minVal) }] : []),
   ];
 
   const n = values.length;

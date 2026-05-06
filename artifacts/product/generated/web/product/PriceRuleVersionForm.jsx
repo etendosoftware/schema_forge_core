@@ -12,5 +12,5 @@ const fields = [
 export default function PriceRuleVersionForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-PriceRuleVersionForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:PriceRuleVersionForm

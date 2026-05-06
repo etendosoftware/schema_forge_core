@@ -23,6 +23,19 @@ const ACCEPTED_TYPES = {
 };
 const ACCEPT_ATTR = Object.keys(ACCEPTED_TYPES).join(',');
 
+function getBackdropClass(animState) {
+  if (animState === 'opening') return 'opacity-0';
+  if (animState === 'closing') return 'opacity-0 transition-opacity duration-[280ms]';
+  return 'opacity-100 transition-opacity duration-[280ms]';
+}
+
+function getCardClass(animState) {
+  if (animState === 'opening') return 'translate-x-full';
+  if (animState === 'closing') return 'translate-x-full transition-transform duration-[280ms]';
+  if (animState === 'closingUp') return 'opacity-0 translate-x-full transition-all duration-[280ms]';
+  return 'translate-x-0 transition-transform duration-[280ms]';
+}
+
 /**
  * InvoicePreviewModal — Holded-style preview popup for a purchase or sales invoice.
  *
@@ -123,19 +136,17 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
     setTimeout(onClose, 280);
   }
 
-  // Open the email modal: slide InvoicePreviewModal out to the right first, then show email modal
+  // Open the email modal on top of the preview (same pattern as payment modal)
   function openEmailModal() {
-    setAnimState('sliding-out-right');
-    setTimeout(() => setShowSendModal(true), 280);
+    setShowSendModal(true);
   }
 
-  // Close the email modal: animate it out (slide up); InvoicePreviewModal stays closed
+  // Close the email modal; preview remains visible underneath
   function closeEmailModal() {
     setSendModalClosing(true);
     setTimeout(() => {
       setSendModalClosing(false);
       setShowSendModal(false);
-      onClose();
     }, 280);
   }
 
@@ -193,19 +204,8 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
   const canAddPayment = isCompleted && !isFullyPaid;
 
   // Animation classes
-  const backdropClass = animState === 'opening'
-    ? 'opacity-0'
-    : (animState === 'closing' || animState === 'sliding-out-right')
-      ? 'opacity-0 transition-opacity duration-[280ms]'
-      : 'opacity-100 transition-opacity duration-[280ms]';
-
-  const cardClass = animState === 'opening'
-    ? 'translate-x-full'
-    : (animState === 'closing' || animState === 'sliding-out-right')
-      ? 'translate-x-full transition-transform duration-[280ms]'
-      : animState === 'closingUp'
-        ? 'opacity-0 translate-x-full transition-all duration-[280ms]'
-        : 'translate-x-0 transition-transform duration-[280ms]';
+  const backdropClass = getBackdropClass(animState);
+  const cardClass = getCardClass(animState);
 
   // Download the generated PDF blob
   function handleDownloadPdf() {
@@ -220,11 +220,9 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
 
   return (
     <>
-      {/* Backdrop — hidden when SendDocumentModal is open to avoid overlap,
-          but kept mounted so the pdfUrl blob remains alive */}
+      {/* Backdrop */}
       <div
         className={`fixed inset-0 z-50 bg-black/30 ${backdropClass}`}
-        style={showSendModal ? { display: 'none' } : undefined}
         onClick={handleClose}
       >
         {/* Side panel — slides in from the right (wider for better PDF view) */}
@@ -497,7 +495,8 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
           documentType={tMenu(specName === 'purchase-invoice' ? 'Purchase Invoice' : 'Sales Invoice')}
           documentNo={displayInvoice.documentNo}
           bpName={partnerName}
-          bpEmail={displayInvoice.bpEmail || displayInvoice.partnerEmail || ''}
+          bPartnerId={displayInvoice.businessPartner}
+          apiBaseUrl={apiBaseUrl}
           documentId={displayInvoice.id}
           windowName={specName}
           token={token}

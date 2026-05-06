@@ -150,10 +150,13 @@ export const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=goods-movementsDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "inventory"
   }
 };
 
@@ -192,6 +195,7 @@ export default function MovementPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="movementDate"
       {...props}
     />
   );

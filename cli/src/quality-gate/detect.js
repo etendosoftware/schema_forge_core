@@ -74,13 +74,20 @@ export function detectAffectedWindowsDetailed({ changedFiles, blastRadius, avail
         }
         continue;
       }
-
       if (rule.scope === 'touched-window') {
         for (const entry of resolveTouchedWindows(changedFile, allWindows)) {
           const current = affected.get(entry.window);
           if (current !== 'direct') {
             affected.set(entry.window, entry.source);
           }
+        }
+        continue;
+      }
+
+      if (rule.scope === 'named-target' && rule.target) {
+        const excluded = (rule.excludePatterns ?? []).some((p) => globToRegExp(p).test(changedFile));
+        if (!excluded) {
+          affected.set(rule.target, 'direct');
         }
       }
     }

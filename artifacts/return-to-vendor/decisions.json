@@ -5,13 +5,24 @@
     "name": "Return to Vendor",
     "relatedDocuments": true,
     "notesField": "returnReason",
-    "dateFilterKey": "orderDate"
+    "dateFilterKey": "orderDate",
+    "lineEntityConfig": "returnOrder"
   },
   "entities": {
     "header": {
       "fields": {
         "orderDate": {
           "grid": true
+        }
+      }
+    },
+    "lines": {
+      "fields": {
+        "lineGrossAmount": {
+          "visibility": "readOnly",
+          "grid": true,
+          "form": true,
+          "displayLogic": null
         }
       }
     }

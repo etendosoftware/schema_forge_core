@@ -54,7 +54,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:lines
 
-const api = {
+export const api = {
   "specName": "return-to-vendor-shipment",
   "baseUrl": "/sws/neo/return-to-vendor-shipment",
   "crud": {
@@ -313,16 +313,18 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=return-to-vendor-shipmentDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "purchases"
   }
 };
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -358,7 +360,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
-dateFilterKey="movementDate"
+      dateFilterKey="movementDate"
       {...props}
     />
   );

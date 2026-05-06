@@ -8,6 +8,7 @@ export const STATUS_BADGE = {
   DR: 'bg-gray-50 text-gray-600 border-gray-200',
   PWNC: 'bg-amber-50 text-amber-700 border-amber-200',
   VO: 'bg-red-50 text-red-700 border-red-200',
+  CJ: 'bg-red-50 text-red-700 border-red-200',
 };
 
 export const STATUS_KEYS = {
@@ -15,6 +16,9 @@ export const STATUS_KEYS = {
   DR: 'statusDraft',
   VO: 'statusVoided',
   CL: 'statusClosed',
+  CA: 'statusOrderCreated',
+  CJ: 'statusRejected',
+  ETGO_CI: 'statusInvoiceCreated',
   RPPC: 'statusReceived',
   RPR: 'statusReceived',
   PPM: 'statusPaid',

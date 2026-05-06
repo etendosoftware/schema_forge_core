@@ -1,13 +1,13 @@
 {
-  "version": "0.3.0",
-  "generatedAt": "2026-04-14T18:08:24.582Z",
-  "checksum": "c09ba3c23acc4676",
+  "version": "0.4.0",
+  "generatedAt": "2026-04-29T18:12:23.942Z",
+  "checksum": "63412332b03fe0dd",
   "frontendContract": {
     "window": {
       "id": "3CAAC7D54593489384452416ACF356DD",
       "name": "Payment Method",
       "primaryEntity": "paymentMethod",
-      "category": "configuracion",
+      "category": "settings",
       "hidePrint": true,
       "hideMoreMenu": true,
       "breadcrumb": "Settings / Payment Method",
@@ -48,6 +48,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "section": "principal",
             "seq": 1
           },
@@ -76,6 +77,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "Y"
+            },
             "defaultValue": "Y",
             "section": "principal",
             "seq": 10
@@ -91,6 +97,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N",
             "section": "principal",
             "seq": 11,
@@ -110,6 +121,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N",
             "section": "principal",
             "seq": 12,
@@ -129,6 +145,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "Y"
+            },
             "defaultValue": "Y",
             "section": "principal",
             "seq": 20
@@ -144,6 +165,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N",
             "section": "principal",
             "seq": 21,
@@ -163,6 +189,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N",
             "section": "principal",
             "seq": 22,
@@ -227,7 +258,7 @@
       "id": "3CAAC7D54593489384452416ACF356DD",
       "name": "Payment Method",
       "primaryEntity": "paymentMethod",
-      "category": "configuracion",
+      "category": "settings",
       "hidePrint": true,
       "hideMoreMenu": true,
       "breadcrumb": "Settings / Payment Method",
@@ -570,13 +601,13 @@
       },
       "sorting": {
         "param": "_sortBy",
-        "example": "_sortBy=payment-methodDate"
+        "example": "_sortBy=creationDate desc"
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
     },
     "window": {
-      "category": "configuracion"
+      "category": "settings"
     },
     "labelOverrides": {
       "es_ES": {

@@ -2,8 +2,8 @@ import { DataTable } from '@/components/contract-ui';
 
 // @sf-generated-start columns:transactions
 const columns = [
-  { key: 'organization', column: 'AD_Org_ID', type: 'string', label: 'Organization' },
-  { key: 'storageBin', column: 'M_Locator_ID', type: 'string', label: 'Storage Bin' },
+  { key: 'organization', column: 'AD_Org_ID', type: 'selector', label: 'Organization' },
+  { key: 'storageBin', column: 'M_Locator_ID', type: 'selector', label: 'Storage Bin' },
   { key: 'movementQuantity', column: 'MovementQty', type: 'number', label: 'Movement Quantity' },
   { key: 'movementDate', column: 'MovementDate', type: 'date', label: 'Movement Date' },
   { key: 'movementType', column: 'MovementType', type: 'enum', label: 'Movement Type', enumLabels: { 'V+': 'Vendor Receipts', 'I+': 'Inventory In', 'M-': 'Movement From', 'M+': 'Movement To', 'I-': 'Inventory Out', 'P-': 'Production -', 'P+': 'Production +', 'C-': 'Customer Shipment', 'D-': 'Internal Consumption -', 'D+': 'Internal Consumption +' } },

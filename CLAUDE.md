@@ -283,6 +283,8 @@ A "worked" window has `artifacts/{name}/decisions.json`. Legacy `schema-curated.
 `resolve-curated.js` merges raw + decisions → curated **in memory** (no intermediate files).
 See `docs/decisions-versioning.md` for migration guide.
 
+**Iterating on decisions or regenerating UI:** use `make regen ONLY=<window>` (add `PUSH_TO_NEO=1` to push to NEO). It is the canonical wrapper around extract → resolve → generate (→ push). Reach for `resolve-curated.js`, `pipeline.js`, or `push-to-neo.js` directly only when debugging a single phase or using flags `make regen` does not expose. See the Window Change Integrity Protocol below for the full command reference.
+
 ## Window Change Integrity Protocol (MANDATORY)
 
 **EVERY change to a window** (decisions.json, generator, contract, or generated files) MUST complete ALL steps below before considering the task done. No exceptions.
@@ -291,11 +293,24 @@ See `docs/decisions-versioning.md` for migration guide.
 Never edit `contract.json` or generated files directly. `decisions.json` is the single source of truth.
 If a change cannot be expressed in `decisions.json`, fix the generator (`generate-frontend.js`, `generate-contract.js`, `resolve-curated.js`) instead.
 
-### Step 2 — Regenerate via `--write`
+### Step 2 — Regenerate via `make regen` (CANONICAL)
 ```bash
-node cli/src/resolve-curated.js --window <name> --write
+make regen ONLY=<name>                      # iterate on decisions / regenerate UI
+make regen ONLY=<name> PUSH_TO_NEO=1        # same + push config to NEO Headless
+make regen ONLY=<name> SKIP_EXTRACT=1       # reuse existing schema-raw.json (skip DB hit)
+make regen ONLY=tax,product                 # multiple windows in one run
+make regen-help                             # full option list
 ```
-This runs: `decisions.json + schema-raw.json → contract.json → generated/web/<name>/`
+This runs: `decisions.json + schema-raw.json → contract.json → generated/web/<name>/` (and optionally `push-to-neo` at the end). **`make regen` is the default command for every iterative loop on decisions or UI regeneration** — agents must reach for it first.
+
+**Lower-level commands (use only when `make regen` does not fit):**
+```bash
+node cli/src/resolve-curated.js --window <name> --write             # single phase, no extract, no push
+node cli/src/pipeline.js --menu-name "..." --skip-to resolve-curated --skip-interactive
+node cli/src/push-to-neo.js <spec> [--dry-run]                      # push only (after a regen without it)
+node cli/src/extract-from-db.js --menu-name "..."                   # re-extract raw schema only
+```
+Reach for these when debugging a single phase, dry-running, or using flags `make regen` does not expose (e.g. `--dry-run`, custom `--skip-to`). After any direct `push-to-neo.js`, remind the user to run `./gradlew export.database` in Etendo root — `make regen PUSH_TO_NEO=1` follows the same rule.
 
 ### Step 3 — Verify contract integrity (MANDATORY after every --write)
 Run this and confirm **no field shows `false` for readOnly when it should be locked**:

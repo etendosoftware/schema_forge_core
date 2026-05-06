@@ -10,7 +10,7 @@ const fields = [
   { key: 'payment', column: 'FIN_Payment_ID', type: 'selector', label: 'Payment', section: 'other', reference: 'Payment', inputMode: 'selector' },
   { key: 'status', column: 'Status', type: 'select', label: 'Status', section: 'other', options: [{ value: 'RPAP', label: 'Awaiting Payment' }, { value: 'RPAE', label: 'Awaiting Execution' }, { value: 'RPVOID', label: 'Void' }, { value: 'PPM', label: 'Payment Made' }, { value: 'RPR', label: 'Payment Received' }, { value: 'RDNC', label: 'Deposited not Cleared' }, { value: 'PWNC', label: 'Withdrawn not Cleared' }, { value: 'RPPC', label: 'Payment Cleared' }] },
   { key: 'isManualSettlement', column: 'IsManualSettlement', type: 'checkbox', label: 'Manual Settlement', required: true, readOnly: true, section: 'other' },
-  { key: 'accountingDate', column: 'Dateacct', type: 'date', label: 'Manual Cash VAT Settlement Date', required: true, readOnly: true, section: 'other', defaultValue: '@#Date@' },
+  { key: 'accountingDate', column: 'Dateacct', type: 'date', label: 'Manual Cash VAT Settlement Date', required: true, readOnly: true, section: 'other' },
 ];
 // @sf-generated-end fields:cashVat
 
@@ -18,5 +18,5 @@ const fields = [
 export default function CashVatForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-CashVatForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:CashVatForm
