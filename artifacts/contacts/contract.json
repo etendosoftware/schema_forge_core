@@ -91,21 +91,19 @@
         "hidePrint": true,
         "hideEye": true,
         "hideCounter": true,
-        "hideLink": true,
-        "hideFilters": true
+        "hideLink": true
       },
       "listBaseFilter": "criteria=%7B%22operator%22%3A%22or%22%2C%22criteria%22%3A%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%2C%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D%7D",
-      "quickFilters": [
+      "subsetFilters": [
         {
-          "label": "All",
-          "filter": null
+          "label": "all"
         },
         {
-          "label": "Customers",
+          "label": "customers",
           "filter": "criteria=%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"
         },
         {
-          "label": "Vendors",
+          "label": "vendors",
           "filter": "criteria=%5B%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"
         }
       ],
@@ -858,6 +856,18 @@
               "evaluable": true,
               "js": "record.vendor"
             }
+          },
+          {
+            "name": "eTGOLocation",
+            "apiKey": "eTGOLocation",
+            "column": "em_etgo_location",
+            "label": "em_etgo_location",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": false
           }
         ],
         "searchableFields": [
@@ -3829,21 +3839,19 @@
         "hidePrint": true,
         "hideEye": true,
         "hideCounter": true,
-        "hideLink": true,
-        "hideFilters": true
+        "hideLink": true
       },
       "listBaseFilter": "criteria=%7B%22operator%22%3A%22or%22%2C%22criteria%22%3A%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%2C%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D%7D",
-      "quickFilters": [
+      "subsetFilters": [
         {
-          "label": "All",
-          "filter": null
+          "label": "all"
         },
         {
-          "label": "Customers",
+          "label": "customers",
           "filter": "criteria=%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"
         },
         {
-          "label": "Vendors",
+          "label": "vendors",
           "filter": "criteria=%5B%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"
         }
       ]
@@ -4733,6 +4741,14 @@
             "type": "boolean",
             "visibility": "editable",
             "required": true
+          },
+          {
+            "name": "eTGOLocation",
+            "apiKey": "eTGOLocation",
+            "column": "em_etgo_location",
+            "type": "string",
+            "visibility": "readOnly",
+            "required": false
           }
         ],
         "javaQualifier": "businessPartnerHandler"
@@ -5621,6 +5637,14 @@
             "type": "boolean",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "eTGOLocation",
+            "apiKey": "eTGOLocation",
+            "column": "em_etgo_location",
+            "type": "string",
+            "visibility": "system",
+            "required": false
           }
         ]
       },
@@ -6759,6 +6783,14 @@
             "name": "uRL",
             "apiKey": "uRL",
             "column": "URL",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "eTGOLocation",
+            "apiKey": "eTGOLocation",
+            "column": "em_etgo_location",
             "type": "string",
             "visibility": "system",
             "required": false
@@ -7911,6 +7943,14 @@
             "type": "boolean",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "eTGOLocation",
+            "apiKey": "eTGOLocation",
+            "column": "em_etgo_location",
+            "type": "string",
+            "visibility": "system",
+            "required": false
           }
         ]
       },
@@ -11869,6 +11909,14 @@
         "description": "Field 'etgoLastname' should be present in businessPartner"
       },
       {
+        "id": "t-field-presence-businessPartner-eTGOLocation",
+        "category": "field-presence",
+        "entity": "businessPartner",
+        "field": "eTGOLocation",
+        "runner": "node",
+        "description": "Field 'eTGOLocation' should be present in businessPartner"
+      },
+      {
         "id": "t-field-presence-businessPartner-etgoPhone",
         "category": "field-presence",
         "entity": "businessPartner",
@@ -12995,6 +13043,14 @@
         "field": "etgoLastname",
         "runner": "node",
         "description": "Field 'etgoLastname' should have type 'string' in businessPartner"
+      },
+      {
+        "id": "t-field-type-businessPartner-eTGOLocation",
+        "category": "field-type",
+        "entity": "businessPartner",
+        "field": "eTGOLocation",
+        "runner": "node",
+        "description": "Field 'eTGOLocation' should have type 'string' in businessPartner"
       },
       {
         "id": "t-field-type-businessPartner-etgoPhone",
@@ -15815,6 +15871,14 @@
         "description": "System field 'etgoLastname' should exist in backend but not frontend for customer"
       },
       {
+        "id": "t-system-field-customer-eTGOLocation",
+        "category": "system-field",
+        "entity": "customer",
+        "field": "eTGOLocation",
+        "runner": "node",
+        "description": "System field 'eTGOLocation' should exist in backend but not frontend for customer"
+      },
+      {
         "id": "t-system-field-customer-etgoPhone",
         "category": "system-field",
         "entity": "customer",
@@ -16717,6 +16781,14 @@
         "field": "etgoLastname",
         "runner": "node",
         "description": "System field 'etgoLastname' should exist in backend but not frontend for employee"
+      },
+      {
+        "id": "t-system-field-employee-eTGOLocation",
+        "category": "system-field",
+        "entity": "employee",
+        "field": "eTGOLocation",
+        "runner": "node",
+        "description": "System field 'eTGOLocation' should exist in backend but not frontend for employee"
       },
       {
         "id": "t-system-field-employee-etgoPhone",
@@ -18031,6 +18103,14 @@
         "description": "System field 'etgoLastname' should exist in backend but not frontend for vendorCreditor"
       },
       {
+        "id": "t-system-field-vendorCreditor-eTGOLocation",
+        "category": "system-field",
+        "entity": "vendorCreditor",
+        "field": "eTGOLocation",
+        "runner": "node",
+        "description": "System field 'eTGOLocation' should exist in backend but not frontend for vendorCreditor"
+      },
+      {
         "id": "t-system-field-vendorCreditor-etgoPhone",
         "category": "system-field",
         "entity": "vendorCreditor",
@@ -18641,23 +18721,23 @@
       }
     ],
     "summary": {
-      "total": 1059,
+      "total": 1064,
       "byCategory": {
         "action-endpoint": 6,
         "crud-flags": 15,
         "default-value-type": 46,
         "displaylogic-evaluable": 55,
         "displaylogic-valid": 55,
-        "field-presence": 141,
-        "field-type": 141,
+        "field-presence": 142,
+        "field-type": 142,
         "rule-declared": 29,
         "searchable-filters": 4,
         "selector-endpoint": 41,
-        "system-field": 511,
+        "system-field": 514,
         "visibility": 15
       },
       "byRunner": {
-        "node": 1059,
+        "node": 1064,
         "junit": 0
       }
     }

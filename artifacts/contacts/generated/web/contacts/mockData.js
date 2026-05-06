@@ -29,7 +29,6 @@ export const businessPartner = [
     "bPCurrencyID": "USD",
     "isCustomerConsent": "Acme Corp",
     "etgoIsperson": "Sample etgoIsperson",
-    "eTGOLocation": "Sample eTGOLocation",
     "operator": "Sample operator",
     "creditUsed": 38907,
     "paymentTerms": "Sample paymentTerms",
@@ -43,7 +42,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-002",
@@ -73,7 +73,6 @@ export const businessPartner = [
     "bPCurrencyID": "EUR",
     "isCustomerConsent": "TechFlow Inc",
     "etgoIsperson": "Sample etgoIsperson",
-    "eTGOLocation": "Sample eTGOLocation",
     "operator": "Sample operator",
     "creditUsed": 9306,
     "paymentTerms": "Sample paymentTerms",
@@ -87,7 +86,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-003",
@@ -117,7 +117,6 @@ export const businessPartner = [
     "bPCurrencyID": "GBP",
     "isCustomerConsent": "Global Trade Ltd",
     "etgoIsperson": "Sample etgoIsperson",
-    "eTGOLocation": "Sample eTGOLocation",
     "operator": "Sample operator",
     "creditUsed": 11544,
     "paymentTerms": "Sample paymentTerms",
@@ -131,7 +130,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-004",
@@ -161,7 +161,6 @@ export const businessPartner = [
     "bPCurrencyID": "USD",
     "isCustomerConsent": "Summit Industries",
     "etgoIsperson": "Sample etgoIsperson",
-    "eTGOLocation": "Sample eTGOLocation",
     "operator": "Sample operator",
     "creditUsed": 11872,
     "paymentTerms": "Sample paymentTerms",
@@ -175,7 +174,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-005",
@@ -205,7 +205,6 @@ export const businessPartner = [
     "bPCurrencyID": "EUR",
     "isCustomerConsent": "Pacific Partners",
     "etgoIsperson": "Sample etgoIsperson",
-    "eTGOLocation": "Sample eTGOLocation",
     "operator": "Sample operator",
     "creditUsed": 48460,
     "paymentTerms": "Sample paymentTerms",
@@ -219,7 +218,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-006",
@@ -249,7 +249,6 @@ export const businessPartner = [
     "bPCurrencyID": "GBP",
     "isCustomerConsent": "Alpine Solutions",
     "etgoIsperson": "Sample etgoIsperson",
-    "eTGOLocation": "Sample eTGOLocation",
     "operator": "Sample operator",
     "creditUsed": 45418,
     "paymentTerms": "Sample paymentTerms",
@@ -263,7 +262,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-007",
@@ -293,7 +293,6 @@ export const businessPartner = [
     "bPCurrencyID": "USD",
     "isCustomerConsent": "Meridian Group",
     "etgoIsperson": "Sample etgoIsperson",
-    "eTGOLocation": "Sample eTGOLocation",
     "operator": "Sample operator",
     "creditUsed": 33840,
     "paymentTerms": "Sample paymentTerms",
@@ -307,7 +306,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-008",
@@ -337,7 +337,6 @@ export const businessPartner = [
     "bPCurrencyID": "EUR",
     "isCustomerConsent": "Vertex Systems",
     "etgoIsperson": "Sample etgoIsperson",
-    "eTGOLocation": "Sample eTGOLocation",
     "operator": "Sample operator",
     "creditUsed": 25716,
     "paymentTerms": "Sample paymentTerms",
@@ -351,7 +350,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-009",
@@ -381,7 +381,6 @@ export const businessPartner = [
     "bPCurrencyID": "GBP",
     "isCustomerConsent": "Atlas Manufacturing",
     "etgoIsperson": "Sample etgoIsperson",
-    "eTGOLocation": "Sample eTGOLocation",
     "operator": "Sample operator",
     "creditUsed": 44780,
     "paymentTerms": "Sample paymentTerms",
@@ -395,7 +394,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-010",
@@ -425,7 +425,6 @@ export const businessPartner = [
     "bPCurrencyID": "USD",
     "isCustomerConsent": "Nova Enterprises",
     "etgoIsperson": "Sample etgoIsperson",
-    "eTGOLocation": "Sample eTGOLocation",
     "operator": "Sample operator",
     "creditUsed": 12483,
     "paymentTerms": "Sample paymentTerms",
@@ -439,7 +438,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-011",
@@ -469,7 +469,6 @@ export const businessPartner = [
     "bPCurrencyID": "EUR",
     "isCustomerConsent": "Pinnacle Services",
     "etgoIsperson": "Sample etgoIsperson",
-    "eTGOLocation": "Sample eTGOLocation",
     "operator": "Sample operator",
     "creditUsed": 46022,
     "paymentTerms": "Sample paymentTerms",
@@ -483,7 +482,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-012",
@@ -513,7 +513,6 @@ export const businessPartner = [
     "bPCurrencyID": "GBP",
     "isCustomerConsent": "Horizon Labs",
     "etgoIsperson": "Sample etgoIsperson",
-    "eTGOLocation": "Sample eTGOLocation",
     "operator": "Sample operator",
     "creditUsed": 38634,
     "paymentTerms": "Sample paymentTerms",
@@ -527,7 +526,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   }
 ];
 
