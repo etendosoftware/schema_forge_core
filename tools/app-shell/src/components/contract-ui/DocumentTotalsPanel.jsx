@@ -50,7 +50,7 @@ export default function DocumentTotalsPanel({
   // Without this guard the panel closes during async load (header arrives before lines),
   // leaving totalDiscountOpen=false while inputPct still holds the saved percentage.
   useEffect(() => {
-    if (lines.length === 0 && pendingLine == null && !(totalDiscountPct > 0)) {
+    if (lines.length === 0 && pendingLine == null && totalDiscountPct <= 0) {
       setTotalDiscountOpen(false);
     }
   }, [lines.length, pendingLine, totalDiscountPct]);

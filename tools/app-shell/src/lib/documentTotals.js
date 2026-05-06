@@ -10,8 +10,14 @@
  * @param lineConfig    - { qtyField, priceField, discountField, grossField }
  * @param totalDiscountPct - optional document-level discount percentage (0–100)
  */
+
+function applyEditingLine(lines, editingLine) {
+  if (!editingLine?.id) return lines;
+  return lines.map(l => l.id === editingLine.id ? { ...l, ...editingLine } : l);
+}
+
 export function computeDocumentTotals(
-  lines = [],
+  lines,
   pendingLine,
   editingLine,
   lineConfig,
@@ -26,10 +32,10 @@ export function computeDocumentTotals(
     totalDiscountAmt: null,
   };
 
+  const safeLines = lines || [];
+
   // Sidebar editing: replace the matching saved line with live sidebar values.
-  const effectiveLines = editingLine?.id
-    ? lines.map(l => l.id === editingLine.id ? { ...l, ...editingLine } : l)
-    : lines;
+  const effectiveLines = applyEditingLine(safeLines, editingLine);
 
   // All lines to aggregate: effective saved lines + optional in-progress add-row.
   const allLines = pendingLine ? [...effectiveLines, pendingLine] : effectiveLines;
@@ -67,9 +73,10 @@ export function computeDocumentTotals(
 
   // Total discount amount applied on top of per-product discounts.
   const pct = Math.max(0, Math.min(100, totalDiscountPct || 0));
-  const totalDiscountAmt = netSubtotal != null && pct > 0
-    ? netSubtotal * pct / 100
-    : (netSubtotal != null ? 0 : null);
+  let totalDiscountAmt = null;
+  if (netSubtotal != null) {
+    totalDiscountAmt = pct > 0 ? netSubtotal * pct / 100 : 0;
+  }
 
   // When a total discount is active, scale both grandTotal and taxAmt proportionally.
   // Tax stays proportional to the reduced base: taxAmt_new = taxAmt_base × (1 − pct/100).
