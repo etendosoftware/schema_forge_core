@@ -21,7 +21,7 @@ const SII_RECIBIDAS_ANT_ENTITY   = 'receivedInvoices(previousPeriod)';
 // ── Monitor Verifactu entity names ────────────────────────────────────────────
 const VF_SPEC              = 'monitor-verifactu';
 const VF_ACEPTADAS_ENTITY  = 'facturasAceptadas';
-const VF_PARCIAL_ENTITY    = 'facturasParcialmenteAceptadas';
+const VF_PARCIAL_ENTITY    = 'partiallyAcceptedInvoices';
 const VF_RECHAZADAS_ENTITY = 'facturasRechazadas';
 const VF_INVALIDAS_ENTITY  = 'facturasInválidas';
 

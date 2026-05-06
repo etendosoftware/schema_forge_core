@@ -270,9 +270,9 @@ export const facturasRechazadas = [
   }
 ];
 
-export const facturasParcialmenteAceptadas = [
+export const partiallyAcceptedInvoices = [
   {
-    "id": "mock-facturasParcialmenteAceptadas-001",
+    "id": "mock-partiallyAcceptedInvoices-001",
     "issuerTaxID": "VAT 21%",
     "active": "Sample active",
     "sentToVerifactu": "Sample sentToVerifactu",
@@ -285,7 +285,7 @@ export const facturasParcialmenteAceptadas = [
     "cabeceraDeEmisorId": "mock-cabeceraDeEmisor-001"
   },
   {
-    "id": "mock-facturasParcialmenteAceptadas-002",
+    "id": "mock-partiallyAcceptedInvoices-002",
     "issuerTaxID": "VAT 10%",
     "active": "Sample active",
     "sentToVerifactu": "Sample sentToVerifactu",
@@ -298,7 +298,7 @@ export const facturasParcialmenteAceptadas = [
     "cabeceraDeEmisorId": "mock-cabeceraDeEmisor-002"
   },
   {
-    "id": "mock-facturasParcialmenteAceptadas-003",
+    "id": "mock-partiallyAcceptedInvoices-003",
     "issuerTaxID": "VAT 0%",
     "active": "Sample active",
     "sentToVerifactu": "Sample sentToVerifactu",
@@ -311,7 +311,7 @@ export const facturasParcialmenteAceptadas = [
     "cabeceraDeEmisorId": "mock-cabeceraDeEmisor-003"
   },
   {
-    "id": "mock-facturasParcialmenteAceptadas-004",
+    "id": "mock-partiallyAcceptedInvoices-004",
     "issuerTaxID": "Sales Tax 8.5%",
     "active": "Sample active",
     "sentToVerifactu": "Sample sentToVerifactu",
@@ -324,7 +324,7 @@ export const facturasParcialmenteAceptadas = [
     "cabeceraDeEmisorId": "mock-cabeceraDeEmisor-004"
   },
   {
-    "id": "mock-facturasParcialmenteAceptadas-005",
+    "id": "mock-partiallyAcceptedInvoices-005",
     "issuerTaxID": "Exempt",
     "active": "Sample active",
     "sentToVerifactu": "Sample sentToVerifactu",
@@ -337,7 +337,7 @@ export const facturasParcialmenteAceptadas = [
     "cabeceraDeEmisorId": "mock-cabeceraDeEmisor-005"
   },
   {
-    "id": "mock-facturasParcialmenteAceptadas-006",
+    "id": "mock-partiallyAcceptedInvoices-006",
     "issuerTaxID": "Reduced Rate 5%",
     "active": "Sample active",
     "sentToVerifactu": "Sample sentToVerifactu",
@@ -350,7 +350,7 @@ export const facturasParcialmenteAceptadas = [
     "cabeceraDeEmisorId": "mock-cabeceraDeEmisor-006"
   },
   {
-    "id": "mock-facturasParcialmenteAceptadas-007",
+    "id": "mock-partiallyAcceptedInvoices-007",
     "issuerTaxID": "Standard Rate 20%",
     "active": "Sample active",
     "sentToVerifactu": "Sample sentToVerifactu",
@@ -363,7 +363,7 @@ export const facturasParcialmenteAceptadas = [
     "cabeceraDeEmisorId": "mock-cabeceraDeEmisor-007"
   },
   {
-    "id": "mock-facturasParcialmenteAceptadas-008",
+    "id": "mock-partiallyAcceptedInvoices-008",
     "issuerTaxID": "VAT 21%",
     "active": "Sample active",
     "sentToVerifactu": "Sample sentToVerifactu",
@@ -376,7 +376,7 @@ export const facturasParcialmenteAceptadas = [
     "cabeceraDeEmisorId": "mock-cabeceraDeEmisor-008"
   },
   {
-    "id": "mock-facturasParcialmenteAceptadas-009",
+    "id": "mock-partiallyAcceptedInvoices-009",
     "issuerTaxID": "VAT 10%",
     "active": "Sample active",
     "sentToVerifactu": "Sample sentToVerifactu",
@@ -389,7 +389,7 @@ export const facturasParcialmenteAceptadas = [
     "cabeceraDeEmisorId": "mock-cabeceraDeEmisor-009"
   },
   {
-    "id": "mock-facturasParcialmenteAceptadas-010",
+    "id": "mock-partiallyAcceptedInvoices-010",
     "issuerTaxID": "VAT 0%",
     "active": "Sample active",
     "sentToVerifactu": "Sample sentToVerifactu",
@@ -402,7 +402,7 @@ export const facturasParcialmenteAceptadas = [
     "cabeceraDeEmisorId": "mock-cabeceraDeEmisor-010"
   },
   {
-    "id": "mock-facturasParcialmenteAceptadas-011",
+    "id": "mock-partiallyAcceptedInvoices-011",
     "issuerTaxID": "Sales Tax 8.5%",
     "active": "Sample active",
     "sentToVerifactu": "Sample sentToVerifactu",
@@ -415,7 +415,7 @@ export const facturasParcialmenteAceptadas = [
     "cabeceraDeEmisorId": "mock-cabeceraDeEmisor-011"
   },
   {
-    "id": "mock-facturasParcialmenteAceptadas-012",
+    "id": "mock-partiallyAcceptedInvoices-012",
     "issuerTaxID": "Exempt",
     "active": "Sample active",
     "sentToVerifactu": "Sample sentToVerifactu",

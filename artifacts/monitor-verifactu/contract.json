@@ -1,7 +1,8 @@
 {
   "version": "0.1.0",
   "generatedAt": "2026-05-04T17:02:25.021Z",
-  "checksum": "9b84b60a4e830309",
+  "updatedAt": "2026-05-06T15:48:47.589Z",
+  "checksum": "f40e66f2f0b6d120",
   "frontendContract": {
     "window": {
       "id": "F4675DAB02134762B66881DAE4672AD0",
@@ -304,7 +305,7 @@
         "searchableFields": [],
         "computedFields": []
       },
-      "facturasParcialmenteAceptadas": {
+      "partiallyAcceptedInvoices": {
         "tableName": "etvfac_inv_sent_status_mv",
         "tabId": "126EBD2F625344E1A22C11219217F551",
         "tabName": "Facturas Parcialmente Aceptadas",
@@ -1092,7 +1093,7 @@
           }
         ]
       },
-      "facturasParcialmenteAceptadas": {
+      "partiallyAcceptedInvoices": {
         "tableName": "etvfac_inv_sent_status_mv",
         "tabId": "126EBD2F625344E1A22C11219217F551",
         "tabName": "Facturas Parcialmente Aceptadas",
@@ -1633,32 +1634,32 @@
       },
       {
         "method": "GET",
-        "path": "/facturasParcialmenteAceptadas",
-        "entity": "facturasParcialmenteAceptadas",
+        "path": "/partiallyAcceptedInvoices",
+        "entity": "partiallyAcceptedInvoices",
         "supportedFilters": []
       },
       {
         "method": "GET",
-        "path": "/facturasParcialmenteAceptadas/:id",
-        "entity": "facturasParcialmenteAceptadas",
+        "path": "/partiallyAcceptedInvoices/:id",
+        "entity": "partiallyAcceptedInvoices",
         "supportedFilters": []
       },
       {
         "method": "POST",
-        "path": "/facturasParcialmenteAceptadas",
-        "entity": "facturasParcialmenteAceptadas",
+        "path": "/partiallyAcceptedInvoices",
+        "entity": "partiallyAcceptedInvoices",
         "supportedFilters": []
       },
       {
         "method": "PUT",
-        "path": "/facturasParcialmenteAceptadas/:id",
-        "entity": "facturasParcialmenteAceptadas",
+        "path": "/partiallyAcceptedInvoices/:id",
+        "entity": "partiallyAcceptedInvoices",
         "supportedFilters": []
       },
       {
         "method": "DELETE",
-        "path": "/facturasParcialmenteAceptadas/:id",
-        "entity": "facturasParcialmenteAceptadas",
+        "path": "/partiallyAcceptedInvoices/:id",
+        "entity": "partiallyAcceptedInvoices",
         "supportedFilters": []
       },
       {
@@ -1750,15 +1751,15 @@
         "detailUrl": "/sws/neo/monitor-verifactu/facturasRechazadas/{id}",
         "supportedFilters": []
       },
-      "facturasParcialmenteAceptadas": {
+      "partiallyAcceptedInvoices": {
         "get": true,
         "getById": true,
         "post": true,
         "put": true,
         "patch": true,
         "delete": true,
-        "listUrl": "/sws/neo/monitor-verifactu/facturasParcialmenteAceptadas",
-        "detailUrl": "/sws/neo/monitor-verifactu/facturasParcialmenteAceptadas/{id}",
+        "listUrl": "/sws/neo/monitor-verifactu/partiallyAcceptedInvoices",
+        "detailUrl": "/sws/neo/monitor-verifactu/partiallyAcceptedInvoices/{id}",
         "supportedFilters": []
       },
       "facturasAceptadas": {
@@ -1794,12 +1795,12 @@
         "url": "/sws/neo/monitor-verifactu/facturasRechazadas/selectors/invoice"
       },
       {
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "invoice",
         "column": "C_Invoice_ID",
         "reference": "Invoice",
         "inputMode": "selector",
-        "url": "/sws/neo/monitor-verifactu/facturasParcialmenteAceptadas/selectors/invoice"
+        "url": "/sws/neo/monitor-verifactu/partiallyAcceptedInvoices/selectors/invoice"
       },
       {
         "entity": "facturasAceptadas",
@@ -1844,10 +1845,10 @@
         "processType": "obuiapp"
       },
       {
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "correctInvoice",
         "column": "Correct_Invoice",
-        "url": "/sws/neo/monitor-verifactu/facturasParcialmenteAceptadas/{id}/action/correctInvoice",
+        "url": "/sws/neo/monitor-verifactu/partiallyAcceptedInvoices/{id}/action/correctInvoice",
         "processId": "F353F2A7307B464CA2C6515CBEFB0D93",
         "processType": "obuiapp"
       },
@@ -2184,153 +2185,153 @@
       {
         "id": "t-38",
         "category": "field-presence",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "issuerTaxID",
         "runner": "node",
-        "description": "Field 'issuerTaxID' should be present in facturasParcialmenteAceptadas"
+        "description": "Field 'issuerTaxID' should be present in partiallyAcceptedInvoices"
       },
       {
         "id": "t-39",
         "category": "field-presence",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "active",
         "runner": "node",
-        "description": "Field 'active' should be present in facturasParcialmenteAceptadas"
+        "description": "Field 'active' should be present in partiallyAcceptedInvoices"
       },
       {
         "id": "t-40",
         "category": "field-presence",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "sentToVerifactu",
         "runner": "node",
-        "description": "Field 'sentToVerifactu' should be present in facturasParcialmenteAceptadas"
+        "description": "Field 'sentToVerifactu' should be present in partiallyAcceptedInvoices"
       },
       {
         "id": "t-41",
         "category": "field-presence",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "errorReason",
         "runner": "node",
-        "description": "Field 'errorReason' should be present in facturasParcialmenteAceptadas"
+        "description": "Field 'errorReason' should be present in partiallyAcceptedInvoices"
       },
       {
         "id": "t-42",
         "category": "field-presence",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "typeOperation",
         "runner": "node",
-        "description": "Field 'typeOperation' should be present in facturasParcialmenteAceptadas"
+        "description": "Field 'typeOperation' should be present in partiallyAcceptedInvoices"
       },
       {
         "id": "t-43",
         "category": "field-presence",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "codeError",
         "runner": "node",
-        "description": "Field 'codeError' should be present in facturasParcialmenteAceptadas"
+        "description": "Field 'codeError' should be present in partiallyAcceptedInvoices"
       },
       {
         "id": "t-44",
         "category": "field-presence",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "isSubsanation",
         "runner": "node",
-        "description": "Field 'isSubsanation' should be present in facturasParcialmenteAceptadas"
+        "description": "Field 'isSubsanation' should be present in partiallyAcceptedInvoices"
       },
       {
         "id": "t-45",
         "category": "field-presence",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "invoice",
         "runner": "node",
-        "description": "Field 'invoice' should be present in facturasParcialmenteAceptadas"
+        "description": "Field 'invoice' should be present in partiallyAcceptedInvoices"
       },
       {
         "id": "t-46",
         "category": "field-presence",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "verifactuSendingStatus",
         "runner": "node",
-        "description": "Field 'verifactuSendingStatus' should be present in facturasParcialmenteAceptadas"
+        "description": "Field 'verifactuSendingStatus' should be present in partiallyAcceptedInvoices"
       },
       {
         "id": "t-47",
         "category": "field-type",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "issuerTaxID",
         "runner": "node",
-        "description": "Field 'issuerTaxID' should have type 'string' in facturasParcialmenteAceptadas"
+        "description": "Field 'issuerTaxID' should have type 'string' in partiallyAcceptedInvoices"
       },
       {
         "id": "t-48",
         "category": "field-type",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "active",
         "runner": "node",
-        "description": "Field 'active' should have type 'boolean' in facturasParcialmenteAceptadas"
+        "description": "Field 'active' should have type 'boolean' in partiallyAcceptedInvoices"
       },
       {
         "id": "t-49",
         "category": "field-type",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "sentToVerifactu",
         "runner": "node",
-        "description": "Field 'sentToVerifactu' should have type 'boolean' in facturasParcialmenteAceptadas"
+        "description": "Field 'sentToVerifactu' should have type 'boolean' in partiallyAcceptedInvoices"
       },
       {
         "id": "t-50",
         "category": "field-type",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "errorReason",
         "runner": "node",
-        "description": "Field 'errorReason' should have type 'string' in facturasParcialmenteAceptadas"
+        "description": "Field 'errorReason' should have type 'string' in partiallyAcceptedInvoices"
       },
       {
         "id": "t-51",
         "category": "field-type",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "typeOperation",
         "runner": "node",
-        "description": "Field 'typeOperation' should have type 'string' in facturasParcialmenteAceptadas"
+        "description": "Field 'typeOperation' should have type 'string' in partiallyAcceptedInvoices"
       },
       {
         "id": "t-52",
         "category": "field-type",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "codeError",
         "runner": "node",
-        "description": "Field 'codeError' should have type 'string' in facturasParcialmenteAceptadas"
+        "description": "Field 'codeError' should have type 'string' in partiallyAcceptedInvoices"
       },
       {
         "id": "t-53",
         "category": "field-type",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "isSubsanation",
         "runner": "node",
-        "description": "Field 'isSubsanation' should have type 'boolean' in facturasParcialmenteAceptadas"
+        "description": "Field 'isSubsanation' should have type 'boolean' in partiallyAcceptedInvoices"
       },
       {
         "id": "t-54",
         "category": "field-type",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "invoice",
         "runner": "node",
-        "description": "Field 'invoice' should have type 'string' in facturasParcialmenteAceptadas"
+        "description": "Field 'invoice' should have type 'string' in partiallyAcceptedInvoices"
       },
       {
         "id": "t-55",
         "category": "field-type",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "verifactuSendingStatus",
         "runner": "node",
-        "description": "Field 'verifactuSendingStatus' should have type 'string' in facturasParcialmenteAceptadas"
+        "description": "Field 'verifactuSendingStatus' should have type 'string' in partiallyAcceptedInvoices"
       },
       {
         "id": "t-56",
         "category": "visibility",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "runner": "node",
-        "description": "Entity 'facturasParcialmenteAceptadas' should only expose visible fields in frontend"
+        "description": "Entity 'partiallyAcceptedInvoices' should only expose visible fields in frontend"
       },
       {
         "id": "t-57",
@@ -2837,82 +2838,82 @@
       {
         "id": "t-120",
         "category": "system-field",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "organization",
         "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+        "description": "System field 'organization' should exist in backend but not frontend for partiallyAcceptedInvoices"
       },
       {
         "id": "t-121",
         "category": "system-field",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "client",
         "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+        "description": "System field 'client' should exist in backend but not frontend for partiallyAcceptedInvoices"
       },
       {
         "id": "t-122",
         "category": "system-field",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "invoiceSentStatusID",
         "runner": "node",
-        "description": "System field 'invoiceSentStatusID' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+        "description": "System field 'invoiceSentStatusID' should exist in backend but not frontend for partiallyAcceptedInvoices"
       },
       {
         "id": "t-123",
         "category": "system-field",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "correctInvoice",
         "runner": "node",
-        "description": "System field 'correctInvoice' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+        "description": "System field 'correctInvoice' should exist in backend but not frontend for partiallyAcceptedInvoices"
       },
       {
         "id": "t-124",
         "category": "system-field",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "creationDate",
         "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+        "description": "System field 'creationDate' should exist in backend but not frontend for partiallyAcceptedInvoices"
       },
       {
         "id": "t-125",
         "category": "system-field",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "createdBy",
         "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+        "description": "System field 'createdBy' should exist in backend but not frontend for partiallyAcceptedInvoices"
       },
       {
         "id": "t-126",
         "category": "system-field",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "cSV",
         "runner": "node",
-        "description": "System field 'cSV' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+        "description": "System field 'cSV' should exist in backend but not frontend for partiallyAcceptedInvoices"
       },
       {
         "id": "t-127",
         "category": "system-field",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "hash",
         "runner": "node",
-        "description": "System field 'hash' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+        "description": "System field 'hash' should exist in backend but not frontend for partiallyAcceptedInvoices"
       },
       {
         "id": "t-128",
         "category": "system-field",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "updated",
         "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+        "description": "System field 'updated' should exist in backend but not frontend for partiallyAcceptedInvoices"
       },
       {
         "id": "t-129",
         "category": "system-field",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "updatedBy",
         "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for facturasParcialmenteAceptadas"
+        "description": "System field 'updatedBy' should exist in backend but not frontend for partiallyAcceptedInvoices"
       },
       {
         "id": "t-130",
@@ -3125,9 +3126,9 @@
       {
         "id": "t-157",
         "category": "crud-flags",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "runner": "node",
-        "description": "CRUD flags for 'facturasParcialmenteAceptadas' should all be booleans"
+        "description": "CRUD flags for 'partiallyAcceptedInvoices' should all be booleans"
       },
       {
         "id": "t-158",
@@ -3154,10 +3155,10 @@
       {
         "id": "t-161",
         "category": "selector-endpoint",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "invoice",
         "runner": "node",
-        "description": "Selector endpoint for 'invoice' in facturasParcialmenteAceptadas should exist"
+        "description": "Selector endpoint for 'invoice' in partiallyAcceptedInvoices should exist"
       },
       {
         "id": "t-162",
@@ -3202,10 +3203,10 @@
       {
         "id": "t-167",
         "category": "action-endpoint",
-        "entity": "facturasParcialmenteAceptadas",
+        "entity": "partiallyAcceptedInvoices",
         "field": "correctInvoice",
         "runner": "node",
-        "description": "Action endpoint for 'correctInvoice' in facturasParcialmenteAceptadas should exist"
+        "description": "Action endpoint for 'correctInvoice' in partiallyAcceptedInvoices should exist"
       },
       {
         "id": "t-168",

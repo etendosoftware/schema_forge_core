@@ -80,15 +80,15 @@ export const api = {
       "detailUrl": "/sws/neo/monitor-verifactu/facturasRechazadas/{id}",
       "supportedFilters": []
     },
-    "facturasParcialmenteAceptadas": {
+    "partiallyAcceptedInvoices": {
       "get": true,
       "getById": true,
       "post": true,
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/monitor-verifactu/facturasParcialmenteAceptadas",
-      "detailUrl": "/sws/neo/monitor-verifactu/facturasParcialmenteAceptadas/{id}",
+      "listUrl": "/sws/neo/monitor-verifactu/partiallyAcceptedInvoices",
+      "detailUrl": "/sws/neo/monitor-verifactu/partiallyAcceptedInvoices/{id}",
       "supportedFilters": []
     },
     "facturasAceptadas": {
@@ -124,12 +124,12 @@ export const api = {
       "url": "/sws/neo/monitor-verifactu/facturasRechazadas/selectors/invoice"
     },
     {
-      "entity": "facturasParcialmenteAceptadas",
+      "entity": "partiallyAcceptedInvoices",
       "field": "invoice",
       "column": "C_Invoice_ID",
       "reference": "Invoice",
       "inputMode": "selector",
-      "url": "/sws/neo/monitor-verifactu/facturasParcialmenteAceptadas/selectors/invoice"
+      "url": "/sws/neo/monitor-verifactu/partiallyAcceptedInvoices/selectors/invoice"
     },
     {
       "entity": "facturasAceptadas",
@@ -174,10 +174,10 @@ export const api = {
       "processType": "obuiapp"
     },
     {
-      "entity": "facturasParcialmenteAceptadas",
+      "entity": "partiallyAcceptedInvoices",
       "field": "correctInvoice",
       "column": "Correct_Invoice",
-      "url": "/sws/neo/monitor-verifactu/facturasParcialmenteAceptadas/{id}/action/correctInvoice",
+      "url": "/sws/neo/monitor-verifactu/partiallyAcceptedInvoices/{id}/action/correctInvoice",
       "processId": "F353F2A7307B464CA2C6515CBEFB0D93",
       "processType": "obuiapp"
     },

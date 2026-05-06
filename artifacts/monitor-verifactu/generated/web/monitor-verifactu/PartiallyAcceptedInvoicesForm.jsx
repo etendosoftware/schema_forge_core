@@ -1,6 +1,6 @@
 import { EntityForm } from '@/components/contract-ui';
 
-// @sf-generated-start fields:facturasParcialmenteAceptadas
+// @sf-generated-start fields:partiallyAcceptedInvoices
 const fields = [
   { key: 'issuerTaxID', column: 'Legal_Entity_Nif', type: 'text', label: 'NIF de Entidad Legal', section: 'principal' },
   { key: 'active', column: 'Isactive', type: 'checkbox', label: 'Activo', section: 'principal' },
@@ -12,11 +12,11 @@ const fields = [
   { key: 'invoice', column: 'C_Invoice_ID', type: 'selector', label: 'Factura', section: 'other', reference: 'Invoice', inputMode: 'selector' },
   { key: 'verifactuSendingStatus', column: 'EM_Etvfac_Invoice_Status', type: 'select', label: 'Estado de Envío a Verifactu', section: 'other', options: [{ value: 'AC', label: 'Aceptada' }, { value: 'AE', label: 'Aceptada con Errores' }, { value: 'IN', label: 'Inválida' }, { value: 'PE', label: 'Pendiente' }, { value: 'ER', label: 'Rechazada' }] },
 ];
-// @sf-generated-end fields:facturasParcialmenteAceptadas
+// @sf-generated-end fields:partiallyAcceptedInvoices
 
-// @sf-generated-start component:FacturasParcialmenteAceptadasForm
-export default function FacturasParcialmenteAceptadasForm(props) {
+// @sf-generated-start component:PartiallyAcceptedInvoicesForm
+export default function PartiallyAcceptedInvoicesForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
 
-// @sf-generated-end component:FacturasParcialmenteAceptadasForm
+// @sf-generated-end component:PartiallyAcceptedInvoicesForm

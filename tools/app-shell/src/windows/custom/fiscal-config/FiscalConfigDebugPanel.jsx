@@ -116,20 +116,12 @@ async function deleteNeoRecord(base, spec, entity, orgId, token, idField) {
 
 async function deleteCertificates(base, orgId, token) {
   const res = await fetch(`${base}/certificate?${new URLSearchParams({ orgId })}`, {
+    method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error(`Fetch certificate HTTP ${res.status}`);
-  const records = (await res.json())?.data ?? [];
-  if (records.length === 0) return 0;
-  let deleted = 0;
-  await Promise.all(records.map(async (r) => {
-    const delRes = await fetch(`${base}/certificate/${r.id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (delRes.ok) deleted++;
-  }));
-  return deleted;
+  if (!res.ok) throw new Error(`Delete certificate HTTP ${res.status}`);
+  const json = await res.json().catch(() => ({}));
+  return json?.deleted ?? 0;
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
