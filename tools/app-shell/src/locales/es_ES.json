@@ -17748,6 +17748,7 @@
     "datePickerOk": "Ok",
     "datePickerMonth": "Mes",
     "datePickerYear": "Año",
+    "datePickerOpen": "Abrir calendario",
     "soOrderConfirmedShipmentError": "El pedido fue procesado pero no se pudo crear el albarán. ",
     "soOrderConfirmedInvoiceError": "El pedido fue procesado pero no se pudo crear la factura. ",
     "soAlreadyCreated": "Ya creado",

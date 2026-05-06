@@ -17509,6 +17509,7 @@
     "datePickerOk": "OK",
     "datePickerMonth": "Month",
     "datePickerYear": "Year",
+    "datePickerOpen": "Open calendar",
     "soOrderConfirmedShipmentError": "Order confirmed, but shipment could not be created. ",
     "soOrderConfirmedInvoiceError": "Order confirmed, but invoice could not be created. ",
     "soAlreadyCreated": "Already created",
