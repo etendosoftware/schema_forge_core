@@ -28,7 +28,8 @@ export const header = [
     "chargeAmount": 38907,
     "charge": "Sample charge",
     "project": "Sample project",
-    "prepaymentAmount": 38907
+    "prepaymentAmount": 38907,
+    "eTGODueDate": "2026-01-15"
   },
   {
     "id": "mock-header-002",
@@ -57,7 +58,8 @@ export const header = [
     "chargeAmount": 9306,
     "charge": "Sample charge",
     "project": "Sample project",
-    "prepaymentAmount": 9306
+    "prepaymentAmount": 9306,
+    "eTGODueDate": "2026-01-16"
   },
   {
     "id": "mock-header-003",
@@ -86,7 +88,8 @@ export const header = [
     "chargeAmount": 11544,
     "charge": "Sample charge",
     "project": "Sample project",
-    "prepaymentAmount": 11544
+    "prepaymentAmount": 11544,
+    "eTGODueDate": "2026-01-17"
   },
   {
     "id": "mock-header-004",
@@ -115,7 +118,8 @@ export const header = [
     "chargeAmount": 11872,
     "charge": "Sample charge",
     "project": "Sample project",
-    "prepaymentAmount": 11872
+    "prepaymentAmount": 11872,
+    "eTGODueDate": "2026-01-18"
   },
   {
     "id": "mock-header-005",
@@ -144,7 +148,8 @@ export const header = [
     "chargeAmount": 48460,
     "charge": "Sample charge",
     "project": "Sample project",
-    "prepaymentAmount": 48460
+    "prepaymentAmount": 48460,
+    "eTGODueDate": "2026-01-19"
   },
   {
     "id": "mock-header-006",
@@ -173,7 +178,8 @@ export const header = [
     "chargeAmount": 45418,
     "charge": "Sample charge",
     "project": "Sample project",
-    "prepaymentAmount": 45418
+    "prepaymentAmount": 45418,
+    "eTGODueDate": "2026-01-20"
   },
   {
     "id": "mock-header-007",
@@ -202,7 +208,8 @@ export const header = [
     "chargeAmount": 33840,
     "charge": "Sample charge",
     "project": "Sample project",
-    "prepaymentAmount": 33840
+    "prepaymentAmount": 33840,
+    "eTGODueDate": "2026-01-21"
   },
   {
     "id": "mock-header-008",
@@ -231,7 +238,8 @@ export const header = [
     "chargeAmount": 25716,
     "charge": "Sample charge",
     "project": "Sample project",
-    "prepaymentAmount": 25716
+    "prepaymentAmount": 25716,
+    "eTGODueDate": "2026-01-22"
   },
   {
     "id": "mock-header-009",
@@ -260,7 +268,8 @@ export const header = [
     "chargeAmount": 44780,
     "charge": "Sample charge",
     "project": "Sample project",
-    "prepaymentAmount": 44780
+    "prepaymentAmount": 44780,
+    "eTGODueDate": "2026-01-23"
   },
   {
     "id": "mock-header-010",
@@ -289,7 +298,8 @@ export const header = [
     "chargeAmount": 12483,
     "charge": "Sample charge",
     "project": "Sample project",
-    "prepaymentAmount": 12483
+    "prepaymentAmount": 12483,
+    "eTGODueDate": "2026-01-24"
   },
   {
     "id": "mock-header-011",
@@ -318,7 +328,8 @@ export const header = [
     "chargeAmount": 46022,
     "charge": "Sample charge",
     "project": "Sample project",
-    "prepaymentAmount": 46022
+    "prepaymentAmount": 46022,
+    "eTGODueDate": "2026-01-25"
   },
   {
     "id": "mock-header-012",
@@ -347,7 +358,8 @@ export const header = [
     "chargeAmount": 38634,
     "charge": "Sample charge",
     "project": "Sample project",
-    "prepaymentAmount": 38634
+    "prepaymentAmount": 38634,
+    "eTGODueDate": "2026-01-26"
   }
 ];
 

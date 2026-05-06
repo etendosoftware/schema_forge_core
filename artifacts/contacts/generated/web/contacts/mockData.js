@@ -42,7 +42,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-002",
@@ -85,7 +86,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-003",
@@ -128,7 +130,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-004",
@@ -171,7 +174,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-005",
@@ -214,7 +218,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-006",
@@ -257,7 +262,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-007",
@@ -300,7 +306,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-008",
@@ -343,7 +350,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-009",
@@ -386,7 +394,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-010",
@@ -429,7 +438,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-011",
@@ -472,7 +482,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-012",
@@ -515,7 +526,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   }
 ];
 

@@ -6,23 +6,38 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUI } from '@/i18n';
 import { useFiscalConfig } from './useFiscalConfig.js';
+import { detectProfile } from './fiscalConfig.utils.js';
+import { useDebugMode } from '../fiscal-monitor/useDebugMode.js';
 import OnboardingWizard from './OnboardingWizard.jsx';
 import SiiSection from './SiiSection.jsx';
 import TbaiSection from './TbaiSection.jsx';
 import VerifactuSection from './VerifactuSection.jsx';
 import CertSection from './CertSection.jsx';
+import FiscalConfigDebugPanel from './FiscalConfigDebugPanel.jsx';
 
 export default function FiscalConfigPage({ token, apiBaseUrl }) {
   const ui = useUI();
   const navigate = useNavigate();
   const { selectedOrg } = useAuth();
   const orgId = selectedOrg?.id ?? null;
+  const debugMode = useDebugMode();
+
+  // mockOverride = null | { key, sii, tbai, verifactu }  (set by debug panel)
+  const [mockOverride, setMockOverride] = useState(null);
 
   const {
     loading, error, profile,
     siiRecord, tbaiRecord, verifactuRecord,
     refetch,
   } = useFiscalConfig(orgId, token, apiBaseUrl);
+
+  // When mock is active, bypass API result entirely
+  const effectiveProfile = mockOverride
+    ? detectProfile(mockOverride.sii, mockOverride.tbai, mockOverride.verifactu)
+    : profile;
+  const effectiveSii      = mockOverride ? mockOverride.sii      : siiRecord;
+  const effectiveTbai     = mockOverride ? mockOverride.tbai     : tbaiRecord;
+  const effectiveVerifactu= mockOverride ? mockOverride.verifactu: verifactuRecord;
 
   const siiRef  = useRef(null);
   const tbaiRef = useRef(null);
@@ -63,25 +78,46 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
     );
   }
 
+  const DebugPanel = debugMode ? (
+    <FiscalConfigDebugPanel
+      orgId={orgId}
+      token={token}
+      apiBaseUrl={apiBaseUrl}
+      onDeleted={refetch}
+      onSetMock={setMockOverride}
+      activeMockKey={mockOverride?.key ?? null}
+    />
+  ) : null;
+
+  // When mock is active, skip loading/error entirely and go straight to the effective profile
+  const showLoading  = !mockOverride && loading;
+  const showError    = !mockOverride && !loading && error;
+  const showContent  = mockOverride || (!loading && !error);
+
   // Wizard needs the full height of the card — render it without any outer wrapper.
-  if (orgId && !loading && !error && profile === 'unconfigured') {
+  if ((orgId || mockOverride) && !showLoading && !showError && effectiveProfile === 'unconfigured') {
     return (
-      <div className="relative h-full overflow-hidden">
-        <WipBadge />
-        <OnboardingWizard
-          orgId={orgId}
-          orgName={selectedOrg?.name}
-          token={token}
-          apiBaseUrl={apiBaseUrl}
-          onComplete={refetch}
-          onGoHome={() => navigate('/dashboard')}
-        />
-      </div>
+      <>
+        {DebugPanel}
+        <div className="relative h-full overflow-hidden">
+          <WipBadge />
+          <OnboardingWizard
+            orgId={orgId}
+            orgName={selectedOrg?.name}
+            token={token}
+            apiBaseUrl={apiBaseUrl}
+            onComplete={refetch}
+            onGoHome={() => navigate('/dashboard')}
+          />
+        </div>
+      </>
     );
   }
 
   // All other states: scrollable content with a standard header.
   return (
+    <>
+      {DebugPanel}
     <div className="relative h-full overflow-y-auto">
       <WipBadge />
       <div className="px-6 py-8">
@@ -94,13 +130,13 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
           </div>
         )}
 
-        {!orgId && (
+        {!orgId && !mockOverride && (
           <p className="text-sm text-muted-foreground text-center py-12">
             {ui('fiscal.noOrg')}
           </p>
         )}
 
-        {loading && (
+        {showLoading && (
           <div className="space-y-4">
             <Skeleton className="h-8 w-full" />
             <Skeleton className="h-32 w-full" />
@@ -108,7 +144,7 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
           </div>
         )}
 
-        {!loading && error && (
+        {showError && (
           <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
             <p className="text-sm text-destructive">{ui('fiscal.loadError', { error })}</p>
             <Button variant="link" onClick={refetch} className="mt-2 h-auto p-0">
@@ -117,16 +153,16 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
           </div>
         )}
 
-        {!loading && !error && profile === 'conflict' && (
+        {showContent && effectiveProfile === 'conflict' && (
           <div className="rounded-lg border border-destructive bg-destructive/10 p-6">
             <h2 className="font-semibold text-destructive">{ui('fiscal.conflict.title')}</h2>
             <p className="text-sm text-muted-foreground mt-2">{ui('fiscal.conflict.body')}</p>
           </div>
         )}
 
-        {!loading && !error && profile === 'sii' && (
+        {showContent && effectiveProfile === 'sii' && (
           <SiiSection
-            record={siiRecord}
+            record={effectiveSii}
             token={token}
             apiBaseUrl={apiBaseUrl}
             orgId={orgId}
@@ -135,9 +171,9 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
           />
         )}
 
-        {!loading && !error && profile === 'sii-navarra' && (
+        {showContent && effectiveProfile === 'sii-navarra' && (
           <SiiSection
-            record={siiRecord}
+            record={effectiveSii}
             token={token}
             apiBaseUrl={apiBaseUrl}
             orgId={orgId}
@@ -146,11 +182,11 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
           />
         )}
 
-        {!loading && !error && profile === 'sii+tbai' && (
+        {showContent && effectiveProfile === 'sii+tbai' && (
           <div className="space-y-10">
             <SiiSection
               ref={siiRef}
-              record={siiRecord}
+              record={effectiveSii}
               token={token}
               apiBaseUrl={apiBaseUrl}
               orgId={orgId}
@@ -164,7 +200,7 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
             <div className="border-t pt-8">
               <TbaiSection
                 ref={tbaiRef}
-                record={tbaiRecord}
+                record={effectiveTbai}
                 token={token}
                 apiBaseUrl={apiBaseUrl}
                 orgId={orgId}
@@ -183,9 +219,9 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
           </div>
         )}
 
-        {!loading && !error && profile === 'tbai' && (
+        {showContent && effectiveProfile === 'tbai' && (
           <TbaiSection
-            record={tbaiRecord}
+            record={effectiveTbai}
             token={token}
             apiBaseUrl={apiBaseUrl}
             orgId={orgId}
@@ -193,9 +229,9 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
           />
         )}
 
-        {!loading && !error && profile === 'verifactu' && (
+        {showContent && effectiveProfile === 'verifactu' && (
           <VerifactuSection
-            record={verifactuRecord}
+            record={effectiveVerifactu}
             token={token}
             apiBaseUrl={apiBaseUrl}
             orgId={orgId}
@@ -204,5 +240,6 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
         )}
       </div>
     </div>
+    </>
   );
 }

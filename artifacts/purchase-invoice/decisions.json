@@ -34,11 +34,13 @@
     "labelOverrides": {
       "es_ES": {
         "POReference": "Nº documento",
-        "OutstandingAmt": "Pendiente de pago"
+        "OutstandingAmt": "Pendiente de pago",
+        "EM_Etgo_Due_Date": "Vencimiento"
       },
       "en_US": {
         "POReference": "Document No.",
-        "OutstandingAmt": "Pending Payment"
+        "OutstandingAmt": "Pending Payment",
+        "EM_Etgo_Due_Date": "Due Date"
       }
     }
   },
@@ -241,6 +243,13 @@
           "grid": true,
           "gridOrder": 6,
           "displayLogic": null
+        },
+        "eTGODueDate": {
+          "visibility": "readOnly",
+          "grid": true,
+          "gridOrder": 7,
+          "form": false,
+          "searchable": true
         },
         "dueAmount": {
           "visibility": "readOnly",

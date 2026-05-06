@@ -45,8 +45,14 @@
     },
     "dateFilterKey": "invoiceDate",
     "labelOverrides": {
-      "es_ES": { "OutstandingAmt": "Pendiente de pago" },
-      "en_US": { "OutstandingAmt": "Pending Payment" }
+      "es_ES": {
+        "OutstandingAmt": "Pendiente de pago",
+        "EM_Etgo_Due_Date": "Vencimiento"
+      },
+      "en_US": {
+        "OutstandingAmt": "Pending Payment",
+        "EM_Etgo_Due_Date": "Due Date"
+      }
     }
   },
   "entities": {
@@ -182,6 +188,13 @@
           "gridOrder": 6,
           "form": false,
           "section": "summary"
+        },
+        "eTGODueDate": {
+          "visibility": "readOnly",
+          "grid": true,
+          "gridOrder": 7,
+          "form": false,
+          "searchable": true
         },
         "isPaid": {
           "visibility": "readOnly",

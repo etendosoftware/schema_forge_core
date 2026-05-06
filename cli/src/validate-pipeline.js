@@ -29,6 +29,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const ROOT = join(__dirname, '..', '..');
 
+// Artifact dirs that are intentionally custom-only: they have decisions.json
+// but no contract pipeline (no contract.json, report-contract.json, etc.).
+// These are fully hand-written custom windows — skipping them is correct.
+const CUSTOM_ONLY_ARTIFACTS = new Set([
+  'fiscal-config',
+  'fiscal-monitor',
+]);
+
 // ---------------------------------------------------------------------------
 // Artifact classifier
 // ---------------------------------------------------------------------------
@@ -575,6 +583,10 @@ export async function validatePipeline({
         break;
       }
       case 'unknown':
+        if (CUSTOM_ONLY_ARTIFACTS.has(name)) {
+          allResults.push(skipped('CUSTOM-ONLY', name, 'Intentional custom-only artifact — no contract pipeline'));
+          break;
+        }
         // Unknown artifacts: emit as warning (or block with --strict)
         allResults.push(violation(
           'UNKNOWN', name, strict ? 'BLOCK' : 'WARN',

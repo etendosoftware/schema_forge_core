@@ -1,8 +1,8 @@
 {
-  "version": "0.16.0",
+  "version": "0.17.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
-  "updatedAt": "2026-05-06T18:08:33.534Z",
-  "checksum": "d885a13446565052",
+  "updatedAt": "2026-05-06T22:04:25.101Z",
+  "checksum": "ca9844a2661d0165",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -44,10 +44,12 @@
       "salesTheme": true,
       "labelOverrides": {
         "es_ES": {
-          "OutstandingAmt": "Pendiente de pago"
+          "OutstandingAmt": "Pendiente de pago",
+          "EM_Etgo_Due_Date": "Vencimiento"
         },
         "en_US": {
-          "OutstandingAmt": "Pending Payment"
+          "OutstandingAmt": "Pending Payment",
+          "EM_Etgo_Due_Date": "Due Date"
         }
       },
       "dateFilterKey": "invoiceDate",
@@ -471,13 +473,27 @@
               "type": "computed",
               "source": "false"
             }
+          },
+          {
+            "name": "eTGODueDate",
+            "apiKey": "eTGODueDate",
+            "column": "em_etgo_due_date",
+            "label": "em_etgo_due_date",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": false,
+            "gridOrder": 7
           }
         ],
         "searchableFields": [
           "documentNo",
           "invoiceDate",
           "businessPartner",
-          "documentStatus"
+          "documentStatus",
+          "eTGODueDate"
         ],
         "computedFields": [
           {
@@ -1087,10 +1103,12 @@
       "salesTheme": true,
       "labelOverrides": {
         "es_ES": {
-          "OutstandingAmt": "Pendiente de pago"
+          "OutstandingAmt": "Pendiente de pago",
+          "EM_Etgo_Due_Date": "Vencimiento"
         },
         "en_US": {
-          "OutstandingAmt": "Pending Payment"
+          "OutstandingAmt": "Pending Payment",
+          "EM_Etgo_Due_Date": "Due Date"
         }
       },
       "dateFilterKey": "invoiceDate",
@@ -2349,6 +2367,14 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "eTGODueDate",
+            "apiKey": "eTGODueDate",
+            "column": "em_etgo_due_date",
+            "type": "date",
+            "visibility": "readOnly",
+            "required": false
           }
         ],
         "javaQualifier": "salesInvoiceHeaderHandler"
@@ -3058,7 +3084,8 @@
           "documentNo",
           "invoiceDate",
           "businessPartner",
-          "documentStatus"
+          "documentStatus",
+          "eTGODueDate"
         ]
       },
       {
@@ -3167,7 +3194,8 @@
           "documentNo",
           "invoiceDate",
           "businessPartner",
-          "documentStatus"
+          "documentStatus",
+          "eTGODueDate"
         ]
       },
       "lines": {
@@ -3485,10 +3513,12 @@
     },
     "labelOverrides": {
       "es_ES": {
-        "OutstandingAmt": "Pendiente de pago"
+        "OutstandingAmt": "Pendiente de pago",
+        "EM_Etgo_Due_Date": "Vencimiento"
       },
       "en_US": {
-        "OutstandingAmt": "Pending Payment"
+        "OutstandingAmt": "Pending Payment",
+        "EM_Etgo_Due_Date": "Due Date"
       }
     }
   },
@@ -3940,6 +3970,14 @@
         "description": "Field 'documentStatus' should be present in header"
       },
       {
+        "id": "t-field-presence-header-eTGODueDate",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "eTGODueDate",
+        "runner": "node",
+        "description": "Field 'eTGODueDate' should be present in header"
+      },
+      {
         "id": "t-field-presence-header-grandTotalAmount",
         "category": "field-presence",
         "entity": "header",
@@ -4242,6 +4280,14 @@
         "field": "documentStatus",
         "runner": "node",
         "description": "Field 'documentStatus' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-eTGODueDate",
+        "category": "field-type",
+        "entity": "header",
+        "field": "eTGODueDate",
+        "runner": "node",
+        "description": "Field 'eTGODueDate' should have type 'string' in header"
       },
       {
         "id": "t-field-type-header-grandTotalAmount",
@@ -4810,6 +4856,14 @@
         "field": "documentStatus",
         "runner": "node",
         "description": "Field 'documentStatus' should be a supported filter for header"
+      },
+      {
+        "id": "t-searchable-filters-header-eTGODueDate",
+        "category": "searchable-filters",
+        "entity": "header",
+        "field": "eTGODueDate",
+        "runner": "node",
+        "description": "Field 'eTGODueDate' should be a supported filter for header"
       },
       {
         "id": "t-searchable-filters-header-invoiceDate",
@@ -6554,25 +6608,25 @@
       }
     ],
     "summary": {
-      "total": 384,
+      "total": 387,
       "byCategory": {
         "action-endpoint": 24,
         "crud-flags": 3,
         "default-value-type": 14,
         "displaylogic-evaluable": 5,
         "displaylogic-valid": 5,
-        "field-presence": 38,
-        "field-type": 38,
+        "field-presence": 39,
+        "field-type": 39,
         "readonlylogic-evaluable": 14,
         "readonlylogic-valid": 14,
         "rule-declared": 8,
-        "searchable-filters": 5,
+        "searchable-filters": 6,
         "selector-endpoint": 10,
         "system-field": 203,
         "visibility": 3
       },
       "byRunner": {
-        "node": 384,
+        "node": 387,
         "junit": 0
       }
     }
