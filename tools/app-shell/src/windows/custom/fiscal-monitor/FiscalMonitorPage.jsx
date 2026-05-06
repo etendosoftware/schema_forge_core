@@ -14,7 +14,7 @@ import VerifactuMonitorSection from './VerifactuMonitorSection.jsx';
 import FiscalMonitorDebugPanel from './FiscalMonitorDebugPanel.jsx';
 import './fiscal-monitor.css';
 
-const ProfileBadge = ({ profile }) => {
+const ProfileBadge = ({ profile, labels = {} }) => {
   const styles = {
     sii:          { bg: '#121217', color: '#fff' },
     tbai:         { bg: '#5423E7', color: '#fff' },
@@ -24,11 +24,6 @@ const ProfileBadge = ({ profile }) => {
     unconfigured: { bg: '#F7F7F8', color: '#6C6C89' },
     conflict:     { bg: '#FEF0F4', color: '#D50B3E' },
   };
-  const labels = {
-    sii: 'SII', tbai: 'TBAI', 'sii+tbai': 'SII + TBAI',
-    'sii-navarra': 'SII Navarra', verifactu: 'Verifactu',
-    unconfigured: 'Sin configurar', conflict: 'Conflicto',
-  };
   const s = styles[profile] || styles.unconfigured;
   return (
     <span className="fm-profile-badge" style={{ background: s.bg, color: s.color }}>
@@ -37,13 +32,20 @@ const ProfileBadge = ({ profile }) => {
   );
 };
 
-const OrgLead = ({ org, profile, ui }) => (
+const OrgLead = ({ org, profile, ui }) => {
+  const profileLabels = {
+    sii: 'SII', tbai: 'TBAI', 'sii+tbai': 'SII + TBAI',
+    'sii-navarra': 'SII Navarra', verifactu: 'Verifactu',
+    unconfigured: ui('fiscalMonitor.profile.unconfigured'),
+    conflict: ui('fiscalMonitor.profile.conflict'),
+  };
+  return (
   <div className="fm-orglead">
     <div className="l">
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span className="name">{org.name}</span>
-          <ProfileBadge profile={profile} />
+          <ProfileBadge profile={profile} labels={profileLabels} />
         </div>
         <div className="meta">{ui('fiscalMonitor.orgMeta')}</div>
       </div>
@@ -53,7 +55,8 @@ const OrgLead = ({ org, profile, ui }) => (
       {ui('fiscalMonitor.synced')}
     </div>
   </div>
-);
+  );
+};
 
 const FmEmpty = ({ ui }) => {
   const navigate = useNavigate();
@@ -193,7 +196,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
     );
   }
 
-  const org = { name: selectedOrg?.name ?? 'Organización' };
+  const org = { name: selectedOrg?.name ?? ui('fiscalMonitor.orgFallback') };
 
   return (
     <>

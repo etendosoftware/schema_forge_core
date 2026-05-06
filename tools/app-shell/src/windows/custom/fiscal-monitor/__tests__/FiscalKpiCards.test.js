@@ -59,6 +59,10 @@ describe('FiscalKpiCards — TBAI variant', () => {
   it('includes an error/rejected KPI combining rejected + error counts', () => {
     assert.match(src, /\(tbai\.rejected \?\? 0\) \+ \(tbai\.error \?\? 0\)/);
   });
+
+  it('TBAI error card active key aligns with onPick key (Rechazado)', () => {
+    assert.match(src, /activeKey === ['"]Rechazado['"]/);
+  });
 });
 
 describe('FiscalKpiCards — Verifactu variant', () => {

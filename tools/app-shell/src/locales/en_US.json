@@ -986,7 +986,7 @@
     },
     "CreatedBy": {
       "label": "CreatedBy",
-      "description": "User who created this records"
+      "description": "User who created this record"
     },
     "Separator": {
       "label": "Element separator",
@@ -7222,7 +7222,7 @@
     },
     "createdBy": {
       "label": "Created By",
-      "description": "User who created this records"
+      "description": "User who created this record"
     },
     "Fin_Payment_ID": {
       "label": "Payment Out",
@@ -16852,6 +16852,8 @@
     "lineAdded": "Line added",
     "recordCreated": "Record created",
     "recordSaved": "Record saved",
+    "requiredFieldsMissing": "Please complete all required fields",
+    "fieldRequired": "Required",
     "invoicePdfGenerating": "Generating invoice...",
     "invoicePdfError": "Could not generate invoice PDF.",
     "invoicePdfTitle": "Sales invoice",
@@ -17506,6 +17508,10 @@
     "soClose": "Close",
     "soViewShipment": "View shipment →",
     "soViewInvoice": "View invoice →",
+    "datePickerBack": "Back",
+    "datePickerOk": "OK",
+    "datePickerMonth": "Month",
+    "datePickerYear": "Year",
     "soOrderConfirmedShipmentError": "Order confirmed, but shipment could not be created. ",
     "soOrderConfirmedInvoiceError": "Order confirmed, but invoice could not be created. ",
     "soAlreadyCreated": "Already created",
@@ -18124,7 +18130,10 @@
     "fiscalMonitor.status.vf.invalid": "Invalid",
     "fiscalMonitor.pager.showing": "Showing",
     "fiscalMonitor.pager.of": "of",
-    "fiscalMonitor.pager.records": "records"
+    "fiscalMonitor.pager.records": "records",
+    "fiscalMonitor.profile.unconfigured": "Not configured",
+    "fiscalMonitor.profile.conflict": "Conflict",
+    "fiscalMonitor.orgFallback": "Organization"
   },
   "menus": {
     "Currency": {

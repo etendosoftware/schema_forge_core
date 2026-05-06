@@ -120,7 +120,7 @@ export default function FiscalKpiCards({ variant, kpis, activeKey, onPick }) {
           num={(tbai.rejected ?? 0) + (tbai.error ?? 0)}
           icon={icons.xcircle} tone="danger"
           sub={ui('fiscalMonitor.kpi.tbai.error.sub')}
-          active={activeKey === 'error'}
+          active={activeKey === 'Rechazado'}
           onClick={() => onPick('Rechazado')}
         />
       </div>

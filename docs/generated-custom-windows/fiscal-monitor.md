@@ -108,7 +108,7 @@ Each system gets a row of clickable metric cards above its section. Clicking a c
 
 ## Debug mode
 
-Typing the sequence `debugfiscalon` anywhere in the app (any page) activates the debug panel. State persists in `localStorage` under key `etendo-debug-fiscal` and survives page refresh. Typing the sequence again deactivates it.
+Typing the sequence `debugfiscal` anywhere in the app (any page) activates the debug panel. State persists in `localStorage` under key `etendo-debug-fiscal` and survives page refresh. Typing the sequence again deactivates it.
 
 `useDebugMode.js` manages activation using a module-level key buffer and a `Set` of React listener functions. This ensures all mounted instances of the hook respond simultaneously without polling.
 
@@ -143,9 +143,9 @@ Three arrays with realistic Spanish invoice data:
 3. Open with an SII+TBAI org — confirm both sections render. Scroll down and confirm the TBAI section is reachable. Verify the "Y también" divider appears between them.
 4. Click an SII KPI card (e.g. "Emitidas · periodo anterior") — confirm the section tab and period toggle both update to match.
 5. Click a section tab — confirm the corresponding KPI card becomes active (highlighted).
-6. Type `debugfiscalon` anywhere on the page — confirm the debug panel appears top-right. Select "SII+TBAI" and enable mock data — confirm both sections render with mock rows and the KPI counts match the row counts in each tab.
+6. Type `debugfiscal` anywhere on the page — confirm the debug panel appears top-right. Select "SII+TBAI" and enable mock data — confirm both sections render with mock rows and the KPI counts match the row counts in each tab.
 7. Switch tabs in each section under mock data — confirm the rows change (e.g. TBAI "Rechazadas" shows only 2 rows).
-8. Refresh the page with debug mode active — confirm the panel persists (localStorage). Type `debugfiscalon` again — confirm it disappears.
+8. Refresh the page with debug mode active — confirm the panel persists (localStorage). Type `debugfiscal` again — confirm it disappears.
 9. Open `/fiscal-config` with debug mode active — confirm `FiscalConfigDebugPanel` appears and delete buttons work.
 
 ## Automated evidence

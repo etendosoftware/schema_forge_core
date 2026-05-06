@@ -17087,6 +17087,8 @@
     "lineAdded": "Línea añadida",
     "recordCreated": "Registro creado",
     "recordSaved": "Registro guardado",
+    "requiredFieldsMissing": "Completá todos los campos requeridos",
+    "fieldRequired": "Requerido",
     "invoicePdfGenerating": "Generando factura...",
     "invoicePdfError": "No se pudo generar el PDF de la factura.",
     "invoicePdfTitle": "Factura de venta",
@@ -17745,6 +17747,10 @@
     "soClose": "Cerrar",
     "soViewShipment": "Ver albarán →",
     "soViewInvoice": "Ver factura →",
+    "datePickerBack": "Volver",
+    "datePickerOk": "Ok",
+    "datePickerMonth": "Mes",
+    "datePickerYear": "Año",
     "soOrderConfirmedShipmentError": "El pedido fue procesado pero no se pudo crear el albarán. ",
     "soOrderConfirmedInvoiceError": "El pedido fue procesado pero no se pudo crear la factura. ",
     "soAlreadyCreated": "Ya creado",
@@ -18363,7 +18369,10 @@
     "fiscalMonitor.status.vf.invalid": "Inválido",
     "fiscalMonitor.pager.showing": "Mostrando",
     "fiscalMonitor.pager.of": "de",
-    "fiscalMonitor.pager.records": "registros"
+    "fiscalMonitor.pager.records": "registros",
+    "fiscalMonitor.profile.unconfigured": "Sin configurar",
+    "fiscalMonitor.profile.conflict": "Conflicto",
+    "fiscalMonitor.orgFallback": "Organización"
   },
   "menus": {
     "Tax": {

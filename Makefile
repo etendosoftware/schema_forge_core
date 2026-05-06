@@ -80,6 +80,9 @@ regen-help: ## Show usage and examples for `make regen`
 dev: ## Start app-shell dev server (http://localhost:3100)
 	cd tools/app-shell && npm run dev
 
+dev-with-shell: ## Start app-shell + spike-hello-app together (shell 3100, UI 5173, API 4100)
+	cd tools/spike-hello-app && npm run dev:with-shell
+
 dev-mock: ## Start app-shell dev server with mock data (http://localhost:3100) — required for E2E tests
 	cd tools/app-shell && npm run dev:mock
 
