@@ -89,7 +89,8 @@ export const api = {
         "documentNo",
         "invoiceDate",
         "businessPartner",
-        "documentStatus"
+        "documentStatus",
+        "eTGODueDate"
       ]
     },
     "lines": {
