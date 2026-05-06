@@ -52,6 +52,8 @@ export function ListView({
   labelOverrides,
   onCloneRow = null,
   initialColumnFilters,
+  initialAdvancedFilter = null,
+  initialColumns = null,
   rowFilter,
   dateFilterKey = null,
   refreshTrigger = 0,
@@ -84,9 +86,9 @@ export function ListView({
   }, []);
 
   // Advanced filter (funnel popover) — ephemeral state, lost on page refresh.
-  const [advancedFilter, setAdvancedFilter] = useState(null);
+  const [advancedFilter, setAdvancedFilter] = useState(initialAdvancedFilter);
 
-  const [tableColumns, setTableColumns] = useState([]);
+  const [tableColumns, setTableColumns] = useState(initialColumns ?? []);
 
   const advancedFilterPart = useMemo(() => {
     const criteria = buildAdvancedFilterCriteria(advancedFilter, tableColumns);
