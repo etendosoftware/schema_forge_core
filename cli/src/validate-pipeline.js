@@ -33,6 +33,7 @@ const ROOT = join(__dirname, '..', '..');
 // but no contract pipeline (no contract.json, report-contract.json, etc.).
 // These are fully hand-written custom windows — skipping them is correct.
 const CUSTOM_ONLY_ARTIFACTS = new Set([
+  'fiscal-config',
   'fiscal-monitor',
 ]);
 
