@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { toSpecName } from './push-to-neo.js';
-import { autoSimplifyEntityName } from './resolve-curated.js';
+import { autoSimplifyEntityName, reorderKeys, WINDOW_KEY_ORDER } from './resolve-curated.js';
 
 // Slug helper for deterministic test IDs: collapse non-alphanumerics to hyphens, trim.
 const slug = (s) => String(s ?? '')
@@ -296,7 +296,7 @@ export function generateFrontendContract(schema, rules = []) {
     win.templateConfig = schema.window.templateConfig ?? null;
   }
 
-  return { window: win, entities };
+  return { window: reorderKeys(win, WINDOW_KEY_ORDER), entities };
 }
 
 /**
@@ -376,7 +376,7 @@ export function generateBackendContract(schema, rules = [], processes = []) {
     };
   });
 
-  return { window: schema.window, entities, endpoints, processEndpoints };
+  return { window: reorderKeys(schema.window, WINDOW_KEY_ORDER), entities, endpoints, processEndpoints };
 }
 
 /**
