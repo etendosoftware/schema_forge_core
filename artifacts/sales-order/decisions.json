@@ -266,6 +266,10 @@
         },
         "externalBusinessPartnerReference": {
           "visibility": "discarded"
+        },
+        "etgoTotalDiscount": {
+          "visibility": "editable",
+          "form": false
         }
       }
     },
@@ -300,7 +304,14 @@
           "inputMode": "search",
           "order": 1,
           "gridOrder": 1,
-          "forceCalloutFields": ["listPrice", "unitPrice", "tax", "uOM", "grossUnitPrice", "discount"]
+          "forceCalloutFields": [
+            "listPrice",
+            "unitPrice",
+            "tax",
+            "uOM",
+            "grossUnitPrice",
+            "discount"
+          ]
         },
         "orderedQuantity": {
           "grid": true,
@@ -341,7 +352,11 @@
           "order": 6,
           "gridOrder": 6,
           "inputMode": "selector",
-          "forceCalloutFields": ["lineGrossAmount", "grossUnitPrice", "lineNetAmount"]
+          "forceCalloutFields": [
+            "lineGrossAmount",
+            "grossUnitPrice",
+            "lineNetAmount"
+          ]
         },
         "listPrice": {
           "grid": true,

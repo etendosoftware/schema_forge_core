@@ -845,6 +845,27 @@ export function DetailView({
   }, [token, apiBaseUrl, detailEntity, hook.editing, hook.selected, catalogs, api, addLineFields, computeLineGrossAmount, resolveTaxFactor]);
 
   const data = hook.editing || currentItem || {};
+
+  // Send total-discount percentage to the backend. No full reload — visual totals are
+  // already computed locally from inputPct in DocumentTotalsPanel, so reloading would
+  // discard any in-progress unsaved inline-add row without any visual benefit.
+  const handleTotalDiscountChange = useCallback(async (pct) => {
+    const currentId = data?.id || recordId;
+    if (!currentId || isNew) return;
+    try {
+      await fetch(`${apiBaseUrl}/${entity}/${currentId}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ etgoTotalDiscount: pct }),
+      });
+    } catch {
+      // Best-effort: silent failure to avoid breaking the UI
+    }
+  }, [data?.id, recordId, isNew, apiBaseUrl, entity, token]);
+
   // Guard that controls whether "+ Add Lines" is shown.
   // When addLineGuard is provided, it receives the current record data and must return true to allow.
   const canAddLines = addLineGuard ? addLineGuard(data) : true;
@@ -2067,6 +2088,8 @@ export function DetailView({
                   pendingLine={pendingLineValues}
                   editingLine={lineEdits && selectedLine ? { ...selectedLine, ...lineEdits } : selectedLine}
                   lineConfig={lineConfig}
+                  totalDiscountPct={Number(data?.etgoTotalDiscount ?? 0)}
+                  onTotalDiscountChange={handleTotalDiscountChange}
                 />
               );
             })() : (
@@ -2086,6 +2109,8 @@ export function DetailView({
                       formatAmount={formatAmount}
                       currency={currency}
                       readOnly={isDocumentReadOnly}
+                      totalDiscountPct={Number(data?.etgoTotalDiscount ?? 0)}
+                      onTotalDiscountChange={handleTotalDiscountChange}
                     />
                   );
                 })()}

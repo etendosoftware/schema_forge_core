@@ -1,8 +1,8 @@
 {
   "version": "0.18.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-06T23:04:37.578Z",
-  "checksum": "2984023154233f87",
+  "updatedAt": "2026-05-06T19:55:04.605Z",
+  "checksum": "82bd527c159d88b8",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -32,12 +32,10 @@
       "labelOverrides": {
         "es_ES": {
           "POReference": "Nº documento",
-          "OutstandingAmt": "Pendiente de pago",
           "EM_Etgo_Due_Date": "Vencimiento"
         },
         "en_US": {
           "POReference": "Document No.",
-          "OutstandingAmt": "Pending Payment",
           "EM_Etgo_Due_Date": "Due Date"
         }
       },
@@ -684,6 +682,18 @@
               "source": "0"
             },
             "defaultValue": "0"
+          },
+          {
+            "name": "etgoTotalDiscount",
+            "apiKey": "etgoTotalDiscount",
+            "column": "EM_Etgo_Total_Discount",
+            "label": "Total Discount %",
+            "type": "decimal",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": false
           },
           {
             "name": "eTGODueDate",
@@ -1340,12 +1350,12 @@
                 "name": "Arrendamiento financiero (alquiler­compra)"
               },
               {
-                "value": "INTRES_14",
-                "name": "Compras por particulares"
-              },
-              {
                 "value": "INTRES_11",
                 "name": "Compra/venta en firme"
+              },
+              {
+                "value": "INTRES_14",
+                "name": "Compras por particulares"
               },
               {
                 "value": "INTRES_21",
@@ -1372,12 +1382,12 @@
                 "name": "Operaciones tras el trabajo por encargo"
               },
               {
-                "value": "INTRES_32",
-                "name": "Otras entregas de ayuda gubernamental"
-              },
-              {
                 "value": "INTRES_33",
                 "name": "Otras entregas de ayuda (particulares, orgs. no gubernamenta"
+              },
+              {
+                "value": "INTRES_32",
+                "name": "Otras entregas de ayuda gubernamental"
               },
               {
                 "value": "INTRES_90",
@@ -3192,12 +3202,10 @@
       "labelOverrides": {
         "es_ES": {
           "POReference": "Nº documento",
-          "OutstandingAmt": "Pendiente de pago",
           "EM_Etgo_Due_Date": "Vencimiento"
         },
         "en_US": {
           "POReference": "Document No.",
-          "OutstandingAmt": "Pending Payment",
           "EM_Etgo_Due_Date": "Due Date"
         }
       },
@@ -4459,19 +4467,19 @@
             "required": true
           },
           {
+            "name": "etgoTotalDiscount",
+            "apiKey": "etgoTotalDiscount",
+            "column": "EM_Etgo_Total_Discount",
+            "type": "decimal",
+            "visibility": "editable",
+            "required": false
+          },
+          {
             "name": "eTGODueDate",
             "apiKey": "eTGODueDate",
             "column": "em_etgo_due_date",
             "type": "date",
             "visibility": "readOnly",
-            "required": false
-          },
-          {
-            "name": "eTGODeliveryStatus",
-            "apiKey": "eTGODeliveryStatus",
-            "column": "em_etgo_delivery_status",
-            "type": "integer",
-            "visibility": "discarded",
             "required": false
           }
         ],
@@ -8050,12 +8058,10 @@
     "labelOverrides": {
       "es_ES": {
         "POReference": "Nº documento",
-        "OutstandingAmt": "Pendiente de pago",
         "EM_Etgo_Due_Date": "Vencimiento"
       },
       "en_US": {
         "POReference": "Document No.",
-        "OutstandingAmt": "Pending Payment",
         "EM_Etgo_Due_Date": "Due Date"
       }
     }
@@ -8985,6 +8991,14 @@
         "field": "eTGODueDate",
         "runner": "node",
         "description": "Field 'eTGODueDate' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-etgoTotalDiscount",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "etgoTotalDiscount",
+        "runner": "node",
+        "description": "Field 'etgoTotalDiscount' should be present in header"
       },
       {
         "id": "t-field-presence-header-grandTotalAmount",
@@ -9969,6 +9983,14 @@
         "field": "eTGODueDate",
         "runner": "node",
         "description": "Field 'eTGODueDate' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-etgoTotalDiscount",
+        "category": "field-type",
+        "entity": "header",
+        "field": "etgoTotalDiscount",
+        "runner": "node",
+        "description": "Field 'etgoTotalDiscount' should have type 'number' in header"
       },
       {
         "id": "t-field-type-header-grandTotalAmount",
@@ -12958,14 +12980,6 @@
         "description": "System field 'etcopagCopilotFeedback' should exist in backend but not frontend for header"
       },
       {
-        "id": "t-system-field-header-eTGODeliveryStatus",
-        "category": "system-field",
-        "entity": "header",
-        "field": "eTGODeliveryStatus",
-        "runner": "node",
-        "description": "System field 'eTGODeliveryStatus' should exist in backend but not frontend for header"
-      },
-      {
         "id": "t-system-field-header-etsgDateOperation",
         "category": "system-field",
         "entity": "header",
@@ -14715,25 +14729,25 @@
       }
     ],
     "summary": {
-      "total": 837,
+      "total": 838,
       "byCategory": {
         "action-endpoint": 24,
         "crud-flags": 12,
         "default-value-type": 27,
         "displaylogic-evaluable": 6,
         "displaylogic-valid": 6,
-        "field-presence": 123,
-        "field-type": 123,
+        "field-presence": 124,
+        "field-type": 124,
         "readonlylogic-evaluable": 48,
         "readonlylogic-valid": 48,
         "rule-declared": 21,
         "searchable-filters": 6,
         "selector-endpoint": 47,
-        "system-field": 334,
+        "system-field": 333,
         "visibility": 12
       },
       "byRunner": {
-        "node": 837,
+        "node": 838,
         "junit": 0
       }
     }
