@@ -112,6 +112,7 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
   - Partial or empty batches stop pagination.
   - Save blocked by missing required fields surfaces per-field `fieldErrors` highlights and a toast; the record is not created.
   - Save and child-row creation failures surface `saveError` and toast feedback; delete and process failures surface toast feedback.
+  - Kebab menu actions that carry a `documentAction` field (e.g. `Reactivate` with `documentAction: 'RE'`) call the standard `documentAction` endpoint and on success emit a `sonner` `toast.success()` using the i18n key from `successKey` (declared in `decisions.json → window.menuActions[]`). On failure the error message is surfaced via `toast.error()`. No inline banner is shown.
 - **Automated evidence:**
   - `tools/app-shell/src/hooks/__tests__/useEntity-pagination.test.js` verifies first-page and subsequent-page batch windows, sort handling, retry behavior for the default `creationDate` sort, empty datasets, and fetch failures.
   - `tools/app-shell/src/hooks/__tests__/useEntity-defaults.test.js` verifies the defaults URL, bearer header use, non-OK handling, network-error fallback, and missing-defaults fallback.

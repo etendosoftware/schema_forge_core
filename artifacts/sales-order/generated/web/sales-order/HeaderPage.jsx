@@ -412,7 +412,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         topbarRight={OrderCreateInvoice}
         topbarExtra={OrderDraftChips}
         menuActions={({ data, status }) => [
-          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO' && !data?.hasLinkedDocuments, labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
+          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO' && !data?.hasLinkedDocuments, labelKey: 'reactivate', successKey: 'reactivated', documentAction: 'RE',  }
         ]}
         draftMode={draftMode}
         salesTheme

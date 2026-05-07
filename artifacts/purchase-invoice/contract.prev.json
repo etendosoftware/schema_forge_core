@@ -1,8 +1,8 @@
 {
   "version": "0.18.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-07T13:42:23.022Z",
-  "checksum": "aabc239780cd53a9",
+  "updatedAt": "2026-05-07T14:47:20.986Z",
+  "checksum": "ddbcb85277298cb1",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -18,7 +18,7 @@
           "labelKey": "reactivate",
           "visibleWhenStatus": "CO",
           "documentAction": "RE",
-          "successKey": "actionCompleted"
+          "successKey": "reactivated"
         }
       ],
       "processOverrides": {},
@@ -3181,7 +3181,7 @@
           "labelKey": "reactivate",
           "visibleWhenStatus": "CO",
           "documentAction": "RE",
-          "successKey": "actionCompleted"
+          "successKey": "reactivated"
         }
       ],
       "processOverrides": {},

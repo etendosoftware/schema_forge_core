@@ -16330,6 +16330,7 @@
     "completePartial": "{ok} of {total} orders completed",
     "noDraftSelected": "No draft orders in selection",
     "actionCompleted": "Action completed",
+    "reactivated": "Document reactivated",
     "salesOrderRef": "Sales Order #",
     "deleteRecord": "Delete record",
     "deleteConfirmTitle": "Delete record",
