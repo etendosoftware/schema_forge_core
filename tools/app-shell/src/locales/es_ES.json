@@ -18379,7 +18379,18 @@
     "fiscalMonitor.pager.records": "registros",
     "fiscalMonitor.profile.unconfigured": "Sin configurar",
     "fiscalMonitor.profile.conflict": "Conflicto",
-    "fiscalMonitor.orgFallback": "Organización"
+    "fiscalMonitor.orgFallback": "Organización",
+    "sendToSif": "Enviar a SIF",
+    "sendToSifTitle": "Enviar al sistema fiscal",
+    "sendToSifBodySii": "Esta factura se enviará al SII.",
+    "sendToSifBodyTbai": "Esta factura se enviará a TBAI.",
+    "sendToSifBodyBoth": "Esta factura se enviará al SII y a TBAI.",
+    "sendToSifConfirm": "Enviar",
+    "sendToSifSending": "Enviando… esto puede tardar unos segundos.",
+    "sendToSifSuccessSii": "Enviado al SII correctamente.",
+    "sendToSifSuccessTbai": "Enviado a TBAI correctamente.",
+    "sendToSifErrorSii": "Error al enviar al SII.",
+    "sendToSifErrorTbai": "Error al enviar a TBAI."
   },
   "menus": {
     "Tax": {

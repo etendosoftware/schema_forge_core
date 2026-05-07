@@ -18134,7 +18134,18 @@
     "fiscalMonitor.pager.records": "records",
     "fiscalMonitor.profile.unconfigured": "Not configured",
     "fiscalMonitor.profile.conflict": "Conflict",
-    "fiscalMonitor.orgFallback": "Organization"
+    "fiscalMonitor.orgFallback": "Organization",
+    "sendToSif": "Send to SIF",
+    "sendToSifTitle": "Send to Tax System",
+    "sendToSifBodySii": "This invoice will be sent to SII.",
+    "sendToSifBodyTbai": "This invoice will be sent to TBAI.",
+    "sendToSifBodyBoth": "This invoice will be sent to SII and TBAI.",
+    "sendToSifConfirm": "Send",
+    "sendToSifSending": "Sending… this may take a few seconds.",
+    "sendToSifSuccessSii": "Sent to SII successfully.",
+    "sendToSifSuccessTbai": "Sent to TBAI successfully.",
+    "sendToSifErrorSii": "Error sending to SII.",
+    "sendToSifErrorTbai": "Error sending to TBAI."
   },
   "menus": {
     "Currency": {
