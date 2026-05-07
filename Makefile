@@ -37,17 +37,6 @@ quality-gate: ## Run Schema Forge quality gate for PR-affected windows
 test-e2e: ## Run E2E tests with visible browser
 	cd e2e && npx playwright test --headed
 
-
-
-
-
-
-
-
-
-
-
-
 test-e2e-headless: ## Run E2E tests headless (CI mode)
 	cd e2e && CI=true npx playwright test
 

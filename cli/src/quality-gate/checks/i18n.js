@@ -43,10 +43,9 @@ function collectTranslatorAliases(ast) {
 }
 
 function isNonTestJsModule(filePath) {
-  if (!isJavaScriptModule(filePath)) return false;
-  if (filePath.split(sep).includes('__tests__')) return false;
-  if (/\.(?:test|spec)\.[jt]sx?$/.test(filePath)) return false;
-  return true;
+  return isJavaScriptModule(filePath)
+    && !filePath.split(sep).includes('__tests__')
+    && !/\.(?:test|spec)\.[jt]sx?$/.test(filePath);
 }
 
 function collectCustomFiles(rootDir, windowDir, windowName) {
