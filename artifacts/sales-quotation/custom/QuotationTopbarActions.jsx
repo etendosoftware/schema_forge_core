@@ -20,15 +20,14 @@ function CopyIcon() {
 const btnCloneStyle = {
   display: 'inline-flex',
   alignItems: 'center',
-  gap: 5,
-  padding: '5px 12px',
+  justifyContent: 'center',
+  padding: '7px',
   borderRadius: 6,
-  fontSize: 13,
-  fontWeight: 500,
-  border: '1px solid #D1D5DB',
-  background: 'transparent',
-  color: '#374151',
+  border: '1px solid #D1D4DB',
+  background: '#FFFFFF',
+  color: '#64748B',
   cursor: 'pointer',
+  boxShadow: '0px 1px 2px 0px #1212170D',
 };
 
 export default function QuotationTopbarActions({ data, recordId, token, apiBaseUrl }) {
@@ -39,6 +38,7 @@ export default function QuotationTopbarActions({ data, recordId, token, apiBaseU
   const [showConfirm, setShowConfirm] = useState(false);
   const [showSendToEval, setShowSendToEval] = useState(false);
   const [showClone, setShowClone] = useState(false);
+  const [isCloneHovered, setIsCloneHovered] = useState(false);
   const [showReject, setShowReject] = useState(false);
 
   const headers = useMemo(() => ({
@@ -73,8 +73,8 @@ export default function QuotationTopbarActions({ data, recordId, token, apiBaseU
 
   return (
     <>
-      <button type="button" onClick={() => setShowClone(true)} style={btnCloneStyle}>
-        <CopyIcon />{ui('cloneOrderBtn')}
+      <button type="button" onClick={() => setShowClone(true)} style={{...btnCloneStyle, background: isCloneHovered ? '#F1F5F9' : '#FFFFFF'}} title={ui('cloneOrderBtn')} onMouseEnter={() => setIsCloneHovered(true)} onMouseLeave={() => setIsCloneHovered(false)}>
+        <CopyIcon />
       </button>
 
       <SendDocumentButton onClick={() => setShowSend(true)} />

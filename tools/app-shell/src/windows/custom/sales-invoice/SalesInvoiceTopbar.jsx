@@ -19,21 +19,21 @@ function CopyIcon() {
 const btnCloneStyle = {
   display: 'inline-flex',
   alignItems: 'center',
-  gap: 5,
-  padding: '5px 12px',
+  justifyContent: 'center',
+  padding: '7px',
   borderRadius: 6,
-  fontSize: 13,
-  fontWeight: 500,
-  border: '1px solid #D1D5DB',
-  background: 'transparent',
-  color: '#374151',
+  border: '1px solid #D1D4DB',
+  background: '#FFFFFF',
+  color: '#64748B',
   cursor: 'pointer',
+  boxShadow: '0px 1px 2px 0px #1212170D',
 };
 
 export default function SalesInvoiceTopbar({ data, recordId, token, apiBaseUrl, api, onProcess }) {
   const navigate = useNavigate();
   const ui = useUI();
   const [showClone, setShowClone] = useState(false);
+  const [isCloneHovered, setIsCloneHovered] = useState(false);
 
   const headers = useMemo(() => ({
     Authorization: `Bearer ${token}`,
@@ -44,8 +44,8 @@ export default function SalesInvoiceTopbar({ data, recordId, token, apiBaseUrl, 
 
   return (
     <>
-      <button type="button" onClick={() => setShowClone(true)} style={btnCloneStyle}>
-        <CopyIcon />{ui('cloneOrderBtn')}
+      <button type="button" onClick={() => setShowClone(true)} style={{...btnCloneStyle, background: isCloneHovered ? '#F1F5F9' : '#FFFFFF'}} title={ui('cloneOrderBtn')} onMouseEnter={() => setIsCloneHovered(true)} onMouseLeave={() => setIsCloneHovered(false)}>
+        <CopyIcon />
       </button>
       <InvoiceTopbarExtra
         data={data}
