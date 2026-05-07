@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-30T15:33:38.824Z",
-  "updatedAt": "2026-05-06T18:00:41.316Z",
-  "checksum": "16ddc06a200b5b40",
+  "updatedAt": "2026-05-07T13:42:22.464Z",
+  "checksum": "61b8511a490c9cdf",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -19,13 +19,6 @@
         "bulkActions": "OrderReactivateBulkAction"
       },
       "menuActions": [
-        {
-          "key": "cancel",
-          "label": "Cancel",
-          "labelKey": "cancel",
-          "destructive": true,
-          "visibleWhenStatus": "CO"
-        },
         {
           "key": "reactivate",
           "label": "Reactivate",
@@ -851,13 +844,6 @@
         "bulkActions": "OrderReactivateBulkAction"
       },
       "menuActions": [
-        {
-          "key": "cancel",
-          "label": "Cancel",
-          "labelKey": "cancel",
-          "destructive": true,
-          "visibleWhenStatus": "CO"
-        },
         {
           "key": "reactivate",
           "label": "Reactivate",
