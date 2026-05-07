@@ -1,8 +1,8 @@
 {
   "version": "0.20.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
-  "updatedAt": "2026-05-07T02:36:24.806Z",
-  "checksum": "e8230c77d4809138",
+  "updatedAt": "2026-05-07T16:06:17.758Z",
+  "checksum": "df5853971031a3a5",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -19,17 +19,6 @@
         "topbarRight": "InvoiceTopbarExtra"
       },
       "menuActions": [
-        {
-          "key": "duplicate",
-          "label": "Duplicate"
-        },
-        {
-          "key": "cancel",
-          "label": "Cancel",
-          "labelKey": "cancel",
-          "destructive": true,
-          "visibleWhenStatus": "CO"
-        },
         {
           "key": "reactivate",
           "label": "Reactivate",
@@ -475,6 +464,18 @@
               "type": "computed",
               "source": "false"
             }
+          },
+          {
+            "name": "etgoTotalDiscount",
+            "apiKey": "etgoTotalDiscount",
+            "column": "EM_Etgo_Total_Discount",
+            "label": "Total Discount %",
+            "type": "decimal",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": false
           },
           {
             "name": "eTGODueDate",
@@ -1093,17 +1094,6 @@
         "topbarRight": "InvoiceTopbarExtra"
       },
       "menuActions": [
-        {
-          "key": "duplicate",
-          "label": "Duplicate"
-        },
-        {
-          "key": "cancel",
-          "label": "Cancel",
-          "labelKey": "cancel",
-          "destructive": true,
-          "visibleWhenStatus": "CO"
-        },
         {
           "key": "reactivate",
           "label": "Reactivate",
@@ -2384,6 +2374,14 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "etgoTotalDiscount",
+            "apiKey": "etgoTotalDiscount",
+            "column": "EM_Etgo_Total_Discount",
+            "type": "decimal",
+            "visibility": "editable",
+            "required": false
           },
           {
             "name": "eTGODueDate",
@@ -4013,6 +4011,14 @@
         "description": "Field 'eTGODueDate' should be present in header"
       },
       {
+        "id": "t-field-presence-header-etgoTotalDiscount",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "etgoTotalDiscount",
+        "runner": "node",
+        "description": "Field 'etgoTotalDiscount' should be present in header"
+      },
+      {
         "id": "t-field-presence-header-grandTotalAmount",
         "category": "field-presence",
         "entity": "header",
@@ -4331,6 +4337,14 @@
         "field": "eTGODueDate",
         "runner": "node",
         "description": "Field 'eTGODueDate' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-etgoTotalDiscount",
+        "category": "field-type",
+        "entity": "header",
+        "field": "etgoTotalDiscount",
+        "runner": "node",
+        "description": "Field 'etgoTotalDiscount' should have type 'number' in header"
       },
       {
         "id": "t-field-type-header-grandTotalAmount",
@@ -6651,15 +6665,15 @@
       }
     ],
     "summary": {
-      "total": 389,
+      "total": 391,
       "byCategory": {
         "action-endpoint": 24,
         "crud-flags": 3,
         "default-value-type": 14,
         "displaylogic-evaluable": 5,
         "displaylogic-valid": 5,
-        "field-presence": 40,
-        "field-type": 40,
+        "field-presence": 41,
+        "field-type": 41,
         "readonlylogic-evaluable": 14,
         "readonlylogic-valid": 14,
         "rule-declared": 8,
@@ -6669,7 +6683,7 @@
         "visibility": 3
       },
       "byRunner": {
-        "node": 389,
+        "node": 391,
         "junit": 0
       }
     }

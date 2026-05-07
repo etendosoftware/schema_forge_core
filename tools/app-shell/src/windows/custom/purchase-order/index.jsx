@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
+import { buildPendingDeliveryFilter } from '../shared/pendingDeliveryFilter.js';
 import { useCurrency } from '@/hooks/useCurrency';
 import { ListView } from '@/components/contract-ui';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
@@ -114,19 +115,8 @@ export default function PurchaseOrderWindow(props) {
     );
   }
 
-  const docStatus = searchParams.get('DocStatus');
-  const filterParam = searchParams.get('filter');
-  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
-
-  const QUICK_FILTERS = [
-    {
-      label: 'pendingDeliveryOnly',
-      filter: `criteria=${encodeURIComponent(JSON.stringify([
-        { fieldName: 'deliveryStatusPurchase', operator: 'lessThan', value: 100 },
-      ]))}`,
-    },
-  ];
-  const initialQuickFilterIndex = filterParam === 'pendingDelivery' ? 0 : null;
+  const { initialColumnFilters, isPendingDelivery, initialAdvancedFilter } =
+    buildPendingDeliveryFilter(searchParams, 'deliveryStatusPurchase');
 
   return (
     <>
@@ -145,8 +135,8 @@ export default function PurchaseOrderWindow(props) {
           </>
         )}
         initialColumnFilters={initialColumnFilters}
-        quickFilters={QUICK_FILTERS}
-        initialQuickFilterIndex={initialQuickFilterIndex}
+        initialAdvancedFilter={initialAdvancedFilter}
+        initialColumns={isPendingDelivery ? LIST_COLUMNS : null}
         dateFilterKey="orderDate"
         refreshTrigger={refreshKey}
         {...props}

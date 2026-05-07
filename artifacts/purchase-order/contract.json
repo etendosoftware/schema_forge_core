@@ -1,8 +1,8 @@
 {
-  "version": "0.20.0",
+  "version": "0.19.0",
   "generatedAt": "2026-04-30T15:42:46.497Z",
-  "updatedAt": "2026-05-07T02:36:24.901Z",
-  "checksum": "92824fd1a9eedaf3",
+  "updatedAt": "2026-05-07T16:06:17.860Z",
+  "checksum": "46fa98a4c9b1abcb",
   "frontendContract": {
     "window": {
       "id": "181",
@@ -24,13 +24,6 @@
         "bulkActions": "PurchaseOrderReactivateBulkAction"
       },
       "menuActions": [
-        {
-          "key": "cancel",
-          "label": "Cancel",
-          "labelKey": "cancel",
-          "destructive": true,
-          "visibleWhenStatus": "CO"
-        },
         {
           "key": "reactivate",
           "label": "Reactivate",
@@ -922,6 +915,23 @@
             "gridOrder": 6
           },
           {
+            "name": "etgoTotalDiscount",
+            "apiKey": "etgoTotalDiscount",
+            "column": "EM_Etgo_Total_Discount",
+            "label": "EM_Etgo_Total_Discount",
+            "type": "decimal",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": false,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
+            "defaultValue": "0"
+          },
+          {
             "name": "accountingDate",
             "apiKey": "accountingDate",
             "column": "DateAcct",
@@ -1061,6 +1071,13 @@
           },
           {
             "name": "chargeAmount",
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            }
+          },
+          {
+            "name": "etgoTotalDiscount",
             "derivation": {
               "type": "computed",
               "source": "0"
@@ -2278,13 +2295,6 @@
       },
       "menuActions": [
         {
-          "key": "cancel",
-          "label": "Cancel",
-          "labelKey": "cancel",
-          "destructive": true,
-          "visibleWhenStatus": "CO"
-        },
-        {
           "key": "reactivate",
           "label": "Reactivate",
           "labelKey": "reactivate",
@@ -2812,6 +2822,14 @@
             "column": "InvoiceStatus",
             "type": "integer",
             "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "etgoTotalDiscount",
+            "apiKey": "etgoTotalDiscount",
+            "column": "EM_Etgo_Total_Discount",
+            "type": "decimal",
+            "visibility": "editable",
             "required": false
           },
           {
@@ -5274,6 +5292,14 @@
         "description": "Default value for 'documentStatus' in header should be a string"
       },
       {
+        "id": "t-default-value-type-header-etgoTotalDiscount",
+        "category": "default-value-type",
+        "entity": "header",
+        "field": "etgoTotalDiscount",
+        "runner": "node",
+        "description": "Default value for 'etgoTotalDiscount' in header should be a string"
+      },
+      {
         "id": "t-default-value-type-header-orderDate",
         "category": "default-value-type",
         "entity": "header",
@@ -5560,6 +5586,14 @@
         "field": "documentStatus",
         "runner": "node",
         "description": "Field 'documentStatus' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-etgoTotalDiscount",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "etgoTotalDiscount",
+        "runner": "node",
+        "description": "Field 'etgoTotalDiscount' should be present in header"
       },
       {
         "id": "t-field-presence-header-freightAmount",
@@ -6304,6 +6338,14 @@
         "field": "documentStatus",
         "runner": "node",
         "description": "Field 'documentStatus' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-etgoTotalDiscount",
+        "category": "field-type",
+        "entity": "header",
+        "field": "etgoTotalDiscount",
+        "runner": "node",
+        "description": "Field 'etgoTotalDiscount' should have type 'number' in header"
       },
       {
         "id": "t-field-type-header-freightAmount",
@@ -9673,15 +9715,15 @@
       }
     ],
     "summary": {
-      "total": 592,
+      "total": 595,
       "byCategory": {
         "action-endpoint": 21,
         "crud-flags": 5,
-        "default-value-type": 25,
+        "default-value-type": 26,
         "displaylogic-evaluable": 1,
         "displaylogic-valid": 1,
-        "field-presence": 93,
-        "field-type": 93,
+        "field-presence": 94,
+        "field-type": 94,
         "readonlylogic-evaluable": 43,
         "readonlylogic-valid": 43,
         "rule-declared": 68,
@@ -9691,7 +9733,7 @@
         "visibility": 5
       },
       "byRunner": {
-        "node": 592,
+        "node": 595,
         "junit": 0
       }
     }
