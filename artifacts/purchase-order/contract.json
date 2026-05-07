@@ -25,13 +25,6 @@
       },
       "menuActions": [
         {
-          "key": "cancel",
-          "label": "Cancel",
-          "labelKey": "cancel",
-          "destructive": true,
-          "visibleWhenStatus": "CO"
-        },
-        {
           "key": "reactivate",
           "label": "Reactivate",
           "labelKey": "reactivate",
@@ -2299,13 +2292,6 @@
         "bulkActions": "PurchaseOrderReactivateBulkAction"
       },
       "menuActions": [
-        {
-          "key": "cancel",
-          "label": "Cancel",
-          "labelKey": "cancel",
-          "destructive": true,
-          "visibleWhenStatus": "CO"
-        },
         {
           "key": "reactivate",
           "label": "Reactivate",

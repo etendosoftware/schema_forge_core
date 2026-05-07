@@ -16,17 +16,6 @@
     },
     "menuActions": [
       {
-        "key": "duplicate",
-        "label": "Duplicate"
-      },
-      {
-        "key": "cancel",
-        "label": "Cancel",
-        "labelKey": "cancel",
-        "destructive": true,
-        "visibleWhenStatus": "CO"
-      },
-      {
         "key": "reactivate",
         "label": "Reactivate",
         "labelKey": "reactivate",

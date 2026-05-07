@@ -847,7 +847,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         menuActions={({ status }) => [
-          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', labelKey: 'cancel', onClick: () => {}, },
           { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'reactivated', documentAction: 'RE',  }
         ]}
         draftMode={draftMode}

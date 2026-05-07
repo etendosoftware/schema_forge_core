@@ -48,7 +48,6 @@ A user should be able to:
 ## Gap assessment
 
 - The `DocumentTotalsPanel` inside `InvoiceBottomPanel` computes subtotal, discount, tax, and total client-side from the saved lines plus the live add-row (`pendingLine`) and sidebar editing state (`editingLine`), so totals update in real time as the user types — without waiting for a server save. The panel is the source of truth for displayed amounts; it does not read from server-side header fields.
-- The generated detail page advertises a `Cancel` menu action when the invoice status is `CO`, but the generated wiring currently uses an empty `onClick`. The action is visible in configuration, yet an actual cancellation flow is not evidenced here.
 - The payment-plan entity exposes backend actions such as `updatePaymentPlan` and APRM payment-plan modification processes, but the current user-facing evidence does not clearly show how or whether those actions are surfaced to users in this window. Installment visibility is proven; installment maintenance is still an open ambiguity.
 - The related-documents flow for original invoices is explicitly conditional on the current document looking like a credit note. If users expect every sales invoice to expose upstream invoice relationships, that broader behavior is not supported by the current evidence.
 - The preview modal includes `Messages` and `History` tabs, but the shared invoice-preview implementation renders them as empty states today. If invoice communication history or audit history is expected here, that is a current functional gap.
@@ -70,8 +69,7 @@ A user should be able to:
 10. Open `Related Documents` on an invoice tied to a commercial chain and confirm the user can navigate to the originating quotation or sales order, related goods shipments, and, for credit notes, the original invoice records when present.
 11. Open a completed sales invoice detail and confirm the kebab menu exposes a `Reactivate` action. Trigger it and verify the document returns to draft status and a `sonner` toast notification appears with the message `Document reactivated` / `Documento reactivado` (i18n key `reactivated`).
 12. From the list, select multiple draft invoices and confirm the bulk-complete action is available; then select multiple completed invoices and confirm the bulk-reactivate action is available. Verify each produces the expected status transition and a result toast.
-13. If the `Cancel` action appears on a completed invoice, verify whether it performs a real cancellation flow; if it only renders without effect, treat that as a product gap.
-14. Open the Send Email modal from the topbar and from the invoice preview and confirm: the `Para` field is pre-filled with the business partner's email when one is registered in `EM_Etgo_Email`; the field is empty (showing the "no email found" hint) when none is registered; and the modal title reads the translated document name in the active UI language.
+13. Open the Send Email modal from the topbar and from the invoice preview and confirm: the `Para` field is pre-filled with the business partner's email when one is registered in `EM_Etgo_Email`; the field is empty (showing the "no email found" hint) when none is registered; and the modal title reads the translated document name in the active UI language.
 
 ## Automated evidence
 
