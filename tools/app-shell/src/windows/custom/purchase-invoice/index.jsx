@@ -26,6 +26,19 @@ const LIST_COLUMNS = [
   { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
 ];
+// Mirrors PurchaseInvoiceHeaderTable columns (key + column + type only) so that
+// buildAdvancedFilterCriteria can resolve filter modes on the first render,
+// before DataTable fires onColumnsReady.
+const OVERDUE_INITIAL_COLUMNS = [
+  { key: 'invoiceDate', column: 'DateInvoiced', type: 'date' },
+  { key: 'orderReference', column: 'POReference', type: 'string' },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector' },
+  { key: 'documentStatus', column: 'DocStatus', type: 'status' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
+  { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
+  { key: 'eTGODueDate', column: 'em_etgo_due_date', type: 'date' },
+];
+
 // Mirrors artifacts/purchase-invoice/generated/web/purchase-invoice/HeaderPage.jsx
 // Kept in sync manually because the generator does not expose it yet.
 const LABEL_OVERRIDES = {
@@ -128,19 +141,27 @@ export default function PurchaseInvoiceWindow(props) {
 
   const filterParam = searchParams.get('filter');
   const docStatus = searchParams.get('DocStatus');
-  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
 
-  const todayIso = new Date().toISOString().slice(0, 10);
-  const INVOICE_QUICK_FILTERS = [
-    {
-      label: 'overdueOnly',
-      filter: `criteria=${encodeURIComponent(JSON.stringify([
-        { fieldName: 'outstandingAmount', operator: 'greaterThan', value: 0 },
-        { fieldName: 'eTGODueDate', operator: 'lessThan', value: todayIso },
-      ]))}`,
-    },
-  ];
-  const initialQuickFilterIndex = filterParam === 'overdue' ? 0 : null;
+  const isOverdue = filterParam === 'overdue';
+  const isPaymentsDueToday = filterParam === 'paymentsDueToday';
+  const isInvoiceFilter = isOverdue || isPaymentsDueToday;
+
+  const todayISO = new Date().toISOString().slice(0, 10);
+
+  const initialAdvancedFilter = isInvoiceFilter
+    ? {
+        rowOperator: 'and',
+        conditions: [
+          { field: 'documentStatus', operator: 'equals', value: 'CO' },
+          { field: 'outstandingAmount', operator: 'greaterThan', value: 0 },
+          ...(isPaymentsDueToday
+            ? [{ field: 'eTGODueDate', operator: 'equals', value: todayISO }]
+            : []),
+        ],
+      }
+    : null;
+
+  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
 
   return (
     <>
@@ -152,8 +173,8 @@ export default function PurchaseInvoiceWindow(props) {
         breadcrumb={breadcrumb}
         labelOverrides={LABEL_OVERRIDES}
         initialColumnFilters={initialColumnFilters}
-        quickFilters={INVOICE_QUICK_FILTERS}
-        initialQuickFilterIndex={initialQuickFilterIndex}
+        initialAdvancedFilter={initialAdvancedFilter}
+        initialColumns={isInvoiceFilter ? OVERDUE_INITIAL_COLUMNS : null}
         dateFilterKey="invoiceDate"
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
         bulkActions={(ctx) => <BulkDocumentAction {...ctx} />}
