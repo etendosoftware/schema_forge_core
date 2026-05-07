@@ -284,6 +284,50 @@
         "etgoTotalDiscount": {
           "visibility": "editable",
           "form": false
+        },
+        "aeatsiiClaveTipo": {
+          "visibility": "editable",
+          "form": false
+        },
+        "aeatsiiDescription": {
+          "visibility": "editable",
+          "form": false
+        },
+        "aeatsiiDescripcionSii": {
+          "visibility": "editable",
+          "form": false
+        },
+        "aeatsiiCauseExemption": {
+          "visibility": "editable",
+          "form": false
+        },
+        "aeatsiiIsauthorization": {
+          "visibility": "editable",
+          "form": false
+        },
+        "aeatsiiFechaOperacion": {
+          "visibility": "editable",
+          "form": false
+        },
+        "aeatsiiEjercicio": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "aeatsiiPeriodo": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "tbaiSequence": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "tbaiInvoicenum": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "tbaiInvoiceseq": {
+          "visibility": "readOnly",
+          "form": false
         }
       }
     },

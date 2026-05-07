@@ -172,6 +172,22 @@ export const api = {
       "url": "/sws/neo/sales-invoice/header/selectors/priceList"
     },
     {
+      "entity": "header",
+      "field": "aeatsiiDescription",
+      "column": "EM_Aeatsii_Description_ID",
+      "reference": "aeatsii_description",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/header/selectors/aeatsiiDescription"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiCauseExemption",
+      "column": "EM_Aeatsii_Cause_Exemption_ID",
+      "reference": "aeatsii_cause_exemption",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/header/selectors/aeatsiiCauseExemption"
+    },
+    {
       "entity": "lines",
       "field": "product",
       "column": "M_Product_ID",
