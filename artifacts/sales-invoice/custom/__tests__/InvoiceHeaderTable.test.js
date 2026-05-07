@@ -11,7 +11,6 @@ describe('Sales InvoiceHeaderTable', () => {
   it('uses calendar-date helpers for due date parsing and formatting', () => {
     assert.match(src, /formatCalendarDate/);
     assert.match(src, /getCalendarDateRelation/);
-    assert.match(src, /getLatestInstallmentDueDate/);
   });
 
   it('formats due dates with the active locale instead of a hardcoded region', () => {
@@ -20,16 +19,16 @@ describe('Sales InvoiceHeaderTable', () => {
   });
 
   it('renders the due date column driven by paid/overdue/soon/ok state', () => {
-    assert.match(src, /key.*_dueDate/);
+    assert.match(src, /key.*eTGODueDate/);
     assert.match(src, /getDueDateState/);
     assert.match(src, /getDueDateDotStyle/);
   });
 
-  it('feeds outstandingAmount into the due-date state to flip overdue→paid', () => {
-    assert.match(src, /getDueDateState\(\s*d\s*,\s*row\.outstandingAmount/);
+  it('feeds outstandingAmount into the due-date state', () => {
+    assert.match(src, /getDueDateState\(d, row\.outstandingAmount\)/);
   });
 
-  it('treats only past due dates as overdue status', () => {
-    assert.match(src, /getCalendarDateRelation\(row\.dueDate\) === 'past'/);
+  it('uses getCalendarDateRelation to determine overdue status', () => {
+    assert.match(src, /getCalendarDateRelation\(row\.eTGODueDate\) === 'past'/);
   });
 });

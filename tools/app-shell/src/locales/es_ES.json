@@ -14481,6 +14481,9 @@
     },
     "Código de Actividad": {
       "label": "Código de Actividad"
+    },
+    "Goods Movements": {
+      "label": "Movimientos de mercancía"
     }
   },
   "tabs": {
@@ -16082,6 +16085,9 @@
     },
     "Cabecera de Emisor": {
       "label": "Cabecera de Emisor"
+    },
+    "Assets": {
+      "label": "Activos"
     }
   },
   "ui": {
@@ -19646,6 +19652,9 @@
     },
     "Return Shipment": {
       "label": "Albarán de Devolución"
+    },
+    "Account": {
+      "label": "Plan de cuentas"
     }
   },
   "statuses": {

@@ -1,4 +1,4 @@
-.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-with-shell dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate sonar sonar-coverage menu-cache uuid
+.PHONY: test test-all-coverage test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-with-shell dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate sonar sonar-coverage menu-cache uuid
 
 # --- Testing ---
 
@@ -6,6 +6,22 @@ test: ## Run all CLI tests and app-shell unit tests
 	cd cli && node --test 'test/*.test.js'
 	node --test tools/app-shell/src/lib/__tests__/*.test.js
 	node --test tools/app-shell/src/pages/onboarding/__tests__/*.test.js
+
+test-all-coverage: ## Run ALL unit tests (Node + Vitest) with coverage reports
+	@mkdir -p coverage
+	@echo "=== CLI tests ==="
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/cli-lcov.info 'cli/test/*.test.js'
+	@echo "=== App-shell Node tests ==="
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-lcov.info 'tools/app-shell/src/**/__tests__/*.test.js'
+	@echo "=== App-shell extra tests ==="
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-test-lcov.info 'tools/app-shell/test/*.test.js'
+	@echo "=== Artifact custom tests ==="
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/artifacts-lcov.info 'artifacts/**/__tests__/*.test.js'
+	@echo "=== Vitest (React components) ==="
+	cd tools/app-shell && npx vitest run --coverage && cp coverage/vitest/lcov.info ../../coverage/vitest-lcov.info
+	@echo ""
+	@echo "Coverage reports saved in coverage/"
+	@echo "  cli-lcov.info, appshell-lcov.info, appshell-test-lcov.info, artifacts-lcov.info, vitest-lcov.info"
 
 validate-pipeline: ## Validate pipeline completeness across all artifacts
 	node cli/src/validate-pipeline.js --format=text
@@ -20,6 +36,17 @@ quality-gate: ## Run Schema Forge quality gate for PR-affected windows
 
 test-e2e: ## Run E2E tests with visible browser
 	cd e2e && npx playwright test --headed
+
+
+
+
+
+
+
+
+
+
+
 
 test-e2e-headless: ## Run E2E tests headless (CI mode)
 	cd e2e && CI=true npx playwright test

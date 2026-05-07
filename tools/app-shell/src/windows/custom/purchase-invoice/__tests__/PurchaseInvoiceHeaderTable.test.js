@@ -16,13 +16,15 @@ describe('PurchaseInvoiceHeaderTable', () => {
     assert.match(src, /DataTable/);
   });
 
-  it('batch-fetches due dates from the payment plan endpoint', () => {
-    assert.match(src, /paymentPlan\?parentId/);
-    assert.match(src, /Promise\.all/);
+  it('uses invoiceDueDate helpers for due-date state and styling', () => {
+    assert.match(src, /getDueDateState/);
+    assert.match(src, /getDueDateDotStyle/);
+    assert.match(src, /getDueDateTextStyle/);
   });
 
-  it('derives max dueDate from installments', () => {
-    assert.match(src, /getLatestInstallmentDueDate/);
+  it('reads due date from eTGODueDate (EM_Etgo_Due_Date column)', () => {
+    assert.match(src, /eTGODueDate/);
+    assert.match(src, /EM_Etgo_Due_Date/);
   });
 
   it('includes invoiceDate column with dot suppressed', () => {
@@ -35,14 +37,14 @@ describe('PurchaseInvoiceHeaderTable', () => {
     assert.match(src, /POReference/);
   });
 
-  it('includes a custom _dueDate column driven by paid/overdue/soon/ok state', () => {
-    assert.match(src, /key.*_dueDate/);
+  it('includes a custom eTGODueDate column driven by paid/overdue/soon/ok state', () => {
+    assert.match(src, /key.*eTGODueDate/);
     assert.match(src, /getDueDateState/);
     assert.match(src, /getDueDateDotStyle/);
   });
 
-  it('feeds outstandingAmount into the due-date state to flip overdue→paid', () => {
-    assert.match(src, /getDueDateState\(\s*d\s*,\s*row\.outstandingAmount/);
+  it('feeds outstandingAmount into the due-date state', () => {
+    assert.match(src, /getDueDateState\(d, row\.outstandingAmount\)/);
   });
 
   it('shows a dash when no due date is available', () => {
@@ -56,9 +58,5 @@ describe('PurchaseInvoiceHeaderTable', () => {
   it('formats due dates with the active locale instead of a hardcoded region', () => {
     assert.match(src, /useLocaleSwitch/);
     assert.match(src, /formatCalendarDate\(d, locale\)/);
-  });
-
-  it('passes Authorization header when fetching payment plans', () => {
-    assert.match(src, /Authorization.*Bearer/);
   });
 });
