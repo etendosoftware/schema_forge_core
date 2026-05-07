@@ -25,7 +25,7 @@ describe('ImportFromShipmentModal', () => {
   it('filters shipments by CO status, matching business partner, and not fully invoiced', () => {
     assert.match(src, /documentStatus\s*===\s*'CO'/);
     assert.match(src, /businessPartner\s*===\s*bpId/);
-    assert.match(src, /completelyInvoiced\s*!==\s*true/);
+    assert.match(src, /invoiced\s*!==\s*true/);
   });
 
   it('tracks already-imported shipment lines and order lines', () => {
@@ -39,10 +39,10 @@ describe('ImportFromShipmentModal', () => {
     assert.match(src, /documentNo.*toLowerCase.*includes/s);
   });
 
-  it('fetches shipment lines on expand with order line price enrichment', () => {
+  it('fetches shipment lines on expand with callout price enrichment', () => {
     assert.match(src, /fetchLines/);
     assert.match(src, /goods-shipment\/goodsShipmentLine\?parentId=/);
-    assert.match(src, /sales-order\/lines\?parentId=/);
+    assert.match(src, /resolveLinePrice/);
   });
 
   it('marks lines as already imported and disables their selection', () => {
