@@ -1,8 +1,8 @@
 {
-  "version": "0.17.0",
+  "version": "0.19.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
-  "updatedAt": "2026-05-06T14:48:44.119Z",
-  "checksum": "b018cd09ede2aab3",
+  "updatedAt": "2026-05-06T19:55:04.397Z",
+  "checksum": "e143d2e14e03a6af",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -471,6 +471,18 @@
               "type": "computed",
               "source": "false"
             }
+          },
+          {
+            "name": "etgoTotalDiscount",
+            "apiKey": "etgoTotalDiscount",
+            "column": "EM_Etgo_Total_Discount",
+            "label": "Total Discount %",
+            "type": "decimal",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": false
           },
           {
             "name": "eTGODueDate",
@@ -2365,6 +2377,14 @@
             "required": true
           },
           {
+            "name": "etgoTotalDiscount",
+            "apiKey": "etgoTotalDiscount",
+            "column": "EM_Etgo_Total_Discount",
+            "type": "decimal",
+            "visibility": "editable",
+            "required": false
+          },
+          {
             "name": "eTGODueDate",
             "apiKey": "eTGODueDate",
             "column": "em_etgo_due_date",
@@ -3972,6 +3992,14 @@
         "description": "Field 'eTGODueDate' should be present in header"
       },
       {
+        "id": "t-field-presence-header-etgoTotalDiscount",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "etgoTotalDiscount",
+        "runner": "node",
+        "description": "Field 'etgoTotalDiscount' should be present in header"
+      },
+      {
         "id": "t-field-presence-header-grandTotalAmount",
         "category": "field-presence",
         "entity": "header",
@@ -4282,6 +4310,14 @@
         "field": "eTGODueDate",
         "runner": "node",
         "description": "Field 'eTGODueDate' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-etgoTotalDiscount",
+        "category": "field-type",
+        "entity": "header",
+        "field": "etgoTotalDiscount",
+        "runner": "node",
+        "description": "Field 'etgoTotalDiscount' should have type 'number' in header"
       },
       {
         "id": "t-field-type-header-grandTotalAmount",
@@ -6602,15 +6638,15 @@
       }
     ],
     "summary": {
-      "total": 387,
+      "total": 389,
       "byCategory": {
         "action-endpoint": 24,
         "crud-flags": 3,
         "default-value-type": 14,
         "displaylogic-evaluable": 5,
         "displaylogic-valid": 5,
-        "field-presence": 39,
-        "field-type": 39,
+        "field-presence": 40,
+        "field-type": 40,
         "readonlylogic-evaluable": 14,
         "readonlylogic-valid": 14,
         "rule-declared": 8,
@@ -6620,7 +6656,7 @@
         "visibility": 3
       },
       "byRunner": {
-        "node": 387,
+        "node": 389,
         "junit": 0
       }
     }

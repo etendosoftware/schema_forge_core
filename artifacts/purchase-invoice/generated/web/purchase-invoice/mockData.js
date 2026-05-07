@@ -29,6 +29,7 @@ export const header = [
     "charge": "Sample charge",
     "project": "Sample project",
     "prepaymentAmount": 38907,
+    "etgoTotalDiscount": 99.44,
     "eTGODueDate": "2026-01-15"
   },
   {
@@ -59,6 +60,7 @@ export const header = [
     "charge": "Sample charge",
     "project": "Sample project",
     "prepaymentAmount": 9306,
+    "etgoTotalDiscount": 96.94,
     "eTGODueDate": "2026-01-16"
   },
   {
@@ -89,6 +91,7 @@ export const header = [
     "charge": "Sample charge",
     "project": "Sample project",
     "prepaymentAmount": 11544,
+    "etgoTotalDiscount": 12.48,
     "eTGODueDate": "2026-01-17"
   },
   {
@@ -119,6 +122,7 @@ export const header = [
     "charge": "Sample charge",
     "project": "Sample project",
     "prepaymentAmount": 11872,
+    "etgoTotalDiscount": 96.31,
     "eTGODueDate": "2026-01-18"
   },
   {
@@ -149,6 +153,7 @@ export const header = [
     "charge": "Sample charge",
     "project": "Sample project",
     "prepaymentAmount": 48460,
+    "etgoTotalDiscount": 31.27,
     "eTGODueDate": "2026-01-19"
   },
   {
@@ -179,6 +184,7 @@ export const header = [
     "charge": "Sample charge",
     "project": "Sample project",
     "prepaymentAmount": 45418,
+    "etgoTotalDiscount": 76.52,
     "eTGODueDate": "2026-01-20"
   },
   {
@@ -209,6 +215,7 @@ export const header = [
     "charge": "Sample charge",
     "project": "Sample project",
     "prepaymentAmount": 33840,
+    "etgoTotalDiscount": 2.66,
     "eTGODueDate": "2026-01-21"
   },
   {
@@ -239,6 +246,7 @@ export const header = [
     "charge": "Sample charge",
     "project": "Sample project",
     "prepaymentAmount": 25716,
+    "etgoTotalDiscount": 10.03,
     "eTGODueDate": "2026-01-22"
   },
   {
@@ -269,6 +277,7 @@ export const header = [
     "charge": "Sample charge",
     "project": "Sample project",
     "prepaymentAmount": 44780,
+    "etgoTotalDiscount": 93.97,
     "eTGODueDate": "2026-01-23"
   },
   {
@@ -299,6 +308,7 @@ export const header = [
     "charge": "Sample charge",
     "project": "Sample project",
     "prepaymentAmount": 12483,
+    "etgoTotalDiscount": 1.1,
     "eTGODueDate": "2026-01-24"
   },
   {
@@ -329,6 +339,7 @@ export const header = [
     "charge": "Sample charge",
     "project": "Sample project",
     "prepaymentAmount": 46022,
+    "etgoTotalDiscount": 79.99,
     "eTGODueDate": "2026-01-25"
   },
   {
@@ -359,6 +370,7 @@ export const header = [
     "charge": "Sample charge",
     "project": "Sample project",
     "prepaymentAmount": 38634,
+    "etgoTotalDiscount": 53.61,
     "eTGODueDate": "2026-01-26"
   }
 ];

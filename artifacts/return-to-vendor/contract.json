@@ -1,8 +1,8 @@
 {
-  "version": "0.3.0",
+  "version": "0.4.0",
   "generatedAt": "2026-04-29T19:46:13.628Z",
-  "updatedAt": "2026-05-06T12:21:43.853Z",
-  "checksum": "11d15e4d2247f595",
+  "updatedAt": "2026-05-06T22:31:24.783Z",
+  "checksum": "3ba219a1263817c7",
   "frontendContract": {
     "window": {
       "id": "C50A8AEE6F044825B5EF54FAAE76826F",
@@ -2565,6 +2565,14 @@
             "apiKey": "validUntil",
             "column": "validuntil",
             "type": "date",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "etgoTotalDiscount",
+            "apiKey": "etgoTotalDiscount",
+            "column": "EM_Etgo_Total_Discount",
+            "type": "decimal",
             "visibility": "system",
             "required": false
           }
@@ -8135,6 +8143,14 @@
         "description": "System field 'dropShipPartner' should exist in backend but not frontend for header"
       },
       {
+        "id": "t-system-field-header-etgoTotalDiscount",
+        "category": "system-field",
+        "entity": "header",
+        "field": "etgoTotalDiscount",
+        "runner": "node",
+        "description": "System field 'etgoTotalDiscount' should exist in backend but not frontend for header"
+      },
+      {
         "id": "t-system-field-header-etvfacReversedInvoice",
         "category": "system-field",
         "entity": "header",
@@ -9441,7 +9457,7 @@
       }
     ],
     "summary": {
-      "total": 599,
+      "total": 600,
       "byCategory": {
         "action-endpoint": 22,
         "crud-flags": 7,
@@ -9454,11 +9470,11 @@
         "readonlylogic-valid": 30,
         "rule-declared": 68,
         "selector-endpoint": 30,
-        "system-field": 197,
+        "system-field": 198,
         "visibility": 7
       },
       "byRunner": {
-        "node": 599,
+        "node": 600,
         "junit": 0
       }
     }
