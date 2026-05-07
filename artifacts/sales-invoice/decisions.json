@@ -307,7 +307,7 @@
           "visibility": "editable",
           "form": false
         },
-        "aeatsiiFechaOperacion": {
+        "etsgDateOperation": {
           "visibility": "editable",
           "form": false
         },

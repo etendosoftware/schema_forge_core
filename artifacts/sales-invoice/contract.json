@@ -1,5 +1,5 @@
 {
-  "version": "0.21.0",
+  "version": "0.22.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
   "updatedAt": "2026-05-07T18:28:19.946Z",
   "checksum": "e076f9ae129c5eab",
@@ -488,6 +488,32 @@
             }
           },
           {
+            "name": "etsgDateOperation",
+            "apiKey": "etsgDateOperation",
+            "column": "EM_Etsg_Date_Operation",
+            "label": "Fecha operación",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": false,
+            "derivation": {
+              "type": "fromConfig",
+              "source": "context.dateInvoiced"
+            },
+            "defaultValue": "@DateInvoiced@",
+            "displayLogic": {
+              "raw": "@etvfac_has_configuration@='Y' | @TBAI_ExistTBAIConfig@=1 | @AEATSII_AcogidaSII@='Y'",
+              "evaluable": true
+            },
+            "readOnlyLogic": {
+              "raw": "@processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
+            }
+          },
+          {
             "name": "tbaiSequence",
             "apiKey": "tbaiSequence",
             "column": "EM_Tbai_Sequence",
@@ -739,28 +765,6 @@
             }
           },
           {
-            "name": "aeatsiiFechaOperacion",
-            "apiKey": "aeatsiiFechaOperacion",
-            "column": "EM_Aeatsii_Fecha_Operacion",
-            "label": "EM_Aeatsii_Fecha_Operacion",
-            "type": "date",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": false,
-            "derivation": {
-              "type": "fromConfig",
-              "source": "context.dateInvoiced"
-            },
-            "defaultValue": "@DateInvoiced@",
-            "readOnlyLogic": {
-              "raw": "(@em_aeatsii_estado@='CO' | @em_aeatsii_estado@='AE' | (@DocStatus@='VO' & @em_aeatsii_issent@='Y')) & @Processed@='Y'",
-              "evaluable": true,
-              "js": "(record['em_aeatsii_estado'] === 'CO' || record['em_aeatsii_estado'] === 'AE' || (record['documentStatus'] === 'VO' && record['em_aeatsii_issent'] === 'Y')) && record['processed'] === true"
-            }
-          },
-          {
             "name": "etgoTotalDiscount",
             "apiKey": "etgoTotalDiscount",
             "column": "EM_Etgo_Total_Discount",
@@ -864,6 +868,13 @@
             }
           },
           {
+            "name": "etsgDateOperation",
+            "derivation": {
+              "type": "fromConfig",
+              "source": "context.dateInvoiced"
+            }
+          },
+          {
             "name": "aeatsiiClaveTipo",
             "derivation": {
               "type": "lookup",
@@ -896,13 +907,6 @@
             "derivation": {
               "type": "computed",
               "source": "false"
-            }
-          },
-          {
-            "name": "aeatsiiFechaOperacion",
-            "derivation": {
-              "type": "fromConfig",
-              "source": "context.dateInvoiced"
             }
           }
         ],
@@ -1893,7 +1897,7 @@
             "apiKey": "etsgDateOperation",
             "column": "EM_Etsg_Date_Operation",
             "type": "date",
-            "visibility": "discarded",
+            "visibility": "editable",
             "required": false
           },
           {
@@ -2453,7 +2457,7 @@
             "apiKey": "aeatsiiFechaOperacion",
             "column": "EM_Aeatsii_Fecha_Operacion",
             "type": "date",
-            "visibility": "editable",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -4156,14 +4160,6 @@
         "description": "Default value for 'aeatsiiDescription' in header should be a string"
       },
       {
-        "id": "t-default-value-type-header-aeatsiiFechaOperacion",
-        "category": "default-value-type",
-        "entity": "header",
-        "field": "aeatsiiFechaOperacion",
-        "runner": "node",
-        "description": "Default value for 'aeatsiiFechaOperacion' in header should be a string"
-      },
-      {
         "id": "t-default-value-type-header-aeatsiiIsauthorization",
         "category": "default-value-type",
         "entity": "header",
@@ -4186,6 +4182,14 @@
         "field": "documentStatus",
         "runner": "node",
         "description": "Default value for 'documentStatus' in header should be a string"
+      },
+      {
+        "id": "t-default-value-type-header-etsgDateOperation",
+        "category": "default-value-type",
+        "entity": "header",
+        "field": "etsgDateOperation",
+        "runner": "node",
+        "description": "Default value for 'etsgDateOperation' in header should be a string"
       },
       {
         "id": "t-default-value-type-header-invoiceDate",
@@ -4348,6 +4352,14 @@
         "description": "Display logic for 'aeatsiiPeriodo' in header should have evaluable flag"
       },
       {
+        "id": "t-displaylogic-evaluable-header-etsgDateOperation",
+        "category": "displaylogic-evaluable",
+        "entity": "header",
+        "field": "etsgDateOperation",
+        "runner": "node",
+        "description": "Display logic for 'etsgDateOperation' in header should have evaluable flag"
+      },
+      {
         "id": "t-displaylogic-evaluable-header-outstandingAmount",
         "category": "displaylogic-evaluable",
         "entity": "header",
@@ -4476,6 +4488,14 @@
         "description": "Display logic for 'aeatsiiPeriodo' in header should be valid JS"
       },
       {
+        "id": "t-displaylogic-valid-header-etsgDateOperation",
+        "category": "displaylogic-valid",
+        "entity": "header",
+        "field": "etsgDateOperation",
+        "runner": "node",
+        "description": "Display logic for 'etsgDateOperation' in header should be valid JS"
+      },
+      {
         "id": "t-displaylogic-valid-header-outstandingAmount",
         "category": "displaylogic-valid",
         "entity": "header",
@@ -4588,14 +4608,6 @@
         "description": "Field 'aeatsiiEjercicio' should be present in header"
       },
       {
-        "id": "t-field-presence-header-aeatsiiFechaOperacion",
-        "category": "field-presence",
-        "entity": "header",
-        "field": "aeatsiiFechaOperacion",
-        "runner": "node",
-        "description": "Field 'aeatsiiFechaOperacion' should be present in header"
-      },
-      {
         "id": "t-field-presence-header-aeatsiiIsauthorization",
         "category": "field-presence",
         "entity": "header",
@@ -4674,6 +4686,14 @@
         "field": "etgoTotalDiscount",
         "runner": "node",
         "description": "Field 'etgoTotalDiscount' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-etsgDateOperation",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "etsgDateOperation",
+        "runner": "node",
+        "description": "Field 'etsgDateOperation' should be present in header"
       },
       {
         "id": "t-field-presence-header-grandTotalAmount",
@@ -5012,14 +5032,6 @@
         "description": "Field 'aeatsiiEjercicio' should have type 'number' in header"
       },
       {
-        "id": "t-field-type-header-aeatsiiFechaOperacion",
-        "category": "field-type",
-        "entity": "header",
-        "field": "aeatsiiFechaOperacion",
-        "runner": "node",
-        "description": "Field 'aeatsiiFechaOperacion' should have type 'string' in header"
-      },
-      {
         "id": "t-field-type-header-aeatsiiIsauthorization",
         "category": "field-type",
         "entity": "header",
@@ -5098,6 +5110,14 @@
         "field": "etgoTotalDiscount",
         "runner": "node",
         "description": "Field 'etgoTotalDiscount' should have type 'number' in header"
+      },
+      {
+        "id": "t-field-type-header-etsgDateOperation",
+        "category": "field-type",
+        "entity": "header",
+        "field": "etsgDateOperation",
+        "runner": "node",
+        "description": "Field 'etsgDateOperation' should have type 'string' in header"
       },
       {
         "id": "t-field-type-header-grandTotalAmount",
@@ -5428,14 +5448,6 @@
         "description": "Read-only logic for 'aeatsiiEjercicio' in header should have evaluable flag"
       },
       {
-        "id": "t-readonlylogic-evaluable-header-aeatsiiFechaOperacion",
-        "category": "readonlylogic-evaluable",
-        "entity": "header",
-        "field": "aeatsiiFechaOperacion",
-        "runner": "node",
-        "description": "Read-only logic for 'aeatsiiFechaOperacion' in header should have evaluable flag"
-      },
-      {
         "id": "t-readonlylogic-evaluable-header-aeatsiiPeriodo",
         "category": "readonlylogic-evaluable",
         "entity": "header",
@@ -5458,6 +5470,14 @@
         "field": "documentNo",
         "runner": "node",
         "description": "Read-only logic for 'documentNo' in header should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-header-etsgDateOperation",
+        "category": "readonlylogic-evaluable",
+        "entity": "header",
+        "field": "etsgDateOperation",
+        "runner": "node",
+        "description": "Read-only logic for 'etsgDateOperation' in header should have evaluable flag"
       },
       {
         "id": "t-readonlylogic-evaluable-header-invoiceDate",
@@ -5596,14 +5616,6 @@
         "description": "Read-only logic for 'aeatsiiEjercicio' in header should be valid JS"
       },
       {
-        "id": "t-readonlylogic-valid-header-aeatsiiFechaOperacion",
-        "category": "readonlylogic-valid",
-        "entity": "header",
-        "field": "aeatsiiFechaOperacion",
-        "runner": "node",
-        "description": "Read-only logic for 'aeatsiiFechaOperacion' in header should be valid JS"
-      },
-      {
         "id": "t-readonlylogic-valid-header-aeatsiiPeriodo",
         "category": "readonlylogic-valid",
         "entity": "header",
@@ -5626,6 +5638,14 @@
         "field": "documentNo",
         "runner": "node",
         "description": "Read-only logic for 'documentNo' in header should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-header-etsgDateOperation",
+        "category": "readonlylogic-valid",
+        "entity": "header",
+        "field": "etsgDateOperation",
+        "runner": "node",
+        "description": "Read-only logic for 'etsgDateOperation' in header should be valid JS"
       },
       {
         "id": "t-readonlylogic-valid-header-invoiceDate",
@@ -6044,6 +6064,14 @@
         "description": "System field 'aeatsiiFechaDua' should exist in backend but not frontend for header"
       },
       {
+        "id": "t-system-field-header-aeatsiiFechaOperacion",
+        "category": "system-field",
+        "entity": "header",
+        "field": "aeatsiiFechaOperacion",
+        "runner": "node",
+        "description": "System field 'aeatsiiFechaOperacion' should exist in backend but not frontend for header"
+      },
+      {
         "id": "t-system-field-header-aeatsiiFechaRegCont",
         "category": "system-field",
         "entity": "header",
@@ -6322,14 +6350,6 @@
         "field": "etcopagCopilotFeedback",
         "runner": "node",
         "description": "System field 'etcopagCopilotFeedback' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-system-field-header-etsgDateOperation",
-        "category": "system-field",
-        "entity": "header",
-        "field": "etsgDateOperation",
-        "runner": "node",
-        "description": "System field 'etsgDateOperation' should exist in backend but not frontend for header"
       },
       {
         "id": "t-system-field-header-etsgIsF3",
@@ -7482,13 +7502,13 @@
       }
     ],
     "summary": {
-      "total": 446,
+      "total": 448,
       "byCategory": {
         "action-endpoint": 24,
         "crud-flags": 3,
         "default-value-type": 20,
-        "displaylogic-evaluable": 16,
-        "displaylogic-valid": 16,
+        "displaylogic-evaluable": 17,
+        "displaylogic-valid": 17,
         "field-presence": 52,
         "field-type": 52,
         "readonlylogic-evaluable": 21,
@@ -7500,7 +7520,7 @@
         "visibility": 3
       },
       "byRunner": {
-        "node": 446,
+        "node": 448,
         "junit": 0
       }
     }

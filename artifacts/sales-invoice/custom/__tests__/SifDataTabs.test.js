@@ -64,8 +64,8 @@ describe('SifDataTabs', () => {
 
   // ── SII fields ─────────────────────────────────────────────────────────────
 
-  it('renders an input for aeatsiiFechaOperacion (date)', () => {
-    assert.match(src, /aeatsiiFechaOperacion/);
+  it('renders an input for etsgDateOperation (date)', () => {
+    assert.match(src, /etsgDateOperation/);
   });
 
   it('renders a select for aeatsiiClaveTipo with R, F1, F2, F4 options', () => {
