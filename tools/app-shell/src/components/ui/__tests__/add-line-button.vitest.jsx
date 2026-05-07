@@ -7,8 +7,8 @@ vi.mock('@/i18n', () => ({
 }));
 
 // Mock Radix dropdown — render a simplified version that works in jsdom
-vi.mock('@/components/ui/dropdown-menu', () => {
-  const React = require('react');
+vi.mock('@/components/ui/dropdown-menu', async () => {
+  const React = await import('react');
   return {
     DropdownMenu: ({ children }) => <>{children}</>,
     DropdownMenuTrigger: React.forwardRef(({ children, asChild, ...props }, ref) => {

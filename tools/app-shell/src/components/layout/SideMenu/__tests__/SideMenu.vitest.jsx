@@ -51,8 +51,8 @@ vi.mock('@/components/ui/tooltip.jsx', () => ({
   TooltipContent: ({ children }) => <span style={{ display: 'none' }}>{children}</span>,
 }));
 
-vi.mock('@/components/ui/popover.jsx', () => {
-  const React = require('react');
+vi.mock('@/components/ui/popover.jsx', async () => {
+  const React = await import('react');
   return {
     Popover: ({ children }) => <>{children}</>,
     PopoverTrigger: React.forwardRef(({ children, asChild }, ref) => <span ref={ref}>{children}</span>),
@@ -60,8 +60,8 @@ vi.mock('@/components/ui/popover.jsx', () => {
   };
 });
 
-vi.mock('@/components/ui/dropdown-menu.jsx', () => {
-  const React = require('react');
+vi.mock('@/components/ui/dropdown-menu.jsx', async () => {
+  const React = await import('react');
   return {
     DropdownMenu: ({ children }) => <>{children}</>,
     DropdownMenuTrigger: React.forwardRef(({ children, asChild, ...props }, ref) => {
