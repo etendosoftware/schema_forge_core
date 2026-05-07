@@ -42,7 +42,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-002",
@@ -85,7 +86,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-003",
@@ -128,7 +130,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-004",
@@ -171,7 +174,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-005",
@@ -214,7 +218,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-006",
@@ -257,7 +262,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-007",
@@ -300,7 +306,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-008",
@@ -343,7 +350,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-009",
@@ -386,7 +394,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-010",
@@ -429,7 +438,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-011",
@@ -472,7 +482,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   },
   {
     "id": "mock-businessPartner-012",
@@ -515,7 +526,8 @@ export const businessPartner = [
     "pOPaymentMethod": "Sample pOPaymentMethod",
     "pOPaymentTerms": "Sample pOPaymentTerms",
     "purchasePricelist": "Sample purchasePricelist",
-    "vendorBlocking": "Sample vendorBlocking"
+    "vendorBlocking": "Sample vendorBlocking",
+    "eTGOLocation": "Sample eTGOLocation"
   }
 ];
 
@@ -2108,8 +2120,8 @@ export const contact = [
     "id": "mock-contact-001",
     "firstName": "Sample firstName",
     "lastName": "Sample lastName",
-    "email": "Sample email",
     "name": "Sample name",
+    "email": "Sample email",
     "phone": "Sample phone",
     "alternativePhone": "Sample alternativePhone",
     "position": "Sample position",
@@ -2126,8 +2138,8 @@ export const contact = [
     "id": "mock-contact-002",
     "firstName": "Sample firstName",
     "lastName": "Sample lastName",
-    "email": "Sample email",
     "name": "Sample name",
+    "email": "Sample email",
     "phone": "Sample phone",
     "alternativePhone": "Sample alternativePhone",
     "position": "Sample position",
@@ -2144,8 +2156,8 @@ export const contact = [
     "id": "mock-contact-003",
     "firstName": "Sample firstName",
     "lastName": "Sample lastName",
-    "email": "Sample email",
     "name": "Sample name",
+    "email": "Sample email",
     "phone": "Sample phone",
     "alternativePhone": "Sample alternativePhone",
     "position": "Sample position",
@@ -2162,8 +2174,8 @@ export const contact = [
     "id": "mock-contact-004",
     "firstName": "Sample firstName",
     "lastName": "Sample lastName",
-    "email": "Sample email",
     "name": "Sample name",
+    "email": "Sample email",
     "phone": "Sample phone",
     "alternativePhone": "Sample alternativePhone",
     "position": "Sample position",
@@ -2180,8 +2192,8 @@ export const contact = [
     "id": "mock-contact-005",
     "firstName": "Sample firstName",
     "lastName": "Sample lastName",
-    "email": "Sample email",
     "name": "Sample name",
+    "email": "Sample email",
     "phone": "Sample phone",
     "alternativePhone": "Sample alternativePhone",
     "position": "Sample position",
@@ -2198,8 +2210,8 @@ export const contact = [
     "id": "mock-contact-006",
     "firstName": "Sample firstName",
     "lastName": "Sample lastName",
-    "email": "Sample email",
     "name": "Sample name",
+    "email": "Sample email",
     "phone": "Sample phone",
     "alternativePhone": "Sample alternativePhone",
     "position": "Sample position",
@@ -2216,8 +2228,8 @@ export const contact = [
     "id": "mock-contact-007",
     "firstName": "Sample firstName",
     "lastName": "Sample lastName",
-    "email": "Sample email",
     "name": "Sample name",
+    "email": "Sample email",
     "phone": "Sample phone",
     "alternativePhone": "Sample alternativePhone",
     "position": "Sample position",
@@ -2234,8 +2246,8 @@ export const contact = [
     "id": "mock-contact-008",
     "firstName": "Sample firstName",
     "lastName": "Sample lastName",
-    "email": "Sample email",
     "name": "Sample name",
+    "email": "Sample email",
     "phone": "Sample phone",
     "alternativePhone": "Sample alternativePhone",
     "position": "Sample position",
@@ -2252,8 +2264,8 @@ export const contact = [
     "id": "mock-contact-009",
     "firstName": "Sample firstName",
     "lastName": "Sample lastName",
-    "email": "Sample email",
     "name": "Sample name",
+    "email": "Sample email",
     "phone": "Sample phone",
     "alternativePhone": "Sample alternativePhone",
     "position": "Sample position",
@@ -2270,8 +2282,8 @@ export const contact = [
     "id": "mock-contact-010",
     "firstName": "Sample firstName",
     "lastName": "Sample lastName",
-    "email": "Sample email",
     "name": "Sample name",
+    "email": "Sample email",
     "phone": "Sample phone",
     "alternativePhone": "Sample alternativePhone",
     "position": "Sample position",
@@ -2288,8 +2300,8 @@ export const contact = [
     "id": "mock-contact-011",
     "firstName": "Sample firstName",
     "lastName": "Sample lastName",
-    "email": "Sample email",
     "name": "Sample name",
+    "email": "Sample email",
     "phone": "Sample phone",
     "alternativePhone": "Sample alternativePhone",
     "position": "Sample position",
@@ -2306,8 +2318,8 @@ export const contact = [
     "id": "mock-contact-012",
     "firstName": "Sample firstName",
     "lastName": "Sample lastName",
-    "email": "Sample email",
     "name": "Sample name",
+    "email": "Sample email",
     "phone": "Sample phone",
     "alternativePhone": "Sample alternativePhone",
     "position": "Sample position",

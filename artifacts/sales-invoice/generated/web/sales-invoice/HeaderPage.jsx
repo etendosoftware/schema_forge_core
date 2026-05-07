@@ -14,6 +14,15 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Sales Invoice';
 
+const labelOverrides = {
+  "en_US": {
+    "EM_Etgo_Due_Date": "Due Date"
+  },
+  "es_ES": {
+    "EM_Etgo_Due_Date": "Vencimiento"
+  }
+};
+
 
 // @sf-generated-start summary:header
 const summary = [
@@ -80,7 +89,8 @@ export const api = {
         "documentNo",
         "invoiceDate",
         "businessPartner",
-        "documentStatus"
+        "documentStatus",
+        "eTGODueDate"
       ]
     },
     "lines": {
@@ -395,6 +405,14 @@ export const api = {
   },
   "window": {
     "category": "sales"
+  },
+  "labelOverrides": {
+    "en_US": {
+      "EM_Etgo_Due_Date": "Due Date"
+    },
+    "es_ES": {
+      "EM_Etgo_Due_Date": "Vencimiento"
+    }
   }
 };
 
@@ -433,6 +451,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         ]}
         draftMode={draftMode}
         salesTheme
+        labelOverrides={labelOverrides}
         lineConfig={INVOICE_LINE_CONFIG}
         {...props}
       />
@@ -449,6 +468,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       api={api}
       dateFilterKey="invoiceDate"
       hidePrint
+      labelOverrides={labelOverrides}
       {...props}
     />
   );

@@ -61,7 +61,7 @@ export async function refreshCache() {
       entries,
     };
 
-    await writeFile(CACHE_PATH, JSON.stringify(cache, null, 2), 'utf-8');
+    await writeFile(CACHE_PATH, JSON.stringify(cache, null, 2) + '\n', 'utf-8');
     return entries;
   } finally {
     await closePool(pool);

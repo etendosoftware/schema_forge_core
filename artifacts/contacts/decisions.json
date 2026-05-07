@@ -19,17 +19,16 @@
         "panel": "ContactsFinancialPanel"
       }
     ],
-    "quickFilters": [
+    "subsetFilters": [
       {
-        "label": "All",
-        "filter": null
+        "label": "all"
       },
       {
-        "label": "Customers",
+        "label": "customers",
         "filter": "criteria=%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"
       },
       {
-        "label": "Vendors",
+        "label": "vendors",
         "filter": "criteria=%5B%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"
       }
     ],
@@ -68,8 +67,7 @@
       "hidePrint": true,
       "hideEye": true,
       "hideCounter": true,
-      "hideLink": true,
-      "hideFilters": true
+      "hideLink": true
     },
     "secondaryTabs": {
       "contact": {
@@ -139,17 +137,24 @@
           "form": true,
           "grid": false,
           "section": "principal",
-          "order": 3
+          "order": 3,
+          "required": true
         },
         "etgoLastname": {
           "visibility": "editable",
           "form": true,
           "grid": false,
           "section": "principal",
-          "order": 4
+          "order": 4,
+          "required": true
         },
         "etgoIsperson": {
           "visibility": "editable",
+          "form": false,
+          "grid": false
+        },
+        "eTGOLocation": {
+          "visibility": "readOnly",
           "form": false,
           "grid": false
         },
@@ -165,7 +170,6 @@
           "visibility": "editable",
           "form": false,
           "grid": false,
-          "required": false,
           "section": "principal",
           "order": 1
         },

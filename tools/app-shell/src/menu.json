@@ -280,6 +280,11 @@
           "hidden": true
         },
         {
+          "name": "fiscal-monitor",
+          "label": "Fiscal Monitor",
+          "favname": "Fiscal Monitor"
+        },
+        {
           "name": "report-viewer-finance",
           "label": "Reports",
           "favname": "Finance Reports",
