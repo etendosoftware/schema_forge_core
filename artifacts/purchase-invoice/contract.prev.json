@@ -1,8 +1,8 @@
 {
   "version": "0.18.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-06T19:55:04.605Z",
-  "checksum": "82bd527c159d88b8",
+  "updatedAt": "2026-05-07T13:42:23.022Z",
+  "checksum": "aabc239780cd53a9",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -12,13 +12,6 @@
       "notesField": "description",
       "relatedDocuments": true,
       "menuActions": [
-        {
-          "key": "cancel",
-          "label": "Cancel",
-          "labelKey": "cancel",
-          "destructive": true,
-          "visibleWhenStatus": "CO"
-        },
         {
           "key": "reactivate",
           "label": "Reactivate",
@@ -3182,13 +3175,6 @@
       "notesField": "description",
       "relatedDocuments": true,
       "menuActions": [
-        {
-          "key": "cancel",
-          "label": "Cancel",
-          "labelKey": "cancel",
-          "destructive": true,
-          "visibleWhenStatus": "CO"
-        },
         {
           "key": "reactivate",
           "label": "Reactivate",
