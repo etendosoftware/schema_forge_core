@@ -13,33 +13,24 @@ const CLAVE_TIPO_OPTIONS = [
   { value: 'R', label: 'Corrective invoice' },
 ];
 
-function Field({ label, children }) {
+function FieldRow({ label, children }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-      <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: 500 }}>{label}</span>
-      {children}
+    <div className="flex items-start gap-2 min-w-0">
+      <span className="text-[11px] text-muted-foreground shrink-0 w-28 pt-0.5 leading-tight">{label}</span>
+      <div className="flex-1 min-w-0">{children}</div>
     </div>
   );
 }
 
 function ReadValue({ value }) {
   return (
-    <span style={{ fontSize: '14px', color: '#111827', padding: '6px 0' }}>
-      {value ?? '—'}
+    <span className="text-xs text-foreground">
+      {value ?? <span className="text-muted-foreground/40">—</span>}
     </span>
   );
 }
 
-const INPUT_STYLE = {
-  fontSize: '14px',
-  border: '1px solid #e5e7eb',
-  borderRadius: '6px',
-  padding: '6px 10px',
-  color: '#111827',
-  background: '#fff',
-  width: '100%',
-  boxSizing: 'border-box',
-};
+const inputCls = 'w-full text-xs bg-white border rounded px-2 py-0.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50 border-border/40';
 
 export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
   const { selectedOrg } = useAuth();
@@ -101,56 +92,62 @@ export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
     patchField(fieldKey, checked);
   }
 
-  const TAB_STYLE_ACTIVE = {
-    padding: '6px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-    color: '#1d4ed8', background: 'none', border: 'none',
-    borderBottom: '2px solid #1d4ed8',
-  };
-  const TAB_STYLE_INACTIVE = {
-    padding: '6px 16px', fontSize: '13px', fontWeight: 500, cursor: 'pointer',
-    color: '#6b7280', background: 'none', border: 'none', borderBottom: '2px solid transparent',
-  };
-
   return (
-    <div style={{ marginBottom: '16px', border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', borderBottom: '1px solid #e5e7eb', background: '#f9fafb' }}>
-        {showSii && (
-          <button
-            type="button"
-            style={effectiveTab === 'sii' ? TAB_STYLE_ACTIVE : TAB_STYLE_INACTIVE}
-            onClick={() => setActiveTab('sii')}
-          >
-            SII
-          </button>
-        )}
-        {showTbai && (
-          <button
-            type="button"
-            style={effectiveTab === 'tbai' ? TAB_STYLE_ACTIVE : TAB_STYLE_INACTIVE}
-            onClick={() => setActiveTab('tbai')}
-          >
-            TBAI
-          </button>
-        )}
+    <div className="flex items-start gap-3 px-3 pt-3 pb-3 border-t border-border/40" style={{ borderTopWidth: '0.5px' }}>
+      {/* Section label + tab switcher stacked */}
+      <div className="shrink-0 w-24">
+        <span className="text-[11px] font-medium text-foreground uppercase block mb-1.5" style={{ letterSpacing: '0.04em' }}>
+          SIF
+        </span>
+        <div className="flex flex-col gap-0.5">
+          {showSii && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('sii')}
+              className={`text-[10px] font-medium px-1.5 py-0.5 rounded text-left transition-colors ${
+                effectiveTab === 'sii'
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              SII
+            </button>
+          )}
+          {showTbai && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('tbai')}
+              className={`text-[10px] font-medium px-1.5 py-0.5 rounded text-left transition-colors ${
+                effectiveTab === 'tbai'
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              TBAI
+            </button>
+          )}
+        </div>
       </div>
 
-      <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+      {/* Fields */}
+      <div className="flex-1 min-w-0">
         {effectiveTab === 'sii' && showSii && (
-          <>
-            <Field label="Fecha operación">
+          <div className="flex flex-col gap-1.5">
+            <FieldRow label="Fecha operación">
               <input
                 type="date"
-                style={INPUT_STYLE}
+                className={inputCls}
+                style={{ borderWidth: '0.5px' }}
                 value={getVal('aeatsiiFechaOperacion')}
                 onChange={e => setVal('aeatsiiFechaOperacion', e.target.value)}
                 onBlur={e => handleBlur('aeatsiiFechaOperacion', e.target.value)}
                 disabled={savingField === 'aeatsiiFechaOperacion'}
               />
-            </Field>
-
-            <Field label="Tipo de factura SII">
+            </FieldRow>
+            <FieldRow label="Tipo factura">
               <select
-                style={INPUT_STYLE}
+                className={inputCls}
+                style={{ borderWidth: '0.5px' }}
                 value={getVal('aeatsiiClaveTipo')}
                 onChange={e => setVal('aeatsiiClaveTipo', e.target.value)}
                 onBlur={e => handleBlur('aeatsiiClaveTipo', e.target.value)}
@@ -161,63 +158,54 @@ export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
                   <option key={o.value} value={o.value}>{o.value} — {o.label}</option>
                 ))}
               </select>
-            </Field>
-
-            <Field label="Descripción maestra SII">
+            </FieldRow>
+            <FieldRow label="Descripción maestra">
               <ReadValue value={data?.['aeatsiiDescription$_identifier']} />
-            </Field>
-
-            <Field label="Descripción SII">
+            </FieldRow>
+            <FieldRow label="Descripción SII">
               <input
                 type="text"
-                style={INPUT_STYLE}
+                className={inputCls}
+                style={{ borderWidth: '0.5px' }}
                 value={getVal('aeatsiiDescripcionSii')}
                 onChange={e => setVal('aeatsiiDescripcionSii', e.target.value)}
                 onBlur={e => handleBlur('aeatsiiDescripcionSii', e.target.value)}
                 disabled={savingField === 'aeatsiiDescripcionSii'}
               />
-            </Field>
-
-            <Field label="Causa de exención SII">
+            </FieldRow>
+            <FieldRow label="Causa exención">
               <ReadValue value={data?.['aeatsiiCauseExemption$_identifier']} />
-            </Field>
-
-            <Field label="Autorización">
-              <div style={{ display: 'flex', alignItems: 'center', height: '34px' }}>
-                <input
-                  type="checkbox"
-                  checked={Boolean(getVal('aeatsiiIsauthorization'))}
-                  onChange={e => handleCheckboxChange('aeatsiiIsauthorization', e.target.checked)}
-                  disabled={savingField === 'aeatsiiIsauthorization'}
-                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                />
-              </div>
-            </Field>
-
-            <Field label="Ejercicio SII">
+            </FieldRow>
+            <FieldRow label="Autorización">
+              <input
+                type="checkbox"
+                checked={Boolean(getVal('aeatsiiIsauthorization'))}
+                onChange={e => handleCheckboxChange('aeatsiiIsauthorization', e.target.checked)}
+                disabled={savingField === 'aeatsiiIsauthorization'}
+                className="mt-0.5 cursor-pointer"
+              />
+            </FieldRow>
+            <FieldRow label="Ejercicio SII">
               <ReadValue value={data?.aeatsiiEjercicio} />
-            </Field>
-
-            <Field label="Periodo SII">
+            </FieldRow>
+            <FieldRow label="Periodo SII">
               <ReadValue value={data?.aeatsiiPeriodo} />
-            </Field>
-          </>
+            </FieldRow>
+          </div>
         )}
 
         {effectiveTab === 'tbai' && showTbai && (
-          <>
-            <Field label="Secuencia de encadenamiento">
+          <div className="flex flex-col gap-1.5">
+            <FieldRow label="Secuencia encadenamiento">
               <ReadValue value={data?.tbaiSequence} />
-            </Field>
-
-            <Field label="Serie factura">
+            </FieldRow>
+            <FieldRow label="Serie factura">
               <ReadValue value={data?.tbaiInvoicenum} />
-            </Field>
-
-            <Field label="Secuencia factura">
+            </FieldRow>
+            <FieldRow label="Secuencia factura">
               <ReadValue value={data?.tbaiInvoiceseq} />
-            </Field>
-          </>
+            </FieldRow>
+          </div>
         )}
       </div>
     </div>
