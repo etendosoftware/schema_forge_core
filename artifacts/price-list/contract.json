@@ -1,8 +1,8 @@
 {
   "version": "0.2.0",
   "generatedAt": "2026-04-29T18:12:11.134Z",
-  "updatedAt": "2026-05-05T19:58:51.411Z",
-  "checksum": "38d99f1f9756ae18",
+  "updatedAt": "2026-05-06T14:31:28.188Z",
+  "checksum": "f660c4f25f448e0b",
   "frontendContract": {
     "window": {
       "id": "146",
@@ -1070,767 +1070,7 @@
   "testManifest": {
     "tests": [
       {
-        "id": "t-1",
-        "category": "field-presence",
-        "entity": "priceList",
-        "field": "name",
-        "runner": "node",
-        "description": "Field 'name' should be present in priceList"
-      },
-      {
-        "id": "t-2",
-        "category": "field-presence",
-        "entity": "priceList",
-        "field": "currency",
-        "runner": "node",
-        "description": "Field 'currency' should be present in priceList"
-      },
-      {
-        "id": "t-3",
-        "category": "field-presence",
-        "entity": "priceList",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should be present in priceList"
-      },
-      {
-        "id": "t-4",
-        "category": "field-presence",
-        "entity": "priceList",
-        "field": "salesPriceList",
-        "runner": "node",
-        "description": "Field 'salesPriceList' should be present in priceList"
-      },
-      {
-        "id": "t-5",
-        "category": "field-presence",
-        "entity": "priceList",
-        "field": "costBasedPriceList",
-        "runner": "node",
-        "description": "Field 'costBasedPriceList' should be present in priceList"
-      },
-      {
-        "id": "t-6",
-        "category": "field-presence",
-        "entity": "priceList",
-        "field": "priceIncludesTax",
-        "runner": "node",
-        "description": "Field 'priceIncludesTax' should be present in priceList"
-      },
-      {
-        "id": "t-7",
-        "category": "field-presence",
-        "entity": "priceList",
-        "field": "default",
-        "runner": "node",
-        "description": "Field 'default' should be present in priceList"
-      },
-      {
-        "id": "t-8",
-        "category": "field-type",
-        "entity": "priceList",
-        "field": "name",
-        "runner": "node",
-        "description": "Field 'name' should have type 'string' in priceList"
-      },
-      {
-        "id": "t-9",
-        "category": "field-type",
-        "entity": "priceList",
-        "field": "currency",
-        "runner": "node",
-        "description": "Field 'currency' should have type 'string' in priceList"
-      },
-      {
-        "id": "t-10",
-        "category": "field-type",
-        "entity": "priceList",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should have type 'string' in priceList"
-      },
-      {
-        "id": "t-11",
-        "category": "field-type",
-        "entity": "priceList",
-        "field": "salesPriceList",
-        "runner": "node",
-        "description": "Field 'salesPriceList' should have type 'boolean' in priceList"
-      },
-      {
-        "id": "t-12",
-        "category": "field-type",
-        "entity": "priceList",
-        "field": "costBasedPriceList",
-        "runner": "node",
-        "description": "Field 'costBasedPriceList' should have type 'boolean' in priceList"
-      },
-      {
-        "id": "t-13",
-        "category": "field-type",
-        "entity": "priceList",
-        "field": "priceIncludesTax",
-        "runner": "node",
-        "description": "Field 'priceIncludesTax' should have type 'boolean' in priceList"
-      },
-      {
-        "id": "t-14",
-        "category": "field-type",
-        "entity": "priceList",
-        "field": "default",
-        "runner": "node",
-        "description": "Field 'default' should have type 'boolean' in priceList"
-      },
-      {
-        "id": "t-15",
-        "category": "searchable-filters",
-        "entity": "priceList",
-        "field": "name",
-        "runner": "node",
-        "description": "Field 'name' should be a supported filter for priceList"
-      },
-      {
-        "id": "t-16",
-        "category": "visibility",
-        "entity": "priceList",
-        "runner": "node",
-        "description": "Entity 'priceList' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-17",
-        "category": "displaylogic-valid",
-        "entity": "priceList",
-        "field": "costBasedPriceList",
-        "runner": "node",
-        "description": "Display logic for 'costBasedPriceList' in priceList should be valid JS"
-      },
-      {
-        "id": "t-18",
-        "category": "displaylogic-evaluable",
-        "entity": "priceList",
-        "field": "costBasedPriceList",
-        "runner": "node",
-        "description": "Display logic for 'costBasedPriceList' in priceList should have evaluable flag"
-      },
-      {
-        "id": "t-19",
-        "category": "default-value-type",
-        "entity": "priceList",
-        "field": "costBasedPriceList",
-        "runner": "node",
-        "description": "Default value for 'costBasedPriceList' in priceList should be a string"
-      },
-      {
-        "id": "t-20",
-        "category": "field-presence",
-        "entity": "priceListVersion",
-        "field": "name",
-        "runner": "node",
-        "description": "Field 'name' should be present in priceListVersion"
-      },
-      {
-        "id": "t-21",
-        "category": "field-presence",
-        "entity": "priceListVersion",
-        "field": "validFromDate",
-        "runner": "node",
-        "description": "Field 'validFromDate' should be present in priceListVersion"
-      },
-      {
-        "id": "t-22",
-        "category": "field-presence",
-        "entity": "priceListVersion",
-        "field": "priceListSchema",
-        "runner": "node",
-        "description": "Field 'priceListSchema' should be present in priceListVersion"
-      },
-      {
-        "id": "t-23",
-        "category": "field-presence",
-        "entity": "priceListVersion",
-        "field": "basePriceListVersion",
-        "runner": "node",
-        "description": "Field 'basePriceListVersion' should be present in priceListVersion"
-      },
-      {
-        "id": "t-24",
-        "category": "field-presence",
-        "entity": "priceListVersion",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should be present in priceListVersion"
-      },
-      {
-        "id": "t-25",
-        "category": "field-presence",
-        "entity": "priceListVersion",
-        "field": "create",
-        "runner": "node",
-        "description": "Field 'create' should be present in priceListVersion"
-      },
-      {
-        "id": "t-26",
-        "category": "field-type",
-        "entity": "priceListVersion",
-        "field": "name",
-        "runner": "node",
-        "description": "Field 'name' should have type 'string' in priceListVersion"
-      },
-      {
-        "id": "t-27",
-        "category": "field-type",
-        "entity": "priceListVersion",
-        "field": "validFromDate",
-        "runner": "node",
-        "description": "Field 'validFromDate' should have type 'string' in priceListVersion"
-      },
-      {
-        "id": "t-28",
-        "category": "field-type",
-        "entity": "priceListVersion",
-        "field": "priceListSchema",
-        "runner": "node",
-        "description": "Field 'priceListSchema' should have type 'string' in priceListVersion"
-      },
-      {
-        "id": "t-29",
-        "category": "field-type",
-        "entity": "priceListVersion",
-        "field": "basePriceListVersion",
-        "runner": "node",
-        "description": "Field 'basePriceListVersion' should have type 'string' in priceListVersion"
-      },
-      {
-        "id": "t-30",
-        "category": "field-type",
-        "entity": "priceListVersion",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should have type 'string' in priceListVersion"
-      },
-      {
-        "id": "t-31",
-        "category": "field-type",
-        "entity": "priceListVersion",
-        "field": "create",
-        "runner": "node",
-        "description": "Field 'create' should have type 'string' in priceListVersion"
-      },
-      {
-        "id": "t-32",
-        "category": "visibility",
-        "entity": "priceListVersion",
-        "runner": "node",
-        "description": "Entity 'priceListVersion' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-33",
-        "category": "default-value-type",
-        "entity": "priceListVersion",
-        "field": "name",
-        "runner": "node",
-        "description": "Default value for 'name' in priceListVersion should be a string"
-      },
-      {
-        "id": "t-34",
-        "category": "default-value-type",
-        "entity": "priceListVersion",
-        "field": "validFromDate",
-        "runner": "node",
-        "description": "Default value for 'validFromDate' in priceListVersion should be a string"
-      },
-      {
-        "id": "t-35",
-        "category": "field-presence",
-        "entity": "productPrice",
-        "field": "product",
-        "runner": "node",
-        "description": "Field 'product' should be present in productPrice"
-      },
-      {
-        "id": "t-36",
-        "category": "field-presence",
-        "entity": "productPrice",
-        "field": "standardPrice",
-        "runner": "node",
-        "description": "Field 'standardPrice' should be present in productPrice"
-      },
-      {
-        "id": "t-37",
-        "category": "field-presence",
-        "entity": "productPrice",
-        "field": "listPrice",
-        "runner": "node",
-        "description": "Field 'listPrice' should be present in productPrice"
-      },
-      {
-        "id": "t-38",
-        "category": "field-presence",
-        "entity": "productPrice",
-        "field": "cost",
-        "runner": "node",
-        "description": "Field 'cost' should be present in productPrice"
-      },
-      {
-        "id": "t-39",
-        "category": "field-presence",
-        "entity": "productPrice",
-        "field": "algorithm",
-        "runner": "node",
-        "description": "Field 'algorithm' should be present in productPrice"
-      },
-      {
-        "id": "t-40",
-        "category": "field-type",
-        "entity": "productPrice",
-        "field": "product",
-        "runner": "node",
-        "description": "Field 'product' should have type 'string' in productPrice"
-      },
-      {
-        "id": "t-41",
-        "category": "field-type",
-        "entity": "productPrice",
-        "field": "standardPrice",
-        "runner": "node",
-        "description": "Field 'standardPrice' should have type 'number' in productPrice"
-      },
-      {
-        "id": "t-42",
-        "category": "field-type",
-        "entity": "productPrice",
-        "field": "listPrice",
-        "runner": "node",
-        "description": "Field 'listPrice' should have type 'number' in productPrice"
-      },
-      {
-        "id": "t-43",
-        "category": "field-type",
-        "entity": "productPrice",
-        "field": "cost",
-        "runner": "node",
-        "description": "Field 'cost' should have type 'string' in productPrice"
-      },
-      {
-        "id": "t-44",
-        "category": "field-type",
-        "entity": "productPrice",
-        "field": "algorithm",
-        "runner": "node",
-        "description": "Field 'algorithm' should have type 'string' in productPrice"
-      },
-      {
-        "id": "t-45",
-        "category": "visibility",
-        "entity": "productPrice",
-        "runner": "node",
-        "description": "Entity 'productPrice' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-46",
-        "category": "displaylogic-valid",
-        "entity": "productPrice",
-        "field": "cost",
-        "runner": "node",
-        "description": "Display logic for 'cost' in productPrice should be valid JS"
-      },
-      {
-        "id": "t-47",
-        "category": "displaylogic-valid",
-        "entity": "productPrice",
-        "field": "algorithm",
-        "runner": "node",
-        "description": "Display logic for 'algorithm' in productPrice should be valid JS"
-      },
-      {
-        "id": "t-48",
-        "category": "displaylogic-evaluable",
-        "entity": "productPrice",
-        "field": "cost",
-        "runner": "node",
-        "description": "Display logic for 'cost' in productPrice should have evaluable flag"
-      },
-      {
-        "id": "t-49",
-        "category": "displaylogic-evaluable",
-        "entity": "productPrice",
-        "field": "algorithm",
-        "runner": "node",
-        "description": "Display logic for 'algorithm' in productPrice should have evaluable flag"
-      },
-      {
-        "id": "t-50",
-        "category": "default-value-type",
-        "entity": "productPrice",
-        "field": "cost",
-        "runner": "node",
-        "description": "Default value for 'cost' in productPrice should be a string"
-      },
-      {
-        "id": "t-51",
-        "category": "default-value-type",
-        "entity": "productPrice",
-        "field": "algorithm",
-        "runner": "node",
-        "description": "Default value for 'algorithm' in productPrice should be a string"
-      },
-      {
-        "id": "t-52",
-        "category": "system-field",
-        "entity": "priceList",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for priceList"
-      },
-      {
-        "id": "t-53",
-        "category": "system-field",
-        "entity": "priceList",
-        "field": "basePricelist",
-        "runner": "node",
-        "description": "System field 'basePricelist' should exist in backend but not frontend for priceList"
-      },
-      {
-        "id": "t-54",
-        "category": "system-field",
-        "entity": "priceList",
-        "field": "active",
-        "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for priceList"
-      },
-      {
-        "id": "t-55",
-        "category": "system-field",
-        "entity": "priceList",
-        "field": "enforcePriceLimit",
-        "runner": "node",
-        "description": "System field 'enforcePriceLimit' should exist in backend but not frontend for priceList"
-      },
-      {
-        "id": "t-56",
-        "category": "system-field",
-        "entity": "priceList",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for priceList"
-      },
-      {
-        "id": "t-57",
-        "category": "system-field",
-        "entity": "priceList",
-        "field": "id",
-        "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for priceList"
-      },
-      {
-        "id": "t-58",
-        "category": "system-field",
-        "entity": "priceList",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for priceList"
-      },
-      {
-        "id": "t-59",
-        "category": "system-field",
-        "entity": "priceList",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for priceList"
-      },
-      {
-        "id": "t-60",
-        "category": "system-field",
-        "entity": "priceList",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for priceList"
-      },
-      {
-        "id": "t-61",
-        "category": "system-field",
-        "entity": "priceList",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for priceList"
-      },
-      {
-        "id": "t-62",
-        "category": "system-field",
-        "entity": "priceListVersion",
-        "field": "active",
-        "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for priceListVersion"
-      },
-      {
-        "id": "t-63",
-        "category": "system-field",
-        "entity": "priceListVersion",
-        "field": "generatePriceListVersion",
-        "runner": "node",
-        "description": "System field 'generatePriceListVersion' should exist in backend but not frontend for priceListVersion"
-      },
-      {
-        "id": "t-64",
-        "category": "system-field",
-        "entity": "priceListVersion",
-        "field": "priceList",
-        "runner": "node",
-        "description": "System field 'priceList' should exist in backend but not frontend for priceListVersion"
-      },
-      {
-        "id": "t-65",
-        "category": "system-field",
-        "entity": "priceListVersion",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for priceListVersion"
-      },
-      {
-        "id": "t-66",
-        "category": "system-field",
-        "entity": "priceListVersion",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for priceListVersion"
-      },
-      {
-        "id": "t-67",
-        "category": "system-field",
-        "entity": "priceListVersion",
-        "field": "id",
-        "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for priceListVersion"
-      },
-      {
-        "id": "t-68",
-        "category": "system-field",
-        "entity": "priceListVersion",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for priceListVersion"
-      },
-      {
-        "id": "t-69",
-        "category": "system-field",
-        "entity": "priceListVersion",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for priceListVersion"
-      },
-      {
-        "id": "t-70",
-        "category": "system-field",
-        "entity": "priceListVersion",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for priceListVersion"
-      },
-      {
-        "id": "t-71",
-        "category": "system-field",
-        "entity": "priceListVersion",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for priceListVersion"
-      },
-      {
-        "id": "t-72",
-        "category": "system-field",
-        "entity": "productPrice",
-        "field": "priceLimit",
-        "runner": "node",
-        "description": "System field 'priceLimit' should exist in backend but not frontend for productPrice"
-      },
-      {
-        "id": "t-73",
-        "category": "system-field",
-        "entity": "productPrice",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for productPrice"
-      },
-      {
-        "id": "t-74",
-        "category": "system-field",
-        "entity": "productPrice",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for productPrice"
-      },
-      {
-        "id": "t-75",
-        "category": "system-field",
-        "entity": "productPrice",
-        "field": "priceListVersion",
-        "runner": "node",
-        "description": "System field 'priceListVersion' should exist in backend but not frontend for productPrice"
-      },
-      {
-        "id": "t-76",
-        "category": "system-field",
-        "entity": "productPrice",
-        "field": "active",
-        "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for productPrice"
-      },
-      {
-        "id": "t-77",
-        "category": "system-field",
-        "entity": "productPrice",
-        "field": "id",
-        "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for productPrice"
-      },
-      {
-        "id": "t-78",
-        "category": "system-field",
-        "entity": "productPrice",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for productPrice"
-      },
-      {
-        "id": "t-79",
-        "category": "system-field",
-        "entity": "productPrice",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for productPrice"
-      },
-      {
-        "id": "t-80",
-        "category": "system-field",
-        "entity": "productPrice",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for productPrice"
-      },
-      {
-        "id": "t-81",
-        "category": "system-field",
-        "entity": "productPrice",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for productPrice"
-      },
-      {
-        "id": "t-82",
-        "category": "rule-declared",
-        "rule": "SE_Pricelist_Active_IsActive",
-        "runner": "node",
-        "description": "Rule 'SE_Pricelist_Active_IsActive' (callout) should be declared"
-      },
-      {
-        "id": "t-83",
-        "category": "rule-declared",
-        "rule": "SE_Sales_Pricelist_IsSOPriceList",
-        "runner": "node",
-        "description": "Rule 'SE_Sales_Pricelist_IsSOPriceList' (callout) should be declared"
-      },
-      {
-        "id": "t-84",
-        "category": "rule-declared",
-        "rule": "AD_Client Security validation",
-        "runner": "node",
-        "description": "Rule 'AD_Client Security validation' (validation) should be declared"
-      },
-      {
-        "id": "t-85",
-        "category": "rule-declared",
-        "rule": "M_PriceList Base",
-        "runner": "node",
-        "description": "Rule 'M_PriceList Base' (validation) should be declared"
-      },
-      {
-        "id": "t-86",
-        "category": "rule-declared",
-        "rule": "Records belonging to any org declared in the role",
-        "runner": "node",
-        "description": "Rule 'Records belonging to any org declared in the role' (validation) should be declared"
-      },
-      {
-        "id": "t-87",
-        "category": "rule-declared",
-        "rule": "M_DiscountSchema only PriceList",
-        "runner": "node",
-        "description": "Rule 'M_DiscountSchema only PriceList' (validation) should be declared"
-      },
-      {
-        "id": "t-88",
-        "category": "rule-declared",
-        "runner": "node",
-        "description": "Rule 'undefined' (displayLogic) should be declared"
-      },
-      {
-        "id": "t-89",
-        "category": "rule-declared",
-        "rule": "Create Price List",
-        "runner": "node",
-        "description": "Rule 'Create Price List' (process) should be declared"
-      },
-      {
-        "id": "t-90",
-        "category": "rule-declared",
-        "rule": "Create Price List Version",
-        "runner": "node",
-        "description": "Rule 'Create Price List Version' (process) should be declared"
-      },
-      {
-        "id": "t-91",
-        "category": "crud-flags",
-        "entity": "priceList",
-        "runner": "node",
-        "description": "CRUD flags for 'priceList' should all be booleans"
-      },
-      {
-        "id": "t-92",
-        "category": "crud-flags",
-        "entity": "priceListVersion",
-        "runner": "node",
-        "description": "CRUD flags for 'priceListVersion' should all be booleans"
-      },
-      {
-        "id": "t-93",
-        "category": "crud-flags",
-        "entity": "productPrice",
-        "runner": "node",
-        "description": "CRUD flags for 'productPrice' should all be booleans"
-      },
-      {
-        "id": "t-94",
-        "category": "selector-endpoint",
-        "entity": "priceList",
-        "field": "currency",
-        "runner": "node",
-        "description": "Selector endpoint for 'currency' in priceList should exist"
-      },
-      {
-        "id": "t-95",
-        "category": "selector-endpoint",
-        "entity": "priceListVersion",
-        "field": "priceListSchema",
-        "runner": "node",
-        "description": "Selector endpoint for 'priceListSchema' in priceListVersion should exist"
-      },
-      {
-        "id": "t-96",
-        "category": "selector-endpoint",
-        "entity": "priceListVersion",
-        "field": "basePriceListVersion",
-        "runner": "node",
-        "description": "Selector endpoint for 'basePriceListVersion' in priceListVersion should exist"
-      },
-      {
-        "id": "t-97",
-        "category": "selector-endpoint",
-        "entity": "productPrice",
-        "field": "product",
-        "runner": "node",
-        "description": "Selector endpoint for 'product' in productPrice should exist"
-      },
-      {
-        "id": "t-98",
+        "id": "t-action-endpoint-priceListVersion-create",
         "category": "action-endpoint",
         "entity": "priceListVersion",
         "field": "create",
@@ -1838,29 +1078,789 @@
         "description": "Action endpoint for 'create' in priceListVersion should exist"
       },
       {
-        "id": "t-99",
+        "id": "t-action-endpoint-priceListVersion-generatePriceListVersion",
         "category": "action-endpoint",
         "entity": "priceListVersion",
         "field": "generatePriceListVersion",
         "runner": "node",
         "description": "Action endpoint for 'generatePriceListVersion' in priceListVersion should exist"
+      },
+      {
+        "id": "t-crud-flags-priceList",
+        "category": "crud-flags",
+        "entity": "priceList",
+        "runner": "node",
+        "description": "CRUD flags for 'priceList' should all be booleans"
+      },
+      {
+        "id": "t-crud-flags-priceListVersion",
+        "category": "crud-flags",
+        "entity": "priceListVersion",
+        "runner": "node",
+        "description": "CRUD flags for 'priceListVersion' should all be booleans"
+      },
+      {
+        "id": "t-crud-flags-productPrice",
+        "category": "crud-flags",
+        "entity": "productPrice",
+        "runner": "node",
+        "description": "CRUD flags for 'productPrice' should all be booleans"
+      },
+      {
+        "id": "t-default-value-type-priceList-costBasedPriceList",
+        "category": "default-value-type",
+        "entity": "priceList",
+        "field": "costBasedPriceList",
+        "runner": "node",
+        "description": "Default value for 'costBasedPriceList' in priceList should be a string"
+      },
+      {
+        "id": "t-default-value-type-priceListVersion-name",
+        "category": "default-value-type",
+        "entity": "priceListVersion",
+        "field": "name",
+        "runner": "node",
+        "description": "Default value for 'name' in priceListVersion should be a string"
+      },
+      {
+        "id": "t-default-value-type-priceListVersion-validFromDate",
+        "category": "default-value-type",
+        "entity": "priceListVersion",
+        "field": "validFromDate",
+        "runner": "node",
+        "description": "Default value for 'validFromDate' in priceListVersion should be a string"
+      },
+      {
+        "id": "t-default-value-type-productPrice-algorithm",
+        "category": "default-value-type",
+        "entity": "productPrice",
+        "field": "algorithm",
+        "runner": "node",
+        "description": "Default value for 'algorithm' in productPrice should be a string"
+      },
+      {
+        "id": "t-default-value-type-productPrice-cost",
+        "category": "default-value-type",
+        "entity": "productPrice",
+        "field": "cost",
+        "runner": "node",
+        "description": "Default value for 'cost' in productPrice should be a string"
+      },
+      {
+        "id": "t-displaylogic-evaluable-priceList-costBasedPriceList",
+        "category": "displaylogic-evaluable",
+        "entity": "priceList",
+        "field": "costBasedPriceList",
+        "runner": "node",
+        "description": "Display logic for 'costBasedPriceList' in priceList should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-evaluable-productPrice-algorithm",
+        "category": "displaylogic-evaluable",
+        "entity": "productPrice",
+        "field": "algorithm",
+        "runner": "node",
+        "description": "Display logic for 'algorithm' in productPrice should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-evaluable-productPrice-cost",
+        "category": "displaylogic-evaluable",
+        "entity": "productPrice",
+        "field": "cost",
+        "runner": "node",
+        "description": "Display logic for 'cost' in productPrice should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-valid-priceList-costBasedPriceList",
+        "category": "displaylogic-valid",
+        "entity": "priceList",
+        "field": "costBasedPriceList",
+        "runner": "node",
+        "description": "Display logic for 'costBasedPriceList' in priceList should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-productPrice-algorithm",
+        "category": "displaylogic-valid",
+        "entity": "productPrice",
+        "field": "algorithm",
+        "runner": "node",
+        "description": "Display logic for 'algorithm' in productPrice should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-productPrice-cost",
+        "category": "displaylogic-valid",
+        "entity": "productPrice",
+        "field": "cost",
+        "runner": "node",
+        "description": "Display logic for 'cost' in productPrice should be valid JS"
+      },
+      {
+        "id": "t-field-presence-priceList-costBasedPriceList",
+        "category": "field-presence",
+        "entity": "priceList",
+        "field": "costBasedPriceList",
+        "runner": "node",
+        "description": "Field 'costBasedPriceList' should be present in priceList"
+      },
+      {
+        "id": "t-field-presence-priceList-currency",
+        "category": "field-presence",
+        "entity": "priceList",
+        "field": "currency",
+        "runner": "node",
+        "description": "Field 'currency' should be present in priceList"
+      },
+      {
+        "id": "t-field-presence-priceList-default",
+        "category": "field-presence",
+        "entity": "priceList",
+        "field": "default",
+        "runner": "node",
+        "description": "Field 'default' should be present in priceList"
+      },
+      {
+        "id": "t-field-presence-priceList-description",
+        "category": "field-presence",
+        "entity": "priceList",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in priceList"
+      },
+      {
+        "id": "t-field-presence-priceList-name",
+        "category": "field-presence",
+        "entity": "priceList",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be present in priceList"
+      },
+      {
+        "id": "t-field-presence-priceList-priceIncludesTax",
+        "category": "field-presence",
+        "entity": "priceList",
+        "field": "priceIncludesTax",
+        "runner": "node",
+        "description": "Field 'priceIncludesTax' should be present in priceList"
+      },
+      {
+        "id": "t-field-presence-priceList-salesPriceList",
+        "category": "field-presence",
+        "entity": "priceList",
+        "field": "salesPriceList",
+        "runner": "node",
+        "description": "Field 'salesPriceList' should be present in priceList"
+      },
+      {
+        "id": "t-field-presence-priceListVersion-basePriceListVersion",
+        "category": "field-presence",
+        "entity": "priceListVersion",
+        "field": "basePriceListVersion",
+        "runner": "node",
+        "description": "Field 'basePriceListVersion' should be present in priceListVersion"
+      },
+      {
+        "id": "t-field-presence-priceListVersion-create",
+        "category": "field-presence",
+        "entity": "priceListVersion",
+        "field": "create",
+        "runner": "node",
+        "description": "Field 'create' should be present in priceListVersion"
+      },
+      {
+        "id": "t-field-presence-priceListVersion-description",
+        "category": "field-presence",
+        "entity": "priceListVersion",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in priceListVersion"
+      },
+      {
+        "id": "t-field-presence-priceListVersion-name",
+        "category": "field-presence",
+        "entity": "priceListVersion",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be present in priceListVersion"
+      },
+      {
+        "id": "t-field-presence-priceListVersion-priceListSchema",
+        "category": "field-presence",
+        "entity": "priceListVersion",
+        "field": "priceListSchema",
+        "runner": "node",
+        "description": "Field 'priceListSchema' should be present in priceListVersion"
+      },
+      {
+        "id": "t-field-presence-priceListVersion-validFromDate",
+        "category": "field-presence",
+        "entity": "priceListVersion",
+        "field": "validFromDate",
+        "runner": "node",
+        "description": "Field 'validFromDate' should be present in priceListVersion"
+      },
+      {
+        "id": "t-field-presence-productPrice-algorithm",
+        "category": "field-presence",
+        "entity": "productPrice",
+        "field": "algorithm",
+        "runner": "node",
+        "description": "Field 'algorithm' should be present in productPrice"
+      },
+      {
+        "id": "t-field-presence-productPrice-cost",
+        "category": "field-presence",
+        "entity": "productPrice",
+        "field": "cost",
+        "runner": "node",
+        "description": "Field 'cost' should be present in productPrice"
+      },
+      {
+        "id": "t-field-presence-productPrice-listPrice",
+        "category": "field-presence",
+        "entity": "productPrice",
+        "field": "listPrice",
+        "runner": "node",
+        "description": "Field 'listPrice' should be present in productPrice"
+      },
+      {
+        "id": "t-field-presence-productPrice-product",
+        "category": "field-presence",
+        "entity": "productPrice",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be present in productPrice"
+      },
+      {
+        "id": "t-field-presence-productPrice-standardPrice",
+        "category": "field-presence",
+        "entity": "productPrice",
+        "field": "standardPrice",
+        "runner": "node",
+        "description": "Field 'standardPrice' should be present in productPrice"
+      },
+      {
+        "id": "t-field-type-priceList-costBasedPriceList",
+        "category": "field-type",
+        "entity": "priceList",
+        "field": "costBasedPriceList",
+        "runner": "node",
+        "description": "Field 'costBasedPriceList' should have type 'boolean' in priceList"
+      },
+      {
+        "id": "t-field-type-priceList-currency",
+        "category": "field-type",
+        "entity": "priceList",
+        "field": "currency",
+        "runner": "node",
+        "description": "Field 'currency' should have type 'string' in priceList"
+      },
+      {
+        "id": "t-field-type-priceList-default",
+        "category": "field-type",
+        "entity": "priceList",
+        "field": "default",
+        "runner": "node",
+        "description": "Field 'default' should have type 'boolean' in priceList"
+      },
+      {
+        "id": "t-field-type-priceList-description",
+        "category": "field-type",
+        "entity": "priceList",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in priceList"
+      },
+      {
+        "id": "t-field-type-priceList-name",
+        "category": "field-type",
+        "entity": "priceList",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should have type 'string' in priceList"
+      },
+      {
+        "id": "t-field-type-priceList-priceIncludesTax",
+        "category": "field-type",
+        "entity": "priceList",
+        "field": "priceIncludesTax",
+        "runner": "node",
+        "description": "Field 'priceIncludesTax' should have type 'boolean' in priceList"
+      },
+      {
+        "id": "t-field-type-priceList-salesPriceList",
+        "category": "field-type",
+        "entity": "priceList",
+        "field": "salesPriceList",
+        "runner": "node",
+        "description": "Field 'salesPriceList' should have type 'boolean' in priceList"
+      },
+      {
+        "id": "t-field-type-priceListVersion-basePriceListVersion",
+        "category": "field-type",
+        "entity": "priceListVersion",
+        "field": "basePriceListVersion",
+        "runner": "node",
+        "description": "Field 'basePriceListVersion' should have type 'string' in priceListVersion"
+      },
+      {
+        "id": "t-field-type-priceListVersion-create",
+        "category": "field-type",
+        "entity": "priceListVersion",
+        "field": "create",
+        "runner": "node",
+        "description": "Field 'create' should have type 'string' in priceListVersion"
+      },
+      {
+        "id": "t-field-type-priceListVersion-description",
+        "category": "field-type",
+        "entity": "priceListVersion",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in priceListVersion"
+      },
+      {
+        "id": "t-field-type-priceListVersion-name",
+        "category": "field-type",
+        "entity": "priceListVersion",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should have type 'string' in priceListVersion"
+      },
+      {
+        "id": "t-field-type-priceListVersion-priceListSchema",
+        "category": "field-type",
+        "entity": "priceListVersion",
+        "field": "priceListSchema",
+        "runner": "node",
+        "description": "Field 'priceListSchema' should have type 'string' in priceListVersion"
+      },
+      {
+        "id": "t-field-type-priceListVersion-validFromDate",
+        "category": "field-type",
+        "entity": "priceListVersion",
+        "field": "validFromDate",
+        "runner": "node",
+        "description": "Field 'validFromDate' should have type 'string' in priceListVersion"
+      },
+      {
+        "id": "t-field-type-productPrice-algorithm",
+        "category": "field-type",
+        "entity": "productPrice",
+        "field": "algorithm",
+        "runner": "node",
+        "description": "Field 'algorithm' should have type 'string' in productPrice"
+      },
+      {
+        "id": "t-field-type-productPrice-cost",
+        "category": "field-type",
+        "entity": "productPrice",
+        "field": "cost",
+        "runner": "node",
+        "description": "Field 'cost' should have type 'string' in productPrice"
+      },
+      {
+        "id": "t-field-type-productPrice-listPrice",
+        "category": "field-type",
+        "entity": "productPrice",
+        "field": "listPrice",
+        "runner": "node",
+        "description": "Field 'listPrice' should have type 'number' in productPrice"
+      },
+      {
+        "id": "t-field-type-productPrice-product",
+        "category": "field-type",
+        "entity": "productPrice",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should have type 'string' in productPrice"
+      },
+      {
+        "id": "t-field-type-productPrice-standardPrice",
+        "category": "field-type",
+        "entity": "productPrice",
+        "field": "standardPrice",
+        "runner": "node",
+        "description": "Field 'standardPrice' should have type 'number' in productPrice"
+      },
+      {
+        "id": "t-rule-declared",
+        "category": "rule-declared",
+        "runner": "node",
+        "description": "Rule 'undefined' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-AD-Client-Security-validation",
+        "category": "rule-declared",
+        "rule": "AD_Client Security validation",
+        "runner": "node",
+        "description": "Rule 'AD_Client Security validation' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Create-Price-List",
+        "category": "rule-declared",
+        "rule": "Create Price List",
+        "runner": "node",
+        "description": "Rule 'Create Price List' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Create-Price-List-Version",
+        "category": "rule-declared",
+        "rule": "Create Price List Version",
+        "runner": "node",
+        "description": "Rule 'Create Price List Version' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-M-DiscountSchema-only-PriceList",
+        "category": "rule-declared",
+        "rule": "M_DiscountSchema only PriceList",
+        "runner": "node",
+        "description": "Rule 'M_DiscountSchema only PriceList' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-M-PriceList-Base",
+        "category": "rule-declared",
+        "rule": "M_PriceList Base",
+        "runner": "node",
+        "description": "Rule 'M_PriceList Base' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Records-belonging-to-any-org-declared-in-the-role",
+        "category": "rule-declared",
+        "rule": "Records belonging to any org declared in the role",
+        "runner": "node",
+        "description": "Rule 'Records belonging to any org declared in the role' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SE-Pricelist-Active-IsActive",
+        "category": "rule-declared",
+        "rule": "SE_Pricelist_Active_IsActive",
+        "runner": "node",
+        "description": "Rule 'SE_Pricelist_Active_IsActive' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SE-Sales-Pricelist-IsSOPriceList",
+        "category": "rule-declared",
+        "rule": "SE_Sales_Pricelist_IsSOPriceList",
+        "runner": "node",
+        "description": "Rule 'SE_Sales_Pricelist_IsSOPriceList' (callout) should be declared"
+      },
+      {
+        "id": "t-searchable-filters-priceList-name",
+        "category": "searchable-filters",
+        "entity": "priceList",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be a supported filter for priceList"
+      },
+      {
+        "id": "t-selector-endpoint-priceList-currency",
+        "category": "selector-endpoint",
+        "entity": "priceList",
+        "field": "currency",
+        "runner": "node",
+        "description": "Selector endpoint for 'currency' in priceList should exist"
+      },
+      {
+        "id": "t-selector-endpoint-priceListVersion-basePriceListVersion",
+        "category": "selector-endpoint",
+        "entity": "priceListVersion",
+        "field": "basePriceListVersion",
+        "runner": "node",
+        "description": "Selector endpoint for 'basePriceListVersion' in priceListVersion should exist"
+      },
+      {
+        "id": "t-selector-endpoint-priceListVersion-priceListSchema",
+        "category": "selector-endpoint",
+        "entity": "priceListVersion",
+        "field": "priceListSchema",
+        "runner": "node",
+        "description": "Selector endpoint for 'priceListSchema' in priceListVersion should exist"
+      },
+      {
+        "id": "t-selector-endpoint-productPrice-product",
+        "category": "selector-endpoint",
+        "entity": "productPrice",
+        "field": "product",
+        "runner": "node",
+        "description": "Selector endpoint for 'product' in productPrice should exist"
+      },
+      {
+        "id": "t-system-field-priceList-active",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-system-field-priceList-basePricelist",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "basePricelist",
+        "runner": "node",
+        "description": "System field 'basePricelist' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-system-field-priceList-client",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-system-field-priceList-createdBy",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-system-field-priceList-creationDate",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-system-field-priceList-enforcePriceLimit",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "enforcePriceLimit",
+        "runner": "node",
+        "description": "System field 'enforcePriceLimit' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-system-field-priceList-id",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-system-field-priceList-organization",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-system-field-priceList-updated",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-system-field-priceList-updatedBy",
+        "category": "system-field",
+        "entity": "priceList",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for priceList"
+      },
+      {
+        "id": "t-system-field-priceListVersion-active",
+        "category": "system-field",
+        "entity": "priceListVersion",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for priceListVersion"
+      },
+      {
+        "id": "t-system-field-priceListVersion-client",
+        "category": "system-field",
+        "entity": "priceListVersion",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for priceListVersion"
+      },
+      {
+        "id": "t-system-field-priceListVersion-createdBy",
+        "category": "system-field",
+        "entity": "priceListVersion",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for priceListVersion"
+      },
+      {
+        "id": "t-system-field-priceListVersion-creationDate",
+        "category": "system-field",
+        "entity": "priceListVersion",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for priceListVersion"
+      },
+      {
+        "id": "t-system-field-priceListVersion-generatePriceListVersion",
+        "category": "system-field",
+        "entity": "priceListVersion",
+        "field": "generatePriceListVersion",
+        "runner": "node",
+        "description": "System field 'generatePriceListVersion' should exist in backend but not frontend for priceListVersion"
+      },
+      {
+        "id": "t-system-field-priceListVersion-id",
+        "category": "system-field",
+        "entity": "priceListVersion",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for priceListVersion"
+      },
+      {
+        "id": "t-system-field-priceListVersion-organization",
+        "category": "system-field",
+        "entity": "priceListVersion",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for priceListVersion"
+      },
+      {
+        "id": "t-system-field-priceListVersion-priceList",
+        "category": "system-field",
+        "entity": "priceListVersion",
+        "field": "priceList",
+        "runner": "node",
+        "description": "System field 'priceList' should exist in backend but not frontend for priceListVersion"
+      },
+      {
+        "id": "t-system-field-priceListVersion-updated",
+        "category": "system-field",
+        "entity": "priceListVersion",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for priceListVersion"
+      },
+      {
+        "id": "t-system-field-priceListVersion-updatedBy",
+        "category": "system-field",
+        "entity": "priceListVersion",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for priceListVersion"
+      },
+      {
+        "id": "t-system-field-productPrice-active",
+        "category": "system-field",
+        "entity": "productPrice",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for productPrice"
+      },
+      {
+        "id": "t-system-field-productPrice-client",
+        "category": "system-field",
+        "entity": "productPrice",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for productPrice"
+      },
+      {
+        "id": "t-system-field-productPrice-createdBy",
+        "category": "system-field",
+        "entity": "productPrice",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for productPrice"
+      },
+      {
+        "id": "t-system-field-productPrice-creationDate",
+        "category": "system-field",
+        "entity": "productPrice",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for productPrice"
+      },
+      {
+        "id": "t-system-field-productPrice-id",
+        "category": "system-field",
+        "entity": "productPrice",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for productPrice"
+      },
+      {
+        "id": "t-system-field-productPrice-organization",
+        "category": "system-field",
+        "entity": "productPrice",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for productPrice"
+      },
+      {
+        "id": "t-system-field-productPrice-priceLimit",
+        "category": "system-field",
+        "entity": "productPrice",
+        "field": "priceLimit",
+        "runner": "node",
+        "description": "System field 'priceLimit' should exist in backend but not frontend for productPrice"
+      },
+      {
+        "id": "t-system-field-productPrice-priceListVersion",
+        "category": "system-field",
+        "entity": "productPrice",
+        "field": "priceListVersion",
+        "runner": "node",
+        "description": "System field 'priceListVersion' should exist in backend but not frontend for productPrice"
+      },
+      {
+        "id": "t-system-field-productPrice-updated",
+        "category": "system-field",
+        "entity": "productPrice",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for productPrice"
+      },
+      {
+        "id": "t-system-field-productPrice-updatedBy",
+        "category": "system-field",
+        "entity": "productPrice",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for productPrice"
+      },
+      {
+        "id": "t-visibility-priceList",
+        "category": "visibility",
+        "entity": "priceList",
+        "runner": "node",
+        "description": "Entity 'priceList' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-visibility-priceListVersion",
+        "category": "visibility",
+        "entity": "priceListVersion",
+        "runner": "node",
+        "description": "Entity 'priceListVersion' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-visibility-productPrice",
+        "category": "visibility",
+        "entity": "productPrice",
+        "runner": "node",
+        "description": "Entity 'productPrice' should only expose visible fields in frontend"
       }
     ],
     "summary": {
       "total": 99,
       "byCategory": {
+        "action-endpoint": 2,
+        "crud-flags": 3,
+        "default-value-type": 5,
+        "displaylogic-evaluable": 3,
+        "displaylogic-valid": 3,
         "field-presence": 18,
         "field-type": 18,
-        "searchable-filters": 1,
-        "visibility": 3,
-        "displaylogic-valid": 3,
-        "displaylogic-evaluable": 3,
-        "default-value-type": 5,
-        "system-field": 30,
         "rule-declared": 9,
-        "crud-flags": 3,
+        "searchable-filters": 1,
         "selector-endpoint": 4,
-        "action-endpoint": 2
+        "system-field": 30,
+        "visibility": 3
       },
       "byRunner": {
         "node": 99,

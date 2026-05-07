@@ -22,10 +22,16 @@ const breadcrumb = 'Purchases / Purchase Invoice';
 
 const labelOverrides = {
   "es_ES": {
-    "POReference": "Nº documento"
+    "POReference": "Nº documento",
+    "OutstandingAmt": "Pendiente de pago",
+    "EM_Etgo_Due_Date": "Vencimiento",
+    "em_etgo_delivery_status": "Estado de entrega"
   },
   "en_US": {
-    "POReference": "Document No."
+    "POReference": "Document No.",
+    "OutstandingAmt": "Pending Payment",
+    "EM_Etgo_Due_Date": "Due Date",
+    "em_etgo_delivery_status": "Delivery Status"
   }
 };
 
@@ -94,7 +100,8 @@ export const api = {
         "invoiceDate",
         "businessPartner",
         "orderReference",
-        "documentStatus"
+        "documentStatus",
+        "eTGODueDate"
       ]
     },
     "lines": {
@@ -803,10 +810,16 @@ export const api = {
   },
   "labelOverrides": {
     "es_ES": {
-      "POReference": "Nº documento"
+      "POReference": "Nº documento",
+      "OutstandingAmt": "Pendiente de pago",
+      "EM_Etgo_Due_Date": "Vencimiento",
+      "em_etgo_delivery_status": "Estado de entrega"
     },
     "en_US": {
-      "POReference": "Document No."
+      "POReference": "Document No.",
+      "OutstandingAmt": "Pending Payment",
+      "EM_Etgo_Due_Date": "Due Date",
+      "em_etgo_delivery_status": "Delivery Status"
     }
   }
 };
@@ -842,7 +855,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         menuActions={({ status }) => [
-          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', labelKey: 'cancel', onClick: () => {}, },
           { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
         ]}
         draftMode={draftMode}

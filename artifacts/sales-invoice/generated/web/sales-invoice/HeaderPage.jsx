@@ -14,6 +14,19 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Sales Invoice';
 
+const labelOverrides = {
+  "es_ES": {
+    "OutstandingAmt": "Pendiente de pago",
+    "EM_Etgo_Due_Date": "Vencimiento",
+    "em_etgo_delivery_status": "Estado de entrega"
+  },
+  "en_US": {
+    "OutstandingAmt": "Pending Payment",
+    "EM_Etgo_Due_Date": "Due Date",
+    "em_etgo_delivery_status": "Delivery Status"
+  }
+};
+
 
 // @sf-generated-start summary:header
 const summary = [
@@ -80,7 +93,8 @@ export const api = {
         "documentNo",
         "invoiceDate",
         "businessPartner",
-        "documentStatus"
+        "documentStatus",
+        "eTGODueDate"
       ]
     },
     "lines": {
@@ -395,6 +409,18 @@ export const api = {
   },
   "window": {
     "category": "sales"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "OutstandingAmt": "Pendiente de pago",
+      "EM_Etgo_Due_Date": "Vencimiento",
+      "em_etgo_delivery_status": "Estado de entrega"
+    },
+    "en_US": {
+      "OutstandingAmt": "Pending Payment",
+      "EM_Etgo_Due_Date": "Due Date",
+      "em_etgo_delivery_status": "Delivery Status"
+    }
   }
 };
 
@@ -427,12 +453,11 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         bottomSection={InvoiceBottomPanel}
         topbarRight={InvoiceTopbarExtra}
         menuActions={({ status }) => [
-          { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
-          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', labelKey: 'cancel', onClick: () => {}, },
           { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
         ]}
         draftMode={draftMode}
         salesTheme
+        labelOverrides={labelOverrides}
         lineConfig={INVOICE_LINE_CONFIG}
         {...props}
       />
@@ -449,6 +474,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       api={api}
       dateFilterKey="invoiceDate"
       hidePrint
+      labelOverrides={labelOverrides}
       {...props}
     />
   );

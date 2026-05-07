@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
+import { buildPendingDeliveryFilter } from '../shared/pendingDeliveryFilter.js';
 import { useCurrency } from '@/hooks/useCurrency';
 import { ListView } from '@/components/contract-ui';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
@@ -22,8 +23,8 @@ const LIST_COLUMNS = [
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner' },
   { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
-  { key: 'deliveryStatusPurchase', column: 'DeliveryStatusPurchase', type: 'percent', label: 'Delivery Status' },
   { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'percent', label: 'Invoice Status' },
+  { key: 'deliveryStatusPurchase', column: 'DeliveryStatusPurchase', type: 'percent', label: 'Delivery Status' },
 ];
 const draftModeWithModal = {
   enabled: true,
@@ -33,19 +34,22 @@ const draftModeWithModal = {
   onConfirm: () => window.dispatchEvent(new CustomEvent('purchase-order:open-confirm-modal')),
 };
 
-// Mirrors artifacts/purchase-order/generated/web/purchase-order/HeaderPage.jsx.
-// Kept in sync manually because the generator does not expose labelOverrides yet,
-// and the list view bulkActions prop is hand-rolled here (drift with decisions.json).
+// Mirrors artifacts/purchase-order/decisions.json → window.labelOverrides.
+// The list view here bypasses the generated HeaderPage and renders ListView
+// directly, so the generator-emitted labelOverrides do not reach it. Mirror
+// here until the wrapper consumes the spec's labelOverrides at runtime.
 const LABEL_OVERRIDES = {
   es_ES: {
     C_BPartner_ID: 'Contacto',
     DatePromised: 'Fecha de entrega esperada',
     DeliveryStatusPurchase: 'Estado de entrega',
+    InvoiceStatus: 'Estado de facturación',
   },
   en_US: {
     C_BPartner_ID: 'Contact',
     DatePromised: 'Expected Delivery Date',
     DeliveryStatusPurchase: 'Delivery Status',
+    InvoiceStatus: 'Invoicing Status',
   },
 };
 
@@ -111,19 +115,8 @@ export default function PurchaseOrderWindow(props) {
     );
   }
 
-  const docStatus = searchParams.get('DocStatus');
-  const filterParam = searchParams.get('filter');
-  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
-
-  const QUICK_FILTERS = [
-    {
-      label: 'pendingDeliveryOnly',
-      filter: `criteria=${encodeURIComponent(JSON.stringify([
-        { fieldName: 'deliveryStatusPurchase', operator: 'lessThan', value: 100 },
-      ]))}`,
-    },
-  ];
-  const initialQuickFilterIndex = filterParam === 'pendingDelivery' ? 0 : null;
+  const { initialColumnFilters, isPendingDelivery, initialAdvancedFilter } =
+    buildPendingDeliveryFilter(searchParams, 'deliveryStatusPurchase');
 
   return (
     <>
@@ -142,8 +135,8 @@ export default function PurchaseOrderWindow(props) {
           </>
         )}
         initialColumnFilters={initialColumnFilters}
-        quickFilters={QUICK_FILTERS}
-        initialQuickFilterIndex={initialQuickFilterIndex}
+        initialAdvancedFilter={initialAdvancedFilter}
+        initialColumns={isPendingDelivery ? LIST_COLUMNS : null}
         dateFilterKey="orderDate"
         refreshTrigger={refreshKey}
         {...props}

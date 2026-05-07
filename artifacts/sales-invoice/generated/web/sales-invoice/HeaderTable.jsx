@@ -8,10 +8,12 @@ const columns = [
   { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status', enumLabels: { 'CL': 'Closed', 'CO': 'Completed', 'DR': 'Draft', 'NA': 'Not Accepted', 'WP': 'Not Paid', 'RE': 'Re-Opened', 'TEMP': 'Temporal', 'IP': 'Under Way', '??': 'Unknown', 'VO': 'Voided' } },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
   { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount', label: 'Total Outstanding' },
+  { key: 'eTGODueDate', column: 'em_etgo_due_date', type: 'date', label: 'em_etgo_due_date' },
+  { key: 'eTGODeliveryStatus', column: 'em_etgo_delivery_status', type: 'number', label: 'em_etgo_delivery_status' },
 ];
 // @sf-generated-end columns:header
 
-const filters = ['documentNo', 'invoiceDate', 'businessPartner', 'documentStatus'];
+const filters = ['documentNo', 'invoiceDate', 'businessPartner', 'documentStatus', 'eTGODueDate'];
 
 // @sf-generated-start component:HeaderTable
 export default function HeaderTable(props) {

@@ -1,6 +1,11 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 
+function toJsIdentifier(name) {
+  if (!name) return '';
+  return name.replace(/[^a-zA-Z0-9_$]/g, '');
+}
+
 // --- Data pools ---
 
 const COMPANY_NAMES = [
@@ -256,7 +261,7 @@ export function generateMockDataFile(contract) {
   ];
 
   for (const [entityName, records] of Object.entries(data)) {
-    lines.push(`export const ${entityName} = ${JSON.stringify(records, null, 2)};`);
+    lines.push(`export const ${toJsIdentifier(entityName)} = ${JSON.stringify(records, null, 2)};`);
     lines.push('');
   }
 

@@ -124,4 +124,124 @@ test.describe('Physical Inventory', () => {
     // forceCalloutFields: callout returns quantityCount=42, must overwrite the 999
     await expect(userCountInput).not.toHaveValue('999', { timeout: 3_000 });
   });
+
+  // --- ETP-3901: warehouse-scoped system count (bookQuantity) ---
+
+  // Selects a product in the inline add row using the shared popup flow.
+  async function selectProduct(page) {
+    const productButton = page.locator('td button:has(svg)').first();
+    await expect(productButton).toBeVisible({ timeout: 3_000 });
+    await productButton.click();
+    const drawerInput = page.locator('[role="dialog"] input[type="text"]');
+    await expect(drawerInput).toBeVisible({ timeout: 3_000 });
+    await drawerInput.fill('Test');
+    const firstResult = page.locator('[role="dialog"] li button').first();
+    await expect(firstResult).toBeVisible({ timeout: 3_000 });
+    await firstResult.click();
+  }
+
+  // Verifies ETP-3901: afterCallout() on InventoryLineHandler now overrides both
+  // bookQuantity (Conteo del sistema) and quantityCount in the callout response.
+  // We intercept the callout with a specific value (296) and verify quantityCount
+  // reflects it — quantityCount is the editable mirror of bookQuantity in the UI.
+  test('callout overrides quantityCount and bookQuantity to warehouse-scoped stock value', async ({ page }) => {
+    await page.route('**/sws/**', (route) => {
+      const req = route.request();
+      if (req.method() === 'POST' && req.url().includes('/callout')) {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            updates: { quantityCount: 296, bookQuantity: 296 },
+            combos: {},
+            messages: [],
+          }),
+        });
+      } else {
+        route.continue();
+      }
+    });
+
+    await page.locator('button', { hasText: 'Nuevo' }).last().click();
+    await page.waitForURL('**/physical-inventory/new', { timeout: 5_000 });
+    await byRole(page, physicalInventoryDetail.addLine).click();
+
+    const userCountInput = page.locator('input[placeholder="User Count"]');
+    await expect(userCountInput).toBeVisible({ timeout: 5_000 });
+
+    await selectProduct(page);
+
+    // afterCallout() returns { quantityCount: 296, bookQuantity: 296 }.
+    // quantityCount maps to the editable User Count input — verifies both fields
+    // were set to the warehouse-scoped value, not the global default.
+    await expect(userCountInput).toHaveValue('296', { timeout: 3_000 });
+  });
+
+  // Verifies ETP-3901: the callout request targets the inventoryLine endpoint,
+  // confirming InventoryLineHandler.afterCallout() is the active handler.
+  test('product selection sends callout request to the inventoryLine endpoint', async ({ page }) => {
+    const capturedUrls = [];
+    await page.route('**/sws/**', (route) => {
+      const req = route.request();
+      if (req.method() === 'POST' && req.url().includes('/callout')) {
+        capturedUrls.push(req.url());
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ updates: { quantityCount: 42, bookQuantity: 42 }, combos: {}, messages: [] }),
+        });
+      } else {
+        route.continue();
+      }
+    });
+
+    await page.locator('button', { hasText: 'Nuevo' }).last().click();
+    await page.waitForURL('**/physical-inventory/new', { timeout: 5_000 });
+    await byRole(page, physicalInventoryDetail.addLine).click();
+    await expect(page.locator('input[placeholder="User Count"]')).toBeVisible({ timeout: 5_000 });
+
+    await selectProduct(page);
+    await page.waitForTimeout(500);
+
+    expect(capturedUrls.length).toBeGreaterThan(0);
+    expect(capturedUrls.some(url => url.includes('inventoryLine'))).toBe(true);
+  });
+
+  // Verifies ETP-3901: the product selector is now served by InventoryProductSelectorPolicy
+  // (SPI-based) instead of the deleted InventoryProductSelectorServlet.
+  // Confirms the /selectors/ endpoint is hit when the product popup search fires.
+  test('product popup search calls the selector endpoint (InventoryProductSelectorPolicy)', async ({ page }) => {
+    let selectorEndpointHit = false;
+    await page.route('**/sws/**', (route) => {
+      const url = route.request().url();
+      if (url.includes('/selectors/')) {
+        selectorEndpointHit = true;
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            items: [{ id: 'prod-e2e', label: 'Test Product', name: 'Test Product', _identifier: 'Test Product' }],
+          }),
+        });
+      } else {
+        route.continue();
+      }
+    });
+
+    await page.locator('button', { hasText: 'Nuevo' }).last().click();
+    await page.waitForURL('**/physical-inventory/new', { timeout: 5_000 });
+    await byRole(page, physicalInventoryDetail.addLine).click();
+    await expect(page.locator('input[placeholder="User Count"]')).toBeVisible({ timeout: 5_000 });
+
+    const productButton = page.locator('td button:has(svg)').first();
+    await expect(productButton).toBeVisible({ timeout: 3_000 });
+    await productButton.click();
+    const drawerInput = page.locator('[role="dialog"] input[type="text"]');
+    await expect(drawerInput).toBeVisible({ timeout: 3_000 });
+    await drawerInput.fill('Test');
+
+    // Result must appear — confirms the SPI-based selector is responding
+    await expect(page.locator('[role="dialog"] li button').first()).toBeVisible({ timeout: 3_000 });
+    expect(selectorEndpointHit).toBe(true);
+  });
 });

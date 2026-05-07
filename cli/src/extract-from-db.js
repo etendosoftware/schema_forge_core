@@ -73,7 +73,7 @@ SELECT * FROM (
       WHERE f2.AD_Tab_ID = t.AD_Tab_ID AND f2.AD_Column_ID = c.AD_Column_ID
     )
 ) combined
-ORDER BY tab_seq, field_seq`,
+ORDER BY tab_seq, tab_name, AD_Tab_ID, field_seq, ColumnName, ad_field_id NULLS LAST`,
 
   callouts: `
 SELECT co.AD_Callout_ID, co.Name AS callout_name,
@@ -131,7 +131,7 @@ SELECT ai.Name, ai.Code AS validation_code, t.Name AS tab_name, t.AD_Tab_ID
 FROM AD_AuxiliarInput ai
 JOIN AD_Tab t ON ai.AD_Tab_ID = t.AD_Tab_ID
 WHERE t.AD_Window_ID = $1
-ORDER BY t.SeqNo, ai.Name`,
+ORDER BY t.SeqNo, t.Name, t.AD_Tab_ID, ai.Name, ai.AD_AuxiliarInput_ID`,
 };
 
 function rowsToCsv(rows) {

@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
-import { toast } from 'sonner';
 import GoodsShipmentTable from './GoodsShipmentTable';
 import GoodsShipmentForm from './GoodsShipmentForm';
 import GoodsShipmentLineTable from './GoodsShipmentLineTable';
@@ -177,14 +176,6 @@ export const api = {
     },
     {
       "entity": "goodsShipment",
-      "field": "sendMaterials",
-      "column": "RM_Shipment_Pickedit",
-      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/sendMaterials",
-      "processId": "4AD70293357245AB96E59C2CDB43A35D",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "goodsShipment",
       "field": "updateLines",
       "column": "UpdateLines",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/updateLines",
@@ -197,6 +188,14 @@ export const api = {
       "column": "RM_Receipt_PickEdit",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/receiveMaterials",
       "processId": "5E9F9D7EECC24E4FBB2C60840FF613BE",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "goodsShipment",
+      "field": "sendMaterials",
+      "column": "RM_Shipment_Pickedit",
+      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/sendMaterials",
+      "processId": "4AD70293357245AB96E59C2CDB43A35D",
       "processType": "obuiapp"
     },
     {
@@ -262,9 +261,6 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         topbarRight={GoodsShipmentActions}
-        menuActions={({ status }) => [
-          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
-        ]}
         salesTheme
         {...props}
       />

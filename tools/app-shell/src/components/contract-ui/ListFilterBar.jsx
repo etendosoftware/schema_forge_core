@@ -36,6 +36,7 @@ export function ListFilterBar({
   onApplyPreset = null,
   onSavePreset = null,
   onDeletePreset = null,
+  labelOverrides = null,
 }) {
   const ui = useUI();
   const dictionary = useLocale();
@@ -465,6 +466,7 @@ export function ListFilterBar({
             onSavePreset={onSavePreset}
             onDeletePreset={onDeletePreset}
             hasActiveFilter={hasActiveFilter}
+            labelOverrides={labelOverrides}
           />
         </PopoverContent>
       </Popover>

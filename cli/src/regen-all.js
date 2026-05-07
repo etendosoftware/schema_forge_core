@@ -44,13 +44,23 @@ function parseArgs(argv) {
 async function getActiveWindows() {
   const menu = JSON.parse(await readFile(MENU_PATH, 'utf8'));
   const windows = [];
+  const skipped = [];
   for (const group of menu.menu) {
     if (group.hidden) continue;
     for (const item of group.items || []) {
       if (item.hidden) continue;
       if (!item.windowId) continue;
-      windows.push({ name: item.name, windowId: item.windowId });
+      const decisionsPath = join(ARTIFACTS, item.name, 'decisions.json');
+      try {
+        await access(decisionsPath);
+        windows.push({ name: item.name, windowId: item.windowId });
+      } catch {
+        skipped.push(item.name);
+      }
     }
+  }
+  if (skipped.length > 0) {
+    console.log(`Skipping ${skipped.length} window(s) without decisions.json: ${skipped.join(', ')}`);
   }
   return windows;
 }
@@ -122,7 +132,7 @@ async function runPipeline(name, windowId, { pushToNeo, skipExtract }) {
   const processesPath = join(ARTIFACTS, name, 'processes.json');
   try { await acc2(processesPath); } catch {
     await mk2(join(ARTIFACTS, name), { recursive: true });
-    await wf2(processesPath, JSON.stringify({ processes: [] }, null, 2));
+    await wf2(processesPath, JSON.stringify({ processes: [] }, null, 2) + '\n');
   }
   const processes = JSON.parse(await readFile(processesPath, 'utf8'));
 
@@ -140,7 +150,7 @@ async function runPipeline(name, windowId, { pushToNeo, skipExtract }) {
 
   const rules = Array.isArray(resolved.rules) ? resolved.rules : resolved.rules?.rules || [];
   const contract = generateContract(resolved.schema, rules, processes.processes || [], prevVersion, prevContract);
-  await wf2(join(ARTIFACTS, name, 'contract.json'), JSON.stringify(contract, null, 2));
+  await wf2(join(ARTIFACTS, name, 'contract.json'), JSON.stringify(contract, null, 2) + '\n');
   console.log(`    Contract: ${contract.testManifest.summary.total} tests`);
 
   // Version check (advisory)

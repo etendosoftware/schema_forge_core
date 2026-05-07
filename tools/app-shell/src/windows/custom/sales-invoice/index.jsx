@@ -26,6 +26,33 @@ const LIST_COLUMNS = [
   { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
 ];
+// Mirrors artifacts/sales-invoice/decisions.json → window.labelOverrides.
+// The list view here bypasses the generated HeaderPage and renders ListView
+// directly, so the generator-emitted labelOverrides do not reach it. Mirror
+// here until the wrapper consumes the spec's labelOverrides at runtime.
+const LABEL_OVERRIDES = {
+  es_ES: {
+    OutstandingAmt: 'Pendiente de pago',
+    em_etgo_delivery_status: 'Estado de entrega',
+  },
+  en_US: {
+    OutstandingAmt: 'Pending Payment',
+    em_etgo_delivery_status: 'Delivery Status',
+  },
+};
+
+// Mirrors InvoiceHeaderTable columns (key + column + type only) so that
+// buildAdvancedFilterCriteria can resolve filter modes on the first render,
+// before DataTable fires onColumnsReady.
+const OVERDUE_INITIAL_COLUMNS = [
+  { key: 'invoiceDate', column: 'DateInvoiced', type: 'date' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector' },
+  { key: 'documentStatus', column: 'DocStatus', type: 'status' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
+  { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
+  { key: 'eTGODueDate', column: 'em_etgo_due_date', type: 'date' },
+];
 
 let previewRowSetterRef = null;
 
@@ -117,17 +144,27 @@ export default function SalesInvoiceWindow(props) {
 
   const filterParam = searchParams.get('filter');
   const docStatus = searchParams.get('DocStatus');
-  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
 
-  const INVOICE_QUICK_FILTERS = [
-    {
-      label: 'overdueOnly',
-      filter: `criteria=${encodeURIComponent(JSON.stringify([
-        { fieldName: 'outstandingAmount', operator: 'greaterThan', value: 0 },
-      ]))}`,
-    },
-  ];
-  const initialQuickFilterIndex = filterParam === 'overdue' ? 0 : null;
+  const isOverdue = filterParam === 'overdue';
+  const isCollectionsDueToday = filterParam === 'collectionsDueToday';
+  const isInvoiceFilter = isOverdue || isCollectionsDueToday;
+
+  const todayISO = new Date().toISOString().slice(0, 10);
+
+  const initialAdvancedFilter = isInvoiceFilter
+    ? {
+        rowOperator: 'and',
+        conditions: [
+          { field: 'documentStatus', operator: 'equals', value: 'CO' },
+          { field: 'outstandingAmount', operator: 'greaterThan', value: 0 },
+          ...(isCollectionsDueToday
+            ? [{ field: 'eTGODueDate', operator: 'equals', value: todayISO }]
+            : []),
+        ],
+      }
+    : null;
+
+  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
 
   return (
     <>
@@ -137,9 +174,10 @@ export default function SalesInvoiceWindow(props) {
         Table={SalesInvoiceTable}
         entityLabel="Sales Invoice"
         breadcrumb={breadcrumb}
+        labelOverrides={LABEL_OVERRIDES}
         initialColumnFilters={initialColumnFilters}
-        quickFilters={INVOICE_QUICK_FILTERS}
-        initialQuickFilterIndex={initialQuickFilterIndex}
+        initialAdvancedFilter={initialAdvancedFilter}
+        initialColumns={isInvoiceFilter ? OVERDUE_INITIAL_COLUMNS : null}
         dateFilterKey="invoiceDate"
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
         bulkActions={(ctx) => <BulkDocumentAction {...ctx} />}

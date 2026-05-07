@@ -1,7 +1,8 @@
 {
   "version": "0.4.0",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "checksum": "0b3fd7bd9452979f",
+  "updatedAt": "2026-05-05T18:49:56.260Z",
+  "checksum": "f67504590180db2d",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -991,20 +992,20 @@
             "required": false
           },
           {
-            "name": "processGoodsJava",
-            "apiKey": "processGoodsJava",
-            "column": "Process_Goods_Java",
-            "type": "button",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
             "name": "documentAction",
             "apiKey": "documentAction",
             "column": "DocAction",
             "type": "button",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "processGoodsJava",
+            "apiKey": "processGoodsJava",
+            "column": "Process_Goods_Java",
+            "type": "button",
+            "visibility": "discarded",
+            "required": false
           },
           {
             "name": "posted",
@@ -1199,17 +1200,49 @@
             "required": false
           },
           {
-            "name": "sendMaterials",
-            "apiKey": "sendMaterials",
-            "column": "RM_Shipment_Pickedit",
+            "name": "receiveMaterials",
+            "apiKey": "receiveMaterials",
+            "column": "RM_Receipt_PickEdit",
             "type": "button",
             "visibility": "discarded",
             "required": false
           },
           {
-            "name": "invoice",
-            "apiKey": "invoice",
-            "column": "C_Invoice_ID",
+            "name": "pickDate",
+            "apiKey": "pickDate",
+            "column": "PickDate",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "shipDate",
+            "apiKey": "shipDate",
+            "column": "ShipDate",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "logistic",
+            "apiKey": "logistic",
+            "column": "Islogistic",
+            "type": "boolean",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "updateLines",
+            "apiKey": "updateLines",
+            "column": "UpdateLines",
+            "type": "button",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "deliveryLocation",
+            "apiKey": "deliveryLocation",
+            "column": "Delivery_Location_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": false
@@ -1228,6 +1261,30 @@
             "column": "IsSOTrx",
             "type": "boolean",
             "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "invoice",
+            "apiKey": "invoice",
+            "column": "C_Invoice_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "sendMaterials",
+            "apiKey": "sendMaterials",
+            "column": "RM_Shipment_Pickedit",
+            "type": "button",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "processed",
+            "apiKey": "processed",
+            "column": "Processed",
+            "type": "boolean",
+            "visibility": "discarded",
             "required": true
           },
           {
@@ -1253,62 +1310,6 @@
             "type": "id",
             "visibility": "system",
             "required": true
-          },
-          {
-            "name": "shipDate",
-            "apiKey": "shipDate",
-            "column": "ShipDate",
-            "type": "dateTime",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "updateLines",
-            "apiKey": "updateLines",
-            "column": "UpdateLines",
-            "type": "button",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "logistic",
-            "apiKey": "logistic",
-            "column": "Islogistic",
-            "type": "boolean",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "receiveMaterials",
-            "apiKey": "receiveMaterials",
-            "column": "RM_Receipt_PickEdit",
-            "type": "button",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
-            "name": "processed",
-            "apiKey": "processed",
-            "column": "Processed",
-            "type": "boolean",
-            "visibility": "discarded",
-            "required": true
-          },
-          {
-            "name": "deliveryLocation",
-            "apiKey": "deliveryLocation",
-            "column": "Delivery_Location_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "pickDate",
-            "apiKey": "pickDate",
-            "column": "PickDate",
-            "type": "dateTime",
-            "visibility": "system",
-            "required": false
           },
           {
             "name": "orderDate",
@@ -1978,18 +1979,18 @@
       },
       {
         "entity": "goodsReceipt",
-        "field": "processGoodsJava",
-        "column": "Process_Goods_Java",
-        "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/processGoodsJava",
-        "processId": "49DEE812BF0545269781FCEBF2235924",
-        "processType": "classic"
-      },
-      {
-        "entity": "goodsReceipt",
         "field": "documentAction",
         "column": "DocAction",
         "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/documentAction",
         "processId": "109",
+        "processType": "classic"
+      },
+      {
+        "entity": "goodsReceipt",
+        "field": "processGoodsJava",
+        "column": "Process_Goods_Java",
+        "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/processGoodsJava",
+        "processId": "49DEE812BF0545269781FCEBF2235924",
         "processType": "classic"
       },
       {
@@ -2008,10 +2009,10 @@
       },
       {
         "entity": "goodsReceipt",
-        "field": "sendMaterials",
-        "column": "RM_Shipment_Pickedit",
-        "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/sendMaterials",
-        "processId": "4AD70293357245AB96E59C2CDB43A35D",
+        "field": "receiveMaterials",
+        "column": "RM_Receipt_PickEdit",
+        "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/receiveMaterials",
+        "processId": "5E9F9D7EECC24E4FBB2C60840FF613BE",
         "processType": "obuiapp"
       },
       {
@@ -2024,10 +2025,10 @@
       },
       {
         "entity": "goodsReceipt",
-        "field": "receiveMaterials",
-        "column": "RM_Receipt_PickEdit",
-        "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/receiveMaterials",
-        "processId": "5E9F9D7EECC24E4FBB2C60840FF613BE",
+        "field": "sendMaterials",
+        "column": "RM_Shipment_Pickedit",
+        "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/sendMaterials",
+        "processId": "4AD70293357245AB96E59C2CDB43A35D",
         "processType": "obuiapp"
       },
       {
@@ -2075,2117 +2076,7 @@
   "testManifest": {
     "tests": [
       {
-        "id": "t-1",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "documentNo",
-        "runner": "node",
-        "description": "Field 'documentNo' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-2",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "warehouse",
-        "runner": "node",
-        "description": "Field 'warehouse' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-3",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Field 'businessPartner' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-4",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "partnerAddress",
-        "runner": "node",
-        "description": "Field 'partnerAddress' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-5",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "movementDate",
-        "runner": "node",
-        "description": "Field 'movementDate' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-6",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "accountingDate",
-        "runner": "node",
-        "description": "Field 'accountingDate' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-7",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "salesOrder",
-        "runner": "node",
-        "description": "Field 'salesOrder' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-8",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "orderReference",
-        "runner": "node",
-        "description": "Field 'orderReference' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-9",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-10",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "documentStatus",
-        "runner": "node",
-        "description": "Field 'documentStatus' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-11",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "project",
-        "runner": "node",
-        "description": "Field 'project' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-12",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "costcenter",
-        "runner": "node",
-        "description": "Field 'costcenter' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-13",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "asset",
-        "runner": "node",
-        "description": "Field 'asset' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-14",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Field 'stDimension' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-15",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Field 'ndDimension' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-16",
-        "category": "field-presence",
-        "entity": "goodsReceipt",
-        "field": "invoiceStatus",
-        "runner": "node",
-        "description": "Field 'invoiceStatus' should be present in goodsReceipt"
-      },
-      {
-        "id": "t-17",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "documentNo",
-        "runner": "node",
-        "description": "Field 'documentNo' should have type 'string' in goodsReceipt"
-      },
-      {
-        "id": "t-18",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "warehouse",
-        "runner": "node",
-        "description": "Field 'warehouse' should have type 'string' in goodsReceipt"
-      },
-      {
-        "id": "t-19",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Field 'businessPartner' should have type 'string' in goodsReceipt"
-      },
-      {
-        "id": "t-20",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "partnerAddress",
-        "runner": "node",
-        "description": "Field 'partnerAddress' should have type 'string' in goodsReceipt"
-      },
-      {
-        "id": "t-21",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "movementDate",
-        "runner": "node",
-        "description": "Field 'movementDate' should have type 'string' in goodsReceipt"
-      },
-      {
-        "id": "t-22",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "accountingDate",
-        "runner": "node",
-        "description": "Field 'accountingDate' should have type 'string' in goodsReceipt"
-      },
-      {
-        "id": "t-23",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "salesOrder",
-        "runner": "node",
-        "description": "Field 'salesOrder' should have type 'string' in goodsReceipt"
-      },
-      {
-        "id": "t-24",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "orderReference",
-        "runner": "node",
-        "description": "Field 'orderReference' should have type 'string' in goodsReceipt"
-      },
-      {
-        "id": "t-25",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should have type 'string' in goodsReceipt"
-      },
-      {
-        "id": "t-26",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "documentStatus",
-        "runner": "node",
-        "description": "Field 'documentStatus' should have type 'string' in goodsReceipt"
-      },
-      {
-        "id": "t-27",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "project",
-        "runner": "node",
-        "description": "Field 'project' should have type 'string' in goodsReceipt"
-      },
-      {
-        "id": "t-28",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "costcenter",
-        "runner": "node",
-        "description": "Field 'costcenter' should have type 'string' in goodsReceipt"
-      },
-      {
-        "id": "t-29",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "asset",
-        "runner": "node",
-        "description": "Field 'asset' should have type 'string' in goodsReceipt"
-      },
-      {
-        "id": "t-30",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Field 'stDimension' should have type 'string' in goodsReceipt"
-      },
-      {
-        "id": "t-31",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Field 'ndDimension' should have type 'string' in goodsReceipt"
-      },
-      {
-        "id": "t-32",
-        "category": "field-type",
-        "entity": "goodsReceipt",
-        "field": "invoiceStatus",
-        "runner": "node",
-        "description": "Field 'invoiceStatus' should have type 'number' in goodsReceipt"
-      },
-      {
-        "id": "t-33",
-        "category": "searchable-filters",
-        "entity": "goodsReceipt",
-        "field": "documentNo",
-        "runner": "node",
-        "description": "Field 'documentNo' should be a supported filter for goodsReceipt"
-      },
-      {
-        "id": "t-34",
-        "category": "searchable-filters",
-        "entity": "goodsReceipt",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Field 'businessPartner' should be a supported filter for goodsReceipt"
-      },
-      {
-        "id": "t-35",
-        "category": "searchable-filters",
-        "entity": "goodsReceipt",
-        "field": "movementDate",
-        "runner": "node",
-        "description": "Field 'movementDate' should be a supported filter for goodsReceipt"
-      },
-      {
-        "id": "t-36",
-        "category": "searchable-filters",
-        "entity": "goodsReceipt",
-        "field": "orderReference",
-        "runner": "node",
-        "description": "Field 'orderReference' should be a supported filter for goodsReceipt"
-      },
-      {
-        "id": "t-37",
-        "category": "searchable-filters",
-        "entity": "goodsReceipt",
-        "field": "documentStatus",
-        "runner": "node",
-        "description": "Field 'documentStatus' should be a supported filter for goodsReceipt"
-      },
-      {
-        "id": "t-38",
-        "category": "visibility",
-        "entity": "goodsReceipt",
-        "runner": "node",
-        "description": "Entity 'goodsReceipt' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-39",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceipt",
-        "field": "documentNo",
-        "runner": "node",
-        "description": "Read-only logic for 'documentNo' in goodsReceipt should be valid JS"
-      },
-      {
-        "id": "t-40",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceipt",
-        "field": "warehouse",
-        "runner": "node",
-        "description": "Read-only logic for 'warehouse' in goodsReceipt should be valid JS"
-      },
-      {
-        "id": "t-41",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceipt",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Read-only logic for 'businessPartner' in goodsReceipt should be valid JS"
-      },
-      {
-        "id": "t-42",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceipt",
-        "field": "partnerAddress",
-        "runner": "node",
-        "description": "Read-only logic for 'partnerAddress' in goodsReceipt should be valid JS"
-      },
-      {
-        "id": "t-43",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceipt",
-        "field": "movementDate",
-        "runner": "node",
-        "description": "Read-only logic for 'movementDate' in goodsReceipt should be valid JS"
-      },
-      {
-        "id": "t-44",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceipt",
-        "field": "accountingDate",
-        "runner": "node",
-        "description": "Read-only logic for 'accountingDate' in goodsReceipt should be valid JS"
-      },
-      {
-        "id": "t-45",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceipt",
-        "field": "orderReference",
-        "runner": "node",
-        "description": "Read-only logic for 'orderReference' in goodsReceipt should be valid JS"
-      },
-      {
-        "id": "t-46",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceipt",
-        "field": "description",
-        "runner": "node",
-        "description": "Read-only logic for 'description' in goodsReceipt should be valid JS"
-      },
-      {
-        "id": "t-47",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceipt",
-        "field": "project",
-        "runner": "node",
-        "description": "Read-only logic for 'project' in goodsReceipt should be valid JS"
-      },
-      {
-        "id": "t-48",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceipt",
-        "field": "costcenter",
-        "runner": "node",
-        "description": "Read-only logic for 'costcenter' in goodsReceipt should be valid JS"
-      },
-      {
-        "id": "t-49",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceipt",
-        "field": "asset",
-        "runner": "node",
-        "description": "Read-only logic for 'asset' in goodsReceipt should be valid JS"
-      },
-      {
-        "id": "t-50",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceipt",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Read-only logic for 'stDimension' in goodsReceipt should be valid JS"
-      },
-      {
-        "id": "t-51",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceipt",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Read-only logic for 'ndDimension' in goodsReceipt should be valid JS"
-      },
-      {
-        "id": "t-52",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceipt",
-        "field": "documentNo",
-        "runner": "node",
-        "description": "Read-only logic for 'documentNo' in goodsReceipt should have evaluable flag"
-      },
-      {
-        "id": "t-53",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceipt",
-        "field": "warehouse",
-        "runner": "node",
-        "description": "Read-only logic for 'warehouse' in goodsReceipt should have evaluable flag"
-      },
-      {
-        "id": "t-54",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceipt",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Read-only logic for 'businessPartner' in goodsReceipt should have evaluable flag"
-      },
-      {
-        "id": "t-55",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceipt",
-        "field": "partnerAddress",
-        "runner": "node",
-        "description": "Read-only logic for 'partnerAddress' in goodsReceipt should have evaluable flag"
-      },
-      {
-        "id": "t-56",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceipt",
-        "field": "movementDate",
-        "runner": "node",
-        "description": "Read-only logic for 'movementDate' in goodsReceipt should have evaluable flag"
-      },
-      {
-        "id": "t-57",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceipt",
-        "field": "accountingDate",
-        "runner": "node",
-        "description": "Read-only logic for 'accountingDate' in goodsReceipt should have evaluable flag"
-      },
-      {
-        "id": "t-58",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceipt",
-        "field": "orderReference",
-        "runner": "node",
-        "description": "Read-only logic for 'orderReference' in goodsReceipt should have evaluable flag"
-      },
-      {
-        "id": "t-59",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceipt",
-        "field": "description",
-        "runner": "node",
-        "description": "Read-only logic for 'description' in goodsReceipt should have evaluable flag"
-      },
-      {
-        "id": "t-60",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceipt",
-        "field": "project",
-        "runner": "node",
-        "description": "Read-only logic for 'project' in goodsReceipt should have evaluable flag"
-      },
-      {
-        "id": "t-61",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceipt",
-        "field": "costcenter",
-        "runner": "node",
-        "description": "Read-only logic for 'costcenter' in goodsReceipt should have evaluable flag"
-      },
-      {
-        "id": "t-62",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceipt",
-        "field": "asset",
-        "runner": "node",
-        "description": "Read-only logic for 'asset' in goodsReceipt should have evaluable flag"
-      },
-      {
-        "id": "t-63",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceipt",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Read-only logic for 'stDimension' in goodsReceipt should have evaluable flag"
-      },
-      {
-        "id": "t-64",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceipt",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Read-only logic for 'ndDimension' in goodsReceipt should have evaluable flag"
-      },
-      {
-        "id": "t-65",
-        "category": "default-value-type",
-        "entity": "goodsReceipt",
-        "field": "movementDate",
-        "runner": "node",
-        "description": "Default value for 'movementDate' in goodsReceipt should be a string"
-      },
-      {
-        "id": "t-66",
-        "category": "default-value-type",
-        "entity": "goodsReceipt",
-        "field": "accountingDate",
-        "runner": "node",
-        "description": "Default value for 'accountingDate' in goodsReceipt should be a string"
-      },
-      {
-        "id": "t-67",
-        "category": "default-value-type",
-        "entity": "goodsReceipt",
-        "field": "documentStatus",
-        "runner": "node",
-        "description": "Default value for 'documentStatus' in goodsReceipt should be a string"
-      },
-      {
-        "id": "t-68",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "lineNo",
-        "runner": "node",
-        "description": "Field 'lineNo' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-69",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "product",
-        "runner": "node",
-        "description": "Field 'product' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-70",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "attributeSetValue",
-        "runner": "node",
-        "description": "Field 'attributeSetValue' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-71",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "operativeQuantity",
-        "runner": "node",
-        "description": "Field 'operativeQuantity' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-72",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "operativeUOM",
-        "runner": "node",
-        "description": "Field 'operativeUOM' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-73",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "movementQuantity",
-        "runner": "node",
-        "description": "Field 'movementQuantity' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-74",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "uOM",
-        "runner": "node",
-        "description": "Field 'uOM' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-75",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "storageBin",
-        "runner": "node",
-        "description": "Field 'storageBin' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-76",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-77",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "salesOrderLine",
-        "runner": "node",
-        "description": "Field 'salesOrderLine' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-78",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Field 'businessPartner' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-79",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "project",
-        "runner": "node",
-        "description": "Field 'project' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-80",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "costcenter",
-        "runner": "node",
-        "description": "Field 'costcenter' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-81",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "asset",
-        "runner": "node",
-        "description": "Field 'asset' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-82",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Field 'stDimension' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-83",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Field 'ndDimension' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-84",
-        "category": "field-presence",
-        "entity": "goodsReceiptLine",
-        "field": "invoiceQuantity",
-        "runner": "node",
-        "description": "Field 'invoiceQuantity' should be present in goodsReceiptLine"
-      },
-      {
-        "id": "t-85",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "lineNo",
-        "runner": "node",
-        "description": "Field 'lineNo' should have type 'number' in goodsReceiptLine"
-      },
-      {
-        "id": "t-86",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "product",
-        "runner": "node",
-        "description": "Field 'product' should have type 'string' in goodsReceiptLine"
-      },
-      {
-        "id": "t-87",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "attributeSetValue",
-        "runner": "node",
-        "description": "Field 'attributeSetValue' should have type 'string' in goodsReceiptLine"
-      },
-      {
-        "id": "t-88",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "operativeQuantity",
-        "runner": "node",
-        "description": "Field 'operativeQuantity' should have type 'number' in goodsReceiptLine"
-      },
-      {
-        "id": "t-89",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "operativeUOM",
-        "runner": "node",
-        "description": "Field 'operativeUOM' should have type 'string' in goodsReceiptLine"
-      },
-      {
-        "id": "t-90",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "movementQuantity",
-        "runner": "node",
-        "description": "Field 'movementQuantity' should have type 'number' in goodsReceiptLine"
-      },
-      {
-        "id": "t-91",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "uOM",
-        "runner": "node",
-        "description": "Field 'uOM' should have type 'string' in goodsReceiptLine"
-      },
-      {
-        "id": "t-92",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "storageBin",
-        "runner": "node",
-        "description": "Field 'storageBin' should have type 'string' in goodsReceiptLine"
-      },
-      {
-        "id": "t-93",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should have type 'string' in goodsReceiptLine"
-      },
-      {
-        "id": "t-94",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "salesOrderLine",
-        "runner": "node",
-        "description": "Field 'salesOrderLine' should have type 'string' in goodsReceiptLine"
-      },
-      {
-        "id": "t-95",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Field 'businessPartner' should have type 'string' in goodsReceiptLine"
-      },
-      {
-        "id": "t-96",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "project",
-        "runner": "node",
-        "description": "Field 'project' should have type 'string' in goodsReceiptLine"
-      },
-      {
-        "id": "t-97",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "costcenter",
-        "runner": "node",
-        "description": "Field 'costcenter' should have type 'string' in goodsReceiptLine"
-      },
-      {
-        "id": "t-98",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "asset",
-        "runner": "node",
-        "description": "Field 'asset' should have type 'string' in goodsReceiptLine"
-      },
-      {
-        "id": "t-99",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Field 'stDimension' should have type 'string' in goodsReceiptLine"
-      },
-      {
-        "id": "t-100",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Field 'ndDimension' should have type 'string' in goodsReceiptLine"
-      },
-      {
-        "id": "t-101",
-        "category": "field-type",
-        "entity": "goodsReceiptLine",
-        "field": "invoiceQuantity",
-        "runner": "node",
-        "description": "Field 'invoiceQuantity' should have type 'number' in goodsReceiptLine"
-      },
-      {
-        "id": "t-102",
-        "category": "visibility",
-        "entity": "goodsReceiptLine",
-        "runner": "node",
-        "description": "Entity 'goodsReceiptLine' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-103",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceiptLine",
-        "field": "lineNo",
-        "runner": "node",
-        "description": "Read-only logic for 'lineNo' in goodsReceiptLine should be valid JS"
-      },
-      {
-        "id": "t-104",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceiptLine",
-        "field": "product",
-        "runner": "node",
-        "description": "Read-only logic for 'product' in goodsReceiptLine should be valid JS"
-      },
-      {
-        "id": "t-105",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceiptLine",
-        "field": "attributeSetValue",
-        "runner": "node",
-        "description": "Read-only logic for 'attributeSetValue' in goodsReceiptLine should be valid JS"
-      },
-      {
-        "id": "t-106",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceiptLine",
-        "field": "operativeQuantity",
-        "runner": "node",
-        "description": "Read-only logic for 'operativeQuantity' in goodsReceiptLine should be valid JS"
-      },
-      {
-        "id": "t-107",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceiptLine",
-        "field": "operativeUOM",
-        "runner": "node",
-        "description": "Read-only logic for 'operativeUOM' in goodsReceiptLine should be valid JS"
-      },
-      {
-        "id": "t-108",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceiptLine",
-        "field": "movementQuantity",
-        "runner": "node",
-        "description": "Read-only logic for 'movementQuantity' in goodsReceiptLine should be valid JS"
-      },
-      {
-        "id": "t-109",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceiptLine",
-        "field": "uOM",
-        "runner": "node",
-        "description": "Read-only logic for 'uOM' in goodsReceiptLine should be valid JS"
-      },
-      {
-        "id": "t-110",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceiptLine",
-        "field": "storageBin",
-        "runner": "node",
-        "description": "Read-only logic for 'storageBin' in goodsReceiptLine should be valid JS"
-      },
-      {
-        "id": "t-111",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceiptLine",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Read-only logic for 'businessPartner' in goodsReceiptLine should be valid JS"
-      },
-      {
-        "id": "t-112",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceiptLine",
-        "field": "project",
-        "runner": "node",
-        "description": "Read-only logic for 'project' in goodsReceiptLine should be valid JS"
-      },
-      {
-        "id": "t-113",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceiptLine",
-        "field": "costcenter",
-        "runner": "node",
-        "description": "Read-only logic for 'costcenter' in goodsReceiptLine should be valid JS"
-      },
-      {
-        "id": "t-114",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceiptLine",
-        "field": "asset",
-        "runner": "node",
-        "description": "Read-only logic for 'asset' in goodsReceiptLine should be valid JS"
-      },
-      {
-        "id": "t-115",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceiptLine",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Read-only logic for 'stDimension' in goodsReceiptLine should be valid JS"
-      },
-      {
-        "id": "t-116",
-        "category": "readonlylogic-valid",
-        "entity": "goodsReceiptLine",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Read-only logic for 'ndDimension' in goodsReceiptLine should be valid JS"
-      },
-      {
-        "id": "t-117",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceiptLine",
-        "field": "lineNo",
-        "runner": "node",
-        "description": "Read-only logic for 'lineNo' in goodsReceiptLine should have evaluable flag"
-      },
-      {
-        "id": "t-118",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceiptLine",
-        "field": "product",
-        "runner": "node",
-        "description": "Read-only logic for 'product' in goodsReceiptLine should have evaluable flag"
-      },
-      {
-        "id": "t-119",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceiptLine",
-        "field": "attributeSetValue",
-        "runner": "node",
-        "description": "Read-only logic for 'attributeSetValue' in goodsReceiptLine should have evaluable flag"
-      },
-      {
-        "id": "t-120",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceiptLine",
-        "field": "operativeQuantity",
-        "runner": "node",
-        "description": "Read-only logic for 'operativeQuantity' in goodsReceiptLine should have evaluable flag"
-      },
-      {
-        "id": "t-121",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceiptLine",
-        "field": "operativeUOM",
-        "runner": "node",
-        "description": "Read-only logic for 'operativeUOM' in goodsReceiptLine should have evaluable flag"
-      },
-      {
-        "id": "t-122",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceiptLine",
-        "field": "movementQuantity",
-        "runner": "node",
-        "description": "Read-only logic for 'movementQuantity' in goodsReceiptLine should have evaluable flag"
-      },
-      {
-        "id": "t-123",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceiptLine",
-        "field": "uOM",
-        "runner": "node",
-        "description": "Read-only logic for 'uOM' in goodsReceiptLine should have evaluable flag"
-      },
-      {
-        "id": "t-124",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceiptLine",
-        "field": "storageBin",
-        "runner": "node",
-        "description": "Read-only logic for 'storageBin' in goodsReceiptLine should have evaluable flag"
-      },
-      {
-        "id": "t-125",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceiptLine",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Read-only logic for 'businessPartner' in goodsReceiptLine should have evaluable flag"
-      },
-      {
-        "id": "t-126",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceiptLine",
-        "field": "project",
-        "runner": "node",
-        "description": "Read-only logic for 'project' in goodsReceiptLine should have evaluable flag"
-      },
-      {
-        "id": "t-127",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceiptLine",
-        "field": "costcenter",
-        "runner": "node",
-        "description": "Read-only logic for 'costcenter' in goodsReceiptLine should have evaluable flag"
-      },
-      {
-        "id": "t-128",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceiptLine",
-        "field": "asset",
-        "runner": "node",
-        "description": "Read-only logic for 'asset' in goodsReceiptLine should have evaluable flag"
-      },
-      {
-        "id": "t-129",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceiptLine",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Read-only logic for 'stDimension' in goodsReceiptLine should have evaluable flag"
-      },
-      {
-        "id": "t-130",
-        "category": "readonlylogic-evaluable",
-        "entity": "goodsReceiptLine",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Read-only logic for 'ndDimension' in goodsReceiptLine should have evaluable flag"
-      },
-      {
-        "id": "t-131",
-        "category": "default-value-type",
-        "entity": "goodsReceiptLine",
-        "field": "lineNo",
-        "runner": "node",
-        "description": "Default value for 'lineNo' in goodsReceiptLine should be a string"
-      },
-      {
-        "id": "t-132",
-        "category": "default-value-type",
-        "entity": "goodsReceiptLine",
-        "field": "movementQuantity",
-        "runner": "node",
-        "description": "Default value for 'movementQuantity' in goodsReceiptLine should be a string"
-      },
-      {
-        "id": "t-133",
-        "category": "default-value-type",
-        "entity": "goodsReceiptLine",
-        "field": "storageBin",
-        "runner": "node",
-        "description": "Default value for 'storageBin' in goodsReceiptLine should be a string"
-      },
-      {
-        "id": "t-134",
-        "category": "default-value-type",
-        "entity": "goodsReceiptLine",
-        "field": "invoiceQuantity",
-        "runner": "node",
-        "description": "Default value for 'invoiceQuantity' in goodsReceiptLine should be a string"
-      },
-      {
-        "id": "t-135",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-136",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "documentType",
-        "runner": "node",
-        "description": "System field 'documentType' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-137",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "mConditionGoodsID",
-        "runner": "node",
-        "description": "System field 'mConditionGoodsID' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-138",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "userContact",
-        "runner": "node",
-        "description": "System field 'userContact' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-139",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "createLinesFrom",
-        "runner": "node",
-        "description": "System field 'createLinesFrom' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-140",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "generateTo",
-        "runner": "node",
-        "description": "System field 'generateTo' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-141",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "processGoodsJava",
-        "runner": "node",
-        "description": "System field 'processGoodsJava' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-142",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "documentAction",
-        "runner": "node",
-        "description": "System field 'documentAction' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-143",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "posted",
-        "runner": "node",
-        "description": "System field 'posted' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-144",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "salesRepresentative",
-        "runner": "node",
-        "description": "System field 'salesRepresentative' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-145",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "charge",
-        "runner": "node",
-        "description": "System field 'charge' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-146",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "chargeAmount",
-        "runner": "node",
-        "description": "System field 'chargeAmount' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-147",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "deliveryTerms",
-        "runner": "node",
-        "description": "System field 'deliveryTerms' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-148",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "deliveryMethod",
-        "runner": "node",
-        "description": "System field 'deliveryMethod' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-149",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "freightAmount",
-        "runner": "node",
-        "description": "System field 'freightAmount' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-150",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "freightCostRule",
-        "runner": "node",
-        "description": "System field 'freightCostRule' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-151",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "priority",
-        "runner": "node",
-        "description": "System field 'priority' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-152",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "movementType",
-        "runner": "node",
-        "description": "System field 'movementType' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-153",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "shippingCompany",
-        "runner": "node",
-        "description": "System field 'shippingCompany' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-154",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "numberOfPackages",
-        "runner": "node",
-        "description": "System field 'numberOfPackages' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-155",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "activity",
-        "runner": "node",
-        "description": "System field 'activity' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-156",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "salesCampaign",
-        "runner": "node",
-        "description": "System field 'salesCampaign' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-157",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "trxOrganization",
-        "runner": "node",
-        "description": "System field 'trxOrganization' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-158",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "freightCategory",
-        "runner": "node",
-        "description": "System field 'freightCategory' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-159",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "calculateFreight",
-        "runner": "node",
-        "description": "System field 'calculateFreight' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-160",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "freightCurrency",
-        "runner": "node",
-        "description": "System field 'freightCurrency' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-161",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "sendMaterials",
-        "runner": "node",
-        "description": "System field 'sendMaterials' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-162",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "invoice",
-        "runner": "node",
-        "description": "System field 'invoice' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-163",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "print",
-        "runner": "node",
-        "description": "System field 'print' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-164",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "salesTransaction",
-        "runner": "node",
-        "description": "System field 'salesTransaction' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-165",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "datePrinted",
-        "runner": "node",
-        "description": "System field 'datePrinted' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-166",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "processNow",
-        "runner": "node",
-        "description": "System field 'processNow' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-167",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "id",
-        "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-168",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "shipDate",
-        "runner": "node",
-        "description": "System field 'shipDate' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-169",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "updateLines",
-        "runner": "node",
-        "description": "System field 'updateLines' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-170",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "logistic",
-        "runner": "node",
-        "description": "System field 'logistic' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-171",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "receiveMaterials",
-        "runner": "node",
-        "description": "System field 'receiveMaterials' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-172",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "processed",
-        "runner": "node",
-        "description": "System field 'processed' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-173",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "deliveryLocation",
-        "runner": "node",
-        "description": "System field 'deliveryLocation' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-174",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "pickDate",
-        "runner": "node",
-        "description": "System field 'pickDate' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-175",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "orderDate",
-        "runner": "node",
-        "description": "System field 'orderDate' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-176",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-177",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "trackingNo",
-        "runner": "node",
-        "description": "System field 'trackingNo' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-178",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "active",
-        "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-179",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "externalBusinessPartnerReference",
-        "runner": "node",
-        "description": "System field 'externalBusinessPartnerReference' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-180",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-181",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-182",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "invoicefromshipment",
-        "runner": "node",
-        "description": "System field 'invoicefromshipment' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-183",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "completelyInvoiced",
-        "runner": "node",
-        "description": "System field 'completelyInvoiced' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-184",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "isnettingshipment",
-        "runner": "node",
-        "description": "System field 'isnettingshipment' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-185",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-186",
-        "category": "system-field",
-        "entity": "goodsReceipt",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for goodsReceipt"
-      },
-      {
-        "id": "t-187",
-        "category": "system-field",
-        "entity": "goodsReceiptLine",
-        "field": "mConditionGoodsID",
-        "runner": "node",
-        "description": "System field 'mConditionGoodsID' should exist in backend but not frontend for goodsReceiptLine"
-      },
-      {
-        "id": "t-188",
-        "category": "system-field",
-        "entity": "goodsReceiptLine",
-        "field": "orderUOM",
-        "runner": "node",
-        "description": "System field 'orderUOM' should exist in backend but not frontend for goodsReceiptLine"
-      },
-      {
-        "id": "t-189",
-        "category": "system-field",
-        "entity": "goodsReceiptLine",
-        "field": "orderQuantity",
-        "runner": "node",
-        "description": "System field 'orderQuantity' should exist in backend but not frontend for goodsReceiptLine"
-      },
-      {
-        "id": "t-190",
-        "category": "system-field",
-        "entity": "goodsReceiptLine",
-        "field": "canceledInoutLine",
-        "runner": "node",
-        "description": "System field 'canceledInoutLine' should exist in backend but not frontend for goodsReceiptLine"
-      },
-      {
-        "id": "t-191",
-        "category": "system-field",
-        "entity": "goodsReceiptLine",
-        "field": "managePrereservation",
-        "runner": "node",
-        "description": "System field 'managePrereservation' should exist in backend but not frontend for goodsReceiptLine"
-      },
-      {
-        "id": "t-192",
-        "category": "system-field",
-        "entity": "goodsReceiptLine",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for goodsReceiptLine"
-      },
-      {
-        "id": "t-193",
-        "category": "system-field",
-        "entity": "goodsReceiptLine",
-        "field": "explode",
-        "runner": "node",
-        "description": "System field 'explode' should exist in backend but not frontend for goodsReceiptLine"
-      },
-      {
-        "id": "t-194",
-        "category": "system-field",
-        "entity": "goodsReceiptLine",
-        "field": "bOMParentID",
-        "runner": "node",
-        "description": "System field 'bOMParentID' should exist in backend but not frontend for goodsReceiptLine"
-      },
-      {
-        "id": "t-195",
-        "category": "system-field",
-        "entity": "goodsReceiptLine",
-        "field": "shipmentReceipt",
-        "runner": "node",
-        "description": "System field 'shipmentReceipt' should exist in backend but not frontend for goodsReceiptLine"
-      },
-      {
-        "id": "t-196",
-        "category": "system-field",
-        "entity": "goodsReceiptLine",
-        "field": "reinvoice",
-        "runner": "node",
-        "description": "System field 'reinvoice' should exist in backend but not frontend for goodsReceiptLine"
-      },
-      {
-        "id": "t-197",
-        "category": "system-field",
-        "entity": "goodsReceiptLine",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for goodsReceiptLine"
-      },
-      {
-        "id": "t-198",
-        "category": "system-field",
-        "entity": "goodsReceiptLine",
-        "field": "active",
-        "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for goodsReceiptLine"
-      },
-      {
-        "id": "t-199",
-        "category": "system-field",
-        "entity": "goodsReceiptLine",
-        "field": "id",
-        "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for goodsReceiptLine"
-      },
-      {
-        "id": "t-200",
-        "category": "system-field",
-        "entity": "goodsReceiptLine",
-        "field": "descriptionOnly",
-        "runner": "node",
-        "description": "System field 'descriptionOnly' should exist in backend but not frontend for goodsReceiptLine"
-      },
-      {
-        "id": "t-201",
-        "category": "system-field",
-        "entity": "goodsReceiptLine",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for goodsReceiptLine"
-      },
-      {
-        "id": "t-202",
-        "category": "system-field",
-        "entity": "goodsReceiptLine",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for goodsReceiptLine"
-      },
-      {
-        "id": "t-203",
-        "category": "system-field",
-        "entity": "goodsReceiptLine",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for goodsReceiptLine"
-      },
-      {
-        "id": "t-204",
-        "category": "system-field",
-        "entity": "goodsReceiptLine",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for goodsReceiptLine"
-      },
-      {
-        "id": "t-205",
-        "category": "rule-declared",
-        "rule": "SL_InOut_AccountingDate",
-        "runner": "node",
-        "description": "Rule 'SL_InOut_AccountingDate' (undefined) should be declared"
-      },
-      {
-        "id": "t-206",
-        "category": "rule-declared",
-        "rule": "SE_InOut_Organization",
-        "runner": "node",
-        "description": "Rule 'SE_InOut_Organization' (undefined) should be declared"
-      },
-      {
-        "id": "t-207",
-        "category": "rule-declared",
-        "rule": "SE_InOut_DocType",
-        "runner": "node",
-        "description": "Rule 'SE_InOut_DocType' (undefined) should be declared"
-      },
-      {
-        "id": "t-208",
-        "category": "rule-declared",
-        "rule": "SL_InOut_BPartner",
-        "runner": "node",
-        "description": "Rule 'SL_InOut_BPartner' (undefined) should be declared"
-      },
-      {
-        "id": "t-209",
-        "category": "rule-declared",
-        "rule": "SE_InOut_Warehouse",
-        "runner": "node",
-        "description": "Rule 'SE_InOut_Warehouse' (undefined) should be declared"
-      },
-      {
-        "id": "t-210",
-        "category": "rule-declared",
-        "rule": "SL_InOutLine_Product",
-        "runner": "node",
-        "description": "Rule 'SL_InOutLine_Product' (undefined) should be declared"
-      },
-      {
-        "id": "t-211",
-        "category": "rule-declared",
-        "rule": "SL_InOut_Conversion",
-        "runner": "node",
-        "description": "Rule 'SL_InOut_Conversion' (undefined) should be declared"
-      },
-      {
-        "id": "t-212",
-        "category": "rule-declared",
-        "rule": "OperativeQuantity_To_BaseQuantity",
-        "runner": "node",
-        "description": "Rule 'OperativeQuantity_To_BaseQuantity' (undefined) should be declared"
-      },
-      {
-        "id": "t-213",
-        "category": "rule-declared",
-        "rule": "SL_LandedCost_Cost_Type",
-        "runner": "node",
-        "description": "Rule 'SL_LandedCost_Cost_Type' (undefined) should be declared"
-      },
-      {
-        "id": "t-214",
-        "category": "rule-declared",
-        "rule": "SL_LandedCost_InvoiceLine",
-        "runner": "node",
-        "description": "Rule 'SL_LandedCost_InvoiceLine' (undefined) should be declared"
-      },
-      {
-        "id": "t-215",
-        "category": "rule-declared",
-        "rule": "VAL_DocType_MaterialReceipt",
-        "runner": "node",
-        "description": "Rule 'VAL_DocType_MaterialReceipt' (validation) should be declared"
-      },
-      {
-        "id": "t-216",
-        "category": "rule-declared",
-        "rule": "VAL_BPartnerLocation_ShipTo",
-        "runner": "node",
-        "description": "Rule 'VAL_BPartnerLocation_ShipTo' (validation) should be declared"
-      },
-      {
-        "id": "t-217",
-        "category": "rule-declared",
-        "rule": "VAL_User_BPartnerContact",
-        "runner": "node",
-        "description": "Rule 'VAL_User_BPartnerContact' (validation) should be declared"
-      },
-      {
-        "id": "t-218",
-        "category": "rule-declared",
-        "rule": "VAL_User_OrgTree",
-        "runner": "node",
-        "description": "Rule 'VAL_User_OrgTree' (validation) should be declared"
-      },
-      {
-        "id": "t-219",
-        "category": "rule-declared",
-        "rule": "VAL_Project_StatusAndBPartner",
-        "runner": "node",
-        "description": "Rule 'VAL_Project_StatusAndBPartner' (validation) should be declared"
-      },
-      {
-        "id": "t-220",
-        "category": "rule-declared",
-        "rule": "VAL_DeliveryLocation_ShipTo",
-        "runner": "node",
-        "description": "Rule 'VAL_DeliveryLocation_ShipTo' (validation) should be declared"
-      },
-      {
-        "id": "t-221",
-        "category": "rule-declared",
-        "rule": "VAL_Org_ShowChildren",
-        "runner": "node",
-        "description": "Rule 'VAL_Org_ShowChildren' (validation) should be declared"
-      },
-      {
-        "id": "t-222",
-        "category": "rule-declared",
-        "rule": "VAL_Locator_ByWarehouse",
-        "runner": "node",
-        "description": "Rule 'VAL_Locator_ByWarehouse' (validation) should be declared"
-      },
-      {
-        "id": "t-223",
-        "category": "rule-declared",
-        "rule": "VAL_UOM_ForProduct",
-        "runner": "node",
-        "description": "Rule 'VAL_UOM_ForProduct' (validation) should be declared"
-      },
-      {
-        "id": "t-224",
-        "category": "rule-declared",
-        "rule": "VAL_DocType_LandedCostCost",
-        "runner": "node",
-        "description": "Rule 'VAL_DocType_LandedCostCost' (validation) should be declared"
-      },
-      {
-        "id": "t-225",
-        "category": "rule-declared",
-        "rule": "READONLY_Processed_Header",
-        "runner": "node",
-        "description": "Rule 'READONLY_Processed_Header' (readOnlyLogic) should be declared"
-      },
-      {
-        "id": "t-226",
-        "category": "rule-declared",
-        "rule": "READONLY_Posted_AccountingDate",
-        "runner": "node",
-        "description": "Rule 'READONLY_Posted_AccountingDate' (readOnlyLogic) should be declared"
-      },
-      {
-        "id": "t-227",
-        "category": "rule-declared",
-        "rule": "READONLY_BPartner_HasLines",
-        "runner": "node",
-        "description": "Rule 'READONLY_BPartner_HasLines' (readOnlyLogic) should be declared"
-      },
-      {
-        "id": "t-228",
-        "category": "rule-declared",
-        "rule": "READONLY_Processed_Lines",
-        "runner": "node",
-        "description": "Rule 'READONLY_Processed_Lines' (readOnlyLogic) should be declared"
-      },
-      {
-        "id": "t-229",
-        "category": "rule-declared",
-        "rule": "READONLY_UomManagement_Qty",
-        "runner": "node",
-        "description": "Rule 'READONLY_UomManagement_Qty' (readOnlyLogic) should be declared"
-      },
-      {
-        "id": "t-230",
-        "category": "rule-declared",
-        "rule": "READONLY_LandedCost_Processed",
-        "runner": "node",
-        "description": "Rule 'READONLY_LandedCost_Processed' (readOnlyLogic) should be declared"
-      },
-      {
-        "id": "t-231",
-        "category": "rule-declared",
-        "rule": "DISPLAY_InvoicedQty_WhenProcessed",
-        "runner": "node",
-        "description": "Rule 'DISPLAY_InvoicedQty_WhenProcessed' (displayLogic) should be declared"
-      },
-      {
-        "id": "t-232",
-        "category": "rule-declared",
-        "rule": "DISPLAY_AttributeSet_WhenApplicable",
-        "runner": "node",
-        "description": "Rule 'DISPLAY_AttributeSet_WhenApplicable' (displayLogic) should be declared"
-      },
-      {
-        "id": "t-233",
-        "category": "rule-declared",
-        "rule": "DISPLAY_OrderUOM_WhenApplicable",
-        "runner": "node",
-        "description": "Rule 'DISPLAY_OrderUOM_WhenApplicable' (displayLogic) should be declared"
-      },
-      {
-        "id": "t-234",
-        "category": "rule-declared",
-        "rule": "DISPLAY_OperativeQty_WhenNoOrderUOM",
-        "runner": "node",
-        "description": "Rule 'DISPLAY_OperativeQty_WhenNoOrderUOM' (displayLogic) should be declared"
-      },
-      {
-        "id": "t-235",
-        "category": "rule-declared",
-        "rule": "DISPLAY_Dimensions_WhenEnabled",
-        "runner": "node",
-        "description": "Rule 'DISPLAY_Dimensions_WhenEnabled' (displayLogic) should be declared"
-      },
-      {
-        "id": "t-236",
-        "category": "rule-declared",
-        "rule": "PROCESS_ProcessShipment",
-        "runner": "node",
-        "description": "Rule 'PROCESS_ProcessShipment' (process) should be declared"
-      },
-      {
-        "id": "t-237",
-        "category": "rule-declared",
-        "rule": "PROCESS_CreateLinesFrom",
-        "runner": "node",
-        "description": "Rule 'PROCESS_CreateLinesFrom' (process) should be declared"
-      },
-      {
-        "id": "t-238",
-        "category": "rule-declared",
-        "rule": "PROCESS_GenerateInvoice",
-        "runner": "node",
-        "description": "Rule 'PROCESS_GenerateInvoice' (process) should be declared"
-      },
-      {
-        "id": "t-239",
-        "category": "rule-declared",
-        "rule": "PROCESS_InvoiceFromShipment",
-        "runner": "node",
-        "description": "Rule 'PROCESS_InvoiceFromShipment' (process) should be declared"
-      },
-      {
-        "id": "t-240",
-        "category": "rule-declared",
-        "rule": "PROCESS_LandedCostMatching",
-        "runner": "node",
-        "description": "Rule 'PROCESS_LandedCostMatching' (process) should be declared"
-      },
-      {
-        "id": "t-241",
-        "category": "rule-declared",
-        "rule": "PROCESS_ManagePrereservation",
-        "runner": "node",
-        "description": "Rule 'PROCESS_ManagePrereservation' (process) should be declared"
-      },
-      {
-        "id": "t-242",
-        "category": "rule-declared",
-        "rule": "PROCESS_Explode",
-        "runner": "node",
-        "description": "Rule 'PROCESS_Explode' (process) should be declared"
-      },
-      {
-        "id": "t-243",
-        "category": "crud-flags",
-        "entity": "goodsReceipt",
-        "runner": "node",
-        "description": "CRUD flags for 'goodsReceipt' should all be booleans"
-      },
-      {
-        "id": "t-244",
-        "category": "crud-flags",
-        "entity": "goodsReceiptLine",
-        "runner": "node",
-        "description": "CRUD flags for 'goodsReceiptLine' should all be booleans"
-      },
-      {
-        "id": "t-245",
-        "category": "selector-endpoint",
-        "entity": "goodsReceipt",
-        "field": "warehouse",
-        "runner": "node",
-        "description": "Selector endpoint for 'warehouse' in goodsReceipt should exist"
-      },
-      {
-        "id": "t-246",
-        "category": "selector-endpoint",
-        "entity": "goodsReceipt",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Selector endpoint for 'businessPartner' in goodsReceipt should exist"
-      },
-      {
-        "id": "t-247",
-        "category": "selector-endpoint",
-        "entity": "goodsReceipt",
-        "field": "partnerAddress",
-        "runner": "node",
-        "description": "Selector endpoint for 'partnerAddress' in goodsReceipt should exist"
-      },
-      {
-        "id": "t-248",
-        "category": "selector-endpoint",
-        "entity": "goodsReceipt",
-        "field": "salesOrder",
-        "runner": "node",
-        "description": "Selector endpoint for 'salesOrder' in goodsReceipt should exist"
-      },
-      {
-        "id": "t-249",
-        "category": "selector-endpoint",
-        "entity": "goodsReceipt",
-        "field": "project",
-        "runner": "node",
-        "description": "Selector endpoint for 'project' in goodsReceipt should exist"
-      },
-      {
-        "id": "t-250",
-        "category": "selector-endpoint",
-        "entity": "goodsReceipt",
-        "field": "costcenter",
-        "runner": "node",
-        "description": "Selector endpoint for 'costcenter' in goodsReceipt should exist"
-      },
-      {
-        "id": "t-251",
-        "category": "selector-endpoint",
-        "entity": "goodsReceipt",
-        "field": "asset",
-        "runner": "node",
-        "description": "Selector endpoint for 'asset' in goodsReceipt should exist"
-      },
-      {
-        "id": "t-252",
-        "category": "selector-endpoint",
-        "entity": "goodsReceipt",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Selector endpoint for 'stDimension' in goodsReceipt should exist"
-      },
-      {
-        "id": "t-253",
-        "category": "selector-endpoint",
-        "entity": "goodsReceipt",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Selector endpoint for 'ndDimension' in goodsReceipt should exist"
-      },
-      {
-        "id": "t-254",
-        "category": "selector-endpoint",
-        "entity": "goodsReceiptLine",
-        "field": "product",
-        "runner": "node",
-        "description": "Selector endpoint for 'product' in goodsReceiptLine should exist"
-      },
-      {
-        "id": "t-255",
-        "category": "selector-endpoint",
-        "entity": "goodsReceiptLine",
-        "field": "operativeUOM",
-        "runner": "node",
-        "description": "Selector endpoint for 'operativeUOM' in goodsReceiptLine should exist"
-      },
-      {
-        "id": "t-256",
-        "category": "selector-endpoint",
-        "entity": "goodsReceiptLine",
-        "field": "uOM",
-        "runner": "node",
-        "description": "Selector endpoint for 'uOM' in goodsReceiptLine should exist"
-      },
-      {
-        "id": "t-257",
-        "category": "selector-endpoint",
-        "entity": "goodsReceiptLine",
-        "field": "storageBin",
-        "runner": "node",
-        "description": "Selector endpoint for 'storageBin' in goodsReceiptLine should exist"
-      },
-      {
-        "id": "t-258",
-        "category": "selector-endpoint",
-        "entity": "goodsReceiptLine",
-        "field": "salesOrderLine",
-        "runner": "node",
-        "description": "Selector endpoint for 'salesOrderLine' in goodsReceiptLine should exist"
-      },
-      {
-        "id": "t-259",
-        "category": "selector-endpoint",
-        "entity": "goodsReceiptLine",
-        "field": "businessPartner",
-        "runner": "node",
-        "description": "Selector endpoint for 'businessPartner' in goodsReceiptLine should exist"
-      },
-      {
-        "id": "t-260",
-        "category": "selector-endpoint",
-        "entity": "goodsReceiptLine",
-        "field": "project",
-        "runner": "node",
-        "description": "Selector endpoint for 'project' in goodsReceiptLine should exist"
-      },
-      {
-        "id": "t-261",
-        "category": "selector-endpoint",
-        "entity": "goodsReceiptLine",
-        "field": "costcenter",
-        "runner": "node",
-        "description": "Selector endpoint for 'costcenter' in goodsReceiptLine should exist"
-      },
-      {
-        "id": "t-262",
-        "category": "selector-endpoint",
-        "entity": "goodsReceiptLine",
-        "field": "asset",
-        "runner": "node",
-        "description": "Selector endpoint for 'asset' in goodsReceiptLine should exist"
-      },
-      {
-        "id": "t-263",
-        "category": "selector-endpoint",
-        "entity": "goodsReceiptLine",
-        "field": "stDimension",
-        "runner": "node",
-        "description": "Selector endpoint for 'stDimension' in goodsReceiptLine should exist"
-      },
-      {
-        "id": "t-264",
-        "category": "selector-endpoint",
-        "entity": "goodsReceiptLine",
-        "field": "ndDimension",
-        "runner": "node",
-        "description": "Selector endpoint for 'ndDimension' in goodsReceiptLine should exist"
-      },
-      {
-        "id": "t-265",
-        "category": "action-endpoint",
-        "entity": "goodsReceipt",
-        "field": "createLinesFrom",
-        "runner": "node",
-        "description": "Action endpoint for 'createLinesFrom' in goodsReceipt should exist"
-      },
-      {
-        "id": "t-266",
-        "category": "action-endpoint",
-        "entity": "goodsReceipt",
-        "field": "generateTo",
-        "runner": "node",
-        "description": "Action endpoint for 'generateTo' in goodsReceipt should exist"
-      },
-      {
-        "id": "t-267",
-        "category": "action-endpoint",
-        "entity": "goodsReceipt",
-        "field": "processGoodsJava",
-        "runner": "node",
-        "description": "Action endpoint for 'processGoodsJava' in goodsReceipt should exist"
-      },
-      {
-        "id": "t-268",
-        "category": "action-endpoint",
-        "entity": "goodsReceipt",
-        "field": "documentAction",
-        "runner": "node",
-        "description": "Action endpoint for 'documentAction' in goodsReceipt should exist"
-      },
-      {
-        "id": "t-269",
-        "category": "action-endpoint",
-        "entity": "goodsReceipt",
-        "field": "posted",
-        "runner": "node",
-        "description": "Action endpoint for 'posted' in goodsReceipt should exist"
-      },
-      {
-        "id": "t-270",
+        "id": "t-action-endpoint-goodsReceipt-calculateFreight",
         "category": "action-endpoint",
         "entity": "goodsReceipt",
         "field": "calculateFreight",
@@ -4193,31 +2084,31 @@
         "description": "Action endpoint for 'calculateFreight' in goodsReceipt should exist"
       },
       {
-        "id": "t-271",
+        "id": "t-action-endpoint-goodsReceipt-createLinesFrom",
         "category": "action-endpoint",
         "entity": "goodsReceipt",
-        "field": "sendMaterials",
+        "field": "createLinesFrom",
         "runner": "node",
-        "description": "Action endpoint for 'sendMaterials' in goodsReceipt should exist"
+        "description": "Action endpoint for 'createLinesFrom' in goodsReceipt should exist"
       },
       {
-        "id": "t-272",
+        "id": "t-action-endpoint-goodsReceipt-documentAction",
         "category": "action-endpoint",
         "entity": "goodsReceipt",
-        "field": "updateLines",
+        "field": "documentAction",
         "runner": "node",
-        "description": "Action endpoint for 'updateLines' in goodsReceipt should exist"
+        "description": "Action endpoint for 'documentAction' in goodsReceipt should exist"
       },
       {
-        "id": "t-273",
+        "id": "t-action-endpoint-goodsReceipt-generateTo",
         "category": "action-endpoint",
         "entity": "goodsReceipt",
-        "field": "receiveMaterials",
+        "field": "generateTo",
         "runner": "node",
-        "description": "Action endpoint for 'receiveMaterials' in goodsReceipt should exist"
+        "description": "Action endpoint for 'generateTo' in goodsReceipt should exist"
       },
       {
-        "id": "t-274",
+        "id": "t-action-endpoint-goodsReceipt-invoicefromshipment",
         "category": "action-endpoint",
         "entity": "goodsReceipt",
         "field": "invoicefromshipment",
@@ -4225,7 +2116,55 @@
         "description": "Action endpoint for 'invoicefromshipment' in goodsReceipt should exist"
       },
       {
-        "id": "t-275",
+        "id": "t-action-endpoint-goodsReceipt-posted",
+        "category": "action-endpoint",
+        "entity": "goodsReceipt",
+        "field": "posted",
+        "runner": "node",
+        "description": "Action endpoint for 'posted' in goodsReceipt should exist"
+      },
+      {
+        "id": "t-action-endpoint-goodsReceipt-processGoodsJava",
+        "category": "action-endpoint",
+        "entity": "goodsReceipt",
+        "field": "processGoodsJava",
+        "runner": "node",
+        "description": "Action endpoint for 'processGoodsJava' in goodsReceipt should exist"
+      },
+      {
+        "id": "t-action-endpoint-goodsReceipt-receiveMaterials",
+        "category": "action-endpoint",
+        "entity": "goodsReceipt",
+        "field": "receiveMaterials",
+        "runner": "node",
+        "description": "Action endpoint for 'receiveMaterials' in goodsReceipt should exist"
+      },
+      {
+        "id": "t-action-endpoint-goodsReceipt-sendMaterials",
+        "category": "action-endpoint",
+        "entity": "goodsReceipt",
+        "field": "sendMaterials",
+        "runner": "node",
+        "description": "Action endpoint for 'sendMaterials' in goodsReceipt should exist"
+      },
+      {
+        "id": "t-action-endpoint-goodsReceipt-updateLines",
+        "category": "action-endpoint",
+        "entity": "goodsReceipt",
+        "field": "updateLines",
+        "runner": "node",
+        "description": "Action endpoint for 'updateLines' in goodsReceipt should exist"
+      },
+      {
+        "id": "t-action-endpoint-goodsReceiptLine-explode",
+        "category": "action-endpoint",
+        "entity": "goodsReceiptLine",
+        "field": "explode",
+        "runner": "node",
+        "description": "Action endpoint for 'explode' in goodsReceiptLine should exist"
+      },
+      {
+        "id": "t-action-endpoint-goodsReceiptLine-managePrereservation",
         "category": "action-endpoint",
         "entity": "goodsReceiptLine",
         "field": "managePrereservation",
@@ -4233,29 +2172,2091 @@
         "description": "Action endpoint for 'managePrereservation' in goodsReceiptLine should exist"
       },
       {
-        "id": "t-276",
-        "category": "action-endpoint",
+        "id": "t-crud-flags-goodsReceipt",
+        "category": "crud-flags",
+        "entity": "goodsReceipt",
+        "runner": "node",
+        "description": "CRUD flags for 'goodsReceipt' should all be booleans"
+      },
+      {
+        "id": "t-crud-flags-goodsReceiptLine",
+        "category": "crud-flags",
+        "entity": "goodsReceiptLine",
+        "runner": "node",
+        "description": "CRUD flags for 'goodsReceiptLine' should all be booleans"
+      },
+      {
+        "id": "t-default-value-type-goodsReceipt-accountingDate",
+        "category": "default-value-type",
+        "entity": "goodsReceipt",
+        "field": "accountingDate",
+        "runner": "node",
+        "description": "Default value for 'accountingDate' in goodsReceipt should be a string"
+      },
+      {
+        "id": "t-default-value-type-goodsReceipt-documentStatus",
+        "category": "default-value-type",
+        "entity": "goodsReceipt",
+        "field": "documentStatus",
+        "runner": "node",
+        "description": "Default value for 'documentStatus' in goodsReceipt should be a string"
+      },
+      {
+        "id": "t-default-value-type-goodsReceipt-movementDate",
+        "category": "default-value-type",
+        "entity": "goodsReceipt",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Default value for 'movementDate' in goodsReceipt should be a string"
+      },
+      {
+        "id": "t-default-value-type-goodsReceiptLine-invoiceQuantity",
+        "category": "default-value-type",
+        "entity": "goodsReceiptLine",
+        "field": "invoiceQuantity",
+        "runner": "node",
+        "description": "Default value for 'invoiceQuantity' in goodsReceiptLine should be a string"
+      },
+      {
+        "id": "t-default-value-type-goodsReceiptLine-lineNo",
+        "category": "default-value-type",
+        "entity": "goodsReceiptLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Default value for 'lineNo' in goodsReceiptLine should be a string"
+      },
+      {
+        "id": "t-default-value-type-goodsReceiptLine-movementQuantity",
+        "category": "default-value-type",
+        "entity": "goodsReceiptLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Default value for 'movementQuantity' in goodsReceiptLine should be a string"
+      },
+      {
+        "id": "t-default-value-type-goodsReceiptLine-storageBin",
+        "category": "default-value-type",
+        "entity": "goodsReceiptLine",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "Default value for 'storageBin' in goodsReceiptLine should be a string"
+      },
+      {
+        "id": "t-field-presence-goodsReceipt-accountingDate",
+        "category": "field-presence",
+        "entity": "goodsReceipt",
+        "field": "accountingDate",
+        "runner": "node",
+        "description": "Field 'accountingDate' should be present in goodsReceipt"
+      },
+      {
+        "id": "t-field-presence-goodsReceipt-asset",
+        "category": "field-presence",
+        "entity": "goodsReceipt",
+        "field": "asset",
+        "runner": "node",
+        "description": "Field 'asset' should be present in goodsReceipt"
+      },
+      {
+        "id": "t-field-presence-goodsReceipt-businessPartner",
+        "category": "field-presence",
+        "entity": "goodsReceipt",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should be present in goodsReceipt"
+      },
+      {
+        "id": "t-field-presence-goodsReceipt-costcenter",
+        "category": "field-presence",
+        "entity": "goodsReceipt",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "Field 'costcenter' should be present in goodsReceipt"
+      },
+      {
+        "id": "t-field-presence-goodsReceipt-description",
+        "category": "field-presence",
+        "entity": "goodsReceipt",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in goodsReceipt"
+      },
+      {
+        "id": "t-field-presence-goodsReceipt-documentNo",
+        "category": "field-presence",
+        "entity": "goodsReceipt",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should be present in goodsReceipt"
+      },
+      {
+        "id": "t-field-presence-goodsReceipt-documentStatus",
+        "category": "field-presence",
+        "entity": "goodsReceipt",
+        "field": "documentStatus",
+        "runner": "node",
+        "description": "Field 'documentStatus' should be present in goodsReceipt"
+      },
+      {
+        "id": "t-field-presence-goodsReceipt-invoiceStatus",
+        "category": "field-presence",
+        "entity": "goodsReceipt",
+        "field": "invoiceStatus",
+        "runner": "node",
+        "description": "Field 'invoiceStatus' should be present in goodsReceipt"
+      },
+      {
+        "id": "t-field-presence-goodsReceipt-movementDate",
+        "category": "field-presence",
+        "entity": "goodsReceipt",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Field 'movementDate' should be present in goodsReceipt"
+      },
+      {
+        "id": "t-field-presence-goodsReceipt-ndDimension",
+        "category": "field-presence",
+        "entity": "goodsReceipt",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "Field 'ndDimension' should be present in goodsReceipt"
+      },
+      {
+        "id": "t-field-presence-goodsReceipt-orderReference",
+        "category": "field-presence",
+        "entity": "goodsReceipt",
+        "field": "orderReference",
+        "runner": "node",
+        "description": "Field 'orderReference' should be present in goodsReceipt"
+      },
+      {
+        "id": "t-field-presence-goodsReceipt-partnerAddress",
+        "category": "field-presence",
+        "entity": "goodsReceipt",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "Field 'partnerAddress' should be present in goodsReceipt"
+      },
+      {
+        "id": "t-field-presence-goodsReceipt-project",
+        "category": "field-presence",
+        "entity": "goodsReceipt",
+        "field": "project",
+        "runner": "node",
+        "description": "Field 'project' should be present in goodsReceipt"
+      },
+      {
+        "id": "t-field-presence-goodsReceipt-salesOrder",
+        "category": "field-presence",
+        "entity": "goodsReceipt",
+        "field": "salesOrder",
+        "runner": "node",
+        "description": "Field 'salesOrder' should be present in goodsReceipt"
+      },
+      {
+        "id": "t-field-presence-goodsReceipt-stDimension",
+        "category": "field-presence",
+        "entity": "goodsReceipt",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "Field 'stDimension' should be present in goodsReceipt"
+      },
+      {
+        "id": "t-field-presence-goodsReceipt-warehouse",
+        "category": "field-presence",
+        "entity": "goodsReceipt",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Field 'warehouse' should be present in goodsReceipt"
+      },
+      {
+        "id": "t-field-presence-goodsReceiptLine-asset",
+        "category": "field-presence",
+        "entity": "goodsReceiptLine",
+        "field": "asset",
+        "runner": "node",
+        "description": "Field 'asset' should be present in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-presence-goodsReceiptLine-attributeSetValue",
+        "category": "field-presence",
+        "entity": "goodsReceiptLine",
+        "field": "attributeSetValue",
+        "runner": "node",
+        "description": "Field 'attributeSetValue' should be present in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-presence-goodsReceiptLine-businessPartner",
+        "category": "field-presence",
+        "entity": "goodsReceiptLine",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should be present in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-presence-goodsReceiptLine-costcenter",
+        "category": "field-presence",
+        "entity": "goodsReceiptLine",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "Field 'costcenter' should be present in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-presence-goodsReceiptLine-description",
+        "category": "field-presence",
+        "entity": "goodsReceiptLine",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-presence-goodsReceiptLine-invoiceQuantity",
+        "category": "field-presence",
+        "entity": "goodsReceiptLine",
+        "field": "invoiceQuantity",
+        "runner": "node",
+        "description": "Field 'invoiceQuantity' should be present in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-presence-goodsReceiptLine-lineNo",
+        "category": "field-presence",
+        "entity": "goodsReceiptLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should be present in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-presence-goodsReceiptLine-movementQuantity",
+        "category": "field-presence",
+        "entity": "goodsReceiptLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Field 'movementQuantity' should be present in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-presence-goodsReceiptLine-ndDimension",
+        "category": "field-presence",
+        "entity": "goodsReceiptLine",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "Field 'ndDimension' should be present in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-presence-goodsReceiptLine-operativeQuantity",
+        "category": "field-presence",
+        "entity": "goodsReceiptLine",
+        "field": "operativeQuantity",
+        "runner": "node",
+        "description": "Field 'operativeQuantity' should be present in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-presence-goodsReceiptLine-operativeUOM",
+        "category": "field-presence",
+        "entity": "goodsReceiptLine",
+        "field": "operativeUOM",
+        "runner": "node",
+        "description": "Field 'operativeUOM' should be present in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-presence-goodsReceiptLine-product",
+        "category": "field-presence",
+        "entity": "goodsReceiptLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should be present in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-presence-goodsReceiptLine-project",
+        "category": "field-presence",
+        "entity": "goodsReceiptLine",
+        "field": "project",
+        "runner": "node",
+        "description": "Field 'project' should be present in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-presence-goodsReceiptLine-salesOrderLine",
+        "category": "field-presence",
+        "entity": "goodsReceiptLine",
+        "field": "salesOrderLine",
+        "runner": "node",
+        "description": "Field 'salesOrderLine' should be present in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-presence-goodsReceiptLine-stDimension",
+        "category": "field-presence",
+        "entity": "goodsReceiptLine",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "Field 'stDimension' should be present in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-presence-goodsReceiptLine-storageBin",
+        "category": "field-presence",
+        "entity": "goodsReceiptLine",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "Field 'storageBin' should be present in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-presence-goodsReceiptLine-uOM",
+        "category": "field-presence",
+        "entity": "goodsReceiptLine",
+        "field": "uOM",
+        "runner": "node",
+        "description": "Field 'uOM' should be present in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-type-goodsReceipt-accountingDate",
+        "category": "field-type",
+        "entity": "goodsReceipt",
+        "field": "accountingDate",
+        "runner": "node",
+        "description": "Field 'accountingDate' should have type 'string' in goodsReceipt"
+      },
+      {
+        "id": "t-field-type-goodsReceipt-asset",
+        "category": "field-type",
+        "entity": "goodsReceipt",
+        "field": "asset",
+        "runner": "node",
+        "description": "Field 'asset' should have type 'string' in goodsReceipt"
+      },
+      {
+        "id": "t-field-type-goodsReceipt-businessPartner",
+        "category": "field-type",
+        "entity": "goodsReceipt",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should have type 'string' in goodsReceipt"
+      },
+      {
+        "id": "t-field-type-goodsReceipt-costcenter",
+        "category": "field-type",
+        "entity": "goodsReceipt",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "Field 'costcenter' should have type 'string' in goodsReceipt"
+      },
+      {
+        "id": "t-field-type-goodsReceipt-description",
+        "category": "field-type",
+        "entity": "goodsReceipt",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in goodsReceipt"
+      },
+      {
+        "id": "t-field-type-goodsReceipt-documentNo",
+        "category": "field-type",
+        "entity": "goodsReceipt",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should have type 'string' in goodsReceipt"
+      },
+      {
+        "id": "t-field-type-goodsReceipt-documentStatus",
+        "category": "field-type",
+        "entity": "goodsReceipt",
+        "field": "documentStatus",
+        "runner": "node",
+        "description": "Field 'documentStatus' should have type 'string' in goodsReceipt"
+      },
+      {
+        "id": "t-field-type-goodsReceipt-invoiceStatus",
+        "category": "field-type",
+        "entity": "goodsReceipt",
+        "field": "invoiceStatus",
+        "runner": "node",
+        "description": "Field 'invoiceStatus' should have type 'number' in goodsReceipt"
+      },
+      {
+        "id": "t-field-type-goodsReceipt-movementDate",
+        "category": "field-type",
+        "entity": "goodsReceipt",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Field 'movementDate' should have type 'string' in goodsReceipt"
+      },
+      {
+        "id": "t-field-type-goodsReceipt-ndDimension",
+        "category": "field-type",
+        "entity": "goodsReceipt",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "Field 'ndDimension' should have type 'string' in goodsReceipt"
+      },
+      {
+        "id": "t-field-type-goodsReceipt-orderReference",
+        "category": "field-type",
+        "entity": "goodsReceipt",
+        "field": "orderReference",
+        "runner": "node",
+        "description": "Field 'orderReference' should have type 'string' in goodsReceipt"
+      },
+      {
+        "id": "t-field-type-goodsReceipt-partnerAddress",
+        "category": "field-type",
+        "entity": "goodsReceipt",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "Field 'partnerAddress' should have type 'string' in goodsReceipt"
+      },
+      {
+        "id": "t-field-type-goodsReceipt-project",
+        "category": "field-type",
+        "entity": "goodsReceipt",
+        "field": "project",
+        "runner": "node",
+        "description": "Field 'project' should have type 'string' in goodsReceipt"
+      },
+      {
+        "id": "t-field-type-goodsReceipt-salesOrder",
+        "category": "field-type",
+        "entity": "goodsReceipt",
+        "field": "salesOrder",
+        "runner": "node",
+        "description": "Field 'salesOrder' should have type 'string' in goodsReceipt"
+      },
+      {
+        "id": "t-field-type-goodsReceipt-stDimension",
+        "category": "field-type",
+        "entity": "goodsReceipt",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "Field 'stDimension' should have type 'string' in goodsReceipt"
+      },
+      {
+        "id": "t-field-type-goodsReceipt-warehouse",
+        "category": "field-type",
+        "entity": "goodsReceipt",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Field 'warehouse' should have type 'string' in goodsReceipt"
+      },
+      {
+        "id": "t-field-type-goodsReceiptLine-asset",
+        "category": "field-type",
+        "entity": "goodsReceiptLine",
+        "field": "asset",
+        "runner": "node",
+        "description": "Field 'asset' should have type 'string' in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-type-goodsReceiptLine-attributeSetValue",
+        "category": "field-type",
+        "entity": "goodsReceiptLine",
+        "field": "attributeSetValue",
+        "runner": "node",
+        "description": "Field 'attributeSetValue' should have type 'string' in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-type-goodsReceiptLine-businessPartner",
+        "category": "field-type",
+        "entity": "goodsReceiptLine",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should have type 'string' in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-type-goodsReceiptLine-costcenter",
+        "category": "field-type",
+        "entity": "goodsReceiptLine",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "Field 'costcenter' should have type 'string' in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-type-goodsReceiptLine-description",
+        "category": "field-type",
+        "entity": "goodsReceiptLine",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-type-goodsReceiptLine-invoiceQuantity",
+        "category": "field-type",
+        "entity": "goodsReceiptLine",
+        "field": "invoiceQuantity",
+        "runner": "node",
+        "description": "Field 'invoiceQuantity' should have type 'number' in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-type-goodsReceiptLine-lineNo",
+        "category": "field-type",
+        "entity": "goodsReceiptLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Field 'lineNo' should have type 'number' in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-type-goodsReceiptLine-movementQuantity",
+        "category": "field-type",
+        "entity": "goodsReceiptLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Field 'movementQuantity' should have type 'number' in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-type-goodsReceiptLine-ndDimension",
+        "category": "field-type",
+        "entity": "goodsReceiptLine",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "Field 'ndDimension' should have type 'string' in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-type-goodsReceiptLine-operativeQuantity",
+        "category": "field-type",
+        "entity": "goodsReceiptLine",
+        "field": "operativeQuantity",
+        "runner": "node",
+        "description": "Field 'operativeQuantity' should have type 'number' in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-type-goodsReceiptLine-operativeUOM",
+        "category": "field-type",
+        "entity": "goodsReceiptLine",
+        "field": "operativeUOM",
+        "runner": "node",
+        "description": "Field 'operativeUOM' should have type 'string' in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-type-goodsReceiptLine-product",
+        "category": "field-type",
+        "entity": "goodsReceiptLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Field 'product' should have type 'string' in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-type-goodsReceiptLine-project",
+        "category": "field-type",
+        "entity": "goodsReceiptLine",
+        "field": "project",
+        "runner": "node",
+        "description": "Field 'project' should have type 'string' in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-type-goodsReceiptLine-salesOrderLine",
+        "category": "field-type",
+        "entity": "goodsReceiptLine",
+        "field": "salesOrderLine",
+        "runner": "node",
+        "description": "Field 'salesOrderLine' should have type 'string' in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-type-goodsReceiptLine-stDimension",
+        "category": "field-type",
+        "entity": "goodsReceiptLine",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "Field 'stDimension' should have type 'string' in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-type-goodsReceiptLine-storageBin",
+        "category": "field-type",
+        "entity": "goodsReceiptLine",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "Field 'storageBin' should have type 'string' in goodsReceiptLine"
+      },
+      {
+        "id": "t-field-type-goodsReceiptLine-uOM",
+        "category": "field-type",
+        "entity": "goodsReceiptLine",
+        "field": "uOM",
+        "runner": "node",
+        "description": "Field 'uOM' should have type 'string' in goodsReceiptLine"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceipt-accountingDate",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceipt",
+        "field": "accountingDate",
+        "runner": "node",
+        "description": "Read-only logic for 'accountingDate' in goodsReceipt should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceipt-asset",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceipt",
+        "field": "asset",
+        "runner": "node",
+        "description": "Read-only logic for 'asset' in goodsReceipt should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceipt-businessPartner",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceipt",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Read-only logic for 'businessPartner' in goodsReceipt should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceipt-costcenter",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceipt",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "Read-only logic for 'costcenter' in goodsReceipt should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceipt-description",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceipt",
+        "field": "description",
+        "runner": "node",
+        "description": "Read-only logic for 'description' in goodsReceipt should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceipt-documentNo",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceipt",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Read-only logic for 'documentNo' in goodsReceipt should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceipt-movementDate",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceipt",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Read-only logic for 'movementDate' in goodsReceipt should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceipt-ndDimension",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceipt",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "Read-only logic for 'ndDimension' in goodsReceipt should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceipt-orderReference",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceipt",
+        "field": "orderReference",
+        "runner": "node",
+        "description": "Read-only logic for 'orderReference' in goodsReceipt should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceipt-partnerAddress",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceipt",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "Read-only logic for 'partnerAddress' in goodsReceipt should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceipt-project",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceipt",
+        "field": "project",
+        "runner": "node",
+        "description": "Read-only logic for 'project' in goodsReceipt should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceipt-stDimension",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceipt",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "Read-only logic for 'stDimension' in goodsReceipt should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceipt-warehouse",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceipt",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Read-only logic for 'warehouse' in goodsReceipt should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceiptLine-asset",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceiptLine",
+        "field": "asset",
+        "runner": "node",
+        "description": "Read-only logic for 'asset' in goodsReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceiptLine-attributeSetValue",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceiptLine",
+        "field": "attributeSetValue",
+        "runner": "node",
+        "description": "Read-only logic for 'attributeSetValue' in goodsReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceiptLine-businessPartner",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceiptLine",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Read-only logic for 'businessPartner' in goodsReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceiptLine-costcenter",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceiptLine",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "Read-only logic for 'costcenter' in goodsReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceiptLine-lineNo",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceiptLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Read-only logic for 'lineNo' in goodsReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceiptLine-movementQuantity",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceiptLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Read-only logic for 'movementQuantity' in goodsReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceiptLine-ndDimension",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceiptLine",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "Read-only logic for 'ndDimension' in goodsReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceiptLine-operativeQuantity",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceiptLine",
+        "field": "operativeQuantity",
+        "runner": "node",
+        "description": "Read-only logic for 'operativeQuantity' in goodsReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceiptLine-operativeUOM",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceiptLine",
+        "field": "operativeUOM",
+        "runner": "node",
+        "description": "Read-only logic for 'operativeUOM' in goodsReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceiptLine-product",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceiptLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Read-only logic for 'product' in goodsReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceiptLine-project",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceiptLine",
+        "field": "project",
+        "runner": "node",
+        "description": "Read-only logic for 'project' in goodsReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceiptLine-stDimension",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceiptLine",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "Read-only logic for 'stDimension' in goodsReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceiptLine-storageBin",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceiptLine",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "Read-only logic for 'storageBin' in goodsReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-goodsReceiptLine-uOM",
+        "category": "readonlylogic-evaluable",
+        "entity": "goodsReceiptLine",
+        "field": "uOM",
+        "runner": "node",
+        "description": "Read-only logic for 'uOM' in goodsReceiptLine should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceipt-accountingDate",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceipt",
+        "field": "accountingDate",
+        "runner": "node",
+        "description": "Read-only logic for 'accountingDate' in goodsReceipt should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceipt-asset",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceipt",
+        "field": "asset",
+        "runner": "node",
+        "description": "Read-only logic for 'asset' in goodsReceipt should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceipt-businessPartner",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceipt",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Read-only logic for 'businessPartner' in goodsReceipt should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceipt-costcenter",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceipt",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "Read-only logic for 'costcenter' in goodsReceipt should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceipt-description",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceipt",
+        "field": "description",
+        "runner": "node",
+        "description": "Read-only logic for 'description' in goodsReceipt should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceipt-documentNo",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceipt",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Read-only logic for 'documentNo' in goodsReceipt should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceipt-movementDate",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceipt",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Read-only logic for 'movementDate' in goodsReceipt should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceipt-ndDimension",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceipt",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "Read-only logic for 'ndDimension' in goodsReceipt should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceipt-orderReference",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceipt",
+        "field": "orderReference",
+        "runner": "node",
+        "description": "Read-only logic for 'orderReference' in goodsReceipt should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceipt-partnerAddress",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceipt",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "Read-only logic for 'partnerAddress' in goodsReceipt should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceipt-project",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceipt",
+        "field": "project",
+        "runner": "node",
+        "description": "Read-only logic for 'project' in goodsReceipt should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceipt-stDimension",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceipt",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "Read-only logic for 'stDimension' in goodsReceipt should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceipt-warehouse",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceipt",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Read-only logic for 'warehouse' in goodsReceipt should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceiptLine-asset",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceiptLine",
+        "field": "asset",
+        "runner": "node",
+        "description": "Read-only logic for 'asset' in goodsReceiptLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceiptLine-attributeSetValue",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceiptLine",
+        "field": "attributeSetValue",
+        "runner": "node",
+        "description": "Read-only logic for 'attributeSetValue' in goodsReceiptLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceiptLine-businessPartner",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceiptLine",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Read-only logic for 'businessPartner' in goodsReceiptLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceiptLine-costcenter",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceiptLine",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "Read-only logic for 'costcenter' in goodsReceiptLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceiptLine-lineNo",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceiptLine",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "Read-only logic for 'lineNo' in goodsReceiptLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceiptLine-movementQuantity",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceiptLine",
+        "field": "movementQuantity",
+        "runner": "node",
+        "description": "Read-only logic for 'movementQuantity' in goodsReceiptLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceiptLine-ndDimension",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceiptLine",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "Read-only logic for 'ndDimension' in goodsReceiptLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceiptLine-operativeQuantity",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceiptLine",
+        "field": "operativeQuantity",
+        "runner": "node",
+        "description": "Read-only logic for 'operativeQuantity' in goodsReceiptLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceiptLine-operativeUOM",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceiptLine",
+        "field": "operativeUOM",
+        "runner": "node",
+        "description": "Read-only logic for 'operativeUOM' in goodsReceiptLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceiptLine-product",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceiptLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Read-only logic for 'product' in goodsReceiptLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceiptLine-project",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceiptLine",
+        "field": "project",
+        "runner": "node",
+        "description": "Read-only logic for 'project' in goodsReceiptLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceiptLine-stDimension",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceiptLine",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "Read-only logic for 'stDimension' in goodsReceiptLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceiptLine-storageBin",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceiptLine",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "Read-only logic for 'storageBin' in goodsReceiptLine should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-goodsReceiptLine-uOM",
+        "category": "readonlylogic-valid",
+        "entity": "goodsReceiptLine",
+        "field": "uOM",
+        "runner": "node",
+        "description": "Read-only logic for 'uOM' in goodsReceiptLine should be valid JS"
+      },
+      {
+        "id": "t-rule-declared-DISPLAY-AttributeSet-WhenApplicable",
+        "category": "rule-declared",
+        "rule": "DISPLAY_AttributeSet_WhenApplicable",
+        "runner": "node",
+        "description": "Rule 'DISPLAY_AttributeSet_WhenApplicable' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-DISPLAY-Dimensions-WhenEnabled",
+        "category": "rule-declared",
+        "rule": "DISPLAY_Dimensions_WhenEnabled",
+        "runner": "node",
+        "description": "Rule 'DISPLAY_Dimensions_WhenEnabled' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-DISPLAY-InvoicedQty-WhenProcessed",
+        "category": "rule-declared",
+        "rule": "DISPLAY_InvoicedQty_WhenProcessed",
+        "runner": "node",
+        "description": "Rule 'DISPLAY_InvoicedQty_WhenProcessed' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-DISPLAY-OperativeQty-WhenNoOrderUOM",
+        "category": "rule-declared",
+        "rule": "DISPLAY_OperativeQty_WhenNoOrderUOM",
+        "runner": "node",
+        "description": "Rule 'DISPLAY_OperativeQty_WhenNoOrderUOM' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-DISPLAY-OrderUOM-WhenApplicable",
+        "category": "rule-declared",
+        "rule": "DISPLAY_OrderUOM_WhenApplicable",
+        "runner": "node",
+        "description": "Rule 'DISPLAY_OrderUOM_WhenApplicable' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-OperativeQuantity-To-BaseQuantity",
+        "category": "rule-declared",
+        "rule": "OperativeQuantity_To_BaseQuantity",
+        "runner": "node",
+        "description": "Rule 'OperativeQuantity_To_BaseQuantity' (undefined) should be declared"
+      },
+      {
+        "id": "t-rule-declared-PROCESS-CreateLinesFrom",
+        "category": "rule-declared",
+        "rule": "PROCESS_CreateLinesFrom",
+        "runner": "node",
+        "description": "Rule 'PROCESS_CreateLinesFrom' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-PROCESS-Explode",
+        "category": "rule-declared",
+        "rule": "PROCESS_Explode",
+        "runner": "node",
+        "description": "Rule 'PROCESS_Explode' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-PROCESS-GenerateInvoice",
+        "category": "rule-declared",
+        "rule": "PROCESS_GenerateInvoice",
+        "runner": "node",
+        "description": "Rule 'PROCESS_GenerateInvoice' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-PROCESS-InvoiceFromShipment",
+        "category": "rule-declared",
+        "rule": "PROCESS_InvoiceFromShipment",
+        "runner": "node",
+        "description": "Rule 'PROCESS_InvoiceFromShipment' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-PROCESS-LandedCostMatching",
+        "category": "rule-declared",
+        "rule": "PROCESS_LandedCostMatching",
+        "runner": "node",
+        "description": "Rule 'PROCESS_LandedCostMatching' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-PROCESS-ManagePrereservation",
+        "category": "rule-declared",
+        "rule": "PROCESS_ManagePrereservation",
+        "runner": "node",
+        "description": "Rule 'PROCESS_ManagePrereservation' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-PROCESS-ProcessShipment",
+        "category": "rule-declared",
+        "rule": "PROCESS_ProcessShipment",
+        "runner": "node",
+        "description": "Rule 'PROCESS_ProcessShipment' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-READONLY-BPartner-HasLines",
+        "category": "rule-declared",
+        "rule": "READONLY_BPartner_HasLines",
+        "runner": "node",
+        "description": "Rule 'READONLY_BPartner_HasLines' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-READONLY-LandedCost-Processed",
+        "category": "rule-declared",
+        "rule": "READONLY_LandedCost_Processed",
+        "runner": "node",
+        "description": "Rule 'READONLY_LandedCost_Processed' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-READONLY-Posted-AccountingDate",
+        "category": "rule-declared",
+        "rule": "READONLY_Posted_AccountingDate",
+        "runner": "node",
+        "description": "Rule 'READONLY_Posted_AccountingDate' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-READONLY-Processed-Header",
+        "category": "rule-declared",
+        "rule": "READONLY_Processed_Header",
+        "runner": "node",
+        "description": "Rule 'READONLY_Processed_Header' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-READONLY-Processed-Lines",
+        "category": "rule-declared",
+        "rule": "READONLY_Processed_Lines",
+        "runner": "node",
+        "description": "Rule 'READONLY_Processed_Lines' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-READONLY-UomManagement-Qty",
+        "category": "rule-declared",
+        "rule": "READONLY_UomManagement_Qty",
+        "runner": "node",
+        "description": "Rule 'READONLY_UomManagement_Qty' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SE-InOut-DocType",
+        "category": "rule-declared",
+        "rule": "SE_InOut_DocType",
+        "runner": "node",
+        "description": "Rule 'SE_InOut_DocType' (undefined) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SE-InOut-Organization",
+        "category": "rule-declared",
+        "rule": "SE_InOut_Organization",
+        "runner": "node",
+        "description": "Rule 'SE_InOut_Organization' (undefined) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SE-InOut-Warehouse",
+        "category": "rule-declared",
+        "rule": "SE_InOut_Warehouse",
+        "runner": "node",
+        "description": "Rule 'SE_InOut_Warehouse' (undefined) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-InOut-AccountingDate",
+        "category": "rule-declared",
+        "rule": "SL_InOut_AccountingDate",
+        "runner": "node",
+        "description": "Rule 'SL_InOut_AccountingDate' (undefined) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-InOut-BPartner",
+        "category": "rule-declared",
+        "rule": "SL_InOut_BPartner",
+        "runner": "node",
+        "description": "Rule 'SL_InOut_BPartner' (undefined) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-InOut-Conversion",
+        "category": "rule-declared",
+        "rule": "SL_InOut_Conversion",
+        "runner": "node",
+        "description": "Rule 'SL_InOut_Conversion' (undefined) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-InOutLine-Product",
+        "category": "rule-declared",
+        "rule": "SL_InOutLine_Product",
+        "runner": "node",
+        "description": "Rule 'SL_InOutLine_Product' (undefined) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-LandedCost-Cost-Type",
+        "category": "rule-declared",
+        "rule": "SL_LandedCost_Cost_Type",
+        "runner": "node",
+        "description": "Rule 'SL_LandedCost_Cost_Type' (undefined) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-LandedCost-InvoiceLine",
+        "category": "rule-declared",
+        "rule": "SL_LandedCost_InvoiceLine",
+        "runner": "node",
+        "description": "Rule 'SL_LandedCost_InvoiceLine' (undefined) should be declared"
+      },
+      {
+        "id": "t-rule-declared-VAL-BPartnerLocation-ShipTo",
+        "category": "rule-declared",
+        "rule": "VAL_BPartnerLocation_ShipTo",
+        "runner": "node",
+        "description": "Rule 'VAL_BPartnerLocation_ShipTo' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-VAL-DeliveryLocation-ShipTo",
+        "category": "rule-declared",
+        "rule": "VAL_DeliveryLocation_ShipTo",
+        "runner": "node",
+        "description": "Rule 'VAL_DeliveryLocation_ShipTo' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-VAL-DocType-LandedCostCost",
+        "category": "rule-declared",
+        "rule": "VAL_DocType_LandedCostCost",
+        "runner": "node",
+        "description": "Rule 'VAL_DocType_LandedCostCost' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-VAL-DocType-MaterialReceipt",
+        "category": "rule-declared",
+        "rule": "VAL_DocType_MaterialReceipt",
+        "runner": "node",
+        "description": "Rule 'VAL_DocType_MaterialReceipt' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-VAL-Locator-ByWarehouse",
+        "category": "rule-declared",
+        "rule": "VAL_Locator_ByWarehouse",
+        "runner": "node",
+        "description": "Rule 'VAL_Locator_ByWarehouse' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-VAL-Org-ShowChildren",
+        "category": "rule-declared",
+        "rule": "VAL_Org_ShowChildren",
+        "runner": "node",
+        "description": "Rule 'VAL_Org_ShowChildren' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-VAL-Project-StatusAndBPartner",
+        "category": "rule-declared",
+        "rule": "VAL_Project_StatusAndBPartner",
+        "runner": "node",
+        "description": "Rule 'VAL_Project_StatusAndBPartner' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-VAL-UOM-ForProduct",
+        "category": "rule-declared",
+        "rule": "VAL_UOM_ForProduct",
+        "runner": "node",
+        "description": "Rule 'VAL_UOM_ForProduct' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-VAL-User-BPartnerContact",
+        "category": "rule-declared",
+        "rule": "VAL_User_BPartnerContact",
+        "runner": "node",
+        "description": "Rule 'VAL_User_BPartnerContact' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-VAL-User-OrgTree",
+        "category": "rule-declared",
+        "rule": "VAL_User_OrgTree",
+        "runner": "node",
+        "description": "Rule 'VAL_User_OrgTree' (validation) should be declared"
+      },
+      {
+        "id": "t-searchable-filters-goodsReceipt-businessPartner",
+        "category": "searchable-filters",
+        "entity": "goodsReceipt",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should be a supported filter for goodsReceipt"
+      },
+      {
+        "id": "t-searchable-filters-goodsReceipt-documentNo",
+        "category": "searchable-filters",
+        "entity": "goodsReceipt",
+        "field": "documentNo",
+        "runner": "node",
+        "description": "Field 'documentNo' should be a supported filter for goodsReceipt"
+      },
+      {
+        "id": "t-searchable-filters-goodsReceipt-documentStatus",
+        "category": "searchable-filters",
+        "entity": "goodsReceipt",
+        "field": "documentStatus",
+        "runner": "node",
+        "description": "Field 'documentStatus' should be a supported filter for goodsReceipt"
+      },
+      {
+        "id": "t-searchable-filters-goodsReceipt-movementDate",
+        "category": "searchable-filters",
+        "entity": "goodsReceipt",
+        "field": "movementDate",
+        "runner": "node",
+        "description": "Field 'movementDate' should be a supported filter for goodsReceipt"
+      },
+      {
+        "id": "t-searchable-filters-goodsReceipt-orderReference",
+        "category": "searchable-filters",
+        "entity": "goodsReceipt",
+        "field": "orderReference",
+        "runner": "node",
+        "description": "Field 'orderReference' should be a supported filter for goodsReceipt"
+      },
+      {
+        "id": "t-selector-endpoint-goodsReceipt-asset",
+        "category": "selector-endpoint",
+        "entity": "goodsReceipt",
+        "field": "asset",
+        "runner": "node",
+        "description": "Selector endpoint for 'asset' in goodsReceipt should exist"
+      },
+      {
+        "id": "t-selector-endpoint-goodsReceipt-businessPartner",
+        "category": "selector-endpoint",
+        "entity": "goodsReceipt",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Selector endpoint for 'businessPartner' in goodsReceipt should exist"
+      },
+      {
+        "id": "t-selector-endpoint-goodsReceipt-costcenter",
+        "category": "selector-endpoint",
+        "entity": "goodsReceipt",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "Selector endpoint for 'costcenter' in goodsReceipt should exist"
+      },
+      {
+        "id": "t-selector-endpoint-goodsReceipt-ndDimension",
+        "category": "selector-endpoint",
+        "entity": "goodsReceipt",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "Selector endpoint for 'ndDimension' in goodsReceipt should exist"
+      },
+      {
+        "id": "t-selector-endpoint-goodsReceipt-partnerAddress",
+        "category": "selector-endpoint",
+        "entity": "goodsReceipt",
+        "field": "partnerAddress",
+        "runner": "node",
+        "description": "Selector endpoint for 'partnerAddress' in goodsReceipt should exist"
+      },
+      {
+        "id": "t-selector-endpoint-goodsReceipt-project",
+        "category": "selector-endpoint",
+        "entity": "goodsReceipt",
+        "field": "project",
+        "runner": "node",
+        "description": "Selector endpoint for 'project' in goodsReceipt should exist"
+      },
+      {
+        "id": "t-selector-endpoint-goodsReceipt-salesOrder",
+        "category": "selector-endpoint",
+        "entity": "goodsReceipt",
+        "field": "salesOrder",
+        "runner": "node",
+        "description": "Selector endpoint for 'salesOrder' in goodsReceipt should exist"
+      },
+      {
+        "id": "t-selector-endpoint-goodsReceipt-stDimension",
+        "category": "selector-endpoint",
+        "entity": "goodsReceipt",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "Selector endpoint for 'stDimension' in goodsReceipt should exist"
+      },
+      {
+        "id": "t-selector-endpoint-goodsReceipt-warehouse",
+        "category": "selector-endpoint",
+        "entity": "goodsReceipt",
+        "field": "warehouse",
+        "runner": "node",
+        "description": "Selector endpoint for 'warehouse' in goodsReceipt should exist"
+      },
+      {
+        "id": "t-selector-endpoint-goodsReceiptLine-asset",
+        "category": "selector-endpoint",
+        "entity": "goodsReceiptLine",
+        "field": "asset",
+        "runner": "node",
+        "description": "Selector endpoint for 'asset' in goodsReceiptLine should exist"
+      },
+      {
+        "id": "t-selector-endpoint-goodsReceiptLine-businessPartner",
+        "category": "selector-endpoint",
+        "entity": "goodsReceiptLine",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Selector endpoint for 'businessPartner' in goodsReceiptLine should exist"
+      },
+      {
+        "id": "t-selector-endpoint-goodsReceiptLine-costcenter",
+        "category": "selector-endpoint",
+        "entity": "goodsReceiptLine",
+        "field": "costcenter",
+        "runner": "node",
+        "description": "Selector endpoint for 'costcenter' in goodsReceiptLine should exist"
+      },
+      {
+        "id": "t-selector-endpoint-goodsReceiptLine-ndDimension",
+        "category": "selector-endpoint",
+        "entity": "goodsReceiptLine",
+        "field": "ndDimension",
+        "runner": "node",
+        "description": "Selector endpoint for 'ndDimension' in goodsReceiptLine should exist"
+      },
+      {
+        "id": "t-selector-endpoint-goodsReceiptLine-operativeUOM",
+        "category": "selector-endpoint",
+        "entity": "goodsReceiptLine",
+        "field": "operativeUOM",
+        "runner": "node",
+        "description": "Selector endpoint for 'operativeUOM' in goodsReceiptLine should exist"
+      },
+      {
+        "id": "t-selector-endpoint-goodsReceiptLine-product",
+        "category": "selector-endpoint",
+        "entity": "goodsReceiptLine",
+        "field": "product",
+        "runner": "node",
+        "description": "Selector endpoint for 'product' in goodsReceiptLine should exist"
+      },
+      {
+        "id": "t-selector-endpoint-goodsReceiptLine-project",
+        "category": "selector-endpoint",
+        "entity": "goodsReceiptLine",
+        "field": "project",
+        "runner": "node",
+        "description": "Selector endpoint for 'project' in goodsReceiptLine should exist"
+      },
+      {
+        "id": "t-selector-endpoint-goodsReceiptLine-salesOrderLine",
+        "category": "selector-endpoint",
+        "entity": "goodsReceiptLine",
+        "field": "salesOrderLine",
+        "runner": "node",
+        "description": "Selector endpoint for 'salesOrderLine' in goodsReceiptLine should exist"
+      },
+      {
+        "id": "t-selector-endpoint-goodsReceiptLine-stDimension",
+        "category": "selector-endpoint",
+        "entity": "goodsReceiptLine",
+        "field": "stDimension",
+        "runner": "node",
+        "description": "Selector endpoint for 'stDimension' in goodsReceiptLine should exist"
+      },
+      {
+        "id": "t-selector-endpoint-goodsReceiptLine-storageBin",
+        "category": "selector-endpoint",
+        "entity": "goodsReceiptLine",
+        "field": "storageBin",
+        "runner": "node",
+        "description": "Selector endpoint for 'storageBin' in goodsReceiptLine should exist"
+      },
+      {
+        "id": "t-selector-endpoint-goodsReceiptLine-uOM",
+        "category": "selector-endpoint",
+        "entity": "goodsReceiptLine",
+        "field": "uOM",
+        "runner": "node",
+        "description": "Selector endpoint for 'uOM' in goodsReceiptLine should exist"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-active",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-activity",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "activity",
+        "runner": "node",
+        "description": "System field 'activity' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-calculateFreight",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "calculateFreight",
+        "runner": "node",
+        "description": "System field 'calculateFreight' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-charge",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "charge",
+        "runner": "node",
+        "description": "System field 'charge' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-chargeAmount",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "chargeAmount",
+        "runner": "node",
+        "description": "System field 'chargeAmount' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-client",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-completelyInvoiced",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "completelyInvoiced",
+        "runner": "node",
+        "description": "System field 'completelyInvoiced' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-createdBy",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-createLinesFrom",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "createLinesFrom",
+        "runner": "node",
+        "description": "System field 'createLinesFrom' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-creationDate",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-datePrinted",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "datePrinted",
+        "runner": "node",
+        "description": "System field 'datePrinted' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-deliveryLocation",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "deliveryLocation",
+        "runner": "node",
+        "description": "System field 'deliveryLocation' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-deliveryMethod",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "deliveryMethod",
+        "runner": "node",
+        "description": "System field 'deliveryMethod' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-deliveryTerms",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "deliveryTerms",
+        "runner": "node",
+        "description": "System field 'deliveryTerms' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-documentAction",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "documentAction",
+        "runner": "node",
+        "description": "System field 'documentAction' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-documentType",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "documentType",
+        "runner": "node",
+        "description": "System field 'documentType' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-externalBusinessPartnerReference",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "externalBusinessPartnerReference",
+        "runner": "node",
+        "description": "System field 'externalBusinessPartnerReference' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-freightAmount",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "freightAmount",
+        "runner": "node",
+        "description": "System field 'freightAmount' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-freightCategory",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "freightCategory",
+        "runner": "node",
+        "description": "System field 'freightCategory' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-freightCostRule",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "freightCostRule",
+        "runner": "node",
+        "description": "System field 'freightCostRule' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-freightCurrency",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "freightCurrency",
+        "runner": "node",
+        "description": "System field 'freightCurrency' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-generateTo",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "generateTo",
+        "runner": "node",
+        "description": "System field 'generateTo' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-id",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-invoice",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "invoice",
+        "runner": "node",
+        "description": "System field 'invoice' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-invoicefromshipment",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "invoicefromshipment",
+        "runner": "node",
+        "description": "System field 'invoicefromshipment' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-isnettingshipment",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "isnettingshipment",
+        "runner": "node",
+        "description": "System field 'isnettingshipment' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-logistic",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "logistic",
+        "runner": "node",
+        "description": "System field 'logistic' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-mConditionGoodsID",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "mConditionGoodsID",
+        "runner": "node",
+        "description": "System field 'mConditionGoodsID' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-movementType",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "movementType",
+        "runner": "node",
+        "description": "System field 'movementType' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-numberOfPackages",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "numberOfPackages",
+        "runner": "node",
+        "description": "System field 'numberOfPackages' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-orderDate",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "orderDate",
+        "runner": "node",
+        "description": "System field 'orderDate' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-organization",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-pickDate",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "pickDate",
+        "runner": "node",
+        "description": "System field 'pickDate' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-posted",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "posted",
+        "runner": "node",
+        "description": "System field 'posted' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-print",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "print",
+        "runner": "node",
+        "description": "System field 'print' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-priority",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "priority",
+        "runner": "node",
+        "description": "System field 'priority' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-processed",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "processed",
+        "runner": "node",
+        "description": "System field 'processed' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-processGoodsJava",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "processGoodsJava",
+        "runner": "node",
+        "description": "System field 'processGoodsJava' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-processNow",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "processNow",
+        "runner": "node",
+        "description": "System field 'processNow' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-receiveMaterials",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "receiveMaterials",
+        "runner": "node",
+        "description": "System field 'receiveMaterials' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-salesCampaign",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "salesCampaign",
+        "runner": "node",
+        "description": "System field 'salesCampaign' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-salesRepresentative",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "salesRepresentative",
+        "runner": "node",
+        "description": "System field 'salesRepresentative' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-salesTransaction",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "salesTransaction",
+        "runner": "node",
+        "description": "System field 'salesTransaction' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-sendMaterials",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "sendMaterials",
+        "runner": "node",
+        "description": "System field 'sendMaterials' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-shipDate",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "shipDate",
+        "runner": "node",
+        "description": "System field 'shipDate' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-shippingCompany",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "shippingCompany",
+        "runner": "node",
+        "description": "System field 'shippingCompany' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-trackingNo",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "trackingNo",
+        "runner": "node",
+        "description": "System field 'trackingNo' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-trxOrganization",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "trxOrganization",
+        "runner": "node",
+        "description": "System field 'trxOrganization' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-updated",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-updatedBy",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-updateLines",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "updateLines",
+        "runner": "node",
+        "description": "System field 'updateLines' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceipt-userContact",
+        "category": "system-field",
+        "entity": "goodsReceipt",
+        "field": "userContact",
+        "runner": "node",
+        "description": "System field 'userContact' should exist in backend but not frontend for goodsReceipt"
+      },
+      {
+        "id": "t-system-field-goodsReceiptLine-active",
+        "category": "system-field",
+        "entity": "goodsReceiptLine",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-system-field-goodsReceiptLine-bOMParentID",
+        "category": "system-field",
+        "entity": "goodsReceiptLine",
+        "field": "bOMParentID",
+        "runner": "node",
+        "description": "System field 'bOMParentID' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-system-field-goodsReceiptLine-canceledInoutLine",
+        "category": "system-field",
+        "entity": "goodsReceiptLine",
+        "field": "canceledInoutLine",
+        "runner": "node",
+        "description": "System field 'canceledInoutLine' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-system-field-goodsReceiptLine-client",
+        "category": "system-field",
+        "entity": "goodsReceiptLine",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-system-field-goodsReceiptLine-createdBy",
+        "category": "system-field",
+        "entity": "goodsReceiptLine",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-system-field-goodsReceiptLine-creationDate",
+        "category": "system-field",
+        "entity": "goodsReceiptLine",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-system-field-goodsReceiptLine-descriptionOnly",
+        "category": "system-field",
+        "entity": "goodsReceiptLine",
+        "field": "descriptionOnly",
+        "runner": "node",
+        "description": "System field 'descriptionOnly' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-system-field-goodsReceiptLine-explode",
+        "category": "system-field",
         "entity": "goodsReceiptLine",
         "field": "explode",
         "runner": "node",
-        "description": "Action endpoint for 'explode' in goodsReceiptLine should exist"
+        "description": "System field 'explode' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-system-field-goodsReceiptLine-id",
+        "category": "system-field",
+        "entity": "goodsReceiptLine",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-system-field-goodsReceiptLine-managePrereservation",
+        "category": "system-field",
+        "entity": "goodsReceiptLine",
+        "field": "managePrereservation",
+        "runner": "node",
+        "description": "System field 'managePrereservation' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-system-field-goodsReceiptLine-mConditionGoodsID",
+        "category": "system-field",
+        "entity": "goodsReceiptLine",
+        "field": "mConditionGoodsID",
+        "runner": "node",
+        "description": "System field 'mConditionGoodsID' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-system-field-goodsReceiptLine-orderQuantity",
+        "category": "system-field",
+        "entity": "goodsReceiptLine",
+        "field": "orderQuantity",
+        "runner": "node",
+        "description": "System field 'orderQuantity' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-system-field-goodsReceiptLine-orderUOM",
+        "category": "system-field",
+        "entity": "goodsReceiptLine",
+        "field": "orderUOM",
+        "runner": "node",
+        "description": "System field 'orderUOM' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-system-field-goodsReceiptLine-organization",
+        "category": "system-field",
+        "entity": "goodsReceiptLine",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-system-field-goodsReceiptLine-reinvoice",
+        "category": "system-field",
+        "entity": "goodsReceiptLine",
+        "field": "reinvoice",
+        "runner": "node",
+        "description": "System field 'reinvoice' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-system-field-goodsReceiptLine-shipmentReceipt",
+        "category": "system-field",
+        "entity": "goodsReceiptLine",
+        "field": "shipmentReceipt",
+        "runner": "node",
+        "description": "System field 'shipmentReceipt' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-system-field-goodsReceiptLine-updated",
+        "category": "system-field",
+        "entity": "goodsReceiptLine",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-system-field-goodsReceiptLine-updatedBy",
+        "category": "system-field",
+        "entity": "goodsReceiptLine",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for goodsReceiptLine"
+      },
+      {
+        "id": "t-visibility-goodsReceipt",
+        "category": "visibility",
+        "entity": "goodsReceipt",
+        "runner": "node",
+        "description": "Entity 'goodsReceipt' should only expose visible fields in frontend"
+      },
+      {
+        "id": "t-visibility-goodsReceiptLine",
+        "category": "visibility",
+        "entity": "goodsReceiptLine",
+        "runner": "node",
+        "description": "Entity 'goodsReceiptLine' should only expose visible fields in frontend"
       }
     ],
     "summary": {
       "total": 276,
       "byCategory": {
+        "action-endpoint": 12,
+        "crud-flags": 2,
+        "default-value-type": 7,
         "field-presence": 33,
         "field-type": 33,
-        "searchable-filters": 5,
-        "visibility": 2,
-        "readonlylogic-valid": 27,
         "readonlylogic-evaluable": 27,
-        "default-value-type": 7,
-        "system-field": 70,
+        "readonlylogic-valid": 27,
         "rule-declared": 38,
-        "crud-flags": 2,
+        "searchable-filters": 5,
         "selector-endpoint": 20,
-        "action-endpoint": 12
+        "system-field": 70,
+        "visibility": 2
       },
       "byRunner": {
         "node": 276,

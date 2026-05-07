@@ -181,12 +181,6 @@ export const api = {
   "actions": [
     {
       "entity": "customerReturn",
-      "field": "rMReceiveMaterials",
-      "column": "RM_ReceiveMaterials",
-      "url": "/sws/neo/returns/customerReturn/{id}/action/rMReceiveMaterials"
-    },
-    {
-      "entity": "customerReturn",
       "field": "documentAction",
       "column": "DocAction",
       "url": "/sws/neo/returns/customerReturn/{id}/action/documentAction",
@@ -195,11 +189,9 @@ export const api = {
     },
     {
       "entity": "customerReturn",
-      "field": "rMAddOrphanLine",
-      "column": "RM_AddOrphanLine",
-      "url": "/sws/neo/returns/customerReturn/{id}/action/rMAddOrphanLine",
-      "processId": "23D1B163EC0B41F790CE39BF01DA320E",
-      "processType": "classic"
+      "field": "rMReceiveMaterials",
+      "column": "RM_ReceiveMaterials",
+      "url": "/sws/neo/returns/customerReturn/{id}/action/rMReceiveMaterials"
     },
     {
       "entity": "customerReturn",
@@ -208,6 +200,14 @@ export const api = {
       "url": "/sws/neo/returns/customerReturn/{id}/action/rMPickFromShipment",
       "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
       "processType": "obuiapp"
+    },
+    {
+      "entity": "customerReturn",
+      "field": "rMAddOrphanLine",
+      "column": "RM_AddOrphanLine",
+      "url": "/sws/neo/returns/customerReturn/{id}/action/rMAddOrphanLine",
+      "processId": "23D1B163EC0B41F790CE39BF01DA320E",
+      "processType": "classic"
     },
     {
       "entity": "customerReturn",

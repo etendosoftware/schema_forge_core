@@ -18,12 +18,14 @@ const labelOverrides = {
   "es_ES": {
     "C_BPartner_ID": "Contacto",
     "DatePromised": "Fecha de entrega esperada",
-    "DeliveryStatusPurchase": "Estado de entrega"
+    "DeliveryStatusPurchase": "Estado de entrega",
+    "InvoiceStatus": "Estado de facturación"
   },
   "en_US": {
     "C_BPartner_ID": "Contact",
     "DatePromised": "Expected Delivery Date",
-    "DeliveryStatusPurchase": "Delivery Status"
+    "DeliveryStatusPurchase": "Delivery Status",
+    "InvoiceStatus": "Invoicing Status"
   }
 };
 
@@ -529,19 +531,19 @@ export const api = {
     },
     {
       "entity": "header",
-      "field": "posted",
-      "column": "Posted",
-      "url": "/sws/neo/purchase-order/header/{id}/action/posted",
-      "processId": "57496FB9CF9E4E8F847224017941570E",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
       "field": "processNow",
       "column": "Processing",
       "url": "/sws/neo/purchase-order/header/{id}/action/processNow",
       "processId": "104",
       "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "posted",
+      "column": "Posted",
+      "url": "/sws/neo/purchase-order/header/{id}/action/posted",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
     },
     {
       "entity": "header",
@@ -620,12 +622,14 @@ export const api = {
     "es_ES": {
       "C_BPartner_ID": "Contacto",
       "DatePromised": "Fecha de entrega esperada",
-      "DeliveryStatusPurchase": "Estado de entrega"
+      "DeliveryStatusPurchase": "Estado de entrega",
+      "InvoiceStatus": "Estado de facturación"
     },
     "en_US": {
       "C_BPartner_ID": "Contact",
       "DatePromised": "Expected Delivery Date",
-      "DeliveryStatusPurchase": "Delivery Status"
+      "DeliveryStatusPurchase": "Delivery Status",
+      "InvoiceStatus": "Invoicing Status"
     }
   }
 };
@@ -661,7 +665,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         topbarRight={PurchaseOrderActions}
         topbarExtra={PurchaseOrderDraftChips}
         menuActions={({ data, status }) => [
-          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', labelKey: 'cancel', onClick: () => {}, },
           { key: 'reactivate', label: 'Reactivate', visible: status === 'CO' && !data?.hasLinkedDocuments, labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
         ]}
         draftMode={draftMode}

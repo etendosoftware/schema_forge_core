@@ -26,7 +26,7 @@ SELECT pp.AD_Process_Para_ID, pp.Name, pp.ColumnName, pp.Description,
 FROM AD_Process_Para pp
 JOIN AD_Reference r ON r.AD_Reference_ID = pp.AD_Reference_ID
 WHERE pp.AD_Process_ID = $1 AND pp.IsActive = 'Y'
-ORDER BY pp.SeqNo`,
+ORDER BY pp.SeqNo, pp.Name, pp.AD_Process_Para_ID`,
 };
 
 export function rowsToCsv(rows) {
@@ -109,7 +109,7 @@ export async function main(processId, processSlug) {
     // Build and write process-raw.json
     const processRaw = buildProcessRaw(metadataResult.rows, paramsResult.rows);
     const jsonPath = join(ROOT, 'artifacts', processSlug, 'process-raw.json');
-    await writeFile(jsonPath, JSON.stringify(processRaw, null, 2), 'utf-8');
+    await writeFile(jsonPath, JSON.stringify(processRaw, null, 2) + '\n', 'utf-8');
     console.log(`  process-raw.json written`);
 
     console.log(`\nArtifacts written to artifacts/${processSlug}/`);

@@ -1273,5 +1273,27 @@
     ],
     "author": "pipeline",
     "date": "2026-04-30"
+  },
+  {
+    "from": "0.18.0",
+    "to": "0.19.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"etgoTotalDiscount\" added to entity \"header\" in frontend",
+      "Field \"etgoTotalDiscount\" added to entity \"header\" in backend"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-06"
+  },
+  {
+    "from": "0.19.0",
+    "to": "0.20.0",
+    "level": "breaking",
+    "reasons": [
+      "Field \"etgoTotalDiscount\" removed from entity \"header\" in frontend",
+      "Field \"etgoTotalDiscount\" removed from entity \"header\" in backend"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-07"
   }
 ]

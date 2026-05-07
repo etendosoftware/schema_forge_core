@@ -7,13 +7,6 @@
     "notesField": "description",
     "menuActions": [
       {
-        "key": "cancel",
-        "label": "Cancel",
-        "labelKey": "cancel",
-        "destructive": true,
-        "visibleWhenStatus": "CO"
-      },
-      {
         "key": "reactivate",
         "label": "Reactivate",
         "labelKey": "reactivate",
@@ -33,10 +26,16 @@
     "lineEntityConfig": "invoice",
     "labelOverrides": {
       "es_ES": {
-        "POReference": "Nº documento"
+        "POReference": "Nº documento",
+        "OutstandingAmt": "Pendiente de pago",
+        "EM_Etgo_Due_Date": "Vencimiento",
+        "em_etgo_delivery_status": "Estado de entrega"
       },
       "en_US": {
-        "POReference": "Document No."
+        "POReference": "Document No.",
+        "OutstandingAmt": "Pending Payment",
+        "EM_Etgo_Due_Date": "Due Date",
+        "em_etgo_delivery_status": "Delivery Status"
       }
     }
   },
@@ -240,6 +239,19 @@
           "gridOrder": 6,
           "displayLogic": null
         },
+        "eTGODueDate": {
+          "visibility": "readOnly",
+          "grid": true,
+          "gridOrder": 7,
+          "form": false,
+          "searchable": true
+        },
+        "eTGODeliveryStatus": {
+          "visibility": "readOnly",
+          "grid": true,
+          "gridOrder": 8,
+          "form": false
+        },
         "dueAmount": {
           "visibility": "readOnly",
           "form": false,
@@ -314,6 +326,10 @@
         },
         "activity": {
           "visibility": "discarded"
+        },
+        "etgoTotalDiscount": {
+          "visibility": "editable",
+          "form": false
         }
       }
     },
@@ -332,7 +348,13 @@
           "inputMode": "search",
           "readOnlyLogic": null,
           "displayLogic": null,
-          "forceCalloutFields": ["listPrice", "unitPrice", "tax", "uOM", "grossUnitPrice"]
+          "forceCalloutFields": [
+            "listPrice",
+            "unitPrice",
+            "tax",
+            "uOM",
+            "grossUnitPrice"
+          ]
         },
         "description": {
           "grid": true,
@@ -409,7 +431,9 @@
           "section": "principal",
           "inputMode": "selector",
           "readOnlyLogic": null,
-          "forceCalloutFields": ["lineNetAmount"]
+          "forceCalloutFields": [
+            "lineNetAmount"
+          ]
         },
         "taxableAmount": {
           "visibility": "readOnly",
@@ -671,6 +695,32 @@
     },
     "exchangeRates": {
       "exclude": true
+    },
+    "intrastat": {
+      "fields": {
+        "client": { "order": 1 },
+        "organization": { "order": 2 },
+        "invoiceLine": { "order": 3 },
+        "product": { "order": 4 },
+        "incoterms": { "order": 5 },
+        "transactionType": { "order": 6 },
+        "transportationType": { "order": 7 },
+        "portAirport": { "order": 8 },
+        "statisticalRegime": { "order": 9 },
+        "origCountry": { "order": 10 },
+        "nC8Code": { "order": 11 },
+        "netMassKg": { "order": 12 },
+        "hasSuplementaryUnit": { "order": 13 },
+        "conversionRate": { "order": 14 },
+        "staticalValue": { "order": 15 },
+        "supplementaryUOM": { "order": 16 },
+        "active": { "order": 17 },
+        "intrCInvoiceline": { "order": 18 },
+        "creationDate": { "order": 19 },
+        "createdBy": { "order": 20 },
+        "updated": { "order": 21 },
+        "updatedBy": { "order": 22 }
+      }
     }
   },
   "rules": {

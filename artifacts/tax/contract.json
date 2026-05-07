@@ -1,8 +1,8 @@
 {
   "version": "0.4.0",
   "generatedAt": "2026-04-27T19:18:32.198Z",
-  "updatedAt": "2026-04-29T19:32:33.601Z",
-  "checksum": "d7dec2cc387b2363",
+  "updatedAt": "2026-05-05T18:51:27.436Z",
+  "checksum": "aa192c547dd1acc6",
   "frontendContract": {
     "window": {
       "id": "137",
@@ -846,182 +846,14 @@
   "testManifest": {
     "tests": [
       {
-        "id": "t-1",
-        "category": "field-presence",
-        "entity": "tax",
-        "field": "name",
-        "runner": "node",
-        "description": "Field 'name' should be present in tax"
-      },
-      {
-        "id": "t-2",
-        "category": "field-presence",
-        "entity": "tax",
-        "field": "validFromDate",
-        "runner": "node",
-        "description": "Field 'validFromDate' should be present in tax"
-      },
-      {
-        "id": "t-3",
-        "category": "field-presence",
-        "entity": "tax",
-        "field": "rate",
-        "runner": "node",
-        "description": "Field 'rate' should be present in tax"
-      },
-      {
-        "id": "t-4",
-        "category": "field-presence",
-        "entity": "tax",
-        "field": "salesPurchaseType",
-        "runner": "node",
-        "description": "Field 'salesPurchaseType' should be present in tax"
-      },
-      {
-        "id": "t-5",
-        "category": "field-presence",
-        "entity": "tax",
-        "field": "docTaxAmount",
-        "runner": "node",
-        "description": "Field 'docTaxAmount' should be present in tax"
-      },
-      {
-        "id": "t-6",
-        "category": "field-presence",
-        "entity": "tax",
-        "field": "baseAmount",
-        "runner": "node",
-        "description": "Field 'baseAmount' should be present in tax"
-      },
-      {
-        "id": "t-7",
-        "category": "field-type",
-        "entity": "tax",
-        "field": "name",
-        "runner": "node",
-        "description": "Field 'name' should have type 'string' in tax"
-      },
-      {
-        "id": "t-8",
-        "category": "field-type",
-        "entity": "tax",
-        "field": "validFromDate",
-        "runner": "node",
-        "description": "Field 'validFromDate' should have type 'string' in tax"
-      },
-      {
-        "id": "t-9",
-        "category": "field-type",
-        "entity": "tax",
-        "field": "rate",
-        "runner": "node",
-        "description": "Field 'rate' should have type 'number' in tax"
-      },
-      {
-        "id": "t-10",
-        "category": "field-type",
-        "entity": "tax",
-        "field": "salesPurchaseType",
-        "runner": "node",
-        "description": "Field 'salesPurchaseType' should have type 'string' in tax"
-      },
-      {
-        "id": "t-11",
-        "category": "field-type",
-        "entity": "tax",
-        "field": "docTaxAmount",
-        "runner": "node",
-        "description": "Field 'docTaxAmount' should have type 'string' in tax"
-      },
-      {
-        "id": "t-12",
-        "category": "field-type",
-        "entity": "tax",
-        "field": "baseAmount",
-        "runner": "node",
-        "description": "Field 'baseAmount' should have type 'string' in tax"
-      },
-      {
-        "id": "t-13",
-        "category": "searchable-filters",
-        "entity": "tax",
-        "field": "name",
-        "runner": "node",
-        "description": "Field 'name' should be a supported filter for tax"
-      },
-      {
-        "id": "t-14",
-        "category": "visibility",
+        "id": "t-crud-flags-tax",
+        "category": "crud-flags",
         "entity": "tax",
         "runner": "node",
-        "description": "Entity 'tax' should only expose visible fields in frontend"
+        "description": "CRUD flags for 'tax' should all be booleans"
       },
       {
-        "id": "t-15",
-        "category": "displaylogic-valid",
-        "entity": "tax",
-        "field": "rate",
-        "runner": "node",
-        "description": "Display logic for 'rate' in tax should be valid JS"
-      },
-      {
-        "id": "t-16",
-        "category": "displaylogic-valid",
-        "entity": "tax",
-        "field": "docTaxAmount",
-        "runner": "node",
-        "description": "Display logic for 'docTaxAmount' in tax should be valid JS"
-      },
-      {
-        "id": "t-17",
-        "category": "displaylogic-valid",
-        "entity": "tax",
-        "field": "baseAmount",
-        "runner": "node",
-        "description": "Display logic for 'baseAmount' in tax should be valid JS"
-      },
-      {
-        "id": "t-18",
-        "category": "displaylogic-evaluable",
-        "entity": "tax",
-        "field": "rate",
-        "runner": "node",
-        "description": "Display logic for 'rate' in tax should have evaluable flag"
-      },
-      {
-        "id": "t-19",
-        "category": "displaylogic-evaluable",
-        "entity": "tax",
-        "field": "docTaxAmount",
-        "runner": "node",
-        "description": "Display logic for 'docTaxAmount' in tax should have evaluable flag"
-      },
-      {
-        "id": "t-20",
-        "category": "displaylogic-evaluable",
-        "entity": "tax",
-        "field": "baseAmount",
-        "runner": "node",
-        "description": "Display logic for 'baseAmount' in tax should have evaluable flag"
-      },
-      {
-        "id": "t-21",
-        "category": "default-value-type",
-        "entity": "tax",
-        "field": "salesPurchaseType",
-        "runner": "node",
-        "description": "Default value for 'salesPurchaseType' in tax should be a string"
-      },
-      {
-        "id": "t-22",
-        "category": "default-value-type",
-        "entity": "tax",
-        "field": "docTaxAmount",
-        "runner": "node",
-        "description": "Default value for 'docTaxAmount' in tax should be a string"
-      },
-      {
-        "id": "t-23",
+        "id": "t-default-value-type-tax-baseAmount",
         "category": "default-value-type",
         "entity": "tax",
         "field": "baseAmount",
@@ -1029,135 +861,258 @@
         "description": "Default value for 'baseAmount' in tax should be a string"
       },
       {
-        "id": "t-24",
-        "category": "system-field",
+        "id": "t-default-value-type-tax-docTaxAmount",
+        "category": "default-value-type",
         "entity": "tax",
-        "field": "organization",
+        "field": "docTaxAmount",
         "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for tax"
+        "description": "Default value for 'docTaxAmount' in tax should be a string"
       },
       {
-        "id": "t-25",
-        "category": "system-field",
+        "id": "t-default-value-type-tax-salesPurchaseType",
+        "category": "default-value-type",
         "entity": "tax",
-        "field": "taxCategory",
+        "field": "salesPurchaseType",
         "runner": "node",
-        "description": "System field 'taxCategory' should exist in backend but not frontend for tax"
+        "description": "Default value for 'salesPurchaseType' in tax should be a string"
       },
       {
-        "id": "t-26",
-        "category": "system-field",
+        "id": "t-displaylogic-evaluable-tax-baseAmount",
+        "category": "displaylogic-evaluable",
         "entity": "tax",
-        "field": "summaryLevel",
+        "field": "baseAmount",
         "runner": "node",
-        "description": "System field 'summaryLevel' should exist in backend but not frontend for tax"
+        "description": "Display logic for 'baseAmount' in tax should have evaluable flag"
       },
       {
-        "id": "t-27",
-        "category": "system-field",
+        "id": "t-displaylogic-evaluable-tax-docTaxAmount",
+        "category": "displaylogic-evaluable",
         "entity": "tax",
-        "field": "country",
+        "field": "docTaxAmount",
         "runner": "node",
-        "description": "System field 'country' should exist in backend but not frontend for tax"
+        "description": "Display logic for 'docTaxAmount' in tax should have evaluable flag"
       },
       {
-        "id": "t-28",
-        "category": "system-field",
+        "id": "t-displaylogic-evaluable-tax-rate",
+        "category": "displaylogic-evaluable",
         "entity": "tax",
-        "field": "destinationCountry",
+        "field": "rate",
         "runner": "node",
-        "description": "System field 'destinationCountry' should exist in backend but not frontend for tax"
+        "description": "Display logic for 'rate' in tax should have evaluable flag"
       },
       {
-        "id": "t-29",
-        "category": "system-field",
+        "id": "t-displaylogic-valid-tax-baseAmount",
+        "category": "displaylogic-valid",
         "entity": "tax",
-        "field": "taxBase",
+        "field": "baseAmount",
         "runner": "node",
-        "description": "System field 'taxBase' should exist in backend but not frontend for tax"
+        "description": "Display logic for 'baseAmount' in tax should be valid JS"
       },
       {
-        "id": "t-30",
-        "category": "system-field",
+        "id": "t-displaylogic-valid-tax-docTaxAmount",
+        "category": "displaylogic-valid",
         "entity": "tax",
-        "field": "region",
+        "field": "docTaxAmount",
         "runner": "node",
-        "description": "System field 'region' should exist in backend but not frontend for tax"
+        "description": "Display logic for 'docTaxAmount' in tax should be valid JS"
       },
       {
-        "id": "t-31",
-        "category": "system-field",
+        "id": "t-displaylogic-valid-tax-rate",
+        "category": "displaylogic-valid",
         "entity": "tax",
-        "field": "destinationRegion",
+        "field": "rate",
         "runner": "node",
-        "description": "System field 'destinationRegion' should exist in backend but not frontend for tax"
+        "description": "Display logic for 'rate' in tax should be valid JS"
       },
       {
-        "id": "t-32",
-        "category": "system-field",
+        "id": "t-field-presence-tax-baseAmount",
+        "category": "field-presence",
         "entity": "tax",
-        "field": "aeatsiiIsprorate",
+        "field": "baseAmount",
         "runner": "node",
-        "description": "System field 'aeatsiiIsprorate' should exist in backend but not frontend for tax"
+        "description": "Field 'baseAmount' should be present in tax"
       },
       {
-        "id": "t-33",
-        "category": "system-field",
+        "id": "t-field-presence-tax-docTaxAmount",
+        "category": "field-presence",
         "entity": "tax",
-        "field": "lineNo",
+        "field": "docTaxAmount",
         "runner": "node",
-        "description": "System field 'lineNo' should exist in backend but not frontend for tax"
+        "description": "Field 'docTaxAmount' should be present in tax"
       },
       {
-        "id": "t-34",
-        "category": "system-field",
+        "id": "t-field-presence-tax-name",
+        "category": "field-presence",
         "entity": "tax",
-        "field": "oBSPTITaxBookType",
+        "field": "name",
         "runner": "node",
-        "description": "System field 'oBSPTITaxBookType' should exist in backend but not frontend for tax"
+        "description": "Field 'name' should be present in tax"
       },
       {
-        "id": "t-35",
-        "category": "system-field",
+        "id": "t-field-presence-tax-rate",
+        "category": "field-presence",
         "entity": "tax",
-        "field": "description",
+        "field": "rate",
         "runner": "node",
-        "description": "System field 'description' should exist in backend but not frontend for tax"
+        "description": "Field 'rate' should be present in tax"
       },
       {
-        "id": "t-36",
-        "category": "system-field",
+        "id": "t-field-presence-tax-salesPurchaseType",
+        "category": "field-presence",
         "entity": "tax",
-        "field": "parentTaxRate",
+        "field": "salesPurchaseType",
         "runner": "node",
-        "description": "System field 'parentTaxRate' should exist in backend but not frontend for tax"
+        "description": "Field 'salesPurchaseType' should be present in tax"
       },
       {
-        "id": "t-37",
-        "category": "system-field",
+        "id": "t-field-presence-tax-validFromDate",
+        "category": "field-presence",
         "entity": "tax",
-        "field": "oBSPTIReverseCharge",
+        "field": "validFromDate",
         "runner": "node",
-        "description": "System field 'oBSPTIReverseCharge' should exist in backend but not frontend for tax"
+        "description": "Field 'validFromDate' should be present in tax"
       },
       {
-        "id": "t-38",
-        "category": "system-field",
+        "id": "t-field-type-tax-baseAmount",
+        "category": "field-type",
         "entity": "tax",
-        "field": "oBSPTIEquivalentCharge",
+        "field": "baseAmount",
         "runner": "node",
-        "description": "System field 'oBSPTIEquivalentCharge' should exist in backend but not frontend for tax"
+        "description": "Field 'baseAmount' should have type 'string' in tax"
       },
       {
-        "id": "t-39",
-        "category": "system-field",
+        "id": "t-field-type-tax-docTaxAmount",
+        "category": "field-type",
         "entity": "tax",
-        "field": "businessPartnerTaxCategory",
+        "field": "docTaxAmount",
         "runner": "node",
-        "description": "System field 'businessPartnerTaxCategory' should exist in backend but not frontend for tax"
+        "description": "Field 'docTaxAmount' should have type 'string' in tax"
       },
       {
-        "id": "t-40",
+        "id": "t-field-type-tax-name",
+        "category": "field-type",
+        "entity": "tax",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should have type 'string' in tax"
+      },
+      {
+        "id": "t-field-type-tax-rate",
+        "category": "field-type",
+        "entity": "tax",
+        "field": "rate",
+        "runner": "node",
+        "description": "Field 'rate' should have type 'number' in tax"
+      },
+      {
+        "id": "t-field-type-tax-salesPurchaseType",
+        "category": "field-type",
+        "entity": "tax",
+        "field": "salesPurchaseType",
+        "runner": "node",
+        "description": "Field 'salesPurchaseType' should have type 'string' in tax"
+      },
+      {
+        "id": "t-field-type-tax-validFromDate",
+        "category": "field-type",
+        "entity": "tax",
+        "field": "validFromDate",
+        "runner": "node",
+        "description": "Field 'validFromDate' should have type 'string' in tax"
+      },
+      {
+        "id": "t-rule-declared",
+        "category": "rule-declared",
+        "runner": "node",
+        "description": "Rule 'undefined' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-AD-Client-Security-validation",
+        "category": "rule-declared",
+        "rule": "AD_Client Security validation",
+        "runner": "node",
+        "description": "Rule 'AD_Client Security validation' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-AD-Org-Security-validation",
+        "category": "rule-declared",
+        "rule": "AD_Org Security validation",
+        "runner": "node",
+        "description": "Rule 'AD_Org Security validation' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Region-of-a-Country-From",
+        "category": "rule-declared",
+        "rule": "C_Region of a Country From",
+        "runner": "node",
+        "description": "Rule 'C_Region of a Country From' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Region-of-Country",
+        "category": "rule-declared",
+        "rule": "C_Region of Country",
+        "runner": "node",
+        "description": "Rule 'C_Region of Country' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Region-of-Country-To",
+        "category": "rule-declared",
+        "rule": "C_Region of Country To",
+        "runner": "node",
+        "description": "Rule 'C_Region of Country To' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Region-of-To-Country",
+        "category": "rule-declared",
+        "rule": "C_Region of To_Country",
+        "runner": "node",
+        "description": "Rule 'C_Region of To_Country' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Tax-Base-taxes",
+        "category": "rule-declared",
+        "rule": "C_Tax - Base taxes",
+        "runner": "node",
+        "description": "Rule 'C_Tax - Base taxes' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SE-Taxes-Active-IsActive",
+        "category": "rule-declared",
+        "rule": "SE_Taxes_Active_IsActive",
+        "runner": "node",
+        "description": "Rule 'SE_Taxes_Active_IsActive' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SE-TaxRate-Withholding-IsWithholdingTax",
+        "category": "rule-declared",
+        "rule": "SE_TaxRate_Withholding_IsWithholdingTax",
+        "runner": "node",
+        "description": "Rule 'SE_TaxRate_Withholding_IsWithholdingTax' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-TaxCategory-Org-AD-Org-ID",
+        "category": "rule-declared",
+        "rule": "SL_TaxCategory_Org_AD_Org_ID",
+        "runner": "node",
+        "description": "Rule 'SL_TaxCategory_Org_AD_Org_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Tax-not-included",
+        "category": "rule-declared",
+        "rule": "Tax not included",
+        "runner": "node",
+        "description": "Rule 'Tax not included' (validation) should be declared"
+      },
+      {
+        "id": "t-searchable-filters-tax-name",
+        "category": "searchable-filters",
+        "entity": "tax",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be a supported filter for tax"
+      },
+      {
+        "id": "t-system-field-tax-active",
         "category": "system-field",
         "entity": "tax",
         "field": "active",
@@ -1165,207 +1120,7 @@
         "description": "System field 'active' should exist in backend but not frontend for tax"
       },
       {
-        "id": "t-41",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "default",
-        "runner": "node",
-        "description": "System field 'default' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-42",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "cascade",
-        "runner": "node",
-        "description": "System field 'cascade' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-43",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "withholdingTax",
-        "runner": "node",
-        "description": "System field 'withholdingTax' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-44",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "notTaxable",
-        "runner": "node",
-        "description": "System field 'notTaxable' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-45",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "notTaxdeductable",
-        "runner": "node",
-        "description": "System field 'notTaxdeductable' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-46",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "istaxdeductable",
-        "runner": "node",
-        "description": "System field 'istaxdeductable' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-47",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "obsptiReagyp",
-        "runner": "node",
-        "description": "System field 'obsptiReagyp' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-48",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "oBSPTIIsintracommunity",
-        "runner": "node",
-        "description": "System field 'oBSPTIIsintracommunity' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-49",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "deductableRate",
-        "runner": "node",
-        "description": "System field 'deductableRate' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-50",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "isCashVAT",
-        "runner": "node",
-        "description": "System field 'isCashVAT' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-51",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "originalRate",
-        "runner": "node",
-        "description": "System field 'originalRate' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-52",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "obsptiIslease",
-        "runner": "node",
-        "description": "System field 'obsptiIslease' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-53",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "obsptiIsrealestate",
-        "runner": "node",
-        "description": "System field 'obsptiIsrealestate' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-54",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "taxExempt",
-        "runner": "node",
-        "description": "System field 'taxExempt' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-55",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "obsptiIsrebu",
-        "runner": "node",
-        "description": "System field 'obsptiIsrebu' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-56",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "obsptiIsexport",
-        "runner": "node",
-        "description": "System field 'obsptiIsexport' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-57",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "obsptiIsimplicitcharge",
-        "runner": "node",
-        "description": "System field 'obsptiIsimplicitcharge' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-58",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "obsptiReceiveOss",
-        "runner": "node",
-        "description": "System field 'obsptiReceiveOss' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-59",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "tbaiClaveregimeniva",
-        "runner": "node",
-        "description": "System field 'tbaiClaveregimeniva' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-60",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "aeatsiiIsproratexml",
-        "runner": "node",
-        "description": "System field 'aeatsiiIsproratexml' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-61",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "etvfacIGICRegime",
-        "runner": "node",
-        "description": "System field 'etvfacIGICRegime' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-62",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "tbaiNonsubjectcause",
-        "runner": "node",
-        "description": "System field 'tbaiNonsubjectcause' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-63",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "etvfacVatRegime",
-        "runner": "node",
-        "description": "System field 'etvfacVatRegime' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-64",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "etvfacExemptionCause",
-        "runner": "node",
-        "description": "System field 'etvfacExemptionCause' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-65",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "etvfacCauseNotTaxable",
-        "runner": "node",
-        "description": "System field 'etvfacCauseNotTaxable' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-66",
+        "id": "t-system-field-tax-aeatsiiCauseExemption",
         "category": "system-field",
         "entity": "tax",
         "field": "aeatsiiCauseExemption",
@@ -1373,31 +1128,39 @@
         "description": "System field 'aeatsiiCauseExemption' should exist in backend but not frontend for tax"
       },
       {
-        "id": "t-67",
+        "id": "t-system-field-tax-aeatsiiIsprorate",
         "category": "system-field",
         "entity": "tax",
-        "field": "tBAICausaDeExencion",
+        "field": "aeatsiiIsprorate",
         "runner": "node",
-        "description": "System field 'tBAICausaDeExencion' should exist in backend but not frontend for tax"
+        "description": "System field 'aeatsiiIsprorate' should exist in backend but not frontend for tax"
       },
       {
-        "id": "t-68",
+        "id": "t-system-field-tax-aeatsiiIsproratexml",
         "category": "system-field",
         "entity": "tax",
-        "field": "etvfacIPSIRegime",
+        "field": "aeatsiiIsproratexml",
         "runner": "node",
-        "description": "System field 'etvfacIPSIRegime' should exist in backend but not frontend for tax"
+        "description": "System field 'aeatsiiIsproratexml' should exist in backend but not frontend for tax"
       },
       {
-        "id": "t-69",
+        "id": "t-system-field-tax-businessPartnerTaxCategory",
         "category": "system-field",
         "entity": "tax",
-        "field": "creationDate",
+        "field": "businessPartnerTaxCategory",
         "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for tax"
+        "description": "System field 'businessPartnerTaxCategory' should exist in backend but not frontend for tax"
       },
       {
-        "id": "t-70",
+        "id": "t-system-field-tax-cascade",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "cascade",
+        "runner": "node",
+        "description": "System field 'cascade' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-client",
         "category": "system-field",
         "entity": "tax",
         "field": "client",
@@ -1405,31 +1168,15 @@
         "description": "System field 'client' should exist in backend but not frontend for tax"
       },
       {
-        "id": "t-71",
+        "id": "t-system-field-tax-country",
         "category": "system-field",
         "entity": "tax",
-        "field": "taxSearchKey",
+        "field": "country",
         "runner": "node",
-        "description": "System field 'taxSearchKey' should exist in backend but not frontend for tax"
+        "description": "System field 'country' should exist in backend but not frontend for tax"
       },
       {
-        "id": "t-72",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "id",
-        "runner": "node",
-        "description": "System field 'id' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-73",
-        "category": "system-field",
-        "entity": "tax",
-        "field": "noVAT",
-        "runner": "node",
-        "description": "System field 'noVAT' should exist in backend but not frontend for tax"
-      },
-      {
-        "id": "t-74",
+        "id": "t-system-field-tax-createdBy",
         "category": "system-field",
         "entity": "tax",
         "field": "createdBy",
@@ -1437,7 +1184,335 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for tax"
       },
       {
-        "id": "t-75",
+        "id": "t-system-field-tax-creationDate",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-deductableRate",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "deductableRate",
+        "runner": "node",
+        "description": "System field 'deductableRate' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-default",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "default",
+        "runner": "node",
+        "description": "System field 'default' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-description",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "description",
+        "runner": "node",
+        "description": "System field 'description' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-destinationCountry",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "destinationCountry",
+        "runner": "node",
+        "description": "System field 'destinationCountry' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-destinationRegion",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "destinationRegion",
+        "runner": "node",
+        "description": "System field 'destinationRegion' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-etvfacCauseNotTaxable",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "etvfacCauseNotTaxable",
+        "runner": "node",
+        "description": "System field 'etvfacCauseNotTaxable' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-etvfacExemptionCause",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "etvfacExemptionCause",
+        "runner": "node",
+        "description": "System field 'etvfacExemptionCause' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-etvfacIGICRegime",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "etvfacIGICRegime",
+        "runner": "node",
+        "description": "System field 'etvfacIGICRegime' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-etvfacIPSIRegime",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "etvfacIPSIRegime",
+        "runner": "node",
+        "description": "System field 'etvfacIPSIRegime' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-etvfacVatRegime",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "etvfacVatRegime",
+        "runner": "node",
+        "description": "System field 'etvfacVatRegime' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-id",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-isCashVAT",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "isCashVAT",
+        "runner": "node",
+        "description": "System field 'isCashVAT' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-istaxdeductable",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "istaxdeductable",
+        "runner": "node",
+        "description": "System field 'istaxdeductable' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-lineNo",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "System field 'lineNo' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-notTaxable",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "notTaxable",
+        "runner": "node",
+        "description": "System field 'notTaxable' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-notTaxdeductable",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "notTaxdeductable",
+        "runner": "node",
+        "description": "System field 'notTaxdeductable' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-noVAT",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "noVAT",
+        "runner": "node",
+        "description": "System field 'noVAT' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-oBSPTIEquivalentCharge",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "oBSPTIEquivalentCharge",
+        "runner": "node",
+        "description": "System field 'oBSPTIEquivalentCharge' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-obsptiIsexport",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "obsptiIsexport",
+        "runner": "node",
+        "description": "System field 'obsptiIsexport' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-obsptiIsimplicitcharge",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "obsptiIsimplicitcharge",
+        "runner": "node",
+        "description": "System field 'obsptiIsimplicitcharge' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-oBSPTIIsintracommunity",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "oBSPTIIsintracommunity",
+        "runner": "node",
+        "description": "System field 'oBSPTIIsintracommunity' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-obsptiIslease",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "obsptiIslease",
+        "runner": "node",
+        "description": "System field 'obsptiIslease' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-obsptiIsrealestate",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "obsptiIsrealestate",
+        "runner": "node",
+        "description": "System field 'obsptiIsrealestate' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-obsptiIsrebu",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "obsptiIsrebu",
+        "runner": "node",
+        "description": "System field 'obsptiIsrebu' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-obsptiReagyp",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "obsptiReagyp",
+        "runner": "node",
+        "description": "System field 'obsptiReagyp' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-obsptiReceiveOss",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "obsptiReceiveOss",
+        "runner": "node",
+        "description": "System field 'obsptiReceiveOss' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-oBSPTIReverseCharge",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "oBSPTIReverseCharge",
+        "runner": "node",
+        "description": "System field 'oBSPTIReverseCharge' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-oBSPTITaxBookType",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "oBSPTITaxBookType",
+        "runner": "node",
+        "description": "System field 'oBSPTITaxBookType' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-organization",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-originalRate",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "originalRate",
+        "runner": "node",
+        "description": "System field 'originalRate' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-parentTaxRate",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "parentTaxRate",
+        "runner": "node",
+        "description": "System field 'parentTaxRate' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-region",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "region",
+        "runner": "node",
+        "description": "System field 'region' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-summaryLevel",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "summaryLevel",
+        "runner": "node",
+        "description": "System field 'summaryLevel' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-taxBase",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "taxBase",
+        "runner": "node",
+        "description": "System field 'taxBase' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-taxCategory",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "taxCategory",
+        "runner": "node",
+        "description": "System field 'taxCategory' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-taxExempt",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "taxExempt",
+        "runner": "node",
+        "description": "System field 'taxExempt' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-taxSearchKey",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "taxSearchKey",
+        "runner": "node",
+        "description": "System field 'taxSearchKey' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-tBAICausaDeExencion",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "tBAICausaDeExencion",
+        "runner": "node",
+        "description": "System field 'tBAICausaDeExencion' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-tbaiClaveregimeniva",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "tbaiClaveregimeniva",
+        "runner": "node",
+        "description": "System field 'tbaiClaveregimeniva' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-tbaiNonsubjectcause",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "tbaiNonsubjectcause",
+        "runner": "node",
+        "description": "System field 'tbaiNonsubjectcause' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-updated",
         "category": "system-field",
         "entity": "tax",
         "field": "updated",
@@ -1445,7 +1520,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for tax"
       },
       {
-        "id": "t-76",
+        "id": "t-system-field-tax-updatedBy",
         "category": "system-field",
         "entity": "tax",
         "field": "updatedBy",
@@ -1453,109 +1528,34 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for tax"
       },
       {
-        "id": "t-77",
-        "category": "rule-declared",
-        "rule": "SL_TaxCategory_Org_AD_Org_ID",
+        "id": "t-system-field-tax-withholdingTax",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "withholdingTax",
         "runner": "node",
-        "description": "Rule 'SL_TaxCategory_Org_AD_Org_ID' (callout) should be declared"
+        "description": "System field 'withholdingTax' should exist in backend but not frontend for tax"
       },
       {
-        "id": "t-78",
-        "category": "rule-declared",
-        "rule": "SE_Taxes_Active_IsActive",
-        "runner": "node",
-        "description": "Rule 'SE_Taxes_Active_IsActive' (callout) should be declared"
-      },
-      {
-        "id": "t-79",
-        "category": "rule-declared",
-        "rule": "SE_TaxRate_Withholding_IsWithholdingTax",
-        "runner": "node",
-        "description": "Rule 'SE_TaxRate_Withholding_IsWithholdingTax' (callout) should be declared"
-      },
-      {
-        "id": "t-80",
-        "category": "rule-declared",
-        "rule": "AD_Client Security validation",
-        "runner": "node",
-        "description": "Rule 'AD_Client Security validation' (validation) should be declared"
-      },
-      {
-        "id": "t-81",
-        "category": "rule-declared",
-        "rule": "Tax not included",
-        "runner": "node",
-        "description": "Rule 'Tax not included' (validation) should be declared"
-      },
-      {
-        "id": "t-82",
-        "category": "rule-declared",
-        "rule": "C_Region of Country",
-        "runner": "node",
-        "description": "Rule 'C_Region of Country' (validation) should be declared"
-      },
-      {
-        "id": "t-83",
-        "category": "rule-declared",
-        "rule": "C_Region of To_Country",
-        "runner": "node",
-        "description": "Rule 'C_Region of To_Country' (validation) should be declared"
-      },
-      {
-        "id": "t-84",
-        "category": "rule-declared",
-        "rule": "C_Tax - Base taxes",
-        "runner": "node",
-        "description": "Rule 'C_Tax - Base taxes' (validation) should be declared"
-      },
-      {
-        "id": "t-85",
-        "category": "rule-declared",
-        "rule": "C_Region of a Country From",
-        "runner": "node",
-        "description": "Rule 'C_Region of a Country From' (validation) should be declared"
-      },
-      {
-        "id": "t-86",
-        "category": "rule-declared",
-        "rule": "C_Region of Country To",
-        "runner": "node",
-        "description": "Rule 'C_Region of Country To' (validation) should be declared"
-      },
-      {
-        "id": "t-87",
-        "category": "rule-declared",
-        "rule": "AD_Org Security validation",
-        "runner": "node",
-        "description": "Rule 'AD_Org Security validation' (validation) should be declared"
-      },
-      {
-        "id": "t-88",
-        "category": "rule-declared",
-        "runner": "node",
-        "description": "Rule 'undefined' (displayLogic) should be declared"
-      },
-      {
-        "id": "t-89",
-        "category": "crud-flags",
+        "id": "t-visibility-tax",
+        "category": "visibility",
         "entity": "tax",
         "runner": "node",
-        "description": "CRUD flags for 'tax' should all be booleans"
+        "description": "Entity 'tax' should only expose visible fields in frontend"
       }
     ],
     "summary": {
       "total": 89,
       "byCategory": {
+        "crud-flags": 1,
+        "default-value-type": 3,
+        "displaylogic-evaluable": 3,
+        "displaylogic-valid": 3,
         "field-presence": 6,
         "field-type": 6,
-        "searchable-filters": 1,
-        "visibility": 1,
-        "displaylogic-valid": 3,
-        "displaylogic-evaluable": 3,
-        "default-value-type": 3,
-        "system-field": 53,
         "rule-declared": 12,
-        "crud-flags": 1
+        "searchable-filters": 1,
+        "system-field": 53,
+        "visibility": 1
       },
       "byRunner": {
         "node": 89,

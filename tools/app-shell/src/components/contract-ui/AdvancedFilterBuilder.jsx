@@ -39,24 +39,24 @@ import { DistinctValuesList } from './DistinctValuesList.jsx';
  */
 
 const OPERATORS_BY_MODE = {
-  text:         ['iContains', 'iNotContains', 'iEquals', 'iNotEquals', 'isNull', 'isNotNull'],
-  identifier:   ['iContains', 'iNotContains', 'equals', 'notEquals', 'isNull', 'isNotNull'],
-  enumLabel:    ['equals', 'notEquals', 'inSet', 'isNull', 'isNotNull'],
+  text:         ['iContains', 'iNotContains', 'iEquals', 'iNotEqual', 'isNull', 'isNotNull'],
+  identifier:   ['iContains', 'iNotContains', 'equals', 'notEqual', 'isNull', 'isNotNull'],
+  enumLabel:    ['equals', 'notEqual', 'inSet', 'isNull', 'isNotNull'],
   booleanLabel: ['equals'],
-  numeric:      ['equals', 'notEquals', 'greaterThan', 'greaterOrEqual', 'lessThan', 'lessOrEqual', 'between', 'isNull', 'isNotNull'],
+  numeric:      ['equals', 'notEqual', 'greaterThan', 'greaterOrEqual', 'lessThan', 'lessOrEqual', 'between', 'isNull', 'isNotNull'],
   date:         ['equals', 'lessThan', 'greaterThan', 'between', 'isNull', 'isNotNull'],
 };
 
 // Text-style ops: user types free text (backend filters on `$_identifier`).
-const TEXTUAL_IDENT_OPS = new Set(['iContains', 'iNotContains', 'iEquals', 'iNotEquals']);
+const TEXTUAL_IDENT_OPS = new Set(['iContains', 'iNotContains', 'iEquals', 'iNotEqual']);
 
 const OP_LABEL_KEY = {
   iContains: 'opContains',
   iNotContains: 'opNotContains',
   iEquals: 'opIs',
-  iNotEquals: 'opIsNot',
+  iNotEqual: 'opIsNot',
   equals: 'opIs',
-  notEquals: 'opIsNot',
+  notEqual: 'opIsNot',
   greaterThan: 'opGreaterThan',
   greaterOrEqual: 'opGreaterOrEqual',
   lessThan: 'opLessThan',
@@ -128,9 +128,10 @@ export function AdvancedFilterBuilder({
   onSavePreset = null,
   onDeletePreset = null,
   hasActiveFilter = false,
+  labelOverrides = null,
 }) {
   const ui = useUI();
-  const labelOf = useLabel();
+  const labelOf = useLabel(labelOverrides);
   const dictionary = useLocale();
 
   const filterableColumns = useMemo(
@@ -353,6 +354,7 @@ export function AdvancedFilterBuilder({
                     rows={rows}
                     entity={entity}
                     apiBaseUrl={apiBaseUrl}
+                    labelOverrides={labelOverrides}
                   />
                 )}
               </div>
@@ -538,7 +540,7 @@ export function AdvancedFilterBuilder({
   );
 }
 
-function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows, entity, apiBaseUrl }) {
+function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows, entity, apiBaseUrl, labelOverrides }) {
   if (mode === 'identifier' && !TEXTUAL_IDENT_OPS.has(operator)) {
     return (
       <IdentifierMultiPicker
@@ -549,6 +551,7 @@ function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows
         value={value}
         onChange={onChange}
         ui={ui}
+        labelOverrides={labelOverrides}
       />
     );
   }
@@ -628,11 +631,11 @@ function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows
   );
 }
 
-function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui }) {
+function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui, labelOverrides = null }) {
   const [open, setOpen] = useState(false);
   const selected = Array.isArray(value) ? value : [];
   const sentinelRef = useRef(null);
-  const labelOf = useLabel();
+  const labelOf = useLabel(labelOverrides);
 
   // Pulls {id, _identifier} pairs from the list GET's `_distinct` branch so
   // the picker shows all values in the filterable universe, not only those on

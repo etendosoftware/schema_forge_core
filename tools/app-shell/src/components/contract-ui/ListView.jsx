@@ -52,6 +52,8 @@ export function ListView({
   labelOverrides,
   onCloneRow = null,
   initialColumnFilters,
+  initialAdvancedFilter = null,
+  initialColumns = null,
   rowFilter,
   dateFilterKey = null,
   refreshTrigger = 0,
@@ -84,9 +86,9 @@ export function ListView({
   }, []);
 
   // Advanced filter (funnel popover) — ephemeral state, lost on page refresh.
-  const [advancedFilter, setAdvancedFilter] = useState(null);
+  const [advancedFilter, setAdvancedFilter] = useState(initialAdvancedFilter);
 
-  const [tableColumns, setTableColumns] = useState([]);
+  const [tableColumns, setTableColumns] = useState(initialColumns ?? []);
 
   const advancedFilterPart = useMemo(() => {
     const criteria = buildAdvancedFilterCriteria(advancedFilter, tableColumns);
@@ -266,7 +268,7 @@ export function ListView({
 
   const navigate = useNavigate();
   const tMenu = useMenuLabel();
-  const t = useLabel();
+  const t = useLabel(labelOverrides);
   const ui = useUI();
   const label = tMenu(entityLabel) || entityLabel || entity;
   const { toggleFavorite, isFavorite } = useFavorites();
@@ -447,6 +449,7 @@ export function ListView({
                   onApplyPreset={windowName ? applyPreset : null}
                   onSavePreset={windowName ? saveCurrentAsPreset : null}
                   onDeletePreset={windowName ? deletePreset : null}
+                  labelOverrides={labelOverrides}
                 />
               )}
             </div>
@@ -473,7 +476,7 @@ export function ListView({
                     <div className="px-3 py-2 text-xs font-medium text-muted-foreground tracking-wide">
                       {ui('sortBy')}
                     </div>
-                    {tableColumns.map(col => {
+                    {tableColumns.filter(col => col.sortable !== false).map(col => {
                       const colLabel = t(col.column) ?? col.label ?? col.key;
                       const isActive = hook.sortColumn === col.key;
                       return (
