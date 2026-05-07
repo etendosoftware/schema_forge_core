@@ -16,8 +16,8 @@ describe('SalesInvoiceLinesTable', () => {
     assert.match(src, /DataTable/);
   });
 
-  it('defines unitPrice column with type amount', () => {
-    assert.match(src, /key.*unitPrice/);
+  it('defines listPrice column with type amount', () => {
+    assert.match(src, /key.*listPrice/);
     assert.match(src, /type.*amount/);
   });
 

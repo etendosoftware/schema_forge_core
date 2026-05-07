@@ -6,7 +6,7 @@ import { resolve, join } from 'node:path';
 const ARTIFACTS_DIR = resolve(import.meta.dirname, '../../../artifacts');
 const SAFE_WINDOW_RE = /^[a-z0-9-]+$/;
 const SAFE_REF_RE = /^[a-f0-9]{7,40}$/;
-const ALLOWED_ARTIFACT_FILES = ['schema-raw.json', 'schema-curated.json', 'contract.json'];
+const ALLOWED_ARTIFACT_FILES = ['decisions.json', 'contract.json'];
 
 describe('artifact-api validation', () => {
   it('SAFE_WINDOW_RE accepts valid window names', () => {
@@ -38,10 +38,9 @@ describe('artifact-api validation', () => {
     assert.ok(!SAFE_REF_RE.test(''));
   });
 
-  it('ALLOWED_ARTIFACT_FILES whitelist contains exactly 3 files', () => {
-    assert.equal(ALLOWED_ARTIFACT_FILES.length, 3);
-    assert.ok(ALLOWED_ARTIFACT_FILES.includes('schema-raw.json'));
-    assert.ok(ALLOWED_ARTIFACT_FILES.includes('schema-curated.json'));
+  it('ALLOWED_ARTIFACT_FILES whitelist contains exactly 2 files', () => {
+    assert.equal(ALLOWED_ARTIFACT_FILES.length, 2);
+    assert.ok(ALLOWED_ARTIFACT_FILES.includes('decisions.json'));
     assert.ok(ALLOWED_ARTIFACT_FILES.includes('contract.json'));
   });
 
@@ -69,7 +68,7 @@ describe('artifact-api filesystem', () => {
     assert.ok(windowsWithArtifacts.length > 0, 'Should have at least one window with artifacts');
   });
 
-  it('sales-order has all 3 artifact files', () => {
+  it('sales-order has all artifact files', () => {
     const windowDir = join(ARTIFACTS_DIR, 'sales-order');
     for (const f of ALLOWED_ARTIFACT_FILES) {
       assert.ok(existsSync(join(windowDir, f)), `sales-order should have ${f}`);

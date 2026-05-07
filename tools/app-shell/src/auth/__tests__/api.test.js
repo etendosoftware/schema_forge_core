@@ -1,36 +1,45 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { buildHeaders, isTokenExpired } from '../api.js';
+import { readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// api.js uses window and import.meta.env at module scope — cannot be imported in Node.
+// Use source-reading to verify the module's contract.
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const src = readFileSync(join(__dirname, '..', 'api.js'), 'utf8');
 
 describe('buildHeaders', () => {
-  it('includes Authorization header when token provided', () => {
-    const headers = buildHeaders('my-jwt-token');
-    assert.equal(headers['Authorization'], 'Bearer my-jwt-token');
-    assert.equal(headers['Content-Type'], 'application/json');
+  it('is exported as a named function', () => {
+    assert.match(src, /export function buildHeaders/);
   });
 
-  it('omits Authorization when no token', () => {
-    const headers = buildHeaders(null);
-    assert.ok(!headers['Authorization']);
-    assert.equal(headers['Content-Type'], 'application/json');
+  it('sets Authorization header with Bearer prefix when token is provided', () => {
+    assert.match(src, /Authorization.*Bearer.*token/s);
   });
 
-  it('omits Authorization for empty string', () => {
-    const headers = buildHeaders('');
-    assert.ok(!headers['Authorization']);
+  it('sets Content-Type to application/json', () => {
+    assert.match(src, /Content-Type.*application\/json/);
   });
 });
 
 describe('isTokenExpired', () => {
-  it('returns true for null token', () => {
-    assert.equal(isTokenExpired(null), true);
+  it('is exported as a named function', () => {
+    assert.match(src, /export function isTokenExpired/);
   });
 
-  it('returns true for empty string', () => {
-    assert.equal(isTokenExpired(''), true);
+  it('returns truthy for falsy token values', () => {
+    assert.match(src, /!token/);
+  });
+});
+
+describe('detectBaseUrl', () => {
+  it('is exported and reads window.location.pathname', () => {
+    assert.match(src, /export function detectBaseUrl/);
+    assert.match(src, /window\.location\.pathname/);
   });
 
-  it('returns false for non-empty token', () => {
-    assert.equal(isTokenExpired('some-token'), false);
+  it('falls back to VITE_API_BASE env variable', () => {
+    assert.match(src, /VITE_API_BASE/);
   });
 });

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { resolveBackendSort, buildBackendFilter } from '@/lib/gridQuery.js';
 import { toast } from 'sonner';
 import { useAuth } from '@/auth/AuthContext.jsx';
@@ -336,6 +336,19 @@ export function useEntity(entity, childEntity, {
   // Used in handleSave to validate required+editable fields before posting to the backend.
   const formFieldsRef = useRef([]);
 
+  // True when editing has diverged from the last-saved selected state.
+  // For new records (selected === null): dirty as soon as any non-id field has a value.
+  const isDirtyHeader = useMemo(() => {
+    if (!selected) {
+      return Object.keys(editing || {}).some(
+        k => k !== 'id' && editing[k] != null && editing[k] !== ''
+      );
+    }
+    return Object.entries(editing || {}).some(
+      ([key, val]) => key !== 'id' && val !== selected[key]
+    );
+  }, [editing, selected]);
+
   const headers = buildHeaders(token);
 
   const refresh = useCallback(() => {
@@ -461,6 +474,32 @@ export function useEntity(entity, childEntity, {
       })
       .catch(() => setLoading(false));
   }, [apiBaseUrl, entity, token, fetchChildren]);
+
+  // Lightweight header refresh used after line add/update/delete operations.
+  // Unlike fetchById, this preserves fields the user has explicitly edited (tracked in
+  // userChangedKeysRef) so pending header changes survive line operations.
+  // Only server-computed fields (totals, sequence numbers) get updated in editing.
+  const refreshHeaderTotals = useCallback((id) => {
+    if (!id) return;
+    fetch(`${apiBaseUrl}/${entity}/${id}`, { headers })
+      .then(res => {
+        if (!res.ok) throw new Error(`${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        const row = normalizeRecord(data?.response?.data?.[0] ?? data, entity);
+        setSelected(row);
+        setEditing(prev => {
+          if (!prev) return { ...row };
+          const merged = { ...prev };
+          for (const [key, val] of Object.entries(row)) {
+            if (!userChangedKeysRef.current.has(key)) merged[key] = val;
+          }
+          return merged;
+        });
+      })
+      .catch(() => {});
+  }, [apiBaseUrl, entity, headers]);
 
   const handleSelect = useCallback((row) => {
     setSelected(row);
@@ -745,9 +784,10 @@ export function useEntity(entity, childEntity, {
         return null;
       }
       const data = await res.json().catch(() => null);
-      // Refresh children and header (totals recalculated by backend)
+      // Refresh children and header totals. refreshHeaderTotals preserves any
+      // pending header edits in editing while updating server-computed fields (totals).
       fetchChildren(selected.id);
-      fetchById(selected.id);
+      refreshHeaderTotals(selected.id);
       setSaveError(null);
       toast.success(ui('lineAdded'));
       return normalizeRecord(data?.response?.data?.[0] ?? data, childEntity) ?? true;
@@ -765,14 +805,14 @@ export function useEntity(entity, childEntity, {
       if (typeof fieldOrObject === 'object') return { ...c, ...fieldOrObject };
       return { ...c, [fieldOrObject]: value };
     }));
-    if (selected?.id) fetchById(selected.id);
-  }, [selected, fetchById]);
+    if (selected?.id) refreshHeaderTotals(selected.id);
+  }, [selected, refreshHeaderTotals]);
 
   const handleDeleteChild = useCallback((childId) => {
     setChildren(prev => prev.filter(c => String(c.id) !== String(childId)));
-    // Refetch header to update totals after line deletion
-    if (selected?.id) fetchById(selected.id);
-  }, [selected, fetchById]);
+    // Refresh header to update totals after line deletion
+    if (selected?.id) refreshHeaderTotals(selected.id);
+  }, [selected, refreshHeaderTotals]);
 
   const handleSaveAndProcess = useCallback(async (draftModeConfig) => {
     const saved = await handleSave();
@@ -845,6 +885,7 @@ export function useEntity(entity, childEntity, {
 
   return {
     items, selected, editing, children, childrenLoading, loading, loadingMore, hasMore, saveError, isSaving,
+    isDirtyHeader,
     fieldErrors, registerFields,
     handleSelect, handleNew, handleChange, handleSave, handleSaveAndProcess, handleDelete, handleProcess,
     handleAddChild, handleUpdateChild, handleDeleteChild, primeSaved,

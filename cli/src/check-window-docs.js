@@ -29,6 +29,11 @@ export function toKebabCase(value) {
 }
 
 export function windowFromChangedPath(path) {
+  // Test files do not affect window behavior — skip them
+  if (/__tests__\//.test(path) || /\.test\.[jt]sx?$/.test(path) || /\.spec\.[jt]sx?$/.test(path)) {
+    return null;
+  }
+
   const artifactMatch = path.match(/^artifacts\/([^/]+)\//);
   if (artifactMatch) {
     return artifactMatch[1];

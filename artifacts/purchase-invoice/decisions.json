@@ -12,7 +12,7 @@
         "labelKey": "reactivate",
         "visibleWhenStatus": "CO",
         "documentAction": "RE",
-        "successKey": "actionCompleted"
+        "successKey": "reactivated"
       }
     ],
     "processOverrides": {},

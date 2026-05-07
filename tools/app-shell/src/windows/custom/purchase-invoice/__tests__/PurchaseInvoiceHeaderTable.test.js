@@ -61,8 +61,8 @@ describe('PurchaseInvoiceHeaderTable — due date column', () => {
     assert.doesNotMatch(src, /paymentPlan\?parentId/, 'payment-plan fetch was retired in ETP-3873');
   });
 
-  it('feeds outstandingAmount into the due-date state to flip overdue→paid', () => {
-    assert.match(src, /getDueDateState\(\s*d\s*,\s*row\.outstandingAmount/);
+  it('feeds outstandingAmount into the due-date state', () => {
+    assert.match(src, /getDueDateState\(d, row\.outstandingAmount\)/);
   });
 
   it('shows a dash when no due date is available', () => {

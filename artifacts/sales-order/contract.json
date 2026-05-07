@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-30T15:33:38.824Z",
-  "updatedAt": "2026-05-07T16:06:17.535Z",
-  "checksum": "a70e48ac5903ad81",
+  "updatedAt": "2026-05-07T18:28:08.761Z",
+  "checksum": "0591997a03927f08",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -26,7 +26,7 @@
           "visibleWhenStatus": "CO",
           "visibleWhenFieldFalse": "hasLinkedDocuments",
           "documentAction": "RE",
-          "successKey": "actionCompleted"
+          "successKey": "reactivated"
         }
       ],
       "processOverrides": {},
@@ -853,7 +853,7 @@
           "visibleWhenStatus": "CO",
           "visibleWhenFieldFalse": "hasLinkedDocuments",
           "documentAction": "RE",
-          "successKey": "actionCompleted"
+          "successKey": "reactivated"
         }
       ],
       "processOverrides": {},
