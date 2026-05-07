@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useUI } from '@/i18n';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
+import { useAuth } from '@/auth/AuthContext';
 
 const VISIBLE_PROFILES = new Set(['sii', 'sii-navarra', 'tbai', 'sii+tbai']);
 
@@ -10,7 +11,8 @@ export default function SendToSifButton({ data, recordId, token, apiBaseUrl, sta
   const [phase, setPhase] = useState('confirm');
   const [results, setResults] = useState({});
 
-  const orgId = data?.adOrgId ?? null;
+  const { selectedOrg } = useAuth();
+  const orgId = selectedOrg?.id ?? null;
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({
     Authorization: `Bearer ${token}`,

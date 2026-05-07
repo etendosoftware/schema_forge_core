@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
+import { useAuth } from '@/auth/AuthContext';
 
 const SII_PROFILES = new Set(['sii', 'sii-navarra', 'sii+tbai']);
 const TBAI_PROFILES = new Set(['tbai', 'sii+tbai']);
@@ -41,7 +42,8 @@ const INPUT_STYLE = {
 };
 
 export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
-  const orgId = data?.adOrgId ?? null;
+  const { selectedOrg } = useAuth();
+  const orgId = selectedOrg?.id ?? null;
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({
     Authorization: `Bearer ${token}`,

@@ -25,8 +25,9 @@ describe('SifDataTabs', () => {
     assert.match(src, /import.*useFiscalConfig.*from.*fiscal-config/);
   });
 
-  it('reads orgId from data.adOrgId', () => {
-    assert.match(src, /data\?\.adOrgId/);
+  it('reads orgId from selectedOrg via useAuth', () => {
+    assert.match(src, /useAuth/);
+    assert.match(src, /selectedOrg/);
   });
 
   it('returns null when profile is not sii/tbai/sii+tbai', () => {
