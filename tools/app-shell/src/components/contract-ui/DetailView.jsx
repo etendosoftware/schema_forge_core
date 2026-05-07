@@ -227,7 +227,6 @@ export function DetailView({
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
   const docAction = useDocumentAction({ apiBaseUrl, entity, token });
-  const [actionFeedback, setActionFeedback] = useState(null); // { type: 'error'|'success', message }
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -1094,17 +1093,14 @@ export function DetailView({
                           onClick={async () => {
                             setShowMoreMenu(false);
                             if (action.documentAction) {
-                              setActionFeedback(null);
                               const currentId = data?.id || recordId;
                               try {
                                 await docAction.execute(currentId, action.documentAction);
-                                setActionFeedback({
-                                  type: 'success',
-                                  message: (action.successKey ? ui(action.successKey) : action.successMessage) || ui('actionCompleted'),
-                                });
+                                const msg = (action.successKey ? ui(action.successKey) : action.successMessage) || ui('actionCompleted');
+                                toast.success(msg);
                                 hook.fetchById?.(currentId);
                               } catch (err) {
-                                setActionFeedback({ type: 'error', message: err.message });
+                                toast.error(err.message);
                               }
                               return;
                             }
@@ -1277,27 +1273,6 @@ export function DetailView({
         </div>
         )}
 
-        {/* Menu action feedback (from documentAction items) */}
-        {actionFeedback && (
-          <div
-            role="alert"
-            className={`mx-6 my-2 px-3 py-2 text-xs rounded-md border flex items-start justify-between gap-3 ${
-              actionFeedback.type === 'error'
-                ? 'bg-red-50 border-red-200 text-red-700'
-                : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-            }`}
-          >
-            <span className="flex-1">{actionFeedback.message}</span>
-            <button
-              type="button"
-              onClick={() => setActionFeedback(null)}
-              className="text-xs font-medium opacity-60 hover:opacity-100"
-              aria-label="Dismiss"
-            >
-              &times;
-            </button>
-          </div>
-        )}
 
         {/* Scrollable content + optional sidebarContent (full-height independent column) */}
         <div className="flex-1 flex overflow-hidden">

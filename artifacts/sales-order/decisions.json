@@ -23,7 +23,7 @@
         "visibleWhenStatus": "CO",
         "visibleWhenFieldFalse": "hasLinkedDocuments",
         "documentAction": "RE",
-        "successKey": "actionCompleted"
+        "successKey": "reactivated"
       }
     ],
     "processOverrides": {},

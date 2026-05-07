@@ -1,8 +1,8 @@
 {
   "version": "0.19.0",
   "generatedAt": "2026-04-30T15:42:46.497Z",
-  "updatedAt": "2026-05-06T18:00:41.545Z",
-  "checksum": "b41c73018ea9d3a9",
+  "updatedAt": "2026-05-07T14:47:20.677Z",
+  "checksum": "c7e1186b9b49db87",
   "frontendContract": {
     "window": {
       "id": "181",
@@ -38,7 +38,7 @@
           "visibleWhenStatus": "CO",
           "visibleWhenFieldFalse": "hasLinkedDocuments",
           "documentAction": "RE",
-          "successKey": "actionCompleted"
+          "successKey": "reactivated"
         }
       ],
       "secondaryTabs": {},
@@ -2313,7 +2313,7 @@
           "visibleWhenStatus": "CO",
           "visibleWhenFieldFalse": "hasLinkedDocuments",
           "documentAction": "RE",
-          "successKey": "actionCompleted"
+          "successKey": "reactivated"
         }
       ],
       "secondaryTabs": {},

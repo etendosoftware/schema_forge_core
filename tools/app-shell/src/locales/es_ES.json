@@ -16560,6 +16560,7 @@
     "completePartial": "{ok} de {total} pedidos procesados",
     "noDraftSelected": "Ningún borrador en la selección",
     "actionCompleted": "Acción completada",
+    "reactivated": "Documento reactivado",
     "salesOrderRef": "Pedido de venta #",
     "delete": "Eliminar",
     "deleteRecord": "Eliminar registro",
