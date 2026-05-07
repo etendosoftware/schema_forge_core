@@ -240,7 +240,9 @@
           "name": "adClientId"
         },
         "organization": {
-          "name": "adOrgId"
+          "name": "adOrgId",
+          "visibility": "readOnly",
+          "form": false
         },
         "transactionDocument": {
           "name": "cDocTypeTargetId"

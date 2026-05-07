@@ -10,7 +10,7 @@ export default function SendToSifButton({ data, recordId, token, apiBaseUrl, sta
   const [phase, setPhase] = useState('confirm');
   const [results, setResults] = useState({});
 
-  const orgId = data?.organization ?? null;
+  const orgId = data?.adOrgId ?? null;
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({
     Authorization: `Bearer ${token}`,

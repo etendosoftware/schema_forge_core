@@ -125,6 +125,14 @@ export const api = {
   "selectors": [
     {
       "entity": "header",
+      "field": "adOrgId",
+      "column": "AD_Org_ID",
+      "reference": "Org",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/header/selectors/adOrgId"
+    },
+    {
+      "entity": "header",
       "field": "businessPartner",
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",

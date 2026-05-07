@@ -86,7 +86,7 @@ describe('SendToSifButton', () => {
     assert.match(src, /ui\(['"]sendToSifErrorTbai['"]\)/);
   });
 
-  it('derives orgId from data.organization', () => {
-    assert.match(src, /data\?\.organization/);
+  it('derives orgId from data.adOrgId', () => {
+    assert.match(src, /data\?\.adOrgId/);
   });
 });

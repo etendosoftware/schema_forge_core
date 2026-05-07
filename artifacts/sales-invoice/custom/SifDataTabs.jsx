@@ -41,7 +41,7 @@ const INPUT_STYLE = {
 };
 
 export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
-  const orgId = data?.organization ?? null;
+  const orgId = data?.adOrgId ?? null;
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({
     Authorization: `Bearer ${token}`,
@@ -101,7 +101,7 @@ export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
 
   const TAB_STYLE_ACTIVE = {
     padding: '6px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-    borderBottom: '2px solid #1d4ed8', color: '#1d4ed8', background: 'none', border: 'none',
+    color: '#1d4ed8', background: 'none', border: 'none',
     borderBottom: '2px solid #1d4ed8',
   };
   const TAB_STYLE_INACTIVE = {

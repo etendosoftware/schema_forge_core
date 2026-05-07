@@ -3,6 +3,7 @@
 export const header = [
   {
     "id": "mock-header-001",
+    "adOrgId": "Sample adOrgId",
     "documentNo": "HE-00001",
     "invoiceDate": "2026-01-15",
     "businessPartner": "Acme Corp",
@@ -36,6 +37,7 @@ export const header = [
   },
   {
     "id": "mock-header-002",
+    "adOrgId": "Sample adOrgId",
     "documentNo": "HE-00002",
     "invoiceDate": "2026-01-16",
     "businessPartner": "TechFlow Inc",
@@ -69,6 +71,7 @@ export const header = [
   },
   {
     "id": "mock-header-003",
+    "adOrgId": "Sample adOrgId",
     "documentNo": "HE-00003",
     "invoiceDate": "2026-01-17",
     "businessPartner": "Global Trade Ltd",
@@ -102,6 +105,7 @@ export const header = [
   },
   {
     "id": "mock-header-004",
+    "adOrgId": "Sample adOrgId",
     "documentNo": "HE-00004",
     "invoiceDate": "2026-01-18",
     "businessPartner": "Summit Industries",
@@ -135,6 +139,7 @@ export const header = [
   },
   {
     "id": "mock-header-005",
+    "adOrgId": "Sample adOrgId",
     "documentNo": "HE-00005",
     "invoiceDate": "2026-01-19",
     "businessPartner": "Pacific Partners",
@@ -168,6 +173,7 @@ export const header = [
   },
   {
     "id": "mock-header-006",
+    "adOrgId": "Sample adOrgId",
     "documentNo": "HE-00006",
     "invoiceDate": "2026-01-20",
     "businessPartner": "Alpine Solutions",
@@ -201,6 +207,7 @@ export const header = [
   },
   {
     "id": "mock-header-007",
+    "adOrgId": "Sample adOrgId",
     "documentNo": "HE-00007",
     "invoiceDate": "2026-01-21",
     "businessPartner": "Meridian Group",
@@ -234,6 +241,7 @@ export const header = [
   },
   {
     "id": "mock-header-008",
+    "adOrgId": "Sample adOrgId",
     "documentNo": "HE-00008",
     "invoiceDate": "2026-01-22",
     "businessPartner": "Vertex Systems",
@@ -267,6 +275,7 @@ export const header = [
   },
   {
     "id": "mock-header-009",
+    "adOrgId": "Sample adOrgId",
     "documentNo": "HE-00009",
     "invoiceDate": "2026-01-23",
     "businessPartner": "Atlas Manufacturing",
@@ -300,6 +309,7 @@ export const header = [
   },
   {
     "id": "mock-header-010",
+    "adOrgId": "Sample adOrgId",
     "documentNo": "HE-00010",
     "invoiceDate": "2026-01-24",
     "businessPartner": "Nova Enterprises",
@@ -333,6 +343,7 @@ export const header = [
   },
   {
     "id": "mock-header-011",
+    "adOrgId": "Sample adOrgId",
     "documentNo": "HE-00011",
     "invoiceDate": "2026-01-25",
     "businessPartner": "Pinnacle Services",
@@ -366,6 +377,7 @@ export const header = [
   },
   {
     "id": "mock-header-012",
+    "adOrgId": "Sample adOrgId",
     "documentNo": "HE-00012",
     "invoiceDate": "2026-01-26",
     "businessPartner": "Horizon Labs",
