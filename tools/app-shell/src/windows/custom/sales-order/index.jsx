@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
+import { buildPendingDeliveryFilter } from '../shared/pendingDeliveryFilter.js';
 import GeneratedApp from '@generated/sales-order/generated/web/sales-order/index.jsx';
 import HeaderTable from '@generated/sales-order/generated/web/sales-order/HeaderTable';
 import OrderReactivateBulkAction from '@generated/sales-order/custom/OrderReactivateBulkAction';
@@ -89,21 +90,8 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
     );
   }
 
-  const docStatus = searchParams.get('DocStatus');
-  const filterParam = searchParams.get('filter');
-  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
-
-  const isPendingDelivery = filterParam === 'pendingDelivery';
-
-  const initialAdvancedFilter = isPendingDelivery
-    ? {
-        rowOperator: 'and',
-        conditions: [
-          { field: 'documentStatus', operator: 'equals', value: 'CO' },
-          { field: 'deliveryStatus', operator: 'lessThan', value: 100 },
-        ],
-      }
-    : null;
+  const { initialColumnFilters, isPendingDelivery, initialAdvancedFilter } =
+    buildPendingDeliveryFilter(searchParams, 'deliveryStatus');
 
   return (
     <>

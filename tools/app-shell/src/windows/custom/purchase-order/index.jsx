@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
+import { buildPendingDeliveryFilter } from '../shared/pendingDeliveryFilter.js';
 import { useCurrency } from '@/hooks/useCurrency';
 import { ListView } from '@/components/contract-ui';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
@@ -111,21 +112,8 @@ export default function PurchaseOrderWindow(props) {
     );
   }
 
-  const docStatus = searchParams.get('DocStatus');
-  const filterParam = searchParams.get('filter');
-  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
-
-  const isPendingDelivery = filterParam === 'pendingDelivery';
-
-  const initialAdvancedFilter = isPendingDelivery
-    ? {
-        rowOperator: 'and',
-        conditions: [
-          { field: 'documentStatus', operator: 'equals', value: 'CO' },
-          { field: 'deliveryStatusPurchase', operator: 'lessThan', value: 100 },
-        ],
-      }
-    : null;
+  const { initialColumnFilters, isPendingDelivery, initialAdvancedFilter } =
+    buildPendingDeliveryFilter(searchParams, 'deliveryStatusPurchase');
 
   return (
     <>
