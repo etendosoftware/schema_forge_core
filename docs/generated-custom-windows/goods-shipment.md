@@ -9,7 +9,6 @@ Use this window to register and complete outbound customer shipments. The functi
 - Create or review a shipment header with warehouse, customer, delivery address, movement date, status (rendered as a status badge, not a dot indicator), and invoicing state.
 - Maintain shipment lines that represent the delivered products and quantities for the selected shipment.
 - Complete a draft shipment when it is ready to be executed.
-- Cancel a completed shipment from the detail view when reversal is required.
 - Create a draft sales invoice from one completed shipment or from multiple completed shipments when they are invoiceable together.
 - Start a return flow from a completed shipment so the user can select shipped lines and quantities to send back through the return process.
 - Open related downstream or upstream documents from the shipment, especially the linked sales order and the invoices created from that order.
@@ -43,7 +42,6 @@ Use this window to register and complete outbound customer shipments. The functi
 - Batch invoice creation is clearly implemented as a draft-invoice flow, but current evidence only proves source shape and endpoint usage, not a browser-tested logistics scenario. It should be treated as supported-by-code with limited automated proof.
 - The documented shipment-to-invoice relationship is order-centric: the related-documents tab resolves invoices through the linked sales order, not by directly querying invoices from the shipment id. If the business expects shipment-specific invoice traceability independent of the order link, that remains an open ambiguity.
 - The top-bar and list invoicing logic check a `completelyInvoiced` flag in custom components, while the contract and generated fields expose the frontend field as `invoiced` / `Iscompletelyinvoiced`. The runtime payload may normalize both names, but this is not explicit in current evidence, so the exact gating behavior for already invoiced shipments remains an implementation ambiguity.
-- The detail view exposes a destructive `Cancel` action placeholder in the generated page definition, but the current visible evidence here does not prove the end-to-end cancellation behavior beyond menu-action presence and status visibility.
 
 ## Manual verification
 

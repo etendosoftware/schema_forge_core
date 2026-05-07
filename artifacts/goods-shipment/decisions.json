@@ -12,14 +12,7 @@
       "topbarRight": "GoodsShipmentActions",
       "bulkActions": "BulkInvoiceFromShipment"
     },
-    "menuActions": [
-      {
-        "key": "cancel",
-        "label": "Cancel",
-        "destructive": true,
-        "visibleWhenStatus": "CO"
-      }
-    ],
+    "menuActions": [],
     "processOverrides": {
       "documentAction": {
         "label": "Complete",
