@@ -18,12 +18,14 @@ const labelOverrides = {
   "es_ES": {
     "C_BPartner_ID": "Contacto",
     "DatePromised": "Fecha de entrega esperada",
-    "DeliveryStatusPurchase": "Estado de entrega"
+    "DeliveryStatusPurchase": "Estado de entrega",
+    "InvoiceStatus": "Estado de facturación"
   },
   "en_US": {
     "C_BPartner_ID": "Contact",
     "DatePromised": "Expected Delivery Date",
-    "DeliveryStatusPurchase": "Delivery Status"
+    "DeliveryStatusPurchase": "Delivery Status",
+    "InvoiceStatus": "Invoicing Status"
   }
 };
 
@@ -620,12 +622,14 @@ export const api = {
     "es_ES": {
       "C_BPartner_ID": "Contacto",
       "DatePromised": "Fecha de entrega esperada",
-      "DeliveryStatusPurchase": "Estado de entrega"
+      "DeliveryStatusPurchase": "Estado de entrega",
+      "InvoiceStatus": "Estado de facturación"
     },
     "en_US": {
       "C_BPartner_ID": "Contact",
       "DatePromised": "Expected Delivery Date",
-      "DeliveryStatusPurchase": "Delivery Status"
+      "DeliveryStatusPurchase": "Delivery Status",
+      "InvoiceStatus": "Invoicing Status"
     }
   }
 };

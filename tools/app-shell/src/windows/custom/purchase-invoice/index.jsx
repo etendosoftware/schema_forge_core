@@ -39,11 +39,21 @@ const OVERDUE_INITIAL_COLUMNS = [
   { key: 'eTGODueDate', column: 'em_etgo_due_date', type: 'date' },
 ];
 
-// Mirrors artifacts/purchase-invoice/generated/web/purchase-invoice/HeaderPage.jsx
-// Kept in sync manually because the generator does not expose it yet.
+// Mirrors artifacts/purchase-invoice/decisions.json → window.labelOverrides.
+// The list view here bypasses the generated HeaderPage and renders ListView
+// directly, so the generator-emitted labelOverrides do not reach it. Mirror
+// here until the wrapper consumes the spec's labelOverrides at runtime.
 const LABEL_OVERRIDES = {
-  es_ES: { POReference: 'Nº documento' },
-  en_US: { POReference: 'Document No.' },
+  es_ES: {
+    POReference: 'Nº documento',
+    OutstandingAmt: 'Pendiente de pago',
+    em_etgo_delivery_status: 'Estado de entrega',
+  },
+  en_US: {
+    POReference: 'Document No.',
+    OutstandingAmt: 'Pending Payment',
+    em_etgo_delivery_status: 'Delivery Status',
+  },
 };
 
 let previewRowSetterRef = null;
