@@ -1,8 +1,8 @@
 {
-  "version": "0.2.0",
+  "version": "0.3.0",
   "generatedAt": "2026-04-29T19:46:12.773Z",
-  "updatedAt": "2026-05-05T18:49:49.282Z",
-  "checksum": "5c7ae48b4fd3321b",
+  "updatedAt": "2026-05-06T22:31:24.051Z",
+  "checksum": "b1da90796d71a7aa",
   "frontendContract": {
     "window": {
       "id": "FF808081330213E60133021822E40007",
@@ -1516,6 +1516,14 @@
             "column": "validuntil",
             "type": "date",
             "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "etgoTotalDiscount",
+            "apiKey": "etgoTotalDiscount",
+            "column": "EM_Etgo_Total_Discount",
+            "type": "decimal",
+            "visibility": "system",
             "required": false
           }
         ]
@@ -3791,6 +3799,14 @@
         "description": "System field 'dropShipPartner' should exist in backend but not frontend for customerReturn"
       },
       {
+        "id": "t-system-field-customerReturn-etgoTotalDiscount",
+        "category": "system-field",
+        "entity": "customerReturn",
+        "field": "etgoTotalDiscount",
+        "runner": "node",
+        "description": "System field 'etgoTotalDiscount' should exist in backend but not frontend for customerReturn"
+      },
+      {
         "id": "t-system-field-customerReturn-externalBusinessPartnerReference",
         "category": "system-field",
         "entity": "customerReturn",
@@ -4718,7 +4734,7 @@
       }
     ],
     "summary": {
-      "total": 278,
+      "total": 279,
       "byCategory": {
         "action-endpoint": 21,
         "crud-flags": 2,
@@ -4732,11 +4748,11 @@
         "rule-declared": 6,
         "searchable-filters": 5,
         "selector-endpoint": 11,
-        "system-field": 150,
+        "system-field": 151,
         "visibility": 2
       },
       "byRunner": {
-        "node": 278,
+        "node": 279,
         "junit": 0
       }
     }

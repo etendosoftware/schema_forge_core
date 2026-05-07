@@ -1,8 +1,8 @@
 {
-  "version": "0.16.0",
+  "version": "0.19.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
-  "updatedAt": "2026-05-05T18:49:45.489Z",
-  "checksum": "43e3f1830696ee94",
+  "updatedAt": "2026-05-06T19:55:04.397Z",
+  "checksum": "e143d2e14e03a6af",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -42,6 +42,14 @@
       "processOverrides": {},
       "secondaryTabs": {},
       "salesTheme": true,
+      "labelOverrides": {
+        "en_US": {
+          "EM_Etgo_Due_Date": "Due Date"
+        },
+        "es_ES": {
+          "EM_Etgo_Due_Date": "Vencimiento"
+        }
+      },
       "dateFilterKey": "invoiceDate",
       "lineEntityConfig": "invoice",
       "layoutType": "default"
@@ -463,13 +471,39 @@
               "type": "computed",
               "source": "false"
             }
+          },
+          {
+            "name": "etgoTotalDiscount",
+            "apiKey": "etgoTotalDiscount",
+            "column": "EM_Etgo_Total_Discount",
+            "label": "Total Discount %",
+            "type": "decimal",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": false
+          },
+          {
+            "name": "eTGODueDate",
+            "apiKey": "eTGODueDate",
+            "column": "em_etgo_due_date",
+            "label": "em_etgo_due_date",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": false,
+            "gridOrder": 7
           }
         ],
         "searchableFields": [
           "documentNo",
           "invoiceDate",
           "businessPartner",
-          "documentStatus"
+          "documentStatus",
+          "eTGODueDate"
         ],
         "computedFields": [
           {
@@ -1077,6 +1111,14 @@
       "processOverrides": {},
       "secondaryTabs": {},
       "salesTheme": true,
+      "labelOverrides": {
+        "en_US": {
+          "EM_Etgo_Due_Date": "Due Date"
+        },
+        "es_ES": {
+          "EM_Etgo_Due_Date": "Vencimiento"
+        }
+      },
       "dateFilterKey": "invoiceDate",
       "lineEntityConfig": "invoice"
     },
@@ -2333,6 +2375,22 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "etgoTotalDiscount",
+            "apiKey": "etgoTotalDiscount",
+            "column": "EM_Etgo_Total_Discount",
+            "type": "decimal",
+            "visibility": "editable",
+            "required": false
+          },
+          {
+            "name": "eTGODueDate",
+            "apiKey": "eTGODueDate",
+            "column": "em_etgo_due_date",
+            "type": "date",
+            "visibility": "readOnly",
+            "required": false
           }
         ],
         "javaQualifier": "salesInvoiceHeaderHandler"
@@ -3042,7 +3100,8 @@
           "documentNo",
           "invoiceDate",
           "businessPartner",
-          "documentStatus"
+          "documentStatus",
+          "eTGODueDate"
         ]
       },
       {
@@ -3151,7 +3210,8 @@
           "documentNo",
           "invoiceDate",
           "businessPartner",
-          "documentStatus"
+          "documentStatus",
+          "eTGODueDate"
         ]
       },
       "lines": {
@@ -3466,6 +3526,14 @@
     },
     "window": {
       "category": "sales"
+    },
+    "labelOverrides": {
+      "en_US": {
+        "EM_Etgo_Due_Date": "Due Date"
+      },
+      "es_ES": {
+        "EM_Etgo_Due_Date": "Vencimiento"
+      }
     }
   },
   "testManifest": {
@@ -3916,6 +3984,22 @@
         "description": "Field 'documentStatus' should be present in header"
       },
       {
+        "id": "t-field-presence-header-eTGODueDate",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "eTGODueDate",
+        "runner": "node",
+        "description": "Field 'eTGODueDate' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-etgoTotalDiscount",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "etgoTotalDiscount",
+        "runner": "node",
+        "description": "Field 'etgoTotalDiscount' should be present in header"
+      },
+      {
         "id": "t-field-presence-header-grandTotalAmount",
         "category": "field-presence",
         "entity": "header",
@@ -4218,6 +4302,22 @@
         "field": "documentStatus",
         "runner": "node",
         "description": "Field 'documentStatus' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-eTGODueDate",
+        "category": "field-type",
+        "entity": "header",
+        "field": "eTGODueDate",
+        "runner": "node",
+        "description": "Field 'eTGODueDate' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-etgoTotalDiscount",
+        "category": "field-type",
+        "entity": "header",
+        "field": "etgoTotalDiscount",
+        "runner": "node",
+        "description": "Field 'etgoTotalDiscount' should have type 'number' in header"
       },
       {
         "id": "t-field-type-header-grandTotalAmount",
@@ -4786,6 +4886,14 @@
         "field": "documentStatus",
         "runner": "node",
         "description": "Field 'documentStatus' should be a supported filter for header"
+      },
+      {
+        "id": "t-searchable-filters-header-eTGODueDate",
+        "category": "searchable-filters",
+        "entity": "header",
+        "field": "eTGODueDate",
+        "runner": "node",
+        "description": "Field 'eTGODueDate' should be a supported filter for header"
       },
       {
         "id": "t-searchable-filters-header-invoiceDate",
@@ -6530,25 +6638,25 @@
       }
     ],
     "summary": {
-      "total": 384,
+      "total": 389,
       "byCategory": {
         "action-endpoint": 24,
         "crud-flags": 3,
         "default-value-type": 14,
         "displaylogic-evaluable": 5,
         "displaylogic-valid": 5,
-        "field-presence": 38,
-        "field-type": 38,
+        "field-presence": 40,
+        "field-type": 40,
         "readonlylogic-evaluable": 14,
         "readonlylogic-valid": 14,
         "rule-declared": 8,
-        "searchable-filters": 5,
+        "searchable-filters": 6,
         "selector-endpoint": 10,
         "system-field": 203,
         "visibility": 3
       },
       "byRunner": {
-        "node": 384,
+        "node": 389,
         "junit": 0
       }
     }

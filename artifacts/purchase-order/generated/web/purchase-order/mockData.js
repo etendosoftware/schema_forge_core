@@ -39,6 +39,7 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "DR",
     "invoiceStatus": "DR",
+    "etgoTotalDiscount": 99.44,
     "accountingDate": "2026-01-15",
     "deliveryTerms": "Sample deliveryTerms"
   },
@@ -80,6 +81,7 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "CO",
     "invoiceStatus": "CO",
+    "etgoTotalDiscount": 96.94,
     "accountingDate": "2026-01-16",
     "deliveryTerms": "Sample deliveryTerms"
   },
@@ -121,6 +123,7 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "VO",
     "invoiceStatus": "VO",
+    "etgoTotalDiscount": 12.48,
     "accountingDate": "2026-01-17",
     "deliveryTerms": "Sample deliveryTerms"
   },
@@ -162,6 +165,7 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "IP",
     "invoiceStatus": "IP",
+    "etgoTotalDiscount": 96.31,
     "accountingDate": "2026-01-18",
     "deliveryTerms": "Sample deliveryTerms"
   },
@@ -203,6 +207,7 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "DR",
     "invoiceStatus": "DR",
+    "etgoTotalDiscount": 31.27,
     "accountingDate": "2026-01-19",
     "deliveryTerms": "Sample deliveryTerms"
   },
@@ -244,6 +249,7 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "CO",
     "invoiceStatus": "CO",
+    "etgoTotalDiscount": 76.52,
     "accountingDate": "2026-01-20",
     "deliveryTerms": "Sample deliveryTerms"
   },
@@ -285,6 +291,7 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "VO",
     "invoiceStatus": "VO",
+    "etgoTotalDiscount": 2.66,
     "accountingDate": "2026-01-21",
     "deliveryTerms": "Sample deliveryTerms"
   },
@@ -326,6 +333,7 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "IP",
     "invoiceStatus": "IP",
+    "etgoTotalDiscount": 10.03,
     "accountingDate": "2026-01-22",
     "deliveryTerms": "Sample deliveryTerms"
   },
@@ -367,6 +375,7 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "DR",
     "invoiceStatus": "DR",
+    "etgoTotalDiscount": 93.97,
     "accountingDate": "2026-01-23",
     "deliveryTerms": "Sample deliveryTerms"
   },
@@ -408,6 +417,7 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "CO",
     "invoiceStatus": "CO",
+    "etgoTotalDiscount": 1.1,
     "accountingDate": "2026-01-24",
     "deliveryTerms": "Sample deliveryTerms"
   },
@@ -449,6 +459,7 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "VO",
     "invoiceStatus": "VO",
+    "etgoTotalDiscount": 79.99,
     "accountingDate": "2026-01-25",
     "deliveryTerms": "Sample deliveryTerms"
   },
@@ -490,6 +501,7 @@ export const header = [
     "ndDimension": "Sample ndDimension",
     "deliveryStatusPurchase": "IP",
     "invoiceStatus": "IP",
+    "etgoTotalDiscount": 53.61,
     "accountingDate": "2026-01-26",
     "deliveryTerms": "Sample deliveryTerms"
   }

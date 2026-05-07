@@ -1,8 +1,8 @@
 {
-  "version": "0.3.0",
+  "version": "0.4.0",
   "generatedAt": "2026-04-30T15:42:46.907Z",
-  "updatedAt": "2026-05-05T18:49:38.110Z",
-  "checksum": "ddb278f1c5b8766f",
+  "updatedAt": "2026-05-06T18:00:41.228Z",
+  "checksum": "cae54d8ffc03cff4",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -461,6 +461,23 @@
             }
           },
           {
+            "name": "etgoTotalDiscount",
+            "apiKey": "etgoTotalDiscount",
+            "column": "EM_Etgo_Total_Discount",
+            "label": "Total Discount %",
+            "type": "decimal",
+            "tsType": "number",
+            "visibility": "editable",
+            "required": false,
+            "grid": false,
+            "form": false,
+            "derivation": {
+              "type": "computed",
+              "source": "0"
+            },
+            "defaultValue": "0"
+          },
+          {
             "name": "processed",
             "apiKey": "processed",
             "column": "Processed",
@@ -512,6 +529,13 @@
             "derivation": {
               "type": "fromConfig",
               "source": "context.cCurrencyId"
+            }
+          },
+          {
+            "name": "etgoTotalDiscount",
+            "derivation": {
+              "type": "computed",
+              "source": "0"
             }
           },
           {
@@ -921,20 +945,20 @@
             "required": true
           },
           {
-            "name": "rMPickFromShipment",
-            "apiKey": "rMPickFromShipment",
-            "column": "RM_PickFromShipment",
-            "type": "button",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
             "name": "partnerAddress",
             "apiKey": "partnerAddress",
             "column": "C_BPartner_Location_ID",
             "type": "foreignKey",
             "visibility": "editable",
             "required": true
+          },
+          {
+            "name": "rMPickFromShipment",
+            "apiKey": "rMPickFromShipment",
+            "column": "RM_PickFromShipment",
+            "type": "button",
+            "visibility": "discarded",
+            "required": false
           },
           {
             "name": "priceList",
@@ -945,12 +969,12 @@
             "required": true
           },
           {
-            "name": "scheduledDeliveryDate",
-            "apiKey": "scheduledDeliveryDate",
-            "column": "DatePromised",
-            "type": "date",
+            "name": "rMReceiveMaterials",
+            "apiKey": "rMReceiveMaterials",
+            "column": "RM_ReceiveMaterials",
+            "type": "button",
             "visibility": "discarded",
-            "required": true
+            "required": false
           },
           {
             "name": "validUntil",
@@ -961,12 +985,12 @@
             "required": false
           },
           {
-            "name": "rMReceiveMaterials",
-            "apiKey": "rMReceiveMaterials",
-            "column": "RM_ReceiveMaterials",
-            "type": "button",
+            "name": "scheduledDeliveryDate",
+            "apiKey": "scheduledDeliveryDate",
+            "column": "DatePromised",
+            "type": "date",
             "visibility": "discarded",
-            "required": false
+            "required": true
           },
           {
             "name": "paymentMethod",
@@ -1225,19 +1249,19 @@
             "required": false
           },
           {
-            "name": "project",
-            "apiKey": "project",
-            "column": "C_Project_ID",
-            "type": "foreignKey",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
             "name": "activity",
             "apiKey": "activity",
             "column": "C_Activity_ID",
             "type": "foreignKey",
             "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "project",
+            "apiKey": "project",
+            "column": "C_Project_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -1273,68 +1297,12 @@
             "required": false
           },
           {
-            "name": "processNow",
-            "apiKey": "processNow",
-            "column": "Processing",
-            "type": "button",
-            "visibility": "system",
+            "name": "etgoTotalDiscount",
+            "apiKey": "etgoTotalDiscount",
+            "column": "EM_Etgo_Total_Discount",
+            "type": "decimal",
+            "visibility": "editable",
             "required": false
-          },
-          {
-            "name": "priceIncludesTax",
-            "apiKey": "priceIncludesTax",
-            "column": "IsTaxIncluded",
-            "type": "boolean",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
-            "name": "dropShipPartner",
-            "apiKey": "dropShipPartner",
-            "column": "DropShip_BPartner_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "processed",
-            "apiKey": "processed",
-            "column": "Processed",
-            "type": "boolean",
-            "visibility": "readOnly",
-            "required": true
-          },
-          {
-            "name": "dropShipLocation",
-            "apiKey": "dropShipLocation",
-            "column": "DropShip_Location_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "reinvoice",
-            "apiKey": "reinvoice",
-            "column": "IsInvoiced",
-            "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "posted",
-            "apiKey": "posted",
-            "column": "Posted",
-            "type": "button",
-            "visibility": "discarded",
-            "required": true
-          },
-          {
-            "name": "id",
-            "apiKey": "id",
-            "column": "C_Order_ID",
-            "type": "id",
-            "visibility": "system",
-            "required": true
           },
           {
             "name": "salesTransaction",
@@ -1345,66 +1313,26 @@
             "required": true
           },
           {
-            "name": "active",
-            "apiKey": "active",
-            "column": "IsActive",
-            "type": "boolean",
-            "visibility": "discarded",
-            "required": true
-          },
-          {
-            "name": "print",
-            "apiKey": "print",
-            "column": "IsPrinted",
+            "name": "reinvoice",
+            "apiKey": "reinvoice",
+            "column": "IsInvoiced",
             "type": "boolean",
             "visibility": "system",
             "required": true
-          },
-          {
-            "name": "accountingDate",
-            "apiKey": "accountingDate",
-            "column": "DateAcct",
-            "type": "date",
-            "visibility": "discarded",
-            "required": true
-          },
-          {
-            "name": "deliveryNotes",
-            "apiKey": "deliveryNotes",
-            "column": "Deliverynotes",
-            "type": "text",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "selfService",
-            "apiKey": "selfService",
-            "column": "IsSelfService",
-            "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "formOfPayment",
-            "apiKey": "formOfPayment",
-            "column": "PaymentRule",
-            "type": "enum",
-            "visibility": "discarded",
-            "required": true
-          },
-          {
-            "name": "datePrinted",
-            "apiKey": "datePrinted",
-            "column": "DatePrinted",
-            "type": "date",
-            "visibility": "system",
-            "required": false
           },
           {
             "name": "generateTemplate",
             "apiKey": "generateTemplate",
             "column": "Generatetemplate",
             "type": "button",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "datePrinted",
+            "apiKey": "datePrinted",
+            "column": "DatePrinted",
+            "type": "date",
             "visibility": "system",
             "required": false
           },
@@ -1417,26 +1345,50 @@
             "required": true
           },
           {
-            "name": "incoterms",
-            "apiKey": "incoterms",
-            "column": "C_Incoterms_ID",
-            "type": "foreignKey",
+            "name": "processNow",
+            "apiKey": "processNow",
+            "column": "Processing",
+            "type": "button",
             "visibility": "system",
             "required": false
           },
           {
-            "name": "iNCOTERMSDescription",
-            "apiKey": "iNCOTERMSDescription",
-            "column": "Incotermsdescription",
+            "name": "formOfPayment",
+            "apiKey": "formOfPayment",
+            "column": "PaymentRule",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "selfService",
+            "apiKey": "selfService",
+            "column": "IsSelfService",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "deliveryNotes",
+            "apiKey": "deliveryNotes",
+            "column": "Deliverynotes",
             "type": "text",
             "visibility": "system",
             "required": false
           },
           {
-            "name": "selected",
-            "apiKey": "selected",
-            "column": "IsSelected",
-            "type": "boolean",
+            "name": "posted",
+            "apiKey": "posted",
+            "column": "Posted",
+            "type": "button",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
@@ -1449,10 +1401,90 @@
             "required": false
           },
           {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
+            "name": "selected",
+            "apiKey": "selected",
+            "column": "IsSelected",
+            "type": "boolean",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "iNCOTERMSDescription",
+            "apiKey": "iNCOTERMSDescription",
+            "column": "Incotermsdescription",
+            "type": "text",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "dropShipLocation",
+            "apiKey": "dropShipLocation",
+            "column": "DropShip_Location_ID",
             "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "incoterms",
+            "apiKey": "incoterms",
+            "column": "C_Incoterms_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "id",
+            "apiKey": "id",
+            "column": "C_Order_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "dropShipPartner",
+            "apiKey": "dropShipPartner",
+            "column": "DropShip_BPartner_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "priceIncludesTax",
+            "apiKey": "priceIncludesTax",
+            "column": "IsTaxIncluded",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "processed",
+            "apiKey": "processed",
+            "column": "Processed",
+            "type": "boolean",
+            "visibility": "readOnly",
+            "required": true
+          },
+          {
+            "name": "accountingDate",
+            "apiKey": "accountingDate",
+            "column": "DateAcct",
+            "type": "date",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "print",
+            "apiKey": "print",
+            "column": "IsPrinted",
+            "type": "boolean",
             "visibility": "system",
             "required": true
           },
@@ -1473,6 +1505,14 @@
             "required": false
           },
           {
+            "name": "costcenter",
+            "apiKey": "costcenter",
+            "column": "C_Costcenter_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
             "name": "cancelandreplace",
             "apiKey": "cancelandreplace",
             "column": "Cancelandreplace",
@@ -1489,17 +1529,17 @@
             "required": false
           },
           {
-            "name": "costcenter",
-            "apiKey": "costcenter",
-            "column": "C_Costcenter_ID",
-            "type": "foreignKey",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
             "name": "confirmcancelandreplace",
             "apiKey": "confirmcancelandreplace",
             "column": "Confirmcancelandreplace",
+            "type": "button",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "createPOLines",
+            "apiKey": "createPOLines",
+            "column": "Create_POLines",
             "type": "button",
             "visibility": "system",
             "required": false
@@ -1519,14 +1559,6 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
-          },
-          {
-            "name": "createPOLines",
-            "apiKey": "createPOLines",
-            "column": "Create_POLines",
-            "type": "button",
-            "visibility": "system",
-            "required": false
           },
           {
             "name": "deliveryStatus",
@@ -1993,22 +2025,6 @@
             "required": false
           },
           {
-            "name": "currency",
-            "apiKey": "currency",
-            "column": "C_Currency_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "client",
-            "apiKey": "client",
-            "column": "AD_Client_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
             "name": "invoiceDate",
             "apiKey": "invoiceDate",
             "column": "DateInvoiced",
@@ -2017,57 +2033,41 @@
             "required": false
           },
           {
-            "name": "active",
-            "apiKey": "active",
-            "column": "IsActive",
+            "name": "descriptionOnly",
+            "apiKey": "descriptionOnly",
+            "column": "IsDescription",
             "type": "boolean",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "dateDelivered",
-            "apiKey": "dateDelivered",
-            "column": "DateDelivered",
-            "type": "date",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "salesOrder",
-            "apiKey": "salesOrder",
-            "column": "C_Order_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "cOrderDiscountID",
-            "apiKey": "cOrderDiscountID",
-            "column": "C_Order_Discount_ID",
-            "type": "foreignKey",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "id",
-            "apiKey": "id",
-            "column": "C_OrderLine_ID",
-            "type": "id",
-            "visibility": "system",
-            "required": true
-          },
-          {
-            "name": "priceLimit",
-            "apiKey": "priceLimit",
-            "column": "PriceLimit",
-            "type": "price",
             "visibility": "discarded",
             "required": true
           },
           {
-            "name": "charge",
-            "apiKey": "charge",
-            "column": "C_Charge_ID",
+            "name": "priceAdjustment",
+            "apiKey": "priceAdjustment",
+            "column": "M_Offer_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "chargeAmount",
+            "apiKey": "chargeAmount",
+            "column": "ChargeAmt",
+            "type": "amount",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "sOPOReference",
+            "apiKey": "sOPOReference",
+            "column": "Ref_OrderLine_ID",
             "type": "foreignKey",
             "visibility": "discarded",
             "required": false
@@ -2081,43 +2081,75 @@
             "required": false
           },
           {
-            "name": "sOPOReference",
-            "apiKey": "sOPOReference",
-            "column": "Ref_OrderLine_ID",
-            "type": "foreignKey",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
-            "name": "chargeAmount",
-            "apiKey": "chargeAmount",
-            "column": "ChargeAmt",
-            "type": "amount",
-            "visibility": "discarded",
-            "required": false
-          },
-          {
-            "name": "organization",
-            "apiKey": "organization",
-            "column": "AD_Org_ID",
+            "name": "currency",
+            "apiKey": "currency",
+            "column": "C_Currency_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "priceAdjustment",
-            "apiKey": "priceAdjustment",
-            "column": "M_Offer_ID",
+            "name": "charge",
+            "apiKey": "charge",
+            "column": "C_Charge_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "priceLimit",
+            "apiKey": "priceLimit",
+            "column": "PriceLimit",
+            "type": "price",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "id",
+            "apiKey": "id",
+            "column": "C_OrderLine_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "cOrderDiscountID",
+            "apiKey": "cOrderDiscountID",
+            "column": "C_Order_Discount_ID",
             "type": "foreignKey",
             "visibility": "system",
             "required": false
           },
           {
-            "name": "descriptionOnly",
-            "apiKey": "descriptionOnly",
-            "column": "IsDescription",
+            "name": "salesOrder",
+            "apiKey": "salesOrder",
+            "column": "C_Order_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "dateDelivered",
+            "apiKey": "dateDelivered",
+            "column": "DateDelivered",
+            "type": "date",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
             "type": "boolean",
-            "visibility": "discarded",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
             "required": true
           },
           {
@@ -2145,6 +2177,14 @@
             "required": false
           },
           {
+            "name": "createReservation",
+            "apiKey": "createReservation",
+            "column": "Create_Reservation",
+            "type": "enum",
+            "visibility": "system",
+            "required": false
+          },
+          {
             "name": "creationDate",
             "apiKey": "creationDate",
             "column": "Created",
@@ -2161,19 +2201,19 @@
             "required": true
           },
           {
-            "name": "createReservation",
-            "apiKey": "createReservation",
-            "column": "Create_Reservation",
-            "type": "enum",
-            "visibility": "system",
-            "required": false
-          },
-          {
             "name": "explode",
             "apiKey": "explode",
             "column": "Explode",
             "type": "button",
             "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "warehouseRule",
+            "apiKey": "warehouseRule",
+            "column": "M_Warehouse_Rule_ID",
+            "type": "foreignKey",
+            "visibility": "system",
             "required": false
           },
           {
@@ -2189,14 +2229,6 @@
             "apiKey": "manageReservation",
             "column": "Manage_Reservation",
             "type": "button",
-            "visibility": "system",
-            "required": false
-          },
-          {
-            "name": "warehouseRule",
-            "apiKey": "warehouseRule",
-            "column": "M_Warehouse_Rule_ID",
-            "type": "foreignKey",
             "visibility": "system",
             "required": false
           },
@@ -2522,6 +2554,14 @@
       },
       {
         "entity": "quotation",
+        "field": "generateTemplate",
+        "column": "Generatetemplate",
+        "url": "/sws/neo/sales-quotation/quotation/{id}/action/generateTemplate",
+        "processId": "800022",
+        "processType": "classic"
+      },
+      {
+        "entity": "quotation",
         "field": "processNow",
         "column": "Processing",
         "url": "/sws/neo/sales-quotation/quotation/{id}/action/processNow",
@@ -2535,14 +2575,6 @@
         "url": "/sws/neo/sales-quotation/quotation/{id}/action/posted",
         "processId": "57496FB9CF9E4E8F847224017941570E",
         "processType": "obuiapp"
-      },
-      {
-        "entity": "quotation",
-        "field": "generateTemplate",
-        "column": "Generatetemplate",
-        "url": "/sws/neo/sales-quotation/quotation/{id}/action/generateTemplate",
-        "processId": "800022",
-        "processType": "classic"
       },
       {
         "entity": "quotation",
@@ -2851,6 +2883,14 @@
         "description": "Default value for 'documentStatus' in quotation should be a string"
       },
       {
+        "id": "t-default-value-type-quotation-etgoTotalDiscount",
+        "category": "default-value-type",
+        "entity": "quotation",
+        "field": "etgoTotalDiscount",
+        "runner": "node",
+        "description": "Default value for 'etgoTotalDiscount' in quotation should be a string"
+      },
+      {
         "id": "t-default-value-type-quotation-orderDate",
         "category": "default-value-type",
         "entity": "quotation",
@@ -2953,6 +2993,14 @@
         "field": "documentStatus",
         "runner": "node",
         "description": "Field 'documentStatus' should be present in quotation"
+      },
+      {
+        "id": "t-field-presence-quotation-etgoTotalDiscount",
+        "category": "field-presence",
+        "entity": "quotation",
+        "field": "etgoTotalDiscount",
+        "runner": "node",
+        "description": "Field 'etgoTotalDiscount' should be present in quotation"
       },
       {
         "id": "t-field-presence-quotation-grandTotalAmount",
@@ -3145,6 +3193,14 @@
         "field": "documentStatus",
         "runner": "node",
         "description": "Field 'documentStatus' should have type 'string' in quotation"
+      },
+      {
+        "id": "t-field-type-quotation-etgoTotalDiscount",
+        "category": "field-type",
+        "entity": "quotation",
+        "field": "etgoTotalDiscount",
+        "runner": "node",
+        "description": "Field 'etgoTotalDiscount' should have type 'number' in quotation"
       },
       {
         "id": "t-field-type-quotation-grandTotalAmount",
@@ -4962,15 +5018,15 @@
       }
     ],
     "summary": {
-      "total": 290,
+      "total": 293,
       "byCategory": {
         "action-endpoint": 21,
         "crud-flags": 2,
-        "default-value-type": 6,
+        "default-value-type": 7,
         "displaylogic-evaluable": 2,
         "displaylogic-valid": 2,
-        "field-presence": 24,
-        "field-type": 24,
+        "field-presence": 25,
+        "field-type": 25,
         "readonlylogic-evaluable": 17,
         "readonlylogic-valid": 17,
         "rule-declared": 8,
@@ -4980,7 +5036,7 @@
         "visibility": 2
       },
       "byRunner": {
-        "node": 290,
+        "node": 293,
         "junit": 0
       }
     }

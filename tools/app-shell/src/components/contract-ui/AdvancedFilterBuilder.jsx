@@ -128,9 +128,10 @@ export function AdvancedFilterBuilder({
   onSavePreset = null,
   onDeletePreset = null,
   hasActiveFilter = false,
+  labelOverrides = null,
 }) {
   const ui = useUI();
-  const labelOf = useLabel();
+  const labelOf = useLabel(labelOverrides);
   const dictionary = useLocale();
 
   const filterableColumns = useMemo(
@@ -353,6 +354,7 @@ export function AdvancedFilterBuilder({
                     rows={rows}
                     entity={entity}
                     apiBaseUrl={apiBaseUrl}
+                    labelOverrides={labelOverrides}
                   />
                 )}
               </div>
@@ -538,7 +540,7 @@ export function AdvancedFilterBuilder({
   );
 }
 
-function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows, entity, apiBaseUrl }) {
+function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows, entity, apiBaseUrl, labelOverrides }) {
   if (mode === 'identifier' && !TEXTUAL_IDENT_OPS.has(operator)) {
     return (
       <IdentifierMultiPicker
@@ -549,6 +551,7 @@ function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows
         value={value}
         onChange={onChange}
         ui={ui}
+        labelOverrides={labelOverrides}
       />
     );
   }
@@ -628,11 +631,11 @@ function ValueInput({ col, mode, operator, value, onChange, ui, dictionary, rows
   );
 }
 
-function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui }) {
+function IdentifierMultiPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui, labelOverrides = null }) {
   const [open, setOpen] = useState(false);
   const selected = Array.isArray(value) ? value : [];
   const sentinelRef = useRef(null);
-  const labelOf = useLabel();
+  const labelOf = useLabel(labelOverrides);
 
   // Pulls {id, _identifier} pairs from the list GET's `_distinct` branch so
   // the picker shows all values in the filterable universe, not only those on

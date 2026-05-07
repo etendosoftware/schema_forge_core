@@ -36,6 +36,7 @@ const OVERDUE_INITIAL_COLUMNS = [
   { key: 'documentStatus', column: 'DocStatus', type: 'status' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
   { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
+  { key: 'eTGODueDate', column: 'em_etgo_due_date', type: 'date' },
 ];
 
 // Mirrors artifacts/purchase-invoice/generated/web/purchase-invoice/HeaderPage.jsx
@@ -143,34 +144,20 @@ export default function PurchaseInvoiceWindow(props) {
 
   const isPaymentsDueToday = filterParam === 'paymentsDueToday';
 
+  const todayISO = new Date().toISOString().slice(0, 10);
+
   const initialAdvancedFilter = isPaymentsDueToday
     ? {
         rowOperator: 'and',
         conditions: [
           { field: 'documentStatus', operator: 'equals', value: 'CO' },
           { field: 'outstandingAmount', operator: 'greaterThan', value: 0 },
+          { field: 'eTGODueDate', operator: 'equals', value: todayISO },
         ],
       }
     : null;
 
-  const initialColumnFilters = (() => {
-    if (docStatus) return { documentStatus: docStatus };
-    if (isPaymentsDueToday) {
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
-      const pad = (n) => String(n).padStart(2, '0');
-      const todayISO = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-      return {
-        invoiceDate: {
-          mode: 'date',
-          op: 'range',
-          value: [todayISO, todayISO],
-          originalValue: 'preset:today',
-        },
-      };
-    }
-    return undefined;
-  })();
+  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
 
   return (
     <>

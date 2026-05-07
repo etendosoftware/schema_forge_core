@@ -409,7 +409,7 @@ describe('SII field mapping', () => {
 
 describe('fiscal-config source guards', () => {
   it('does not render the wizard when no org is selected', () => {
-    assert.match(fiscalPageSrc, /if \(orgId && !loading && !error && profile === 'unconfigured'\)/);
+    assert.match(fiscalPageSrc, /if \(\(orgId \|\| mockOverride\) && !showLoading && !showError && effectiveProfile === 'unconfigured'\)/);
   });
 
   it('uses the validHash action endpoint', () => {

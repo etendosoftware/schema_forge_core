@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useMemo } from 'react';
 import { DataTable } from '@/components/contract-ui';
 import { useLocale, useLocaleSwitch } from '@/i18n';
 import { formatCalendarDate } from '@/lib/dateOnly';
@@ -6,7 +6,6 @@ import {
   getDueDateState,
   getDueDateDotStyle,
   getDueDateTextStyle,
-  getLatestInstallmentDueDate,
 } from '@/lib/invoiceDueDate';
 
 /* eslint-disable react/prop-types */
@@ -19,33 +18,13 @@ export default function PurchaseInvoiceHeaderTable(props) {
   const gl = dictionary?.genericLabels || {};
   const t = (key) => gl[key] || key;
 
-  // ─── Batch-fetch max dueDate per invoice from payment plan ────
-  const [dueDates, setDueDates] = useState({});
-  useEffect(() => {
-    const rows = props.data;
-    if (!rows?.length || !props.apiBaseUrl || !props.token) return;
-    const headers = { Authorization: `Bearer ${props.token}` };
-    const ids = rows.map(r => r.id).filter(Boolean);
-    Promise.all(
-      ids.map(id =>
-        fetch(`${props.apiBaseUrl}/paymentPlan?parentId=${id}`, { headers })
-          .then(r => r.ok ? r.json() : {})
-          .then(d => {
-            const installments = d?.response?.data ?? d?.data ?? [];
-            return [id, getLatestInstallmentDueDate(installments)];
-          })
-          .catch(() => [id, null])
-      )
-    ).then(entries => setDueDates(Object.fromEntries(entries)));
-  }, [props.data, props.apiBaseUrl, props.token]);
-
   const columns = useMemo(() => [
     { key: 'invoiceDate', column: 'DateInvoiced', type: 'date', dot: false },
     { key: 'orderReference', column: 'POReference', type: 'string' },
     {
-      key: '_dueDate', column: '_dueDate', type: 'custom', label: t('dueDate'),
+      key: 'eTGODueDate', column: 'EM_Etgo_Due_Date', type: 'custom', label: t('dueDate'),
       render: (row) => {
-        const d = dueDates[row.id];
+        const d = row.eTGODueDate;
         if (!d) return <span className="text-muted-foreground">—</span>;
         const state = getDueDateState(d, row.outstandingAmount);
         return (
@@ -60,7 +39,7 @@ export default function PurchaseInvoiceHeaderTable(props) {
     { key: 'documentStatus', column: 'DocStatus', type: 'status' },
     { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
     { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
-  ], [gl, dueDates, locale]);
+  ], [gl, locale]);
 
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
