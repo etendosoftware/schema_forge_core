@@ -15,11 +15,15 @@ import catalogs from './mockCatalogs';
 const breadcrumb = 'Sales / Sales Invoice';
 
 const labelOverrides = {
-  "en_US": {
-    "EM_Etgo_Due_Date": "Due Date"
-  },
   "es_ES": {
-    "EM_Etgo_Due_Date": "Vencimiento"
+    "OutstandingAmt": "Pendiente de pago",
+    "EM_Etgo_Due_Date": "Vencimiento",
+    "em_etgo_delivery_status": "Estado de entrega"
+  },
+  "en_US": {
+    "OutstandingAmt": "Pending Payment",
+    "EM_Etgo_Due_Date": "Due Date",
+    "em_etgo_delivery_status": "Delivery Status"
   }
 };
 
@@ -407,11 +411,15 @@ export const api = {
     "category": "sales"
   },
   "labelOverrides": {
-    "en_US": {
-      "EM_Etgo_Due_Date": "Due Date"
-    },
     "es_ES": {
-      "EM_Etgo_Due_Date": "Vencimiento"
+      "OutstandingAmt": "Pendiente de pago",
+      "EM_Etgo_Due_Date": "Vencimiento",
+      "em_etgo_delivery_status": "Estado de entrega"
+    },
+    "en_US": {
+      "OutstandingAmt": "Pending Payment",
+      "EM_Etgo_Due_Date": "Due Date",
+      "em_etgo_delivery_status": "Delivery Status"
     }
   }
 };
