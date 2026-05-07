@@ -311,6 +311,14 @@
           "visibility": "readOnly",
           "form": false
         },
+        "aeatsiiEstado": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "tbaiIssent": {
+          "visibility": "readOnly",
+          "form": false
+        },
         "etsgDateOperation": {
           "visibility": "editable",
           "form": false

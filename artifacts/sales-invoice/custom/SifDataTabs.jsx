@@ -33,6 +33,37 @@ function ReadValue({ value }) {
 
 const inputCls = 'w-full text-xs bg-white border rounded px-2 py-0.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50 border-border/40';
 
+const SII_STATUS = {
+  CO: { label: 'Correcto',              cls: 'bg-green-50 text-green-700 border-green-200' },
+  AE: { label: 'Aceptado con errores',  cls: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+  IN: { label: 'Incorrecto',            cls: 'bg-red-50 text-red-700 border-red-200' },
+  EE: { label: 'Error de envío',        cls: 'bg-red-50 text-red-700 border-red-200' },
+  PE: { label: 'Pendiente',             cls: 'bg-gray-50 text-gray-500 border-gray-200' },
+  AN: { label: 'Anulada',              cls: 'bg-gray-50 text-gray-500 border-gray-200' },
+  BA: { label: 'Dada de baja',          cls: 'bg-gray-50 text-gray-500 border-gray-200' },
+  NR: { label: 'No registrable',        cls: 'bg-gray-50 text-gray-500 border-gray-200' },
+};
+
+function SiiStatusBadge({ estado }) {
+  const s = SII_STATUS[estado] ?? { label: 'No enviada', cls: 'bg-gray-50 text-gray-400 border-gray-200' };
+  return (
+    <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded border ${s.cls}`}>
+      {s.label}
+    </span>
+  );
+}
+
+function TbaiBadge({ issent }) {
+  const sent = issent === true || issent === 'Y';
+  return (
+    <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded border ${
+      sent ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-400 border-gray-200'
+    }`}>
+      {sent ? 'Enviada a TBAI' : 'No enviada'}
+    </span>
+  );
+}
+
 export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
   const { selectedOrg } = useAuth();
   const orgId = selectedOrg?.id ?? null;
@@ -144,6 +175,9 @@ export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
       <div className="flex-1 min-w-0">
         {effectiveTab === 'sii' && showSii && (
           <div className="flex flex-col gap-1.5">
+            <div className="mb-0.5">
+              <SiiStatusBadge estado={data?.aeatsiiEstado} />
+            </div>
             <FieldRow label="Fecha operación">
               <input
                 type="date"
@@ -207,6 +241,9 @@ export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
 
         {effectiveTab === 'tbai' && showTbai && (
           <div className="flex flex-col gap-1.5">
+            <div className="mb-0.5">
+              <TbaiBadge issent={data?.tbaiIssent} />
+            </div>
             <FieldRow label="Secuencia encadenamiento">
               <ReadValue value={data?.tbaiSequence} />
             </FieldRow>
