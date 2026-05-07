@@ -56,7 +56,7 @@ function PopupSearchInput({ field, value, displayValue, onChange, label, selecto
         type="button"
         onClick={() => setOpen(true)}
         data-testid={`field-${field.key}`}
-        className="w-full h-10 text-sm rounded-md border border-input bg-background px-3 text-left flex items-center gap-2 hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
+        className="w-full h-10 text-sm rounded-lg border border-[#D1D4DB] bg-background p-2 text-left flex items-center gap-2 shadow-[0px_1px_2px_rgba(18,18,23,0.05)] hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
       >
         <Search className="h-4 w-4 text-muted-foreground shrink-0" />
         {displayText ? (
@@ -403,7 +403,7 @@ function LookupFormField({ field, value, displayValue, selectorUrl, selectorCont
         type="button"
         data-testid={`field-${field.key}`}
         onClick={() => setOpen(true)}
-        className="w-full flex items-center gap-2 h-9 rounded-md border border-input bg-background px-3 text-sm text-left hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
+        className="w-full flex items-center gap-2 h-10 rounded-lg border border-[#D1D4DB] bg-background p-2 text-sm text-left shadow-[0px_1px_2px_rgba(18,18,23,0.05)] hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
       >
         <Search className="h-4 w-4 text-muted-foreground shrink-0" />
         {display ? (
@@ -818,7 +818,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
             onBlur={() => onFieldBlur?.(f.key)}
             disabled={isReadOnly}
             className={[
-              'flex w-full rounded-md border border-input px-3 py-2 text-sm shadow-sm',
+              'flex w-full rounded-lg border border-[#D1D4DB] p-2 text-sm shadow-[0px_1px_2px_rgba(18,18,23,0.05)]',
               'placeholder:text-muted-foreground resize-none flex-1 min-h-[96px]',
               'focus:outline-none focus:ring-2 focus:ring-primary',
               isReadOnly ? 'bg-muted/50 cursor-default' : 'bg-background',
