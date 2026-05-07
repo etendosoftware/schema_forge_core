@@ -14,10 +14,12 @@ const breadcrumb = 'Sales / Sales Quotation';
 
 const labelOverrides = {
   "es_ES": {
-    "C_BPartner_ID": "Contacto"
+    "C_BPartner_ID": "Contacto",
+    "C_Reject_Reason_ID": "Razón de rechazo"
   },
   "en_US": {
-    "C_BPartner_ID": "Contact"
+    "C_BPartner_ID": "Contact",
+    "C_Reject_Reason_ID": "Reject Reason"
   }
 };
 
@@ -372,10 +374,12 @@ export const api = {
   },
   "labelOverrides": {
     "es_ES": {
-      "C_BPartner_ID": "Contacto"
+      "C_BPartner_ID": "Contacto",
+      "C_Reject_Reason_ID": "Razón de rechazo"
     },
     "en_US": {
-      "C_BPartner_ID": "Contact"
+      "C_BPartner_ID": "Contact",
+      "C_Reject_Reason_ID": "Reject Reason"
     }
   }
 };
