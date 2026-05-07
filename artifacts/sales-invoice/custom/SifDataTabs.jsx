@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
+import { normalizeDateInputValue } from '@/windows/custom/fiscal-config/fiscalConfig.utils.js';
 import { useAuth } from '@/auth/AuthContext';
 
 const SII_PROFILES = new Set(['sii', 'sii-navarra', 'sii+tbai']);
@@ -56,6 +57,10 @@ export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
 
   function getVal(key) {
     return key in siiForm ? siiForm[key] : (data?.[key] ?? '');
+  }
+
+  function getDateVal(key) {
+    return key in siiForm ? siiForm[key] : normalizeDateInputValue(data?.[key] ?? '');
   }
 
   function setVal(key, value) {
@@ -138,7 +143,7 @@ export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
                 type="date"
                 className={inputCls}
                 style={{ borderWidth: '0.5px' }}
-                value={getVal('aeatsiiFechaOperacion')}
+                value={getDateVal('aeatsiiFechaOperacion')}
                 onChange={e => setVal('aeatsiiFechaOperacion', e.target.value)}
                 onBlur={e => handleBlur('aeatsiiFechaOperacion', e.target.value)}
                 disabled={savingField === 'aeatsiiFechaOperacion'}
