@@ -3,12 +3,21 @@ import { executeTool, extractAnswerText, uploadFile } from '../copilotApi';
 
 /**
  * Strip Markdown code fences that some OCR outputs still include around JSON.
+ * String-based to avoid regex backtracking concerns on adversarial inputs.
  */
 function stripCodeFences(text) {
   if (!text) return '';
   const trimmed = text.trim();
-  const match = trimmed.match(/^```(?:json)?\s*([^`]*?)```$/i);
-  return match ? match[1].trim() : trimmed;
+  if (!trimmed.startsWith('```') || !trimmed.endsWith('```') || trimmed.length < 6) {
+    return trimmed;
+  }
+  // Drop the opening fence, then the optional "json" language tag (case-insensitive),
+  // then any leading whitespace, then drop the closing fence.
+  let body = trimmed.slice(3, -3);
+  if (body.toLowerCase().startsWith('json')) {
+    body = body.slice(4);
+  }
+  return body.trim();
 }
 
 /**

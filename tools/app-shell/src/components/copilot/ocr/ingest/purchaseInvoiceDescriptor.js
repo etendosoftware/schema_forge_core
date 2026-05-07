@@ -234,7 +234,11 @@ function buildLineOps(lines, productByIdx) {
     }
     const body = { product: productId };
     if (nonBlank(line?.quantity)) body.invoicedQuantity = Number(line.quantity);
-    if (nonBlank(line?.unit_price)) body.unitPrice = Number(line.unit_price);
+    if (nonBlank(line?.unit_price)) {
+      const price = Number(line.unit_price);
+      body.unitPrice = price;
+      body.listPrice = price;
+    }
     lineOps.push({
       id: `ln${idx}`,
       spec: 'purchase-invoice',

@@ -358,26 +358,3 @@ export async function permanentDeleteConversation(token, conversationId) {
   });
 }
 
-/**
- * Build the full SSE URL for streaming a copilot response via EventSource.
- *
- * NOTE — auth limitation: the browser EventSource API cannot set custom
- * headers, so the bearer token is appended as a `token` query parameter.
- * Tokens in URLs can leak via server logs, browser history, proxies, and
- * Referer headers. This helper is currently NOT wired into the UI; before
- * enabling SSE streaming, switch the server to accept either a same-origin
- * session cookie (EventSource forwards cookies automatically) or a
- * short-lived single-use stream token, and drop the `token` param here.
- *
- * @param {string} token
- * @param {{ app_id: string, question: string, conversation_id?: string, file?: string[] }} params
- * @returns {string}
- */
-export function buildSSEUrl(token, { app_id, question, conversation_id, file }) {
-  const params = new URLSearchParams({ app_id, question });
-  if (conversation_id) params.set('conversation_id', conversation_id);
-  if (file && file.length > 0) params.set('file', JSON.stringify(file));
-  // TODO(security): replace with cookie-based auth or short-lived stream token.
-  if (token) params.set('token', token);
-  return `${buildCopilotUrl('question/stream')}?${params.toString()}`;
-}
