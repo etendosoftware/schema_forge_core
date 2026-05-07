@@ -23,11 +23,15 @@ const breadcrumb = 'Purchases / Purchase Invoice';
 const labelOverrides = {
   "es_ES": {
     "POReference": "Nº documento",
-    "EM_Etgo_Due_Date": "Vencimiento"
+    "OutstandingAmt": "Pendiente de pago",
+    "EM_Etgo_Due_Date": "Vencimiento",
+    "em_etgo_delivery_status": "Estado de entrega"
   },
   "en_US": {
     "POReference": "Document No.",
-    "EM_Etgo_Due_Date": "Due Date"
+    "OutstandingAmt": "Pending Payment",
+    "EM_Etgo_Due_Date": "Due Date",
+    "em_etgo_delivery_status": "Delivery Status"
   }
 };
 
@@ -807,11 +811,15 @@ export const api = {
   "labelOverrides": {
     "es_ES": {
       "POReference": "Nº documento",
-      "EM_Etgo_Due_Date": "Vencimiento"
+      "OutstandingAmt": "Pendiente de pago",
+      "EM_Etgo_Due_Date": "Vencimiento",
+      "em_etgo_delivery_status": "Estado de entrega"
     },
     "en_US": {
       "POReference": "Document No.",
-      "EM_Etgo_Due_Date": "Due Date"
+      "OutstandingAmt": "Pending Payment",
+      "EM_Etgo_Due_Date": "Due Date",
+      "em_etgo_delivery_status": "Delivery Status"
     }
   }
 };

@@ -1,8 +1,8 @@
 {
-  "version": "0.19.0",
+  "version": "0.20.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
-  "updatedAt": "2026-05-07T13:42:22.743Z",
-  "checksum": "9b191ab4519595bb",
+  "updatedAt": "2026-05-07T16:06:17.758Z",
+  "checksum": "df5853971031a3a5",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -32,11 +32,15 @@
       "secondaryTabs": {},
       "salesTheme": true,
       "labelOverrides": {
-        "en_US": {
-          "EM_Etgo_Due_Date": "Due Date"
-        },
         "es_ES": {
-          "EM_Etgo_Due_Date": "Vencimiento"
+          "OutstandingAmt": "Pendiente de pago",
+          "EM_Etgo_Due_Date": "Vencimiento",
+          "em_etgo_delivery_status": "Estado de entrega"
+        },
+        "en_US": {
+          "OutstandingAmt": "Pending Payment",
+          "EM_Etgo_Due_Date": "Due Date",
+          "em_etgo_delivery_status": "Delivery Status"
         }
       },
       "dateFilterKey": "invoiceDate",
@@ -485,6 +489,19 @@
             "grid": true,
             "form": false,
             "gridOrder": 7
+          },
+          {
+            "name": "eTGODeliveryStatus",
+            "apiKey": "eTGODeliveryStatus",
+            "column": "em_etgo_delivery_status",
+            "label": "em_etgo_delivery_status",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": false,
+            "gridOrder": 8
           }
         ],
         "searchableFields": [
@@ -1090,11 +1107,15 @@
       "secondaryTabs": {},
       "salesTheme": true,
       "labelOverrides": {
-        "en_US": {
-          "EM_Etgo_Due_Date": "Due Date"
-        },
         "es_ES": {
-          "EM_Etgo_Due_Date": "Vencimiento"
+          "OutstandingAmt": "Pendiente de pago",
+          "EM_Etgo_Due_Date": "Vencimiento",
+          "em_etgo_delivery_status": "Estado de entrega"
+        },
+        "en_US": {
+          "OutstandingAmt": "Pending Payment",
+          "EM_Etgo_Due_Date": "Due Date",
+          "em_etgo_delivery_status": "Delivery Status"
         }
       },
       "dateFilterKey": "invoiceDate",
@@ -2369,6 +2390,14 @@
             "type": "date",
             "visibility": "readOnly",
             "required": false
+          },
+          {
+            "name": "eTGODeliveryStatus",
+            "apiKey": "eTGODeliveryStatus",
+            "column": "em_etgo_delivery_status",
+            "type": "integer",
+            "visibility": "readOnly",
+            "required": false
           }
         ],
         "javaQualifier": "salesInvoiceHeaderHandler"
@@ -3506,11 +3535,15 @@
       "category": "sales"
     },
     "labelOverrides": {
-      "en_US": {
-        "EM_Etgo_Due_Date": "Due Date"
-      },
       "es_ES": {
-        "EM_Etgo_Due_Date": "Vencimiento"
+        "OutstandingAmt": "Pendiente de pago",
+        "EM_Etgo_Due_Date": "Vencimiento",
+        "em_etgo_delivery_status": "Estado de entrega"
+      },
+      "en_US": {
+        "OutstandingAmt": "Pending Payment",
+        "EM_Etgo_Due_Date": "Due Date",
+        "em_etgo_delivery_status": "Delivery Status"
       }
     }
   },
@@ -3962,6 +3995,14 @@
         "description": "Field 'documentStatus' should be present in header"
       },
       {
+        "id": "t-field-presence-header-eTGODeliveryStatus",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "eTGODeliveryStatus",
+        "runner": "node",
+        "description": "Field 'eTGODeliveryStatus' should be present in header"
+      },
+      {
         "id": "t-field-presence-header-eTGODueDate",
         "category": "field-presence",
         "entity": "header",
@@ -4280,6 +4321,14 @@
         "field": "documentStatus",
         "runner": "node",
         "description": "Field 'documentStatus' should have type 'string' in header"
+      },
+      {
+        "id": "t-field-type-header-eTGODeliveryStatus",
+        "category": "field-type",
+        "entity": "header",
+        "field": "eTGODeliveryStatus",
+        "runner": "node",
+        "description": "Field 'eTGODeliveryStatus' should have type 'number' in header"
       },
       {
         "id": "t-field-type-header-eTGODueDate",
@@ -6616,15 +6665,15 @@
       }
     ],
     "summary": {
-      "total": 389,
+      "total": 391,
       "byCategory": {
         "action-endpoint": 24,
         "crud-flags": 3,
         "default-value-type": 14,
         "displaylogic-evaluable": 5,
         "displaylogic-valid": 5,
-        "field-presence": 40,
-        "field-type": 40,
+        "field-presence": 41,
+        "field-type": 41,
         "readonlylogic-evaluable": 14,
         "readonlylogic-valid": 14,
         "rule-declared": 8,
@@ -6634,7 +6683,7 @@
         "visibility": 3
       },
       "byRunner": {
-        "node": 389,
+        "node": 391,
         "junit": 0
       }
     }

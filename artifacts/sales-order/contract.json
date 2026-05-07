@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-30T15:33:38.824Z",
-  "updatedAt": "2026-05-07T13:42:22.464Z",
-  "checksum": "61b8511a490c9cdf",
+  "updatedAt": "2026-05-07T16:06:17.535Z",
+  "checksum": "a70e48ac5903ad81",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -34,11 +34,13 @@
       "labelOverrides": {
         "es_ES": {
           "C_BPartner_ID": "Contacto",
-          "DeliveryStatus": "Estado de entrega"
+          "DeliveryStatus": "Estado de entrega",
+          "InvoiceStatus": "Estado de facturación"
         },
         "en_US": {
           "C_BPartner_ID": "Contact",
-          "DeliveryStatus": "Delivery Status"
+          "DeliveryStatus": "Delivery Status",
+          "InvoiceStatus": "Invoicing Status"
         }
       },
       "dateFilterKey": "orderDate",
@@ -859,11 +861,13 @@
       "labelOverrides": {
         "es_ES": {
           "C_BPartner_ID": "Contacto",
-          "DeliveryStatus": "Estado de entrega"
+          "DeliveryStatus": "Estado de entrega",
+          "InvoiceStatus": "Estado de facturación"
         },
         "en_US": {
           "C_BPartner_ID": "Contact",
-          "DeliveryStatus": "Delivery Status"
+          "DeliveryStatus": "Delivery Status",
+          "InvoiceStatus": "Invoicing Status"
         }
       },
       "dateFilterKey": "orderDate",
@@ -2653,11 +2657,13 @@
     "labelOverrides": {
       "es_ES": {
         "C_BPartner_ID": "Contacto",
-        "DeliveryStatus": "Estado de entrega"
+        "DeliveryStatus": "Estado de entrega",
+        "InvoiceStatus": "Estado de facturación"
       },
       "en_US": {
         "C_BPartner_ID": "Contact",
-        "DeliveryStatus": "Delivery Status"
+        "DeliveryStatus": "Delivery Status",
+        "InvoiceStatus": "Invoicing Status"
       }
     }
   },

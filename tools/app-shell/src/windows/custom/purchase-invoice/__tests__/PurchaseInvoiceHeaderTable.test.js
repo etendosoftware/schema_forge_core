@@ -7,40 +7,58 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(__dirname, '..', 'PurchaseInvoiceHeaderTable.jsx'), 'utf8');
 
-describe('PurchaseInvoiceHeaderTable', () => {
+const columnsBlock = src.match(/const columns = useMemo\(\(\) => \[([\s\S]*?)\], \[/);
+
+const expectedKeysInOrder = [
+  'invoiceDate',
+  'orderReference',
+  'eTGODueDate',
+  'businessPartner',
+  'documentStatus',
+  'grandTotalAmount',
+  'outstandingAmount',
+  'eTGODeliveryStatus',
+];
+
+describe('PurchaseInvoiceHeaderTable — columns', () => {
   it('exports a default function component', () => {
     assert.match(src, /export default function PurchaseInvoiceHeaderTable/);
   });
 
-  it('renders a DataTable', () => {
-    assert.match(src, /DataTable/);
+  it('declares the columns array', () => {
+    assert.ok(columnsBlock, 'expected `const columns = useMemo(() => [...], [])` block');
   });
 
-  it('uses invoiceDueDate helpers for due-date state and styling', () => {
-    assert.match(src, /getDueDateState/);
-    assert.match(src, /getDueDateDotStyle/);
-    assert.match(src, /getDueDateTextStyle/);
+  it('renders the eight expected columns in order', () => {
+    const block = columnsBlock[1];
+    const keys = [...block.matchAll(/key:\s*'([^']+)'/g)].map(m => m[1]);
+    assert.deepEqual(keys, expectedKeysInOrder);
   });
 
-  it('reads due date from eTGODueDate (EM_Etgo_Due_Date column)', () => {
-    assert.match(src, /eTGODueDate/);
-    assert.match(src, /EM_Etgo_Due_Date/);
+  it('binds each column to the right AD column name', () => {
+    assert.match(src, /key: 'invoiceDate', column: 'DateInvoiced'/);
+    assert.match(src, /key: 'orderReference', column: 'POReference'/);
+    assert.match(src, /key: 'eTGODueDate', column: 'EM_Etgo_Due_Date'/);
+    assert.match(src, /key: 'businessPartner', column: 'C_BPartner_ID'/);
+    assert.match(src, /key: 'documentStatus', column: 'DocStatus'/);
+    assert.match(src, /key: 'grandTotalAmount', column: 'GrandTotal'/);
+    assert.match(src, /key: 'outstandingAmount', column: 'OutstandingAmt'/);
+    assert.match(src, /key: 'eTGODeliveryStatus', column: 'em_etgo_delivery_status'/);
   });
 
-  it('includes invoiceDate column with dot suppressed', () => {
-    assert.match(src, /key.*invoiceDate/);
-    assert.match(src, /dot.*false/);
+  it('renders delivery status as a percent progress bar', () => {
+    assert.match(
+      src,
+      /key: 'eTGODeliveryStatus'.*type: 'percent'/,
+      'eTGODeliveryStatus must use type: "percent" so DataTable renders the progress bar',
+    );
   });
+});
 
-  it('includes orderReference column for supplier reference', () => {
-    assert.match(src, /key.*orderReference/);
-    assert.match(src, /POReference/);
-  });
-
-  it('includes a custom eTGODueDate column driven by paid/overdue/soon/ok state', () => {
-    assert.match(src, /key.*eTGODueDate/);
-    assert.match(src, /getDueDateState/);
-    assert.match(src, /getDueDateDotStyle/);
+describe('PurchaseInvoiceHeaderTable — due date column', () => {
+  it('reads eTGODueDate from the row (no payment-plan fetch)', () => {
+    assert.match(src, /const d = row\.eTGODueDate/);
+    assert.doesNotMatch(src, /paymentPlan\?parentId/, 'payment-plan fetch was retired in ETP-3873');
   });
 
   it('feeds outstandingAmount into the due-date state', () => {
@@ -55,7 +73,7 @@ describe('PurchaseInvoiceHeaderTable', () => {
     assert.match(src, /t\('dueDate'\)/);
   });
 
-  it('formats due dates with the active locale instead of a hardcoded region', () => {
+  it('formats the date with the active locale, not a hardcoded region', () => {
     assert.match(src, /useLocaleSwitch/);
     assert.match(src, /formatCalendarDate\(d, locale\)/);
   });
