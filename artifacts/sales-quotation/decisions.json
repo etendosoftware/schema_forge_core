@@ -13,10 +13,12 @@
     },
     "labelOverrides": {
       "es_ES": {
-        "C_BPartner_ID": "Contacto"
+        "C_BPartner_ID": "Contacto",
+        "C_Reject_Reason_ID": "Razón de rechazo"
       },
       "en_US": {
-        "C_BPartner_ID": "Contact"
+        "C_BPartner_ID": "Contact",
+        "C_Reject_Reason_ID": "Reject Reason"
       }
     },
     "menuActions": [
@@ -145,8 +147,10 @@
         },
         "rejectReason": {
           "visibility": "editable",
-          "form": false,
+          "form": true,
           "grid": false,
+          "section": "principal",
+          "displayLogic": "record.documentStatus === 'CJ'",
           "readOnlyLogic": "@DocStatus@='CJ'|@DocStatus@='CA'"
         },
         "summedLineAmount": {

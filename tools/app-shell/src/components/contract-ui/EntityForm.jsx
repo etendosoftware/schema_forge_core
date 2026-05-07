@@ -512,13 +512,16 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     const displayValue = f.type === 'number' && isReadOnly && Number.isFinite(Number(rawDisplayValue))
       ? parseFloat(Number(rawDisplayValue).toFixed(10))
       : rawDisplayValue;
-    // Shared read-only rendering for FK-style fields (dependent, selector, search)
+    // Shared read-only rendering for FK-style fields (dependent, selector, search).
+    // The data-testid sits on the wrapper so tests can use the container/input
+    // pattern (`container.locator('input').first()`) consistently with the
+    // editable branches above.
     const renderReadOnlyFk = () => (
-      <div key={f.key} className="space-y-1.5">
+      <div key={f.key} data-testid={`field-${f.key}`} className="space-y-1.5">
         <Label htmlFor={f.key} className="text-sm text-muted-foreground font-medium">
           {label}
         </Label>
-        <Input value={resolveIdentifier(data, f.key) || data?.[f.key] || ''} disabled className="bg-muted/50" />
+        <Input id={f.key} value={resolveIdentifier(data, f.key) || data?.[f.key] || ''} disabled className="bg-muted/50" />
       </div>
     );
     if (f.type === 'checkbox') {
