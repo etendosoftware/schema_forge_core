@@ -142,17 +142,21 @@ export default function PurchaseInvoiceWindow(props) {
   const filterParam = searchParams.get('filter');
   const docStatus = searchParams.get('DocStatus');
 
+  const isOverdue = filterParam === 'overdue';
   const isPaymentsDueToday = filterParam === 'paymentsDueToday';
+  const isInvoiceFilter = isOverdue || isPaymentsDueToday;
 
   const todayISO = new Date().toISOString().slice(0, 10);
 
-  const initialAdvancedFilter = isPaymentsDueToday
+  const initialAdvancedFilter = isInvoiceFilter
     ? {
         rowOperator: 'and',
         conditions: [
           { field: 'documentStatus', operator: 'equals', value: 'CO' },
           { field: 'outstandingAmount', operator: 'greaterThan', value: 0 },
-          { field: 'eTGODueDate', operator: 'equals', value: todayISO },
+          ...(isPaymentsDueToday
+            ? [{ field: 'eTGODueDate', operator: 'equals', value: todayISO }]
+            : []),
         ],
       }
     : null;
@@ -170,7 +174,7 @@ export default function PurchaseInvoiceWindow(props) {
         labelOverrides={LABEL_OVERRIDES}
         initialColumnFilters={initialColumnFilters}
         initialAdvancedFilter={initialAdvancedFilter}
-        initialColumns={isPaymentsDueToday ? OVERDUE_INITIAL_COLUMNS : null}
+        initialColumns={isInvoiceFilter ? OVERDUE_INITIAL_COLUMNS : null}
         dateFilterKey="invoiceDate"
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
         bulkActions={(ctx) => <BulkDocumentAction {...ctx} />}
