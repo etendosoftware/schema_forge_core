@@ -153,6 +153,7 @@ export function DetailView({
   labelOverrides,
   enableSecondaryRowDelete = false,
   sidebarClassName = 'w-96 shrink-0 overflow-y-auto pt-0 pl-0 pr-4 pb-5',
+  autoSaveOnBlur = false,
 }) {
   // DetailView never needs the parent list: on `/new` there is no record to match, and on
   // `/:id` the currentItem shortcut only helps when we arrived from ListView (items already
@@ -172,6 +173,14 @@ export function DetailView({
   const secondaryHook3 = useEntity(entity, (secondaryTabs[3]?.isFormTab || secondaryTabs[3]?.Panel) ? null : (secondaryTabs[3]?.key ?? null), { token, apiBaseUrl, skipListFetch: true });
   const secondaryHooks = [secondaryHook0, secondaryHook1, secondaryHook2, secondaryHook3];
   const parentRecordId = hook.selected?.id ?? recordId ?? hook.editing?.id ?? null;
+
+  const handleFieldBlur = useCallback(() => {
+    if (!hook.editing || !hook.selected) return;
+    const hasChanges = Object.entries(hook.editing).some(
+      ([key, value]) => key !== 'id' && value !== hook.selected[key]
+    );
+    if (hasChanges) hook.handleSave();
+  }, [hook]);
   // Depend on the single scalar the memo reads from editing/selected, not the whole objects.
   // Keeps original semantics: prefer editing when present (even if priceList is null), else selected.
   const priceListId = (hook.editing || hook.selected)?.priceList ?? null;
@@ -1367,6 +1376,7 @@ export function DetailView({
                   labelOverrides={labelOverrides}
                   registerFields={hook.registerFields}
                   fieldErrors={hook.fieldErrors}
+                  onFieldBlur={autoSaveOnBlur ? handleFieldBlur : undefined}
                 />
               </div>
 
@@ -1389,6 +1399,7 @@ export function DetailView({
                       selectorContext={selectorContextByEntity[entity]}
                       labelOverrides={labelOverrides}
                       fieldErrors={hook.fieldErrors}
+                      onFieldBlur={autoSaveOnBlur ? handleFieldBlur : undefined}
                     />
                   </div>
                 </CollapsibleSection>
