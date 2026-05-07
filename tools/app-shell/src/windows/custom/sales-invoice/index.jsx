@@ -119,11 +119,13 @@ export default function SalesInvoiceWindow(props) {
   const docStatus = searchParams.get('DocStatus');
   const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
 
+  const todayIso = new Date().toISOString().slice(0, 10);
   const INVOICE_QUICK_FILTERS = [
     {
       label: 'overdueOnly',
       filter: `criteria=${encodeURIComponent(JSON.stringify([
         { fieldName: 'outstandingAmount', operator: 'greaterThan', value: 0 },
+        { fieldName: 'eTGODueDate', operator: 'lessThan', value: todayIso },
       ]))}`,
     },
   ];

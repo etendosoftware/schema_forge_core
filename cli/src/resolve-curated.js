@@ -537,6 +537,45 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
 const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb'];
 const WINDOW_NOT_NULL_PROPS = ['detailTabIndex', 'salesTheme'];
 
+// Canonical key order for the contract window object. Stabilizes contract.json
+// output so internal refactors of the resolver/generator don't produce cosmetic
+// drift. Keys not listed here land alphabetically at the end of the object.
+export const WINDOW_KEY_ORDER = [
+  'id', 'name', 'primaryEntity', 'category',
+  'sidebarLayout', 'templateConfig',
+  'documentPreview', 'notesField', 'relatedDocuments',
+  'hideDeleteWhenComplete', 'hidePrint', 'hideSaveStatuses',
+  'hideMoreMenu', 'hideMoreDetails', 'contentBg',
+  'hideListFilters', 'hideLink', 'hideEyeCount', 'breadcrumb',
+  'customComponents', 'menuActions', 'processOverrides',
+  'entityLabel', 'detailLabel', 'detailTabIndex', 'secondaryTabs',
+  'detailEntity', 'statusBar', 'statusField', 'summaryFields',
+  'detailSortBy', 'salesTheme', 'listKpiCards', 'headerExtra',
+  'labelOverrides', 'primaryTabs', 'othersLabel',
+  'disableProcessedLock', 'titleField',
+  'listViewOptions', 'listBaseFilter', 'quickFilters', 'subsetFilters',
+  'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'lineEntityConfig',
+  'layoutType',
+];
+
+// Generic helper: returns a new object with keys in `canonicalOrder` first
+// (only those present in `obj`), then any leftover keys sorted alphabetically.
+export function reorderKeys(obj, canonicalOrder) {
+  const result = {};
+  const seen = new Set();
+  for (const key of canonicalOrder) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      result[key] = obj[key];
+      seen.add(key);
+    }
+  }
+  const leftover = Object.keys(obj)
+    .filter(k => !seen.has(k))
+    .sort((a, b) => a.localeCompare(b));
+  for (const key of leftover) result[key] = obj[key];
+  return result;
+}
+
 function copyTruthyProps(target, source, props) {
   for (const prop of props) {
     if (source[prop]) target[prop] = source[prop];
@@ -627,6 +666,7 @@ export async function resolveCurated(schemaRaw, rulesRaw, decisions) {
   };
 
   applyWindowDecisions(schema.window, windowDecisions);
+  schema.window = reorderKeys(schema.window, WINDOW_KEY_ORDER);
   applyWindowDraftModeToPrimaryEntity(curatedEntities, windowDecisions);
 
   const rules = resolveRules(rulesRaw, decisions);
@@ -706,7 +746,7 @@ async function runCli() {
     );
 
     const contractPath = join(artifactsDir, 'contract.json');
-    await writeFile(contractPath, JSON.stringify(contract, null, 2));
+    await writeFile(contractPath, JSON.stringify(contract, null, 2) + '\n');
     console.log(`✓ contract.json written for ${windowName}`);
 
     // Regenerate frontend

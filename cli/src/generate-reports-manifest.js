@@ -51,5 +51,5 @@ function listReports() {
 
 const reports = listReports();
 mkdirSync(OUT_DIR, { recursive: true });
-writeFileSync(OUT_FILE, JSON.stringify(reports));
+writeFileSync(OUT_FILE, JSON.stringify(reports) + '\n');
 console.log(`reports manifest: ${reports.length} reports → dist/api/reports`);

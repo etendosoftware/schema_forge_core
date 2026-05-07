@@ -18,16 +18,20 @@ pipeline {
         EMAIL_ADDRESS       = credentials('email_builds')
 
         // --- Repositories ---
-        REPOSITORY_NAME     = 'schema_forge'
-        URL_REPO            = 'https://github.com/etendosoftware/schema_forge'
-        SCHEMA_FORGE_SSH    = 'git@github.com:etendosoftware/schema_forge.git'
+        REPOSITORY_NAME     = 'etendo_schema_forge'
+        URL_REPO            = 'https://github.com/etendosoftware/etendo_schema_forge'
+        SCHEMA_FORGE_SSH    = 'git@github.com:etendosoftware/etendo_schema_forge.git'
         CORE_URL_REPO       = 'https://github.com/etendosoftware/etendo_core'
         GO_MODULE_SSH       = 'git@github.com:etendosoftware/com.etendoerp.go.git'
         GO_MODULE_NAME      = 'com.etendoerp.go'
+        // Newline-separated list of extra module SSH URLs cloned into
+        // ${CORE_DIR}/modules/ and aligned with the same branch strategy.
+        // Used when a published module version is missing recent changes.
+        EXTRA_MODULES_FILE  = 'pipelines/extra-modules.txt'
 
         // --- Layout ---
         CORE_DIR            = 'etendo_core'                                   // ${WORKSPACE}/etendo_core
-        SCHEMA_FORGE_DIR    = "${CORE_DIR}/schema_forge"                      // sibling of modules/
+        SCHEMA_FORGE_DIR    = "${CORE_DIR}/etendo_schema_forge"               // sibling of modules/
         GO_MODULE_DIR       = "${CORE_DIR}/modules/${GO_MODULE_NAME}"
 
         // --- Build env ---
@@ -35,7 +39,7 @@ pipeline {
         NODE_VERSION        = '22'
 
         // --- GitHub commit status ---
-        CONTEXT_BUILD            = 'Schema Forge Pipeline'
+        CONTEXT_BUILD            = 'Etendo GO Regeneration check'
         COMMIT_INPROGRESS_STATUS = 'pending'
         COMMIT_SUCCESS_STATUS    = 'success'
         COMMIT_FAILED_STATUS     = 'failure'
@@ -67,7 +71,46 @@ pipeline {
         }
     }
 
+    options { // MARK: - Options
+        timeout(time: 90, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+    }
+
     stages { // MARK: - Stages
+        stage('Preflight') { // MARK: - Stage 0 (sanity check tooling)
+            steps {
+                container('compiler') {
+                    script {
+                        // Verifies the compiler image has every CLI we depend on.
+                        // Fails loudly so the operator updates the image instead of
+                        // hitting cryptic errors mid-pipeline (e.g. silent Jira fallback
+                        // when `jq` is missing).
+                        def required = ['rsync', 'curl', 'make', 'jq', 'git']
+                        def missing  = []
+                        for (tool in required) {
+                            def rc = sh(script: "command -v ${tool} >/dev/null 2>&1", returnStatus: true)
+                            if (rc != 0) {
+                                missing << tool
+                            }
+                        }
+                        if (missing) {
+                            echo "---------------------- 🚨 Missing tools in compiler image: ${missing.join(', ')} ----------------------"
+                            // Try to install the missing pieces on Debian-based images.
+                            // If apt-get is also missing, we fail with a clear message.
+                            def aptOk = sh(script: 'command -v apt-get >/dev/null 2>&1', returnStatus: true)
+                            if (aptOk == 0) {
+                                sh "apt-get update && apt-get install -y ${missing.join(' ')}"
+                            } else {
+                                error("Compiler image lacks required tools (${missing.join(', ')}) and apt-get is not available. Update the image.")
+                            }
+                        } else {
+                            echo '✅ All required tools present (rsync, curl, make, jq, git)'
+                        }
+                    }
+                }
+            }
+        }
+
         stage('Checkout & Align Branches') { // MARK: - Stage 1
             steps {
                 container('compiler') {
@@ -124,7 +167,8 @@ pipeline {
                             }
                             def coreCheckout = checkoutChain()
                             def goCheckout   = checkoutChain()
-                            echo "Checkout chain for etendo_core / com.etendoerp.go:\n${coreCheckout}"
+                            def sfCheckout   = checkoutChain()
+                            echo "Checkout chain for etendo_core / com.etendoerp.go / schema_forge:\n${coreCheckout}"
 
                             withCredentials([sshUserPrivateKey(credentialsId: 'my-credentials', keyFileVariable: 'keyfile')]) {
                                 def sshCmd = "ssh -i ${keyfile} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
@@ -145,27 +189,62 @@ pipeline {
                                     ${goCheckout}
                                 """
 
-                                echo '---------------------- Placing schema_forge as sibling of modules/ ----------------------'
-                                // The Jenkins SCM checkout already left schema_forge content at ${WORKSPACE}.
-                                // db.js auto-discovers gradle.properties at ../../.. relative to cli/src/db.js,
-                                // which only works if schema_forge sits at {etendo_root}/schema_forge/.
+                                // Extra modules: cloned BEFORE schema_forge so they sit under modules/
+                                // and follow the same branch resolution chain as core / go.
+                                env.EXTRA_MODULE_NAMES = ''
+                                if (fileExists(env.EXTRA_MODULES_FILE)) {
+                                    def extraCheckout = checkoutChain()
+                                    def extraModules = readFile(env.EXTRA_MODULES_FILE)
+                                        .split('\n')
+                                        .collect { it.replaceAll(/#.*$/, '').trim() }
+                                        .findAll { it }
+                                    def names = []
+                                    extraModules.each { repoUrl ->
+                                        def moduleName = repoUrl.tokenize('/').last().replaceAll(/\.git$/, '')
+                                        names << moduleName
+                                        echo "---------------------- Cloning extra module ${moduleName} ----------------------"
+                                        sh """
+                                            cd ${CORE_DIR}/modules
+                                            GIT_SSH_COMMAND='${sshCmd}' git clone ${repoUrl}
+                                            cd ${moduleName}
+                                            ${extraCheckout}
+                                        """
+                                    }
+                                    env.EXTRA_MODULE_NAMES = names.join(',')
+                                } else {
+                                    echo "No extra modules file at ${env.EXTRA_MODULES_FILE} — skipping."
+                                }
+
+                                echo '---------------------- Cloning etendo_schema_forge as sibling of modules/ ----------------------'
+                                // db.js auto-discovers gradle.properties relative to cli/src/db.js,
+                                // which only works if schema_forge sits at {etendo_root}/etendo_schema_forge/.
                                 sh """
-                                    mkdir -p ${SCHEMA_FORGE_DIR}
-                                    rsync -a --delete \
-                                        --exclude='/${CORE_DIR}' \
-                                        --exclude='/${SCHEMA_FORGE_DIR}' \
-                                        ./ ${SCHEMA_FORGE_DIR}/
+                                    GIT_SSH_COMMAND='${sshCmd}' git clone ${SCHEMA_FORGE_SSH} ${SCHEMA_FORGE_DIR}
+                                    cd ${SCHEMA_FORGE_DIR}
+                                    ${sfCheckout}
                                 """
                             }
+
+                            // Allow Jenkins agent (different UID than the compiler container) to create
+                            // the `<dir>@tmp` siblings required by the `dir()` step in later stages.
+                            sh "chmod -R a+rwX ${CORE_DIR}"
 
                             // Record the resolved branches for the failure email.
                             def coreBranch = sh(script: "cd ${CORE_DIR} && git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
                             def goBranch   = sh(script: "cd ${GO_MODULE_DIR} && git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
                             def sfBranch   = sh(script: "cd ${SCHEMA_FORGE_DIR} && git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                            def extraInfo = ''
+                            if (env.EXTRA_MODULE_NAMES?.trim()) {
+                                env.EXTRA_MODULE_NAMES.split(',').each { name ->
+                                    def br = sh(script: "cd ${CORE_DIR}/modules/${name} && git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                                    extraInfo += "<li>${name}: ${br}</li>"
+                                }
+                            }
                             env.REPOS_INFO = "<em>🧲 Branches in use:</em><br><ul>" +
                                 "<li>schema_forge: ${sfBranch}</li>" +
                                 "<li>etendo_core: ${coreBranch}</li>" +
                                 "<li>${GO_MODULE_NAME}: ${goBranch}</li>" +
+                                extraInfo +
                                 "</ul>"
                             echo "${env.REPOS_INFO}"
 
@@ -278,7 +357,8 @@ EOF
 
                             dir(CORE_DIR) {
                                 echo '---------------------- ./gradlew export.database ----------------------'
-                                sh './gradlew export.database --info --stacktrace'
+                                // -Dallow.root: Etendo's build.xml refuses ant tasks under root unless this is set as a system prop.
+                                sh './gradlew export.database -Dallow.root=true --info --stacktrace'
                             }
                             currentBuild.result = SUCCESS
                         } catch (Exception e) {
@@ -303,6 +383,19 @@ EOF
 
                             def sfDirty = sh(script: "cd ${SCHEMA_FORGE_DIR} && git status --porcelain", returnStdout: true).trim()
                             def goDirty = sh(script: "cd ${GO_MODULE_DIR} && git status --porcelain", returnStdout: true).trim()
+                            def extraDirty = false
+                            if (env.EXTRA_MODULE_NAMES?.trim()) {
+                                env.EXTRA_MODULE_NAMES.split(',').each { name ->
+                                    def d = sh(script: "cd ${CORE_DIR}/modules/${name} && git status --porcelain", returnStdout: true).trim()
+                                    if (d) {
+                                        echo "---------------------- 🚨 Uncommitted changes in ${name} ----------------------"
+                                        sh "cd ${CORE_DIR}/modules/${name} && git status && git --no-pager diff"
+                                        extraDirty = true
+                                    } else {
+                                        echo "✅ ${name} clean"
+                                    }
+                                }
+                            }
 
                             if (sfDirty) {
                                 echo '---------------------- 🚨 Uncommitted changes in schema_forge ----------------------'
@@ -318,7 +411,7 @@ EOF
                                 echo "✅ ${GO_MODULE_NAME} clean"
                             }
 
-                            if (sfDirty || goDirty) {
+                            if (sfDirty || goDirty || extraDirty) {
                                 env.ERROR_MESSAGE = 'Pipeline produced uncommitted changes — regenerated artifacts are out of sync with the repo'
                                 error(env.ERROR_MESSAGE)
                             }

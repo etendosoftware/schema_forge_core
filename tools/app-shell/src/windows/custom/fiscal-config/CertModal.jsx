@@ -36,7 +36,7 @@ function MiniStepper({ step, ui }) {
   );
 }
 
-export default function CertModal({ context, orgId, token, apiBaseUrl, onClose, onUpload }) {
+export default function CertModal({ context, orgId, token, apiBaseUrl, onClose, onUpload, debugInitialState }) {
   const ui = useUI();
 
   const CONTEXT_SUBTITLE = {
@@ -46,13 +46,13 @@ export default function CertModal({ context, orgId, token, apiBaseUrl, onClose, 
   };
 
   const [drag,        setDrag]        = useState(false);
-  const [file,        setFile]        = useState(null);
+  const [file,        setFile]        = useState(debugInitialState?.file ?? null);
   const [pwd,         setPwd]         = useState('');
   const [showPwd,     setShowPwd]     = useState(false);
-  const [step,        setStep]        = useState('pick');
-  const [errMsg,      setErrMsg]      = useState(null);
-  const [certDetails, setCertDetails] = useState(null);
-  const [pendingNif,  setPendingNif]  = useState(null);
+  const [step,        setStep]        = useState(debugInitialState?.step ?? 'pick');
+  const [errMsg,      setErrMsg]      = useState(debugInitialState?.errMsg ?? null);
+  const [certDetails, setCertDetails] = useState(debugInitialState?.certDetails ?? null);
+  const [pendingNif,  setPendingNif]  = useState(debugInitialState?.pendingNif ?? null);
   const inputRef = useRef(null);
 
   const subtitle = CONTEXT_SUBTITLE[context] ?? ui('fiscal.cert.subtitle.default');

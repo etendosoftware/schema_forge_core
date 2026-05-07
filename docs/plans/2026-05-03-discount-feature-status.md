@@ -1,171 +1,277 @@
-# Discount Feature — Estado actual y próximos pasos
+# Discount Feature — Status and Next Steps
 
-**Fecha:** 2026-05-03  
-**Branch activo:** `feature/ETP-3662` (rebased sobre `epic/ETP-3662`)  
-**Estado:** Descuento por producto ✅ entregado — Descuento total UI ✅ visual implementado (sin persistencia) — lógica backend ⏸ pausada pendiente análisis funcional
+**Date:** 2026-05-03 (updated 2026-05-07)
+**Active branch:** `feature/ETP-3662` (rebased onto `epic/ETP-3662`)
+**Status:** Per-product discount ✅ delivered — Total discount ✅ fully implemented (backend + frontend + Sonar clean)
 
 ---
 
-## Parte 1 — Descuento por producto (IMPLEMENTADO, en PR)
+## Part 1 — Per-product discount (IMPLEMENTED, in PR)
 
-### Qué hace
+### What it does
 
-Inspirado en la UX de Holded, el panel de totales de los documentos (pedidos, facturas, presupuestos) incluye un desglose de descuentos totalmente client-side y en tiempo real:
+The document totals panel (orders, invoices, quotations) includes a fully client-side, real-time discount breakdown:
 
-**Columna de descuento**: siempre visible en la tabla de líneas y en la fila de añadir línea inline (`hiddenColumns={[]}` estático — no hay toggle).
+**Discount column**: always visible in the lines grid and the inline add-row.
 
-**Filas de desglose automáticas** (aparecen cuando `discountAmt > 0`, es decir, al menos una línea tiene descuento no cero):
-- "Subtotal sin descuento" (`Σ qty × listPrice`)
-- "Descuento por producto" — fila **de solo lectura** que muestra el importe calculado (no es un checkbox)
+**Auto-appear breakdown rows** (shown when `discountAmt > 0`, i.e. at least one line carries a non-zero discount):
+- "Subtotal without discount" (`Σ qty × listPrice`)
+- "Discount per product" — read-only computed row
 
-Cuando el desglose está visible, el panel muestra:
-- Subtotal sin descuento
-- Descuento por producto (read-only)
-- Subtotal (neto)
-- IVA
-- Total
+**`+ Add total discount` button**: appears when no total discount is active and at least one line exists. Hidden when `readOnly` or no lines.
 
-**Botón `+ Añadir descuento total`**: aparece debajo del bloque cuando no hay descuento total activo y existen líneas (guardadas o en el add-row). Se oculta si el documento es `readOnly` o no hay líneas.
-Al hacer clic, muestra la sección "Descuento total": checkbox (activado por defecto) + importe calculado + input numérico + etiqueta "%" estática. Desactivar el checkbox colapsa la sección y restaura el botón.
+All totals are 100% client-side and real-time, including in-progress add-row (`pendingLine`) and live sidebar edits (`editingLine`).
 
-El cálculo de "Descuento total" es un **placeholder visual** — sin persistencia en backend todavía.
-
-Todos los cálculos son **100% client-side y en tiempo real** — el panel actualiza sin esperar un save, incluyendo:
-- La fila en proceso de escritura en el add-row inline (`pendingLine`)
-- Las ediciones en curso en el sidebar (`editingLine`)
-
-### Windows afectados
+### Affected windows
 
 | Window | Panel |
 |--------|-------|
-| Sales Order | `DetailView.jsx` (directo) |
-| Purchase Order | `DetailView.jsx` (directo) |
-| Sales Quotation | `DetailView.jsx` (directo) |
-| Sales Invoice | `InvoiceBottomPanel.jsx` → `DocumentTotalsPanel` |
-| Purchase Invoice | `PurchaseInvoiceBottomPanel.jsx` → `DocumentTotalsPanel` |
+| Sales Order | `DetailView.jsx` (direct) |
+| Purchase Order | `DetailView.jsx` (direct) |
+| Sales Quotation | `DetailView.jsx` (direct) |
+| Sales Invoice | `InvoiceBottomPanel` → `DocumentTotalsPanel` |
+| Purchase Invoice | `PurchaseInvoiceBottomPanel` → `DocumentTotalsPanel` |
 
-### Archivos clave
+### Key files
 
-| Archivo | Qué hace |
-|---------|----------|
-| `tools/app-shell/src/components/contract-ui/DocumentTotalsPanel.jsx` | Componente genérico — renderiza el panel con desglose automático y sección "Descuento total" interactiva; `totalDiscountOpen` es estado local |
-| `tools/app-shell/src/lib/documentTotals.js` | Función pura `computeDocumentTotals()` — toda la lógica de cálculo extraída |
-| `tools/app-shell/src/lib/__tests__/documentTotals.test.js` | 11 tests unitarios cubriendo edge cases |
-| `tools/app-shell/src/components/contract-ui/DataTable.jsx` | `hiddenColumns` prop (siempre `[]`) + `onValuesChange` en InlineAddRow para `pendingLine` |
-| `tools/app-shell/src/components/contract-ui/DetailView.jsx` | Estado `pendingLineValues`, `editingLine` — `discountPerProductEnabled` y `onDiscountPerProductChange` eliminados |
-| `artifacts/purchase-order/decisions.json` | `grandTotalAmount` y `summedLineAmount` → `section: "summary"`, sin `form: false` |
-| `tools/app-shell/src/locales/en_US.json` + `es_ES.json` | Claves: `addTotalDiscount` (renombrada desde `addDiscount`), `totalDiscount` (nueva), `subtotalWithoutDiscount`, `discountPerProduct` |
-
-### Bugs resueltos durante el desarrollo
-
-1. ~~**Click en "+ Añadir descuento" guardaba la línea inline**~~: resuelto y ya no aplica — el mecanismo de checkbox/toggle fue eliminado. El botón `+ Añadir descuento total` opera solo sobre estado local de `DocumentTotalsPanel` sin interferir con `InlineAddRow`. El atributo `data-inline-add-portal="true"` se mantiene en los divs raíz del panel como salvaguarda para la interacción con el input de porcentaje.
-
-2. ~~**Panel se reseteaba al guardar la primera línea (race condition)**~~: resuelto y ya no aplica — `discountPerProductEnabled` y su lógica de `useRef` fueron eliminados. El desglose de "Descuento por producto" se deriva directamente de `discountAmt > 0`, por lo que no hay estado booleano que pueda desincronizarse.
-
-3. **"Descuento por producto" se cortaba en facturas**: columna derecha de 300px no alcanzaba. Solución: `w-[340px]` en ambos bottom panels + `whitespace-nowrap` en el label + `max-w-xs` en el panel para evitar que se expanda en pedidos/presupuestos.
-
-4. **Purchase order no mostraba el panel**: `getReadOnlyFields()` filtra `f.form && f.visibility === 'readOnly'`. El `decisions.json` tenía `form: false` en `grandTotalAmount` y `summedLineAmount`. Para `visibility: "readOnly"` el default es `form: true` — solo había que quitar `form: false` y dejar que `visibilityDefaults()` lo resuelva.
-
-5. **Ediciones en sidebar no se reflejaban en el panel**: el panel solo leía `lines` (datos guardados). Solución: `DetailView` pasa `editingLine = { ...selectedLine, ...lineEdits }` al panel, que reemplaza la línea guardada en el cómputo.
+| File | Role |
+|------|------|
+| `tools/app-shell/src/components/contract-ui/DocumentTotalsPanel.jsx` | Generic component — panel with breakdown, interactive total discount section, and read-only mode for completed docs |
+| `tools/app-shell/src/lib/documentTotals.js` | Pure function `computeDocumentTotals()` — all calculation logic |
+| `tools/app-shell/src/lib/__tests__/documentTotals.test.js` | Unit tests |
+| `tools/app-shell/src/components/contract-ui/DetailView.jsx` | Passes `pendingLineValues`, `editingLine`, `totalDiscountPct`, `readOnly` to the panel |
+| `tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceBottomPanel.jsx` | Derives `isReadOnly = documentStatus !== 'DR'` and passes to panel |
+| `artifacts/sales-invoice/custom/InvoiceBottomPanel.jsx` | Same pattern as PurchaseInvoiceBottomPanel |
 
 ---
 
-## Parte 2 — Descuento total (UI VISUAL IMPLEMENTADA — backend pausado)
+## Part 2 — Total discount (IMPLEMENTED)
 
-La interfaz visual del "Descuento total" está implementada en `DocumentTotalsPanel`: botón `+ Añadir descuento total`, checkbox, importe calculado, input de porcentaje y etiqueta "%". La sección es completamente interactiva en la UI pero no persiste datos en el backend todavía. Las preguntas funcionales del analista siguen abiertas antes de avanzar con la persistencia.
+### Architecture
 
-### UX objetivo (referencia Holded)
+The discount line is created **only just before the Complete action** (documentAction=CO). It is not maintained throughout the draft lifecycle — only at completion time.
 
-En el estado expandido del panel, debajo de "Descuento por producto":
+**Flow:**
+1. User sets a percentage via the panel input → PATCH `{ etgoTotalDiscount: N }` → stored in `EM_Etgo_Total_Discount` on the header.
+2. On Complete (`POST /action/documentAction` with `{ docAction: "CO" }` or CRUD PATCH with `{ documentAction: "CO" }`):
+   - Header handler's `handle()` pre-hook calls `AbstractOrderHeaderHandler.applyTotalDiscountBeforeComplete()`.
+   - `TotalDiscountService.recalculate()` deletes any existing ETGO_DTO line, computes `netSubtotal` (sum of all non-discount lines), inserts a new negative-amount discount line.
+3. On GET: line handlers filter the ETGO_DTO line from the response. The `etgoTotalDiscount` field is returned from the header and used to restore the panel state.
 
+**Why only at Complete (not on every PATCH/line change):**
+Triggering on every PATCH was inefficient (`etgoTotalDiscount` is controlled by arrow keys, producing continuous requests). The discount line needs to reflect the final set of lines and the correct amounts, so inserting it just before completion is the correct point.
+
+### Backend components
+
+#### `TotalDiscountService` (`com.etendoerp.go.schemaforge`)
+
+`@ApplicationScoped` CDI bean:
+- `recalculate(String headerId, boolean isInvoice)`:
+  - Reads `EM_Etgo_Total_Discount` from `C_Invoice`/`C_Order`
+  - Deletes existing discount lines (product = `ETGO_DTO`)
+  - Computes `netSubtotal` = `SUM(linenetamt)` excluding discount lines
+  - Inserts new discount line with negative amount, using tax from first product line and UOM from the dummy product
+
+Constants:
+- `DISCOUNT_PRODUCT_ID = "E4BC94E71D664E73A066DAF78BF39DB3"` (product search key: `ETGO_DTO`)
+
+#### Header handlers
+
+| Handler | Config |
+|---------|--------|
+| `SalesOrderHeaderHandler` | `applyTotalDiscountBeforeComplete(context, service, false)` |
+| `PurchaseOrderHeaderHandler` | `applyTotalDiscountBeforeComplete(context, service, false)` |
+| `SalesQuotationHeaderHandler` | `applyTotalDiscountBeforeComplete(context, service, false)` |
+| `SalesInvoiceHeaderHandler` | `applyTotalDiscountBeforeComplete(context, service, true)` |
+| `PurchaseInvoiceHeaderHandler` | `applyTotalDiscountBeforeComplete(context, service, true)` |
+
+The shared helper in `AbstractOrderHeaderHandler` intercepts two paths:
+- **CRUD:** PATCH/PUT with `{ documentAction: "CO" }` in body
+- **ACTION:** POST to `/action/documentAction` with `{ docAction: "CO" }` or `{ fieldValues: { documentAction: "CO" } }`
+
+#### Line handlers
+
+| Handler | Windows | Behavior |
+|---------|---------|----------|
+| `OrderLineHandler` | Sales Order, Purchase Order, Sales Quotation | GET: filters ETGO_DTO lines from response |
+| `InvoiceLineHandler` | Sales Invoice, Purchase Invoice | GET: filters ETGO_DTO lines from response |
+
+Line handlers no longer trigger `recalculate()` on line add/delete — that pattern was removed.
+
+### Data model
+
+| Element | Value |
+|---------|-------|
+| Dummy product search key | `ETGO_DTO` |
+| Dummy product ID | `E4BC94E71D664E73A066DAF78BF39DB3` |
+| Header column (`C_INVOICE`) | `EM_Etgo_Total_Discount` (AD_Column_ID: `8E5D45740B584747A55632EA47B85C85`) |
+| Header column (`C_ORDER`) | `EM_Etgo_Total_Discount` (AD_Column_ID: `801DA2A5D6C4436F8B0F26D0995189C4`) |
+| API field name | `etgoTotalDiscount` (the `em_` prefix is stripped by the extractor; `java_qualifier` in ETGO_SF_FIELD maps `emEtgoTotalDiscount` → `etgoTotalDiscount`) |
+| Tax strategy | Single discount line using tax from the first non-discount product line (Q-B interim) |
+
+### NEO config (all 5 windows)
+
+`etgoTotalDiscount` added to `decisions.json` as `visibility: editable, form: false` on all 5 windows. Contracts regenerated and pushed to NEO (`make regen ONLY=<window> SKIP_EXTRACT=1 PUSH_TO_NEO=1`). Field is `ISINCLUDED=Y, ISREADONLY=N` in `ETGO_SF_FIELD`.
+
+### Frontend fixes
+
+#### `lineGrossAmount` double-discount regression (fixed 2026-05-06)
+
+**Root cause:** ETP-3881 refactored `NeoDefaultsService.injectLineGrossAmountIfMissing` into
+`NeoCommercialLinePolicy` but accidentally copied a pre-fix version — one that applied
+`(1 − discount/100)` to `unitPrice` (which is already post-discount), causing double-discounting.
+It also dropped the client guard, so the server overwrote the correct client-computed value on PATCH.
+
+**Fix:** Restored both corrections in `NeoCommercialLinePolicy.injectLineGrossAmountIfMissing`:
+- Formula: `baseNetAmt = unitPrice * qty` (no discount factor)
+- Guard: if client sends non-zero `lineGrossAmount`, trust it and return early
+
+**Symptom visible:** grid column "Importe bruto de línea" showed wrong values (e.g. 43.12 instead
+of 47.92 for 44.00 × 0.9 × 1.21); totals panel showed wrong tax (e.g. 3.52 instead of 8.32).
+
+#### Race condition in `DocumentTotalsPanel` (fixed 2026-05-05)
+
+**Root cause:** when the header GET returned first (`etgoTotalDiscount=6`), the first effect set `totalDiscountOpen=true`. Then lines arrived momentarily empty, triggering the second effect which reset `totalDiscountOpen=false`. Lines then loaded (1 item) but the first effect didn't re-fire.
+
+**Result:** `totalDiscountOpen=false` but `inputPct=6` — numbers were computed correctly (e.g. 11.28 subtotal) but the discount label rows were invisible.
+
+**Fix:** the auto-collapse effect only fires when `totalDiscountPct <= 0`:
+```js
+useEffect(() => {
+  if (lines.length === 0 && pendingLine == null && totalDiscountPct <= 0) {
+    setTotalDiscountOpen(false);
+  }
+}, [lines.length, pendingLine, totalDiscountPct]);
 ```
-Subtotal sin descuento          100,00€
-  □ Descuento por producto         0,00€
-  ☑ Descuento total               -12,00€
-    [ 12 ] [ % ▼ ]
-    ☑ Mostrar descuento en documento
-─────────────────────────────────────────
-Subtotal                          88,00€
-IVA 21%                           18,48€
-Total                            106,48€
+
+#### Read-only display for completed documents (fixed 2026-05-05)
+
+When `readOnly=true` and `totalDiscountOpen=true`, the panel now shows a plain text row instead of the interactive checkbox + input:
+```
+Descuento total (6%)        -0.72€
 ```
 
-El descuento total:
-- Es un checkbox independiente del de por producto (pueden coexistir)
-- Tiene un input numérico + selector de tipo (`%` o importe fijo)
-- Se aplica sobre el `netSubtotal` (después de descuentos por producto): `100€ × 12% = -12€`
-- El IVA se recalcula sobre la base reducida
+### Classic safety analysis
 
-### Análisis técnico realizado
+- `C_INVOICE_DISCOUNT_ID = NULL` → `c_invoice_post` does not delete our lines
+- `c_invoiceline_trg2` recalculates header totals including negative lines → `GrandTotal` always correct
+- `ConvertQuotationIntoOrder.java` skips lines where `c_order_discount_id IS NOT NULL` — our lines have NULL → they get copied. Harmless: on next open/save through GO, stale lines are replaced by `recalculate()`
+- RM orders: total discount is out of scope; `c_order_post1` check (`qtyordered > 0 AND c_order_discount_id IS NULL`) only concerns RM subtype, which is not managed through GO
 
-#### Lo que NO funciona: modificar GrandTotal directamente
+### Testing status
 
-Se investigó la DB de Etendo Classic. Conclusiones:
-
-- `GrandTotal` es recalculado por el trigger `c_invoiceline_trg2` en cada modificación de línea: `GrandTotal = TotalLines + TaxAmt`
-- Durante el completado (`C_Invoice_Post`), hay un `UPDATE C_INVOICELINE SET UPDATED = now()` que vuelve a disparar ese trigger en todas las líneas → **cualquier valor manual en GrandTotal se sobreescribe**
-- `ChargeAmt` de cabecera tampoco es seguro: el trigger incremental no lo incluye en la fórmula, se pierde en la siguiente edición de línea
-- Modificar `GrandTotal` manualmente en borrador se permite por el trigger `c_invoice_trg`, pero no sobrevive el completado
-
-#### El mecanismo propuesto: `basicDiscount` + `EM_Etgo_Discount`
-
-La solapa `basicDiscounts` del documento (tabla `C_Invoice_Discount` / `C_Order_Discount`) tiene el campo `EM_Etgo_Discount` agregado por `com.etendoerp.go`. El analista funcional confirmó que crear registros allí y llenar ese campo con el porcentaje de descuento no genera problemas al completar el documento.
-
-**Flujo propuesto:**
-
-1. Usuario activa "Descuento total = 12%" en el panel
-2. Etendo GO crea un registro en `basicDiscount` con `EM_Etgo_Discount = 12`
-3. Al guardar cada línea, el descuento total también se aplica a `unitPrice` (oculto, calculado al persistir) y a `lineGrossAmount` → Classic queda consistente
-4. Al cargar el documento: leer `EM_Etgo_Discount` de `basicDiscount`, usar ese valor en el panel para mostrar el desglose correcto
-
-**La matemática del panel funciona limpiamente:**
-```
-grossSubtotal  = Σ(qty × listPrice)                         ← listPrice no se modifica
-netSubtotal    = Σ(qty × listPrice × (1 − discount%))       ← discount por producto tampoco
-totalDiscAmt   = netSubtotal × totalDiscountPct / 100
-grandTotal     = Σ(lineGrossAmount)                         ← ya tiene total discount baked in
-taxAmt         = grandTotal − (netSubtotal × (1 − totalDiscPct/100))   ← correcto
-```
-
-### Punto de pausa — preguntas abiertas para el analista funcional
-
-**P1 — ¿Qué hace Classic al completar con un registro en `basicDiscount`?**
-
-¿Los `lineGrossAmount` en la DB cambian después del completado (Classic aplicó el descuento a las líneas), o el ajuste se hace solo a nivel de asientos contables? Esto es crítico para saber si hay double-discounting.
-
-**P2 — ¿Total discount y per-product discount pueden coexistir siempre?**
-
-Holded los muestra como checkboxes independientes. ¿En el modelo de negocio de Etendo, tiene sentido aplicar ambos al mismo tiempo? ¿O son mutuamente excluyentes?
-
-**P3 — Visibilidad en el documento PDF / confirmado**
-
-Holded tiene "Mostrar descuento en documento". ¿Etendo Go tiene o planea tener generación de PDF propia? Si no, ¿importa qué se muestre?
-
-**P4 — ¿Importe fijo además de porcentaje?**
-
-Holded ofrece `%` y presumiblemente importe fijo. ¿El caso de uso real de los clientes requiere importe fijo, o con porcentaje alcanza?
-
-### Riesgo técnico flagueado
-
-Si el descuento total se hornea en `lineGrossAmount` al guardar (para consistencia con Classic), y además se guarda en `basicDiscount`, al recargar el documento el panel necesita **revertir visualmente** ese descuento del `lineGrossAmount` para no mostrar el descuento dos veces:
-
-```
-displayLineGrossAmount = lineGrossAmount / (1 − totalDiscountPct/100)
-```
-
-Esto funciona matemáticamente (redondeo manejable), pero crea un acoplamiento frágil: si alguien modifica una línea directamente en Classic, el `lineGrossAmount` cambia pero el registro en `basicDiscount` no — Etendo GO mostraría una reversa incorrecta sin ningún error visible.
-
-**Alternativa más limpia (a validar con analista):** no hornear el descuento en `lineGrossAmount` al guardar. Solo guardar en `basicDiscount`. Que Classic aplique el descuento en el completado desde ese registro. Esto elimina el problema de reversa completamente. Requiere confirmar que Classic no hace double-discounting.
+| Window | Discount created on Complete | Panel shows after Complete |
+|--------|------------------------------|----------------------------|
+| Sales Order | ✅ tested | ✅ tested |
+| Purchase Order | not yet tested | not yet tested |
+| Sales Invoice | not yet tested | not yet tested |
+| Purchase Invoice | not yet tested | not yet tested |
+| Sales Quotation | not yet tested | not yet tested |
 
 ---
 
-## Próximos pasos cuando se retome
+## ETGO_DTO dummy product — configuration validation (2026-05-07)
 
-1. Responder las 4 preguntas abiertas con el analista funcional
-2. Confirmar comportamiento de Classic en el completado con basicDiscount ya cargado
-3. Decidir si hornear o no el descuento en lineGrossAmount
-4. Diseñar el NeoHandler que cree/actualice el registro en basicDiscount
-5. ~~Implementar la UI: checkbox + input + tipo en `DocumentTotalsPanel`~~ ✅ DONE
-6. Actualizar `computeDocumentTotals` para aceptar `totalDiscountPct` y `totalDiscountType` (actualmente el input no afecta al cálculo)
-7. Conectar el input del panel con el backend (leer `EM_Etgo_Discount` de `basicDiscount` al cargar; persistir al cambiar)
-8. Tests unitarios del nuevo cálculo con `totalDiscountPct`
+The `ETGO_DTO` product must be exported in the dataset before the feature ships. The following configuration has been validated against Classic behavior.
+
+| Field | Value | Rationale |
+|-------|-------|-----------|
+| Search Key | `ETGO_DTO` | Must match `DISCOUNT_PRODUCT_ID` constant in `TotalDiscountService` |
+| Name | `Discount` | Descriptive only |
+| Product Type | **Service** | Critical — Service products do not require a warehouse/locator. An Item-type product would cause Etendo to demand `M_Locator_ID` when inserting the line, which we never provide |
+| UOM | Unit | Required field; `TotalDiscountService` reads UOM from the first non-discount line and assigns it to the discount line, so the product's UOM is a fallback only |
+| Tax Category | Standard | Not functionally critical — `TotalDiscountService` always sets the tax explicitly from each tax group; the product's tax category is not used during line creation |
+| Purchase + Sale | Both checked | Required to use the product on both purchase and sales documents |
+| Organization | `*` | Cross-org — accessible to all organizations in the tenant |
+| Active | Yes | — |
+
+**What it does NOT need:**
+- A price in any price list — all prices (`unitPrice`, `listPrice`, `grossUnitPrice`, etc.) are set programmatically by `TotalDiscountService`
+- Attribute Set — service products without variant control
+- Accounting category — this is covered by open question Q-A (GL account for discounts must be configured by the analyst before production)
+
+**Classic validation:** `C_ORDER_POST1` and `C_INVOICE_POST` use the same pattern — a Service product inserted with all prices overridden, one line per tax group. No price list lookup, no locator required.
+
+---
+
+## Sonar fixes (2026-05-07)
+
+All Sonar issues on `feature/ETP-3662` have been resolved and pushed.
+
+### `com.etendoerp.go` module
+
+| File | Issues fixed |
+|------|-------------|
+| `AbstractOrderHeaderHandler.java` | Cognitive Complexity 31→≤15 (extracted `isCompleteAction`, `isCrudComplete`, `isActionDocumentActionComplete`); constant `FIELD_DOCUMENT_ACTION`; constants `DOC_TYPE_ORDER`/`DOC_TYPE_INVOICE`; removed commented-out code with JSON-looking fragments; merged `if` statements; logger made `static final` |
+| `TotalDiscountService.java` | Constants `COL_ORDER_ID`, `COL_INVOICE_ID`, `TABLE_ORDER_LINE`, `TABLE_INVOICE_LINE`, `SQL_WHERE`; eliminated unnecessary `val` temp variable (direct return) |
+| `OrderLineHandler.java` + `InvoiceLineHandler.java` | Extracted `DiscountLineFilter.filterFromResponse()` to eliminate 57 duplicated lines (9% duplication → within threshold) |
+
+### Schema Forge module
+
+| File | Issues fixed |
+|------|-------------|
+| `DocumentTotalsPanel.jsx` | `!(totalDiscountPct > 0)` → `totalDiscountPct <= 0` (opposite operator rule) |
+| `documentTotals.js` | Default param `lines = []` not last → removed default, guard inside with `const safeLines = lines \|\| []`; nested ternary at `totalDiscountAmt` extracted to `if/let` block; Cognitive Complexity 18→15 by extracting `applyEditingLine()` helper and merging `baseTaxAmt`+`taxAmt` into a single expression |
+
+---
+
+## Open questions (analyst sign-off required)
+
+| ID | Question | Status |
+|----|----------|--------|
+| Q-A | Accounting configuration for dummy product `ETGO_DTO` — must use a "discounts" GL account (e.g. 709) | ⏸ pending analyst |
+| Q-B | Tax distribution: **Classic behavior confirmed** — one line per tax group (see analysis below). Implemented 2026-05-06. | ✅ implemented |
+| Q-C | Coexistence of per-product discount and total discount confirmed acceptable | ⏸ pending analyst |
+
+Q-A and Q-C do not block testing but must be resolved before the feature ships to production.
+Q-B is implemented — `TotalDiscountService` now creates one discount line per tax group.
+
+---
+
+### Q-B — Tax distribution: how Classic basic discounts work (research 2026-05-06)
+
+Analysis of `C_ORDER_POST1` and `C_INVOICE_POST` stored procedures in Classic confirms:
+
+**Classic creates one discount line per tax group, not a single discount line.**
+
+The stored procedure uses a nested loop:
+```sql
+-- Outer loop: each discount defined on the document
+FOR Cur_COrderDiscount IN (SELECT ... FROM C_ORDER_DISCOUNT ...) LOOP
+  -- Inner loop: GROUP BY C_TAX_ID on all non-discount lines
+  FOR Cur_TaxDiscount IN (
+    SELECT C_TAX_ID, SUM(LINENETAMT) AS LINENETAMT
+    FROM C_ORDERLINE
+    WHERE C_ORDER_ID = v_Record_ID
+      AND C_ORDER_DISCOUNT_ID IS NULL  -- only product lines
+    GROUP BY C_TAX_ID                  -- one entry per tax group
+  ) LOOP
+    -- Creates one discount line per (discount × tax group):
+    v_Discount := -1 * Cur_TaxDiscount.LINENETAMT * DiscountPct / 100;
+    INSERT INTO c_orderline (..., c_tax_id, linenetamt, ...)
+    VALUES (..., Cur_TaxDiscount.C_TAX_ID, v_Discount, ...);
+  END LOOP;
+END LOOP;
+```
+
+**Example with mixed taxes:**
+
+| Line | Product | Net | Tax |
+|------|---------|-----|-----|
+| 10 | Fernet | 39.60 | IVA Normal 21% |
+| 20 | Agua | 11.40 | IVA Reducido 10% |
+
+With 10% total discount — Classic creates **two** negative lines:
+| Discount line | Amount | Tax |
+|---|---|---|
+| ETGO_DTO (IVA 21%) | −3.96 | IVA Normal 21% |
+| ETGO_DTO (IVA 10%) | −1.14 | IVA Reducido 10% |
+
+**Implemented `TotalDiscountService` (2026-05-06):**
+`readNetSubtotalByTax()` queries `GROUP BY c_tax_id ORDER BY MIN(line)` and returns
+a `Map<taxId, netAmt>`. `recalculate()` loops over the map and calls
+`create*DiscountLine(headerId, discountAmt, taxId, lineNo)` once per tax group.
+
+→ For the example above: two lines — ETGO_DTO (IVA 21%) = −3.96, ETGO_DTO (IVA 10%) = −1.14.
+
+Single-tax documents (the common case) are unaffected — the loop runs once.

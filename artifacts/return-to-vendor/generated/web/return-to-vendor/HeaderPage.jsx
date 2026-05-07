@@ -99,17 +99,6 @@ export const api = {
       "detailUrl": "/sws/neo/return-to-vendor/lineTax/{id}",
       "supportedFilters": []
     },
-    "tax": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/return-to-vendor/tax",
-      "detailUrl": "/sws/neo/return-to-vendor/tax/{id}",
-      "supportedFilters": []
-    },
     "basicDiscounts": {
       "get": true,
       "getById": true,
@@ -119,6 +108,17 @@ export const api = {
       "delete": true,
       "listUrl": "/sws/neo/return-to-vendor/basicDiscounts",
       "detailUrl": "/sws/neo/return-to-vendor/basicDiscounts/{id}",
+      "supportedFilters": []
+    },
+    "tax": {
+      "get": true,
+      "getById": true,
+      "post": true,
+      "put": true,
+      "patch": true,
+      "delete": true,
+      "listUrl": "/sws/neo/return-to-vendor/tax",
+      "detailUrl": "/sws/neo/return-to-vendor/tax/{id}",
       "supportedFilters": []
     },
     "paymentOutPlan": {
@@ -330,20 +330,20 @@ export const api = {
       "url": "/sws/neo/return-to-vendor/lineTax/selectors/tax"
     },
     {
-      "entity": "tax",
-      "field": "tax",
-      "column": "C_Tax_ID",
-      "reference": "Tax",
-      "inputMode": "selector",
-      "url": "/sws/neo/return-to-vendor/tax/selectors/tax"
-    },
-    {
       "entity": "basicDiscounts",
       "field": "discount",
       "column": "C_Discount_ID",
       "reference": "Discount",
       "inputMode": "selector",
       "url": "/sws/neo/return-to-vendor/basicDiscounts/selectors/discount"
+    },
+    {
+      "entity": "tax",
+      "field": "tax",
+      "column": "C_Tax_ID",
+      "reference": "Tax",
+      "inputMode": "selector",
+      "url": "/sws/neo/return-to-vendor/tax/selectors/tax"
     },
     {
       "entity": "paymentOutPlan",

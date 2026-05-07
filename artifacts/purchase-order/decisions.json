@@ -7,8 +7,22 @@
     "relatedDocuments": true,
     "hideDeleteWhenComplete": true,
     "menuActions": [
-      { "key": "cancel", "label": "Cancel", "labelKey": "cancel", "destructive": true, "visibleWhenStatus": "CO" },
-      { "key": "reactivate", "label": "Reactivate", "labelKey": "reactivate", "visibleWhenStatus": "CO", "visibleWhenFieldFalse": "hasLinkedDocuments", "documentAction": "RE", "successKey": "actionCompleted" }
+      {
+        "key": "cancel",
+        "label": "Cancel",
+        "labelKey": "cancel",
+        "destructive": true,
+        "visibleWhenStatus": "CO"
+      },
+      {
+        "key": "reactivate",
+        "label": "Reactivate",
+        "labelKey": "reactivate",
+        "visibleWhenStatus": "CO",
+        "visibleWhenFieldFalse": "hasLinkedDocuments",
+        "documentAction": "RE",
+        "successKey": "actionCompleted"
+      }
     ],
     "draftMode": {
       "enabled": true,
@@ -295,6 +309,10 @@
           "grid": false,
           "reference": "Shipper",
           "inputMode": null
+        },
+        "etgoTotalDiscount": {
+          "visibility": "editable",
+          "form": false
         }
       }
     },
@@ -312,7 +330,14 @@
           "order": 1,
           "gridOrder": 1,
           "readOnlyLogic": null,
-          "forceCalloutFields": ["listPrice", "unitPrice", "tax", "uOM", "grossUnitPrice", "discount"]
+          "forceCalloutFields": [
+            "listPrice",
+            "unitPrice",
+            "tax",
+            "uOM",
+            "grossUnitPrice",
+            "discount"
+          ]
         },
         "operativeQuantity": {
           "form": false,
@@ -369,7 +394,11 @@
           "gridOrder": 6,
           "inputMode": "selector",
           "readOnlyLogic": null,
-          "forceCalloutFields": ["lineGrossAmount", "grossUnitPrice", "lineNetAmount"]
+          "forceCalloutFields": [
+            "lineGrossAmount",
+            "grossUnitPrice",
+            "lineNetAmount"
+          ]
         },
         "listPrice": {
           "grid": true,

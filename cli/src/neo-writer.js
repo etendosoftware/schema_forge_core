@@ -359,12 +359,16 @@ export async function populateSpec(client, params) {
  * Incremental: matches entities by ad_tab_id, fields by ad_column_id.
  */
 async function populateWindowSpec(client, { specId, windowId, moduleId, excludeSystemColumns, includeAllMethods, audit }) {
-  // Get active tabs ordered by seqno
+  // Get active tabs ordered by seqno. name + ad_tab_id are tiebreakers:
+  // when two modules attach tabs to the same window with the same SeqNo the
+  // primary sort is ambiguous, and the entity SEQNO assigned below is derived
+  // from iteration order — so without a stable tiebreaker the output flips
+  // across runs and pollutes ETGO_SF_ENTITY.xml.
   const tabsResult = await client.query(
     `SELECT ad_tab_id, name, ad_table_id, seqno
      FROM ad_tab
      WHERE ad_window_id = $1 AND isactive = 'Y'
-     ORDER BY seqno`,
+     ORDER BY seqno, name, ad_tab_id`,
     [windowId],
   );
 
@@ -420,9 +424,14 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
     if (entityCreated) changes.entities.created++;
     else changes.entities.updated++;
 
-    // Load existing fields for this entity, indexed by ad_column_id
+    // Load existing fields for this entity, indexed by ad_column_id.
+    // ORDER BY is required: without it Postgres can return duplicate
+    // (entity_id, ad_column_id) rows in any order, and Map.set() keeps the
+    // last one — producing a non-deterministic flip across runs.
     const existingFieldsResult = await client.query(
-      `SELECT etgo_sf_field_id, ad_column_id FROM etgo_sf_field WHERE etgo_sf_entity_id = $1`,
+      `SELECT etgo_sf_field_id, ad_column_id FROM etgo_sf_field
+       WHERE etgo_sf_entity_id = $1
+       ORDER BY created, etgo_sf_field_id`,
       [entityId],
     );
     const existingFieldByColumn = new Map();
@@ -433,11 +442,16 @@ async function populateWindowSpec(client, { specId, windowId, moduleId, excludeS
     }
 
     // Get active columns for this tab's table
+    // ORDER BY needs a tiebreaker: AD_Column.position is not unique within a
+    // table. When two columns share the same position, the row order is
+    // undefined — and since fieldSeqCounter assigns SEQNO = counter * 10, any
+    // flip across runs produces SEQNO churn in ETGO_SF_FIELD.xml. columnname
+    // + ad_column_id pin the order deterministically.
     const colsResult = await client.query(
       `SELECT ad_column_id, columnname, position
        FROM ad_column
        WHERE ad_table_id = $1 AND isactive = 'Y'
-       ORDER BY position`,
+       ORDER BY position, columnname, ad_column_id`,
       [tab.ad_table_id],
     );
 
@@ -571,12 +585,14 @@ async function populateProcessSpec(client, { specId, processId, moduleId, audit 
     }
   }
 
-  // Get active process parameters
+  // Get active process parameters. AD_Process_Para.SeqNo is not unique per
+  // process — name + ad_process_para_id pin the order so SEQNO assigned via
+  // fieldCount doesn't flip across runs.
   const parasResult = await client.query(
     `SELECT ad_process_para_id, name, defaultvalue, seqno
      FROM ad_process_para
      WHERE ad_process_id = $1 AND isactive = 'Y'
-     ORDER BY seqno`,
+     ORDER BY seqno, name, ad_process_para_id`,
     [processId],
   );
 

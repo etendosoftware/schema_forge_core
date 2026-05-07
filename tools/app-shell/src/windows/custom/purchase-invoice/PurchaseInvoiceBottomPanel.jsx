@@ -18,6 +18,7 @@ export default function PurchaseInvoiceBottomPanel({
   recordId, data, token, apiBaseUrl, api, summary,
   notesField, onFieldChange, notesFocused, setNotesFocused,
   lines, pendingLine, editingLine, lineConfig,
+  totalDiscountPct, onTotalDiscountChange,
 }) {
   const ui = useUI();
   const currency = data?.['currency$_identifier'] || '';
@@ -104,6 +105,8 @@ export default function PurchaseInvoiceBottomPanel({
             formatAmount={(val, curr) => formatCurrency(curr || currency || 'USD', val)}
             currency={currency}
             readOnly={isReadOnly}
+            totalDiscountPct={Number(data?.etgoTotalDiscount ?? totalDiscountPct ?? 0)}
+            onTotalDiscountChange={onTotalDiscountChange}
           />
         </div>
       </div>

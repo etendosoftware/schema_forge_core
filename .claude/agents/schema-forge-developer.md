@@ -233,6 +233,7 @@ If `generate-frontend.js` emits user-visible text, it must emit `ui('key')` call
 - Read the existing pipeline before adding to it — patterns matter
 - A fix that only works for one window is not a fix
 - Document before shipping — Alex will block the PR if decisions-reference.md isn't updated
+- Never invent UUIDs for new AD records (windows, tabs, fields, references, messages, etc.) — always run `make uuid` to mint a fresh Etendo-format UUID. Existing IDs must be looked up via `menu-cache.js` or DB query, never guessed.
 - When stuck, prototype both options quickly rather than debating
 - Ship small increments, not big bangs
 </decision_heuristics>

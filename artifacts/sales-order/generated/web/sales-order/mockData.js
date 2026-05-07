@@ -18,6 +18,7 @@ export const header = [
     "description": "Standard order for Q1 delivery",
     "deliveryStatus": "DR",
     "invoiceStatus": "DR",
+    "etgoTotalDiscount": 99.44,
     "processed": "Sample processed"
   },
   {
@@ -37,6 +38,7 @@ export const header = [
     "description": "Rush order - priority shipping required",
     "deliveryStatus": "CO",
     "invoiceStatus": "CO",
+    "etgoTotalDiscount": 96.94,
     "processed": "Sample processed"
   },
   {
@@ -56,6 +58,7 @@ export const header = [
     "description": "Bulk purchase for warehouse restocking",
     "deliveryStatus": "VO",
     "invoiceStatus": "VO",
+    "etgoTotalDiscount": 12.48,
     "processed": "Sample processed"
   },
   {
@@ -75,6 +78,7 @@ export const header = [
     "description": "Sample order for client evaluation",
     "deliveryStatus": "IP",
     "invoiceStatus": "IP",
+    "etgoTotalDiscount": 96.31,
     "processed": "Sample processed"
   },
   {
@@ -94,6 +98,7 @@ export const header = [
     "description": "Recurring monthly supply order",
     "deliveryStatus": "DR",
     "invoiceStatus": "DR",
+    "etgoTotalDiscount": 31.27,
     "processed": "Sample processed"
   },
   {
@@ -113,6 +118,7 @@ export const header = [
     "description": "Special pricing agreement applies",
     "deliveryStatus": "CO",
     "invoiceStatus": "CO",
+    "etgoTotalDiscount": 76.52,
     "processed": "Sample processed"
   },
   {
@@ -132,6 +138,7 @@ export const header = [
     "description": "Consolidated order from multiple requests",
     "deliveryStatus": "VO",
     "invoiceStatus": "VO",
+    "etgoTotalDiscount": 2.66,
     "processed": "Sample processed"
   },
   {
@@ -151,6 +158,7 @@ export const header = [
     "description": "Trial order for new product line",
     "deliveryStatus": "IP",
     "invoiceStatus": "IP",
+    "etgoTotalDiscount": 10.03,
     "processed": "Sample processed"
   },
   {
@@ -170,6 +178,7 @@ export const header = [
     "description": "Replacement for damaged goods",
     "deliveryStatus": "DR",
     "invoiceStatus": "DR",
+    "etgoTotalDiscount": 93.97,
     "processed": "Sample processed"
   },
   {
@@ -189,6 +198,7 @@ export const header = [
     "description": "Pre-season inventory build-up",
     "deliveryStatus": "CO",
     "invoiceStatus": "CO",
+    "etgoTotalDiscount": 1.1,
     "processed": "Sample processed"
   },
   {
@@ -208,6 +218,7 @@ export const header = [
     "description": "Customer-specific configuration",
     "deliveryStatus": "VO",
     "invoiceStatus": "VO",
+    "etgoTotalDiscount": 79.99,
     "processed": "Sample processed"
   },
   {
@@ -227,6 +238,7 @@ export const header = [
     "description": "Government contract fulfillment",
     "deliveryStatus": "IP",
     "invoiceStatus": "IP",
+    "etgoTotalDiscount": 53.61,
     "processed": "Sample processed"
   }
 ];
