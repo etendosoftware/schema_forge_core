@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { useUI } from '@/i18n';
 import RelatedDocuments from './RelatedDocuments';
+import SifDataTabs from './SifDataTabs';
 import ImportFromShipmentModal from './ImportFromShipmentModal';
 import DocumentTotalsPanel from '@/components/contract-ui/DocumentTotalsPanel.jsx';
 
@@ -38,6 +39,7 @@ export default function InvoiceBottomPanel({
 
   return (
     <div className="flex flex-col">
+      <SifDataTabs data={data} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} />
       <div className="flex">
       {/* ── Left column: Docs + Notes ── */}
       <div className="flex-1 min-w-0 py-4 px-1 bg-muted/30 rounded-bl-lg">
