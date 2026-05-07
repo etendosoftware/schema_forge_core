@@ -1,8 +1,8 @@
 {
   "version": "0.4.0",
   "generatedAt": "2026-04-30T15:42:46.907Z",
-  "updatedAt": "2026-05-06T18:00:41.228Z",
-  "checksum": "cae54d8ffc03cff4",
+  "updatedAt": "2026-05-07T04:07:41.301Z",
+  "checksum": "91075857ef9db5c5",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -62,7 +62,8 @@
       },
       "dateFilterKey": "orderDate",
       "noHeaderBorder": true,
-      "layoutType": "default"
+      "layoutType": "default",
+      "linesLayout": "inlineEditable"
     },
     "entities": {
       "quotation": {
@@ -888,7 +889,8 @@
         }
       },
       "dateFilterKey": "orderDate",
-      "noHeaderBorder": true
+      "noHeaderBorder": true,
+      "linesLayout": "inlineEditable"
     },
     "entities": {
       "quotation": {

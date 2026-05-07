@@ -48,6 +48,7 @@
       }
     },
     "noHeaderBorder": true,
+    "linesLayout": "inlineEditable",
     "dateFilterKey": "orderDate",
     "hideSaveStatuses": [
       "CA",

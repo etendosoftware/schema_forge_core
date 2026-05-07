@@ -415,6 +415,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         draftMode={draftMode}
         salesTheme
         labelOverrides={labelOverrides}
+        linesLayout="inlineEditable"
         {...props}
       />
     );

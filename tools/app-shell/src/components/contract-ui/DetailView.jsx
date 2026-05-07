@@ -153,6 +153,7 @@ export function DetailView({
   labelOverrides,
   enableSecondaryRowDelete = false,
   sidebarClassName = 'w-96 shrink-0 overflow-y-auto pt-0 pl-0 pr-4 pb-5',
+  linesLayout = 'classic',
 }) {
   // DetailView never needs the parent list: on `/new` there is no record to match, and on
   // `/:id` the currentItem shortcut only helps when we arrived from ListView (items already
@@ -250,7 +251,14 @@ export function DetailView({
     }
     return secondaryAddRowRefs.current[key];
   }, []);
+  // Imperative ref to InlineLinesPanel — only attached when linesLayout==='inlineEditable'.
+  // Used by flushPendingLines so the global "Guardar" closes any open inline-edit row
+  // (firing the focused input's blur → autosave PATCH) before the parent record saves.
+  const inlineLinesRef = useRef(null);
   const flushPendingLines = useCallback(async () => {
+    if (linesLayout === 'inlineEditable' && inlineLinesRef.current?.flushPendingEdits) {
+      await inlineLinesRef.current.flushPendingEdits();
+    }
     if (addingLine && primaryAddRowRef.current?.flush) {
       const ok = await primaryAddRowRef.current.flush({ closeAfterSave: true });
       if (ok === false) return false;
@@ -264,7 +272,7 @@ export function DetailView({
       }
     }
     return true;
-  }, [addingLine, addingSecondaryLine]);
+  }, [addingLine, addingSecondaryLine, linesLayout]);
   const [customModalState, setCustomModalState] = useState({ key: null, rowId: null });
   const [activeTab, setActiveTab] = useState(0);
 
@@ -1340,12 +1348,12 @@ export function DetailView({
         {primaryTabs && activePrimaryTab !== 'general' ? (() => {
           const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
           return activeTab?.Panel ? (
-            <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6'}`}>
+            <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidePanel || sidebarContent ? (linesLayout === 'inlineEditable' ? 'pr-2' : 'pl-6 pr-2') : (linesLayout === 'inlineEditable' ? 'pr-6' : 'px-6')}`}>
               <activeTab.Panel entity={entity} data={data} token={token} apiBaseUrl={apiBaseUrl} catalogs={catalogs} api={api} editing={hook.editing} onChange={handleChangeWithCallout} />
             </div>
           ) : null;
         })() : null}
-        <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6'}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
+        <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidePanel || sidebarContent ? (linesLayout === 'inlineEditable' ? 'pr-2' : 'pl-6 pr-2') : (linesLayout === 'inlineEditable' ? 'pr-6' : 'px-6')}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
           <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-2`}>
@@ -1426,7 +1434,13 @@ export function DetailView({
                           </span>
                         )}
                         {activeTab === idx && (
-                          <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full" />
+                          // Inline-editable layout uses the Figma indicator (full-width
+                          // 2px black bar). Other windows keep the classic narrower bar.
+                          linesLayout === 'inlineEditable' ? (
+                            <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground" />
+                          ) : (
+                            <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full" />
+                          )
                         )}
                       </button>
                     ))}
@@ -1435,7 +1449,12 @@ export function DetailView({
 
                 {/* Tab content: Lines */}
                 {tabs[activeTab]?.key === 'lines' && DetailTable && (
-                  hook.childrenLoading ? (
+                  // Only show the loading spinner on INITIAL load (no children yet).
+                  // Subsequent refetches (e.g., after PATCH on a child) keep the table
+                  // mounted to preserve transient state like InlineLinesPanel's
+                  // editingRowId — otherwise editing mode is silently dropped on every
+                  // autosave round-trip.
+                  hook.childrenLoading && hook.children.length === 0 ? (
                     <div className="flex items-center justify-center py-10 text-muted-foreground">
                       <div className="h-5 w-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                     </div>
@@ -1506,16 +1525,137 @@ export function DetailView({
                         </div>
                       )}
                       <DetailTable
+                        ref={inlineLinesRef}
                         data={hook.children}
                         entity={detailEntity}
                         token={token}
                         apiBaseUrl={apiBaseUrl}
-                        onRowClick={DetailForm ? (row) => { const line = { ...row }; roundAmounts(line); setSelectedLine(line); } : undefined}
+                        linesLayout={linesLayout}
+                        isDocumentReadOnly={isDocumentReadOnly}
+                        onRowClick={DetailForm && linesLayout !== 'inlineEditable' ? (row) => { const line = { ...row }; roundAmounts(line); setSelectedLine(line); } : undefined}
                         selectedRowId={selectedLine?.id}
                         onSelectionChange={setSelectedChildRows}
                         showFooterTotals={showDetailFooterTotals ?? !summary.some(f => f.type === 'amount')}
                         selectorContext={selectorContextByEntity[detailEntity]}
                         hiddenColumns={[]}
+                        onUpdateRow={linesLayout === 'inlineEditable' && !isDocumentReadOnly ? async (row, fieldKey, value, opts) => {
+                          // Inline autosave with callout chain. NEO Headless expects API keys
+                          // (camelCase), an unwrapped body, and numeric strings coerced for
+                          // BigDecimal — mirrors the side-panel save at line ~1750. When a
+                          // trigger field changes (e.g., product), `handleLineFieldChange`
+                          // populates `derivedUpdates` with all callout-driven fields (price,
+                          // tax, description, etc.) so they can be PATCHed in one shot.
+                          const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', row.id)
+                            || `${apiBaseUrl}/${detailEntity}/${row.id}`;
+                          const coerce = (v) => (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v) ? parseFloat(v) : v);
+                          const payloadValue = coerce(value);
+
+                          // Build the row snapshot the callout sees: existing row + the change.
+                          // Strip null/empty inherited keys that the parent has set (e.g.
+                          // businessPartner, priceList on OrderLine). buildCalloutFormState
+                          // by contract does NOT overwrite a row value with the header's,
+                          // so without this prune the callout would receive
+                          // businessPartner=null and NEO returns listPrice=0. The addRow
+                          // flow doesn't hit this because it starts from an empty values
+                          // object, but existing rows include denormalized parent keys.
+                          const headerSnapshot = hook.editing || hook.selected || {};
+                          const cleanRow = { ...row };
+                          for (const k of Object.keys(headerSnapshot)) {
+                            const v = cleanRow[k];
+                            if (v === null || v === undefined || v === '') {
+                              delete cleanRow[k];
+                            }
+                          }
+                          const snapshot = { ...cleanRow, [fieldKey]: payloadValue };
+                          if (opts?.identifier !== undefined) {
+                            snapshot[fieldKey + '$_identifier'] = opts.identifier;
+                          }
+                          // Mirror DataTable's selector-aux merge (lines 468–512). The
+                          // selector item carries `_aux` (product_PSTD, _PLIM, _UOM, _CURR)
+                          // and top-level fields (standardPrice, isTaxIncluded, currency)
+                          // that the callout needs to compute the price. Without this, the
+                          // callout has no access to the price-list metadata and returns 0.
+                          const selectedItem = opts?.selectedItem;
+                          if (selectedItem && typeof selectedItem === 'object') {
+                            if (selectedItem._aux) {
+                              for (const [suffix, auxVal] of Object.entries(selectedItem._aux)) {
+                                snapshot[fieldKey + suffix] = auxVal;
+                              }
+                            }
+                            for (const [topField, topVal] of Object.entries(selectedItem)) {
+                              if (topField === 'id' || topField === '_aux' || topField === 'label'
+                                  || topField === 'name' || topField === 'searchKey'
+                                  || typeof topVal === 'object' || topVal === null) continue;
+                              if (topField === 'standardPrice' && topVal != null) {
+                                const isGross = selectedItem.isTaxIncluded !== false;
+                                if (isGross) {
+                                  snapshot.grossUnitPrice = topVal;
+                                  snapshot.grossListPrice = topVal;
+                                } else {
+                                  snapshot.unitPrice = topVal;
+                                  snapshot.listPrice = topVal;
+                                }
+                                continue;
+                              }
+                              const ctxKey = `${fieldKey}_${topField}`;
+                              if (!(ctxKey in snapshot)) snapshot[ctxKey] = topVal;
+                            }
+                          }
+
+                          // Run callout (no-op for fields without one). Captures derived fields
+                          // through the applyUpdates callback so we can fold them into the PATCH.
+                          let derivedUpdates = {};
+                          try {
+                            await handleLineFieldChange(fieldKey, payloadValue, snapshot, (updates) => {
+                              derivedUpdates = { ...updates };
+                            });
+                          } catch {
+                            // Callout is best-effort; PATCH continues with the user-typed value only.
+                          }
+
+                          // PATCH body: send the full row + derived + change. NEO Headless
+                          // doesn't reliably recompute derived fields (lineGrossAmount,
+                          // standardPrice) when only a partial body arrives — observed
+                          // when changing product to one with a different price. The
+                          // side-panel save (line ~1750) sends the whole row for the same
+                          // reason, so we mirror that here for parity.
+                          const fieldValues = {};
+                          // 1. Start from the cleaned row (skips already-null inherited keys).
+                          for (const [k, v] of Object.entries(cleanRow)) {
+                            if (k.endsWith('$_identifier')) continue;
+                            // Skip internal markers and metadata that aren't valid fields.
+                            if (k === '_identifier' || k === '_entityName' || k === '$ref' || k === 'id') continue;
+                            fieldValues[k] = coerce(v);
+                          }
+                          // 2. Overlay derived fields from the callout (incl. lineGrossAmount,
+                          //    standardPrice, unitPrice, listPrice).
+                          for (const [k, v] of Object.entries(derivedUpdates)) {
+                            if (k.endsWith('$_identifier')) continue;
+                            fieldValues[k] = coerce(v);
+                          }
+                          // 3. The user-changed field always wins (last-write).
+                          fieldValues[fieldKey] = payloadValue;
+
+                          const res = await fetch(childUrl, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                            body: JSON.stringify(fieldValues),
+                          });
+                          if (res.ok) {
+                            // Local update folds in derived values (incl. $_identifier keys for
+                            // FK callout outputs like tax$_identifier) so the row UI reflects
+                            // the full snapshot without a refetch.
+                            const localUpdate = { ...derivedUpdates, [fieldKey]: payloadValue };
+                            if (opts?.identifier !== undefined) {
+                              localUpdate[fieldKey + '$_identifier'] = opts.identifier;
+                            }
+                            hook.handleUpdateChild?.(row.id, localUpdate);
+                          } else {
+                            const msg = await extractErrorMessage(res);
+                            toast.error(msg || ui('networkError'));
+                            throw new Error(msg || 'PATCH failed');
+                          }
+                        } : undefined}
                         onDeleteRow={(api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly ? async (row) => {
                           if (!(await confirmDelete())) return;
                           try {
@@ -1652,8 +1792,9 @@ export function DetailView({
                       )}
                     </div>
 
-                    {/* Right sidebar: line detail form */}
-                    {DetailForm && (selectedLine || isClosingLine) && (
+                    {/* Right sidebar: line detail form. Suppressed in inlineEditable mode —
+                        edit happens inside the row via InlineLinesPanel. */}
+                    {linesLayout !== 'inlineEditable' && DetailForm && (selectedLine || isClosingLine) && (
                       <div className={`w-[48rem] shrink-0 border-l border-border pl-4 self-stretch overflow-hidden ${isClosingLine ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}>
                         <div className="flex items-center justify-between mb-3">
                           <span className="text-sm font-medium text-foreground">{ui('entityDetail', { label: tMenu(detailLabel || 'Line') })}</span>

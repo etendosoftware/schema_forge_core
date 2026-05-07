@@ -1,0 +1,109 @@
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const src = readFileSync(join(__dirname, '..', 'InlineLinesPanel.jsx'), 'utf8');
+
+describe('InlineLinesPanel', () => {
+  it('exports a forwardRef default component', () => {
+    assert.match(src, /forwardRef\(function InlineLinesPanel/);
+    assert.match(src, /export default InlineLinesPanel/);
+  });
+
+  it('declares the expected prop surface', () => {
+    for (const prop of [
+      'columns', 'data', 'entity', 'token', 'apiBaseUrl',
+      'selectedRowId', 'isDocumentReadOnly',
+      'onSelectionChange', 'onUpdateRow', 'onDeleteRow',
+    ]) {
+      assert.match(src, new RegExp(`\\b${prop}\\b`), `missing prop reference: ${prop}`);
+    }
+  });
+
+  it('exposes flushPendingEdits and closeEditing through the imperative ref', () => {
+    assert.match(src, /useImperativeHandle/);
+    assert.match(src, /flushPendingEdits/);
+    assert.match(src, /closeEditing/);
+  });
+
+  it('renders only pencil and trash hover-action icons', () => {
+    for (const icon of ['Pencil', 'Trash2']) {
+      assert.match(src, new RegExp(`\\b${icon}\\b`), `missing icon import/use: ${icon}`);
+    }
+    // Copy / Mail / More icons were removed; assert they are NOT imported.
+    for (const removed of ['Copy', 'Mail', 'MoreHorizontal']) {
+      assert.doesNotMatch(src, new RegExp(`\\b${removed}\\b`), `unexpected icon present: ${removed}`);
+    }
+  });
+
+  it('wires pencil → handleEditClick and trash → handleDeleteClick', () => {
+    assert.match(src, /aria-label=\{ui\('editLineTooltip'\)[^}]*\}\s*\n\s*title=\{ui\('editLineTooltip'\)[^}]*\}\s*\n\s*onClick=\{\(\)\s*=>\s*handleEditClick/);
+    assert.match(src, /aria-label=\{ui\('deleteRowTooltip'\)[^}]*\}\s*\n\s*title=\{ui\('deleteRowTooltip'\)[^}]*\}\s*\n\s*onClick=\{\(\)\s*=>\s*handleDeleteClick/);
+  });
+
+  it('locks edit and delete actions when isDocumentReadOnly is true', () => {
+    assert.match(src, /if \(isDocumentReadOnly\) return;/);
+    assert.match(src, /isDocumentReadOnly && !isDocumentReadOnly|!isDocumentReadOnly/);
+    // The edit handler must early-return on locked docs; same for delete.
+    assert.match(src, /handleEditClick[\s\S]*?if \(isDocumentReadOnly\) return;/);
+    assert.match(src, /handleDeleteClick[\s\S]*?if \(isDocumentReadOnly\) return;/);
+  });
+
+  it('only allows a single row in edit mode at a time', () => {
+    // editingRowId is a scalar (not a Set/array), so toggling another row replaces the previous one.
+    assert.match(src, /\[editingRowId, setEditingRowId\] = useState\(null\)/);
+    assert.match(src, /setEditingRowId\(prev => \(prev === row\.id \? null : row\.id\)\)/);
+  });
+
+  it('autosaves on field commit via onUpdateRow', () => {
+    assert.match(src, /commitField/);
+    assert.match(src, /onUpdateRow\?\.\(row, col\.key, value/);
+  });
+
+  it('makes selector and search columns inline-editable via SelectorInput', () => {
+    const editableTypesMatch = src.match(/EDITABLE_TYPES = new Set\(\[([\s\S]+?)\]\)/);
+    assert.ok(editableTypesMatch, 'EDITABLE_TYPES set not found');
+    assert.match(editableTypesMatch[1], /'selector'/);
+    assert.match(editableTypesMatch[1], /'search'/);
+    // Imports the shared dropdown and builds the selector URL the same way DataTable does.
+    assert.match(src, /import \{ SelectorInput \} from '\.\/SelectorInput\.jsx'/);
+    assert.match(src, /selectors\/\$\{col\.column\}/);
+    // Selector commits include the FK identifier so the local row label can refresh.
+    assert.match(src, /onChange=\{\(id, label\) => onCommit\(id, \{ identifier: label \|\| '' \}\)\}/);
+  });
+
+  it('opens ProductSearchDrawer for lookup/popup fields instead of the dropdown', () => {
+    assert.match(src, /import ProductSearchDrawer from '\.\/ProductSearchDrawer\.jsx'/);
+    assert.match(src, /function LookupTrigger\(/);
+    assert.match(src, /if \(col\.lookup \|\| col\.popup\) \{/);
+    // The drawer's onSelect must commit id, identifier, AND the full item so the parent
+    // can extract the auxiliary values (product_PSTD, product_PLIM, …) that the callout
+    // needs to compute the price.
+    assert.match(src, /onSelect=\{\(item\) => \{[\s\S]*?onCommit\(id, \{ identifier: label, selectedItem: item \}\);/);
+  });
+
+  it('uses Figma design tokens (40px row, Inter font, #E8EAEF separator)', () => {
+    assert.match(src, /rowHeight: 40/);
+    assert.match(src, /'#E8EAEF'/);
+    assert.match(src, /'#121217'/);
+    assert.match(src, /Inter/);
+  });
+
+  it('lifts the row with a shadow on hover and while editing', () => {
+    // Hover state: shadow + raised z-index so the shadow is not clipped by adjacent rows.
+    assert.match(src, /hover:shadow-\[/);
+    assert.match(src, /hover:z-10/);
+    // Editing state preserves the same elevation so the actively edited row stays prominent.
+    assert.match(src, /isEditing\s*\?\s*'shadow-\[[^']*\]\s+relative\s+z-10'/);
+  });
+
+  it('uses i18n hooks for tooltips and labels (no hardcoded English)', () => {
+    assert.match(src, /useUI/);
+    assert.match(src, /useLabel/);
+    assert.match(src, /useLocale/);
+    assert.match(src, /resolveColumnLabel/);
+  });
+});
