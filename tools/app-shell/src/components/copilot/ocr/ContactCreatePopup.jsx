@@ -25,6 +25,61 @@ async function fetchSelectorPage(url, headers) {
   };
 }
 
+/**
+ * Validate the popup's form. Returns the i18n key of the first failing rule
+ * or null when the form is acceptable. Pure so it can live outside the
+ * component and not contribute to its cognitive complexity.
+ */
+function validateContactForm(form, ui) {
+  if (!form.name.trim()) return ui('ocrContactNameRequired');
+  if (form.type === 'P' && !form.firstName.trim()) return ui('ocrContactFirstNameRequired');
+  if (!form.country) return ui('ocrContactCountryRequired');
+  return null;
+}
+
+/**
+ * Build the BP fields object the resolver expects. BatchService bypasses
+ * NeoHandler hooks, so BusinessPartnerHandler's auto-inject of `searchKey`
+ * never runs through /batch — we replicate the hook's effect here.
+ */
+function buildBpFields(form) {
+  const identifierRaw = form.etgoIdentifier.trim();
+  const identifierClean = identifierRaw.replace(/(?:^<)|(?:>$)/g, '');
+  const bpFields = {
+    name: form.name.trim(),
+    searchKey: identifierClean || form.name.trim(),
+    etgoIdentifier: identifierRaw || null,
+    taxID: form.taxId.trim() || null,
+    isVendor: true,
+    // The SF field default for this list reference is literally "'1'" (with
+    // surrounding quotes), which the runtime validator rejects. Send the
+    // bare value so it bypasses that broken default.
+    oBTIKTaxIDKey: '1',
+  };
+  if (form.type === 'P') {
+    bpFields.em_etgo_firstname = form.firstName.trim();
+    bpFields.em_etgo_lastname = form.lastName.trim() || null;
+  }
+  return bpFields;
+}
+
+function buildLocationFields(form) {
+  const locName = [form.city, form.addressLine1].filter(Boolean).join(', ')
+    || [form.regionLabel || form.region, form.countryLabel || form.country].filter(Boolean).join(', ')
+    || 'Location';
+  return {
+    name: locName,
+    addressLine1: form.addressLine1.trim() || null,
+    addressLine2: form.addressLine2.trim() || null,
+    cityName: form.city.trim() || null,
+    postalCode: form.postalCode.trim() || null,
+    country: form.country || null,
+    region: form.region || null,
+    shipToAddress: form.shipToAddress ? 'Y' : 'N',
+    invoiceToAddress: form.invoiceToAddress ? 'Y' : 'N',
+  };
+}
+
 const EMPTY_FORM = {
   type: 'C', // 'C' = Company, 'P' = Person
   name: '',
@@ -371,69 +426,23 @@ export default function ContactCreatePopup({
     setRegionPickerOpen(false);
   };
 
-  const validate = () => {
-    if (!form.name.trim()) return ui('ocrContactNameRequired');
-    if (form.type === 'P' && !form.firstName.trim()) return ui('ocrContactFirstNameRequired');
-    if (!form.country) return ui('ocrContactCountryRequired');
-    return null;
-  };
-
   const submit = () => {
     setError(null);
-    const validationError = validate();
+    const validationError = validateContactForm(form, ui);
     if (validationError) {
       setError(validationError);
       return;
     }
     setSubmitting(true);
-
-    // Build the BP payload exactly as the prior client-side createContact() did,
-    // so the server-side ContactResolver can pass it through unchanged to the
-    // contacts/businessPartner spec. The location goes nested so the resolver
-    // can detect it and chain a contacts/locationAddress create with the new
-    // BP id as parent — all inside the ingest transaction.
-    // BatchService bypasses NeoHandler hooks, so BusinessPartnerHandler's
-    // auto-inject of `searchKey` and post-save rewrite from em_etgo_identifier
-    // never run when we come in through /batch. We replicate the hook's effect
-    // here: send `searchKey` set to the resolved sequence value (or fall back
-    // to `name` if the defaults endpoint didn't supply an identifier).
-    const identifierRaw = form.etgoIdentifier.trim();
-    const identifierClean = identifierRaw.replace(/^<|>$/g, '');
-    const bpFields = {
-      name: form.name.trim(),
-      searchKey: identifierClean || form.name.trim(),
-      etgoIdentifier: identifierRaw || null,
-      taxID: form.taxId.trim() || null,
-      isVendor: true,
-      // The SF field default for this list reference is literally "'1'" (with
-      // surrounding quotes), which the runtime validator rejects. Send the
-      // bare value so it bypasses that broken default.
-      oBTIKTaxIDKey: '1',
-    };
-    if (form.type === 'P') {
-      bpFields.em_etgo_firstname = form.firstName.trim();
-      bpFields.em_etgo_lastname = form.lastName.trim() || null;
-    }
-
-    const locName = [form.city, form.addressLine1].filter(Boolean).join(', ')
-      || [form.regionLabel || form.region, form.countryLabel || form.country].filter(Boolean).join(', ')
-      || 'Location';
-    const location = {
-      name: locName,
-      addressLine1: form.addressLine1.trim() || null,
-      addressLine2: form.addressLine2.trim() || null,
-      cityName: form.city.trim() || null,
-      postalCode: form.postalCode.trim() || null,
-      country: form.country || null,
-      region: form.region || null,
-      shipToAddress: form.shipToAddress ? 'Y' : 'N',
-      invoiceToAddress: form.invoiceToAddress ? 'Y' : 'N',
-    };
-
     try {
+      // Build the BP payload exactly as the prior client-side createContact() did,
+      // so the server-side ContactResolver can pass it through unchanged to the
+      // contacts/businessPartner spec. The location goes nested so the resolver
+      // can detect it and chain a contacts/locationAddress create with the new
+      // BP id as parent — all inside the ingest transaction.
       onSubmit({
         action: 'create',
-        fields: { ...bpFields, location },
+        fields: { ...buildBpFields(form), location: buildLocationFields(form) },
       });
     } catch (e) {
       setError(e?.message || ui('ocrContactCreateFailed'));
@@ -522,7 +531,7 @@ export default function ContactCreatePopup({
                 <label className="block text-xs font-medium text-gray-700 mb-1">{ui('ocrContactIdentifier')}</label>
                 <input
                   type="text"
-                  value={form.etgoIdentifier.replace(/^<|>$/g, '')}
+                  value={form.etgoIdentifier.replace(/(?:^<)|(?:>$)/g, '')}
                   readOnly
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-600 cursor-not-allowed"
                 />
@@ -667,13 +676,16 @@ export default function ContactCreatePopup({
               </div>
             </div>
             <div className="flex-1 overflow-auto py-1">
-              {countriesLoading ? (
+              {countriesLoading && (
                 <div className="px-4 py-6 text-center text-sm text-gray-500">{ui('loading')}</div>
-              ) : countriesLoadFailed ? (
+              )}
+              {!countriesLoading && countriesLoadFailed && (
                 <div className="px-4 py-6 text-center text-sm text-gray-500">{ui('countryLoadError')}</div>
-              ) : filteredCountries.length === 0 ? (
+              )}
+              {!countriesLoading && !countriesLoadFailed && filteredCountries.length === 0 && (
                 <div className="px-4 py-6 text-center text-sm text-gray-500">{ui('noResults')}</div>
-              ) : (
+              )}
+              {!countriesLoading && !countriesLoadFailed && filteredCountries.length > 0 && (
                 filteredCountries.map(c => (
                   <button
                     key={c.id}
@@ -728,13 +740,16 @@ export default function ContactCreatePopup({
               </div>
             </div>
             <div className="flex-1 overflow-auto py-1">
-              {regionsLoading ? (
+              {regionsLoading && (
                 <div className="px-4 py-6 text-center text-sm text-gray-500">{ui('loading')}</div>
-              ) : regionsLoadFailed ? (
+              )}
+              {!regionsLoading && regionsLoadFailed && (
                 <div className="px-4 py-6 text-center text-sm text-gray-500">{ui('regionLoadError')}</div>
-              ) : filteredRegions.length === 0 ? (
+              )}
+              {!regionsLoading && !regionsLoadFailed && filteredRegions.length === 0 && (
                 <div className="px-4 py-6 text-center text-sm text-gray-500">{ui('noResults')}</div>
-              ) : (
+              )}
+              {!regionsLoading && !regionsLoadFailed && filteredRegions.length > 0 && (
                 filteredRegions.map(r => (
                   <button
                     key={r.id}

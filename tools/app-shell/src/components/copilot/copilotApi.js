@@ -125,6 +125,15 @@ export function extractConversationId(payload) {
 // ---------------------------------------------------------------------------
 
 /**
+ * Generate a stable client-side id for messages that arrive without one.
+ * Uses Web Crypto's randomUUID() — required by all browsers Etendo targets
+ * (Chrome 92+, Firefox 95+, Safari 15.4+, Edge 92+).
+ */
+export function makeClientId() {
+  return globalThis.crypto.randomUUID();
+}
+
+/**
  * Normalize a conversation object from the backend.
  * The backend returns `id`; our UI uses `conversation_id` consistently.
  */
@@ -148,7 +157,7 @@ function normalizeMessage(msg) {
   if (raw === 'bot' || raw === 'assistant') role = 'copilot';
   return {
     ...msg,
-    id: msg.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    id: msg.id || makeClientId(),
     role,
     text: msg.text || msg.content || msg.message || '',
     timestamp: msg.timestamp || '',
@@ -352,6 +361,14 @@ export async function permanentDeleteConversation(token, conversationId) {
 /**
  * Build the full SSE URL for streaming a copilot response via EventSource.
  *
+ * NOTE — auth limitation: the browser EventSource API cannot set custom
+ * headers, so the bearer token is appended as a `token` query parameter.
+ * Tokens in URLs can leak via server logs, browser history, proxies, and
+ * Referer headers. This helper is currently NOT wired into the UI; before
+ * enabling SSE streaming, switch the server to accept either a same-origin
+ * session cookie (EventSource forwards cookies automatically) or a
+ * short-lived single-use stream token, and drop the `token` param here.
+ *
  * @param {string} token
  * @param {{ app_id: string, question: string, conversation_id?: string, file?: string[] }} params
  * @returns {string}
@@ -360,6 +377,7 @@ export function buildSSEUrl(token, { app_id, question, conversation_id, file }) 
   const params = new URLSearchParams({ app_id, question });
   if (conversation_id) params.set('conversation_id', conversation_id);
   if (file && file.length > 0) params.set('file', JSON.stringify(file));
+  // TODO(security): replace with cookie-based auth or short-lived stream token.
   if (token) params.set('token', token);
   return `${buildCopilotUrl('question/stream')}?${params.toString()}`;
 }

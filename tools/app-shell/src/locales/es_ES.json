@@ -16558,6 +16558,7 @@
     "ocrPickPdf": "Elegir un archivo PDF",
     "ocrInlinePickPdf": "Elegir un PDF",
     "ocrInlineDropHint": "o arrástralo aquí para extraer la factura.",
+    "ocrInlinePdfOnly": "Solo se admiten archivos PDF.",
     "ocrInlineBrowse": "Buscar",
     "ocrExtractFill": "Extraer y completar",
     "ocrUploading": "Subiendo PDF...",

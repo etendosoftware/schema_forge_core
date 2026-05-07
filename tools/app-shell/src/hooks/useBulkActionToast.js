@@ -43,7 +43,13 @@ export function useBulkActionToast() {
     const stored = sessionStorage.getItem(STORAGE_KEY);
     if (!stored) return;
     sessionStorage.removeItem(STORAGE_KEY);
-    showBulkActionToast(ui, JSON.parse(stored));
+    let parsed;
+    try {
+      parsed = JSON.parse(stored);
+    } catch {
+      return;
+    }
+    showBulkActionToast(ui, parsed);
   }, [ui]);
 
   return { showResult };

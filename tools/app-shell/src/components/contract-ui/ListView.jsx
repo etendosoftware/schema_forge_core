@@ -4,9 +4,7 @@ import { Button } from '@/components/ui/button.jsx';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { useEntity } from '@/hooks/useEntity';
 import { useMenuLabel, useLabel, useUI } from '@/i18n';
-import { Search, ArrowUpDown, SlidersHorizontal, ChevronDown, MoreVertical, Plus, CalendarDays, Link2, Sparkles, Bell, Mic, Printer, LayoutGrid, LayoutList, RefreshCw, Eye, Copy } from 'lucide-react';
-import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
-import { UserAvatarButton } from '@/components/UserAvatarButton.jsx';
+import { ArrowUpDown, ChevronDown, Plus, Link2, Printer, LayoutGrid, LayoutList, RefreshCw, Eye, Copy } from 'lucide-react';
 import { useRegisterWindowContext } from '@/components/CurrentWindowContext';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
@@ -288,14 +286,16 @@ export function ListView({
   const [selectedRows, setSelectedRows] = useState([]);
 
   // Register this list view with the current-window context so the Copilot
-  // widget can auto-attach it when opened.
-  useRegisterWindowContext({
+  // widget can auto-attach it when opened. Memoized so the hook's signature
+  // computation stays stable across unrelated renders.
+  const windowContextInfo = useMemo(() => ({
     spec: windowName,
     tabTitle: label,
     selectedRecords: selectedRows,
     formValues: null,
     isFormEditing: false,
-  });
+  }), [windowName, label, selectedRows]);
+  useRegisterWindowContext(windowContextInfo);
   const [showSortPopover, setShowSortPopover] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showDocPrint, setShowDocPrint] = useState(false);

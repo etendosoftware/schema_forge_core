@@ -32,7 +32,7 @@ function detectEtendoBase() {
  * @param {object} envelope - Parsed JSON body returned by fetch.
  * @param {number} itemCount - Number of items the request asked about.
  */
-function parseSimSearchEnvelope(envelope, itemCount) {
+export function parseSimSearchEnvelope(envelope, itemCount) {
   const raw = envelope?.message;
   if (!raw || typeof raw !== 'string') return Array(itemCount).fill(null);
   let parsed;
@@ -50,7 +50,7 @@ function parseSimSearchEnvelope(envelope, itemCount) {
       results.push({
         id: first.id,
         name: first.name || first._identifier || first.id,
-        similarityPercent: first.similarity_percent || null,
+        similarityPercent: first.similarity_percent ?? null,
       });
     } else {
       results.push(null);

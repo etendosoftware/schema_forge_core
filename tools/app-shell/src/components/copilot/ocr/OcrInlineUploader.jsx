@@ -28,6 +28,7 @@ export default function OcrInlineUploader({
   const inputRef = useRef(null);
   const [file, setFile] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [pickError, setPickError] = useState(null);
   const { result, loading: applying, pendingModal } = useOcrFlow({
     docTypeId,
     token,
@@ -47,6 +48,15 @@ export default function OcrInlineUploader({
 
   const loadFile = (picked) => {
     if (!picked) return;
+    const isPdf = picked.type === 'application/pdf'
+      || /\.pdf$/i.test(picked.name || '');
+    if (!isPdf) {
+      setFile(null);
+      setPickError(ui('ocrInlinePdfOnly'));
+      reset();
+      return;
+    }
+    setPickError(null);
     setFile(picked);
     reset();
   };
@@ -71,6 +81,15 @@ export default function OcrInlineUploader({
     setFile(null);
     reset();
   };
+
+  let buttonLabel;
+  if (isBusy) {
+    buttonLabel = ui('ocrProcessing');
+  } else if (file) {
+    buttonLabel = ui('ocrExtractFill');
+  } else {
+    buttonLabel = ui('ocrInlineBrowse');
+  }
 
   return (
     <div className="mb-3">
@@ -128,6 +147,12 @@ export default function OcrInlineUploader({
               <span>{error || ui('ocrFailed')}</span>
             </div>
           )}
+          {pickError && (
+            <div className="mt-1 flex items-start gap-2 text-xs text-red-600">
+              <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
+              <span>{pickError}</span>
+            </div>
+          )}
           {result && status === 'done' && !applying && (
             <div className="mt-1 flex items-center gap-2 text-xs text-emerald-600">
               <CheckCircle2 className="h-3 w-3" />
@@ -148,7 +173,7 @@ export default function OcrInlineUploader({
           disabled={isBusy}
           className="shrink-0 rounded-md border border-gray-900 px-3 py-1.5 text-xs font-medium text-gray-900 transition-colors hover:bg-gray-900 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isBusy ? ui('ocrProcessing') : (file ? ui('ocrExtractFill') : ui('ocrInlineBrowse'))}
+          {buttonLabel}
         </button>
         <input
           ref={inputRef}

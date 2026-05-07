@@ -16328,6 +16328,7 @@
     "ocrPickPdf": "Choose a PDF file",
     "ocrInlinePickPdf": "Choose a PDF",
     "ocrInlineDropHint": "or drag and drop it here to extract the invoice.",
+    "ocrInlinePdfOnly": "Only PDF files are supported.",
     "ocrInlineBrowse": "Browse",
     "ocrExtractFill": "Extract & Fill",
     "ocrUploading": "Uploading PDF...",

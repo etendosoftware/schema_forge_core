@@ -298,15 +298,18 @@ function SelectorDialog({
               <span className="truncate">{createLabel}</span>
             </button>
           )}
-          {loading ? (
+          {loading && (
             <div className="px-4 py-6 text-center text-sm text-gray-500 flex items-center justify-center gap-2">
               <Loader2 size={14} className="animate-spin" /> {ui('loading')}
             </div>
-          ) : failed ? (
+          )}
+          {!loading && failed && (
             <div className="px-4 py-6 text-center text-sm text-gray-500">{ui('ocrProductLoadError')}</div>
-          ) : filtered.length === 0 ? (
+          )}
+          {!loading && !failed && filtered.length === 0 && (
             <div className="px-4 py-6 text-center text-sm text-gray-500">{ui('noResults')}</div>
-          ) : (
+          )}
+          {!loading && !failed && filtered.length > 0 && (
             filtered.map(o => (
               <button
                 key={o.id}

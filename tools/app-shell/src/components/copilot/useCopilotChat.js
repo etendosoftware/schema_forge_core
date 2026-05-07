@@ -14,6 +14,7 @@ import {
   permanentDeleteConversation as apiPermanentDeleteConversation,
   extractAnswerText,
   extractConversationId,
+  makeClientId,
 } from './copilotApi.js';
 
 // ---------------------------------------------------------------------------
@@ -31,6 +32,7 @@ const SET_INPUT = 'SET_INPUT';
 const SET_FILES = 'SET_FILES';
 const ADD_MESSAGE = 'ADD_MESSAGE';
 const UPDATE_CONVERSATION = 'UPDATE_CONVERSATION';
+const UPSERT_CONVERSATION = 'UPSERT_CONVERSATION';
 const REMOVE_CONVERSATION = 'REMOVE_CONVERSATION';
 const SET_LOADING = 'SET_LOADING';
 const SET_ERROR = 'SET_ERROR';
@@ -61,6 +63,7 @@ const initialState = {
   dismissedIds: [],
   isLoadingAssistants: false,
   isLoadingConversations: false,
+  isLoadingArchivedConversations: false,
   isLoadingMessages: false,
   isSending: false,
   error: '',
@@ -125,6 +128,15 @@ function reducer(state, action) {
         ...state,
         conversations: update(state.conversations),
         archivedConversations: update(state.archivedConversations),
+      };
+    }
+
+    case UPSERT_CONVERSATION: {
+      const exists = state.conversations.some((c) => c.conversation_id === action.payload.conversation_id);
+      if (exists) return state;
+      return {
+        ...state,
+        conversations: [action.payload, ...state.conversations],
       };
     }
 
@@ -214,12 +226,7 @@ function reducer(state, action) {
 // Helper utilities
 // ---------------------------------------------------------------------------
 
-function makeMessageId() {
-  if (globalThis.crypto?.randomUUID) {
-    return globalThis.crypto.randomUUID();
-  }
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
+const makeMessageId = makeClientId;
 
 /**
  * Build the structured context block prepended to the wire payload when there
@@ -360,14 +367,14 @@ export function useCopilotChat({ token }) {
   const loadArchivedConversations = useCallback(async () => {
     if (!token || !state.selectedAssistant) return;
 
-    dispatch({ type: SET_LOADING, key: 'isLoadingConversations', value: true });
+    dispatch({ type: SET_LOADING, key: 'isLoadingArchivedConversations', value: true });
     try {
       const convs = await getArchivedConversations(token, state.selectedAssistant.app_id);
       dispatch({ type: SET_ARCHIVED, payload: convs });
     } catch (err) {
       dispatch({ type: SET_ERROR, payload: err.message || 'Failed to load archived conversations' });
     } finally {
-      dispatch({ type: SET_LOADING, key: 'isLoadingConversations', value: false });
+      dispatch({ type: SET_LOADING, key: 'isLoadingArchivedConversations', value: false });
     }
   }, [token, state.selectedAssistant]);
 
@@ -476,6 +483,16 @@ export function useCopilotChat({ token }) {
 
       if (newConversationId) {
         dispatch({ type: SET_CONVERSATION_ID, payload: newConversationId });
+        if (isFirstReply) {
+          dispatch({
+            type: UPSERT_CONVERSATION,
+            payload: {
+              conversation_id: newConversationId,
+              title: '',
+              app_id: state.selectedAssistant?.app_id,
+            },
+          });
+        }
       }
 
       dispatch({

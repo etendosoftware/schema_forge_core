@@ -7,7 +7,7 @@ import { executeTool, extractAnswerText, uploadFile } from '../copilotApi';
 function stripCodeFences(text) {
   if (!text) return '';
   const trimmed = text.trim();
-  const match = trimmed.match(/^```(?:json)?\s*([\s\S]*?)```$/i);
+  const match = trimmed.match(/^```(?:json)?\s*([^`]*?)```$/i);
   return match ? match[1].trim() : trimmed;
 }
 

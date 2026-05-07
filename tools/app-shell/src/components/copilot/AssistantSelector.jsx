@@ -64,12 +64,13 @@ export function AssistantSelector({
 
       {/* Assistant grid */}
       <div className="mt-4 flex-1 overflow-y-auto">
-        {isLoading ? (
+        {isLoading && (
           <div className="flex h-full items-center justify-center gap-2 text-sm text-muted-foreground">
             <LoaderCircle className="h-4 w-4 animate-spin" />
             <span>{ui('copilotLoadingAssistants')}</span>
           </div>
-        ) : filteredAssistants.length > 0 ? (
+        )}
+        {!isLoading && filteredAssistants.length > 0 && (
           <div className="flex flex-col gap-2">
             {filteredAssistants.map((assistant) => (
               <button
@@ -92,7 +93,8 @@ export function AssistantSelector({
               </button>
             ))}
           </div>
-        ) : (
+        )}
+        {!isLoading && filteredAssistants.length === 0 && (
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
             {error || ui('copilotNoAssistants')}
           </div>

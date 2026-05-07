@@ -14,11 +14,11 @@ import { deriveContactsApiBase } from '../contactApi';
  *   - {@code { ops: [...] }} ready to POST to {@code /sws/neo/batch}, or
  *   - {@code { cancelled: true }} when the user dismissed a required popup.
  */
-function nonBlank(value) {
+export function nonBlank(value) {
   return value != null && String(value).trim() !== '';
 }
 
-function toIsoDate(value) {
+export function toIsoDate(value) {
   if (!value) return null;
   const trimmed = String(value).trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
@@ -102,133 +102,129 @@ async function findBp({ token, apiBaseUrl, taxId, name }) {
   return (await tryQuery('taxID', taxId)) || (await tryQuery('name', name)) || null;
 }
 
-export async function buildPurchaseInvoiceBatch(extracted, ctx) {
-  const safe = extracted || {};
-  const lines = Array.isArray(safe.line_items) ? safe.line_items : [];
-  const { token, apiBaseUrl, askUserForBp, askUserForProducts } = ctx || {};
-
-  // 1. Resolve products (client-side simSearch — same logic as today).
+/**
+ * Run simSearch on the line descriptions. Returns an empty array when there
+ * is nothing to look up so the caller can index by line idx safely.
+ */
+async function runProductSimSearch({ token, lines }) {
   const productHints = lines.map(l => String(l?.description ?? '').trim());
-  let productMatches = [];
-  if (token && productHints.length > 0) {
-    productMatches = await simSearch({
-      token,
-      entityName: 'Product',
-      items: productHints,
-      minSimPercent: 30,
-      qtyResults: 1,
-    });
-  }
+  if (!token || productHints.length === 0) return [];
+  return simSearch({
+    token,
+    entityName: 'Product',
+    items: productHints,
+    minSimPercent: 30,
+    qtyResults: 1,
+  });
+}
 
-  // 2. Try to find the vendor; if missing, ask the user via the popup.
-  let bpId = await findBp({
+/**
+ * Resolve the vendor BP. Returns one of:
+ *   - { bpId, bpCreate: null, locationCreate: null }   — existing BP found
+ *   - { bpId: null, bpCreate, locationCreate? }        — user filled the popup
+ *   - { cancelled: true }                              — user dismissed popup
+ */
+async function resolveBpOrAskUser({ token, apiBaseUrl, safe, askUserForBp }) {
+  const bpId = await findBp({
     token,
     apiBaseUrl,
     taxId: safe.tax_id,
     name: safe.vendor_name,
   });
-
-  let bpCreate = null;
-  let locationCreate = null;
-  if (!bpId && typeof askUserForBp === 'function') {
-    const fields = await askUserForBp({
-      prefilled: {
-        name: safe.vendor_name || '',
-        taxId: safe.tax_id || '',
-        phone: safe.vendor_phone || '',
-        email: safe.vendor_email || '',
-        addressLine1: safe.vendor_address || '',
-      },
-    });
-    if (!fields) {
-      return { cancelled: true };
-    }
-    const { location, ...bpFields } = fields;
-    bpCreate = {
-      id: 'bp',
+  if (bpId) return { bpId, bpCreate: null, locationCreate: null };
+  if (typeof askUserForBp !== 'function') {
+    return { bpId: null, bpCreate: null, locationCreate: null };
+  }
+  const fields = await askUserForBp({
+    prefilled: {
+      name: safe.vendor_name || '',
+      taxId: safe.tax_id || '',
+      phone: safe.vendor_phone || '',
+      email: safe.vendor_email || '',
+      addressLine1: safe.vendor_address || '',
+    },
+  });
+  if (!fields) return { cancelled: true };
+  const { location, ...bpFields } = fields;
+  const bpCreate = { id: 'bp', spec: 'contacts', entity: 'businessPartner', body: bpFields };
+  const locationCreate = location
+    ? {
+      id: 'loc',
       spec: 'contacts',
-      entity: 'businessPartner',
-      body: bpFields,
-    };
-    if (location) {
-      locationCreate = {
-        id: 'loc',
-        spec: 'contacts',
-        entity: 'locationAddress',
-        parentRef: 'bp',
-        body: { ...location, businessPartner: '$ref:bp' },
-      };
+      entity: 'locationAddress',
+      parentRef: 'bp',
+      body: { ...location, businessPartner: '$ref:bp' },
     }
-  }
+    : null;
+  return { bpId: null, bpCreate, locationCreate };
+}
 
-  // 3. Assemble the batch.
-  const ops = [];
-  if (bpCreate) ops.push(bpCreate);
-  if (locationCreate) ops.push(locationCreate);
+/**
+ * Resolve the partnerAddress for the invoice header. NOT NULL on C_Invoice;
+ * for a freshly-created BP it points at the location op via $ref, for an
+ * existing BP we look up the first active location ourselves.
+ */
+async function resolvePartnerAddress({ token, apiBaseUrl, bpId, locationCreate }) {
+  if (bpId) return findBpLocation({ token, apiBaseUrl, bpId });
+  if (locationCreate) return '$ref:loc';
+  return null;
+}
 
-  // partnerAddress is NOT NULL on C_Invoice. For a freshly-created BP it
-  // points at the location op via $ref; for an existing BP we look up the
-  // BP's first active location ourselves (the SE_Invoice_BPartner callout
-  // doesn't reliably populate it through the /batch path).
-  let partnerAddress = null;
-  if (bpId) {
-    partnerAddress = await findBpLocation({ token, apiBaseUrl, bpId });
-  } else if (locationCreate) {
-    partnerAddress = '$ref:loc';
-  }
-
+function buildHeaderBody(safe, bpId, partnerAddress) {
   const headerBody = {};
   if (nonBlank(safe.document_no)) headerBody.orderReference = String(safe.document_no).trim();
   if (nonBlank(safe.invoice_date)) headerBody.invoiceDate = toIsoDate(safe.invoice_date);
   headerBody.businessPartner = bpId || '$ref:bp';
   if (partnerAddress) headerBody.partnerAddress = partnerAddress;
+  return headerBody;
+}
 
-  ops.push({
-    id: 'inv',
-    spec: 'purchase-invoice',
-    entity: 'Header',
-    body: headerBody,
-  });
-
-  // Resolve the product for every line. simSearch handles the obvious matches;
-  // anything left over goes through the resolver popup so the user can pick.
-  // The DB trigger c_invline_chk_restrictions_trg rejects rows where
-  // M_Product_ID is null with @InvoiceLineAmountMustBeZero@, so a still-
-  // unresolved line is dropped from the batch — the user can add it manually.
+/**
+ * Map line idx → productId. Falls back to the product-resolver popup when
+ * simSearch leaves a line unmatched. Returns `{ cancelled: true }` when the
+ * user dismisses the popup.
+ */
+async function resolveProductsForLines({ lines, productMatches, askUserForProducts, apiBaseUrl }) {
   const productByIdx = {};
   const needsUserPick = [];
   lines.forEach((line, idx) => {
     const id = productMatches[idx]?.id;
     if (id) {
       productByIdx[idx] = id;
-    } else {
-      needsUserPick.push({
-        idx,
-        description: String(line?.description ?? `line ${idx + 1}`).trim(),
-        quantity: nonBlank(line?.quantity) ? Number(line.quantity) : null,
-        unitPrice: nonBlank(line?.unit_price) ? Number(line.unit_price) : null,
-      });
+      return;
     }
+    needsUserPick.push({
+      idx,
+      description: String(line?.description ?? `line ${idx + 1}`).trim(),
+      quantity: nonBlank(line?.quantity) ? Number(line.quantity) : null,
+      unitPrice: nonBlank(line?.unit_price) ? Number(line.unit_price) : null,
+    });
   });
-
-  if (needsUserPick.length > 0 && typeof askUserForProducts === 'function') {
-    // Sibling product spec — same shape used in ContactCreatePopup for the
-    // contacts spec (`/sws/neo/<host>` → `/sws/neo/product`).
-    const productSpecUrl = apiBaseUrl ? apiBaseUrl.replace(/\/[^/]+$/, '/product') : null;
-    // Use the standalone product entity list rather than the line-context
-    // selector. The line selector (`${apiBaseUrl}/lines/selectors/M_Product_ID`)
-    // is narrowed by the parent invoice's price list, which we don't have at
-    // OCR time — so it returned only the 4 products in the org default list.
-    const selectorUrl = productSpecUrl ? `${productSpecUrl}/product` : null;
-    const picks = await askUserForProducts({ unmatched: needsUserPick, selectorUrl, productSpecUrl });
-    if (picks === null) {
-      return { cancelled: true };
-    }
-    for (const [idxStr, productId] of Object.entries(picks || {})) {
-      if (productId) productByIdx[Number(idxStr)] = productId;
-    }
+  if (needsUserPick.length === 0 || typeof askUserForProducts !== 'function') {
+    return { productByIdx };
   }
+  // Sibling product spec — same shape used elsewhere (`/sws/neo/<host>` → `/sws/neo/product`).
+  // We use the standalone product entity list, NOT the line-context selector,
+  // because the line selector filters by parent invoice's price list, which
+  // we don't have at OCR time.
+  const productSpecUrl = apiBaseUrl ? apiBaseUrl.replace(/\/[^/]+$/, '/product') : null;
+  const selectorUrl = productSpecUrl ? `${productSpecUrl}/product` : null;
+  const picks = await askUserForProducts({ unmatched: needsUserPick, selectorUrl, productSpecUrl });
+  if (picks === null) return { cancelled: true };
+  for (const [idxStr, productId] of Object.entries(picks || {})) {
+    if (productId) productByIdx[Number(idxStr)] = productId;
+  }
+  return { productByIdx };
+}
 
+/**
+ * Build the line ops + unmatched-name list. The DB trigger
+ * c_invline_chk_restrictions_trg rejects rows where M_Product_ID is null with
+ * @InvoiceLineAmountMustBeZero@, so any still-unresolved line is dropped from
+ * the batch and surfaced for the user to add manually.
+ */
+function buildLineOps(lines, productByIdx) {
+  const lineOps = [];
   const unmatched = [];
   lines.forEach((line, idx) => {
     const productId = productByIdx[idx];
@@ -239,7 +235,7 @@ export async function buildPurchaseInvoiceBatch(extracted, ctx) {
     const body = { product: productId };
     if (nonBlank(line?.quantity)) body.invoicedQuantity = Number(line.quantity);
     if (nonBlank(line?.unit_price)) body.unitPrice = Number(line.unit_price);
-    ops.push({
+    lineOps.push({
       id: `ln${idx}`,
       spec: 'purchase-invoice',
       entity: 'Lines',
@@ -247,6 +243,42 @@ export async function buildPurchaseInvoiceBatch(extracted, ctx) {
       body,
     });
   });
+  return { lineOps, unmatched };
+}
+
+export async function buildPurchaseInvoiceBatch(extracted, ctx) {
+  const safe = extracted || {};
+  const lines = Array.isArray(safe.line_items) ? safe.line_items : [];
+  const { token, apiBaseUrl, askUserForBp, askUserForProducts } = ctx || {};
+
+  const productMatches = await runProductSimSearch({ token, lines });
+
+  const bpResolution = await resolveBpOrAskUser({ token, apiBaseUrl, safe, askUserForBp });
+  if (bpResolution.cancelled) return { cancelled: true };
+  const { bpId, bpCreate, locationCreate } = bpResolution;
+
+  const partnerAddress = await resolvePartnerAddress({ token, apiBaseUrl, bpId, locationCreate });
+
+  const productResolution = await resolveProductsForLines({
+    lines,
+    productMatches,
+    askUserForProducts,
+    apiBaseUrl,
+  });
+  if (productResolution.cancelled) return { cancelled: true };
+  const { productByIdx } = productResolution;
+
+  const ops = [];
+  if (bpCreate) ops.push(bpCreate);
+  if (locationCreate) ops.push(locationCreate);
+  ops.push({
+    id: 'inv',
+    spec: 'purchase-invoice',
+    entity: 'Header',
+    body: buildHeaderBody(safe, bpId, partnerAddress),
+  });
+  const { lineOps, unmatched } = buildLineOps(lines, productByIdx);
+  ops.push(...lineOps);
 
   return { ops, unmatched };
 }

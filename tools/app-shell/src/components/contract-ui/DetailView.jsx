@@ -277,16 +277,20 @@ export function DetailView({
   const _headerData = hook.selected ?? hook.editing;
 
   // Register this detail view with the current-window context so the Copilot
-  // widget can auto-attach the current record when opened.
+  // widget can auto-attach the current record when opened. Memoized so the
+  // hook's JSON.stringify signature work stays stable across renders.
   const _detailTabTitle = tMenu(entityLabel) || entityLabel || entity;
   const _isFormEditing = Boolean(hook.editing);
-  useRegisterWindowContext(_headerData ? {
-    spec: windowName,
-    tabTitle: _detailTabTitle,
-    selectedRecords: [_headerData],
-    formValues: hook.editing || null,
-    isFormEditing: _isFormEditing,
-  } : null);
+  const _windowContextInfo = useMemo(() => (
+    _headerData ? {
+      spec: windowName,
+      tabTitle: _detailTabTitle,
+      selectedRecords: [_headerData],
+      formValues: hook.editing || null,
+      isFormEditing: _isFormEditing,
+    } : null
+  ), [_headerData, windowName, _detailTabTitle, hook.editing, _isFormEditing]);
+  useRegisterWindowContext(_windowContextInfo);
   const isDocumentReadOnly = lockWhenProcessed && (_headerData?.processed === true || _headerData?.processed === 'Y');
   const isProcessed = _headerData?.processed === true || _headerData?.processed === 'Y';
   // When draftMode declares an explicit completedStatuses array, only those documentStatus
