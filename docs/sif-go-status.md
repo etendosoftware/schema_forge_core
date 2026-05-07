@@ -70,38 +70,40 @@ POST /sws/neo/sales-invoice/header/{id}/action/Em_Tbai_Xmlgenerator
 
 ### Causa raíz
 
-`Em_aeatsii_send` y `Em_Tbai_Xmlgenerator` son **columnas de tipo Button sin `AD_Process_ID`** en Classic Etendo. No son AD_Process estándar — son botones que disparan Java directamente desde la UI clásica.
+Ambos botones tienen `OBUIAPP_Process_ID` pero NO `AD_Process_ID` estándar. NEO Headless no los expone automáticamente como endpoints `action/<columnName>`.
 
-NEO Headless solo expone endpoints `action/<columnName>` cuando el proceso está configurado a través de la infraestructura de NEO (bien como `menuAction` en decisions.json vinculado a un AD_Process, o bien mediante un `NeoHandler` Java).
+| Botón               | OBUIAPP_Process_ID                   | Tipo     | Implementación |
+|--------------------|--------------------------------------|----------|----------------|
+| `Em_aeatsii_send`  | `2ECF46DAAEEB486EAF79D3594D50DE5F`   | **JavaScript** | `OB.AEATSII.send` (client-side en Classic Etendo) |
+| `Em_Tbai_Xmlgenerator` | `BE2486102F2C41779B760609FD69A225` | **Java**   | `com.smf.ticketbai.process.XMLConvertionFromInvoice` |
 
 ### Lo que hay que hacer
 
-Hay dos opciones:
+#### TBAI — NeoHandler Java (directo)
 
-#### Opción A — NeoHandler Java (recomendada)
-
-Implementar dos beans `NeoHandler` en `com.etendoerp.go`:
+TBAI tiene un proceso Java conocido. Implementar un `NeoHandler` en `com.etendoerp.go` que instancie o invoque `com.smf.ticketbai.process.XMLConvertionFromInvoice` pasándole el `C_Invoice_ID`.
 
 ```
 modules/com.etendoerp.go/src/com/etendoerp/go/schemaforge/handlers/
-  SiiSendHandler.java        → @Named("sales-invoice-sii-send")
-  TbaiXmlgeneratorHandler.java → @Named("sales-invoice-tbai-send")
+  TbaiXmlgeneratorHandler.java   → @Named("tbai-xmlgenerator")
 ```
 
-Cada handler intercepta la llamada `action/Em_aeatsii_send` o `action/Em_Tbai_Xmlgenerator`
-y ejecuta la lógica Java del módulo SII/TBAI correspondiente.
+Ver `docs/neo-headless-extensibility.md` para la API del NeoHandler y cómo configurar el `Java_Qualifier` en `ETGO_SF_ENTITY`.
 
-Ver: `docs/neo-headless-extensibility.md` para la API del NeoHandler.
+#### SII — Investigar el servidor detrás de `OB.AEATSII.send`
 
-Necesitarás identificar la clase Java que ejecuta la acción en Classic Etendo:
-- SII: buscar `EM_Aeatsii_Send` en el código Java de `org.openbravo.module.aeatSii` o similar
-- TBAI: buscar `EM_Tbai_Xmlgenerator` en el código Java del módulo TBAI
+`OB.AEATSII.send` es JavaScript de client-side en Classic Etendo. Antes de implementar el NeoHandler hay que descubrir a qué servlet/endpoint Java llama ese JS:
 
-#### Opción B — menuActions con AD_Process vinculado
+1. Buscar en el código fuente del módulo `org.openbravo.module.aeatSii` (o similar) el servlet al que `OB.AEATSII.send` hace POST
+2. Identificar la clase Java que procesa esa request
+3. Implementar `SiiSendHandler.java` que llame a esa clase directamente (sin pasar por el servlet HTTP)
 
-Si los botones tienen un `AD_Process_ID` asociado en alguna versión del módulo (o se puede crear uno), se puede registrar como `menuAction` en `decisions.json` y NEO lo expone automáticamente.
+```
+modules/com.etendoerp.go/src/com/etendoerp/go/schemaforge/handlers/
+  SiiSendHandler.java   → @Named("sii-send")
+```
 
-Actualmente `EM_Aeatsii_Send` en `C_Invoice` tiene `AD_Process_ID = NULL`, por lo que esta opción requeriría modificar el módulo SII.
+Si el servlet de SII no es invocable directamente, la alternativa es hacer una llamada HTTP interna desde el NeoHandler al mismo Tomcat (localhost).
 
 ---
 
