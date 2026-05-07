@@ -47,7 +47,11 @@ export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
   const showSii = SII_PROFILES.has(profile);
   const showTbai = TBAI_PROFILES.has(profile);
 
-  const isReadOnly = data?.documentStatus !== 'DR';
+  const isDraft = data?.documentStatus === 'DR';
+  const isSentToSii = data?.aeatsiiIssent === true || data?.aeatsiiIssent === 'Y';
+  // Fecha operación is locked once completed; the 5 SII classification fields stay editable until sent
+  const dateReadOnly = !isDraft;
+  const siiFieldReadOnly = isSentToSii;
 
   const [activeTab, setActiveTab] = useState('sii');
   const [siiForm, setSiiForm] = useState({});
@@ -148,7 +152,7 @@ export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
                 value={getDateVal('etsgDateOperation')}
                 onChange={e => setVal('etsgDateOperation', e.target.value)}
                 onBlur={e => handleBlur('etsgDateOperation', e.target.value)}
-                disabled={isReadOnly || savingField === 'etsgDateOperation'}
+                disabled={dateReadOnly || savingField === 'etsgDateOperation'}
               />
             </FieldRow>
             <FieldRow label="Tipo factura">
@@ -158,7 +162,7 @@ export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
                 value={getVal('aeatsiiClaveTipo')}
                 onChange={e => setVal('aeatsiiClaveTipo', e.target.value)}
                 onBlur={e => handleBlur('aeatsiiClaveTipo', e.target.value)}
-                disabled={isReadOnly || savingField === 'aeatsiiClaveTipo'}
+                disabled={siiFieldReadOnly || savingField === 'aeatsiiClaveTipo'}
               >
                 <option value="">—</option>
                 {CLAVE_TIPO_OPTIONS.map(o => (
@@ -177,7 +181,7 @@ export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
                 value={getVal('aeatsiiDescripcionSii')}
                 onChange={e => setVal('aeatsiiDescripcionSii', e.target.value)}
                 onBlur={e => handleBlur('aeatsiiDescripcionSii', e.target.value)}
-                disabled={isReadOnly || savingField === 'aeatsiiDescripcionSii'}
+                disabled={siiFieldReadOnly || savingField === 'aeatsiiDescripcionSii'}
               />
             </FieldRow>
             <FieldRow label="Causa exención">
@@ -187,9 +191,9 @@ export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
               <input
                 type="checkbox"
                 checked={Boolean(getVal('aeatsiiIsauthorization'))}
-                onChange={e => !isReadOnly && handleCheckboxChange('aeatsiiIsauthorization', e.target.checked)}
-                disabled={isReadOnly || savingField === 'aeatsiiIsauthorization'}
-                className={`mt-0.5 ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}
+                onChange={e => !siiFieldReadOnly && handleCheckboxChange('aeatsiiIsauthorization', e.target.checked)}
+                disabled={siiFieldReadOnly || savingField === 'aeatsiiIsauthorization'}
+                className={`mt-0.5 ${siiFieldReadOnly ? 'cursor-default' : 'cursor-pointer'}`}
               />
             </FieldRow>
             <FieldRow label="Ejercicio SII">

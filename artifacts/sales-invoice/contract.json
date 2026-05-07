@@ -1,5 +1,5 @@
 {
-  "version": "0.22.0",
+  "version": "0.23.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
   "updatedAt": "2026-05-07T18:28:19.946Z",
   "checksum": "e076f9ae129c5eab",
@@ -562,6 +562,33 @@
             }
           },
           {
+            "name": "aeatsiiIssent",
+            "apiKey": "aeatsiiIssent",
+            "column": "EM_Aeatsii_Issent",
+            "label": "Sent to SII",
+            "type": "boolean",
+            "tsType": "boolean",
+            "visibility": "readOnly",
+            "required": true,
+            "grid": false,
+            "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
+            "defaultValue": "N",
+            "displayLogic": {
+              "raw": "@AEATSII_AcogidaSII@='Y'",
+              "evaluable": true
+            },
+            "readOnlyLogic": {
+              "raw": "true",
+              "evaluable": true,
+              "js": "true"
+            }
+          },
+          {
             "name": "aeatsiiClaveTipo",
             "apiKey": "aeatsiiClaveTipo",
             "column": "EM_Aeatsii_Clave_Tipo",
@@ -872,6 +899,13 @@
             "derivation": {
               "type": "fromConfig",
               "source": "context.dateInvoiced"
+            }
+          },
+          {
+            "name": "aeatsiiIssent",
+            "derivation": {
+              "type": "computed",
+              "source": "N"
             }
           },
           {
@@ -2137,7 +2171,7 @@
             "apiKey": "aeatsiiIssent",
             "column": "EM_Aeatsii_Issent",
             "type": "boolean",
-            "visibility": "discarded",
+            "visibility": "readOnly",
             "required": true
           },
           {
@@ -4168,6 +4202,14 @@
         "description": "Default value for 'aeatsiiIsauthorization' in header should be a string"
       },
       {
+        "id": "t-default-value-type-header-aeatsiiIssent",
+        "category": "default-value-type",
+        "entity": "header",
+        "field": "aeatsiiIssent",
+        "runner": "node",
+        "description": "Default value for 'aeatsiiIssent' in header should be a string"
+      },
+      {
         "id": "t-default-value-type-header-currency",
         "category": "default-value-type",
         "entity": "header",
@@ -4344,6 +4386,14 @@
         "description": "Display logic for 'aeatsiiIsauthorization' in header should have evaluable flag"
       },
       {
+        "id": "t-displaylogic-evaluable-header-aeatsiiIssent",
+        "category": "displaylogic-evaluable",
+        "entity": "header",
+        "field": "aeatsiiIssent",
+        "runner": "node",
+        "description": "Display logic for 'aeatsiiIssent' in header should have evaluable flag"
+      },
+      {
         "id": "t-displaylogic-evaluable-header-aeatsiiPeriodo",
         "category": "displaylogic-evaluable",
         "entity": "header",
@@ -4480,6 +4530,14 @@
         "description": "Display logic for 'aeatsiiIsauthorization' in header should be valid JS"
       },
       {
+        "id": "t-displaylogic-valid-header-aeatsiiIssent",
+        "category": "displaylogic-valid",
+        "entity": "header",
+        "field": "aeatsiiIssent",
+        "runner": "node",
+        "description": "Display logic for 'aeatsiiIssent' in header should be valid JS"
+      },
+      {
         "id": "t-displaylogic-valid-header-aeatsiiPeriodo",
         "category": "displaylogic-valid",
         "entity": "header",
@@ -4614,6 +4672,14 @@
         "field": "aeatsiiIsauthorization",
         "runner": "node",
         "description": "Field 'aeatsiiIsauthorization' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-aeatsiiIssent",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "aeatsiiIssent",
+        "runner": "node",
+        "description": "Field 'aeatsiiIssent' should be present in header"
       },
       {
         "id": "t-field-presence-header-aeatsiiPeriodo",
@@ -5040,6 +5106,14 @@
         "description": "Field 'aeatsiiIsauthorization' should have type 'boolean' in header"
       },
       {
+        "id": "t-field-type-header-aeatsiiIssent",
+        "category": "field-type",
+        "entity": "header",
+        "field": "aeatsiiIssent",
+        "runner": "node",
+        "description": "Field 'aeatsiiIssent' should have type 'boolean' in header"
+      },
+      {
         "id": "t-field-type-header-aeatsiiPeriodo",
         "category": "field-type",
         "entity": "header",
@@ -5448,6 +5522,14 @@
         "description": "Read-only logic for 'aeatsiiEjercicio' in header should have evaluable flag"
       },
       {
+        "id": "t-readonlylogic-evaluable-header-aeatsiiIssent",
+        "category": "readonlylogic-evaluable",
+        "entity": "header",
+        "field": "aeatsiiIssent",
+        "runner": "node",
+        "description": "Read-only logic for 'aeatsiiIssent' in header should have evaluable flag"
+      },
+      {
         "id": "t-readonlylogic-evaluable-header-aeatsiiPeriodo",
         "category": "readonlylogic-evaluable",
         "entity": "header",
@@ -5614,6 +5696,14 @@
         "field": "aeatsiiEjercicio",
         "runner": "node",
         "description": "Read-only logic for 'aeatsiiEjercicio' in header should be valid JS"
+      },
+      {
+        "id": "t-readonlylogic-valid-header-aeatsiiIssent",
+        "category": "readonlylogic-valid",
+        "entity": "header",
+        "field": "aeatsiiIssent",
+        "runner": "node",
+        "description": "Read-only logic for 'aeatsiiIssent' in header should be valid JS"
       },
       {
         "id": "t-readonlylogic-valid-header-aeatsiiPeriodo",
@@ -6102,14 +6192,6 @@
         "field": "aeatsiiInvoice",
         "runner": "node",
         "description": "System field 'aeatsiiInvoice' should exist in backend but not frontend for header"
-      },
-      {
-        "id": "t-system-field-header-aeatsiiIssent",
-        "category": "system-field",
-        "entity": "header",
-        "field": "aeatsiiIssent",
-        "runner": "node",
-        "description": "System field 'aeatsiiIssent' should exist in backend but not frontend for header"
       },
       {
         "id": "t-system-field-header-aeatsiiModif",
@@ -7502,25 +7584,25 @@
       }
     ],
     "summary": {
-      "total": 448,
+      "total": 454,
       "byCategory": {
         "action-endpoint": 24,
         "crud-flags": 3,
-        "default-value-type": 20,
-        "displaylogic-evaluable": 17,
-        "displaylogic-valid": 17,
-        "field-presence": 52,
-        "field-type": 52,
-        "readonlylogic-evaluable": 21,
-        "readonlylogic-valid": 21,
+        "default-value-type": 21,
+        "displaylogic-evaluable": 18,
+        "displaylogic-valid": 18,
+        "field-presence": 53,
+        "field-type": 53,
+        "readonlylogic-evaluable": 22,
+        "readonlylogic-valid": 22,
         "rule-declared": 8,
         "searchable-filters": 6,
         "selector-endpoint": 13,
-        "system-field": 191,
+        "system-field": 190,
         "visibility": 3
       },
       "byRunner": {
-        "node": 448,
+        "node": 454,
         "junit": 0
       }
     }

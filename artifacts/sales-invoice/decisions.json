@@ -307,6 +307,10 @@
           "visibility": "editable",
           "form": false
         },
+        "aeatsiiIssent": {
+          "visibility": "readOnly",
+          "form": false
+        },
         "etsgDateOperation": {
           "visibility": "editable",
           "form": false
