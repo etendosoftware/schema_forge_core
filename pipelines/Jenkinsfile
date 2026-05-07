@@ -211,7 +211,7 @@ pipeline {
                                     ]
 
                                     extraModules.each { repoUrl ->
-                                        def moduleName = repoUrl.tokenize('/').last().replaceAll(/\\.git$/, '')
+                                        def moduleName = repoUrl.tokenize('/').last().replaceAll(/\.git$/, '')
                                         names << moduleName
                                         echo "---------------------- Cloning extra module ${moduleName} ----------------------"
 
