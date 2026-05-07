@@ -2,10 +2,12 @@
 
 # --- Testing ---
 
-test: ## Run all CLI tests and app-shell unit tests
+test: ## Run all unit tests (CLI + app-shell + artifacts + vitest)
 	cd cli && node --test 'test/*.test.js'
-	node --test tools/app-shell/src/lib/__tests__/*.test.js
-	node --test tools/app-shell/src/pages/onboarding/__tests__/*.test.js
+	node --test 'tools/app-shell/src/**/__tests__/*.test.js'
+	node --test 'tools/app-shell/test/*.test.js'
+	node --test 'artifacts/**/__tests__/*.test.js'
+	cd tools/app-shell && npx vitest run
 
 test-all-coverage: ## Run ALL unit tests (Node + Vitest) with coverage reports
 	@mkdir -p coverage
