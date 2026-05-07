@@ -129,11 +129,12 @@ export default function SalesInvoiceWindow(props) {
 
   const filterParam = searchParams.get('filter');
   const docStatus = searchParams.get('DocStatus');
-  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
 
   const isOverdue = filterParam === 'overdue';
+  const isCollectionsDueToday = filterParam === 'collectionsDueToday';
+  const isInvoiceFilter = isOverdue || isCollectionsDueToday;
 
-  const initialAdvancedFilter = isOverdue
+  const initialAdvancedFilter = isInvoiceFilter
     ? {
         rowOperator: 'and',
         conditions: [
@@ -142,6 +143,25 @@ export default function SalesInvoiceWindow(props) {
         ],
       }
     : null;
+
+  const initialColumnFilters = (() => {
+    if (docStatus) return { documentStatus: docStatus };
+    if (isCollectionsDueToday) {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const pad = (n) => String(n).padStart(2, '0');
+      const todayISO = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      return {
+        invoiceDate: {
+          mode: 'date',
+          op: 'range',
+          value: [todayISO, todayISO],
+          originalValue: 'preset:today',
+        },
+      };
+    }
+    return undefined;
+  })();
 
   return (
     <>
@@ -153,7 +173,7 @@ export default function SalesInvoiceWindow(props) {
         breadcrumb={breadcrumb}
         initialColumnFilters={initialColumnFilters}
         initialAdvancedFilter={initialAdvancedFilter}
-        initialColumns={isOverdue ? OVERDUE_INITIAL_COLUMNS : null}
+        initialColumns={isInvoiceFilter ? OVERDUE_INITIAL_COLUMNS : null}
         dateFilterKey="invoiceDate"
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
         bulkActions={(ctx) => <BulkDocumentAction {...ctx} />}
