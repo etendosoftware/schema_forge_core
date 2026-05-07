@@ -671,7 +671,9 @@ export async function main(windowId, windowName) {
          FROM AD_Ref_List rl
          WHERE rl.AD_Reference_ID = ANY($1)
            AND rl.IsActive = 'Y'
-         ORDER BY rl.SeqNo, rl.Name`,
+         ORDER BY rl.SeqNo,
+                  regexp_replace(rl.Name, '[^A-Za-z0-9]', '', 'g') COLLATE "C",
+                  rl.AD_Ref_List_ID`,
         [listRefIds]
       );
       for (const row of enumResult.rows) {

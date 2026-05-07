@@ -1,8 +1,8 @@
 {
-  "version": "0.4.0",
+  "version": "0.5.0",
   "generatedAt": "2026-05-06T15:52:09.982Z",
-  "updatedAt": "2026-05-06T23:10:13.761Z",
-  "checksum": "cc444fa6a8f66f0b",
+  "updatedAt": "2026-05-07T13:02:31.973Z",
+  "checksum": "ee133f89b9e2b749",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -1770,20 +1770,20 @@
                 "name": "MURCIA AEROPUERTO"
               },
               {
-                "value": "INTRES_0711",
-                "name": "P . MALLORCA MARITIMA"
-              },
-              {
-                "value": "INTRES_0701",
-                "name": "P. MALLORCA AEROPUERTO"
-              },
-              {
                 "value": "INTRES_1711",
                 "name": "PALAMOS MARITIMA"
               },
               {
                 "value": "INTRES_2011",
                 "name": "PASAJES MARITIMA"
+              },
+              {
+                "value": "INTRES_0701",
+                "name": "P. MALLORCA AEROPUERTO"
+              },
+              {
+                "value": "INTRES_0711",
+                "name": "P . MALLORCA MARITIMA"
               },
               {
                 "value": "INTRES_1121",
@@ -2554,20 +2554,20 @@
                 "name": "MURCIA AEROPUERTO"
               },
               {
-                "value": "INTRES_0711",
-                "name": "P . MALLORCA MARITIMA"
-              },
-              {
-                "value": "INTRES_0701",
-                "name": "P. MALLORCA AEROPUERTO"
-              },
-              {
                 "value": "INTRES_1711",
                 "name": "PALAMOS MARITIMA"
               },
               {
                 "value": "INTRES_2011",
                 "name": "PASAJES MARITIMA"
+              },
+              {
+                "value": "INTRES_0701",
+                "name": "P. MALLORCA AEROPUERTO"
+              },
+              {
+                "value": "INTRES_0711",
+                "name": "P . MALLORCA MARITIMA"
               },
               {
                 "value": "INTRES_1121",

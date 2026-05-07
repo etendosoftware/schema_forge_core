@@ -1,8 +1,8 @@
 {
-  "version": "0.18.0",
+  "version": "0.19.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-06T19:55:04.605Z",
-  "checksum": "82bd527c159d88b8",
+  "updatedAt": "2026-05-07T13:02:55.595Z",
+  "checksum": "acd915da229ecc07",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -1350,12 +1350,12 @@
                 "name": "Arrendamiento financiero (alquiler­compra)"
               },
               {
-                "value": "INTRES_11",
-                "name": "Compra/venta en firme"
-              },
-              {
                 "value": "INTRES_14",
                 "name": "Compras por particulares"
+              },
+              {
+                "value": "INTRES_11",
+                "name": "Compra/venta en firme"
               },
               {
                 "value": "INTRES_21",
@@ -1382,12 +1382,12 @@
                 "name": "Operaciones tras el trabajo por encargo"
               },
               {
-                "value": "INTRES_33",
-                "name": "Otras entregas de ayuda (particulares, orgs. no gubernamenta"
-              },
-              {
                 "value": "INTRES_32",
                 "name": "Otras entregas de ayuda gubernamental"
+              },
+              {
+                "value": "INTRES_33",
+                "name": "Otras entregas de ayuda (particulares, orgs. no gubernamenta"
               },
               {
                 "value": "INTRES_90",
@@ -1632,20 +1632,20 @@
                 "name": "MURCIA AEROPUERTO"
               },
               {
-                "value": "INTRES_0711",
-                "name": "P . MALLORCA MARITIMA"
-              },
-              {
-                "value": "INTRES_0701",
-                "name": "P. MALLORCA AEROPUERTO"
-              },
-              {
                 "value": "INTRES_1711",
                 "name": "PALAMOS MARITIMA"
               },
               {
                 "value": "INTRES_2011",
                 "name": "PASAJES MARITIMA"
+              },
+              {
+                "value": "INTRES_0701",
+                "name": "P. MALLORCA AEROPUERTO"
+              },
+              {
+                "value": "INTRES_0711",
+                "name": "P . MALLORCA MARITIMA"
               },
               {
                 "value": "INTRES_1121",

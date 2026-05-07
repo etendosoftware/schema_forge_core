@@ -102,29 +102,34 @@ WHERE t.AD_Window_ID = $1
   AND (f.DisplayLogic IS NOT NULL OR c.ReadOnlyLogic IS NOT NULL)`,
 
   'document-processes': `
-SELECT 'tab_process' AS mechanism,
-       p.AD_Process_ID AS process_id, NULL AS obuiapp_process_id,
-       p.Name, p.Classname, NULL AS column_name
-FROM AD_Process p
-JOIN AD_Tab t ON t.AD_Process_ID = p.AD_Process_ID
-WHERE t.AD_Window_ID = $1
-UNION ALL
-SELECT 'classic_process' AS mechanism,
-       p.AD_Process_ID AS process_id, NULL AS obuiapp_process_id,
-       p.Name, p.Classname, c.ColumnName
-FROM AD_Process p
-JOIN AD_Column c ON c.AD_Process_ID = p.AD_Process_ID
-JOIN AD_Tab t ON c.AD_Table_ID = t.AD_Table_ID
-WHERE t.AD_Window_ID = $1
-UNION ALL
-SELECT 'obuiapp_process' AS mechanism,
-       NULL AS process_id, op.OBUIAPP_Process_ID AS obuiapp_process_id,
-       op.Name, op.Classname, c.ColumnName
-FROM OBUIAPP_Process op
-JOIN AD_Column c ON c.EM_OBUIAPP_Process_ID = op.OBUIAPP_Process_ID
-JOIN AD_Tab t ON c.AD_Table_ID = t.AD_Table_ID
-WHERE t.AD_Window_ID = $1
-ORDER BY mechanism, name`,
+SELECT * FROM (
+  SELECT 'tab_process' AS mechanism,
+         p.AD_Process_ID AS process_id, NULL AS obuiapp_process_id,
+         p.Name, p.Classname, NULL AS column_name
+  FROM AD_Process p
+  JOIN AD_Tab t ON t.AD_Process_ID = p.AD_Process_ID
+  WHERE t.AD_Window_ID = $1
+  UNION ALL
+  SELECT 'classic_process' AS mechanism,
+         p.AD_Process_ID AS process_id, NULL AS obuiapp_process_id,
+         p.Name, p.Classname, c.ColumnName
+  FROM AD_Process p
+  JOIN AD_Column c ON c.AD_Process_ID = p.AD_Process_ID
+  JOIN AD_Tab t ON c.AD_Table_ID = t.AD_Table_ID
+  WHERE t.AD_Window_ID = $1
+  UNION ALL
+  SELECT 'obuiapp_process' AS mechanism,
+         NULL AS process_id, op.OBUIAPP_Process_ID AS obuiapp_process_id,
+         op.Name, op.Classname, c.ColumnName
+  FROM OBUIAPP_Process op
+  JOIN AD_Column c ON c.EM_OBUIAPP_Process_ID = op.OBUIAPP_Process_ID
+  JOIN AD_Tab t ON c.AD_Table_ID = t.AD_Table_ID
+  WHERE t.AD_Window_ID = $1
+) doc_processes
+ORDER BY mechanism,
+         regexp_replace(name, '[^A-Za-z0-9]', '', 'g') COLLATE "C",
+         COALESCE(classname, '') COLLATE "C",
+         COALESCE(column_name, '') COLLATE "C"`,
 
   'auxiliary-inputs': `
 SELECT ai.Name, ai.Code AS validation_code, t.Name AS tab_name, t.AD_Tab_ID

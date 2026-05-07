@@ -46,51 +46,55 @@ ORDER BY t.SeqNo, t.Name, t.AD_Tab_ID, ai.Name, ai.AD_AuxiliarInput_ID
 `;
 
 const DOCUMENT_PROCESSES_SQL = `
--- 1. Tab-level process
-SELECT 'tab_process' AS mechanism,
-       p.AD_Process_ID AS process_id, NULL AS obuiapp_process_id,
-       p.Name, p.Classname, NULL AS column_name
-FROM AD_Process p
-JOIN AD_Tab t ON t.AD_Process_ID = p.AD_Process_ID
-WHERE t.AD_Window_ID = $1
+SELECT * FROM (
+  -- 1. Tab-level process
+  SELECT 'tab_process' AS mechanism,
+         p.AD_Process_ID AS process_id, NULL AS obuiapp_process_id,
+         p.Name, p.Classname, NULL AS column_name
+  FROM AD_Process p
+  JOIN AD_Tab t ON t.AD_Process_ID = p.AD_Process_ID
+  WHERE t.AD_Window_ID = $1
 
-UNION ALL
+  UNION ALL
 
--- 2. Classic process (button column -> AD_Process)
-SELECT 'classic_process' AS mechanism,
-       p.AD_Process_ID AS process_id, NULL AS obuiapp_process_id,
-       p.Name, p.Classname, c.ColumnName
-FROM AD_Process p
-JOIN AD_Column c ON c.AD_Process_ID = p.AD_Process_ID
-JOIN AD_Tab t ON c.AD_Table_ID = t.AD_Table_ID
-WHERE t.AD_Window_ID = $1
+  -- 2. Classic process (button column -> AD_Process)
+  SELECT 'classic_process' AS mechanism,
+         p.AD_Process_ID AS process_id, NULL AS obuiapp_process_id,
+         p.Name, p.Classname, c.ColumnName
+  FROM AD_Process p
+  JOIN AD_Column c ON c.AD_Process_ID = p.AD_Process_ID
+  JOIN AD_Tab t ON c.AD_Table_ID = t.AD_Table_ID
+  WHERE t.AD_Window_ID = $1
 
-UNION ALL
+  UNION ALL
 
--- 3. OBUIAPP Process (button column -> OBUIAPP_Process)
-SELECT 'obuiapp_process' AS mechanism,
-       NULL AS process_id, op.OBUIAPP_Process_ID AS obuiapp_process_id,
-       op.Name, op.Classname, c.ColumnName
-FROM OBUIAPP_Process op
-JOIN AD_Column c ON c.EM_OBUIAPP_Process_ID = op.OBUIAPP_Process_ID
-JOIN AD_Tab t ON c.AD_Table_ID = t.AD_Table_ID
-WHERE t.AD_Window_ID = $1
+  -- 3. OBUIAPP Process (button column -> OBUIAPP_Process)
+  SELECT 'obuiapp_process' AS mechanism,
+         NULL AS process_id, op.OBUIAPP_Process_ID AS obuiapp_process_id,
+         op.Name, op.Classname, c.ColumnName
+  FROM OBUIAPP_Process op
+  JOIN AD_Column c ON c.EM_OBUIAPP_Process_ID = op.OBUIAPP_Process_ID
+  JOIN AD_Tab t ON c.AD_Table_ID = t.AD_Table_ID
+  WHERE t.AD_Window_ID = $1
 
-UNION ALL
+  UNION ALL
 
--- 4. Hardcoded buttons (no process linked)
-SELECT 'hardcoded' AS mechanism,
-       NULL AS process_id, NULL AS obuiapp_process_id,
-       c.ColumnName AS name, NULL AS classname, c.ColumnName
-FROM AD_Column c
-JOIN AD_Tab t ON c.AD_Table_ID = t.AD_Table_ID
-JOIN AD_Reference r ON c.AD_Reference_ID = r.AD_Reference_ID
-WHERE t.AD_Window_ID = $1
-  AND r.Name = 'Button'
-  AND c.AD_Process_ID IS NULL
-  AND c.EM_OBUIAPP_Process_ID IS NULL
-
-ORDER BY mechanism, name
+  -- 4. Hardcoded buttons (no process linked)
+  SELECT 'hardcoded' AS mechanism,
+         NULL AS process_id, NULL AS obuiapp_process_id,
+         c.ColumnName AS name, NULL AS classname, c.ColumnName
+  FROM AD_Column c
+  JOIN AD_Tab t ON c.AD_Table_ID = t.AD_Table_ID
+  JOIN AD_Reference r ON c.AD_Reference_ID = r.AD_Reference_ID
+  WHERE t.AD_Window_ID = $1
+    AND r.Name = 'Button'
+    AND c.AD_Process_ID IS NULL
+    AND c.EM_OBUIAPP_Process_ID IS NULL
+) doc_processes
+ORDER BY mechanism,
+         regexp_replace(name, '[^A-Za-z0-9]', '', 'g') COLLATE "C",
+         COALESCE(classname, '') COLLATE "C",
+         COALESCE(column_name, '') COLLATE "C"
 `;
 
 // --- Pure functions ---

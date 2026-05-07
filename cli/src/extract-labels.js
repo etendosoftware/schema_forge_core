@@ -51,7 +51,9 @@ WHERE rl.value IN (
   'ETGO_CI'
 )
 AND rl.isactive = 'Y'
-ORDER BY rl.value, rlt.name NULLS LAST`,
+ORDER BY rl.value,
+         regexp_replace(COALESCE(rlt.name, ''), '[^A-Za-z0-9]', '', 'g') COLLATE "C" NULLS LAST,
+         rl.ad_ref_list_id`,
 };
 
 /**
