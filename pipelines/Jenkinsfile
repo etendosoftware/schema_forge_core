@@ -168,6 +168,13 @@ pipeline {
                             def coreCheckout = checkoutChain()
                             def goCheckout   = checkoutChain()
                             def sfCheckout   = checkoutChain()
+
+                            // TODO: Remove this block to restore normal branch resolution for etendo_core
+                            if (!isHotfixBranch && !(isFeatureBranch && env.EPIC_BRANCH)) {
+                                coreCheckout = "git checkout epic/ETP-3504 || git checkout ${DEVELOP_BRANCH}\n" +
+                                               "git checkout ${env.GIT_BRANCH} || echo 'Branch ${env.GIT_BRANCH} not found, keeping previous checkout'"
+                                echo "Hardcoding etendo_core checkout to epic/ETP-3504 (fallback develop)"
+                            }
                             echo "Checkout chain for etendo_core / com.etendoerp.go / schema_forge:\n${coreCheckout}"
 
                             withCredentials([sshUserPrivateKey(credentialsId: 'my-credentials', keyFileVariable: 'keyfile')]) {
