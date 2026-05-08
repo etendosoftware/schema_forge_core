@@ -283,7 +283,7 @@ Additional actions shown in the dropdown of the split "New" button in the list v
 | `label` | string | Display label in the dropdown menu. |
 | `component` | string | Optional. Name of a custom component in `tools/app-shell/src/windows/custom/{window}/`. When set, the generator imports it, creates a `show{Key}Modal` state, and passes `onClick: () => setShow{Key}Modal(true)`. If omitted, generates an empty `onClick` placeholder. |
 
-The component receives: `apiBaseUrl`, `windowName`, `onClose`. Components that need authenticated API calls should use `useApiFetch(apiBaseUrl)` instead of accepting or constructing raw auth headers.
+The component receives: `token`, `apiBaseUrl`, `windowName`, `onClose`. The `token` prop remains for legacy compatibility while existing generated custom components are migrated. New or migrated components that need authenticated API calls should use `useApiFetch(apiBaseUrl)` instead of constructing raw auth headers.
 
 ### Process Overrides (`window.processOverrides`)
 

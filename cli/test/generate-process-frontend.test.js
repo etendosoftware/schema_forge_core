@@ -73,8 +73,8 @@ describe('generateProcessIndex', () => {
     assert.ok(code.includes('export default function App'));
   });
 
-  it('passes apiBaseUrl without token props', () => {
-    assert.ok(!code.includes('token'), 'generated process entrypoint should not expose token');
+  it('passes token and apiBaseUrl props', () => {
+    assert.ok(code.includes('token={token}'));
     assert.ok(code.includes('apiBaseUrl={apiBaseUrl}'));
   });
 

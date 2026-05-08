@@ -55,3 +55,8 @@ export default function MyWindowCustom({ apiBaseUrl, windowName, recordId, windo
   // Use apiFetch(...) for authenticated requests.
 }
 ```
+
+Generated and legacy extension points may still receive a `token` prop while
+contract-ui and existing custom components are migrated. Do not add new local
+`Authorization` header construction when touching a component; prefer
+`useApiFetch(apiBaseUrl)` for new or migrated API calls.

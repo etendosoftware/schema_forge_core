@@ -638,7 +638,7 @@ describe('generatePageComponent', () => {
     assert.ok(!code.includes('shadow-sm'));
   });
 
-  it('does not pass token to gallery detail header custom components', () => {
+  it('preserves token for gallery detail header custom components until they migrate', () => {
     const galleryContract = {
       apiPrediction: { baseUrl: '/sws/neo/product', specName: 'product' },
       frontendContract: {
@@ -657,10 +657,10 @@ describe('generatePageComponent', () => {
     };
     const code = generatePageComponent('product', null, galleryContract);
     assert.ok(code.includes('headerContent={'), 'should render the gallery detail header slot');
-    assert.ok(!code.includes('token={props.token}'), 'gallery custom header should not receive token');
+    assert.ok(code.includes('token={props.token}'), 'gallery custom header should receive token for legacy compatibility');
   });
 
-  it('does not pass token to sidebar custom components', () => {
+  it('preserves token for sidebar custom components until they migrate', () => {
     const sidebarContract = {
       frontendContract: {
         window: { id: '102', name: 'Contacts', primaryEntity: 'contact', category: 'crm', sidebarLayout: true },
@@ -678,7 +678,7 @@ describe('generatePageComponent', () => {
     };
     const code = generatePageComponent('contact', null, sidebarContract);
     assert.ok(code.includes('sidebarContent='), 'should render the sidebar slot');
-    assert.ok(!code.includes('token={props.token}'), 'sidebar custom component should not receive token');
+    assert.ok(code.includes('token={props.token}'), 'sidebar custom component should receive token for legacy compatibility');
   });
 });
 
@@ -687,9 +687,9 @@ describe('generatePageComponent', () => {
 // ---------------------------------------------------------------------------
 
 describe('generateIndexComponent', () => {
-  it('generates entry point with apiBaseUrl and window props for master-detail without token', () => {
+  it('generates entry point with token, apiBaseUrl, and window props for master-detail', () => {
     const code = generateIndexComponent('order', 'orderLine', masterDetailContract);
-    assert.ok(!code.includes('token'), 'generated window entrypoint should not expose token as a prop');
+    assert.ok(code.includes('token'));
     assert.ok(code.includes('apiBaseUrl'));
     assert.ok(code.includes('window'));
     assert.ok(code.includes('export default'));
@@ -717,9 +717,9 @@ describe('generateIndexComponent', () => {
 
   it('passes correct props to Page for single-entity', () => {
     const code = generateIndexComponent('item', null, singleEntityContract);
-    assert.ok(!code.includes('token={token}'), 'generated Page should not receive token explicitly');
+    assert.ok(code.includes('token={token}'));
     assert.ok(code.includes('apiBaseUrl={apiBaseUrl}'));
-    assert.ok(!code.includes('{...rest}'), 'generated entrypoint should not forward arbitrary props');
+    assert.ok(code.includes('{...rest}'));
   });
 
   it('includes windowMeta with category and name for single-entity', () => {
@@ -1356,9 +1356,9 @@ describe('generatePageComponent - newRecordComponent', () => {
     assert.ok(code.includes('onClose={() => setShowNewModal(false)}'), 'should pass onClose to close the modal');
   });
 
-  it('passes apiBaseUrl and windowName to modal without token', () => {
+  it('passes token, apiBaseUrl, and windowName to modal', () => {
     const code = generatePageComponent('finPayment', null, newRecordContract);
-    assert.ok(!code.includes('token={props.token}'), 'should not pass token');
+    assert.ok(code.includes('token={props.token}'), 'should pass token for legacy compatibility');
     assert.ok(code.includes('apiBaseUrl={props.apiBaseUrl}'), 'should pass apiBaseUrl');
     assert.ok(code.includes('windowName={windowName}'), 'should pass windowName');
   });
