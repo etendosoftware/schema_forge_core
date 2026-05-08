@@ -32,6 +32,7 @@ const Checkbox = forwardRef(function Checkbox(
         checked={!!checked}
         readOnly
         tabIndex={-1}
+        aria-hidden="true"
         className="sr-only"
       />
       <div className={cn(

@@ -1,8 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 
-const src = readFileSync(new URL('../custom-icons.jsx', import.meta.url), 'utf8');
+const src = await readFile(new URL('../custom-icons.jsx', import.meta.url), 'utf8');
 
 // ---------------------------------------------------------------------------
 // custom-icons.jsx — source-reading tests (ETP-3660)

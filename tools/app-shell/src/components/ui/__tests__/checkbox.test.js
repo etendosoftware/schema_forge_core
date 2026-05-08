@@ -1,8 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 
-const src = readFileSync(new URL('../checkbox.jsx', import.meta.url), 'utf8');
+const src = await readFile(new URL('../checkbox.jsx', import.meta.url), 'utf8');
 
 // ---------------------------------------------------------------------------
 // checkbox.jsx — source-reading tests (ETP-3660)
@@ -96,6 +96,10 @@ describe('Checkbox — hidden input element (ETP-3660)', () => {
 
   it('input is readOnly (no onChange on the input itself)', () => {
     assert.match(src, /readOnly/);
+  });
+
+  it('input has aria-hidden="true" to exclude it from the accessibility tree', () => {
+    assert.match(src, /aria-hidden="true"/);
   });
 
   it('input checked value is coerced to boolean (!!checked)', () => {
