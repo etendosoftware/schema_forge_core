@@ -47,7 +47,11 @@ const customLoaders = {
 Custom window components receive the same props as any generated window:
 
 ```jsx
-export default function MyWindowCustom({ token, apiBaseUrl, windowName, recordId, window }) {
-  // ...
+import { useApiFetch } from '@/auth/useApiFetch.js';
+
+export default function MyWindowCustom({ apiBaseUrl, windowName, recordId, window }) {
+  const apiFetch = useApiFetch(apiBaseUrl);
+
+  // Use apiFetch(...) for authenticated requests.
 }
 ```

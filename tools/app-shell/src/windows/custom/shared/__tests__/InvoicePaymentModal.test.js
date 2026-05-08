@@ -19,10 +19,22 @@ describe('InvoicePaymentModal', () => {
     assert.match(src, /export function PaymentRegisterForm/);
   });
 
-  it('accepts invoiceId, invoiceData, specName, token, apiBaseUrl, and onClose props', () => {
+  it('accepts invoiceId, invoiceData, specName, apiBaseUrl, and onClose props without token', () => {
     assert.match(src, /invoiceId/);
     assert.match(src, /invoiceData/);
     assert.match(src, /specName/);
+    assert.doesNotMatch(src, /export default function InvoicePaymentModal\(\{[^}]*\btoken\b/s);
+  });
+
+  it('uses the centralized authenticated fetch hook instead of building Authorization locally', () => {
+    assert.match(src, /useApiFetch/);
+    assert.doesNotMatch(src, /Authorization:\s*`Bearer \$\{token\}`/);
+    assert.doesNotMatch(src, /headers=\{headers\}/);
+  });
+
+  it('does not pass raw headers into PaymentRegisterForm', () => {
+    assert.doesNotMatch(src, /export function PaymentRegisterForm\(\{[^}]*\bheaders\b/s);
+    assert.doesNotMatch(src, /<PaymentRegisterForm[\s\S]*headers=\{headers\}/);
   });
 
   // ── Installment label ──────────────────────────────────────────────────────

@@ -968,7 +968,6 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     : (isGallery && !isSidebar ? `\n        headerContent={
           <${headerName}DetailHeader
             recordId={recordId}
-            token={props.token}
             apiBaseUrl={api.baseUrl}
           />
         }` : '');
@@ -977,7 +976,6 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
           <${headerName}Sidebar
             recordId={recordId}
             data={data}
-            token={props.token}
             apiBaseUrl={props.apiBaseUrl}
           />
         )}`
@@ -1082,7 +1080,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const newActionsModals = newActionsWithComponents.map(a => {
     const stateName = `show${capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()))}Modal`;
     const setterName = `set${capitalize(a.key.replace(/-./g, m => m[1].toUpperCase()))}Modal`;
-    return `    {${stateName} && <${a.component} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} onClose={() => ${setterName}(false)} />}`;
+    return `    {${stateName} && <${a.component} apiBaseUrl={props.apiBaseUrl} windowName={windowName} onClose={() => ${setterName}(false)} />}`;
   }).join('\n');
 
   const needsUseState = customComponents.newRecordComponent || newActionsWithComponents.length > 0;
@@ -1177,7 +1175,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
       {...props}${customComponents.newRecordComponent ? `
       onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}
     />${customComponents.newRecordComponent ? `
-    {showNewModal && <${customComponents.newRecordComponent} token={props.token} apiBaseUrl={props.apiBaseUrl} windowName={windowName} onClose={() => setShowNewModal(false)} />}` : ''}${newActionsWithComponents.length > 0 ? `\n${newActionsModals}` : ''}${needsFragment ? `
+    {showNewModal && <${customComponents.newRecordComponent} apiBaseUrl={props.apiBaseUrl} windowName={windowName} onClose={() => setShowNewModal(false)} />}` : ''}${newActionsWithComponents.length > 0 ? `\n${newActionsModals}` : ''}${needsFragment ? `
     </>` : ''}
   );
 }
@@ -1187,7 +1185,7 @@ ${MARKERS.GENERATED_END(`component:${compName}`)}
 
 /**
  * Generate the entry point / index component.
- * Accepts { token, apiBaseUrl, window } props.
+ * Accepts { apiBaseUrl, window } props.
  */
 export function generateIndexComponent(headerEntity, detailEntity, contract) {
   const headerName = toJsIdentifier(headerEntity);
@@ -1202,8 +1200,8 @@ export function generateIndexComponent(headerEntity, detailEntity, contract) {
 const windowMeta = { category: '${category}', name: '${windowName}' };
 
 ${MARKERS.GENERATED_START('component:App')}
-export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
-  return <${headerName}Page windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta}${apiProp} {...rest} />;
+export default function App({ windowName, recordId, apiBaseUrl, window }) {
+  return <${headerName}Page windowName={windowName} recordId={recordId} apiBaseUrl={apiBaseUrl} window={window || windowMeta}${apiProp} />;
 }
 ${MARKERS.GENERATED_END('component:App')}
 `;
@@ -1339,8 +1337,8 @@ export function generateProcessIndex(contract) {
 
 const processMeta = { name: '${proc.name.replace(/'/g, "\\'")}', specName: '${proc.specName}' };
 
-export default function App({ token, apiBaseUrl }) {
-  return <${compName} token={token} apiBaseUrl={apiBaseUrl} process={processMeta} />;
+export default function App({ apiBaseUrl }) {
+  return <${compName} apiBaseUrl={apiBaseUrl} process={processMeta} />;
 }
 `;
 }
@@ -1409,8 +1407,8 @@ export function generateReportIndex(contract) {
 
 const reportMeta = { name: '${proc.name.replace(/'/g, "\\'")}', specName: '${proc.specName}' };
 
-export default function App({ token, apiBaseUrl }) {
-  return <${compName} token={token} apiBaseUrl={apiBaseUrl} report={reportMeta} />;
+export default function App({ apiBaseUrl }) {
+  return <${compName} apiBaseUrl={apiBaseUrl} report={reportMeta} />;
 }
 `;
 }

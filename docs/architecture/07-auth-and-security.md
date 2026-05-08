@@ -89,7 +89,7 @@ After a successful platform login or registration, `routeByEnvironments()` decid
 1. Automatic `Authorization: Bearer <token>` header injection
 2. Automatic 401 detection -- calls `onUnauthorized()` callback (typically triggers logout + redirect)
 
-Every API call from the SPA passes through this wrapper, ensuring consistent auth handling.
+React components should access it through `useApiFetch(baseUrl)`, which reads the token from `AuthContext` and wires unauthorized responses to `logout()`. Custom windows and generated extension components should not accept raw token props or construct `Authorization` headers locally.
 
 ### Session Defaults Endpoint
 

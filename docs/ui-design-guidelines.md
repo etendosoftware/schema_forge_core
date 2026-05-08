@@ -116,7 +116,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { formatCurrency } from '@/lib/formatCurrency';
 
 // Context: component without a document record (sidebar, KPI card, modal)
-export default function MyComponent({ recordId, token, apiBaseUrl }) {
+export default function MyComponent({ recordId, apiBaseUrl }) {
   const orgCurrency = useCurrency() ?? 'USD';
 
   return (
