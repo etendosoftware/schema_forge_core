@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { createPortal } from 'react-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -1216,13 +1217,11 @@ export function DataTable({
             <TableRow className="border-b border-border/40">
               {selectable && (
                 <TableHead className="w-10 px-3 align-middle" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={allSelected}
-                    ref={el => { if (el) el.indeterminate = someSelected; }}
+                    indeterminate={someSelected}
                     onChange={toggleAll}
                     onClick={(e) => e.stopPropagation()}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
                   />
                 </TableHead>
               )}
@@ -1291,14 +1290,11 @@ export function DataTable({
                       const rowDisabled = isRowSelectable && !isRowSelectable(row);
                       return (
                         <TableCell className="w-10 px-3" onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={isChecked}
                             disabled={rowDisabled}
                             onChange={(e) => toggleRow(e, row)}
                             onClick={(e) => e.stopPropagation()}
-                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                            style={rowDisabled ? { opacity: 0.3, cursor: 'not-allowed' } : undefined}
                           />
                         </TableCell>
                       );
