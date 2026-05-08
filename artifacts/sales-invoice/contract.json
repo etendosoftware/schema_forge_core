@@ -1,8 +1,8 @@
 {
   "version": "0.24.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
-  "updatedAt": "2026-05-07T18:28:19.946Z",
-  "checksum": "e076f9ae129c5eab",
+  "updatedAt": "2026-05-08T11:14:41.858Z",
+  "checksum": "1a0649f317a65706",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -7739,15 +7739,15 @@
       }
     ],
     "summary": {
-      "total": 463,
+      "total": 465,
       "byCategory": {
         "action-endpoint": 24,
         "crud-flags": 3,
         "default-value-type": 22,
         "displaylogic-evaluable": 20,
         "displaylogic-valid": 20,
-        "field-presence": 55,
-        "field-type": 55,
+        "field-presence": 56,
+        "field-type": 56,
         "readonlylogic-evaluable": 23,
         "readonlylogic-valid": 23,
         "rule-declared": 8,
@@ -7757,7 +7757,7 @@
         "visibility": 3
       },
       "byRunner": {
-        "node": 463,
+        "node": 465,
         "junit": 0
       }
     }
