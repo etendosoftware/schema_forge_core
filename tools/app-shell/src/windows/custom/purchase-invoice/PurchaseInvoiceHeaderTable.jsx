@@ -39,6 +39,7 @@ export default function PurchaseInvoiceHeaderTable(props) {
     { key: 'documentStatus', column: 'DocStatus', type: 'status' },
     { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
     { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
+    { key: 'eTGODeliveryStatus', column: 'em_etgo_delivery_status', type: 'percent' },
   ], [gl, locale]);
 
   return <DataTable columns={columns} filters={filters} {...props} />;

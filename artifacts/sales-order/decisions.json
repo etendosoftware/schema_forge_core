@@ -10,20 +10,13 @@
     "hidePrint": true,
     "menuActions": [
       {
-        "key": "cancel",
-        "label": "Cancel",
-        "labelKey": "cancel",
-        "destructive": true,
-        "visibleWhenStatus": "CO"
-      },
-      {
         "key": "reactivate",
         "label": "Reactivate",
         "labelKey": "reactivate",
         "visibleWhenStatus": "CO",
         "visibleWhenFieldFalse": "hasLinkedDocuments",
         "documentAction": "RE",
-        "successKey": "actionCompleted"
+        "successKey": "reactivated"
       }
     ],
     "processOverrides": {},
@@ -35,11 +28,13 @@
     "labelOverrides": {
       "es_ES": {
         "C_BPartner_ID": "Contacto",
-        "DeliveryStatus": "Estado de entrega"
+        "DeliveryStatus": "Estado de entrega",
+        "InvoiceStatus": "Estado de facturación"
       },
       "en_US": {
         "C_BPartner_ID": "Contact",
-        "DeliveryStatus": "Delivery Status"
+        "DeliveryStatus": "Delivery Status",
+        "InvoiceStatus": "Invoicing Status"
       }
     },
     "noHeaderBorder": true,

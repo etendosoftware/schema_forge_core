@@ -23,6 +23,67 @@ function intlLocale(appLocale) {
   return (appLocale || 'en-GB').replace('_', '-');
 }
 
+// Inspects the locale to learn the natural date order (en-US is month-first;
+// es-ES, en-GB and most others are day-first) plus the literal separator,
+// so the input mask, placeholder and parser all match the locale convention.
+function getDatePattern(localeStr) {
+  const sample = new Date(2026, 0, 8);
+  const parts = new Intl.DateTimeFormat(localeStr, {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+  }).formatToParts(sample);
+  const order = parts
+    .filter((p) => p.type === 'day' || p.type === 'month' || p.type === 'year')
+    .map((p) => p.type);
+  const sepPart = parts.find((p) => p.type === 'literal' && p.value.trim());
+  const sep = sepPart ? sepPart.value.trim().charAt(0) : '/';
+  return { order, sep };
+}
+
+// Builds the visible placeholder hint (e.g. "dd/mm/aaaa", "mm/dd/yyyy") so the
+// user knows the expected order without trial and error.
+function buildDatePlaceholder(pattern, localeStr) {
+  const yearLabel = (localeStr || '').toLowerCase().startsWith('es') ? 'aaaa' : 'yyyy';
+  const labels = { day: 'dd', month: 'mm', year: yearLabel };
+  return pattern.order.map((seg) => labels[seg]).join(pattern.sep);
+}
+
+// Masks raw keyboard input to the locale-specific shape: drops every non-digit,
+// caps at 8 digits and auto-inserts the separators so the user cannot type
+// arbitrary characters and never has to type them manually.
+function formatDateInput(raw, pattern) {
+  const digits = (raw ?? '').replace(/\D/g, '').slice(0, 8);
+  const segLengths = { day: 2, month: 2, year: 4 };
+  const chunks = [];
+  let cursor = 0;
+  for (const seg of pattern.order) {
+    if (cursor >= digits.length) break;
+    const len = segLengths[seg];
+    chunks.push(digits.slice(cursor, cursor + len));
+    cursor += len;
+  }
+  return chunks.join(pattern.sep);
+}
+
+// Parses a user-typed date according to the locale pattern. Returns
+// { ok: true, iso } when the value is a real calendar date,
+// { ok: true, iso: '' } when empty, { ok: false } otherwise.
+function parseDateInput(text, pattern) {
+  const trimmed = (text ?? '').trim();
+  if (!trimmed) return { ok: true, iso: '' };
+  const m = trimmed.match(/^(\d{1,4})[\/\-.](\d{1,2})[\/\-.](\d{1,4})$/);
+  if (!m) return { ok: false };
+  const monthFirst = pattern.order[0] === 'month';
+  const day = Number(monthFirst ? m[2] : m[1]);
+  const month = Number(monthFirst ? m[1] : m[2]);
+  const year = Number(m[3]);
+  if (year < 1000 || year > 9999) return { ok: false };
+  if (month < 1 || month > 12) return { ok: false };
+  const lastDay = new Date(year, month, 0).getDate();
+  if (day < 1 || day > lastDay) return { ok: false };
+  const iso = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  return { ok: true, iso };
+}
+
 // Generates "Ene Feb Mar Abr May Jun Jul Ago Sep Oct Nov Dic" / "Jan Feb…" per locale.
 // Strips a trailing dot some locales add (e.g. "ene.") and capitalizes the first letter.
 function getMonthShortNames(localeStr) {
@@ -165,6 +226,11 @@ export function DateField({
   const { locale: appLocale } = useLocaleSwitch();
   const ui = useUI();
   const localeStr = intlLocale(appLocale);
+  const datePattern = React.useMemo(() => getDatePattern(localeStr), [localeStr]);
+  const localePlaceholder = React.useMemo(
+    () => buildDatePlaceholder(datePattern, localeStr),
+    [datePattern, localeStr],
+  );
 
   const [open, setOpen] = React.useState(false);
   const [view, setView] = React.useState('calendar'); // 'calendar' | 'picker'
@@ -190,10 +256,42 @@ export function DateField({
     if (parsedValue) setDisplayedMonth(parsedValue);
   }, [parsedValue]);
 
-  const displayText = parsedValue ? formatCalendarDate(value, appLocale) : '';
+  const formattedValue = parsedValue ? formatCalendarDate(value, appLocale) : '';
+
+  // Local state for the text the user is typing — kept separate from `value`
+  // so partial / invalid input doesn't fire onChange on every keystroke.
+  const [inputText, setInputText] = React.useState(formattedValue);
+  const [isFocused, setIsFocused] = React.useState(false);
+
+  // Sync input text when the value prop changes from outside, but only while
+  // the user is not actively typing (otherwise every keystroke would race
+  // with the parent's controlled value).
+  React.useEffect(() => {
+    if (!isFocused) setInputText(formattedValue);
+  }, [formattedValue, isFocused]);
+
+  const commitTypedValue = () => {
+    const parsed = parseDateInput(inputText, datePattern);
+    if (!parsed.ok) {
+      // Invalid input — revert to last known good value.
+      setInputText(formattedValue);
+      return null;
+    }
+    if (parsed.iso !== (value ?? '')) onChange?.(parsed.iso);
+    return parsed.iso;
+  };
 
   const handleOpenChange = (next) => {
     if (disabled) return;
+    if (next) {
+      // Commit any pending typed value so the calendar opens on the right
+      // month with the typed date highlighted.
+      const iso = commitTypedValue();
+      if (iso) {
+        const d = parseCalendarDate(iso);
+        if (d) setDisplayedMonth(d);
+      }
+    }
     setOpen(next);
     if (!next) {
       // Reset to calendar view whenever the popover closes so it always
@@ -204,13 +302,32 @@ export function DateField({
   };
 
   const handleSelect = (date) => {
-    onChange?.(toIsoDate(date));
+    const iso = toIsoDate(date);
+    onChange?.(iso);
+    setInputText(iso ? formatCalendarDate(iso, appLocale) : '');
     setOpen(false);
   };
 
   const handleClear = () => {
     onChange?.('');
+    setInputText('');
     setOpen(false);
+  };
+
+  const handleInputBlur = () => {
+    setIsFocused(false);
+    commitTypedValue();
+    onBlur?.();
+  };
+
+  const handleInputKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.currentTarget.blur();
+    } else if (e.key === 'Escape') {
+      setInputText(formattedValue);
+      e.currentTarget.blur();
+    }
   };
 
   const openPicker = () => {
@@ -283,32 +400,51 @@ export function DateField({
   const wrapperClass = cn(
     'flex items-center gap-2 h-10 w-full rounded-lg border border-[#D1D4DB] bg-white px-2',
     'shadow-[0px_1px_2px_rgba(18,18,23,0.05)]',
-    'text-left',
     disabled
       ? 'opacity-60 cursor-not-allowed bg-muted/50'
-      : 'cursor-pointer hover:border-[rgba(18,18,23,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+      : 'hover:border-[rgba(18,18,23,0.3)] focus-within:outline-none focus-within:ring-2 focus-within:ring-ring',
     className,
   );
 
+  // Default placeholder hints the expected typing format per locale
+  // (es-ES → dd/mm/aaaa; en-US → mm/dd/yyyy; en-GB → dd/mm/yyyy).
+  const inputPlaceholder = placeholder || localePlaceholder;
+
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
+      <div className={wrapperClass}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            disabled={disabled}
+            aria-label={ui('datePickerOpen')}
+            className={cn(
+              'inline-flex items-center justify-center shrink-0 rounded',
+              !disabled && 'hover:bg-[rgba(18,18,23,0.05)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            )}
+          >
+            <CalendarIcon className="h-6 w-6 shrink-0 text-[#A9A9BC]" aria-hidden="true" />
+          </button>
+        </PopoverTrigger>
+        <input
+          type="text"
           id={id}
           name={name}
           data-testid={dataTestId}
           disabled={disabled}
-          aria-required={required || undefined}
-          aria-label={placeholder || undefined}
-          className={wrapperClass}
-        >
-          <CalendarIcon className="h-6 w-6 shrink-0 text-[#A9A9BC]" aria-hidden="true" />
-          <span className="text-sm leading-6 font-normal text-[#121217] truncate">
-            {displayText || placeholder}
-          </span>
-        </button>
-      </PopoverTrigger>
+          required={required}
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder={isFocused ? inputPlaceholder : ''}
+          value={inputText}
+          onChange={(e) => setInputText(formatDateInput(e.target.value, datePattern))}
+          maxLength={10}
+          onFocus={() => setIsFocused(true)}
+          onBlur={handleInputBlur}
+          onKeyDown={handleInputKeyDown}
+          className="flex-1 min-w-0 bg-transparent border-0 outline-none text-sm leading-6 font-normal text-[#121217] placeholder:text-[#A9A9BC] disabled:cursor-not-allowed"
+        />
+      </div>
       {!disabled && (
         <PopoverContent className="w-[264px] p-0" align="start">
           <div className="p-2">

@@ -272,6 +272,10 @@ export default function ImportFromShipmentModal({ invoiceId, bpId, base, headers
           const grossUnitPrice = Number(priceData.grossUnitPrice) || 0;
           const unitPrice = Number(priceData.unitPrice) || grossUnitPrice || Number(line._unitPrice) || 0;
           const lineNetAmount = Number(priceData.lineNetAmount) || qty * unitPrice;
+          // listPrice is the price-list price before any discount. The callout returns it in
+          // priceData; without it the "Net List Price" column shows 0 on imported lines.
+          // Fallback to unitPrice: when no discount applies, list price equals unit price.
+          const listPrice = Number(priceData.listPrice) || unitPrice;
           const tax = priceData.tax || line._tax || null;
           const uOM = priceData.uOM || line._uOM || line.uOM || null;
 
@@ -280,6 +284,7 @@ export default function ImportFromShipmentModal({ invoiceId, bpId, base, headers
             product: line.product,
             invoicedQuantity: qty,
             unitPrice,
+            listPrice,
             // For tax-included price lists (GROSSPRICE='Y'), the server derives unitPrice and
             // lineNetAmount from grossUnitPrice. Sending it ensures correct calculation even when
             // the server's own callout would otherwise reset unitPrice to 0.

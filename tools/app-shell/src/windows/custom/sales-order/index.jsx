@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
+import { buildPendingDeliveryFilter } from '../shared/pendingDeliveryFilter.js';
 import GeneratedApp from '@generated/sales-order/generated/web/sales-order/index.jsx';
 import HeaderTable from '@generated/sales-order/generated/web/sales-order/HeaderTable';
 import OrderReactivateBulkAction from '@generated/sales-order/custom/OrderReactivateBulkAction';
@@ -14,8 +15,8 @@ const LIST_COLUMNS = [
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner' },
   { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
-  { key: 'deliveryStatus', column: 'DeliveryStatus', type: 'percent', label: 'Shipment Status' },
   { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'percent', label: 'Invoice Status' },
+  { key: 'deliveryStatus', column: 'DeliveryStatus', type: 'percent', label: 'Shipment Status' },
 ];
 
 function CustomHeaderTable(props) {
@@ -27,17 +28,20 @@ import { CreateContactContext } from '@/components/contract-ui/CreateContactCont
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 import LinesEmptyState from '@/components/contract-ui/LinesEmptyState.jsx';
 
-// Mirrors artifacts/sales-order/generated/web/sales-order/HeaderPage.jsx.
-// Kept in sync manually because the generator does not expose labelOverrides yet,
-// and the list view bulkActions prop is hand-rolled here (drift with decisions.json).
+// Mirrors artifacts/sales-order/decisions.json → window.labelOverrides.
+// The list view here bypasses the generated HeaderPage and renders ListView
+// directly, so the generator-emitted labelOverrides do not reach it. Mirror
+// here until the wrapper consumes the spec's labelOverrides at runtime.
 const LABEL_OVERRIDES = {
   es_ES: {
     C_BPartner_ID: 'Contacto',
     DeliveryStatus: 'Estado de entrega',
+    InvoiceStatus: 'Estado de facturación',
   },
   en_US: {
     C_BPartner_ID: 'Contact',
     DeliveryStatus: 'Delivery Status',
+    InvoiceStatus: 'Invoicing Status',
   },
 };
 
@@ -89,19 +93,8 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
     );
   }
 
-  const docStatus = searchParams.get('DocStatus');
-  const filterParam = searchParams.get('filter');
-  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
-
-  const QUICK_FILTERS = [
-    {
-      label: 'pendingDeliveryOnly',
-      filter: `criteria=${encodeURIComponent(JSON.stringify([
-        { fieldName: 'deliveryStatus', operator: 'lessThan', value: 100 },
-      ]))}`,
-    },
-  ];
-  const initialQuickFilterIndex = filterParam === 'pendingDelivery' ? 0 : null;
+  const { initialColumnFilters, isPendingDelivery, initialAdvancedFilter } =
+    buildPendingDeliveryFilter(searchParams, 'deliveryStatus');
 
   return (
     <>
@@ -123,8 +116,8 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
           </>
         )}
         initialColumnFilters={initialColumnFilters}
-        quickFilters={QUICK_FILTERS}
-        initialQuickFilterIndex={initialQuickFilterIndex}
+        initialAdvancedFilter={initialAdvancedFilter}
+        initialColumns={isPendingDelivery ? LIST_COLUMNS : null}
         dateFilterKey="orderDate"
         refreshTrigger={refreshKey}
         {...rest}

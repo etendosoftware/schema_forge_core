@@ -386,7 +386,8 @@ function inferFilterMode(type) {
     case 'enum':     return 'enumLabel';
     case 'boolean':  return 'booleanLabel';
     case 'number':
-    case 'amount':   return 'numeric';
+    case 'amount':
+    case 'percent':  return 'numeric';
     default:         return 'text';
   }
 }
@@ -441,14 +442,14 @@ export function buildAdvancedFilterCriteria(advancedFilter, columns) {
   return items;
 }
 
-const TEXTUAL_IDENTIFIER_OPS = new Set(['iContains', 'iNotContains', 'iEquals', 'iNotEquals']);
+const TEXTUAL_IDENTIFIER_OPS = new Set(['iContains', 'iNotContains', 'iEquals', 'iNotEqual']);
 
 function buildRowCriteria(col, row) {
   const op = row.operator;
   if (!op) return null;
   const mode = resolveFilterMode(col);
   // For identifier columns: textual ops filter against the $_identifier (user
-  // typed free text → match BP display name). Discrete ops (equals/notEquals/
+  // typed free text → match BP display name). Discrete ops (equals/notEqual/
   // inSet, picked from the checkbox popover) filter against the ID directly.
   const fieldName = col.backendFilterKey
     ?? (mode === 'identifier'

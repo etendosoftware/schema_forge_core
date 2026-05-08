@@ -83,8 +83,8 @@ describe('resolveLabel en_US.json contract', () => {
     assert.equal(typeof enUS.fields, 'object');
   });
 
-  it('C_BPartner_ID resolves to Business Partner', () => {
-    assert.equal(resolveLabel(enUS, 'C_BPartner_ID'), 'Business Partner');
+  it('C_BPartner_ID resolves to Contact', () => {
+    assert.equal(resolveLabel(enUS, 'C_BPartner_ID'), 'Contact');
   });
 
   it('DatePromised resolves to Scheduled Delivery Date', () => {

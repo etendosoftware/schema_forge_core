@@ -1,8 +1,8 @@
 {
-  "version": "0.4.0",
+  "version": "0.6.0",
   "generatedAt": "2026-04-30T15:42:46.907Z",
-  "updatedAt": "2026-05-07T04:07:41.301Z",
-  "checksum": "91075857ef9db5c5",
+  "updatedAt": "2026-05-07T17:06:20.054Z",
+  "checksum": "02c350ec344f00fe",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -54,10 +54,12 @@
       "salesTheme": true,
       "labelOverrides": {
         "es_ES": {
-          "C_BPartner_ID": "Contacto"
+          "C_BPartner_ID": "Contacto",
+          "C_Reject_Reason_ID": "Razón de rechazo"
         },
         "en_US": {
-          "C_BPartner_ID": "Contact"
+          "C_BPartner_ID": "Contact",
+          "C_Reject_Reason_ID": "Reject Reason"
         }
       },
       "dateFilterKey": "orderDate",
@@ -295,9 +297,15 @@
             "visibility": "editable",
             "required": false,
             "grid": false,
-            "form": false,
+            "form": true,
             "reference": "Reject_Reason",
             "inputMode": "selector",
+            "section": "principal",
+            "displayLogic": {
+              "raw": "record.documentStatus === 'CJ'",
+              "evaluable": true,
+              "js": "record.documentStatus === 'CJ'"
+            },
             "readOnlyLogic": {
               "raw": "@DocStatus@='CJ'|@DocStatus@='CA'",
               "evaluable": true,
@@ -882,10 +890,12 @@
       "salesTheme": true,
       "labelOverrides": {
         "es_ES": {
-          "C_BPartner_ID": "Contacto"
+          "C_BPartner_ID": "Contacto",
+          "C_Reject_Reason_ID": "Razón de rechazo"
         },
         "en_US": {
-          "C_BPartner_ID": "Contact"
+          "C_BPartner_ID": "Contact",
+          "C_Reject_Reason_ID": "Reject Reason"
         }
       },
       "dateFilterKey": "orderDate",
@@ -2677,10 +2687,12 @@
     },
     "labelOverrides": {
       "es_ES": {
-        "C_BPartner_ID": "Contacto"
+        "C_BPartner_ID": "Contacto",
+        "C_Reject_Reason_ID": "Razón de rechazo"
       },
       "en_US": {
-        "C_BPartner_ID": "Contact"
+        "C_BPartner_ID": "Contact",
+        "C_Reject_Reason_ID": "Reject Reason"
       }
     }
   },
@@ -2925,6 +2937,14 @@
         "description": "Default value for 'orderedQuantity' in quotationLine should be a string"
       },
       {
+        "id": "t-displaylogic-evaluable-quotation-rejectReason",
+        "category": "displaylogic-evaluable",
+        "entity": "quotation",
+        "field": "rejectReason",
+        "runner": "node",
+        "description": "Display logic for 'rejectReason' in quotation should have evaluable flag"
+      },
+      {
         "id": "t-displaylogic-evaluable-quotationLine-lineGrossAmount",
         "category": "displaylogic-evaluable",
         "entity": "quotationLine",
@@ -2939,6 +2959,14 @@
         "field": "listPrice",
         "runner": "node",
         "description": "Display logic for 'listPrice' in quotationLine should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-valid-quotation-rejectReason",
+        "category": "displaylogic-valid",
+        "entity": "quotation",
+        "field": "rejectReason",
+        "runner": "node",
+        "description": "Display logic for 'rejectReason' in quotation should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-quotationLine-lineGrossAmount",
@@ -5020,13 +5048,13 @@
       }
     ],
     "summary": {
-      "total": 293,
+      "total": 295,
       "byCategory": {
         "action-endpoint": 21,
         "crud-flags": 2,
         "default-value-type": 7,
-        "displaylogic-evaluable": 2,
-        "displaylogic-valid": 2,
+        "displaylogic-evaluable": 3,
+        "displaylogic-valid": 3,
         "field-presence": 25,
         "field-type": 25,
         "readonlylogic-evaluable": 17,
@@ -5038,7 +5066,7 @@
         "visibility": 2
       },
       "byRunner": {
-        "node": 293,
+        "node": 295,
         "junit": 0
       }
     }

@@ -22,7 +22,7 @@ describe('StatusTag — getStatusTone', () => {
 
   describe('destructive tone', () => {
     it('maps VO (Voided) to destructive', () => assert.equal(getStatusTone('VO'), 'destructive'));
-    it('maps CA (Cancelled) to destructive', () => assert.equal(getStatusTone('CA'), 'destructive'));
+    it('maps CA (Closed - Order Created) to success', () => assert.equal(getStatusTone('CA'), 'success'));
     it('maps RPVOID to destructive', () => assert.equal(getStatusTone('RPVOID'), 'destructive'));
     it('maps RPVD to destructive', () => assert.equal(getStatusTone('RPVD'), 'destructive'));
     it('maps "voided" (lowercase) to destructive', () => assert.equal(getStatusTone('voided'), 'destructive'));

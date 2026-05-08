@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-30T15:33:38.824Z",
-  "updatedAt": "2026-05-06T18:00:41.316Z",
-  "checksum": "16ddc06a200b5b40",
+  "updatedAt": "2026-05-07T18:28:08.761Z",
+  "checksum": "0591997a03927f08",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -20,20 +20,13 @@
       },
       "menuActions": [
         {
-          "key": "cancel",
-          "label": "Cancel",
-          "labelKey": "cancel",
-          "destructive": true,
-          "visibleWhenStatus": "CO"
-        },
-        {
           "key": "reactivate",
           "label": "Reactivate",
           "labelKey": "reactivate",
           "visibleWhenStatus": "CO",
           "visibleWhenFieldFalse": "hasLinkedDocuments",
           "documentAction": "RE",
-          "successKey": "actionCompleted"
+          "successKey": "reactivated"
         }
       ],
       "processOverrides": {},
@@ -41,11 +34,13 @@
       "labelOverrides": {
         "es_ES": {
           "C_BPartner_ID": "Contacto",
-          "DeliveryStatus": "Estado de entrega"
+          "DeliveryStatus": "Estado de entrega",
+          "InvoiceStatus": "Estado de facturación"
         },
         "en_US": {
           "C_BPartner_ID": "Contact",
-          "DeliveryStatus": "Delivery Status"
+          "DeliveryStatus": "Delivery Status",
+          "InvoiceStatus": "Invoicing Status"
         }
       },
       "dateFilterKey": "orderDate",
@@ -852,20 +847,13 @@
       },
       "menuActions": [
         {
-          "key": "cancel",
-          "label": "Cancel",
-          "labelKey": "cancel",
-          "destructive": true,
-          "visibleWhenStatus": "CO"
-        },
-        {
           "key": "reactivate",
           "label": "Reactivate",
           "labelKey": "reactivate",
           "visibleWhenStatus": "CO",
           "visibleWhenFieldFalse": "hasLinkedDocuments",
           "documentAction": "RE",
-          "successKey": "actionCompleted"
+          "successKey": "reactivated"
         }
       ],
       "processOverrides": {},
@@ -873,11 +861,13 @@
       "labelOverrides": {
         "es_ES": {
           "C_BPartner_ID": "Contacto",
-          "DeliveryStatus": "Estado de entrega"
+          "DeliveryStatus": "Estado de entrega",
+          "InvoiceStatus": "Estado de facturación"
         },
         "en_US": {
           "C_BPartner_ID": "Contact",
-          "DeliveryStatus": "Delivery Status"
+          "DeliveryStatus": "Delivery Status",
+          "InvoiceStatus": "Invoicing Status"
         }
       },
       "dateFilterKey": "orderDate",
@@ -2667,11 +2657,13 @@
     "labelOverrides": {
       "es_ES": {
         "C_BPartner_ID": "Contacto",
-        "DeliveryStatus": "Estado de entrega"
+        "DeliveryStatus": "Estado de entrega",
+        "InvoiceStatus": "Estado de facturación"
       },
       "en_US": {
         "C_BPartner_ID": "Contact",
-        "DeliveryStatus": "Delivery Status"
+        "DeliveryStatus": "Delivery Status",
+        "InvoiceStatus": "Invoicing Status"
       }
     }
   },
