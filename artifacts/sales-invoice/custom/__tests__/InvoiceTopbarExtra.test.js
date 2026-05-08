@@ -92,8 +92,16 @@ describe('InvoiceTopbarExtra', () => {
 
   // ── Payment modal ──────────────────────────────────────────────────────────
 
-  it('renders a ViewPaymentsModal component', () => {
-    assert.match(src, /ViewPaymentsModal/);
+  it('renders InvoicePaymentModal for the payments modal', () => {
+    assert.match(src, /InvoicePaymentModal/);
+  });
+
+  it('passes specName="sales-invoice" to InvoicePaymentModal', () => {
+    assert.match(src, /specName="sales-invoice"/);
+  });
+
+  it('passes onPaymentAdded={fetchInstallments} to InvoicePaymentModal', () => {
+    assert.match(src, /onPaymentAdded=\{fetchInstallments\}/);
   });
 
   it('opens the payments modal on badge click via showPaymentsModal state', () => {
