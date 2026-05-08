@@ -307,6 +307,7 @@ export function useEntity(entity, childEntity, {
   columnDefs = EMPTY_DEFS,
   skipListFetch = false,
   trailingFilter = null,
+  refetchAfterSave = false,
 }) {
   const { logout } = useAuth();
   const ui = useUI();
@@ -682,7 +683,7 @@ export function useEntity(entity, childEntity, {
       if (res.ok) {
         const data = await res.json();
         const saved = normalizeRecord(data?.response?.data?.[0] ?? data, entity);
-        if (saved?.id) {
+        if (saved?.id && refetchAfterSave) {
           await fetch(`${apiBaseUrl}/${entity}/${saved.id}`, { headers })
             .then(refetchRes => (refetchRes.ok ? refetchRes.json() : null))
             .then(refetchData => {
@@ -701,9 +702,6 @@ export function useEntity(entity, childEntity, {
         setSaveError(null);
         setFieldErrors({});
         toast.success(isNew ? ui('recordCreated') : ui('recordSaved'));
-        // After save, refetch the full header once so server-populated defaults/callouts
-        // (for example fiscal status fields) are reflected immediately in the detail UI.
-        // We still avoid a list refresh here; callers that need the list reloaded handle it.
         return saved;
       } else {
         // ETP-3894: parse a structured MISSING_REQUIRED_FIELDS 400 from the backend so
@@ -742,7 +740,7 @@ export function useEntity(entity, childEntity, {
     } finally {
       setIsSaving(false);
     }
-  }, [editing, selected, apiBaseUrl, entity, token, ui]);
+  }, [editing, selected, apiBaseUrl, entity, refetchAfterSave, token, ui]);
 
   const handleDelete = useCallback(async () => {
     if (!selected?.id) return;

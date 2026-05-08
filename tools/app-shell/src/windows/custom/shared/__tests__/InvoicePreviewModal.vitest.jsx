@@ -181,6 +181,44 @@ describe('InvoicePreviewModal', () => {
     expect(screen.getByText('sendToSifBodyTbai')).toBeInTheDocument();
   });
 
+  it('keeps current invoice data when preview refetch returns a non-record payload', async () => {
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+    global.fetch = vi
+      .fn(() => Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ response: { data: [] } }),
+      }))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ response: { data: [] } }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ response: { data: [] } }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({}),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ foo: 'bar' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ response: { data: [] } }),
+      });
+
+    renderPreview();
+    fireEvent.click(screen.getByText('sendToSif'));
+    fireEvent.click(screen.getByText('sendToSifConfirm'));
+
+    await screen.findByRole('button', { name: 'close' });
+
+    expect(screen.getByText(/Purchase Invoice INV-001/i)).toBeInTheDocument();
+    expect(dispatchSpy).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'purchase-invoice:invoice-updated' }));
+  });
+
   it('shows empty messages panel when messages tab is clicked', () => {
     renderPreview();
     fireEvent.click(screen.getByText('invoicePreviewMessages'));

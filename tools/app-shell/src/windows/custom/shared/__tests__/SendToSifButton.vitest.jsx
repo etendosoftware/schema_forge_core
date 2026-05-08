@@ -61,6 +61,12 @@ describe('SendToSifButton', () => {
     expect(screen.getByText('sendToSifBodyBoth')).toBeInTheDocument();
   });
 
+  it('renders the modal with dialog semantics', () => {
+    renderButton();
+    fireEvent.click(screen.getByRole('button', { name: 'sendToSif' }));
+    expect(screen.getByRole('dialog', { name: 'sendToSifTitle' })).toBeInTheDocument();
+  });
+
   it('supports partial retry by calling only the failed target endpoint', async () => {
     renderButton({
       data: { aeatsiiIssent: true, tbaiIssent: false },

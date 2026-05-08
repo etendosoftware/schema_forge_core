@@ -96,6 +96,9 @@ export default function SendToSifButton({ data, recordId, token, apiBaseUrl, sta
 
       {modalOpen && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="send-to-sif-title"
           style={{
             position: 'fixed', inset: 0, zIndex: 50,
             background: 'rgba(0,0,0,0.4)',
@@ -103,7 +106,7 @@ export default function SendToSifButton({ data, recordId, token, apiBaseUrl, sta
           }}
         >
           <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', minWidth: '320px', maxWidth: '480px', width: '100%' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>
+            <h3 id="send-to-sif-title" style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>
               {ui('sendToSifTitle')}
             </h3>
 

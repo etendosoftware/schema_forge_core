@@ -97,8 +97,9 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
       const res = await fetch(`${apiBaseUrl}/header/${invoice.id}`, { headers });
       if (!res.ok) return null;
       const json = await res.json();
-      const refreshed = json?.response?.data?.[0] ?? json ?? null;
-      if (refreshed) {
+      const candidate = json?.response?.data?.[0] ?? json?.data?.[0] ?? null;
+      const refreshed = candidate && typeof candidate === 'object' && !Array.isArray(candidate) ? candidate : null;
+      if (refreshed?.id) {
         setInvoiceData(refreshed);
         window.dispatchEvent(new CustomEvent(updateEventName, {
           detail: { invoiceId: refreshed.id, invoice: refreshed },
@@ -596,6 +597,9 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
 
       {showSifModal && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="send-to-sif-preview-title"
           style={{
             position: 'fixed', inset: 0, zIndex: 60,
             background: 'rgba(0,0,0,0.4)',
@@ -603,7 +607,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
           }}
         >
           <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', minWidth: '320px', maxWidth: '480px', width: '100%' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>
+            <h3 id="send-to-sif-preview-title" style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>
               {ui('sendToSifTitle')}
             </h3>
 

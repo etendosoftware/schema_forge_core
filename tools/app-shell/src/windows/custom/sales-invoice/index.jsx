@@ -121,6 +121,7 @@ export default function SalesInvoiceWindow(props) {
           notesField="description"
           customTabs={[{ key: 'related', label: ui('relatedDocuments'), Component: RelatedDocuments }]}
           onAfterSave={true}
+          refetchAfterSave={true}
           addLineGuard={(d) => !!d?.businessPartner}
           breadcrumb={breadcrumb}
         />

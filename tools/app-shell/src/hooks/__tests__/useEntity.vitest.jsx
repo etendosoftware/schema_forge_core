@@ -159,7 +159,7 @@ describe('useEntity', () => {
     it('proceeds with empty form if defaults endpoint fails', async () => {
       globalThis.fetch.mockRejectedValue(new Error('500'));
 
-      const { result } = renderEntity('header', null, { skipListFetch: true });
+      const { result } = renderEntity('header', null, { skipListFetch: true, refetchAfterSave: true });
 
       await act(async () => {
         await result.current.handleNew();
@@ -180,7 +180,7 @@ describe('useEntity', () => {
         json: async () => ({ defaults: {} }),
       });
 
-      const { result } = renderEntity('header', null, { skipListFetch: true });
+      const { result } = renderEntity('header', null, { skipListFetch: true, refetchAfterSave: true });
 
       await act(async () => {
         await result.current.handleNew();
@@ -199,7 +199,7 @@ describe('useEntity', () => {
         json: async () => ({ defaults: {} }),
       });
 
-      const { result } = renderEntity('header', null, { skipListFetch: true });
+      const { result } = renderEntity('header', null, { skipListFetch: true, refetchAfterSave: true });
 
       await act(async () => {
         await result.current.handleNew();
@@ -237,7 +237,7 @@ describe('useEntity', () => {
         return { ok: true, json: async () => ({ response: { data: [] } }) };
       });
 
-      const { result } = renderEntity('header', null, { skipListFetch: true });
+      const { result } = renderEntity('header', null, { skipListFetch: true, refetchAfterSave: true });
 
       await act(async () => {
         await result.current.handleNew();
@@ -267,6 +267,67 @@ describe('useEntity', () => {
       expect(body.name).toBe('Created');
     });
 
+    it('does not refetch the saved record unless refetchAfterSave is enabled', async () => {
+      const savedRecord = { id: 'new-1', name: 'Created' };
+      globalThis.fetch.mockImplementation(async (url, opts) => {
+        if (url.includes('/defaults')) {
+          return { ok: true, json: async () => ({ defaults: {} }) };
+        }
+        if (opts?.method === 'POST') {
+          return { ok: true, json: async () => ({ response: { data: [savedRecord] } }) };
+        }
+        return { ok: true, json: async () => ({ response: { data: [] } }) };
+      });
+
+      const { result } = renderEntity('header', null, { skipListFetch: true });
+
+      await act(async () => {
+        await result.current.handleNew();
+      });
+
+      act(() => {
+        result.current.handleChange('name', 'Created');
+      });
+
+      await act(async () => {
+        await result.current.handleSave();
+      });
+
+      expect(result.current.selected).toEqual(savedRecord);
+    });
+
+    it('refetches the saved record when refetchAfterSave is enabled', async () => {
+      const savedRecord = { id: 'new-1', name: 'Created' };
+      globalThis.fetch.mockImplementation(async (url, opts) => {
+        if (url.includes('/defaults')) {
+          return { ok: true, json: async () => ({ defaults: {} }) };
+        }
+        if (opts?.method === 'POST') {
+          return { ok: true, json: async () => ({ response: { data: [savedRecord] } }) };
+        }
+        if (String(url).endsWith('/header/new-1')) {
+          return { ok: true, json: async () => ({ response: { data: [{ ...savedRecord, serverValue: 'computed' }] } }) };
+        }
+        return { ok: true, json: async () => ({ response: { data: [] } }) };
+      });
+
+      const { result } = renderEntity('header', null, { skipListFetch: true, refetchAfterSave: true });
+
+      await act(async () => {
+        await result.current.handleNew();
+      });
+
+      act(() => {
+        result.current.handleChange('name', 'Created');
+      });
+
+      await act(async () => {
+        await result.current.handleSave();
+      });
+
+      expect(result.current.selected).toEqual({ ...savedRecord, serverValue: 'computed' });
+    });
+
     it('PATCHes existing record with only changed fields', async () => {
       const existing = { id: 'ex-1', name: 'Original', amount: 100 };
        globalThis.fetch.mockImplementation(async (url, opts) => {
@@ -282,7 +343,7 @@ describe('useEntity', () => {
          return { ok: true, json: async () => ({ response: { data: [] } }) };
        });
 
-      const { result } = renderEntity('header', null, { skipListFetch: true });
+      const { result } = renderEntity('header', null, { skipListFetch: true, refetchAfterSave: true });
 
       // Simulate selecting an existing record
       act(() => {

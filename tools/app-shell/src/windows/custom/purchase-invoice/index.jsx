@@ -129,6 +129,7 @@ export default function PurchaseInvoiceWindow(props) {
           customTabs={customTabs}
           breadcrumb={breadcrumb}
           onAfterSave={true}
+          refetchAfterSave={true}
           addLineGuard={(d) => !!d?.businessPartner}
         />
         {createContactState && createPortal(
