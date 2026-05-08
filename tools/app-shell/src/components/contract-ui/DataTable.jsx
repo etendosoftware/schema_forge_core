@@ -330,10 +330,18 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
   const rowRef = useRef(null);
   const touchedFieldsRef = useRef(new Set());
   const inflightRef = useRef(null);
+  const valuesRef = useRef(null);
+  const pendingCalloutsRef = useRef([]);
+
+  // Keep valuesRef in sync on every render so submitLine never reads a stale closure.
+  valuesRef.current = values;
 
   // Reset values when fields or data change
   useEffect(() => {
-    setValues(buildEmpty());
+    const empty = buildEmpty();
+    valuesRef.current = empty;
+    pendingCalloutsRef.current = [];
+    setValues(empty);
     touchedFieldsRef.current = new Set();
   }, [buildEmpty]);
 
@@ -348,6 +356,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
   }, []);
 
   const handleChange = (key, val) => {
+    valuesRef.current = { ...valuesRef.current, [key]: val };
     setValues(prev => ({ ...prev, [key]: val }));
   };
 
@@ -358,10 +367,14 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     setIsSaving(true);
     const run = (async () => {
       try {
-        // Coerce numeric field values to JS numbers right before submission.
-        // This catches race conditions where async callouts may have overwritten
-        // user-typed values with strings.
-        const coercedValues = { ...values };
+        // Wait for any in-flight callouts (e.g. product → taxRate → lineGrossAmount)
+        // before reading values. Without this, pressing Enter immediately after
+        // selecting a product would POST with taxRate=null and lineGrossAmount=0.
+        if (pendingCalloutsRef.current.length > 0) {
+          await Promise.all(pendingCalloutsRef.current);
+        }
+        // Read from ref (always current) instead of the stale `values` closure.
+        const coercedValues = { ...valuesRef.current };
         for (const f of fields) {
           if (NUMERIC_FIELD_TYPES.has(f.type) && coercedValues[f.key] !== '' && coercedValues[f.key] != null) {
             const raw = String(coercedValues[f.key]);
@@ -378,7 +391,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           return true;
         }
         // Reset for next rapid entry — recompute lineNo
-        const nums = [...(data || []).map(r => Number(r.lineNo) || 0), Number(values.lineNo) || 0];
+        const nums = [...(data || []).map(r => Number(r.lineNo) || 0), Number(valuesRef.current.lineNo) || 0];
         const nextLineNo = Math.max(...nums) + 10;
         const next = {};
         for (const f of fields) {
@@ -391,11 +404,12 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           }
         }
         // Clear any $_identifier companion values
-        for (const key of Object.keys(values)) {
+        for (const key of Object.keys(valuesRef.current)) {
           if (key.includes('$_identifier') && !(key in next)) {
             next[key] = '';
           }
         }
+        valuesRef.current = next;
         setValues(next);
         touchedFieldsRef.current = new Set();
         // Re-focus first input for rapid entry
@@ -408,7 +422,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     })();
     inflightRef.current = run;
     return run;
-  }, [data, fields, onAdd, onCancel, values]);
+  }, [data, fields, onAdd, onCancel]);
 
   // Enter → confirm without closing (rapid entry). Outside-click / parent flush close.
   const handleConfirm = useCallback(() => submitLine({ closeAfterSave: false }), [submitLine]);
@@ -512,10 +526,20 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         }
       }
     }
-    // Notify parent for callout execution — pass computed snapshot (not stale React state)
-    onFieldChange?.(key, val, snapshot, (updates, forceFields = new Set()) => {
-      setValues((prev) => applyCalloutUpdates(prev, updates, forceFields, key, touchedFieldsRef.current));
+    // Notify parent for callout execution — pass computed snapshot (not stale React state).
+    // applyUpdates updates valuesRef synchronously so submitLine always reads the latest
+    // values even if React hasn't re-rendered yet when Enter is pressed.
+    const calloutPromise = onFieldChange?.(key, val, snapshot, (updates, forceFields = new Set()) => {
+      const next = applyCalloutUpdates(valuesRef.current, updates, forceFields, key, touchedFieldsRef.current);
+      valuesRef.current = next;
+      setValues(next);
     });
+    if (calloutPromise instanceof Promise) {
+      pendingCalloutsRef.current.push(calloutPromise);
+      calloutPromise.finally(() => {
+        pendingCalloutsRef.current = pendingCalloutsRef.current.filter(p => p !== calloutPromise);
+      });
+    }
   }, [handleChange, onFieldChange, values]);
 
   const handleKeyDown = (e) => {
