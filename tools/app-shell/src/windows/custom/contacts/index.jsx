@@ -21,6 +21,7 @@ const isPerson = (r) => r.etgoIsperson === true || r.etgoIsperson === 'Y';
 // Overrides the generated BusinessPartnerPage's subsetFilters (Todos/Clientes/Proveedores)
 // with Todos/Personas/Empresas. Works because the generated page spreads {...props} after
 // its hardcoded subsetFilters, so this value wins via JSX prop precedence (last wins).
+// i18n-allowlist: ["all", "persons", "companies"]
 const SUBSET_FILTERS = [
   { label: 'all' },
   { label: 'persons',  rowFilter: isPerson },
