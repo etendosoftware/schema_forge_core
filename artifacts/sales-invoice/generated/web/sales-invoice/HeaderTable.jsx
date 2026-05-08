@@ -9,6 +9,7 @@ const columns = [
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
   { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount', label: 'Total Outstanding' },
   { key: 'eTGODueDate', column: 'em_etgo_due_date', type: 'date', label: 'em_etgo_due_date' },
+  { key: 'eTGODeliveryStatus', column: 'em_etgo_delivery_status', type: 'number', label: 'em_etgo_delivery_status' },
 ];
 // @sf-generated-end columns:header
 

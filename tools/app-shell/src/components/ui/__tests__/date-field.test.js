@@ -70,14 +70,22 @@ describe('DateField — popover behavior', () => {
     assert.doesNotMatch(src, /\{[^}]*(?:value|displayText|parsedValue)[^}]*&&[\s\S]*?<CalendarIcon/);
   });
 
-  it('shows formatted date text when value is present, otherwise placeholder', () => {
-    assert.match(src, /\{displayText\s*\|\|\s*placeholder\}/);
+  it('renders an editable text input bound to local inputText state', () => {
+    assert.match(src, /<input[\s\S]*?value=\{inputText\}/);
+    assert.match(src, /onChange=\{\(e\)\s*=>\s*setInputText\(formatDateInput\(e\.target\.value,\s*datePattern\)\)\}/);
+    assert.doesNotMatch(src, /<input[\s\S]*?readOnly/);
   });
 
-  it('emits yyyy-MM-dd to onChange via toIsoDate(date)', () => {
+  it('masks input via formatDateInput (digits only, auto-inserts separators, caps at 8 digits)', () => {
+    assert.match(src, /function formatDateInput\(raw,\s*pattern\)/);
+    assert.match(src, /digits\s*=\s*\(raw\s*\?\?\s*''\)\.replace\(\/\\D\/g,\s*''\)\.slice\(0,\s*8\)/);
+    assert.match(src, /maxLength=\{10\}/);
+  });
+
+  it('emits yyyy-MM-dd to onChange via toIsoDate(date) when picking from the calendar', () => {
     assert.match(src, /function toIsoDate\(date\)/);
     assert.match(src, /\$\{y\}-\$\{m\}-\$\{day\}/);
-    assert.match(src, /onChange\?\.\(toIsoDate\(date\)\)/);
+    assert.match(src, /handleSelect\s*=\s*\(date\)\s*=>\s*\{[\s\S]*?const iso\s*=\s*toIsoDate\(date\);[\s\S]*?onChange\?\.\(iso\)/);
   });
 
   it('skips the popover content when disabled', () => {
@@ -212,6 +220,56 @@ describe('DateField — footer buttons', () => {
     assert.match(src, /h-8 px-3/);
     assert.match(src, /bg-\[#121217\] text-white/);
     assert.match(src, /bg-white border border-\[#D1D4DB\] text-\[#121217\]/);
+  });
+});
+
+describe('DateField — manual typing in the input', () => {
+  it('declares parseDateInput taking the locale pattern, accepting /, -, . separators', () => {
+    assert.match(src, /function parseDateInput\(text,\s*pattern\)/);
+    assert.match(src, /match\(\/\^\(\\d\{1,4\}\)\[\\\/\\-\.\]\(\\d\{1,2\}\)\[\\\/\\-\.\]\(\\d\{1,4\}\)\$\//);
+  });
+
+  it('honors locale-specific date order via getDatePattern (en-US month-first; rest day-first)', () => {
+    assert.match(src, /function getDatePattern\(localeStr\)/);
+    assert.match(src, /const monthFirst\s*=\s*pattern\.order\[0\]\s*===\s*'month'/);
+  });
+
+  it('placeholder hint adapts to locale (dd/mm/aaaa vs mm/dd/yyyy) via buildDatePlaceholder', () => {
+    assert.match(src, /function buildDatePlaceholder\(pattern,\s*localeStr\)/);
+    assert.match(src, /\.toLowerCase\(\)\.startsWith\('es'\)\s*\?\s*'aaaa'\s*:\s*'yyyy'/);
+  });
+
+  it('rejects invalid month or day values (out-of-range or non-existent)', () => {
+    assert.match(src, /if\s*\(month < 1 \|\| month > 12\)\s*return\s*\{\s*ok:\s*false\s*\}/);
+    assert.match(src, /if\s*\(day < 1 \|\| day > lastDay\)\s*return\s*\{\s*ok:\s*false\s*\}/);
+  });
+
+  it('keeps inputText in local state separate from the value prop', () => {
+    assert.match(src, /\[inputText,\s*setInputText\]\s*=\s*React\.useState/);
+    assert.match(src, /\[isFocused,\s*setIsFocused\]\s*=\s*React\.useState/);
+  });
+
+  it('does not sync input text from value while the user is focused (no race with typing)', () => {
+    assert.match(src, /if\s*\(!isFocused\)\s*setInputText\(formattedValue\)/);
+  });
+
+  it('on blur, commits the typed value via parseDateInput; reverts on invalid', () => {
+    assert.match(src, /commitTypedValue\s*=\s*\(\)\s*=>\s*\{[\s\S]*?parseDateInput\(inputText,\s*datePattern\)/);
+    assert.match(src, /if\s*\(!parsed\.ok\)\s*\{[\s\S]*?setInputText\(formattedValue\)/);
+  });
+
+  it('Enter key commits and Escape reverts', () => {
+    assert.match(src, /e\.key === 'Enter'[\s\S]*?e\.currentTarget\.blur\(\)/);
+    assert.match(src, /e\.key === 'Escape'[\s\S]*?setInputText\(formattedValue\)[\s\S]*?e\.currentTarget\.blur\(\)/);
+  });
+
+  it('opening the popover commits any pending typed value first so the calendar reflects it', () => {
+    assert.match(src, /handleOpenChange\s*=\s*\(next\)[\s\S]*?if\s*\(next\)\s*\{[\s\S]*?commitTypedValue\(\)/);
+  });
+
+  it('only the calendar icon button (not the whole field) opens the popover', () => {
+    // PopoverTrigger wraps only the icon button, not the entire wrapper or the input.
+    assert.match(src, /<PopoverTrigger asChild>\s*<button[\s\S]*?<CalendarIcon[\s\S]*?<\/button>\s*<\/PopoverTrigger>/);
   });
 });
 

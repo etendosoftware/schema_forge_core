@@ -150,6 +150,7 @@ export function DetailView({
   showDetailFooterTotals = undefined,
   onAfterSave,
   onAfterCreate,
+  additionalDirtyState = false,
   labelOverrides,
   enableSecondaryRowDelete = false,
   sidebarClassName = 'w-96 shrink-0 overflow-y-auto pt-0 pl-0 pr-4 pb-5',
@@ -237,7 +238,6 @@ export function DetailView({
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
   const docAction = useDocumentAction({ apiBaseUrl, entity, token });
-  const [actionFeedback, setActionFeedback] = useState(null); // { type: 'error'|'success', message }
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -324,6 +324,19 @@ export function DetailView({
   const [deletingChildren, setDeletingChildren] = useState(false);
   const [lineEdits, setLineEdits] = useState(null);
   const [lineEditColumns, setLineEditColumns] = useState({});
+
+  // Save button is enabled only when there are pending changes. Four sources:
+  // 1. Header fields diverged from last saved state (hook.isDirtyHeader)
+  // 2. Primary inline add-row is open and partially filled
+  // 3. A secondary tab add-row is open
+  // 4. A line sidebar edit has unsaved field changes
+  // additionalDirtyState lets custom windows inject extra dirty sources via prop.
+  const isDirty =
+    hook.isDirtyHeader
+    || addingLine
+    || Object.values(addingSecondaryLine).some(Boolean)
+    || (lineEdits != null && Object.keys(lineEdits).length > 0)
+    || (additionalDirtyState === true);
   const [savingLine, setSavingLine] = useState(false);
   const [isClosingLine, setIsClosingLine] = useState(false);
   const [editingChild, setEditingChild] = useState(null);
@@ -1043,11 +1056,11 @@ export function DetailView({
               {documentPreview && !isNew && recordId && (
                 <button
                   onClick={() => setShowPrint(true)}
-                  className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center justify-center p-[7px] rounded-md bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_0px_#1212170D] text-muted-foreground hover:bg-[#F1F5F9] hover:text-foreground transition-colors"
                   title={ui('sendPreview')}
                   data-testid="action-document-preview"
                 >
-                  <Send className="h-4 w-4" />
+                  <Send className="h-[15px] w-[15px]" />
                 </button>
               )}
               {/* Print document — shown when documentPreview is not provided */}
@@ -1075,9 +1088,9 @@ export function DetailView({
               {!(typeof hideMoreMenu === 'function' ? hideMoreMenu({ data }) : hideMoreMenu) && <div className="relative" ref={moreMenuRef}>
                 <button
                   onClick={() => setShowMoreMenu(v => !v)}
-                  className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center justify-center p-[7px] rounded-md bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_0px_#1212170D] text-muted-foreground hover:bg-[#F1F5F9] hover:text-foreground transition-colors"
                 >
-                  <MoreVertical className="h-4 w-4" />
+                  <MoreVertical className="h-[15px] w-[15px]" />
                 </button>
                 {showMoreMenu && (() => {
                   const resolvedActions = typeof menuActions === 'function'
@@ -1104,17 +1117,14 @@ export function DetailView({
                           onClick={async () => {
                             setShowMoreMenu(false);
                             if (action.documentAction) {
-                              setActionFeedback(null);
                               const currentId = data?.id || recordId;
                               try {
                                 await docAction.execute(currentId, action.documentAction);
-                                setActionFeedback({
-                                  type: 'success',
-                                  message: (action.successKey ? ui(action.successKey) : action.successMessage) || ui('actionCompleted'),
-                                });
+                                const msg = (action.successKey ? ui(action.successKey) : action.successMessage) || ui('actionCompleted');
+                                toast.success(msg);
                                 hook.fetchById?.(currentId);
                               } catch (err) {
-                                setActionFeedback({ type: 'error', message: err.message });
+                                toast.error(err.message);
                               }
                               return;
                             }
@@ -1203,23 +1213,80 @@ export function DetailView({
                   );
                 })}
 
-              {!hideSaveStatuses.includes(_headerData?.documentStatus) && !isDraftModeCompleted && (draftMode?.enabled ? (
-                <>
-                  <Button variant="outline" size="sm" className="gap-1.5 bg-white text-gray-700 hover:text-gray-700" data-testid="action-save-draft" disabled={hook.isSaving} onClick={async () => {
+              {!hideSaveStatuses.includes(_headerData?.documentStatus) && !isDraftModeCompleted && (() => {
+                if (draftMode?.enabled) {
+                  return (
+                    <>
+                      <Button variant="outline" size="sm" className="gap-1.5 bg-white border-[#D1D4DB] text-[#121217]" data-testid="action-save-draft" disabled={hook.isSaving || !isDirty} onClick={async () => {
+                        if (!(await flushPendingLines())) return;
+                        const saved = await hook.handleSave(data);
+                        if (saved?.id && isNew) {
+                          hook.primeSaved?.(saved);
+                          navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
+                        }
+                      }}>
+                        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" color="#64748B" />}
+                        {ui('save')}
+                      </Button>
+                      <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
+                        if (!(await flushPendingLines())) return;
+                        if (typeof draftMode.onConfirm === 'function') { draftMode.onConfirm(); return; }
+                        const saved = await hook.handleSaveAndProcess(draftMode);
+                        if (saved) {
+                          if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
+                          if (onAfterSave) {
+                            navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved, justSaved: saved } });
+                          } else if (saved.id && isNew) {
+                            hook.primeSaved?.(saved);
+                            navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
+                          }
+                        }
+                      }}>
+                        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                        {ui(draftMode.label) || draftMode.label || ui('process')}
+                      </Button>
+                    </>
+                  );
+                }
+                if (isNew) {
+                  return (
+                    <>
+                      <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving} onClick={async () => {
+                        if (!(await flushPendingLines())) return;
+                        const saved = await hook.handleSave(data);
+                        if (saved?.id && isNew) {
+                          hook.primeSaved?.(saved);
+                          navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
+                        }
+                      }}>
+                        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                        {ui('save')}
+                      </Button>
+                      {!isProcessed && hook.children.length > 0 && (
+                        <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
+                          if (!(await flushPendingLines())) return;
+                          const saved = await hook.handleSaveAndProcess(draftMode);
+                          if (saved) {
+                            if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
+                            if (onAfterSave) {
+                              navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved, justSaved: saved } });
+                            } else if (saved.id && isNew) {
+                              hook.primeSaved?.(saved);
+                              navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
+                            }
+                          }
+                        }}>
+                          {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                          {ui(draftMode.label) || tMenu(draftMode.label) || ui('process')}
+                        </Button>
+                      )}
+                    </>
+                  );
+                }
+                return (
+                  <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving || !isDirty} onClick={async () => {
                     if (!(await flushPendingLines())) return;
                     const saved = await hook.handleSave(data);
-                    if (saved?.id && isNew) {
-                      hook.primeSaved?.(saved);
-                      navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
-                    }
-                  }}>
-                    {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                    {ui('save')}
-                  </Button>
-                  <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
-                    if (!(await flushPendingLines())) return;
-                    if (typeof draftMode.onConfirm === 'function') { draftMode.onConfirm(); return; }
-                    const saved = await hook.handleSaveAndProcess(draftMode);
                     if (saved) {
                       if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
                       if (onAfterSave) {
@@ -1231,83 +1298,14 @@ export function DetailView({
                     }
                   }}>
                     {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                    {ui(draftMode.label) || draftMode.label || ui('process')}
+                    {ui('save')}
                   </Button>
-                </>
-              ) : isNew ? (<>
-                <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving} onClick={async () => {
-                  if (!(await flushPendingLines())) return;
-                  const saved = await hook.handleSave(data);
-                  if (saved?.id && isNew) {
-                    hook.primeSaved?.(saved);
-                    navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
-                  }
-                }}>
-                  {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                  {ui('save')}
-                </Button>
-                {!isProcessed && hook.children.length > 0 && (
-                <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
-                  if (!(await flushPendingLines())) return;
-                  const saved = await hook.handleSaveAndProcess(draftMode);
-                  if (saved) {
-                    if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
-                    if (onAfterSave) {
-                      navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved, justSaved: saved } });
-                    } else if (saved.id && isNew) {
-                      hook.primeSaved?.(saved);
-                      navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
-                    }
-                  }
-                }}>
-                  {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                  {ui(draftMode.label) || tMenu(draftMode.label) || ui('process')}
-                </Button>
-                )}
-              </>
-            ) : (
-              <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving} onClick={async () => {
-                if (!(await flushPendingLines())) return;
-                const saved = await hook.handleSave(data);
-                if (saved) {
-                  if (isNew && onAfterCreate) await onAfterCreate(saved, { token, apiBaseUrl });
-                  if (onAfterSave) {
-                    navigate(`/${windowName}`, { replace: true, state: { savedRecord: saved, justSaved: saved } });
-                  } else if (saved.id && isNew) {
-                    hook.primeSaved?.(saved);
-                    navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
-                  }
-                }
-              }}>
-                {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                {ui('save')}
-              </Button>
-            ))}
+                );
+              })()}
           </div>
         </div>
         )}
 
-        {/* Menu action feedback (from documentAction items) */}
-        {actionFeedback && (
-          <div
-            role="alert"
-            className={`mx-6 my-2 px-3 py-2 text-xs rounded-md border flex items-start justify-between gap-3 ${
-              actionFeedback.type === 'error'
-                ? 'bg-red-50 border-red-200 text-red-700'
-                : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-            }`}
-          >
-            <span className="flex-1">{actionFeedback.message}</span>
-            <button
-              type="button"
-              onClick={() => setActionFeedback(null)}
-              className="text-xs font-medium opacity-60 hover:opacity-100"
-              aria-label="Dismiss"
-            >
-              &times;
-            </button>
-          </div>
-        )}
 
         {/* Scrollable content + optional sidebarContent (full-height independent column) */}
         <div className="flex-1 flex overflow-hidden">

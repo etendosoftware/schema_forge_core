@@ -68,5 +68,42 @@ describe('sales-quotation contract integrity (ETP-3873 reject flow)', () => {
       const field = quotation.fields.find((f) => f.name === 'rejectReason');
       assert.ok(field.readOnlyLogic, 'rejectReason must declare readOnlyLogic');
     });
+
+    // ETP-3893 follow-up: surface the rejection reason on the form so the user
+    // can see WHY a quotation was rejected.
+    describe('visible on the form when rejected (ETP-3893)', () => {
+      it('renders on the form (form: true)', () => {
+        const field = quotation.fields.find((f) => f.name === 'rejectReason');
+        assert.equal(field.form, true, 'rejectReason must render on the form');
+      });
+
+      it('lives in the principal section so it sits with the other header fields', () => {
+        const field = quotation.fields.find((f) => f.name === 'rejectReason');
+        assert.equal(field.section, 'principal');
+      });
+
+      it('declares a displayLogic gated on documentStatus === CJ', () => {
+        const field = quotation.fields.find((f) => f.name === 'rejectReason');
+        assert.ok(field.displayLogic, 'rejectReason must declare displayLogic');
+        assert.equal(field.displayLogic.evaluable, true,
+          'displayLogic must be evaluable on the client');
+        assert.match(field.displayLogic.js, /documentStatus.*['"]CJ['"]/,
+          'displayLogic.js must check documentStatus === \'CJ\'');
+      });
+
+      it('readOnlyLogic translates to JS that locks on CJ and CA', () => {
+        const field = quotation.fields.find((f) => f.name === 'rejectReason');
+        assert.equal(field.readOnlyLogic.evaluable, true);
+        assert.match(field.readOnlyLogic.js, /documentStatus.*['"]CJ['"]/);
+        assert.match(field.readOnlyLogic.js, /documentStatus.*['"]CA['"]/);
+      });
+
+      it('window.labelOverrides translates the column in both locales', () => {
+        const overrides = window.labelOverrides;
+        assert.ok(overrides, 'labelOverrides must be present');
+        assert.equal(overrides.es_ES?.C_Reject_Reason_ID, 'Razón de rechazo');
+        assert.equal(overrides.en_US?.C_Reject_Reason_ID, 'Reject Reason');
+      });
+    });
   });
 });

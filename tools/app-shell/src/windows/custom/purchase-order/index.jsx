@@ -23,8 +23,8 @@ const LIST_COLUMNS = [
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner' },
   { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
-  { key: 'deliveryStatusPurchase', column: 'DeliveryStatusPurchase', type: 'percent', label: 'Delivery Status' },
   { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'percent', label: 'Invoice Status' },
+  { key: 'deliveryStatusPurchase', column: 'DeliveryStatusPurchase', type: 'percent', label: 'Delivery Status' },
 ];
 const draftModeWithModal = {
   enabled: true,
@@ -34,19 +34,22 @@ const draftModeWithModal = {
   onConfirm: () => window.dispatchEvent(new CustomEvent('purchase-order:open-confirm-modal')),
 };
 
-// Mirrors artifacts/purchase-order/generated/web/purchase-order/HeaderPage.jsx.
-// Kept in sync manually because the generator does not expose labelOverrides yet,
-// and the list view bulkActions prop is hand-rolled here (drift with decisions.json).
+// Mirrors artifacts/purchase-order/decisions.json → window.labelOverrides.
+// The list view here bypasses the generated HeaderPage and renders ListView
+// directly, so the generator-emitted labelOverrides do not reach it. Mirror
+// here until the wrapper consumes the spec's labelOverrides at runtime.
 const LABEL_OVERRIDES = {
   es_ES: {
     C_BPartner_ID: 'Contacto',
     DatePromised: 'Fecha de entrega esperada',
     DeliveryStatusPurchase: 'Estado de entrega',
+    InvoiceStatus: 'Estado de facturación',
   },
   en_US: {
     C_BPartner_ID: 'Contact',
     DatePromised: 'Expected Delivery Date',
     DeliveryStatusPurchase: 'Delivery Status',
+    InvoiceStatus: 'Invoicing Status',
   },
 };
 

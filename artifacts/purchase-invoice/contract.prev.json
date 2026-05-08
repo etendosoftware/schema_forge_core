@@ -1,8 +1,8 @@
 {
-  "version": "0.18.0",
+  "version": "0.20.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-06T19:55:04.605Z",
-  "checksum": "82bd527c159d88b8",
+  "updatedAt": "2026-05-07T18:28:28.972Z",
+  "checksum": "0d37fcc744a7f3a1",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -13,30 +13,27 @@
       "relatedDocuments": true,
       "menuActions": [
         {
-          "key": "cancel",
-          "label": "Cancel",
-          "labelKey": "cancel",
-          "destructive": true,
-          "visibleWhenStatus": "CO"
-        },
-        {
           "key": "reactivate",
           "label": "Reactivate",
           "labelKey": "reactivate",
           "visibleWhenStatus": "CO",
           "documentAction": "RE",
-          "successKey": "actionCompleted"
+          "successKey": "reactivated"
         }
       ],
       "processOverrides": {},
       "labelOverrides": {
         "es_ES": {
           "POReference": "Nº documento",
-          "EM_Etgo_Due_Date": "Vencimiento"
+          "OutstandingAmt": "Pendiente de pago",
+          "EM_Etgo_Due_Date": "Vencimiento",
+          "em_etgo_delivery_status": "Estado de entrega"
         },
         "en_US": {
           "POReference": "Document No.",
-          "EM_Etgo_Due_Date": "Due Date"
+          "OutstandingAmt": "Pending Payment",
+          "EM_Etgo_Due_Date": "Due Date",
+          "em_etgo_delivery_status": "Delivery Status"
         }
       },
       "dateFilterKey": "invoiceDate",
@@ -707,6 +704,19 @@
             "grid": true,
             "form": false,
             "gridOrder": 7
+          },
+          {
+            "name": "eTGODeliveryStatus",
+            "apiKey": "eTGODeliveryStatus",
+            "column": "em_etgo_delivery_status",
+            "label": "em_etgo_delivery_status",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": false,
+            "gridOrder": 8
           }
         ],
         "searchableFields": [
@@ -1350,12 +1360,12 @@
                 "name": "Arrendamiento financiero (alquiler­compra)"
               },
               {
-                "value": "INTRES_11",
-                "name": "Compra/venta en firme"
-              },
-              {
                 "value": "INTRES_14",
                 "name": "Compras por particulares"
+              },
+              {
+                "value": "INTRES_11",
+                "name": "Compra/venta en firme"
               },
               {
                 "value": "INTRES_21",
@@ -1382,12 +1392,12 @@
                 "name": "Operaciones tras el trabajo por encargo"
               },
               {
-                "value": "INTRES_33",
-                "name": "Otras entregas de ayuda (particulares, orgs. no gubernamenta"
-              },
-              {
                 "value": "INTRES_32",
                 "name": "Otras entregas de ayuda gubernamental"
+              },
+              {
+                "value": "INTRES_33",
+                "name": "Otras entregas de ayuda (particulares, orgs. no gubernamenta"
               },
               {
                 "value": "INTRES_90",
@@ -1632,20 +1642,20 @@
                 "name": "MURCIA AEROPUERTO"
               },
               {
-                "value": "INTRES_0711",
-                "name": "P . MALLORCA MARITIMA"
-              },
-              {
-                "value": "INTRES_0701",
-                "name": "P. MALLORCA AEROPUERTO"
-              },
-              {
                 "value": "INTRES_1711",
                 "name": "PALAMOS MARITIMA"
               },
               {
                 "value": "INTRES_2011",
                 "name": "PASAJES MARITIMA"
+              },
+              {
+                "value": "INTRES_0701",
+                "name": "P. MALLORCA AEROPUERTO"
+              },
+              {
+                "value": "INTRES_0711",
+                "name": "P . MALLORCA MARITIMA"
               },
               {
                 "value": "INTRES_1121",
@@ -3183,30 +3193,27 @@
       "relatedDocuments": true,
       "menuActions": [
         {
-          "key": "cancel",
-          "label": "Cancel",
-          "labelKey": "cancel",
-          "destructive": true,
-          "visibleWhenStatus": "CO"
-        },
-        {
           "key": "reactivate",
           "label": "Reactivate",
           "labelKey": "reactivate",
           "visibleWhenStatus": "CO",
           "documentAction": "RE",
-          "successKey": "actionCompleted"
+          "successKey": "reactivated"
         }
       ],
       "processOverrides": {},
       "labelOverrides": {
         "es_ES": {
           "POReference": "Nº documento",
-          "EM_Etgo_Due_Date": "Vencimiento"
+          "OutstandingAmt": "Pendiente de pago",
+          "EM_Etgo_Due_Date": "Vencimiento",
+          "em_etgo_delivery_status": "Estado de entrega"
         },
         "en_US": {
           "POReference": "Document No.",
-          "EM_Etgo_Due_Date": "Due Date"
+          "OutstandingAmt": "Pending Payment",
+          "EM_Etgo_Due_Date": "Due Date",
+          "em_etgo_delivery_status": "Delivery Status"
         }
       },
       "dateFilterKey": "invoiceDate",
@@ -4479,6 +4486,14 @@
             "apiKey": "eTGODueDate",
             "column": "em_etgo_due_date",
             "type": "date",
+            "visibility": "readOnly",
+            "required": false
+          },
+          {
+            "name": "eTGODeliveryStatus",
+            "apiKey": "eTGODeliveryStatus",
+            "column": "em_etgo_delivery_status",
+            "type": "integer",
             "visibility": "readOnly",
             "required": false
           }
@@ -8058,11 +8073,15 @@
     "labelOverrides": {
       "es_ES": {
         "POReference": "Nº documento",
-        "EM_Etgo_Due_Date": "Vencimiento"
+        "OutstandingAmt": "Pendiente de pago",
+        "EM_Etgo_Due_Date": "Vencimiento",
+        "em_etgo_delivery_status": "Estado de entrega"
       },
       "en_US": {
         "POReference": "Document No.",
-        "EM_Etgo_Due_Date": "Due Date"
+        "OutstandingAmt": "Pending Payment",
+        "EM_Etgo_Due_Date": "Due Date",
+        "em_etgo_delivery_status": "Delivery Status"
       }
     }
   },
@@ -8983,6 +9002,14 @@
         "field": "dueAmount",
         "runner": "node",
         "description": "Field 'dueAmount' should be present in header"
+      },
+      {
+        "id": "t-field-presence-header-eTGODeliveryStatus",
+        "category": "field-presence",
+        "entity": "header",
+        "field": "eTGODeliveryStatus",
+        "runner": "node",
+        "description": "Field 'eTGODeliveryStatus' should be present in header"
       },
       {
         "id": "t-field-presence-header-eTGODueDate",
@@ -9975,6 +10002,14 @@
         "field": "dueAmount",
         "runner": "node",
         "description": "Field 'dueAmount' should have type 'number' in header"
+      },
+      {
+        "id": "t-field-type-header-eTGODeliveryStatus",
+        "category": "field-type",
+        "entity": "header",
+        "field": "eTGODeliveryStatus",
+        "runner": "node",
+        "description": "Field 'eTGODeliveryStatus' should have type 'number' in header"
       },
       {
         "id": "t-field-type-header-eTGODueDate",
@@ -14729,15 +14764,15 @@
       }
     ],
     "summary": {
-      "total": 838,
+      "total": 840,
       "byCategory": {
         "action-endpoint": 24,
         "crud-flags": 12,
         "default-value-type": 27,
         "displaylogic-evaluable": 6,
         "displaylogic-valid": 6,
-        "field-presence": 124,
-        "field-type": 124,
+        "field-presence": 125,
+        "field-type": 125,
         "readonlylogic-evaluable": 48,
         "readonlylogic-valid": 48,
         "rule-declared": 21,
@@ -14747,7 +14782,7 @@
         "visibility": 12
       },
       "byRunner": {
-        "node": 838,
+        "node": 840,
         "junit": 0
       }
     }

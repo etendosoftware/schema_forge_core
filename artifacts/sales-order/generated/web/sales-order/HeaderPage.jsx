@@ -17,11 +17,13 @@ const breadcrumb = 'Sales / Sales Order';
 const labelOverrides = {
   "es_ES": {
     "C_BPartner_ID": "Contacto",
-    "DeliveryStatus": "Estado de entrega"
+    "DeliveryStatus": "Estado de entrega",
+    "InvoiceStatus": "Estado de facturación"
   },
   "en_US": {
     "C_BPartner_ID": "Contact",
-    "DeliveryStatus": "Delivery Status"
+    "DeliveryStatus": "Delivery Status",
+    "InvoiceStatus": "Invoicing Status"
   }
 };
 
@@ -369,11 +371,13 @@ export const api = {
   "labelOverrides": {
     "es_ES": {
       "C_BPartner_ID": "Contacto",
-      "DeliveryStatus": "Estado de entrega"
+      "DeliveryStatus": "Estado de entrega",
+      "InvoiceStatus": "Estado de facturación"
     },
     "en_US": {
       "C_BPartner_ID": "Contact",
-      "DeliveryStatus": "Delivery Status"
+      "DeliveryStatus": "Delivery Status",
+      "InvoiceStatus": "Invoicing Status"
     }
   }
 };
@@ -408,7 +412,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         topbarRight={OrderCreateInvoice}
         topbarExtra={OrderDraftChips}
         menuActions={({ data, status }) => [
-          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO' && !data?.hasLinkedDocuments, labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
+          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO' && !data?.hasLinkedDocuments, labelKey: 'reactivate', successKey: 'reactivated', documentAction: 'RE',  }
         ]}
         draftMode={draftMode}
         salesTheme
