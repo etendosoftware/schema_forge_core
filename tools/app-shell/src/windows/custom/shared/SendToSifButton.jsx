@@ -2,22 +2,7 @@ import { useState, useMemo } from 'react';
 import { useUI } from '@/i18n';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
 import { useAuth } from '@/auth/AuthContext';
-import { getInvoiceFiscalTargets } from './fiscalTargets.js';
-
-function getPendingTargets(specName, profile, data) {
-  const { showSii, showTbai } = getInvoiceFiscalTargets(specName, profile);
-
-  return {
-    sendSii: showSii && data?.aeatsiiIssent !== true,
-    sendTbai: showTbai && data?.tbaiIssent !== true,
-  };
-}
-
-function getBodyKey({ sendSii, sendTbai }) {
-  if (sendSii && sendTbai) return 'sendToSifBodyBoth';
-  if (sendTbai) return 'sendToSifBodyTbai';
-  return 'sendToSifBodySii';
-}
+import { getPendingSifTargets, getSifBodyKey } from './sifSending.js';
 
 export default function SendToSifButton({ data, recordId, token, apiBaseUrl, status }) {
   const ui = useUI();
@@ -37,12 +22,12 @@ export default function SendToSifButton({ data, recordId, token, apiBaseUrl, sta
   }), [token]);
 
   const { profile } = useFiscalConfig(orgId, token, apiBaseUrl);
-  const pendingTargets = getPendingTargets(specName, profile, data);
+  const pendingTargets = getPendingSifTargets(specName, profile, data);
   const hasPendingTargets = pendingTargets.sendSii || pendingTargets.sendTbai;
 
   if (status !== 'CO' || !hasPendingTargets) return null;
 
-  const bodyKey = getBodyKey(pendingTargets);
+  const bodyKey = getSifBodyKey(pendingTargets);
 
   async function callProcess(columnName) {
     const res = await fetch(

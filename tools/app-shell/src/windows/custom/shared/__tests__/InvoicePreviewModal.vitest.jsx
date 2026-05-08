@@ -41,6 +41,14 @@ vi.mock('@/components/contract-ui/SendDocumentModal.jsx', () => ({
   default: () => <div data-testid="send-modal">Send Modal</div>,
 }));
 
+vi.mock('@/windows/custom/fiscal-config/useFiscalConfig.js', () => ({
+  useFiscalConfig: () => ({ profile: 'tbai' }),
+}));
+
+vi.mock('@/auth/AuthContext.jsx', () => ({
+  useAuth: () => ({ selectedOrg: { id: 'ORG_1' } }),
+}));
+
 vi.mock('@/components/ui/badge.jsx', () => ({
   Badge: ({ children, ...props }) => <span data-testid="badge" {...props}>{children}</span>,
 }));
@@ -159,6 +167,18 @@ describe('InvoicePreviewModal', () => {
     expect(screen.getAllByText('invoicePreviewSend').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('invoicePreviewAddPayment').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('invoicePreviewEdit')).toBeInTheDocument();
+  });
+
+  it('shows Send to SIF in the preview actions when the fiscal profile enables it', () => {
+    renderPreview();
+    expect(screen.getByText('sendToSif')).toBeInTheDocument();
+  });
+
+  it('opens the SIF confirmation modal from the preview action', () => {
+    renderPreview();
+    fireEvent.click(screen.getByText('sendToSif'));
+    expect(screen.getByText('sendToSifTitle')).toBeInTheDocument();
+    expect(screen.getByText('sendToSifBodyTbai')).toBeInTheDocument();
   });
 
   it('shows empty messages panel when messages tab is clicked', () => {

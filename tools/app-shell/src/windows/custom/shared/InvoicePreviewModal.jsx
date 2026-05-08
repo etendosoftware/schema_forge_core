@@ -13,7 +13,7 @@ import PdfViewer from './PdfViewer.jsx';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
 import { useAuth } from '@/auth/AuthContext.jsx';
-import { getInvoiceFiscalTargets } from './fiscalTargets.js';
+import { getPendingSifTargets, getSifBodyKey } from './sifSending.js';
 
 const ACCEPTED_TYPES = {
   'application/pdf': 'pdf',
@@ -25,21 +25,6 @@ const ACCEPTED_TYPES = {
   'image/svg+xml': 'image',
 };
 const ACCEPT_ATTR = Object.keys(ACCEPTED_TYPES).join(',');
-
-function getPendingTargets(specName, profile, invoice) {
-  const { showSii, showTbai } = getInvoiceFiscalTargets(specName, profile);
-
-  return {
-    sendSii: showSii && invoice?.aeatsiiIssent !== true,
-    sendTbai: showTbai && invoice?.tbaiIssent !== true,
-  };
-}
-
-function getSifBodyKey({ sendSii, sendTbai }) {
-  if (sendSii && sendTbai) return 'sendToSifBodyBoth';
-  if (sendTbai) return 'sendToSifBodyTbai';
-  return 'sendToSifBodySii';
-}
 
 function getBackdropClass(animState) {
   if (animState === 'opening') return 'opacity-0';
@@ -234,7 +219,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
     fetchPayments();
   }, [fetchPayments]);
 
-  const pendingTargets = getPendingTargets(specName, profile, displayInvoice);
+  const pendingTargets = getPendingSifTargets(specName, profile, displayInvoice);
   const hasPendingTargets = pendingTargets.sendSii || pendingTargets.sendTbai;
 
   const canSendToSif = displayInvoice?.documentStatus === 'CO'

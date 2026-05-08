@@ -11,7 +11,7 @@ const columnsBlock = src.match(/const columns = useMemo\(\(\) => \[([\s\S]*?)\],
 
 const expectedKeysInOrder = [
   'invoiceDate',
-  'documentNo',
+  'orderReference',
   'eTGODueDate',
   'businessPartner',
   'documentStatus',
@@ -37,7 +37,7 @@ describe('PurchaseInvoiceHeaderTable — columns', () => {
 
   it('binds each column to the right AD column name', () => {
     assert.match(src, /key: 'invoiceDate', column: 'DateInvoiced'/);
-    assert.match(src, /key: 'documentNo', column: 'DocumentNo'/);
+    assert.match(src, /key: 'orderReference', column: 'POReference'/);
     assert.match(src, /key: 'eTGODueDate', column: 'EM_Etgo_Due_Date'/);
     assert.match(src, /key: 'businessPartner', column: 'C_BPartner_ID'/);
     assert.match(src, /key: 'documentStatus', column: 'DocStatus'/);
@@ -61,8 +61,8 @@ describe('PurchaseInvoiceHeaderTable — due date column', () => {
     assert.doesNotMatch(src, /paymentPlan\?parentId/, 'payment-plan fetch was retired in ETP-3873');
   });
 
-  it('does not expose POReference as a list column', () => {
-    assert.doesNotMatch(src, /key: 'orderReference', column: 'POReference'/);
+  it('shows POReference as the list document number column', () => {
+    assert.match(src, /key: 'orderReference', column: 'POReference'/);
   });
 
   it('feeds outstandingAmount into the due-date state', () => {
