@@ -1,6 +1,6 @@
 /** Figma token map: tag variant → { background, color } (ETP-3835) */
 export const VARIANT_STYLES = {
-  blue:    { background: '#DBF3FF', color: '#0075AD' },
+  blue:    { background: '#F0FAFF', color: '#0075AD' },
   green:   { background: '#DFF8EA', color: '#17663A' },
   purple:  { background: '#F4F1FD', color: '#4316CA' },
   yellow:  { background: '#FFF3D6', color: '#8A6100' },

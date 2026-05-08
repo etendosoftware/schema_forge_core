@@ -65,6 +65,8 @@ export function ListView({
   dateFilterKey = null,
   refreshTrigger = 0,
   hoverRowActions = false,
+  selectionBarSize = 'sm',
+  selectionBarRightActions = null,
 }) {
   // Subset filters — radio-style, always one active, applied first.
   const [activeSubsetIndex, setActiveSubsetIndex] = useState(() => {
@@ -293,6 +295,11 @@ export function ListView({
     isFavorite: favActive,
   }, [favActive, hook.items.length]);
   const [selectedRows, setSelectedRows] = useState([]);
+  const [clearSelectionCounter, setClearSelectionCounter] = useState(0);
+  const clearSelection = useCallback(() => {
+    setSelectedRows([]);
+    setClearSelectionCounter((c) => c + 1);
+  }, []);
   const [showSortPopover, setShowSortPopover] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showDocPrint, setShowDocPrint] = useState(false);
@@ -366,40 +373,47 @@ export function ListView({
       <div className="flex-1 flex flex-col bg-white rounded-tl-2xl overflow-hidden min-h-0">
         {/* Selection bar or filter bar */}
         {selectedRows.length > 0 ? (
-          <div className="flex items-center justify-between px-6 py-3 border-b border-border/30">
-            <div className="flex items-center gap-3">
+          <div className={`flex items-center justify-between ${listbarPaddingX} py-3 border-b border-border/30`}>
+            <div className="flex items-center gap-3 h-10">
               <span className="text-sm font-semibold">{ui('selected').replace('{count}', selectedRows.length)}</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 h-10">
               <Button
                 variant="outline"
-                size="sm"
+                size={selectionBarSize}
                 className="gap-1.5"
                 onClick={() => setShowDocPrint(true)}
               >
-                <Eye className="h-3.5 w-3.5" />
+                <Eye className={selectionBarSize === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
                 {ui('preview')}
               </Button>
               <Button
-                size="sm"
+                size={selectionBarSize}
                 className="gap-1.5"
                 onClick={() => printDocuments(windowName, selectedRows.map(r => r.id || r), token)}
               >
-                <Printer className="h-3.5 w-3.5" />
+                <Printer className={selectionBarSize === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
                 {ui('print')} ({selectedRows.length})
               </Button>
               {onCloneRow && (
                 <Button
                   variant="outline"
-                  size="sm"
+                  size={selectionBarSize}
                   className="gap-1.5"
                   onClick={() => onCloneRow(selectedRows)}
                 >
-                  <Copy className="h-3.5 w-3.5" />
+                  <Copy className={selectionBarSize === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
                   {ui('cloneOrderBtn')} ({selectedRows.length})
                 </Button>
               )}
-              {bulkActions && bulkActions({ selectedRows, clearSelection: () => setSelectedRows([]), token, apiBaseUrl, windowName, api })}
+              {bulkActions && bulkActions({ selectedRows, clearSelection, token, apiBaseUrl, windowName, api })}
+              {selectionBarRightActions && selectionBarRightActions({
+                selectedRows,
+                clearSelection,
+                token,
+                apiBaseUrl,
+                onDataMutated: hook.refresh,
+              })}
             </div>
           </div>
         ) : (
@@ -654,6 +668,7 @@ export function ListView({
                     onCloneRow={onCloneRow}
                     rowFilter={effectiveRowFilter}
                     hoverRowActions={hoverRowActions}
+                    clearSelectionTrigger={clearSelectionCounter}
                   />
                 )
               }

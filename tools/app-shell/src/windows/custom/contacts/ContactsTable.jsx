@@ -1,4 +1,5 @@
 import { useMemo, useCallback, useState } from 'react';
+import { toast } from 'sonner';
 import { DataTable } from '@/components/contract-ui';
 import { useLocale, useUI } from '@/i18n';
 import { Tag } from '@/components/ui/tag';
@@ -6,6 +7,7 @@ import { Button } from '@/components/ui/button.jsx';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog.jsx';
+import { extractApiErrorMessage } from '@/lib/apiError';
 
 const filters = ['searchKey', 'name', 'etgoFirstname', 'etgoLastname'];
 
@@ -23,13 +25,13 @@ function TypeBadge({ row, t }) {
   if (isCust && isVend) {
     return (
       <span className="inline-flex items-center gap-1">
-        <Tag variant="blue" label={t('Customer')} />
-        <Tag variant="green" label={t('Vendor')} />
+        <Tag variant="purple" label={t('Customer')} />
+        <Tag variant="blue" label={t('Vendor')} />
       </span>
     );
   }
-  if (isCust) return <Tag variant="blue" label={t('Customer')} />;
-  if (isVend) return <Tag variant="green" label={t('Vendor')} />;
+  if (isCust) return <Tag variant="purple" label={t('Customer')} />;
+  if (isVend) return <Tag variant="blue" label={t('Vendor')} />;
   return '—';
 }
 
@@ -183,8 +185,13 @@ export default function ContactsTable({ data = [], apiBaseUrl, token, onDataMuta
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error(`Error ${res.status}`);
-      onDataMutated?.();
+      if (!res.ok) {
+        toast.error(await extractApiErrorMessage(res));
+      } else {
+        onDataMutated?.();
+      }
+    } catch (err) {
+      toast.error(err.message || 'Network error');
     } finally {
       resolve();
     }

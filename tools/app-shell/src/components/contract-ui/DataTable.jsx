@@ -902,6 +902,7 @@ export function DataTable({
   editingRowId = null,
   onSaveRow = null,
   onCancelEdit = null,
+  clearSelectionTrigger = 0,
 }) {
   const t = useLabel(labelOverrides);
   const tMenu = useMenuLabel();
@@ -914,6 +915,12 @@ export function DataTable({
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRows, setSelectedRows] = useState(new Set());
+
+  useEffect(() => {
+    if (!clearSelectionTrigger) return;
+    setSelectedRows(new Set());
+  }, [clearSelectionTrigger]);
+
   const [optimisticToggles, setOptimisticToggles] = useState({});
   const [savingToggles, setSavingToggles] = useState({});
   const [deletingRows, setDeletingRows] = useState({});
