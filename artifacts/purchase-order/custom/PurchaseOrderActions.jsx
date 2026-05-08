@@ -40,6 +40,7 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
   const [confirmedDocs,  setConfirmedDocs]  = useState(null);
   const [confirmedTitle, setConfirmedTitle] = useState(null); // null = "PO confirmed", string = custom title
   const [showClone,      setShowClone]      = useState(false);
+  const [isCloneHovered, setIsCloneHovered] = useState(false);
 
   const status      = data?.documentStatus;
   const isDraft     = status === 'DR';
@@ -109,8 +110,8 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
     : null;
 
   const cloneButton = (
-    <button type="button" onClick={() => setShowClone(true)} style={btnCloneStyle}>
-      <CopyIcon />{ui('cloneOrderBtn')}
+    <button type="button" onClick={() => setShowClone(true)} style={{...btnCloneStyle, background: isCloneHovered ? '#F1F5F9' : '#FFFFFF'}} title={ui('cloneOrderBtn')} onMouseEnter={() => setIsCloneHovered(true)} onMouseLeave={() => setIsCloneHovered(false)}>
+      <CopyIcon />
     </button>
   );
 
@@ -928,9 +929,10 @@ const btnSecondary = {
 };
 
 const btnCloneStyle = {
-  display: 'inline-flex', alignItems: 'center', gap: 5,
-  padding: '5px 12px', borderRadius: 6, fontSize: 13, fontWeight: 500,
-  border: '1px solid #D1D5DB', background: 'transparent', color: '#374151', cursor: 'pointer',
+  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+  padding: '7px', borderRadius: 6,
+  border: '1px solid #D1D4DB', background: '#FFFFFF', color: '#64748B', cursor: 'pointer',
+  boxShadow: '0px 1px 2px 0px #1212170D',
 };
 
 const iconBtnStyle = {
