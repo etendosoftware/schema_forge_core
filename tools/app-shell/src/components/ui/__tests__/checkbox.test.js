@@ -1,11 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const dir = dirname(fileURLToPath(import.meta.url));
-const src = readFileSync(join(dir, '..', 'checkbox.jsx'), 'utf8');
+const src = readFileSync(new URL('../checkbox.jsx', import.meta.url), 'utf8');
 
 // ---------------------------------------------------------------------------
 // checkbox.jsx — source-reading tests (ETP-3660)

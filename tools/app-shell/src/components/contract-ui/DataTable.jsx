@@ -1228,11 +1228,11 @@ export function DataTable({
     });
   };
 
-  const colSpan = visibleColumns.length
-    + (selectable ? 1 : 0)
-    + (hoverRowActions
-      ? 1 + (onDeleteRow ? 1 : 0)
-      : (onDeleteRow ? 1 : 0) + (onCloneRow ? 1 : 0));
+  const deleteCol = onDeleteRow ? 1 : 0;
+  const cloneCol = onCloneRow ? 1 : 0;
+  const actionCols = hoverRowActions ? 1 + deleteCol : deleteCol + cloneCol;
+  const colSpan = visibleColumns.length + (selectable ? 1 : 0) + actionCols;
+  const selectedRowBg = hoverRowActions ? 'bg-[#F5F7F9]' : 'bg-primary/5';
 
   return (
     <div className="space-y-0">
@@ -1315,7 +1315,7 @@ export function DataTable({
                     className={[
                       'transition-colors h-12 group/row',
                       (onRowClick || onNavigate) ? 'cursor-pointer' : 'cursor-default',
-                      isChecked ? (hoverRowActions ? 'bg-[#F5F7F9]' : 'bg-primary/5') : '',
+                      isChecked ? selectedRowBg : '',
                       selectedId != null && row.id === selectedId ? 'bg-primary/10' : '',
                       isSelectedLine ? 'bg-slate-200/90 ring-1 ring-slate-300' : '',
                       isSelectedLine ? 'hover:bg-slate-300/80' : (onRowClick || onNavigate) ? 'hover:bg-muted/50' : '',
@@ -1354,7 +1354,12 @@ export function DataTable({
                           ) : (
                             <button
                               type="button"
-                              onClick={(e) => { e.stopPropagation(); onEditRow ? onEditRow(row) : (onNavigate ? onNavigate(row) : onRowClick?.(row)); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onEditRow) { onEditRow(row); }
+                                else if (onNavigate) { onNavigate(row); }
+                                else { onRowClick?.(row); }
+                              }}
                               className="opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 h-8 w-8 flex items-center justify-center rounded-full text-[#828FA3] hover:bg-[#F5F7F9] transition-all"
                               aria-label={ui('edit')}
                             >

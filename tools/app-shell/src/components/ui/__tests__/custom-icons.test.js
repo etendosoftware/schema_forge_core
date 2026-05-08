@@ -1,11 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const dir = dirname(fileURLToPath(import.meta.url));
-const src = readFileSync(join(dir, '..', 'custom-icons.jsx'), 'utf8');
+const src = readFileSync(new URL('../custom-icons.jsx', import.meta.url), 'utf8');
 
 // ---------------------------------------------------------------------------
 // custom-icons.jsx — source-reading tests (ETP-3660)
