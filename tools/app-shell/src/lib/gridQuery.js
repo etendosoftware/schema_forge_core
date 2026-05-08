@@ -445,6 +445,7 @@ export function buildAdvancedFilterCriteria(advancedFilter, columns) {
 const TEXTUAL_IDENTIFIER_OPS = new Set(['iContains', 'iNotContains', 'iEquals', 'iNotEqual']);
 
 function buildRowCriteria(col, row) {
+  if (typeof col.buildCriteria === 'function') return col.buildCriteria(row) ?? null;
   const op = row.operator;
   if (!op) return null;
   const mode = resolveFilterMode(col);

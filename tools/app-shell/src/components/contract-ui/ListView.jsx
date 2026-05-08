@@ -64,6 +64,7 @@ export function ListView({
   rowFilter,
   dateFilterKey = null,
   refreshTrigger = 0,
+  hoverRowActions = false,
 }) {
   // Subset filters — radio-style, always one active, applied first.
   const [activeSubsetIndex, setActiveSubsetIndex] = useState(() => {
@@ -652,6 +653,7 @@ export function ListView({
                     columnFilters={columnFilters}
                     onCloneRow={onCloneRow}
                     rowFilter={effectiveRowFilter}
+                    hoverRowActions={hoverRowActions}
                   />
                 )
               }
