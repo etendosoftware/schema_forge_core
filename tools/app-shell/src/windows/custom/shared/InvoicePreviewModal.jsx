@@ -13,8 +13,7 @@ import PdfViewer from './PdfViewer.jsx';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
 import { useAuth } from '@/auth/AuthContext.jsx';
-
-const VISIBLE_SIF_PROFILES = new Set(['sii', 'sii-navarra', 'tbai', 'sii+tbai']);
+import { getInvoiceFiscalTargets } from './fiscalTargets.js';
 
 const ACCEPTED_TYPES = {
   'application/pdf': 'pdf',
@@ -27,9 +26,19 @@ const ACCEPTED_TYPES = {
 };
 const ACCEPT_ATTR = Object.keys(ACCEPTED_TYPES).join(',');
 
-function isPendingSifStatus(value) {
-  const normalized = String(value ?? '').trim().toUpperCase();
-  return normalized === 'PE';
+function getPendingTargets(specName, profile, invoice) {
+  const { showSii, showTbai } = getInvoiceFiscalTargets(specName, profile);
+
+  return {
+    sendSii: showSii && invoice?.aeatsiiIssent !== true,
+    sendTbai: showTbai && invoice?.tbaiIssent !== true,
+  };
+}
+
+function getSifBodyKey({ sendSii, sendTbai }) {
+  if (sendSii && sendTbai) return 'sendToSifBodyBoth';
+  if (sendTbai) return 'sendToSifBodyTbai';
+  return 'sendToSifBodySii';
 }
 
 function getBackdropClass(animState) {
@@ -74,8 +83,9 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
   const { profile } = useFiscalConfig(orgId, token, apiBaseUrl);
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
+  const updateEventName = `${specName}:invoice-updated`;
 
-  // For sales-invoice: auto-render invoice PDF instead of the drop zone
+  // Sales invoices render the generated PDF preview; purchase invoices keep the upload/drop zone.
   const isSalesInvoice = specName === 'sales-invoice';
   const { pdfUrl, loading: pdfLoading, error: pdfError } = useInvoicePdf(
     isSalesInvoice ? invoiceData?.id : null,
@@ -105,7 +115,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
       const refreshed = json?.response?.data?.[0] ?? json ?? null;
       if (refreshed) {
         setInvoiceData(refreshed);
-        window.dispatchEvent(new CustomEvent('sales-invoice:invoice-updated', {
+        window.dispatchEvent(new CustomEvent(updateEventName, {
           detail: { invoiceId: refreshed.id, invoice: refreshed },
         }));
         onInvoiceUpdated?.(refreshed);
@@ -114,7 +124,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
     } catch {
       return null;
     }
-  }, [apiBaseUrl, headers, invoice?.id, onInvoiceUpdated, token]);
+  }, [apiBaseUrl, headers, invoice?.id, onInvoiceUpdated, token, updateEventName]);
 
   // Animation state: 'opening' → 'open' → 'closing' → 'closingUp'
   const [animState, setAnimState] = useState('opening');
@@ -224,21 +234,17 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
     fetchPayments();
   }, [fetchPayments]);
 
-  const canSendToSif = isSalesInvoice
-    && displayInvoice?.documentStatus === 'CO'
-    && isPendingSifStatus(displayInvoice?.aeatsiiEstado)
-    && displayInvoice?.aeatsiiIssent !== true
-    && VISIBLE_SIF_PROFILES.has(profile);
+  const pendingTargets = getPendingTargets(specName, profile, displayInvoice);
+  const hasPendingTargets = pendingTargets.sendSii || pendingTargets.sendTbai;
 
-  const sifBodyKey = profile === 'sii+tbai'
-    ? 'sendToSifBodyBoth'
-    : profile === 'tbai'
-      ? 'sendToSifBodyTbai'
-      : 'sendToSifBodySii';
+  const canSendToSif = displayInvoice?.documentStatus === 'CO'
+    && hasPendingTargets;
+
+  const sifBodyKey = getSifBodyKey(pendingTargets);
 
   const callSifProcess = useCallback(async (columnName) => {
     const res = await fetch(
-      `${base}/sales-invoice/header/${displayInvoice.id}/action/${columnName}`,
+      `${base}/${specName}/header/${displayInvoice.id}/action/${columnName}`,
       { method: 'POST', headers, body: '{}' },
     );
     if (!res.ok) {
@@ -246,7 +252,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
       throw new Error(json?.response?.message || json?.message || `HTTP ${res.status}`);
     }
     return res.json().catch(() => null);
-  }, [base, displayInvoice?.id, headers]);
+  }, [base, displayInvoice?.id, headers, specName]);
 
   const closeSifModal = useCallback(() => {
     setShowSifModal(false);
@@ -258,7 +264,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
     setSifPhase('sending');
     const next = {};
 
-    if (profile === 'sii' || profile === 'sii-navarra' || profile === 'sii+tbai') {
+    if (pendingTargets.sendSii) {
       try {
         await callSifProcess('Em_aeatsii_send');
         next.sii = { ok: true };
@@ -267,7 +273,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
       }
     }
 
-    if (profile === 'tbai' || profile === 'sii+tbai') {
+    if (pendingTargets.sendTbai) {
       try {
         await callSifProcess('Em_Tbai_Xmlgenerator');
         next.tbai = { ok: true };
@@ -284,7 +290,7 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
     }
 
     setSifPhase('results');
-  }, [callSifProcess, fetchPayments, profile, refetchInvoice]);
+  }, [callSifProcess, fetchPayments, pendingTargets, refetchInvoice]);
 
   if (!invoice) return null;
 

@@ -3,15 +3,20 @@ import { toast } from 'sonner';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
 import { normalizeDateInputValue } from '@/windows/custom/fiscal-config/fiscalConfig.utils.js';
 import { useAuth } from '@/auth/AuthContext';
-
-const SII_PROFILES = new Set(['sii', 'sii-navarra', 'sii+tbai']);
-const TBAI_PROFILES = new Set(['tbai', 'sii+tbai']);
+import { getInvoiceFiscalTargets } from '@/windows/custom/shared/fiscalTargets.js';
 
 const CLAVE_TIPO_OPTIONS = [
   { value: 'F1', label: 'Invoice' },
   { value: 'F2', label: 'Simplified invoice' },
   { value: 'F4', label: 'Simplified invoices summary' },
   { value: 'R', label: 'Corrective invoice' },
+];
+
+const PURCHASE_CLAVE_TIPO_FC_OPTIONS = [
+  { value: 'F6', label: 'Accounting document' },
+  { value: 'LC', label: 'Aduanas - Liquidacion complementaria' },
+  { value: 'F5', label: 'Import (DUA)' },
+  { value: 'F1', label: 'Invoice' },
 ];
 
 function FieldRow({ label, children }) {
@@ -64,19 +69,46 @@ function TbaiBadge({ issent }) {
   );
 }
 
+const VERIFACTU_STATUS = {
+  AC: { label: 'Aceptada', cls: 'bg-green-50 text-green-700 border-green-200' },
+  AE: { label: 'Aceptada con errores', cls: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+  IN: { label: 'Inválida', cls: 'bg-red-50 text-red-700 border-red-200' },
+  ER: { label: 'Rechazada', cls: 'bg-red-50 text-red-700 border-red-200' },
+  PE: { label: 'Pendiente', cls: 'bg-gray-50 text-gray-500 border-gray-200' },
+};
+
+function VerifactuBadge({ status, sent }) {
+  const normalized = status || (sent === true || sent === 'Y' ? 'AC' : null);
+  const current = VERIFACTU_STATUS[normalized] ?? {
+    label: 'No enviada',
+    cls: 'bg-gray-50 text-gray-400 border-gray-200',
+  };
+
+  return (
+    <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded border ${current.cls}`}>
+      {current.label}
+    </span>
+  );
+}
+
 export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
   const { selectedOrg } = useAuth();
   const orgId = selectedOrg?.id ?? null;
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
+  const specName = apiBaseUrl?.split('/').filter(Boolean).pop() || 'sales-invoice';
   const headers = useMemo(() => ({
     Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',
   }), [token]);
 
   const { profile } = useFiscalConfig(orgId, token, apiBaseUrl);
-
-  const showSii = SII_PROFILES.has(profile);
-  const showTbai = TBAI_PROFILES.has(profile);
+  const { showSii, showTbai, showVerifactu } = getInvoiceFiscalTargets(specName, profile);
+  const isPurchaseInvoice = specName === 'purchase-invoice';
+  const siiTypeField = isPurchaseInvoice ? 'aeatsiiClaveTipoFc' : 'aeatsiiClaveTipo';
+  const siiDescriptionMasterIdentifier = isPurchaseInvoice
+    ? data?.['aeatsiiPurDescription$_identifier']
+    : data?.['aeatsiiDescription$_identifier'];
+  const siiTypeOptions = isPurchaseInvoice ? PURCHASE_CLAVE_TIPO_FC_OPTIONS : CLAVE_TIPO_OPTIONS;
 
   const isDraft = data?.documentStatus === 'DR';
   const isSentToSii = data?.aeatsiiIssent === true || data?.aeatsiiIssent === 'Y';
@@ -88,9 +120,13 @@ export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
   const [siiForm, setSiiForm] = useState({});
   const [savingField, setSavingField] = useState(null);
 
-  if (!showSii && !showTbai) return null;
+  if (!showSii && !showTbai && !showVerifactu) return null;
 
-  const effectiveTab = (!showSii && activeTab === 'sii' && showTbai) ? 'tbai' : activeTab;
+  const effectiveTab = showSii
+    ? activeTab
+    : showTbai
+      ? 'tbai'
+      : 'verifactu';
 
   function getVal(key) {
     return key in siiForm ? siiForm[key] : (data?.[key] ?? '');
@@ -107,7 +143,7 @@ export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
   async function patchField(fieldKey, value) {
     setSavingField(fieldKey);
     try {
-      const res = await fetch(`${base}/sales-invoice/header/${recordId}`, {
+      const res = await fetch(`${base}/${specName}/header/${recordId}`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify({ [fieldKey]: value }),
@@ -168,6 +204,19 @@ export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
               TBAI
             </button>
           )}
+          {showVerifactu && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('verifactu')}
+              className={`text-[10px] font-medium px-1.5 py-0.5 rounded text-left transition-colors ${
+                effectiveTab === 'verifactu'
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Verifactu
+            </button>
+          )}
         </div>
       </div>
 
@@ -193,19 +242,19 @@ export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
               <select
                 className={inputCls}
                 style={{ borderWidth: '0.5px' }}
-                value={getVal('aeatsiiClaveTipo')}
-                onChange={e => setVal('aeatsiiClaveTipo', e.target.value)}
-                onBlur={e => handleBlur('aeatsiiClaveTipo', e.target.value)}
-                disabled={siiFieldReadOnly || savingField === 'aeatsiiClaveTipo'}
+                value={getVal(siiTypeField)}
+                onChange={e => setVal(siiTypeField, e.target.value)}
+                onBlur={e => handleBlur(siiTypeField, e.target.value)}
+                disabled={siiFieldReadOnly || savingField === siiTypeField}
               >
                 <option value="">—</option>
-                {CLAVE_TIPO_OPTIONS.map(o => (
+                {siiTypeOptions.map(o => (
                   <option key={o.value} value={o.value}>{o.value} — {o.label}</option>
                 ))}
               </select>
             </FieldRow>
             <FieldRow label="Descripción maestra">
-              <ReadValue value={data?.['aeatsiiDescription$_identifier']} />
+              <ReadValue value={siiDescriptionMasterIdentifier} />
             </FieldRow>
             <FieldRow label="Descripción SII">
               <input
@@ -252,6 +301,32 @@ export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
             </FieldRow>
             <FieldRow label="Secuencia factura">
               <ReadValue value={data?.tbaiInvoiceseq} />
+            </FieldRow>
+          </div>
+        )}
+
+        {effectiveTab === 'verifactu' && showVerifactu && (
+          <div className="flex flex-col gap-1.5">
+            <div className="mb-0.5">
+              <VerifactuBadge
+                status={data?.etvfacInvoiceStatus}
+                sent={data?.etvfacSentToVerifac}
+              />
+            </div>
+            <FieldRow label="Fecha generación RF">
+              <ReadValue value={data?.etvfacDateIssue} />
+            </FieldRow>
+            <FieldRow label="CSV">
+              <ReadValue value={data?.cdigoCSV} />
+            </FieldRow>
+            <FieldRow label="Hash">
+              <ReadValue value={data?.etvfacHash} />
+            </FieldRow>
+            <FieldRow label="QR URL">
+              <ReadValue value={data?.etvfacQRURL} />
+            </FieldRow>
+            <FieldRow label="Detalle incidencia">
+              <ReadValue value={data?.etvfacIssueDescription} />
             </FieldRow>
           </div>
         )}

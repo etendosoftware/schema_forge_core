@@ -30,26 +30,20 @@ describe('SifDataTabs', () => {
     assert.match(src, /selectedOrg/);
   });
 
-  it('returns null when profile is not sii/tbai/sii+tbai', () => {
+  it('returns null when no fiscal targets apply to the current invoice spec', () => {
     assert.match(src, /return null/);
   });
 
   // ── Tab visibility ─────────────────────────────────────────────────────────
 
-  it('defines SII_PROFILES with sii, sii-navarra, and sii+tbai', () => {
-    assert.match(src, /SII_PROFILES/);
-    assert.match(src, /sii-navarra/);
-    assert.match(src, /sii\+tbai/);
-  });
-
-  it('defines TBAI_PROFILES with tbai and sii+tbai', () => {
-    assert.match(src, /TBAI_PROFILES/);
-    assert.match(src, /tbai/);
+  it('derives visible fiscal targets from a shared helper', () => {
+    assert.match(src, /getInvoiceFiscalTargets/);
   });
 
   it('derives showSii and showTbai from profile', () => {
     assert.match(src, /showSii/);
     assert.match(src, /showTbai/);
+    assert.match(src, /showVerifactu/);
   });
 
   // ── Tab state ──────────────────────────────────────────────────────────────
@@ -78,6 +72,12 @@ describe('SifDataTabs', () => {
     assert.match(src, /type=['"]checkbox['"]/);
   });
 
+  it('switches to purchase-specific SII fields for purchase invoices', () => {
+    assert.match(src, /aeatsiiClaveTipoFc/);
+    assert.match(src, /aeatsiiPurDescription\$_identifier/);
+    assert.match(src, /PURCHASE_CLAVE_TIPO_FC_OPTIONS/);
+  });
+
   it('shows aeatsiiEjercicio and aeatsiiPeriodo as read-only', () => {
     assert.match(src, /aeatsiiEjercicio/);
     assert.match(src, /aeatsiiPeriodo/);
@@ -89,9 +89,10 @@ describe('SifDataTabs', () => {
     assert.match(src, /function patchField|patchField.*=.*async/);
   });
 
-  it('calls PATCH on the sales-invoice header endpoint', () => {
+  it('calls PATCH on the current spec header endpoint', () => {
     assert.match(src, /PATCH/);
-    assert.match(src, /sales-invoice\/header/);
+    assert.match(src, /specName/);
+    assert.match(src, /header/);
   });
 
   it('shows a toast error on PATCH failure', () => {
@@ -104,6 +105,16 @@ describe('SifDataTabs', () => {
     assert.match(src, /tbaiSequence/);
     assert.match(src, /tbaiInvoicenum/);
     assert.match(src, /tbaiInvoiceseq/);
+  });
+
+  it('renders a Verifactu status tab with read-only fields', () => {
+    assert.match(src, /Verifactu/);
+    assert.match(src, /etvfacInvoiceStatus/);
+    assert.match(src, /etvfacDateIssue/);
+    assert.match(src, /cdigoCSV/);
+    assert.match(src, /etvfacHash/);
+    assert.match(src, /etvfacQRURL/);
+    assert.match(src, /etvfacIssueDescription/);
   });
 
 });

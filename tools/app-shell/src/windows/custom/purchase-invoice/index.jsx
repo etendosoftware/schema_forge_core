@@ -20,7 +20,7 @@ import { useCreateContactModal } from '@/components/contract-ui/useCreateContact
 /* eslint-disable react/prop-types */
 
 const LIST_COLUMNS = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string', label: 'Document No.' },
+  { key: 'orderReference', column: 'POReference', type: 'string', label: 'Document No.' },
   { key: 'invoiceDate', column: 'DateInvoiced', type: 'date', label: 'Invoice Date' },
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner' },
   { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
@@ -209,6 +209,7 @@ export default function PurchaseInvoiceWindow(props) {
           token={token}
           apiBaseUrl={apiBaseUrl}
           windowName={windowName}
+          specName="purchase-invoice"
           onClose={() => {
             setPreviewRow(null);
             clearSavedRecord();

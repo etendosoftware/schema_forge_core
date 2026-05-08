@@ -231,6 +231,9 @@ describe('useEntity', () => {
         if (opts?.method === 'POST') {
           return { ok: true, json: async () => ({ response: { data: [savedRecord] } }) };
         }
+        if (String(url).endsWith('/header/new-1')) {
+          return { ok: true, json: async () => ({ response: { data: [{ ...savedRecord, serverValue: 'computed' }] } }) };
+        }
         return { ok: true, json: async () => ({ response: { data: [] } }) };
       });
 
@@ -250,7 +253,7 @@ describe('useEntity', () => {
       });
 
       expect(saved).toEqual(savedRecord);
-      expect(result.current.selected).toEqual(savedRecord);
+      expect(result.current.selected).toEqual({ ...savedRecord, serverValue: 'computed' });
       expect(result.current.saveError).toBeNull();
 
       // Check the POST call
@@ -266,8 +269,18 @@ describe('useEntity', () => {
 
     it('PATCHes existing record with only changed fields', async () => {
       const existing = { id: 'ex-1', name: 'Original', amount: 100 };
-      globalThis.fetch
-        .mockResolvedValueOnce({ ok: true, json: async () => ({ response: { data: [] } }) });
+       globalThis.fetch.mockImplementation(async (url, opts) => {
+         if (String(url).endsWith('/header/ex-1') && !opts?.method) {
+           return { ok: true, json: async () => ({ response: { data: [{ ...existing, name: 'Updated', serverValue: 'computed' }] } }) };
+         }
+         if (!opts?.method) {
+           return { ok: true, json: async () => ({ response: { data: [] } }) };
+         }
+         if (opts.method === 'PATCH') {
+           return { ok: true, json: async () => ({ response: { data: [{ ...existing, name: 'Updated' }] } }) };
+         }
+         return { ok: true, json: async () => ({ response: { data: [] } }) };
+       });
 
       const { result } = renderEntity('header', null, { skipListFetch: true });
 
@@ -278,11 +291,6 @@ describe('useEntity', () => {
 
       act(() => {
         result.current.handleChange('name', 'Updated');
-      });
-
-      globalThis.fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ response: { data: [{ ...existing, name: 'Updated' }] } }),
       });
 
       await act(async () => {
@@ -296,6 +304,7 @@ describe('useEntity', () => {
       expect(body.name).toBe('Updated');
       // amount unchanged, should not be in payload
       expect(body.amount).toBeUndefined();
+      expect(result.current.selected).toEqual({ ...existing, name: 'Updated', serverValue: 'computed' });
     });
 
     it('returns null and sets error on non-ok response', async () => {
