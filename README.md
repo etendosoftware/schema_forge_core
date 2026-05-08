@@ -106,15 +106,18 @@ cp .env.example .env
 Edit `.env` with your values:
 
 ```env
-# Path to your Etendo root (relative or absolute)
+# Etendo root directory (relative or absolute path)
 ETENDO_ROOT=..
 
-# Database connection (optional — CLI auto-reads from gradle.properties)
+# Etendo Database (staging/development - NEVER production)
 ETENDO_DB_HOST=localhost
 ETENDO_DB_PORT=5432
-ETENDO_DB_USER=etendo
-ETENDO_DB_PASSWORD=
-ETENDO_DB_NAME=etendo_dev
+ETENDO_DB_USER=tad
+ETENDO_DB_PASSWORD=tad
+ETENDO_DB_NAME=etendo
+
+# Etendo Java source directory (for Rule Extractor callout analysis)
+ETENDO_SOURCE_DIR=../src
 ```
 
 > **Note:** The CLI tools auto-read DB credentials from `{ETENDO_ROOT}/gradle.properties`. The `.env` overrides are only needed if your setup differs.
