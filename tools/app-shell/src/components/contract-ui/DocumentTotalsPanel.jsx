@@ -118,41 +118,40 @@ export default function DocumentTotalsPanel({
                 <span className="tabular-nums text-muted-foreground">-{fmt(totalDiscountAmt ?? 0)}</span>
               </div>
             ) : (
-              <>
-                <div className="flex justify-between items-center py-2 px-2">
-                  <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked
-                      onChange={() => {
-                        setTotalDiscountOpen(false);
-                        setInputPct(0);
-                        onTotalDiscountChange?.(0);
-                      }}
-                      className="h-3.5 w-3.5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                    />
-                    <span className="whitespace-nowrap">{ui('totalDiscount')}</span>
-                  </label>
-                  <span className="tabular-nums text-muted-foreground">-{fmt(totalDiscountAmt ?? 0)}</span>
-                </div>
-                <div className="flex items-center gap-2 pl-[1.75rem] pr-2 pb-2">
+              // Single compact row — checkbox + label + % input + amount — so the
+              // expanded panel keeps the same height as the collapsed "+ Añadir
+              // descuento total" link area, no layout shift on toggle.
+              <div className="flex items-center gap-2 py-2 px-2">
+                <label className="flex items-center gap-1.5 cursor-pointer select-none">
                   <input
-                    type="number"
-                    value={inputPct}
-                    min={0}
-                    max={100}
-                    onChange={e => setInputPct(Number(e.target.value))}
-                    onBlur={e => {
-                      const v = Math.max(0, Math.min(100, Number(e.target.value)));
-                      setInputPct(v);
-                      onTotalDiscountChange?.(v);
+                    type="checkbox"
+                    checked
+                    onChange={() => {
+                      setTotalDiscountOpen(false);
+                      setInputPct(0);
+                      onTotalDiscountChange?.(0);
                     }}
-                    className="w-16 text-xs border border-border/60 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                    style={{ borderWidth: '0.5px' }}
+                    className="h-3.5 w-3.5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
                   />
-                  <span className="text-xs text-muted-foreground">%</span>
-                </div>
-              </>
+                  <span className="whitespace-nowrap">{ui('totalDiscount')}</span>
+                </label>
+                <input
+                  type="number"
+                  value={inputPct}
+                  min={0}
+                  max={100}
+                  onChange={e => setInputPct(Number(e.target.value))}
+                  onBlur={e => {
+                    const v = Math.max(0, Math.min(100, Number(e.target.value)));
+                    setInputPct(v);
+                    onTotalDiscountChange?.(v);
+                  }}
+                  className="w-12 text-xs border border-border/60 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  style={{ borderWidth: '0.5px' }}
+                />
+                <span className="text-xs text-muted-foreground">%</span>
+                <span className="tabular-nums text-muted-foreground ml-auto">-{fmt(totalDiscountAmt ?? 0)}</span>
+              </div>
             )
           )}
 

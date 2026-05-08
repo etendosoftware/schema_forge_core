@@ -253,6 +253,8 @@ export function DetailView({
   // Imperative handles to in-progress inline add rows so we can commit them
   // before header save (mirrors clicking the green check on an editing line).
   const primaryAddRowRef = useRef(null);
+  const linesScrollRef = useRef(null);
+  const bottomSectionRef = useRef(null);
   const secondaryAddRowRefs = useRef({});
   const getSecondaryAddRowRef = useCallback((key) => {
     if (!secondaryAddRowRefs.current[key]) {
@@ -328,6 +330,92 @@ export function DetailView({
   const [directFetched, setDirectFetched] = useState(false);
   const [selectedLine, setSelectedLine] = useState(null);
   const [selectedChildRows, setSelectedChildRows] = useState([]);
+  const [selectionBarVisible, setSelectionBarVisible] = useState(false);
+  const [selectionBarClosing, setSelectionBarClosing] = useState(false);
+  // When the bottom section (Docs/Notes/Totals) grows because the user expanded
+  // an inner block (e.g., "Añadir descuento total"), the lines area shrinks via
+  // flex-1, and rows previously at the bottom of the visible scroll get covered.
+  // We compensate by scrolling the lines container by the delta, keeping the
+  // same content visible.
+  useEffect(() => {
+    if (linesLayout !== 'inlineEditable') return;
+    const bottomEl = bottomSectionRef.current;
+    const scrollEl = linesScrollRef.current;
+    if (!bottomEl || !scrollEl || typeof ResizeObserver === 'undefined') return;
+    let prevHeight = bottomEl.getBoundingClientRect().height;
+    const ro = new ResizeObserver(() => {
+      const nextHeight = bottomEl.getBoundingClientRect().height;
+      const delta = nextHeight - prevHeight;
+      if (delta > 1) {
+        // Bottom panel grew → lines viewport shrank by `delta` from the bottom.
+        // Scroll DOWN by `delta` so the rows that were at the bottom of view
+        // remain visible (top rows scroll out instead of bottom ones being
+        // hidden behind the now-taller panel).
+        const maxScroll = Math.max(0, scrollEl.scrollHeight - scrollEl.clientHeight);
+        scrollEl.scrollTop = Math.min(maxScroll, scrollEl.scrollTop + delta);
+      }
+      prevHeight = nextHeight;
+    });
+    ro.observe(bottomEl);
+    return () => ro.disconnect();
+  }, [linesLayout]);
+
+  // When the user opens the inline add-line row (inlineEditable mode), scroll the
+  // lines container to the bottom with a long, eased animation so the user can
+  // visually follow the scroll instead of seeing a sudden jump.
+  useEffect(() => {
+    if (linesLayout !== 'inlineEditable' || !addingLine) return;
+    const el = linesScrollRef.current;
+    if (!el) return;
+    let rafId = 0;
+    let cancelled = false;
+    const startScroll = () => {
+      const startTop = el.scrollTop;
+      const targetTop = el.scrollHeight - el.clientHeight;
+      const distance = targetTop - startTop;
+      if (distance <= 1) return;
+      // If the user was already near the bottom (within one row of the new add
+      // row), just snap instantly — animating a few px feels jittery.
+      if (distance <= 60) {
+        el.scrollTop = targetTop;
+        return;
+      }
+      const duration = 300;
+      const startTime = performance.now();
+      // easeOutCubic — quick start, slow gentle finish.
+      const ease = (t) => 1 - Math.pow(1 - t, 3);
+      const step = (now) => {
+        if (cancelled) return;
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        el.scrollTop = startTop + distance * ease(progress);
+        if (progress < 1) rafId = requestAnimationFrame(step);
+      };
+      rafId = requestAnimationFrame(step);
+    };
+    // Wait two frames so the inline-add row is mounted and its height included
+    // in scrollHeight before we compute the target offset.
+    rafId = requestAnimationFrame(() => { rafId = requestAnimationFrame(startScroll); });
+    return () => { cancelled = true; cancelAnimationFrame(rafId); };
+  }, [addingLine, linesLayout]);
+
+  // Selection toolbar lifecycle: mount on first select, keep mounted with a
+  // slide-out animation while count drops to 0, then unmount.
+  useEffect(() => {
+    if (selectedChildRows.length > 0) {
+      setSelectionBarVisible(true);
+      setSelectionBarClosing(false);
+      return;
+    }
+    if (selectionBarVisible) {
+      setSelectionBarClosing(true);
+      const t = setTimeout(() => {
+        setSelectionBarVisible(false);
+        setSelectionBarClosing(false);
+      }, 450);
+      return () => clearTimeout(t);
+    }
+  }, [selectedChildRows.length, selectionBarVisible]);
   const [deletingChildren, setDeletingChildren] = useState(false);
   const [lineEdits, setLineEdits] = useState(null);
   const [lineEditColumns, setLineEditColumns] = useState({});
@@ -1014,7 +1102,7 @@ export function DetailView({
             </div>
           ) : null
         ) : (
-        <div className={`flex items-center justify-between px-6 py-3${toolbarBorderBottom ? ' border-b border-[#E8EAEF]' : ''}`}>
+        <div className={`flex items-center justify-between ${linesLayout === 'inlineEditable' ? 'p-2' : 'px-6 py-3'}${toolbarBorderBottom || linesLayout === 'inlineEditable' ? ' border-b border-[#E8EAEF]' : ''}`}>
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
@@ -1360,13 +1448,13 @@ export function DetailView({
             </div>
           ) : null;
         })() : null}
-        <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidePanel || sidebarContent ? (linesLayout === 'inlineEditable' ? 'pr-2' : 'pl-6 pr-2') : (linesLayout === 'inlineEditable' ? 'pr-6' : 'px-6')}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
+        <div className={`flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-hidden' : 'overflow-auto pb-6'} ${sidePanel || sidebarContent ? (linesLayout === 'inlineEditable' ? 'pr-2' : 'pl-6 pr-2') : (linesLayout === 'inlineEditable' ? '' : 'px-6')}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
-          <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
-          <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-2`}>
+          <div className={`${sidePanel ? 'flex items-start gap-0' : ''} ${linesLayout === 'inlineEditable' ? 'flex-1 min-h-0 flex flex-col' : ''}`}>
+          <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} ${linesLayout === 'inlineEditable' ? 'flex flex-col min-h-0 flex-1' : 'space-y-2'}`}>
             {/* Principal + collapsed fields wrapped in a card */}
             <div className={`${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${embedded ? ' pointer-events-none' : ''}`}>
-              <div className="p-6">
+              <div className={linesLayout === 'inlineEditable' ? 'p-2' : 'p-6'}>
                 <Form
                   entity={entity}
                   data={data}
@@ -1421,8 +1509,8 @@ export function DetailView({
 
             {/* Tabs: child entities + Others */}
             {tabs.length > 0 && (
-              <div className="mt-6">
-                <div className="flex items-center justify-between border-b border-border/50">
+              <div className={linesLayout === 'inlineEditable' ? 'mt-1 flex-1 flex flex-col min-h-0 relative' : 'mt-6'}>
+                <div className={`flex items-center justify-between border-b border-border/50 ${linesLayout === 'inlineEditable' ? 'shrink-0' : ''}`}>
                   <div className="flex items-center gap-0">
                     {tabs.map((tab, idx) => (
                       <button
@@ -1456,7 +1544,11 @@ export function DetailView({
                   </div>
                 </div>
 
-                {/* Tab content: Lines */}
+                {/* Tab content: Lines.
+                    In inlineEditable mode this wrapper is the SOLE scroll
+                    container — everything outside (form card, tabs bar,
+                    bottom section) stays fixed in viewport. */}
+                <div ref={linesScrollRef} className={linesLayout === 'inlineEditable' ? 'flex-1 overflow-auto min-h-0' : ''}>
                 {tabs[activeTab]?.key === 'lines' && DetailTable && (
                   // Only show the loading spinner on INITIAL load (no children yet).
                   // Subsequent refetches (e.g., after PATCH on a child) keep the table
@@ -1481,11 +1573,11 @@ export function DetailView({
                       onForceOpenHandled={() => setForceOpenImport(false)}
                     />
                   ) : (
-                  <div className={`pt-3 flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`}>
+                  <div className={`${linesLayout === 'inlineEditable' ? '' : 'pt-3 '}flex items-start gap-4${embedded ? ' pointer-events-none' : ''}`}>
                     {/* Table + add button */}
                     <div className="flex-1 min-w-0">
-                      {/* Bulk delete bar */}
-                      {(api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly && selectedChildRows.length > 0 && (
+                      {/* Bulk delete bar (classic only) */}
+                      {linesLayout !== 'inlineEditable' && (api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly && selectedChildRows.length > 0 && (
                         <div className="flex items-center justify-between px-3 py-2 mb-2 rounded-lg bg-muted/60 border border-border/40">
                           <span className="text-sm font-medium text-foreground">
                             {ui('selected', { count: selectedChildRows.length })}
@@ -1787,7 +1879,10 @@ export function DetailView({
                       )}
 
                       {hook.editing && !isDocumentReadOnly && (allEntryFields.length > 0 || DetailExtraActions) && canAddLines && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, borderTop: '0.5px solid var(--color-border-tertiary, #e5e7eb)', padding: '10px 16px' }}>
+                        <div
+                          className={linesLayout === 'inlineEditable' ? 'sticky bottom-0 bg-white z-10' : ''}
+                          style={{ display: 'flex', flexDirection: 'column', gap: 6, borderTop: '0.5px solid var(--color-border-tertiary, #e5e7eb)', padding: linesLayout === 'inlineEditable' ? 8 : '10px 16px' }}
+                        >
                           {allEntryFields.length > 0 && (
                             <AddLineButton
                               onClick={handleAddLineClick}
@@ -2191,6 +2286,123 @@ export function DetailView({
                     />
                   </div>
                 )}
+                </div>
+
+                {/* Floating selection toolbar (inlineEditable) — sibling of the scroll
+                    container so it stays anchored to the visible bottom of the tab area
+                    regardless of how far the user has scrolled inside the lines list. */}
+                {linesLayout === 'inlineEditable' && (api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly && selectionBarVisible && (
+                  <div
+                    className="absolute bottom-0 left-0 right-0 z-30 pointer-events-none"
+                    style={{ height: 56, overflowX: 'clip', overflowY: 'visible' }}
+                  >
+                    <div
+                      className={`pointer-events-auto ${selectionBarClosing ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}
+                      style={{
+                        height: 56,
+                        background: '#FFFFFF',
+                        borderTop: '0.5px solid var(--color-border-tertiary, #e5e7eb)',
+                        boxShadow: '0px 10px 15px -3px rgba(18,18,23,0.08), 0px 4px 6px -2px rgba(18,18,23,0.05)',
+                        padding: 8,
+                        animationDuration: '0.45s',
+                      }}
+                    >
+                      <div className="flex items-center justify-between h-full">
+                        <div className="flex flex-col items-start pl-1">
+                          <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 600, lineHeight: '24px', color: '#121217' }}>
+                            {ui('selected', { count: selectedChildRows.length })}
+                          </span>
+                          <span style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 400, lineHeight: '16px', color: '#121217' }}>
+                            {(() => {
+                              const total = selectedChildRows.reduce((acc, row) => {
+                                const v = parseFloat(String(row?.[lineConfig.grossField] ?? row?.lineGrossAmount ?? 0));
+                                return acc + (Number.isFinite(v) ? v : 0);
+                              }, 0);
+                              const formatted = total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                              const curr = data?.['currency$_identifier'] || '';
+                              return curr ? `${formatted} ${curr}` : formatted;
+                            })()}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            disabled={deletingChildren}
+                            title={ui('delete')}
+                            onClick={async () => {
+                              if (!(await confirmDelete())) return;
+                              setDeletingChildren(true);
+                              try {
+                                const results = await Promise.allSettled(
+                                  selectedChildRows.map(row => {
+                                    const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', row.id)
+                                      || `${apiBaseUrl}/${detailEntity}/${row.id}`;
+                                    return fetch(childUrl, {
+                                      method: 'DELETE',
+                                      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                                    }).then(res => ({ res, row }));
+                                  })
+                                );
+                                let deleted = 0;
+                                for (const result of results) {
+                                  if (result.status === 'fulfilled' && result.value.res.ok) {
+                                    hook.handleDeleteChild(result.value.row.id);
+                                    if (selectedLine?.id === result.value.row.id) setSelectedLine(null);
+                                    deleted++;
+                                  }
+                                }
+                                inlineLinesRef.current?.clearSelection?.();
+                                setSelectedChildRows([]);
+                                if (deleted > 0) toast.success(ui('recordsDeleted', { count: deleted }));
+                                const failed = results.length - deleted;
+                                if (failed > 0) toast.error(ui('recordsCouldNotBeDeleted', { count: failed }));
+                              } catch (err) {
+                                toast.error(err.message || ui('networkError'));
+                              } finally {
+                                setDeletingChildren(false);
+                              }
+                            }}
+                            className="disabled:opacity-50 transition-colors"
+                            style={{
+                              width: 40,
+                              height: 40,
+                              background: '#FFFFFF',
+                              border: '1px solid #FBB1C4',
+                              boxShadow: '0px 1px 2px rgba(18,18,23,0.05)',
+                              borderRadius: 8,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Trash2 style={{ width: 18, height: 18, color: '#F3164E' }} />
+                          </button>
+                          <button
+                            type="button"
+                            title={ui('close')}
+                            onClick={() => {
+                              inlineLinesRef.current?.clearSelection?.();
+                              setSelectedChildRows([]);
+                            }}
+                            className="transition-colors hover:bg-muted/40"
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 8,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              background: 'transparent',
+                              border: 'none',
+                            }}
+                          >
+                            <X style={{ width: 20, height: 20, color: '#828FA3' }} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
               </div>
             )}
@@ -2219,7 +2431,11 @@ export function DetailView({
               </>
             )}
 
-            {/* Bottom section: custom (two-column) or default (totals + footer) */}
+            {/* Bottom section: custom (two-column) or default (totals + footer).
+                In inlineEditable mode the parent is a flex column with
+                overflow-hidden, so this wrapper sits naturally at the bottom
+                while the lines area scrolls in the middle. */}
+            <div ref={bottomSectionRef} className={linesLayout === 'inlineEditable' ? 'shrink-0' : ''}>
             {bottomSection ? (() => {
               const BottomComponent = bottomSection;
               return (
@@ -2327,6 +2543,7 @@ export function DetailView({
                 )}
               </>
             )}
+            </div>
           </div>
           {sidePanel && (
             <div

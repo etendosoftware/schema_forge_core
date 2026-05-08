@@ -29,20 +29,18 @@ const TOKENS = {
   cellFontWeight: 400,
 };
 
-const NUMERIC_TYPES = new Set(['number', 'amount', 'integer', 'percent']);
+const NUMERIC_TYPES = new Set(['number', 'amount', 'integer', 'percent', 'decimal', 'price', 'quantity']);
 
-// Column flex shorthands. Only `string` (typically Description) grows to fill the
-// remaining row width; everything else has a fixed footprint so the row stays tight
-// against the left edge — matches the Figma where columns hug the start instead of
-// being evenly distributed across the viewport.
 function columnFlex(col, idx) {
-  if (idx === 0) return '0 0 240px';
-  if (col.type === 'amount') return '0 0 160px';
-  if (col.type === 'string' || col.type === 'text') return '1 1 240px';
-  if (col.type === 'selector' || col.type === 'search') return '0 0 200px';
-  if (col.type === 'date') return '0 0 140px';
-  // number, integer, percent and any unknown numeric kind
-  return '0 0 140px';
+  if (col.type === 'amount') return '0 0 160px';                          // Importe bruto — fixed, pins right
+  if (col.type === 'price') return '0 0 140px';                           // Precio tarifa — wider, fixed
+  if (col.type === 'quantity' || col.type === 'integer') return '0 0 90px'; // Cant. pedido — compact
+  if (col.type === 'decimal' || col.type === 'percent') return '0 0 100px'; // % descuento
+  if (idx === 0) return '1 1 180px';                                      // first column (Producto)
+  if (col.type === 'string' || col.type === 'text') return '2 1 180px';   // Descripción grows fastest
+  if (col.type === 'selector' || col.type === 'search' || col.type === 'foreignKey') return '1 1 160px';
+  if (col.type === 'date') return '1 1 130px';
+  return '0 0 120px';
 }
 // Inline-edit covers all column types that the line table renders today. Selector/search
 // FK columns (e.g., product, tax) use the shared `SelectorInput` (the same Radix dropdown
@@ -72,7 +70,7 @@ function LookupTrigger({ field, displayLabel, selectorUrl, selectorContext, toke
         type="button"
         data-testid={`field-${field.key}`}
         onClick={() => setOpen(true)}
-        className="w-full flex items-center gap-2 h-7 rounded-md border border-input bg-background px-2 text-sm text-left hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
+        className="w-full flex items-center gap-2 h-7 rounded-md border border-input bg-white px-2 text-sm text-left hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
       >
         <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         {displayLabel
@@ -191,18 +189,29 @@ function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus
     );
   }
 
-  const inputType = col.type === 'date'
-    ? 'date'
-    : NUMERIC_TYPES.has(col.type)
-      ? 'number'
-      : 'text';
-  const numericProps = NUMERIC_TYPES.has(col.type) ? { step: col.type === 'integer' ? '1' : '0.01' } : {};
+  const isNumeric = NUMERIC_TYPES.has(col.type);
+  const inputType = col.type === 'date' ? 'date' : 'text';
+  // Numeric fields use type="text" + inputMode to avoid the browser's spinner
+  // arrows on type="number" while still surfacing the numeric keyboard on mobile.
+  const numericProps = isNumeric
+    ? { inputMode: col.type === 'integer' ? 'numeric' : 'decimal' }
+    : {};
+
+  // Currency-style columns show two decimals on edit so "23" displays as "23.00",
+  // matching the read-mode rendering. Integer/quantity/percent stay raw.
+  const TWO_DECIMAL_TYPES = new Set(['amount', 'price']);
+  const formatForEdit = (raw) => {
+    if (raw == null || raw === '') return '';
+    if (!TWO_DECIMAL_TYPES.has(col.type)) return raw;
+    const n = typeof raw === 'string' ? parseFloat(raw) : raw;
+    return Number.isFinite(n) ? n.toFixed(2) : raw;
+  };
 
   return (
     <Input
       ref={inputRef}
       type={inputType}
-      defaultValue={value ?? ''}
+      defaultValue={formatForEdit(value)}
       onBlur={(e) => onCommit(e.target.value)}
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
@@ -214,7 +223,7 @@ function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus
           onCancel?.();
         }
       }}
-      className="h-7 px-2 text-sm border-input"
+      className={`h-7 px-2 text-sm border-input${isNumeric ? ' text-right tabular-nums' : ''}`}
       {...numericProps}
     />
   );
@@ -304,6 +313,24 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
 
   const selectableRows = useMemo(() => data || [], [data]);
 
+  // Prune deleted IDs from the selection Set — keeps the master checkbox in sync
+  // when rows are removed (single-row trash, external mutations, etc.).
+  useEffect(() => {
+    setSelectedRows(prev => {
+      if (prev.size === 0) return prev;
+      const validIds = new Set(selectableRows.map(r => r.id));
+      let changed = false;
+      const next = new Set();
+      for (const id of prev) {
+        if (validIds.has(id)) next.add(id);
+        else changed = true;
+      }
+      if (!changed) return prev;
+      onSelectionChange?.(selectableRows.filter(r => next.has(r.id)));
+      return next;
+    });
+  }, [selectableRows, onSelectionChange]);
+
   const toggleRow = useCallback((row, checked) => {
     setSelectedRows(prev => {
       const next = new Set(prev);
@@ -366,7 +393,11 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
       return Promise.resolve();
     },
     closeEditing: () => setEditingRowId(null),
-  }), []);
+    clearSelection: () => {
+      setSelectedRows(new Set());
+      onSelectionChange?.([]);
+    },
+  }), [onSelectionChange]);
 
   // --- Action handlers ---------------------------------------------------------
 
@@ -404,9 +435,11 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
 
   return (
     <div ref={panelRef} className="w-full" data-testid="inline-lines-panel">
-      {/* Header strip */}
+      {/* Header strip — sticky at the top of the scroll container so column
+          labels stay visible while rows scroll. The white background and z-10
+          keep it opaque above the scrolled content. */}
       <div
-        className="flex items-stretch border-b"
+        className="flex items-stretch border-b sticky top-0 z-10 bg-white"
         style={{ borderColor: TOKENS.separator, height: TOKENS.rowHeight, ...headerStyle }}
       >
         <div className="flex items-center justify-center px-2" style={{ width: 40 }}>
@@ -427,8 +460,8 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
             style={{
               padding: `0 ${TOKENS.cellPaddingX}px`,
               flex: columnFlex(col, idx),
-              justifyContent: col.type === 'amount' ? 'flex-end' : 'flex-start',
-              textAlign: col.type === 'amount' ? 'right' : 'left',
+              justifyContent: 'flex-start',
+              textAlign: 'left',
             }}
           >
             {resolveColumnLabel(col, locale, t)}
@@ -453,9 +486,9 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
               // `hover:relative hover:z-10` lifts the row above its neighbors so the
               // shadow can spill onto the rows below without being clipped by them.
               'group/row flex items-stretch border-b bg-white transition-shadow',
-              'hover:relative hover:z-10 hover:shadow-[0_4px_12px_rgba(18,18,23,0.08)]',
+              'hover:relative hover:z-20 hover:shadow-[0_4px_12px_rgba(18,18,23,0.08)]',
               isHighlighted ? 'bg-muted/40' : '',
-              isEditing ? 'shadow-[0_4px_12px_rgba(18,18,23,0.08)] relative z-10' : '',
+              isEditing ? 'shadow-[0_4px_12px_rgba(18,18,23,0.08)] relative z-20' : '',
             ].join(' ')}
             style={{ borderColor: TOKENS.separator, minHeight: TOKENS.rowHeight, ...cellStyle }}
             onMouseEnter={() => setHoveredRowId(row.id)}
@@ -480,14 +513,19 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
               // so the icons can take its space. Other amount columns stay visible.
               if (isTrailing && showActions) return null;
 
-              const baseStyle = {
-                padding: `0 ${TOKENS.cellPaddingX}px`,
-                flex: columnFlex(col, idx),
-                justifyContent: col.type === 'amount' ? 'flex-end' : 'flex-start',
-                textAlign: col.type === 'amount' ? 'right' : 'left',
-              };
-
+              const isNumeric = NUMERIC_TYPES.has(col.type);
               const editable = isEditing && isCellEditable(col);
+              // When a cell is in edit mode, the input/trigger has its own px-2 (8px)
+              // + 1px border = 9px of internal padding. Reducing the cell's outer
+              // padding to 3px compensates: the input's CONTENT lands exactly where
+              // read-mode text lands (cell_left + 12px), so values don't visually
+              // jump when toggling between view and edit modes.
+              const baseStyle = {
+                padding: editable ? '0 3px' : `0 ${TOKENS.cellPaddingX}px`,
+                flex: columnFlex(col, idx),
+                justifyContent: isNumeric ? 'flex-end' : 'flex-start',
+                textAlign: isNumeric ? 'right' : 'left',
+              };
 
               return (
                 <div
