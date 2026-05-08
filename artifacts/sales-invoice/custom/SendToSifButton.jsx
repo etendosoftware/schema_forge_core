@@ -5,11 +5,17 @@ import { useAuth } from '@/auth/AuthContext';
 
 const VISIBLE_PROFILES = new Set(['sii', 'sii-navarra', 'tbai', 'sii+tbai']);
 
+function isPendingSifStatus(data) {
+  const status = String(data?.aeatsiiEstado ?? '').trim().toUpperCase();
+  return status === 'PE' && data?.aeatsiiIssent !== true;
+}
+
 export default function SendToSifButton({ data, recordId, token, apiBaseUrl, status }) {
   const ui = useUI();
   const [modalOpen, setModalOpen] = useState(false);
   const [phase, setPhase] = useState('confirm');
   const [results, setResults] = useState({});
+  const [refreshOnClose, setRefreshOnClose] = useState(false);
 
   const { selectedOrg } = useAuth();
   const orgId = selectedOrg?.id ?? null;
@@ -21,7 +27,7 @@ export default function SendToSifButton({ data, recordId, token, apiBaseUrl, sta
 
   const { profile } = useFiscalConfig(orgId, token, apiBaseUrl);
 
-  if (status !== 'CO' || !VISIBLE_PROFILES.has(profile)) return null;
+  if (status !== 'CO' || !VISIBLE_PROFILES.has(profile) || !isPendingSifStatus(data)) return null;
 
   const bodyKey = profile === 'sii+tbai' ? 'sendToSifBodyBoth'
     : profile === 'tbai' ? 'sendToSifBodyTbai'
@@ -61,13 +67,25 @@ export default function SendToSifButton({ data, recordId, token, apiBaseUrl, sta
     }
 
     setResults(next);
+
+    const hasSuccess = Object.values(next).some(result => result?.ok);
+    if (hasSuccess) {
+      setRefreshOnClose(true);
+    }
+
     setPhase('results');
   }
 
   function handleClose() {
+    if (refreshOnClose) {
+      window.dispatchEvent(new CustomEvent('sales-invoice:invoice-updated', {
+        detail: { invoiceId: recordId },
+      }));
+    }
     setModalOpen(false);
     setPhase('confirm');
     setResults({});
+    setRefreshOnClose(false);
   }
 
   return (

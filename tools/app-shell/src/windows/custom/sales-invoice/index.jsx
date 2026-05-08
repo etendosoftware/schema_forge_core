@@ -203,6 +203,11 @@ export default function SalesInvoiceWindow(props) {
           token={token}
           apiBaseUrl={apiBaseUrl}
           windowName={windowName}
+          onInvoiceUpdated={(updatedInvoice) => {
+            setPreviewRow((current) => (current ? updatedInvoice : current));
+            setSavedRecord((current) => (current ? updatedInvoice : current));
+            setRefreshKey(k => k + 1);
+          }}
           onClose={() => {
             setPreviewRow(null);
             clearSavedRecord();
