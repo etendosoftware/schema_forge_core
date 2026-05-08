@@ -19,8 +19,8 @@ describe('Tag — VARIANT_STYLES palette (ETP-3835)', () => {
   });
 
   describe('Figma hex values', () => {
-    it('blue — Customer type (#DBF3FF / #0075AD)', () => {
-      assert.equal(VARIANT_STYLES.blue.background, '#DBF3FF');
+    it('blue — Customer type (#F0FAFF / #0075AD)', () => {
+      assert.equal(VARIANT_STYLES.blue.background, '#F0FAFF');
       assert.equal(VARIANT_STYLES.blue.color, '#0075AD');
     });
 

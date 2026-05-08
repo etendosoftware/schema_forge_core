@@ -155,6 +155,7 @@ export function DetailView({
   enableSecondaryRowDelete = false,
   sidebarClassName = 'w-96 shrink-0 overflow-y-auto pt-0 pl-0 pr-4 pb-5',
   autoSaveOnBlur = false,
+  toolbarPaddingX = 'px-6',
 }) {
   // DetailView never needs the parent list: on `/new` there is no record to match, and on
   // `/:id` the currentItem shortcut only helps when we arrived from ListView (items already
@@ -1006,7 +1007,7 @@ export function DetailView({
             </div>
           ) : null
         ) : (
-        <div className={`flex items-center justify-between px-6 py-3${toolbarBorderBottom ? ' border-b border-[#E8EAEF]' : ''}`}>
+        <div className={`flex items-center justify-between ${toolbarPaddingX} py-3${toolbarBorderBottom ? ' border-b border-[#E8EAEF]' : ''}`}>
           <div className="flex items-center gap-3">
             <Button
               variant="outline"

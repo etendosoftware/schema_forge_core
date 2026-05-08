@@ -16922,6 +16922,8 @@
     "Contact Person": "Person",
     "Contact Bank Account": "Bank Account",
     "Person": "Person",
+    "persons": "Persons",
+    "companies": "Companies",
     "statusUnderEvaluation": "Under Evaluation",
     "statusCancelled": "Cancelled",
     "statusPaymentReceived": "Payment Received",
