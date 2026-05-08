@@ -53,7 +53,7 @@ export default function ContactsTable({ data = [], apiBaseUrl, token, onDataMuta
   const gl = dictionary?.genericLabels || {};
   const t = (key) => gl[key] || key;
 
-  const [editingRow, setEditingRow] = useState(null); // { id, values }
+  const [editingRow, setEditingRow] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
 
   const handleEditChange = useCallback((key, val) => {

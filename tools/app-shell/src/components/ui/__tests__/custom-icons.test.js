@@ -4,8 +4,8 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const src = readFileSync(join(__dirname, '..', 'custom-icons.jsx'), 'utf8');
+const dir = dirname(fileURLToPath(import.meta.url));
+const src = readFileSync(join(dir, '..', 'custom-icons.jsx'), 'utf8');
 
 // ---------------------------------------------------------------------------
 // custom-icons.jsx — source-reading tests (ETP-3660)
