@@ -7,17 +7,17 @@ import { useAuth } from '@/auth/AuthContext';
 import { getInvoiceFiscalTargets } from '@/windows/custom/shared/fiscalTargets.js';
 
 const CLAVE_TIPO_OPTIONS = [
-  { value: 'F1', label: 'Invoice' },
-  { value: 'F2', label: 'Simplified invoice' },
-  { value: 'F4', label: 'Simplified invoices summary' },
-  { value: 'R', label: 'Corrective invoice' },
+  { value: 'F1', labelKey: 'sifDataTabs.option.invoice' },
+  { value: 'F2', labelKey: 'sifDataTabs.option.simplifiedInvoice' },
+  { value: 'F4', labelKey: 'sifDataTabs.option.simplifiedInvoiceSummary' },
+  { value: 'R', labelKey: 'sifDataTabs.option.correctiveInvoice' },
 ];
 
 const PURCHASE_CLAVE_TIPO_FC_OPTIONS = [
-  { value: 'F6', label: 'Accounting document' },
-  { value: 'LC', label: 'Customs - Complementary settlement' },
-  { value: 'F5', label: 'Import (DUA)' },
-  { value: 'F1', label: 'Invoice' },
+  { value: 'F6', labelKey: 'sifDataTabs.option.accountingDocument' },
+  { value: 'LC', labelKey: 'sifDataTabs.option.customsComplementarySettlement' },
+  { value: 'F5', labelKey: 'sifDataTabs.option.importDua' },
+  { value: 'F1', labelKey: 'sifDataTabs.option.invoice' },
 ];
 
 const inputCls = 'w-full text-xs bg-white border rounded px-2 py-0.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50 border-border/40';
@@ -127,11 +127,10 @@ export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
 
   if (!showSii && !showTbai && !showVerifactu) return null;
 
-  const effectiveTab = showSii
-    ? activeTab
-    : showTbai
-      ? 'tbai'
-      : 'verifactu';
+  let effectiveTab = activeTab;
+  if (!showSii) {
+    effectiveTab = showTbai ? 'tbai' : 'verifactu';
+  }
 
   function getVal(key) {
     return key in siiForm ? siiForm[key] : (data?.[key] ?? '');
@@ -252,7 +251,7 @@ export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
               >
                 <option value="">-</option>
                 {siiTypeOptions.map(o => (
-                  <option key={o.value} value={o.value}>{o.value} - {o.label}</option>
+                  <option key={o.value} value={o.value}>{o.value} - {ui(o.labelKey)}</option>
                 ))}
               </select>
             </FieldRow>
