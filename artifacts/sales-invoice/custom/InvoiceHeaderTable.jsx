@@ -81,7 +81,7 @@ export default function InvoiceHeaderTable(props) {
     if (targets.showTbai) {
       fiscalCols.push({
         key: '_tbaiStatus', type: 'custom', label: tbaiColLabel,
-        render: (row) => <FiscalStatusBadge status={statusMap?.[row.id]?.tbai} loading={fiscalLoading && !statusMap} />,
+        render: (row) => <FiscalStatusBadge status={statusMap?.[row.id]?.tbai ?? 'Pendiente'} loading={fiscalLoading && !statusMap} />,
       });
     }
     if (targets.showVerifactu) {
