@@ -62,7 +62,7 @@ async function fetchSubtab(base, entity, parentId, page, token, statusFilter) {
   return { data: json?.response?.data ?? [], totalRows: json?.response?.totalRows ?? 0 };
 }
 
-export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, initialTab = 'issued', mockRows, onTabChange, refreshKey = 0 }) {
+export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, initialTab = 'issued', mockRows, onTabChange, refreshKey = 0, onInvoiceOpen }) {
   const ui = useUI();
   const [tab, setTab]             = useState('issued');
   const [period, setPeriod]       = useState('current');
@@ -222,7 +222,10 @@ export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, 
                     <td><input type="checkbox" /></td>
                     <td className="strong">{row.invoiceDate ?? '—'}</td>
                     <td className="num-factura">
-                      <NumFactura n={row.documentNo ?? row[INVOICE_FK_FIELD] ?? '—'} />
+                      <NumFactura
+                        n={row.documentNo ?? row[INVOICE_FK_FIELD] ?? '—'}
+                        onOpen={() => onInvoiceOpen?.(row[INVOICE_FK_FIELD], tab === 'issued' ? 'sales-invoice' : 'purchase-invoice')}
+                      />
                     </td>
                     <td className="strong">{row['businessPartner$_identifier'] ?? row.businessPartnerIdentifier ?? row.businessPartner ?? '—'}</td>
                     <td>{row.aeatsiiClaveTipo ?? row.aeatsiiClaveTipoFc ?? '—'}</td>

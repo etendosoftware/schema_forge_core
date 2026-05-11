@@ -762,7 +762,7 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, install
   const { locale } = useLocaleSwitch();
   const fiscalTargets = getInvoiceFiscalTargets(specName, profile);
   const { sii: siiStatus, tbai: tbaiStatus, verifactu: vfStatus, loading: fiscalLoading } = useFiscalStatus(
-    invoice?.id, specName, profile, apiBaseUrl, token,
+    invoice?.id, specName, profile, apiBaseUrl, token, orgId,
   );
   const [accountingAccount, setAccountingAccount] = useState(null);
 

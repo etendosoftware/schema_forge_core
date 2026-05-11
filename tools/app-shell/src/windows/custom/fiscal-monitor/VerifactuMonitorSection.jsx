@@ -41,7 +41,7 @@ async function fetchStatusTab(base, entity, orgId, page, token) {
   return { data: json?.response?.data ?? [], totalRows: json?.response?.totalRows ?? 0 };
 }
 
-export default function VerifactuMonitorSection({ orgId, token, apiBaseUrl, initialTab = 'accepted', mockRows, onTabChange, refreshKey = 0 }) {
+export default function VerifactuMonitorSection({ orgId, token, apiBaseUrl, initialTab = 'accepted', mockRows, onTabChange, refreshKey = 0, onInvoiceOpen }) {
   const ui = useUI();
   const [activeTab, setActiveTab] = useState('accepted');
   const [page, setPage]     = useState(1);
@@ -136,7 +136,10 @@ export default function VerifactuMonitorSection({ orgId, token, apiBaseUrl, init
                   <tr key={row.id ?? i}>
                     <td><input type="checkbox" /></td>
                     <td className="num-factura">
-                      <NumFactura n={row[INVOICE_FK_FIELD] ?? '—'} />
+                      <NumFactura
+                        n={row[INVOICE_FK_FIELD] ?? '—'}
+                        onOpen={() => onInvoiceOpen?.(row[INVOICE_FK_FIELD], 'sales-invoice')}
+                      />
                     </td>
                     <td className="mono">{row.issuerTaxID ?? '—'}</td>
                     <td>{row.typeOperation ?? '—'}</td>

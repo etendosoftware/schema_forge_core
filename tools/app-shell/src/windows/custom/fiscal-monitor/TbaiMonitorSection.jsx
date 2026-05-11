@@ -50,7 +50,7 @@ const CheckIcon = () => (
   </svg>
 );
 
-export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFilter = 'all', mockRows, onFilterChange, refreshKey = 0 }) {
+export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFilter = 'all', mockRows, onFilterChange, refreshKey = 0, onInvoiceOpen }) {
   const ui = useUI();
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage]       = useState(1);
@@ -149,7 +149,10 @@ export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFi
                       <td><input type="checkbox" /></td>
                       <td className="strong">{row.invoiceDate ?? inv.date}</td>
                       <td className="num-factura">
-                        <NumFactura n={inv.docNo} />
+                        <NumFactura
+                          n={inv.docNo}
+                          onOpen={() => onInvoiceOpen?.(row.invoice, 'sales-invoice')}
+                        />
                       </td>
                       <td>{row['invoice$description'] ?? row.descripcion ?? '—'}</td>
                       <td>

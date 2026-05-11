@@ -4,7 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI } from '@/i18n';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { neoBase } from '@/components/related-documents/helpers.js';
 import { useFiscalMonitor } from './useFiscalMonitor.js';
+import InvoicePreviewModal from '../shared/InvoicePreviewModal.jsx';
 import { useDebugMode } from './useDebugMode.js';
 import { computeKpis } from './fiscalMonitor.utils.js';
 import { MOCK_MONITOR_DATA, MOCK_SII_ROWS, MOCK_TBAI_ROWS, MOCK_VF_ROWS } from './fiscalMonitorMockData.js';
@@ -150,6 +152,8 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
   const [tbaiInitialFilter, setTbaiInitialFilter] = useState('all');
   const [veriInitialTab,    setVeriInitialTab]    = useState('accepted');
   const [refreshKey,        setRefreshKey]        = useState(0);
+  const [previewInvoice,    setPreviewInvoice]    = useState(null);
+  const [previewSpec,       setPreviewSpec]       = useState('sales-invoice');
 
   const {
     loading, error, profile, kpis, siiParentId,
@@ -162,6 +166,28 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
   function handleRefresh() {
     refetch();
     setRefreshKey(k => k + 1);
+  }
+
+  async function handleInvoiceOpen(invoiceId, specHint = 'sales-invoice') {
+    if (!invoiceId) return;
+    const base = neoBase(apiBaseUrl);
+    const headers = { Authorization: `Bearer ${token}` };
+    const specs = specHint === 'sales-invoice'
+      ? ['sales-invoice', 'purchase-invoice']
+      : ['purchase-invoice', 'sales-invoice'];
+    for (const spec of specs) {
+      try {
+        const res = await fetch(`${base}/${spec}/header/${invoiceId}`, { headers });
+        if (!res.ok) continue;
+        const json = await res.json();
+        const inv = json?.response?.data?.[0] ?? null;
+        if (inv?.id) {
+          setPreviewSpec(spec);
+          setPreviewInvoice(inv);
+          return;
+        }
+      } catch { /* try next */ }
+    }
   }
 
   const DebugPanel = debugMode ? (
@@ -263,6 +289,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
             mockRows={siiMockRows}
             onTabChange={setSiiInitialTab}
             refreshKey={refreshKey}
+            onInvoiceOpen={handleInvoiceOpen}
           />
         </>
       )}
@@ -287,6 +314,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
             mockRows={tbaiMockRows}
             onFilterChange={setTbaiInitialFilter}
             refreshKey={refreshKey}
+            onInvoiceOpen={handleInvoiceOpen}
           />
         </>
       )}
@@ -305,10 +333,20 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
             mockRows={vfMockRows}
             onTabChange={setVeriInitialTab}
             refreshKey={refreshKey}
+            onInvoiceOpen={handleInvoiceOpen}
           />
         </>
       )}
     </div>
+    {previewInvoice && (
+      <InvoicePreviewModal
+        invoice={previewInvoice}
+        token={token}
+        apiBaseUrl={`${neoBase(apiBaseUrl)}/${previewSpec}`}
+        specName={previewSpec}
+        onClose={() => setPreviewInvoice(null)}
+      />
+    )}
     </>
   );
 }
