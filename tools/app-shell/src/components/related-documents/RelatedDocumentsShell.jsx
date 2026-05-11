@@ -72,9 +72,14 @@ export default function RelatedDocumentsShell({ loading, onRefresh, children }) 
   // `<Shell>{orders.map(...)}{invoices.map(...)}</Shell>` yields
   // `[[], []]` when both source arrays are empty. Flat-deep + filter Boolean
   // captures the actual rendered count regardless of nesting.
-  const flatChildren = Array.isArray(children)
-    ? children.flat(Infinity).filter(Boolean)
-    : (children ? [children] : []);
+  let flatChildren;
+  if (Array.isArray(children)) {
+    flatChildren = children.flat(Infinity).filter(Boolean);
+  } else if (children) {
+    flatChildren = [children];
+  } else {
+    flatChildren = [];
+  }
   const hasChildren = flatChildren.length > 0;
 
   if (!hasChildren) {

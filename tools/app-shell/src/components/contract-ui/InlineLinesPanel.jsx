@@ -95,11 +95,30 @@ function LookupTrigger({ field, displayLabel, selectorUrl, selectorContext, toke
  * line tables (string, number, amount, percent, date, selector). Unsupported types
  * fall back to the resolved identifier string.
  */
+const TRUTHY_BOOLEAN_VALUES = new Set([true, 'Y', 'true']);
+const FALSY_BOOLEAN_VALUES = new Set([false, 'N', 'false']);
+
+function renderBooleanCell(value, ui) {
+  if (TRUTHY_BOOLEAN_VALUES.has(value)) {
+    return <span className="text-emerald-600">{ui?.('yes') ?? 'Yes'}</span>;
+  }
+  if (FALSY_BOOLEAN_VALUES.has(value)) {
+    return <span className="text-slate-400">{ui?.('no') ?? 'No'}</span>;
+  }
+  return <span className="text-slate-300">—</span>;
+}
+
+function renderDateCell(raw, locale) {
+  if (!raw) return <span className="text-slate-300">—</span>;
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(raw + 'T00:00:00') : new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return <span>{String(raw)}</span>;
+  return <span>{parsed.toLocaleDateString(locale)}</span>;
+}
+
 function ReadCell({ row, col, locale, t, ui }) {
   if (typeof col.render === 'function') {
     return col.render(row, {});
   }
-  const display = resolveIdentifier(row, col.key);
   if (col.type === 'amount') {
     return <span className="tabular-nums">{formatAmount(row[col.key], row['currency$_identifier'])}</span>;
   }
@@ -108,18 +127,12 @@ function ReadCell({ row, col, locale, t, ui }) {
     return <span className="tabular-nums">{Number.isFinite(val) ? `${val}%` : '—'}</span>;
   }
   if (col.type === 'boolean') {
-    const v = row[col.key];
-    if (v === true || v === 'Y' || v === 'true') return <span className="text-emerald-600">{ui?.('yes') ?? 'Yes'}</span>;
-    if (v === false || v === 'N' || v === 'false') return <span className="text-slate-400">{ui?.('no') ?? 'No'}</span>;
-    return <span className="text-slate-300">—</span>;
+    return renderBooleanCell(row[col.key], ui);
   }
   if (col.type === 'date') {
-    const raw = row[col.key];
-    if (!raw) return <span className="text-slate-300">—</span>;
-    const parsed = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(raw + 'T00:00:00') : new Date(raw);
-    if (Number.isNaN(parsed.getTime())) return <span>{String(raw)}</span>;
-    return <span>{parsed.toLocaleDateString(locale)}</span>;
+    return renderDateCell(row[col.key], locale);
   }
+  const display = resolveIdentifier(row, col.key);
   if (typeof display === 'string' && display.length > 60) {
     return <span className="block max-w-[260px] truncate" title={display}>{display}</span>;
   }

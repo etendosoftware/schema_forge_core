@@ -544,8 +544,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const requiredHeaderFieldNames = allEntityFields
     .filter(f => f.required && f.form && f.visibility !== 'discarded' && f.visibility !== 'system')
     .map(f => f.name);
+  // Built without a nested template literal (Sonar S4624): plain concat
+  // around each name keeps the outer template flat.
+  const quotedRequiredHeaderFields = requiredHeaderFieldNames.map(n => "'" + n + "'").join(', ');
   const requiredHeaderFieldsArray = requiredHeaderFieldNames.length > 0
-    ? `[${requiredHeaderFieldNames.map(n => `'${n}'`).join(', ')}]`
+    ? `[${quotedRequiredHeaderFields}]`
     : '[]';
   const docStatusField = allEntityFields.find(f => f.column === 'DocStatus');
   const statusFieldOverride = contract.frontendContract.window.statusField;

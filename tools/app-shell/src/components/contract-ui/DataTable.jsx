@@ -755,15 +755,22 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
 
         const isNumeric = NUMERIC_FIELD_TYPES.has(field.type);
         const isTwoDecimal = field.type === 'amount' || field.type === 'price';
-        const numericInputMode = field.inputMode || (isNumeric ? (field.type === 'integer' ? 'numeric' : 'decimal') : undefined);
+        // Pick a numeric `inputMode` only for numeric fields. Integer fields
+        // surface the digits-only on-screen keyboard, the rest get the decimal
+        // pad. Resolved via an intermediate variable so the call site stays a
+        // flat conditional (Sonar S3358).
+        let numericInputMode = field.inputMode;
+        if (!numericInputMode && isNumeric) {
+          numericInputMode = field.type === 'integer' ? 'numeric' : 'decimal';
+        }
         const formatTwoDecimals = (raw) => {
           if (raw == null || raw === '') return '';
           const n = typeof raw === 'string' ? parseFloat(raw) : raw;
           return Number.isFinite(n) ? n.toFixed(2) : raw;
         };
-        // Use type="text" for numerics to avoid the browser's spinner buttons; the
-        // numeric on-screen keyboard is preserved via inputMode.
-        const inputType = isNumeric ? 'text' : 'text';
+        // Always type="text" — numeric inputs would render browser spinner
+        // buttons; the numeric on-screen keyboard is preserved via inputMode.
+        const inputType = 'text';
         const rawValue = values[field.key];
         const displayValue = isTwoDecimal && rawValue !== '' && rawValue != null
           ? formatTwoDecimals(rawValue)

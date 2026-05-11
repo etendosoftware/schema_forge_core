@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
@@ -83,6 +82,23 @@ function CollapsibleSection({ title, children }) {
       </div>
     </details>
   );
+}
+
+/**
+ * Resolve the `onRowClick` handler for a secondary-tab table.
+ *
+ * Priority:
+ *  1. `customAddModal` tabs (e.g. Dirección) → click opens the popup editor.
+ *  2. Tabs with a `Form` → click selects the row for the side-panel form.
+ *  3. Read-only tabs → no row click handler.
+ *
+ * Extracted from inline JSX so the call site stays a flat expression (Sonar
+ * S3358: avoid nested ternaries).
+ */
+function resolveSecondaryRowClickHandler(st, { openCustomModal, openSecondaryLine }) {
+  if (st.customAddModal) return openCustomModal;
+  if (st.Form) return openSecondaryLine;
+  return undefined;
 }
 
 /**
@@ -1263,7 +1279,7 @@ export function DetailView({
             </div>
           ) : null
         ) : (
-        <div className={`flex items-center justify-between ${linesLayout === 'inlineEditable' ? 'p-2' : `${toolbarPaddingX} py-3`}${toolbarBorderBottom || linesLayout === 'inlineEditable' ? ' border-b border-[#E8EAEF]' : ''}`}>
+        <div className={`flex items-center justify-between ${linesLayout === 'inlineEditable' ? 'p-2' : toolbarPaddingX + ' py-3'}${toolbarBorderBottom || linesLayout === 'inlineEditable' ? ' border-b border-[#E8EAEF]' : ''}`}>
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
@@ -2365,11 +2381,10 @@ export function DetailView({
                         apiBaseUrl={apiBaseUrl}
                         selectorContext={selectorContextByEntity[st.key]}
                         linesLayout={linesLayout}
-                        onRowClick={st.customAddModal
-                          ? (row) => setCustomModalState({ key: st.key, rowId: row.id })
-                          : st.Form
-                            ? (row) => { setSelectedSecondaryLine({ ...row, _tabKey: st.key }); setSecondaryLineEdits(null); }
-                            : undefined}
+                        onRowClick={resolveSecondaryRowClickHandler(st, {
+                          openCustomModal: (row) => setCustomModalState({ key: st.key, rowId: row.id }),
+                          openSecondaryLine: (row) => { setSelectedSecondaryLine({ ...row, _tabKey: st.key }); setSecondaryLineEdits(null); },
+                        })}
                         // Pencil action for customAddModal tabs (Dirección) opens
                         // the popup editor — rows are not editable in place.
                         onEditRow={st.customAddModal
