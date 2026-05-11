@@ -7,12 +7,19 @@ import BillingPreferencesForm from './BillingPreferencesForm';
 function CreditLimitStepper({ value, readOnly, onChange, onBlur, saving }) {
   const ui = useUI();
   const num = value === '' || value == null ? 0 : Number(value);
+  const debounceRef = useRef(null);
+
+  useEffect(() => () => clearTimeout(debounceRef.current), []);
 
   function step(delta) {
     if (readOnly || saving) return;
     const next = Math.max(0, num + delta);
     onChange(next);
-    setTimeout(onBlur, 0);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      onBlur();
+      debounceRef.current = null;
+    }, 400);
   }
 
   return (
