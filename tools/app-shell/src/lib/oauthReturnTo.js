@@ -17,9 +17,8 @@ export function getSafeReturnTo(search, fallback = DEFAULT_AUTH_RETURN_TO) {
 export function isSafeLocalReturnTo(value) {
   if (typeof value !== 'string') return false;
   const target = value.trim();
-  if (!target.startsWith('/')) return false;
-  if (target.startsWith('//')) return false;
-  if (target.includes('\\')) return false;
-  if (/^\/(?:onboarding|login)(?:[/?#]|$)/.test(target)) return false;
-  return true;
+  return target.startsWith('/') &&
+    !target.startsWith('//') &&
+    !target.includes('\\') &&
+    !/^\/(?:onboarding|login)(?:[/?#]|$)/.test(target);
 }
