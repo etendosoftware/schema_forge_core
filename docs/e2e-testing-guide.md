@@ -29,7 +29,7 @@ npm install -g agent-browser && agent-browser install   # Optional: install agen
 
 ## Deployed MCP OAuth2 Smoke
 
-`e2e/tests/flows/mcp-oauth-pkce.smoke.spec.js` validates the public MCP/OAuth integration after deploy. It models the browser flow started by `opencode mcp auth etendo`: clean session, OAuth authorize URL, login, requested permissions, explicit authorization, local callback, and PKCE token exchange. It is skipped by default because it targets a deployed environment, uses real smoke credentials, can create an OAuth client through DCR, and binds a local callback server.
+`e2e/tests/flows/mcp-oauth-pkce.smoke.spec.js` validates the public MCP/OAuth integration after deploy. It models the browser flow started by `opencode mcp auth etendo`: clean session, OAuth authorize URL, login, requested permissions, explicit authorization, local callback, and PKCE token exchange. The UI preserves the original `/authorize?...` URL through onboarding with a local-only `returnTo` parameter, then resumes the authorization screen after environment login. It is skipped by default because it targets a deployed environment, uses real smoke credentials, can create an OAuth client through DCR, and binds a local callback server.
 
 Run it explicitly:
 
