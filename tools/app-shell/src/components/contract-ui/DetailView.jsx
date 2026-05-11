@@ -85,6 +85,27 @@ function CollapsibleSection({ title, children }) {
 }
 
 /**
+ * Compute the padding classes for the main detail content column.
+ *
+ * Combinations:
+ *  - `hasSidebar` true → reserved space for the right side panel (pr-2 inline,
+ *    pl-6 pr-2 classic).
+ *  - `hasSidebar` false, variant `'panel'` → standalone Panel tab (pr-6 inline,
+ *    px-6 classic).
+ *  - `hasSidebar` false, variant `'content'` → form content card (no padding
+ *    inline because the inner card supplies its own, px-6 classic).
+ *
+ * Extracted from inline JSX to avoid the nested-ternary anti-pattern Sonar
+ * S3358 was flagging inside the className templates.
+ */
+function detailContentPadding(linesLayout, hasSidebar, variant) {
+  const isInline = linesLayout === 'inlineEditable';
+  if (hasSidebar) return isInline ? 'pr-2' : 'pl-6 pr-2';
+  if (variant === 'panel') return isInline ? 'pr-6' : 'px-6';
+  return isInline ? '' : 'px-6';
+}
+
+/**
  * Resolve the `onRowClick` handler for a secondary-tab table.
  *
  * Priority:
@@ -1156,14 +1177,17 @@ export function DetailView({
   //    pipeline). This matches the UX where the add-lines button only
   //    appears once the header form is complete.
   // 3. Otherwise (no metadata at all), allow.
-  const canAddLines = addLineGuard
-    ? addLineGuard(data)
-    : Array.isArray(requiredHeaderFields) && requiredHeaderFields.length > 0
-      ? requiredHeaderFields.every((k) => {
-          const v = data?.[k];
-          return v != null && v !== '' && !(typeof v === 'string' && v.trim() === '');
-        })
-      : true;
+  let canAddLines;
+  if (addLineGuard) {
+    canAddLines = addLineGuard(data);
+  } else if (Array.isArray(requiredHeaderFields) && requiredHeaderFields.length > 0) {
+    canAddLines = requiredHeaderFields.every((k) => {
+      const v = data?.[k];
+      return v != null && v !== '' && !(typeof v === 'string' && v.trim() === '');
+    });
+  } else {
+    canAddLines = true;
+  }
   const windowTitle = breadcrumb
     ? tMenu(breadcrumb.split(' / ').at(-1).trim()) || breadcrumb.split(' / ').at(-1).trim()
     : tMenu(windowName) || windowName || '';
@@ -1620,12 +1644,12 @@ export function DetailView({
         {primaryTabs && activePrimaryTab !== 'general' ? (() => {
           const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
           return activeTab?.Panel ? (
-            <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidePanel || sidebarContent ? (linesLayout === 'inlineEditable' ? 'pr-2' : 'pl-6 pr-2') : (linesLayout === 'inlineEditable' ? 'pr-6' : 'px-6')}`}>
+            <div className={`flex-1 overflow-auto pb-6 min-w-0 ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'panel')}`}>
               <activeTab.Panel entity={entity} data={data} token={token} apiBaseUrl={apiBaseUrl} catalogs={catalogs} api={api} editing={hook.editing} onChange={handleChangeWithCallout} />
             </div>
           ) : null;
         })() : null}
-        <div className={`flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-hidden' : 'overflow-auto pb-6'} ${sidePanel || sidebarContent ? (linesLayout === 'inlineEditable' ? 'pr-2' : 'pl-6 pr-2') : (linesLayout === 'inlineEditable' ? '' : 'px-6')}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
+        <div className={`flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-hidden' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'content')}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
           <div className={`${sidePanel ? 'flex items-start gap-0' : ''} ${linesLayout === 'inlineEditable' ? 'flex-1 min-h-0 flex flex-col' : ''}`}>
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} ${linesLayout === 'inlineEditable' ? 'flex flex-col min-h-0 flex-1' : 'space-y-2'}`}>
