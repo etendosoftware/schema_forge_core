@@ -38,7 +38,7 @@ const CheckIcon = () => (
   </svg>
 );
 
-export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFilter = 'all', mockRows, onFilterChange }) {
+export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFilter = 'all', mockRows, onFilterChange, refreshKey = 0 }) {
   const ui = useUI();
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage]       = useState(1);
@@ -67,7 +67,7 @@ export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFi
       .then(({ data, totalRows }) => { setRows(data); setTotalRows(totalRows); })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [orgId, statusFilter, page, token, apiBaseUrl, mockRows]);
+  }, [orgId, statusFilter, page, token, apiBaseUrl, mockRows, refreshKey]);
 
   useEffect(() => { setPage(1); }, [statusFilter]);
 
