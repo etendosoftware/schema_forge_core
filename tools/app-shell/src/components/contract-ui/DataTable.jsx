@@ -299,7 +299,7 @@ const NUMERIC_FIELD_TYPES = new Set(['number', 'integer', 'decimal', 'quantity',
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
-const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, selectable, hasDeleteColumn, hasCloneColumn, token, apiBaseUrl, entity, selectorContext }, ref) {
+const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, token, apiBaseUrl, entity, selectorContext }, ref) {
   const t = useLabel();
   const fieldMap = useMemo(() => {
     const map = {};
@@ -339,6 +339,11 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     setValues(buildEmpty());
     touchedFieldsRef.current = new Set();
   }, [buildEmpty]);
+
+  // Notify parent on every values change so it can compute live totals (pendingLine).
+  useEffect(() => {
+    onValuesChange?.(values);
+  }, [values, onValuesChange]);
 
   // Auto-focus first input when row appears
   useEffect(() => {
@@ -890,6 +895,7 @@ export function DataTable({
   onClearAllFilters,
   columnFilters = {},
   rowFilter,
+  hiddenColumns = [],
 }) {
   const t = useLabel(labelOverrides);
   const tMenu = useMenuLabel();
@@ -945,9 +951,14 @@ export function DataTable({
     return result;
   }, [data, filters, searchQuery, onFilterChange, rowFilter]);
 
+  const visibleColumns = useMemo(
+    () => hiddenColumns.length > 0 ? columns.filter(col => !hiddenColumns.includes(col.key)) : columns,
+    [columns, hiddenColumns]
+  );
+
   const amountColumns = useMemo(
-    () => columns.filter(col => col.type === 'amount'),
-    [columns]
+    () => visibleColumns.filter(col => col.type === 'amount'),
+    [visibleColumns]
   );
 
   const internalConsumptionWarehouseByLocator = useMemo(() => {
@@ -1030,7 +1041,7 @@ export function DataTable({
         if (warehouseLabel) display = warehouseLabel;
       }
     }
-    if (col === columns[0] && col.type === 'string') {
+    if (col === visibleColumns[0] && col.type === 'string') {
       const pill = col.pill;
       const pillLabel = pill && pill.when(row) ? pill.label : null;
       return (
@@ -1170,7 +1181,7 @@ export function DataTable({
   if (loading) {
     return (
       <div className="space-y-4">
-        <TableSkeleton columns={columns.length > 0 ? columns : [{ key: '_1' }, { key: '_2' }, { key: '_3' }]} />
+        <TableSkeleton columns={visibleColumns.length > 0 ? visibleColumns : [{ key: '_1' }, { key: '_2' }, { key: '_3' }]} />
       </div>
     );
   }
@@ -1204,7 +1215,7 @@ export function DataTable({
     });
   };
 
-  const colSpan = columns.length + (selectable ? 1 : 0) + (onDeleteRow ? 1 : 0) + (onCloneRow ? 1 : 0);
+  const colSpan = visibleColumns.length + (selectable ? 1 : 0) + (onDeleteRow ? 1 : 0) + (onCloneRow ? 1 : 0);
 
   return (
     <div className="space-y-0">
@@ -1224,7 +1235,7 @@ export function DataTable({
                   />
                 </TableHead>
               )}
-              {columns.map(col => {
+              {visibleColumns.map(col => {
                 const colLabel = resolveColumnLabel(col, locale, t);
                 const isSorted = sortColumn === col.key;
                 return (
@@ -1300,7 +1311,7 @@ export function DataTable({
                         </TableCell>
                       );
                     })()}
-                    {columns.map(col => (
+                    {visibleColumns.map(col => (
                       <TableCell
                         key={col.key}
                         data-testid={`cell-${row.id ?? idx}-${col.key}`}
@@ -1361,13 +1372,14 @@ export function DataTable({
             {addRow?.active && (
               <InlineAddRow
                 ref={addRow.ref}
-                columns={columns}
+                columns={visibleColumns}
                 fields={addRow.fields}
                 onAdd={addRow.onAdd}
                 onCancel={addRow.onCancel}
                 data={data}
                 catalogs={addRow.catalogs}
                 onFieldChange={addRow.onFieldChange}
+                onValuesChange={addRow.onValuesChange}
                   selectable={selectable}
                   hasDeleteColumn={!!onDeleteRow}
                   hasCloneColumn={!!onCloneRow}
@@ -1382,7 +1394,7 @@ export function DataTable({
             <TableFooter>
               <TableRow className="font-medium">
                 {selectable && <TableCell />}
-                {columns.map((col, idx) => (
+                {visibleColumns.map((col, idx) => (
                   <TableCell key={col.key} className={col.type === 'amount' ? 'tabular-nums text-right font-semibold' : ''}>
                     {col.type === 'amount'
                       ? formatAmount(totals[col.key], filteredData[0]?.['currency$_identifier'])

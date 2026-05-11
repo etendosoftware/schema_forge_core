@@ -94,6 +94,27 @@ test.describe('Physical Inventory', () => {
   // The route intercept in auth.js returns a synthetic product suggestion and callout
   // response ({ quantityCount: 42 }), so this test runs without VITE_MOCK=true.
   test('selecting a product overwrites user-typed userCount (forceCalloutFields)', async ({ page }) => {
+    await page.route('**/sws/**/selectors/M_Product_ID**', route => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        items: [{
+          id: 'prod-e2e',
+          label: 'Test Product',
+          name: 'Test Product',
+          _identifier: 'Test Product',
+          searchKey: 'TEST-PRODUCT',
+        }],
+        hasMore: false,
+        totalCount: 1,
+      }),
+    }));
+    await page.route('**/sws/**/callout**', route => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ updates: { quantityCount: 42, bookQuantity: 42 }, combos: {}, messages: [] }),
+    }));
+
     await page.getByTestId('action-new').click();
     await page.waitForURL('**/physical-inventory/new', { timeout: 5_000 });
     await page.getByTestId('action-add-line').click();
@@ -112,12 +133,12 @@ test.describe('Physical Inventory', () => {
     await expect(productButton).toBeVisible({ timeout: 3_000 });
     await productButton.click();
 
-    const drawerInput = page.locator('[role="dialog"] input[type="text"]');
+    const drawerInput = page.getByTestId('product-search-input');
     await expect(drawerInput).toBeVisible({ timeout: 3_000 });
-    await drawerInput.fill('a');
+    await drawerInput.fill('test');
 
-    // Select first result — route intercept ensures "Test Product" appears
-    const firstResult = page.locator('[role="dialog"] li button').first();
+    // Select first result from the route fixture.
+    const firstResult = page.getByTestId('product-search-option-prod-e2e');
     await expect(firstResult).toBeVisible({ timeout: 3_000 });
     await firstResult.click();
 

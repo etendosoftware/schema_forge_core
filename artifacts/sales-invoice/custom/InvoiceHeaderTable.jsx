@@ -2,7 +2,12 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { DataTable } from '@/components/contract-ui';
 import { useLocale, useLocaleSwitch } from '@/i18n';
 import { formatCalendarDate, getCalendarDateRelation } from '@/lib/dateOnly';
-import { getDueDateDotColor, getLatestInstallmentDueDate } from '@/lib/invoiceDueDate';
+import {
+  getDueDateState,
+  getDueDateDotStyle,
+  getDueDateTextStyle,
+  getLatestInstallmentDueDate,
+} from '@/lib/invoiceDueDate';
 
 // ─── Invoice-specific status logic ───────────────────────────────
 
@@ -81,10 +86,10 @@ export default function InvoiceHeaderTable(props) {
       render: (row) => {
         const d = dueDates[row.id];
         if (!d) return <span className="text-muted-foreground">—</span>;
-        const dotColor = getDueDateDotColor(d);
+        const state = getDueDateState(d, row.outstandingAmount);
         return (
-          <span className="inline-flex items-center gap-1.5">
-            <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${dotColor}`} />
+          <span className="inline-flex items-center gap-1.5" style={getDueDateTextStyle(state)}>
+            <span className="inline-block h-2 w-2 rounded-full shrink-0" style={getDueDateDotStyle(state)} />
             {formatCalendarDate(d, locale)}
           </span>
         );
