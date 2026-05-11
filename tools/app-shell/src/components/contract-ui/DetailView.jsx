@@ -906,6 +906,7 @@ export function DetailView({
   // Guard that controls whether "+ Add Lines" is shown.
   // When addLineGuard is provided, it receives the current record data and must return true to allow.
   const canAddLines = addLineGuard ? addLineGuard(data) : true;
+  const formScrollPaddingXResolved = formScrollPaddingX !== null ? formScrollPaddingX : (sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6');
   const windowTitle = breadcrumb
     ? tMenu(breadcrumb.split(' / ').at(-1).trim()) || breadcrumb.split(' / ').at(-1).trim()
     : tMenu(windowName) || windowName || '';
@@ -1378,12 +1379,12 @@ export function DetailView({
         {primaryTabs && activePrimaryTab !== 'general' ? (() => {
           const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
           return activeTab?.Panel ? (
-            <div className={`flex-1 overflow-auto ${formScrollPaddingB} min-w-0 ${formScrollPaddingX !== null ? formScrollPaddingX : (sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6')}`}>
+            <div className={`flex-1 overflow-auto ${formScrollPaddingB} min-w-0 ${formScrollPaddingXResolved}`}>
               <activeTab.Panel entity={entity} data={data} token={token} apiBaseUrl={apiBaseUrl} catalogs={catalogs} api={api} editing={hook.editing} onChange={handleChangeWithCallout} />
             </div>
           ) : null;
         })() : null}
-        <div className={`flex-1 overflow-auto ${formScrollPaddingB} min-w-0 ${formScrollPaddingX !== null ? formScrollPaddingX : (sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6')}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
+        <div className={`flex-1 overflow-auto ${formScrollPaddingB} min-w-0 ${formScrollPaddingXResolved}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
           <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-2`}>
