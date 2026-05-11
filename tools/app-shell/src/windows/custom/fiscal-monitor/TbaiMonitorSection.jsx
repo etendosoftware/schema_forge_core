@@ -135,7 +135,7 @@ export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFi
                     <td><input type="checkbox" /></td>
                     <td className="strong">{row['invoice$invoiceDate'] ?? row.invoiceDate ?? row.creationDate ?? '—'}</td>
                     <td className="num-factura">
-                      <NumFactura n={row['invoice$_identifier'] ?? row.invoiceIdentifier ?? row.invoice ?? '—'} />
+                      <NumFactura n={row['invoice$documentNo'] ?? row.invoiceIdentifier ?? row.invoice ?? '—'} />
                     </td>
                     <td>{row['invoice$description'] ?? row.descripcion ?? '—'}</td>
                     <td>
