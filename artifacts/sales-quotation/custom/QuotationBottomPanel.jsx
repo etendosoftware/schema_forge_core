@@ -74,8 +74,10 @@ export default function QuotationBottomPanel({
 
         <div className="border-l border-border/50" style={{ borderLeftWidth: '0.5px' }} />
 
-        {/* Right column: Totals */}
-        <div className="w-[340px] shrink-0 p-2 flex flex-col justify-start">
+        {/* Right column: Totals. Fixed height matches the expanded "Descuento
+            total" state so toggling does not resize the panel. Inline style
+            wins over any Tailwind class purge or flex stretching. */}
+        <div className="w-[340px] shrink-0 p-2 flex flex-col justify-start" style={{ height: 241, minHeight: 241, maxHeight: 241 }}>
           <DocumentTotalsPanel
             lines={lines ?? []}
             pendingLine={pendingLine ?? null}

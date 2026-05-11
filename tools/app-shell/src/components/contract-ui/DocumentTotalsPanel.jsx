@@ -74,15 +74,19 @@ export default function DocumentTotalsPanel({
     <div className="mt-1 flex flex-col items-end" data-inline-add-portal="true">
       <div className="w-full max-w-xs text-sm">
 
-        {/* Button — hidden once total discount is active */}
+        {/* Button — hidden once total discount is active. Uses the same vertical
+            footprint as the expanded "Descuento total" row (py-2 px-2, text-sm
+            line-height) so toggling does not change the panel's total height. */}
         {canShowTotalDiscount && !totalDiscountOpen && (
-          <button
-            type="button"
-            onClick={() => setTotalDiscountOpen(true)}
-            className="mb-3 px-2 text-xs text-primary underline underline-offset-2 hover:opacity-70 transition-opacity cursor-pointer bg-transparent border-0 text-left"
-          >
-            + {ui('addTotalDiscount')}
-          </button>
+          <div className="flex items-center py-2 px-2">
+            <button
+              type="button"
+              onClick={() => setTotalDiscountOpen(true)}
+              className="text-xs text-primary underline underline-offset-2 hover:opacity-70 transition-opacity cursor-pointer bg-transparent border-0 text-left p-0"
+            >
+              + {ui('addTotalDiscount')}
+            </button>
+          </div>
         )}
 
         {/*
@@ -136,13 +140,15 @@ export default function DocumentTotalsPanel({
                   <span className="whitespace-nowrap">{ui('totalDiscount')}</span>
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   value={inputPct}
-                  min={0}
-                  max={100}
-                  onChange={e => setInputPct(Number(e.target.value))}
+                  onChange={e => {
+                    const raw = e.target.value.replace(/[^\d.]/g, '');
+                    setInputPct(raw === '' ? 0 : Number(raw));
+                  }}
                   onBlur={e => {
-                    const v = Math.max(0, Math.min(100, Number(e.target.value)));
+                    const v = Math.max(0, Math.min(100, Number(e.target.value) || 0));
                     setInputPct(v);
                     onTotalDiscountChange?.(v);
                   }}
