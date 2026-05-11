@@ -482,6 +482,78 @@ Shared UI components (`EntityForm`, `DetailView`, `ListView`, `DataTable`) emit 
 | `row-{id}` | `row-ABC123` | DataTable rows |
 | `option-{id}` | `option-ABC123` | SearchInput suggestions |
 | `option-{field}-{id}` | `option-warehouse-ABC123` | SelectorInput / DependentSelect items |
+| `row-quick-actions` | — | RowQuickActions overlay container (per row) |
+| `row-quick-action-{key}` | `row-quick-action-edit`, `-clone`, `-email`, `-more`, `-delete` | Canonical row quick-action buttons |
+| `row-quick-action-delete-confirm` | — | Destructive button inside the row delete confirm dialog |
+
+## Writing a mocked list/detail spec
+
+For features that live on the list grid (e.g. RowQuickActions) you can run specs against `make dev` without an Etendo backend. The `login()` helper in `tests/helpers/auth.js` seeds a fake token and a generic `**/sws/**` mock that returns empty lists. Install **more specific** routes after login to feed synthetic rows — Playwright matches routes in **reverse registration order**, so specific wins over generic.
+
+### Minimal template
+
+```js
+import { test, expect } from '@playwright/test';
+import { login } from '../helpers/auth.js';
+
+const ROWS = [
+  { id: 'row-001', documentNo: 'DOC-001', documentStatus: 'DR' },
+  { id: 'row-002', documentNo: 'DOC-002', documentStatus: 'CO' },
+];
+
+async function installListMock(page, spec) {
+  await page.route(`**/sws/neo/${spec}/header**`, async (route) => {
+    const req = route.request();
+    const url = req.url();
+    if (req.method() === 'GET' && !/\/header\/[^/?]+/.test(url)) {
+      // List fetch
+      return route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({ response: { data: ROWS, totalRows: ROWS.length } }),
+      });
+    }
+    if (req.method() === 'GET') {
+      // Detail fetch — match by id and return a single-element envelope
+      const m = url.match(/\/header\/([^/?]+)/);
+      const found = ROWS.find(r => r.id === m?.[1]) ?? ROWS[0];
+      return route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({ response: { data: [found] } }),
+      });
+    }
+    return route.fallback();
+  });
+}
+
+test.describe('My feature — sales-order', () => {
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await installListMock(page, 'sales-order');
+    await page.goto('/sales-order');
+    await page.waitForLoadState('networkidle').catch(() => {});
+  });
+
+  test('hover reveals the overlay', async ({ page }) => {
+    const row = page.locator('tbody tr').filter({ hasText: 'DOC-001' }).first();
+    await row.hover();
+    await expect(row.getByTestId('row-quick-actions')).toBeVisible();
+    await expect(row.getByTestId('row-quick-action-edit')).toBeVisible();
+  });
+});
+```
+
+### Conventions for mocked specs
+
+- **File name suffix `.mocked.spec.js`** — distinguishes from specs that need a real backend.
+- **Identify rows by display text**, not by index — `tbody tr.filter({ hasText: 'DOC-001' })` survives reorderings.
+- **Use `getByTestId()`** instead of `[data-testid="..."]` — built-in retry and cleaner traces.
+- **Match list vs detail by regex on the URL** — `/\/header\/[^/?]+/.test(url)` is the detail GET.
+- **Custom field keys** — some windows expose the document number under a different field (e.g. purchase-invoice uses `orderReference`, not `documentNo`). Mirror the value into both keys when mocking so a single locator works across windows.
+- **Per-window expected buttons** — if your overlay/feature is gated by the custom window file (`onClone`, `onEmail`, `menuActions`, `documentPreview`), parametrize the asserts so each window verifies its own wiring (catches regressions where a custom window stops passing a handler).
+
+### Canonical reference
+
+`e2e/tests/flows/row-quick-actions.mocked.spec.js` covers the four pilot windows (sales-order, purchase-order, sales-invoice, purchase-invoice) and is the recommended starting point for any list-row UI test. It demonstrates: mocked list+detail endpoints, per-window expected-button matrix, hover→overlay assertion, edit-navigates-to-detail flow, and delete-opens-dialog flow.
 
 ## Tips
 

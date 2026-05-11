@@ -104,20 +104,20 @@ for (const spec of SPECS) {
       await expect(firstRow).toBeVisible();
       await firstRow.hover();
 
-      const overlay = firstRow.locator('[data-testid="row-quick-actions"]');
+      const overlay = firstRow.getByTestId('row-quick-actions');
       await expect(overlay).toBeVisible();
 
       // Always-on canonical buttons.
-      await expect(firstRow.locator('[data-testid="row-quick-action-edit"]')).toBeVisible();
-      await expect(firstRow.locator('[data-testid="row-quick-action-delete"]')).toBeVisible();
+      await expect(firstRow.getByTestId('row-quick-action-edit')).toBeVisible();
+      await expect(firstRow.getByTestId('row-quick-action-delete')).toBeVisible();
 
       // Per-window wiring: assert each conditional button is present or absent
       // as declared in the custom window file. Catches regressions where a
       // window stops passing onClone / onEmail / menuActions.
       const { expects } = FIELDS[spec];
-      const clone = firstRow.locator('[data-testid="row-quick-action-clone"]');
-      const email = firstRow.locator('[data-testid="row-quick-action-email"]');
-      const more  = firstRow.locator('[data-testid="row-quick-action-more"]');
+      const clone = firstRow.getByTestId('row-quick-action-clone');
+      const email = firstRow.getByTestId('row-quick-action-email');
+      const more  = firstRow.getByTestId('row-quick-action-more');
 
       if (expects.clone) await expect(clone).toBeVisible();
       else               await expect(clone).toHaveCount(0);
@@ -132,14 +132,14 @@ for (const spec of SPECS) {
     test('Edit button navigates to detail view', async ({ page }) => {
       const firstRow = page.locator('tbody tr').filter({ hasText: 'DOC-001' }).first();
       await firstRow.hover();
-      await firstRow.locator('[data-testid="row-quick-action-edit"]').click();
+      await firstRow.getByTestId('row-quick-action-edit').click();
       await expect(page).toHaveURL(new RegExp(`/${spec}/row-001`));
     });
 
     test('Delete button opens confirm modal and Cancel dismisses it', async ({ page }) => {
       const firstRow = page.locator('tbody tr').filter({ hasText: 'DOC-001' }).first();
       await firstRow.hover();
-      const deleteBtn = firstRow.locator('[data-testid="row-quick-action-delete"]');
+      const deleteBtn = firstRow.getByTestId('row-quick-action-delete');
       if (await deleteBtn.count() === 0) test.skip(true, 'Delete hidden for this row state');
 
       await deleteBtn.click();
