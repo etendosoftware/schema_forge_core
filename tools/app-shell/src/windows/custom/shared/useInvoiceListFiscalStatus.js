@@ -6,7 +6,8 @@ const SII_SPEC  = 'sii-monitor';
 const TBAI_SPEC = 'tbai-facturas-enviadas';
 const VF_SPEC   = 'monitor-verifactu';
 
-async function fetchInSetStatus(base, spec, entity, extraParams, fkField, statusField, ids, token) {
+async function fetchInSetStatus(base, spec, entity, extraParams, fields, ids, token) {
+  const { fkField, statusField } = fields;
   if (!ids.length) return {};
   const params = new URLSearchParams({
     ...extraParams,
@@ -58,8 +59,8 @@ export function useInvoiceListFiscalStatus(ids, specName, profile, apiBaseUrl, t
         const parentId = await fetchSiiParentId(base, orgId, token);
         if (parentId) {
           const [issued, received] = await Promise.all([
-            fetchInSetStatus(base, SII_SPEC, 'issuedInvoices',  { parentId }, 'aeatsiiInvoice', 'aeatsiiEstado', idList, token),
-            fetchInSetStatus(base, SII_SPEC, 'receivedInvoices', { parentId }, 'aeatsiiInvoice', 'aeatsiiEstado', idList, token),
+            fetchInSetStatus(base, SII_SPEC, 'issuedInvoices',  { parentId }, { fkField: 'aeatsiiInvoice', statusField: 'aeatsiiEstado' }, idList, token),
+            fetchInSetStatus(base, SII_SPEC, 'receivedInvoices', { parentId }, { fkField: 'aeatsiiInvoice', statusField: 'aeatsiiEstado' }, idList, token),
           ]);
           siiMap = { ...received, ...issued };
         }
@@ -67,16 +68,16 @@ export function useInvoiceListFiscalStatus(ids, specName, profile, apiBaseUrl, t
 
       let tbaiMap = {};
       if (targets.showTbai) {
-        tbaiMap = await fetchInSetStatus(base, TBAI_SPEC, 'sincronización', {}, 'invoice', 'estado', idList, token);
+        tbaiMap = await fetchInSetStatus(base, TBAI_SPEC, 'sincronización', {}, { fkField: 'invoice', statusField: 'estado' }, idList, token);
       }
 
       let vfMap = {};
       if (targets.showVerifactu) {
         const maps = await Promise.all([
-          fetchInSetStatus(base, VF_SPEC, 'facturasAceptadas',           {}, 'invoice', 'verifactuSendingStatus', idList, token),
-          fetchInSetStatus(base, VF_SPEC, 'partiallyAcceptedInvoices',   {}, 'invoice', 'verifactuSendingStatus', idList, token),
-          fetchInSetStatus(base, VF_SPEC, 'facturasRechazadas',          {}, 'invoice', 'verifactuSendingStatus', idList, token),
-          fetchInSetStatus(base, VF_SPEC, 'facturasInválidas',           {}, 'invoice', 'verifactuSendingStatus', idList, token),
+          fetchInSetStatus(base, VF_SPEC, 'facturasAceptadas',           {}, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList, token),
+          fetchInSetStatus(base, VF_SPEC, 'partiallyAcceptedInvoices',   {}, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList, token),
+          fetchInSetStatus(base, VF_SPEC, 'facturasRechazadas',          {}, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList, token),
+          fetchInSetStatus(base, VF_SPEC, 'facturasInválidas',           {}, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList, token),
         ]);
         for (const m of maps) Object.assign(vfMap, m);
       }

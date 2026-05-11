@@ -6,7 +6,8 @@ const SII_SPEC  = 'sii-monitor';
 const TBAI_SPEC = 'tbai-facturas-enviadas';
 const VF_SPEC   = 'monitor-verifactu';
 
-async function fetchFirstStatus(base, spec, entity, extraParams, fkField, statusField, invoiceId, token) {
+async function fetchFirstStatus(base, spec, entity, extraParams, fields, invoiceId, token) {
+  const { fkField, statusField } = fields;
   const params = new URLSearchParams({
     ...extraParams,
     _startRow: '0',
@@ -36,13 +37,14 @@ async function fetchSiiStatus(base, orgId, invoiceId, token) {
   const parentId = await fetchSiiParentId(base, orgId, token);
   if (!parentId) return null;
   const extra = { parentId };
-  const issued = await fetchFirstStatus(base, SII_SPEC, 'issuedInvoices', extra, 'aeatsiiInvoice', 'aeatsiiEstado', invoiceId, token);
+  const siiFields = { fkField: 'aeatsiiInvoice', statusField: 'aeatsiiEstado' };
+  const issued = await fetchFirstStatus(base, SII_SPEC, 'issuedInvoices', extra, siiFields, invoiceId, token);
   if (issued !== null) return issued;
-  return fetchFirstStatus(base, SII_SPEC, 'receivedInvoices', extra, 'aeatsiiInvoice', 'aeatsiiEstado', invoiceId, token);
+  return fetchFirstStatus(base, SII_SPEC, 'receivedInvoices', extra, siiFields, invoiceId, token);
 }
 
 async function fetchTbaiStatus(base, invoiceId, token) {
-  return fetchFirstStatus(base, TBAI_SPEC, 'sincronización', {}, 'invoice', 'estado', invoiceId, token);
+  return fetchFirstStatus(base, TBAI_SPEC, 'sincronización', {}, { fkField: 'invoice', statusField: 'estado' }, invoiceId, token);
 }
 
 async function fetchVerifactuStatus(base, invoiceId, token) {
@@ -53,7 +55,7 @@ async function fetchVerifactuStatus(base, invoiceId, token) {
     'facturasInválidas',
   ];
   for (const entity of entities) {
-    const status = await fetchFirstStatus(base, VF_SPEC, entity, {}, 'invoice', 'verifactuSendingStatus', invoiceId, token);
+    const status = await fetchFirstStatus(base, VF_SPEC, entity, {}, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, invoiceId, token);
     if (status !== null) return status;
   }
   return null;
