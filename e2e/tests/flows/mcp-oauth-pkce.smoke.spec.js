@@ -322,6 +322,11 @@ async function expectPermissionPromptAndAuthorize(page, callbackPromise) {
     () => page.getByRole('heading', { name: /authorize connection/i }).first(),
     () => page.getByText(/requested permissions/i).first(),
   ];
+  const authorizeButtonCandidates = [
+    () => page.getByTestId('oauth-authorize-submit'),
+    () => page.getByTestId('action-oauth-authorize'),
+    () => page.getByRole('button', { name: /authorize|allow|approve|accept|autorizar|permitir|aprobar|aceptar/i }).first(),
+  ];
 
   const deadline = Date.now() + 60_000;
   while (Date.now() < deadline) {
@@ -332,7 +337,8 @@ async function expectPermissionPromptAndAuthorize(page, callbackPromise) {
       const locator = candidate();
       if (await locator.isVisible({ timeout: 500 }).catch(() => false)) {
         await expectNotOnlyPwaShell(page);
-        await page.getByTestId('oauth-authorize-submit').click();
+        const authorizeButton = await firstVisibleLocator(page, authorizeButtonCandidates, 5_000);
+        await authorizeButton.click();
         return;
       }
     }

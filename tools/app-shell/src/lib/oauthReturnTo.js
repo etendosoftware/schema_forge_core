@@ -14,6 +14,12 @@ export function getSafeReturnTo(search, fallback = DEFAULT_AUTH_RETURN_TO) {
   return isSafeLocalReturnTo(returnTo) ? returnTo : fallback;
 }
 
+export function buildAppReturnToHref(target, currentPathname) {
+  const safeTarget = isSafeLocalReturnTo(target) ? target : DEFAULT_AUTH_RETURN_TO;
+  const basePath = getCurrentAppBasePath(currentPathname);
+  return `${basePath}${safeTarget}`;
+}
+
 export function isSafeLocalReturnTo(value) {
   if (typeof value !== 'string') return false;
   const target = value.trim();
@@ -21,4 +27,10 @@ export function isSafeLocalReturnTo(value) {
     !target.startsWith('//') &&
     !target.includes('\\') &&
     !/^\/(?:onboarding|login)(?:[/?#]|$)/.test(target);
+}
+
+function getCurrentAppBasePath(currentPathname) {
+  const pathname = currentPathname || '';
+  const onboardingIndex = pathname.lastIndexOf('/onboarding');
+  return onboardingIndex === -1 ? '' : pathname.slice(0, onboardingIndex);
 }

@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   DEFAULT_AUTH_RETURN_TO,
+  buildAppReturnToHref,
   buildOnboardingReturnTo,
   getSafeReturnTo,
   isSafeLocalReturnTo,
@@ -25,6 +26,27 @@ test('getSafeReturnTo accepts local OAuth authorize paths', () => {
   assert.equal(
     getSafeReturnTo('?returnTo=%2Fauthorize%3Fclient_id%3Dopencode%26state%3Dabc'),
     '/authorize?client_id=opencode&state=abc'
+  );
+});
+
+test('buildAppReturnToHref preserves the current app basename', () => {
+  assert.equal(
+    buildAppReturnToHref(
+      '/authorize?client_id=opencode&state=abc',
+      '/etendo/web/app-shell/onboarding'
+    ),
+    '/etendo/web/app-shell/authorize?client_id=opencode&state=abc'
+  );
+  assert.equal(
+    buildAppReturnToHref('/authorize?client_id=opencode', '/onboarding'),
+    '/authorize?client_id=opencode'
+  );
+});
+
+test('buildAppReturnToHref falls back for unsafe targets', () => {
+  assert.equal(
+    buildAppReturnToHref('https://evil.example/authorize', '/etendo/web/app-shell/onboarding'),
+    '/etendo/web/app-shell/dashboard'
   );
 });
 
