@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DateField } from '@/components/ui/date-field';
 import { useUI, useMenuLabel } from '@/i18n';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
+import SendToSifButton from './SendToSifButton';
 
 const STATUS_LABELS = {
   RPAP: 'Awaiting Payment', RPPC: 'Payment Cleared', RPR: 'Payment Received',
@@ -258,6 +259,14 @@ export default function InvoiceTopbarExtra({ data, recordId, token, apiBaseUrl, 
         {badgeInfo.label}
         <span style={{ opacity: 0.6, marginLeft: 4 }}>{ui('view')} &rarr;</span>
       </button>
+
+      <SendToSifButton
+        data={data}
+        recordId={recordId}
+        token={token}
+        apiBaseUrl={apiBaseUrl}
+        status={data?.documentStatus}
+      />
 
       <SendDocumentButton onClick={() => setShowSendModal(true)} />
 
