@@ -98,6 +98,7 @@ export default function ContactsWindow(props) {
           hoverRowActions={true}
           selectionBarSize="default"
           selectionBarRightActions={selectionBarRightActions}
+          toolbarButtonSize="default"
         />
       </div>
 

@@ -156,6 +156,7 @@ export function DetailView({
   sidebarClassName = 'w-96 shrink-0 overflow-y-auto pt-0 pl-0 pr-4 pb-5',
   autoSaveOnBlur = false,
   toolbarPaddingX = 'px-6',
+  toolbarButtonSize = 'sm',
 }) {
   // DetailView never needs the parent list: on `/new` there is no record to match, and on
   // `/:id` the currentItem shortcut only helps when we arrived from ListView (items already
@@ -293,6 +294,8 @@ export function DetailView({
     )
   );
   const isDocumentReadOnly = lockWhenProcessed && isProcessed;
+  const sqBtnSize = toolbarButtonSize === 'default' ? 'h-10 w-10' : 'h-9 w-9';
+  const saveBtnCls = toolbarButtonSize === 'default' ? 'h-10 gap-2' : 'gap-1.5';
   const [showPrint, setShowPrint] = useState(false);
   // showNotes state removed — notes panel is always visible in side-by-side layout
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -1010,13 +1013,10 @@ export function DetailView({
         <div className={`flex items-center justify-between ${toolbarPaddingX} py-3${toolbarBorderBottom ? ' border-b border-[#E8EAEF]' : ''}`}>
           <div className="flex items-center gap-3">
             <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
+              className="h-10 px-3 rounded-lg bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_rgba(18,18,23,0.05)] text-[#121217] text-sm font-medium hover:bg-[#F5F7F9] transition-colors"
               data-testid="action-cancel"
               onClick={() => navigate(`/${windowName}`)}
             >
-              <X className="h-3.5 w-3.5" />
               {ui('cancel')}
             </Button>
             {statusField && data[statusField] != null && (
@@ -1067,7 +1067,7 @@ export function DetailView({
               {!documentPreview && !hidePrint && !isNew && recordId && (
                 <button
                   onClick={() => setShowPrint(true)}
-                  className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
+                  className={`${sqBtnSize} flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors`}
                   title={ui('print')}
                 >
                   <Printer className="h-4 w-4" />
@@ -1077,7 +1077,7 @@ export function DetailView({
               {!isNew && recordId && !(hideDeleteWhenComplete && statusField && data?.[statusField] && data[statusField] !== 'DR' && data[statusField] !== 'RPAP') && (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+                  className={`${sqBtnSize} flex items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors`}
                   title={ui('delete')}
                   data-testid="action-delete"
                 >
@@ -1173,8 +1173,8 @@ export function DetailView({
                   <Button
                     key={action.key || i}
                     variant="outline"
-                    size="sm"
-                    className={action.className || ''}
+                    size="default"
+                    className={`${action.className || ''} ${saveBtnCls}`.trim()}
                     onClick={action.onClick}
                   >
                     {action.label}
@@ -1204,8 +1204,8 @@ export function DetailView({
                     <Button
                       key={p.name}
                       variant={isPrimary ? 'default' : 'outline'}
-                      size="sm"
-                      className={btnClass}
+                      size="default"
+                      className={`${btnClass} ${saveBtnCls}`.trim()}
                       onClick={() => hook.handleProcess?.(p)}
                     >
                       {tMenu(p.label)}
@@ -1217,7 +1217,7 @@ export function DetailView({
                 if (draftMode?.enabled) {
                   return (
                     <>
-                      <Button variant="outline" size="sm" className="gap-1.5 bg-white border-[#D1D4DB] text-[#121217]" data-testid="action-save-draft" disabled={hook.isSaving || !isDirty} onClick={async () => {
+                      <Button variant="outline" size="default" className={`${saveBtnCls} bg-white border-[#D1D4DB] text-[#121217]`} data-testid="action-save-draft" disabled={hook.isSaving || !isDirty} onClick={async () => {
                         if (!(await flushPendingLines())) return;
                         const saved = await hook.handleSave(data);
                         if (saved?.id && isNew) {
@@ -1228,7 +1228,7 @@ export function DetailView({
                         {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" color="#64748B" />}
                         {ui('save')}
                       </Button>
-                      <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
+                      <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
                         if (!(await flushPendingLines())) return;
                         if (typeof draftMode.onConfirm === 'function') { draftMode.onConfirm(); return; }
                         const saved = await hook.handleSaveAndProcess(draftMode);
@@ -1251,7 +1251,7 @@ export function DetailView({
                 if (isNew) {
                   return (
                     <>
-                      <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving} onClick={async () => {
+                      <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving} onClick={async () => {
                         if (!(await flushPendingLines())) return;
                         const saved = await hook.handleSave(data);
                         if (saved?.id && isNew) {
@@ -1263,7 +1263,7 @@ export function DetailView({
                         {ui('save')}
                       </Button>
                       {!isProcessed && hook.children.length > 0 && (
-                        <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
+                        <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
                           if (!(await flushPendingLines())) return;
                           const saved = await hook.handleSaveAndProcess(draftMode);
                           if (saved) {
@@ -1284,7 +1284,7 @@ export function DetailView({
                   );
                 }
                 return (
-                  <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving || !isDirty} onClick={async () => {
+                  <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving || !isDirty} onClick={async () => {
                     if (!(await flushPendingLines())) return;
                     const saved = await hook.handleSave(data);
                     if (saved) {
