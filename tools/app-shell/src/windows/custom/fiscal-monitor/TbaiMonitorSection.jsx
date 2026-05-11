@@ -5,6 +5,13 @@ import { StatusPill, NumFactura, Pager, RowActionBtn } from './FmPrimitives.jsx'
 import { TBAI_SPEC, TBAI_ENTITY } from './useFiscalMonitor.js';
 
 const STATUS_FIELD = 'estado';
+
+function invoiceDocNo(row) {
+  const raw = row['invoice$_identifier'] ?? row.invoiceIdentifier ?? row.invoice ?? null;
+  if (!raw) return '—';
+  // Etendo identifier format: "documentNo – date – amount"; extract just the first segment
+  return raw.split(/\s*[–-]\s*/)[0].trim() || raw;
+}
 const PAGE_SIZE    = 20;
 
 const STATUS_TAB_KEYS = [
@@ -135,7 +142,7 @@ export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFi
                     <td><input type="checkbox" /></td>
                     <td className="strong">{row['invoice$invoiceDate'] ?? row.invoiceDate ?? row.creationDate ?? '—'}</td>
                     <td className="num-factura">
-                      <NumFactura n={row['invoice$_identifier'] ?? row.invoiceIdentifier ?? row.invoice ?? '—'} />
+                      <NumFactura n={invoiceDocNo(row)} />
                     </td>
                     <td>{row['invoice$description'] ?? row.descripcion ?? '—'}</td>
                     <td>
