@@ -20,6 +20,7 @@ import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
 import { SummaryBar } from './SummaryBar.jsx';
 import DocumentTotalsPanel from './DocumentTotalsPanel.jsx';
+import LinesSelectionBar from './LinesSelectionBar.jsx';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import {
   buildCalloutFormState, extractAuxValues, normalizeCalloutQty,
@@ -289,6 +290,23 @@ export function DetailView({
     }
     return secondaryAddRowRefs.current[key];
   }, []);
+  // Per-tab refs powering the selection bar in secondary inline-editable tabs.
+  // Mirrors `addLineWrapperRef` + `inlineLinesRef` from the primary lines flow,
+  // one entry per tab key so each tab measures and clears independently.
+  const secondaryAddLineWrapperRefs = useRef({});
+  const getSecondaryAddLineWrapperRef = useCallback((key) => {
+    if (!secondaryAddLineWrapperRefs.current[key]) {
+      secondaryAddLineWrapperRefs.current[key] = { current: null };
+    }
+    return secondaryAddLineWrapperRefs.current[key];
+  }, []);
+  const secondaryInlineLinesRefs = useRef({});
+  const getSecondaryInlineLinesRef = useCallback((key) => {
+    if (!secondaryInlineLinesRefs.current[key]) {
+      secondaryInlineLinesRefs.current[key] = { current: null };
+    }
+    return secondaryInlineLinesRefs.current[key];
+  }, []);
   // Imperative ref to InlineLinesPanel — only attached when linesLayout==='inlineEditable'.
   // Used by flushPendingLines so the global "Guardar" closes any open inline-edit row
   // (firing the focused input's blur → autosave PATCH) before the parent record saves.
@@ -359,6 +377,13 @@ export function DetailView({
   const [selectedChildRows, setSelectedChildRows] = useState([]);
   const [selectionBarVisible, setSelectionBarVisible] = useState(false);
   const [selectionBarClosing, setSelectionBarClosing] = useState(false);
+  // Per secondary-tab selection state — same shape as the primary lines bar,
+  // keyed by tab key. Only the active tab measures and renders its bar.
+  const [secondarySelectedRows, setSecondarySelectedRows] = useState({});
+  const [secondaryBarVisible, setSecondaryBarVisible] = useState({});
+  const [secondaryBarClosing, setSecondaryBarClosing] = useState({});
+  const [secondaryBarRects, setSecondaryBarRects] = useState({});
+  const [secondaryDeleting, setSecondaryDeleting] = useState({});
   // Position of the AddLineButton wrapper in viewport coordinates. Drives the
   // portal-rendered selection bar so its downward shadow always renders OUTSIDE
   // the linesScrollRef's overflow-auto clipping boundary, regardless of how
@@ -468,10 +493,78 @@ export function DetailView({
       const t = setTimeout(() => {
         setSelectionBarVisible(false);
         setSelectionBarClosing(false);
-      }, 450);
+      }, 250);
       return () => clearTimeout(t);
     }
   }, [selectedChildRows.length, selectionBarVisible]);
+  // Per-tab close-animation timeouts. Kept in a ref so the lifecycle effect
+  // below doesn't have to depend on visibility state (which would cancel its
+  // own scheduled close on the next re-render).
+  const secondaryBarTimeoutRef = useRef({});
+  // Mirrors the primary lifecycle, but iterates secondary tabs. Each tab's
+  // bar mounts when its selection becomes non-empty and slides out 250ms
+  // after the selection is cleared.
+  useEffect(() => {
+    for (const st of secondaryTabs) {
+      const tabKey = st.key;
+      const rows = secondarySelectedRows[tabKey] ?? [];
+      if (rows.length > 0) {
+        if (secondaryBarTimeoutRef.current[tabKey]) {
+          clearTimeout(secondaryBarTimeoutRef.current[tabKey]);
+          delete secondaryBarTimeoutRef.current[tabKey];
+        }
+        setSecondaryBarVisible(prev => (prev[tabKey] ? prev : { ...prev, [tabKey]: true }));
+        setSecondaryBarClosing(prev => (prev[tabKey] ? { ...prev, [tabKey]: false } : prev));
+      } else if (!secondaryBarTimeoutRef.current[tabKey]) {
+        setSecondaryBarClosing(prev => ({ ...prev, [tabKey]: true }));
+        secondaryBarTimeoutRef.current[tabKey] = setTimeout(() => {
+          setSecondaryBarVisible(prev => ({ ...prev, [tabKey]: false }));
+          setSecondaryBarClosing(prev => ({ ...prev, [tabKey]: false }));
+          delete secondaryBarTimeoutRef.current[tabKey];
+        }, 250);
+      }
+    }
+  }, [secondarySelectedRows, secondaryTabs]);
+  // Measure each visible secondary tab's add-line wrapper so its bar can be
+  // portaled with `position: fixed`. Only the active tab actually mounts its
+  // wrapper (inactive tabs unmount their content), so refs from other tabs
+  // resolve to null and are skipped naturally.
+  useEffect(() => {
+    const cleanups = [];
+    for (const st of secondaryTabs) {
+      if (!secondaryBarVisible[st.key]) continue;
+      const el = secondaryAddLineWrapperRefs.current[st.key]?.current;
+      if (!el) continue;
+      const measure = () => {
+        const r = el.getBoundingClientRect();
+        setSecondaryBarRects(prev => ({
+          ...prev,
+          [st.key]: { top: r.top, left: r.left, width: r.width, height: r.height },
+        }));
+      };
+      measure();
+      let ro = null;
+      if (typeof ResizeObserver !== 'undefined') {
+        ro = new ResizeObserver(measure);
+        ro.observe(el);
+      }
+      const events = ['scroll', 'resize'];
+      events.forEach(e => window.addEventListener(e, measure, true));
+      cleanups.push(() => {
+        ro?.disconnect();
+        events.forEach(e => window.removeEventListener(e, measure, true));
+      });
+    }
+    return () => cleanups.forEach(fn => fn());
+  }, [secondaryBarVisible, secondaryTabs]);
+  // Clear secondary-tab selection state when the active tab changes. The
+  // InlineLinesPanel resets its internal checkboxes on unmount, so we mirror
+  // that here so the bar doesn't outlive the row checks.
+  useEffect(() => {
+    setSecondarySelectedRows({});
+    setSecondaryBarVisible({});
+    setSecondaryBarClosing({});
+  }, [activeTab]);
   const [deletingChildren, setDeletingChildren] = useState(false);
   const [lineEdits, setLineEdits] = useState(null);
   const [lineEditColumns, setLineEditColumns] = useState({});
@@ -1983,128 +2076,63 @@ export function DetailView({
                               overflow-auto clipping boundary even when scroll is
                               engaged (many rows). Positioned via fixed coords from
                               `barRect`, measured off `addLineWrapperRef`. */}
-                          {linesLayout === 'inlineEditable' && (api?.crud?.[detailEntity]?.delete ?? true) && selectionBarVisible && barRect && createPortal(
-                            <div
-                              className="z-50 pointer-events-none"
-                              style={{
-                                position: 'fixed',
-                                top: barRect.top,
-                                left: barRect.left,
-                                width: barRect.width,
-                                height: barRect.height,
+                          {linesLayout === 'inlineEditable' && (api?.crud?.[detailEntity]?.delete ?? true) && (
+                            <LinesSelectionBar
+                              visible={selectionBarVisible}
+                              closing={selectionBarClosing}
+                              barRect={barRect}
+                              count={selectedChildRows.length}
+                              selectedLabel={ui('selected', { count: selectedChildRows.length })}
+                              totalLabel={bottomSection?.showLineTotals !== false ? (() => {
+                                const total = selectedChildRows.reduce((acc, row) => {
+                                  const v = parseFloat(String(row?.[lineConfig.grossField] ?? row?.lineGrossAmount ?? 0));
+                                  return acc + (Number.isFinite(v) ? v : 0);
+                                }, 0);
+                                const formatted = total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                const curr = data?.['currency$_identifier'] || '';
+                                return curr ? `${formatted} ${curr}` : formatted;
+                              })() : null}
+                              deleting={deletingChildren}
+                              deleteTitle={ui('delete')}
+                              closeTitle={ui('close')}
+                              onDelete={async () => {
+                                if (!(await confirmDelete())) return;
+                                setDeletingChildren(true);
+                                try {
+                                  const results = await Promise.allSettled(
+                                    selectedChildRows.map(row => {
+                                      const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', row.id)
+                                        || `${apiBaseUrl}/${detailEntity}/${row.id}`;
+                                      return fetch(childUrl, {
+                                        method: 'DELETE',
+                                        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                                      }).then(res => ({ res, row }));
+                                    })
+                                  );
+                                  let deleted = 0;
+                                  for (const result of results) {
+                                    if (result.status === 'fulfilled' && result.value.res.ok) {
+                                      hook.handleDeleteChild(result.value.row.id);
+                                      if (selectedLine?.id === result.value.row.id) setSelectedLine(null);
+                                      deleted++;
+                                    }
+                                  }
+                                  inlineLinesRef.current?.clearSelection?.();
+                                  setSelectedChildRows([]);
+                                  if (deleted > 0) toast.success(ui('recordsDeleted', { count: deleted }));
+                                  const failed = results.length - deleted;
+                                  if (failed > 0) toast.error(ui('recordsCouldNotBeDeleted', { count: failed }));
+                                } catch (err) {
+                                  toast.error(err.message || ui('networkError'));
+                                } finally {
+                                  setDeletingChildren(false);
+                                }
                               }}
-                            >
-                              <div
-                                className={`pointer-events-auto h-full ${selectionBarClosing ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}
-                                style={{
-                                  background: '#FFFFFF',
-                                  boxShadow: '0px 10px 15px -3px rgba(18,18,23,0.08), 0px 4px 6px -2px rgba(18,18,23,0.05)',
-                                  padding: 8,
-                                  animationDuration: '0.45s',
-                                }}
-                              >
-                                <div className="flex items-center justify-between h-full">
-                                  <div className="flex flex-col items-start pl-1">
-                                    <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 600, lineHeight: '24px', color: '#121217' }}>
-                                      {ui('selected', { count: selectedChildRows.length })}
-                                    </span>
-                                    {/* Hide the rolled-up amount in inventory /
-                                        shipment-style windows where the bottom
-                                        panel sets showLineTotals=false (no
-                                        monetary totals to sum). */}
-                                    {bottomSection?.showLineTotals !== false && (
-                                      <span style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 400, lineHeight: '16px', color: '#121217' }}>
-                                        {(() => {
-                                          const total = selectedChildRows.reduce((acc, row) => {
-                                            const v = parseFloat(String(row?.[lineConfig.grossField] ?? row?.lineGrossAmount ?? 0));
-                                            return acc + (Number.isFinite(v) ? v : 0);
-                                          }, 0);
-                                          const formatted = total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                                          const curr = data?.['currency$_identifier'] || '';
-                                          return curr ? `${formatted} ${curr}` : formatted;
-                                        })()}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      type="button"
-                                      disabled={deletingChildren}
-                                      title={ui('delete')}
-                                      onClick={async () => {
-                                        if (!(await confirmDelete())) return;
-                                        setDeletingChildren(true);
-                                        try {
-                                          const results = await Promise.allSettled(
-                                            selectedChildRows.map(row => {
-                                              const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', row.id)
-                                                || `${apiBaseUrl}/${detailEntity}/${row.id}`;
-                                              return fetch(childUrl, {
-                                                method: 'DELETE',
-                                                headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                                              }).then(res => ({ res, row }));
-                                            })
-                                          );
-                                          let deleted = 0;
-                                          for (const result of results) {
-                                            if (result.status === 'fulfilled' && result.value.res.ok) {
-                                              hook.handleDeleteChild(result.value.row.id);
-                                              if (selectedLine?.id === result.value.row.id) setSelectedLine(null);
-                                              deleted++;
-                                            }
-                                          }
-                                          inlineLinesRef.current?.clearSelection?.();
-                                          setSelectedChildRows([]);
-                                          if (deleted > 0) toast.success(ui('recordsDeleted', { count: deleted }));
-                                          const failed = results.length - deleted;
-                                          if (failed > 0) toast.error(ui('recordsCouldNotBeDeleted', { count: failed }));
-                                        } catch (err) {
-                                          toast.error(err.message || ui('networkError'));
-                                        } finally {
-                                          setDeletingChildren(false);
-                                        }
-                                      }}
-                                      className="disabled:opacity-50 transition-colors"
-                                      style={{
-                                        width: 40,
-                                        height: 40,
-                                        background: '#FFFFFF',
-                                        border: '1px solid #FBB1C4',
-                                        boxShadow: '0px 1px 2px rgba(18,18,23,0.05)',
-                                        borderRadius: 8,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                      }}
-                                    >
-                                      <Trash2 style={{ width: 18, height: 18, color: '#F3164E' }} />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      title={ui('close')}
-                                      onClick={() => {
-                                        inlineLinesRef.current?.clearSelection?.();
-                                        setSelectedChildRows([]);
-                                      }}
-                                      className="transition-colors hover:bg-muted/40"
-                                      style={{
-                                        width: 40,
-                                        height: 40,
-                                        borderRadius: 8,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        background: 'transparent',
-                                        border: 'none',
-                                      }}
-                                    >
-                                      <X style={{ width: 20, height: 20, color: '#828FA3' }} />
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>,
-                            document.body,
+                              onClose={() => {
+                                inlineLinesRef.current?.clearSelection?.();
+                                setSelectedChildRows([]);
+                              }}
+                            />
                           )}
                         </div>
                       )}
@@ -2330,21 +2358,74 @@ export function DetailView({
                     <div className="flex items-start gap-4">
                     <div className="flex-1 min-w-0">
                       <st.Table
+                        ref={linesLayout === 'inlineEditable' ? getSecondaryInlineLinesRef(st.key) : undefined}
                         data={secondaryHooks[stIdx]?.children ?? []}
                         entity={st.key}
+                        token={token}
+                        apiBaseUrl={apiBaseUrl}
                         selectorContext={selectorContextByEntity[st.key]}
+                        linesLayout={linesLayout}
                         onRowClick={st.customAddModal
                           ? (row) => setCustomModalState({ key: st.key, rowId: row.id })
                           : st.Form
                             ? (row) => { setSelectedSecondaryLine({ ...row, _tabKey: st.key }); setSecondaryLineEdits(null); }
                             : undefined}
+                        // Pencil action for customAddModal tabs (Dirección) opens
+                        // the popup editor — rows are not editable in place.
+                        onEditRow={st.customAddModal
+                          ? (row) => setCustomModalState({ key: st.key, rowId: row.id })
+                          : undefined}
                         selectedRowId={selectedSecondaryLine?._tabKey === st.key ? selectedSecondaryLine?.id : undefined}
+                        onSelectionChange={linesLayout === 'inlineEditable'
+                          ? (rows) => setSecondarySelectedRows(prev => ({ ...prev, [st.key]: rows }))
+                          : undefined}
                         onDeleteRow={enableSecondaryRowDelete && (api?.crud?.[st.key]?.delete ?? true) ? (row) => {
                           setSecondaryDeleteConfirm({
                             tabKey: st.key,
                             tabIndex: stIdx,
                             id: row.id,
                           });
+                        } : undefined}
+                        // Inline edit save for secondary-tab rows. Fires when a
+                        // cell loses focus while in edit mode. Optimistic flow:
+                        // we update the local cache FIRST so the Radix Select
+                        // (and read-mode label) reflect the new pick instantly,
+                        // then PATCH the server and roll back if it rejects.
+                        onUpdateRow={!st.customAddModal && linesLayout === 'inlineEditable' ? async (row, fieldKey, value, opts) => {
+                          const childUrl = api?.crud?.[st.key]?.detailUrl?.replace('{id}', row.id)
+                            || `${apiBaseUrl}/${st.key}/${row.id}`;
+                          const includesIdentifier = opts?.identifier !== undefined;
+                          const optimistic = includesIdentifier
+                            ? { [fieldKey]: value, [`${fieldKey}$_identifier`]: opts.identifier }
+                            : { [fieldKey]: value };
+                          // Snapshot the previous values so we can revert on failure.
+                          const previous = includesIdentifier
+                            ? { [fieldKey]: row[fieldKey], [`${fieldKey}$_identifier`]: row[`${fieldKey}$_identifier`] }
+                            : { [fieldKey]: row[fieldKey] };
+                          secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, optimistic);
+                          let res;
+                          try {
+                            res = await fetch(childUrl, {
+                              method: 'PATCH',
+                              headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ [fieldKey]: value }),
+                            });
+                          } catch (err) {
+                            secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, previous);
+                            toast.error(err?.message || ui('networkError'));
+                            throw err;
+                          }
+                          if (res.ok) {
+                            const updated = await res.json().catch(() => null);
+                            // Server response wins over the optimistic cache when present
+                            // — keeps any callout-driven fields the backend computed.
+                            if (updated) secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, updated);
+                          } else {
+                            secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, previous);
+                            const msg = await extractErrorMessage(res);
+                            toast.error(msg || ui('networkError'));
+                            throw new Error(msg || 'PATCH failed');
+                          }
                         } : undefined}
                         addRow={st.addLineFields?.entry?.length > 0 ? {
                           ref: getSecondaryAddRowRef(st.key),
@@ -2464,16 +2545,74 @@ export function DetailView({
                     )}
                     </div>
                     {(st.addLineFields?.entry?.length > 0 || st.customAddModal) && hook.editing && (
-                      <AddLineButton
-                        onClick={() => {
-                          if (st.customAddModal) {
-                            void handleCustomModalAddClick(st.key);
-                          } else {
-                            void handleSecondaryAddLineToggle(st.key);
-                          }
-                        }}
-                        label={ui('addEntity', { label: tMenu(st.label) })}
-                      />
+                      // Wrapper measured by the secondary selection bar — its
+                      // `position: fixed` portal overlays exactly this region.
+                      <div ref={getSecondaryAddLineWrapperRef(st.key)} className="relative">
+                        <AddLineButton
+                          onClick={() => {
+                            if (st.customAddModal) {
+                              void handleCustomModalAddClick(st.key);
+                            } else {
+                              void handleSecondaryAddLineToggle(st.key);
+                            }
+                          }}
+                          label={ui('addEntity', { label: tMenu(st.label) })}
+                        />
+                        {linesLayout === 'inlineEditable' && (api?.crud?.[st.key]?.delete ?? true) && (
+                          <LinesSelectionBar
+                            visible={secondaryBarVisible[st.key] ?? false}
+                            closing={secondaryBarClosing[st.key] ?? false}
+                            barRect={secondaryBarRects[st.key]}
+                            count={(secondarySelectedRows[st.key] ?? []).length}
+                            selectedLabel={ui('selected', { count: (secondarySelectedRows[st.key] ?? []).length })}
+                            totalLabel={null}
+                            deleting={secondaryDeleting[st.key] ?? false}
+                            deleteTitle={ui('delete')}
+                            closeTitle={ui('close')}
+                            compact
+                            onDelete={async () => {
+                              if (!(await confirmDelete())) return;
+                              setSecondaryDeleting(prev => ({ ...prev, [st.key]: true }));
+                              const rows = secondarySelectedRows[st.key] ?? [];
+                              try {
+                                const results = await Promise.allSettled(
+                                  rows.map(row => {
+                                    const childUrl = api?.crud?.[st.key]?.detailUrl?.replace('{id}', row.id)
+                                      || `${apiBaseUrl}/${st.key}/${row.id}`;
+                                    return fetch(childUrl, {
+                                      method: 'DELETE',
+                                      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                                    }).then(res => ({ res, row }));
+                                  })
+                                );
+                                let deleted = 0;
+                                for (const result of results) {
+                                  if (result.status === 'fulfilled' && result.value.res.ok) {
+                                    secondaryHooks[stIdx]?.handleDeleteChild?.(result.value.row.id);
+                                    if (selectedSecondaryLine?._tabKey === st.key && selectedSecondaryLine?.id === result.value.row.id) {
+                                      setSelectedSecondaryLine(null);
+                                    }
+                                    deleted++;
+                                  }
+                                }
+                                secondaryInlineLinesRefs.current[st.key]?.current?.clearSelection?.();
+                                setSecondarySelectedRows(prev => ({ ...prev, [st.key]: [] }));
+                                if (deleted > 0) toast.success(ui('recordsDeleted', { count: deleted }));
+                                const failed = results.length - deleted;
+                                if (failed > 0) toast.error(ui('recordsCouldNotBeDeleted', { count: failed }));
+                              } catch (err) {
+                                toast.error(err.message || ui('networkError'));
+                              } finally {
+                                setSecondaryDeleting(prev => ({ ...prev, [st.key]: false }));
+                              }
+                            }}
+                            onClose={() => {
+                              secondaryInlineLinesRefs.current[st.key]?.current?.clearSelection?.();
+                              setSecondarySelectedRows(prev => ({ ...prev, [st.key]: [] }));
+                            }}
+                          />
+                        )}
+                      </div>
                     )}
                     </>
                     )}

@@ -11,12 +11,13 @@ import { Pencil, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useLabel, useLocale, useUI } from '@/i18n';
+import { useLabel, useLocaleSwitch, useUI } from '@/i18n';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { resolveColumnLabel } from '@/lib/resolveColumnLabel.js';
 import { SelectorInput } from './SelectorInput.jsx';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
+import { columnFlex } from '@/lib/linesColumnWidth.js';
 
 // Figma tokens — extracted from /home/agustin/Desktop/newlines.css.
 const TOKENS = {
@@ -31,23 +32,12 @@ const TOKENS = {
 };
 
 const NUMERIC_TYPES = new Set(['number', 'amount', 'integer', 'percent', 'decimal', 'price', 'quantity']);
-
-function columnFlex(col, idx) {
-  if (col.type === 'amount') return '0 0 160px';                          // Importe bruto — fixed, pins right
-  if (col.type === 'price') return '0 0 140px';                           // Precio tarifa — wider, fixed
-  if (col.type === 'quantity' || col.type === 'integer') return '0 0 90px'; // Cant. pedido — compact
-  if (col.type === 'decimal' || col.type === 'percent') return '0 0 100px'; // % descuento
-  if (idx === 0) return '1 1 180px';                                      // first column (Producto)
-  if (col.type === 'string' || col.type === 'text') return '2 1 180px';   // Descripción grows fastest
-  if (col.type === 'selector' || col.type === 'search' || col.type === 'foreignKey') return '1 1 160px';
-  if (col.type === 'date') return '1 1 130px';
-  return '0 0 120px';
-}
 // Inline-edit covers all column types that the line table renders today. Selector/search
 // FK columns (e.g., product, tax) use the shared `SelectorInput` (the same Radix dropdown
 // the add-row flow uses), so the inline experience matches the form-mode UX.
 const EDITABLE_TYPES = new Set([
   'string', 'text', 'number', 'integer', 'amount', 'percent', 'date', 'selector', 'search',
+  'enum', 'select',
 ]);
 
 function isCellEditable(col) {
@@ -105,7 +95,7 @@ function LookupTrigger({ field, displayLabel, selectorUrl, selectorContext, toke
  * line tables (string, number, amount, percent, date, selector). Unsupported types
  * fall back to the resolved identifier string.
  */
-function ReadCell({ row, col, locale, t }) {
+function ReadCell({ row, col, locale, t, ui }) {
   if (typeof col.render === 'function') {
     return col.render(row, {});
   }
@@ -116,6 +106,12 @@ function ReadCell({ row, col, locale, t }) {
   if (col.type === 'percent') {
     const val = Number(row[col.key]);
     return <span className="tabular-nums">{Number.isFinite(val) ? `${val}%` : '—'}</span>;
+  }
+  if (col.type === 'boolean') {
+    const v = row[col.key];
+    if (v === true || v === 'Y' || v === 'true') return <span className="text-emerald-600">{ui?.('yes') ?? 'Yes'}</span>;
+    if (v === false || v === 'N' || v === 'false') return <span className="text-slate-400">{ui?.('no') ?? 'No'}</span>;
+    return <span className="text-slate-300">—</span>;
   }
   if (col.type === 'date') {
     const raw = row[col.key];
@@ -190,6 +186,33 @@ function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus
     );
   }
 
+  // Enum / list field — native <select> populated from the column's enumLabels
+  // map. Mirrors the inline-add-row UX (DataTable line ~730) so editing an
+  // existing row uses the same control as creating one.
+  if (col.type === 'enum' || col.type === 'select') {
+    const labels = col.enumLabels || {};
+    const options = Object.entries(labels);
+    return (
+      <select
+        ref={inputRef}
+        defaultValue={value ?? ''}
+        onChange={(e) => onCommit(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            onCancel?.();
+          }
+        }}
+        className="w-full h-7 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+      >
+        {!col.required && <option value="">—</option>}
+        {options.map(([v, label]) => (
+          <option key={v} value={v}>{label}</option>
+        ))}
+      </select>
+    );
+  }
+
   const isNumeric = NUMERIC_TYPES.has(col.type);
   const inputType = col.type === 'date' ? 'date' : 'text';
   // Numeric fields use type="text" + inputMode to avoid the browser's spinner
@@ -257,10 +280,20 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
   onSelectionChange,
   onUpdateRow,
   onDeleteRow,
+  // Optional: when provided, the pencil action calls this instead of toggling
+  // the inline edit mode — used by tabs whose rows open a popup modal for
+  // editing (e.g. Dirección with `customAddModal`).
+  onEditRow,
+  // Optional: when provided, clicking anywhere on the row body fires this.
+  // Pairs with `onEditRow` for modal-style flows.
+  onRowClick,
 }, ref) {
   const ui = useUI();
   const t = useLabel();
-  const locale = useLocale();
+  // resolveColumnLabel + toLocaleDateString expect the locale STRING
+  // (es_ES / en_US) — `useLocale()` would return the dictionary object due
+  // to a backward-compat shim, hence `useLocaleSwitch` here.
+  const { locale } = useLocaleSwitch();
 
   const [editingRowId, setEditingRowId] = useState(null);
   const [hoveredRowId, setHoveredRowId] = useState(null);
@@ -303,14 +336,18 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
     () => (columns || []).filter(c => !c.hidden),
     [columns]
   );
-  // The last "amount" column is the one that disappears on hover to make room for
-  // the action strip. If no amount column exists, fall back to the last column.
+  // The last "amount" column is the one that disappears on hover to make room
+  // for the action strip — its 160px width matches the strip so the swap is
+  // invisible. This only applies to monetary tables (sales-quotation, etc.).
+  // For tabs without an amount column (Cuenta Bancaria, Persona) we instead
+  // ALWAYS reserve the 160px slot, so values don't reflow when hovering.
   const trailingColumn = useMemo(() => {
     for (let i = visibleColumns.length - 1; i >= 0; i--) {
       if (visibleColumns[i].type === 'amount') return visibleColumns[i];
     }
-    return visibleColumns[visibleColumns.length - 1] || null;
+    return null;
   }, [visibleColumns]);
+  const reserveActionSlot = trailingColumn == null;
 
   const selectableRows = useMemo(() => data || [], [data]);
 
@@ -404,8 +441,12 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
 
   const handleEditClick = useCallback((row) => {
     if (isDocumentReadOnly) return;
+    if (onEditRow) {
+      onEditRow(row);
+      return;
+    }
     setEditingRowId(prev => (prev === row.id ? null : row.id));
-  }, [isDocumentReadOnly]);
+  }, [isDocumentReadOnly, onEditRow]);
 
   const handleDeleteClick = useCallback(async (row) => {
     if (isDocumentReadOnly) return;
@@ -466,6 +507,11 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
             {resolveColumnLabel(col, locale, t)}
           </div>
         ))}
+        {/* Reserve the same 160 px slot the action strip will occupy so the
+            header columns align with the body rows even when hovering. */}
+        {reserveActionSlot && (
+          <div style={{ flex: '0 0 160px' }} aria-hidden="true" />
+        )}
       </div>
 
       {/* Body rows */}
@@ -488,10 +534,18 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
               'hover:relative hover:z-20 hover:shadow-[0_4px_12px_rgba(18,18,23,0.08)]',
               isHighlighted ? 'bg-muted/40' : '',
               isEditing ? 'shadow-[0_4px_12px_rgba(18,18,23,0.08)] relative z-20' : '',
+              onRowClick ? 'cursor-pointer' : '',
             ].join(' ')}
             style={{ borderColor: TOKENS.separator, minHeight: TOKENS.rowHeight, ...cellStyle }}
             onMouseEnter={() => setHoveredRowId(row.id)}
             onMouseLeave={() => setHoveredRowId(prev => (prev === row.id ? null : prev))}
+            onClick={onRowClick ? (e) => {
+              // Don't fire when the click was on the checkbox / hover actions —
+              // those have their own handlers and stopping propagation there
+              // keeps the row body click semantic (open detail).
+              if (e.target.closest('[data-testid="line-actions"]') || e.target.closest('button') || e.target.closest('input')) return;
+              onRowClick(row);
+            } : undefined}
           >
             {/* Selection checkbox */}
             <div className="flex items-center justify-center px-2" style={{ width: 40 }}>
@@ -552,41 +606,47 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
                       onCancel={() => setEditingRowId(null)}
                     />
                   ) : (
-                    <ReadCell row={row} col={col} locale={locale} t={t} />
+                    <ReadCell row={row} col={col} locale={locale} t={t} ui={ui} />
                   )}
                 </div>
               );
             })}
 
-            {/* Hover / edit action strip */}
-            {showActions && (
+            {/* Hover / edit action strip. When `reserveActionSlot` is true
+                (no amount column), the slot is rendered in every row so cells
+                don't reflow on hover — only the icons inside fade in. */}
+            {(showActions || reserveActionSlot) && (
               <div
                 className="flex items-center justify-end gap-2 pr-3"
                 style={{ flex: '0 0 160px' }}
                 data-testid="line-actions"
               >
-                <button
-                  type="button"
-                  aria-label={ui('editLineTooltip') ?? 'Edit line'}
-                  title={ui('editLineTooltip') ?? 'Edit line'}
-                  onClick={() => handleEditClick(row)}
-                  className={[
-                    'p-1 rounded hover:bg-muted',
-                    isEditing ? 'text-foreground bg-muted' : 'text-muted-foreground hover:text-foreground',
-                  ].join(' ')}
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  aria-label={ui('deleteRowTooltip') ?? 'Delete'}
-                  title={ui('deleteRowTooltip') ?? 'Delete'}
-                  onClick={() => handleDeleteClick(row)}
-                  disabled={isDeleting}
-                  className="p-1 rounded text-destructive hover:bg-destructive/10 disabled:opacity-50"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                {showActions && (
+                  <>
+                    <button
+                      type="button"
+                      aria-label={ui('editLineTooltip') ?? 'Edit line'}
+                      title={ui('editLineTooltip') ?? 'Edit line'}
+                      onClick={() => handleEditClick(row)}
+                      className={[
+                        'p-1 rounded hover:bg-muted',
+                        isEditing ? 'text-foreground bg-muted' : 'text-muted-foreground hover:text-foreground',
+                      ].join(' ')}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={ui('deleteRowTooltip') ?? 'Delete'}
+                      title={ui('deleteRowTooltip') ?? 'Delete'}
+                      onClick={() => handleDeleteClick(row)}
+                      disabled={isDeleting}
+                      className="p-1 rounded text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>

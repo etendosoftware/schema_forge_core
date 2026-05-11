@@ -18,6 +18,7 @@ import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { resolveColumnLabel } from '@/lib/resolveColumnLabel.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { applyCalloutUpdates } from '@/lib/applyCalloutUpdates.js';
+import { columnMinWidthPx } from '@/lib/linesColumnWidth.js';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import InternalConsumptionProductSearchDrawer from './InternalConsumptionProductSearchDrawer.jsx';
 import { SelectorInput } from './SelectorInput.jsx';
@@ -1313,12 +1314,19 @@ export function DataTable({
                   />
                 </TableHead>
               )}
-              {visibleColumns.map(col => {
+              {visibleColumns.map((col, colIdx) => {
                 const colLabel = resolveColumnLabel(col, locale, t);
                 const isSorted = sortColumn === col.key;
                 const isSortable = col.sortable !== false;
+                // In inline-editable mode, mirror the column widths used by
+                // InlineLinesPanel so the header wraps identically whether
+                // the user sees the flex layout (rows present) or the HTML
+                // table layout (inline-add row active).
+                const headStyle = linesLayout === 'inlineEditable'
+                  ? { minWidth: columnMinWidthPx(col, colIdx) }
+                  : undefined;
                 return (
-                  <TableHead key={col.key} className="align-middle">
+                  <TableHead key={col.key} className="align-middle" style={headStyle}>
                     {onSort && isSortable ? (
                         <button
                           type="button"
