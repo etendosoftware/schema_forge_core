@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
+import './contacts.css';
 import BusinessPartnerPage from '@generated/contacts/generated/web/contacts/BusinessPartnerPage';
 import { ContactsProvider } from './ContactsContext';
 import ContactsBusinessPartnerForm from './ContactsBusinessPartnerForm';
@@ -104,6 +105,8 @@ export default function ContactsWindow(props) {
           tabsBarPaddingX="pl-2 pr-5"
           formScrollPaddingX="pl-0 pr-2"
           formCardPadding="pt-2 px-5 pb-3"
+          secondaryTabsPaddingY="py-[14px]"
+          secondaryTabsShowHoverLine={true}
         />
       </div>
 

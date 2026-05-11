@@ -21,7 +21,7 @@ function CreditLimitStepper({ value, readOnly, onChange, onBlur, saving }) {
         <span className="text-sm font-medium text-[#121217]">{ui('creditLimitField')}</span>
         <span className="text-sm text-[#F53D6B]">*</span>
       </div>
-      <div className="flex flex-row items-center h-10 border border-[#D1D4DB] rounded-lg shadow-sm overflow-hidden bg-white">
+      <div className="flex flex-row items-center h-10 border border-[#D1D4DB] rounded-lg shadow-[0px_1px_2px_rgba(18,18,23,0.05)] overflow-hidden bg-white hover:bg-[#F5F7F9] focus-within:border-[#121217] focus-within:shadow-[0px_0px_0px_1px_#121217] transition-colors">
         <input
           type="number"
           value={num}

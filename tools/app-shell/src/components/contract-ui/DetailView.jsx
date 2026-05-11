@@ -162,6 +162,8 @@ export function DetailView({
   toolbarButtonSize = 'sm',
   primaryTabsVariant = 'default',
   refetchAfterSave = false,
+  secondaryTabsPaddingY = 'py-2.5',
+  secondaryTabsShowHoverLine = false,
 }) {
   // DetailView never needs the parent list: on `/new` there is no record to match, and on
   // `/:id` the currentItem shortcut only helps when we arrived from ListView (items already
@@ -1446,7 +1448,7 @@ export function DetailView({
                         key={tab.key}
                         onClick={() => { setActiveTab(idx); setSelectedLine(null); setSelectedSecondaryLine(null); }}
                         className={[
-                          'flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative',
+                          `${secondaryTabsShowHoverLine ? 'group ' : ''}flex items-center gap-2 px-4 ${secondaryTabsPaddingY} text-sm font-medium transition-colors relative`,
                           activeTab === idx
                             ? 'text-foreground'
                             : 'text-muted-foreground hover:text-foreground',
@@ -1459,8 +1461,17 @@ export function DetailView({
                             {tab.count}
                           </span>
                         )}
-                        {activeTab === idx && (
-                          <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full" />
+                        {secondaryTabsShowHoverLine ? (
+                          <span className={[
+                            'absolute bottom-0 left-2 right-2 h-0.5 rounded-full transition-colors',
+                            activeTab === idx
+                              ? 'bg-foreground'
+                              : 'bg-transparent group-hover:bg-muted-foreground/30',
+                          ].join(' ')} />
+                        ) : (
+                          activeTab === idx && (
+                            <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full" />
+                          )
                         )}
                       </button>
                     ))}
