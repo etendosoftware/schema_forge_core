@@ -20,7 +20,7 @@ const STATUS_TAB_KEYS = [
 function parseIdentifier(row) {
   const raw = row['invoice$_identifier'] ?? row.invoiceIdentifier ?? null;
   if (!raw) return { docNo: row.invoice ?? '—', date: '—' };
-  const parts = raw.split(/\s*[–-]\s*/);
+  const parts = raw.split(/\s+[–-]\s+/);
   return {
     docNo: parts[0]?.trim() || raw,
     date:  parts[1]?.trim() || '—',
