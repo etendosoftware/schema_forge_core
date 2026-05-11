@@ -33,6 +33,22 @@ const ProfileBadge = ({ profile, labels = {} }) => {
   );
 };
 
+const RefreshButton = ({ loading, onRefresh, ui }) => (
+  <button
+    className="fm-orglead-refresh"
+    onClick={loading ? undefined : onRefresh}
+    disabled={loading}
+    aria-label={ui('fiscalMonitor.refresh')}
+    title={ui('fiscalMonitor.refresh')}
+    style={{ background: 'none', border: 'none', cursor: loading ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+  >
+    {loading
+      ? <RefreshCw size={14} className="animate-spin" style={{ color: 'var(--fm-fg-3)' }} />
+      : <><span className="syncdot" />{ui('fiscalMonitor.synced')}</>
+    }
+  </button>
+);
+
 const OrgLead = ({ org, profile, ui, onRefresh, loading }) => {
   const profileLabels = {
     sii: 'SII', tbai: 'TBAI', 'sii+tbai': 'SII + TBAI',
@@ -126,22 +142,6 @@ const WipBadge = ({ ui }) => (
       </Tooltip>
     </TooltipProvider>
   </div>
-);
-
-const RefreshButton = ({ loading, onRefresh, ui }) => (
-  <button
-    className="fm-orglead-refresh"
-    onClick={loading ? undefined : onRefresh}
-    disabled={loading}
-    aria-label={ui('fiscalMonitor.refresh')}
-    title={ui('fiscalMonitor.refresh')}
-    style={{ background: 'none', border: 'none', cursor: loading ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
-  >
-    {loading
-      ? <RefreshCw size={14} className="animate-spin" style={{ color: 'var(--fm-fg-3)' }} />
-      : <><span className="syncdot" />{ui('fiscalMonitor.synced')}</>
-    }
-  </button>
 );
 
 export default function FiscalMonitorPage({ token, apiBaseUrl }) {
