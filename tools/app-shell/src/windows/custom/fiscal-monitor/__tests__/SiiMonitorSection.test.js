@@ -77,20 +77,23 @@ describe('SiiMonitorSection — initialTab prop', () => {
   });
 });
 
-// Guards: SiiMonitorSection.fmtDate assumes year-first input (yyyy-mm-dd from API).
-// Different from the TBAI/VF version — no a.length===4 guard, always reverses parts.
+// Guards: SiiMonitorSection.fmtDate now uses the same year-first detection as TBAI/VF
+// and trims whitespace from each part (unified across all three monitor sections).
 describe('SiiMonitorSection — fmtDate inline logic (copied from SiiMonitorSection.jsx)', () => {
   // Copied from SiiMonitorSection.jsx — not exported.
   function fmtDate(raw) {
     if (!raw) return '—';
     const parts = String(raw).split(/[-/]/);
     if (parts.length !== 3) return raw;
-    const [y, m, d] = parts;
-    return `${d}/${m}/${y}`;
+    const [a, b, c] = parts.map(p => p.trim());
+    return a.length === 4 ? `${c}/${b}/${a}` : `${a}/${b}/${c}`;
   }
 
-  it('converts yyyy-mm-dd to dd/mm/yyyy', () => assert.equal(fmtDate('2025-04-14'), '14/04/2025'));
+  it('converts ISO yyyy-mm-dd to dd/mm/yyyy', () => assert.equal(fmtDate('2025-04-14'), '14/04/2025'));
   it('converts yyyy/mm/dd to dd/mm/yyyy', () => assert.equal(fmtDate('2025/04/14'), '14/04/2025'));
+  it('keeps already-formatted dd/mm/yyyy unchanged', () => assert.equal(fmtDate('14/04/2025'), '14/04/2025'));
+  it('normalises dd-mm-yyyy to dd/mm/yyyy', () => assert.equal(fmtDate('14-04-2025'), '14/04/2025'));
+  it('trims spaced separators — 2025 - 04 - 14 → 14/04/2025', () => assert.equal(fmtDate('2025 - 04 - 14'), '14/04/2025'));
   it('returns — for null', () => assert.equal(fmtDate(null), '—'));
   it('returns — for empty string', () => assert.equal(fmtDate(''), '—'));
   it('returns raw string when fewer than 3 parts', () => assert.equal(fmtDate('2025-04'), '2025-04'));

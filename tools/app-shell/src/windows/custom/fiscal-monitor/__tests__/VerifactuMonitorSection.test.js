@@ -13,7 +13,7 @@ function fmtDate(raw) {
   if (!raw) return '—';
   const parts = String(raw).split(/[-/]/);
   if (parts.length !== 3) return raw;
-  const [a, b, c] = parts;
+  const [a, b, c] = parts.map(p => p.trim());
   return a.length === 4 ? `${c}/${b}/${a}` : `${a}/${b}/${c}`;
 }
 
@@ -26,6 +26,7 @@ describe('fmtDate — inline logic (copied from VerifactuMonitorSection.jsx)', (
   it('returns — for null', () => assert.equal(fmtDate(null), '—'));
   it('returns — for empty string', () => assert.equal(fmtDate(''), '—'));
   it('returns raw string when fewer than 3 parts', () => assert.equal(fmtDate('2025-04'), '2025-04'));
+  it('trims spaced separators — 2025 - 04 - 14 → 14/04/2025', () => assert.equal(fmtDate('2025 - 04 - 14'), '14/04/2025'));
 });
 
 // Guards: fmtDate source structure matches expected implementation

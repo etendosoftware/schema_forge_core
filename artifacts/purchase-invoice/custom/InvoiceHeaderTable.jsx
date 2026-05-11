@@ -17,7 +17,7 @@ const BASE_COLUMNS = [
 const TAIL_COLUMNS = [
   { key: 'grandTotalAmount',   column: 'GrandTotal',                type: 'amount', label: 'Total Gross Amount' },
   { key: 'outstandingAmount',  column: 'OutstandingAmt',            type: 'amount', label: 'Total Outstanding' },
-  { key: 'eTGODueDate',        column: 'em_etgo_due_date',          type: 'date' },
+  { key: 'eTGODueDate',        column: 'EM_Etgo_Due_Date',          type: 'date' },
   { key: 'eTGODeliveryStatus', column: 'em_etgo_delivery_status',   type: 'percent' },
 ];
 

@@ -136,9 +136,9 @@ describe('TaxIDKeyPicker — structure', () => {
     assert.match(src, /bg-blue-50/);
   });
 
-  it('closes on Escape key via document.addEventListener keydown', () => {
+  it('handles Escape key to close the dropdown', () => {
     assert.match(src, /Escape/);
-    assert.match(src, /document\.addEventListener\(['"]keydown/);
+    assert.match(src, /handleListKeyDown|onKeyDown/);
   });
 
   it('uses a fixed-position backdrop div for outside-click detection', () => {

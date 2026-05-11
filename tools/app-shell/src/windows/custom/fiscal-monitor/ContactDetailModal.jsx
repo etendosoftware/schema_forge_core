@@ -49,18 +49,42 @@ function formatAddress(loc) {
 
 function TaxIDKeyPicker({ options, value, onChange, loading, ui }) {
   const [open, setOpen] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0);
   const ref = useRef(null);
+  const optionRefs = useRef([]);
 
   const selected = options.find(o => o.id === value);
 
   const close = useCallback(() => setOpen(false), []);
 
+  // When the listbox opens, put focus on the currently-selected option (or first).
   useEffect(() => {
     if (!open) return;
-    function onKey(e) { if (e.key === 'Escape') close(); }
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [open, close]);
+    const idx = options.findIndex(o => o.id === value);
+    const start = idx >= 0 ? idx : 0;
+    setActiveIdx(start);
+    optionRefs.current[start]?.focus();
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Roving focus: move to new activeIdx when it changes while the list is open.
+  useEffect(() => {
+    if (open) optionRefs.current[activeIdx]?.focus();
+  }, [activeIdx, open]);
+
+  function handleListKeyDown(e) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIdx(i => Math.min(i + 1, options.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIdx(i => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      if (options[activeIdx]) { onChange(options[activeIdx].id); setOpen(false); }
+    } else if (e.key === 'Escape') {
+      close();
+    }
+  }
 
   if (loading) {
     return (
@@ -91,14 +115,18 @@ function TaxIDKeyPicker({ options, value, onChange, loading, ui }) {
           <div className="fixed inset-0 z-[60]" onMouseDown={close} />
           <ul
             role="listbox"
+            aria-label={ui('contactDetail.taxIDKey')}
             className="absolute z-[61] mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg py-1 max-h-60 overflow-auto"
           >
-            {options.map(opt => (
+            {options.map((opt, idx) => (
               <li key={opt.id}>
                 <button
+                  ref={el => { optionRefs.current[idx] = el; }}
                   type="button"
                   role="option"
                   aria-selected={opt.id === value}
+                  tabIndex={activeIdx === idx ? 0 : -1}
+                  onKeyDown={handleListKeyDown}
                   onMouseDown={(e) => {
                     e.preventDefault();
                     onChange(opt.id);

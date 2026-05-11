@@ -54,25 +54,21 @@ describe('FmPrimitives — exports', () => {
   it('exports ERROR_STATUSES', () => assert.match(src, /export const ERROR_STATUSES/));
 });
 
-// Guards: adding onClick to StatusPill must not break non-clickable pills (backward compatibility)
+// Guards: StatusPill renders a <button> when clickable, plain <span> otherwise
 describe('StatusPill — onClick backward compatibility', () => {
   it('accepts an onClick prop in its destructured signature', () => {
     assert.match(src, /StatusPill.*\{.*onClick/);
   });
 
-  it('applies cursor:pointer only when onClick is provided (not unconditionally)', () => {
-    assert.match(src, /onClick \? \{ cursor: 'pointer' \} : undefined/);
+  it('renders a <button type="button"> with fm-pill class when onClick is provided', () => {
+    assert.match(src, /if \(onClick\)[\s\S]*?<button/);
   });
 
   it('passes fiscalMonitor.viewContact as title only when onClick is provided', () => {
     assert.match(src, /fiscalMonitor\.viewContact/);
   });
 
-  it('sets role=button conditionally — only when onClick is provided', () => {
-    assert.match(src, /role=\{onClick \? 'button' : undefined\}/);
-  });
-
-  it('does not introduce a <button> element — keeps <span> to avoid layout regression', () => {
-    assert.doesNotMatch(src, /<button.*fm-pill/);
+  it('falls back to a plain <span> when no onClick is provided', () => {
+    assert.match(src, /<span className=.*fm-pill/);
   });
 });

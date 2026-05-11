@@ -35,17 +35,19 @@ export const StatusPill = ({ estado, onClick }) => {
   const cfg = STATUS_CONFIG[estado];
   const cls  = cfg?.cls  ?? 'pending';
   const text = cfg ? ui(cfg.labelKey) : (estado ?? '—');
-  return (
-    <span
-      className={`fm-pill ${cls}`}
-      onClick={onClick}
-      style={onClick ? { cursor: 'pointer' } : undefined}
-      title={onClick ? ui('fiscalMonitor.viewContact') : undefined}
-      role={onClick ? 'button' : undefined}
-    >
-      {text}
-    </span>
-  );
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        className={`fm-pill ${cls}`}
+        onClick={onClick}
+        title={ui('fiscalMonitor.viewContact')}
+      >
+        {text}
+      </button>
+    );
+  }
+  return <span className={`fm-pill ${cls}`}>{text}</span>;
 };
 
 const ExtLinkIcon = () => (

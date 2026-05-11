@@ -63,8 +63,8 @@ Replace the static sync indicator:
 
 `RefreshButton` is a small inline component in `FiscalMonitorPage.jsx`:
 
-- **Idle:** sync dot + "Sincronizado" label (same visual as current)
-- **Loading:** spinning `RefreshCw` icon (Lucide, already available) + no label
+- **Idle:** `RefreshCw` icon (Lucide)
+- **Loading:** icon spins, button non-clickable
 - Clicking while loading is a no-op (`disabled`)
 
 `OrgLead` receives `onRefresh` and `loading` as new props from `FiscalMonitorPage`.

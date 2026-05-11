@@ -68,16 +68,16 @@ export function useInvoiceListFiscalStatus(ids, specName, profile, apiBaseUrl, t
 
       let tbaiMap = {};
       if (targets.showTbai) {
-        tbaiMap = await fetchInSetStatus(base, TBAI_SPEC, 'sincronización', {}, { fkField: 'invoice', statusField: 'estado' }, idList, token);
+        tbaiMap = await fetchInSetStatus(base, TBAI_SPEC, 'sincronización', { organization: orgId }, { fkField: 'invoice', statusField: 'estado' }, idList, token);
       }
 
       let vfMap = {};
       if (targets.showVerifactu) {
         const maps = await Promise.all([
-          fetchInSetStatus(base, VF_SPEC, 'facturasAceptadas',           {}, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList, token),
-          fetchInSetStatus(base, VF_SPEC, 'partiallyAcceptedInvoices',   {}, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList, token),
-          fetchInSetStatus(base, VF_SPEC, 'facturasRechazadas',          {}, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList, token),
-          fetchInSetStatus(base, VF_SPEC, 'facturasInválidas',           {}, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList, token),
+          fetchInSetStatus(base, VF_SPEC, 'facturasAceptadas',           { organization: orgId }, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList, token),
+          fetchInSetStatus(base, VF_SPEC, 'partiallyAcceptedInvoices',   { organization: orgId }, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList, token),
+          fetchInSetStatus(base, VF_SPEC, 'facturasRechazadas',          { organization: orgId }, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList, token),
+          fetchInSetStatus(base, VF_SPEC, 'facturasInválidas',           { organization: orgId }, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList, token),
         ]);
         for (const m of maps) Object.assign(vfMap, m);
       }

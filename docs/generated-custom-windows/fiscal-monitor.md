@@ -141,7 +141,7 @@ Three arrays with realistic Spanish invoice data:
 
 Both `FiscalMonitorPage` and `FiscalConfigPage` expose a manual refresh control.
 
-**FiscalMonitorPage:** The `OrgLead` bar replaces the static "Sincronizado" indicator with a `RefreshButton` component. When idle it shows the sync dot + "Sincronizado" label (same visual). When loading it shows a spinning `RefreshCw` icon (Lucide) and is non-clickable. Clicking calls `refetch()` (re-loads profile + KPIs via `useFiscalMonitor`) and increments `refreshKey` — a counter passed as prop to all three section components. Each section adds `refreshKey` to its row-fetch `useEffect` dependency array, re-triggering the current tab/page/filter fetch without resetting those states.
+**FiscalMonitorPage:** The `OrgLead` bar replaces the static "Sincronizado" indicator with a `RefreshButton` component. When idle it shows a `RefreshCw` icon (Lucide). When loading the icon spins and the button is non-clickable. Clicking calls `refetch()` (re-loads profile + KPIs via `useFiscalMonitor`) and increments `refreshKey` — a counter passed as prop to all three section components. Each section adds `refreshKey` to its row-fetch `useEffect` dependency array, re-triggering the current tab/page/filter fetch without resetting those states.
 
 **FiscalConfigPage:** A small `RefreshCw` icon button in the page header calls `refetch` from `useFiscalConfig`. No `refreshKey` propagation needed — section components re-render completely on `refetch`.
 

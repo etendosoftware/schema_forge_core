@@ -43,11 +43,11 @@ async function fetchSiiStatus(base, orgId, invoiceId, token) {
   return fetchFirstStatus(base, SII_SPEC, 'receivedInvoices', extra, siiFields, invoiceId, token);
 }
 
-async function fetchTbaiStatus(base, invoiceId, token) {
-  return fetchFirstStatus(base, TBAI_SPEC, 'sincronización', {}, { fkField: 'invoice', statusField: 'estado' }, invoiceId, token);
+async function fetchTbaiStatus(base, orgId, invoiceId, token) {
+  return fetchFirstStatus(base, TBAI_SPEC, 'sincronización', { organization: orgId }, { fkField: 'invoice', statusField: 'estado' }, invoiceId, token);
 }
 
-async function fetchVerifactuStatus(base, invoiceId, token) {
+async function fetchVerifactuStatus(base, orgId, invoiceId, token) {
   const entities = [
     'facturasAceptadas',
     'partiallyAcceptedInvoices',
@@ -55,7 +55,7 @@ async function fetchVerifactuStatus(base, invoiceId, token) {
     'facturasInválidas',
   ];
   for (const entity of entities) {
-    const status = await fetchFirstStatus(base, VF_SPEC, entity, {}, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, invoiceId, token);
+    const status = await fetchFirstStatus(base, VF_SPEC, entity, { organization: orgId }, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, invoiceId, token);
     if (status !== null) return status;
   }
   return null;
@@ -79,9 +79,9 @@ export function useFiscalStatus(invoiceId, specName, profile, apiBaseUrl, token,
     const base = neoBase(apiBaseUrl);
 
     Promise.all([
-      targets.showSii       ? fetchSiiStatus(base, orgId, invoiceId, token)  : Promise.resolve(null),
-      targets.showTbai      ? fetchTbaiStatus(base, invoiceId, token)        : Promise.resolve(null),
-      targets.showVerifactu ? fetchVerifactuStatus(base, invoiceId, token)   : Promise.resolve(null),
+      targets.showSii && orgId ? fetchSiiStatus(base, orgId, invoiceId, token)  : Promise.resolve(null),
+      targets.showTbai         ? fetchTbaiStatus(base, orgId, invoiceId, token) : Promise.resolve(null),
+      targets.showVerifactu    ? fetchVerifactuStatus(base, orgId, invoiceId, token) : Promise.resolve(null),
     ])
       .then(([sii, tbai, verifactu]) => setState({ sii, tbai, verifactu, loading: false }))
       .catch(() => setState({ sii: null, tbai: null, verifactu: null, loading: false }));

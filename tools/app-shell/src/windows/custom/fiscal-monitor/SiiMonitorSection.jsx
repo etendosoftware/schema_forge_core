@@ -26,8 +26,8 @@ function fmtDate(raw) {
   if (!raw) return '—';
   const parts = String(raw).split(/[-/]/);
   if (parts.length !== 3) return raw;
-  const [y, m, d] = parts;
-  return `${d}/${m}/${y}`;
+  const [a, b, c] = parts.map(p => p.trim());
+  return a.length === 4 ? `${c}/${b}/${a}` : `${a}/${b}/${c}`;
 }
 
 const SII_STATUS_TABS = [
