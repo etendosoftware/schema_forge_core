@@ -41,6 +41,16 @@ export default function LinesBottomSection({
   onTotalDiscountChange,
   relatedDocuments: RelatedDocumentsComponent,
   totalsField = 'etgoTotalDiscount',
+  // Inventory / shipment-style windows (albaranes, recepciones, movimientos)
+  // don't carry monetary totals — set `showTotals={false}` in the per-window
+  // wrapper to hide the right column entirely and let Docs/Notas occupy the
+  // full width.
+  showTotals = true,
+  // Optional component rendered inside the left column right below the Notes
+  // block. Used by windows that need an extra panel attached to the
+  // Docs/Notes group — e.g. Sales Invoice's SIF (fiscal) data tabs. Receives
+  // `{ data, recordId, token, apiBaseUrl, api }` as props.
+  notesExtra: NotesExtraComponent,
 }) {
   const ui = useUI();
   const currency = data?.['currency$_identifier'] || '';
@@ -53,8 +63,8 @@ export default function LinesBottomSection({
             column doesn't claim, so Docs+Notes stays wide on most screens. */}
         <div className="flex-1 min-w-0 p-2">
           {RelatedDocumentsComponent && (
-            <div className="flex items-start gap-3 px-3 pb-3">
-              <span className="text-[11px] font-medium text-foreground uppercase shrink-0 w-24 pt-0.5" style={{ letterSpacing: '0.04em' }}>
+            <div className="flex items-center gap-3 px-3 pb-3">
+              <span className="text-[11px] font-medium text-foreground uppercase shrink-0 w-24" style={{ letterSpacing: '0.04em' }}>
                 {ui('docs')}
               </span>
               <div className="flex-1">
@@ -104,26 +114,45 @@ export default function LinesBottomSection({
               </div>
             </div>
           )}
+
+          {/* Optional extra component under Notes — e.g. Sales Invoice's
+              SifDataTabs. Rendered as a React component with standard
+              data/recordId/token props. */}
+          {NotesExtraComponent && (
+            <div className="px-3 pt-3 mt-3 border-t border-border/40" style={{ borderTopWidth: '0.5px' }}>
+              <NotesExtraComponent
+                data={data}
+                recordId={recordId}
+                token={token}
+                apiBaseUrl={apiBaseUrl}
+                api={api}
+              />
+            </div>
+          )}
         </div>
 
-        <div className="border-l border-border/50" style={{ borderLeftWidth: '0.5px' }} />
+        {showTotals && (
+          <>
+            <div className="border-l border-border/50" style={{ borderLeftWidth: '0.5px' }} />
 
-        {/* Right column: Totals — fixed 420px wide / 241px tall to keep the
-            same footprint whether the "Descuento total" row is collapsed or
-            expanded. */}
-        <div className="w-[420px] shrink-0 p-2 flex flex-col justify-start" style={{ height: 241, minHeight: 241, maxHeight: 241 }}>
-          <DocumentTotalsPanel
-            lines={lines ?? []}
-            pendingLine={pendingLine ?? null}
-            editingLine={editingLine ?? null}
-            lineConfig={lineConfig}
-            formatAmount={fmt}
-            currency={currency}
-            readOnly={isReadOnly}
-            totalDiscountPct={Number(data?.[totalsField] ?? totalDiscountPct ?? 0)}
-            onTotalDiscountChange={onTotalDiscountChange}
-          />
-        </div>
+            {/* Right column: Totals — fixed 420px wide / 241px tall to keep the
+                same footprint whether the "Descuento total" row is collapsed or
+                expanded. */}
+            <div className="w-[420px] shrink-0 p-2 flex flex-col justify-start" style={{ height: 241, minHeight: 241, maxHeight: 241 }}>
+              <DocumentTotalsPanel
+                lines={lines ?? []}
+                pendingLine={pendingLine ?? null}
+                editingLine={editingLine ?? null}
+                lineConfig={lineConfig}
+                formatAmount={fmt}
+                currency={currency}
+                readOnly={isReadOnly}
+                totalDiscountPct={Number(data?.[totalsField] ?? totalDiscountPct ?? 0)}
+                onTotalDiscountChange={onTotalDiscountChange}
+              />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

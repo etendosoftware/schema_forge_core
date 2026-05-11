@@ -61,6 +61,10 @@ const draftMode = {
 };
 // @sf-generated-end draftMode:quotation
 
+// @sf-generated-start requiredHeaderFields:quotation
+const requiredHeaderFields = ['documentNo', 'orderDate', 'businessPartner', 'partnerAddress', 'priceList', 'paymentTerms', 'grandTotalAmount', 'summedLineAmount'];
+// @sf-generated-end requiredHeaderFields:quotation
+
 // @sf-generated-start addLineFields:quotationLine
 const addLineFields = {
   entry: [
@@ -419,6 +423,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
           { key: 'reject', label: 'Reject', destructive: true, visible: ["UE"].includes(status), labelKey: 'rejectQuotation', onClick: () => {}, }
         ]}
         draftMode={draftMode}
+        requiredHeaderFields={requiredHeaderFields}
         salesTheme
         labelOverrides={labelOverrides}
         linesLayout="inlineEditable"

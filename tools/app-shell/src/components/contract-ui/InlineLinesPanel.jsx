@@ -10,6 +10,7 @@ import React, {
 import { Pencil, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useLabel, useLocale, useUI } from '@/i18n';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
@@ -443,14 +444,12 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
         style={{ borderColor: TOKENS.separator, height: TOKENS.rowHeight, ...headerStyle }}
       >
         <div className="flex items-center justify-center px-2" style={{ width: 40 }}>
-          <input
-            type="checkbox"
+          <Checkbox
             aria-label={ui('selectAll')}
             checked={allSelected}
-            ref={el => { if (el) el.indeterminate = someSelected; }}
-            onChange={(e) => toggleAll(e.target.checked)}
+            indeterminate={someSelected}
+            onChange={() => toggleAll(!allSelected)}
             disabled={isDocumentReadOnly}
-            className="h-4 w-4 rounded-sm border border-[#D1D4DB]"
           />
         </div>
         {visibleColumns.map((col, idx) => (
@@ -496,13 +495,11 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
           >
             {/* Selection checkbox */}
             <div className="flex items-center justify-center px-2" style={{ width: 40 }}>
-              <input
-                type="checkbox"
+              <Checkbox
                 aria-label={ui('selectRow') ?? 'Select row'}
                 checked={isSelected}
-                onChange={(e) => toggleRow(row, e.target.checked)}
+                onChange={() => toggleRow(row, !isSelected)}
                 disabled={isDocumentReadOnly}
-                className="h-4 w-4 rounded-sm border border-[#D1D4DB]"
               />
             </div>
 

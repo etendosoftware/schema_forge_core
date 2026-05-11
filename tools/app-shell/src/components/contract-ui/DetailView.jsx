@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
@@ -11,6 +12,7 @@ import { useEntity } from '@/hooks/useEntity';
 import { useCatalogs } from '@/hooks/useCatalogs';
 import { useDisplayLogic } from '@/hooks/useDisplayLogic';
 import { useCallout } from '@/hooks/useCallout';
+import { useCurrency } from '@/hooks/useCurrency';
 import { useLineGrossAmount, ORDER_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import { useDocumentAction } from '@/hooks/useDocumentAction';
 import { useMenuLabel, useUI } from '@/i18n';
@@ -147,6 +149,7 @@ export function DetailView({
   lineConfig = ORDER_LINE_CONFIG,
   lockWhenProcessed = true,
   addLineGuard = null,
+  requiredHeaderFields = null,
   showDetailFooterTotals = undefined,
   onAfterSave,
   onAfterCreate,
@@ -165,8 +168,30 @@ export function DetailView({
   // the effect falls through to fetchById. Skipping the list fetch unconditionally drops one
   // wasted GET per direct-URL navigation.
   const hook = useEntity(entity, detailEntity, { token, apiBaseUrl, skipListFetch: true, refetchAfterSave });
+  // Session-level currency fallback. NEO Headless doesn't return
+  // `currency$_identifier` on every line endpoint (only on the header), so we
+  // back-fill it generically here. Windows that already get it from the
+  // backend or that don't show amount columns are unaffected (the spread
+  // preserves any existing value). Removes the need for per-window
+  // `*LinesTable` wrappers that were doing the same thing manually.
+  const sessionCurrencyCode = useCurrency();
+  const enrichedChildren = useMemo(() => {
+    if (!Array.isArray(hook.children)) return hook.children;
+    if (!sessionCurrencyCode) return hook.children;
+    return hook.children.map(row => (
+      row && row['currency$_identifier'] == null
+        ? { ...row, 'currency$_identifier': sessionCurrencyCode }
+        : row
+    ));
+  }, [hook.children, sessionCurrencyCode]);
   const LinesEmptyState = linesEmptyState ?? bottomSection?.linesEmptyState ?? null;
   const DetailExtraActions = bottomSection?.detailExtraActions ?? null;
+  // Optional function (NOT a hook) that returns menu actions for the
+  // "+ Añadir línea" dropdown. When present, the chevron menu is populated
+  // from this and the visible inline "DetailExtraActions" link is suppressed
+  // — the actions ref-controls the same modal so no functionality is lost.
+  const getLineMenuActions = bottomSection?.lineMenuActions ?? null;
+  const extraActionsRef = useRef(null);
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls).
   // Secondary hooks only consume child-level state (children, handleAddChild, handleDeleteChild,
   // handleSelect) — never the parent list. skipListFetch avoids refetching the parent entity
@@ -334,6 +359,35 @@ export function DetailView({
   const [selectedChildRows, setSelectedChildRows] = useState([]);
   const [selectionBarVisible, setSelectionBarVisible] = useState(false);
   const [selectionBarClosing, setSelectionBarClosing] = useState(false);
+  // Position of the AddLineButton wrapper in viewport coordinates. Drives the
+  // portal-rendered selection bar so its downward shadow always renders OUTSIDE
+  // the linesScrollRef's overflow-auto clipping boundary, regardless of how
+  // many rows are in the table.
+  const addLineWrapperRef = useRef(null);
+  const [barRect, setBarRect] = useState(null);
+  useEffect(() => {
+    if (!selectionBarVisible) return;
+    const el = addLineWrapperRef.current;
+    const scrollEl = linesScrollRef.current;
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      setBarRect({ top: r.top, left: r.left, width: r.width, height: r.height });
+    };
+    measure();
+    let ro = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(measure);
+      ro.observe(el);
+      if (scrollEl) ro.observe(scrollEl);
+    }
+    const events = ['scroll', 'resize'];
+    events.forEach(e => window.addEventListener(e, measure, true));
+    return () => {
+      ro?.disconnect();
+      events.forEach(e => window.removeEventListener(e, measure, true));
+    };
+  }, [selectionBarVisible, linesLayout]);
   // When the bottom section (Docs/Notes/Totals) grows because the user expanded
   // an inner block (e.g., "Añadir descuento total"), the lines area shrinks via
   // flex-1, and rows previously at the bottom of the visible scroll get covered.
@@ -987,8 +1041,20 @@ export function DetailView({
   }, [data?.id, recordId, isNew, apiBaseUrl, entity, token]);
 
   // Guard that controls whether "+ Add Lines" is shown.
-  // When addLineGuard is provided, it receives the current record data and must return true to allow.
-  const canAddLines = addLineGuard ? addLineGuard(data) : true;
+  // 1. Explicit `addLineGuard` from the window wins (business-specific rules).
+  // 2. Otherwise, fall back to the generic "all required header fields must
+  //    be filled" check using `requiredHeaderFields` (emitted by the
+  //    pipeline). This matches the UX where the add-lines button only
+  //    appears once the header form is complete.
+  // 3. Otherwise (no metadata at all), allow.
+  const canAddLines = addLineGuard
+    ? addLineGuard(data)
+    : Array.isArray(requiredHeaderFields) && requiredHeaderFields.length > 0
+      ? requiredHeaderFields.every((k) => {
+          const v = data?.[k];
+          return v != null && v !== '' && !(typeof v === 'string' && v.trim() === '');
+        })
+      : true;
   const windowTitle = breadcrumb
     ? tMenu(breadcrumb.split(' / ').at(-1).trim()) || breadcrumb.split(' / ').at(-1).trim()
     : tMenu(windowName) || windowName || '';
@@ -1629,7 +1695,7 @@ export function DetailView({
                       )}
                       <DetailTable
                         ref={inlineLinesRef}
-                        data={hook.children}
+                        data={enrichedChildren}
                         entity={detailEntity}
                         token={token}
                         apiBaseUrl={apiBaseUrl}
@@ -1882,17 +1948,163 @@ export function DetailView({
 
                       {hook.editing && !isDocumentReadOnly && (allEntryFields.length > 0 || DetailExtraActions) && canAddLines && (
                         <div
-                          className={linesLayout === 'inlineEditable' ? 'sticky bottom-0 bg-white z-10' : ''}
+                          ref={addLineWrapperRef}
+                          className={linesLayout === 'inlineEditable' ? 'sticky bottom-0 bg-white z-10' : 'relative'}
                           style={{ display: 'flex', flexDirection: 'column', gap: 6, borderTop: '0.5px solid var(--color-border-tertiary, #e5e7eb)', padding: linesLayout === 'inlineEditable' ? 8 : '10px 16px' }}
                         >
                           {allEntryFields.length > 0 && (
                             <AddLineButton
                               onClick={handleAddLineClick}
                               label={ui('addLine')}
+                              menuActions={getLineMenuActions
+                                ? getLineMenuActions({ data, importRef: extraActionsRef }).map(a => ({
+                                    ...a,
+                                    label: typeof a.label === 'string' ? (ui(a.label) || a.label) : a.label,
+                                  }))
+                                : undefined}
                             />
                           )}
                           {DetailExtraActions && (
-                            <DetailExtraActions data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} onRefresh={() => hook.fetchChildren?.(data?.id || recordId)} onSave={handleImportClick} forceOpen={forceOpenImport} onForceOpenHandled={() => setForceOpenImport(false)} />
+                            <DetailExtraActions
+                              ref={getLineMenuActions ? extraActionsRef : undefined}
+                              hideTrigger={!!getLineMenuActions}
+                              data={data}
+                              recordId={data?.id || recordId}
+                              token={token}
+                              apiBaseUrl={apiBaseUrl}
+                              onRefresh={() => hook.fetchChildren?.(data?.id || recordId)}
+                              onSave={handleImportClick}
+                              forceOpen={forceOpenImport}
+                              onForceOpenHandled={() => setForceOpenImport(false)}
+                            />
+                          )}
+                          {/* Selection toolbar — portaled to document.body so the
+                              downward shadow renders OUTSIDE the linesScrollRef's
+                              overflow-auto clipping boundary even when scroll is
+                              engaged (many rows). Positioned via fixed coords from
+                              `barRect`, measured off `addLineWrapperRef`. */}
+                          {linesLayout === 'inlineEditable' && (api?.crud?.[detailEntity]?.delete ?? true) && selectionBarVisible && barRect && createPortal(
+                            <div
+                              className="z-50 pointer-events-none"
+                              style={{
+                                position: 'fixed',
+                                top: barRect.top,
+                                left: barRect.left,
+                                width: barRect.width,
+                                height: barRect.height,
+                              }}
+                            >
+                              <div
+                                className={`pointer-events-auto h-full ${selectionBarClosing ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}
+                                style={{
+                                  background: '#FFFFFF',
+                                  boxShadow: '0px 10px 15px -3px rgba(18,18,23,0.08), 0px 4px 6px -2px rgba(18,18,23,0.05)',
+                                  padding: 8,
+                                  animationDuration: '0.45s',
+                                }}
+                              >
+                                <div className="flex items-center justify-between h-full">
+                                  <div className="flex flex-col items-start pl-1">
+                                    <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 600, lineHeight: '24px', color: '#121217' }}>
+                                      {ui('selected', { count: selectedChildRows.length })}
+                                    </span>
+                                    {/* Hide the rolled-up amount in inventory /
+                                        shipment-style windows where the bottom
+                                        panel sets showLineTotals=false (no
+                                        monetary totals to sum). */}
+                                    {bottomSection?.showLineTotals !== false && (
+                                      <span style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 400, lineHeight: '16px', color: '#121217' }}>
+                                        {(() => {
+                                          const total = selectedChildRows.reduce((acc, row) => {
+                                            const v = parseFloat(String(row?.[lineConfig.grossField] ?? row?.lineGrossAmount ?? 0));
+                                            return acc + (Number.isFinite(v) ? v : 0);
+                                          }, 0);
+                                          const formatted = total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                          const curr = data?.['currency$_identifier'] || '';
+                                          return curr ? `${formatted} ${curr}` : formatted;
+                                        })()}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      disabled={deletingChildren}
+                                      title={ui('delete')}
+                                      onClick={async () => {
+                                        if (!(await confirmDelete())) return;
+                                        setDeletingChildren(true);
+                                        try {
+                                          const results = await Promise.allSettled(
+                                            selectedChildRows.map(row => {
+                                              const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', row.id)
+                                                || `${apiBaseUrl}/${detailEntity}/${row.id}`;
+                                              return fetch(childUrl, {
+                                                method: 'DELETE',
+                                                headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                                              }).then(res => ({ res, row }));
+                                            })
+                                          );
+                                          let deleted = 0;
+                                          for (const result of results) {
+                                            if (result.status === 'fulfilled' && result.value.res.ok) {
+                                              hook.handleDeleteChild(result.value.row.id);
+                                              if (selectedLine?.id === result.value.row.id) setSelectedLine(null);
+                                              deleted++;
+                                            }
+                                          }
+                                          inlineLinesRef.current?.clearSelection?.();
+                                          setSelectedChildRows([]);
+                                          if (deleted > 0) toast.success(ui('recordsDeleted', { count: deleted }));
+                                          const failed = results.length - deleted;
+                                          if (failed > 0) toast.error(ui('recordsCouldNotBeDeleted', { count: failed }));
+                                        } catch (err) {
+                                          toast.error(err.message || ui('networkError'));
+                                        } finally {
+                                          setDeletingChildren(false);
+                                        }
+                                      }}
+                                      className="disabled:opacity-50 transition-colors"
+                                      style={{
+                                        width: 40,
+                                        height: 40,
+                                        background: '#FFFFFF',
+                                        border: '1px solid #FBB1C4',
+                                        boxShadow: '0px 1px 2px rgba(18,18,23,0.05)',
+                                        borderRadius: 8,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                      }}
+                                    >
+                                      <Trash2 style={{ width: 18, height: 18, color: '#F3164E' }} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      title={ui('close')}
+                                      onClick={() => {
+                                        inlineLinesRef.current?.clearSelection?.();
+                                        setSelectedChildRows([]);
+                                      }}
+                                      className="transition-colors hover:bg-muted/40"
+                                      style={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 8,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        background: 'transparent',
+                                        border: 'none',
+                                      }}
+                                    >
+                                      <X style={{ width: 20, height: 20, color: '#828FA3' }} />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>,
+                            document.body,
                           )}
                         </div>
                       )}
@@ -2289,121 +2501,6 @@ export function DetailView({
                   </div>
                 )}
                 </div>
-
-                {/* Floating selection toolbar (inlineEditable) — sibling of the scroll
-                    container so it stays anchored to the visible bottom of the tab area
-                    regardless of how far the user has scrolled inside the lines list. */}
-                {linesLayout === 'inlineEditable' && (api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly && selectionBarVisible && (
-                  <div
-                    className="absolute bottom-0 left-0 right-0 z-30 pointer-events-none"
-                    style={{ height: 46, overflowX: 'clip', overflowY: 'visible' }}
-                  >
-                    <div
-                      className={`pointer-events-auto ${selectionBarClosing ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}
-                      style={{
-                        height: 46,
-                        background: '#FFFFFF',
-                        boxShadow: '0px 10px 15px -3px rgba(18,18,23,0.08), 0px 4px 6px -2px rgba(18,18,23,0.05)',
-                        padding: 8,
-                        animationDuration: '0.45s',
-                      }}
-                    >
-                      <div className="flex items-center justify-between h-full">
-                        <div className="flex flex-col items-start pl-1">
-                          <span style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 600, lineHeight: '24px', color: '#121217' }}>
-                            {ui('selected', { count: selectedChildRows.length })}
-                          </span>
-                          <span style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 400, lineHeight: '16px', color: '#121217' }}>
-                            {(() => {
-                              const total = selectedChildRows.reduce((acc, row) => {
-                                const v = parseFloat(String(row?.[lineConfig.grossField] ?? row?.lineGrossAmount ?? 0));
-                                return acc + (Number.isFinite(v) ? v : 0);
-                              }, 0);
-                              const formatted = total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                              const curr = data?.['currency$_identifier'] || '';
-                              return curr ? `${formatted} ${curr}` : formatted;
-                            })()}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            disabled={deletingChildren}
-                            title={ui('delete')}
-                            onClick={async () => {
-                              if (!(await confirmDelete())) return;
-                              setDeletingChildren(true);
-                              try {
-                                const results = await Promise.allSettled(
-                                  selectedChildRows.map(row => {
-                                    const childUrl = api?.crud?.[detailEntity]?.detailUrl?.replace('{id}', row.id)
-                                      || `${apiBaseUrl}/${detailEntity}/${row.id}`;
-                                    return fetch(childUrl, {
-                                      method: 'DELETE',
-                                      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                                    }).then(res => ({ res, row }));
-                                  })
-                                );
-                                let deleted = 0;
-                                for (const result of results) {
-                                  if (result.status === 'fulfilled' && result.value.res.ok) {
-                                    hook.handleDeleteChild(result.value.row.id);
-                                    if (selectedLine?.id === result.value.row.id) setSelectedLine(null);
-                                    deleted++;
-                                  }
-                                }
-                                inlineLinesRef.current?.clearSelection?.();
-                                setSelectedChildRows([]);
-                                if (deleted > 0) toast.success(ui('recordsDeleted', { count: deleted }));
-                                const failed = results.length - deleted;
-                                if (failed > 0) toast.error(ui('recordsCouldNotBeDeleted', { count: failed }));
-                              } catch (err) {
-                                toast.error(err.message || ui('networkError'));
-                              } finally {
-                                setDeletingChildren(false);
-                              }
-                            }}
-                            className="disabled:opacity-50 transition-colors"
-                            style={{
-                              width: 40,
-                              height: 40,
-                              background: '#FFFFFF',
-                              border: '1px solid #FBB1C4',
-                              boxShadow: '0px 1px 2px rgba(18,18,23,0.05)',
-                              borderRadius: 8,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <Trash2 style={{ width: 18, height: 18, color: '#F3164E' }} />
-                          </button>
-                          <button
-                            type="button"
-                            title={ui('close')}
-                            onClick={() => {
-                              inlineLinesRef.current?.clearSelection?.();
-                              setSelectedChildRows([]);
-                            }}
-                            className="transition-colors hover:bg-muted/40"
-                            style={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: 8,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              background: 'transparent',
-                              border: 'none',
-                            }}
-                          >
-                            <X style={{ width: 20, height: 20, color: '#828FA3' }} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
 
               </div>
             )}

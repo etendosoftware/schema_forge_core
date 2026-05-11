@@ -63,6 +63,10 @@ const draftMode = {
 };
 // @sf-generated-end draftMode:header
 
+// @sf-generated-start requiredHeaderFields:header
+const requiredHeaderFields = ['invoiceDate', 'businessPartner', 'partnerAddress', 'priceList', 'paymentTerms', 'paymentMethod'];
+// @sf-generated-end requiredHeaderFields:header
+
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
   entry: [
@@ -868,14 +872,17 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'accounting', label: 'Accounting', Table: AccountingTable, Form: AccountingForm },
           { key: 'reversedInvoices', label: 'Reversed Invoices', Table: ReversedInvoicesTable, Form: ReversedInvoicesForm },
         ]}
+        noHeaderBorder
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         menuActions={({ status }) => [
           { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'reactivated', documentAction: 'RE',  }
         ]}
         draftMode={draftMode}
+        requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}
         lineConfig={INVOICE_LINE_CONFIG}
+        linesLayout="inlineEditable"
         {...props}
       />
     );

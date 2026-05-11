@@ -536,6 +536,17 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Status field gets a badge in the header; summary strip uses only fields with explicit section:'summary'.
   // Prefer DocStatus column (document workflow status) if present, even when form:false.
   const allEntityFields = contract.frontendContract.entities[headerEntity]?.fields ?? [];
+
+  // Required form fields on the header. DetailView uses this as the default
+  // gate for "+ Añadir línea" — the button only appears when all of these are
+  // filled in `data`. Windows can still override with their own addLineGuard
+  // prop for more complex business rules.
+  const requiredHeaderFieldNames = allEntityFields
+    .filter(f => f.required && f.form && f.visibility !== 'discarded' && f.visibility !== 'system')
+    .map(f => f.name);
+  const requiredHeaderFieldsArray = requiredHeaderFieldNames.length > 0
+    ? `[${requiredHeaderFieldNames.map(n => `'${n}'`).join(', ')}]`
+    : '[]';
   const docStatusField = allEntityFields.find(f => f.column === 'DocStatus');
   const statusFieldOverride = contract.frontendContract.window.statusField;
   const statusField = statusFieldOverride
@@ -972,6 +983,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     ? JSON.stringify(draftModeConfig, null, 2)
     : 'null';
   const draftModeProp = draftModeConfig?.enabled ? '\n        draftMode={draftMode}' : '';
+  const requiredHeaderFieldsProp = requiredHeaderFieldNames.length > 0
+    ? '\n        requiredHeaderFields={requiredHeaderFields}'
+    : '';
 
   // entityLabel / detailLabel / detailTabIndex from window decisions config
   const entityLabel = windowConfig.entityLabel || toLabel(headerEntity);
@@ -1147,6 +1161,10 @@ ${MARKERS.GENERATED_START(`draftMode:${headerEntity}`)}
 const draftMode = ${draftModeValue};
 ${MARKERS.GENERATED_END(`draftMode:${headerEntity}`)}
 
+${MARKERS.GENERATED_START(`requiredHeaderFields:${headerEntity}`)}
+const requiredHeaderFields = ${requiredHeaderFieldsArray};
+${MARKERS.GENERATED_END(`requiredHeaderFields:${headerEntity}`)}
+
 ${detailEntity ? `${MARKERS.GENERATED_START(`addLineFields:${detailEntity}`)}
 const addLineFields = {
   entry: [
@@ -1182,7 +1200,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}
         {...props}${sidebarContentProp}
       />
     );
