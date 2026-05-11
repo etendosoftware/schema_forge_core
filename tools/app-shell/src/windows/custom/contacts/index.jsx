@@ -62,15 +62,15 @@ export default function ContactsWindow(props) {
       <>
         <button
           onClick={() => setPendingBulkDelete({ rows: selectedRows, clearSelection, onDataMutated, apiBaseUrl, token })}
-          className="h-10 w-10 flex items-center justify-center rounded-lg border border-[#FBB1C4] bg-white shadow-[0px_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#FFF0F4] transition-colors"
+          className="h-9 w-9 flex items-center justify-center rounded-lg border border-[#FBB1C4] bg-white shadow-[0px_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#FFF0F4] transition-colors"
         >
-          <Trash2 className="h-6 w-6 text-[#F3164E]" />
+          <Trash2 className="h-4 w-4 text-[#F3164E]" />
         </button>
         <button
           onClick={clearSelection}
-          className="h-10 w-10 flex items-center justify-center rounded-lg hover:bg-[#F5F7F9] transition-colors"
+          className="h-9 w-9 flex items-center justify-center rounded-lg hover:bg-[#F5F7F9] transition-colors"
         >
-          <X className="h-6 w-6 text-[#828FA3]" />
+          <X className="h-4 w-4 text-[#828FA3]" />
         </button>
       </>
     ),
@@ -88,7 +88,6 @@ export default function ContactsWindow(props) {
           enableSecondaryRowDelete={true}
           sidebarClassName="w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF]"
           noHeaderBorder={true}
-          toolbarBorderBottom={true}
           toolbarPaddingX="px-2"
           newLabel={ui('newContact')}
           listbarPaddingX="px-2"
