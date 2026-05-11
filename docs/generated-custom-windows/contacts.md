@@ -29,6 +29,7 @@ The Contacts window should let users maintain a shared business-partner master r
 - Visibility: visible as the only non-hidden item in the People menu group.
 - Implementation type: custom `contacts` window registered in the app-shell registry. The wrapper adds a contacts-specific provider, header persona toggle, filtered header form, custom list table, financial panel, location modal, and right-side sidebar around the generated window contract.
 - Shape: master-child window. The master record is `businessPartner`; child work areas are `contact` (Person), `bankAccount`, and `locationAddress`, while the Financial tab also edits related customer/vendor preference fields and discount data.
+- Secondary tab layout: the three child work areas use `window.linesLayout = "inlineEditable"`. Rows render at 40 px with pencil and trash hover-action icons on the right. For `contact` (Persona) and `bankAccount` (Cuenta Bancaria), clicking pencil flips the row into inline edit. For `locationAddress` (Dirección), clicking pencil opens the `LocationEditorModal` instead of inline editing. When one or more rows are checked, a compact selection bar (28 px buttons) appears anchored below the add-line button. See `docs/ui-customization.md` section 13 for the full reference.
 
 ## Reactive behavior and dependencies
 
