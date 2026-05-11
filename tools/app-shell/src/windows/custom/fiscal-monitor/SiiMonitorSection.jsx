@@ -22,6 +22,14 @@ const PAGE_SIZE = 20;
 
 const SII_ERROR_STATUSES = new Set(['IN', 'EE']);
 
+function fmtDate(raw) {
+  if (!raw) return '—';
+  const parts = String(raw).split(/[-/]/);
+  if (parts.length !== 3) return raw;
+  const [y, m, d] = parts;
+  return `${d}/${m}/${y}`;
+}
+
 const SII_STATUS_TABS = [
   { key: 'all',    dot: null,      labelKey: 'fiscalMonitor.sii.filter.all' },
   { key: 'CO',     dot: 'success', labelKey: 'fiscalMonitor.status.sii.CO' },
@@ -220,7 +228,7 @@ export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, 
                 ) : rows.map((row, i) => (
                   <tr key={row.id ?? i}>
                     <td><input type="checkbox" /></td>
-                    <td className="strong">{row.invoiceDate ?? '—'}</td>
+                    <td className="strong">{fmtDate(row.invoiceDate)}</td>
                     <td className="num-factura">
                       <NumFactura
                         n={row.documentNo ?? row[INVOICE_FK_FIELD] ?? '—'}

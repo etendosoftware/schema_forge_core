@@ -15,6 +15,15 @@ const STATUS_TAB_KEYS = [
   { key: 'Pendiente', dot: 'pending', labelKey: 'fiscalMonitor.tbai.tab.Pendiente' },
 ];
 
+function fmtDate(raw) {
+  if (!raw) return '—';
+  const parts = String(raw).split(/[-/]/);
+  if (parts.length !== 3) return raw;
+  const [a, b, c] = parts;
+  // yyyy-mm-dd → dd/mm/yyyy; dd-mm-yyyy already correct, just swap separators
+  return a.length === 4 ? `${c}/${b}/${a}` : `${a}/${b}/${c}`;
+}
+
 // Etendo identifier format: "documentNo – date – amount"
 // Parse into the individual parts we need for display.
 function parseIdentifier(row) {
@@ -147,7 +156,7 @@ export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFi
                   return (
                     <tr key={row.id ?? i}>
                       <td><input type="checkbox" /></td>
-                      <td className="strong">{row.invoiceDate ?? inv.date}</td>
+                      <td className="strong">{fmtDate(row.invoiceDate ?? inv.date)}</td>
                       <td className="num-factura">
                         <NumFactura
                           n={inv.docNo}
