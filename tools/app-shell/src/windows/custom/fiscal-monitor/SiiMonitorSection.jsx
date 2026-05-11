@@ -62,7 +62,7 @@ async function fetchSubtab(base, entity, parentId, page, token, statusFilter) {
   return { data: json?.response?.data ?? [], totalRows: json?.response?.totalRows ?? 0 };
 }
 
-export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, initialTab = 'issued', mockRows, onTabChange }) {
+export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, initialTab = 'issued', mockRows, onTabChange, refreshKey = 0 }) {
   const ui = useUI();
   const [tab, setTab]             = useState('issued');
   const [period, setPeriod]       = useState('current');
@@ -120,7 +120,7 @@ export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, 
       .then(({ data, totalRows }) => { setRows(data); setTotalRows(totalRows); })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [parentId, entityKey, page, token, apiBaseUrl, mockRows, statusFilter]);
+  }, [parentId, entityKey, page, token, apiBaseUrl, mockRows, statusFilter, refreshKey]);
 
   useEffect(() => { setPage(1); }, [tab, period, statusFilter]);
 
