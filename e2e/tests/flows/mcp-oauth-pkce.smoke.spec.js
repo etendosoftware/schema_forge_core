@@ -91,7 +91,7 @@ test.describe('MCP OAuth2 Authorization Code + PKCE deployed smoke', () => {
     }
   });
 
-  test('unauthenticated browser can complete OAuth2 authorization code flow with PKCE', async ({
+  test('unauthenticated OpenCode-style flow requires login, permission, callback, and PKCE token', async ({
     page,
     request,
   }) => {
@@ -145,7 +145,7 @@ test.describe('MCP OAuth2 Authorization Code + PKCE deployed smoke', () => {
       await expectNotOnlyPwaShell(page);
 
       await fillLoginForm(page, SMOKE_USER, SMOKE_PASSCODE);
-      await approveConsentIfNeeded(page, callbackServer.callbackPromise);
+      await expectPermissionPromptAndAuthorize(page, callbackServer.callbackPromise);
 
       const callback = await callbackServer.callbackPromise;
       expect(callback.state).toBe(state);
@@ -310,28 +310,35 @@ async function fillLoginForm(page, user, password) {
   await submit.click();
 }
 
-async function approveConsentIfNeeded(page, callbackPromise) {
+async function expectPermissionPromptAndAuthorize(page, callbackPromise) {
   let callbackReceived = false;
   callbackPromise.then(() => {
     callbackReceived = true;
   }).catch(() => {});
 
-  const consentButtonCandidates = [
-    () => page.getByRole('button', { name: /authorize|allow|approve|accept/i }).first(),
-    () => page.getByTestId('action-oauth-authorize'),
+  const permissionPromptCandidates = [
+    () => page.getByTestId('oauth-consent-view'),
+    () => page.getByTestId('oauth-requested-permissions'),
+    () => page.getByRole('heading', { name: /authorize connection/i }).first(),
+    () => page.getByText(/requested permissions/i).first(),
   ];
 
-  const deadline = Date.now() + 120_000;
-  while (!callbackReceived && Date.now() < deadline) {
-    for (const candidate of consentButtonCandidates) {
+  const deadline = Date.now() + 60_000;
+  while (Date.now() < deadline) {
+    if (callbackReceived) {
+      throw new Error('OAuth callback was received before the user permission prompt was shown.');
+    }
+    for (const candidate of permissionPromptCandidates) {
       const locator = candidate();
       if (await locator.isVisible({ timeout: 500 }).catch(() => false)) {
-        await locator.click();
+        await expectNotOnlyPwaShell(page);
+        await page.getByTestId('oauth-authorize-submit').click();
         return;
       }
     }
     await page.waitForTimeout(500);
   }
+  throw new Error('OAuth authorization did not show the required user permission prompt after login.');
 }
 
 async function expectLoginFlow(page) {

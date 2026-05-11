@@ -29,7 +29,7 @@ npm install -g agent-browser && agent-browser install   # Optional: install agen
 
 ## Deployed MCP OAuth2 Smoke
 
-`e2e/tests/flows/mcp-oauth-pkce.smoke.spec.js` validates the public MCP/OAuth integration after deploy. It is skipped by default because it targets a deployed environment, uses real smoke credentials, can create an OAuth client through DCR, and binds a local callback server.
+`e2e/tests/flows/mcp-oauth-pkce.smoke.spec.js` validates the public MCP/OAuth integration after deploy. It models the browser flow started by `opencode mcp auth etendo`: clean session, OAuth authorize URL, login, requested permissions, explicit authorization, local callback, and PKCE token exchange. It is skipped by default because it targets a deployed environment, uses real smoke credentials, can create an OAuth client through DCR, and binds a local callback server.
 
 Run it explicitly:
 
@@ -75,7 +75,7 @@ The smoke performs these checks:
 2. `/.well-known/oauth-protected-resource` returns JSON with the expected MCP resource.
 3. `POST /mcp` is not blocked by CloudFront/WAF as a method-level `403`.
 4. An unauthenticated authorization request does not resolve to only the Vite/PWA shell.
-5. The user reaches the standard login flow, logs in, continues OAuth, handles consent when present, receives `code` and `state`, and exchanges the code for an `access_token` with PKCE.
+5. The user reaches the standard login flow, logs in, returns to OAuth with the original parameters, sees the requested permissions prompt, explicitly authorizes access, receives `code` and `state`, and exchanges the code for an `access_token` with PKCE.
 
 The app service worker must not serve `index.html` for backend or metadata navigations. `tools/app-shell/vite.config.js` keeps `/etendo/*`, `/mcp`, and `/.well-known/*` in the Workbox navigation fallback denylist while leaving `/authorize` as a SPA route.
 
