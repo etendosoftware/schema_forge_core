@@ -41,7 +41,7 @@ async function fetchStatusTab(base, entity, orgId, page, token) {
   return { data: json?.response?.data ?? [], totalRows: json?.response?.totalRows ?? 0 };
 }
 
-export default function VerifactuMonitorSection({ orgId, token, apiBaseUrl, initialTab = 'accepted', mockRows, onTabChange }) {
+export default function VerifactuMonitorSection({ orgId, token, apiBaseUrl, initialTab = 'accepted', mockRows, onTabChange, refreshKey = 0 }) {
   const ui = useUI();
   const [activeTab, setActiveTab] = useState('accepted');
   const [page, setPage]     = useState(1);
@@ -69,7 +69,7 @@ export default function VerifactuMonitorSection({ orgId, token, apiBaseUrl, init
       .then(({ data, totalRows }) => { setRows(data); setTotalRows(totalRows); })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [orgId, activeTab, page, token, apiBaseUrl, mockRows]);
+  }, [orgId, activeTab, page, token, apiBaseUrl, mockRows, refreshKey]);
 
   useEffect(() => { setPage(1); }, [activeTab]);
 
