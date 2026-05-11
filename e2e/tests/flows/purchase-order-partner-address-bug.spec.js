@@ -31,25 +31,23 @@ test.describe('Purchase Order - Partner Address Bug', () => {
 
     // Search and select a Business Partner via data-testid
     const bpField = page.getByTestId('field-businessPartner');
-    await bpField.fill('Bebidas');
-    await page.waitForTimeout(1_500);
+    await bpField.fill('go');
 
-    // Click the suggestion
-    await page.getByRole('button', { name: 'Bebidas Alegres, S.L.' }).click();
-    await page.waitForTimeout(2_000);
+    // Click the first real backend suggestion.
+    const firstSuggestion = page.locator('[data-testid^="option-businessPartner-"]').first();
+    await expect(firstSuggestion).toBeVisible({ timeout: 10_000 });
+    await firstSuggestion.click();
 
     // Partner Address should now be enabled
     await expect(partnerAddress).toBeEnabled({ timeout: 5_000 });
+    await expect(partnerAddress).not.toHaveValue('', { timeout: 5_000 });
 
     // BUG: The dropdown should have options, not be empty
     // Open the dropdown and check for options
     await partnerAddress.click();
-    await page.waitForTimeout(1_000);
 
     // There should be at least one selectable option (a BP location)
-    const options = page.getByRole('option');
-    const optionCount = await options.count();
-
-    expect(optionCount, 'Partner Address should have at least one location option').toBeGreaterThan(0);
+    await expect(page.getByTestId('options-partnerAddress')).toBeVisible({ timeout: 5_000 });
+    await expect(page.locator('[data-testid^="option-partnerAddress-"]').first()).toBeVisible({ timeout: 5_000 });
   });
 });

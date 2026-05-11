@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 import { login, navigateTo } from '../helpers/auth.js';
-import { physicalInventoryList, physicalInventoryDetail, byRole } from '../helpers/selectors.js';
 
 /**
  * Physical Inventory — flow tests.
@@ -8,8 +7,8 @@ import { physicalInventoryList, physicalInventoryDetail, byRole } from '../helpe
  * Requires the dev server running (make dev or make dev-mock).
  * Auth is seeded via localStorage; /sws/* API calls are intercepted to return empty lists.
  *
- * UI is rendered in es_ES locale — all selectors use Spanish text.
- * Column headers are sortable <button> elements, not role="columnheader".
+ * Selectors use stable data-testid attributes instead of localized labels.
+ * Column headers are sortable <button> elements in list views.
  */
 
 test.describe('Physical Inventory', () => {
@@ -22,71 +21,71 @@ test.describe('Physical Inventory', () => {
   // --- List view ---
 
   test('list view shows window title and New button', async ({ page }) => {
-    await expect(page.locator('text=Inventario físico').first()).toBeVisible();
-    await expect(page.locator('button', { hasText: 'Nuevo' }).last()).toBeVisible();
+    await expect(page.getByTestId('list-view')).toBeVisible();
+    await expect(page.getByTestId('action-new')).toBeVisible();
   });
 
   test('list view shows correct sortable column headers', async ({ page }) => {
-    const cols = physicalInventoryList.columns;
-    await expect(byRole(page, cols.movementDate)).toBeVisible();
-    await expect(byRole(page, cols.name)).toBeVisible();
-    await expect(byRole(page, cols.warehouse)).toBeVisible();
-    await expect(byRole(page, cols.inventoryType)).toBeVisible();
+    await expect(page.getByTestId('column-header-movementDate')).toBeVisible();
+    await expect(page.getByTestId('column-header-name')).toBeVisible();
+    await expect(page.getByTestId('column-header-warehouse')).toBeVisible();
+    await expect(page.getByTestId('column-header-inventoryType')).toBeVisible();
   });
 
   // --- New form ---
 
   test('clicking New opens detail form with required fields', async ({ page }) => {
-    await page.locator('button', { hasText: 'Nuevo' }).last().click();
+    await page.getByTestId('action-new').click();
     await page.waitForURL('**/physical-inventory/new', { timeout: 5_000 });
 
-    // Breadcrumb shows "Nuevo"
-    await expect(page.locator('text=Nuevo').first()).toBeVisible();
+    await expect(page.getByTestId('detail-view')).toBeVisible();
 
     // Required fields present
-    await expect(page.locator('input[type="date"]')).toBeVisible();
-    await expect(byRole(page, physicalInventoryDetail.cancel)).toBeVisible();
-    await expect(byRole(page, physicalInventoryDetail.save)).toBeVisible();
+    await expect(page.getByTestId('field-movementDate')).toBeVisible();
+    await expect(page.getByTestId('field-name')).toBeVisible();
+    await expect(page.getByTestId('field-warehouse')).toBeVisible();
+    await expect(page.getByTestId('action-cancel')).toBeVisible();
+    await expect(page.getByTestId('action-save')).toBeVisible();
   });
 
   test('New form shows Lines tab with correct columns', async ({ page }) => {
-    await page.locator('button', { hasText: 'Nuevo' }).last().click();
+    await page.getByTestId('action-new').click();
     await page.waitForURL('**/physical-inventory/new', { timeout: 5_000 });
 
-    // Lines tab
-    await expect(page.locator('button', { hasText: /Líneas/ })).toBeVisible();
+    await expect(page.getByTestId('detail-view')).toBeVisible();
 
     // Line columns are <th> elements (not sortable buttons in detail view)
-    await expect(page.locator('th', { hasText: 'Línea' })).toBeVisible();
-    await expect(page.locator('th', { hasText: 'Producto' })).toBeVisible();
-    await expect(page.locator('th', { hasText: 'Conteo del usuario' })).toBeVisible();
-    await expect(page.locator('th', { hasText: 'Unidad' })).toBeVisible();
-    await expect(page.locator('th', { hasText: 'Conteo del sistema' })).toBeVisible();
+    await expect(page.getByTestId('column-header-lineNo')).toBeVisible();
+    await expect(page.getByTestId('column-header-product')).toBeVisible();
+    await expect(page.getByTestId('column-header-quantityCount')).toBeVisible();
+    await expect(page.getByTestId('column-header-uOM')).toBeVisible();
+    await expect(page.getByTestId('column-header-bookQuantity')).toBeVisible();
   });
 
   test('Cancel returns to list view', async ({ page }) => {
-    await page.locator('button', { hasText: 'Nuevo' }).last().click();
+    await page.getByTestId('action-new').click();
     await page.waitForURL('**/physical-inventory/new', { timeout: 5_000 });
 
-    await byRole(page, physicalInventoryDetail.cancel).click();
+    await page.getByTestId('action-cancel').click();
 
     await page.waitForURL('**/physical-inventory', { timeout: 5_000 });
-    await expect(page.locator('text=Inventario físico').first()).toBeVisible();
+    await expect(page.getByTestId('list-view')).toBeVisible();
   });
 
   // --- Inline add line ---
 
   test('Add line button opens inline row with product and count fields', async ({ page }) => {
-    await page.locator('button', { hasText: 'Nuevo' }).last().click();
+    await page.getByTestId('action-new').click();
     await page.waitForURL('**/physical-inventory/new', { timeout: 5_000 });
 
-    // Clicking "Añadir línea" saves the header first, then shows the inline add row
-    await page.locator('button', { hasText: 'Añadir línea' }).first().click();
+    // Clicking Add Line saves the header first, then shows the inline add row.
+    await page.getByTestId('action-add-line').click();
 
-    // Wait for the inline row to appear (placeholders come from the generated addLineFields,
-    // not from the locale dictionary — they are always English regardless of UI locale)
-    await expect(page.locator('input[placeholder="Line No."]')).toBeVisible({ timeout: 5_000 });
-    await expect(page.locator('input[placeholder="User Count"]')).toBeVisible();
+    // Wait for the inline row to appear. Current UI renders numeric inputs without placeholders.
+    await expect(page.getByTestId('inline-add-row')).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId('inline-add-field-lineNo')).toBeVisible();
+    await expect(page.getByTestId('inline-add-field-product')).toBeVisible();
+    await expect(page.getByTestId('inline-add-field-quantityCount')).toBeVisible();
   });
 
   // --- forceCalloutFields invariant ---
@@ -95,12 +94,13 @@ test.describe('Physical Inventory', () => {
   // The route intercept in auth.js returns a synthetic product suggestion and callout
   // response ({ quantityCount: 42 }), so this test runs without VITE_MOCK=true.
   test('selecting a product overwrites user-typed userCount (forceCalloutFields)', async ({ page }) => {
-    await page.locator('button', { hasText: 'Nuevo' }).last().click();
+    await page.getByTestId('action-new').click();
     await page.waitForURL('**/physical-inventory/new', { timeout: 5_000 });
-    await byRole(page, physicalInventoryDetail.addLine).click();
+    await page.getByTestId('action-add-line').click();
 
     // Wait for inline add row (POST saves the header first, then row appears)
-    const userCountInput = page.locator('input[placeholder="User Count"]');
+    await expect(page.getByTestId('inline-add-row')).toBeVisible({ timeout: 5_000 });
+    const userCountInput = page.getByTestId('inline-add-field-quantityCount');
     await expect(userCountInput).toBeVisible({ timeout: 5_000 });
 
     // User manually types 999 in userCount BEFORE selecting a product
@@ -108,13 +108,13 @@ test.describe('Physical Inventory', () => {
 
     // The product field is a PopupSearchInput: a button that opens a drawer dialog.
     // Click the button to open it, then type in the inner search input.
-    const productButton = page.locator('td button:has(svg)').first();
+    const productButton = page.getByTestId('inline-add-field-product');
     await expect(productButton).toBeVisible({ timeout: 3_000 });
     await productButton.click();
 
     const drawerInput = page.locator('[role="dialog"] input[type="text"]');
     await expect(drawerInput).toBeVisible({ timeout: 3_000 });
-    await drawerInput.fill('Test');
+    await drawerInput.fill('a');
 
     // Select first result — route intercept ensures "Test Product" appears
     const firstResult = page.locator('[role="dialog"] li button').first();

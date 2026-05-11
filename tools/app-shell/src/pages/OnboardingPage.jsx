@@ -183,7 +183,7 @@ function OnboardingLanguageSelect({ label, locale, onChange, options }) {
 
 const AUTH_FEATURE_KEYS = ['onboardingAuthFeatureNoCard', 'onboardingAuthFeatureTrial', 'onboardingAuthFeatureInstantAccess'];
 
-function AuthShell({ brandLabel, switchPrompt, switchAction, onSwitch, headerContent, marketingTitle, marketingDescription, featureLabels, children }) {
+function AuthShell({ brandLabel, switchPrompt, switchAction, switchTestId, onSwitch, headerContent, marketingTitle, marketingDescription, featureLabels, children }) {
   return (
     <div className="min-h-screen bg-white">
       <div className="flex min-h-screen w-full bg-white lg:grid lg:grid-cols-[minmax(0,1.12fr)_minmax(420px,0.88fr)]">
@@ -196,6 +196,7 @@ function AuthShell({ brandLabel, switchPrompt, switchAction, onSwitch, headerCon
                 {switchPrompt}{' '}
                 <button
                   type="button"
+                  data-testid={switchTestId}
                   onClick={onSwitch}
                   className="font-medium text-slate-900 underline underline-offset-4 transition hover:text-slate-700"
                 >
@@ -800,6 +801,7 @@ export default function OnboardingPage() {
       <AuthShell
         switchPrompt={ui('onboardingSwitchToLoginPrompt')}
         switchAction={ui('onboardingSwitchToLoginAction')}
+        switchTestId="action-switch-to-login"
         onSwitch={() => {
           setRegisterError(null);
           setLoginError(null);
@@ -880,6 +882,7 @@ export default function OnboardingPage() {
 
           <Button
             type="submit"
+            data-testid="action-register-submit"
             disabled={registerLoading}
             className="h-12 w-full rounded-2xl bg-gray-900 text-base font-medium text-white hover:bg-gray-800"
           >
@@ -898,6 +901,7 @@ export default function OnboardingPage() {
       <AuthShell
         switchPrompt={ui('onboardingSwitchToRegisterPrompt')}
         switchAction={ui('onboardingSwitchToRegisterAction')}
+        switchTestId="action-switch-to-register"
         onSwitch={() => {
           setRegisterError(null);
           setLoginError(null);
@@ -965,6 +969,7 @@ export default function OnboardingPage() {
 
           <Button
             type="submit"
+            data-testid="action-login-submit"
             disabled={loginLoading}
             className="h-12 w-full rounded-2xl bg-gray-900 text-base font-medium text-white hover:bg-gray-800"
           >
@@ -1061,6 +1066,7 @@ export default function OnboardingPage() {
                   <Button
                     variant="ghost"
                     size="sm"
+                    data-testid={`action-enter-environment-${env.clientId}`}
                     onClick={() => loginToEnvironment(env)}
                     disabled={loggingIn === env.clientId}
                     className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
