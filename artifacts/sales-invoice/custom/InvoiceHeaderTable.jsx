@@ -52,7 +52,6 @@ export default function InvoiceHeaderTable(props) {
   const { token, apiBaseUrl, data } = props;
   const dictionary = useLocale();
   const { locale } = useLocaleSwitch();
-  const ui = useUI();
   const gl = dictionary?.genericLabels || {};
   const t = (key) => gl[key] || key;
 
