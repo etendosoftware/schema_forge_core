@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { DataTable } from '@/components/contract-ui';
-import { useUI } from '@/i18n';
+import { useLocale } from '@/i18n';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
 import { getInvoiceFiscalTargets } from '@/windows/custom/shared/fiscalTargets.js';
@@ -25,7 +25,8 @@ const FILTERS = ['documentNo', 'invoiceDate', 'businessPartner', 'orderReference
 
 export default function InvoiceHeaderTable(props) {
   const { token, apiBaseUrl, data } = props;
-  const ui = useUI();
+  const dictionary = useLocale();
+  const gl = dictionary?.genericLabels || {};
 
   const { selectedOrg } = useAuth();
   const orgId = selectedOrg?.id ?? null;
@@ -36,22 +37,25 @@ export default function InvoiceHeaderTable(props) {
   const ids = useMemo(() => (data || []).map(r => r.id).filter(Boolean), [data]);
   const { statusMap, loading: fiscalLoading } = useInvoiceListFiscalStatus(ids, 'purchase-invoice', profile, apiBaseUrl, token, orgId);
 
+  const siiColLabel = gl['invoiceList.col.siiStatus']       || 'SII Status';
+  const vfColLabel  = gl['invoiceList.col.verifactuStatus'] || 'Verifactu Status';
+
   const columns = useMemo(() => {
     const fiscalCols = [];
     if (targets.showSii) {
       fiscalCols.push({
-        key: '_siiStatus', type: 'custom', label: ui('invoiceList.col.siiStatus'),
+        key: '_siiStatus', type: 'custom', label: siiColLabel,
         render: (row) => <FiscalStatusBadge status={statusMap?.[row.id]?.sii} loading={fiscalLoading && !statusMap} />,
       });
     }
     if (targets.showVerifactu) {
       fiscalCols.push({
-        key: '_vfStatus', type: 'custom', label: ui('invoiceList.col.verifactuStatus'),
+        key: '_vfStatus', type: 'custom', label: vfColLabel,
         render: (row) => <FiscalStatusBadge status={statusMap?.[row.id]?.verifactu} loading={fiscalLoading && !statusMap} />,
       });
     }
     return [...BASE_COLUMNS, ...fiscalCols, ...TAIL_COLUMNS];
-  }, [targets, fiscalLoading, statusMap, ui]);
+  }, [targets, fiscalLoading, statusMap, siiColLabel, vfColLabel]);
 
   return <DataTable columns={columns} filters={FILTERS} {...props} />;
 }

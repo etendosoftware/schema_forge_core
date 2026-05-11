@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { DataTable } from '@/components/contract-ui';
-import { useLocale, useLocaleSwitch, useUI } from '@/i18n';
+import { useLocale, useLocaleSwitch } from '@/i18n';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { formatCalendarDate, getCalendarDateRelation } from '@/lib/dateOnly';
 import {
@@ -65,24 +65,29 @@ export default function InvoiceHeaderTable(props) {
   const ids = useMemo(() => (data || []).map(r => r.id).filter(Boolean), [data]);
   const { statusMap, loading: fiscalLoading } = useInvoiceListFiscalStatus(ids, 'sales-invoice', profile, apiBaseUrl, token, orgId);
 
+  // Derive stable label strings from gl (avoids putting the unstable ui() fn in useMemo deps)
+  const siiColLabel  = gl['invoiceList.col.siiStatus']       || 'SII Status';
+  const tbaiColLabel = gl['invoiceList.col.tbaiStatus']      || 'TBAI Status';
+  const vfColLabel   = gl['invoiceList.col.verifactuStatus'] || 'Verifactu Status';
+
   // ─── Custom columns ────────────────────────────────────────────
   const columns = useMemo(() => {
     const fiscalCols = [];
     if (targets.showSii) {
       fiscalCols.push({
-        key: '_siiStatus', type: 'custom', label: ui('invoiceList.col.siiStatus'),
+        key: '_siiStatus', type: 'custom', label: siiColLabel,
         render: (row) => <FiscalStatusBadge status={statusMap?.[row.id]?.sii} loading={fiscalLoading && !statusMap} />,
       });
     }
     if (targets.showTbai) {
       fiscalCols.push({
-        key: '_tbaiStatus', type: 'custom', label: ui('invoiceList.col.tbaiStatus'),
+        key: '_tbaiStatus', type: 'custom', label: tbaiColLabel,
         render: (row) => <FiscalStatusBadge status={statusMap?.[row.id]?.tbai} loading={fiscalLoading && !statusMap} />,
       });
     }
     if (targets.showVerifactu) {
       fiscalCols.push({
-        key: '_vfStatus', type: 'custom', label: ui('invoiceList.col.verifactuStatus'),
+        key: '_vfStatus', type: 'custom', label: vfColLabel,
         render: (row) => <FiscalStatusBadge status={statusMap?.[row.id]?.verifactu} loading={fiscalLoading && !statusMap} />,
       });
     }
@@ -118,7 +123,7 @@ export default function InvoiceHeaderTable(props) {
       { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
       { key: 'eTGODeliveryStatus', column: 'em_etgo_delivery_status', type: 'percent' },
     ];
-  }, [gl, locale, targets, fiscalLoading, statusMap, ui]);
+  }, [gl, locale, targets, fiscalLoading, statusMap, siiColLabel, tbaiColLabel, vfColLabel]);
 
   // ─── Filter options ───────────────────────────────────────────
   const TYPE_OPTIONS = useMemo(() => [
