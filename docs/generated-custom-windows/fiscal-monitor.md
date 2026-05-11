@@ -137,6 +137,32 @@ Three arrays with realistic Spanish invoice data:
 | `MOCK_VF_ROWS` | Verifactu | 8 rows — 4 aceptadas, 2 parcialmenteAceptadas, 1 rechazadas, 1 invalidas | `verifactuSendingStatus` field used for filtering |
 | `MOCK_MONITOR_DATA` | All | KPI counts | Must always match the array lengths above |
 
+## Refresh
+
+Both `FiscalMonitorPage` and `FiscalConfigPage` expose a manual refresh control.
+
+**FiscalMonitorPage:** The `OrgLead` bar replaces the static "Sincronizado" indicator with a `RefreshButton` component. When idle it shows the sync dot + "Sincronizado" label (same visual). When loading it shows a spinning `RefreshCw` icon (Lucide) and is non-clickable. Clicking calls `refetch()` (re-loads profile + KPIs via `useFiscalMonitor`) and increments `refreshKey` — a counter passed as prop to all three section components. Each section adds `refreshKey` to its row-fetch `useEffect` dependency array, re-triggering the current tab/page/filter fetch without resetting those states.
+
+**FiscalConfigPage:** A small `RefreshCw` icon button in the page header calls `refetch` from `useFiscalConfig`. No `refreshKey` propagation needed — section components re-render completely on `refetch`.
+
+i18n key: `fiscalMonitor.refresh` → "Actualizar" / "Refresh".
+
+## Fiscal Status in InvoicePreviewModal
+
+`StatsPanel` (inside `InvoicePreviewModal`) renders per-system submission status rows directly below the document "Estado" row. Visibility is driven by `getInvoiceFiscalTargets(specName, profile)` — only rows where `showSii`/`showTbai`/`showVerifactu` is `true` are rendered.
+
+Status is fetched by `useFiscalStatus(invoiceId, specName, profile, apiBaseUrl, token)` from `tools/app-shell/src/windows/custom/shared/useFiscalStatus.js`. It queries in parallel (via `Promise.all`) once per active system on mount:
+
+| System | Spec | Entity | FK field | Status field |
+|--------|------|--------|----------|--------------|
+| SII | `sii-monitor` | `issuedInvoices` (then `receivedInvoices` fallback) | `aeatsiiInvoice` | `aeatsiiEstado` |
+| TBAI | `tbai-facturas-enviadas` | `sincronización` | `invoice` | `estado` |
+| Verifactu | `monitor-verifactu` | `facturasAceptadas` → `partiallyAcceptedInvoices` → `facturasRechazadas` → `facturasInválidas` (first match) | `invoice` | `verifactuSendingStatus` |
+
+No match → pill shows `PE` (SII/Verifactu) or `Pendiente` (TBAI). While fetching, rows show a skeleton shimmer.
+
+i18n keys: `invoicePreview.fiscalStatus.sii`, `invoicePreview.fiscalStatus.tbai`, `invoicePreview.fiscalStatus.verifactu`.
+
 ## Interaction model
 
 - Route: `/fiscal-monitor` (custom window).
