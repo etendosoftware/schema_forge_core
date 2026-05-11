@@ -209,12 +209,12 @@ describe('getReadOnlyFields', () => {
 describe('generateTableComponent', () => {
   it('imports DataTable from contract-ui', () => {
     const code = generateTableComponent('order', masterDetailContract);
-    assert.ok(code.includes("import { DataTable } from '@/components/contract-ui'"));
+    assert.ok(code.includes("import { DataTable, InlineLinesPanel } from '@/components/contract-ui'"));
   });
 
   it('exports a named component with PascalCase entity name + Table', () => {
     const code = generateTableComponent('order', masterDetailContract);
-    assert.ok(code.includes('export default function OrderTable'));
+    assert.ok(code.includes('export default OrderTable'));
   });
 
   it('renders DataTable with columns, filters, and spread props', () => {
