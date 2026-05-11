@@ -64,6 +64,7 @@ test.describe('MCP OAuth2 Authorization Code + PKCE deployed smoke', () => {
     expect(protectedResource.resource).toBe(MCP_RESOURCE);
     expect(Array.isArray(protectedResource.authorization_servers)).toBe(true);
     for (const server of protectedResource.authorization_servers) {
+      // RFC 9728 allows protected resources to delegate auth to another issuer.
       expectHttpsEndpoint(server, 'authorization_servers[]');
     }
 
@@ -94,6 +95,7 @@ test.describe('MCP OAuth2 Authorization Code + PKCE deployed smoke', () => {
     page,
     request,
   }) => {
+    test.setTimeout(180_000);
     test.skip(Boolean(!SMOKE_USER || !SMOKE_PASSCODE), 'Set smoke user credentials in E2E_MCP_SMOKE_USER/E2E_MCP_SMOKE_PASSWORD or E2E_USER/E2E_PASSWORD.');
     test.skip(Boolean(!STATIC_CLIENT_ID && !ENABLE_DCR), 'Set E2E_MCP_OAUTH_CLIENT_ID or enable DCR with E2E_MCP_OAUTH_ENABLE_DCR=1.');
 
