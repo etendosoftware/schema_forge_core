@@ -14,7 +14,7 @@ function buildHeaders(token) {
 /**
  * Extract a human-readable error message from a NEO Headless error response.
  */
-async function extractErrorMessage(res, ui) {
+export async function extractErrorMessage(res, ui) {
   try {
     const data = await res.json();
 

@@ -147,6 +147,7 @@ export default function UnitOfMeasurePage({ windowName, recordId, ...props }) {
       api={api}
       hidePrint
       hideMoreMenu
+      rowQuickActions={{}}
       {...props}
     />
   );

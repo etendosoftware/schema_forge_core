@@ -196,6 +196,7 @@ export default function MovementPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="movementDate"
+      rowQuickActions={{}}
       {...props}
     />
   );

@@ -686,6 +686,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       bulkActions={(ctx) => <PurchaseOrderReactivateBulkAction {...ctx} />}
       hidePrint
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
       {...props}
     />
   );

@@ -891,6 +891,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       api={api}
       dateFilterKey="invoiceDate"
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
       {...props}
     />
   );

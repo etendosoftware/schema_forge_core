@@ -21,6 +21,7 @@ import { applyCalloutUpdates } from '@/lib/applyCalloutUpdates.js';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import InternalConsumptionProductSearchDrawer from './InternalConsumptionProductSearchDrawer.jsx';
 import { SelectorInput } from './SelectorInput.jsx';
+import RowQuickActions from './RowQuickActions.jsx';
 
 /**
  * Compact inline combobox for search-type FK fields in rapid line entry.
@@ -296,7 +297,7 @@ const NUMERIC_FIELD_TYPES = new Set(['number', 'integer', 'decimal', 'quantity',
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
-const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, token, apiBaseUrl, entity, selectorContext }, ref) {
+const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, hasQuickActionsColumn, token, apiBaseUrl, entity, selectorContext }, ref) {
   const t = useLabel();
   const fieldMap = useMemo(() => {
     const map = {};
@@ -764,6 +765,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           {hasCloneColumn && <TableCell className="w-10" />}
         </>
       )}
+      {hasQuickActionsColumn && <TableCell className="w-10" />}
     </TableRow>
   );
 });
@@ -916,6 +918,33 @@ export function DataTable({
   labelOverrides,
   onDeleteRow,
   onCloneRow,
+  /**
+   * Row Quick Actions overlay (ETP-3914 slice 2).
+   * Optional. When provided and `enabled !== false`, renders a hover-revealed
+   * overlay anchored to the right edge of each row, mirroring DetailView toolbar
+   * actions. Independent of `onDeleteRow` / `onCloneRow` — those continue to work
+   * for legacy callers that have not migrated yet.
+   *
+   * Shape (all keys optional except `enabled`):
+   *   {
+   *     enabled?: boolean,                  // defaults to true when object is present
+   *     editMode?: 'navigate' | 'inline',   // forwarded from decisions.json (slice 3)
+   *     onEdit?: (row) => void,
+   *     onClone?: (row) => void,
+   *     onEmail?: (row) => void,
+   *     onDelete?: (row) => void,
+   *     menuActions?: Array<MenuAction>,    // forwarded to RowQuickActions' kebab
+   *     documentPreview?: boolean | object, // truthy ⇒ show Email button
+   *     statusField?: string,
+   *     hideDeleteWhenComplete?: boolean,
+   *     onMenuActionExecuted?: (action, result) => void,
+   *     // Per-action overrides from decisions.json → window.rowQuickActions.actions.
+   *     // Keyed by canonical name ('edit', 'duplicate', 'email', 'delete') or processKey.
+   *     // Each entry: { show: boolean | 'fixed' | 'kebab', visibleWhen?: string }
+   *     actions?: Record<string, { show?: boolean|'fixed'|'kebab', visibleWhen?: string }>,
+   *   }
+   */
+  rowQuickActions,
   onFilterChange,
   onClearAllFilters,
   columnFilters = {},
@@ -1252,10 +1281,13 @@ export function DataTable({
     });
   };
 
-  const deleteCol = onDeleteRow ? 1 : 0;
-  const cloneCol = onCloneRow ? 1 : 0;
+  const quickActionsEnabled = !!rowQuickActions && rowQuickActions.enabled !== false;
+  const legacyDeleteEnabled = !!onDeleteRow && (hoverRowActions || !quickActionsEnabled);
+  const deleteCol = legacyDeleteEnabled ? 1 : 0;
+  const cloneCol = onCloneRow && !quickActionsEnabled ? 1 : 0;
+  const quickActionsCol = quickActionsEnabled ? 1 : 0;
   const actionCols = hoverRowActions ? 1 + deleteCol : deleteCol + cloneCol;
-  const colSpan = visibleColumns.length + (selectable ? 1 : 0) + actionCols;
+  const colSpan = visibleColumns.length + (selectable ? 1 : 0) + actionCols + quickActionsCol;
   const selectedRowBg = hoverRowActions ? 'bg-[#F5F7F9]' : 'bg-primary/5';
 
   return (
@@ -1309,10 +1341,11 @@ export function DataTable({
                 </>
               ) : (
                 <>
-                  {onDeleteRow && <TableHead className="w-10 px-2" />}
-                  {onCloneRow && <TableHead className="w-10 px-2" />}
+                  {legacyDeleteEnabled && <TableHead className="w-10 px-2" />}
+                  {onCloneRow && !quickActionsEnabled && <TableHead className="w-10 px-2" />}
                 </>
               )}
+              {quickActionsEnabled && <TableHead className="w-10 px-2" aria-hidden="true" />}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -1432,7 +1465,7 @@ export function DataTable({
                       </>
                     ) : (
                       <>
-                        {onDeleteRow && (
+                        {legacyDeleteEnabled && (
                           <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
                             <button
                               type="button"
@@ -1458,7 +1491,7 @@ export function DataTable({
                             </button>
                           </TableCell>
                         )}
-                        {onCloneRow && (
+                        {onCloneRow && !quickActionsEnabled && (
                           <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
                             <div className="relative group/clonebtn flex items-center justify-center">
                               <button
@@ -1478,6 +1511,26 @@ export function DataTable({
                         )}
                       </>
                     )}
+                    {quickActionsEnabled && (
+                      <TableCell className="w-10 px-2 relative" onClick={(e) => e.stopPropagation()}>
+                        <RowQuickActions
+                          row={row}
+                          entity={entity}
+                          apiBaseUrl={apiBaseUrl}
+                          token={token}
+                          documentPreview={rowQuickActions.documentPreview}
+                          menuActions={rowQuickActions.menuActions}
+                          hideDeleteWhenComplete={rowQuickActions.hideDeleteWhenComplete}
+                          statusField={rowQuickActions.statusField}
+                          onEdit={rowQuickActions.onEdit}
+                          onClone={rowQuickActions.onClone}
+                          onEmail={rowQuickActions.onEmail}
+                          onDelete={rowQuickActions.onDelete}
+                          onMenuActionExecuted={rowQuickActions.onMenuActionExecuted}
+                          actionsConfig={rowQuickActions.actions}
+                        />
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })
@@ -1494,10 +1547,11 @@ export function DataTable({
                 onFieldChange={addRow.onFieldChange}
                 onValuesChange={addRow.onValuesChange}
                   selectable={selectable}
-                  hasDeleteColumn={!hoverRowActions && !!onDeleteRow}
-                  hasCloneColumn={!hoverRowActions && !!onCloneRow}
+                  hasDeleteColumn={!hoverRowActions && legacyDeleteEnabled}
+                  hasCloneColumn={!hoverRowActions && !!onCloneRow && !quickActionsEnabled}
                   hoverRowActions={hoverRowActions}
                   hoverRowHasDelete={hoverRowActions && !!onDeleteRow}
+                  hasQuickActionsColumn={quickActionsEnabled}
                   token={token}
                   apiBaseUrl={apiBaseUrl}
                   entity={entity}
@@ -1523,10 +1577,11 @@ export function DataTable({
                   </>
                 ) : (
                   <>
-                    {onDeleteRow && <TableCell />}
-                    {onCloneRow && <TableCell />}
+                    {legacyDeleteEnabled && <TableCell />}
+                    {onCloneRow && !quickActionsEnabled && <TableCell />}
                   </>
                 )}
+                {quickActionsEnabled && <TableCell />}
               </TableRow>
             </TableFooter>
           )}

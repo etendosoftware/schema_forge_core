@@ -191,7 +191,7 @@ export function generateTableComponent(entityName, contract) {
     let renderPart = '';
     if (f.cellType === 'depreciationProgress') renderPart = ', render: renderDepreciationProgress';
     else if (f.cellType === 'taxRate') renderPart = ', render: renderTaxRate';
-    else if (f.cellType === 'taxScope') renderPart = `, render: (row) => renderTaxScope(row, '${f.name}')`;
+    else if (f.cellType === 'taxScope') renderPart = `, render: (row) => <TaxScopeCell row={row} fieldKey="${f.name}" />`;
     return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart} },`;
   }).join('\n');
 
@@ -688,6 +688,10 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const titleField = windowConfig.titleField ?? null;
   const salesTheme = windowConfig.salesTheme ?? false;
   const lineEntityConfig = windowConfig.lineEntityConfig ?? null;
+  // ETP-3914 — Row Quick Actions overlay config (defaults injected by resolve-curated.js).
+  // When the entire feature is disabled we skip emitting the prop so the list view is
+  // identical to the pre-feature behavior.
+  const rowQuickActions = windowConfig.rowQuickActions ?? null;
 
   // Detect secondary child entities for additional tabs
   const secondaryTabsDecl = windowConfig.secondaryTabs;
@@ -1061,6 +1065,18 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     ? `\nconst labelOverrides = ${JSON.stringify(labelOverridesConfig, null, 2)};\n`
     : '';
 
+  // ETP-3914 — rowQuickActions prop forwarded to ListView.
+  // The feature is ON by default for every window. The contract only carries a block
+  // when the user wants to override defaults (decisions.json → window.rowQuickActions).
+  // The generator forwards whatever is declared verbatim; an empty `{}` is enough to
+  // mount the overlay since DataTable + RowQuickActions resolve defaults at runtime.
+  // We skip emission entirely only when the user explicitly set `enabled: false`.
+  let rowQuickActionsProp = '';
+  if (!rowQuickActions || rowQuickActions.enabled !== false) {
+    const declarativePart = rowQuickActions ?? {};
+    rowQuickActionsProp = `\n      rowQuickActions={${JSON.stringify(declarativePart)}}`;
+  }
+
   // newActions support — split button dropdown on the list view
   const hasNewActions = newActionsConfig.length > 0;
   const newActionsStatements = newActionsWithComponents.map(a => {
@@ -1173,7 +1189,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}${rowQuickActionsProp}
       {...props}${customComponents.newRecordComponent ? `
       onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}
     />${customComponents.newRecordComponent ? `

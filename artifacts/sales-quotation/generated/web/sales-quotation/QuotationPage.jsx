@@ -435,6 +435,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
       dateFilterKey="orderDate"
       hidePrint
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
       {...props}
     />
   );

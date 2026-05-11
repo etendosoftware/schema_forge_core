@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { useEntity } from '@/hooks/useEntity';
+import { useRowDelete } from '@/hooks/useRowDelete';
 import { useMenuLabel, useLabel, useUI } from '@/i18n';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
@@ -66,6 +67,10 @@ export function ListView({
   hoverRowActions = false,
   selectionBarSize = 'sm',
   selectionBarRightActions = null,
+  // ETP-3914 — Row Quick Actions overlay. Forwarded to the inner DataTable through the
+  // generated `${headerName}Table` (which spreads its props). Optional. See DataTable.jsx
+  // for the full shape.
+  rowQuickActions = null,
 }) {
   // Subset filters — radio-style, always one active, applied first.
   const [activeSubsetIndex, setActiveSubsetIndex] = useState(() => {
@@ -276,6 +281,27 @@ export function ListView({
   }, [refreshTrigger]);
 
   const navigate = useNavigate();
+  // ETP-3914 — when rowQuickActions is enabled but the host did not supply
+  // onEdit/onDelete, wire sensible defaults: navigate to detail and reuse the
+  // shared delete confirm + DELETE pipeline. Custom overrides that pass their
+  // own handlers (sales-order, purchase-order, sales-invoice, purchase-invoice)
+  // win — we only fill blanks.
+  const quickActionsEnabled = !!rowQuickActions && rowQuickActions.enabled !== false;
+  const { requestDelete: defaultRequestDelete, deleteDialog: defaultDeleteDialog } = useRowDelete({
+    apiBaseUrl,
+    entity: entity || 'header',
+    token,
+    onSuccess: () => refreshRef.current?.(),
+  });
+  const effectiveRowQuickActions = useMemo(() => {
+    if (!quickActionsEnabled) return rowQuickActions;
+    return {
+      ...rowQuickActions,
+      onEdit: rowQuickActions.onEdit
+        || ((row) => row?.id && navigate(`/${windowName || entity}/${row.id}`)),
+      onDelete: rowQuickActions.onDelete || defaultRequestDelete,
+    };
+  }, [quickActionsEnabled, rowQuickActions, navigate, windowName, entity, defaultRequestDelete]);
   const tMenu = useMenuLabel();
   const t = useLabel(labelOverrides);
   const ui = useUI();
@@ -668,6 +694,7 @@ export function ListView({
                     rowFilter={effectiveRowFilter}
                     hoverRowActions={hoverRowActions}
                     clearSelectionTrigger={clearSelectionCounter}
+                    rowQuickActions={effectiveRowQuickActions}
                   />
                 )
               }
@@ -703,6 +730,7 @@ export function ListView({
         documentIds={selectedRows.map(r => r.id || r)}
         token={token}
       />
+      {quickActionsEnabled && !rowQuickActions?.onDelete && defaultDeleteDialog}
     </div>
   );
 }

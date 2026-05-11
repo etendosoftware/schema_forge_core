@@ -549,6 +549,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="paymentDate"
+      rowQuickActions={{}}
       {...props}
     />
   );

@@ -403,6 +403,61 @@ async function ruleF10(artifactDir, artifactName, registryContent, repoRoot = RO
   return null;
 }
 
+/**
+ * Canonical row-quick-action keys that never need to be validated against the menu/process
+ * list — they always have built-in handlers (Edit/Duplicate/Email/Delete).
+ */
+const ROW_QUICK_ACTION_CANONICAL_KEYS = new Set(['edit', 'duplicate', 'email', 'delete']);
+
+/**
+ * F11: `window.rowQuickActions.actions.<key>` references a process key that does NOT exist
+ * in the window's `menuActions` / `processOverrides` declaration.
+ *
+ * Canonical keys (edit/duplicate/email/delete) are always valid and never reported.
+ * Detection runs on the raw `decisions.json` (no contract needed) so it works even before
+ * the contract has been regenerated.
+ *
+ * @param {string} artifactDir
+ * @param {string} artifactName
+ * @returns {Promise<object|null>}
+ */
+async function ruleF11(artifactDir, artifactName) {
+  const decisionsPath = join(artifactDir, 'decisions.json');
+  if (!(await fileExists(decisionsPath))) return null;
+
+  const decisions = await readJSON(decisionsPath);
+  const win = decisions.window;
+  const rqa = win?.rowQuickActions;
+  if (!rqa || typeof rqa !== 'object') return null;
+  const actions = rqa.actions;
+  if (!actions || typeof actions !== 'object') return null;
+
+  // Build the set of allowed non-canonical keys from the window's declared sources.
+  const allowed = new Set();
+  for (const a of (Array.isArray(win.menuActions) ? win.menuActions : [])) {
+    if (a && typeof a.key === 'string') allowed.add(a.key);
+  }
+  if (win.processOverrides && typeof win.processOverrides === 'object') {
+    for (const k of Object.keys(win.processOverrides)) allowed.add(k);
+  }
+
+  const offenders = [];
+  for (const key of Object.keys(actions)) {
+    if (ROW_QUICK_ACTION_CANONICAL_KEYS.has(key)) continue;
+    // A `show: false` entry is also pointless if the key doesn't exist, so we still flag it —
+    // the user almost certainly meant a real process and made a typo.
+    if (!allowed.has(key)) offenders.push(key);
+  }
+
+  if (offenders.length === 0) return null;
+
+  return violation(
+    'F11', artifactName, 'BLOCK',
+    `rowQuickActions.actions references unknown process key(s): ${offenders.join(', ')}. Allowed: canonical (edit, duplicate, email, delete) or any key declared in window.menuActions / window.processOverrides`,
+    `Remove the unknown key(s) from rowQuickActions.actions, or add the corresponding entry to window.menuActions / window.processOverrides in decisions.json`,
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Artifact discovery
 // ---------------------------------------------------------------------------
@@ -541,6 +596,7 @@ export async function validatePipeline({
           skipSet.has('F6') ? null : ruleF6(artifactDir, name),
           skipSet.has('F7') ? null : ruleF7(artifactDir, name),
           skipSet.has('F10') ? null : ruleF10(artifactDir, name, registryContent, root),
+          skipSet.has('F11') ? null : ruleF11(artifactDir, name),
         ];
         const results = await Promise.all(checks);
         for (const r of results) {

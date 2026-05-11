@@ -285,6 +285,41 @@ describe('Rule F10 — registry points to missing index.jsx', () => {
 });
 
 // ---------------------------------------------------------------------------
+// F11 — rowQuickActions references unknown process keys
+// ---------------------------------------------------------------------------
+
+describe('Rule F11 — rowQuickActions unknown process key', () => {
+  it('passes when every non-canonical key exists in menuActions or processOverrides', async () => {
+    const result = await runOnFixtures(['window-row-quick-actions-ok']);
+    const v = result.violations.find(v => v.rule === 'F11');
+    assert.ok(!v, 'No F11 violation expected for window-row-quick-actions-ok');
+  });
+
+  it('emits BLOCK when a non-canonical action key has no matching menuAction or processOverride', async () => {
+    const result = await runOnFixtures(['window-row-quick-actions-bad']);
+    const v = result.violations.find(v => v.rule === 'F11');
+    assert.ok(v, 'F11 violation expected for window-row-quick-actions-bad');
+    assert.equal(v.severity, 'BLOCK');
+    assert.equal(v.artifact, 'window-row-quick-actions-bad');
+    assert.match(v.message, /nonExistentProcess/);
+  });
+
+  it('never fails for canonical keys (edit, duplicate, email, delete)', async () => {
+    // window-row-quick-actions-ok declares all four canonicals without any menuAction match —
+    // and yet must pass.
+    const result = await runOnFixtures(['window-row-quick-actions-ok']);
+    const f11s = result.violations.filter(v => v.rule === 'F11');
+    assert.equal(f11s.length, 0);
+  });
+
+  it('honors --skip=F11', async () => {
+    const result = await runOnFixtures(['window-row-quick-actions-bad'], { skip: ['F11'] });
+    const v = result.violations.find(v => v.rule === 'F11');
+    assert.ok(!v, 'F11 should be skipped');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // --skip flag
 // ---------------------------------------------------------------------------
 

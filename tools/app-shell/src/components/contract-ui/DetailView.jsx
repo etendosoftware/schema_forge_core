@@ -26,6 +26,7 @@ import {
 } from '@/lib/lineFieldChange.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { formatAmount } from '@/lib/formatAmount.js';
+import { isDeleteVisibleForRecord } from '@/utils/recordActions.js';
 import DocumentStatusPill from './DocumentStatusPill.jsx';
 
 /**
@@ -1086,7 +1087,7 @@ export function DetailView({
                 </button>
               )}
               {/* Delete record — hidden when hideDeleteWhenComplete and status matches */}
-              {!isNew && recordId && !(hideDeleteWhenComplete && statusField && data?.[statusField] && data[statusField] !== 'DR' && data[statusField] !== 'RPAP') && (
+              {!isNew && recordId && isDeleteVisibleForRecord({ record: data, statusField, hideDeleteWhenComplete }) && (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   className={`${sqBtnSize} flex items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors`}

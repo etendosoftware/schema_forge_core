@@ -290,6 +290,7 @@ export default function ReturnMaterialReceiptPage({ windowName, recordId, ...pro
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="movementDate"
+      rowQuickActions={{}}
       {...props}
     />
   );

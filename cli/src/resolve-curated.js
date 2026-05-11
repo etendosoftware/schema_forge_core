@@ -520,6 +520,7 @@ const WINDOW_TRUTHY_PROPS = [
   'dateFilterKey',
   'statusEnumLabels',
   'lineEntityConfig',
+  'rowQuickActions',
 ];
 
 const WINDOW_BOOLEAN_TRUE_PROPS = [
@@ -555,6 +556,7 @@ export const WINDOW_KEY_ORDER = [
   'disableProcessedLock', 'titleField',
   'listViewOptions', 'listBaseFilter', 'quickFilters', 'subsetFilters',
   'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'lineEntityConfig',
+  'rowQuickActions',
   'layoutType',
 ];
 
@@ -615,6 +617,12 @@ function applyWindowDecisions(window, windowDecisions) {
   if ('detailEntity' in windowDecisions) {
     window.detailEntity = windowDecisions.detailEntity;
   }
+
+  // ETP-3914 — Row Quick Actions: the user declaration (if any) is copied verbatim via
+  // WINDOW_TRUTHY_PROPS. Windows that don't declare `rowQuickActions` get the feature
+  // enabled with canonical defaults at runtime — no contract block needed. The block
+  // is only emitted when the user wants to override defaults (hide an action, disable
+  // the feature, add `visibleWhen`, promote a process to a fixed slot, etc.).
 }
 
 function applyWindowDraftModeToPrimaryEntity(curatedEntities, windowDecisions) {

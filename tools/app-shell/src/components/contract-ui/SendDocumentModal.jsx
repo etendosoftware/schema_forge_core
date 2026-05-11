@@ -21,7 +21,7 @@ import { useUI } from '@/i18n';
  * When provided, the preview uses it directly and download triggers on the blob,
  * bypassing the /api/reports render endpoint entirely.
  */
-export default function SendDocumentModal({ documentType = 'Document', documentNo, bpName, bpEmail, bPartnerId, apiBaseUrl, documentId, windowName, token, onClose, pdfBlobUrl, isClosing = false }) {
+export default function SendDocumentModal({ documentType = 'Document', documentNo, bpName, bpEmail, bPartnerId, apiBaseUrl, documentId, windowName, token, onClose, pdfBlobUrl, pdfBlobLoading = false, isClosing = false }) {
   const ui = useUI();
   const hasEmail = bpEmail && bpEmail.includes('@');
   const [to, setTo] = useState(hasEmail ? bpEmail : '');
@@ -53,6 +53,9 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(!pdfBlobUrl);
+  // True while the parent is still generating the blob via useInvoicePdf — suppress
+  // the fallback report-render fetch and show a spinner instead of the error card.
+  const waitingForBlob = pdfBlobLoading && !pdfBlobUrl;
   const [pdfError, setPdfError] = useState(null);
   const [downloading, setDownloading] = useState(false);
 
@@ -64,7 +67,16 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
     // If a pre-rendered blob URL is provided, use it directly
     if (pdfBlobUrl) {
       node.src = `${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=1`;
+      setPdfError(null);
       setPdfLoading(false);
+      return;
+    }
+
+    // Parent indicated a blob is being generated — wait for it instead of falling
+    // back to /api/reports which would set pdfError and show the sad-page card.
+    if (pdfBlobLoading) {
+      setPdfError(null);
+      setPdfLoading(true);
       return;
     }
 
@@ -90,7 +102,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
       }
       setPdfLoading(false);
     })();
-  }, [documentId, token, reportId, pdfBlobUrl]);
+  }, [documentId, token, reportId, pdfBlobUrl, pdfBlobLoading]);
 
   const handleDownload = async () => {
     if (downloading) return;
@@ -148,6 +160,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
       <style>{`
         @keyframes sfSlideDownIn { from { transform: translateY(-40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes sfSlideUpOut  { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-40px); opacity: 0; } }
+        @keyframes sfSpin { to { transform: rotate(360deg); } }
       `}</style>
       <div onClick={onClose} className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
         <div onClick={e => e.stopPropagation()} style={{ width: 800, height: 560, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 12, backgroundColor: '#fff', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', border: '0.5px solid #E5E7EB', animation: isClosing ? 'sfSlideUpOut 280ms ease-in forwards' : 'sfSlideDownIn 280ms ease-out' }}>
@@ -166,9 +179,14 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
           <div style={{ width: '60%', display: 'flex', flexDirection: 'column', borderRight: '0.5px solid #E5E7EB' }}>
             <div style={{ flex: 1, position: 'relative', background: '#EFEFEF' }}>
               {pdfLoading && (
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13 }}>{ui('sendModalLoadingPreview')}</div>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13, gap: 10 }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'sfSpin 0.9s linear infinite' }}>
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                  <span>{ui('sendModalLoadingPreview')}</span>
+                </div>
               )}
-              {pdfError && (
+              {pdfError && !waitingForBlob && !pdfLoading && (
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', padding: 24, textAlign: 'center', gap: 8 }}>
                   <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                   <span style={{ fontSize: 14, fontWeight: 500, color: '#6B7280' }}>{ui('sendModalPdfPreview')}</span>

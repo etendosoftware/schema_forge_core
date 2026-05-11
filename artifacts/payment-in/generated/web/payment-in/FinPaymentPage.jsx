@@ -226,6 +226,7 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="paymentDate"
+      rowQuickActions={{}}
       {...props}
       onNew={() => setShowNewModal(true)}
     />

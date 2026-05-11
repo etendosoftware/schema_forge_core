@@ -721,6 +721,7 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
       hidePrint
       hideMoreMenu
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
       {...props}
     />
   );

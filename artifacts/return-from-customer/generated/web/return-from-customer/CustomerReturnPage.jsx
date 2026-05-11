@@ -405,6 +405,7 @@ export default function CustomerReturnPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="orderDate"
+      rowQuickActions={{}}
       {...props}
     />
   );
