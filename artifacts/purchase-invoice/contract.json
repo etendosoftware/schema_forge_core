@@ -1,8 +1,8 @@
 {
   "version": "0.27.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-08T15:16:17.377Z",
-  "checksum": "d8491e14e014b5f4",
+  "updatedAt": "2026-05-11T20:40:22.311Z",
+  "checksum": "2f5ae17f5b613d3f",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -11,6 +11,9 @@
       "category": "purchases",
       "notesField": "description",
       "relatedDocuments": true,
+      "customComponents": {
+        "headerTable": "InvoiceHeaderTable"
+      },
       "menuActions": [
         {
           "key": "reactivate",
@@ -3700,6 +3703,9 @@
       "category": "purchases",
       "notesField": "description",
       "relatedDocuments": true,
+      "customComponents": {
+        "headerTable": "InvoiceHeaderTable"
+      },
       "menuActions": [
         {
           "key": "reactivate",

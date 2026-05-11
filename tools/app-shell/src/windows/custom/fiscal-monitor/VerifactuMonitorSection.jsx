@@ -18,6 +18,14 @@ const STATUS_ENTITIES = {
 };
 
 const INVOICE_FK_FIELD = 'invoice';
+
+function fmtDate(raw) {
+  if (!raw) return '—';
+  const parts = String(raw).split(/[-/]/);
+  if (parts.length !== 3) return raw;
+  const [a, b, c] = parts;
+  return a.length === 4 ? `${c}/${b}/${a}` : `${a}/${b}/${c}`;
+}
 const PAGE_SIZE = 20;
 
 const STATUS_TABS = [
@@ -116,6 +124,7 @@ export default function VerifactuMonitorSection({ orgId, token, apiBaseUrl, init
               <thead>
                 <tr>
                   <th><input type="checkbox" /></th>
+                  <th className="sortable sorted">{ui('fiscalMonitor.col.date')}</th>
                   <th>{ui('fiscalMonitor.col.invoiceNumber')}</th>
                   <th>{ui('fiscalMonitor.col.issuerNIF')}</th>
                   <th>{ui('fiscalMonitor.col.type')}</th>
@@ -128,13 +137,14 @@ export default function VerifactuMonitorSection({ orgId, token, apiBaseUrl, init
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={8} style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--fm-fg-3)' }}>
+                    <td colSpan={9} style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--fm-fg-3)' }}>
                       {ui('fiscalMonitor.empty')}
                     </td>
                   </tr>
                 ) : rows.map((row, i) => (
                   <tr key={row.id ?? i}>
                     <td><input type="checkbox" /></td>
+                    <td className="strong">{fmtDate(row.invoiceDate)}</td>
                     <td className="num-factura">
                       <NumFactura
                         n={row[INVOICE_FK_FIELD] ?? '—'}

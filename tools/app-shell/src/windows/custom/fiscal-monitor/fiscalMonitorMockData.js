@@ -50,14 +50,14 @@ export const MOCK_TBAI_ROWS = [
 
 // ── Verifactu — AEAT mainland, March 2025, SHA fingerprints, four status types ─
 export const MOCK_VF_ROWS = [
-  { id: 'v1', invoice: 'SV-2025-1001', issuerTaxID: 'B28912345', typeOperation: 'F1', cSV: 'VFT-8A3F-KL02', verifactuSendingStatus: 'accepted',             codeError: null,   errorReason: null },
-  { id: 'v2', invoice: 'SV-2025-1002', issuerTaxID: 'B28912345', typeOperation: 'F1', cSV: 'VFT-9C1D-MN07', verifactuSendingStatus: 'accepted',             codeError: null,   errorReason: null },
-  { id: 'v3', invoice: 'SV-2025-1003', issuerTaxID: 'A91234567', typeOperation: 'F2', cSV: 'VFT-2E7G-QR14', verifactuSendingStatus: 'accepted',             codeError: null,   errorReason: null },
-  { id: 'v4', invoice: 'SV-2025-1004', issuerTaxID: 'B28912345', typeOperation: 'F1', cSV: 'VFT-5H8J-ST21', verifactuSendingStatus: 'accepted',             codeError: null,   errorReason: null },
-  { id: 'v5', invoice: 'SV-2025-1005', issuerTaxID: 'B76543210', typeOperation: 'F1', cSV: 'VFT-3K6L-UV28', verifactuSendingStatus: 'partiallyAccepted', codeError: '1001', errorReason: 'Importe fuera del rango máximo permitido para el tipo de operación' },
-  { id: 'v6', invoice: 'SV-2025-1006', issuerTaxID: 'A91234567', typeOperation: 'F3', cSV: null,             verifactuSendingStatus: 'partiallyAccepted', codeError: '1108', errorReason: 'Descripción de la operación no coincide con el tipo declarado' },
-  { id: 'v7', invoice: 'SV-2025-1007', issuerTaxID: 'B99887766', typeOperation: 'F1', cSV: null,             verifactuSendingStatus: 'rejected',            codeError: '3005', errorReason: 'NIF del emisor no registrado en el sistema Verifactu' },
-  { id: 'v8', invoice: 'SV-2025-1008', issuerTaxID: 'C55443322', typeOperation: 'F1', cSV: null,             verifactuSendingStatus: 'invalid',             codeError: '4002', errorReason: 'Estructura del registro no válida: campo «FechaExpedicion» ausente' },
+  { id: 'v1', invoiceDate: '2025-04-01', invoice: 'SV-2025-1001', issuerTaxID: 'B28912345', typeOperation: 'F1', cSV: 'VFT-8A3F-KL02', verifactuSendingStatus: 'accepted',          codeError: null,   errorReason: null },
+  { id: 'v2', invoiceDate: '2025-04-03', invoice: 'SV-2025-1002', issuerTaxID: 'B28912345', typeOperation: 'F1', cSV: 'VFT-9C1D-MN07', verifactuSendingStatus: 'accepted',          codeError: null,   errorReason: null },
+  { id: 'v3', invoiceDate: '2025-04-07', invoice: 'SV-2025-1003', issuerTaxID: 'A91234567', typeOperation: 'F2', cSV: 'VFT-2E7G-QR14', verifactuSendingStatus: 'accepted',          codeError: null,   errorReason: null },
+  { id: 'v4', invoiceDate: '2025-04-10', invoice: 'SV-2025-1004', issuerTaxID: 'B28912345', typeOperation: 'F1', cSV: 'VFT-5H8J-ST21', verifactuSendingStatus: 'accepted',          codeError: null,   errorReason: null },
+  { id: 'v5', invoiceDate: '2025-04-14', invoice: 'SV-2025-1005', issuerTaxID: 'B76543210', typeOperation: 'F1', cSV: 'VFT-3K6L-UV28', verifactuSendingStatus: 'partiallyAccepted', codeError: '1001', errorReason: 'Importe fuera del rango máximo permitido para el tipo de operación' },
+  { id: 'v6', invoiceDate: '2025-04-17', invoice: 'SV-2025-1006', issuerTaxID: 'A91234567', typeOperation: 'F3', cSV: null,             verifactuSendingStatus: 'partiallyAccepted', codeError: '1108', errorReason: 'Descripción de la operación no coincide con el tipo declarado' },
+  { id: 'v7', invoiceDate: '2025-04-22', invoice: 'SV-2025-1007', issuerTaxID: 'B99887766', typeOperation: 'F1', cSV: null,             verifactuSendingStatus: 'rejected',           codeError: '3005', errorReason: 'NIF del emisor no registrado en el sistema Verifactu' },
+  { id: 'v8', invoiceDate: '2025-04-25', invoice: 'SV-2025-1008', issuerTaxID: 'C55443322', typeOperation: 'F1', cSV: null,             verifactuSendingStatus: 'invalid',            codeError: '4002', errorReason: 'Estructura del registro no válida: campo «FechaExpedicion» ausente' },
 ];
 
 // ── KPI counts consumed by computeKpis ────────────────────────────────────────
