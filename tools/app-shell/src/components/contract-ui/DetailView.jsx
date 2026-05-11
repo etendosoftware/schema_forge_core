@@ -156,13 +156,15 @@ export function DetailView({
   sidebarClassName = 'w-96 shrink-0 overflow-y-auto pt-0 pl-0 pr-4 pb-5',
   linesLayout = 'classic',
   autoSaveOnBlur = false,
+  toolbarPaddingX = 'px-6',
+  refetchAfterSave = false,
 }) {
   // DetailView never needs the parent list: on `/new` there is no record to match, and on
   // `/:id` the currentItem shortcut only helps when we arrived from ListView (items already
   // in memory from the other hook instance). On a direct URL hit `items` is empty anyway and
   // the effect falls through to fetchById. Skipping the list fetch unconditionally drops one
   // wasted GET per direct-URL navigation.
-  const hook = useEntity(entity, detailEntity, { token, apiBaseUrl, skipListFetch: true });
+  const hook = useEntity(entity, detailEntity, { token, apiBaseUrl, skipListFetch: true, refetchAfterSave });
   const LinesEmptyState = linesEmptyState ?? bottomSection?.linesEmptyState ?? null;
   const DetailExtraActions = bottomSection?.detailExtraActions ?? null;
   // Static hooks for up to 4 secondary tabs (React rules forbid dynamic hook calls).
@@ -1102,7 +1104,7 @@ export function DetailView({
             </div>
           ) : null
         ) : (
-        <div className={`flex items-center justify-between ${linesLayout === 'inlineEditable' ? 'p-2' : 'px-6 py-3'}${toolbarBorderBottom || linesLayout === 'inlineEditable' ? ' border-b border-[#E8EAEF]' : ''}`}>
+        <div className={`flex items-center justify-between ${linesLayout === 'inlineEditable' ? 'p-2' : `${toolbarPaddingX} py-3`}${toolbarBorderBottom || linesLayout === 'inlineEditable' ? ' border-b border-[#E8EAEF]' : ''}`}>
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
@@ -1151,11 +1153,11 @@ export function DetailView({
               {documentPreview && !isNew && recordId && (
                 <button
                   onClick={() => setShowPrint(true)}
-                  className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center justify-center p-[7px] rounded-md bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_0px_#1212170D] text-muted-foreground hover:bg-[#F1F5F9] hover:text-foreground transition-colors"
                   title={ui('sendPreview')}
                   data-testid="action-document-preview"
                 >
-                  <Send className="h-4 w-4" />
+                  <Send className="h-[15px] w-[15px]" />
                 </button>
               )}
               {/* Print document — shown when documentPreview is not provided */}
@@ -1183,9 +1185,9 @@ export function DetailView({
               {!(typeof hideMoreMenu === 'function' ? hideMoreMenu({ data }) : hideMoreMenu) && <div className="relative" ref={moreMenuRef}>
                 <button
                   onClick={() => setShowMoreMenu(v => !v)}
-                  className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center justify-center p-[7px] rounded-md bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_0px_#1212170D] text-muted-foreground hover:bg-[#F1F5F9] hover:text-foreground transition-colors"
                 >
-                  <MoreVertical className="h-4 w-4" />
+                  <MoreVertical className="h-[15px] w-[15px]" />
                 </button>
                 {showMoreMenu && (() => {
                   const resolvedActions = typeof menuActions === 'function'
@@ -1312,7 +1314,7 @@ export function DetailView({
                 if (draftMode?.enabled) {
                   return (
                     <>
-                      <Button variant="outline" size="sm" className="gap-1.5 bg-white text-gray-700 hover:text-gray-700" data-testid="action-save-draft" disabled={hook.isSaving || !isDirty} onClick={async () => {
+                      <Button variant="outline" size="sm" className="gap-1.5 bg-white border-[#D1D4DB] text-[#121217]" data-testid="action-save-draft" disabled={hook.isSaving || !isDirty} onClick={async () => {
                         if (!(await flushPendingLines())) return;
                         const saved = await hook.handleSave(data);
                         if (saved?.id && isNew) {
@@ -1320,7 +1322,7 @@ export function DetailView({
                           navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
                         }
                       }}>
-                        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                        {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" color="#64748B" />}
                         {ui('save')}
                       </Button>
                       <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={hook.isSaving} onClick={async () => {

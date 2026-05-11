@@ -19,10 +19,11 @@ describe('InvoicePaymentModal', () => {
     assert.match(src, /export function PaymentRegisterForm/);
   });
 
-  it('accepts invoiceId, invoiceData, specName, token, apiBaseUrl, and onClose props', () => {
+  it('accepts invoiceId, invoiceData, specName, token, apiBaseUrl, onClose, and onPaymentAdded props', () => {
     assert.match(src, /invoiceId/);
     assert.match(src, /invoiceData/);
     assert.match(src, /specName/);
+    assert.match(src, /onPaymentAdded/);
   });
 
   // ── Installment label ──────────────────────────────────────────────────────
@@ -95,6 +96,10 @@ describe('InvoicePaymentModal', () => {
 
   it('re-fetches installments and payments after a payment is registered', () => {
     assert.match(src, /handlePaymentSuccess/);
+  });
+
+  it('calls onPaymentAdded after a successful payment registration', () => {
+    assert.match(src, /onPaymentAdded\?\.\(\)/);
   });
 
   // ── Sorting ────────────────────────────────────────────────────────────────

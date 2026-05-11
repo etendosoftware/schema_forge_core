@@ -6,7 +6,7 @@ import { useEntity } from '@/hooks/useEntity';
 import { useMenuLabel, useLabel, useUI } from '@/i18n';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
-import { Search, ArrowUpDown, ChevronDown, MoreVertical, Plus, Link2, Printer, LayoutGrid, LayoutList, RefreshCw, Eye, Copy } from 'lucide-react';
+import { ArrowUpDown, ChevronDown, Plus, Link2, Printer, LayoutGrid, LayoutList, RefreshCw, Eye, Copy } from 'lucide-react';
 import ReportDrawer from './ReportDrawer.jsx';
 import DocumentPrintDrawer, { printDocuments } from './DocumentPrintDrawer.jsx';
 import { ListFilterBar } from './ListFilterBar.jsx';
@@ -48,7 +48,13 @@ export function ListView({
   subsetFilters = null,
   initialSubsetIndex = 0,
   onNew = null,
+  newLabel = null,
   newActions = [],
+  listbarPaddingX = 'px-6',
+  SortIconComponent = null,
+  RefreshIconComponent = null,
+  iconButtonHover = 'hover:text-foreground',
+  tablePaddingX = 'px-6',
   labelOverrides,
   onCloneRow = null,
   initialColumnFilters,
@@ -57,6 +63,9 @@ export function ListView({
   rowFilter,
   dateFilterKey = null,
   refreshTrigger = 0,
+  hoverRowActions = false,
+  selectionBarSize = 'sm',
+  selectionBarRightActions = null,
 }) {
   // Subset filters — radio-style, always one active, applied first.
   const [activeSubsetIndex, setActiveSubsetIndex] = useState(() => {
@@ -285,6 +294,11 @@ export function ListView({
     isFavorite: favActive,
   }, [favActive, hook.items.length]);
   const [selectedRows, setSelectedRows] = useState([]);
+  const [clearSelectionCounter, setClearSelectionCounter] = useState(0);
+  const clearSelection = useCallback(() => {
+    setSelectedRows([]);
+    setClearSelectionCounter((c) => c + 1);
+  }, []);
   const [showSortPopover, setShowSortPopover] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showDocPrint, setShowDocPrint] = useState(false);
@@ -358,57 +372,63 @@ export function ListView({
       <div className="flex-1 flex flex-col bg-white rounded-tl-2xl overflow-hidden min-h-0">
         {/* Selection bar or filter bar */}
         {selectedRows.length > 0 ? (
-          <div className="flex items-center justify-between px-6 py-3 border-b border-border/30">
-            <div className="flex items-center gap-3">
+          <div className={`flex items-center justify-between ${listbarPaddingX} py-3 border-b border-border/30`}>
+            <div className="flex items-center gap-3 h-10">
               <span className="text-sm font-semibold">{ui('selected').replace('{count}', selectedRows.length)}</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 h-10">
               <Button
                 variant="outline"
-                size="sm"
+                size={selectionBarSize}
                 className="gap-1.5"
                 onClick={() => setShowDocPrint(true)}
               >
-                <Eye className="h-3.5 w-3.5" />
+                <Eye className={selectionBarSize === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
                 {ui('preview')}
               </Button>
               <Button
-                size="sm"
+                size={selectionBarSize}
                 className="gap-1.5"
                 onClick={() => printDocuments(windowName, selectedRows.map(r => r.id || r), token)}
               >
-                <Printer className="h-3.5 w-3.5" />
+                <Printer className={selectionBarSize === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
                 {ui('print')} ({selectedRows.length})
               </Button>
               {onCloneRow && (
                 <Button
                   variant="outline"
-                  size="sm"
+                  size={selectionBarSize}
                   className="gap-1.5"
                   onClick={() => onCloneRow(selectedRows)}
                 >
-                  <Copy className="h-3.5 w-3.5" />
+                  <Copy className={selectionBarSize === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
                   {ui('cloneOrderBtn')} ({selectedRows.length})
                 </Button>
               )}
-              {bulkActions && bulkActions({ selectedRows, clearSelection: () => setSelectedRows([]), token, apiBaseUrl, windowName, api })}
+              {bulkActions && bulkActions({ selectedRows, clearSelection, token, apiBaseUrl, windowName, api })}
+              {selectionBarRightActions && selectionBarRightActions({
+                selectedRows,
+                clearSelection,
+                token,
+                apiBaseUrl,
+                onDataMutated: hook.refresh,
+              })}
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-between px-6 py-3">
+          <div className={`flex items-center justify-between ${listbarPaddingX} py-3`}>
             <div className="flex items-center gap-2">
               {subsetFilters && (
-                <div className="inline-flex items-center rounded-lg border border-border overflow-hidden">
+                <div className="inline-flex items-center gap-1 rounded-xl bg-[#F5F7F9] p-1 h-10">
                   {subsetFilters.map((sf, i) => (
                     <button
                       key={i}
                       onClick={() => selectSubset(i)}
                       className={[
-                        'h-9 px-3 text-xs transition-colors',
-                        i > 0 ? 'border-l border-border' : '',
+                        'flex-1 h-8 px-2 text-sm font-medium text-[#121217] rounded-lg transition-all',
                         activeSubsetIndex === i
-                          ? 'bg-primary/5 text-primary font-medium'
-                          : 'text-muted-foreground hover:text-foreground',
+                          ? 'bg-white shadow-sm'
+                          : 'bg-[#F5F7F9] hover:brightness-95',
                       ].join(' ')}
                     >
                       {ui(sf.label)}
@@ -460,17 +480,19 @@ export function ListView({
                 </button>
               )}
               <div className="relative" ref={sortBtnRef}>
+                {(() => { const SortEl = SortIconComponent || ArrowUpDown; return (
                 <button
                   onClick={() => setShowSortPopover(v => !v)}
                   className={[
                     'h-9 w-9 flex items-center justify-center rounded-lg border transition-colors',
                     isDefaultSort
-                      ? 'border-border text-muted-foreground hover:text-foreground'
+                      ? `border-border text-muted-foreground ${iconButtonHover}`
                       : 'border-primary/40 bg-primary/10 text-primary',
                   ].join(' ')}
                 >
-                  <ArrowUpDown className="h-4 w-4" />
+                  <SortEl className="h-4 w-4" />
                 </button>
+                ); })()}
                 {showSortPopover && tableColumns.length > 0 && (
                   <div className="absolute right-0 top-full mt-1 z-50 w-56 rounded-lg border border-border bg-card shadow-lg py-1">
                     <div className="px-3 py-2 text-xs font-medium text-muted-foreground tracking-wide">
@@ -510,13 +532,15 @@ export function ListView({
                   </div>
                 )}
               </div>
+              {(() => { const RefreshEl = RefreshIconComponent || RefreshCw; return (
               <button
                 onClick={() => hook.refresh()}
-                className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
+                className={`h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground ${iconButtonHover} transition-colors`}
                 title={ui('refresh') || 'Refresh'}
               >
-                <RefreshCw className="h-4 w-4" />
+                <RefreshEl className="h-4 w-4" />
               </button>
+              ); })()}
               {!(listViewOptions?.hidePrint ?? hidePrint) && (
                 <Button
                   variant="outline"
@@ -549,19 +573,19 @@ export function ListView({
               {!hideCreate && (
               <div className="inline-flex items-stretch rounded-lg overflow-hidden shadow-sm ml-3">
                 <Button
-                  className="rounded-none rounded-l-lg gap-1.5 px-4"
+                  className="rounded-none rounded-l-lg gap-1.5 px-4 hover:bg-[#FFD500] hover:text-[#121217] transition-colors"
                   data-testid="action-new"
                   onClick={() => onNew ? onNew() : navigate(`/${windowName}/new`)}
                 >
                   <Plus className="h-4 w-4" />
-                  {ui('newRecord')}
+                  {newLabel ?? ui('newRecord')}
                 </Button>
                 {newActions.length > 0 && (
                   <>
                     <div className="w-px bg-primary-foreground/20" />
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button className="rounded-none rounded-r-lg px-2" data-testid="action-new-more">
+                        <Button className="rounded-none rounded-r-lg px-2 hover:bg-[#FFD500] hover:text-[#121217] transition-colors" data-testid="action-new-more">
                           <ChevronDown className="h-3.5 w-3.5" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -608,7 +632,7 @@ export function ListView({
         )}
 
         {/* Table */}
-        <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-auto px-6 pb-6">
+        <div ref={scrollRef} onScroll={handleScroll} className={`flex-1 overflow-auto ${tablePaddingX} pb-6`}>
           {hook.loading && hook.items.length === 0 ? (
             <div className="space-y-3">
               <Skeleton className="h-10 w-full" />
@@ -642,6 +666,8 @@ export function ListView({
                     columnFilters={columnFilters}
                     onCloneRow={onCloneRow}
                     rowFilter={effectiveRowFilter}
+                    hoverRowActions={hoverRowActions}
+                    clearSelectionTrigger={clearSelectionCounter}
                   />
                 )
               }

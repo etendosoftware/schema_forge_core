@@ -1,11 +1,12 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { createPortal } from 'react-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
-import { Search, Inbox, X, ChevronDown, Trash2, Copy, Loader2 } from 'lucide-react';
+import { Search, Inbox, X, ChevronDown, Trash2, Copy, Loader2, Pencil, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLabel, useUI, useLocale, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
@@ -295,7 +296,7 @@ const NUMERIC_FIELD_TYPES = new Set(['number', 'integer', 'decimal', 'quantity',
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
-const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, token, apiBaseUrl, entity, selectorContext }, ref) {
+const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, token, apiBaseUrl, entity, selectorContext }, ref) {
   const t = useLabel();
   const ui = useUI();
   const fieldMap = useMemo(() => {
@@ -330,10 +331,18 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
   const rowRef = useRef(null);
   const touchedFieldsRef = useRef(new Set());
   const inflightRef = useRef(null);
+  const valuesRef = useRef(null);
+  const pendingCalloutsRef = useRef([]);
+
+  // Keep valuesRef in sync on every render so submitLine never reads a stale closure.
+  valuesRef.current = values;
 
   // Reset values when fields or data change
   useEffect(() => {
-    setValues(buildEmpty());
+    const empty = buildEmpty();
+    valuesRef.current = empty;
+    pendingCalloutsRef.current = [];
+    setValues(empty);
     touchedFieldsRef.current = new Set();
   }, [buildEmpty]);
 
@@ -350,6 +359,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
   }, []);
 
   const handleChange = (key, val) => {
+    valuesRef.current = { ...valuesRef.current, [key]: val };
     setValues(prev => ({ ...prev, [key]: val }));
   };
 
@@ -358,10 +368,11 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     // in the same tick; both callers must observe the same outcome.
     if (inflightRef.current) return inflightRef.current;
     // Validate required fields BEFORE entering the in-flight state — a missing
-    // value should leave the row open for the user to complete.
+    // value should leave the row open for the user to complete. Reads from the
+    // valuesRef so an in-flight callout cannot mask a still-empty user field.
     const missing = fields.filter(f => {
       if (!f.required) return false;
-      const v = values[f.key];
+      const v = valuesRef.current[f.key];
       return v == null || v === '' || (typeof v === 'string' && v.trim() === '');
     });
     if (missing.length > 0) {
@@ -375,10 +386,14 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     setIsSaving(true);
     const run = (async () => {
       try {
-        // Coerce numeric field values to JS numbers right before submission.
-        // This catches race conditions where async callouts may have overwritten
-        // user-typed values with strings.
-        const coercedValues = { ...values };
+        // Wait for any in-flight callouts (e.g. product → taxRate → lineGrossAmount)
+        // before reading values. Without this, pressing Enter immediately after
+        // selecting a product would POST with taxRate=null and lineGrossAmount=0.
+        if (pendingCalloutsRef.current.length > 0) {
+          await Promise.all(pendingCalloutsRef.current);
+        }
+        // Read from ref (always current) instead of the stale `values` closure.
+        const coercedValues = { ...valuesRef.current };
         for (const f of fields) {
           if (NUMERIC_FIELD_TYPES.has(f.type) && coercedValues[f.key] !== '' && coercedValues[f.key] != null) {
             const raw = String(coercedValues[f.key]);
@@ -395,7 +410,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           return true;
         }
         // Reset for next rapid entry — recompute lineNo
-        const nums = [...(data || []).map(r => Number(r.lineNo) || 0), Number(values.lineNo) || 0];
+        const nums = [...(data || []).map(r => Number(r.lineNo) || 0), Number(valuesRef.current.lineNo) || 0];
         const nextLineNo = Math.max(...nums) + 10;
         const next = {};
         for (const f of fields) {
@@ -408,11 +423,12 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           }
         }
         // Clear any $_identifier companion values
-        for (const key of Object.keys(values)) {
+        for (const key of Object.keys(valuesRef.current)) {
           if (key.includes('$_identifier') && !(key in next)) {
             next[key] = '';
           }
         }
+        valuesRef.current = next;
         setValues(next);
         touchedFieldsRef.current = new Set();
         // Re-focus first input for rapid entry
@@ -425,7 +441,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     })();
     inflightRef.current = run;
     return run;
-  }, [data, fields, onAdd, onCancel, values, ui]);
+  }, [data, fields, onAdd, onCancel, ui]);
 
   // Enter → confirm without closing (rapid entry). Outside-click / parent flush close.
   const handleConfirm = useCallback(() => submitLine({ closeAfterSave: false }), [submitLine]);
@@ -529,10 +545,20 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         }
       }
     }
-    // Notify parent for callout execution — pass computed snapshot (not stale React state)
-    onFieldChange?.(key, val, snapshot, (updates, forceFields = new Set()) => {
-      setValues((prev) => applyCalloutUpdates(prev, updates, forceFields, key, touchedFieldsRef.current));
+    // Notify parent for callout execution — pass computed snapshot (not stale React state).
+    // applyUpdates updates valuesRef synchronously so submitLine always reads the latest
+    // values even if React hasn't re-rendered yet when Enter is pressed.
+    const calloutPromise = onFieldChange?.(key, val, snapshot, (updates, forceFields = new Set()) => {
+      const next = applyCalloutUpdates(valuesRef.current, updates, forceFields, key, touchedFieldsRef.current);
+      valuesRef.current = next;
+      setValues(next);
     });
+    if (calloutPromise instanceof Promise) {
+      pendingCalloutsRef.current.push(calloutPromise);
+      calloutPromise.finally(() => {
+        pendingCalloutsRef.current = pendingCalloutsRef.current.filter(p => p !== calloutPromise);
+      });
+    }
   }, [handleChange, onFieldChange, values]);
 
   const handleKeyDown = (e) => {
@@ -765,8 +791,17 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           </TableCell>
         );
       })}
-      {hasDeleteColumn && <TableCell className="w-10" />}
-      {hasCloneColumn && <TableCell className="w-10" />}
+      {hoverRowActions ? (
+        <>
+          <TableCell className="w-10" />
+          {hoverRowHasDelete && <TableCell className="w-10" />}
+        </>
+      ) : (
+        <>
+          {hasDeleteColumn && <TableCell className="w-10" />}
+          {hasCloneColumn && <TableCell className="w-10" />}
+        </>
+      )}
     </TableRow>
   );
 });
@@ -925,6 +960,12 @@ export function DataTable({
   rowFilter,
   hiddenColumns = [],
   linesLayout,
+  hoverRowActions = false,
+  onEditRow = null,
+  editingRowId = null,
+  onSaveRow = null,
+  onCancelEdit = null,
+  clearSelectionTrigger = 0,
 }) {
   const t = useLabel(labelOverrides);
   const tMenu = useMenuLabel();
@@ -937,6 +978,12 @@ export function DataTable({
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRows, setSelectedRows] = useState(new Set());
+
+  useEffect(() => {
+    if (!clearSelectionTrigger) return;
+    setSelectedRows(new Set());
+  }, [clearSelectionTrigger]);
+
   const [optimisticToggles, setOptimisticToggles] = useState({});
   const [savingToggles, setSavingToggles] = useState({});
   const [deletingRows, setDeletingRows] = useState({});
@@ -1244,7 +1291,11 @@ export function DataTable({
     });
   };
 
-  const colSpan = visibleColumns.length + (selectable ? 1 : 0) + (onDeleteRow ? 1 : 0) + (onCloneRow ? 1 : 0);
+  const deleteCol = onDeleteRow ? 1 : 0;
+  const cloneCol = onCloneRow ? 1 : 0;
+  const actionCols = hoverRowActions ? 1 + deleteCol : deleteCol + cloneCol;
+  const colSpan = visibleColumns.length + (selectable ? 1 : 0) + actionCols;
+  const selectedRowBg = hoverRowActions ? 'bg-[#F5F7F9]' : 'bg-primary/5';
 
   return (
     <div className="space-y-0">
@@ -1254,13 +1305,11 @@ export function DataTable({
             <TableRow className="border-b border-border/40">
               {selectable && (
                 <TableHead className="w-10 px-3 align-middle" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={allSelected}
-                    ref={el => { if (el) el.indeterminate = someSelected; }}
+                    indeterminate={someSelected}
                     onChange={toggleAll}
                     onClick={(e) => e.stopPropagation()}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
                   />
                 </TableHead>
               )}
@@ -1292,8 +1341,17 @@ export function DataTable({
                   </TableHead>
                 );
               })}
-              {onDeleteRow && <TableHead className="w-10 px-2" />}
-              {onCloneRow && <TableHead className="w-10 px-2" />}
+              {hoverRowActions ? (
+                <>
+                  <TableHead className="w-10 px-2" />
+                  {onDeleteRow && <TableHead className="w-10 px-2" />}
+                </>
+              ) : (
+                <>
+                  {onDeleteRow && <TableHead className="w-10 px-2" />}
+                  {onCloneRow && <TableHead className="w-10 px-2" />}
+                </>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -1312,6 +1370,7 @@ export function DataTable({
                     key={row.id ?? idx}
                     data-testid={`row-${row.id ?? idx}`}
                     onClick={() => {
+                      if (editingRowId === row.id) return;
                       if (onRowClick) onRowClick(row);
                       else if (onNavigate) onNavigate(row);
                       else onRowSelect?.(row);
@@ -1319,7 +1378,7 @@ export function DataTable({
                     className={[
                       'transition-colors h-12 group/row',
                       (onRowClick || onNavigate) ? 'cursor-pointer' : 'cursor-default',
-                      isChecked ? 'bg-primary/5' : '',
+                      isChecked ? selectedRowBg : '',
                       selectedId != null && row.id === selectedId ? 'bg-primary/10' : '',
                       isSelectedLine ? 'bg-slate-200/90 ring-1 ring-slate-300' : '',
                       isSelectedLine ? 'hover:bg-slate-300/80' : (onRowClick || onNavigate) ? 'hover:bg-muted/50' : '',
@@ -1329,14 +1388,11 @@ export function DataTable({
                       const rowDisabled = isRowSelectable && !isRowSelectable(row);
                       return (
                         <TableCell className="w-10 px-3" onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={isChecked}
                             disabled={rowDisabled}
                             onChange={(e) => toggleRow(e, row)}
                             onClick={(e) => e.stopPropagation()}
-                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                            style={rowDisabled ? { opacity: 0.3, cursor: 'not-allowed' } : undefined}
                           />
                         </TableCell>
                       );
@@ -1346,49 +1402,120 @@ export function DataTable({
                         {renderCellValue(row, col)}
                       </TableCell>
                     ))}
-                    {onDeleteRow && (
-                      <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          type="button"
-                          disabled={!!deletingRows[row.id]}
-                          onClick={async () => {
-                            const deleteKey = row.id;
-                            setDeletingRows(prev => ({ ...prev, [deleteKey]: true }));
-                            try {
-                              await onDeleteRow(row);
-                            } finally {
-                              setDeletingRows(prev => {
-                                const next = { ...prev };
-                                delete next[deleteKey];
-                                return next;
-                              });
-                            }
-                          }}
-                          className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                          title={ui('deleteRowTooltip')}
-                          aria-label={ui('deleteRowTooltip')}
-                        >
-                          {deletingRows[row.id] ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />}
-                        </button>
-                      </TableCell>
-                    )}
-                    {onCloneRow && (
-                      <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
-                        <div className="relative group/clonebtn flex items-center justify-center">
-                          <button
-                            type="button"
-                            onClick={() => onCloneRow(row)}
-                            className="opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 flex items-center justify-center rounded border border-border bg-white text-muted-foreground hover:text-foreground hover:border-border/80 transition-all"
-                            style={{ width: 26, height: 26 }}
-                            aria-label={ui('cloneOrderBtn')}
-                          >
-                            <Copy className="h-3.5 w-3.5" aria-hidden="true" />
-                          </button>
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-xs font-medium text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover/clonebtn:opacity-100 pointer-events-none transition-opacity z-10">
-                            {ui('cloneOrderBtn')}
-                          </div>
-                        </div>
-                      </TableCell>
+                    {hoverRowActions ? (
+                      <>
+                        <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
+                          {editingRowId === row.id ? (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); onSaveRow?.(); }}
+                              className="h-8 w-8 flex items-center justify-center rounded-full text-[#17663A] hover:bg-[#EEFBF4] transition-all"
+                              aria-label={ui('save')}
+                            >
+                              <Check className="h-5 w-5" aria-hidden="true" />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onEditRow) { onEditRow(row); }
+                                else if (onNavigate) { onNavigate(row); }
+                                else { onRowClick?.(row); }
+                              }}
+                              className="opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 h-8 w-8 flex items-center justify-center rounded-full text-[#828FA3] hover:bg-[#F5F7F9] transition-all"
+                              aria-label={ui('edit')}
+                            >
+                              <Pencil className="h-5 w-5" aria-hidden="true" />
+                            </button>
+                          )}
+                        </TableCell>
+                        {onDeleteRow && (
+                          <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
+                            {editingRowId === row.id ? (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); onCancelEdit?.(); }}
+                                className="h-8 w-8 flex items-center justify-center rounded-full text-[#828FA3] hover:bg-[#F5F7F9] transition-all"
+                                aria-label={ui('cancel')}
+                              >
+                                <X className="h-5 w-5" aria-hidden="true" />
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                disabled={!!deletingRows[row.id]}
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  const deleteKey = row.id;
+                                  setDeletingRows(prev => ({ ...prev, [deleteKey]: true }));
+                                  try { await onDeleteRow(row); }
+                                  finally {
+                                    setDeletingRows(prev => {
+                                      const next = { ...prev };
+                                      delete next[deleteKey];
+                                      return next;
+                                    });
+                                  }
+                                }}
+                                className="opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 h-8 w-8 flex items-center justify-center rounded-full text-[#D50B3E] hover:bg-[#FEF0F4] transition-all"
+                                aria-label={ui('deleteRowTooltip')}
+                              >
+                                {deletingRows[row.id]
+                                  ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                                  : <Trash2 className="h-5 w-5" aria-hidden="true" />}
+                              </button>
+                            )}
+                          </TableCell>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {onDeleteRow && (
+                          <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              disabled={!!deletingRows[row.id]}
+                              onClick={async () => {
+                                const deleteKey = row.id;
+                                setDeletingRows(prev => ({ ...prev, [deleteKey]: true }));
+                                try {
+                                  await onDeleteRow(row);
+                                } finally {
+                                  setDeletingRows(prev => {
+                                    const next = { ...prev };
+                                    delete next[deleteKey];
+                                    return next;
+                                  });
+                                }
+                              }}
+                              className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              title={ui('deleteRowTooltip')}
+                              aria-label={ui('deleteRowTooltip')}
+                            >
+                              {deletingRows[row.id] ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />}
+                            </button>
+                          </TableCell>
+                        )}
+                        {onCloneRow && (
+                          <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
+                            <div className="relative group/clonebtn flex items-center justify-center">
+                              <button
+                                type="button"
+                                onClick={() => onCloneRow(row)}
+                                className="opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 flex items-center justify-center rounded border border-border bg-white text-muted-foreground hover:text-foreground hover:border-border/80 transition-all"
+                                style={{ width: 26, height: 26 }}
+                                aria-label={ui('cloneOrderBtn')}
+                              >
+                                <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                              </button>
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-xs font-medium text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover/clonebtn:opacity-100 pointer-events-none transition-opacity z-10">
+                                {ui('cloneOrderBtn')}
+                              </div>
+                            </div>
+                          </TableCell>
+                        )}
+                      </>
                     )}
                   </TableRow>
                 );
@@ -1406,8 +1533,10 @@ export function DataTable({
                 onFieldChange={addRow.onFieldChange}
                 onValuesChange={addRow.onValuesChange}
                   selectable={selectable}
-                  hasDeleteColumn={!!onDeleteRow}
-                  hasCloneColumn={!!onCloneRow}
+                  hasDeleteColumn={!hoverRowActions && !!onDeleteRow}
+                  hasCloneColumn={!hoverRowActions && !!onCloneRow}
+                  hoverRowActions={hoverRowActions}
+                  hoverRowHasDelete={hoverRowActions && !!onDeleteRow}
                   token={token}
                   apiBaseUrl={apiBaseUrl}
                   entity={entity}
@@ -1426,8 +1555,17 @@ export function DataTable({
                       : ''}
                   </TableCell>
                 ))}
-                {onDeleteRow && <TableCell />}
-                {onCloneRow && <TableCell />}
+                {hoverRowActions ? (
+                  <>
+                    <TableCell />
+                    {onDeleteRow && <TableCell />}
+                  </>
+                ) : (
+                  <>
+                    {onDeleteRow && <TableCell />}
+                    {onCloneRow && <TableCell />}
+                  </>
+                )}
               </TableRow>
             </TableFooter>
           )}
