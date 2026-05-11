@@ -156,7 +156,11 @@ export function DetailView({
   sidebarClassName = 'w-96 shrink-0 overflow-y-auto pt-0 pl-0 pr-4 pb-5',
   autoSaveOnBlur = false,
   toolbarPaddingX = 'px-6',
+  tabsBarPaddingX = 'px-6',
+  formScrollPaddingX = null,
+  formCardPadding = 'p-6',
   toolbarButtonSize = 'sm',
+  primaryTabsVariant = 'default',
   refetchAfterSave = false,
 }) {
   // DetailView never needs the parent list: on `/new` there is no record to match, and on
@@ -1315,26 +1319,45 @@ export function DetailView({
         {/* Primary tab bar (General / Additional Info / etc.) */}
         {primaryTabs && (
           <div
-            className={`flex items-center gap-1 px-6 py-2 shrink-0${tabsBarRightDivider ? ' relative' : ''}`}
+            className={`flex items-center gap-1 ${tabsBarPaddingX} py-2 shrink-0${tabsBarRightDivider ? ' relative' : ''}`}
             style={tabsBarRight && tabsBarRightDivider ? { paddingRight: `calc(${tabsBarRightDivider} + 24px)` } : undefined}
           >
             {tabsBarRightDivider && (
               <div className="absolute top-0 bottom-0 w-px bg-[#E8EAEF] pointer-events-none" style={{ left: `calc(100% - ${tabsBarRightDivider})` }} />
             )}
-            {primaryTabs.map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => setActivePrimaryTab(tab.key)}
-                className={[
-                  'relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors border',
-                  activePrimaryTab === tab.key
-                    ? 'bg-white border-gray-200 shadow-sm text-foreground'
-                    : 'border-transparent text-muted-foreground hover:text-foreground',
-                ].join(' ')}
-              >
-                {tMenu(tab.label)}
-              </button>
-            ))}
+            {primaryTabsVariant === 'pill' ? (
+              <div className="inline-flex items-center gap-1 p-1 h-10 rounded-xl" style={{ background: '#F5F7F9' }}>
+                {primaryTabs.map(tab => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActivePrimaryTab(tab.key)}
+                    className="h-8 px-4 text-sm font-medium rounded-lg transition-all"
+                    style={
+                      activePrimaryTab === tab.key
+                        ? { background: '#FFFFFF', color: '#121217', boxShadow: '0px 1px 3px rgba(18,18,23,0.10), 0px 1px 2px rgba(18,18,23,0.06)' }
+                        : { color: '#121217' }
+                    }
+                  >
+                    {tMenu(tab.label)}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              primaryTabs.map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActivePrimaryTab(tab.key)}
+                  className={[
+                    'relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors border',
+                    activePrimaryTab === tab.key
+                      ? 'bg-white border-gray-200 shadow-sm text-foreground'
+                      : 'border-transparent text-muted-foreground hover:text-foreground',
+                  ].join(' ')}
+                >
+                  {tMenu(tab.label)}
+                </button>
+              ))
+            )}
             {tabsBarRight && (() => {
               const TabsBarRightComponent = tabsBarRight;
               return (
@@ -1349,18 +1372,18 @@ export function DetailView({
         {primaryTabs && activePrimaryTab !== 'general' ? (() => {
           const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
           return activeTab?.Panel ? (
-            <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6'}`}>
+            <div className={`flex-1 overflow-auto pb-6 min-w-0 ${formScrollPaddingX !== null ? formScrollPaddingX : (sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6')}`}>
               <activeTab.Panel entity={entity} data={data} token={token} apiBaseUrl={apiBaseUrl} catalogs={catalogs} api={api} editing={hook.editing} onChange={handleChangeWithCallout} />
             </div>
           ) : null;
         })() : null}
-        <div className={`flex-1 overflow-auto pb-6 min-w-0 ${sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6'}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
+        <div className={`flex-1 overflow-auto pb-6 min-w-0 ${formScrollPaddingX !== null ? formScrollPaddingX : (sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6')}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
           <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-2`}>
             {/* Principal + collapsed fields wrapped in a card */}
             <div className={`${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${embedded ? ' pointer-events-none' : ''}`}>
-              <div className="p-6">
+              <div className={formCardPadding}>
                 <Form
                   entity={entity}
                   data={data}

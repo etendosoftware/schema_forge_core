@@ -88,6 +88,7 @@ export default function ContactsWindow(props) {
           enableSecondaryRowDelete={true}
           sidebarClassName="w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF]"
           noHeaderBorder={true}
+          toolbarBorderBottom={true}
           toolbarPaddingX="px-2"
           newLabel={ui('newContact')}
           listbarPaddingX="px-2"
@@ -99,6 +100,10 @@ export default function ContactsWindow(props) {
           selectionBarSize="default"
           selectionBarRightActions={selectionBarRightActions}
           toolbarButtonSize="default"
+          primaryTabsVariant="pill"
+          tabsBarPaddingX="pl-2 pr-5"
+          formScrollPaddingX="pl-0 pr-2"
+          formCardPadding="pt-2 px-5 pb-3"
         />
       </div>
 
