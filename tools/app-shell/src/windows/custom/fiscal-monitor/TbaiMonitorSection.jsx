@@ -5,13 +5,6 @@ import { StatusPill, NumFactura, Pager, RowActionBtn } from './FmPrimitives.jsx'
 import { TBAI_SPEC, TBAI_ENTITY } from './useFiscalMonitor.js';
 
 const STATUS_FIELD = 'estado';
-
-function invoiceDocNo(row) {
-  const raw = row['invoice$_identifier'] ?? row.invoiceIdentifier ?? row.invoice ?? null;
-  if (!raw) return '—';
-  // Etendo identifier format: "documentNo – date – amount"; extract just the first segment
-  return raw.split(/\s*[–-]\s*/)[0].trim() || raw;
-}
 const PAGE_SIZE    = 20;
 
 const STATUS_TAB_KEYS = [
@@ -21,6 +14,18 @@ const STATUS_TAB_KEYS = [
   { key: 'Error',     dot: 'danger',  labelKey: 'fiscalMonitor.tbai.tab.Error' },
   { key: 'Pendiente', dot: 'pending', labelKey: 'fiscalMonitor.tbai.tab.Pendiente' },
 ];
+
+// Etendo identifier format: "documentNo – date – amount"
+// Parse into the individual parts we need for display.
+function parseIdentifier(row) {
+  const raw = row['invoice$_identifier'] ?? row.invoiceIdentifier ?? null;
+  if (!raw) return { docNo: row.invoice ?? '—', date: '—' };
+  const parts = raw.split(/\s*[–-]\s*/);
+  return {
+    docNo: parts[0]?.trim() || raw,
+    date:  parts[1]?.trim() || '—',
+  };
+}
 
 async function fetchTbaiList(base, orgId, token, page, statusFilter) {
   const params = new URLSearchParams({
@@ -137,31 +142,34 @@ export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFi
                       {ui('fiscalMonitor.empty')}
                     </td>
                   </tr>
-                ) : rows.map((row, i) => (
-                  <tr key={row.id ?? i}>
-                    <td><input type="checkbox" /></td>
-                    <td className="strong">{row['invoice$invoiceDate'] ?? row.invoiceDate ?? row.creationDate ?? '—'}</td>
-                    <td className="num-factura">
-                      <NumFactura n={invoiceDocNo(row)} />
-                    </td>
-                    <td>{row['invoice$description'] ?? row.descripcion ?? '—'}</td>
-                    <td>
-                      {row.estado === 'Recibido' ? (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--fm-success-fg)', fontWeight: 500, fontSize: 12 }}>
-                          <CheckIcon /> OK
-                        </span>
-                      ) : (
-                        <span style={{ color: 'var(--fm-fg-4)' }}>—</span>
-                      )}
-                    </td>
-                    <td>
-                      <StatusPill estado={row.estado} />
-                    </td>
-                    <td>
-                      <RowActionBtn title={ui('fiscalMonitor.openInvoice')} />
-                    </td>
-                  </tr>
-                ))}
+                ) : rows.map((row, i) => {
+                  const inv = parseIdentifier(row);
+                  return (
+                    <tr key={row.id ?? i}>
+                      <td><input type="checkbox" /></td>
+                      <td className="strong">{row.invoiceDate ?? inv.date}</td>
+                      <td className="num-factura">
+                        <NumFactura n={inv.docNo} />
+                      </td>
+                      <td>{row['invoice$description'] ?? row.descripcion ?? '—'}</td>
+                      <td>
+                        {row.estado === 'Recibido' ? (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--fm-success-fg)', fontWeight: 500, fontSize: 12 }}>
+                            <CheckIcon /> OK
+                          </span>
+                        ) : (
+                          <span style={{ color: 'var(--fm-fg-4)' }}>—</span>
+                        )}
+                      </td>
+                      <td>
+                        <StatusPill estado={row.estado} />
+                      </td>
+                      <td>
+                        <RowActionBtn title={ui('fiscalMonitor.openInvoice')} />
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             <Pager total={totalRows} page={page} pageSize={PAGE_SIZE} onPage={setPage} />
