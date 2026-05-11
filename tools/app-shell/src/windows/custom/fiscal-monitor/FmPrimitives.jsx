@@ -15,6 +15,7 @@ const STATUS_CONFIG = {
   Recibido:           { cls: 'success', labelKey: 'fiscalMonitor.tbai.status.Recibido' },
   Rechazado:          { cls: 'danger',  labelKey: 'fiscalMonitor.tbai.status.Rechazado' },
   Error:              { cls: 'danger',  labelKey: 'fiscalMonitor.tbai.status.Error' },
+  Pendiente:          { cls: 'pending', labelKey: 'fiscalMonitor.tbai.status.Pendiente' },
   // Verifactu
   accepted:           { cls: 'success', labelKey: 'fiscalMonitor.status.vf.accepted' },
   partiallyAccepted:  { cls: 'warn',    labelKey: 'fiscalMonitor.status.vf.partiallyAccepted' },

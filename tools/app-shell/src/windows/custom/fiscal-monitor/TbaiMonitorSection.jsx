@@ -8,10 +8,11 @@ const STATUS_FIELD = 'estado';
 const PAGE_SIZE    = 20;
 
 const STATUS_TAB_KEYS = [
-  { key: 'all',      dot: null,      labelKey: 'fiscalMonitor.tbai.tab.all' },
-  { key: 'Recibido', dot: 'success', labelKey: 'fiscalMonitor.tbai.tab.Recibido' },
-  { key: 'Rechazado',dot: 'danger',  labelKey: 'fiscalMonitor.tbai.tab.Rechazado' },
-  { key: 'Error',    dot: 'danger',  labelKey: 'fiscalMonitor.tbai.tab.Error' },
+  { key: 'all',       dot: null,      labelKey: 'fiscalMonitor.tbai.tab.all' },
+  { key: 'Recibido',  dot: 'success', labelKey: 'fiscalMonitor.tbai.tab.Recibido' },
+  { key: 'Rechazado', dot: 'danger',  labelKey: 'fiscalMonitor.tbai.tab.Rechazado' },
+  { key: 'Error',     dot: 'danger',  labelKey: 'fiscalMonitor.tbai.tab.Error' },
+  { key: 'Pendiente', dot: 'pending', labelKey: 'fiscalMonitor.tbai.tab.Pendiente' },
 ];
 
 async function fetchTbaiList(base, orgId, token, page, statusFilter) {
@@ -134,7 +135,7 @@ export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFi
                     <td><input type="checkbox" /></td>
                     <td className="strong">{row.invoiceDate ?? row.creationDate ?? '—'}</td>
                     <td className="num-factura">
-                      <NumFactura n={row.invoice ?? '—'} />
+                      <NumFactura n={row.invoiceIdentifier ?? row.invoice ?? '—'} />
                     </td>
                     <td>{row.descripcion ?? '—'}</td>
                     <td>
