@@ -2296,14 +2296,13 @@ export function DetailView({
                 {linesLayout === 'inlineEditable' && (api?.crud?.[detailEntity]?.delete ?? true) && !isDocumentReadOnly && selectionBarVisible && (
                   <div
                     className="absolute bottom-0 left-0 right-0 z-30 pointer-events-none"
-                    style={{ height: 56, overflowX: 'clip', overflowY: 'visible' }}
+                    style={{ height: 46, overflowX: 'clip', overflowY: 'visible' }}
                   >
                     <div
                       className={`pointer-events-auto ${selectionBarClosing ? 'sidebar-slide-out' : 'sidebar-slide-in'}`}
                       style={{
-                        height: 56,
+                        height: 46,
                         background: '#FFFFFF',
-                        borderTop: '0.5px solid var(--color-border-tertiary, #e5e7eb)',
                         boxShadow: '0px 10px 15px -3px rgba(18,18,23,0.08), 0px 4px 6px -2px rgba(18,18,23,0.05)',
                         padding: 8,
                         animationDuration: '0.45s',

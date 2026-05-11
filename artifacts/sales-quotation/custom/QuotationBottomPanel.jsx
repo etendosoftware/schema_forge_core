@@ -21,7 +21,8 @@ export default function QuotationBottomPanel({
   return (
     <div className="flex flex-col">
       <div className="flex">
-        {/* Left column: Docs + Notes */}
+        {/* Left column: Docs + Notes — flex-1 absorbs whatever the Resumen
+            column doesn't claim, so Docs+Notes stays wide on most screens. */}
         <div className="flex-1 min-w-0 p-2">
           <div className="flex items-start gap-3 px-3 pb-3">
             <span className="text-[11px] font-medium text-foreground uppercase shrink-0 w-24 pt-0.5" style={{ letterSpacing: '0.04em' }}>
@@ -74,10 +75,11 @@ export default function QuotationBottomPanel({
 
         <div className="border-l border-border/50" style={{ borderLeftWidth: '0.5px' }} />
 
-        {/* Right column: Totals. Fixed height matches the expanded "Descuento
-            total" state so toggling does not resize the panel. Inline style
-            wins over any Tailwind class purge or flex stretching. */}
-        <div className="w-[340px] shrink-0 p-2 flex flex-col justify-start" style={{ height: 241, minHeight: 241, maxHeight: 241 }}>
+        {/* Right column: Totals. Fixed width — wider than the original 340px
+            so amounts up to ~9 digits + currency fit on a single line. Docs/Notes
+            on the left absorbs the rest. Fixed height matches the expanded
+            "Descuento total" state. */}
+        <div className="w-[420px] shrink-0 p-2 flex flex-col justify-start" style={{ height: 241, minHeight: 241, maxHeight: 241 }}>
           <DocumentTotalsPanel
             lines={lines ?? []}
             pendingLine={pendingLine ?? null}

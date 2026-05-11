@@ -72,7 +72,7 @@ export default function DocumentTotalsPanel({
 
   return (
     <div className="mt-1 flex flex-col items-end" data-inline-add-portal="true">
-      <div className="w-full max-w-xs text-sm">
+      <div className="w-full text-sm">
 
         {/* Button — hidden once total discount is active. Uses the same vertical
             footprint as the expanded "Descuento total" row (py-2 px-2, text-sm
@@ -156,7 +156,7 @@ export default function DocumentTotalsPanel({
                   style={{ borderWidth: '0.5px' }}
                 />
                 <span className="text-xs text-muted-foreground">%</span>
-                <span className="tabular-nums text-muted-foreground ml-auto">-{fmt(totalDiscountAmt ?? 0)}</span>
+                <span className="tabular-nums text-muted-foreground ml-auto whitespace-nowrap">-{fmt(totalDiscountAmt ?? 0)}</span>
               </div>
             )
           )}
