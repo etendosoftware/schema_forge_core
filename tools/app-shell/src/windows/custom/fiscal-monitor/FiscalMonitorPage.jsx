@@ -42,10 +42,7 @@ const RefreshButton = ({ loading, onRefresh, ui }) => (
     title={ui('fiscalMonitor.refresh')}
     style={{ background: 'none', border: 'none', cursor: loading ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
   >
-    {loading
-      ? <RefreshCw size={14} className="animate-spin" style={{ color: 'var(--fm-fg-3)' }} />
-      : <><span className="syncdot" />{ui('fiscalMonitor.synced')}</>
-    }
+    <RefreshCw size={14} className={loading ? 'animate-spin' : ''} style={{ color: 'var(--fm-fg-3)' }} />
   </button>
 );
 
