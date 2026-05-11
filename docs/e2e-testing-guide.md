@@ -77,6 +77,10 @@ The smoke performs these checks:
 4. An unauthenticated authorization request does not resolve to only the Vite/PWA shell.
 5. The user reaches the standard login flow, logs in, continues OAuth, handles consent when present, receives `code` and `state`, and exchanges the code for an `access_token` with PKCE.
 
+The app service worker must not serve `index.html` for backend or metadata navigations. `tools/app-shell/vite.config.js` keeps `/etendo/*`, `/mcp`, and `/.well-known/*` in the Workbox navigation fallback denylist while leaving `/authorize` as a SPA route.
+
+After deploying a service worker or routing change, invalidate CloudFront for `/sw.js`, `/registerSW.js`, `/index.html`, and `/assets/*`. For one local browser session, close and reopen the browser or unregister the existing service worker before retrying MCP authorization.
+
 ---
 
 ## Method 1: Record a Flow (Recommended for new tests)
