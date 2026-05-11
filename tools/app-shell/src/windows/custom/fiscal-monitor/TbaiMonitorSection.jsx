@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
-import { StatusPill, NumFactura, Pager, RowActionBtn } from './FmPrimitives.jsx';
+import { StatusPill, NumFactura, Pager, RowActionBtn, isErrorStatus } from './FmPrimitives.jsx';
 import { TBAI_SPEC, TBAI_ENTITY } from './useFiscalMonitor.js';
 
 const STATUS_FIELD = 'estado';
@@ -59,7 +59,7 @@ const CheckIcon = () => (
   </svg>
 );
 
-export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFilter = 'all', mockRows, onFilterChange, refreshKey = 0, onInvoiceOpen }) {
+export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFilter = 'all', mockRows, onFilterChange, refreshKey = 0, onInvoiceOpen, onBpClick }) {
   const ui = useUI();
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage]       = useState(1);
@@ -174,7 +174,12 @@ export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFi
                         )}
                       </td>
                       <td>
-                        <StatusPill estado={row.estado} />
+                        <StatusPill
+                          estado={row.estado}
+                          onClick={isErrorStatus(row.estado) && row.businessPartner
+                            ? () => onBpClick?.(row.businessPartner)
+                            : undefined}
+                        />
                       </td>
                       <td>
                         <RowActionBtn title={ui('fiscalMonitor.openInvoice')} />

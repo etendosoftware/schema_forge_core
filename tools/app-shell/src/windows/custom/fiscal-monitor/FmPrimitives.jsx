@@ -1,6 +1,13 @@
 // Shared UI primitives for the Fiscal Monitor.
 import { useUI } from '@/i18n';
 
+export const ERROR_STATUSES = new Set([
+  'IN', 'EE', 'AE',                            // SII
+  'Rechazado', 'Error',                         // TBAI
+  'rejected', 'invalid', 'partiallyAccepted',   // Verifactu
+]);
+export const isErrorStatus = (estado) => ERROR_STATUSES.has(estado);
+
 const STATUS_CONFIG = {
   // SII — API returns 2-letter codes from AD_Ref_List
   CO: { cls: 'success', labelKey: 'fiscalMonitor.status.sii.CO' },
@@ -23,12 +30,22 @@ const STATUS_CONFIG = {
   invalid:            { cls: 'danger',  labelKey: 'fiscalMonitor.status.vf.invalid' },
 };
 
-export const StatusPill = ({ estado }) => {
+export const StatusPill = ({ estado, onClick }) => {
   const ui = useUI();
   const cfg = STATUS_CONFIG[estado];
   const cls  = cfg?.cls  ?? 'pending';
   const text = cfg ? ui(cfg.labelKey) : (estado ?? '—');
-  return <span className={`fm-pill ${cls}`}>{text}</span>;
+  return (
+    <span
+      className={`fm-pill ${cls}`}
+      onClick={onClick}
+      style={onClick ? { cursor: 'pointer' } : undefined}
+      title={onClick ? ui('fiscalMonitor.viewContact') : undefined}
+      role={onClick ? 'button' : undefined}
+    >
+      {text}
+    </span>
+  );
 };
 
 const ExtLinkIcon = () => (

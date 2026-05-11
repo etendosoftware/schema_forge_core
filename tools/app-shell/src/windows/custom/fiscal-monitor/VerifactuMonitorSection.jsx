@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
-import { StatusPill, NumFactura, Pager, RowActionBtn } from './FmPrimitives.jsx';
+import { StatusPill, NumFactura, Pager, RowActionBtn, isErrorStatus } from './FmPrimitives.jsx';
 import {
   VF_SPEC,
   VF_ACEPTADAS_ENTITY,
@@ -49,7 +49,7 @@ async function fetchStatusTab(base, entity, orgId, page, token) {
   return { data: json?.response?.data ?? [], totalRows: json?.response?.totalRows ?? 0 };
 }
 
-export default function VerifactuMonitorSection({ orgId, token, apiBaseUrl, initialTab = 'accepted', mockRows, onTabChange, refreshKey = 0, onInvoiceOpen }) {
+export default function VerifactuMonitorSection({ orgId, token, apiBaseUrl, initialTab = 'accepted', mockRows, onTabChange, refreshKey = 0, onInvoiceOpen, onBpClick }) {
   const ui = useUI();
   const [activeTab, setActiveTab] = useState('accepted');
   const [page, setPage]     = useState(1);
@@ -155,7 +155,12 @@ export default function VerifactuMonitorSection({ orgId, token, apiBaseUrl, init
                     <td>{row.typeOperation ?? '—'}</td>
                     <td className="mono">{row.cSV ?? '—'}</td>
                     <td>
-                      <StatusPill estado={row.verifactuSendingStatus ?? activeTab} />
+                      <StatusPill
+                        estado={row.verifactuSendingStatus ?? activeTab}
+                        onClick={isErrorStatus(row.verifactuSendingStatus ?? activeTab) && row.businessPartner
+                          ? () => onBpClick?.(row.businessPartner)
+                          : undefined}
+                      />
                     </td>
                     <td style={{ maxWidth: 280, color: row.errorReason ? 'var(--fm-danger-fg)' : 'var(--fm-fg-3)', fontSize: 12 }}>
                       {row.codeError ? `[${row.codeError}] ` : ''}{row.errorReason ?? '—'}

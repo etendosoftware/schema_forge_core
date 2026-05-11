@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { neoBase } from '@/components/related-documents/helpers.js';
 import { useFiscalMonitor } from './useFiscalMonitor.js';
 import InvoicePreviewModal from '../shared/InvoicePreviewModal.jsx';
+import ContactDetailModal from './ContactDetailModal.jsx';
 import { useDebugMode } from './useDebugMode.js';
 import { computeKpis } from './fiscalMonitor.utils.js';
 import { MOCK_MONITOR_DATA, MOCK_SII_ROWS, MOCK_TBAI_ROWS, MOCK_VF_ROWS } from './fiscalMonitorMockData.js';
@@ -154,6 +155,8 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
   const [refreshKey,        setRefreshKey]        = useState(0);
   const [previewInvoice,    setPreviewInvoice]    = useState(null);
   const [previewSpec,       setPreviewSpec]       = useState('sales-invoice');
+  const [bpPopup,           setBpPopup]           = useState(null);
+  const contactsApiBase = `${neoBase(apiBaseUrl)}/contacts`;
 
   const {
     loading, error, profile, kpis, siiParentId,
@@ -290,6 +293,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
             onTabChange={setSiiInitialTab}
             refreshKey={refreshKey}
             onInvoiceOpen={handleInvoiceOpen}
+            onBpClick={(bpId) => setBpPopup(bpId)}
           />
         </>
       )}
@@ -315,6 +319,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
             onFilterChange={setTbaiInitialFilter}
             refreshKey={refreshKey}
             onInvoiceOpen={handleInvoiceOpen}
+            onBpClick={(bpId) => setBpPopup(bpId)}
           />
         </>
       )}
@@ -334,6 +339,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
             onTabChange={setVeriInitialTab}
             refreshKey={refreshKey}
             onInvoiceOpen={handleInvoiceOpen}
+            onBpClick={(bpId) => setBpPopup(bpId)}
           />
         </>
       )}
@@ -345,6 +351,15 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
         apiBaseUrl={`${neoBase(apiBaseUrl)}/${previewSpec}`}
         specName={previewSpec}
         onClose={() => setPreviewInvoice(null)}
+      />
+    )}
+    {bpPopup && (
+      <ContactDetailModal
+        open={!!bpPopup}
+        onClose={() => setBpPopup(null)}
+        bpId={bpPopup}
+        token={token}
+        contactsApiBase={contactsApiBase}
       />
     )}
     </>

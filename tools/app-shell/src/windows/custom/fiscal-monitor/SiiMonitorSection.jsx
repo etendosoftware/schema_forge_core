@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
-import { StatusPill, NumFactura, Pager, RowActionBtn } from './FmPrimitives.jsx';
+import { StatusPill, NumFactura, Pager, RowActionBtn, isErrorStatus } from './FmPrimitives.jsx';
 import {
   SII_SPEC,
   SII_EMITIDAS_ENTITY,
@@ -70,7 +70,7 @@ async function fetchSubtab(base, entity, parentId, page, token, statusFilter) {
   return { data: json?.response?.data ?? [], totalRows: json?.response?.totalRows ?? 0 };
 }
 
-export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, initialTab = 'issued', mockRows, onTabChange, refreshKey = 0, onInvoiceOpen }) {
+export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, initialTab = 'issued', mockRows, onTabChange, refreshKey = 0, onInvoiceOpen, onBpClick }) {
   const ui = useUI();
   const [tab, setTab]             = useState('issued');
   const [period, setPeriod]       = useState('current');
@@ -239,7 +239,12 @@ export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, 
                     <td>{row.aeatsiiClaveTipo ?? row.aeatsiiClaveTipoFc ?? '—'}</td>
                     <td className="num strong">{row.grandTotalAmount ?? '—'}</td>
                     <td>
-                      <StatusPill estado={row.aeatsiiEstado} />
+                      <StatusPill
+                        estado={row.aeatsiiEstado}
+                        onClick={isErrorStatus(row.aeatsiiEstado) && row.businessPartner
+                          ? () => onBpClick?.(row.businessPartner)
+                          : undefined}
+                      />
                       {row.aeatsiiErrorMsg && (
                         <div style={{ fontSize: 11, color: 'var(--fm-danger-fg)', marginTop: 3 }}>
                           {row.aeatsiiErrorCode ? `[${row.aeatsiiErrorCode}] ` : ''}{row.aeatsiiErrorMsg}
