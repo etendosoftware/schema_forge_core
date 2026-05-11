@@ -164,6 +164,10 @@ export function DetailView({
   refetchAfterSave = false,
   secondaryTabsPaddingY = 'py-2.5',
   secondaryTabsShowHoverLine = false,
+  hideAddLineChevron = false,
+  addLineButtonPaddingX = '',
+  formScrollPaddingB = 'pb-6',
+  secondaryTabContentPaddingT = 'pt-3',
 }) {
   // DetailView never needs the parent list: on `/new` there is no record to match, and on
   // `/:id` the currentItem shortcut only helps when we arrived from ListView (items already
@@ -1374,12 +1378,12 @@ export function DetailView({
         {primaryTabs && activePrimaryTab !== 'general' ? (() => {
           const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
           return activeTab?.Panel ? (
-            <div className={`flex-1 overflow-auto pb-6 min-w-0 ${formScrollPaddingX !== null ? formScrollPaddingX : (sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6')}`}>
+            <div className={`flex-1 overflow-auto ${formScrollPaddingB} min-w-0 ${formScrollPaddingX !== null ? formScrollPaddingX : (sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6')}`}>
               <activeTab.Panel entity={entity} data={data} token={token} apiBaseUrl={apiBaseUrl} catalogs={catalogs} api={api} editing={hook.editing} onChange={handleChangeWithCallout} />
             </div>
           ) : null;
         })() : null}
-        <div className={`flex-1 overflow-auto pb-6 min-w-0 ${formScrollPaddingX !== null ? formScrollPaddingX : (sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6')}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
+        <div className={`flex-1 overflow-auto ${formScrollPaddingB} min-w-0 ${formScrollPaddingX !== null ? formScrollPaddingX : (sidePanel || sidebarContent ? 'pl-6 pr-2' : 'px-6')}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
           <div className={`${sidePanel ? 'flex items-start gap-0' : ''}`}>
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} space-y-2`}>
@@ -1884,7 +1888,7 @@ export function DetailView({
 
                 {/* Tab content: secondary child entity tabs (or form-only tabs) */}
                 {secondaryTabs.map((st, stIdx) => tabs[activeTab]?.key === st.key && (
-                  <div key={st.key} className={`pt-3 flex flex-col gap-3${embedded ? ' pointer-events-none' : ''}`}>
+                  <div key={st.key} className={`${secondaryTabContentPaddingT} flex flex-col gap-3${embedded ? ' pointer-events-none' : ''}`}>
                     {st.isFormTab ? (
                       <div className="flex-1 min-w-0">
                         <st.Form
@@ -2050,16 +2054,19 @@ export function DetailView({
                     )}
                     </div>
                     {(st.addLineFields?.entry?.length > 0 || st.customAddModal) && hook.editing && (
-                      <AddLineButton
-                        onClick={() => {
-                          if (st.customAddModal) {
-                            void handleCustomModalAddClick(st.key);
-                          } else {
-                            void handleSecondaryAddLineToggle(st.key);
-                          }
-                        }}
-                        label={ui('addEntity', { label: tMenu(st.label) })}
-                      />
+                      <div className={addLineButtonPaddingX}>
+                        <AddLineButton
+                          onClick={() => {
+                            if (st.customAddModal) {
+                              void handleCustomModalAddClick(st.key);
+                            } else {
+                              void handleSecondaryAddLineToggle(st.key);
+                            }
+                          }}
+                          label={ui('addEntity', { label: tMenu(st.label) })}
+                          hideChevron={hideAddLineChevron}
+                        />
+                      </div>
                     )}
                     </>
                     )}

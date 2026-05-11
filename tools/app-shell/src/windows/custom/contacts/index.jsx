@@ -103,10 +103,14 @@ export default function ContactsWindow(props) {
           toolbarButtonSize="default"
           primaryTabsVariant="pill"
           tabsBarPaddingX="pl-2 pr-5"
-          formScrollPaddingX="pl-0 pr-2"
-          formCardPadding="pt-2 px-5 pb-3"
+          formScrollPaddingX="pl-0 pr-0"
+          formScrollPaddingB="pb-2"
+          secondaryTabContentPaddingT="pt-2"
+          formCardPadding="pt-2 px-5 pb-2"
           secondaryTabsPaddingY="py-[14px]"
           secondaryTabsShowHoverLine={true}
+          hideAddLineChevron={true}
+          addLineButtonPaddingX="pl-2"
         />
       </div>
 
