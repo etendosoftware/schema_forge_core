@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI } from '@/i18n';
@@ -32,7 +33,7 @@ const ProfileBadge = ({ profile, labels = {} }) => {
   );
 };
 
-const OrgLead = ({ org, profile, ui }) => {
+const OrgLead = ({ org, profile, ui, onRefresh, loading }) => {
   const profileLabels = {
     sii: 'SII', tbai: 'TBAI', 'sii+tbai': 'SII + TBAI',
     'sii-navarra': 'SII Navarra', verifactu: 'Verifactu',
@@ -51,8 +52,7 @@ const OrgLead = ({ org, profile, ui }) => {
       </div>
     </div>
     <div className="r">
-      <span className="syncdot" />
-      {ui('fiscalMonitor.synced')}
+      <RefreshButton loading={loading} onRefresh={onRefresh} ui={ui} />
     </div>
   </div>
   );
@@ -84,7 +84,7 @@ function useDebugState(orgId, token, apiBaseUrl) {
   const [debugProfile, setDebugProfile] = useState(null);
   const [mockData,     setMockData]     = useState(false);
 
-  const { loading, error, profile: realProfile, kpis: realKpis, siiParentId } = useFiscalMonitor(orgId, token, apiBaseUrl);
+  const { loading, error, profile: realProfile, kpis: realKpis, siiParentId, refetch } = useFiscalMonitor(orgId, token, apiBaseUrl);
 
   const profile = (debugMode && debugProfile) ? debugProfile : realProfile;
 
@@ -104,6 +104,7 @@ function useDebugState(orgId, token, apiBaseUrl) {
 
   return {
     loading, error, profile, kpis, siiParentId,
+    refetch,
     siiMockRows, tbaiMockRows, vfMockRows,
     debugMode, debugProfile, setDebugProfile,
     mockData, setMockData, debugOverrideActive,
@@ -127,6 +128,22 @@ const WipBadge = ({ ui }) => (
   </div>
 );
 
+const RefreshButton = ({ loading, onRefresh, ui }) => (
+  <button
+    className="fm-orglead-refresh"
+    onClick={loading ? undefined : onRefresh}
+    disabled={loading}
+    aria-label={ui('fiscalMonitor.refresh')}
+    title={ui('fiscalMonitor.refresh')}
+    style={{ background: 'none', border: 'none', cursor: loading ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+  >
+    {loading
+      ? <RefreshCw size={14} className="animate-spin" style={{ color: 'var(--fm-fg-3)' }} />
+      : <><span className="syncdot" />{ui('fiscalMonitor.synced')}</>
+    }
+  </button>
+);
+
 export default function FiscalMonitorPage({ token, apiBaseUrl }) {
   const ui = useUI();
   const { selectedOrg } = useAuth();
@@ -135,13 +152,20 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
   const [siiInitialTab,     setSiiInitialTab]     = useState('issued');
   const [tbaiInitialFilter, setTbaiInitialFilter] = useState('all');
   const [veriInitialTab,    setVeriInitialTab]    = useState('accepted');
+  const [refreshKey,        setRefreshKey]        = useState(0);
 
   const {
     loading, error, profile, kpis, siiParentId,
+    refetch,
     siiMockRows, tbaiMockRows, vfMockRows,
     debugMode, debugProfile, setDebugProfile,
     mockData, setMockData, debugOverrideActive,
   } = useDebugState(orgId, token, apiBaseUrl);
+
+  function handleRefresh() {
+    refetch();
+    setRefreshKey(k => k + 1);
+  }
 
   const DebugPanel = debugMode ? (
     <FiscalMonitorDebugPanel
@@ -225,7 +249,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
       {DebugPanel}
     <div className="relative fm-wrap fm-page">
       <WipBadge ui={ui} />
-      <OrgLead org={org} profile={profile} ui={ui} />
+      <OrgLead org={org} profile={profile} ui={ui} onRefresh={handleRefresh} loading={loading} />
 
       {(profile === 'sii' || profile === 'sii-navarra' || profile === 'sii+tbai') && (
         <>
@@ -241,6 +265,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
             initialTab={siiInitialTab}
             mockRows={siiMockRows}
             onTabChange={setSiiInitialTab}
+            refreshKey={refreshKey}
           />
         </>
       )}
@@ -264,6 +289,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
             initialFilter={tbaiInitialFilter}
             mockRows={tbaiMockRows}
             onFilterChange={setTbaiInitialFilter}
+            refreshKey={refreshKey}
           />
         </>
       )}
@@ -281,6 +307,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
             initialTab={veriInitialTab}
             mockRows={vfMockRows}
             onTabChange={setVeriInitialTab}
+            refreshKey={refreshKey}
           />
         </>
       )}
