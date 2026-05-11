@@ -99,9 +99,9 @@ describe('invoiceDueDate helpers', () => {
       assert.equal(getDueDateTextStyle('paid'), undefined);
     });
 
-    it('overdue uses red-500 #F53D6B dot and red-700 #D50B3E text', () => {
+    it('overdue uses red-500 #F53D6B dot, no override on text', () => {
       assert.deepEqual(getDueDateDotStyle('overdue'), { backgroundColor: '#F53D6B' });
-      assert.deepEqual(getDueDateTextStyle('overdue'), { color: '#D50B3E' });
+      assert.equal(getDueDateTextStyle('overdue'), undefined);
     });
 
     it('soon uses yellow-600 #FAAF00 dot, no override on text', () => {

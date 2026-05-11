@@ -3,16 +3,11 @@ import { ArrowUpRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { BPChartSVGContent } from '@/windows/custom/businessPartner/BusinessPartnerSidebar';
 import { useUI, useLocaleSwitch } from '@/i18n';
+import { useCurrency } from '@/hooks/useCurrency';
+import { formatCurrency } from '@/lib/formatCurrency';
 
-function formatCurrency(value) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency', currency: 'USD',
-    minimumFractionDigits: 0, maximumFractionDigits: 2,
-  }).format(value);
-}
-
-function KPICard({ label, value, format, color }) {
-  const display = format === 'currency' ? formatCurrency(value) : value;
+function KPICard({ label, value, format, color, currencyCode }) {
+  const display = format === 'currency' ? formatCurrency(currencyCode ?? 'USD', value) : value;
   return (
     <div className="flex flex-col justify-center gap-2 rounded-lg flex-1 h-16 [filter:drop-shadow(0px_1px_2px_rgba(18,18,23,0.05))]">
       <p className="text-sm font-normal leading-5 text-[#3F3F50]">{label}</p>
@@ -47,7 +42,7 @@ const PERIOD_OPTIONS = [
   { label: '6M', months: 6 },
 ];
 
-function ContactsChart({ labels = [], revenue = [], expenses = [] }) {
+function ContactsChart({ labels = [], revenue = [], expenses = [], currencyCode }) {
   const ui = useUI();
   const { locale } = useLocaleSwitch();
   const [expanded, setExpanded] = useState(false);
@@ -86,7 +81,7 @@ function ContactsChart({ labels = [], revenue = [], expenses = [] }) {
       <BPChartSVGContent
         labels={localizedLabels} revenue={revenue} expenses={expenses}
         CW={320} CH={200} PX={32} PY={12} PB={22}
-        fontSize={9} chartId="contacts-mini"
+        fontSize={9} chartId="contacts-mini" orgCurrency={currencyCode ?? 'USD'}
       />
 
       <Dialog open={expanded} onOpenChange={setExpanded}>
@@ -116,7 +111,7 @@ function ContactsChart({ labels = [], revenue = [], expenses = [] }) {
           <BPChartSVGContent
             labels={sl(localizedLabels)} revenue={sl(revenue)} expenses={sl(expenses)}
             CW={580} CH={280} PX={48} PY={16} PB={28}
-            fontSize={12} chartId="contacts-expanded"
+            fontSize={12} chartId="contacts-expanded" orgCurrency={currencyCode ?? 'USD'}
           />
           <ChartLegend />
         </DialogContent>
@@ -128,6 +123,7 @@ function ContactsChart({ labels = [], revenue = [], expenses = [] }) {
 /* eslint-disable react/prop-types */
 export default function ContactsSidebar({ recordId, token, apiBaseUrl }) {
   const ui = useUI();
+  const currencyCode = useCurrency();
   const [kpis, setKpis] = useState(null);
   const [trend, setTrend] = useState(null);
 
@@ -163,6 +159,7 @@ export default function ContactsSidebar({ recordId, token, apiBaseUrl }) {
               value={kpi.value}
               format={kpi.format}
               color={KPI_CONFIG[kpi.key]?.color ?? 'text-foreground'}
+              currencyCode={currencyCode}
             />
           ))
         )}
@@ -178,6 +175,7 @@ export default function ContactsSidebar({ recordId, token, apiBaseUrl }) {
           labels={trend.labels ?? []}
           revenue={trend.revenue ?? []}
           expenses={trend.expenses ?? []}
+          currencyCode={currencyCode}
         />
       )}
     </div>

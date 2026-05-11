@@ -146,4 +146,9 @@ describe('InvoicePaymentModal', () => {
     backdrop.click();
     expect(props.onClose).toHaveBeenCalled();
   });
+
+  it('accepts an optional onPaymentAdded prop without error', () => {
+    const onPaymentAdded = vi.fn();
+    expect(() => renderModal({ onPaymentAdded })).not.toThrow();
+  });
 });
