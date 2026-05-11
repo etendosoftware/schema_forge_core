@@ -224,7 +224,7 @@ export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, 
                     <td className="num-factura">
                       <NumFactura n={row.documentNo ?? row[INVOICE_FK_FIELD] ?? '—'} />
                     </td>
-                    <td className="strong">{row.businessPartnerIdentifier ?? row.businessPartner ?? '—'}</td>
+                    <td className="strong">{row['businessPartner$_identifier'] ?? row.businessPartnerIdentifier ?? row.businessPartner ?? '—'}</td>
                     <td>{row.aeatsiiClaveTipo ?? row.aeatsiiClaveTipoFc ?? '—'}</td>
                     <td className="num strong">{row.grandTotalAmount ?? '—'}</td>
                     <td>

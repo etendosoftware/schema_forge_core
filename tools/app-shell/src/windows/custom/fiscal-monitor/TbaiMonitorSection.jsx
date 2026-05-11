@@ -133,11 +133,11 @@ export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFi
                 ) : rows.map((row, i) => (
                   <tr key={row.id ?? i}>
                     <td><input type="checkbox" /></td>
-                    <td className="strong">{row.invoiceDate ?? row.creationDate ?? '—'}</td>
+                    <td className="strong">{row['invoice$invoiceDate'] ?? row.invoiceDate ?? row.creationDate ?? '—'}</td>
                     <td className="num-factura">
-                      <NumFactura n={row.invoiceIdentifier ?? row.invoice ?? '—'} />
+                      <NumFactura n={row['invoice$_identifier'] ?? row.invoiceIdentifier ?? row.invoice ?? '—'} />
                     </td>
-                    <td>{row.descripcion ?? '—'}</td>
+                    <td>{row['invoice$description'] ?? row.descripcion ?? '—'}</td>
                     <td>
                       {row.estado === 'Recibido' ? (
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--fm-success-fg)', fontWeight: 500, fontSize: 12 }}>
