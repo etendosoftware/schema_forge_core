@@ -141,8 +141,8 @@ test.describe('MCP OAuth2 Authorization Code + PKCE deployed smoke', () => {
 
       await page.context().clearCookies();
       await page.goto(authorizeUrl.toString(), { waitUntil: 'domcontentloaded' });
-      await expectNotOnlyPwaShell(page);
       await expectLoginFlow(page);
+      await expectNotOnlyPwaShell(page);
 
       await fillLoginForm(page, SMOKE_USER, SMOKE_PASSCODE);
       await approveConsentIfNeeded(page, callbackServer.callbackPromise);
@@ -179,6 +179,7 @@ async function resolveOAuthClient(request, redirectUri) {
     headers.authorization = `Bearer ${INITIAL_DCR_TOKEN}`;
   }
 
+  const requestedTokenAuthMethod = 'none';
   const response = await request.post(REGISTRATION_ENDPOINT, {
     headers,
     data: {
@@ -186,7 +187,7 @@ async function resolveOAuthClient(request, redirectUri) {
       redirect_uris: [redirectUri],
       grant_types: ['authorization_code'],
       response_types: ['code'],
-      token_endpoint_auth_method: 'none',
+      token_endpoint_auth_method: requestedTokenAuthMethod,
       scope: REQUESTED_SCOPES,
     },
   });
@@ -197,7 +198,7 @@ async function resolveOAuthClient(request, redirectUri) {
   return {
     clientId: body.client_id,
     clientCredential: body.client_secret,
-    tokenAuthMethod: body.token_endpoint_auth_method || 'client_secret_basic',
+    tokenAuthMethod: body.token_endpoint_auth_method || requestedTokenAuthMethod,
   };
 }
 
@@ -416,7 +417,7 @@ function resolveCallbackListenHost(url) {
   const host = url.hostname;
   if (host === '127.0.0.1') return host;
   if (host === '[::1]' || host === '::1') return '::1';
-  if (host === 'localhost') return null;
+  if (host === 'localhost') return host;
 
   throw new Error(
     'E2E_MCP_OAUTH_REDIRECT_URI must use a loopback host: 127.0.0.1, localhost, or [::1].'
@@ -426,11 +427,7 @@ function resolveCallbackListenHost(url) {
 function listenForCallback(server, port, host) {
   return new Promise((resolve, reject) => {
     server.once('error', reject);
-    if (host) {
-      server.listen(port, host, resolve);
-      return;
-    }
-    server.listen(port, resolve);
+    server.listen(port, host, resolve);
   });
 }
 
