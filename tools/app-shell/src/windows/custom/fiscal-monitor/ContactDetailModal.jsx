@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, Loader2, MapPin } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { X, Loader2, MapPin, ChevronDown, Check } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { toast } from 'sonner';
 import LocationEditorModal from '@/windows/custom/contacts/LocationEditorModal.jsx';
@@ -23,22 +23,18 @@ async function fetchFirstLocation(apiBase, bpId, token) {
 }
 
 async function fetchTaxIDKeyOptions(apiBase, token) {
-  const urls = [
-    `${apiBase}/businessPartner/selectors/oBTIKTaxIDKey`,
-    `${apiBase}/businessPartner/selectors/OBTIKTaxIDKey`,
-  ];
-  for (const url of urls) {
-    try {
-      const res = await fetch(`${url}?limit=50&offset=0`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) continue;
-      const json = await res.json();
-      const items = json?.items ?? json?.response?.data ?? [];
-      if (Array.isArray(items) && items.length > 0) return items;
-    } catch (_) { /* try next */ }
+  const url = `${apiBase}/businessPartner/selectors/EM_OBTIK_Tax_ID_Key?limit=50&offset=0`;
+  try {
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return [];
+    const json = await res.json();
+    const items = json?.items ?? json?.response?.data ?? [];
+    return Array.isArray(items)
+      ? items.map(i => ({ id: i.id, label: i.label || i.name || i._identifier || i.id }))
+      : [];
+  } catch (_) {
+    return [];
   }
-  return [];
 }
 
 function formatAddress(loc) {
@@ -51,10 +47,92 @@ function formatAddress(loc) {
   return parts.join(', ') || loc.name || null;
 }
 
+function TaxIDKeyPicker({ options, value, onChange, loading, ui }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  const selected = options.find(o => o.id === value);
+
+  const close = useCallback(() => setOpen(false), []);
+
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open, close]);
+
+  if (loading) {
+    return (
+      <div className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-400 bg-gray-50 flex items-center gap-2">
+        <Loader2 size={13} className="animate-spin" />
+        {ui('loading')}
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors flex items-center justify-between gap-2"
+      >
+        <span className={`truncate ${selected ? 'text-gray-900' : 'text-gray-400'}`}>
+          {selected?.label ?? '—'}
+        </span>
+        <ChevronDown size={15} className={`text-gray-500 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-[60]" onMouseDown={close} />
+          <ul
+            role="listbox"
+            className="absolute z-[61] mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg py-1 max-h-60 overflow-auto"
+          >
+            {options.map(opt => (
+              <li key={opt.id}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={opt.id === value}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    onChange(opt.id);
+                    setOpen(false);
+                  }}
+                  className={[
+                    'w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left transition-colors',
+                    opt.id === value
+                      ? 'bg-blue-50 text-blue-700 font-medium'
+                      : 'text-gray-800 hover:bg-gray-50',
+                  ].join(' ')}
+                >
+                  <span className="w-4 shrink-0">
+                    {opt.id === value && <Check size={13} />}
+                  </span>
+                  {opt.label}
+                </button>
+              </li>
+            ))}
+            {options.length === 0 && (
+              <li className="px-4 py-3 text-sm text-gray-400 text-center">{ui('noResults')}</li>
+            )}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function ContactDetailModal({ open, onClose, bpId, token, contactsApiBase }) {
   const ui = useUI();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [keyOptsLoading, setKeyOptsLoading] = useState(false);
   const [name, setName] = useState('');
   const [taxID, setTaxID] = useState('');
   const [taxIDKey, setTaxIDKey] = useState('');
@@ -66,6 +144,7 @@ export default function ContactDetailModal({ open, onClose, bpId, token, contact
     if (!open || !bpId || !contactsApiBase) return;
     let cancelled = false;
     setLoading(true);
+    setKeyOptsLoading(true);
     setName(''); setTaxID(''); setTaxIDKey(''); setLocation(null); setTaxIDKeyOptions([]);
 
     Promise.all([
@@ -75,14 +154,14 @@ export default function ContactDetailModal({ open, onClose, bpId, token, contact
     ]).then(([bp, loc, keyOpts]) => {
       if (cancelled) return;
       if (bp) {
-        setName(bp.name ?? '');
+        setName(bp.name ?? bp.etgoFirstname ?? '');
         setTaxID(bp.taxID ?? '');
         setTaxIDKey(bp.oBTIKTaxIDKey ?? '');
       }
       setLocation(loc);
-      setTaxIDKeyOptions(Array.isArray(keyOpts) ? keyOpts : []);
+      setTaxIDKeyOptions(keyOpts);
     }).finally(() => {
-      if (!cancelled) setLoading(false);
+      if (!cancelled) { setLoading(false); setKeyOptsLoading(false); }
     });
 
     return () => { cancelled = true; };
@@ -157,6 +236,20 @@ export default function ContactDetailModal({ open, onClose, bpId, token, contact
               </div>
             </div>
 
+            {/* Tax ID Key — custom styled dropdown */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                {ui('contactDetail.taxIDKey')}
+              </label>
+              <TaxIDKeyPicker
+                options={taxIDKeyOptions}
+                value={taxIDKey}
+                onChange={setTaxIDKey}
+                loading={keyOptsLoading}
+                ui={ui}
+              />
+            </div>
+
             {/* Tax ID */}
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -168,35 +261,6 @@ export default function ContactDetailModal({ open, onClose, bpId, token, contact
                 onChange={e => setTaxID(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-            </div>
-
-            {/* Tax ID Key */}
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                {ui('contactDetail.taxIDKey')}
-              </label>
-              {taxIDKeyOptions.length > 0 ? (
-                <select
-                  value={taxIDKey}
-                  onChange={e => setTaxIDKey(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">—</option>
-                  {taxIDKeyOptions.map(opt => (
-                    <option key={opt.id ?? opt.value} value={opt.id ?? opt.value}>
-                      {opt.label ?? opt.name ?? opt._identifier ?? opt.id}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  type="text"
-                  value={taxIDKey}
-                  onChange={e => setTaxIDKey(e.target.value)}
-                  placeholder="—"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              )}
             </div>
 
             {/* Location */}
