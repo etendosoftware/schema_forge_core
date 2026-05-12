@@ -8,6 +8,12 @@ export const ERROR_STATUSES = new Set([
 ]);
 export const isErrorStatus = (estado) => ERROR_STATUSES.has(estado);
 
+export const PENDING_STATUSES = new Set([
+  'PE',        // SII
+  'Pendiente', // TBAI
+]);
+export const isPendingStatus = (estado) => PENDING_STATUSES.has(estado);
+
 const STATUS_CONFIG = {
   // SII — API returns 2-letter codes from AD_Ref_List
   CO: { cls: 'success', labelKey: 'fiscalMonitor.status.sii.CO' },
@@ -30,7 +36,7 @@ const STATUS_CONFIG = {
   invalid:            { cls: 'danger',  labelKey: 'fiscalMonitor.status.vf.invalid' },
 };
 
-export const StatusPill = ({ estado, onClick }) => {
+export const StatusPill = ({ estado, onClick, title: titleProp }) => {
   const ui = useUI();
   const cfg = STATUS_CONFIG[estado];
   const cls  = cfg?.cls  ?? 'pending';
@@ -41,7 +47,7 @@ export const StatusPill = ({ estado, onClick }) => {
         type="button"
         className={`fm-pill ${cls}`}
         onClick={onClick}
-        title={ui('fiscalMonitor.viewContact')}
+        title={titleProp ?? ui('fiscalMonitor.viewContact')}
       >
         {text}
       </button>

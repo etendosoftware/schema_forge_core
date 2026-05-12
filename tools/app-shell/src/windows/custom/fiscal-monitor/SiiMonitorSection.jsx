@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
-import { StatusPill, NumFactura, Pager, RowActionBtn, isErrorStatus } from './FmPrimitives.jsx';
+import { StatusPill, NumFactura, Pager, RowActionBtn, isErrorStatus, isPendingStatus } from './FmPrimitives.jsx';
 import {
   SII_SPEC,
   SII_EMITIDAS_ENTITY,
@@ -241,9 +241,14 @@ export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, 
                     <td>
                       <StatusPill
                         estado={row.aeatsiiEstado}
-                        onClick={isErrorStatus(row.aeatsiiEstado) && row.businessPartner
-                          ? () => onBpClick?.(row.businessPartner)
-                          : undefined}
+                        onClick={
+                          isErrorStatus(row.aeatsiiEstado) && row.businessPartner
+                            ? () => onBpClick?.(row.businessPartner)
+                            : isPendingStatus(row.aeatsiiEstado) && row[INVOICE_FK_FIELD]
+                              ? () => onInvoiceOpen?.(row[INVOICE_FK_FIELD], tab === 'issued' ? 'sales-invoice' : 'purchase-invoice')
+                              : undefined
+                        }
+                        title={isPendingStatus(row.aeatsiiEstado) ? ui('fiscalMonitor.openInvoice') : undefined}
                       />
                       {row.aeatsiiErrorMsg && (
                         <div style={{ fontSize: 11, color: 'var(--fm-danger-fg)', marginTop: 3 }}>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
-import { StatusPill, NumFactura, Pager, RowActionBtn, isErrorStatus } from './FmPrimitives.jsx';
+import { StatusPill, NumFactura, Pager, RowActionBtn, isErrorStatus, isPendingStatus } from './FmPrimitives.jsx';
 import { TBAI_SPEC, TBAI_ENTITY } from './useFiscalMonitor.js';
 
 const STATUS_FIELD = 'estado';
@@ -175,9 +175,14 @@ export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFi
                       <td>
                         <StatusPill
                           estado={row.estado}
-                          onClick={isErrorStatus(row.estado) && row.businessPartner
-                            ? () => onBpClick?.(row.businessPartner)
-                            : undefined}
+                          onClick={
+                            isErrorStatus(row.estado) && row.businessPartner
+                              ? () => onBpClick?.(row.businessPartner)
+                              : isPendingStatus(row.estado) && row.invoice
+                                ? () => onInvoiceOpen?.(row.invoice, 'sales-invoice')
+                                : undefined
+                          }
+                          title={isPendingStatus(row.estado) ? ui('fiscalMonitor.openInvoice') : undefined}
                         />
                       </td>
                       <td>
