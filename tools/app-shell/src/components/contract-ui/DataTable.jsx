@@ -244,6 +244,18 @@ function isFalsyBoolean(value) {
   return value === false || value === 'N' || value === 'false';
 }
 
+const INLINE_ADD_IGNORED_PORTAL_SELECTORS = [
+  '[role="dialog"]',
+  '[data-inline-add-portal="true"]',
+  '[role="listbox"]',
+  '[data-radix-popper-content-wrapper]',
+];
+
+function isClickInsideIgnoredPortal(target) {
+  if (!(target instanceof Element)) return false;
+  return INLINE_ADD_IGNORED_PORTAL_SELECTORS.some(sel => target.closest(sel));
+}
+
 function applyLocalSearch(rows, filters, searchQuery) {
   if (!searchQuery) return rows;
   const q = searchQuery.toLowerCase();
@@ -474,18 +486,12 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     const handler = (e) => {
       const target = e.target;
       if (!(target instanceof Node)) return;
-      if (rowRef.current && rowRef.current.contains(target)) return;
-      if (target instanceof Element) {
-        if (target.closest('[role="dialog"]')) return;
-        if (target.closest('[data-inline-add-portal="true"]')) return;
-        // Radix Select renders its dropdown in a portal outside the row. Treat any
-        // click inside an open listbox/popper as part of the row interaction so the
-        // row is not silently saved with the previous value when the user just picked
-        // a different option (e.g. switching the tax).
-        if (target.closest('[role="listbox"]')) return;
-        if (target.closest('[data-radix-popper-content-wrapper]')) return;
-      }
-      // If a dialog/drawer is currently open anywhere, defer — clicks belong to it.
+      if (rowRef.current?.contains(target)) return;
+      // Skip whitelisted portals: open dialog/drawer, inline-add combo portal, and
+      // Radix Select dropdowns (rendered outside the row via portal). Treating
+      // these as part of the row prevents silent saves when the user is still
+      // interacting with a popover/listbox (e.g. switching the tax).
+      if (isClickInsideIgnoredPortal(target)) return;
       if (document.querySelector('[role="dialog"]')) return;
       if (inflightRef.current) return;
       if (touchedFieldsRef.current.size === 0) {
