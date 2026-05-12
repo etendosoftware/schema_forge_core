@@ -15,7 +15,7 @@
       "breadcrumb": "Contact",
       "customComponents": {
         "headerTable": "ContactsTable",
-        "topbarRight": "ContactTypeToggle"
+        "topbarExtra": "ContactTypeToggle"
       },
       "processOverrides": {
         "setNewCurrency": {
@@ -3774,7 +3774,7 @@
       "breadcrumb": "Contact",
       "customComponents": {
         "headerTable": "ContactsTable",
-        "topbarRight": "ContactTypeToggle"
+        "topbarExtra": "ContactTypeToggle"
       },
       "processOverrides": {
         "setNewCurrency": {

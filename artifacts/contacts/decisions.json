@@ -34,7 +34,7 @@
     ],
     "customComponents": {
       "headerTable": "ContactsTable",
-      "topbarRight": "ContactTypeToggle"
+      "topbarExtra": "ContactTypeToggle"
     },
     "hidePrint": true,
     "hideMoreMenu": true,

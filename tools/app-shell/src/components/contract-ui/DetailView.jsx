@@ -198,7 +198,18 @@ export function DetailView({
   linesLayout = 'classic',
   autoSaveOnBlur = false,
   toolbarPaddingX = 'px-6',
+  tabsBarPaddingX = 'px-6',
+  formScrollPaddingX = null,
+  formCardPadding = 'p-6',
+  toolbarButtonSize = 'sm',
+  primaryTabsVariant = 'default',
   refetchAfterSave = false,
+  secondaryTabsPaddingY = 'py-2.5',
+  secondaryTabsShowHoverLine = false,
+  hideAddLineChevron = false,
+  addLineButtonPaddingX = '',
+  formScrollPaddingB = 'pb-6',
+  secondaryTabContentPaddingT = 'pt-3',
 }) {
   // DetailView never needs the parent list: on `/new` there is no record to match, and on
   // `/:id` the currentItem shortcut only helps when we arrived from ListView (items already
@@ -384,6 +395,8 @@ export function DetailView({
     )
   );
   const isDocumentReadOnly = lockWhenProcessed && isProcessed;
+  const sqBtnSize = toolbarButtonSize === 'default' ? 'h-10 w-10' : 'h-9 w-9';
+  const saveBtnCls = toolbarButtonSize === 'default' ? 'h-10 gap-2' : 'gap-1.5';
   const [showPrint, setShowPrint] = useState(false);
   // showNotes state removed — notes panel is always visible in side-by-side layout
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -1306,13 +1319,10 @@ export function DetailView({
         <div className={`flex items-center justify-between ${linesLayout === 'inlineEditable' ? 'p-2' : toolbarPaddingX + ' py-3'}${toolbarBorderBottom || linesLayout === 'inlineEditable' ? ' border-b border-[#E8EAEF]' : ''}`}>
           <div className="flex items-center gap-3">
             <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
+              className="h-10 px-3 rounded-lg bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_rgba(18,18,23,0.05)] text-[#121217] text-sm font-medium hover:bg-[#F5F7F9] transition-colors"
               data-testid="action-cancel"
               onClick={() => navigate(`/${windowName}`)}
             >
-              <X className="h-3.5 w-3.5" />
               {ui('cancel')}
             </Button>
             {statusField && data[statusField] != null && (
@@ -1363,7 +1373,7 @@ export function DetailView({
               {!documentPreview && !hidePrint && !isNew && recordId && (
                 <button
                   onClick={() => setShowPrint(true)}
-                  className="h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
+                  className={`${sqBtnSize} flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors`}
                   title={ui('print')}
                 >
                   <Printer className="h-4 w-4" />
@@ -1373,7 +1383,7 @@ export function DetailView({
               {!isNew && recordId && !(hideDeleteWhenComplete && statusField && data?.[statusField] && data[statusField] !== 'DR' && data[statusField] !== 'RPAP') && (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+                  className={`${sqBtnSize} flex items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors`}
                   title={ui('delete')}
                   data-testid="action-delete"
                 >
@@ -1469,8 +1479,8 @@ export function DetailView({
                   <Button
                     key={action.key || i}
                     variant="outline"
-                    size="sm"
-                    className={action.className || ''}
+                    size="default"
+                    className={`${action.className || ''} ${saveBtnCls}`.trim()}
                     onClick={action.onClick}
                   >
                     {action.label}
@@ -1500,8 +1510,8 @@ export function DetailView({
                     <Button
                       key={p.name}
                       variant={isPrimary ? 'default' : 'outline'}
-                      size="sm"
-                      className={btnClass}
+                      size="default"
+                      className={`${btnClass} ${saveBtnCls}`.trim()}
                       onClick={() => hook.handleProcess?.(p)}
                     >
                       {tMenu(p.label)}
@@ -1513,7 +1523,7 @@ export function DetailView({
                 if (draftMode?.enabled) {
                   return (
                     <>
-                      <Button variant="outline" size="sm" className="gap-1.5 bg-white border-[#D1D4DB] text-[#121217]" data-testid="action-save-draft" disabled={hook.isSaving || !isDirty} onClick={async () => {
+                      <Button variant="outline" size="default" className={`${saveBtnCls} bg-white border-[#D1D4DB] text-[#121217]`} data-testid="action-save-draft" disabled={hook.isSaving || !isDirty} onClick={async () => {
                         if (!(await flushPendingLines())) return;
                         const saved = await hook.handleSave(data);
                         if (saved?.id && isNew) {
@@ -1524,7 +1534,7 @@ export function DetailView({
                         {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" color="#64748B" />}
                         {ui('save')}
                       </Button>
-                      <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
+                      <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
                         if (!(await flushPendingLines())) return;
                         if (typeof draftMode.onConfirm === 'function') { draftMode.onConfirm(); return; }
                         const saved = await hook.handleSaveAndProcess(draftMode);
@@ -1547,7 +1557,7 @@ export function DetailView({
                 if (isNew) {
                   return (
                     <>
-                      <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving} onClick={async () => {
+                      <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving} onClick={async () => {
                         if (!(await flushPendingLines())) return;
                         const saved = await hook.handleSave(data);
                         if (saved?.id && isNew) {
@@ -1559,7 +1569,7 @@ export function DetailView({
                         {ui('save')}
                       </Button>
                       {!isProcessed && hook.children.length > 0 && (
-                        <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
+                        <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
                           if (!(await flushPendingLines())) return;
                           const saved = await hook.handleSaveAndProcess(draftMode);
                           if (saved) {
@@ -1580,7 +1590,7 @@ export function DetailView({
                   );
                 }
                 return (
-                  <Button size="sm" className="gap-1.5" data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving || !isDirty} onClick={async () => {
+                  <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={isDocumentReadOnly || hook.isSaving || !isDirty} onClick={async () => {
                     if (!(await flushPendingLines())) return;
                     const saved = await hook.handleSave(data);
                     if (saved) {
@@ -1610,26 +1620,45 @@ export function DetailView({
         {/* Primary tab bar (General / Additional Info / etc.) */}
         {primaryTabs && (
           <div
-            className={`flex items-center gap-1 px-6 py-2 shrink-0${tabsBarRightDivider ? ' relative' : ''}`}
+            className={`flex items-center gap-1 ${tabsBarPaddingX} py-2 shrink-0${tabsBarRightDivider ? ' relative' : ''}`}
             style={tabsBarRight && tabsBarRightDivider ? { paddingRight: `calc(${tabsBarRightDivider} + 24px)` } : undefined}
           >
             {tabsBarRightDivider && (
               <div className="absolute top-0 bottom-0 w-px bg-[#E8EAEF] pointer-events-none" style={{ left: `calc(100% - ${tabsBarRightDivider})` }} />
             )}
-            {primaryTabs.map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => setActivePrimaryTab(tab.key)}
-                className={[
-                  'relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors border',
-                  activePrimaryTab === tab.key
-                    ? 'bg-white border-gray-200 shadow-sm text-foreground'
-                    : 'border-transparent text-muted-foreground hover:text-foreground',
-                ].join(' ')}
-              >
-                {tMenu(tab.label)}
-              </button>
-            ))}
+            {primaryTabsVariant === 'pill' ? (
+              <div className="inline-flex items-center gap-1 p-1 h-10 rounded-xl" style={{ background: '#F5F7F9' }}>
+                {primaryTabs.map(tab => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActivePrimaryTab(tab.key)}
+                    className="h-8 px-4 text-sm font-medium rounded-lg transition-all"
+                    style={
+                      activePrimaryTab === tab.key
+                        ? { background: '#FFFFFF', color: '#121217', boxShadow: '0px 1px 3px rgba(18,18,23,0.10), 0px 1px 2px rgba(18,18,23,0.06)' }
+                        : { color: '#121217' }
+                    }
+                  >
+                    {tMenu(tab.label)}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              primaryTabs.map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActivePrimaryTab(tab.key)}
+                  className={[
+                    'relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors border',
+                    activePrimaryTab === tab.key
+                      ? 'bg-white border-gray-200 shadow-sm text-foreground'
+                      : 'border-transparent text-muted-foreground hover:text-foreground',
+                  ].join(' ')}
+                >
+                  {tMenu(tab.label)}
+                </button>
+              ))
+            )}
             {tabsBarRight && (() => {
               const TabsBarRightComponent = tabsBarRight;
               return (
@@ -1718,7 +1747,7 @@ export function DetailView({
                         key={tab.key}
                         onClick={() => { setActiveTab(idx); setSelectedLine(null); setSelectedSecondaryLine(null); }}
                         className={[
-                          'flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative',
+                          `${secondaryTabsShowHoverLine ? 'group ' : ''}flex items-center gap-2 px-4 ${secondaryTabsPaddingY} text-sm font-medium transition-colors relative`,
                           activeTab === idx
                             ? 'text-foreground'
                             : 'text-muted-foreground hover:text-foreground',
@@ -1731,13 +1760,20 @@ export function DetailView({
                             {tab.count}
                           </span>
                         )}
-                        {activeTab === idx && (
-                          // Inline-editable layout uses the Figma indicator (full-width
-                          // 2px black bar). Other windows keep the classic narrower bar.
-                          linesLayout === 'inlineEditable' ? (
-                            <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground" />
-                          ) : (
-                            <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full" />
+                        {secondaryTabsShowHoverLine ? (
+                          <span className={[
+                            'absolute bottom-0 left-2 right-2 h-0.5 rounded-full transition-colors',
+                            activeTab === idx
+                              ? 'bg-foreground'
+                              : 'bg-transparent group-hover:bg-muted-foreground/30',
+                          ].join(' ')} />
+                        ) : (
+                          activeTab === idx && (
+                            linesLayout === 'inlineEditable' ? (
+                              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground" />
+                            ) : (
+                              <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full" />
+                            )
                           )
                         )}
                       </button>
@@ -2366,7 +2402,7 @@ export function DetailView({
 
                 {/* Tab content: secondary child entity tabs (or form-only tabs) */}
                 {secondaryTabs.map((st, stIdx) => tabs[activeTab]?.key === st.key && (
-                  <div key={st.key} className={`pt-3 flex flex-col gap-3${embedded ? ' pointer-events-none' : ''}`}>
+                  <div key={st.key} className={`${secondaryTabContentPaddingT} flex flex-col gap-3${embedded ? ' pointer-events-none' : ''}`}>
                     {st.isFormTab ? (
                       <div className="flex-1 min-w-0">
                         <st.Form
@@ -2596,6 +2632,7 @@ export function DetailView({
                             }
                           }}
                           label={ui('addEntity', { label: tMenu(st.label) })}
+                          hideChevron={hideAddLineChevron}
                         />
                         {linesLayout === 'inlineEditable' && (api?.crud?.[st.key]?.delete ?? true) && (
                           <LinesSelectionBar

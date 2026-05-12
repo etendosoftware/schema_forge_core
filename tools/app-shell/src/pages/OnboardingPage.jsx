@@ -20,6 +20,7 @@ import {
 } from './onboarding/onboardingApi.js';
 import { checkSalesInvoiceReadiness } from './onboarding/onboardingReadiness.js';
 import { useLocaleSwitch, useUI } from '../i18n/index.js';
+import { buildAppReturnToHref, getSafeReturnTo } from '../lib/oauthReturnTo.js';
 import {
   applyProgressMessage,
   buildEnvironmentSessionStorage,
@@ -640,7 +641,10 @@ export default function OnboardingPage() {
             return;
           }
         }
-        window.location.href = '/dashboard';
+        window.location.href = buildAppReturnToHref(
+          getSafeReturnTo(window.location.search),
+          window.location.pathname
+        );
         return;
       }
       alert(ui('onboardingEnvironmentLoginFailed'));
