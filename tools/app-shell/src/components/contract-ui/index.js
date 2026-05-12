@@ -9,6 +9,7 @@ export { ListView } from './ListView';
 export { DetailView } from './DetailView';
 export { default as InlineLinesPanel } from './InlineLinesPanel';
 export { default as LinesBottomSection } from './LinesBottomSection';
+export { default as ImportLinesModal } from './ImportLinesModal';
 export { DocumentPreview } from './DocumentPreview';
 export { SummaryBar } from './SummaryBar';
 export { CompactHeader } from './CompactHeader';
