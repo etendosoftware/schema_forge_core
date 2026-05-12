@@ -17738,6 +17738,8 @@
     "quantitiesUpdated": "System quantities updated",
     "errorUpdatingQuantities": "Failed to update system quantities",
     "deleteRowTooltip": "Delete",
+    "editLineTooltip": "Edit line",
+    "selectRow": "Select row",
     "recordDeleted": "Record deleted",
     "recordsDeleted": "{count} record(s) deleted",
     "recordsCouldNotBeDeleted": "{count} record(s) could not be deleted",

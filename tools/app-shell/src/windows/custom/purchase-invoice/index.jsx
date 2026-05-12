@@ -8,7 +8,6 @@ import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import { useRowDelete } from '@/hooks/useRowDelete';
 import PurchaseInvoiceHeaderTable from './PurchaseInvoiceHeaderTable.jsx';
 import HeaderPage from '@generated/purchase-invoice/generated/web/purchase-invoice/HeaderPage';
-import InvoiceLineTableCustom from './InvoiceLineTableCustom.jsx';
 import InvoicePreviewModal from '../shared/InvoicePreviewModal.jsx';
 import PurchaseInvoiceTopbar from './PurchaseInvoiceTopbar.jsx';
 import PurchaseInvoiceBottomPanel from './PurchaseInvoiceBottomPanel.jsx';
@@ -146,7 +145,6 @@ export default function PurchaseInvoiceWindow(props) {
       <CreateContactContext.Provider value={createContactCtxValue}>
         <HeaderPage
           {...props}
-          DetailTable={InvoiceLineTableCustom}
           secondaryTabs={[]}
           summary={summary}
           extraBadges={[]}
@@ -157,7 +155,6 @@ export default function PurchaseInvoiceWindow(props) {
           breadcrumb={breadcrumb}
           onAfterSave={true}
           refetchAfterSave={true}
-          addLineGuard={(d) => !!d?.businessPartner}
         />
         {createContactState && createPortal(
           <CreateContactModal

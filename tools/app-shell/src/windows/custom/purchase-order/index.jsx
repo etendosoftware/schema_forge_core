@@ -5,14 +5,12 @@ import { useUI } from '@/i18n';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import { useRowDelete } from '@/hooks/useRowDelete';
 import { buildPendingDeliveryFilter } from '../shared/pendingDeliveryFilter.js';
-import { useCurrency } from '@/hooks/useCurrency';
 import { ListView } from '@/components/contract-ui';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 import HeaderTable from '@generated/purchase-order/generated/web/purchase-order/HeaderTable';
-import LinesTable from '@generated/purchase-order/generated/web/purchase-order/LinesTable';
 import GeneratedApp from '@generated/purchase-order/generated/web/purchase-order/index.jsx';
 import PurchaseOrderReactivateBulkAction from '@generated/purchase-order/custom/PurchaseOrderReactivateBulkAction';
 import BulkPurchaseOrderMoreMenu from '@generated/purchase-order/custom/BulkPurchaseOrderMoreMenu';
@@ -56,28 +54,8 @@ const LABEL_OVERRIDES = {
   },
 };
 
-// Lines table columns without lineNo
-const LINES_COLUMNS = [
-  { key: 'product', column: 'M_Product_ID', type: 'string', label: 'Product' },
-  { key: 'description', column: 'Description', type: 'string', label: 'Description' },
-  { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', label: 'Ordered Quantity' },
-  { key: 'listPrice', column: 'PriceList', type: 'amount', label: 'Net List Price' },
-  { key: 'discount', column: 'Discount', type: 'number', label: 'Discount %' },
-  { key: 'tax', column: 'C_Tax_ID', type: 'string', label: 'Tax' },
-  { key: 'lineGrossAmount', column: 'Line_Gross_Amount', type: 'amount', label: 'Line Gross Amount' },
-];
-
 function CustomHeaderTable(props) {
   return <HeaderTable columns={LIST_COLUMNS} {...props} />;
-}
-
-function CustomLinesTable({ data, ...props }) {
-  const currencyCode = useCurrency();
-  const enrichedData = data?.map(row => ({
-    ...row,
-    'currency$_identifier': row['currency$_identifier'] ?? currencyCode,
-  }));
-  return <LinesTable columns={LINES_COLUMNS} data={enrichedData} {...props} />;
 }
 
 export default function PurchaseOrderWindow(props) {
@@ -164,10 +142,8 @@ export default function PurchaseOrderWindow(props) {
       <CreateContactContext.Provider value={createContactCtxValue}>
         <GeneratedApp
           {...props}
-          DetailTable={CustomLinesTable}
           draftMode={draftModeWithModal}
           linesEmptyState={LinesEmptyState}
-          addLineGuard={(d) => !!d?.businessPartner}
         />
         {createContactState && createPortal(
           <CreateContactModal

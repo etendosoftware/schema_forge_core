@@ -5,6 +5,7 @@
     "name": "Purchase Invoice",
     "relatedDocuments": true,
     "notesField": "description",
+    "noHeaderBorder": true,
     "menuActions": [
       {
         "key": "reactivate",
@@ -27,6 +28,7 @@
     },
     "dateFilterKey": "invoiceDate",
     "lineEntityConfig": "invoice",
+    "linesLayout": "inlineEditable",
     "labelOverrides": {
       "es_ES": {
         "POReference": "Nº documento",
