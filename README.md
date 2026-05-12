@@ -443,6 +443,7 @@ make dev                 Start dev server (localhost:3100)
 make build               Build app-shell for production
 make deploy              Deprecated; use LEGACY_DEPLOY=1 for the old copy flow
 make test                Run all CLI tests
+make test-ci             Run all unit tests and write JUnit XML reports to test-results/ (CI mode)
 make test-frontend       Run frontend generator tests
 make validate-pipeline   Check artifact pipeline consistency (see docs/pipeline-validator-reference.md)
 make clean               Remove build artifacts
