@@ -112,7 +112,14 @@ function renderDateCell(raw, locale) {
   if (!raw) return <span className="text-slate-300">—</span>;
   const parsed = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(raw + 'T00:00:00') : new Date(raw);
   if (Number.isNaN(parsed.getTime())) return <span>{String(raw)}</span>;
-  return <span>{parsed.toLocaleDateString(locale)}</span>;
+  const localeTag = typeof locale === 'string' && locale
+    ? locale.replace(/_/g, '-')
+    : undefined;
+  try {
+    return <span>{parsed.toLocaleDateString(localeTag)}</span>;
+  } catch {
+    return <span>{parsed.toLocaleDateString()}</span>;
+  }
 }
 
 function ReadCell({ row, col, locale, t, ui }) {

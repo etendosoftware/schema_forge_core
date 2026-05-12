@@ -9,6 +9,38 @@ import { AttachmentIcon } from '@/components/attachments/AttachmentIcon';
 const TAB_ICONS = {
   'custom:attachments': AttachmentIcon,
 };
+
+function TabStripButton({
+  iconKey, label, count, isActive, onClick,
+  paddingY = 'py-2.5', showHoverLine = false, indicatorCls, tMenu,
+}) {
+  const defaultCls = 'absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full';
+  return (
+    <button
+      onClick={onClick}
+      className={[
+        `${showHoverLine ? 'group ' : ''}flex items-center gap-2 px-4 ${paddingY} text-sm font-medium transition-colors relative`,
+        isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+      ].join(' ')}
+    >
+      {React.createElement(TAB_ICONS[iconKey] ?? List, { className: 'h-4 w-4' })}
+      {tMenu(label)}
+      {count != null && (
+        <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 text-xs rounded-full bg-muted text-muted-foreground">
+          {count}
+        </span>
+      )}
+      {showHoverLine ? (
+        <span className={[
+          'absolute bottom-0 left-2 right-2 h-0.5 rounded-full transition-colors',
+          isActive ? 'bg-foreground' : 'bg-transparent group-hover:bg-muted-foreground/30',
+        ].join(' ')} />
+      ) : (
+        isActive && <span className={indicatorCls || defaultCls} />
+      )}
+    </button>
+  );
+}
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from '@/components/ui/dialog.jsx';
@@ -1788,34 +1820,18 @@ export function DetailView({
                         ? 'absolute bottom-0 left-0 right-0 h-[2px] bg-foreground'
                         : 'absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full';
                       return (
-                        <button
+                        <TabStripButton
                           key={tab.key}
+                          iconKey={tab.key}
+                          label={tab.label}
+                          count={tab.count}
+                          isActive={activeTab === idx}
                           onClick={() => { setActiveTab(idx); setSelectedLine(null); setSelectedSecondaryLine(null); }}
-                          className={[
-                            `${secondaryTabsShowHoverLine ? 'group ' : ''}flex items-center gap-2 px-4 ${secondaryTabsPaddingY} text-sm font-medium transition-colors relative`,
-                            activeTab === idx
-                              ? 'text-foreground'
-                              : 'text-muted-foreground hover:text-foreground',
-                          ].join(' ')}
-                        >
-                          {React.createElement(TAB_ICONS[tab.key] ?? List, { className: 'h-4 w-4' })}
-                          {tMenu(tab.label)}
-                          {tab.count != null && (
-                            <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 text-xs rounded-full bg-muted text-muted-foreground">
-                              {tab.count}
-                            </span>
-                          )}
-                          {secondaryTabsShowHoverLine ? (
-                            <span className={[
-                              'absolute bottom-0 left-2 right-2 h-0.5 rounded-full transition-colors',
-                              activeTab === idx
-                                ? 'bg-foreground'
-                                : 'bg-transparent group-hover:bg-muted-foreground/30',
-                            ].join(' ')} />
-                          ) : (
-                            activeTab === idx && <span className={tabIndicatorCls} />
-                          )}
-                        </button>
+                          paddingY={secondaryTabsPaddingY}
+                          showHoverLine={secondaryTabsShowHoverLine}
+                          indicatorCls={tabIndicatorCls}
+                          tMenu={tMenu}
+                        />
                       );
                     })}
                   </div>
@@ -1825,7 +1841,7 @@ export function DetailView({
                     In inlineEditable mode this wrapper is the SOLE scroll
                     container — everything outside (form card, tabs bar,
                     bottom section) stays fixed in viewport. */}
-                <div ref={linesScrollRef} className={linesLayout === 'inlineEditable' ? 'flex-1 overflow-auto min-h-0' : ''}>
+                <div ref={linesScrollRef} className={linesLayout === 'inlineEditable' && !isCustomTabActive ? 'flex-1 overflow-auto min-h-0' : ''}>
                 {tabs[activeTab]?.key === 'lines' && DetailTable && (
                   // Only show the loading spinner on INITIAL load (no children yet).
                   // Subsequent refetches (e.g., after PATCH on a child) keep the table
@@ -2934,25 +2950,16 @@ export function DetailView({
                 <div className="flex items-center border-b border-border/50">
                   {tabCustomTabs.map((ct, idx) => {
                     const isActive = activeCustomBelowTab === idx;
-                    const resolvedLabel = ct.labelKey ? ui(ct.labelKey) : ct.label;
                     return (
-                      <button
+                      <TabStripButton
                         key={customTabKey(ct)}
+                        iconKey={customTabKey(ct)}
+                        label={ct.labelKey ? ui(ct.labelKey) : ct.label}
+                        count={customTabCounts[ct.key]}
+                        isActive={isActive}
                         onClick={() => setActiveCustomBelowTab(idx)}
-                        className={[
-                          'flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors relative',
-                          isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
-                        ].join(' ')}
-                      >
-                        {React.createElement(TAB_ICONS[customTabKey(ct)] ?? List, { className: 'h-4 w-4' })}
-                        {tMenu(resolvedLabel)}
-                        {customTabCounts[ct.key] != null && (
-                          <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 text-xs rounded-full bg-muted text-muted-foreground">
-                            {customTabCounts[ct.key]}
-                          </span>
-                        )}
-                        {isActive && <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full" />}
-                      </button>
+                        tMenu={tMenu}
+                      />
                     );
                   })}
                 </div>
@@ -3128,7 +3135,7 @@ export function DetailView({
         const CustomModal = st.customAddModal;
         return (
           <CustomModal
-            key={st.key}
+            key={st.key}  
             open={customModalState.key === st.key}
             onClose={() => setCustomModalState({ key: null, rowId: null })}
             onSaved={() => {
