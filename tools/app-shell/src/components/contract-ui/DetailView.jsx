@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { AddLineButton } from '@/components/ui/add-line-button.jsx';
-import { X, MoreVertical, Check, Save, List, Printer, Send, Trash2, Loader2 } from 'lucide-react';
+import { X, MoreVertical, Check, Save, List, Printer, Mail, Trash2, Loader2 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from '@/components/ui/dialog.jsx';
@@ -1359,7 +1359,9 @@ export function DetailView({
                 const TopbarRightComponent = topbarRight;
                 return <TopbarRightComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} />;
               })()}
-              {/* Send / Print document — uses DocumentPrintDrawer */}
+              {/* Send / Print document — uses DocumentPrintDrawer.
+                  Icon unified with RowQuickActions (envelope/Mail) so the same
+                  "send document" affordance looks identical in detail and list views. */}
               {documentPreview && !isNew && recordId && (
                 <button
                   onClick={() => setShowPrint(true)}
@@ -1367,7 +1369,7 @@ export function DetailView({
                   title={ui('sendPreview')}
                   data-testid="action-document-preview"
                 >
-                  <Send className="h-[15px] w-[15px]" />
+                  <Mail className="h-[15px] w-[15px]" />
                 </button>
               )}
               {/* Print document — shown when documentPreview is not provided */}
