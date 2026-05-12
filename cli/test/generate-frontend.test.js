@@ -1435,3 +1435,60 @@ describe('generatePageComponent — menuActions visibleWhenFieldFalse', () => {
     assert.ok(code.includes("successKey: 'actionCompleted'"), 'should emit successKey');
   });
 });
+
+// ---------------------------------------------------------------------------
+// linesLayout — inline-editable lines flag
+// ---------------------------------------------------------------------------
+
+const inlineEditableContract = {
+  frontendContract: {
+    window: { id: '200', name: 'Sales Quotation', primaryEntity: 'order', category: 'sales', linesLayout: 'inlineEditable' },
+    entities: {
+      order: {
+        fields: [
+          { name: 'documentNo', column: 'DocumentNo', type: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+          { name: 'businessPartner', column: 'C_BPartner_ID', type: 'foreignKey', visibility: 'editable', required: true, grid: true, form: true, inputMode: 'search' },
+          { name: 'grandTotal', column: 'GrandTotal', type: 'amount', visibility: 'readOnly', required: false, grid: true, form: true },
+          { name: 'docStatus', column: 'DocStatus', type: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+        ],
+        searchableFields: ['documentNo', 'businessPartner'],
+        computedFields: [],
+      },
+      orderLine: {
+        fields: [
+          { name: 'product', column: 'M_Product_ID', type: 'foreignKey', visibility: 'editable', required: true, grid: true, form: true, inputMode: 'search', lookup: true },
+          { name: 'quantity', column: 'QtyOrdered', type: 'number', visibility: 'editable', required: true, grid: true, form: true },
+          { name: 'lineAmount', column: 'LineNetAmt', type: 'amount', visibility: 'readOnly', required: false, grid: true, form: true },
+        ],
+        searchableFields: [],
+        computedFields: [],
+        addLineFields: { entry: [{ key: 'product', required: true, lookup: true }, { key: 'quantity', defaultValue: 1 }], derived: [] },
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+};
+
+describe('generatePageComponent — linesLayout', () => {
+  it('emits linesLayout="inlineEditable" on DetailView when window declares it', () => {
+    const code = generatePageComponent('order', 'orderLine', inlineEditableContract);
+    assert.ok(code.includes('linesLayout="inlineEditable"'), 'DetailView must receive linesLayout prop');
+  });
+
+  it('does NOT emit linesLayout prop for classic layout (default)', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(!code.includes('linesLayout='), 'classic layout must not emit any linesLayout prop');
+  });
+
+  it('generated table component uses forwardRef for inline-editable windows', () => {
+    const code = generateTableComponent('orderLine', inlineEditableContract);
+    assert.ok(code.includes('forwardRef'), 'table must use forwardRef so DetailView can call flushPendingEdits');
+    assert.ok(code.includes('InlineLinesPanel'), 'table must render InlineLinesPanel when linesLayout is active');
+  });
+
+  it('generated table falls back to DataTable when linesLayout is classic', () => {
+    const code = generateTableComponent('order', masterDetailContract);
+    assert.ok(code.includes('DataTable'), 'classic table must render DataTable');
+    assert.ok(code.includes('InlineLinesPanel'), 'classic table still imports InlineLinesPanel (dual-mode render)');
+  });
+});

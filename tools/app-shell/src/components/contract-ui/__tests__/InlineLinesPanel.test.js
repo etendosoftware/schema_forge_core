@@ -106,4 +106,49 @@ describe('InlineLinesPanel', () => {
     assert.match(src, /useLocale/);
     assert.match(src, /resolveColumnLabel/);
   });
+
+  it('supports onEditRow prop — dispatches to caller instead of opening inline edit', () => {
+    // When onEditRow is provided the pencil routes through it (e.g. to open a modal).
+    assert.match(src, /onEditRow/);
+    assert.match(src, /onEditRow\(row\)/);
+  });
+
+  it('supports onRowClick prop — row body click fires the handler', () => {
+    assert.match(src, /onRowClick/);
+    assert.match(src, /onRowClick\(row\)/);
+  });
+
+  it('includes enum and select in EDITABLE_TYPES', () => {
+    const editableTypesMatch = src.match(/EDITABLE_TYPES = new Set\(\[([\s\S]+?)\]\)/);
+    assert.ok(editableTypesMatch, 'EDITABLE_TYPES set not found');
+    assert.match(editableTypesMatch[1], /'enum'/);
+    assert.match(editableTypesMatch[1], /'select'/);
+  });
+
+  it('renders a native <select> for enum/select columns in edit mode', () => {
+    assert.match(src, /col\.type === 'enum' \|\| col\.type === 'select'/);
+    assert.match(src, /<select/);
+    assert.match(src, /col\.enumLabels/);
+  });
+
+  it('always reserves a 160px action slot in the header when there is no amount column', () => {
+    // trailingColumn is null when the last column is not an amount type.
+    // reserveActionSlot ensures the header row and body rows always have the same
+    // rightmost 160px slot so columns never shift on hover.
+    assert.match(src, /reserveActionSlot/);
+    assert.match(src, /trailingColumn\s*==\s*null/);
+  });
+
+  it('imports linesColumnWidth helper for consistent column sizing', () => {
+    assert.match(src, /import \{ columnFlex \} from '@\/lib\/linesColumnWidth\.js'/);
+  });
+
+  it('exposes clearSelection through the imperative ref', () => {
+    assert.match(src, /clearSelection/);
+    assert.match(src, /useImperativeHandle/);
+  });
+
+  it('emits onSelectionChange when checkbox state changes', () => {
+    assert.match(src, /onSelectionChange\?\.\(/);
+  });
 });
