@@ -112,7 +112,7 @@ function TaxIDKeyPicker({ options, value, onChange, loading, ui }) {
 
       {open && (
         <>
-          <div className="fixed inset-0 z-[60]" onMouseDown={close} />
+          <div className="fixed inset-0 z-[60]" data-testid="taxid-picker-backdrop" onMouseDown={close} />
           <ul
             role="listbox"
             aria-label={ui('contactDetail.taxIDKey')}
@@ -227,6 +227,7 @@ export default function ContactDetailModal({ open, onClose, bpId, token, contact
   return (
     <div
       className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center"
+      data-testid="contact-detail-backdrop"
       onClick={onClose}
     >
       <div

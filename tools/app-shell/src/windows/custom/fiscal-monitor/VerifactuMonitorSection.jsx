@@ -86,7 +86,7 @@ export default function VerifactuMonitorSection({ orgId, token, apiBaseUrl, init
       </div>
 
       <div className="fm-tablecard">
-        <div className="fm-tabs">
+        <div className="fm-tabs" data-testid="fm-tabs">
           {STATUS_TABS.map(({ id, dot, labelKey }) => (
             <button
               key={id}
@@ -112,7 +112,7 @@ export default function VerifactuMonitorSection({ orgId, token, apiBaseUrl, init
         )}
         {!loading && !error && (
           <>
-            <table className="fm-table">
+            <table className="fm-table" data-testid="fm-data-table">
               <thead>
                 <tr>
                   <th><input type="checkbox" /></th>

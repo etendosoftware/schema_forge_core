@@ -137,7 +137,7 @@ export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, 
       </div>
 
       <div className="fm-tablecard">
-        <div className="fm-tabs">
+        <div className="fm-tabs" data-testid="fm-tabs">
           <button
             className={`tab${tab === 'issued' ? ' active' : ''}`}
             onClick={() => changeTab('issued', period)}
@@ -151,7 +151,7 @@ export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, 
             <DownloadIcon /> {ui('fiscalMonitor.sii.tab.received')}
           </button>
           <div className="spacer" />
-          <div className="fm-segmented">
+          <div className="fm-segmented" data-testid="fm-period-toggle">
             <button
               className={`seg${period === 'current' ? ' active' : ''}`}
               onClick={() => changeTab(tab, 'current')}
@@ -194,7 +194,7 @@ export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, 
         )}
         {!loading && !error && (
           <>
-            <table className="fm-table">
+            <table className="fm-table" data-testid="fm-data-table">
               <thead>
                 <tr>
                   <th><input type="checkbox" /></th>

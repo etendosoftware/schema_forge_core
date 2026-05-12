@@ -47,6 +47,8 @@ export const StatusPill = ({ estado, onClick, title: titleProp }) => {
       <button
         type="button"
         className={`fm-pill ${cls}`}
+        data-testid="status-pill"
+        data-status={cls}
         onClick={onClick}
         title={titleProp ?? ui('fiscalMonitor.viewContact')}
       >
@@ -54,7 +56,7 @@ export const StatusPill = ({ estado, onClick, title: titleProp }) => {
       </button>
     );
   }
-  return <span className={`fm-pill ${cls}`}>{text}</span>;
+  return <span className={`fm-pill ${cls}`} data-testid="status-pill" data-status={cls}>{text}</span>;
 };
 
 const ExtLinkIcon = () => (
