@@ -5,6 +5,7 @@ import MovementForm from './MovementForm';
 import MovementLineTable from './MovementLineTable';
 import MovementLineForm from './MovementLineForm';
 import { AttachmentsTab } from '@/components/attachments';
+import GoodsMovementsBottomPanel from '../../../custom/GoodsMovementsBottomPanel';
 import catalogs from './mockCatalogs';
 
 
@@ -33,6 +34,10 @@ const processes = [
 // @sf-generated-start draftMode:movement
 const draftMode = null;
 // @sf-generated-end draftMode:movement
+
+// @sf-generated-start requiredHeaderFields:movement
+const requiredHeaderFields = ['name', 'movementDate', 'documentNo'];
+// @sf-generated-end requiredHeaderFields:movement
 
 // @sf-generated-start addLineFields:movementLine
 const addLineFields = {
@@ -184,6 +189,9 @@ export default function MovementPage({ windowName, recordId, ...props }) {
         breadcrumb={breadcrumb}
       api={api}
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_Movement", config: {} } }]}
+        bottomSection={GoodsMovementsBottomPanel}
+        requiredHeaderFields={requiredHeaderFields}
+        linesLayout="inlineEditable"
         {...props}
       />
     );

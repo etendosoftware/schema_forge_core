@@ -7,6 +7,7 @@ import CustomerReturnLineTable from './CustomerReturnLineTable';
 import CustomerReturnLineForm from './CustomerReturnLineForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
 import { AttachmentsTab } from '@/components/attachments';
+import ReturnFromCustomerBottomPanel from '../../../custom/ReturnFromCustomerBottomPanel';
 import catalogs from './mockCatalogs';
 
 
@@ -35,6 +36,10 @@ const processes = [
 // @sf-generated-start draftMode:customerReturn
 const draftMode = null;
 // @sf-generated-end draftMode:customerReturn
+
+// @sf-generated-start requiredHeaderFields:customerReturn
+const requiredHeaderFields = ['summedLineAmount', 'documentNo', 'orderDate', 'businessPartner', 'partnerAddress', 'warehouse'];
+// @sf-generated-end requiredHeaderFields:customerReturn
 
 // @sf-generated-start addLineFields:customerReturnLine
 const addLineFields = {
@@ -391,7 +396,10 @@ export default function CustomerReturnPage({ windowName, recordId, ...props }) {
         hideDeleteWhenComplete
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Order", config: {} } }]}
+        bottomSection={ReturnFromCustomerBottomPanel}
+        requiredHeaderFields={requiredHeaderFields}
         lineConfig={RETURN_ORDER_LINE_CONFIG}
+        linesLayout="inlineEditable"
         {...props}
       />
     );

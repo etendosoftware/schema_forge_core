@@ -6,6 +6,7 @@ import GoodsReceiptLineTable from './GoodsReceiptLineTable';
 import GoodsReceiptLineForm from './GoodsReceiptLineForm';
 import RelatedDocuments from '@/windows/custom/goods-receipt/RelatedDocuments';
 import { AttachmentsTab } from '@/components/attachments';
+import GoodsReceiptBottomPanel from '../../../custom/GoodsReceiptBottomPanel';
 import catalogs from './mockCatalogs';
 
 
@@ -38,6 +39,10 @@ const draftMode = {
   "label": "Confirmar"
 };
 // @sf-generated-end draftMode:goodsReceipt
+
+// @sf-generated-start requiredHeaderFields:goodsReceipt
+const requiredHeaderFields = ['documentNo', 'warehouse', 'businessPartner', 'partnerAddress', 'movementDate'];
+// @sf-generated-end requiredHeaderFields:goodsReceipt
 
 // @sf-generated-start addLineFields:goodsReceiptLine
 const addLineFields = {
@@ -387,7 +392,10 @@ export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
         breadcrumb={breadcrumb}
       api={api}
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_InOut", config: {} } }]}
+        bottomSection={GoodsReceiptBottomPanel}
         draftMode={draftMode}
+        requiredHeaderFields={requiredHeaderFields}
+        linesLayout="inlineEditable"
         {...props}
       />
     );

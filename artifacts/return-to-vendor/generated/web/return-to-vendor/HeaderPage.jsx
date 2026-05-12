@@ -9,6 +9,7 @@ import BasicDiscountsTable from './BasicDiscountsTable';
 import BasicDiscountsForm from './BasicDiscountsForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
 import { AttachmentsTab } from '@/components/attachments';
+import ReturnToVendorBottomPanel from '../../../custom/ReturnToVendorBottomPanel';
 import catalogs from './mockCatalogs';
 
 
@@ -44,6 +45,10 @@ const processes = [
 // @sf-generated-start draftMode:header
 const draftMode = null;
 // @sf-generated-end draftMode:header
+
+// @sf-generated-start requiredHeaderFields:header
+const requiredHeaderFields = ['documentAction', 'orderDate', 'businessPartner', 'partnerAddress', 'warehouse', 'paymentTerms', 'priceList', 'documentStatus', 'grandTotalAmount', 'summedLineAmount', 'currency', 'delivered'];
+// @sf-generated-end requiredHeaderFields:header
 
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
@@ -608,7 +613,10 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         ]}
         notesField="returnReason"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Order", config: {} } }]}
+        bottomSection={ReturnToVendorBottomPanel}
+        requiredHeaderFields={requiredHeaderFields}
         lineConfig={RETURN_ORDER_LINE_CONFIG}
+        linesLayout="inlineEditable"
         {...props}
       />
     );

@@ -6,6 +6,7 @@ import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
 import { AttachmentsTab } from '@/components/attachments';
+import ReturnToVendorShipmentBottomPanel from '../../../custom/ReturnToVendorShipmentBottomPanel';
 import catalogs from './mockCatalogs';
 
 
@@ -36,6 +37,10 @@ const processes = [
 // @sf-generated-start draftMode:header
 const draftMode = null;
 // @sf-generated-end draftMode:header
+
+// @sf-generated-start requiredHeaderFields:header
+const requiredHeaderFields = ['businessPartner', 'partnerAddress', 'movementDate', 'accountingDate', 'warehouse', 'documentStatus', 'documentAction'];
+// @sf-generated-end requiredHeaderFields:header
 
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
@@ -348,6 +353,9 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       api={api}
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_InOut", config: {} } }]}
+        bottomSection={ReturnToVendorShipmentBottomPanel}
+        requiredHeaderFields={requiredHeaderFields}
+        linesLayout="inlineEditable"
         {...props}
       />
     );
