@@ -9,6 +9,7 @@ import AccountingForm from './AccountingForm';
 import ExecutionHistoryTable from './ExecutionHistoryTable';
 import ExecutionHistoryForm from './ExecutionHistoryForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 
 
@@ -534,7 +535,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'executionHistory', label: 'Execution History', Table: ExecutionHistoryTable, Form: ExecutionHistoryForm },
         ]}
         notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "FIN_Payment", config: {} } }]}
         {...props}
       />
     );

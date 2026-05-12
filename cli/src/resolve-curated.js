@@ -524,6 +524,7 @@ const WINDOW_TRUTHY_PROPS = [
 
 const WINDOW_BOOLEAN_TRUE_PROPS = [
   'hideDeleteWhenComplete',
+  'customTabsAfterBottom',
   'hidePrint',
   'hideMoreMenu',
   'hideMoreDetails',
@@ -534,7 +535,10 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
   'noHeaderBorder',
 ];
 
-const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb'];
+// `attachments` is defined-only (not truthy) so an explicit `false` from
+// decisions.json reaches the contract and disables the AttachmentsTab in the
+// generator. Accepted shapes: boolean | { enabled?: boolean, ...options }.
+const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb', 'attachments'];
 const WINDOW_NOT_NULL_PROPS = ['detailTabIndex', 'salesTheme'];
 
 // Canonical key order for the contract window object. Stabilizes contract.json
@@ -544,7 +548,7 @@ export const WINDOW_KEY_ORDER = [
   'id', 'name', 'primaryEntity', 'category',
   'sidebarLayout', 'templateConfig',
   'documentPreview', 'notesField', 'relatedDocuments',
-  'hideDeleteWhenComplete', 'hidePrint', 'hideSaveStatuses',
+  'hideDeleteWhenComplete', 'customTabsAfterBottom', 'hidePrint', 'hideSaveStatuses',
   'hideMoreMenu', 'hideMoreDetails', 'contentBg',
   'hideListFilters', 'hideLink', 'hideEyeCount', 'breadcrumb',
   'customComponents', 'menuActions', 'processOverrides',
@@ -555,6 +559,7 @@ export const WINDOW_KEY_ORDER = [
   'disableProcessedLock', 'titleField',
   'listViewOptions', 'listBaseFilter', 'quickFilters', 'subsetFilters',
   'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'lineEntityConfig',
+  'attachments',
   'layoutType',
 ];
 

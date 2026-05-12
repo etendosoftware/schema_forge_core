@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import FinPaymentTable from './FinPaymentTable';
 import FinPaymentForm from './FinPaymentForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
 import PaymentBottomPanel from '../../../custom/PaymentBottomPanel';
 import PaymentActivityToggle from '../../../custom/PaymentActivityToggle';
 import NewPaymentModal from '../../../custom/NewPaymentModal';
@@ -203,8 +204,9 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
       api={api}
         documentPreview={{ titlePrefix: 'Payment', pdfUrl: null }}
         hideDeleteWhenComplete
+        customTabsAfterBottom
         notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "FIN_Payment", config: {} } }]}
         bottomSection={PaymentBottomPanel}
         topbarRight={PaymentActivityToggle}
         menuActions={({ status }) => [

@@ -4,6 +4,7 @@ import ProductCategoryTable from './ProductCategoryTable';
 import ProductCategoryForm from './ProductCategoryForm';
 import AssignedProductsTable from './AssignedProductsTable';
 import AssignedProductsForm from './AssignedProductsForm';
+import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 
 
@@ -187,6 +188,7 @@ export default function ProductCategoryPage({ windowName, recordId, ...props }) 
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_Product_Category", config: {} } }]}
         {...props}
       />
     );

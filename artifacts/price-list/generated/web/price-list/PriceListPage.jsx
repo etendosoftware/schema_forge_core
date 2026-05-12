@@ -4,6 +4,7 @@ import PriceListTable from './PriceListTable';
 import PriceListForm from './PriceListForm';
 import PriceListVersionTable from './PriceListVersionTable';
 import PriceListVersionForm from './PriceListVersionForm';
+import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 
 
@@ -204,6 +205,7 @@ export default function PriceListPage({ windowName, recordId, ...props }) {
       api={api}
         hidePrint
         hideMoreMenu
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_PriceList", config: {} } }]}
         labelOverrides={labelOverrides}
         {...props}
       />

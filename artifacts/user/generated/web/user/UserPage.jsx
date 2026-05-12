@@ -4,6 +4,7 @@ import UserTable from './UserTable';
 import UserForm from './UserForm';
 import UserRolesTable from './UserRolesTable';
 import UserRolesForm from './UserRolesForm';
+import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 
 
@@ -225,6 +226,7 @@ export default function UserPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "AD_User", config: {} } }]}
         {...props}
       />
     );

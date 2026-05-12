@@ -666,6 +666,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const notesField = windowConfig.notesField ?? null;
   const relatedDocuments = windowConfig.relatedDocuments ?? false;
   const hideDeleteWhenComplete = windowConfig.hideDeleteWhenComplete ?? false;
+  const customTabsAfterBottom = windowConfig.customTabsAfterBottom ?? false;
   const hidePrint = windowConfig.hidePrint ?? false;
   const hideSaveStatuses = windowConfig.hideSaveStatuses ?? [];
   const hideMoreMenu = windowConfig.hideMoreMenu ?? false;
@@ -688,6 +689,32 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const titleField = windowConfig.titleField ?? null;
   const salesTheme = windowConfig.salesTheme ?? false;
   const lineEntityConfig = windowConfig.lineEntityConfig ?? null;
+
+  // Attachments tab — enabled by default on standard (default) layout windows.
+  // Opt out per-window via `window.attachments: false` in decisions.json, or
+  // pass an object to forward options to the AttachmentsTab component (e.g.
+  // `{ enabled: true, accept: '.pdf', maxSizeMb: 10 }`).
+  const attachmentsCfg = windowConfig.attachments ?? true;
+  // attachments are auto-enabled on default layout; on other layouts they must be
+  // explicitly opted-in via `window.attachments: true` (or an options object) in decisions.json.
+  const attachmentsExplicit = windowConfig.attachments !== undefined;
+  let attachmentsEnabled =
+    (layoutType === 'default' || attachmentsExplicit) &&
+    attachmentsCfg !== false &&
+    (typeof attachmentsCfg !== 'object' || attachmentsCfg?.enabled !== false);
+  const attachmentsOpts = typeof attachmentsCfg === 'object' && attachmentsCfg !== null
+    ? attachmentsCfg
+    : {};
+  // Resolve header DB table name from the contract — required by AttachmentsTab
+  // to build the NEO endpoint `/sws/neo/attachments/{tableName}/{recordId}`.
+  const headerEntityContract = contract?.frontendContract?.entities?.[headerEntity];
+  const headerTableName = headerEntityContract?.tableName ?? null;
+  if (attachmentsEnabled && !headerTableName) {
+    console.warn(
+      `[generate-frontend] AttachmentsTab disabled for "${headerEntity}": header entity has no tableName in contract.`
+    );
+    attachmentsEnabled = false;
+  }
 
   // Detect secondary child entities for additional tabs
   const secondaryTabsDecl = windowConfig.secondaryTabs;
@@ -811,12 +838,28 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const notesFieldProp = notesField
     ? `\n        notesField="${notesField}"`
     : '';
-  const customTabsProp = relatedDocuments
-    ? `\n        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}`
+  // customTabs accumulator — DetailView supports items with shape
+  //   { key, label, Component, placement?: 'tab' | 'footer', props?: {} }
+  // `placement: 'tab'` renders as a main tab (Lines/Notes style);
+  // `placement: 'footer'` (default) keeps the legacy chip-footer behavior.
+  const customTabItems = [];
+  if (relatedDocuments) {
+    customTabItems.push(`{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }`);
+  }
+  if (attachmentsEnabled) {
+    const optsLiteral = JSON.stringify(attachmentsOpts);
+    customTabItems.push(
+      `{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: ${JSON.stringify(headerTableName)}, config: ${optsLiteral} } }`
+    );
+  }
+  const customTabsProp = customTabItems.length > 0
+    ? `\n        customTabs={[${customTabItems.join(', ')}]}`
     : '';
 
   // hideDeleteWhenComplete prop
   const hideDeleteProp = hideDeleteWhenComplete ? '\n        hideDeleteWhenComplete' : '';
+  // customTabsAfterBottom prop
+  const customTabsAfterBottomProp = customTabsAfterBottom ? '\n        customTabsAfterBottom' : '';
 
   // hidePrint prop (DetailView)
   const hidePrintProp = hidePrint ? '\n        hidePrint' : '';
@@ -941,6 +984,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Build optional import for RelatedDocuments
   const relatedDocsImport = relatedDocuments
     ? `import RelatedDocuments from ${resolveCustomImport(specName, 'RelatedDocuments')};\n`
+    : '';
+
+  // Build optional import for the generic AttachmentsTab component
+  const attachmentsImport = attachmentsEnabled
+    ? `import { AttachmentsTab } from '@/components/attachments';\n`
     : '';
 
   // Draft mode config from frontend contract
@@ -1094,7 +1142,7 @@ ${headerTableImport}
 import ${headerName}Form from './${headerName}Form';${detailEntity ? `
 import ${detailName}Table from './${detailName}Table';
 import ${detailName}Form from './${detailName}Form';` : ''}
-${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${formFooterImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
+${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${formFooterImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${attachmentsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
 ${isGallery ? `import ${headerName}Gallery from ${resolveCustomImport(specName || headerEntity, `${headerName}Gallery`)};` : ''}${isSidebar ? `
 import ${headerName}Sidebar from ${resolveCustomImport(specName || headerEntity, `${headerName}Sidebar`)};` : (isGallery ? `
 import ${headerName}DetailHeader from ${resolveCustomImport(specName || headerEntity, `${headerName}DetailHeader`)};` : '')}${statusBarImport}
@@ -1159,7 +1207,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}
         {...props}${sidebarContentProp}
       />
     );

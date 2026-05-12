@@ -4,6 +4,7 @@ import InventoryTable from './InventoryTable';
 import InventoryForm from './InventoryForm';
 import InventoryLineTable from './InventoryLineTable';
 import InventoryLineForm from './InventoryLineForm';
+import { AttachmentsTab } from '@/components/attachments';
 import InventoryMenuContent from '../../../custom/InventoryMenuContent';
 import catalogs from './mockCatalogs';
 
@@ -196,6 +197,7 @@ export default function InventoryPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_Inventory", config: {} } }]}
         customMenuContent={InventoryMenuContent}
         {...props}
       />

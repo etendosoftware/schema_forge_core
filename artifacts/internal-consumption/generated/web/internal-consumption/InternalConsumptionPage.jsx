@@ -4,6 +4,7 @@ import InternalConsumptionTable from './InternalConsumptionTable';
 import InternalConsumptionForm from './InternalConsumptionForm';
 import InternalConsumptionLineTable from './InternalConsumptionLineTable';
 import InternalConsumptionLineForm from './InternalConsumptionLineForm';
+import { AttachmentsTab } from '@/components/attachments';
 import InternalConsumptionActions from '../../../custom/InternalConsumptionActions';
 import catalogs from './mockCatalogs';
 
@@ -163,6 +164,7 @@ export default function InternalConsumptionPage({ windowName, recordId, ...props
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_Internal_Consumption", config: {} } }]}
         customMenuContent={InternalConsumptionActions}
         {...props}
       />

@@ -12,6 +12,7 @@ import InvoicePreviewModal from '../shared/InvoicePreviewModal.jsx';
 import PurchaseInvoiceTopbar from './PurchaseInvoiceTopbar.jsx';
 import PurchaseInvoiceBottomPanel from './PurchaseInvoiceBottomPanel.jsx';
 import RelatedDocuments from './RelatedDocuments.jsx';
+import { AttachmentsTab } from '@/components/attachments';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
@@ -101,7 +102,7 @@ export default function PurchaseInvoiceWindow(props) {
     { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount', label: ui('outstandingAmount') },
   ];
 
-  const customTabs = [{ key: 'related', label: ui('relatedDocuments'), Component: RelatedDocuments }];
+  const customTabs = [{ key: 'related', label: ui('relatedDocuments'), Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: 'C_Invoice', config: {} } }];
 
   // Pick up the saved record from navigation state when arriving at the list view
   const effectiveRecord = savedRecord ?? location.state?.savedRecord ?? null;

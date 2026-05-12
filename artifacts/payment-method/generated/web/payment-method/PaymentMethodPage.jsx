@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import PaymentMethodTable from './PaymentMethodTable';
 import PaymentMethodForm from './PaymentMethodForm';
+import { AttachmentsTab } from '@/components/attachments';
 import PaymentGroupsSection from '@/windows/custom/payment-method/PaymentGroupsSection';
 import catalogs from './mockCatalogs';
 
@@ -115,8 +116,10 @@ export default function PaymentMethodPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        customTabsAfterBottom
         hidePrint
         hideMoreMenu
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "FIN_PaymentMethod", config: {} } }]}
         bottomSection={PaymentGroupsSection}
         labelOverrides={labelOverrides}
         {...props}

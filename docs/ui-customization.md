@@ -215,6 +215,52 @@ Adds a "Related Documents" tab/section to the detail view. Requires a hand-writt
 
 ---
 
+### 7.b `window.attachments` — file attachments tab
+
+Adds a transversal **Attachments** tab to the detail view for uploading, listing, downloading, and deleting files attached to the current record. The tab is **auto-enabled on every window** with `layoutType: "default"` — no opt-in needed. Set `attachments: false` to disable it, or pass an object to tune client-side limits.
+
+**Use when:** the window represents a document/master record where users need to attach supporting files (PDFs, images, spreadsheets). For most transactional windows, no configuration is required — the tab is already there.
+
+**Opt-out:**
+```json
+"window": {
+  "attachments": false
+}
+```
+
+**Custom limits:**
+```json
+"window": {
+  "attachments": {
+    "enabled": true,
+    "maxSizeMB": 10,
+    "allowedMimeTypes": ["application/pdf", "image/*"]
+  }
+}
+```
+
+**Limitations (v1):**
+- Only available on `layoutType: "default"`. Kanban, calendar, gallery, and custom layouts ignore the option entirely.
+- No pagination — the list does a single lazy fetch when the tab becomes active.
+- Hard upload limit of **10 MB** enforced by the NEO servlet (`MultipartConfig`). `maxSizeMB > 10` will fail at upload time.
+
+**Endpoints exposed by NEO Headless:**
+
+| Method | URL | Action |
+|--------|-----|--------|
+| `GET` | `/sws/neo/attachments/{tableName}/{recordId}` | List attachments for the record |
+| `POST` | `/sws/neo/attachments/{tableName}/{recordId}` (multipart/form-data) | Upload a new attachment |
+| `GET` | `/sws/neo/attachments/file/{attachmentId}` | Download a single attachment |
+| `GET` | `/sws/neo/attachments/{tableName}/{recordId}/zip` | Download all attachments as a ZIP archive |
+| `DELETE` | `/sws/neo/attachments/file/{attachmentId}` | Delete an attachment |
+| `PATCH` | `/sws/neo/attachments/file/{attachmentId}` body `{ "description": "..." }` | Update the attachment description |
+
+The handler delegates to the standard Etendo `AttachImplementationManager` and stores metadata in the `C_FILE` table — attachments uploaded through this tab are visible in Classic Etendo and vice versa.
+
+**Frontend behavior:** drag-and-drop drop zone + tabular listing with per-row actions (download, edit description, delete) and a global "Download all" action. The `tableName` is resolved from `frontendContract.entities.header.tableName` automatically — there is no manual wiring.
+
+---
+
 ### 8. `window.notesField` — notes panel
 
 Renders a designated field as an expandable notes panel in the detail view footer.
@@ -364,10 +410,11 @@ I need to customize the UI of a window
 │   └─ Secondary document actions (cancel, reverse, duplicate)
 │       └─ → window.menuActions
 │
-└─ Cross-cutting behavior (notes, delete protection, related docs)
+└─ Cross-cutting behavior (notes, delete protection, related docs, attachments)
     ├─ → window.notesField
     ├─ → window.hideDeleteWhenComplete
     ├─ → window.relatedDocuments
+    ├─ → window.attachments (auto-on; set to false to opt out, object to tune limits)
     ├─ Empty state when lines tab is empty → linesEmptyState prop + addLineGuard
     ├─ Gate add-line button on header field → addLineGuard prop
     └─ Hide ⋮ menu on new/processed records → hideMoreMenu prop (boolean or function)
