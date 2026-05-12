@@ -65,3 +65,9 @@ The current repo evidence shows a generated finance window with payment-in-speci
   - `artifacts/payment-in/custom/PaymentActivityPanel.jsx`
   - `artifacts/payment-in/custom/RelatedDocuments.jsx`
   - `artifacts/payment-in/custom/ApplyToInvoices.jsx`
+## Pipeline regeneration — ETP-3908
+
+Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functional changes to this window.
+
+- `linesLayout: "classic"` is now written explicitly to `contract.json`; previously the classic layout was the implicit default.
+- `requiredHeaderFields` is now emitted in the page component; this window has no required header fields so the array is empty and there is no behavioral change.

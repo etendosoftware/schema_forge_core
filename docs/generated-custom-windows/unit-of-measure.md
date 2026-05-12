@@ -56,3 +56,10 @@ The contract and generated assets indicate that conversion handling is part of t
 - `artifacts/unit-of-measure/generated/web/unit-of-measure/UnitOfMeasureForm.jsx` exposes the current header fields and UOM Type enum options.
 - `artifacts/unit-of-measure/generated/web/unit-of-measure/UnitOfMeasurePage.jsx` mounts only the header list/detail flow, which is why conversion maintenance is currently a documented gap.
 - There is no dedicated SPA test proving visible conversion behavior for this window; current automated evidence is contract- and source-shape-based rather than browser-level.
+
+## Pipeline regeneration — ETP-3908
+
+Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functional changes to this window.
+
+- `linesLayout: "classic"` is now written explicitly to `contract.json`; previously the classic layout was the implicit default.
+- `requiredHeaderFields` is now emitted in the page component; this window has no required header fields so the array is empty and there is no behavioral change.
