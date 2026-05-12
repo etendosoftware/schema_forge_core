@@ -118,7 +118,16 @@ export const api = {
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
-      "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/partnerAddress"
+      "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/partnerAddress",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "goodsReceipt",
@@ -134,7 +143,20 @@ export const api = {
       "column": "C_Project_ID",
       "reference": "Project",
       "inputMode": "search",
-      "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/project"
+      "url": "/sws/neo/goods-receipt/goodsReceipt/selectors/project",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "C_BPartner_ID",
+            "source": "parentField",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "goodsReceipt",
@@ -182,7 +204,15 @@ export const api = {
       "column": "C_Aum",
       "reference": "UOM",
       "inputMode": "selector",
-      "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/operativeUOM"
+      "url": "/sws/neo/goods-receipt/goodsReceiptLine/selectors/operativeUOM",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "goodsReceiptLine",
@@ -259,93 +289,117 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "createLinesFrom",
       "entity": "goodsReceipt",
-      "field": "createLinesFrom",
       "column": "CreateFrom",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/createLinesFrom"
     },
     {
+      "name": "generateTo",
       "entity": "goodsReceipt",
-      "field": "generateTo",
       "column": "GenerateTo",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/generateTo",
       "processId": "154",
       "processType": "classic"
     },
     {
+      "name": "documentAction",
       "entity": "goodsReceipt",
-      "field": "documentAction",
       "column": "DocAction",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/documentAction",
       "processId": "109",
       "processType": "classic"
     },
     {
+      "name": "processGoodsJava",
       "entity": "goodsReceipt",
-      "field": "processGoodsJava",
       "column": "Process_Goods_Java",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/processGoodsJava",
       "processId": "49DEE812BF0545269781FCEBF2235924",
       "processType": "classic"
     },
     {
+      "name": "posted",
       "entity": "goodsReceipt",
-      "field": "posted",
       "column": "Posted",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/posted"
     },
     {
+      "name": "calculateFreight",
       "entity": "goodsReceipt",
-      "field": "calculateFreight",
       "column": "Calculate_Freight",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/calculateFreight",
       "processId": "800141",
       "processType": "classic"
     },
     {
+      "name": "receiveMaterials",
       "entity": "goodsReceipt",
-      "field": "receiveMaterials",
       "column": "RM_Receipt_PickEdit",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/receiveMaterials",
       "processId": "5E9F9D7EECC24E4FBB2C60840FF613BE",
       "processType": "obuiapp"
     },
     {
+      "name": "updateLines",
       "entity": "goodsReceipt",
-      "field": "updateLines",
       "column": "UpdateLines",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/updateLines",
       "processId": "800010",
       "processType": "classic"
     },
     {
+      "name": "sendMaterials",
       "entity": "goodsReceipt",
-      "field": "sendMaterials",
       "column": "RM_Shipment_Pickedit",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/sendMaterials",
       "processId": "4AD70293357245AB96E59C2CDB43A35D",
       "processType": "obuiapp"
     },
     {
+      "name": "invoicefromshipment",
       "entity": "goodsReceipt",
-      "field": "invoicefromshipment",
       "column": "Invoicefromshipment",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-receipt/goodsReceipt/{id}/action/invoicefromshipment",
       "processId": "62250E8866EA4D96A66C309878DC039E",
       "processType": "obuiapp"
     },
     {
+      "name": "managePrereservation",
       "entity": "goodsReceiptLine",
-      "field": "managePrereservation",
       "column": "Manage_Prereservation",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-receipt/goodsReceiptLine/{id}/action/managePrereservation",
       "processId": "70E42AD47E5F4698A9ACCCAF3EB72B9E",
       "processType": "obuiapp"
     },
     {
+      "name": "explode",
       "entity": "goodsReceiptLine",
-      "field": "explode",
       "column": "Explode",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-receipt/goodsReceiptLine/{id}/action/explode",
       "processId": "DAE719940FE9463F8A3E3C401BBAFC53",
       "processType": "classic"

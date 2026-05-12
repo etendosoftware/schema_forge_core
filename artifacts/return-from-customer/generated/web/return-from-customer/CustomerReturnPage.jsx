@@ -117,7 +117,16 @@ export const api = {
       "column": "C_BPartner_Location_ID",
       "reference": "BPartner_Location",
       "inputMode": "dependent",
-      "url": "/sws/neo/returns/customerReturn/selectors/partnerAddress"
+      "url": "/sws/neo/returns/customerReturn/selectors/partnerAddress",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "customerReturn",
@@ -173,7 +182,22 @@ export const api = {
       "column": "C_Tax_ID",
       "reference": "Tax",
       "inputMode": "selector",
-      "url": "/sws/neo/returns/customerReturnLine/selectors/tax"
+      "url": "/sws/neo/returns/customerReturnLine/selectors/tax",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "DateInvoiced",
+            "source": "parentField",
+            "field": "invoiceDate",
+            "fallbackField": "orderDate",
+            "format": "DD-MM-YYYY"
+          }
+        ]
+      }
     },
     {
       "entity": "customerReturnLine",
@@ -186,167 +210,209 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "documentAction",
       "entity": "customerReturn",
-      "field": "documentAction",
       "column": "DocAction",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturn/{id}/action/documentAction",
       "processId": "104",
       "processType": "classic"
     },
     {
+      "name": "rMReceiveMaterials",
       "entity": "customerReturn",
-      "field": "rMReceiveMaterials",
       "column": "RM_ReceiveMaterials",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturn/{id}/action/rMReceiveMaterials"
     },
     {
+      "name": "rMPickFromShipment",
       "entity": "customerReturn",
-      "field": "rMPickFromShipment",
       "column": "RM_PickFromShipment",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturn/{id}/action/rMPickFromShipment",
       "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
       "processType": "obuiapp"
     },
     {
+      "name": "rMAddOrphanLine",
       "entity": "customerReturn",
-      "field": "rMAddOrphanLine",
       "column": "RM_AddOrphanLine",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturn/{id}/action/rMAddOrphanLine",
       "processId": "23D1B163EC0B41F790CE39BF01DA320E",
       "processType": "classic"
     },
     {
+      "name": "rMCreateInvoice",
       "entity": "customerReturn",
-      "field": "rMCreateInvoice",
       "column": "RM_CreateInvoice",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturn/{id}/action/rMCreateInvoice",
       "processId": "FF80808133362F6A013336781FCE0066",
       "processType": "classic"
     },
     {
+      "name": "processNow",
       "entity": "customerReturn",
-      "field": "processNow",
       "column": "Processing",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturn/{id}/action/processNow",
       "processId": "104",
       "processType": "classic"
     },
     {
+      "name": "copyFrom",
       "entity": "customerReturn",
-      "field": "copyFrom",
       "column": "CopyFrom",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturn/{id}/action/copyFrom",
       "processId": "211",
       "processType": "classic"
     },
     {
+      "name": "generateTemplate",
       "entity": "customerReturn",
-      "field": "generateTemplate",
       "column": "Generatetemplate",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturn/{id}/action/generateTemplate",
       "processId": "800022",
       "processType": "classic"
     },
     {
+      "name": "copyFromPO",
       "entity": "customerReturn",
-      "field": "copyFromPO",
       "column": "CopyFromPO",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturn/{id}/action/copyFromPO",
       "processId": "8B81D80B06364566B87853FEECAB5DE0",
       "processType": "obuiapp"
     },
     {
+      "name": "posted",
       "entity": "customerReturn",
-      "field": "posted",
       "column": "Posted",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturn/{id}/action/posted",
       "processId": "57496FB9CF9E4E8F847224017941570E",
       "processType": "obuiapp"
     },
     {
+      "name": "calculatePromotions",
       "entity": "customerReturn",
-      "field": "calculatePromotions",
       "column": "Calculate_Promotions",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturn/{id}/action/calculatePromotions",
       "processId": "9EB2228A60684C0DBEC12D5CD8D85218",
       "processType": "classic"
     },
     {
+      "name": "cancelandreplace",
       "entity": "customerReturn",
-      "field": "cancelandreplace",
       "column": "Cancelandreplace",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturn/{id}/action/cancelandreplace",
       "processId": "A2FAF49712D1445ABE750315CE1B473A",
       "processType": "obuiapp"
     },
     {
+      "name": "confirmcancelandreplace",
       "entity": "customerReturn",
-      "field": "confirmcancelandreplace",
       "column": "Confirmcancelandreplace",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturn/{id}/action/confirmcancelandreplace",
       "processId": "0C2AFAEFB67B4CB8A1429195EB119A49",
       "processType": "obuiapp"
     },
     {
+      "name": "createOrder",
       "entity": "customerReturn",
-      "field": "createOrder",
       "column": "Convertquotation",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturn/{id}/action/createOrder",
       "processId": "A3FE1F9892394386A49FB707AA50A0FA",
       "processType": "classic"
     },
     {
+      "name": "createPOLines",
       "entity": "customerReturn",
-      "field": "createPOLines",
       "column": "Create_POLines",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturn/{id}/action/createPOLines",
       "processId": "6995A4C2592D434A9E16B71E1694CBCA",
       "processType": "obuiapp"
     },
     {
+      "name": "aPRMAddPayment",
       "entity": "customerReturn",
-      "field": "aPRMAddPayment",
       "column": "EM_APRM_AddPayment",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturn/{id}/action/aPRMAddPayment",
       "processId": "9BED7889E1034FE68BD85D5D16857320",
       "processType": "obuiapp"
     },
     {
+      "name": "rMPickfromreceipt",
       "entity": "customerReturn",
-      "field": "rMPickfromreceipt",
       "column": "RM_Pickfromreceipt",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturn/{id}/action/rMPickfromreceipt",
       "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
       "processType": "obuiapp"
     },
     {
+      "name": "selectOrderLine",
       "entity": "customerReturnLine",
-      "field": "selectOrderLine",
       "column": "Relate_Orderline",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturnLine/{id}/action/selectOrderLine",
       "processId": "C4265E27C8134096B49DFBF69369DFC6",
       "processType": "obuiapp"
     },
     {
+      "name": "explode",
       "entity": "customerReturnLine",
-      "field": "explode",
       "column": "Explode",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturnLine/{id}/action/explode",
       "processId": "DFC78024B1F54CBB95DC73425BA6687F",
       "processType": "classic"
     },
     {
+      "name": "managePrereservation",
       "entity": "customerReturnLine",
-      "field": "managePrereservation",
       "column": "Manage_Prereservation",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturnLine/{id}/action/managePrereservation",
       "processId": "70E42AD47E5F4698A9ACCCAF3EB72B9E",
       "processType": "obuiapp"
     },
     {
+      "name": "manageReservation",
       "entity": "customerReturnLine",
-      "field": "manageReservation",
       "column": "Manage_Reservation",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/returns/customerReturnLine/{id}/action/manageReservation",
       "processId": "5F547560D3DE401AA0B570F22E2C6C06",
       "processType": "obuiapp"

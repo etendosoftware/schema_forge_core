@@ -97,7 +97,16 @@ export const api = {
       "column": "Fin_Financial_Account_ID",
       "reference": "Financial_Account",
       "inputMode": "dependent",
-      "url": "/sws/neo/payment-in/finPayment/selectors/account"
+      "url": "/sws/neo/payment-in/finPayment/selectors/account",
+      "context": {
+        "required": [
+          {
+            "param": "Fin_Paymentmethod_ID",
+            "source": "field",
+            "field": "paymentMethod"
+          }
+        ]
+      }
     },
     {
       "entity": "finPayment",
@@ -105,7 +114,16 @@ export const api = {
       "column": "C_Currency_ID",
       "reference": "Currency",
       "inputMode": "dependent",
-      "url": "/sws/neo/payment-in/finPayment/selectors/currency"
+      "url": "/sws/neo/payment-in/finPayment/selectors/currency",
+      "context": {
+        "required": [
+          {
+            "param": "FIN_Financial_Account_ID",
+            "source": "field",
+            "field": "account"
+          }
+        ]
+      }
     },
     {
       "entity": "finPaymentScheduleDetail",
@@ -118,53 +136,67 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "aPRMAddScheduledpayments",
       "entity": "finPayment",
-      "field": "aPRMAddScheduledpayments",
       "column": "EM_Aprm_Add_Scheduledpayments",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/payment-in/finPayment/{id}/action/aPRMAddScheduledpayments",
       "processId": "9BED7889E1034FE68BD85D5D16857320",
       "processType": "obuiapp"
     },
     {
+      "name": "posted",
       "entity": "finPayment",
-      "field": "posted",
       "column": "Posted",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/payment-in/finPayment/{id}/action/posted"
     },
     {
+      "name": "aPRMProcessPayment",
       "entity": "finPayment",
-      "field": "aPRMProcessPayment",
       "column": "EM_APRM_Process_Payment",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/payment-in/finPayment/{id}/action/aPRMProcessPayment",
       "processId": "6255BE488882480599C81284B70CD9B3",
       "processType": "classic"
     },
     {
+      "name": "aprmExecutepayment",
       "entity": "finPayment",
-      "field": "aprmExecutepayment",
       "column": "EM_Aprm_Executepayment",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/payment-in/finPayment/{id}/action/aprmExecutepayment",
       "processId": "E011F492B0814A74B63CD1F3B9FF0526",
       "processType": "classic"
     },
     {
+      "name": "aPRMReversePayment",
       "entity": "finPayment",
-      "field": "aPRMReversePayment",
       "column": "EM_APRM_ReversePayment",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/payment-in/finPayment/{id}/action/aPRMReversePayment",
       "processId": "29D17F515727436DBCE32BC6CA28382B",
       "processType": "classic"
     },
     {
+      "name": "aPRMReconcilePayment",
       "entity": "finPayment",
-      "field": "aPRMReconcilePayment",
       "column": "EM_APRM_Reconcile_Payment",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/payment-in/finPayment/{id}/action/aPRMReconcilePayment"
     },
     {
+      "name": "aeatsiiSend",
       "entity": "finPayment",
-      "field": "aeatsiiSend",
       "column": "EM_Aeatsii_Send",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/payment-in/finPayment/{id}/action/aeatsiiSend",
       "processId": "EA02D79CA1DE4B46909EA6EF64A66B53",
       "processType": "obuiapp"

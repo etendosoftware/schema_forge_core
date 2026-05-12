@@ -360,73 +360,91 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "manageVariants",
       "entity": "product",
-      "field": "manageVariants",
       "column": "ManageVariants",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/product/product/{id}/action/manageVariants",
       "processId": "FE3A8C134D41488DB3A69837BD54B56A",
       "processType": "obuiapp"
     },
     {
+      "name": "processNow",
       "entity": "product",
-      "field": "processNow",
       "column": "Processing",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/product/product/{id}/action/processNow",
       "processId": "136",
       "processType": "classic"
     },
     {
+      "name": "createVariants",
       "entity": "product",
-      "field": "createVariants",
       "column": "CreateVariants",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/product/product/{id}/action/createVariants",
       "processId": "3C386BC12832466790E50F2F8C5EBD85",
       "processType": "classic"
     },
     {
+      "name": "updateInvariants",
       "entity": "product",
-      "field": "updateInvariants",
       "column": "Updateinvariants",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/product/product/{id}/action/updateInvariants",
       "processId": "7DC2C8DC186B4C1DB18E147911950861",
       "processType": "obuiapp"
     },
     {
+      "name": "relateprodcattoservice",
       "entity": "product",
-      "field": "relateprodcattoservice",
       "column": "Relateprodcattoservice",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/product/product/{id}/action/relateprodcattoservice",
       "processId": "8E5996F1F3154B498468938B5341A0CB",
       "processType": "obuiapp"
     },
     {
+      "name": "relateprodtoservice",
       "entity": "product",
-      "field": "relateprodtoservice",
       "column": "Relateprodtoservice",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/product/product/{id}/action/relateprodtoservice",
       "processId": "E66C669B0B01498C8EB3F99CD371CF9A",
       "processType": "obuiapp"
     },
     {
+      "name": "relateprodcattaxtoservice",
       "entity": "product",
-      "field": "relateprodcattaxtoservice",
       "column": "Relateprodcattaxtoservice",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/product/product/{id}/action/relateprodcattaxtoservice",
       "processId": "E0870062F05F4DC88E589ABC6A45DF4C",
       "processType": "obuiapp"
     },
     {
+      "name": "copyservicemodifytaxconfig",
       "entity": "product",
-      "field": "copyservicemodifytaxconfig",
       "column": "Copyservicemodifytaxconfig",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/product/product/{id}/action/copyservicemodifytaxconfig",
       "processId": "CBBD7BB6BDFE4705B68DD3D9FF788D4E",
       "processType": "obuiapp"
     },
     {
+      "name": "manualcostadjustment",
       "entity": "transactions",
-      "field": "manualcostadjustment",
       "column": "Manualcostadjustment",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/product/transactions/{id}/action/manualcostadjustment",
       "processId": "D395B727675C45C98320F8A40E0768E7",
       "processType": "obuiapp"

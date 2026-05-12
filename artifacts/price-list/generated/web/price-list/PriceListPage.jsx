@@ -142,17 +142,21 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "create",
       "entity": "priceListVersion",
-      "field": "create",
       "column": "ProcCreate",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/price-list/priceListVersion/{id}/action/create",
       "processId": "103",
       "processType": "classic"
     },
     {
+      "name": "generatePriceListVersion",
       "entity": "priceListVersion",
-      "field": "generatePriceListVersion",
       "column": "M_Pricelist_Version_Generate",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/price-list/priceListVersion/{id}/action/generatePriceListVersion",
       "processId": "800069",
       "processType": "classic"

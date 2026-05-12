@@ -111,7 +111,16 @@ export const api = {
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
-      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/selectors/partnerAddress"
+      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/selectors/partnerAddress",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "returnMaterialReceipt",
@@ -148,93 +157,117 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "receiveMaterials",
       "entity": "returnMaterialReceipt",
-      "field": "receiveMaterials",
       "column": "RM_Receipt_PickEdit",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/receiveMaterials",
       "processId": "5E9F9D7EECC24E4FBB2C60840FF613BE",
       "processType": "obuiapp"
     },
     {
+      "name": "createLinesFrom",
       "entity": "returnMaterialReceipt",
-      "field": "createLinesFrom",
       "column": "CreateFrom",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/createLinesFrom"
     },
     {
+      "name": "documentAction",
       "entity": "returnMaterialReceipt",
-      "field": "documentAction",
       "column": "DocAction",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/documentAction",
       "processId": "109",
       "processType": "classic"
     },
     {
+      "name": "posted",
       "entity": "returnMaterialReceipt",
-      "field": "posted",
       "column": "Posted",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/posted"
     },
     {
+      "name": "calculateFreight",
       "entity": "returnMaterialReceipt",
-      "field": "calculateFreight",
       "column": "Calculate_Freight",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/calculateFreight",
       "processId": "800141",
       "processType": "classic"
     },
     {
+      "name": "sendMaterials",
       "entity": "returnMaterialReceipt",
-      "field": "sendMaterials",
       "column": "RM_Shipment_Pickedit",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/sendMaterials",
       "processId": "4AD70293357245AB96E59C2CDB43A35D",
       "processType": "obuiapp"
     },
     {
+      "name": "generateTo",
       "entity": "returnMaterialReceipt",
-      "field": "generateTo",
       "column": "GenerateTo",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/generateTo",
       "processId": "154",
       "processType": "classic"
     },
     {
+      "name": "updateLines",
       "entity": "returnMaterialReceipt",
-      "field": "updateLines",
       "column": "UpdateLines",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/updateLines",
       "processId": "800010",
       "processType": "classic"
     },
     {
+      "name": "invoicefromshipment",
       "entity": "returnMaterialReceipt",
-      "field": "invoicefromshipment",
       "column": "Invoicefromshipment",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/invoicefromshipment",
       "processId": "62250E8866EA4D96A66C309878DC039E",
       "processType": "obuiapp"
     },
     {
+      "name": "processGoodsJava",
       "entity": "returnMaterialReceipt",
-      "field": "processGoodsJava",
       "column": "Process_Goods_Java",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/{id}/action/processGoodsJava",
       "processId": "49DEE812BF0545269781FCEBF2235924",
       "processType": "classic"
     },
     {
+      "name": "explode",
       "entity": "returnMaterialReceiptLine",
-      "field": "explode",
       "column": "Explode",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-material-receipt/returnMaterialReceiptLine/{id}/action/explode",
       "processId": "DAE719940FE9463F8A3E3C401BBAFC53",
       "processType": "classic"
     },
     {
+      "name": "managePrereservation",
       "entity": "returnMaterialReceiptLine",
-      "field": "managePrereservation",
       "column": "Manage_Prereservation",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-material-receipt/returnMaterialReceiptLine/{id}/action/managePrereservation",
       "processId": "70E42AD47E5F4698A9ACCCAF3EB72B9E",
       "processType": "obuiapp"

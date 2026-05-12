@@ -116,7 +116,16 @@ export const api = {
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
-      "url": "/sws/neo/goods-shipment/goodsShipment/selectors/partnerAddress"
+      "url": "/sws/neo/goods-shipment/goodsShipment/selectors/partnerAddress",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "goodsShipmentLine",
@@ -129,93 +138,117 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "createLinesFrom",
       "entity": "goodsShipment",
-      "field": "createLinesFrom",
       "column": "CreateFrom",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/createLinesFrom"
     },
     {
+      "name": "processGoodsJava",
       "entity": "goodsShipment",
-      "field": "processGoodsJava",
       "column": "Process_Goods_Java",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/processGoodsJava",
       "processId": "49DEE812BF0545269781FCEBF2235924",
       "processType": "classic"
     },
     {
+      "name": "documentAction",
       "entity": "goodsShipment",
-      "field": "documentAction",
       "column": "DocAction",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/documentAction",
       "processId": "109",
       "processType": "classic"
     },
     {
+      "name": "posted",
       "entity": "goodsShipment",
-      "field": "posted",
       "column": "Posted",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/posted"
     },
     {
+      "name": "calculateFreight",
       "entity": "goodsShipment",
-      "field": "calculateFreight",
       "column": "Calculate_Freight",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/calculateFreight",
       "processId": "800141",
       "processType": "classic"
     },
     {
+      "name": "invoicefromshipment",
       "entity": "goodsShipment",
-      "field": "invoicefromshipment",
       "column": "Invoicefromshipment",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/invoicefromshipment",
       "processId": "62250E8866EA4D96A66C309878DC039E",
       "processType": "obuiapp"
     },
     {
+      "name": "generateTo",
       "entity": "goodsShipment",
-      "field": "generateTo",
       "column": "GenerateTo",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/generateTo",
       "processId": "154",
       "processType": "classic"
     },
     {
+      "name": "updateLines",
       "entity": "goodsShipment",
-      "field": "updateLines",
       "column": "UpdateLines",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/updateLines",
       "processId": "800010",
       "processType": "classic"
     },
     {
+      "name": "receiveMaterials",
       "entity": "goodsShipment",
-      "field": "receiveMaterials",
       "column": "RM_Receipt_PickEdit",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/receiveMaterials",
       "processId": "5E9F9D7EECC24E4FBB2C60840FF613BE",
       "processType": "obuiapp"
     },
     {
+      "name": "sendMaterials",
       "entity": "goodsShipment",
-      "field": "sendMaterials",
       "column": "RM_Shipment_Pickedit",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/sendMaterials",
       "processId": "4AD70293357245AB96E59C2CDB43A35D",
       "processType": "obuiapp"
     },
     {
+      "name": "explode",
       "entity": "goodsShipmentLine",
-      "field": "explode",
       "column": "Explode",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipmentLine/{id}/action/explode",
       "processId": "DAE719940FE9463F8A3E3C401BBAFC53",
       "processType": "classic"
     },
     {
+      "name": "managePrereservation",
       "entity": "goodsShipmentLine",
-      "field": "managePrereservation",
       "column": "Manage_Prereservation",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipmentLine/{id}/action/managePrereservation",
       "processId": "70E42AD47E5F4698A9ACCCAF3EB72B9E",
       "processType": "obuiapp"

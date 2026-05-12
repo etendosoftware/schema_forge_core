@@ -115,17 +115,21 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "processNow",
       "entity": "internalConsumption",
-      "field": "processNow",
       "column": "Processing",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/internal-consumption/internalConsumption/{id}/action/processNow",
       "processId": "800131",
       "processType": "classic"
     },
     {
+      "name": "posted",
       "entity": "internalConsumption",
-      "field": "posted",
       "column": "Posted",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/internal-consumption/internalConsumption/{id}/action/posted"
     }
   ],

@@ -88,65 +88,81 @@ export const api = {
   "selectors": [],
   "actions": [
     {
+      "name": "processNow",
       "entity": "assignedProducts",
-      "field": "processNow",
       "column": "Processing",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/product-category/assignedProducts/{id}/action/processNow",
       "processId": "136",
       "processType": "classic"
     },
     {
+      "name": "copyservicemodifytaxconfig",
       "entity": "assignedProducts",
-      "field": "copyservicemodifytaxconfig",
       "column": "Copyservicemodifytaxconfig",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/product-category/assignedProducts/{id}/action/copyservicemodifytaxconfig",
       "processId": "CBBD7BB6BDFE4705B68DD3D9FF788D4E",
       "processType": "obuiapp"
     },
     {
+      "name": "createVariants",
       "entity": "assignedProducts",
-      "field": "createVariants",
       "column": "CreateVariants",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/product-category/assignedProducts/{id}/action/createVariants",
       "processId": "3C386BC12832466790E50F2F8C5EBD85",
       "processType": "classic"
     },
     {
+      "name": "manageVariants",
       "entity": "assignedProducts",
-      "field": "manageVariants",
       "column": "ManageVariants",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/product-category/assignedProducts/{id}/action/manageVariants",
       "processId": "FE3A8C134D41488DB3A69837BD54B56A",
       "processType": "obuiapp"
     },
     {
+      "name": "relateprodcattaxtoservice",
       "entity": "assignedProducts",
-      "field": "relateprodcattaxtoservice",
       "column": "Relateprodcattaxtoservice",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/product-category/assignedProducts/{id}/action/relateprodcattaxtoservice",
       "processId": "E0870062F05F4DC88E589ABC6A45DF4C",
       "processType": "obuiapp"
     },
     {
+      "name": "relateprodcattoservice",
       "entity": "assignedProducts",
-      "field": "relateprodcattoservice",
       "column": "Relateprodcattoservice",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/product-category/assignedProducts/{id}/action/relateprodcattoservice",
       "processId": "8E5996F1F3154B498468938B5341A0CB",
       "processType": "obuiapp"
     },
     {
+      "name": "relateprodtoservice",
       "entity": "assignedProducts",
-      "field": "relateprodtoservice",
       "column": "Relateprodtoservice",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/product-category/assignedProducts/{id}/action/relateprodtoservice",
       "processId": "E66C669B0B01498C8EB3F99CD371CF9A",
       "processType": "obuiapp"
     },
     {
+      "name": "updateInvariants",
       "entity": "assignedProducts",
-      "field": "updateInvariants",
       "column": "Updateinvariants",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/product-category/assignedProducts/{id}/action/updateInvariants",
       "processId": "7DC2C8DC186B4C1DB18E147911950861",
       "processType": "obuiapp"

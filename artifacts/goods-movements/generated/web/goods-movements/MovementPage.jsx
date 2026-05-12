@@ -126,25 +126,31 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "moveBetweenLocators",
       "entity": "movement",
-      "field": "moveBetweenLocators",
       "column": "Move_FromTo_Locator",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-movements/movement/{id}/action/moveBetweenLocators",
       "processId": "800048",
       "processType": "classic"
     },
     {
+      "name": "processNow",
       "entity": "movement",
-      "field": "processNow",
       "column": "Processing",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-movements/movement/{id}/action/processNow",
       "processId": "122",
       "processType": "classic"
     },
     {
+      "name": "posted",
       "entity": "movement",
-      "field": "posted",
       "column": "Posted",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/goods-movements/movement/{id}/action/posted"
     }
   ],

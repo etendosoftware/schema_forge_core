@@ -1,8 +1,8 @@
 {
   "version": "0.2.0",
   "generatedAt": "2026-04-29T18:12:11.134Z",
-  "updatedAt": "2026-05-12T19:44:24.001Z",
-  "checksum": "f660c4f25f448e0b",
+  "updatedAt": "2026-05-15T16:28:11.516Z",
+  "checksum": "2fffe47ceb47ae09",
   "frontendContract": {
     "window": {
       "id": "146",
@@ -1025,18 +1025,54 @@
     ],
     "actions": [
       {
+        "name": "create",
+        "label": "Create Price List",
+        "actionType": "createFrom",
         "entity": "priceListVersion",
-        "field": "create",
         "column": "ProcCreate",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/price-list/priceListVersion/{id}/action/create",
+        "method": "POST",
         "url": "/sws/neo/price-list/priceListVersion/{id}/action/create",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates child or related records",
+          "May copy data from source document"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Source document has no valid lines to copy",
+          "Target entity already has linked records",
+          "Required reference data is missing (price list, warehouse, etc.)"
+        ],
+        "provenance": "extracted",
         "processId": "103",
         "processType": "classic"
       },
       {
+        "name": "generatePriceListVersion",
+        "label": "Create Price List Version",
+        "actionType": "createFrom",
         "entity": "priceListVersion",
-        "field": "generatePriceListVersion",
         "column": "M_Pricelist_Version_Generate",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/price-list/priceListVersion/{id}/action/generatePriceListVersion",
+        "method": "POST",
         "url": "/sws/neo/price-list/priceListVersion/{id}/action/generatePriceListVersion",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates child or related records",
+          "May copy data from source document"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Source document has no valid lines to copy",
+          "Target entity already has linked records",
+          "Required reference data is missing (price list, warehouse, etc.)"
+        ],
+        "provenance": "extracted",
         "processId": "800069",
         "processType": "classic"
       }

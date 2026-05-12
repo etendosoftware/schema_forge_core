@@ -251,93 +251,117 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "sendMaterials",
       "entity": "header",
-      "field": "sendMaterials",
       "column": "RM_Shipment_Pickedit",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/sendMaterials",
       "processId": "4AD70293357245AB96E59C2CDB43A35D",
       "processType": "obuiapp"
     },
     {
+      "name": "createLinesFrom",
       "entity": "header",
-      "field": "createLinesFrom",
       "column": "CreateFrom",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/createLinesFrom"
     },
     {
+      "name": "generateTo",
       "entity": "header",
-      "field": "generateTo",
       "column": "GenerateTo",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/generateTo",
       "processId": "154",
       "processType": "classic"
     },
     {
+      "name": "documentAction",
       "entity": "header",
-      "field": "documentAction",
       "column": "DocAction",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/documentAction",
       "processId": "109",
       "processType": "classic"
     },
     {
+      "name": "posted",
       "entity": "header",
-      "field": "posted",
       "column": "Posted",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/posted"
     },
     {
+      "name": "calculateFreight",
       "entity": "header",
-      "field": "calculateFreight",
       "column": "Calculate_Freight",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/calculateFreight",
       "processId": "800141",
       "processType": "classic"
     },
     {
+      "name": "receiveMaterials",
       "entity": "header",
-      "field": "receiveMaterials",
       "column": "RM_Receipt_PickEdit",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/receiveMaterials",
       "processId": "5E9F9D7EECC24E4FBB2C60840FF613BE",
       "processType": "obuiapp"
     },
     {
+      "name": "updateLines",
       "entity": "header",
-      "field": "updateLines",
       "column": "UpdateLines",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/updateLines",
       "processId": "800010",
       "processType": "classic"
     },
     {
+      "name": "invoicefromshipment",
       "entity": "header",
-      "field": "invoicefromshipment",
       "column": "Invoicefromshipment",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/invoicefromshipment",
       "processId": "62250E8866EA4D96A66C309878DC039E",
       "processType": "obuiapp"
     },
     {
+      "name": "processGoodsJava",
       "entity": "header",
-      "field": "processGoodsJava",
       "column": "Process_Goods_Java",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/processGoodsJava",
       "processId": "49DEE812BF0545269781FCEBF2235924",
       "processType": "classic"
     },
     {
+      "name": "explode",
       "entity": "lines",
-      "field": "explode",
       "column": "Explode",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-to-vendor-shipment/lines/{id}/action/explode",
       "processId": "DAE719940FE9463F8A3E3C401BBAFC53",
       "processType": "classic"
     },
     {
+      "name": "managePrereservation",
       "entity": "lines",
-      "field": "managePrereservation",
       "column": "Manage_Prereservation",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/return-to-vendor-shipment/lines/{id}/action/managePrereservation",
       "processId": "70E42AD47E5F4698A9ACCCAF3EB72B9E",
       "processType": "obuiapp"

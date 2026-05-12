@@ -2,6 +2,33 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 
 import { resolve, dirname } from 'node:path';
 import { MARKERS } from './custom-section-markers.js';
 
+const FRONTEND_ACTION_KEYS = [
+  'name',
+  'entity',
+  'column',
+  'requiresRecord',
+  'method',
+  'url',
+  'processId',
+  'processType',
+];
+
+function pickDefined(source, keys) {
+  const result = {};
+  for (const key of keys) {
+    if (source?.[key] !== undefined) result[key] = source[key];
+  }
+  return result;
+}
+
+export function projectApiPredictionForFrontend(apiPrediction) {
+  if (!apiPrediction) return apiPrediction;
+  return {
+    ...apiPrediction,
+    actions: (apiPrediction.actions ?? []).map(action => pickDefined(action, FRONTEND_ACTION_KEYS)),
+  };
+}
+
 /**
  * Resolves the correct import path for a custom component.
  *
@@ -699,7 +726,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   }).join('\n');
 
   // API prediction config
-  const apiPrediction = contract.apiPrediction;
+  const apiPrediction = projectApiPredictionForFrontend(contract.apiPrediction);
   const apiBlock = apiPrediction
     ? `\nexport const api = ${JSON.stringify(apiPrediction, null, 2)};\n`
     : '';

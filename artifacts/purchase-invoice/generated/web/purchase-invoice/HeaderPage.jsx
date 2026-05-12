@@ -239,7 +239,15 @@ export const api = {
       "column": "C_DocTypeTarget_ID",
       "reference": "DocumentType",
       "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/header/selectors/transactionDocument"
+      "url": "/sws/neo/purchase-invoice/header/selectors/transactionDocument",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -255,7 +263,16 @@ export const api = {
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
-      "url": "/sws/neo/purchase-invoice/header/selectors/partnerAddress"
+      "url": "/sws/neo/purchase-invoice/header/selectors/partnerAddress",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -263,7 +280,15 @@ export const api = {
       "column": "M_PriceList_ID",
       "reference": "PriceList",
       "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/header/selectors/priceList"
+      "url": "/sws/neo/purchase-invoice/header/selectors/priceList",
+      "context": {
+        "required": [
+          {
+            "param": "isSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -279,7 +304,15 @@ export const api = {
       "column": "FIN_Paymentmethod_ID",
       "reference": "PaymentMethod",
       "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/header/selectors/paymentMethod"
+      "url": "/sws/neo/purchase-invoice/header/selectors/paymentMethod",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -303,7 +336,16 @@ export const api = {
       "column": "AD_User_ID",
       "reference": "User",
       "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/header/selectors/userContact"
+      "url": "/sws/neo/purchase-invoice/header/selectors/userContact",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "parentField",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -327,7 +369,20 @@ export const api = {
       "column": "C_Project_ID",
       "reference": "Project",
       "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/header/selectors/project"
+      "url": "/sws/neo/purchase-invoice/header/selectors/project",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "C_BPartner_ID",
+            "source": "parentField",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -359,7 +414,22 @@ export const api = {
       "column": "C_Tax_ID",
       "reference": "Tax",
       "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/lines/selectors/tax"
+      "url": "/sws/neo/purchase-invoice/lines/selectors/tax",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "DateInvoiced",
+            "source": "parentField",
+            "field": "invoiceDate",
+            "fallbackField": "orderDate",
+            "format": "DD-MM-YYYY"
+          }
+        ]
+      }
     },
     {
       "entity": "lines",
@@ -626,189 +696,237 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "generateTo",
       "entity": "header",
-      "field": "generateTo",
       "column": "GenerateTo",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/generateTo",
       "processId": "142",
       "processType": "classic"
     },
     {
+      "name": "aPRMAddpayment",
       "entity": "header",
-      "field": "aPRMAddpayment",
       "column": "EM_APRM_Addpayment",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/aPRMAddpayment",
       "processId": "9BED7889E1034FE68BD85D5D16857320",
       "processType": "obuiapp"
     },
     {
+      "name": "posted",
       "entity": "header",
-      "field": "posted",
       "column": "Posted",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/posted"
     },
     {
+      "name": "aPRMProcessinvoice",
       "entity": "header",
-      "field": "aPRMProcessinvoice",
       "column": "EM_APRM_Processinvoice",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/aPRMProcessinvoice",
       "processId": "B54318B49E984B9CB855AEFB1F474CD6",
       "processType": "classic"
     },
     {
+      "name": "documentAction",
       "entity": "header",
-      "field": "documentAction",
       "column": "DocAction",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/documentAction",
       "processId": "111",
       "processType": "classic"
     },
     {
+      "name": "createLinesFromOrder",
       "entity": "header",
-      "field": "createLinesFromOrder",
       "column": "Createfromorders",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/createLinesFromOrder",
       "processId": "AB2EFCAABB7B4EC0A9B30CFB82963FB6",
       "processType": "obuiapp"
     },
     {
+      "name": "createLinesFromShipment",
       "entity": "header",
-      "field": "createLinesFromShipment",
       "column": "Createfrominouts",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/createLinesFromShipment",
       "processId": "7737CA7330FD49FBA7EBC225E85F2BC9",
       "processType": "obuiapp"
     },
     {
+      "name": "copyFrom",
       "entity": "header",
-      "field": "copyFrom",
       "column": "CopyFrom",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/copyFrom",
       "processId": "210",
       "processType": "classic"
     },
     {
+      "name": "calculatePromotions",
       "entity": "header",
-      "field": "calculatePromotions",
       "column": "Calculate_Promotions",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/calculatePromotions",
       "processId": "9EB2228A60684C0DBEC12D5CD8D85218",
       "processType": "classic"
     },
     {
+      "name": "aeatsiiSend",
       "entity": "header",
-      "field": "aeatsiiSend",
       "column": "EM_Aeatsii_Send",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/aeatsiiSend",
       "processId": "2ECF46DAAEEB486EAF79D3594D50DE5F",
       "processType": "obuiapp"
     },
     {
+      "name": "aeatsiiModif",
       "entity": "header",
-      "field": "aeatsiiModif",
       "column": "EM_Aeatsii_Modif",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/aeatsiiModif",
       "processId": "BAAECFDF9FF144E8A610E9F1EF3E5FBE",
       "processType": "obuiapp"
     },
     {
+      "name": "tbaiXmlgenerator",
       "entity": "header",
-      "field": "tbaiXmlgenerator",
       "column": "EM_Tbai_Xmlgenerator",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/tbaiXmlgenerator",
       "processId": "BE2486102F2C41779B760609FD69A225",
       "processType": "obuiapp"
     },
     {
+      "name": "processNow",
       "entity": "header",
-      "field": "processNow",
       "column": "Processing",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/processNow",
       "processId": "111",
       "processType": "classic"
     },
     {
+      "name": "createLinesFrom",
       "entity": "header",
-      "field": "createLinesFrom",
       "column": "CreateFrom",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/createLinesFrom"
     },
     {
+      "name": "aeatsiiDup",
       "entity": "header",
-      "field": "aeatsiiDup",
       "column": "EM_Aeatsii_Dup",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/aeatsiiDup",
       "processId": "92C02F9A367140C085D1EE3BD27C4E96",
       "processType": "obuiapp"
     },
     {
+      "name": "aeatsiiUnsubscribe",
       "entity": "header",
-      "field": "aeatsiiUnsubscribe",
       "column": "EM_Aeatsii_Unsubscribe",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/aeatsiiUnsubscribe",
       "processId": "BE564945CB2D4892AC0EE51204C5DB7D",
       "processType": "obuiapp"
     },
     {
+      "name": "etvfacRectCreate",
       "entity": "header",
-      "field": "etvfacRectCreate",
       "column": "EM_Etvfac_Rect_Create",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/etvfacRectCreate",
       "processId": "E36A8BA259164E78AFDDC760172C18F5",
       "processType": "obuiapp"
     },
     {
+      "name": "tBAIQRcode",
       "entity": "header",
-      "field": "tBAIQRcode",
       "column": "em_tbai_qrcode",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/tBAIQRcode",
       "processId": "12FECC9DF1F4418AB7DAA46D6A05FEC6",
       "processType": "obuiapp"
     },
     {
+      "name": "tbaiVoidxmlgenerator",
       "entity": "header",
-      "field": "tbaiVoidxmlgenerator",
       "column": "EM_Tbai_Voidxmlgenerator",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/tbaiVoidxmlgenerator",
       "processId": "535A8BAE44A34759A7C8FF40D62A5070",
       "processType": "obuiapp"
     },
     {
+      "name": "explode",
       "entity": "lines",
-      "field": "explode",
       "column": "Explode",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/lines/{id}/action/explode",
       "processId": "6E1ADD5C8B6B4ACB82237DAA8114451E",
       "processType": "classic"
     },
     {
+      "name": "matchLCCosts",
       "entity": "lines",
-      "field": "matchLCCosts",
       "column": "Match_Lccosts",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/lines/{id}/action/matchLCCosts",
       "processId": "281FFDFAB31C4394A2EAA73A6F9F3A3F",
       "processType": "obuiapp"
     },
     {
+      "name": "updatePaymentPlan",
       "entity": "paymentPlan",
-      "field": "updatePaymentPlan",
       "column": "Update_Payment_Plan",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/paymentPlan/{id}/action/updatePaymentPlan",
       "processId": "FB740AB61B0E42B198D2C88D3A0D0CE6",
       "processType": "classic"
     },
     {
+      "name": "aprmModifPaymentOUTPlan",
       "entity": "paymentPlan",
-      "field": "aprmModifPaymentOUTPlan",
       "column": "EM_Aprm_Modif_Paym_Out_Sched",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/paymentPlan/{id}/action/aprmModifPaymentOUTPlan",
       "processId": "6F87442DF7BC43AB8A666BDED2F7D64E",
       "processType": "obuiapp"
     },
     {
+      "name": "aprmModifPaymentINPlan",
       "entity": "paymentPlan",
-      "field": "aprmModifPaymentINPlan",
       "column": "EM_Aprm_Modif_Paym_Sched",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/purchase-invoice/paymentPlan/{id}/action/aprmModifPaymentINPlan",
       "processId": "4EEB3497082C4F2182E16A4371CD5D96",
       "processType": "obuiapp"

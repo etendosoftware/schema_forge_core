@@ -135,7 +135,16 @@ export const api = {
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/partnerAddress"
+      "url": "/sws/neo/sales-quotation/quotation/selectors/partnerAddress",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "quotation",
@@ -143,7 +152,15 @@ export const api = {
       "column": "M_PriceList_ID",
       "reference": "PriceList",
       "inputMode": "selector",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/priceList"
+      "url": "/sws/neo/sales-quotation/quotation/selectors/priceList",
+      "context": {
+        "required": [
+          {
+            "param": "isSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "quotation",
@@ -151,7 +168,15 @@ export const api = {
       "column": "FIN_Paymentmethod_ID",
       "reference": "Paymentmethod",
       "inputMode": "selector",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/paymentMethod"
+      "url": "/sws/neo/sales-quotation/quotation/selectors/paymentMethod",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "quotation",
@@ -191,172 +216,229 @@ export const api = {
       "column": "C_Tax_ID",
       "reference": "Tax",
       "inputMode": "selector",
-      "url": "/sws/neo/sales-quotation/quotationLine/selectors/tax"
+      "url": "/sws/neo/sales-quotation/quotationLine/selectors/tax",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "DateInvoiced",
+            "source": "parentField",
+            "field": "invoiceDate",
+            "fallbackField": "orderDate",
+            "format": "DD-MM-YYYY"
+          }
+        ]
+      }
     }
   ],
   "actions": [
     {
+      "name": "rMPickFromShipment",
       "entity": "quotation",
-      "field": "rMPickFromShipment",
       "column": "RM_PickFromShipment",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/rMPickFromShipment",
       "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
       "processType": "obuiapp"
     },
     {
+      "name": "rMReceiveMaterials",
       "entity": "quotation",
-      "field": "rMReceiveMaterials",
       "column": "RM_ReceiveMaterials",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/rMReceiveMaterials"
     },
     {
+      "name": "rMCreateInvoice",
       "entity": "quotation",
-      "field": "rMCreateInvoice",
       "column": "RM_CreateInvoice",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/rMCreateInvoice",
       "processId": "FF80808133362F6A013336781FCE0066",
       "processType": "classic"
     },
     {
+      "name": "copyFrom",
       "entity": "quotation",
-      "field": "copyFrom",
       "column": "CopyFrom",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/copyFrom",
       "processId": "211",
       "processType": "classic"
     },
     {
+      "name": "copyFromPO",
       "entity": "quotation",
-      "field": "copyFromPO",
       "column": "CopyFromPO",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/copyFromPO",
       "processId": "8B81D80B06364566B87853FEECAB5DE0",
       "processType": "obuiapp"
     },
     {
+      "name": "documentAction",
       "entity": "quotation",
-      "field": "documentAction",
       "column": "DocAction",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/documentAction",
       "processId": "104",
       "processType": "classic"
     },
     {
+      "name": "createOrder",
       "entity": "quotation",
-      "field": "createOrder",
       "column": "Convertquotation",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/createOrder",
       "processId": "A3FE1F9892394386A49FB707AA50A0FA",
       "processType": "classic"
     },
     {
+      "name": "calculatePromotions",
       "entity": "quotation",
-      "field": "calculatePromotions",
       "column": "Calculate_Promotions",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/calculatePromotions",
       "processId": "9EB2228A60684C0DBEC12D5CD8D85218",
       "processType": "classic"
     },
     {
+      "name": "generateTemplate",
       "entity": "quotation",
-      "field": "generateTemplate",
       "column": "Generatetemplate",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/generateTemplate",
       "processId": "800022",
       "processType": "classic"
     },
     {
+      "name": "processNow",
       "entity": "quotation",
-      "field": "processNow",
       "column": "Processing",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/processNow",
       "processId": "104",
       "processType": "classic"
     },
     {
+      "name": "posted",
       "entity": "quotation",
-      "field": "posted",
       "column": "Posted",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/posted",
       "processId": "57496FB9CF9E4E8F847224017941570E",
       "processType": "obuiapp"
     },
     {
+      "name": "cancelandreplace",
       "entity": "quotation",
-      "field": "cancelandreplace",
       "column": "Cancelandreplace",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/cancelandreplace",
       "processId": "A2FAF49712D1445ABE750315CE1B473A",
       "processType": "obuiapp"
     },
     {
+      "name": "confirmcancelandreplace",
       "entity": "quotation",
-      "field": "confirmcancelandreplace",
       "column": "Confirmcancelandreplace",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/confirmcancelandreplace",
       "processId": "0C2AFAEFB67B4CB8A1429195EB119A49",
       "processType": "obuiapp"
     },
     {
+      "name": "createPOLines",
       "entity": "quotation",
-      "field": "createPOLines",
       "column": "Create_POLines",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/createPOLines",
       "processId": "6995A4C2592D434A9E16B71E1694CBCA",
       "processType": "obuiapp"
     },
     {
+      "name": "aPRMAddPayment",
       "entity": "quotation",
-      "field": "aPRMAddPayment",
       "column": "EM_APRM_AddPayment",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/aPRMAddPayment",
       "processId": "9BED7889E1034FE68BD85D5D16857320",
       "processType": "obuiapp"
     },
     {
+      "name": "rMAddOrphanLine",
       "entity": "quotation",
-      "field": "rMAddOrphanLine",
       "column": "RM_AddOrphanLine",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/rMAddOrphanLine",
       "processId": "23D1B163EC0B41F790CE39BF01DA320E",
       "processType": "classic"
     },
     {
+      "name": "rMPickfromreceipt",
       "entity": "quotation",
-      "field": "rMPickfromreceipt",
       "column": "RM_Pickfromreceipt",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotation/{id}/action/rMPickfromreceipt",
       "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
       "processType": "obuiapp"
     },
     {
+      "name": "explode",
       "entity": "quotationLine",
-      "field": "explode",
       "column": "Explode",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotationLine/{id}/action/explode",
       "processId": "DFC78024B1F54CBB95DC73425BA6687F",
       "processType": "classic"
     },
     {
+      "name": "managePrereservation",
       "entity": "quotationLine",
-      "field": "managePrereservation",
       "column": "Manage_Prereservation",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotationLine/{id}/action/managePrereservation",
       "processId": "70E42AD47E5F4698A9ACCCAF3EB72B9E",
       "processType": "obuiapp"
     },
     {
+      "name": "manageReservation",
       "entity": "quotationLine",
-      "field": "manageReservation",
       "column": "Manage_Reservation",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotationLine/{id}/action/manageReservation",
       "processId": "5F547560D3DE401AA0B570F22E2C6C06",
       "processType": "obuiapp"
     },
     {
+      "name": "selectOrderLine",
       "entity": "quotationLine",
-      "field": "selectOrderLine",
       "column": "Relate_Orderline",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/sales-quotation/quotationLine/{id}/action/selectOrderLine",
       "processId": "C4265E27C8134096B49DFBF69369DFC6",
       "processType": "obuiapp"

@@ -198,17 +198,21 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "changeStatus",
       "entity": "storageBin",
-      "field": "changeStatus",
       "column": "Change_Status",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/warehouse/storageBin/{id}/action/changeStatus",
       "processId": "3A4E13B0AB764F188CB062DDE2A9B685",
       "processType": "obuiapp"
     },
     {
+      "name": "manualcostadjustment",
       "entity": "productTransactions",
-      "field": "manualcostadjustment",
       "column": "Manualcostadjustment",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/warehouse/productTransactions/{id}/action/manualcostadjustment",
       "processId": "D395B727675C45C98320F8A40E0768E7",
       "processType": "obuiapp"

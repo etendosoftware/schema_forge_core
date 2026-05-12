@@ -546,7 +546,16 @@ export const api = {
       "column": "AD_User_ID",
       "reference": "User",
       "inputMode": "selector",
-      "url": "/sws/neo/contacts/bankAccount/selectors/userContact"
+      "url": "/sws/neo/contacts/bankAccount/selectors/userContact",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "parentField",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "documentType",
@@ -575,49 +584,61 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "setNewCurrency",
       "entity": "businessPartner",
-      "field": "setNewCurrency",
       "column": "Update_Currency",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/contacts/businessPartner/{id}/action/setNewCurrency",
       "processId": "B5C942145F354ABEBC9F16235D80D776",
       "processType": "obuiapp"
     },
     {
+      "name": "setNewCurrency",
       "entity": "customer",
-      "field": "setNewCurrency",
       "column": "Update_Currency",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/contacts/customer/{id}/action/setNewCurrency",
       "processId": "B5C942145F354ABEBC9F16235D80D776",
       "processType": "obuiapp"
     },
     {
+      "name": "setNewCurrency",
       "entity": "vendorCreditor",
-      "field": "setNewCurrency",
       "column": "Update_Currency",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/contacts/vendorCreditor/{id}/action/setNewCurrency",
       "processId": "B5C942145F354ABEBC9F16235D80D776",
       "processType": "obuiapp"
     },
     {
+      "name": "setNewCurrency",
       "entity": "employee",
-      "field": "setNewCurrency",
       "column": "Update_Currency",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/contacts/employee/{id}/action/setNewCurrency",
       "processId": "B5C942145F354ABEBC9F16235D80D776",
       "processType": "obuiapp"
     },
     {
+      "name": "grantPortalAccess",
       "entity": "contact",
-      "field": "grantPortalAccess",
       "column": "Grant_Portal_Access",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/contacts/contact/{id}/action/grantPortalAccess",
       "processId": "97FFD59B991D49BFB5153C309B009272",
       "processType": "obuiapp"
     },
     {
+      "name": "processNow",
       "entity": "contact",
-      "field": "processNow",
       "column": "Processing",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/contacts/contact/{id}/action/processNow"
     }
   ],

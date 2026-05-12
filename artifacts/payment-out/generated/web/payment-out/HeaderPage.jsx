@@ -443,53 +443,67 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "aPRMAddScheduledpayments",
       "entity": "header",
-      "field": "aPRMAddScheduledpayments",
       "column": "EM_Aprm_Add_Scheduledpayments",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/payment-out/header/{id}/action/aPRMAddScheduledpayments",
       "processId": "9BED7889E1034FE68BD85D5D16857320",
       "processType": "obuiapp"
     },
     {
+      "name": "posted",
       "entity": "header",
-      "field": "posted",
       "column": "Posted",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/payment-out/header/{id}/action/posted"
     },
     {
+      "name": "aPRMProcessPayment",
       "entity": "header",
-      "field": "aPRMProcessPayment",
       "column": "EM_APRM_Process_Payment",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/payment-out/header/{id}/action/aPRMProcessPayment",
       "processId": "6255BE488882480599C81284B70CD9B3",
       "processType": "classic"
     },
     {
+      "name": "aprmExecutepayment",
       "entity": "header",
-      "field": "aprmExecutepayment",
       "column": "EM_Aprm_Executepayment",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/payment-out/header/{id}/action/aprmExecutepayment",
       "processId": "E011F492B0814A74B63CD1F3B9FF0526",
       "processType": "classic"
     },
     {
+      "name": "aPRMReversePayment",
       "entity": "header",
-      "field": "aPRMReversePayment",
       "column": "EM_APRM_ReversePayment",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/payment-out/header/{id}/action/aPRMReversePayment",
       "processId": "29D17F515727436DBCE32BC6CA28382B",
       "processType": "classic"
     },
     {
+      "name": "aPRMReconcilePayment",
       "entity": "header",
-      "field": "aPRMReconcilePayment",
       "column": "EM_APRM_Reconcile_Payment",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/payment-out/header/{id}/action/aPRMReconcilePayment"
     },
     {
+      "name": "aeatsiiSend",
       "entity": "header",
-      "field": "aeatsiiSend",
       "column": "EM_Aeatsii_Send",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/payment-out/header/{id}/action/aeatsiiSend",
       "processId": "EA02D79CA1DE4B46909EA6EF64A66B53",
       "processType": "obuiapp"

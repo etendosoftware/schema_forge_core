@@ -132,33 +132,41 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "generateList",
       "entity": "inventory",
-      "field": "generateList",
       "column": "GenerateList",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/physical-inventory/inventory/{id}/action/generateList",
       "processId": "105",
       "processType": "classic"
     },
     {
+      "name": "updateQuantities",
       "entity": "inventory",
-      "field": "updateQuantities",
       "column": "UpdateQty",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/physical-inventory/inventory/{id}/action/updateQuantities",
       "processId": "106",
       "processType": "classic"
     },
     {
+      "name": "processNow",
       "entity": "inventory",
-      "field": "processNow",
       "column": "Processing",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/physical-inventory/inventory/{id}/action/processNow",
       "processId": "107",
       "processType": "classic"
     },
     {
+      "name": "posted",
       "entity": "inventory",
-      "field": "posted",
       "column": "Posted",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/physical-inventory/inventory/{id}/action/posted"
     }
   ],

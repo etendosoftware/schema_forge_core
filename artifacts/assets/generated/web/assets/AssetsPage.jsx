@@ -145,17 +145,21 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "processed",
       "entity": "assets",
-      "field": "processed",
       "column": "Processed",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/assets/assets/{id}/action/processed",
       "processId": "800125",
       "processType": "classic"
     },
     {
+      "name": "processAsset",
       "entity": "assets",
-      "field": "processAsset",
       "column": "Process_Asset",
+      "requiresRecord": true,
+      "method": "POST",
       "url": "/sws/neo/assets/assets/{id}/action/processAsset",
       "processId": "85601427EAEE401FA0250FF0A6DD62EF",
       "processType": "classic"
