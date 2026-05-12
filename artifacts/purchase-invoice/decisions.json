@@ -17,7 +17,8 @@
       }
     ],
     "customComponents": {
-      "headerTable": "InvoiceHeaderTable"
+      "headerTable": "InvoiceHeaderTable",
+      "bottomSection": "PurchaseInvoiceBottomPanel"
     },
     "processOverrides": {},
     "draftMode": {

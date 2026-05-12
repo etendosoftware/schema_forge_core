@@ -73,7 +73,7 @@ export default function DocumentTotalsPanel({
 
   return (
     <div className="mt-1 flex flex-col items-end" data-inline-add-portal="true">
-      <div className="w-full text-sm">
+      <div className="w-full text-sm pr-12">
 
         <div>
 

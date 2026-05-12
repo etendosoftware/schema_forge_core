@@ -21,7 +21,7 @@ import { columnFlex } from '@/lib/linesColumnWidth.js';
 
 // Figma tokens — extracted from /home/agustin/Desktop/newlines.css.
 const TOKENS = {
-  rowHeight: 40,
+  rowHeight: 41,
   cellPaddingX: 12,
   separator: '#E8EAEF',
   textPrimary: '#121217',
@@ -363,6 +363,10 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
     return null;
   }, [visibleColumns]);
   const reserveActionSlot = trailingColumn == null;
+  // Action strip must be the same width as the trailing column it replaces on hover.
+  const actionStripFlex = trailingColumn
+    ? columnFlex(trailingColumn, visibleColumns.indexOf(trailingColumn))
+    : '0 0 160px';
 
   const selectableRows = useMemo(() => data || [], [data]);
 
@@ -527,6 +531,9 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
         {reserveActionSlot && (
           <div style={{ flex: '0 0 160px' }} aria-hidden="true" />
         )}
+        {/* Right spacer — mirrors the Figma right margin without adding padding
+            to the root (which would clip the row border-b lines). */}
+        <div style={{ width: 48, flexShrink: 0 }} aria-hidden="true" />
       </div>
 
       {/* Body rows */}
@@ -632,8 +639,8 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
                 don't reflow on hover — only the icons inside fade in. */}
             {(showActions || reserveActionSlot) && (
               <div
-                className="flex items-center justify-end gap-2 pr-3"
-                style={{ flex: '0 0 160px' }}
+                className="flex items-center justify-end gap-2 pr-1"
+                style={{ flex: actionStripFlex }}
                 data-testid="line-actions"
               >
                 {showActions && (
@@ -644,7 +651,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
                       title={ui('editLineTooltip') ?? 'Edit line'}
                       onClick={() => handleEditClick(row)}
                       className={[
-                        'p-1 rounded hover:bg-muted',
+                        'p-1 rounded-full hover:bg-muted',
                         isEditing ? 'text-foreground bg-muted' : 'text-muted-foreground hover:text-foreground',
                       ].join(' ')}
                     >
@@ -656,7 +663,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
                       title={ui('deleteRowTooltip') ?? 'Delete'}
                       onClick={() => handleDeleteClick(row)}
                       disabled={isDeleting}
-                      className="p-1 rounded text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                      className="p-1 rounded-full text-destructive hover:bg-destructive/10 disabled:opacity-50"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -664,6 +671,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
                 )}
               </div>
             )}
+            <div style={{ width: 48, flexShrink: 0 }} aria-hidden="true" />
           </div>
         );
       })}
