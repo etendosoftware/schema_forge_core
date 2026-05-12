@@ -97,7 +97,7 @@ describe('InlineLinesPanel', () => {
     assert.match(src, /hover:shadow-\[/);
     assert.match(src, /hover:z-10/);
     // Editing state preserves the same elevation so the actively edited row stays prominent.
-    assert.match(src, /isEditing\s*\?\s*'shadow-\[[^']*\]\s+relative\s+z-10'/);
+    assert.match(src, /isEditing\s*\?\s*'shadow-\[[^']*\]\s+relative\s+z-20'/);
   });
 
   it('uses i18n hooks for tooltips and labels (no hardcoded English)', () => {
