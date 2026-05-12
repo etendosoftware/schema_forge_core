@@ -159,31 +159,19 @@ describe('BottomPanel rollout — all inline-editable windows', () => {
     });
   });
 
-  describe('purchase-invoice PurchaseInvoiceBottomPanel — custom layout (in tools/app-shell)', () => {
-    const src = readAppShell('purchase-invoice', 'PurchaseInvoiceBottomPanel.jsx');
+  describe('purchase-invoice PurchaseInvoiceBottomPanel — delegated to LinesBottomSection (in artifacts)', () => {
+    const src = readArtifact('purchase-invoice', 'PurchaseInvoiceBottomPanel.jsx');
 
-    it('does NOT use LinesBottomSection (renders a custom two-column layout)', () => {
-      assert.doesNotMatch(src, /LinesBottomSection/);
+    it('delegates to LinesBottomSection (standard shared layout)', () => {
+      assert.match(src, /LinesBottomSection/);
     });
 
-    it('uses DocumentTotalsPanel directly for the right-column totals', () => {
-      assert.match(src, /DocumentTotalsPanel/);
-      assert.match(src, /pendingLine/);
-      assert.match(src, /editingLine/);
+    it('passes RelatedDocuments as the relatedDocuments slot', () => {
+      assert.match(src, /relatedDocuments=\{RelatedDocuments\}/);
     });
 
-    it('imports and renders SifDataTabs from the shared module', () => {
-      assert.match(src, /SifDataTabs/);
-      assert.match(src, /from.*SifDataTabs/);
-    });
-
-    it('derives isReadOnly from documentStatus !== DR', () => {
-      assert.match(src, /documentStatus\s*!==\s*'DR'/);
-    });
-
-    it('renders notes as textarea when notesFocused and plain text otherwise', () => {
-      assert.match(src, /<textarea/);
-      assert.match(src, /notesFocused/);
+    it('passes SifDataTabs as the notesExtra slot', () => {
+      assert.match(src, /notesExtra=\{SifDataTabs\}/);
     });
 
     it('declares PurchaseInvoiceLinesEmptyState and attaches as linesEmptyState', () => {
