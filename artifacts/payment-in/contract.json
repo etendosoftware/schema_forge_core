@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T19:05:52.312Z",
-  "updatedAt": "2026-05-15T16:28:11.198Z",
-  "checksum": "4a568bfdb0c58739",
+  "updatedAt": "2026-05-15T16:33:39.981Z",
+  "checksum": "6b7311c247a257c1",
   "frontendContract": {
     "window": {
       "id": "E547CE89D4C04429B6340FFA44E70716",
@@ -1550,6 +1550,150 @@
     "window": {
       "category": "finance"
     }
+  },
+  "formState": {
+    "entities": {
+      "finPayment": {
+        "fields": {
+          "documentNo": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "referenceNo": {
+            "visible": true,
+            "readOnly": true,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "paymentDate": {
+            "visible": true,
+            "readOnly": true,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y' & @status@!'RPAE'",
+            "calloutTriggers": null,
+            "defaultValue": "@#Date@",
+            "provenance": "extracted"
+          },
+          "businessPartner": {
+            "visible": true,
+            "readOnly": true,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "description": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "paymentMethod": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y' & @status@!'RPAE'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "amount": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "((@Processed@='Y' & @isReceipt@='Y') | @isReceipt@='N') | @Status@='RPAE'",
+            "calloutTriggers": null,
+            "defaultValue": "0",
+            "provenance": "extracted"
+          },
+          "account": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y' & @status@!'RPAE'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "currency": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@IsMultiCurrencyEnabled@!'Y' | @Processed@='Y' | @Status@='RPAE'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "status": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "RPAP",
+            "provenance": "extracted"
+          }
+        }
+      },
+      "finPaymentScheduleDetail": {
+        "fields": {
+          "dueDate": {
+            "visible": true,
+            "readOnly": true,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "amount": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "0",
+            "provenance": "extracted"
+          },
+          "invoicePaymentSchedule": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          }
+        }
+      }
+    },
+    "requiredSessionVariables": [],
+    "evaluationMode": "runtime"
   },
   "testManifest": {
     "tests": [

@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T18:12:34.035Z",
-  "updatedAt": "2026-05-15T16:28:12.021Z",
-  "checksum": "f6b7d022a1df77ce",
+  "updatedAt": "2026-05-15T16:33:40.789Z",
+  "checksum": "c8027686276fce34",
   "frontendContract": {
     "window": {
       "id": "108",
@@ -1763,6 +1763,384 @@
     "window": {
       "category": "settings"
     }
+  },
+  "formState": {
+    "entities": {
+      "user": {
+        "fields": {
+          "name": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "username": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "firstName": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "lastName": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "password": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "isPasswordExpired": {
+            "visible": true,
+            "readOnly": true,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "description": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "businessPartner": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "email": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "locked": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "position": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "phone": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "supervisor": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "defaultRole": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "defaultLanguage": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "defaultClient": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "defaultOrganization": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "defaultWarehouse": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "lastPasswordUpdate": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "@#Date@",
+            "provenance": "extracted"
+          }
+        }
+      },
+      "userRoles": {
+        "fields": {
+          "role": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "roleAdmin": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          }
+        }
+      },
+      "emailConfiguration": {
+        "fields": {
+          "active": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "smtpServer": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "sMTPAuthentification": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "smtpServerAccount": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "smtpServerPassword": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "smtpServerSenderAddress": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "smtpConnectionSecurity": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "smtpPort": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "25",
+            "provenance": "extracted"
+          },
+          "smtpConnectionTimeout": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "600",
+            "provenance": "extracted"
+          },
+          "fromName": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "replyToAddress": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "testSuccessful": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "lastTestDate": {
+            "visible": true,
+            "readOnly": true,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "smtpconnectiontest": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "defaultConfiguration": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          }
+        }
+      }
+    },
+    "requiredSessionVariables": [],
+    "evaluationMode": "runtime"
   },
   "testManifest": {
     "tests": [

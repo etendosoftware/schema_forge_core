@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T19:06:55.269Z",
-  "updatedAt": "2026-05-12T19:44:32.752Z",
-  "checksum": "41bc87f1b0f35514",
+  "updatedAt": "2026-05-15T16:33:40.394Z",
+  "checksum": "d4c158ee909f6dc2",
   "frontendContract": {
     "window": {
       "id": "141",
@@ -421,6 +421,66 @@
         "IsActive": "Activo"
       }
     }
+  },
+  "formState": {
+    "entities": {
+      "header": {
+        "fields": {
+          "searchKey": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "name": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "offsetMonthDue": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "overduePaymentDaysRule": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "default": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          }
+        }
+      }
+    },
+    "requiredSessionVariables": [],
+    "evaluationMode": "runtime"
   },
   "testManifest": {
     "tests": [

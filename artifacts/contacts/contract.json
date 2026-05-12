@@ -1,8 +1,8 @@
 {
   "version": "0.8.1",
   "generatedAt": "2026-05-06T15:52:09.982Z",
-  "updatedAt": "2026-05-15T16:28:09.254Z",
-  "checksum": "dc21a0dd8688e1af",
+  "updatedAt": "2026-05-15T16:33:38.056Z",
+  "checksum": "9f44204a9101aa79",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -10407,6 +10407,1492 @@
         "EM_Etgo_Lastname": "Apellidos"
       }
     }
+  },
+  "formState": {
+    "entities": {
+      "businessPartner": {
+        "fields": {
+          "etgoIdentifier": {
+            "visible": true,
+            "readOnly": true,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "searchKey": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "name": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "etgoFirstname": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "etgoLastname": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "oBTIKTaxIDKey": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "'1'",
+            "provenance": "extracted"
+          },
+          "taxID": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "etgoWeb": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "etgoEmail": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "etgoPhone": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "businessPartnerCategory": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "@SQL=SELECT MAX(C_BP_GROUP_ID) FROM C_BP_GROUP WHERE AD_ISORGINCLUDED(@AD_ORG_ID@, AD_ORG_ID, @#AD_CLIENT_ID@) <> -1 AND ISDEFAULT = 'Y' AND AD_CLIENT_ID = @#AD_CLIENT_ID@",
+            "provenance": "extracted"
+          },
+          "name2": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "description": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "uRL": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "referenceNo": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "consumptionDays": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "1000",
+            "provenance": "extracted"
+          },
+          "active": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "Y",
+            "provenance": "extracted"
+          },
+          "greeting": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "customer": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "Y",
+            "provenance": "extracted"
+          },
+          "vendor": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "employee": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "setNewCurrency": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "creditLimit": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "bPCurrencyID": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "isCustomerConsent": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "etgoIsperson": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "operator": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "creditUsed": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "paymentTerms": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "salaryCategory": {
+            "visible": true,
+            "readOnly": true,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "customerBlocking": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "account": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "paymentMethod": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "isSalesRepresentative": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "priceList": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "pOFinancialAccount": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "pOPaymentMethod": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "pOPaymentTerms": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "purchasePricelist": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "vendorBlocking": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "eTGOLocation": {
+            "visible": true,
+            "readOnly": true,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          }
+        }
+      },
+      "customer": {
+        "fields": {
+          "customer": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "Y",
+            "provenance": "extracted"
+          },
+          "priceList": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "paymentMethod": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "paymentTerms": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "account": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "salesRepresentative": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "invoiceTerms": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "I",
+            "provenance": "extracted"
+          },
+          "invoiceSchedule": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "taxExempt": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "customerBlocking": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "salesOrder": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "Y",
+            "provenance": "extracted"
+          },
+          "goodsShipment": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "Y",
+            "provenance": "extracted"
+          },
+          "salesInvoice": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "Y",
+            "provenance": "extracted"
+          },
+          "paymentIn": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "sOBPTaxCategory": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "maturityDate1": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "maturityDate2": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "maturityDate3": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "birthDay": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "birthPlace": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "aeatsiiDefaultsiikey": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "aeatsiiSiikeylist": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "F1",
+            "provenance": "extracted"
+          }
+        }
+      },
+      "customerAccounting": {
+        "fields": {
+          "accountingSchema": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "customerReceivablesNo": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "customerPrepayment": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          }
+        }
+      },
+      "intrastatShipments": {
+        "fields": {
+          "businessPartner": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "sOTransportationType": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "port": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "statisticalAmtPercentSo": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "privateCustomer": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          }
+        }
+      },
+      "vendorCreditor": {
+        "fields": {
+          "vendor": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "purchasePricelist": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "pOPaymentMethod": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "pOPaymentTerms": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "pOFinancialAccount": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "pOMaturityDate1": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "pOMaturityDate2": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "pOMaturityDate3": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "taxCategory": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "cashVAT": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "vendorBlocking": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "purchaseOrder": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "Y",
+            "provenance": "extracted"
+          },
+          "goodsReceipt": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "purchaseInvoice": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "Y",
+            "provenance": "extracted"
+          },
+          "paymentOut": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "Y",
+            "provenance": "extracted"
+          }
+        }
+      },
+      "vendorAccounting": {
+        "fields": {
+          "accountingSchema": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "vendorLiability": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "vendorPrepayment": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          }
+        }
+      },
+      "intrastatAdquisitions": {
+        "fields": {
+          "businessPartner": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "country": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "transportationType": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "portAirport": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "statisticalAmtPercentPo": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          }
+        }
+      },
+      "employee": {
+        "fields": {
+          "employee": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "isSalesRepresentative": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "operator": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "salaryCategory": {
+            "visible": true,
+            "readOnly": true,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          }
+        }
+      },
+      "employeeAccounting": {
+        "fields": {
+          "accountingSchema": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          }
+        }
+      },
+      "costSalaryCategory": {
+        "fields": {
+          "startingDate": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "salaryCategory": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          }
+        }
+      },
+      "bankAccount": {
+        "fields": {
+          "bankName": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "country": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "@COUNTRYDEF@",
+            "provenance": "extracted"
+          },
+          "userContact": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "bankFormat": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "GENERIC",
+            "provenance": "extracted"
+          },
+          "accountNo": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "iBAN": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "swiftCode": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "displayedAccount": {
+            "visible": true,
+            "readOnly": true,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          }
+        }
+      },
+      "documentType": {
+        "fields": {
+          "documentcategory": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "issotrx": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "cDoctypeID": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "active": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "Y",
+            "provenance": "extracted"
+          }
+        }
+      },
+      "locationAddress": {
+        "fields": {
+          "locationAddress": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "phone": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "alternativePhone": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "name": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": ".",
+            "provenance": "extracted"
+          },
+          "fax": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "shipToAddress": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "Y",
+            "provenance": "extracted"
+          },
+          "invoiceToAddress": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "Y",
+            "provenance": "extracted"
+          },
+          "active": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "taxLocation": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          }
+        }
+      },
+      "contact": {
+        "fields": {
+          "firstName": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "lastName": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "name": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "email": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "phone": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "alternativePhone": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "position": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "comments": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "active": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "isdefaultfordocs": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "grantPortalAccess": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "commercialauth": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "viasms": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "viaemail": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          }
+        }
+      },
+      "basicDiscount": {
+        "fields": {
+          "lineNo": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "@SQL=SELECT COALESCE(MAX(LINE),0)+10 AS DefaultValue FROM C_BPARTNER_DISCOUNT WHERE C_BPARTNER_ID=@C_BPARTNER_ID@",
+            "provenance": "extracted"
+          },
+          "discount": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "customer": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "Y",
+            "provenance": "extracted"
+          },
+          "vendor": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "applyInOrder": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          },
+          "cascade": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "N",
+            "provenance": "extracted"
+          }
+        }
+      }
+    },
+    "requiredSessionVariables": [],
+    "evaluationMode": "runtime"
   },
   "testManifest": {
     "tests": [

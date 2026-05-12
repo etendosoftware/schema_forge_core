@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T19:46:12.773Z",
-  "updatedAt": "2026-05-15T16:28:09.800Z",
-  "checksum": "47401470893c7b94",
+  "updatedAt": "2026-05-15T16:33:38.596Z",
+  "checksum": "ceb2e80134be71ca",
   "frontendContract": {
     "window": {
       "id": "FF808081330213E60133021822E40007",
@@ -2960,6 +2960,260 @@
     "window": {
       "category": "sales"
     }
+  },
+  "formState": {
+    "entities": {
+      "customerReturn": {
+        "fields": {
+          "documentStatus": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "DR",
+            "provenance": "extracted"
+          },
+          "grandTotalAmount": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "summedLineAmount": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "documentNo": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "cReturnReasonID": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "orderDate": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": "@#Date@",
+            "provenance": "extracted"
+          },
+          "businessPartner": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "partnerAddress": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y' | @DocStatus@='TMP'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "warehouse": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "description": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "etvfacReversedInvoice": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "salesRepresentative": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          }
+        }
+      },
+      "customerReturnLine": {
+        "fields": {
+          "lineNo": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": "@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM C_OrderLine WHERE C_Order_ID=@C_Order_ID@",
+            "provenance": "extracted"
+          },
+          "product": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "attributeSetValue": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y' | @ATTRIBUTESETINSTANCIABLE@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "cReturnReasonID": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "orderedQuantity": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y' | (@IsSOTrx@='Y' & @ISLINKEDTOPRODUCT@='Y' & @PRODUCTTYPE@='S') | @UomManagement@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": "1",
+            "provenance": "extracted"
+          },
+          "uOM": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@UomManagement@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "unitPrice": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y' | @GROSSPRICE@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "lineNetAmount": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Iseditlinenetamt@='N'|@GROSSPRICE@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "lineGrossAmount": {
+            "visible": true,
+            "readOnly": true,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "0",
+            "provenance": "extracted"
+          },
+          "tax": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "goodsShipmentLine": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "description": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          }
+        }
+      }
+    },
+    "requiredSessionVariables": [],
+    "evaluationMode": "runtime"
   },
   "testManifest": {
     "tests": [

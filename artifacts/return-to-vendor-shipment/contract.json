@@ -1,8 +1,8 @@
 {
   "version": "0.4.0",
   "generatedAt": "2026-04-29T18:11:17.025Z",
-  "updatedAt": "2026-05-15T16:28:10.460Z",
-  "checksum": "676b9b16eeba9d69",
+  "updatedAt": "2026-05-15T16:33:39.256Z",
+  "checksum": "db9da5faf9c4e661",
   "frontendContract": {
     "window": {
       "id": "273673D2ED914C399A6C51DB758BE0F9",
@@ -2241,6 +2241,300 @@
     "window": {
       "category": "purchases"
     }
+  },
+  "formState": {
+    "entities": {
+      "header": {
+        "fields": {
+          "sendMaterials": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "orderReference": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "businessPartner": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y' | @HAS_M_INOUTLINES@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "partnerAddress": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "movementDate": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": "@#Date@",
+            "provenance": "extracted"
+          },
+          "accountingDate": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Posted@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": "@#Date@",
+            "provenance": "extracted"
+          },
+          "warehouse": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "description": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "documentStatus": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "DR",
+            "provenance": "extracted"
+          },
+          "documentAction": {
+            "visible": true,
+            "readOnly": false,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": "CO",
+            "provenance": "extracted"
+          },
+          "project": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": "@Posted@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "costcenter": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": "@Posted@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "stDimension": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": "@Posted@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "ndDimension": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": "@Posted@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          }
+        }
+      },
+      "lines": {
+        "fields": {
+          "lineNo": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": "@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM M_InOutLine WHERE M_InOut_ID=@M_InOut_ID@",
+            "provenance": "extracted"
+          },
+          "product": {
+            "visible": true,
+            "readOnly": true,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "attributeSetValue": {
+            "visible": true,
+            "readOnly": true,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "operativeQuantity": {
+            "visible": true,
+            "readOnly": true,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "operativeUOM": {
+            "visible": true,
+            "readOnly": true,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "movementQuantity": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y' | @UomManagement@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": "0",
+            "provenance": "extracted"
+          },
+          "uOM": {
+            "visible": true,
+            "readOnly": true,
+            "required": true,
+            "displayLogic": null,
+            "readOnlyLogic": "@UomManagement@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "description": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "storageBin": {
+            "visible": true,
+            "readOnly": true,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": "@Processed@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": "@OnHandLocatorDefault@",
+            "provenance": "extracted"
+          },
+          "salesOrderLine": {
+            "visible": true,
+            "readOnly": true,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": null,
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "project": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": "@Posted@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "costcenter": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": "@Posted@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "stDimension": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": "@Posted@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          },
+          "ndDimension": {
+            "visible": true,
+            "readOnly": false,
+            "required": false,
+            "displayLogic": null,
+            "readOnlyLogic": "@Posted@='Y'",
+            "calloutTriggers": null,
+            "defaultValue": null,
+            "provenance": "extracted"
+          }
+        }
+      }
+    },
+    "requiredSessionVariables": [],
+    "evaluationMode": "runtime"
   },
   "testManifest": {
     "tests": [

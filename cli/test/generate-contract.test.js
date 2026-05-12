@@ -1451,3 +1451,132 @@ describe('generateApiPrediction — action classification (ETP-3956)', () => {
     }
   });
 });
+
+// ─── Form-State Metadata (ETP-3957) ──────────────────────────────────────────
+
+describe('generateContract — formState (ETP-3957)', () => {
+  const formStateSchema = {
+    version: '0.1.0',
+    window: { id: '900', name: 'Form State Test', primaryEntity: 'header', category: 'sales' },
+    entities: [{
+      name: 'header',
+      table: 'C_FormTest',
+      level: 'header',
+      fields: [
+        { name: 'documentNo', column: 'DocumentNo', type: 'string', visibility: 'readOnly', required: false, searchable: true, grid: true, form: true },
+        { name: 'businessPartner', column: 'C_BPartner_ID', type: 'foreignKey', visibility: 'editable', required: true, searchable: true, grid: true, form: true },
+        { name: 'orderDate', column: 'DateOrdered', type: 'date', visibility: 'editable', required: false, searchable: false, grid: true, form: true, defaultValue: 'today' },
+        { name: 'internalNote', column: 'Description', type: 'string', visibility: 'editable', required: false, searchable: false, grid: false, form: true },
+        { name: 'processed', column: 'Processed', type: 'boolean', visibility: 'system', required: false, searchable: false, grid: false, form: false },
+        { name: 'documentAction', column: 'DocAction', type: 'button', visibility: 'system', required: false, searchable: false, grid: false, form: false },
+      ],
+    }],
+  };
+
+  const formStateRules = [
+    { entity: 'header', fieldName: 'businessPartner', type: 'callout', className: 'BPartnerCallout', name: 'bpartnerCallout' },
+    { entity: 'header', fieldName: 'businessPartner', type: 'callout', className: 'PriceListCallout' },
+    { entity: 'header', fieldName: 'documentNo', type: 'readOnlyLogic', expression: "@Processed@='Y'" },
+    { entity: 'header', fieldName: 'internalNote', type: 'displayLogic', expression: "@DocumentStatus@='DR'" },
+  ];
+
+  it('contract includes formState section', () => {
+    const contract = generateContract(formStateSchema, formStateRules);
+    assert.ok(contract.formState, 'contract should have formState');
+    assert.ok(contract.formState.entities, 'formState should have entities');
+  });
+
+  it('formState fields include visibility, readOnly, required', () => {
+    const contract = generateContract(formStateSchema, formStateRules);
+    const bp = contract.formState.entities.header.fields.businessPartner;
+    assert.equal(bp.visible, true);
+    assert.equal(bp.readOnly, false);
+    assert.equal(bp.required, true);
+  });
+
+  it('readOnly fields are marked correctly', () => {
+    const contract = generateContract(formStateSchema, formStateRules);
+    const docNo = contract.formState.entities.header.fields.documentNo;
+    assert.equal(docNo.visible, true);
+    assert.equal(docNo.readOnly, true);
+    assert.equal(docNo.required, false);
+  });
+
+  it('system and discarded fields are excluded from formState', () => {
+    const contract = generateContract(formStateSchema, formStateRules);
+    assert.ok(!contract.formState.entities.header.fields.processed, 'system field should be excluded');
+    assert.ok(!contract.formState.entities.header.fields.documentAction, 'system button should be excluded');
+  });
+
+  it('callout triggers are collected from rules', () => {
+    const contract = generateContract(formStateSchema, formStateRules);
+    const bp = contract.formState.entities.header.fields.businessPartner;
+    assert.ok(Array.isArray(bp.calloutTriggers));
+    assert.equal(bp.calloutTriggers.length, 2);
+    assert.ok(bp.calloutTriggers.includes('BPartnerCallout'));
+    assert.ok(bp.calloutTriggers.includes('PriceListCallout'));
+  });
+
+  it('displayLogic is extracted from rules', () => {
+    const contract = generateContract(formStateSchema, formStateRules);
+    const note = contract.formState.entities.header.fields.internalNote;
+    assert.equal(note.displayLogic, "@DocumentStatus@='DR'");
+  });
+
+  it('readOnlyLogic is extracted from rules', () => {
+    const contract = generateContract(formStateSchema, formStateRules);
+    const docNo = contract.formState.entities.header.fields.documentNo;
+    assert.equal(docNo.readOnlyLogic, "@Processed@='Y'");
+  });
+
+  it('defaultValue is included when present', () => {
+    const contract = generateContract(formStateSchema, formStateRules);
+    const date = contract.formState.entities.header.fields.orderDate;
+    assert.equal(date.defaultValue, 'today');
+  });
+
+  it('requiredSessionVariables extracts @#VAR@ patterns', () => {
+    const sessionSchema = {
+      ...formStateSchema,
+      entities: [{
+        ...formStateSchema.entities[0],
+        fields: [
+          ...formStateSchema.entities[0].fields,
+          { name: 'orgField', column: 'AD_Org_ID', type: 'foreignKey', visibility: 'editable', required: false, searchable: false, grid: false, form: true,
+            validationRule: { rawExpression: "@#AD_Org_ID@ IS NOT NULL" } },
+        ],
+      }],
+    };
+    const contract = generateContract(sessionSchema, []);
+    assert.ok(contract.formState.requiredSessionVariables.includes('#AD_Org_ID'));
+  });
+
+  it('requiredSessionVariables extracts session variables from rule expressions', () => {
+    const contract = generateContract(formStateSchema, [
+      { entity: 'header', fieldName: 'internalNote', type: 'displayLogic', expression: "@#AD_Client_ID@ IS NOT NULL" },
+      { entity: 'header', fieldName: 'businessPartner', type: 'readOnlyLogic', rawExpression: "@#AD_Role_ID@ IS NOT NULL" },
+    ]);
+
+    assert.deepStrictEqual(contract.formState.requiredSessionVariables, [
+      '#AD_Client_ID',
+      '#AD_Role_ID',
+    ]);
+  });
+
+  it('evaluationMode is runtime', () => {
+    const contract = generateContract(formStateSchema, formStateRules);
+    assert.equal(contract.formState.evaluationMode, 'runtime');
+  });
+
+  it('empty schema produces empty formState entities', () => {
+    const emptySchema = {
+      version: '0.1.0',
+      window: { id: '999', name: 'Empty', primaryEntity: 'main', category: 'test' },
+      entities: [],
+    };
+    const contract = generateContract(emptySchema, []);
+    assert.ok(contract.formState);
+    assert.deepStrictEqual(contract.formState.entities, {});
+    assert.deepStrictEqual(contract.formState.requiredSessionVariables, []);
+  });
+});

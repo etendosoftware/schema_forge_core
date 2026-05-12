@@ -1026,6 +1026,116 @@ function reorderFieldsByPrev(currentFields, prevFields) {
   });
 }
 
+// ─── Form-state generation for ETP-3957 ──────────────────────────────────────
+
+/**
+ * Generate form-state metadata for an entity.
+ *
+ * Returns a structured object describing field visibility, read-only logic,
+ * requiredness, display logic, callout triggers, and default value provenance.
+ *
+ * @param {object} entity - Schema entity
+ * @param {object} rules - Business rules for the entity
+ * @returns {object} Form state for the entity
+ */
+function generateEntityFormState(entity, rules) {
+  const fields = {};
+  const allRules = Array.isArray(rules) ? rules : [];
+  const entityRules = allRules.filter(r => r.entity === entity.name);
+
+  for (const field of entity.fields ?? []) {
+    if (field.visibility === 'system' || field.visibility === 'discarded') continue;
+
+    const fieldRules = entityRules.filter(r => r.fieldName === field.name || r.fieldName === field.column);
+    const calloutTriggers = fieldRules.filter(r => r.type === 'callout').map(r => r.className ?? r.name).filter(Boolean);
+    const displayLogicRule = fieldRules.find(r => r.type === 'displayLogic');
+    const readOnlyRule = fieldRules.find(r => r.type === 'readOnlyLogic');
+
+    fields[field.name] = {
+      visible: field.visibility === 'editable' || field.visibility === 'readOnly',
+      readOnly: field.visibility === 'readOnly',
+      required: field.required ?? false,
+      displayLogic: displayLogicRule?.expression ?? null,
+      readOnlyLogic: readOnlyRule?.expression ?? field.readOnlyLogic ?? null,
+      calloutTriggers: calloutTriggers.length > 0 ? calloutTriggers : null,
+      defaultValue: field.defaultValue ?? null,
+      provenance: 'extracted',
+    };
+  }
+
+  return fields;
+}
+
+/**
+ * Extract required session variables from the schema.
+ *
+ * Scans fields for @#VAR@ patterns that indicate session-level context requirements.
+ *
+ * @param {object} schema - Full schema
+ * @returns {string[]} List of required session variable names
+ */
+function addSessionVariablesFromExpression(expression, sessionVars) {
+  if (typeof expression !== 'string') return;
+
+  const sessionPattern = /@#(\w+)@/g;
+  let match;
+  while ((match = sessionPattern.exec(expression)) !== null) {
+    sessionVars.add(`#${match[1]}`);
+  }
+}
+
+function extractRequiredSessionVariables(schema, rules = []) {
+  const sessionVars = new Set();
+
+  for (const entity of schema.entities ?? []) {
+    for (const field of entity.fields ?? []) {
+      const sources = [
+        field.displayLogic,
+        field.readOnlyLogic,
+        field.validationRule?.rawExpression,
+      ].filter(Boolean);
+
+      for (const src of sources) {
+        addSessionVariablesFromExpression(src, sessionVars);
+      }
+    }
+  }
+
+  const allRules = Array.isArray(rules) ? rules : [];
+  for (const rule of allRules) {
+    addSessionVariablesFromExpression(rule.expression, sessionVars);
+    addSessionVariablesFromExpression(rule.rawExpression, sessionVars);
+  }
+
+  return Array.from(sessionVars).sort();
+}
+
+/**
+ * Generate the full formState section for the contract.
+ *
+ * @param {object} schema - Full schema
+ * @param {object} rules - Business rules array
+ * @returns {object} formState contract section
+ */
+function generateFormState(schema, rules) {
+  const entities = {};
+
+  for (const entity of schema.entities ?? []) {
+    const entityFormState = generateEntityFormState(entity, rules);
+    if (Object.keys(entityFormState).length > 0) {
+      entities[entity.name] = { fields: entityFormState };
+    }
+  }
+
+  return {
+    entities,
+    requiredSessionVariables: extractRequiredSessionVariables(schema, rules),
+    evaluationMode: 'runtime',
+  };
+}
+
+// ─── End form-state generation ───────────────────────────────────────────────
+
 /**
  * Main orchestrator: generates the full contract object.
  */
@@ -1036,6 +1146,7 @@ export function generateContract(schema, rules = [], processes = [], previousVer
   const backendContract = generateBackendContract(schema, rules, processes);
   const testManifest = generateTestManifest(frontendContract, backendContract, rules, processes);
   const apiPrediction = generateApiPrediction(schema, frontendContract, backendContract);
+  const formState = generateFormState(schema, rules);
 
   // Append apiPrediction-based tests to testManifest using stable IDs
   const makeId = testManifest._makeId;
@@ -1088,7 +1199,7 @@ export function generateContract(schema, rules = [], processes = [], previousVer
     byRunner: updatedByRunner,
   };
 
-  const contractData = { frontendContract, backendContract, apiPrediction, testManifest };
+  const contractData = { frontendContract, backendContract, apiPrediction, formState, testManifest };
   const checksum = createHash('sha256')
     .update(JSON.stringify(contractData))
     .digest('hex')
