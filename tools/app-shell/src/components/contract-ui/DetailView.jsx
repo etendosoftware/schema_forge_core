@@ -1337,6 +1337,32 @@ export function DetailView({
 
   const isCustomTabActive = tabCustomTabs.some(ct => tabs[activeTab]?.key === customTabKey(ct));
 
+  const renderCustomTabPanels = (resolveIsActive) => tabCustomTabs.map((ct, idx) => {
+    const TabComponent = ct.Component;
+    const isActive = resolveIsActive(ct, idx);
+    return (
+      <div
+        key={customTabKey(ct)}
+        className={`p-2 flex flex-col gap-3${embedded ? ' pointer-events-none' : ''}`}
+        style={isActive ? undefined : { display: 'none' }}
+      >
+        <TabComponent
+          recordId={data?.id || recordId}
+          data={data}
+          token={token}
+          apiBaseUrl={apiBaseUrl}
+          api={api}
+          isActive={isActive}
+          onCountChange={(count) => setCustomTabCounts(prev => {
+            if (prev[ct.key] === count) return prev;
+            return { ...prev, [ct.key]: count };
+          })}
+          {...(ct.props || {})}
+        />
+      </div>
+    );
+  });
+
   useEffect(() => {
     const targetTabKey = location.state?.openSecondaryTab;
     if (!targetTabKey || isNew || !hook.editing) {
@@ -2778,31 +2804,7 @@ export function DetailView({
                     scroll/pagination on tab switches) but hide inactive ones via
                     display:none and pass `isActive` so the component can defer its
                     first fetch until it actually becomes visible. */}
-                {!customTabsAfterBottom && tabCustomTabs.map(ct => {
-                  const TabComponent = ct.Component;
-                  const isActive = tabs[activeTab]?.key === customTabKey(ct);
-                  return (
-                    <div
-                      key={customTabKey(ct)}
-                      className={`p-2 flex flex-col gap-3${embedded ? ' pointer-events-none' : ''}`}
-                      style={isActive ? undefined : { display: 'none' }}
-                    >
-                      <TabComponent
-                        recordId={data?.id || recordId}
-                        data={data}
-                        token={token}
-                        apiBaseUrl={apiBaseUrl}
-                        api={api}
-                        isActive={isActive}
-                        onCountChange={(count) => setCustomTabCounts(prev => {
-                          if (prev[ct.key] === count) return prev;
-                          return { ...prev, [ct.key]: count };
-                        })}
-                        {...(ct.props || {})}
-                      />
-                    </div>
-                  );
-                })}
+                {!customTabsAfterBottom && renderCustomTabPanels((ct) => tabs[activeTab]?.key === customTabKey(ct))}
 
               </div>
             )}
@@ -2964,31 +2966,7 @@ export function DetailView({
                   })}
                 </div>
                 <div>
-                  {tabCustomTabs.map((ct, idx) => {
-                    const TabComponent = ct.Component;
-                    const isActive = activeCustomBelowTab === idx;
-                    return (
-                      <div
-                        key={customTabKey(ct)}
-                        className={`p-2 flex flex-col gap-3${embedded ? ' pointer-events-none' : ''}`}
-                        style={isActive ? undefined : { display: 'none' }}
-                      >
-                        <TabComponent
-                          recordId={data?.id || recordId}
-                          data={data}
-                          token={token}
-                          apiBaseUrl={apiBaseUrl}
-                          api={api}
-                          isActive={isActive}
-                          onCountChange={(count) => setCustomTabCounts(prev => {
-                            if (prev[ct.key] === count) return prev;
-                            return { ...prev, [ct.key]: count };
-                          })}
-                          {...(ct.props || {})}
-                        />
-                      </div>
-                    );
-                  })}
+                  {renderCustomTabPanels((ct, idx) => activeCustomBelowTab === idx)}
                 </div>
               </div>
             )}
