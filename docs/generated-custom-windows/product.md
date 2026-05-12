@@ -21,10 +21,11 @@ On `origin/develop`, the visible product page is still a generated route with cu
 
 The list surface is gallery-based rather than a plain grid. Product cards show the image when one exists and fall back to a package icon when no image is available. Opening a record takes the user into a detail screen with two primary tabs: `General` and `Additional Info`.
 
-The detail screen also changes the standard generated behavior in three visible ways:
+The detail screen also changes the standard generated behavior in four visible ways:
 - pricing is surfaced through a custom footer (`ProductPriceBar`)
 - the sidebar is product-specific (`ProductSidebar`)
 - print and the generic More menu are hidden
+- an **Attachments** tab is placed below the `ProductPriceBar` footer (via `attachments: true` + `customTabsAfterBottom: true`), so file attachments are accessible without displacing the pricing and stock surfaces that dominate the upper part of the detail page
 
 ## Reactive behavior and dependencies
 - **Master/child dependency:** the selected product drives price, stock, and transaction loading through `parentId=<productId>`.
@@ -65,6 +66,7 @@ The detail screen also changes the standard generated behavior in three visible 
 8. In the dialog, stage an edit or add/delete action, try closing it, and confirm the unsaved-changes overlay appears.
 9. Confirm the sidebar exposes `Summary` and `Warehouses`, and that `Stock movement` only appears when the product has transaction history. When it appears, expand it and verify the period switches and warehouse drill-down.
 10. If the business depends on BOM, costing, transactions, characteristics, stock, category price rule version, alternate UOM, or variant actions, verify which of those surfaces are actually visible in the running page. Current repo evidence does not fully prove all of them.
+11. Scroll below the pricing footer and confirm the **Attachments** tab strip appears. Upload a file, verify it shows up in the table with name, size, and upload date, and that downloading and deleting it work correctly. When multiple files exist, confirm "Download all (ZIP)" and "Delete all" appear and that "Delete all" prompts a confirmation dialog.
 
 ## Automated evidence
 - Route registration and menu visibility are grounded in `tools/app-shell/src/windows/registry.js` and `tools/app-shell/src/menu.json`, which register `product` as a generated/custom window reachable from the Inventory section.
@@ -76,4 +78,5 @@ The detail screen also changes the standard generated behavior in three visible 
   - `ProductSidebar.jsx` for stock and transaction-driven sidebar summaries
 - The generated product page at `artifacts/product/generated/web/product/ProductPage.jsx` wires those custom surfaces into the product window and declares the attached child CRUD endpoints.
 - The product contract at `artifacts/product/contract.json` provides evidence for layout (`gallery`, sidebar layout, primary tabs), selectors, child entities, default values, and declared actions.
+- `artifacts/product/decisions.json` declares `attachments: true` (explicit opt-in required for non-default layouts) and `customTabsAfterBottom: true`, which positions the generic `AttachmentsTab` after the `ProductPriceBar` footer rather than in the primary tab strip.
 - `tools/app-shell/src/windows/custom/product/__tests__/ProductSidebar.test.js` verifies that `ProductSidebar` uses the shared `formatDashboardAxisTick` utility for Y-axis labels and does not define a local formatting function. Beyond that, automated evidence in this repo is structural and contract-backed rather than end-to-end proof of the full product workflow.
