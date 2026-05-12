@@ -11,6 +11,9 @@
       "category": "purchases",
       "notesField": "description",
       "relatedDocuments": true,
+      "customComponents": {
+        "headerTable": "InvoiceHeaderTable"
+      },
       "menuActions": [
         {
           "key": "reactivate",
@@ -3702,6 +3705,9 @@
       "category": "purchases",
       "notesField": "description",
       "relatedDocuments": true,
+      "customComponents": {
+        "headerTable": "InvoiceHeaderTable"
+      },
       "menuActions": [
         {
           "key": "reactivate",
