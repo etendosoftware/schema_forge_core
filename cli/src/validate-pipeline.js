@@ -421,6 +421,17 @@ const ROW_QUICK_ACTION_CANONICAL_KEYS = new Set(['edit', 'duplicate', 'email', '
  * @param {string} artifactName
  * @returns {Promise<object|null>}
  */
+function collectAllowedActionKeys(win) {
+  const allowed = new Set();
+  for (const a of (Array.isArray(win.menuActions) ? win.menuActions : [])) {
+    if (a && typeof a.key === 'string') allowed.add(a.key);
+  }
+  if (win.processOverrides && typeof win.processOverrides === 'object') {
+    for (const k of Object.keys(win.processOverrides)) allowed.add(k);
+  }
+  return allowed;
+}
+
 async function ruleF11(artifactDir, artifactName) {
   const decisionsPath = join(artifactDir, 'decisions.json');
   if (!(await fileExists(decisionsPath))) return null;
@@ -432,22 +443,13 @@ async function ruleF11(artifactDir, artifactName) {
   const actions = rqa.actions;
   if (!actions || typeof actions !== 'object') return null;
 
-  // Build the set of allowed non-canonical keys from the window's declared sources.
-  const allowed = new Set();
-  for (const a of (Array.isArray(win.menuActions) ? win.menuActions : [])) {
-    if (a && typeof a.key === 'string') allowed.add(a.key);
-  }
-  if (win.processOverrides && typeof win.processOverrides === 'object') {
-    for (const k of Object.keys(win.processOverrides)) allowed.add(k);
-  }
+  const allowed = collectAllowedActionKeys(win);
 
-  const offenders = [];
-  for (const key of Object.keys(actions)) {
-    if (ROW_QUICK_ACTION_CANONICAL_KEYS.has(key)) continue;
-    // A `show: false` entry is also pointless if the key doesn't exist, so we still flag it —
-    // the user almost certainly meant a real process and made a typo.
-    if (!allowed.has(key)) offenders.push(key);
-  }
+  // A `show: false` entry is also pointless if the key doesn't exist, so we still flag it —
+  // the user almost certainly meant a real process and made a typo.
+  const offenders = Object.keys(actions).filter(
+    key => !ROW_QUICK_ACTION_CANONICAL_KEYS.has(key) && !allowed.has(key),
+  );
 
   if (offenders.length === 0) return null;
 
