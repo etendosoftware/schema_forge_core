@@ -1,8 +1,8 @@
 {
   "version": "0.5.0",
   "generatedAt": "2026-04-29T18:11:37.816Z",
-  "updatedAt": "2026-05-05T18:50:43.678Z",
-  "checksum": "11eba872155a1db2",
+  "updatedAt": "2026-05-12T18:38:13.618Z",
+  "checksum": "8fc17c2edcb036a1",
   "frontendContract": {
     "window": {
       "id": "139",
@@ -16,7 +16,8 @@
         }
       },
       "detailEntity": null,
-      "layoutType": "default"
+      "layoutType": "default",
+      "linesLayout": "classic"
     },
     "entities": {
       "warehouse": {

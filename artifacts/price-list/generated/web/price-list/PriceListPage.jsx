@@ -42,6 +42,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:priceList
 
+// @sf-generated-start requiredHeaderFields:priceList
+const requiredHeaderFields = ['name', 'currency', 'salesPriceList', 'costBasedPriceList', 'priceIncludesTax', 'default'];
+// @sf-generated-end requiredHeaderFields:priceList
+
 // @sf-generated-start addLineFields:priceListVersion
 const addLineFields = {
   entry: [
@@ -204,6 +208,7 @@ export default function PriceListPage({ windowName, recordId, ...props }) {
       api={api}
         hidePrint
         hideMoreMenu
+        requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}
         {...props}
       />
