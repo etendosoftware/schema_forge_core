@@ -699,7 +699,7 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
         hidePrint
         hideMoreMenu
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_BPartner", config: {} } }]}
-        topbarRight={ContactTypeToggle}
+        topbarExtra={ContactTypeToggle}
         requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}
         linesLayout="inlineEditable"

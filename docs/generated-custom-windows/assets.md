@@ -86,3 +86,10 @@ The Assets window should let a finance user register fixed assets, define how ea
 - `tools/app-shell/src/windows/custom/assets/AssetsSidebar.jsx` derives depreciation progress from the asset header plus amortization lines. The asset value and planned depreciation metric cards display amounts using the org's configured currency via `useCurrency()` and `formatCurrency()`.
 - No assets-specific browser or component test file was found in `tools/app-shell/test` or `tools/app-shell/src/**/__tests__`, so the automated evidence is structural/code-backed rather than end-to-end behavioral proof.
 - The generated `AssetsPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `A_Asset` AD table.
+
+## Pipeline regeneration — ETP-3908
+
+Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functional changes to this window.
+
+- `linesLayout: "classic"` is now written explicitly to `contract.json`; previously the classic layout was the implicit default.
+- `requiredHeaderFields` is now emitted in the page component; this window has no required header fields so the array is empty and there is no behavioral change.

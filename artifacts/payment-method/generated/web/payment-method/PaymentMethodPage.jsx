@@ -46,6 +46,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:paymentMethod
 
+// @sf-generated-start requiredHeaderFields:paymentMethod
+const requiredHeaderFields = ['name'];
+// @sf-generated-end requiredHeaderFields:paymentMethod
+
 
 
 export const api = {
@@ -121,6 +125,7 @@ export default function PaymentMethodPage({ windowName, recordId, ...props }) {
         hideMoreMenu
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "FIN_PaymentMethod", config: {} } }]}
         bottomSection={PaymentGroupsSection}
+        requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}
         {...props}
       />

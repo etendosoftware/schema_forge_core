@@ -33,6 +33,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:unitOfMeasure
 
+// @sf-generated-start requiredHeaderFields:unitOfMeasure
+const requiredHeaderFields = ['eDICode', 'name', 'standardPrecision', 'costingPrecision', 'default'];
+// @sf-generated-end requiredHeaderFields:unitOfMeasure
+
 // @sf-generated-start addLineFields:conversion
 const addLineFields = {
   entry: [
@@ -134,6 +138,7 @@ export default function UnitOfMeasurePage({ windowName, recordId, ...props }) {
         hidePrint
         hideMoreMenu
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_UOM", config: {} } }]}
+        requiredHeaderFields={requiredHeaderFields}
         {...props}
       />
     );

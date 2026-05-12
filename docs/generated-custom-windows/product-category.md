@@ -58,3 +58,10 @@ Users should be able to:
 - `artifacts/product-category/generated/web/product-category/ProductCategoryTable.jsx`, `ProductCategoryForm.jsx`, `AssignedProductsTable.jsx`, and `AssignedProductsForm.jsx` show the visible list/header/child fields described above.
 - No dedicated Product Category browser test was found. Shared route/loading and entity-data behavior are documented in `docs/generated-custom-windows/app-shell-functional-flows.md`.
 - The generated `ProductCategoryPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `M_Product_Category` AD table.
+
+## Pipeline regeneration — ETP-3908
+
+Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functional changes to this window.
+
+- `linesLayout: "classic"` is now written explicitly to `contract.json`; previously the classic layout was the implicit default.
+- `requiredHeaderFields` is now emitted in the page component; this window has no required header fields so the array is empty and there is no behavioral change.

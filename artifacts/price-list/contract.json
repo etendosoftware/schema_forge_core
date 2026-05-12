@@ -1,8 +1,8 @@
 {
   "version": "0.2.0",
   "generatedAt": "2026-04-29T18:12:11.134Z",
-  "updatedAt": "2026-05-06T14:31:28.188Z",
-  "checksum": "f660c4f25f448e0b",
+  "updatedAt": "2026-05-12T18:38:14.004Z",
+  "checksum": "2329e9a1baa488a7",
   "frontendContract": {
     "window": {
       "id": "146",
@@ -20,7 +20,8 @@
           "IsDefault": "Por defecto"
         }
       },
-      "layoutType": "default"
+      "layoutType": "default",
+      "linesLayout": "classic"
     },
     "entities": {
       "priceList": {

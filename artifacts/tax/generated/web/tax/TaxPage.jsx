@@ -50,6 +50,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:tax
 
+// @sf-generated-start requiredHeaderFields:tax
+const requiredHeaderFields = ['name', 'validFromDate', 'rate', 'salesPurchaseType', 'docTaxAmount', 'baseAmount'];
+// @sf-generated-end requiredHeaderFields:tax
+
 
 
 export const api = {
@@ -128,6 +132,7 @@ export default function TaxPage({ windowName, recordId, ...props }) {
         hidePrint
         hideMoreMenu
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Tax", config: {} } }]}
+        requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}
         {...props}
       />

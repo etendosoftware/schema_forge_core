@@ -35,6 +35,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:assets
 
+// @sf-generated-start requiredHeaderFields:assets
+const requiredHeaderFields = ['searchKey', 'name', 'assetCategory'];
+// @sf-generated-end requiredHeaderFields:assets
+
 
 
 export const api = {
@@ -202,6 +206,7 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
         hideMoreDetails
         contentBg="bg-slate-50"
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "A_Asset", config: {} } }]}
+        requiredHeaderFields={requiredHeaderFields}
         detailSortBy="sEQNoAsset asc"
         titleField="name"
         lockWhenProcessed={false}

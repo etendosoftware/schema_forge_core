@@ -58,3 +58,9 @@ On `origin/develop`, the generated contract was expanded to model `priceListVers
 - `artifacts/price-list/contract.json` now defines `priceListVersion`, `productPrice`, their selectors, and the version-level classic actions that exist in generated metadata but are not exposed by the custom wrapper.
 - `artifacts/price-list/generated/web/price-list/PriceListPage.jsx`, `PriceListVersionForm.jsx`, and `ProductPriceForm.jsx` show the regenerated baseline the custom wrapper is bypassing.
 - The generated `PriceListPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `M_PriceList` AD table.
+## Pipeline regeneration — ETP-3908
+
+Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functional changes to this window.
+
+- `linesLayout: "classic"` is now written explicitly to `contract.json`; previously the classic layout was the implicit default.
+- `requiredHeaderFields` is now emitted in the page component; this window has no required header fields so the array is empty and there is no behavioral change.

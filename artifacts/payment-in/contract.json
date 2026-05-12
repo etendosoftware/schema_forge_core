@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T19:05:52.312Z",
-  "updatedAt": "2026-05-12T14:25:24.362Z",
-  "checksum": "248e72bf83cc52c1",
+  "updatedAt": "2026-05-12T18:38:13.756Z",
+  "checksum": "b85f5f7d93935f81",
   "frontendContract": {
     "window": {
       "id": "E547CE89D4C04429B6340FFA44E70716",
@@ -60,7 +60,8 @@
       "salesTheme": true,
       "dateFilterKey": "paymentDate",
       "attachments": true,
-      "layoutType": "default"
+      "layoutType": "default",
+      "linesLayout": "classic"
     },
     "entities": {
       "finPayment": {

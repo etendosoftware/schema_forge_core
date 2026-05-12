@@ -43,6 +43,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:header
 
+// @sf-generated-start requiredHeaderFields:header
+const requiredHeaderFields = ['searchKey', 'name', 'offsetMonthDue', 'overduePaymentDaysRule'];
+// @sf-generated-end requiredHeaderFields:header
+
 
 
 export const api = {
@@ -115,6 +119,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         hidePrint
         hideMoreMenu
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_PaymentTerm", config: {} } }]}
+        requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}
         {...props}
       />

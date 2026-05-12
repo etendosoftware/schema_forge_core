@@ -58,3 +58,10 @@ Users should be able to:
 - Shared list/detail shell behavior and defaults loading behavior are described in `docs/generated-custom-windows/app-shell-functional-flows.md`.
 - No dedicated browser automation or user-window-specific SPA test was found for the visible User screen behavior in the current repository evidence.
 - The generated `UserPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `AD_User` AD table.
+
+## Pipeline regeneration — ETP-3908
+
+Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functional changes to this window.
+
+- `linesLayout: "classic"` is now written explicitly to `contract.json`; previously the classic layout was the implicit default.
+- `requiredHeaderFields` is now emitted in the page component; this window has no required header fields so the array is empty and there is no behavioral change.

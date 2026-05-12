@@ -53,3 +53,9 @@ Maintain the rules that determine when a receivable or payable becomes due and w
 - `tools/app-shell/src/menu.json` and `tools/app-shell/src/windows/registry.js` confirm menu visibility and route registration.
 - There is no dedicated SPA test for the visible Payment Term window; current automated evidence is contract- and generated-shape based rather than browser-level UI coverage.
 - The generated `HeaderPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `C_PaymentTerm` AD table.
+## Pipeline regeneration — ETP-3908
+
+Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functional changes to this window.
+
+- `linesLayout: "classic"` is now written explicitly to `contract.json`; previously the classic layout was the implicit default.
+- `requiredHeaderFields` is now emitted in the page component; this window has no required header fields so the array is empty and there is no behavioral change.
