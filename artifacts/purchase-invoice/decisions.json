@@ -15,6 +15,9 @@
         "successKey": "reactivated"
       }
     ],
+    "customComponents": {
+      "headerTable": "InvoiceHeaderTable"
+    },
     "processOverrides": {},
     "draftMode": {
       "enabled": true,
