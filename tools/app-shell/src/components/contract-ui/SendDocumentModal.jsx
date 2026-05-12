@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
+import { Mail } from 'lucide-react';
 import { useUI } from '@/i18n';
 
 /**
@@ -166,10 +167,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
         <div onClick={e => e.stopPropagation()} style={{ width: 800, height: 560, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 12, backgroundColor: '#fff', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', border: '0.5px solid #E5E7EB', animation: isClosing ? 'sfSlideUpOut 280ms ease-in forwards' : 'sfSlideDownIn 280ms ease-out' }}>
           <div style={{ padding: '12px 16px', background: '#F5F5F5', borderBottom: '1px solid #E5E5E5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13" />
-                <polygon points="22 2 15 22 11 13 2 9 22 2" />
-              </svg>
+              <Mail size={16} strokeWidth={1.5} color="#374151" />
               <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>{ui('sendModalTitle', { documentType, documentNo })}</span>
             </div>
             <button type="button" onClick={onClose} style={{ fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}>&times;</button>
@@ -252,7 +250,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
             {sending ? ui('sendModalSending') : (
               <>
                 {ui('sendModalSend')}
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                <Mail size={14} strokeWidth={1.5} />
               </>
             )}
           </button>
@@ -274,10 +272,7 @@ export function SendDocumentButton({ onClick }) {
         onClick={onClick}
         className="flex items-center justify-center p-[7px] rounded-md bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_0px_#1212170D] text-muted-foreground hover:bg-[#F1F5F9] hover:text-foreground transition-colors"
       >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="22" y1="2" x2="11" y2="13" />
-          <polygon points="22 2 15 22 11 13 2 9 22 2" />
-        </svg>
+        <Mail className="h-[15px] w-[15px]" />
       </button>
       <span className="pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-zinc-800 px-2 py-1 text-[11px] text-white opacity-0 group-hover:opacity-100 transition-opacity" style={{ zIndex: 50 }}>
         Send / Download
