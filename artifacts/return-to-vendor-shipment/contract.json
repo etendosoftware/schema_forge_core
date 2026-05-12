@@ -1,8 +1,8 @@
 {
   "version": "0.4.0",
   "generatedAt": "2026-04-29T18:11:17.025Z",
-  "updatedAt": "2026-05-14T16:16:15.734Z",
-  "checksum": "8980dcc59fe7ae11",
+  "updatedAt": "2026-05-15T16:28:10.460Z",
+  "checksum": "676b9b16eeba9d69",
   "frontendContract": {
     "window": {
       "id": "273673D2ED914C399A6C51DB758BE0F9",
@@ -1889,94 +1889,338 @@
     ],
     "actions": [
       {
+        "name": "sendMaterials",
+        "label": "Pick/Edit Lines",
+        "actionType": "createFrom",
         "entity": "header",
-        "field": "sendMaterials",
         "column": "RM_Shipment_Pickedit",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/return-to-vendor-shipment/header/{id}/action/sendMaterials",
+        "method": "POST",
         "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/sendMaterials",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates child or related records",
+          "May copy data from source document"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Source document has no valid lines to copy",
+          "Target entity already has linked records",
+          "Required reference data is missing (price list, warehouse, etc.)"
+        ],
+        "provenance": "extracted",
         "processId": "4AD70293357245AB96E59C2CDB43A35D",
         "processType": "obuiapp"
       },
       {
+        "name": "createLinesFrom",
+        "label": "Create Lines From",
+        "actionType": "createFrom",
         "entity": "header",
-        "field": "createLinesFrom",
         "column": "CreateFrom",
-        "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/createLinesFrom"
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/return-to-vendor-shipment/header/{id}/action/createLinesFrom",
+        "method": "POST",
+        "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/createLinesFrom",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates child or related records",
+          "May copy data from source document"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Source document has no valid lines to copy",
+          "Target entity already has linked records",
+          "Required reference data is missing (price list, warehouse, etc.)"
+        ],
+        "provenance": "extracted"
       },
       {
+        "name": "generateTo",
+        "label": "Generate Invoice from Receipt",
+        "actionType": "createFrom",
         "entity": "header",
-        "field": "generateTo",
         "column": "GenerateTo",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/return-to-vendor-shipment/header/{id}/action/generateTo",
+        "method": "POST",
         "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/generateTo",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates child or related records",
+          "May copy data from source document"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Source document has no valid lines to copy",
+          "Target entity already has linked records",
+          "Required reference data is missing (price list, warehouse, etc.)"
+        ],
+        "provenance": "extracted",
         "processId": "154",
         "processType": "classic"
       },
       {
+        "name": "documentAction",
+        "label": "Process Shipment",
+        "actionType": "documentAction",
         "entity": "header",
-        "field": "documentAction",
         "column": "DocAction",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/return-to-vendor-shipment/header/{id}/action/documentAction",
+        "method": "POST",
         "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/documentAction",
+        "parameters": [
+          {
+            "name": "docAction",
+            "type": "string",
+            "required": true,
+            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+          }
+        ],
+        "preconditions": [
+          {
+            "field": "documentStatus",
+            "operator": "in",
+            "values": [
+              "DR",
+              "IP"
+            ],
+            "description": "Document must be in draft or in-progress state"
+          }
+        ],
+        "effects": [
+          "Updates document status",
+          "May trigger workflow transitions"
+        ],
+        "dryRunSupported": true,
+        "edgeCases": [
+          "Document is already completed or closed",
+          "Document has pending lines or missing required fields",
+          "User lacks permission to execute the action"
+        ],
+        "provenance": "extracted",
         "processId": "109",
         "processType": "classic"
       },
       {
+        "name": "posted",
+        "label": "Posted",
+        "actionType": "documentAction",
         "entity": "header",
-        "field": "posted",
         "column": "Posted",
-        "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/posted"
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/return-to-vendor-shipment/header/{id}/action/posted",
+        "method": "POST",
+        "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/posted",
+        "parameters": [
+          {
+            "name": "docAction",
+            "type": "string",
+            "required": true,
+            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+          }
+        ],
+        "preconditions": [
+          {
+            "field": "documentStatus",
+            "operator": "in",
+            "values": [
+              "DR",
+              "IP"
+            ],
+            "description": "Document must be in draft or in-progress state"
+          }
+        ],
+        "effects": [
+          "Updates document status",
+          "May trigger workflow transitions"
+        ],
+        "dryRunSupported": true,
+        "edgeCases": [
+          "Document is already completed or closed",
+          "Document has pending lines or missing required fields",
+          "User lacks permission to execute the action"
+        ],
+        "provenance": "extracted"
       },
       {
+        "name": "calculateFreight",
+        "label": "Calculate Freight Amount",
+        "actionType": "utilityAction",
         "entity": "header",
-        "field": "calculateFreight",
         "column": "Calculate_Freight",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/return-to-vendor-shipment/header/{id}/action/calculateFreight",
+        "method": "POST",
         "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/calculateFreight",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "provenance": "extracted",
         "processId": "800141",
         "processType": "classic"
       },
       {
+        "name": "receiveMaterials",
+        "label": "Receive Materials",
+        "actionType": "createFrom",
         "entity": "header",
-        "field": "receiveMaterials",
         "column": "RM_Receipt_PickEdit",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/return-to-vendor-shipment/header/{id}/action/receiveMaterials",
+        "method": "POST",
         "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/receiveMaterials",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates child or related records",
+          "May copy data from source document"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Source document has no valid lines to copy",
+          "Target entity already has linked records",
+          "Required reference data is missing (price list, warehouse, etc.)"
+        ],
+        "provenance": "extracted",
         "processId": "5E9F9D7EECC24E4FBB2C60840FF613BE",
         "processType": "obuiapp"
       },
       {
+        "name": "updateLines",
+        "label": "Update Attributes from Shipment",
+        "actionType": "utilityAction",
         "entity": "header",
-        "field": "updateLines",
         "column": "UpdateLines",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/return-to-vendor-shipment/header/{id}/action/updateLines",
+        "method": "POST",
         "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/updateLines",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "provenance": "extracted",
         "processId": "800010",
         "processType": "classic"
       },
       {
+        "name": "invoicefromshipment",
+        "label": "Invoicefromshipment",
+        "actionType": "utilityAction",
         "entity": "header",
-        "field": "invoicefromshipment",
         "column": "Invoicefromshipment",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/return-to-vendor-shipment/header/{id}/action/invoicefromshipment",
+        "method": "POST",
         "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/invoicefromshipment",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "provenance": "extracted",
         "processId": "62250E8866EA4D96A66C309878DC039E",
         "processType": "obuiapp"
       },
       {
+        "name": "processGoodsJava",
+        "label": "Process_Goods_Java",
+        "actionType": "utilityAction",
         "entity": "header",
-        "field": "processGoodsJava",
         "column": "Process_Goods_Java",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/return-to-vendor-shipment/header/{id}/action/processGoodsJava",
+        "method": "POST",
         "url": "/sws/neo/return-to-vendor-shipment/header/{id}/action/processGoodsJava",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "provenance": "extracted",
         "processId": "49DEE812BF0545269781FCEBF2235924",
         "processType": "classic"
       },
       {
+        "name": "explode",
+        "label": "Explode",
+        "actionType": "utilityAction",
         "entity": "lines",
-        "field": "explode",
         "column": "Explode",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/return-to-vendor-shipment/lines/{id}/action/explode",
+        "method": "POST",
         "url": "/sws/neo/return-to-vendor-shipment/lines/{id}/action/explode",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "provenance": "extracted",
         "processId": "DAE719940FE9463F8A3E3C401BBAFC53",
         "processType": "classic"
       },
       {
+        "name": "managePrereservation",
+        "label": "Manage_Prereservation",
+        "actionType": "utilityAction",
         "entity": "lines",
-        "field": "managePrereservation",
         "column": "Manage_Prereservation",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/return-to-vendor-shipment/lines/{id}/action/managePrereservation",
+        "method": "POST",
         "url": "/sws/neo/return-to-vendor-shipment/lines/{id}/action/managePrereservation",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "provenance": "extracted",
         "processId": "70E42AD47E5F4698A9ACCCAF3EB72B9E",
         "processType": "obuiapp"
       }

@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T18:11:26.703Z",
-  "updatedAt": "2026-05-12T19:44:04.462Z",
-  "checksum": "74f6fa4c44a9e396",
+  "updatedAt": "2026-05-15T16:28:10.683Z",
+  "checksum": "14f761cdaf5aefc3",
   "frontendContract": {
     "window": {
       "id": "144",
@@ -1452,66 +1452,221 @@
     "selectors": [],
     "actions": [
       {
+        "name": "processNow",
+        "label": "Verify BOM",
+        "actionType": "documentAction",
         "entity": "assignedProducts",
-        "field": "processNow",
         "column": "Processing",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/product-category/assignedProducts/{id}/action/processNow",
+        "method": "POST",
         "url": "/sws/neo/product-category/assignedProducts/{id}/action/processNow",
+        "parameters": [
+          {
+            "name": "docAction",
+            "type": "string",
+            "required": true,
+            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+          }
+        ],
+        "preconditions": [
+          {
+            "field": "documentStatus",
+            "operator": "in",
+            "values": [
+              "DR",
+              "IP"
+            ],
+            "description": "Document must be in draft or in-progress state"
+          }
+        ],
+        "effects": [
+          "Updates document status",
+          "May trigger workflow transitions"
+        ],
+        "dryRunSupported": true,
+        "edgeCases": [
+          "Document is already completed or closed",
+          "Document has pending lines or missing required fields",
+          "User lacks permission to execute the action"
+        ],
+        "provenance": "extracted",
         "processId": "136",
         "processType": "classic"
       },
       {
+        "name": "copyservicemodifytaxconfig",
+        "label": "Copyservicemodifytaxconfig",
+        "actionType": "utilityAction",
         "entity": "assignedProducts",
-        "field": "copyservicemodifytaxconfig",
         "column": "Copyservicemodifytaxconfig",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/product-category/assignedProducts/{id}/action/copyservicemodifytaxconfig",
+        "method": "POST",
         "url": "/sws/neo/product-category/assignedProducts/{id}/action/copyservicemodifytaxconfig",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "provenance": "extracted",
         "processId": "CBBD7BB6BDFE4705B68DD3D9FF788D4E",
         "processType": "obuiapp"
       },
       {
+        "name": "createVariants",
+        "label": "CreateVariants",
+        "actionType": "createFrom",
         "entity": "assignedProducts",
-        "field": "createVariants",
         "column": "CreateVariants",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/product-category/assignedProducts/{id}/action/createVariants",
+        "method": "POST",
         "url": "/sws/neo/product-category/assignedProducts/{id}/action/createVariants",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "Creates child or related records",
+          "May copy data from source document"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Source document has no valid lines to copy",
+          "Target entity already has linked records",
+          "Required reference data is missing (price list, warehouse, etc.)"
+        ],
+        "provenance": "extracted",
         "processId": "3C386BC12832466790E50F2F8C5EBD85",
         "processType": "classic"
       },
       {
+        "name": "manageVariants",
+        "label": "ManageVariants",
+        "actionType": "utilityAction",
         "entity": "assignedProducts",
-        "field": "manageVariants",
         "column": "ManageVariants",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/product-category/assignedProducts/{id}/action/manageVariants",
+        "method": "POST",
         "url": "/sws/neo/product-category/assignedProducts/{id}/action/manageVariants",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "provenance": "extracted",
         "processId": "FE3A8C134D41488DB3A69837BD54B56A",
         "processType": "obuiapp"
       },
       {
+        "name": "relateprodcattaxtoservice",
+        "label": "Relateprodcattaxtoservice",
+        "actionType": "utilityAction",
         "entity": "assignedProducts",
-        "field": "relateprodcattaxtoservice",
         "column": "Relateprodcattaxtoservice",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/product-category/assignedProducts/{id}/action/relateprodcattaxtoservice",
+        "method": "POST",
         "url": "/sws/neo/product-category/assignedProducts/{id}/action/relateprodcattaxtoservice",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "provenance": "extracted",
         "processId": "E0870062F05F4DC88E589ABC6A45DF4C",
         "processType": "obuiapp"
       },
       {
+        "name": "relateprodcattoservice",
+        "label": "Relateprodcattoservice",
+        "actionType": "utilityAction",
         "entity": "assignedProducts",
-        "field": "relateprodcattoservice",
         "column": "Relateprodcattoservice",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/product-category/assignedProducts/{id}/action/relateprodcattoservice",
+        "method": "POST",
         "url": "/sws/neo/product-category/assignedProducts/{id}/action/relateprodcattoservice",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "provenance": "extracted",
         "processId": "8E5996F1F3154B498468938B5341A0CB",
         "processType": "obuiapp"
       },
       {
+        "name": "relateprodtoservice",
+        "label": "Relateprodtoservice",
+        "actionType": "utilityAction",
         "entity": "assignedProducts",
-        "field": "relateprodtoservice",
         "column": "Relateprodtoservice",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/product-category/assignedProducts/{id}/action/relateprodtoservice",
+        "method": "POST",
         "url": "/sws/neo/product-category/assignedProducts/{id}/action/relateprodtoservice",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "provenance": "extracted",
         "processId": "E66C669B0B01498C8EB3F99CD371CF9A",
         "processType": "obuiapp"
       },
       {
+        "name": "updateInvariants",
+        "label": "Updateinvariants",
+        "actionType": "utilityAction",
         "entity": "assignedProducts",
-        "field": "updateInvariants",
         "column": "Updateinvariants",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/product-category/assignedProducts/{id}/action/updateInvariants",
+        "method": "POST",
         "url": "/sws/neo/product-category/assignedProducts/{id}/action/updateInvariants",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "provenance": "extracted",
         "processId": "7DC2C8DC186B4C1DB18E147911950861",
         "processType": "obuiapp"
       }

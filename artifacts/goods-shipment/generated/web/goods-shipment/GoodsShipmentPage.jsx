@@ -116,7 +116,16 @@ export const api = {
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
-      "url": "/sws/neo/goods-shipment/goodsShipment/selectors/partnerAddress"
+      "url": "/sws/neo/goods-shipment/goodsShipment/selectors/partnerAddress",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "goodsShipmentLine",
@@ -129,94 +138,338 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "createLinesFrom",
+      "label": "Create Lines From",
+      "actionType": "createFrom",
       "entity": "goodsShipment",
-      "field": "createLinesFrom",
       "column": "CreateFrom",
-      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/createLinesFrom"
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/goods-shipment/goodsShipment/{id}/action/createLinesFrom",
+      "method": "POST",
+      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/createLinesFrom",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates child or related records",
+        "May copy data from source document"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Source document has no valid lines to copy",
+        "Target entity already has linked records",
+        "Required reference data is missing (price list, warehouse, etc.)"
+      ],
+      "provenance": "extracted"
     },
     {
+      "name": "processGoodsJava",
+      "label": "Process Shipment Java",
+      "actionType": "utilityAction",
       "entity": "goodsShipment",
-      "field": "processGoodsJava",
       "column": "Process_Goods_Java",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/goods-shipment/goodsShipment/{id}/action/processGoodsJava",
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/processGoodsJava",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "49DEE812BF0545269781FCEBF2235924",
       "processType": "classic"
     },
     {
+      "name": "documentAction",
+      "label": "Process Shipment",
+      "actionType": "documentAction",
       "entity": "goodsShipment",
-      "field": "documentAction",
       "column": "DocAction",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/goods-shipment/goodsShipment/{id}/action/documentAction",
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/documentAction",
+      "parameters": [
+        {
+          "name": "docAction",
+          "type": "string",
+          "required": true,
+          "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+        }
+      ],
+      "preconditions": [
+        {
+          "field": "documentStatus",
+          "operator": "in",
+          "values": [
+            "DR",
+            "IP"
+          ],
+          "description": "Document must be in draft or in-progress state"
+        }
+      ],
+      "effects": [
+        "Updates document status",
+        "May trigger workflow transitions"
+      ],
+      "dryRunSupported": true,
+      "edgeCases": [
+        "Document is already completed or closed",
+        "Document has pending lines or missing required fields",
+        "User lacks permission to execute the action"
+      ],
+      "provenance": "extracted",
       "processId": "109",
       "processType": "classic"
     },
     {
+      "name": "posted",
+      "label": "Posted",
+      "actionType": "documentAction",
       "entity": "goodsShipment",
-      "field": "posted",
       "column": "Posted",
-      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/posted"
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/goods-shipment/goodsShipment/{id}/action/posted",
+      "method": "POST",
+      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/posted",
+      "parameters": [
+        {
+          "name": "docAction",
+          "type": "string",
+          "required": true,
+          "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+        }
+      ],
+      "preconditions": [
+        {
+          "field": "documentStatus",
+          "operator": "in",
+          "values": [
+            "DR",
+            "IP"
+          ],
+          "description": "Document must be in draft or in-progress state"
+        }
+      ],
+      "effects": [
+        "Updates document status",
+        "May trigger workflow transitions"
+      ],
+      "dryRunSupported": true,
+      "edgeCases": [
+        "Document is already completed or closed",
+        "Document has pending lines or missing required fields",
+        "User lacks permission to execute the action"
+      ],
+      "provenance": "extracted"
     },
     {
+      "name": "calculateFreight",
+      "label": "Calculate Freight Amount",
+      "actionType": "utilityAction",
       "entity": "goodsShipment",
-      "field": "calculateFreight",
       "column": "Calculate_Freight",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/goods-shipment/goodsShipment/{id}/action/calculateFreight",
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/calculateFreight",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "800141",
       "processType": "classic"
     },
     {
+      "name": "invoicefromshipment",
+      "label": "Generate Invoice from Shipment",
+      "actionType": "utilityAction",
       "entity": "goodsShipment",
-      "field": "invoicefromshipment",
       "column": "Invoicefromshipment",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/goods-shipment/goodsShipment/{id}/action/invoicefromshipment",
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/invoicefromshipment",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "62250E8866EA4D96A66C309878DC039E",
       "processType": "obuiapp"
     },
     {
+      "name": "generateTo",
+      "label": "Generate Invoice from Receipt",
+      "actionType": "createFrom",
       "entity": "goodsShipment",
-      "field": "generateTo",
       "column": "GenerateTo",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/goods-shipment/goodsShipment/{id}/action/generateTo",
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/generateTo",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates child or related records",
+        "May copy data from source document"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Source document has no valid lines to copy",
+        "Target entity already has linked records",
+        "Required reference data is missing (price list, warehouse, etc.)"
+      ],
+      "provenance": "extracted",
       "processId": "154",
       "processType": "classic"
     },
     {
+      "name": "updateLines",
+      "label": "Update Attributes from Shipment",
+      "actionType": "utilityAction",
       "entity": "goodsShipment",
-      "field": "updateLines",
       "column": "UpdateLines",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/goods-shipment/goodsShipment/{id}/action/updateLines",
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/updateLines",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "800010",
       "processType": "classic"
     },
     {
+      "name": "receiveMaterials",
+      "label": "Receive Materials",
+      "actionType": "createFrom",
       "entity": "goodsShipment",
-      "field": "receiveMaterials",
       "column": "RM_Receipt_PickEdit",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/goods-shipment/goodsShipment/{id}/action/receiveMaterials",
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/receiveMaterials",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates child or related records",
+        "May copy data from source document"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Source document has no valid lines to copy",
+        "Target entity already has linked records",
+        "Required reference data is missing (price list, warehouse, etc.)"
+      ],
+      "provenance": "extracted",
       "processId": "5E9F9D7EECC24E4FBB2C60840FF613BE",
       "processType": "obuiapp"
     },
     {
+      "name": "sendMaterials",
+      "label": "Send Materials",
+      "actionType": "createFrom",
       "entity": "goodsShipment",
-      "field": "sendMaterials",
       "column": "RM_Shipment_Pickedit",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/goods-shipment/goodsShipment/{id}/action/sendMaterials",
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/sendMaterials",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates child or related records",
+        "May copy data from source document"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Source document has no valid lines to copy",
+        "Target entity already has linked records",
+        "Required reference data is missing (price list, warehouse, etc.)"
+      ],
+      "provenance": "extracted",
       "processId": "4AD70293357245AB96E59C2CDB43A35D",
       "processType": "obuiapp"
     },
     {
+      "name": "explode",
+      "label": "Explode",
+      "actionType": "utilityAction",
       "entity": "goodsShipmentLine",
-      "field": "explode",
       "column": "Explode",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/goods-shipment/goodsShipmentLine/{id}/action/explode",
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipmentLine/{id}/action/explode",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "DAE719940FE9463F8A3E3C401BBAFC53",
       "processType": "classic"
     },
     {
+      "name": "managePrereservation",
+      "label": "Manage Prereservation",
+      "actionType": "utilityAction",
       "entity": "goodsShipmentLine",
-      "field": "managePrereservation",
       "column": "Manage_Prereservation",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/goods-shipment/goodsShipmentLine/{id}/action/managePrereservation",
+      "method": "POST",
       "url": "/sws/neo/goods-shipment/goodsShipmentLine/{id}/action/managePrereservation",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "70E42AD47E5F4698A9ACCCAF3EB72B9E",
       "processType": "obuiapp"
     }

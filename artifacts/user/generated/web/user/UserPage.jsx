@@ -139,7 +139,16 @@ export const api = {
       "column": "Default_Ad_Client_ID",
       "reference": "Client",
       "inputMode": "dependent",
-      "url": "/sws/neo/user/user/selectors/defaultClient"
+      "url": "/sws/neo/user/user/selectors/defaultClient",
+      "context": {
+        "required": [
+          {
+            "param": "Default_AD_Role_ID",
+            "source": "field",
+            "field": "defaultRole"
+          }
+        ]
+      }
     },
     {
       "entity": "user",
@@ -147,7 +156,16 @@ export const api = {
       "column": "Default_Ad_Org_ID",
       "reference": "Organization",
       "inputMode": "dependent",
-      "url": "/sws/neo/user/user/selectors/defaultOrganization"
+      "url": "/sws/neo/user/user/selectors/defaultOrganization",
+      "context": {
+        "required": [
+          {
+            "param": "Default_AD_Role_ID",
+            "source": "field",
+            "field": "defaultRole"
+          }
+        ]
+      }
     },
     {
       "entity": "user",
@@ -155,7 +173,16 @@ export const api = {
       "column": "Default_M_Warehouse_ID",
       "reference": "Warehouse",
       "inputMode": "dependent",
-      "url": "/sws/neo/user/user/selectors/defaultWarehouse"
+      "url": "/sws/neo/user/user/selectors/defaultWarehouse",
+      "context": {
+        "required": [
+          {
+            "param": "Default_AD_Client_ID",
+            "source": "field",
+            "field": "defaultClient"
+          }
+        ]
+      }
     },
     {
       "entity": "userRoles",
@@ -168,24 +195,93 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "processNow",
+      "label": "Process Now",
+      "actionType": "documentAction",
       "entity": "user",
-      "field": "processNow",
       "column": "Processing",
-      "url": "/sws/neo/user/user/{id}/action/processNow"
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/user/user/{id}/action/processNow",
+      "method": "POST",
+      "url": "/sws/neo/user/user/{id}/action/processNow",
+      "parameters": [
+        {
+          "name": "docAction",
+          "type": "string",
+          "required": true,
+          "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+        }
+      ],
+      "preconditions": [
+        {
+          "field": "documentStatus",
+          "operator": "in",
+          "values": [
+            "DR",
+            "IP"
+          ],
+          "description": "Document must be in draft or in-progress state"
+        }
+      ],
+      "effects": [
+        "Updates document status",
+        "May trigger workflow transitions"
+      ],
+      "dryRunSupported": true,
+      "edgeCases": [
+        "Document is already completed or closed",
+        "Document has pending lines or missing required fields",
+        "User lacks permission to execute the action"
+      ],
+      "provenance": "extracted"
     },
     {
+      "name": "grantPortalAccess",
+      "label": "Grant_Portal_Access",
+      "actionType": "utilityAction",
       "entity": "user",
-      "field": "grantPortalAccess",
       "column": "Grant_Portal_Access",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/user/user/{id}/action/grantPortalAccess",
+      "method": "POST",
       "url": "/sws/neo/user/user/{id}/action/grantPortalAccess",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "97FFD59B991D49BFB5153C309B009272",
       "processType": "obuiapp"
     },
     {
+      "name": "smtpconnectiontest",
+      "label": "Test SMTP Connection",
+      "actionType": "utilityAction",
       "entity": "emailConfiguration",
-      "field": "smtpconnectiontest",
       "column": "Smtpconnectiontest",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/user/emailConfiguration/{id}/action/smtpconnectiontest",
+      "method": "POST",
       "url": "/sws/neo/user/emailConfiguration/{id}/action/smtpconnectiontest",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "9AB8A39485BD4FB1B6BB38B27E707668",
       "processType": "obuiapp"
     }

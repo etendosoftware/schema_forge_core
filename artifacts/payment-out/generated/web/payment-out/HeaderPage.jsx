@@ -443,54 +443,214 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "aPRMAddScheduledpayments",
+      "label": "Add Details",
+      "actionType": "paymentAction",
       "entity": "header",
-      "field": "aPRMAddScheduledpayments",
       "column": "EM_Aprm_Add_Scheduledpayments",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/payment-out/header/{id}/action/aPRMAddScheduledpayments",
+      "method": "POST",
       "url": "/sws/neo/payment-out/header/{id}/action/aPRMAddScheduledpayments",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates or processes payment records",
+        "May update invoice/order payment status"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Payment amount exceeds remaining balance",
+        "Payment method is not configured for the business partner",
+        "Invoice is already fully paid"
+      ],
+      "provenance": "extracted",
       "processId": "9BED7889E1034FE68BD85D5D16857320",
       "processType": "obuiapp"
     },
     {
+      "name": "posted",
+      "label": "Posted",
+      "actionType": "documentAction",
       "entity": "header",
-      "field": "posted",
       "column": "Posted",
-      "url": "/sws/neo/payment-out/header/{id}/action/posted"
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/payment-out/header/{id}/action/posted",
+      "method": "POST",
+      "url": "/sws/neo/payment-out/header/{id}/action/posted",
+      "parameters": [
+        {
+          "name": "docAction",
+          "type": "string",
+          "required": true,
+          "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+        }
+      ],
+      "preconditions": [
+        {
+          "field": "documentStatus",
+          "operator": "in",
+          "values": [
+            "DR",
+            "IP"
+          ],
+          "description": "Document must be in draft or in-progress state"
+        }
+      ],
+      "effects": [
+        "Updates document status",
+        "May trigger workflow transitions"
+      ],
+      "dryRunSupported": true,
+      "edgeCases": [
+        "Document is already completed or closed",
+        "Document has pending lines or missing required fields",
+        "User lacks permission to execute the action"
+      ],
+      "provenance": "extracted"
     },
     {
+      "name": "aPRMProcessPayment",
+      "label": "Payment Process",
+      "actionType": "paymentAction",
       "entity": "header",
-      "field": "aPRMProcessPayment",
       "column": "EM_APRM_Process_Payment",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/payment-out/header/{id}/action/aPRMProcessPayment",
+      "method": "POST",
       "url": "/sws/neo/payment-out/header/{id}/action/aPRMProcessPayment",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates or processes payment records",
+        "May update invoice/order payment status"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Payment amount exceeds remaining balance",
+        "Payment method is not configured for the business partner",
+        "Invoice is already fully paid"
+      ],
+      "provenance": "extracted",
       "processId": "6255BE488882480599C81284B70CD9B3",
       "processType": "classic"
     },
     {
+      "name": "aprmExecutepayment",
+      "label": "Execute Payment",
+      "actionType": "paymentAction",
       "entity": "header",
-      "field": "aprmExecutepayment",
       "column": "EM_Aprm_Executepayment",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/payment-out/header/{id}/action/aprmExecutepayment",
+      "method": "POST",
       "url": "/sws/neo/payment-out/header/{id}/action/aprmExecutepayment",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates or processes payment records",
+        "May update invoice/order payment status"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Payment amount exceeds remaining balance",
+        "Payment method is not configured for the business partner",
+        "Invoice is already fully paid"
+      ],
+      "provenance": "extracted",
       "processId": "E011F492B0814A74B63CD1F3B9FF0526",
       "processType": "classic"
     },
     {
+      "name": "aPRMReversePayment",
+      "label": "Reverse Payment",
+      "actionType": "documentAction",
       "entity": "header",
-      "field": "aPRMReversePayment",
       "column": "EM_APRM_ReversePayment",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/payment-out/header/{id}/action/aPRMReversePayment",
+      "method": "POST",
       "url": "/sws/neo/payment-out/header/{id}/action/aPRMReversePayment",
+      "parameters": [
+        {
+          "name": "docAction",
+          "type": "string",
+          "required": true,
+          "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+        }
+      ],
+      "preconditions": [
+        {
+          "field": "documentStatus",
+          "operator": "in",
+          "values": [
+            "DR",
+            "IP"
+          ],
+          "description": "Document must be in draft or in-progress state"
+        }
+      ],
+      "effects": [
+        "Updates document status",
+        "May trigger workflow transitions"
+      ],
+      "dryRunSupported": true,
+      "edgeCases": [
+        "Document is already completed or closed",
+        "Document has pending lines or missing required fields",
+        "User lacks permission to execute the action"
+      ],
+      "provenance": "extracted",
       "processId": "29D17F515727436DBCE32BC6CA28382B",
       "processType": "classic"
     },
     {
+      "name": "aPRMReconcilePayment",
+      "label": "Reconcile Payment",
+      "actionType": "paymentAction",
       "entity": "header",
-      "field": "aPRMReconcilePayment",
       "column": "EM_APRM_Reconcile_Payment",
-      "url": "/sws/neo/payment-out/header/{id}/action/aPRMReconcilePayment"
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/payment-out/header/{id}/action/aPRMReconcilePayment",
+      "method": "POST",
+      "url": "/sws/neo/payment-out/header/{id}/action/aPRMReconcilePayment",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates or processes payment records",
+        "May update invoice/order payment status"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Payment amount exceeds remaining balance",
+        "Payment method is not configured for the business partner",
+        "Invoice is already fully paid"
+      ],
+      "provenance": "extracted"
     },
     {
+      "name": "aeatsiiSend",
+      "label": "EM_Aeatsii_Send",
+      "actionType": "createFrom",
       "entity": "header",
-      "field": "aeatsiiSend",
       "column": "EM_Aeatsii_Send",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/payment-out/header/{id}/action/aeatsiiSend",
+      "method": "POST",
       "url": "/sws/neo/payment-out/header/{id}/action/aeatsiiSend",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates child or related records",
+        "May copy data from source document"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Source document has no valid lines to copy",
+        "Target entity already has linked records",
+        "Required reference data is missing (price list, warehouse, etc.)"
+      ],
+      "provenance": "extracted",
       "processId": "EA02D79CA1DE4B46909EA6EF64A66B53",
       "processType": "obuiapp"
     }

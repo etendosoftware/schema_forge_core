@@ -171,14 +171,31 @@ export const api = {
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
-      "url": "/sws/neo/purchase-order/header/selectors/partnerAddress"
+      "url": "/sws/neo/purchase-order/header/selectors/partnerAddress",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
       "field": "transactionDocument",
       "column": "C_DocTypeTarget_ID",
       "reference": "DocumentType",
-      "url": "/sws/neo/purchase-order/header/selectors/transactionDocument"
+      "url": "/sws/neo/purchase-order/header/selectors/transactionDocument",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -194,7 +211,15 @@ export const api = {
       "column": "FIN_Paymentmethod_ID",
       "reference": "PaymentMethod",
       "inputMode": "selector",
-      "url": "/sws/neo/purchase-order/header/selectors/paymentMethod"
+      "url": "/sws/neo/purchase-order/header/selectors/paymentMethod",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -210,7 +235,15 @@ export const api = {
       "column": "M_PriceList_ID",
       "reference": "PriceList",
       "inputMode": "selector",
-      "url": "/sws/neo/purchase-order/header/selectors/priceList"
+      "url": "/sws/neo/purchase-order/header/selectors/priceList",
+      "context": {
+        "required": [
+          {
+            "param": "isSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -230,7 +263,16 @@ export const api = {
       "column": "BillTo_ID",
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
-      "url": "/sws/neo/purchase-order/header/selectors/invoiceFrom"
+      "url": "/sws/neo/purchase-order/header/selectors/invoiceFrom",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -257,7 +299,20 @@ export const api = {
       "column": "C_Project_ID",
       "reference": "Project",
       "inputMode": "search",
-      "url": "/sws/neo/purchase-order/header/selectors/project"
+      "url": "/sws/neo/purchase-order/header/selectors/project",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "C_BPartner_ID",
+            "source": "parentField",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -305,7 +360,22 @@ export const api = {
       "column": "C_Tax_ID",
       "reference": "Tax",
       "inputMode": "selector",
-      "url": "/sws/neo/purchase-order/lines/selectors/tax"
+      "url": "/sws/neo/purchase-order/lines/selectors/tax",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "DateInvoiced",
+            "source": "parentField",
+            "field": "invoiceDate",
+            "fallbackField": "orderDate",
+            "format": "DD-MM-YYYY"
+          }
+        ]
+      }
     },
     {
       "entity": "lines",
@@ -313,7 +383,15 @@ export const api = {
       "column": "C_Aum",
       "reference": "UOM",
       "inputMode": "selector",
-      "url": "/sws/neo/purchase-order/lines/selectors/operativeUOM"
+      "url": "/sws/neo/purchase-order/lines/selectors/operativeUOM",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "lines",
@@ -341,7 +419,16 @@ export const api = {
       "field": "partnerAddress",
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
-      "url": "/sws/neo/purchase-order/lines/selectors/partnerAddress"
+      "url": "/sws/neo/purchase-order/lines/selectors/partnerAddress",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "parentField",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "lines",
@@ -442,168 +529,589 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "generateTemplate",
+      "label": "Generate template",
+      "actionType": "createFrom",
       "entity": "header",
-      "field": "generateTemplate",
       "column": "Generatetemplate",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/header/{id}/action/generateTemplate",
+      "method": "POST",
       "url": "/sws/neo/purchase-order/header/{id}/action/generateTemplate",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates child or related records",
+        "May copy data from source document"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Source document has no valid lines to copy",
+        "Target entity already has linked records",
+        "Required reference data is missing (price list, warehouse, etc.)"
+      ],
+      "provenance": "extracted",
       "processId": "800022",
       "processType": "classic"
     },
     {
+      "name": "rMPickFromShipment",
+      "label": "RM_PickFromShipment",
+      "actionType": "createFrom",
       "entity": "header",
-      "field": "rMPickFromShipment",
       "column": "RM_PickFromShipment",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/header/{id}/action/rMPickFromShipment",
+      "method": "POST",
       "url": "/sws/neo/purchase-order/header/{id}/action/rMPickFromShipment",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates child or related records",
+        "May copy data from source document"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Source document has no valid lines to copy",
+        "Target entity already has linked records",
+        "Required reference data is missing (price list, warehouse, etc.)"
+      ],
+      "provenance": "extracted",
       "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
       "processType": "obuiapp"
     },
     {
+      "name": "rMReceiveMaterials",
+      "label": "RM_ReceiveMaterials",
+      "actionType": "createFrom",
       "entity": "header",
-      "field": "rMReceiveMaterials",
       "column": "RM_ReceiveMaterials",
-      "url": "/sws/neo/purchase-order/header/{id}/action/rMReceiveMaterials"
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/header/{id}/action/rMReceiveMaterials",
+      "method": "POST",
+      "url": "/sws/neo/purchase-order/header/{id}/action/rMReceiveMaterials",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates child or related records",
+        "May copy data from source document"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Source document has no valid lines to copy",
+        "Target entity already has linked records",
+        "Required reference data is missing (price list, warehouse, etc.)"
+      ],
+      "provenance": "extracted"
     },
     {
+      "name": "rMCreateInvoice",
+      "label": "Create Invoice",
+      "actionType": "createFrom",
       "entity": "header",
-      "field": "rMCreateInvoice",
       "column": "RM_CreateInvoice",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/header/{id}/action/rMCreateInvoice",
+      "method": "POST",
       "url": "/sws/neo/purchase-order/header/{id}/action/rMCreateInvoice",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates child or related records",
+        "May copy data from source document"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Source document has no valid lines to copy",
+        "Target entity already has linked records",
+        "Required reference data is missing (price list, warehouse, etc.)"
+      ],
+      "provenance": "extracted",
       "processId": "FF80808133362F6A013336781FCE0066",
       "processType": "classic"
     },
     {
+      "name": "aPRMAddPayment",
+      "label": "Add Payment",
+      "actionType": "paymentAction",
       "entity": "header",
-      "field": "aPRMAddPayment",
       "column": "EM_APRM_AddPayment",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/header/{id}/action/aPRMAddPayment",
+      "method": "POST",
       "url": "/sws/neo/purchase-order/header/{id}/action/aPRMAddPayment",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates or processes payment records",
+        "May update invoice/order payment status"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Payment amount exceeds remaining balance",
+        "Payment method is not configured for the business partner",
+        "Invoice is already fully paid"
+      ],
+      "provenance": "extracted",
       "processId": "9BED7889E1034FE68BD85D5D16857320",
       "processType": "obuiapp"
     },
     {
+      "name": "documentAction",
+      "label": "Process Order",
+      "actionType": "documentAction",
       "entity": "header",
-      "field": "documentAction",
       "column": "DocAction",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/header/{id}/action/documentAction",
+      "method": "POST",
       "url": "/sws/neo/purchase-order/header/{id}/action/documentAction",
+      "parameters": [
+        {
+          "name": "docAction",
+          "type": "string",
+          "required": true,
+          "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+        }
+      ],
+      "preconditions": [
+        {
+          "field": "documentStatus",
+          "operator": "in",
+          "values": [
+            "DR",
+            "IP"
+          ],
+          "description": "Document must be in draft or in-progress state"
+        }
+      ],
+      "effects": [
+        "Updates document status",
+        "May trigger workflow transitions"
+      ],
+      "dryRunSupported": true,
+      "edgeCases": [
+        "Document is already completed or closed",
+        "Document has pending lines or missing required fields",
+        "User lacks permission to execute the action"
+      ],
+      "provenance": "extracted",
       "processId": "104",
       "processType": "classic"
     },
     {
+      "name": "copyFrom",
+      "label": "Copy Lines",
+      "actionType": "createFrom",
       "entity": "header",
-      "field": "copyFrom",
       "column": "CopyFrom",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/header/{id}/action/copyFrom",
+      "method": "POST",
       "url": "/sws/neo/purchase-order/header/{id}/action/copyFrom",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates child or related records",
+        "May copy data from source document"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Source document has no valid lines to copy",
+        "Target entity already has linked records",
+        "Required reference data is missing (price list, warehouse, etc.)"
+      ],
+      "provenance": "extracted",
       "processId": "211",
       "processType": "classic"
     },
     {
+      "name": "copyFromPO",
+      "label": "Copy from Orders",
+      "actionType": "createFrom",
       "entity": "header",
-      "field": "copyFromPO",
       "column": "CopyFromPO",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/header/{id}/action/copyFromPO",
+      "method": "POST",
       "url": "/sws/neo/purchase-order/header/{id}/action/copyFromPO",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates child or related records",
+        "May copy data from source document"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Source document has no valid lines to copy",
+        "Target entity already has linked records",
+        "Required reference data is missing (price list, warehouse, etc.)"
+      ],
+      "provenance": "extracted",
       "processId": "8B81D80B06364566B87853FEECAB5DE0",
       "processType": "obuiapp"
     },
     {
+      "name": "rMAddOrphanLine",
+      "label": "RM_AddOrphanLine",
+      "actionType": "utilityAction",
       "entity": "header",
-      "field": "rMAddOrphanLine",
       "column": "RM_AddOrphanLine",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/header/{id}/action/rMAddOrphanLine",
+      "method": "POST",
       "url": "/sws/neo/purchase-order/header/{id}/action/rMAddOrphanLine",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "23D1B163EC0B41F790CE39BF01DA320E",
       "processType": "classic"
     },
     {
+      "name": "createOrder",
+      "label": "Create Order",
+      "actionType": "createFrom",
       "entity": "header",
-      "field": "createOrder",
       "column": "Convertquotation",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/header/{id}/action/createOrder",
+      "method": "POST",
       "url": "/sws/neo/purchase-order/header/{id}/action/createOrder",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates child or related records",
+        "May copy data from source document"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Source document has no valid lines to copy",
+        "Target entity already has linked records",
+        "Required reference data is missing (price list, warehouse, etc.)"
+      ],
+      "provenance": "extracted",
       "processId": "A3FE1F9892394386A49FB707AA50A0FA",
       "processType": "classic"
     },
     {
+      "name": "calculatePromotions",
+      "label": "Calculate_Promotions",
+      "actionType": "utilityAction",
       "entity": "header",
-      "field": "calculatePromotions",
       "column": "Calculate_Promotions",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/header/{id}/action/calculatePromotions",
+      "method": "POST",
       "url": "/sws/neo/purchase-order/header/{id}/action/calculatePromotions",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "9EB2228A60684C0DBEC12D5CD8D85218",
       "processType": "classic"
     },
     {
+      "name": "createPOLines",
+      "label": "Create Lines",
+      "actionType": "createFrom",
       "entity": "header",
-      "field": "createPOLines",
       "column": "Create_POLines",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/header/{id}/action/createPOLines",
+      "method": "POST",
       "url": "/sws/neo/purchase-order/header/{id}/action/createPOLines",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates child or related records",
+        "May copy data from source document"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Source document has no valid lines to copy",
+        "Target entity already has linked records",
+        "Required reference data is missing (price list, warehouse, etc.)"
+      ],
+      "provenance": "extracted",
       "processId": "6995A4C2592D434A9E16B71E1694CBCA",
       "processType": "obuiapp"
     },
     {
+      "name": "processNow",
+      "label": "Process Order",
+      "actionType": "documentAction",
       "entity": "header",
-      "field": "processNow",
       "column": "Processing",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/header/{id}/action/processNow",
+      "method": "POST",
       "url": "/sws/neo/purchase-order/header/{id}/action/processNow",
+      "parameters": [
+        {
+          "name": "docAction",
+          "type": "string",
+          "required": true,
+          "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+        }
+      ],
+      "preconditions": [
+        {
+          "field": "documentStatus",
+          "operator": "in",
+          "values": [
+            "DR",
+            "IP"
+          ],
+          "description": "Document must be in draft or in-progress state"
+        }
+      ],
+      "effects": [
+        "Updates document status",
+        "May trigger workflow transitions"
+      ],
+      "dryRunSupported": true,
+      "edgeCases": [
+        "Document is already completed or closed",
+        "Document has pending lines or missing required fields",
+        "User lacks permission to execute the action"
+      ],
+      "provenance": "extracted",
       "processId": "104",
       "processType": "classic"
     },
     {
+      "name": "posted",
+      "label": "Posted",
+      "actionType": "documentAction",
       "entity": "header",
-      "field": "posted",
       "column": "Posted",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/header/{id}/action/posted",
+      "method": "POST",
       "url": "/sws/neo/purchase-order/header/{id}/action/posted",
+      "parameters": [
+        {
+          "name": "docAction",
+          "type": "string",
+          "required": true,
+          "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+        }
+      ],
+      "preconditions": [
+        {
+          "field": "documentStatus",
+          "operator": "in",
+          "values": [
+            "DR",
+            "IP"
+          ],
+          "description": "Document must be in draft or in-progress state"
+        }
+      ],
+      "effects": [
+        "Updates document status",
+        "May trigger workflow transitions"
+      ],
+      "dryRunSupported": true,
+      "edgeCases": [
+        "Document is already completed or closed",
+        "Document has pending lines or missing required fields",
+        "User lacks permission to execute the action"
+      ],
+      "provenance": "extracted",
       "processId": "57496FB9CF9E4E8F847224017941570E",
       "processType": "obuiapp"
     },
     {
+      "name": "cancelandreplace",
+      "label": "Cancelandreplace",
+      "actionType": "utilityAction",
       "entity": "header",
-      "field": "cancelandreplace",
       "column": "Cancelandreplace",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/header/{id}/action/cancelandreplace",
+      "method": "POST",
       "url": "/sws/neo/purchase-order/header/{id}/action/cancelandreplace",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "A2FAF49712D1445ABE750315CE1B473A",
       "processType": "obuiapp"
     },
     {
+      "name": "confirmcancelandreplace",
+      "label": "Confirmcancelandreplace",
+      "actionType": "utilityAction",
       "entity": "header",
-      "field": "confirmcancelandreplace",
       "column": "Confirmcancelandreplace",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/header/{id}/action/confirmcancelandreplace",
+      "method": "POST",
       "url": "/sws/neo/purchase-order/header/{id}/action/confirmcancelandreplace",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "0C2AFAEFB67B4CB8A1429195EB119A49",
       "processType": "obuiapp"
     },
     {
+      "name": "rMPickfromreceipt",
+      "label": "RM_Pickfromreceipt",
+      "actionType": "createFrom",
       "entity": "header",
-      "field": "rMPickfromreceipt",
       "column": "RM_Pickfromreceipt",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/header/{id}/action/rMPickfromreceipt",
+      "method": "POST",
       "url": "/sws/neo/purchase-order/header/{id}/action/rMPickfromreceipt",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates child or related records",
+        "May copy data from source document"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Source document has no valid lines to copy",
+        "Target entity already has linked records",
+        "Required reference data is missing (price list, warehouse, etc.)"
+      ],
+      "provenance": "extracted",
       "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
       "processType": "obuiapp"
     },
     {
+      "name": "managePrereservation",
+      "label": "Manage Prereservation",
+      "actionType": "utilityAction",
       "entity": "lines",
-      "field": "managePrereservation",
       "column": "Manage_Prereservation",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/lines/{id}/action/managePrereservation",
+      "method": "POST",
       "url": "/sws/neo/purchase-order/lines/{id}/action/managePrereservation",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "70E42AD47E5F4698A9ACCCAF3EB72B9E",
       "processType": "obuiapp"
     },
     {
+      "name": "explode",
+      "label": "Explode",
+      "actionType": "utilityAction",
       "entity": "lines",
-      "field": "explode",
       "column": "Explode",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/lines/{id}/action/explode",
+      "method": "POST",
       "url": "/sws/neo/purchase-order/lines/{id}/action/explode",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "DFC78024B1F54CBB95DC73425BA6687F",
       "processType": "classic"
     },
     {
+      "name": "manageReservation",
+      "label": "Manage Reservation",
+      "actionType": "utilityAction",
       "entity": "lines",
-      "field": "manageReservation",
       "column": "Manage_Reservation",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/lines/{id}/action/manageReservation",
+      "method": "POST",
       "url": "/sws/neo/purchase-order/lines/{id}/action/manageReservation",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "5F547560D3DE401AA0B570F22E2C6C06",
       "processType": "obuiapp"
     },
     {
+      "name": "selectOrderLine",
+      "label": "Relate_Orderline",
+      "actionType": "utilityAction",
       "entity": "lines",
-      "field": "selectOrderLine",
       "column": "Relate_Orderline",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/purchase-order/lines/{id}/action/selectOrderLine",
+      "method": "POST",
       "url": "/sws/neo/purchase-order/lines/{id}/action/selectOrderLine",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "C4265E27C8134096B49DFBF69369DFC6",
       "processType": "obuiapp"
     }

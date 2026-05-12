@@ -1,8 +1,8 @@
 {
   "version": "0.5.0",
   "generatedAt": "2026-04-29T18:11:37.816Z",
-  "updatedAt": "2026-05-12T19:44:08.766Z",
-  "checksum": "11eba872155a1db2",
+  "updatedAt": "2026-05-15T16:28:11.093Z",
+  "checksum": "bb549a76bf639ab7",
   "frontendContract": {
     "window": {
       "id": "139",
@@ -1747,18 +1747,52 @@
     ],
     "actions": [
       {
+        "name": "changeStatus",
+        "label": "Change Status",
+        "actionType": "utilityAction",
         "entity": "storageBin",
-        "field": "changeStatus",
         "column": "Change_Status",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/warehouse/storageBin/{id}/action/changeStatus",
+        "method": "POST",
         "url": "/sws/neo/warehouse/storageBin/{id}/action/changeStatus",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "provenance": "extracted",
         "processId": "3A4E13B0AB764F188CB062DDE2A9B685",
         "processType": "obuiapp"
       },
       {
+        "name": "manualcostadjustment",
+        "label": "Manualcostadjustment",
+        "actionType": "utilityAction",
         "entity": "productTransactions",
-        "field": "manualcostadjustment",
         "column": "Manualcostadjustment",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/warehouse/productTransactions/{id}/action/manualcostadjustment",
+        "method": "POST",
         "url": "/sws/neo/warehouse/productTransactions/{id}/action/manualcostadjustment",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "provenance": "extracted",
         "processId": "D395B727675C45C98320F8A40E0768E7",
         "processType": "obuiapp"
       }

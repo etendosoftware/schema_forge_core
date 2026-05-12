@@ -198,18 +198,52 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "changeStatus",
+      "label": "Change Status",
+      "actionType": "utilityAction",
       "entity": "storageBin",
-      "field": "changeStatus",
       "column": "Change_Status",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/warehouse/storageBin/{id}/action/changeStatus",
+      "method": "POST",
       "url": "/sws/neo/warehouse/storageBin/{id}/action/changeStatus",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "3A4E13B0AB764F188CB062DDE2A9B685",
       "processType": "obuiapp"
     },
     {
+      "name": "manualcostadjustment",
+      "label": "Manualcostadjustment",
+      "actionType": "utilityAction",
       "entity": "productTransactions",
-      "field": "manualcostadjustment",
       "column": "Manualcostadjustment",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/warehouse/productTransactions/{id}/action/manualcostadjustment",
+      "method": "POST",
       "url": "/sws/neo/warehouse/productTransactions/{id}/action/manualcostadjustment",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "D395B727675C45C98320F8A40E0768E7",
       "processType": "obuiapp"
     }

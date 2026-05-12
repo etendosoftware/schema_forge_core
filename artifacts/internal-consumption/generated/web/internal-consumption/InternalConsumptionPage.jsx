@@ -115,18 +115,88 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "processNow",
+      "label": "Process Internal Consumption",
+      "actionType": "documentAction",
       "entity": "internalConsumption",
-      "field": "processNow",
       "column": "Processing",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/internal-consumption/internalConsumption/{id}/action/processNow",
+      "method": "POST",
       "url": "/sws/neo/internal-consumption/internalConsumption/{id}/action/processNow",
+      "parameters": [
+        {
+          "name": "docAction",
+          "type": "string",
+          "required": true,
+          "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+        }
+      ],
+      "preconditions": [
+        {
+          "field": "documentStatus",
+          "operator": "in",
+          "values": [
+            "DR",
+            "IP"
+          ],
+          "description": "Document must be in draft or in-progress state"
+        }
+      ],
+      "effects": [
+        "Updates document status",
+        "May trigger workflow transitions"
+      ],
+      "dryRunSupported": true,
+      "edgeCases": [
+        "Document is already completed or closed",
+        "Document has pending lines or missing required fields",
+        "User lacks permission to execute the action"
+      ],
+      "provenance": "extracted",
       "processId": "800131",
       "processType": "classic"
     },
     {
+      "name": "posted",
+      "label": "Posted",
+      "actionType": "documentAction",
       "entity": "internalConsumption",
-      "field": "posted",
       "column": "Posted",
-      "url": "/sws/neo/internal-consumption/internalConsumption/{id}/action/posted"
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/internal-consumption/internalConsumption/{id}/action/posted",
+      "method": "POST",
+      "url": "/sws/neo/internal-consumption/internalConsumption/{id}/action/posted",
+      "parameters": [
+        {
+          "name": "docAction",
+          "type": "string",
+          "required": true,
+          "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+        }
+      ],
+      "preconditions": [
+        {
+          "field": "documentStatus",
+          "operator": "in",
+          "values": [
+            "DR",
+            "IP"
+          ],
+          "description": "Document must be in draft or in-progress state"
+        }
+      ],
+      "effects": [
+        "Updates document status",
+        "May trigger workflow transitions"
+      ],
+      "dryRunSupported": true,
+      "edgeCases": [
+        "Document is already completed or closed",
+        "Document has pending lines or missing required fields",
+        "User lacks permission to execute the action"
+      ],
+      "provenance": "extracted"
     }
   ],
   "queryParams": {

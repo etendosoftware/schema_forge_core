@@ -720,6 +720,167 @@ function buildSelectorContext(field, windowCategory) {
   return Object.keys(context).length > 0 ? context : null;
 }
 
+// ─── Action classification helpers for ETP-3956 ──────────────────────────────
+
+/**
+ * Infer action type from field name, column, and window category.
+ */
+function inferActionType(field, windowCategory) {
+  const name = (field.name || '').toLowerCase();
+  const column = (field.column || '').toLowerCase();
+
+  if (name === 'documentaction' || column === 'docaction') return 'documentAction';
+  if (name === 'processnow') return 'documentAction';
+
+  const lifecyclePatterns = ['complete', 'void', 'reactivate', 'close', 'reverse', 'post', 'approve', 'reject'];
+  if (lifecyclePatterns.some(p => name.includes(p))) return 'documentAction';
+
+  if (name.includes('aprm') || name.includes('payment')) return 'paymentAction';
+
+  if (name.includes('create') || name.includes('generate') || name.includes('copyfrom') ||
+      name.includes('pickfrom') || name.includes('receive') || name.includes('send')) return 'createFrom';
+
+  return 'utilityAction';
+}
+
+/**
+ * Infer action parameters from action type and field metadata.
+ */
+function inferActionParameters(field, actionType, curated) {
+  if (curated?.parameters) return curated.parameters;
+
+  const params = [];
+  if (actionType === 'documentAction') {
+    params.push({
+      name: 'docAction',
+      type: 'string',
+      required: true,
+      description: 'Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)',
+    });
+  }
+  return params;
+}
+
+/**
+ * Infer preconditions from action type and field metadata.
+ */
+function inferActionPreconditions(field, actionType, curated) {
+  if (curated?.preconditions) return curated.preconditions;
+
+  if (actionType === 'documentAction') {
+    return [{
+      field: 'documentStatus',
+      operator: 'in',
+      values: ['DR', 'IP'],
+      description: 'Document must be in draft or in-progress state',
+    }];
+  }
+  return [];
+}
+
+/**
+ * Infer side effects from action type.
+ */
+function inferActionEffects(field, actionType) {
+  switch (actionType) {
+    case 'documentAction':
+      return ['Updates document status', 'May trigger workflow transitions'];
+    case 'paymentAction':
+      return ['Creates or processes payment records', 'May update invoice/order payment status'];
+    case 'createFrom':
+      return ['Creates child or related records', 'May copy data from source document'];
+    default:
+      return ['May update related records'];
+  }
+}
+
+/**
+ * Infer edge cases for an action.
+ */
+function inferEdgeCases(field, actionType) {
+  switch (actionType) {
+    case 'documentAction':
+      return [
+        'Document is already completed or closed',
+        'Document has pending lines or missing required fields',
+        'User lacks permission to execute the action',
+      ];
+    case 'paymentAction':
+      return [
+        'Payment amount exceeds remaining balance',
+        'Payment method is not configured for the business partner',
+        'Invoice is already fully paid',
+      ];
+    case 'createFrom':
+      return [
+        'Source document has no valid lines to copy',
+        'Target entity already has linked records',
+        'Required reference data is missing (price list, warehouse, etc.)',
+      ];
+    default:
+      return [
+        'Required context is missing',
+        'User lacks permission',
+        'Record is in an incompatible state',
+      ];
+  }
+}
+
+/**
+ * Classify an action field into a structured action model for agents.
+ *
+ * @param {object} field - Button field from schema entity
+ * @param {string} entityName - Entity name (header, lines, etc.)
+ * @param {string} specName - Spec name (kebab-case)
+ * @param {string} windowCategory - Window category (sales, purchases, etc.)
+ * @param {object} decisionsActions - Curated action overrides from decisions.json
+ * @returns {object} Enriched action entry
+ */
+function classifyAction(field, entityName, specName, windowCategory, decisionsActions) {
+  const curated = decisionsActions?.[field.name] ?? decisionsActions?.[field.column] ?? null;
+  const actionType = inferActionType(field, windowCategory);
+  const label = curated?.label ?? field.label ?? field.name;
+  const endpoint = `/sws/neo/${specName}/${entityName}/{id}/action/${field.name}`;
+  const requiresRecord = true;
+  const parameters = inferActionParameters(field, actionType, curated);
+  const preconditions = inferActionPreconditions(field, actionType, curated);
+  const effects = curated?.effects ?? inferActionEffects(field, actionType);
+  const dryRunSupported = curated?.dryRunSupported ?? (actionType === 'documentAction');
+  const edgeCases = curated?.edgeCases ?? inferEdgeCases(field, actionType);
+
+  const action = {
+    name: field.name,
+    label,
+    actionType,
+    entity: entityName,
+    column: field.column,
+    requiresRecord,
+    endpoint,
+    method: 'POST',
+    url: endpoint,
+    parameters,
+    preconditions,
+    effects,
+    dryRunSupported,
+    edgeCases,
+    provenance: curated ? 'curated' : 'extracted',
+  };
+
+  if (field.processId) action.processId = field.processId;
+  if (field.processType) action.processType = field.processType;
+  if (curated?.description) action.description = curated.description;
+  if (curated?.allowedValues) {
+    const paramName = curated.paramName || 'docAction';
+    action.parameters = action.parameters.map(p =>
+      p.name === paramName ? { ...p, allowedValues: curated.allowedValues } : p
+    );
+  }
+
+  return action;
+}
+
+// ─── End action classification helpers ───────────────────────────────────────
+
 /**
  * Generate API prediction: predicts NEO Headless URLs, selectors, actions, and query params.
  */
@@ -769,16 +930,10 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
     }
 
     // Actions — fields with type "button" (AD_Reference_ID = 28)
+    const decisionsActions = schema.window?.actions ?? {};
     for (const field of entity.fields) {
       if (field.type === 'button') {
-        const action = {
-          entity: entityName,
-          field: field.name,
-          column: field.column,
-          url: `${baseUrl}/${entityName}/{id}/action/${field.name}`,
-        };
-        if (field.processId) action.processId = field.processId;
-        if (field.processType) action.processType = field.processType;
+        const action = classifyAction(field, entityName, specName, windowCategory, decisionsActions);
         actions.push(action);
       }
     }
@@ -796,7 +951,7 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
 
   const seenActions = new Set();
   const dedupedActions = actions.filter(a => {
-    const key = `${a.entity}:${a.field}`;
+    const key = `${a.entity}:${a.name}`;
     if (seenActions.has(key)) return false;
     seenActions.add(key);
     return true;
@@ -907,12 +1062,12 @@ export function generateContract(schema, rules = [], processes = [], previousVer
 
   for (const action of apiPrediction.actions) {
     testManifest.tests.push({
-      id: makeId('action-endpoint', action.entity, action.field),
+      id: makeId('action-endpoint', action.entity, action.name),
       category: 'action-endpoint',
       entity: action.entity,
-      field: action.field,
+      field: action.name,
       runner: 'node',
-      description: `Action endpoint for '${action.field}' in ${action.entity} should exist`,
+      description: `Action endpoint for '${action.name}' in ${action.entity} should exist`,
     });
   }
   delete testManifest._makeId;

@@ -132,34 +132,139 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "generateList",
+      "label": "Create Inventory Count List",
+      "actionType": "createFrom",
       "entity": "inventory",
-      "field": "generateList",
       "column": "GenerateList",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/physical-inventory/inventory/{id}/action/generateList",
+      "method": "POST",
       "url": "/sws/neo/physical-inventory/inventory/{id}/action/generateList",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates child or related records",
+        "May copy data from source document"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Source document has no valid lines to copy",
+        "Target entity already has linked records",
+        "Required reference data is missing (price list, warehouse, etc.)"
+      ],
+      "provenance": "extracted",
       "processId": "105",
       "processType": "classic"
     },
     {
+      "name": "updateQuantities",
+      "label": "Update Quantity",
+      "actionType": "utilityAction",
       "entity": "inventory",
-      "field": "updateQuantities",
       "column": "UpdateQty",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/physical-inventory/inventory/{id}/action/updateQuantities",
+      "method": "POST",
       "url": "/sws/neo/physical-inventory/inventory/{id}/action/updateQuantities",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "106",
       "processType": "classic"
     },
     {
+      "name": "processNow",
+      "label": "Process Inventory Count",
+      "actionType": "documentAction",
       "entity": "inventory",
-      "field": "processNow",
       "column": "Processing",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/physical-inventory/inventory/{id}/action/processNow",
+      "method": "POST",
       "url": "/sws/neo/physical-inventory/inventory/{id}/action/processNow",
+      "parameters": [
+        {
+          "name": "docAction",
+          "type": "string",
+          "required": true,
+          "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+        }
+      ],
+      "preconditions": [
+        {
+          "field": "documentStatus",
+          "operator": "in",
+          "values": [
+            "DR",
+            "IP"
+          ],
+          "description": "Document must be in draft or in-progress state"
+        }
+      ],
+      "effects": [
+        "Updates document status",
+        "May trigger workflow transitions"
+      ],
+      "dryRunSupported": true,
+      "edgeCases": [
+        "Document is already completed or closed",
+        "Document has pending lines or missing required fields",
+        "User lacks permission to execute the action"
+      ],
+      "provenance": "extracted",
       "processId": "107",
       "processType": "classic"
     },
     {
+      "name": "posted",
+      "label": "Posted",
+      "actionType": "documentAction",
       "entity": "inventory",
-      "field": "posted",
       "column": "Posted",
-      "url": "/sws/neo/physical-inventory/inventory/{id}/action/posted"
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/physical-inventory/inventory/{id}/action/posted",
+      "method": "POST",
+      "url": "/sws/neo/physical-inventory/inventory/{id}/action/posted",
+      "parameters": [
+        {
+          "name": "docAction",
+          "type": "string",
+          "required": true,
+          "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+        }
+      ],
+      "preconditions": [
+        {
+          "field": "documentStatus",
+          "operator": "in",
+          "values": [
+            "DR",
+            "IP"
+          ],
+          "description": "Document must be in draft or in-progress state"
+        }
+      ],
+      "effects": [
+        "Updates document status",
+        "May trigger workflow transitions"
+      ],
+      "dryRunSupported": true,
+      "edgeCases": [
+        "Document is already completed or closed",
+        "Document has pending lines or missing required fields",
+        "User lacks permission to execute the action"
+      ],
+      "provenance": "extracted"
     }
   ],
   "queryParams": {

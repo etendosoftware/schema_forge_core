@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T19:05:48.778Z",
-  "updatedAt": "2026-05-11T16:22:46.452Z",
-  "checksum": "c9c20297c85666a0",
+  "updatedAt": "2026-05-15T16:28:10.888Z",
+  "checksum": "88255395011d7d55",
   "frontendContract": {
     "window": {
       "id": "170",
@@ -909,26 +909,113 @@
     ],
     "actions": [
       {
+        "name": "moveBetweenLocators",
+        "label": "Move a Storage Bin",
+        "actionType": "utilityAction",
         "entity": "movement",
-        "field": "moveBetweenLocators",
         "column": "Move_FromTo_Locator",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/goods-movements/movement/{id}/action/moveBetweenLocators",
+        "method": "POST",
         "url": "/sws/neo/goods-movements/movement/{id}/action/moveBetweenLocators",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "provenance": "extracted",
         "processId": "800048",
         "processType": "classic"
       },
       {
+        "name": "processNow",
+        "label": "Process Movements",
+        "actionType": "documentAction",
         "entity": "movement",
-        "field": "processNow",
         "column": "Processing",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/goods-movements/movement/{id}/action/processNow",
+        "method": "POST",
         "url": "/sws/neo/goods-movements/movement/{id}/action/processNow",
+        "parameters": [
+          {
+            "name": "docAction",
+            "type": "string",
+            "required": true,
+            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+          }
+        ],
+        "preconditions": [
+          {
+            "field": "documentStatus",
+            "operator": "in",
+            "values": [
+              "DR",
+              "IP"
+            ],
+            "description": "Document must be in draft or in-progress state"
+          }
+        ],
+        "effects": [
+          "Updates document status",
+          "May trigger workflow transitions"
+        ],
+        "dryRunSupported": true,
+        "edgeCases": [
+          "Document is already completed or closed",
+          "Document has pending lines or missing required fields",
+          "User lacks permission to execute the action"
+        ],
+        "provenance": "extracted",
         "processId": "122",
         "processType": "classic"
       },
       {
+        "name": "posted",
+        "label": "Posted",
+        "actionType": "documentAction",
         "entity": "movement",
-        "field": "posted",
         "column": "Posted",
-        "url": "/sws/neo/goods-movements/movement/{id}/action/posted"
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/goods-movements/movement/{id}/action/posted",
+        "method": "POST",
+        "url": "/sws/neo/goods-movements/movement/{id}/action/posted",
+        "parameters": [
+          {
+            "name": "docAction",
+            "type": "string",
+            "required": true,
+            "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+          }
+        ],
+        "preconditions": [
+          {
+            "field": "documentStatus",
+            "operator": "in",
+            "values": [
+              "DR",
+              "IP"
+            ],
+            "description": "Document must be in draft or in-progress state"
+          }
+        ],
+        "effects": [
+          "Updates document status",
+          "May trigger workflow transitions"
+        ],
+        "dryRunSupported": true,
+        "edgeCases": [
+          "Document is already completed or closed",
+          "Document has pending lines or missing required fields",
+          "User lacks permission to execute the action"
+        ],
+        "provenance": "extracted"
       }
     ],
     "queryParams": {

@@ -1,8 +1,8 @@
 {
   "version": "0.2.0",
   "generatedAt": "2026-04-29T19:06:30.936Z",
-  "updatedAt": "2026-05-12T19:44:17.750Z",
-  "checksum": "8c7c01cd5d0bc19e",
+  "updatedAt": "2026-05-15T16:28:11.413Z",
+  "checksum": "dec6704ae8f567a8",
   "frontendContract": {
     "window": {
       "id": "800027",
@@ -1820,18 +1820,52 @@
     ],
     "actions": [
       {
+        "name": "processed",
+        "label": "Create Amortization",
+        "actionType": "utilityAction",
         "entity": "assets",
-        "field": "processed",
         "column": "Processed",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/assets/assets/{id}/action/processed",
+        "method": "POST",
         "url": "/sws/neo/assets/assets/{id}/action/processed",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "provenance": "extracted",
         "processId": "800125",
         "processType": "classic"
       },
       {
+        "name": "processAsset",
+        "label": "Generate Amortization Plan",
+        "actionType": "utilityAction",
         "entity": "assets",
-        "field": "processAsset",
         "column": "Process_Asset",
+        "requiresRecord": true,
+        "endpoint": "/sws/neo/assets/assets/{id}/action/processAsset",
+        "method": "POST",
         "url": "/sws/neo/assets/assets/{id}/action/processAsset",
+        "parameters": [],
+        "preconditions": [],
+        "effects": [
+          "May update related records"
+        ],
+        "dryRunSupported": false,
+        "edgeCases": [
+          "Required context is missing",
+          "User lacks permission",
+          "Record is in an incompatible state"
+        ],
+        "provenance": "extracted",
         "processId": "85601427EAEE401FA0250FF0A6DD62EF",
         "processType": "classic"
       }

@@ -864,10 +864,21 @@ describe('generateApiPrediction', () => {
     const bc = generateBackendContract(buttonSchema);
     const prediction = generateApiPrediction(buttonSchema, fc, bc);
     assert.equal(prediction.actions.length, 1);
-    assert.equal(prediction.actions[0].field, 'docAction');
-    assert.equal(prediction.actions[0].column, 'DocAction');
-    assert.equal(prediction.actions[0].url,
+    const action = prediction.actions[0];
+    assert.equal(action.name, 'docAction');
+    assert.equal(action.column, 'DocAction');
+    assert.equal(action.url,
       '/sws/neo/purchase-invoice/invoice/{id}/action/docAction');
+    assert.equal(action.actionType, 'documentAction');
+    assert.equal(action.entity, 'invoice');
+    assert.ok(action.requiresRecord);
+    assert.ok(Array.isArray(action.parameters));
+    assert.ok(Array.isArray(action.preconditions));
+    assert.ok(Array.isArray(action.effects));
+    assert.ok(Array.isArray(action.edgeCases));
+    assert.equal(action.edgeCases.length >= 3, true);
+    assert.equal(action.provenance, 'extracted');
+    assert.equal(action.dryRunSupported, true);
   });
 
   it('actions is empty array when no button fields exist', () => {
@@ -1278,5 +1289,165 @@ describe('generateApiPrediction — selector context metadata (ETP-3955)', () =>
     const catSelector = prediction.selectors.find(s => s.field === 'category');
     // No dependsOn, no validationRule cascade params, not a priceList -> no context
     assert.equal(catSelector.context, undefined, 'simple FK without context should have no context metadata');
+  });
+});
+
+// ─── Action Classification Metadata (ETP-3956) ────────────────────────────────
+
+describe('generateApiPrediction — action classification (ETP-3956)', () => {
+  const actionSchema = {
+    version: '0.1.0',
+    window: { id: '800', name: 'Action Test', primaryEntity: 'header', category: 'sales' },
+    entities: [{
+      name: 'header',
+      table: 'C_Test',
+      level: 'header',
+      fields: [
+        { name: 'documentAction', column: 'DocAction', type: 'button',
+          processId: '104', processType: 'classic', label: 'Document Action' },
+        { name: 'completeDocument', column: 'Complete', type: 'button',
+          processId: 'ABC123', processType: 'obuiapp' },
+        { name: 'aPRMAddPayment', column: 'EM_APRM_Add', type: 'button',
+          processId: 'PAY001', processType: 'obuiapp' },
+        { name: 'createLinesFrom', column: 'CreateLines', type: 'button',
+          processId: 'CL001', processType: 'classic' },
+        { name: 'recalculate', column: 'Recalculate', type: 'button' },
+      ],
+    }],
+  };
+
+  it('documentAction is classified as documentAction type', () => {
+    const fc = generateFrontendContract(actionSchema);
+    const bc = generateBackendContract(actionSchema);
+    const prediction = generateApiPrediction(actionSchema, fc, bc);
+    const docAction = prediction.actions.find(a => a.name === 'documentAction');
+    assert.ok(docAction);
+    assert.equal(docAction.actionType, 'documentAction');
+    assert.equal(docAction.dryRunSupported, true);
+    assert.equal(docAction.provenance, 'extracted');
+  });
+
+  it('complete pattern is classified as documentAction', () => {
+    const fc = generateFrontendContract(actionSchema);
+    const bc = generateBackendContract(actionSchema);
+    const prediction = generateApiPrediction(actionSchema, fc, bc);
+    const complete = prediction.actions.find(a => a.name === 'completeDocument');
+    assert.ok(complete);
+    assert.equal(complete.actionType, 'documentAction');
+  });
+
+  it('APRM pattern is classified as paymentAction', () => {
+    const fc = generateFrontendContract(actionSchema);
+    const bc = generateBackendContract(actionSchema);
+    const prediction = generateApiPrediction(actionSchema, fc, bc);
+    const payment = prediction.actions.find(a => a.name === 'aPRMAddPayment');
+    assert.ok(payment);
+    assert.equal(payment.actionType, 'paymentAction');
+  });
+
+  it('create pattern is classified as createFrom', () => {
+    const fc = generateFrontendContract(actionSchema);
+    const bc = generateBackendContract(actionSchema);
+    const prediction = generateApiPrediction(actionSchema, fc, bc);
+    const create = prediction.actions.find(a => a.name === 'createLinesFrom');
+    assert.ok(create);
+    assert.equal(create.actionType, 'createFrom');
+    assert.equal(create.requiresRecord, true);
+  });
+
+  it('unknown button is classified as utilityAction', () => {
+    const fc = generateFrontendContract(actionSchema);
+    const bc = generateBackendContract(actionSchema);
+    const prediction = generateApiPrediction(actionSchema, fc, bc);
+    const util = prediction.actions.find(a => a.name === 'recalculate');
+    assert.ok(util);
+    assert.equal(util.actionType, 'utilityAction');
+  });
+
+  it('every action has at least 3 edge cases', () => {
+    const fc = generateFrontendContract(actionSchema);
+    const bc = generateBackendContract(actionSchema);
+    const prediction = generateApiPrediction(actionSchema, fc, bc);
+    for (const action of prediction.actions) {
+      assert.ok(Array.isArray(action.edgeCases), `${action.name} should have edgeCases array`);
+      assert.ok(action.edgeCases.length >= 3, `${action.name} should have >= 3 edge cases, got ${action.edgeCases.length}`);
+    }
+  });
+
+  it('documentAction has docAction parameter', () => {
+    const fc = generateFrontendContract(actionSchema);
+    const bc = generateBackendContract(actionSchema);
+    const prediction = generateApiPrediction(actionSchema, fc, bc);
+    const docAction = prediction.actions.find(a => a.name === 'documentAction');
+    assert.ok(docAction.parameters.length > 0);
+    assert.equal(docAction.parameters[0].name, 'docAction');
+    assert.equal(docAction.parameters[0].required, true);
+  });
+
+  it('actions expose explicit POST endpoint metadata', () => {
+    const fc = generateFrontendContract(actionSchema);
+    const bc = generateBackendContract(actionSchema);
+    const prediction = generateApiPrediction(actionSchema, fc, bc);
+    const docAction = prediction.actions.find(a => a.name === 'documentAction');
+    assert.equal(docAction.method, 'POST');
+    assert.equal(docAction.endpoint, '/sws/neo/action-test/header/{id}/action/documentAction');
+    assert.equal(docAction.url, docAction.endpoint);
+  });
+
+  it('documentAction has preconditions on documentStatus', () => {
+    const fc = generateFrontendContract(actionSchema);
+    const bc = generateBackendContract(actionSchema);
+    const prediction = generateApiPrediction(actionSchema, fc, bc);
+    const docAction = prediction.actions.find(a => a.name === 'documentAction');
+    assert.ok(docAction.preconditions.length > 0);
+    const statusPre = docAction.preconditions.find(p => p.field === 'documentStatus');
+    assert.ok(statusPre);
+    assert.deepEqual(statusPre.values, ['DR', 'IP']);
+  });
+
+  it('curated action overrides are applied from window.actions', () => {
+    const curatedSchema = {
+      ...actionSchema,
+      window: {
+        ...actionSchema.window,
+        actions: {
+          documentAction: {
+            label: 'Complete Document',
+            description: 'Complete the sales order',
+            dryRunSupported: false,
+            effects: ['Locks the document', 'Creates accounting entries'],
+            edgeCases: ['Custom edge 1', 'Custom edge 2', 'Custom edge 3'],
+            allowedValues: ['CO', 'PR'],
+            paramName: 'docAction',
+          },
+        },
+      },
+    };
+    const fc = generateFrontendContract(curatedSchema);
+    const bc = generateBackendContract(curatedSchema);
+    const prediction = generateApiPrediction(curatedSchema, fc, bc);
+    const docAction = prediction.actions.find(a => a.name === 'documentAction');
+    assert.ok(docAction);
+    assert.equal(docAction.label, 'Complete Document');
+    assert.equal(docAction.description, 'Complete the sales order');
+    assert.equal(docAction.dryRunSupported, false);
+    assert.equal(docAction.provenance, 'curated');
+    assert.deepEqual(docAction.effects, ['Locks the document', 'Creates accounting entries']);
+    assert.deepEqual(docAction.edgeCases, ['Custom edge 1', 'Custom edge 2', 'Custom edge 3']);
+    const param = docAction.parameters.find(p => p.name === 'docAction');
+    assert.ok(param);
+    assert.deepEqual(param.allowedValues, ['CO', 'PR']);
+  });
+
+  it('action testManifest entries use action.name', () => {
+    const fc = generateFrontendContract(actionSchema);
+    const bc = generateBackendContract(actionSchema);
+    const contract = generateContract(actionSchema);
+    const actionTests = contract.testManifest.tests.filter(t => t.category === 'action-endpoint');
+    assert.ok(actionTests.length > 0);
+    for (const t of actionTests) {
+      assert.ok(t.field, 'test should have field property');
+      assert.ok(t.entity, 'test should have entity property');
+    }
   });
 });

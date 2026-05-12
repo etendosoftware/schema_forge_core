@@ -126,26 +126,113 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "moveBetweenLocators",
+      "label": "Move a Storage Bin",
+      "actionType": "utilityAction",
       "entity": "movement",
-      "field": "moveBetweenLocators",
       "column": "Move_FromTo_Locator",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/goods-movements/movement/{id}/action/moveBetweenLocators",
+      "method": "POST",
       "url": "/sws/neo/goods-movements/movement/{id}/action/moveBetweenLocators",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "800048",
       "processType": "classic"
     },
     {
+      "name": "processNow",
+      "label": "Process Movements",
+      "actionType": "documentAction",
       "entity": "movement",
-      "field": "processNow",
       "column": "Processing",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/goods-movements/movement/{id}/action/processNow",
+      "method": "POST",
       "url": "/sws/neo/goods-movements/movement/{id}/action/processNow",
+      "parameters": [
+        {
+          "name": "docAction",
+          "type": "string",
+          "required": true,
+          "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+        }
+      ],
+      "preconditions": [
+        {
+          "field": "documentStatus",
+          "operator": "in",
+          "values": [
+            "DR",
+            "IP"
+          ],
+          "description": "Document must be in draft or in-progress state"
+        }
+      ],
+      "effects": [
+        "Updates document status",
+        "May trigger workflow transitions"
+      ],
+      "dryRunSupported": true,
+      "edgeCases": [
+        "Document is already completed or closed",
+        "Document has pending lines or missing required fields",
+        "User lacks permission to execute the action"
+      ],
+      "provenance": "extracted",
       "processId": "122",
       "processType": "classic"
     },
     {
+      "name": "posted",
+      "label": "Posted",
+      "actionType": "documentAction",
       "entity": "movement",
-      "field": "posted",
       "column": "Posted",
-      "url": "/sws/neo/goods-movements/movement/{id}/action/posted"
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/goods-movements/movement/{id}/action/posted",
+      "method": "POST",
+      "url": "/sws/neo/goods-movements/movement/{id}/action/posted",
+      "parameters": [
+        {
+          "name": "docAction",
+          "type": "string",
+          "required": true,
+          "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+        }
+      ],
+      "preconditions": [
+        {
+          "field": "documentStatus",
+          "operator": "in",
+          "values": [
+            "DR",
+            "IP"
+          ],
+          "description": "Document must be in draft or in-progress state"
+        }
+      ],
+      "effects": [
+        "Updates document status",
+        "May trigger workflow transitions"
+      ],
+      "dryRunSupported": true,
+      "edgeCases": [
+        "Document is already completed or closed",
+        "Document has pending lines or missing required fields",
+        "User lacks permission to execute the action"
+      ],
+      "provenance": "extracted"
     }
   ],
   "queryParams": {

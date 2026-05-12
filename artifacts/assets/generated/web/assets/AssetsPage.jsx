@@ -145,18 +145,52 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "processed",
+      "label": "Create Amortization",
+      "actionType": "utilityAction",
       "entity": "assets",
-      "field": "processed",
       "column": "Processed",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/assets/assets/{id}/action/processed",
+      "method": "POST",
       "url": "/sws/neo/assets/assets/{id}/action/processed",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "800125",
       "processType": "classic"
     },
     {
+      "name": "processAsset",
+      "label": "Generate Amortization Plan",
+      "actionType": "utilityAction",
       "entity": "assets",
-      "field": "processAsset",
       "column": "Process_Asset",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/assets/assets/{id}/action/processAsset",
+      "method": "POST",
       "url": "/sws/neo/assets/assets/{id}/action/processAsset",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "85601427EAEE401FA0250FF0A6DD62EF",
       "processType": "classic"
     }

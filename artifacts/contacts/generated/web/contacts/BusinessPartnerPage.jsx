@@ -546,7 +546,16 @@ export const api = {
       "column": "AD_User_ID",
       "reference": "User",
       "inputMode": "selector",
-      "url": "/sws/neo/contacts/bankAccount/selectors/userContact"
+      "url": "/sws/neo/contacts/bankAccount/selectors/userContact",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "parentField",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "documentType",
@@ -575,50 +584,170 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "setNewCurrency",
+      "label": "Set New Currency",
+      "actionType": "utilityAction",
       "entity": "businessPartner",
-      "field": "setNewCurrency",
       "column": "Update_Currency",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/contacts/businessPartner/{id}/action/setNewCurrency",
+      "method": "POST",
       "url": "/sws/neo/contacts/businessPartner/{id}/action/setNewCurrency",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "B5C942145F354ABEBC9F16235D80D776",
       "processType": "obuiapp"
     },
     {
+      "name": "setNewCurrency",
+      "label": "Update_Currency",
+      "actionType": "utilityAction",
       "entity": "customer",
-      "field": "setNewCurrency",
       "column": "Update_Currency",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/contacts/customer/{id}/action/setNewCurrency",
+      "method": "POST",
       "url": "/sws/neo/contacts/customer/{id}/action/setNewCurrency",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "B5C942145F354ABEBC9F16235D80D776",
       "processType": "obuiapp"
     },
     {
+      "name": "setNewCurrency",
+      "label": "Update_Currency",
+      "actionType": "utilityAction",
       "entity": "vendorCreditor",
-      "field": "setNewCurrency",
       "column": "Update_Currency",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/contacts/vendorCreditor/{id}/action/setNewCurrency",
+      "method": "POST",
       "url": "/sws/neo/contacts/vendorCreditor/{id}/action/setNewCurrency",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "B5C942145F354ABEBC9F16235D80D776",
       "processType": "obuiapp"
     },
     {
+      "name": "setNewCurrency",
+      "label": "Update_Currency",
+      "actionType": "utilityAction",
       "entity": "employee",
-      "field": "setNewCurrency",
       "column": "Update_Currency",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/contacts/employee/{id}/action/setNewCurrency",
+      "method": "POST",
       "url": "/sws/neo/contacts/employee/{id}/action/setNewCurrency",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "B5C942145F354ABEBC9F16235D80D776",
       "processType": "obuiapp"
     },
     {
+      "name": "grantPortalAccess",
+      "label": "Grant Portal Access",
+      "actionType": "utilityAction",
       "entity": "contact",
-      "field": "grantPortalAccess",
       "column": "Grant_Portal_Access",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/contacts/contact/{id}/action/grantPortalAccess",
+      "method": "POST",
       "url": "/sws/neo/contacts/contact/{id}/action/grantPortalAccess",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "May update related records"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Required context is missing",
+        "User lacks permission",
+        "Record is in an incompatible state"
+      ],
+      "provenance": "extracted",
       "processId": "97FFD59B991D49BFB5153C309B009272",
       "processType": "obuiapp"
     },
     {
+      "name": "processNow",
+      "label": "Process Now",
+      "actionType": "documentAction",
       "entity": "contact",
-      "field": "processNow",
       "column": "Processing",
-      "url": "/sws/neo/contacts/contact/{id}/action/processNow"
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/contacts/contact/{id}/action/processNow",
+      "method": "POST",
+      "url": "/sws/neo/contacts/contact/{id}/action/processNow",
+      "parameters": [
+        {
+          "name": "docAction",
+          "type": "string",
+          "required": true,
+          "description": "Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)"
+        }
+      ],
+      "preconditions": [
+        {
+          "field": "documentStatus",
+          "operator": "in",
+          "values": [
+            "DR",
+            "IP"
+          ],
+          "description": "Document must be in draft or in-progress state"
+        }
+      ],
+      "effects": [
+        "Updates document status",
+        "May trigger workflow transitions"
+      ],
+      "dryRunSupported": true,
+      "edgeCases": [
+        "Document is already completed or closed",
+        "Document has pending lines or missing required fields",
+        "User lacks permission to execute the action"
+      ],
+      "provenance": "extracted"
     }
   ],
   "queryParams": {

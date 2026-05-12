@@ -142,18 +142,54 @@ export const api = {
   ],
   "actions": [
     {
+      "name": "create",
+      "label": "Create Price List",
+      "actionType": "createFrom",
       "entity": "priceListVersion",
-      "field": "create",
       "column": "ProcCreate",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/price-list/priceListVersion/{id}/action/create",
+      "method": "POST",
       "url": "/sws/neo/price-list/priceListVersion/{id}/action/create",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates child or related records",
+        "May copy data from source document"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Source document has no valid lines to copy",
+        "Target entity already has linked records",
+        "Required reference data is missing (price list, warehouse, etc.)"
+      ],
+      "provenance": "extracted",
       "processId": "103",
       "processType": "classic"
     },
     {
+      "name": "generatePriceListVersion",
+      "label": "Create Price List Version",
+      "actionType": "createFrom",
       "entity": "priceListVersion",
-      "field": "generatePriceListVersion",
       "column": "M_Pricelist_Version_Generate",
+      "requiresRecord": true,
+      "endpoint": "/sws/neo/price-list/priceListVersion/{id}/action/generatePriceListVersion",
+      "method": "POST",
       "url": "/sws/neo/price-list/priceListVersion/{id}/action/generatePriceListVersion",
+      "parameters": [],
+      "preconditions": [],
+      "effects": [
+        "Creates child or related records",
+        "May copy data from source document"
+      ],
+      "dryRunSupported": false,
+      "edgeCases": [
+        "Source document has no valid lines to copy",
+        "Target entity already has linked records",
+        "Required reference data is missing (price list, warehouse, etc.)"
+      ],
+      "provenance": "extracted",
       "processId": "800069",
       "processType": "classic"
     }
