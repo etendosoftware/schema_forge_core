@@ -181,7 +181,7 @@ function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus
       );
     }
     return (
-      <div className="w-full">
+      <div className="w-full" data-testid={`field-${col.key}`}>
         <SelectorInput
           entityName={entity}
           field={col}
@@ -208,6 +208,7 @@ function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus
     return (
       <select
         ref={inputRef}
+        data-testid={`field-${col.key}`}
         defaultValue={value ?? ''}
         onChange={(e) => onCommit(e.target.value)}
         onKeyDown={(e) => {
@@ -247,6 +248,7 @@ function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus
   return (
     <Input
       ref={inputRef}
+      data-testid={`field-${col.key}`}
       type={inputType}
       defaultValue={formatForEdit(value)}
       onBlur={(e) => onCommit(e.target.value)}
