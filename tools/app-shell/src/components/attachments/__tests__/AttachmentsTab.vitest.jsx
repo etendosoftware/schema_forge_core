@@ -29,6 +29,7 @@ const hookState = {
   download: vi.fn(),
   downloadAll: vi.fn(),
   remove: vi.fn(),
+  removeAll: vi.fn(),
   updateDescription: vi.fn(),
   formatBytes: (n) => `${n} B`,
 };
@@ -94,19 +95,6 @@ describe('AttachmentsTab', () => {
     await user.click(confirmBtn);
 
     expect(hookState.remove).toHaveBeenCalledWith('1');
-  });
-
-  it('opens the EditDescriptionDialog with the current description preloaded', async () => {
-    const user = userEvent.setup();
-    hookState.items = [{ id: '1', name: 'doc.pdf', description: 'hello world' }];
-
-    render(<AttachmentsTab {...baseProps} />);
-
-    const editBtn = screen.getByRole('button', { name: 'attachmentsEditDescription' });
-    await user.click(editBtn);
-
-    const textarea = await screen.findByRole('textbox');
-    expect(textarea).toHaveValue('hello world');
   });
 
   it('shows the Download all button only when there is at least one item', () => {

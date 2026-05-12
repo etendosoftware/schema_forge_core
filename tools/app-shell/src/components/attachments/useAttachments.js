@@ -95,7 +95,7 @@ export function useAttachments({ tableName, recordId, token, apiBaseUrl, isActiv
   // Strip the spec-specific segment so we get the root proxy base for the
   // transversal attachments endpoint (http://host).
   const attachmentsBase = apiBaseUrl
-    ? apiBaseUrl.replace(/\/sws\/neo\/[^/?#]+.*$/, '')
+    ? apiBaseUrl.split('/sws/neo/')[0]
     : '';
 
   const [items, setItems] = useState([]);
@@ -172,7 +172,7 @@ export function useAttachments({ tableName, recordId, token, apiBaseUrl, isActiv
   // ── upload ──────────────────────────────────────────────────────────────
   const upload = useCallback(async (file) => {
     if (!file || !tableName || !recordId) return;
-    const tempId = `upload-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const tempId = `upload-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
     setUploadingFiles((prev) => {
       const next = new Map(prev);
       next.set(tempId, { name: file.name, size: file.size });
