@@ -1122,6 +1122,17 @@ export function DataTable({
     [visibleColumns]
   );
 
+  // ETP-3914 — Mirror InlineLinesPanel: when the quick-actions overlay is enabled,
+  // the last visible column's value is hidden on row hover so the floating action
+  // icons visually take its place (no layout shift). Unlike InlineLinesPanel — which
+  // looks specifically for a trailing `amount` column — headers can end in any type
+  // (status, date, etc.), so we always pick the last visible column.
+  const trailingHoverColumn = useMemo(() => {
+    const enabled = !!rowQuickActions && rowQuickActions.enabled !== false;
+    if (!enabled || visibleColumns.length === 0) return null;
+    return visibleColumns[visibleColumns.length - 1];
+  }, [visibleColumns, rowQuickActions]);
+
   const internalConsumptionWarehouseByLocator = useMemo(
     () => buildWarehouseByLocatorMap(entity, addRow),
     [entity, addRow?.fields, addRow?.catalogs],
@@ -1454,11 +1465,20 @@ export function DataTable({
                         </TableCell>
                       );
                     })()}
-                    {visibleColumns.map(col => (
-                      <TableCell key={col.key} className={['text-sm', NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right tabular-nums' : ''].filter(Boolean).join(' ')}>
-                        {renderCellValue(row, col)}
-                      </TableCell>
-                    ))}
+                    {visibleColumns.map(col => {
+                      const isTrailingHover = trailingHoverColumn != null && col === trailingHoverColumn;
+                      return (
+                        <TableCell key={col.key} className={['text-sm', NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right tabular-nums' : ''].filter(Boolean).join(' ')}>
+                          {isTrailingHover ? (
+                            <span className="block transition-opacity group-hover/row:opacity-0">
+                              {renderCellValue(row, col)}
+                            </span>
+                          ) : (
+                            renderCellValue(row, col)
+                          )}
+                        </TableCell>
+                      );
+                    })}
                     {hoverRowActions ? (
                       <>
                         <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
