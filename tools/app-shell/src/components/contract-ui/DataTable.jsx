@@ -252,6 +252,21 @@ function applyLocalSearch(rows, filters, searchQuery) {
   );
 }
 
+function buildWarehouseByLocatorMap(entity, addRow) {
+  if (entity !== 'internalConsumptionLine') return new Map();
+  const fields = addRow?.fields || [];
+  const catalogs = addRow?.catalogs;
+  const storageBinField = fields.find(f => f.key === 'storageBin');
+  if (!storageBinField || !catalogs) return new Map();
+  const options = getCatalogOptions(catalogs, entity, storageBinField);
+  const map = new Map();
+  for (const opt of options) {
+    if (!opt?.id) continue;
+    map.set(String(opt.id), opt.name || opt.label || opt._identifier || String(opt.id));
+  }
+  return map;
+}
+
 /**
  * Loading skeleton that mimics a table layout.
  */
@@ -1021,20 +1036,10 @@ export function DataTable({
     [visibleColumns]
   );
 
-  const internalConsumptionWarehouseByLocator = useMemo(() => {
-    if (entity !== 'internalConsumptionLine') return new Map();
-    const fields = addRow?.fields || [];
-    const catalogs = addRow?.catalogs;
-    const storageBinField = fields.find(f => f.key === 'storageBin');
-    if (!storageBinField || !catalogs) return new Map();
-    const options = getCatalogOptions(catalogs, entity, storageBinField);
-    const map = new Map();
-    for (const opt of options) {
-      if (!opt?.id) continue;
-      map.set(String(opt.id), opt.name || opt.label || opt._identifier || String(opt.id));
-    }
-    return map;
-  }, [entity, addRow?.fields, addRow?.catalogs]);
+  const internalConsumptionWarehouseByLocator = useMemo(
+    () => buildWarehouseByLocatorMap(entity, addRow),
+    [entity, addRow?.fields, addRow?.catalogs],
+  );
 
   const totals = useMemo(() => {
     if (amountColumns.length === 0) return null;
