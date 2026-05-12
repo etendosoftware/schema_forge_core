@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useCertExpiry } from '../fiscal-config/useCertExpiry.js';
+import CertExpiryBanner from '../fiscal-config/CertExpiryBanner.jsx';
 import { RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext.jsx';
@@ -153,6 +155,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
   const [tbaiInitialFilter, setTbaiInitialFilter] = useState('all');
   const [veriInitialTab,    setVeriInitialTab]    = useState('accepted');
   const [refreshKey,        setRefreshKey]        = useState(0);
+  const [mockCertDays,      setMockCertDays]      = useState(null);
   const [previewInvoice,    setPreviewInvoice]    = useState(null);
   const [previewSpec,       setPreviewSpec]       = useState('sales-invoice');
   const [bpPopup,           setBpPopup]           = useState(null);
@@ -165,6 +168,8 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
     debugMode, debugProfile, setDebugProfile,
     mockData, setMockData, debugOverrideActive,
   } = useDebugState(orgId, token, apiBaseUrl);
+
+  const { daysLeft: certDaysLeft } = useCertExpiry(orgId, token, apiBaseUrl, { mockDaysLeft: mockCertDays });
 
   function handleRefresh() {
     refetch();
@@ -199,6 +204,8 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
       onProfileChange={setDebugProfile}
       mockData={mockData}
       onMockDataChange={setMockData}
+      mockCertDays={mockCertDays}
+      onSetCertDays={setMockCertDays}
     />
   ) : null;
 
@@ -276,6 +283,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
     <div className="relative fm-wrap fm-page">
       <WipBadge ui={ui} />
       <OrgLead org={org} profile={profile} ui={ui} onRefresh={handleRefresh} loading={loading} />
+      <CertExpiryBanner daysLeft={certDaysLeft} variant="subtle" />
 
       {(profile === 'sii' || profile === 'sii-navarra' || profile === 'sii+tbai') && (
         <>

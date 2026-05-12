@@ -8,7 +8,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useUI } from '@/i18n';
 import { useFiscalConfig } from './useFiscalConfig.js';
 import { detectProfile } from './fiscalConfig.utils.js';
+import { useCertExpiry } from './useCertExpiry.js';
 import { useDebugMode } from '../fiscal-monitor/useDebugMode.js';
+import CertExpiryBanner from './CertExpiryBanner.jsx';
 import OnboardingWizard from './OnboardingWizard.jsx';
 import SiiSection from './SiiSection.jsx';
 import TbaiSection from './TbaiSection.jsx';
@@ -25,6 +27,7 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
 
   // mockOverride = null | { key, sii, tbai, verifactu }  (set by debug panel)
   const [mockOverride, setMockOverride] = useState(null);
+  const [mockCertDays, setMockCertDays] = useState(null);
 
   const {
     loading, error, profile,
@@ -39,6 +42,8 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
   const effectiveSii      = mockOverride ? mockOverride.sii      : siiRecord;
   const effectiveTbai     = mockOverride ? mockOverride.tbai     : tbaiRecord;
   const effectiveVerifactu= mockOverride ? mockOverride.verifactu: verifactuRecord;
+
+  const { daysLeft: certDaysLeft } = useCertExpiry(orgId, token, apiBaseUrl, { mockDaysLeft: mockCertDays });
 
   const siiRef  = useRef(null);
   const tbaiRef = useRef(null);
@@ -87,6 +92,8 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
       onDeleted={refetch}
       onSetMock={setMockOverride}
       activeMockKey={mockOverride?.key ?? null}
+      mockCertDays={mockCertDays}
+      onSetCertDays={setMockCertDays}
     />
   ) : null;
 
@@ -142,6 +149,8 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
             </button>
           </div>
         )}
+
+        <CertExpiryBanner daysLeft={certDaysLeft} variant="prominent" />
 
         {!orgId && !mockOverride && (
           <p className="text-sm text-muted-foreground text-center py-12">
