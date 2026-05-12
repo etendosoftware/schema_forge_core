@@ -68,3 +68,26 @@ describe('TbaiMonitorSection — onBpClick wiring', () => {
     assert.match(src, /onBpClick.*businessPartner/);
   });
 });
+
+// Guards: pending status rows open invoice preview instead of the contact popup
+describe('TbaiMonitorSection — pending status opens invoice preview', () => {
+  it('imports isPendingStatus from FmPrimitives', () => {
+    assert.match(src, /isPendingStatus.*from.*FmPrimitives/);
+  });
+
+  it('declares onInvoiceOpen in the function signature', () => {
+    assert.match(src, /onInvoiceOpen\b/);
+  });
+
+  it('onClick callback calls onInvoiceOpen for pending rows', () => {
+    assert.match(src, /isPendingStatus[\s\S]*?onInvoiceOpen/);
+  });
+
+  it('passes the invoice FK field (row.invoice) as first arg to onInvoiceOpen', () => {
+    assert.match(src, /onInvoiceOpen\??\.\(row\.invoice/);
+  });
+
+  it('always uses sales-invoice hint for TBAI (TBAI is sales-only)', () => {
+    assert.match(src, /sales-invoice/);
+  });
+});
