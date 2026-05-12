@@ -244,6 +244,14 @@ function isFalsyBoolean(value) {
   return value === false || value === 'N' || value === 'false';
 }
 
+function applyLocalSearch(rows, filters, searchQuery) {
+  if (!searchQuery) return rows;
+  const q = searchQuery.toLowerCase();
+  return rows.filter(row =>
+    filters.some(key => String(resolveIdentifier(row, key) ?? '').toLowerCase().includes(q)),
+  );
+}
+
 /**
  * Loading skeleton that mimics a table layout.
  */
@@ -995,26 +1003,12 @@ export function DataTable({
   const hasActiveFilter = searchQuery.length > 0 || hasColumnFilter;
 
   const filteredData = useMemo(() => {
-    let result = data;
-
     // If onFilterChange is provided, column filters/sort are handled by the backend;
-    // skip local search + column filter loops. Otherwise apply them client-side.
-    if (!onFilterChange) {
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        result = result.filter(row =>
-          filters.some(key => {
-            const val = resolveIdentifier(row, key);
-            return String(val ?? '').toLowerCase().includes(q);
-          })
-        );
-      }
-    }
-
+    // skip local search loop. Otherwise apply it client-side.
+    const searched = onFilterChange ? data : applyLocalSearch(data, filters, searchQuery);
     // Row-level predicate (e.g. numeric conditions like outstandingAmount > 0)
     // is always applied locally — the backend cannot evaluate arbitrary JS predicates.
-    if (rowFilter) result = result.filter(rowFilter);
-    return result;
+    return rowFilter ? searched.filter(rowFilter) : searched;
   }, [data, filters, searchQuery, onFilterChange, rowFilter]);
 
   const visibleColumns = useMemo(
