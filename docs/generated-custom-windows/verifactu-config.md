@@ -44,3 +44,7 @@ This window has no standalone custom UI. All custom rendering, validation, and s
 
 - Primary entry point: `docs/generated-custom-windows/fiscal-config.md`
 - Architecture: `docs/architecture-overview.md`
+
+## Automated evidence
+
+The `decisions.json` declares `attachments: false`, so the Attachments tab is explicitly disabled for this window.

@@ -22,6 +22,7 @@ Goods Movements should let an inventory user register a stock transfer from one 
 - **Window shape:** master-child. The list route shows movement headers; the record route shows one `movement` header with child `movementLine` rows.
 - **List behavior:** the list shows Name, Movement Date, Document No., and Status columns. Movement Date has `dot: false` so no red/green date dot appears on that column. Filters are available on Name and Movement Date.
 - **Record behavior:** the header form exposes Name, Movement Date, Description, and read-only Document No. The detail area manages movement lines with Line No., Product, Movement Quantity, UOM, Storage Bin, and New Storage Bin.
+- An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
 
 ## Reactive behavior and dependencies
 
@@ -49,6 +50,7 @@ Goods Movements should let an inventory user register a stock transfer from one 
 5. Try combinations of source and destination bins and verify whether the selectors restrict invalid choices or whether the UI allows the same bin on both sides; if no restriction appears, treat that as a functional gap.
 6. Change Product and Movement Quantity on a draft line and verify whether UOM, quantity conversion, or availability feedback reacts immediately; if not, treat those reactions as backend-only or missing.
 7. Process the movement and confirm the header status changes to processed and previously editable header and line fields become read-only.
+8. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 
@@ -58,3 +60,4 @@ Goods Movements should let an inventory user register a stock transfer from one 
 - `artifacts/goods-movements/generated/web/goods-movements/MovementForm.jsx`, `MovementLineForm.jsx`, and `MovementTable.jsx` show the current visible header, line, and list fields.
 - `artifacts/goods-movements/contract.json` and `artifacts/goods-movements/decisions.json` provide supporting evidence for the required-lines processing rule, processed-state read-only logic, omitted classic callouts, and omitted `moveBetweenLocators` / `posted` actions.
 - No dedicated browser test or window-specific automated UI test was found for Goods Movements; shared route and generated-window loading evidence is documented in `docs/generated-custom-windows/app-shell-functional-flows.md`.
+- The generated `MovementPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `M_Movement` AD table.

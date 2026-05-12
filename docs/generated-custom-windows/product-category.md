@@ -23,6 +23,7 @@ Users should be able to:
 - **List behavior:** the category list shows Search Key and Name and supports filtering by those same fields
 - **Record behavior:** opening a category record renders a detail view with the category header form plus the **Assigned Products** child table
 - **Child behavior:** the generated child table exposes Search Key, Name, and Product Type filters/columns, and the generated child form is read-only for those same fields
+- An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
 
 ## Reactive behavior and dependencies
 
@@ -46,6 +47,7 @@ Users should be able to:
 3. Confirm the **Assigned Products** child grid loads under the selected category and only exposes identifying product fields instead of the full product form.
 4. Inspect an assigned-product row and confirm whether variant, service-relation, processing, or invariant-update actions are actually visible in the runtime UI; if not, record that as a delivery gap against the contract.
 5. Attempt the child interactions the runtime allows and verify whether assigned products are review-only or truly editable from this window.
+6. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 
@@ -55,3 +57,4 @@ Users should be able to:
 - `artifacts/product-category/generated/web/product-category/ProductCategoryPage.jsx` renders `ListView` for the list route and `DetailView` for record routes, wiring `AssignedProductsTable` and `AssignedProductsForm` as the child components.
 - `artifacts/product-category/generated/web/product-category/ProductCategoryTable.jsx`, `ProductCategoryForm.jsx`, `AssignedProductsTable.jsx`, and `AssignedProductsForm.jsx` show the visible list/header/child fields described above.
 - No dedicated Product Category browser test was found. Shared route/loading and entity-data behavior are documented in `docs/generated-custom-windows/app-shell-functional-flows.md`.
+- The generated `ProductCategoryPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `M_Product_Category` AD table.

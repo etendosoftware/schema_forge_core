@@ -18,6 +18,7 @@ Physical Inventory should let a warehouse user create an inventory count session
 - Implementation type: custom window wrapper at `tools/app-shell/src/windows/custom/physical-inventory/index.jsx`, registered in `customLoaders` in `tools/app-shell/src/windows/registry.js`. The wrapper supplies an explicit `COLUMNS` array to `InventoryTable` (`dot: false` on `movementDate`), passes a `CustomInventoryTable` to `GeneratedApp`, and passes a `hideMoreMenu` function that hides the ⋮ button when `!data?.id` (unsaved record) or `data?.processed` (completed record).
 - Window shape: master-child. The header entity is `inventory`, and the detail entity is `inventoryLine`.
 - List/detail behavior: the list page opens inventory headers; the record page shows the header form plus the child line table and line form.
+- An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
 
 ## Reactive behavior and dependencies
 - Parent/child interaction: the record page binds `inventory` as the header and `inventoryLine` as the child set, so counting happens under a selected header rather than directly from the list. When the user tries to add lines on a brand-new header, `DetailView` saves the header first and reopens the detail route before showing line entry. That is the current fix for previously lost unsaved lines.
@@ -43,6 +44,7 @@ Physical Inventory should let a warehouse user create an inventory count session
 6. Run `Update List System Count` and confirm the action disables while pending, then the page reloads and the line-level system counts refresh.
 7. Confirm `Process Inventory Count` is absent until at least one line exists, then process the record and confirm the processed status badge is visible and line editing becomes read-only.
 8. Confirm the ⋮ button is absent on a new (unsaved) header. After saving, confirm it appears. After processing, confirm it disappears again.
+9. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 - `docs/generated-custom-windows/app-shell-functional-flows.md` documents the shared generated-window routing model for `/:windowName` and `/:windowName/:recordId`.
@@ -57,6 +59,7 @@ Physical Inventory should let a warehouse user create an inventory count session
 - `artifacts/physical-inventory/custom/InventoryCreateListModal.jsx` implements the create-list modal defaults, category loading, quantity-range options, dismiss behavior, disabled submit state, and `generateList` POST body.
 - `artifacts/physical-inventory/custom/__tests__/InventoryMenuContent.test.js` verifies the custom menu wiring, create-list entry, update-system-count entry, update endpoint, modal launch, `warehouseId` handoff, and the two visibility guards (`recordId === 'new'` and `data?.processed`).
 - `artifacts/physical-inventory/custom/__tests__/InventoryCreateListModal.test.js` verifies the generation endpoint, quantity-range options, category loading, wildcard default for product search key, success callback, and disabled submit state.
+- The generated `InventoryPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `M_Inventory` AD table.
 
 ## Merge refresh notes
 - This guide was refreshed against `origin/develop` after the `epic/ETP-3504` merge by re-reading the current Physical Inventory window code rather than relying on older guide text.

@@ -25,6 +25,7 @@ A user should be able to:
 - Visibility: visible from the Purchases menu under Operations
 - Implementation type: custom window override registered in `tools/app-shell/src/windows/registry.js`, built on top of the generated goods-receipt window
 - Window shape: master-child window with a header record (`goodsReceipt`) and child received lines (`goodsReceiptLine`)
+- An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
 
 In practice, the header behaves like the receipt execution record and the child area behaves like the intake workspace. The custom implementation narrows the visible line table to receipt-focused columns and adds receipt-specific actions for line import and related-document navigation.
 
@@ -70,6 +71,7 @@ No current evidence shows:
 8. Confirm the receipt and verify the document leaves draft status and the draft-only import affordances disappear.
 9. Open **Related Documents** and confirm the purchase-order chip routes to `/purchase-order/:id` and invoice chips route to `/purchase-invoice/:id`.
 10. Select two or more draft goods receipts from the list and confirm the bulk-complete action is available. Trigger it and verify all selected receipts move to completed status and a result toast appears.
+11. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 
@@ -84,3 +86,4 @@ No current evidence shows:
   - `tools/app-shell/src/windows/custom/goods-receipt/GoodsReceiptBottomPanel.jsx`
   - `tools/app-shell/src/windows/custom/goods-receipt/ImportFromPurchaseOrderModal.jsx` — order totals shown in the import modal are formatted using the org's configured currency via `useCurrency()` and `formatCurrency()`.
   - `tools/app-shell/src/windows/custom/goods-receipt/RelatedDocuments.jsx`
+- The generated `GoodsReceiptPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `M_InOut` AD table.

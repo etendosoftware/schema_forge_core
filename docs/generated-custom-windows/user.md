@@ -19,6 +19,7 @@ Users should be able to:
 - Window shape: master-child. The parent entity is `user`, and the visible child entity on the detail page is `userRoles`.
 - List behavior: the generated page exposes list filtering by `name`, `username`, and `email`.
 - Detail behavior: the detail page renders the main user form plus a child table/form for User Roles.
+- An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
 
 
 ## Reactive behavior and dependencies
@@ -45,6 +46,7 @@ Users should be able to:
 4. In the child area, add or edit a User Roles row and confirm the row exposes Role and Role Administrator.
 5. Confirm Expired Password, Locked, and Last Password Update are displayed as review state rather than normal editable business fields.
 6. Confirm the current page does not surface an Email Configuration child pane, SMTP connection test action, Process Now action, or Grant Portal Access action.
+7. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 - Route visibility is grounded in `tools/app-shell/src/menu.json` and `tools/app-shell/src/windows/registry.js`.
@@ -55,3 +57,4 @@ Users should be able to:
 - Generated but currently unmounted email-configuration UI exists in `artifacts/user/generated/web/user/EmailConfigurationTable.jsx` and `artifacts/user/generated/web/user/EmailConfigurationForm.jsx`.
 - Shared list/detail shell behavior and defaults loading behavior are described in `docs/generated-custom-windows/app-shell-functional-flows.md`.
 - No dedicated browser automation or user-window-specific SPA test was found for the visible User screen behavior in the current repository evidence.
+- The generated `UserPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `AD_User` AD table.
