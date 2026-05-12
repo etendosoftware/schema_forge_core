@@ -102,15 +102,26 @@ describe('generate-frontend attachments integration', () => {
   });
 
   // -------------------------------------------------------------------------
-  // 4. layoutType gate — kanban (or any non-default layout) disables the tab.
+  // 4. layoutType gate — non-default layouts block the tab unless explicitly
+  //    opted in via window.attachments in decisions.json.
   // -------------------------------------------------------------------------
 
-  it('does not emit AttachmentsTab on non-default layouts (kanban)', () => {
+  it('does not emit AttachmentsTab on non-default layouts without explicit opt-in', () => {
+    // No attachments key → auto-disabled for non-default layouts.
+    const contract = buildContract({ layoutType: 'kanban' });
+    const code = generatePageComponent('header', 'detail', contract);
+
+    assert.ok(!code.includes("import { AttachmentsTab }"), 'kanban without opt-in must not import AttachmentsTab');
+    assert.ok(!code.includes("Component: AttachmentsTab"), 'kanban without opt-in must not register the tab');
+  });
+
+  it('emits AttachmentsTab on non-default layouts when explicitly opted in', () => {
+    // Explicit window.attachments: true enables the tab even on gallery/kanban layouts.
     const contract = buildContract({ layoutType: 'kanban', attachments: true });
     const code = generatePageComponent('header', 'detail', contract);
 
-    assert.ok(!code.includes("import { AttachmentsTab }"), 'kanban layout must not import AttachmentsTab');
-    assert.ok(!code.includes("Component: AttachmentsTab"), 'kanban layout must not register the tab');
+    assert.match(code, /import \{ AttachmentsTab \}/, 'kanban with explicit opt-in must import AttachmentsTab');
+    assert.match(code, /Component: AttachmentsTab/, 'kanban with explicit opt-in must register the tab');
   });
 
   // -------------------------------------------------------------------------
