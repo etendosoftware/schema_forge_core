@@ -17978,6 +17978,8 @@
     "quantitiesUpdated": "Cantidades del sistema actualizadas",
     "errorUpdatingQuantities": "Error al actualizar las cantidades del sistema",
     "deleteRowTooltip": "Eliminar",
+    "editLineTooltip": "Editar línea",
+    "selectRow": "Seleccionar fila",
     "recordDeleted": "Registro eliminado",
     "recordsDeleted": "{count} registro(s) eliminado(s)",
     "recordsCouldNotBeDeleted": "{count} registro(s) no pudieron ser eliminados",

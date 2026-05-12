@@ -1,8 +1,8 @@
 {
   "version": "0.27.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-11T20:40:22.311Z",
-  "checksum": "2f5ae17f5b613d3f",
+  "updatedAt": "2026-05-12T13:59:42.851Z",
+  "checksum": "f8c04809530dee80",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -12,7 +12,8 @@
       "notesField": "description",
       "relatedDocuments": true,
       "customComponents": {
-        "headerTable": "InvoiceHeaderTable"
+        "headerTable": "InvoiceHeaderTable",
+        "bottomSection": "PurchaseInvoiceBottomPanel"
       },
       "menuActions": [
         {
@@ -40,8 +41,10 @@
         }
       },
       "dateFilterKey": "invoiceDate",
+      "noHeaderBorder": true,
       "lineEntityConfig": "invoice",
-      "layoutType": "default"
+      "layoutType": "default",
+      "linesLayout": "inlineEditable"
     },
     "entities": {
       "header": {
@@ -3704,7 +3707,8 @@
       "notesField": "description",
       "relatedDocuments": true,
       "customComponents": {
-        "headerTable": "InvoiceHeaderTable"
+        "headerTable": "InvoiceHeaderTable",
+        "bottomSection": "PurchaseInvoiceBottomPanel"
       },
       "menuActions": [
         {
@@ -3732,7 +3736,9 @@
         }
       },
       "dateFilterKey": "invoiceDate",
-      "lineEntityConfig": "invoice"
+      "noHeaderBorder": true,
+      "lineEntityConfig": "invoice",
+      "linesLayout": "inlineEditable"
     },
     "entities": {
       "header": {

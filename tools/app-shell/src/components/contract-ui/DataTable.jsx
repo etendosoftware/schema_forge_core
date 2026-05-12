@@ -18,6 +18,7 @@ import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { resolveColumnLabel } from '@/lib/resolveColumnLabel.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { applyCalloutUpdates } from '@/lib/applyCalloutUpdates.js';
+import { columnMinWidthPx } from '@/lib/linesColumnWidth.js';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import InternalConsumptionProductSearchDrawer from './InternalConsumptionProductSearchDrawer.jsx';
 import { SelectorInput } from './SelectorInput.jsx';
@@ -178,7 +179,7 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
           onKeyDown?.(e);
         }}
         placeholder={placeholder}
-        className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 pr-6 focus:ring-2 focus:ring-primary focus:outline-none"
+        className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 pr-6 focus:ring-2 focus:ring-primary focus:outline-none"
       />
       <button
         type="button"
@@ -298,6 +299,7 @@ const NUMERIC_FIELD_TYPES = new Set(['number', 'integer', 'decimal', 'quantity',
  */
 const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, token, apiBaseUrl, entity, selectorContext }, ref) {
   const t = useLabel();
+  const ui = useUI();
   const fieldMap = useMemo(() => {
     const map = {};
     for (const f of fields) map[f.key] = f;
@@ -350,9 +352,11 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     onValuesChange?.(values);
   }, [values, onValuesChange]);
 
-  // Auto-focus first input when row appears
+  // Auto-focus first input when row appears. preventScroll avoids the browser's
+  // instant snap-to-input scroll, leaving the parent's smooth scroll animation
+  // (DetailView linesScrollRef) free to run without being preempted.
   useEffect(() => {
-    firstInputRef.current?.focus();
+    firstInputRef.current?.focus({ preventScroll: true });
   }, []);
 
   const handleChange = (key, val) => {
@@ -364,6 +368,22 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     // Dedupe concurrent submits: outside-click + parent flushPendingLines can fire
     // in the same tick; both callers must observe the same outcome.
     if (inflightRef.current) return inflightRef.current;
+    // Validate required fields BEFORE entering the in-flight state — a missing
+    // value should leave the row open for the user to complete. Reads from the
+    // valuesRef so an in-flight callout cannot mask a still-empty user field.
+    const missing = fields.filter(f => {
+      if (!f.required) return false;
+      const v = valuesRef.current[f.key];
+      return v == null || v === '' || (typeof v === 'string' && v.trim() === '');
+    });
+    if (missing.length > 0) {
+      const labels = missing.map(f => f.label || f.key).join(', ');
+      toast.error(`${ui('requiredFieldsMissing')}: ${labels}`);
+      const firstMissing = missing[0];
+      const inputEl = document.querySelector(`[data-testid="field-${firstMissing.key}"]`);
+      inputEl?.focus?.({ preventScroll: true });
+      return Promise.resolve(false);
+    }
     setIsSaving(true);
     const run = (async () => {
       try {
@@ -413,7 +433,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         setValues(next);
         touchedFieldsRef.current = new Set();
         // Re-focus first input for rapid entry
-        setTimeout(() => firstInputRef.current?.focus(), 0);
+        setTimeout(() => firstInputRef.current?.focus({ preventScroll: true }), 0);
         return true;
       } finally {
         inflightRef.current = null;
@@ -422,7 +442,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     })();
     inflightRef.current = run;
     return run;
-  }, [data, fields, onAdd, onCancel]);
+  }, [data, fields, onAdd, onCancel, ui]);
 
   // Enter → confirm without closing (rapid entry). Outside-click / parent flush close.
   const handleConfirm = useCallback(() => submitLine({ closeAfterSave: false }), [submitLine]);
@@ -573,7 +593,12 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           const rawVal = values[col.key];
           const identVal = values[col.key + '$_identifier'];
           const isNumericDerived = NUMERIC_FIELD_TYPES.has(col.type);
-          const displayVal = identVal || rawVal;
+          const isTwoDecimalDerived = col.type === 'amount' || col.type === 'price';
+          let displayVal = identVal || rawVal;
+          if (isTwoDecimalDerived && displayVal != null && displayVal !== '') {
+            const n = typeof displayVal === 'string' ? parseFloat(displayVal) : displayVal;
+            if (Number.isFinite(n)) displayVal = n.toFixed(2);
+          }
           return (
             <TableCell key={col.key} className={`text-muted-foreground text-sm${isNumericDerived ? ' text-right tabular-nums' : ''}`}>
               {displayVal != null && displayVal !== '' ? displayVal : '—'}
@@ -659,7 +684,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
                 value={values[field.key] ?? ''}
                 onChange={(e) => handleFieldChange(field.key, e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+                className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
               >
                 <option value="" disabled hidden>{field.label ?? field.key}</option>
                 {field.options.map(opt => (
@@ -717,7 +742,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
                   handleFieldChange(field.key, selectedId, opt);
                 }}
                 onKeyDown={handleKeyDown}
-                className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+                className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
               >
                 <option value="" disabled hidden>{fieldLabel}</option>
                 {options.map(opt => (
@@ -729,13 +754,34 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         }
 
         const isNumeric = NUMERIC_FIELD_TYPES.has(field.type);
+        const isTwoDecimal = field.type === 'amount' || field.type === 'price';
+        // Pick a numeric `inputMode` only for numeric fields. Integer fields
+        // surface the digits-only on-screen keyboard, the rest get the decimal
+        // pad. Resolved via an intermediate variable so the call site stays a
+        // flat conditional (Sonar S3358).
+        let numericInputMode = field.inputMode;
+        if (!numericInputMode && isNumeric) {
+          numericInputMode = field.type === 'integer' ? 'numeric' : 'decimal';
+        }
+        const formatTwoDecimals = (raw) => {
+          if (raw == null || raw === '') return '';
+          const n = typeof raw === 'string' ? parseFloat(raw) : raw;
+          return Number.isFinite(n) ? n.toFixed(2) : raw;
+        };
+        // Always type="text" — numeric inputs would render browser spinner
+        // buttons; the numeric on-screen keyboard is preserved via inputMode.
+        const inputType = 'text';
+        const rawValue = values[field.key];
+        const displayValue = isTwoDecimal && rawValue !== '' && rawValue != null
+          ? formatTwoDecimals(rawValue)
+          : (rawValue ?? '');
         return (
           <TableCell key={col.key} className="py-1 px-2">
             <input
               ref={isFirst ? firstInputRef : undefined}
-              type={isNumeric ? 'number' : 'text'}
-              inputMode={field.inputMode}
-              value={values[field.key] ?? ''}
+              type={inputType}
+              inputMode={numericInputMode}
+              value={displayValue}
               onChange={(e) => {
                 const raw = e.target.value;
                 if (isNumeric && raw !== '' && raw !== '-') {
@@ -748,7 +794,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
               onKeyDown={handleKeyDown}
               placeholder={fieldLabel}
               required={field.required}
-              className={`w-full h-8 text-sm rounded-md border border-input bg-background px-2 focus:ring-2 focus:ring-primary focus:outline-none${isNumeric ? ' text-right tabular-nums' : ''}`}
+              className={`w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none${isNumeric ? ' text-right tabular-nums' : ''}`}
             />
           </TableCell>
         );
@@ -797,7 +843,7 @@ function LookupField({ value, placeholder, selectorUrl, selectorContext, token, 
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(true); }
           else if (onKeyDown) onKeyDown(e);
         }}
-        className="w-full h-8 text-sm rounded-md border border-input bg-background px-2 text-left flex items-center gap-2 hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
+        className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 text-left flex items-center gap-2 hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
       >
         <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         {value ? (
@@ -921,6 +967,7 @@ export function DataTable({
   columnFilters = {},
   rowFilter,
   hiddenColumns = [],
+  linesLayout,
   hoverRowActions = false,
   onEditRow = null,
   editingRowId = null,
@@ -1260,9 +1307,9 @@ export function DataTable({
 
   return (
     <div className="space-y-0">
-      <div className="overflow-x-auto overflow-y-visible">
+      <div className={linesLayout === 'inlineEditable' ? '[&>div]:!overflow-visible' : 'overflow-x-auto overflow-y-visible'}>
         <Table>
-          <TableHeader>
+          <TableHeader className={linesLayout === 'inlineEditable' ? 'sticky top-0 z-20 bg-white' : ''}>
             <TableRow className="border-b border-border/40">
               {selectable && (
                 <TableHead className="w-10 px-3 align-middle" onClick={(e) => e.stopPropagation()}>
@@ -1274,12 +1321,19 @@ export function DataTable({
                   />
                 </TableHead>
               )}
-              {visibleColumns.map(col => {
+              {visibleColumns.map((col, colIdx) => {
                 const colLabel = resolveColumnLabel(col, locale, t);
                 const isSorted = sortColumn === col.key;
                 const isSortable = col.sortable !== false;
+                // In inline-editable mode, mirror the column widths used by
+                // InlineLinesPanel so the header wraps identically whether
+                // the user sees the flex layout (rows present) or the HTML
+                // table layout (inline-add row active).
+                const headStyle = linesLayout === 'inlineEditable'
+                  ? { minWidth: columnMinWidthPx(col, colIdx) }
+                  : undefined;
                 return (
-                  <TableHead key={col.key} className="align-middle">
+                  <TableHead key={col.key} className="align-middle" style={headStyle}>
                     {onSort && isSortable ? (
                         <button
                           type="button"

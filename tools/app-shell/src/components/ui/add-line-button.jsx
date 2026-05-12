@@ -94,7 +94,7 @@ export function AddLineButton({ onClick, label, disabled = false, menuActions, h
           <span style={DIVIDER_STYLE} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>{chevronButton}</DropdownMenuTrigger>
-            <DropdownMenuContent align="end" sideOffset={4}>
+            <DropdownMenuContent align="start" sideOffset={4} className="min-w-[200px]">
               {hasMenu ? (
                 menuActions.map((action) => (
                   <DropdownMenuItem
