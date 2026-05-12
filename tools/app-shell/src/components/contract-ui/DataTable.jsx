@@ -264,6 +264,39 @@ function applyLocalSearch(rows, filters, searchQuery) {
   );
 }
 
+async function runInlineToggleRequest({
+  apiBaseUrl, entity, row, col, token, checked,
+  toggleKey, setOptimisticToggles, setSavingToggles, onDataMutated,
+}) {
+  setOptimisticToggles(prev => ({ ...prev, [toggleKey]: checked }));
+  setSavingToggles(prev => ({ ...prev, [toggleKey]: true }));
+  try {
+    const res = await fetch(`${apiBaseUrl}/${entity}/${row.id}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ [col.key]: checked }),
+    });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    onDataMutated?.();
+  } catch (error) {
+    setOptimisticToggles(prev => {
+      const next = { ...prev };
+      delete next[toggleKey];
+      return next;
+    });
+    toast.error(error?.message || 'Failed to update record');
+  } finally {
+    setSavingToggles(prev => {
+      const next = { ...prev };
+      delete next[toggleKey];
+      return next;
+    });
+  }
+}
+
 function buildWarehouseByLocatorMap(entity, addRow) {
   if (entity !== 'internalConsumptionLine') return new Map();
   const fields = addRow?.fields || [];
@@ -1057,44 +1090,15 @@ export function DataTable({
   }, [filteredData, amountColumns]);
 
   const handleInlineToggle = useCallback(async (row, col, checked) => {
-    const toggleKey = `${row.id}:${col.key}`;
     if (!apiBaseUrl || !entity || !row?.id || !token) {
       toast.error('Inline toggle is not available in this context');
       return;
     }
-
-    setOptimisticToggles(prev => ({ ...prev, [toggleKey]: checked }));
-    setSavingToggles(prev => ({ ...prev, [toggleKey]: true }));
-
-    try {
-      const res = await fetch(`${apiBaseUrl}/${entity}/${row.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ [col.key]: checked }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Error ${res.status}`);
-      }
-
-      onDataMutated?.();
-    } catch (error) {
-      setOptimisticToggles(prev => {
-        const next = { ...prev };
-        delete next[toggleKey];
-        return next;
-      });
-      toast.error(error?.message || 'Failed to update record');
-    } finally {
-      setSavingToggles(prev => {
-        const next = { ...prev };
-        delete next[toggleKey];
-        return next;
-      });
-    }
+    await runInlineToggleRequest({
+      apiBaseUrl, entity, row, col, token, checked,
+      toggleKey: `${row.id}:${col.key}`,
+      setOptimisticToggles, setSavingToggles, onDataMutated,
+    });
   }, [apiBaseUrl, entity, onDataMutated, token]);
 
   const renderCellValue = (row, col) => {
