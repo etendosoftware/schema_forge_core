@@ -39,6 +39,13 @@ export default function RowQuickActions({
   token,
   // Window config — all optional
   documentPreview = null,
+  // ETP-3914 — Send/Download envelope gate. Resolved upstream from
+  // `decisions.json → window.sendDocument` with eligibility heuristic
+  // (header has documentNo). Shape: `{ enabled: bool, allowEmail: bool }`.
+  // When the prop is absent we fall back to the legacy `documentPreview` gate
+  // so existing custom callers (sales-invoice, purchase-invoice) keep working
+  // until they migrate.
+  sendDocument = null,
   // Either a static array of MenuAction descriptors OR a function
   // ({ row, status }) => MenuAction[] — same shape DetailView accepts, so the
   // row kebab can mirror the detail kebab's per-state visibility logic.
@@ -220,8 +227,10 @@ export default function RowQuickActions({
         </button>
       )}
 
-      {/* Email — only when window declares documentPreview */}
-      {documentPreview && passesVisibleWhen('email') && (
+      {/* Email — gated by sendDocument.enabled (default true for eligible
+          documental windows) with the legacy `documentPreview` truthy as
+          fallback for callers that haven't migrated. */}
+      {(sendDocument ? sendDocument.enabled !== false : !!documentPreview) && passesVisibleWhen('email') && (
         <button
           type="button"
           onClick={(e) => { stop(e); runWithInFlight('email', onEmail)(row); }}

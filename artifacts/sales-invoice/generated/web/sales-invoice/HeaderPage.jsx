@@ -490,6 +490,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         labelOverrides={labelOverrides}
         lineConfig={INVOICE_LINE_CONFIG}
         linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -507,6 +508,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       hidePrint
       labelOverrides={labelOverrides}
       rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

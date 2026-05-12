@@ -885,6 +885,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         labelOverrides={labelOverrides}
         lineConfig={INVOICE_LINE_CONFIG}
         linesLayout="inlineEditable"
+        sendDocument={{"enabled":true,"allowEmail":false}}
         {...props}
       />
     );
@@ -901,6 +902,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       dateFilterKey="invoiceDate"
       labelOverrides={labelOverrides}
       rowQuickActions={{}}
+      sendDocument={{"enabled":true,"allowEmail":false}}
       {...props}
     />
   );

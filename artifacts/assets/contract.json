@@ -1,8 +1,8 @@
 {
   "version": "0.2.0",
   "generatedAt": "2026-04-29T19:06:30.936Z",
-  "updatedAt": "2026-05-12T18:38:13.931Z",
-  "checksum": "59789d3d75d9c988",
+  "updatedAt": "2026-05-12T19:44:17.750Z",
+  "checksum": "8c7c01cd5d0bc19e",
   "frontendContract": {
     "window": {
       "id": "800027",
@@ -46,8 +46,7 @@
       "disableProcessedLock": true,
       "titleField": "name",
       "dateFilterKey": "purchaseDate",
-      "layoutType": "default",
-      "linesLayout": "classic"
+      "layoutType": "default"
     },
     "entities": {
       "assets": {

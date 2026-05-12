@@ -211,6 +211,7 @@ export default function PurchaseInvoiceWindow(props) {
         dateFilterKey="invoiceDate"
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
         rowQuickActions={rowQuickActions}
+        sendDocument={{ enabled: true, allowEmail: false }}
         bulkActions={(ctx) => <BulkDocumentAction {...ctx} />}
         refreshTrigger={refreshKey}
       />
@@ -225,6 +226,7 @@ export default function PurchaseInvoiceWindow(props) {
           documentId={emailRow.id}
           windowName={windowName}
           token={token}
+          allowEmail={false}
           onClose={() => setEmailRow(null)}
         />,
         document.body,

@@ -190,6 +190,7 @@ export default function MovementPage({ windowName, recordId, ...props }) {
         bottomSection={GoodsMovementsBottomPanel}
         requiredHeaderFields={requiredHeaderFields}
         linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -205,6 +206,7 @@ export default function MovementPage({ windowName, recordId, ...props }) {
       api={api}
       dateFilterKey="movementDate"
       rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

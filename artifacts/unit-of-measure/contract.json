@@ -1,8 +1,8 @@
 {
   "version": "0.2.0",
   "generatedAt": "2026-04-29T18:12:30.399Z",
-  "updatedAt": "2026-05-12T18:38:14.305Z",
-  "checksum": "0ae3220dd4e5688b",
+  "updatedAt": "2026-05-12T19:44:36.969Z",
+  "checksum": "52c614394c00ad36",
   "frontendContract": {
     "window": {
       "id": "120",
@@ -11,8 +11,7 @@
       "category": "settings",
       "hidePrint": true,
       "hideMoreMenu": true,
-      "layoutType": "default",
-      "linesLayout": "classic"
+      "layoutType": "default"
     },
     "entities": {
       "unitOfMeasure": {

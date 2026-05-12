@@ -521,6 +521,7 @@ const WINDOW_TRUTHY_PROPS = [
   'statusEnumLabels',
   'lineEntityConfig',
   'rowQuickActions',
+  'sendDocument',
   'linesLayout',
 ];
 
@@ -558,6 +559,7 @@ export const WINDOW_KEY_ORDER = [
   'listViewOptions', 'listBaseFilter', 'quickFilters', 'subsetFilters',
   'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'lineEntityConfig',
   'rowQuickActions',
+  'sendDocument',
   'layoutType', 'linesLayout',
 ];
 

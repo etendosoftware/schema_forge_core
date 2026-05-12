@@ -22,7 +22,7 @@ import { useUI } from '@/i18n';
  * When provided, the preview uses it directly and download triggers on the blob,
  * bypassing the /api/reports render endpoint entirely.
  */
-export default function SendDocumentModal({ documentType = 'Document', documentNo, bpName, bpEmail, bPartnerId, apiBaseUrl, documentId, windowName, token, onClose, pdfBlobUrl, pdfBlobLoading = false, isClosing = false }) {
+export default function SendDocumentModal({ documentType = 'Document', documentNo, bpName, bpEmail, bPartnerId, apiBaseUrl, documentId, windowName, token, onClose, pdfBlobUrl, pdfBlobLoading = false, isClosing = false, allowEmail = true }) {
   const ui = useUI();
   const hasEmail = bpEmail && bpEmail.includes('@');
   const [to, setTo] = useState(hasEmail ? bpEmail : '');
@@ -174,7 +174,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
           </div>
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-          <div style={{ width: '60%', display: 'flex', flexDirection: 'column', borderRight: '0.5px solid #E5E7EB' }}>
+          <div style={{ width: allowEmail ? '60%' : '100%', display: 'flex', flexDirection: 'column', borderRight: allowEmail ? '0.5px solid #E5E7EB' : 'none' }}>
             <div style={{ flex: 1, position: 'relative', background: '#EFEFEF' }}>
               {pdfLoading && (
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13, gap: 10 }}>
@@ -204,6 +204,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
             </button>
           </div>
 
+          {allowEmail && (
           <div style={{ width: '40%', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
             <div>
               <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalTo')}</label>
@@ -237,10 +238,12 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
               />
             </div>
           </div>
+          )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F5F5F5', borderTop: '1px solid #E5E5E5', padding: '10px 16px', flexShrink: 0 }}>
-          <button type="button" onClick={onClose} style={{ fontSize: 13, padding: '6px 14px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>{ui('cancel')}</button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: allowEmail ? 'space-between' : 'flex-end', background: '#F5F5F5', borderTop: '1px solid #E5E5E5', padding: '10px 16px', flexShrink: 0 }}>
+          <button type="button" onClick={onClose} style={{ fontSize: 13, padding: '6px 14px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>{allowEmail ? ui('cancel') : ui('close')}</button>
+          {allowEmail && (
           <button
             type="button"
             onClick={handleSend}
@@ -254,6 +257,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
               </>
             )}
           </button>
+          )}
         </div>
       </div>
     </div>
@@ -265,17 +269,20 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
  * Reusable Send button with instant tooltip. Place in topbarRight components.
  */
 export function SendDocumentButton({ onClick }) {
+  const ui = useUI();
+  const label = ui('quickAction.email');
   return (
     <div style={{ position: 'relative' }} className="group">
       <button
         type="button"
         onClick={onClick}
+        aria-label={label}
         className="flex items-center justify-center p-[7px] rounded-md bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_0px_#1212170D] text-muted-foreground hover:bg-[#F1F5F9] hover:text-foreground transition-colors"
       >
         <Mail className="h-[15px] w-[15px]" />
       </button>
       <span className="pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-zinc-800 px-2 py-1 text-[11px] text-white opacity-0 group-hover:opacity-100 transition-opacity" style={{ zIndex: 50 }}>
-        Send / Download
+        {label}
       </span>
     </div>
   );

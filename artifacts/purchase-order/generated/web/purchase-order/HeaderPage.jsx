@@ -677,6 +677,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}
         linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -695,6 +696,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       hidePrint
       labelOverrides={labelOverrides}
       rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

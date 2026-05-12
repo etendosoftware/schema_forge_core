@@ -427,6 +427,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         salesTheme
         labelOverrides={labelOverrides}
         linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -444,6 +445,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
       hidePrint
       labelOverrides={labelOverrides}
       rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

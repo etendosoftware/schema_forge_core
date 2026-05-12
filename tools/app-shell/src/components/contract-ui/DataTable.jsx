@@ -1489,7 +1489,7 @@ export function DataTable({
                           className={['text-sm', NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right tabular-nums' : ''].filter(Boolean).join(' ')}
                         >
                           {isTrailingHover ? (
-                            <span className="block transition-opacity group-hover/row:opacity-0">
+                            <span className="block transition-opacity group-hover/row:opacity-0 group-focus-within/row:opacity-0">
                               {renderCellValue(row, col)}
                             </span>
                           ) : (
@@ -1621,6 +1621,7 @@ export function DataTable({
                           apiBaseUrl={apiBaseUrl}
                           token={token}
                           documentPreview={rowQuickActions.documentPreview}
+                          sendDocument={rowQuickActions.sendDocument}
                           menuActions={rowQuickActions.menuActions}
                           hideDeleteWhenComplete={rowQuickActions.hideDeleteWhenComplete}
                           statusField={rowQuickActions.statusField}

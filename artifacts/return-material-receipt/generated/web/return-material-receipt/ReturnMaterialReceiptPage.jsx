@@ -284,6 +284,7 @@ export default function ReturnMaterialReceiptPage({ windowName, recordId, ...pro
         bottomSection={ReturnMaterialReceiptBottomPanel}
         requiredHeaderFields={requiredHeaderFields}
         linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -299,6 +300,7 @@ export default function ReturnMaterialReceiptPage({ windowName, recordId, ...pro
       api={api}
       dateFilterKey="movementDate"
       rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

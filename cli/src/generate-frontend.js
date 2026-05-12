@@ -724,6 +724,26 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // When the entire feature is disabled we skip emitting the prop so the list view is
   // identical to the pre-feature behavior.
   const rowQuickActions = windowConfig.rowQuickActions ?? null;
+  // ETP-3914 — Send/Download envelope gate.
+  // Eligibility heuristic: header has a non-discarded `documentNo` field (the
+  // structural signature of a transactional document). Master-data windows
+  // (tax, product, UOM…) never satisfy this and stay silent automatically.
+  // `decisions.json → window.sendDocument` is copied verbatim into the contract
+  // and overrides eligibility in both directions:
+  //   { enabled: false }              → force off (even if eligible)
+  //   { enabled: true }               → force on (even if non-eligible)
+  //   { allowEmail: false }           → keep eligibility, hide email column
+  // Both fields default to `true` when omitted. We only emit the JSX prop when
+  // the feature is on, so non-eligible windows render no envelope.
+  const sendDocumentOverride = windowConfig.sendDocument || null;
+  const isDocumentalWindow = allEntityFields.some(
+    f => f.name === 'documentNo' && f.visibility !== 'discarded',
+  );
+  const sdEnabled = sendDocumentOverride?.enabled !== undefined
+    ? !!sendDocumentOverride.enabled
+    : isDocumentalWindow;
+  const sdAllowEmail = sendDocumentOverride?.allowEmail !== false;
+  const sendDocument = sdEnabled ? { enabled: true, allowEmail: sdAllowEmail } : null;
 
   // Detect secondary child entities for additional tabs
   const secondaryTabsDecl = windowConfig.secondaryTabs;
@@ -1117,6 +1137,22 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     rowQuickActionsProp = `\n      rowQuickActions={${JSON.stringify(declarativePart)}}`;
   }
 
+  // ETP-3914 — Send/Download envelope prop. ListView routes it into DataTable →
+  // RowQuickActions to control the email quick action, and mounts the generic
+  // SendDocumentModal when no host-supplied `onEmail` exists. When both defaults
+  // match (enabled + allowEmail), emit the bare attribute (`sendDocument`) which
+  // JSX treats as `={true}` — runtime gates use `enabled !== false` and optional
+  // chaining, so a plain `true` behaves identically to `{enabled:true,allowEmail:true}`
+  // while keeping generated files clean of redundant default objects.
+  let sendDocumentProp = '';
+  let sendDocumentDetailProp = '';
+  if (sendDocument) {
+    const isDefaults = sendDocument.enabled === true && sendDocument.allowEmail === true;
+    const propValue = isDefaults ? '' : `={${JSON.stringify(sendDocument)}}`;
+    sendDocumentProp = `\n      sendDocument${propValue}`;
+    sendDocumentDetailProp = `\n        sendDocument${propValue}`;
+  }
+
   // newActions support — split button dropdown on the list view
   const hasNewActions = newActionsConfig.length > 0;
   const newActionsStatements = newActionsWithComponents.map(a => {
@@ -1219,7 +1255,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
         {...props}${sidebarContentProp}
       />
     );
@@ -1233,7 +1269,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}${rowQuickActionsProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}
       {...props}${customComponents.newRecordComponent ? `
       onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}
     />${customComponents.newRecordComponent ? `

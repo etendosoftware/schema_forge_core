@@ -17696,7 +17696,7 @@
     "cloneOrderBtn": "Clone",
     "quickAction.edit": "Edit",
     "quickAction.clone": "Duplicate",
-    "quickAction.email": "Send by email",
+    "quickAction.email": "Send / Download",
     "quickAction.more": "More actions",
     "quickAction.delete": "Delete",
     "cloneOrderConfirmTitle": "Clone order",

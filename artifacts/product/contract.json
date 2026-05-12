@@ -1,8 +1,8 @@
 {
   "version": "0.2.0",
   "generatedAt": "2026-04-29T18:11:24.842Z",
-  "updatedAt": "2026-05-12T18:38:12.720Z",
-  "checksum": "8e2e50a9a7acf8e1",
+  "updatedAt": "2026-05-12T19:44:03.965Z",
+  "checksum": "413b9b8091e07fdd",
   "frontendContract": {
     "window": {
       "id": "140",
@@ -30,8 +30,7 @@
           "panel": "ProductAdditionalInfoPanel"
         }
       ],
-      "layoutType": "gallery",
-      "linesLayout": "classic"
+      "layoutType": "gallery"
     },
     "entities": {
       "product": {
