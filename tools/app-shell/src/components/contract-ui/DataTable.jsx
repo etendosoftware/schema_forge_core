@@ -151,6 +151,7 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
   return (
     <div ref={rootRef} className="relative">
       <input
+        data-testid={`inline-add-field-${field.key}`}
         ref={inputRef}
         type="text"
         value={query}
@@ -183,6 +184,7 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
       />
       <button
         type="button"
+        data-testid={`inline-add-field-${field.key}-toggle`}
         className="absolute right-1 top-1.5 h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-foreground"
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => {
@@ -202,6 +204,7 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
       {open && filtered.length > 0 && dropdownStyle && createPortal(
         <div
           ref={dropdownRef}
+          data-testid={`inline-add-options-${field.key}`}
           className="bg-white border rounded-md shadow-lg overflow-auto"
           style={dropdownStyle}
           data-open-up={openUp ? 'true' : 'false'}
@@ -211,6 +214,7 @@ function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeho
             <button
               key={opt.id}
               type="button"
+              data-testid={`inline-add-option-${field.key}-${opt.id}`}
               className="w-full text-left px-2 py-1.5 text-sm hover:bg-blue-50 cursor-pointer whitespace-nowrap"
               onMouseDown={(e) => { e.preventDefault(); handleSelect(opt); }}
             >
@@ -575,7 +579,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
   let firstInputAssigned = false;
 
   return (
-    <TableRow ref={rowRef} className="bg-blue-50/50 border-t-2 border-primary/20">
+    <TableRow ref={rowRef} data-testid="inline-add-row" className="bg-blue-50/50 border-t-2 border-primary/20">
       {/* Saving spinner — aligned with selection checkbox column (empty when idle). */}
       {selectable && (
         <TableCell className="w-10 px-1">
@@ -600,7 +604,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
             if (Number.isFinite(n)) displayVal = n.toFixed(2);
           }
           return (
-            <TableCell key={col.key} className={`text-muted-foreground text-sm${isNumericDerived ? ' text-right tabular-nums' : ''}`}>
+            <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className={`text-muted-foreground text-sm${isNumericDerived ? ' text-right tabular-nums' : ''}`}>
               {displayVal != null && displayVal !== '' ? displayVal : '—'}
             </TableCell>
           );
@@ -614,9 +618,10 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           const displayLabel = values[field.key + '$_identifier'] || '';
           const isInternalConsumptionProduct = entity === 'internalConsumptionLine' && field.key === 'product';
           return (
-            <TableCell key={col.key} className="py-1 px-2">
+            <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
               <LookupField
                 value={displayLabel}
+                fieldKey={field.key}
                 placeholder={fieldLabel}
                 selectorUrl={selectorUrl}
                 selectorContext={selectorContext}
@@ -653,7 +658,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           const options = getCatalogOptions(catalogs, entity, field);
           const selectorUrl = apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${field.column}` : null;
           return (
-            <TableCell key={col.key} className="py-1 px-2">
+            <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
               <InlineSearchCombo
                 field={field}
                 value={values[field.key] ?? ''}
@@ -678,8 +683,9 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         // Select fields with inline static options array
         if (field.type === 'select' && field.options?.length) {
           return (
-            <TableCell key={col.key} className="py-1 px-2">
+            <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
               <select
+                data-testid={`inline-add-field-${field.key}`}
                 ref={isFirst ? firstInputRef : undefined}
                 value={values[field.key] ?? ''}
                 onChange={(e) => handleFieldChange(field.key, e.target.value)}
@@ -706,7 +712,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
             const selectorUrl = apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${field.column}` : null;
             if (!selectorUrl) return <TableCell key={col.key} className="py-1 px-2" />;
             return (
-              <TableCell key={col.key} className="py-1 px-2">
+              <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
                 <SelectorInput
                   entityName={entity}
                   field={field}
@@ -728,8 +734,9 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
             );
           }
           return (
-            <TableCell key={col.key} className="py-1 px-2">
+            <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
               <select
+                data-testid={`inline-add-field-${field.key}`}
                 ref={isFirst ? firstInputRef : undefined}
                 value={values[field.key] ?? ''}
                 onChange={(e) => {
@@ -776,8 +783,9 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           ? formatTwoDecimals(rawValue)
           : (rawValue ?? '');
         return (
-          <TableCell key={col.key} className="py-1 px-2">
+          <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
             <input
+              data-testid={`inline-add-field-${field.key}`}
               ref={isFirst ? firstInputRef : undefined}
               type={inputType}
               inputMode={numericInputMode}
@@ -817,7 +825,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
 /**
  * Inline field that shows selected value and opens modal on click/focus.
  */
-function LookupField({ value, placeholder, selectorUrl, selectorContext, token, onSelect, onKeyDown, inputRef, title, useInternalConsumptionDrawer = false }) {
+function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContext, token, onSelect, onKeyDown, inputRef, title, useInternalConsumptionDrawer = false }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef(null);
 
@@ -831,6 +839,7 @@ function LookupField({ value, placeholder, selectorUrl, selectorContext, token, 
       <button
         ref={btnRef}
         type="button"
+        data-testid={fieldKey ? `inline-add-field-${fieldKey}` : undefined}
         onClick={() => setOpen(true)}
         onKeyDown={(e) => {
           // Once a value is selected, Enter should bubble up so the row's
@@ -1333,7 +1342,12 @@ export function DataTable({
                   ? { minWidth: columnMinWidthPx(col, colIdx) }
                   : undefined;
                 return (
-                  <TableHead key={col.key} className="align-middle" style={headStyle}>
+                  <TableHead
+                    key={col.key}
+                    data-testid={`column-header-${col.key}`}
+                    className="align-middle"
+                    style={headStyle}
+                  >
                     {onSort && isSortable ? (
                         <button
                           type="button"
@@ -1413,7 +1427,12 @@ export function DataTable({
                       );
                     })()}
                     {visibleColumns.map(col => (
-                      <TableCell key={col.key} className={['text-sm', NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right tabular-nums' : ''].filter(Boolean).join(' ')}>
+                      <TableCell
+                        key={col.key}
+                        data-testid={`cell-${row.id ?? idx}-${col.key}`}
+                        data-value={row[col.key] ?? ''}
+                        className={['text-sm', NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right tabular-nums' : ''].filter(Boolean).join(' ')}
+                      >
                         {renderCellValue(row, col)}
                       </TableCell>
                     ))}

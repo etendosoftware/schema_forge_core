@@ -62,6 +62,7 @@ export function AddLineButton({ onClick, label, disabled = false, menuActions, h
   const primaryButton = (
     <button
       type="button"
+      data-testid="action-add-line"
       onClick={onClick}
       disabled={disabled}
       onMouseEnter={(e) => { if (!disabled) e.currentTarget.style.backgroundColor = '#F9FAFB'; }}
@@ -76,6 +77,7 @@ export function AddLineButton({ onClick, label, disabled = false, menuActions, h
   const chevronButton = (
     <button
       type="button"
+      data-testid="action-add-line-more"
       disabled={disabled}
       onMouseEnter={(e) => { if (!disabled) e.currentTarget.style.backgroundColor = '#F9FAFB'; }}
       onMouseLeave={(e) => { if (!disabled) e.currentTarget.style.backgroundColor = '#FFFFFF'; }}
