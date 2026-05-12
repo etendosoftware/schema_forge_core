@@ -1,8 +1,8 @@
 {
   "version": "0.8.1",
   "generatedAt": "2026-05-06T15:52:09.982Z",
-  "updatedAt": "2026-05-15T16:33:38.056Z",
-  "checksum": "9f44204a9101aa79",
+  "updatedAt": "2026-05-15T16:36:32.902Z",
+  "checksum": "b55eb716a4550e61",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -11893,6 +11893,107 @@
     },
     "requiredSessionVariables": [],
     "evaluationMode": "runtime"
+  },
+  "agentProfile": {
+    "purpose": "Manage contacts records.",
+    "whenToUse": [
+      "Use for contacts management."
+    ],
+    "minimumCreate": {
+      "lineFields": [
+        "searchKey",
+        "name",
+        "etgoFirstname",
+        "etgoLastname",
+        "oBTIKTaxIDKey",
+        "businessPartnerCategory",
+        "customer",
+        "vendor",
+        "employee",
+        "setNewCurrency",
+        "creditLimit",
+        "etgoIsperson",
+        "customerBlocking",
+        "isSalesRepresentative",
+        "vendorBlocking",
+        "customer",
+        "customerBlocking",
+        "salesOrder",
+        "goodsShipment",
+        "salesInvoice",
+        "paymentIn",
+        "aeatsiiDefaultsiikey",
+        "customerReceivablesNo",
+        "privateCustomer",
+        "vendor",
+        "cashVAT",
+        "vendorBlocking",
+        "purchaseOrder",
+        "goodsReceipt",
+        "purchaseInvoice",
+        "paymentOut",
+        "vendorLiability",
+        "employee",
+        "isSalesRepresentative",
+        "startingDate",
+        "salaryCategory",
+        "bankFormat",
+        "documentcategory",
+        "issotrx",
+        "cDoctypeID",
+        "active",
+        "locationAddress",
+        "name",
+        "shipToAddress",
+        "invoiceToAddress",
+        "taxLocation",
+        "isdefaultfordocs",
+        "grantPortalAccess",
+        "commercialauth",
+        "viasms",
+        "viaemail",
+        "lineNo",
+        "discount",
+        "customer",
+        "vendor",
+        "applyInOrder",
+        "cascade"
+      ],
+      "recommendedOrder": [
+        "createLines"
+      ]
+    },
+    "selectorContexts": [
+      {
+        "entity": "bankAccount",
+        "field": "userContact",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "parentField",
+              "field": "businessPartner"
+            }
+          ]
+        }
+      }
+    ],
+    "actions": [
+      "processNow"
+    ],
+    "workflow": [],
+    "edgeCases": [
+      "Required context is missing",
+      "User lacks permission",
+      "Record is in an incompatible state",
+      "Document is already completed or closed",
+      "Document has pending lines or missing required fields",
+      "User lacks permission to execute the action"
+    ],
+    "examples": [],
+    "warnings": [],
+    "knownLimitations": [],
+    "dangerousOperations": []
   },
   "testManifest": {
     "tests": [

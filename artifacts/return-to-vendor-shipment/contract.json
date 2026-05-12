@@ -1,8 +1,8 @@
 {
   "version": "0.4.0",
   "generatedAt": "2026-04-29T18:11:17.025Z",
-  "updatedAt": "2026-05-15T16:33:39.256Z",
-  "checksum": "db9da5faf9c4e661",
+  "updatedAt": "2026-05-15T16:36:34.100Z",
+  "checksum": "fd8d7f6b6866c827",
   "frontendContract": {
     "window": {
       "id": "273673D2ED914C399A6C51DB758BE0F9",
@@ -2535,6 +2535,116 @@
     },
     "requiredSessionVariables": [],
     "evaluationMode": "runtime"
+  },
+  "agentProfile": {
+    "purpose": "Create and manage return to vendor shipment documents.",
+    "whenToUse": [
+      "Use for supplier return to vendor shipment before receipt or invoice."
+    ],
+    "minimumCreate": {
+      "headerFields": [
+        "businessPartner",
+        "partnerAddress",
+        "movementDate",
+        "accountingDate",
+        "warehouse",
+        "documentAction"
+      ],
+      "recommendedOrder": [
+        "createHeader"
+      ]
+    },
+    "selectorContexts": [
+      {
+        "entity": "header",
+        "field": "partnerAddress",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "header",
+        "field": "project",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "C_BPartner_ID",
+              "source": "parentField",
+              "field": "businessPartner"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "lines",
+        "field": "operativeUOM",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
+      }
+    ],
+    "actions": [
+      "sendMaterials",
+      "createLinesFrom",
+      "generateTo",
+      "documentAction",
+      "posted",
+      "receiveMaterials"
+    ],
+    "workflow": [
+      "Create draft header with required fields",
+      "Validate form state",
+      "Complete the document"
+    ],
+    "edgeCases": [
+      "Source document has no valid lines to copy",
+      "Target entity already has linked records",
+      "Required reference data is missing (price list, warehouse, etc.)",
+      "Document is already completed or closed",
+      "Document has pending lines or missing required fields",
+      "User lacks permission to execute the action",
+      "Required context is missing",
+      "User lacks permission",
+      "Record is in an incompatible state",
+      "Required field without default value must be provided"
+    ],
+    "examples": [
+      {
+        "operation": "createHeader",
+        "description": "Create a draft header with the minimum required editable fields.",
+        "fields": [
+          "businessPartner",
+          "partnerAddress",
+          "movementDate",
+          "accountingDate",
+          "warehouse",
+          "documentAction"
+        ]
+      },
+      {
+        "operation": "completeDocument",
+        "description": "Validate form state and run the document lifecycle action when the draft is complete.",
+        "action": "sendMaterials"
+      }
+    ],
+    "warnings": [],
+    "knownLimitations": [],
+    "dangerousOperations": []
   },
   "testManifest": {
     "tests": [

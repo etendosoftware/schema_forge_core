@@ -1,8 +1,8 @@
 {
   "version": "0.2.0",
   "generatedAt": "2026-04-29T18:12:11.134Z",
-  "updatedAt": "2026-05-15T16:33:40.294Z",
-  "checksum": "a32f5e13b735ef1d",
+  "updatedAt": "2026-05-15T16:36:35.133Z",
+  "checksum": "aba22578b670d36d",
   "frontendContract": {
     "window": {
       "id": "146",
@@ -1300,6 +1300,48 @@
     },
     "requiredSessionVariables": [],
     "evaluationMode": "runtime"
+  },
+  "agentProfile": {
+    "purpose": "Manage price list records.",
+    "whenToUse": [
+      "Use for price list management."
+    ],
+    "minimumCreate": {
+      "lineFields": [
+        "name",
+        "currency",
+        "salesPriceList",
+        "costBasedPriceList",
+        "priceIncludesTax",
+        "default",
+        "name",
+        "validFromDate",
+        "priceListSchema",
+        "product",
+        "standardPrice",
+        "listPrice",
+        "cost",
+        "algorithm"
+      ],
+      "recommendedOrder": [
+        "createLines"
+      ]
+    },
+    "selectorContexts": [],
+    "actions": [
+      "create",
+      "generatePriceListVersion"
+    ],
+    "workflow": [],
+    "edgeCases": [
+      "Source document has no valid lines to copy",
+      "Target entity already has linked records",
+      "Required reference data is missing (price list, warehouse, etc.)"
+    ],
+    "examples": [],
+    "warnings": [],
+    "knownLimitations": [],
+    "dangerousOperations": []
   },
   "testManifest": {
     "tests": [

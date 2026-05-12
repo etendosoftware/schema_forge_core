@@ -1136,6 +1136,236 @@ function generateFormState(schema, rules) {
 
 // ─── End form-state generation ───────────────────────────────────────────────
 
+// ─── Agent Profile generation for ETP-3958 ───────────────────────────────────
+
+/**
+ * Generate an agentProfile for a spec.
+ *
+ * The profile provides a concise, agent-friendly summary of what the spec does,
+ * how to use it, and what to watch out for.
+ *
+ * @param {object} schema - Full schema
+ * @param {object} apiPrediction - Generated apiPrediction section
+ * @param {object} formState - Generated formState section
+ * @param {object} windowConfig - Window config from decisions.json
+ * @returns {object} agentProfile
+ */
+function generateAgentProfile(schema, apiPrediction, formState, windowConfig) {
+  const specName = apiPrediction.specName;
+  const category = schema.window.category ?? 'unknown';
+  const isTransactional = ['sales', 'purchases', 'inventory', 'finance'].includes(category);
+
+  // Derive purpose from category and window name
+  const windowName = schema.window.name ?? specName;
+  const purpose = derivePurpose(windowName, category);
+  const whenToUse = deriveWhenToUse(windowName, category);
+
+  // Derive minimum create fields from required editable fields
+  const minimumCreate = deriveMinimumCreate(schema, formState);
+
+  // Collect context-sensitive selectors from apiPrediction
+  const selectorContexts = deriveSelectorContexts(apiPrediction);
+
+  // Collect action names
+  const actions = (apiPrediction.actions ?? [])
+    .filter(a => a.actionType === 'documentAction' || a.actionType === 'createFrom')
+    .map(a => a.name);
+
+  // Derive workflow
+  const workflow = deriveWorkflow(isTransactional, actions, minimumCreate);
+
+  // Edge cases from actions and form-state metadata
+  const edgeCases = deriveProfileEdgeCases(apiPrediction, formState, isTransactional);
+
+  // Examples and warnings
+  const examples = deriveProfileExamples(isTransactional, minimumCreate, actions);
+  const warnings = deriveProfileWarnings(schema, formState, isTransactional, actions);
+
+  // Dangerous operations
+  const dangerousOperations = (apiPrediction.actions ?? [])
+    .filter(a => ['void', 'reverse', 'reactivate', 'cancel'].some(p => (a.name ?? '').toLowerCase().includes(p)))
+    .map(a => a.name);
+
+  return {
+    purpose,
+    whenToUse,
+    minimumCreate,
+    selectorContexts,
+    actions,
+    workflow,
+    edgeCases,
+    examples,
+    warnings,
+    knownLimitations: [],
+    dangerousOperations,
+  };
+}
+
+function derivePurpose(windowName, category) {
+  const name = windowName.toLowerCase();
+  if (category === 'sales') return `Create and manage ${name} documents.`;
+  if (category === 'purchases') return `Create and manage ${name} documents.`;
+  if (category === 'inventory') return `Manage ${name} inventory operations.`;
+  if (category === 'finance') return `Manage ${name} financial records.`;
+  return `Manage ${name} records.`;
+}
+
+function deriveWhenToUse(windowName, category) {
+  const when = [];
+  if (category === 'sales') when.push(`Use for customer ${windowName.toLowerCase()} before receipt or invoice.`);
+  if (category === 'purchases') when.push(`Use for supplier ${windowName.toLowerCase()} before receipt or invoice.`);
+  if (category === 'inventory') when.push(`Use for stock and warehouse operations.`);
+  if (when.length === 0) when.push(`Use for ${windowName.toLowerCase()} management.`);
+  return when;
+}
+
+function deriveMinimumCreate(schema, formState) {
+  const headerFields = [];
+  const lineFields = [];
+
+  for (const entity of schema.entities ?? []) {
+    const entityState = formState?.entities?.[entity.name]?.fields ?? {};
+    const requiredFields = Object.entries(entityState)
+      .filter(([, f]) => f.required && f.visible && !f.readOnly)
+      .map(([name]) => name);
+
+    if (entity.level === 'header' || entity.name === 'header') {
+      headerFields.push(...requiredFields);
+    } else {
+      lineFields.push(...requiredFields);
+    }
+  }
+
+  const recommendedOrder = [];
+  if (headerFields.length > 0) recommendedOrder.push('createHeader');
+  if (lineFields.length > 0) recommendedOrder.push('createLines');
+
+  return {
+    headerFields: headerFields.length > 0 ? headerFields : undefined,
+    lineFields: lineFields.length > 0 ? lineFields : undefined,
+    recommendedOrder: recommendedOrder.length > 0 ? recommendedOrder : undefined,
+  };
+}
+
+function deriveSelectorContexts(apiPrediction) {
+  return (apiPrediction.selectors ?? [])
+    .filter(s => s.context)
+    .map(s => ({
+      entity: s.entity,
+      field: s.field,
+      context: s.context,
+    }));
+}
+
+function deriveWorkflow(isTransactional, actions, minimumCreate) {
+  if (!isTransactional) return [];
+
+  const steps = [];
+  if (minimumCreate.headerFields) steps.push('Create draft header with required fields');
+  if (minimumCreate.lineFields) steps.push('Add at least one valid line');
+  if (actions.includes('documentAction') || actions.some(a => a.includes('complete'))) {
+    steps.push('Validate form state');
+    steps.push('Complete the document');
+  }
+  return steps.length > 0 ? steps : ['Create a new record', 'Update as needed'];
+}
+
+function deriveProfileEdgeCases(apiPrediction, formState, isTransactional) {
+  const edges = new Set();
+
+  for (const edge of collectActionEdgeCases(apiPrediction.actions)) {
+    edges.add(edge);
+  }
+
+  if (isTransactional) {
+    if (hasRequiredFieldWithoutDefault(formState)) {
+      edges.add('Required field without default value must be provided');
+    }
+
+    if ((apiPrediction.actions ?? []).length > 0) {
+      edges.add('Validate the current form state before running lifecycle actions');
+      edges.add('Do not run destructive lifecycle actions without explicit user confirmation');
+    }
+  }
+
+  return Array.from(edges).slice(0, 10);
+}
+
+function collectActionEdgeCases(actions = []) {
+  return actions.flatMap(action => action.edgeCases ?? []);
+}
+
+function hasRequiredFieldWithoutDefault(formState) {
+  return Object.values(formState?.entities ?? {}).some(entity =>
+    Object.values(entity.fields ?? {}).some(field => field.required && !field.defaultValue)
+  );
+}
+
+function deriveProfileExamples(isTransactional, minimumCreate, actions) {
+  const examples = [];
+
+  if (minimumCreate.headerFields?.length) {
+    examples.push({
+      operation: 'createHeader',
+      description: 'Create a draft header with the minimum required editable fields.',
+      fields: minimumCreate.headerFields,
+    });
+  }
+
+  if (isTransactional && minimumCreate.lineFields?.length) {
+    examples.push({
+      operation: 'createLine',
+      description: 'Add a line after the header exists and parent context is available.',
+      fields: minimumCreate.lineFields,
+    });
+  }
+
+  if (isTransactional && actions.length > 0) {
+    examples.push({
+      operation: 'completeDocument',
+      description: 'Validate form state and run the document lifecycle action when the draft is complete.',
+      action: actions[0],
+    });
+  }
+
+  return examples;
+}
+
+function deriveProfileWarnings(schema, formState, isTransactional, actions) {
+  const warnings = new Set();
+  const entities = schema.entities ?? [];
+  const visibleFieldCount = Object.values(formState?.entities ?? {})
+    .reduce((count, entity) => count + Object.keys(entity.fields ?? {}).length, 0);
+
+  if (visibleFieldCount === 0) {
+    warnings.add('No editable or read-only form fields are exposed for this spec');
+  }
+
+  const editableFieldCount = Object.values(formState?.entities ?? {})
+    .reduce((count, entity) => {
+      return count + Object.values(entity.fields ?? {}).filter(field => field.visible && !field.readOnly).length;
+    }, 0);
+
+  if (editableFieldCount === 0 && visibleFieldCount > 0) {
+    warnings.add('This spec appears read-only from generated form metadata');
+  }
+
+  const hasSystemButtons = entities.some(entity =>
+    (entity.fields ?? []).some(field => field.type === 'button' && field.visibility === 'system')
+  );
+  if (hasSystemButtons && actions.length === 0) {
+    warnings.add('System lifecycle actions are present but are not exposed as editable agent actions');
+  }
+
+  if (isTransactional && actions.length === 0) {
+    warnings.add('Transactional spec has no generated lifecycle action metadata');
+  }
+
+  return Array.from(warnings);
+}
+
+// ─── End agent profile generation ────────────────────────────────────────────
+
 /**
  * Main orchestrator: generates the full contract object.
  */
@@ -1147,6 +1377,7 @@ export function generateContract(schema, rules = [], processes = [], previousVer
   const testManifest = generateTestManifest(frontendContract, backendContract, rules, processes);
   const apiPrediction = generateApiPrediction(schema, frontendContract, backendContract);
   const formState = generateFormState(schema, rules);
+  const agentProfile = generateAgentProfile(schema, apiPrediction, formState, schema.window);
 
   // Append apiPrediction-based tests to testManifest using stable IDs
   const makeId = testManifest._makeId;
@@ -1199,7 +1430,7 @@ export function generateContract(schema, rules = [], processes = [], previousVer
     byRunner: updatedByRunner,
   };
 
-  const contractData = { frontendContract, backendContract, apiPrediction, formState, testManifest };
+  const contractData = { frontendContract, backendContract, apiPrediction, formState, agentProfile, testManifest };
   const checksum = createHash('sha256')
     .update(JSON.stringify(contractData))
     .digest('hex')

@@ -1,8 +1,8 @@
 {
   "version": "0.2.0",
   "generatedAt": "2026-04-29T18:12:30.399Z",
-  "updatedAt": "2026-05-15T16:33:40.687Z",
-  "checksum": "ab05297826abf1f0",
+  "updatedAt": "2026-05-15T16:36:35.533Z",
+  "checksum": "2f124e9e38acede6",
   "frontendContract": {
     "window": {
       "id": "120",
@@ -825,6 +825,36 @@
     },
     "requiredSessionVariables": [],
     "evaluationMode": "runtime"
+  },
+  "agentProfile": {
+    "purpose": "Manage unit of measure records.",
+    "whenToUse": [
+      "Use for unit of measure management."
+    ],
+    "minimumCreate": {
+      "lineFields": [
+        "eDICode",
+        "name",
+        "standardPrecision",
+        "costingPrecision",
+        "default",
+        "useinproduction",
+        "toUOM",
+        "multipleRateBy",
+        "divideRateBy"
+      ],
+      "recommendedOrder": [
+        "createLines"
+      ]
+    },
+    "selectorContexts": [],
+    "actions": [],
+    "workflow": [],
+    "edgeCases": [],
+    "examples": [],
+    "warnings": [],
+    "knownLimitations": [],
+    "dangerousOperations": []
   },
   "testManifest": {
     "tests": [

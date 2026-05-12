@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T18:12:34.035Z",
-  "updatedAt": "2026-05-15T16:33:40.789Z",
-  "checksum": "c8027686276fce34",
+  "updatedAt": "2026-05-15T16:36:35.633Z",
+  "checksum": "857747391889a00b",
   "frontendContract": {
     "window": {
       "id": "108",
@@ -2141,6 +2141,87 @@
     },
     "requiredSessionVariables": [],
     "evaluationMode": "runtime"
+  },
+  "agentProfile": {
+    "purpose": "Manage user records.",
+    "whenToUse": [
+      "Use for user management."
+    ],
+    "minimumCreate": {
+      "lineFields": [
+        "name",
+        "username",
+        "role",
+        "roleAdmin",
+        "active",
+        "smtpServer",
+        "sMTPAuthentification",
+        "smtpConnectionSecurity",
+        "smtpPort",
+        "smtpconnectiontest",
+        "defaultConfiguration"
+      ],
+      "recommendedOrder": [
+        "createLines"
+      ]
+    },
+    "selectorContexts": [
+      {
+        "entity": "user",
+        "field": "defaultClient",
+        "context": {
+          "required": [
+            {
+              "param": "Default_AD_Role_ID",
+              "source": "field",
+              "field": "defaultRole"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "user",
+        "field": "defaultOrganization",
+        "context": {
+          "required": [
+            {
+              "param": "Default_AD_Role_ID",
+              "source": "field",
+              "field": "defaultRole"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "user",
+        "field": "defaultWarehouse",
+        "context": {
+          "required": [
+            {
+              "param": "Default_AD_Client_ID",
+              "source": "field",
+              "field": "defaultClient"
+            }
+          ]
+        }
+      }
+    ],
+    "actions": [
+      "processNow"
+    ],
+    "workflow": [],
+    "edgeCases": [
+      "Document is already completed or closed",
+      "Document has pending lines or missing required fields",
+      "User lacks permission to execute the action",
+      "Required context is missing",
+      "User lacks permission",
+      "Record is in an incompatible state"
+    ],
+    "examples": [],
+    "warnings": [],
+    "knownLimitations": [],
+    "dangerousOperations": []
   },
   "testManifest": {
     "tests": [

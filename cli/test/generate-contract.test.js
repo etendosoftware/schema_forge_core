@@ -1580,3 +1580,160 @@ describe('generateContract — formState (ETP-3957)', () => {
     assert.deepStrictEqual(contract.formState.requiredSessionVariables, []);
   });
 });
+
+// ─── Agent Profile Metadata (ETP-3958) ───────────────────────────────────────
+
+describe('generateContract — agentProfile (ETP-3958)', () => {
+  const profileSchema = {
+    version: '0.1.0',
+    window: { id: '1000', name: 'Purchase Order', primaryEntity: 'header', category: 'purchases' },
+    entities: [{
+      name: 'header',
+      table: 'C_Order',
+      level: 'header',
+      fields: [
+        { name: 'businessPartner', column: 'C_BPartner_ID', type: 'foreignKey', visibility: 'editable', required: true, searchable: true, grid: true, form: true, reference: 'BusinessPartner', dependsOn: { field: 'organization', filterKey: 'AD_Org_ID' } },
+        { name: 'orderDate', column: 'DateOrdered', type: 'date', visibility: 'editable', required: false, searchable: true, grid: true, form: true },
+        { name: 'documentAction', column: 'DocAction', type: 'button', visibility: 'system', required: false, searchable: false, grid: false, form: false, processId: '104', processType: 'classic' },
+      ],
+    }, {
+      name: 'lines',
+      table: 'C_OrderLine',
+      level: 'line',
+      fields: [
+        { name: 'product', column: 'M_Product_ID', type: 'foreignKey', visibility: 'editable', required: true, searchable: true, grid: true, form: true, reference: 'Product', validationRule: { cascadeParams: ['C_BPartner_ID'] } },
+        { name: 'quantity', column: 'QtyOrdered', type: 'number', visibility: 'editable', required: true, searchable: false, grid: true, form: true },
+      ],
+    }],
+  };
+
+  it('contract includes agentProfile section', () => {
+    const contract = generateContract(profileSchema, []);
+    assert.ok(contract.agentProfile, 'contract should have agentProfile');
+  });
+
+  it('agentProfile has purpose field', () => {
+    const contract = generateContract(profileSchema, []);
+    assert.ok(typeof contract.agentProfile.purpose === 'string');
+    assert.ok(contract.agentProfile.purpose.length > 0);
+  });
+
+  it('agentProfile has whenToUse array', () => {
+    const contract = generateContract(profileSchema, []);
+    assert.ok(Array.isArray(contract.agentProfile.whenToUse));
+    assert.ok(contract.agentProfile.whenToUse.length > 0);
+  });
+
+  it('agentProfile minimumCreate identifies required header fields', () => {
+    const contract = generateContract(profileSchema, []);
+    assert.ok(contract.agentProfile.minimumCreate);
+    assert.ok(contract.agentProfile.minimumCreate.headerFields.includes('businessPartner'));
+  });
+
+  it('agentProfile minimumCreate identifies required line fields', () => {
+    const contract = generateContract(profileSchema, []);
+    assert.ok(contract.agentProfile.minimumCreate.lineFields.includes('product'));
+    assert.ok(contract.agentProfile.minimumCreate.lineFields.includes('quantity'));
+  });
+
+  it('agentProfile includes selectorContexts', () => {
+    const contract = generateContract(profileSchema, []);
+    assert.ok(Array.isArray(contract.agentProfile.selectorContexts));
+    assert.deepStrictEqual(contract.agentProfile.selectorContexts.map(s => s.field), [
+      'businessPartner',
+      'product',
+    ]);
+    assert.equal(contract.agentProfile.selectorContexts[0].context.required[0].param, 'AD_Org_ID');
+    assert.equal(contract.agentProfile.selectorContexts[1].context.required[0].param, 'C_BPartner_ID');
+  });
+
+  it('agentProfile includes document actions', () => {
+    const contract = generateContract(profileSchema, []);
+    assert.ok(Array.isArray(contract.agentProfile.actions));
+    assert.ok(contract.agentProfile.actions.includes('documentAction'));
+  });
+
+  it('agentProfile includes workflow for transactional specs', () => {
+    const contract = generateContract(profileSchema, []);
+    assert.ok(Array.isArray(contract.agentProfile.workflow));
+    assert.ok(contract.agentProfile.workflow.length > 0);
+  });
+
+  it('agentProfile includes edgeCases', () => {
+    const contract = generateContract(profileSchema, []);
+    assert.ok(Array.isArray(contract.agentProfile.edgeCases));
+    assert.ok(contract.agentProfile.edgeCases.length >= 3);
+  });
+
+  it('agentProfile includes examples for transactional specs', () => {
+    const contract = generateContract(profileSchema, []);
+    assert.ok(Array.isArray(contract.agentProfile.examples));
+    assert.deepStrictEqual(contract.agentProfile.examples.map(e => e.operation), [
+      'createHeader',
+      'createLine',
+      'completeDocument',
+    ]);
+  });
+
+  it('agentProfile exposes warnings for read-only specs without boilerplate workflow', () => {
+    const readOnlySchema = {
+      version: '0.1.0',
+      window: { id: '1001', name: 'Audit Setup', primaryEntity: 'header', category: 'configuration' },
+      entities: [{
+        name: 'header',
+        table: 'AD_Audit_Setup',
+        level: 'header',
+        fields: [
+          { name: 'name', column: 'Name', type: 'string', visibility: 'readOnly', required: false, searchable: true, grid: true, form: true },
+        ],
+      }],
+    };
+    const contract = generateContract(readOnlySchema, []);
+    assert.deepStrictEqual(contract.agentProfile.workflow, []);
+    assert.deepStrictEqual(contract.agentProfile.edgeCases, []);
+    assert.ok(contract.agentProfile.warnings.includes('This spec appears read-only from generated form metadata'));
+  });
+
+  it('agentProfile includes dangerousOperations for void/reactive actions', () => {
+    const schemaWithDanger = {
+      ...profileSchema,
+      entities: [{
+        ...profileSchema.entities[0],
+        fields: [
+          ...profileSchema.entities[0].fields,
+          { name: 'voidDocument', column: 'Void', type: 'button', visibility: 'editable', required: false, searchable: false, grid: false, form: true },
+          { name: 'reactivateDocument', column: 'Reactivate', type: 'button', visibility: 'editable', required: false, searchable: false, grid: false, form: true },
+        ],
+      }],
+    };
+    const contract = generateContract(schemaWithDanger, []);
+    assert.ok(Array.isArray(contract.agentProfile.dangerousOperations));
+    assert.ok(contract.agentProfile.dangerousOperations.includes('voidDocument'));
+    assert.ok(contract.agentProfile.dangerousOperations.includes('reactivateDocument'));
+  });
+
+  it('agentProfile references only existing fields/selectors/actions', () => {
+    const contract = generateContract(profileSchema, []);
+    const profile = contract.agentProfile;
+
+    // Verify minimumCreate fields exist in formState
+    for (const field of profile.minimumCreate.headerFields ?? []) {
+      assert.ok(contract.formState.entities.header.fields[field], `minimumCreate header field ${field} should exist in formState`);
+    }
+    for (const field of profile.minimumCreate.lineFields ?? []) {
+      assert.ok(contract.formState.entities.lines.fields[field], `minimumCreate line field ${field} should exist in formState`);
+    }
+
+    // Verify selectorContexts exist in apiPrediction
+    const selectorNames = new Set(contract.apiPrediction.selectors.filter(s => s.context).map(s => s.field));
+    for (const sel of profile.selectorContexts) {
+      assert.ok(selectorNames.has(sel.field), `selectorContext ${sel.field} should exist in apiPrediction`);
+    }
+
+    // Verify actions exist in apiPrediction
+    const actionNames = new Set(contract.apiPrediction.actions.map(a => a.name));
+    for (const action of profile.actions) {
+      assert.ok(actionNames.has(action), `action ${action} should exist in apiPrediction`);
+    }
+  });
+});

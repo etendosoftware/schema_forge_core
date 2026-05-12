@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T18:11:46.137Z",
-  "updatedAt": "2026-05-15T16:33:40.086Z",
-  "checksum": "0d75aefbbf853e78",
+  "updatedAt": "2026-05-15T16:36:34.932Z",
+  "checksum": "94464a11a1d43ea1",
   "frontendContract": {
     "window": {
       "id": "6F8F913FA60F4CBD93DC1D3AA696E76E",
@@ -4740,6 +4740,94 @@
     },
     "requiredSessionVariables": [],
     "evaluationMode": "runtime"
+  },
+  "agentProfile": {
+    "purpose": "Manage payment out financial records.",
+    "whenToUse": [
+      "Use for payment out management."
+    ],
+    "minimumCreate": {
+      "headerFields": [
+        "documentType",
+        "paymentMethod",
+        "account",
+        "currency",
+        "financialTransactionAmount",
+        "financialTransactionConvertRate"
+      ],
+      "lineFields": [
+        "amount",
+        "active",
+        "toCurrency",
+        "foreignAmount",
+        "creditPaymentUsed",
+        "amount",
+        "currency"
+      ],
+      "recommendedOrder": [
+        "createHeader",
+        "createLines"
+      ]
+    },
+    "selectorContexts": [],
+    "actions": [
+      "posted",
+      "aPRMReversePayment",
+      "aeatsiiSend"
+    ],
+    "workflow": [
+      "Create draft header with required fields",
+      "Add at least one valid line"
+    ],
+    "edgeCases": [
+      "Payment amount exceeds remaining balance",
+      "Payment method is not configured for the business partner",
+      "Invoice is already fully paid",
+      "Document is already completed or closed",
+      "Document has pending lines or missing required fields",
+      "User lacks permission to execute the action",
+      "Source document has no valid lines to copy",
+      "Target entity already has linked records",
+      "Required reference data is missing (price list, warehouse, etc.)",
+      "Required field without default value must be provided"
+    ],
+    "examples": [
+      {
+        "operation": "createHeader",
+        "description": "Create a draft header with the minimum required editable fields.",
+        "fields": [
+          "documentType",
+          "paymentMethod",
+          "account",
+          "currency",
+          "financialTransactionAmount",
+          "financialTransactionConvertRate"
+        ]
+      },
+      {
+        "operation": "createLine",
+        "description": "Add a line after the header exists and parent context is available.",
+        "fields": [
+          "amount",
+          "active",
+          "toCurrency",
+          "foreignAmount",
+          "creditPaymentUsed",
+          "amount",
+          "currency"
+        ]
+      },
+      {
+        "operation": "completeDocument",
+        "description": "Validate form state and run the document lifecycle action when the draft is complete.",
+        "action": "posted"
+      }
+    ],
+    "warnings": [],
+    "knownLimitations": [],
+    "dangerousOperations": [
+      "aPRMReversePayment"
+    ]
   },
   "testManifest": {
     "tests": [

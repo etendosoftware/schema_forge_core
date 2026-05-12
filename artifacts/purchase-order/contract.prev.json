@@ -1,8 +1,8 @@
 {
   "version": "0.19.0",
   "generatedAt": "2026-04-30T15:42:46.497Z",
-  "updatedAt": "2026-05-15T16:33:38.817Z",
-  "checksum": "db2af24b1a59c801",
+  "updatedAt": "2026-05-15T16:36:33.657Z",
+  "checksum": "33886fd2bccac66a",
   "frontendContract": {
     "window": {
       "id": "181",
@@ -6507,6 +6507,242 @@
     },
     "requiredSessionVariables": [],
     "evaluationMode": "runtime"
+  },
+  "agentProfile": {
+    "purpose": "Create and manage purchase order documents.",
+    "whenToUse": [
+      "Use for supplier purchase order before receipt or invoice."
+    ],
+    "minimumCreate": {
+      "headerFields": [
+        "businessPartner",
+        "orderDate",
+        "partnerAddress",
+        "scheduledDeliveryDate",
+        "transactionDocument",
+        "warehouse",
+        "paymentTerms",
+        "priceList",
+        "cashVAT",
+        "invoiceFrom",
+        "deliveryMethod",
+        "priority",
+        "deliveryTerms"
+      ],
+      "lineFields": [
+        "product",
+        "orderedQuantity",
+        "listPrice",
+        "tax",
+        "unitPrice",
+        "lineNetAmount"
+      ],
+      "recommendedOrder": [
+        "createHeader",
+        "createLines"
+      ]
+    },
+    "selectorContexts": [
+      {
+        "entity": "header",
+        "field": "partnerAddress",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "header",
+        "field": "transactionDocument",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "header",
+        "field": "paymentMethod",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "header",
+        "field": "priceList",
+        "context": {
+          "required": [
+            {
+              "param": "isSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "header",
+        "field": "invoiceFrom",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "header",
+        "field": "project",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "C_BPartner_ID",
+              "source": "parentField",
+              "field": "businessPartner"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "lines",
+        "field": "tax",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "DateInvoiced",
+              "source": "parentField",
+              "field": "invoiceDate",
+              "fallbackField": "orderDate",
+              "format": "DD-MM-YYYY"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "lines",
+        "field": "operativeUOM",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "lines",
+        "field": "partnerAddress",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "parentField",
+              "field": "businessPartner"
+            }
+          ]
+        }
+      }
+    ],
+    "actions": [
+      "generateTemplate",
+      "rMPickFromShipment",
+      "rMReceiveMaterials",
+      "rMCreateInvoice",
+      "documentAction",
+      "copyFrom",
+      "copyFromPO",
+      "createOrder",
+      "createPOLines",
+      "processNow",
+      "posted",
+      "rMPickfromreceipt"
+    ],
+    "workflow": [
+      "Create draft header with required fields",
+      "Add at least one valid line",
+      "Validate form state",
+      "Complete the document"
+    ],
+    "edgeCases": [
+      "Source document has no valid lines to copy",
+      "Target entity already has linked records",
+      "Required reference data is missing (price list, warehouse, etc.)",
+      "Payment amount exceeds remaining balance",
+      "Payment method is not configured for the business partner",
+      "Invoice is already fully paid",
+      "Document is already completed or closed",
+      "Document has pending lines or missing required fields",
+      "User lacks permission to execute the action",
+      "Required context is missing"
+    ],
+    "examples": [
+      {
+        "operation": "createHeader",
+        "description": "Create a draft header with the minimum required editable fields.",
+        "fields": [
+          "businessPartner",
+          "orderDate",
+          "partnerAddress",
+          "scheduledDeliveryDate",
+          "transactionDocument",
+          "warehouse",
+          "paymentTerms",
+          "priceList",
+          "cashVAT",
+          "invoiceFrom",
+          "deliveryMethod",
+          "priority",
+          "deliveryTerms"
+        ]
+      },
+      {
+        "operation": "createLine",
+        "description": "Add a line after the header exists and parent context is available.",
+        "fields": [
+          "product",
+          "orderedQuantity",
+          "listPrice",
+          "tax",
+          "unitPrice",
+          "lineNetAmount"
+        ]
+      },
+      {
+        "operation": "completeDocument",
+        "description": "Validate form state and run the document lifecycle action when the draft is complete.",
+        "action": "generateTemplate"
+      }
+    ],
+    "warnings": [],
+    "knownLimitations": [],
+    "dangerousOperations": [
+      "cancelandreplace",
+      "confirmcancelandreplace"
+    ]
   },
   "testManifest": {
     "tests": [

@@ -1,8 +1,8 @@
 {
   "version": "0.4.0",
   "generatedAt": "2026-04-29T18:12:23.942Z",
-  "updatedAt": "2026-05-15T16:33:40.490Z",
-  "checksum": "16dbff15b5a9da1c",
+  "updatedAt": "2026-05-15T16:36:35.332Z",
+  "checksum": "dc49d9522ab22d0f",
   "frontendContract": {
     "window": {
       "id": "3CAAC7D54593489384452416ACF356DD",
@@ -715,6 +715,34 @@
     },
     "requiredSessionVariables": [],
     "evaluationMode": "runtime"
+  },
+  "agentProfile": {
+    "purpose": "Manage payment method records.",
+    "whenToUse": [
+      "Use for payment method management."
+    ],
+    "minimumCreate": {
+      "lineFields": [
+        "name",
+        "payinAllow",
+        "automaticReceipt",
+        "automaticDeposit",
+        "payoutAllow",
+        "automaticPayment",
+        "automaticWithdrawn"
+      ],
+      "recommendedOrder": [
+        "createLines"
+      ]
+    },
+    "selectorContexts": [],
+    "actions": [],
+    "workflow": [],
+    "edgeCases": [],
+    "examples": [],
+    "warnings": [],
+    "knownLimitations": [],
+    "dangerousOperations": []
   },
   "testManifest": {
     "tests": [

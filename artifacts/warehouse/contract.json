@@ -1,8 +1,8 @@
 {
   "version": "0.5.0",
   "generatedAt": "2026-04-29T18:11:37.816Z",
-  "updatedAt": "2026-05-15T16:33:39.878Z",
-  "checksum": "a18f761a13edd8d1",
+  "updatedAt": "2026-05-15T16:36:34.723Z",
+  "checksum": "6362e650345a7071",
   "frontendContract": {
     "window": {
       "id": "139",
@@ -2185,6 +2185,72 @@
     },
     "requiredSessionVariables": [],
     "evaluationMode": "runtime"
+  },
+  "agentProfile": {
+    "purpose": "Manage warehouse inventory operations.",
+    "whenToUse": [
+      "Use for stock and warehouse operations."
+    ],
+    "minimumCreate": {
+      "lineFields": [
+        "searchKey",
+        "name",
+        "locationAddress",
+        "allocated",
+        "searchKey",
+        "rowX",
+        "stackY",
+        "levelZ",
+        "relativePriority",
+        "default",
+        "changeStatus",
+        "product",
+        "uOM"
+      ],
+      "recommendedOrder": [
+        "createLines"
+      ]
+    },
+    "selectorContexts": [],
+    "actions": [],
+    "workflow": [
+      "Add at least one valid line"
+    ],
+    "edgeCases": [
+      "Required context is missing",
+      "User lacks permission",
+      "Record is in an incompatible state",
+      "Required field without default value must be provided",
+      "Validate the current form state before running lifecycle actions",
+      "Do not run destructive lifecycle actions without explicit user confirmation"
+    ],
+    "examples": [
+      {
+        "operation": "createLine",
+        "description": "Add a line after the header exists and parent context is available.",
+        "fields": [
+          "searchKey",
+          "name",
+          "locationAddress",
+          "allocated",
+          "searchKey",
+          "rowX",
+          "stackY",
+          "levelZ",
+          "relativePriority",
+          "default",
+          "changeStatus",
+          "product",
+          "uOM"
+        ]
+      }
+    ],
+    "warnings": [
+      "System lifecycle actions are present but are not exposed as editable agent actions",
+      "Transactional spec has no generated lifecycle action metadata"
+    ],
+    "knownLimitations": [],
+    "dangerousOperations": []
   },
   "testManifest": {
     "tests": [

@@ -1,8 +1,8 @@
 {
   "version": "0.1.0",
   "generatedAt": "2026-05-12T16:47:39.614Z",
-  "updatedAt": "2026-05-15T16:33:38.278Z",
-  "checksum": "31fb4d3412c22037",
+  "updatedAt": "2026-05-15T16:36:33.124Z",
+  "checksum": "4ae4f7ca2b7a7535",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -3405,6 +3405,159 @@
     },
     "requiredSessionVariables": [],
     "evaluationMode": "runtime"
+  },
+  "agentProfile": {
+    "purpose": "Create and manage sales order documents.",
+    "whenToUse": [
+      "Use for customer sales order before receipt or invoice."
+    ],
+    "minimumCreate": {
+      "headerFields": [
+        "orderDate",
+        "businessPartner",
+        "partnerAddress",
+        "priceList",
+        "paymentTerms",
+        "warehouse"
+      ],
+      "lineFields": [
+        "product",
+        "orderedQuantity",
+        "listPrice",
+        "tax",
+        "unitPrice"
+      ],
+      "recommendedOrder": [
+        "createHeader",
+        "createLines"
+      ]
+    },
+    "selectorContexts": [
+      {
+        "entity": "header",
+        "field": "partnerAddress",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "header",
+        "field": "priceList",
+        "context": {
+          "required": [
+            {
+              "param": "isSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "header",
+        "field": "paymentMethod",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
+      },
+      {
+        "entity": "lines",
+        "field": "tax",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "DateInvoiced",
+              "source": "parentField",
+              "field": "invoiceDate",
+              "fallbackField": "orderDate",
+              "format": "DD-MM-YYYY"
+            }
+          ]
+        }
+      }
+    ],
+    "actions": [
+      "rMPickFromShipment",
+      "rMReceiveMaterials",
+      "rMCreateInvoice",
+      "documentAction",
+      "copyFrom",
+      "copyFromPO",
+      "createOrder",
+      "processNow",
+      "posted",
+      "generateTemplate",
+      "createPOLines",
+      "rMPickfromreceipt"
+    ],
+    "workflow": [
+      "Create draft header with required fields",
+      "Add at least one valid line",
+      "Validate form state",
+      "Complete the document"
+    ],
+    "edgeCases": [
+      "Source document has no valid lines to copy",
+      "Target entity already has linked records",
+      "Required reference data is missing (price list, warehouse, etc.)",
+      "Payment amount exceeds remaining balance",
+      "Payment method is not configured for the business partner",
+      "Invoice is already fully paid",
+      "Document is already completed or closed",
+      "Document has pending lines or missing required fields",
+      "User lacks permission to execute the action",
+      "Required context is missing"
+    ],
+    "examples": [
+      {
+        "operation": "createHeader",
+        "description": "Create a draft header with the minimum required editable fields.",
+        "fields": [
+          "orderDate",
+          "businessPartner",
+          "partnerAddress",
+          "priceList",
+          "paymentTerms",
+          "warehouse"
+        ]
+      },
+      {
+        "operation": "createLine",
+        "description": "Add a line after the header exists and parent context is available.",
+        "fields": [
+          "product",
+          "orderedQuantity",
+          "listPrice",
+          "tax",
+          "unitPrice"
+        ]
+      },
+      {
+        "operation": "completeDocument",
+        "description": "Validate form state and run the document lifecycle action when the draft is complete.",
+        "action": "rMPickFromShipment"
+      }
+    ],
+    "warnings": [],
+    "knownLimitations": [],
+    "dangerousOperations": [
+      "cancelAndReplace",
+      "confirmCancelAndReplace"
+    ]
   },
   "testManifest": {
     "tests": [

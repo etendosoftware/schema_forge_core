@@ -1,8 +1,8 @@
 {
   "version": "0.2.0",
   "generatedAt": "2026-04-29T18:11:05.114Z",
-  "updatedAt": "2026-05-15T16:33:38.706Z",
-  "checksum": "c30ce521fb63c8e3",
+  "updatedAt": "2026-05-15T16:36:33.549Z",
+  "checksum": "e7bf6e2352daab35",
   "frontendContract": {
     "window": {
       "id": "123271B9AD60469BAE8A924841456B63",
@@ -2031,6 +2031,83 @@
     },
     "requiredSessionVariables": [],
     "evaluationMode": "runtime"
+  },
+  "agentProfile": {
+    "purpose": "Create and manage return material receipt documents.",
+    "whenToUse": [
+      "Use for customer return material receipt before receipt or invoice."
+    ],
+    "minimumCreate": {
+      "lineFields": [
+        "movementDate",
+        "businessPartner",
+        "warehouse",
+        "partnerAddress"
+      ],
+      "recommendedOrder": [
+        "createLines"
+      ]
+    },
+    "selectorContexts": [
+      {
+        "entity": "returnMaterialReceipt",
+        "field": "partnerAddress",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
+      }
+    ],
+    "actions": [
+      "receiveMaterials",
+      "createLinesFrom",
+      "documentAction",
+      "posted",
+      "sendMaterials",
+      "generateTo"
+    ],
+    "workflow": [
+      "Add at least one valid line",
+      "Validate form state",
+      "Complete the document"
+    ],
+    "edgeCases": [
+      "Source document has no valid lines to copy",
+      "Target entity already has linked records",
+      "Required reference data is missing (price list, warehouse, etc.)",
+      "Document is already completed or closed",
+      "Document has pending lines or missing required fields",
+      "User lacks permission to execute the action",
+      "Required context is missing",
+      "User lacks permission",
+      "Record is in an incompatible state",
+      "Required field without default value must be provided"
+    ],
+    "examples": [
+      {
+        "operation": "createLine",
+        "description": "Add a line after the header exists and parent context is available.",
+        "fields": [
+          "movementDate",
+          "businessPartner",
+          "warehouse",
+          "partnerAddress"
+        ]
+      },
+      {
+        "operation": "completeDocument",
+        "description": "Validate form state and run the document lifecycle action when the draft is complete.",
+        "action": "receiveMaterials"
+      }
+    ],
+    "warnings": [],
+    "knownLimitations": [],
+    "dangerousOperations": []
   },
   "testManifest": {
     "tests": [
