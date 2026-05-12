@@ -1,8 +1,8 @@
 {
   "version": "0.7.0",
   "generatedAt": "2026-05-06T15:52:09.982Z",
-  "updatedAt": "2026-05-11T11:52:33.346Z",
-  "checksum": "d9bc02604ffd915b",
+  "updatedAt": "2026-05-11T14:57:38.913Z",
+  "checksum": "6bd7f396f1844137",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -15,7 +15,7 @@
       "breadcrumb": "Contact",
       "customComponents": {
         "headerTable": "ContactsTable",
-        "topbarRight": "ContactTypeToggle"
+        "topbarExtra": "ContactTypeToggle"
       },
       "processOverrides": {
         "setNewCurrency": {
@@ -3771,7 +3771,7 @@
       "breadcrumb": "Contact",
       "customComponents": {
         "headerTable": "ContactsTable",
-        "topbarRight": "ContactTypeToggle"
+        "topbarExtra": "ContactTypeToggle"
       },
       "processOverrides": {
         "setNewCurrency": {

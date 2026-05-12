@@ -692,7 +692,7 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
         ]}
         hidePrint
         hideMoreMenu
-        topbarRight={ContactTypeToggle}
+        topbarExtra={ContactTypeToggle}
         labelOverrides={labelOverrides}
         {...props}
         sidebarContent={(data) => (
