@@ -4,6 +4,7 @@ import { Pencil, Copy, Mail, MoreVertical, Trash2, Loader2 } from 'lucide-react'
 import { useUI } from '@/i18n';
 import { useDocumentAction } from '@/hooks/useDocumentAction';
 import { isDeleteVisibleForRecord, evalRowVisibleWhen } from '@/utils/recordActions.js';
+import { QUICK_ACTIONS_PILL_CLASS } from './quickActionsStyle.js';
 
 /**
  * RowQuickActions — hover-revealed action icons overlaid at the end of a list row.
@@ -185,7 +186,7 @@ export default function RowQuickActions({
 
   return (
     <div
-      className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-row items-center justify-center gap-0.5 h-10 px-3 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity z-10 bg-white rounded-lg shadow-sm ring-1 ring-border/40"
+      className={`absolute right-3 top-1/2 -translate-y-1/2 flex flex-row items-center justify-center gap-0.5 h-10 px-3 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity z-10 ${QUICK_ACTIONS_PILL_CLASS}`.trim()}
       data-testid="row-quick-actions"
       onClick={stop}
     >
