@@ -138,7 +138,7 @@ export default function LinesBottomSection({
             {/* Right column: Totals — fixed 420px wide / 241px tall to keep the
                 same footprint whether the "Descuento total" row is collapsed or
                 expanded. */}
-            <div className="w-[420px] shrink-0 p-2 flex flex-col justify-start" style={{ height: 241, minHeight: 241, maxHeight: 241 }}>
+            <div className="w-[520px] shrink-0 p-2 flex flex-col justify-start" style={{ height: 241, minHeight: 241, maxHeight: 241 }}>
               <DocumentTotalsPanel
                 lines={lines ?? []}
                 pendingLine={pendingLine ?? null}

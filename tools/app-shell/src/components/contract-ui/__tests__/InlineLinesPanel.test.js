@@ -85,8 +85,8 @@ describe('InlineLinesPanel', () => {
     assert.match(src, /onSelect=\{\(item\) => \{[\s\S]*?onCommit\(id, \{ identifier: label, selectedItem: item \}\);/);
   });
 
-  it('uses Figma design tokens (40px row, Inter font, #E8EAEF separator)', () => {
-    assert.match(src, /rowHeight: 40/);
+  it('uses Figma design tokens (40px visible row, Inter font, #E8EAEF separator)', () => {
+    assert.match(src, /rowHeight: 41/);
     assert.match(src, /'#E8EAEF'/);
     assert.match(src, /'#121217'/);
     assert.match(src, /Inter/);

@@ -85,11 +85,10 @@ export default function LinesSelectionBar({
               disabled={deleting}
               title={deleteTitle}
               onClick={onDelete}
-              className="disabled:opacity-50 transition-colors"
+              className="bg-white hover:bg-[#FEF0F4] disabled:opacity-50 transition-colors"
               style={{
                 width: btnSize,
                 height: btnSize,
-                background: '#FFFFFF',
                 border: '1px solid #FBB1C4',
                 boxShadow: '0px 1px 2px rgba(18,18,23,0.05)',
                 borderRadius: 8,
@@ -104,7 +103,7 @@ export default function LinesSelectionBar({
               type="button"
               title={closeTitle}
               onClick={onClose}
-              className="transition-colors hover:bg-muted/40"
+              className="transition-colors hover:bg-[#F5F7F9]"
               style={{
                 width: btnSize,
                 height: btnSize,
@@ -112,7 +111,6 @@ export default function LinesSelectionBar({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'transparent',
                 border: 'none',
               }}
             >

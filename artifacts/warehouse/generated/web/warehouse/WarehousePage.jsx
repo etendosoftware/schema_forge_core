@@ -31,6 +31,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:warehouse
 
+// @sf-generated-start requiredHeaderFields:warehouse
+const requiredHeaderFields = ['searchKey', 'name', 'locationAddress', 'allocated'];
+// @sf-generated-end requiredHeaderFields:warehouse
+
 
 
 export const api = {
@@ -247,6 +251,7 @@ export default function WarehousePage({ windowName, recordId, ...props }) {
         secondaryTabs={[
           { key: 'productTransactions', label: 'Transactions', Panel: WarehouseTransactionsTable },
         ]}
+        requiredHeaderFields={requiredHeaderFields}
         {...props}
       />
     );

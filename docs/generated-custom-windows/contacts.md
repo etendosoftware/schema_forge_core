@@ -132,3 +132,10 @@ The Contacts window should let users maintain a shared business-partner master r
 - `tools/app-shell/src/windows/custom/contacts/__tests__/ContactsFinancialPanel.test.js` (ETP-3660) — 9 source-read assertions covering `CreditLimitStepper` debounce behavior (debounceRef declaration, clearTimeout before scheduling, 400 ms delay, null reset after firing, useEffect cleanup on unmount, absence of the old direct `setTimeout(onBlur, 0)`), the `<hr>` separator presence, and `BillingPreferencesForm` props wiring.
 - `tools/app-shell/src/components/ui/__tests__/add-line-button-hide-chevron.test.js` (ETP-3660) — 5 source-read assertions verifying the `hideChevron` prop default, the `!hideChevron` guard around divider and dropdown, full `borderRadius: 7` when chevron is hidden, primary button always rendered, and `DIVIDER_STYLE` rendered only inside the `!hideChevron` block.
 - No contacts-window-specific E2E test was found in the current repo. Generic route-loading and shared entity-flow evidence lives in `docs/generated-custom-windows/app-shell-functional-flows.md`, including registry-backed window loading and shared child-refresh/defaults behavior.
+
+## Pipeline regeneration — ETP-3908
+
+Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functional changes to this window.
+
+- `linesLayout: "classic"` is now written explicitly to `contract.json`; previously the classic layout was the implicit default.
+- `requiredHeaderFields` is now emitted in the page component; this window has no required header fields so the array is empty and there is no behavioral change.

@@ -34,6 +34,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:user
 
+// @sf-generated-start requiredHeaderFields:user
+const requiredHeaderFields = ['name', 'username', 'locked', 'lastPasswordUpdate'];
+// @sf-generated-end requiredHeaderFields:user
+
 // @sf-generated-start addLineFields:userRoles
 const addLineFields = {
   entry: [
@@ -225,6 +229,7 @@ export default function UserPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        requiredHeaderFields={requiredHeaderFields}
         {...props}
       />
     );

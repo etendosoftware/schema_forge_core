@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T18:11:26.703Z",
-  "updatedAt": "2026-05-05T18:50:28.949Z",
-  "checksum": "74f6fa4c44a9e396",
+  "updatedAt": "2026-05-12T18:38:12.878Z",
+  "checksum": "10c7d41879059f6f",
   "frontendContract": {
     "window": {
       "id": "144",
@@ -10,7 +10,8 @@
       "primaryEntity": "productCategory",
       "category": "inventory",
       "detailEntity": "assignedProducts",
-      "layoutType": "default"
+      "layoutType": "default",
+      "linesLayout": "classic"
     },
     "entities": {
       "productCategory": {

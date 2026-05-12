@@ -1,16 +1,27 @@
-import { DataTable } from '@/components/contract-ui';
+import { forwardRef } from 'react';
+import { DataTable, InlineLinesPanel } from '@/components/contract-ui';
 
 // @sf-generated-start columns:userRoles
 const columns = [
-  { key: 'role', column: 'AD_Role_ID', type: 'selector', label: 'Role' },
-  { key: 'roleAdmin', column: 'Is_Role_Admin', type: 'boolean', label: 'Role Administrator' },
+  { key: 'role', column: 'AD_Role_ID', type: 'selector', label: 'Role', required: true },
+  { key: 'roleAdmin', column: 'Is_Role_Admin', type: 'boolean', label: 'Role Administrator', required: true },
 ];
 // @sf-generated-end columns:userRoles
 
 const filters = ['role'];
 
 // @sf-generated-start component:UserRolesTable
-export default function UserRolesTable(props) {
+const UserRolesTable = forwardRef(function UserRolesTable(props, ref) {
+  // Inline-editable layout owns rendering of the existing rows. The add-line flow keeps
+  // using the proven DataTable inline-add row (callouts, focus management, defaults) —
+  // when addRow.active flips on, we hand off to DataTable so the user can fill the new
+  // line, then return to InlineLinesPanel once addRow.active flips off again. The ref
+  // is forwarded so DetailView can imperatively flush pending edits on global save.
+  if (props.linesLayout === 'inlineEditable' && !props.addRow?.active) {
+    return <InlineLinesPanel ref={ref} columns={columns} {...props} />;
+  }
   return <DataTable columns={columns} filters={filters} {...props} />;
-}
+});
+
+export default UserRolesTable;
 // @sf-generated-end component:UserRolesTable

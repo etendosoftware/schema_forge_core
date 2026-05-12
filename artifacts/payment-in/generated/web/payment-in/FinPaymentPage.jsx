@@ -36,6 +36,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:finPayment
 
+// @sf-generated-start requiredHeaderFields:finPayment
+const requiredHeaderFields = [];
+// @sf-generated-end requiredHeaderFields:finPayment
+
 
 
 export const api = {
