@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T19:06:55.269Z",
-  "updatedAt": "2026-05-05T18:51:13.168Z",
-  "checksum": "41bc87f1b0f35514",
+  "updatedAt": "2026-05-12T18:38:14.078Z",
+  "checksum": "af69c307f69936e1",
   "frontendContract": {
     "window": {
       "id": "141",
@@ -23,7 +23,8 @@
           "IsActive": "Activo"
         }
       },
-      "layoutType": "default"
+      "layoutType": "default",
+      "linesLayout": "classic"
     },
     "entities": {
       "header": {

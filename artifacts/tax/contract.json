@@ -1,8 +1,8 @@
 {
   "version": "0.4.0",
   "generatedAt": "2026-04-27T19:18:32.198Z",
-  "updatedAt": "2026-05-05T18:51:27.436Z",
-  "checksum": "aa192c547dd1acc6",
+  "updatedAt": "2026-05-12T18:38:14.218Z",
+  "checksum": "81c6caff8002dae2",
   "frontendContract": {
     "window": {
       "id": "137",
@@ -31,7 +31,8 @@
           "Description": "Description"
         }
       },
-      "layoutType": "default"
+      "layoutType": "default",
+      "linesLayout": "classic"
     },
     "entities": {
       "tax": {

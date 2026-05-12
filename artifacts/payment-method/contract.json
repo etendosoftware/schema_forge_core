@@ -1,8 +1,8 @@
 {
   "version": "0.4.0",
   "generatedAt": "2026-04-29T18:12:23.942Z",
-  "updatedAt": "2026-05-05T18:51:23.419Z",
-  "checksum": "9cf422a68c69ede0",
+  "updatedAt": "2026-05-12T18:38:14.149Z",
+  "checksum": "a385cfa31554ae40",
   "frontendContract": {
     "window": {
       "id": "3CAAC7D54593489384452416ACF356DD",
@@ -29,7 +29,8 @@
           "Automatic_Withdrawn": "Retiro automático"
         }
       },
-      "layoutType": "default"
+      "layoutType": "default",
+      "linesLayout": "classic"
     },
     "entities": {
       "paymentMethod": {
