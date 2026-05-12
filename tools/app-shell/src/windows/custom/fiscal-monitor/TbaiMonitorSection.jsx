@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
-import { StatusPill, NumFactura, Pager, RowActionBtn, isErrorStatus, isPendingStatus } from './FmPrimitives.jsx';
+import { StatusPill, NumFactura, Pager, RowActionBtn, isErrorStatus, isPendingStatus, fmtDate, PAGE_SIZE } from './FmPrimitives.jsx';
 import { TBAI_SPEC, TBAI_ENTITY } from './useFiscalMonitor.js';
 
 const STATUS_FIELD = 'estado';
-const PAGE_SIZE    = 20;
 
 const STATUS_TAB_KEYS = [
   { key: 'all',       dot: null,      labelKey: 'fiscalMonitor.tbai.tab.all' },
@@ -14,14 +13,6 @@ const STATUS_TAB_KEYS = [
   { key: 'Error',     dot: 'danger',  labelKey: 'fiscalMonitor.tbai.tab.Error' },
   { key: 'Pendiente', dot: 'pending', labelKey: 'fiscalMonitor.tbai.tab.Pendiente' },
 ];
-
-function fmtDate(raw) {
-  if (!raw) return '—';
-  const parts = String(raw).split(/[-/]/);
-  if (parts.length !== 3) return raw;
-  const [a, b, c] = parts.map(p => p.trim());
-  return a.length === 4 ? `${c}/${b}/${a}` : `${a}/${b}/${c}`;
-}
 
 // Etendo identifier format: "documentNo – date – amount"
 // Parse into the individual parts we need for display.
@@ -173,17 +164,21 @@ export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFi
                         )}
                       </td>
                       <td>
-                        <StatusPill
-                          estado={row.estado}
-                          onClick={
-                            isErrorStatus(row.estado) && row.businessPartner
-                              ? () => onBpClick?.(row.businessPartner)
-                              : isPendingStatus(row.estado) && row.invoice
-                                ? () => onInvoiceOpen?.(row.invoice, 'sales-invoice')
-                                : undefined
+                        {(() => {
+                          let pillClick;
+                          if (isErrorStatus(row.estado) && row.businessPartner) {
+                            pillClick = () => onBpClick?.(row.businessPartner);
+                          } else if (isPendingStatus(row.estado) && row.invoice) {
+                            pillClick = () => onInvoiceOpen?.(row.invoice, 'sales-invoice');
                           }
-                          title={isPendingStatus(row.estado) ? ui('fiscalMonitor.openInvoice') : undefined}
-                        />
+                          return (
+                            <StatusPill
+                              estado={row.estado}
+                              onClick={pillClick}
+                              title={isPendingStatus(row.estado) ? ui('fiscalMonitor.openInvoice') : undefined}
+                            />
+                          );
+                        })()}
                       </td>
                       <td>
                         <RowActionBtn title={ui('fiscalMonitor.openInvoice')} />

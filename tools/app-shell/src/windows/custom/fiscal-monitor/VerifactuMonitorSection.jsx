@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
-import { StatusPill, NumFactura, Pager, RowActionBtn, isErrorStatus } from './FmPrimitives.jsx';
+import { StatusPill, NumFactura, Pager, RowActionBtn, isErrorStatus, fmtDate, PAGE_SIZE } from './FmPrimitives.jsx';
 import {
   VF_SPEC,
   VF_ACEPTADAS_ENTITY,
@@ -19,14 +19,6 @@ const STATUS_ENTITIES = {
 
 const INVOICE_FK_FIELD = 'invoice';
 
-function fmtDate(raw) {
-  if (!raw) return '—';
-  const parts = String(raw).split(/[-/]/);
-  if (parts.length !== 3) return raw;
-  const [a, b, c] = parts.map(p => p.trim());
-  return a.length === 4 ? `${c}/${b}/${a}` : `${a}/${b}/${c}`;
-}
-const PAGE_SIZE = 20;
 
 const STATUS_TABS = [
   { id: 'accepted',          dot: 'success', labelKey: 'fiscalMonitor.verifactu.tab.accepted' },

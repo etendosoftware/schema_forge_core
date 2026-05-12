@@ -5,9 +5,9 @@ import { RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI } from '@/i18n';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { neoBase } from '@/components/related-documents/helpers.js';
 import { useFiscalMonitor } from './useFiscalMonitor.js';
+import { WipBadge } from './FmPrimitives.jsx';
 import InvoicePreviewModal from '../shared/InvoicePreviewModal.jsx';
 import ContactDetailModal from './ContactDetailModal.jsx';
 import { useDebugMode } from './useDebugMode.js';
@@ -129,22 +129,6 @@ function useDebugState(orgId, token, apiBaseUrl) {
   };
 }
 
-const WipBadge = ({ ui }) => (
-  <div className="absolute top-3 right-4 z-10">
-    <TooltipProvider delayDuration={600}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300 cursor-default select-none">
-            ⚠ {ui('fiscal.wip.badge')}
-          </span>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" className="max-w-[260px] text-center">
-          {ui('fiscal.wip.tooltip')}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  </div>
-);
 
 export default function FiscalMonitorPage({ token, apiBaseUrl }) {
   const ui = useUI();
@@ -214,7 +198,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
       <>
         {DebugPanel}
         <div className="relative fm-wrap fm-page" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <WipBadge ui={ui} />
+          <WipBadge />
           <div className="fm-skeleton" style={{ height: 64, borderRadius: 12 }} />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
             {[1,2,3,4].map(i => <div key={i} className="fm-skeleton" style={{ height: 100, borderRadius: 12 }} />)}
@@ -230,7 +214,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
       <>
         {DebugPanel}
         <div className="relative fm-wrap fm-page">
-          <WipBadge ui={ui} />
+          <WipBadge />
           <div className="fm-empty">
             <div className="ill" style={{ background: '#FEF0F4', color: '#D50B3E' }}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -249,7 +233,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
     return (
       <>
         {DebugPanel}
-        <div className="relative fm-wrap fm-page"><WipBadge ui={ui} /><FmEmpty ui={ui} /></div>
+        <div className="relative fm-wrap fm-page"><WipBadge /><FmEmpty ui={ui} /></div>
       </>
     );
   }
@@ -259,7 +243,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
       <>
         {DebugPanel}
         <div className="relative fm-wrap fm-page">
-          <WipBadge ui={ui} />
+          <WipBadge />
           <div className="fm-empty">
             <div className="ill" style={{ background: '#FEF0F4', color: '#D50B3E' }}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -281,7 +265,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
     <>
       {DebugPanel}
     <div className="relative fm-wrap fm-page">
-      <WipBadge ui={ui} />
+      <WipBadge />
       <OrgLead org={org} profile={profile} ui={ui} onRefresh={handleRefresh} loading={loading} />
       <CertExpiryBanner daysLeft={certDaysLeft} variant="subtle" />
 

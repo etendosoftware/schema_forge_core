@@ -1,5 +1,6 @@
 // Shared UI primitives for the Fiscal Monitor.
 import { useUI } from '@/i18n';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export const ERROR_STATUSES = new Set([
   'IN', 'EE', 'AE',                            // SII
@@ -127,3 +128,33 @@ export const RowActionBtn = ({ onClick, title }) => (
     </svg>
   </button>
 );
+
+export const PAGE_SIZE = 20;
+
+export function fmtDate(raw) {
+  if (!raw) return '—';
+  const parts = String(raw).split(/[-/]/);
+  if (parts.length !== 3) return raw;
+  const [a, b, c] = parts.map(p => p.trim());
+  return a.length === 4 ? `${c}/${b}/${a}` : `${a}/${b}/${c}`;
+}
+
+export const WipBadge = () => {
+  const ui = useUI();
+  return (
+    <div className="absolute top-3 right-4 z-10">
+      <TooltipProvider delayDuration={600}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300 cursor-default select-none">
+              ⚠ {ui('fiscal.wip.badge')}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-[260px] text-center">
+            {ui('fiscal.wip.tooltip')}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
+  );
+};

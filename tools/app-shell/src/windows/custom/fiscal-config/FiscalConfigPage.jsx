@@ -4,12 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUI } from '@/i18n';
 import { useFiscalConfig } from './useFiscalConfig.js';
 import { detectProfile } from './fiscalConfig.utils.js';
 import { useCertExpiry } from './useCertExpiry.js';
 import { useDebugMode } from '../fiscal-monitor/useDebugMode.js';
+import { WipBadge } from '../fiscal-monitor/FmPrimitives.jsx';
 import CertExpiryBanner from './CertExpiryBanner.jsx';
 import OnboardingWizard from './OnboardingWizard.jsx';
 import SiiSection from './SiiSection.jsx';
@@ -63,25 +63,6 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
     if (results[1].status === 'rejected') setTbaiError(results[1].reason?.message ?? ui('fiscal.tbai.error', { error: '' }));
     if (results.every(r => r.status === 'fulfilled')) refetch();
     setCombinedSaving(false);
-  }
-
-  function WipBadge() {
-    return (
-      <div className="absolute top-3 right-4 z-10">
-        <TooltipProvider delayDuration={600}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300 cursor-default select-none">
-                ⚠ {ui('fiscal.wip.badge')}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-[260px] text-center">
-              {ui('fiscal.wip.tooltip')}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-    );
   }
 
   const DebugPanel = debugMode ? (
