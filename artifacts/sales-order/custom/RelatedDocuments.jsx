@@ -206,6 +206,8 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
     );
   }
 
+  if (chips.length === 0) return null;
+
   return (
     <RelatedDocumentsShell loading={loading} onRefresh={onRefresh}>
       {chips}
