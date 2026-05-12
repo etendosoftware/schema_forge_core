@@ -62,7 +62,9 @@ export function evalRowVisibleWhen(expr, row) {
     const key = fieldRef[0].toLowerCase() + fieldRef.slice(1);
     if (!(key in (row || {}))) return true;
     const rawVal = row[key];
-    const actual = typeof rawVal === 'boolean' ? (rawVal ? 'Y' : 'N') : String(rawVal ?? '');
+    let actual;
+    if (typeof rawVal === 'boolean') actual = rawVal ? 'Y' : 'N';
+    else actual = String(rawVal ?? '');
     return op === '=' ? actual === expected : actual !== expected;
   });
 }
