@@ -236,6 +236,8 @@ Contract tests (Node.js), Unit tests (JUnit in Etendo Go), Integration tests (OB
 Run `make test` for CLI tests. See `docs/e2e-testing-guide.md` for E2E setup, conventions, and `data-testid` patterns.
 Every process must declare >=3 edge cases. Every kept rule must have a behavioral test.
 
+**Delegation rule (MANDATORY):** Any task that writes, extends, or fixes tests — unit (Vitest / Node test runner), source-reading, or Playwright E2E — MUST be delegated to the `test-generator` subagent (Tester). Spawn it with `subagent_type="general-purpose"` and include Tester's identity from `.claude/agents/test-generator.md`. Before writing or asking Tester to write a Playwright spec, the agent (and the coordinator) MUST read `docs/e2e-testing-guide.md` first; the canonical mocked-spec reference is `e2e/tests/flows/row-quick-actions.mocked.spec.js`.
+
 ## Pipeline Validation
 
 `cli/src/validate-pipeline.js` enforces consistency across the artifact pipeline (decisions → contract → generated → registry). Runs without DB access. Defined rules: F1–F10, full table in `docs/pipeline-validator-reference.md`.
