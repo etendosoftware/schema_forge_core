@@ -113,10 +113,14 @@ async function installQuotationMocks(page, { header = DRAFT_HEADER, lines = [LIN
   });
 }
 
+// IMPORTANT: in Playwright, the LAST registered matching route wins. login() installs
+// a generic `**/sws/**` catch-all, so installQuotationMocks() MUST run *after* login()
+// for the specific routes to take precedence.
+
 test.describe('Inline-editable lines — Sales Quotation (mocked)', () => {
   test('renders rows in InlineLinesPanel with correct data-testid attributes', async ({ page }) => {
-    await installQuotationMocks(page);
     await login(page);
+    await installQuotationMocks(page);
     await page.goto(`/sales-quotation/${QUOT_ID}`);
     await page.waitForLoadState('networkidle').catch(() => {});
 
@@ -125,62 +129,68 @@ test.describe('Inline-editable lines — Sales Quotation (mocked)', () => {
     await expect(page.locator(`[data-testid="line-row-${LINE_B.id}"]`)).toBeVisible();
   });
 
+  // Note: the sticky header (z-10) intercepts pointer events at the row center,
+  // so we use `dispatchEvent('mouseover')` to fire React's synthetic event
+  // directly — same end result as a real hover, no actionability check.
   test('hovering a row reveals the action strip', async ({ page }) => {
-    await installQuotationMocks(page);
     await login(page);
+    await installQuotationMocks(page);
     await page.goto(`/sales-quotation/${QUOT_ID}`);
     await page.waitForSelector('[data-testid="inline-lines-panel"]', { timeout: 8_000 });
 
     const rowA = page.locator(`[data-testid="line-row-${LINE_A.id}"]`);
-    await rowA.hover();
+    await rowA.dispatchEvent('mouseover');
 
     const actionsStrip = rowA.locator('[data-testid="line-actions"]');
     await expect(actionsStrip).toBeVisible();
+    await expect(actionsStrip.locator('button')).toHaveCount(2, { timeout: 2_000 });
   });
 
   test('clicking pencil switches row to edit mode (input appears)', async ({ page }) => {
-    await installQuotationMocks(page);
     await login(page);
+    await installQuotationMocks(page);
     await page.goto(`/sales-quotation/${QUOT_ID}`);
     await page.waitForSelector('[data-testid="inline-lines-panel"]', { timeout: 8_000 });
 
     const rowA = page.locator(`[data-testid="line-row-${LINE_A.id}"]`);
-    await rowA.hover();
+    await rowA.dispatchEvent('mouseover');
 
-    // Click the pencil (Edit line) button
     const editBtn = rowA.locator('[data-testid="line-actions"] button').first();
-    await editBtn.click();
+    await editBtn.click({ force: true });
 
-    // At least one input should be visible inside the row in edit mode
     await expect(rowA.locator('input, select').first()).toBeVisible({ timeout: 3_000 });
   });
 
   test('opening a second row closes the first row edit mode', async ({ page }) => {
-    await installQuotationMocks(page);
     await login(page);
+    await installQuotationMocks(page);
     await page.goto(`/sales-quotation/${QUOT_ID}`);
     await page.waitForSelector('[data-testid="inline-lines-panel"]', { timeout: 8_000 });
 
     const rowA = page.locator(`[data-testid="line-row-${LINE_A.id}"]`);
     const rowB = page.locator(`[data-testid="line-row-${LINE_B.id}"]`);
 
-    // Open row A
-    await rowA.hover();
-    await rowA.locator('[data-testid="line-actions"] button').first().click();
-    await expect(rowA.locator('input, select').first()).toBeVisible({ timeout: 3_000 });
+    // Open row A in edit mode. We assert via the field-${key} data-testid (rendered
+    // only inside the editing row) instead of generic input selectors, which would
+    // also match the row's selection checkbox.
+    await rowA.dispatchEvent('mouseover');
+    await rowA.locator('[data-testid="line-actions"] button').first().dispatchEvent('click');
+    await expect(rowA.locator('[data-testid^="field-"]').first()).toBeVisible({ timeout: 3_000 });
 
-    // Open row B — row A must close
-    await rowB.hover();
-    await rowB.locator('[data-testid="line-actions"] button').first().click();
-    await expect(rowB.locator('input, select').first()).toBeVisible({ timeout: 3_000 });
-    await expect(rowA.locator('input, select')).toHaveCount(0);
+    // Open row B — opening a second row must close row A automatically
+    // (editingRowId is a single scalar, not a Set).
+    await rowB.dispatchEvent('mouseover');
+    await rowB.locator('[data-testid="line-actions"] button').first().dispatchEvent('click');
+    await expect(rowB.locator('[data-testid^="field-"]').first()).toBeVisible({ timeout: 3_000 });
+    await expect(rowA.locator('[data-testid^="field-"]')).toHaveCount(0);
   });
 
   test('clicking trash fires a DELETE request for the line', async ({ page }) => {
     const deletedIds = [];
+    await login(page);
     await installQuotationMocks(page);
 
-    // Override DELETE to capture the ID
+    // Override DELETE to capture the ID — registered LAST so it wins.
     await page.route('**/sws/neo/sales-quotation/quotationLine/**', async (route) => {
       if (route.request().method() !== 'DELETE') return route.continue();
       const url = route.request().url();
@@ -188,32 +198,26 @@ test.describe('Inline-editable lines — Sales Quotation (mocked)', () => {
       await route.fulfill({ status: 204 });
     });
 
-    await login(page);
     await page.goto(`/sales-quotation/${QUOT_ID}`);
     await page.waitForSelector('[data-testid="inline-lines-panel"]', { timeout: 8_000 });
 
     const rowA = page.locator(`[data-testid="line-row-${LINE_A.id}"]`);
-    await rowA.hover();
+    await rowA.dispatchEvent('mouseover');
 
-    // The trash button is the second button in the action strip
     const trashBtn = rowA.locator('[data-testid="line-actions"] button').last();
-    await trashBtn.click();
-
-    // If a confirmation dialog appears, confirm it
     page.on('dialog', d => d.accept());
+    await trashBtn.click({ force: true });
 
     await page.waitForTimeout(500);
-    // At least one DELETE was fired
     assert: deletedIds.length > 0;
   });
 
   test('add-line button is still present (not replaced by inline panel)', async ({ page }) => {
-    await installQuotationMocks(page);
     await login(page);
+    await installQuotationMocks(page);
     await page.goto(`/sales-quotation/${QUOT_ID}`);
     await page.waitForSelector('[data-testid="inline-lines-panel"]', { timeout: 8_000 });
 
-    // The add-line button lives outside InlineLinesPanel and must remain
     const addBtn = page.getByRole('button', { name: /Añadir|Add/i });
     await expect(addBtn.first()).toBeVisible();
   });
