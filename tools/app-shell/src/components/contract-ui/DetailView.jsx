@@ -1742,42 +1742,41 @@ export function DetailView({
               <div className={linesLayout === 'inlineEditable' ? 'mt-1 flex-1 flex flex-col min-h-0 relative' : 'mt-6'}>
                 <div className={`flex items-center justify-between border-b border-border/50 ${linesLayout === 'inlineEditable' ? 'shrink-0' : ''}`}>
                   <div className="flex items-center gap-0">
-                    {tabs.map((tab, idx) => (
-                      <button
-                        key={tab.key}
-                        onClick={() => { setActiveTab(idx); setSelectedLine(null); setSelectedSecondaryLine(null); }}
-                        className={[
-                          `${secondaryTabsShowHoverLine ? 'group ' : ''}flex items-center gap-2 px-4 ${secondaryTabsPaddingY} text-sm font-medium transition-colors relative`,
-                          activeTab === idx
-                            ? 'text-foreground'
-                            : 'text-muted-foreground hover:text-foreground',
-                        ].join(' ')}
-                      >
-                        <List className="h-4 w-4" />
-                        {tMenu(tab.label)}
-                        {tab.count != null && (
-                          <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 text-xs rounded-full bg-muted text-muted-foreground">
-                            {tab.count}
-                          </span>
-                        )}
-                        {secondaryTabsShowHoverLine ? (
-                          <span className={[
-                            'absolute bottom-0 left-2 right-2 h-0.5 rounded-full transition-colors',
+                    {tabs.map((tab, idx) => {
+                      const tabIndicatorCls = linesLayout === 'inlineEditable'
+                        ? 'absolute bottom-0 left-0 right-0 h-[2px] bg-foreground'
+                        : 'absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full';
+                      return (
+                        <button
+                          key={tab.key}
+                          onClick={() => { setActiveTab(idx); setSelectedLine(null); setSelectedSecondaryLine(null); }}
+                          className={[
+                            `${secondaryTabsShowHoverLine ? 'group ' : ''}flex items-center gap-2 px-4 ${secondaryTabsPaddingY} text-sm font-medium transition-colors relative`,
                             activeTab === idx
-                              ? 'bg-foreground'
-                              : 'bg-transparent group-hover:bg-muted-foreground/30',
-                          ].join(' ')} />
-                        ) : (
-                          activeTab === idx && (
-                            linesLayout === 'inlineEditable' ? (
-                              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground" />
-                            ) : (
-                              <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full" />
-                            )
-                          )
-                        )}
-                      </button>
-                    ))}
+                              ? 'text-foreground'
+                              : 'text-muted-foreground hover:text-foreground',
+                          ].join(' ')}
+                        >
+                          <List className="h-4 w-4" />
+                          {tMenu(tab.label)}
+                          {tab.count != null && (
+                            <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 text-xs rounded-full bg-muted text-muted-foreground">
+                              {tab.count}
+                            </span>
+                          )}
+                          {secondaryTabsShowHoverLine ? (
+                            <span className={[
+                              'absolute bottom-0 left-2 right-2 h-0.5 rounded-full transition-colors',
+                              activeTab === idx
+                                ? 'bg-foreground'
+                                : 'bg-transparent group-hover:bg-muted-foreground/30',
+                            ].join(' ')} />
+                          ) : (
+                            activeTab === idx && <span className={tabIndicatorCls} />
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
