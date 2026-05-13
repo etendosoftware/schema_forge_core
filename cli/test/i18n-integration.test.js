@@ -246,6 +246,104 @@ describe('resolveMenuLabel — { field } option', () => {
 });
 
 // ---------------------------------------------------------------------------
+// getPrice — pure function tests (mirrors ProductSearchDrawer.jsx logic)
+// ---------------------------------------------------------------------------
+
+// Inline the formatCurrency logic (ES module with export can't be required directly).
+// This mirrors the implementation in tools/app-shell/src/lib/formatCurrency.js.
+const DEFAULT_LOCALE = 'en-US';
+const SYMBOL_AFTER_CURRENCIES = new Set(['EUR', 'SEK', 'NOK', 'DKK', 'CZK', 'HUF', 'PLN']);
+
+function formatCurrency(currencyCode, value) {
+  if (value == null || !Number.isFinite(Number(value))) return '—';
+
+  const amount = Number(value);
+
+  try {
+    const formatter = new Intl.NumberFormat(DEFAULT_LOCALE, {
+      style: 'currency',
+      currency: currencyCode,
+      currencyDisplay: 'narrowSymbol',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
+    if (SYMBOL_AFTER_CURRENCIES.has(currencyCode)) {
+      const symbol = formatter.formatToParts(0).find((p) => p.type === 'currency')?.value ?? currencyCode;
+      const numFormatter = new Intl.NumberFormat(DEFAULT_LOCALE, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+      const sign = amount < 0 ? '-' : '';
+      return `${sign}${numFormatter.format(Math.abs(amount))} ${symbol}`;
+    }
+
+    return formatter.format(amount);
+  } catch {
+    return amount.toLocaleString(DEFAULT_LOCALE, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+}
+
+// Inline getPrice logic from ProductSearchDrawer.jsx
+function getPrice(item, currency) {
+  const p = item.standardPrice || item.listPrice || item.price;
+  if (p == null) return null;
+  const num = typeof p === 'number' ? p : parseFloat(p);
+  if (isNaN(num)) return String(p);
+  return currency ? formatCurrency(currency, num) : num.toFixed(2);
+}
+
+describe('getPrice — currency formatting', () => {
+  it('with EUR currency returns amount followed by € symbol (symbol-after convention)', () => {
+    const result = getPrice({ standardPrice: 12 }, 'EUR');
+    assert.equal(result, '12.00 €');
+  });
+
+  it('with USD currency returns $ symbol before amount (symbol-before convention)', () => {
+    const result = getPrice({ standardPrice: 12 }, 'USD');
+    assert.equal(result, '$12.00');
+  });
+
+  it('with null currency falls back to toFixed(2) with no symbol', () => {
+    const result = getPrice({ standardPrice: 12 }, null);
+    assert.equal(result, '12.00');
+  });
+
+  it('returns null when price fields are all absent (null item price)', () => {
+    const result = getPrice({ id: 'prod-1' }, 'EUR');
+    assert.equal(result, null);
+  });
+
+  it('parses a string price to float and formats it correctly', () => {
+    const result = getPrice({ standardPrice: '44.5' }, 'EUR');
+    assert.equal(result, '44.50 €');
+  });
+
+  it('returns the raw string when price is a non-numeric string (NaN guard)', () => {
+    const result = getPrice({ standardPrice: 'abc' }, 'EUR');
+    assert.equal(result, 'abc');
+  });
+
+  it('uses listPrice when standardPrice is absent', () => {
+    const result = getPrice({ listPrice: 99 }, 'USD');
+    assert.equal(result, '$99.00');
+  });
+
+  it('uses price as last fallback when both standardPrice and listPrice are absent', () => {
+    const result = getPrice({ price: 5.5 }, 'EUR');
+    assert.equal(result, '5.50 €');
+  });
+
+  it('with undefined currency (no session currency) falls back to toFixed(2)', () => {
+    const result = getPrice({ standardPrice: 30 }, undefined);
+    assert.equal(result, '30.00');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Locale newLabel consistency
 // ---------------------------------------------------------------------------
 
