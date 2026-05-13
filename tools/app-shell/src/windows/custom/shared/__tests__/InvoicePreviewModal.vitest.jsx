@@ -247,6 +247,6 @@ describe('InvoicePreviewModal', () => {
 
   it('renders drop zone for purchase invoice', () => {
     renderPreview({ specName: 'purchase-invoice' });
-    expect(screen.getByText('invoicePreviewUploadYourDocument')).toBeInTheDocument();
+    expect(screen.getByTestId('preview-drop-zone')).toBeInTheDocument();
   });
 });
