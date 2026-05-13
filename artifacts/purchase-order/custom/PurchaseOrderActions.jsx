@@ -462,6 +462,7 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
             {ui('cancel')}
           </button>
           <button type="button" onClick={handleConfirm} disabled={loading}
+            data-testid="action-confirm-modal"
             style={{ ...btnPrimaryStyle, opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             {loading && <Spinner />}
             {loading ? ui('poProcessing') : primaryLabel}
