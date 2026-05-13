@@ -24,6 +24,7 @@ The list also lets users scan existing definitions quickly by showing the rate a
 - **Implementation type:** generated window loaded through `tools/app-shell/src/windows/registry.js`.
 - **Window shape:** single-entity window with no child entities and no declared process endpoints in the generated index.
 - **Screen chrome:** the generated detail view hides print and the generic More menu.
+- An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
 
 ## Reactive behavior and dependencies
 This is a standalone definition window. No parent/child behavior is visible in the current evidence.
@@ -52,6 +53,7 @@ No dependent selector behavior, automatic defaulting between these fields, statu
 7. Confirm `Base Amount` offers `Line Net Amount`, `Line Net Amount + Tax`, `Tax Amount`, `Alternative Base Amount`, and `Alternative Base + Tax`.
 8. Confirm the visible form does not show `Description`, and that print / generic More actions are not present.
 9. Save a change and reopen the record to confirm the updated definition persists.
+10. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 - `origin/develop` commit `15a2288a` added the tax-table cell helpers that drive the current badge/tag rendering.
@@ -59,6 +61,7 @@ No dependent selector behavior, automatic defaulting between these fields, statu
 - `origin/develop:artifacts/tax/generated/web/tax/TaxTable.jsx` renders the rate as a green `+<rate> %` tag and renders scope as `Sales` / `Purchase` tags.
 - `origin/develop:artifacts/tax/generated/web/tax/TaxForm.jsx` defines the six visible form fields and the selector options for applicability, document-tax amount, and base amount.
 - `origin/develop:artifacts/tax/generated/web/tax/index.jsx` confirms the route, standalone generated layout, breadcrumb, and the hidden print/More controls.
+- The generated `TaxPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `C_Tax` AD table.
 ## Pipeline regeneration — ETP-3908
 
 Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functional changes to this window.

@@ -35,8 +35,8 @@ test.describe('Purchase Order — pendingDelivery filter', () => {
     const funnelBtn = page.locator('button[title="Filtros avanzados"], button[title="Advanced filters"]');
     await funnelBtn.click();
 
-    // The popover contains a button with the column label for documentStatus
-    // (label overrides not applied in list columns — falls back to "Estado doc." from locale)
+    // "Estado doc." comes from the locale dictionary (DocStatus column).
+    // LABEL_OVERRIDES in purchase-order/index.jsx does not override DocStatus.
     await expect(
       page.locator('[role="dialog"], [data-radix-popper-content-wrapper]')
         .locator('button', { hasText: /Estado doc\.|Document Status/ })
@@ -50,7 +50,7 @@ test.describe('Purchase Order — pendingDelivery filter', () => {
 
     await expect(
       page.locator('[role="dialog"], [data-radix-popper-content-wrapper]')
-        .locator('button', { hasText: /Estado del envío|Delivery Status/ })
+        .locator('button', { hasText: /Estado de entrega|Delivery Status/ })
         .first()
     ).toBeVisible({ timeout: 3_000 });
   });

@@ -29,6 +29,7 @@ The Contacts window should let users maintain a shared business-partner master r
 - Visibility: visible as the only non-hidden item in the People menu group.
 - Implementation type: custom `contacts` window registered in the app-shell registry. The wrapper adds a contacts-specific provider, header persona toggle, filtered header form, custom list table, financial panel, location modal, and right-side sidebar around the generated window contract. A scoped stylesheet (`contacts.css`) applies Figma-aligned input styles (default white, hover `#F5F7F9`, focus double-border `#121217`, disabled `#F5F7F9`) exclusively to the `.contacts-rows` scope without affecting other windows.
 - Shape: master-child window. The master record is `businessPartner`; child work areas are `contact` (Person), `bankAccount`, and `locationAddress`, while the Financial tab also edits related customer/vendor preference fields and discount data.
+- An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
 - Secondary tab layout: the three child work areas use `window.linesLayout = "inlineEditable"`. Rows render at 40 px with pencil and trash hover-action icons on the right. For `contact` (Persona) and `bankAccount` (Cuenta Bancaria), clicking pencil flips the row into inline edit. For `locationAddress` (Dirección), clicking pencil opens the `LocationEditorModal` instead of inline editing. When one or more rows are checked, a compact selection bar (28 px buttons) appears anchored below the add-line button. See `docs/ui-customization.md` section 13 for the full reference.
 
 ## Reactive behavior and dependencies
@@ -108,6 +109,7 @@ The Contacts window should let users maintain a shared business-partner master r
 25. With rows selected, click the X button in the selection bar. Confirm the selection bar disappears AND all row checkboxes are visually unchecked.
 26. In the advanced filter panel, confirm "Tipo" appears as a filterable field with "Cliente" and "Proveedor" options. Apply `Tipo = Cliente` and confirm only customer contacts are shown. Apply `Tipo = Proveedor` and confirm only vendor contacts are shown.
 27. Confirm the Tipo column shows **Cliente** in purple (`#F4F1FD` bg / `#4316CA` text) and **Proveedor** in blue (`#F0FAFF` bg / `#0075AD` text).
+28. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 
@@ -132,6 +134,7 @@ The Contacts window should let users maintain a shared business-partner master r
 - `tools/app-shell/src/windows/custom/contacts/__tests__/ContactsFinancialPanel.test.js` (ETP-3660) — 9 source-read assertions covering `CreditLimitStepper` debounce behavior (debounceRef declaration, clearTimeout before scheduling, 400 ms delay, null reset after firing, useEffect cleanup on unmount, absence of the old direct `setTimeout(onBlur, 0)`), the `<hr>` separator presence, and `BillingPreferencesForm` props wiring.
 - `tools/app-shell/src/components/ui/__tests__/add-line-button-hide-chevron.test.js` (ETP-3660) — 5 source-read assertions verifying the `hideChevron` prop default, the `!hideChevron` guard around divider and dropdown, full `borderRadius: 7` when chevron is hidden, primary button always rendered, and `DIVIDER_STYLE` rendered only inside the `!hideChevron` block.
 - No contacts-window-specific E2E test was found in the current repo. Generic route-loading and shared entity-flow evidence lives in `docs/generated-custom-windows/app-shell-functional-flows.md`, including registry-backed window loading and shared child-refresh/defaults behavior.
+- The generated `BusinessPartnerPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `C_BPartner` AD table.
 
 ## Pipeline regeneration — ETP-3908
 

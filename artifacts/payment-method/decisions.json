@@ -8,6 +8,7 @@
     "breadcrumb": "Settings / Payment Method",
     "hidePrint": true,
     "hideMoreMenu": true,
+    "customTabsAfterBottom": true,
     "customComponents": {
       "bottomSection": "PaymentGroupsSection"
     },
