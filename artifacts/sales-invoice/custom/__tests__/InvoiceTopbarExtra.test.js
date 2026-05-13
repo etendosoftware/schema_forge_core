@@ -92,8 +92,16 @@ describe('InvoiceTopbarExtra', () => {
 
   // ── Payment modal ──────────────────────────────────────────────────────────
 
-  it('renders a ViewPaymentsModal component', () => {
-    assert.match(src, /ViewPaymentsModal/);
+  it('renders InvoicePaymentModal for the payments modal', () => {
+    assert.match(src, /InvoicePaymentModal/);
+  });
+
+  it('passes specName="sales-invoice" to InvoicePaymentModal', () => {
+    assert.match(src, /specName="sales-invoice"/);
+  });
+
+  it('passes onPaymentAdded={fetchInstallments} to InvoicePaymentModal', () => {
+    assert.match(src, /onPaymentAdded=\{fetchInstallments\}/);
   });
 
   it('opens the payments modal on badge click via showPaymentsModal state', () => {
@@ -116,5 +124,18 @@ describe('InvoiceTopbarExtra', () => {
   it('auto-opens the send modal after a Confirm action via sessionStorage', () => {
     assert.match(src, /sessionStorage/);
     assert.match(src, /invoice:sendAfterConfirm/);
+  });
+
+  // ── SendToSifButton integration ────────────────────────────────────────────
+
+  it('imports SendToSifButton from the custom directory', () => {
+    assert.match(src, /import SendToSifButton from ['"]\.\/SendToSifButton['"]/);
+  });
+
+  it('renders SendToSifButton with data, recordId, token, apiBaseUrl, and status props', () => {
+    assert.match(src, /<SendToSifButton/);
+    assert.match(src, /recordId=\{recordId\}/);
+    assert.match(src, /token=\{token\}/);
+    assert.match(src, /apiBaseUrl=\{apiBaseUrl\}/);
   });
 });

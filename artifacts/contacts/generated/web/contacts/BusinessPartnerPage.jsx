@@ -59,6 +59,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:businessPartner
 
+// @sf-generated-start requiredHeaderFields:businessPartner
+const requiredHeaderFields = ['name', 'etgoFirstname', 'etgoLastname', 'oBTIKTaxIDKey', 'setNewCurrency', 'creditLimit'];
+// @sf-generated-end requiredHeaderFields:businessPartner
+
 
 
 export const api = {
@@ -680,6 +684,7 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
           ], derived: [], hidden: [] }, requireSavedRecord: true },
           { key: 'bankAccount', label: 'Bank Account', Table: BankAccountTable, Form: BankAccountForm, addLineFields: { entry: [
           { key: 'bankName', column: 'Bank_Name', type: 'text', label: 'Bank Name' },
+          { key: 'country', column: 'C_Country_ID', type: 'selector', label: 'Country', reference: 'Country', inputMode: 'selector', defaultValue: '@COUNTRYDEF@' },
           { key: 'bankFormat', column: 'BankFormat', type: 'select', required: true, label: 'Bank Account Format', defaultValue: 'GENERIC', options: [{ value: 'GENERIC', label: 'Use Generic Account No.' }, { value: 'IBAN', label: 'Use IBAN' }, { value: 'SWIFT', label: 'Use SWIFT + Generic Account No.' }, { value: 'SPANISH', label: 'Use Spanish' }] },
           { key: 'accountNo', column: 'AccountNo', type: 'text', label: 'Generic Account No.' },
           { key: 'iBAN', column: 'Iban', type: 'text', label: 'IBAN' },
@@ -692,8 +697,10 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
         ]}
         hidePrint
         hideMoreMenu
-        topbarRight={ContactTypeToggle}
+        topbarExtra={ContactTypeToggle}
+        requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}
+        linesLayout="inlineEditable"
         {...props}
         sidebarContent={(data) => (
           <BusinessPartnerSidebar
@@ -721,6 +728,7 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
       hidePrint
       hideMoreMenu
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
       {...props}
     />
   );

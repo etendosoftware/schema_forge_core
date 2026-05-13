@@ -33,6 +33,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:product
 
+// @sf-generated-start requiredHeaderFields:product
+const requiredHeaderFields = ['searchKey', 'name', 'uOM', 'productCategory', 'taxCategory', 'purchase', 'sale', 'productType', 'stocked', 'returnable'];
+// @sf-generated-end requiredHeaderFields:product
+
 
 
 export const api = {
@@ -470,6 +474,7 @@ export default function ProductPage({ windowName, recordId, ...props }) {
         hidePrint
         hideMoreMenu
         contentBg="bg-slate-50"
+        requiredHeaderFields={requiredHeaderFields}
         {...props}
         sidebarContent={(data) => (
           <ProductSidebar
@@ -494,6 +499,7 @@ export default function ProductPage({ windowName, recordId, ...props }) {
       galleryRenderer={(gProps) => <ProductGallery {...gProps} />}
       hidePrint
       hideMoreMenu
+      rowQuickActions={{}}
       {...props}
     />
   );

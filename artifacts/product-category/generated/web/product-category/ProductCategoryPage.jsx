@@ -32,6 +32,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:productCategory
 
+// @sf-generated-start requiredHeaderFields:productCategory
+const requiredHeaderFields = ['searchKey', 'name', 'default', 'summaryLevel'];
+// @sf-generated-end requiredHeaderFields:productCategory
+
 // @sf-generated-start addLineFields:assignedProducts
 const addLineFields = {
   entry: [
@@ -187,6 +191,7 @@ export default function ProductCategoryPage({ windowName, recordId, ...props }) 
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        requiredHeaderFields={requiredHeaderFields}
         {...props}
       />
     );
@@ -200,6 +205,7 @@ export default function ProductCategoryPage({ windowName, recordId, ...props }) 
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      rowQuickActions={{}}
       {...props}
     />
   );

@@ -88,6 +88,8 @@ Per-locale field label overrides. When the simplified interface needs to rename 
 | `statusBar` | object | `null` | See below | Generates a summary status bar above the detail form showing key numeric fields and an optional progress indicator. |
 | `subsetFilters` | array | `null` | See below | Segmented, radio-style filter above the list. One is always active, mutually exclusive, applied before any other filter. Ideal for "which universe am I looking at" selectors (e.g., All / Customers / Vendors). |
 | `quickFilters` | array | `null` | See below | Independent toggle pills above the list. Each can be on/off; multiple can be active simultaneously. Combined with the active subset and column filters using AND. Ideal for "refinements" (e.g., only overdue, only pending delivery). |
+| `rowQuickActions` | object | _absent_ (feature ON with canonical defaults) | See below | Hover-revealed action overlay on each grid row. The feature is ON by default for every window with canonical actions (Edit / Duplicate / Email / Delete) plus a kebab containing everything from `menuActions` — **no contract block is emitted in that case**. Declare the section only to disable the feature (`enabled: false`), override an action's visibility (`actions.<key>.show: false` / `visibleWhen`), or promote a process to a fixed button (`show: "fixed"`). |
+| `linesLayout` | string | `"classic"` | `"classic"`, `"inlineEditable"` | Lines tab rendering mode. `"classic"` keeps the side-panel edit flow (current behavior). `"inlineEditable"` switches the table to `InlineLinesPanel`: pencil + trash hover-action icons on the right, single-row inline edit triggered by the pencil, autosave on blur. All column types (string, number, amount, percent, date, selector, search) are inline-editable; selector/search reuse the shared `SelectorInput` dropdown. The add-line button, related-documents panel, notes panel and totals panel are unchanged. Validator F12 enforces the enum. |
 
 ### Status Bar (`window.statusBar`)
 
@@ -202,6 +204,58 @@ Use when the window has optional refinements that the user turns on or off indiv
 - Multi-select — clicking toggles the pill independently.
 - All active pills' criteria are merged with the active subset via AND.
 - Starts empty unless the parent component passes `initialQuickFilterIndex` (only the 4 custom sales/purchase windows do this today).
+
+### Row Quick Actions (`window.rowQuickActions`)
+
+Hover-revealed action overlay on each row of the list grid. Mirrors the edit-view toolbar so users can run common actions without opening the record. ETP-3914.
+
+**Feature is ON by default for every window — no contract block is needed.** The runtime renders the four canonical actions plus the kebab automatically when `decisions.json` does not declare the section. You only declare this block to:
+- disable the feature on a specific window (`enabled: false`),
+- hide one of the canonical actions (`actions.<key>.show: false`),
+- promote a non-canonical process to a fixed button (instead of the kebab),
+- attach a `visibleWhen` predicate to an action.
+
+When you do declare it, write **only the delta** — there is no need to repeat `enabled: true` or `actions.edit.show: true`. Defaults are resolved at runtime.
+
+```json
+{
+  "rowQuickActions": {
+    "enabled": true,
+    "editMode": "navigate",
+    "actions": {
+      "edit":      { "show": true },
+      "duplicate": { "show": true },
+      "email":     { "show": true },
+      "delete":    { "show": true },
+      "completeOrder": { "show": "fixed", "visibleWhen": "@DocumentStatus@='DR'" },
+      "voidIt":        { "show": "kebab" }
+    }
+  }
+}
+```
+
+| Property | Type | Default | Purpose |
+|----------|------|---------|---------|
+| `enabled` | boolean | `true` | Toggle the entire overlay for this window. When `false`, the generator skips emission and the list behaves as before. |
+| `editMode` | string | `"navigate"` | `"navigate"` opens the detail view (same as double-click). `"inline"` is reserved for inline-row editing and currently shows a "coming soon" toast. |
+| `actions` | object | Canonical four shown | Per-action overrides. Keys are either canonical (`edit`, `duplicate`, `email`, `delete`) or a process key declared in `menuActions[].key` / `processOverrides`. |
+
+Each entry in `actions` accepts:
+
+| Property | Type | Purpose |
+|----------|------|---------|
+| `show` | boolean \| string | `true` (default) renders the action. `false` removes it from both the fixed buttons and the kebab. `"fixed"` promotes a non-canonical action to a fixed button slot (after the canonical four, before the kebab). `"kebab"` forces an action into the kebab dropdown only. |
+| `visibleWhen` | string | Optional Etendo display-logic predicate (`@Field@='Value'`, AND-chained, `!=` supported). Evaluated against the row data and ANDed with the existing edit-view visibility rules (delete gate, `documentPreview`, `action.visible`). |
+
+**Canonical keys are always valid** — `edit`, `duplicate`, `email`, `delete` never need a matching `menuActions` entry. Non-canonical keys must exist in `window.menuActions` or `window.processOverrides`; the pipeline validator F11 enforces this.
+
+**Resolution behavior** (`resolve-curated.js`):
+- Section absent in `decisions.json` → no `rowQuickActions` block is written to the contract. The feature still mounts at runtime with canonical defaults.
+- Section declared → copied verbatim to the contract. The runtime merges canonical defaults on top, so a partial declaration like `{ actions: { email: { show: false } } }` hides email without affecting the other canonical buttons.
+
+**Generator behavior** (`generate-frontend.js`):
+- When the contract has `enabled === false`, the `rowQuickActions` prop is omitted from `<ListView>` and no row overlay is mounted.
+- Otherwise the prop is always emitted — either with the declared delta or as `{}` for windows that use full defaults. Runtime handlers (`onEdit`, `onClone`, `onEmail`, `onDelete`, `onMenuActionExecuted`) are wired by the host page or `ListView` itself.
 
 ### Subset vs Quick — when to use which
 

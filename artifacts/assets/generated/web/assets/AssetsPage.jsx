@@ -34,6 +34,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:assets
 
+// @sf-generated-start requiredHeaderFields:assets
+const requiredHeaderFields = ['searchKey', 'name', 'assetCategory'];
+// @sf-generated-end requiredHeaderFields:assets
+
 
 
 export const api = {
@@ -200,6 +204,7 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
         hideMoreMenu
         hideMoreDetails
         contentBg="bg-slate-50"
+        requiredHeaderFields={requiredHeaderFields}
         detailSortBy="sEQNoAsset asc"
         titleField="name"
         lockWhenProcessed={false}
@@ -230,6 +235,7 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
       hideListFilters
       hideLink
       hideEyeCount
+      rowQuickActions={{}}
       {...props}
     />
   );

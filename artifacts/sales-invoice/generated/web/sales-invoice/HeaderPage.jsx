@@ -57,6 +57,10 @@ const draftMode = {
 };
 // @sf-generated-end draftMode:header
 
+// @sf-generated-start requiredHeaderFields:header
+const requiredHeaderFields = ['documentNo', 'invoiceDate', 'businessPartner', 'partnerAddress', 'paymentTerms', 'paymentMethod', 'grandTotalAmount', 'summedLineAmount', 'priceList'];
+// @sf-generated-end requiredHeaderFields:header
+
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
   entry: [
@@ -125,6 +129,14 @@ export const api = {
   "selectors": [
     {
       "entity": "header",
+      "field": "adOrgId",
+      "column": "AD_Org_ID",
+      "reference": "Org",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/header/selectors/adOrgId"
+    },
+    {
+      "entity": "header",
       "field": "businessPartner",
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
@@ -170,6 +182,22 @@ export const api = {
       "reference": "PriceList",
       "inputMode": "selector",
       "url": "/sws/neo/sales-invoice/header/selectors/priceList"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiDescription",
+      "column": "EM_Aeatsii_Description_ID",
+      "reference": "aeatsii_description",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/header/selectors/aeatsiiDescription"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiCauseExemption",
+      "column": "EM_Aeatsii_Cause_Exemption_ID",
+      "reference": "aeatsii_cause_exemption",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/header/selectors/aeatsiiCauseExemption"
     },
     {
       "entity": "lines",
@@ -448,6 +476,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       api={api}
         hideDeleteWhenComplete
         hidePrint
+        noHeaderBorder
         notesField="description"
         customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
         bottomSection={InvoiceBottomPanel}
@@ -456,9 +485,12 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'reactivated', documentAction: 'RE',  }
         ]}
         draftMode={draftMode}
+        requiredHeaderFields={requiredHeaderFields}
         salesTheme
         labelOverrides={labelOverrides}
         lineConfig={INVOICE_LINE_CONFIG}
+        linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -475,6 +507,8 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       dateFilterKey="invoiceDate"
       hidePrint
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

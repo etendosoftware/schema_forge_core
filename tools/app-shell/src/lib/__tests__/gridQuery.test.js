@@ -603,3 +603,110 @@ describe('buildAdvancedFilterCriteria', () => {
     ]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// buildAdvancedFilterCriteria — buildCriteria hook
+// ---------------------------------------------------------------------------
+
+describe('buildAdvancedFilterCriteria — buildCriteria hook (ETP-3660)', () => {
+  // The __contactType virtual column uses buildCriteria to map enum values
+  // to real backend boolean fields. Test that buildAdvancedFilterCriteria
+  // calls col.buildCriteria(row) and uses its result instead of the default logic.
+
+  const virtualCol = {
+    key: '__contactType',
+    type: 'enum',
+    filterable: true,
+    buildCriteria: (condition) => {
+      const { operator, value } = condition;
+      if (operator === 'equals') {
+        if (value === 'customer') return [{ fieldName: 'customer', operator: 'equals', value: true }];
+        if (value === 'vendor')   return [{ fieldName: 'vendor',   operator: 'equals', value: true }];
+      }
+      if (operator === 'notEqual') {
+        if (value === 'customer') return [{ fieldName: 'customer', operator: 'equals', value: false }];
+        if (value === 'vendor')   return [{ fieldName: 'vendor',   operator: 'equals', value: false }];
+      }
+      return null;
+    },
+  };
+
+  it('operator=equals, value=customer → customer=true', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: '__contactType', operator: 'equals', value: 'customer' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, [virtualCol]);
+    assert.deepEqual(result, [{ fieldName: 'customer', operator: 'equals', value: true }]);
+  });
+
+  it('operator=equals, value=vendor → vendor=true', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: '__contactType', operator: 'equals', value: 'vendor' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, [virtualCol]);
+    assert.deepEqual(result, [{ fieldName: 'vendor', operator: 'equals', value: true }]);
+  });
+
+  it('operator=notEqual, value=customer → customer=false', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: '__contactType', operator: 'notEqual', value: 'customer' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, [virtualCol]);
+    assert.deepEqual(result, [{ fieldName: 'customer', operator: 'equals', value: false }]);
+  });
+
+  it('operator=notEqual, value=vendor → vendor=false', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: '__contactType', operator: 'notEqual', value: 'vendor' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, [virtualCol]);
+    assert.deepEqual(result, [{ fieldName: 'vendor', operator: 'equals', value: false }]);
+  });
+
+  it('buildCriteria returning null causes the condition to be skipped', () => {
+    // operator 'iContains' is not handled by the virtual col's buildCriteria → returns null
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: '__contactType', operator: 'iContains', value: 'cust' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, [virtualCol]);
+    // All conditions skipped → null
+    assert.equal(result, null);
+  });
+
+  it('buildCriteria is preferred over default logic for string-type columns with buildCriteria', () => {
+    // A column declared as type='string' but with buildCriteria should still use buildCriteria
+    const customStringCol = {
+      key: 'myField',
+      type: 'string',
+      buildCriteria: () => [{ fieldName: 'overridden', operator: 'equals', value: 'custom' }],
+    };
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'myField', operator: 'iContains', value: 'anything' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, [customStringCol]);
+    // Default string logic would produce iContains on 'myField'; buildCriteria overrides it
+    assert.deepEqual(result, [{ fieldName: 'overridden', operator: 'equals', value: 'custom' }]);
+  });
+
+  it('mixes virtual col result with a regular column in the same AND filter', () => {
+    const regularCol = { key: 'documentNo', type: 'string' };
+    const filter = {
+      rowOperator: 'and',
+      conditions: [
+        { field: '__contactType', operator: 'equals', value: 'customer' },
+        { field: 'documentNo', operator: 'iContains', value: 'ORD' },
+      ],
+    };
+    const result = buildAdvancedFilterCriteria(filter, [virtualCol, regularCol]);
+    assert.deepEqual(result, [
+      { fieldName: 'customer', operator: 'equals', value: true },
+      { fieldName: 'documentNo', operator: 'iContains', value: 'ORD' },
+    ]);
+  });
+});

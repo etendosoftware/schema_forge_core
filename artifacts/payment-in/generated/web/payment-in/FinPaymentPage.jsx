@@ -36,6 +36,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:finPayment
 
+// @sf-generated-start requiredHeaderFields:finPayment
+const requiredHeaderFields = [];
+// @sf-generated-end requiredHeaderFields:finPayment
+
 
 
 export const api = {
@@ -211,6 +215,7 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
           { key: 'reverse', label: 'Reverse Payment', destructive: true, visible: ["RPPC","RPR","RDNC"].includes(status), columnName: 'aPRMReversePayment',  }
         ]}
         salesTheme
+        sendDocument
         {...props}
       />
     );
@@ -226,6 +231,8 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="paymentDate"
+      rowQuickActions={{}}
+      sendDocument
       {...props}
       onNew={() => setShowNewModal(true)}
     />

@@ -3,6 +3,9 @@
   "window": {
     "category": "purchases",
     "name": "Goods Receipt",
+    "sendDocument": {
+      "allowEmail": false
+    },
     "relatedDocuments": true,
     "dateFilterKey": "movementDate",
     "draftMode": {
@@ -10,6 +13,10 @@
       "processField": "documentAction",
       "processValue": "CO",
       "label": "Confirmar"
+    },
+    "linesLayout": "inlineEditable",
+    "customComponents": {
+      "bottomSection": "GoodsReceiptBottomPanel"
     }
   },
   "entities": {

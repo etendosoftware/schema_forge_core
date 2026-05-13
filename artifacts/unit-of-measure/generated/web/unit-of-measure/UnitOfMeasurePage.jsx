@@ -32,6 +32,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:unitOfMeasure
 
+// @sf-generated-start requiredHeaderFields:unitOfMeasure
+const requiredHeaderFields = ['eDICode', 'name', 'standardPrecision', 'costingPrecision', 'default'];
+// @sf-generated-end requiredHeaderFields:unitOfMeasure
+
 // @sf-generated-start addLineFields:conversion
 const addLineFields = {
   entry: [
@@ -132,6 +136,7 @@ export default function UnitOfMeasurePage({ windowName, recordId, ...props }) {
       api={api}
         hidePrint
         hideMoreMenu
+        requiredHeaderFields={requiredHeaderFields}
         {...props}
       />
     );
@@ -147,6 +152,7 @@ export default function UnitOfMeasurePage({ windowName, recordId, ...props }) {
       api={api}
       hidePrint
       hideMoreMenu
+      rowQuickActions={{}}
       {...props}
     />
   );

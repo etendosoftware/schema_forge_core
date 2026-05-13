@@ -7,7 +7,11 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(__dirname, '..', 'PurchaseInvoiceHeaderTable.jsx'), 'utf8');
 
-const columnsBlock = src.match(/const columns = useMemo\(\(\) => \[([\s\S]*?)\], \[/);
+// Matches both arrow-expression form useMemo(() => [...], []) and block-body form
+// useMemo(() => { ... return [...]; }, [...]) — the source was refactored to the latter.
+const columnsBlock =
+  src.match(/const columns = useMemo\(\(\) => \{[\s\S]*?return \[([\s\S]*?)\];\s*\}/) ||
+  src.match(/const columns = useMemo\(\(\) => \[([\s\S]*?)\], \[/);
 
 const expectedKeysInOrder = [
   'invoiceDate',
@@ -59,6 +63,10 @@ describe('PurchaseInvoiceHeaderTable — due date column', () => {
   it('reads eTGODueDate from the row (no payment-plan fetch)', () => {
     assert.match(src, /const d = row\.eTGODueDate/);
     assert.doesNotMatch(src, /paymentPlan\?parentId/, 'payment-plan fetch was retired in ETP-3873');
+  });
+
+  it('shows POReference as the list document number column', () => {
+    assert.match(src, /key: 'orderReference', column: 'POReference'/);
   });
 
   it('feeds outstandingAmount into the due-date state', () => {

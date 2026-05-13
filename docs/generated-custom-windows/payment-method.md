@@ -58,3 +58,9 @@ This window should let finance and operations administrators define which paymen
 - `artifacts/payment-method/generated/web/payment-method/PaymentMethodPage.jsx` mounts `PaymentGroupsSection` as the bottom section on the detail page.
 - `tools/app-shell/src/windows/custom/payment-method/PaymentGroupsSection.jsx` confirms the grouped two-card layout for inbound and outbound toggles, and also shows that the current custom component renders each checkbox directly rather than visibly implementing the contract's toggle dependency rules.
 - `docs/generated-custom-windows/app-shell-functional-flows.md` provides the shared authenticated-shell, generic route, and entity list/detail behavior that this window inherits.
+## Pipeline regeneration — ETP-3908
+
+Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functional changes to this window.
+
+- `linesLayout: "classic"` is now written explicitly to `contract.json`; previously the classic layout was the implicit default.
+- `requiredHeaderFields` is now emitted in the page component; this window has no required header fields so the array is empty and there is no behavioral change.

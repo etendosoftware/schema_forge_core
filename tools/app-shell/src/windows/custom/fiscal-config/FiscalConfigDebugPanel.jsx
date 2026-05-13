@@ -76,7 +76,7 @@ const MOCK_PROFILES = [
 const CERT_MODAL_STATES = [
   { key: 'pick',       label: 'Pick',       state: { step: 'pick' } },
   { key: 'pick-file',  label: 'File sel.',  state: { step: 'pick', file: MOCK_FILE_STUB } },
-  { key: 'pick-err',   label: 'Pick err',   state: { step: 'pick', errMsg: 'Formato no válido. Solo se aceptan archivos .p12 y .pfx.' } },
+  { key: 'pick-err',   label: 'Pick err',   state: { step: 'pick', errMsg: 'Invalid format. Only .p12 and .pfx files are accepted.' } },
   { key: 'verify',     label: 'Verify',     state: { step: 'verify', file: MOCK_FILE_STUB } },
   { key: 'confirmNif', label: 'NIF conf.',  state: { step: 'confirmNif', file: MOCK_FILE_STUB, pendingNif: 'B12345678' } },
   { key: 'done',       label: 'Done',       state: { step: 'done', file: MOCK_FILE_STUB, certDetails: MOCK_CERT_DETAILS } },
@@ -162,7 +162,13 @@ const btnBase = {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function FiscalConfigDebugPanel({ orgId, token, apiBaseUrl, onDeleted, onSetMock, activeMockKey }) {
+const CERT_EXPIRY_OPTIONS = [
+  { key: null,  label: 'None' },
+  { key: 45,    label: '45d warn' },
+  { key: 20,    label: '20d crit' },
+];
+
+export default function FiscalConfigDebugPanel({ orgId, token, apiBaseUrl, onDeleted, onSetMock, activeMockKey, mockCertDays, onSetCertDays }) {
   const [collapsed, setCollapsed] = useState(false);
   const [status, setStatus] = useState({});
   const [certDebug, setCertDebug] = useState(null);
@@ -243,6 +249,28 @@ export default function FiscalConfigDebugPanel({ orgId, token, apiBaseUrl, onDel
               >
                 {activeMockKey === 'wizard' ? '✓ ' : ''}Wizard
               </button>
+            </div>
+
+            {/* ── Cert expiry banner ── */}
+            <div style={sectionLabel}>Cert expiry</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
+              {CERT_EXPIRY_OPTIONS.map(opt => {
+                const active = mockCertDays === opt.key;
+                return (
+                  <button
+                    key={String(opt.key)}
+                    onClick={() => onSetCertDays?.(opt.key)}
+                    style={{
+                      ...btnBase,
+                      background: active ? '#1a3a2a' : '#2a2a4e',
+                      borderColor: active ? '#2a7a4a' : '#4040aa',
+                      color: active ? '#b3ffd6' : '#c0c0ff',
+                    }}
+                  >
+                    {active ? '✓ ' : ''}{opt.label}
+                  </button>
+                );
+              })}
             </div>
 
             {/* ── Cert modal debug ── */}

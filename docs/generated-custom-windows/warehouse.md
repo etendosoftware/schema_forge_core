@@ -64,3 +64,10 @@ Use this window to maintain the warehouse master record and understand what is p
 - `artifacts/warehouse/contract.json` and generated warehouse files provide direct source evidence for the available warehouse, storage-bin, product-transactions, and bin-contents entities, selectors, and declared actions.
 - `tools/app-shell/src/windows/custom/warehouse/__tests__/WarehouseSummary.test.js` verifies that `WarehouseSummary` uses `niceScale` and `formatDashboardAxisTick` for both chart types, that no local `fmtY` function is present, that line-chart dots are hover-only, and that the bar-chart tooltip receives the `ui` prop.
 - No dedicated browser-level warehouse window test was found for the full multi-surface interaction flow. Use `docs/generated-custom-windows/app-shell-functional-flows.md` for shared shell/route/loading evidence and rely on manual verification for warehouse-specific behavior.
+
+## Pipeline regeneration — ETP-3908
+
+Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functional changes to this window.
+
+- `linesLayout: "classic"` is now written explicitly to `contract.json`; previously the classic layout was the implicit default.
+- `requiredHeaderFields` is now emitted in the page component; this window has no required header fields so the array is empty and there is no behavioral change.

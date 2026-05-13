@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import {
   FileText,
   ShoppingCart,
@@ -12,6 +12,7 @@ import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useUI } from '@/i18n';
 import { useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { useAuth } from '@/auth/AuthContext.jsx';
+import { useCurrency } from '@/hooks/useCurrency.jsx';
 import { resolveDashboardNavigation } from '@/lib/dashboardNavigation.js';
 import { localeFromUi } from '@/lib/dashboardNumberFormat.js';
 import { DashboardDateRangeProvider } from '@/components/dashboard/DashboardDateRangeContext';
@@ -35,65 +36,14 @@ const ICON_MAP = {
 };
 
 /* ------------------------------------------------------------------
- * Currency hook
- * ----------------------------------------------------------------*/
-
-function useDashboardCurrency(token, selectedOrg, apiBaseUrl = '') {
-  const [currencyLabel, setCurrencyLabel] = useState('');
-  const [isCurrencyReady, setIsCurrencyReady] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    setIsCurrencyReady(false);
-
-    async function loadCurrency() {
-      if (!token) {
-        if (!cancelled) { setCurrencyLabel(''); setIsCurrencyReady(true); }
-        return;
-      }
-      try {
-        const headers = { Authorization: `Bearer ${token}` };
-        const base = apiBaseUrl || '/sws/neo';
-        const endpoints = [
-          `${base}/sales-invoice/header/defaults`,
-          `${base}/sales-order/header/defaults`,
-          `${base}/purchase-invoice/header/defaults`,
-        ];
-        for (const endpoint of endpoints) {
-          const res = await fetch(endpoint, { headers });
-          if (!res.ok) continue;
-          const data = await res.json();
-          const defaults = data?.defaults ?? {};
-          const value = defaults['currency$_identifier']
-            ?? defaults.currency$_identifier
-            ?? defaults.currencyIdentifier
-            ?? defaults.currency
-            ?? defaults.C_Currency_ID$_identifier;
-          if (value) {
-            if (!cancelled) { setCurrencyLabel(String(value)); setIsCurrencyReady(true); }
-            return;
-          }
-        }
-      } catch { /* best-effort */ }
-      if (!cancelled) { setCurrencyLabel(''); setIsCurrencyReady(true); }
-    }
-
-    loadCurrency();
-    return () => { cancelled = true; };
-  }, [token, selectedOrg?.id, apiBaseUrl]);
-
-  return { currencyLabel, isCurrencyReady };
-}
-
-/* ------------------------------------------------------------------
  * Quick actions resolution
  * ----------------------------------------------------------------*/
 
 function useQuickActions(ui) {
   return useMemo(() => [
-    { label: ui('quickAccessSalesOrders'),  to: '/sales-order/new',   icon: TrendingUp },
-    { label: ui('quickAccessSalesInvoices'), to: '/sales-invoice/new', icon: FileText   },
-    { label: ui('quickAccessContacts'),      to: '/contacts/new',      icon: Users      },
+    { label: ui('quickAccessSalesOrders'),  to: '/sales-order/new',   icon: TrendingUp, testId: 'quick-action-sales-order-new' },
+    { label: ui('quickAccessSalesInvoices'), to: '/sales-invoice/new', icon: FileText, testId: 'quick-action-sales-invoice-new' },
+    { label: ui('quickAccessContacts'),      to: '/contacts/new',      icon: Users, testId: 'quick-action-contacts-new' },
   ], [ui]);
 }
 
@@ -103,14 +53,15 @@ function useQuickActions(ui) {
 
 function DashboardContent({ apiBaseUrl }) {
   const ui = useUI();
-  const { token, username, selectedOrg } = useAuth();
+  const { token, username } = useAuth();
   const { open: openCopilot } = useCopilot();
   const {
     kpis, revenueTrend, expenseTrend, topClients, pendingTasks,
     recentInvoices, bestProducts, bestSellers, pendingAmounts, loading,
   } = useDashboardData();
 
-  const { currencyLabel: dashboardCurrency, isCurrencyReady } = useDashboardCurrency(token, selectedOrg, apiBaseUrl);
+  const dashboardCurrency = useCurrency();
+  const isCurrencyReady = dashboardCurrency !== null;
   const resolvedKpis = kpis.map((k) => ({ ...k, icon: ICON_MAP[k.icon] || DollarSign }));
   const quickActions = useQuickActions(ui);
 

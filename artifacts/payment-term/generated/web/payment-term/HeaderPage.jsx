@@ -42,6 +42,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:header
 
+// @sf-generated-start requiredHeaderFields:header
+const requiredHeaderFields = ['searchKey', 'name', 'offsetMonthDue', 'overduePaymentDaysRule'];
+// @sf-generated-end requiredHeaderFields:header
+
 
 
 export const api = {
@@ -113,6 +117,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       api={api}
         hidePrint
         hideMoreMenu
+        requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}
         {...props}
       />
@@ -130,6 +135,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       hidePrint
       hideMoreMenu
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
       {...props}
     />
   );

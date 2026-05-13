@@ -1,13 +1,16 @@
 import { useState, useRef } from 'react';
+import { RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUI } from '@/i18n';
 import { useFiscalConfig } from './useFiscalConfig.js';
 import { detectProfile } from './fiscalConfig.utils.js';
+import { useCertExpiry } from './useCertExpiry.js';
 import { useDebugMode } from '../fiscal-monitor/useDebugMode.js';
+import { WipBadge } from '../fiscal-monitor/FmPrimitives.jsx';
+import CertExpiryBanner from './CertExpiryBanner.jsx';
 import OnboardingWizard from './OnboardingWizard.jsx';
 import SiiSection from './SiiSection.jsx';
 import TbaiSection from './TbaiSection.jsx';
@@ -24,6 +27,7 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
 
   // mockOverride = null | { key, sii, tbai, verifactu }  (set by debug panel)
   const [mockOverride, setMockOverride] = useState(null);
+  const [mockCertDays, setMockCertDays] = useState(null);
 
   const {
     loading, error, profile,
@@ -38,6 +42,8 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
   const effectiveSii      = mockOverride ? mockOverride.sii      : siiRecord;
   const effectiveTbai     = mockOverride ? mockOverride.tbai     : tbaiRecord;
   const effectiveVerifactu= mockOverride ? mockOverride.verifactu: verifactuRecord;
+
+  const { daysLeft: certDaysLeft } = useCertExpiry(orgId, token, apiBaseUrl, { mockDaysLeft: mockCertDays });
 
   const siiRef  = useRef(null);
   const tbaiRef = useRef(null);
@@ -59,25 +65,6 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
     setCombinedSaving(false);
   }
 
-  function WipBadge() {
-    return (
-      <div className="absolute top-3 right-4 z-10">
-        <TooltipProvider delayDuration={600}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300 cursor-default select-none">
-                ⚠ {ui('fiscal.wip.badge')}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-[260px] text-center">
-              {ui('fiscal.wip.tooltip')}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-    );
-  }
-
   const DebugPanel = debugMode ? (
     <FiscalConfigDebugPanel
       orgId={orgId}
@@ -86,6 +73,8 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
       onDeleted={refetch}
       onSetMock={setMockOverride}
       activeMockKey={mockOverride?.key ?? null}
+      mockCertDays={mockCertDays}
+      onSetCertDays={setMockCertDays}
     />
   ) : null;
 
@@ -122,13 +111,27 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
       <WipBadge />
       <div className="px-6 py-8">
         {orgId && (
-          <div className="mb-6">
-            <h1 className="text-xl font-bold">{ui('fiscal.title')}</h1>
-            {selectedOrg?.name && (
-              <p className="text-sm text-muted-foreground mt-1">{ui('fiscal.org.label', { name: selectedOrg.name })}</p>
-            )}
+          <div className="mb-6 flex items-start justify-between">
+            <div>
+              <h1 className="text-xl font-bold">{ui('fiscal.title')}</h1>
+              {selectedOrg?.name && (
+                <p className="text-sm text-muted-foreground mt-1">{ui('fiscal.org.label', { name: selectedOrg.name })}</p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={refetch}
+              disabled={loading}
+              aria-label={ui('fiscalMonitor.refresh')}
+              title={ui('fiscalMonitor.refresh')}
+              className="mt-1 p-2 rounded-lg border border-[#D1D4DB] bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <RefreshCw size={16} className={loading ? 'animate-spin text-gray-400' : 'text-gray-500'} />
+            </button>
           </div>
         )}
+
+        <CertExpiryBanner daysLeft={certDaysLeft} variant="prominent" />
 
         {!orgId && !mockOverride && (
           <p className="text-sm text-muted-foreground text-center py-12">
