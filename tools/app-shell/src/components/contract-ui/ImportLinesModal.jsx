@@ -209,7 +209,7 @@ export default function ImportLinesModal({
                       </div>
                     </div>
                     <span style={{ fontSize: 12, color: '#9ca3af', fontVariantNumeric: 'tabular-nums', flexShrink: 0, marginLeft: 8 }}>
-                      {docTotal != null ? fmtNum(docTotal) : (display.secondary || '')}
+                      {display.secondary || (docTotal != null ? fmtNum(docTotal) : '')}
                     </span>
                   </div>
 
