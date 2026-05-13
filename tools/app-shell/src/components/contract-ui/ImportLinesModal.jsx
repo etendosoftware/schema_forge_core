@@ -169,14 +169,18 @@ export default function ImportLinesModal({
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: 0 }}>
-          {loading ? (
-            <p style={{ fontSize: 13, color: '#9ca3af', padding: '24px 0', textAlign: 'center' }}>{ui('loading')}</p>
-          ) : filtered.length === 0 ? (
-            <p style={{ fontSize: 13, color: '#9ca3af', padding: '24px 0', textAlign: 'center' }}>
-              {documents.length === 0 ? ui(emptyMessageKey) : ui(noSearchResultsKey)}
-            </p>
-          ) : (
-            filtered.map(doc => {
+          {(() => {
+            if (loading) {
+              return <p style={{ fontSize: 13, color: '#9ca3af', padding: '24px 0', textAlign: 'center' }}>{ui('loading')}</p>;
+            }
+            if (filtered.length === 0) {
+              return (
+                <p style={{ fontSize: 13, color: '#9ca3af', padding: '24px 0', textAlign: 'center' }}>
+                  {documents.length === 0 ? ui(emptyMessageKey) : ui(noSearchResultsKey)}
+                </p>
+              );
+            }
+            return filtered.map(doc => {
               const isExpanded = expanded.has(doc.id);
               const isLoadingLns = loadingLines.has(doc.id);
               const lines = docLines[doc.id] || [];
@@ -215,12 +219,15 @@ export default function ImportLinesModal({
 
                   {isExpanded && (
                     <div style={{ background: 'var(--color-background-secondary, #F9FAFB)' }}>
-                      {isLoadingLns ? (
-                        <div style={{ padding: '8px 12px 8px 48px', fontSize: 12, color: '#9ca3af' }}>{ui('loadingLines')}</div>
-                      ) : lines.length === 0 ? (
-                        <div style={{ padding: '8px 12px 8px 48px', fontSize: 12, color: '#9ca3af' }}>{ui('noLinesFound')}</div>
-                      ) : (
-                        <>
+                      {(() => {
+                        if (isLoadingLns) {
+                          return <div style={{ padding: '8px 12px 8px 48px', fontSize: 12, color: '#9ca3af' }}>{ui('loadingLines')}</div>;
+                        }
+                        if (lines.length === 0) {
+                          return <div style={{ padding: '8px 12px 8px 48px', fontSize: 12, color: '#9ca3af' }}>{ui('noLinesFound')}</div>;
+                        }
+                        return (
+                          <>
                           <div style={{ display: 'flex', padding: '4px 12px 4px 48px', fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '0.5px solid #E5E7EB' }}>
                             <span style={{ flex: 1 }}>{ui('product')}</span>
                             <span style={{ width: 70, textAlign: 'right' }}>{ui('qty')}</span>
@@ -288,13 +295,14 @@ export default function ImportLinesModal({
                             );
                           })}
                         </>
-                      )}
+                        );
+                      })()}
                     </div>
                   )}
                 </div>
               );
-            })
-          )}
+            });
+          })()}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F8F9FA', borderTop: '1px solid #E5E7EB', padding: '10px 16px' }}>
