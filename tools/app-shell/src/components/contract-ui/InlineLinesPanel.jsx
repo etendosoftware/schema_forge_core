@@ -523,6 +523,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
         {visibleColumns.map((col, idx) => (
           <div
             key={col.key}
+            data-testid={`column-header-${col.key}`}
             className="flex items-center"
             style={{
               padding: `0 ${TOKENS.cellPaddingX}px`,

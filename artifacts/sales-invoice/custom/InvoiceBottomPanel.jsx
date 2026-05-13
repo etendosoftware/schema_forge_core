@@ -1,11 +1,11 @@
-import { useState, useMemo, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { createPortal } from 'react-dom';
-import { toast } from 'sonner';
 import { useUI } from '@/i18n';
 import { LinesBottomSection } from '@/components/contract-ui';
 import RelatedDocuments from './RelatedDocuments';
 import SifDataTabs from './SifDataTabs';
 import ImportFromShipmentModal from './ImportFromShipmentModal';
+import ImportFromOrderModal from './ImportFromOrderModal';
 
 /**
  * Sales Invoice bottom section. Delegates to the shared LinesBottomSection so
@@ -25,24 +25,39 @@ export default function InvoiceBottomPanel(props) {
   );
 }
 
-function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, token, apiBaseUrl, onSave, forceOpen, onForceOpenHandled }) {
+function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, token, apiBaseUrl, onSave, forceOpen, onForceOpenHandled, onRefresh }) {
   const ui = useUI();
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showImportOrderModal, setShowImportOrderModal] = useState(false);
+  const pendingModal = useRef('shipment');
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
   useEffect(() => {
-    if (forceOpen) { setShowImportModal(true); onForceOpenHandled?.(); }
+    if (forceOpen) {
+      if (pendingModal.current === 'order') { setShowImportOrderModal(true); } else { setShowImportModal(true); }
+      onForceOpenHandled?.();
+    }
   }, [forceOpen, onForceOpenHandled]);
 
   const handleImportClick = async () => {
+    pendingModal.current = 'shipment';
     if (onSave) {
       const shouldOpen = await onSave();
       if (!shouldOpen) return;
     }
     setShowImportModal(true);
+  };
+
+  const handleImportOrderClick = async () => {
+    pendingModal.current = 'order';
+    if (onSave) {
+      const shouldOpen = await onSave();
+      if (!shouldOpen) return;
+    }
+    setShowImportOrderModal(true);
   };
 
   return (
@@ -56,9 +71,9 @@ function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, 
         </svg>
       </div>
       <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: 4 }}>{ui('noLinesYet')}</span>
-      <span style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 20 }}>{ui('addLinesManuallyOrImportFromShipment')}</span>
+      <span style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 20 }}>{ui('addLinesManuallyOrImportFromShipmentOrOrder')}</span>
       {isDraft && canAddLine && (
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
           <button type="button" onClick={onAddLine} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, background: '#18181b', color: '#fff', border: 'none', cursor: 'pointer' }}>
             + {ui('addLines')}
           </button>
@@ -72,6 +87,16 @@ function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, 
               {ui('importFromShipment')}
             </button>
           )}
+          {bpId && (
+            <button type="button" onClick={handleImportOrderClick} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              {ui('importFromSalesOrder')}
+            </button>
+          )}
         </div>
       )}
       {showImportModal && createPortal(
@@ -81,7 +106,18 @@ function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, 
           base={base}
           headers={headers}
           onClose={() => setShowImportModal(false)}
-          onSuccess={() => { setShowImportModal(false); toast.success(ui('linesImportedFromShipment')); window.location.reload(); }}
+          onSuccess={() => { setShowImportModal(false); onRefresh?.(); }}
+        />,
+        document.body,
+      )}
+      {showImportOrderModal && createPortal(
+        <ImportFromOrderModal
+          invoiceId={recordId}
+          bpId={bpId}
+          base={base}
+          headers={headers}
+          onClose={() => setShowImportOrderModal(false)}
+          onSuccess={() => { setShowImportOrderModal(false); onRefresh?.(); }}
         />,
         document.body,
       )}
@@ -94,21 +130,27 @@ function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, 
 // below. `hideTrigger` lets DetailView mount this only for the modal portal
 // (the visible link is suppressed when the menu item is in use).
 const InvoiceLineActions = forwardRef(function InvoiceLineActions(
-  { data, recordId, token, apiBaseUrl, onSave, forceOpen, onForceOpenHandled, hideTrigger = false },
+  { data, recordId, token, apiBaseUrl, onSave, forceOpen, onForceOpenHandled, hideTrigger = false, onRefresh },
   ref,
 ) {
   const ui = useUI();
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showImportOrderModal, setShowImportOrderModal] = useState(false);
+  const pendingModal = useRef('shipment');
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
   useEffect(() => {
-    if (forceOpen) { setShowImportModal(true); onForceOpenHandled?.(); }
+    if (forceOpen) {
+      if (pendingModal.current === 'order') { setShowImportOrderModal(true); } else { setShowImportModal(true); }
+      onForceOpenHandled?.();
+    }
   }, [forceOpen, onForceOpenHandled]);
 
   const openModal = async () => {
+    pendingModal.current = 'shipment';
     if (onSave) {
       const shouldOpen = await onSave();
       if (!shouldOpen) return;
@@ -116,11 +158,18 @@ const InvoiceLineActions = forwardRef(function InvoiceLineActions(
     setShowImportModal(true);
   };
 
-  useImperativeHandle(ref, () => ({ openImportModal: openModal }), [onSave]);
+  const openOrderModal = async () => {
+    pendingModal.current = 'order';
+    if (onSave) {
+      const shouldOpen = await onSave();
+      if (!shouldOpen) return;
+    }
+    setShowImportOrderModal(true);
+  };
+
+  useImperativeHandle(ref, () => ({ openImportModal: openModal, openImportOrderModal: openOrderModal }), [onSave]);
 
   if (!isDraft || !bpId) {
-    // Still keep the modal portal mounted in case forceOpen fires; trigger
-    // (link) only renders in the legacy mode.
     return null;
   }
 
@@ -147,7 +196,18 @@ const InvoiceLineActions = forwardRef(function InvoiceLineActions(
           base={base}
           headers={headers}
           onClose={() => setShowImportModal(false)}
-          onSuccess={() => { setShowImportModal(false); toast.success(ui('linesImportedFromShipment')); window.location.reload(); }}
+          onSuccess={() => { setShowImportModal(false); onRefresh?.(); }}
+        />,
+        document.body,
+      )}
+      {showImportOrderModal && createPortal(
+        <ImportFromOrderModal
+          invoiceId={recordId}
+          bpId={bpId}
+          base={base}
+          headers={headers}
+          onClose={() => setShowImportOrderModal(false)}
+          onSuccess={() => { setShowImportOrderModal(false); onRefresh?.(); }}
         />,
         document.body,
       )}
@@ -174,6 +234,11 @@ InvoiceBottomPanel.lineMenuActions = function lineMenuActions({ data, importRef 
       key: 'import-shipment',
       label: 'importFromShipment',
       onClick: () => importRef.current?.openImportModal?.(),
+    },
+    {
+      key: 'import-order',
+      label: 'importFromSalesOrder',
+      onClick: () => importRef.current?.openImportOrderModal?.(),
     },
   ];
 };

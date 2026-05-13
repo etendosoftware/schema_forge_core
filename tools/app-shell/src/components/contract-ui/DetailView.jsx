@@ -2061,6 +2061,12 @@ export function DetailView({
                           // 3. The user-changed field always wins (last-write).
                           fieldValues[fieldKey] = payloadValue;
 
+                          // Derive unitPrice (PriceActual) = listPrice × (1 - discount/100).
+                          // Without this the backend keeps the pre-discount PriceActual and
+                          // confirmed totals don't match the discounted lineNetAmount we just
+                          // computed — matches the side-panel save flow.
+                          prepareLineForPost(fieldValues);
+
                           const res = await fetch(childUrl, {
                             method: 'PATCH',
                             headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -2071,10 +2077,12 @@ export function DetailView({
                             // FK callout outputs like tax$_identifier) so the row UI reflects
                             // the full snapshot without a refetch.
                             const localUpdate = { ...derivedUpdates, [fieldKey]: payloadValue };
+                            if (fieldValues.unitPrice !== undefined) localUpdate.unitPrice = fieldValues.unitPrice;
                             if (opts?.identifier !== undefined) {
                               localUpdate[fieldKey + '$_identifier'] = opts.identifier;
                             }
                             hook.handleUpdateChild?.(row.id, localUpdate);
+                            toast.success(ui('recordSaved'));
                           } else {
                             const msg = await extractErrorMessage(res);
                             toast.error(msg || ui('networkError'));
