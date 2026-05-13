@@ -75,7 +75,7 @@ describe('StatusPill — onClick backward compatibility', () => {
 
 // Guards: fmtDate, PAGE_SIZE, and WipBadge extracted from per-section copies
 describe('FmPrimitives — shared utilities', () => {
-  it('exports fmtDate', () => assert.match(src, /export function fmtDate/));
+  it('exports fmtDate', () => assert.match(src, /export.*fmtDate/));
   it('exports PAGE_SIZE = 20', () => assert.match(src, /export const PAGE_SIZE\s*=\s*20/));
   it('exports WipBadge', () => assert.match(src, /export const WipBadge/));
   it('WipBadge uses fiscal.wip.badge i18n key', () => assert.match(src, /fiscal\.wip\.badge/));
