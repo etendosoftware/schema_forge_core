@@ -17,6 +17,137 @@ function getCardClass(animState) {
   return 'translate-x-0 transition-transform duration-[280ms]';
 }
 
+function ManagedLeftPanel({ cfg, leftPanel }) {
+  const ui = useUI();
+  const autoFetch = !!(cfg.autoFetch);
+  const attachment = usePreviewAttachment({
+    documentId: cfg.documentId ?? null,
+    specName: cfg.specName ?? null,
+    storeCondition: cfg.storeCondition ?? false,
+    token: cfg.token ?? null,
+    apiBaseUrl: cfg.apiBaseUrl ?? null,
+  });
+
+  const autoStoreAttempted = useRef(false);
+  const autoStoreDocKey = `${cfg.documentId}::${cfg.specName}`;
+  const prevAutoStoreKey = useRef(null);
+  if (prevAutoStoreKey.current !== autoStoreDocKey) {
+    prevAutoStoreKey.current = autoStoreDocKey;
+    autoStoreAttempted.current = false;
+  }
+
+  useEffect(() => {
+    if (!cfg.storeCondition) return;
+    const hasSource = cfg.sourceBlob || cfg.sourceUrl;
+    if (!hasSource) return;
+    if (attachment.storedFile || attachment.isBusy) return;
+    if (autoStoreAttempted.current) return;
+    autoStoreAttempted.current = true;
+    const fileName = `${cfg.documentId ?? 'preview'}.pdf`;
+    if (cfg.sourceBlob) {
+      attachment.storeBlob(cfg.sourceBlob, fileName).catch(() => {});
+    } else {
+      attachment.storeUrl(cfg.sourceUrl, fileName).catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cfg.storeCondition, cfg.sourceBlob, cfg.sourceUrl, cfg.documentId, attachment.storedFile, attachment.isBusy]);
+
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file && ACCEPTED_TYPES[file.type]) attachment.storeFile(file).catch(() => {});
+  }, [attachment]);
+
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) setIsDragOver(false);
+  }, []);
+
+  const handleFileChange = useCallback((e) => {
+    const file = e.target.files[0];
+    if (file && ACCEPTED_TYPES[file.type]) attachment.storeFile(file).catch(() => {});
+    e.target.value = '';
+  }, [attachment]);
+
+  if (attachment.storedFile) {
+    const { objectUrl, mimeType, fileName } = attachment.storedFile;
+    return (
+      <div className="relative flex flex-col h-full min-h-0">
+        {!autoFetch && (
+          <button
+            type="button"
+            onClick={() => attachment.deleteFile().catch(() => {})}
+            className="absolute top-2 left-2 z-10 w-8 h-8 flex items-center justify-center bg-white border border-[#D1D4DB] shadow-sm rounded-lg hover:bg-gray-50 transition-colors"
+            title={`${ui('deleteDocument')} — ${fileName}`}
+            aria-label={ui('deleteDocument')}
+          >
+            <Trash2 size={16} className="text-[#828FA3]" />
+          </button>
+        )}
+        {mimeType?.startsWith('image/') ? (
+          <div className="w-full h-full overflow-auto flex items-center justify-center">
+            <img src={objectUrl} alt={fileName} className="max-w-full max-h-full object-contain bg-white shadow-md" />
+          </div>
+        ) : (
+          <PdfViewer url={objectUrl} />
+        )}
+      </div>
+    );
+  }
+
+  if (autoFetch) return leftPanel;
+
+  if (attachment.isBusy) {
+    return (
+      <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-1 items-center justify-center p-8">
+      <div
+        data-testid="preview-drop-zone"
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onClick={() => fileInputRef.current?.click()}
+        className={`w-full h-full max-h-[420px] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-4 cursor-pointer transition-colors ${
+          isDragOver ? 'border-gray-400 bg-gray-100' : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100/60'
+        }`}
+      >
+        <div className="w-16 h-20 bg-white rounded-lg border border-gray-200 flex items-center justify-center shadow-sm">
+          <Upload size={20} className="text-gray-400" />
+        </div>
+        {isDragOver ? (
+          <p className="text-sm font-medium text-gray-700">{ui('dropZoneDropHere')}</p>
+        ) : (
+          <>
+            <p className="text-sm text-gray-600 mt-1">{ui('dropZoneUploadPrompt')}</p>
+            <button
+              className="px-4 py-2 text-sm font-medium text-gray-900 bg-transparent border border-gray-900 rounded-lg hover:bg-gray-900 hover:text-white transition-colors"
+              onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+            >
+              {ui('dropZoneBrowse')}
+            </button>
+            <p className="text-xs text-gray-400">{ui('dropZoneAcceptedTypes')}</p>
+          </>
+        )}
+        <input ref={fileInputRef} type="file" accept={ACCEPT_ATTR} className="hidden" onChange={handleFileChange} />
+      </div>
+    </div>
+  );
+}
+
 /**
  * GenericPreviewModal — domain-agnostic slide-in preview shell.
  *
@@ -99,146 +230,11 @@ export default function GenericPreviewModal({
 
   const activeContent = tabs.find((t) => t.key === activeTab)?.content ?? null;
 
-  // ── Attachment persistence ────────────────────────────────────────────────
-
   const cfg = attachmentConfig ?? {};
-  const autoFetch = !!(cfg.autoFetch);
-  const attachment = usePreviewAttachment({
-    documentId: cfg.documentId ?? null,
-    specName: cfg.specName ?? null,
-    storeCondition: cfg.storeCondition ?? false,
-    token: cfg.token ?? null,
-    apiBaseUrl: cfg.apiBaseUrl ?? null,
-  });
-
-  // Auto-store blob/url when no file is cached yet (runs once per document open)
-  const autoStoreAttempted = useRef(false);
-  const autoStoreDocKey = `${cfg.documentId}::${cfg.specName}`;
-  const prevAutoStoreKey = useRef(null);
-  if (prevAutoStoreKey.current !== autoStoreDocKey) {
-    prevAutoStoreKey.current = autoStoreDocKey;
-    autoStoreAttempted.current = false;
-  }
-
-  useEffect(() => {
-    if (!cfg.storeCondition) return;
-    const hasSource = cfg.sourceBlob || cfg.sourceUrl;
-    if (!hasSource) return;
-    if (attachment.storedFile || attachment.isBusy) return;
-    if (autoStoreAttempted.current) return;
-    autoStoreAttempted.current = true;
-    const fileName = `${cfg.documentId ?? 'preview'}.pdf`;
-    if (cfg.sourceBlob) {
-      attachment.storeBlob(cfg.sourceBlob, fileName).catch(() => {});
-    } else {
-      attachment.storeUrl(cfg.sourceUrl, fileName).catch(() => {});
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cfg.storeCondition, cfg.sourceBlob, cfg.sourceUrl, cfg.documentId, attachment.storedFile, attachment.isBusy]);
-
-  // Drop zone state for the managed left panel
-  const [isDragOver, setIsDragOver] = useState(false);
-  const fileInputRef = useRef(null);
-
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file && ACCEPTED_TYPES[file.type]) attachment.storeFile(file).catch(() => {});
-  }, [attachment]);
-
-  const handleDragOver = useCallback((e) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e) => {
-    if (!e.currentTarget.contains(e.relatedTarget)) setIsDragOver(false);
-  }, []);
-
-  const handleFileChange = useCallback((e) => {
-    const file = e.target.files[0];
-    if (file && ACCEPTED_TYPES[file.type]) attachment.storeFile(file).catch(() => {});
-    e.target.value = '';
-  }, [attachment]);
-
-  // ── Left panel resolution ─────────────────────────────────────────────────
-
   const shouldManagePanel = !!(cfg.storeCondition && cfg.documentId && cfg.specName);
-
-  let resolvedLeftPanel = leftPanel;
-
-  if (shouldManagePanel) {
-    if (attachment.storedFile) {
-      const { objectUrl, mimeType, fileName } = attachment.storedFile;
-      resolvedLeftPanel = (
-        <div className="relative flex flex-col h-full min-h-0">
-          {!autoFetch && (
-            <button
-              type="button"
-              onClick={() => attachment.deleteFile().catch(() => {})}
-              className="absolute top-2 left-2 z-10 w-8 h-8 flex items-center justify-center bg-white border border-[#D1D4DB] shadow-sm rounded-lg hover:bg-gray-50 transition-colors"
-              title={`${ui('deleteDocument')} — ${fileName}`}
-              aria-label={ui('deleteDocument')}
-            >
-              <Trash2 size={16} className="text-[#828FA3]" />
-            </button>
-          )}
-          {mimeType?.startsWith('image/') ? (
-            <div className="w-full h-full overflow-auto flex items-center justify-center">
-              <img src={objectUrl} alt={fileName} className="max-w-full max-h-full object-contain bg-white shadow-md" />
-            </div>
-          ) : (
-            <PdfViewer url={objectUrl} />
-          )}
-        </div>
-      );
-    } else if (autoFetch) {
-      // No cached file yet: show the caller's leftPanel (e.g. the live PDF viewer)
-      // while background caching runs via autoStore effect.
-      resolvedLeftPanel = leftPanel;
-    } else if (attachment.isBusy) {
-      resolvedLeftPanel = (
-        <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" />
-        </div>
-      );
-    } else {
-      resolvedLeftPanel = (
-        <div className="flex flex-1 items-center justify-center p-8">
-          <div
-            data-testid="preview-drop-zone"
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onClick={() => fileInputRef.current?.click()}
-            className={`w-full h-full max-h-[420px] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-4 cursor-pointer transition-colors ${
-              isDragOver ? 'border-gray-400 bg-gray-100' : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100/60'
-            }`}
-          >
-            <div className="w-16 h-20 bg-white rounded-lg border border-gray-200 flex items-center justify-center shadow-sm">
-              <Upload size={20} className="text-gray-400" />
-            </div>
-            {isDragOver ? (
-              <p className="text-sm font-medium text-gray-700">{ui('dropZoneDropHere')}</p>
-            ) : (
-              <>
-                <p className="text-sm text-gray-600 mt-1">{ui('dropZoneUploadPrompt')}</p>
-                <button
-                  className="px-4 py-2 text-sm font-medium text-gray-900 bg-transparent border border-gray-900 rounded-lg hover:bg-gray-900 hover:text-white transition-colors"
-                  onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                >
-                  {ui('dropZoneBrowse')}
-                </button>
-                <p className="text-xs text-gray-400">{ui('dropZoneAcceptedTypes')}</p>
-              </>
-            )}
-            <input ref={fileInputRef} type="file" accept={ACCEPT_ATTR} className="hidden" onChange={handleFileChange} />
-          </div>
-        </div>
-      );
-    }
-  }
+  const resolvedLeftPanel = shouldManagePanel
+    ? <ManagedLeftPanel cfg={cfg} leftPanel={leftPanel} />
+    : leftPanel;
 
   return (
     <div

@@ -24,6 +24,75 @@ import { getInvoiceFiscalTargets } from './fiscalTargets.js';
  *   - sales invoice, completed: managed by GenericPreviewModal (cached via ETGO_PREVIEW_FILE)
  *   - purchase invoice:         managed by GenericPreviewModal (drop zone → persisted)
  */
+function InvoiceActionButtons({ triggerEdit, onEmail, canSendToSif, onOpenSif, canAddPayment, onAddPayment, isSalesInvoice, onDownloadPdf, hasPdf }) {
+  const ui = useUI();
+  return (
+    <>
+      <Button
+        size="sm"
+        className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-[#121217] hover:bg-[#2a2a30] text-white [&_svg]:size-5"
+        onClick={onEmail}
+      >
+        <Mail />
+        {ui('invoicePreviewSend')}
+      </Button>
+
+      {canSendToSif && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] [&_svg]:size-5"
+          onClick={onOpenSif}
+        >
+          <FileText className="text-[#828FA3]" />
+          {ui('sendToSif')}
+        </Button>
+      )}
+
+      <Button
+        size="sm"
+        variant="outline"
+        className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] disabled:opacity-40 disabled:cursor-not-allowed [&_svg]:size-5"
+        disabled={!canAddPayment}
+        onClick={canAddPayment ? onAddPayment : undefined}
+      >
+        <Wallet className="text-[#828FA3]" />
+        {ui('invoicePreviewAddPayment')}
+      </Button>
+
+      {isSalesInvoice && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] [&_svg]:size-5"
+          onClick={onDownloadPdf}
+          disabled={!hasPdf}
+        >
+          <Download className="text-[#828FA3]" />
+          {ui('invoicePreviewDownloadPdf')}
+        </Button>
+      )}
+
+      <Button
+        size="sm"
+        variant="outline"
+        className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] [&_svg]:size-5"
+        onClick={triggerEdit}
+      >
+        <Edit2 className="text-[#828FA3]" />
+        {ui('invoicePreviewEdit')}
+      </Button>
+
+      <button
+        type="button"
+        className="w-8 h-8 flex items-center justify-center bg-white border border-[#D1D4DB] shadow-sm rounded-lg hover:bg-gray-50 transition-colors"
+      >
+        <MoreVertical size={20} className="text-[#828FA3]" />
+      </button>
+    </>
+  );
+}
+
 export default function InvoicePreview({ invoice, token, apiBaseUrl, windowName, specName = 'purchase-invoice', onClose, onEdit, onInvoiceUpdated = null }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
@@ -130,70 +199,18 @@ export default function InvoicePreview({ invoice, token, apiBaseUrl, windowName,
         onClose={onClose}
         onEdit={() => onEdit?.(p.displayInvoice?.id)}
         tabs={tabs}
-        actionButtons={({ triggerEdit }) => (
-          <>
-            <Button
-              size="sm"
-              className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-[#121217] hover:bg-[#2a2a30] text-white [&_svg]:size-5"
-              onClick={p.openEmailModal}
-            >
-              <Mail />
-              {ui('invoicePreviewSend')}
-            </Button>
-
-            {p.canSendToSif && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] [&_svg]:size-5"
-                onClick={() => p.setShowSifModal(true)}
-              >
-                <FileText className="text-[#828FA3]" />
-                {ui('sendToSif')}
-              </Button>
-            )}
-
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] disabled:opacity-40 disabled:cursor-not-allowed [&_svg]:size-5"
-              disabled={!p.canAddPayment}
-              onClick={p.canAddPayment ? () => p.setShowPaymentModal(true) : undefined}
-            >
-              <Wallet className="text-[#828FA3]" />
-              {ui('invoicePreviewAddPayment')}
-            </Button>
-
-            {p.isSalesInvoice && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] [&_svg]:size-5"
-                onClick={p.handleDownloadPdf}
-                disabled={!p.pdfUrl}
-              >
-                <Download className="text-[#828FA3]" />
-                {ui('invoicePreviewDownloadPdf')}
-              </Button>
-            )}
-
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] [&_svg]:size-5"
-              onClick={triggerEdit}
-            >
-              <Edit2 className="text-[#828FA3]" />
-              {ui('invoicePreviewEdit')}
-            </Button>
-
-            <button
-              type="button"
-              className="w-8 h-8 flex items-center justify-center bg-white border border-[#D1D4DB] shadow-sm rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <MoreVertical size={20} className="text-[#828FA3]" />
-            </button>
-          </>
+        actionButtons={({ triggerEdit: te }) => (
+          <InvoiceActionButtons
+            triggerEdit={te}
+            onEmail={p.openEmailModal}
+            canSendToSif={p.canSendToSif}
+            onOpenSif={() => p.setShowSifModal(true)}
+            canAddPayment={p.canAddPayment}
+            onAddPayment={() => p.setShowPaymentModal(true)}
+            isSalesInvoice={p.isSalesInvoice}
+            onDownloadPdf={p.handleDownloadPdf}
+            hasPdf={!!p.pdfUrl}
+          />
         )}
       />
 
@@ -350,6 +367,46 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, install
 
   const currencyCode = installments[0]?.['currency$_identifier'] || '';
 
+  let paymentsTitleRight = null;
+  if (canAddPayment) {
+    paymentsTitleRight = <button onClick={onAddPayment} className="text-xs font-medium text-gray-900 underline decoration-gray-600 hover:decoration-gray-900 transition-colors">{ui('invoicePreviewAddPayment')}</button>;
+  } else if (isFullyPaid) {
+    paymentsTitleRight = <Check size={13} className="text-green-500" />;
+  }
+
+  let paymentsContent;
+  if (loadingPayments) {
+    paymentsContent = <p className="text-xs text-gray-400 py-4 text-center">{ui('loading')}</p>;
+  } else if (payments.length === 0 && totalOutstanding <= 0) {
+    paymentsContent = <p className="text-xs text-gray-400 py-4 text-center">{ui('invoicePreviewNoPaymentsRecorded')}</p>;
+  } else {
+    paymentsContent = (
+      <div className="flex flex-col gap-3 px-3 py-2">
+        {payments.map((p) => {
+          const acctLabel = p.accountName || (p.documentNo ? `#${p.documentNo}` : '—');
+          return (
+            <div key={p.id} className="flex items-center justify-between rounded px-2 py-2" style={{ backgroundColor: '#F5F7F9' }}>
+              <div className="flex items-center gap-1 min-w-0">
+                <Ban size={20} className="shrink-0" style={{ color: '#828FA3' }} />
+                <span className="text-sm text-gray-900 truncate">{acctLabel}</span>
+              </div>
+              <div className="flex flex-col items-end shrink-0">
+                <span className="text-sm tabular-nums text-gray-900">{currencyCode} {formatAmount(p.amount)}</span>
+                <span className="text-xs tabular-nums" style={{ color: '#555B6D' }}>{fmtPayDate(p.paymentDate)}</span>
+              </div>
+            </div>
+          );
+        })}
+        {totalOutstanding > 0 && (
+          <div className="flex items-center justify-between px-3">
+            <span className="text-xs" style={{ color: '#8A6100' }}>{ui('invoicePendingPayment')}</span>
+            <span className="text-sm tabular-nums" style={{ color: '#8A6100' }}>{currencyCode} {formatAmount(totalOutstanding)}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="pb-4">
       <SectionCard
@@ -397,41 +454,9 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, install
       <SectionCard
         title={ui('invoicePreviewPayments')}
         noPadding
-        titleRight={
-          canAddPayment
-            ? <button onClick={onAddPayment} className="text-xs font-medium text-gray-900 underline decoration-gray-600 hover:decoration-gray-900 transition-colors">{ui('invoicePreviewAddPayment')}</button>
-            : isFullyPaid ? <Check size={13} className="text-green-500" /> : null
-        }
+        titleRight={paymentsTitleRight}
       >
-        {loadingPayments ? (
-          <p className="text-xs text-gray-400 py-4 text-center">{ui('loading')}</p>
-        ) : payments.length === 0 && totalOutstanding <= 0 ? (
-          <p className="text-xs text-gray-400 py-4 text-center">{ui('invoicePreviewNoPaymentsRecorded')}</p>
-        ) : (
-          <div className="flex flex-col gap-3 px-3 py-2">
-            {payments.map((p) => {
-              const acctLabel = p.accountName || (p.documentNo ? `#${p.documentNo}` : '—');
-              return (
-                <div key={p.id} className="flex items-center justify-between rounded px-2 py-2" style={{ backgroundColor: '#F5F7F9' }}>
-                  <div className="flex items-center gap-1 min-w-0">
-                    <Ban size={20} className="shrink-0" style={{ color: '#828FA3' }} />
-                    <span className="text-sm text-gray-900 truncate">{acctLabel}</span>
-                  </div>
-                  <div className="flex flex-col items-end shrink-0">
-                    <span className="text-sm tabular-nums text-gray-900">{currencyCode} {formatAmount(p.amount)}</span>
-                    <span className="text-xs tabular-nums" style={{ color: '#555B6D' }}>{fmtPayDate(p.paymentDate)}</span>
-                  </div>
-                </div>
-              );
-            })}
-            {totalOutstanding > 0 && (
-              <div className="flex items-center justify-between px-3">
-                <span className="text-xs" style={{ color: '#8A6100' }}>{ui('invoicePendingPayment')}</span>
-                <span className="text-sm tabular-nums" style={{ color: '#8A6100' }}>{currencyCode} {formatAmount(totalOutstanding)}</span>
-              </div>
-            )}
-          </div>
-        )}
+        {paymentsContent}
       </SectionCard>
 
       <SectionCard
