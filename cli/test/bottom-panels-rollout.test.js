@@ -193,5 +193,17 @@ describe('BottomPanel rollout — all inline-editable windows', () => {
       assert.match(src, /useUI\(\)/);
       assert.match(src, /ui\('noLinesYet'\)/);
     });
+
+    it('attaches lineMenuActions as a static function returning import-order and import-receipt', () => {
+      assert.match(src, /PurchaseInvoiceBottomPanel\.lineMenuActions/);
+      assert.match(src, /import-order/);
+      assert.match(src, /import-receipt/);
+    });
+
+    it('exposes detailExtraActions with openImportOrderModal and openImportReceiptModal', () => {
+      assert.match(src, /PurchaseInvoiceBottomPanel\.detailExtraActions/);
+      assert.match(src, /openImportOrderModal/);
+      assert.match(src, /openImportReceiptModal/);
+    });
   });
 });

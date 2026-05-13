@@ -1164,14 +1164,14 @@ export function DetailView({
 
   const data = hook.editing || currentItem || {};
 
-  // Send total-discount percentage to the backend. No full reload — visual totals are
-  // already computed locally from inputPct in DocumentTotalsPanel, so reloading would
-  // discard any in-progress unsaved inline-add row without any visual benefit.
+  // Send total-discount percentage to the backend on blur. Also mirror the
+  // saved value into the editing state so subsequent form saves don't overwrite
+  // it with the stale data snapshot. Toast confirms persistence to the user.
   const handleTotalDiscountChange = useCallback(async (pct) => {
     const currentId = data?.id || recordId;
     if (!currentId || isNew) return;
     try {
-      await fetch(`${apiBaseUrl}/${entity}/${currentId}`, {
+      const res = await fetch(`${apiBaseUrl}/${entity}/${currentId}`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -1179,10 +1179,16 @@ export function DetailView({
         },
         body: JSON.stringify({ etgoTotalDiscount: pct }),
       });
-    } catch {
-      // Best-effort: silent failure to avoid breaking the UI
+      if (!res.ok) {
+        toast.error(await extractErrorMessage(res));
+        return;
+      }
+      hook.handleChange?.('etgoTotalDiscount', pct);
+      toast.success(ui('totalDiscountSaved'));
+    } catch (err) {
+      toast.error(err?.message || ui('networkError'));
     }
-  }, [data?.id, recordId, isNew, apiBaseUrl, entity, token]);
+  }, [data?.id, recordId, isNew, apiBaseUrl, entity, token, hook, ui, extractErrorMessage]);
 
   // Guard that controls whether "+ Add Lines" is shown.
   // 1. Explicit `addLineGuard` from the window wins (business-specific rules).
@@ -1806,7 +1812,10 @@ export function DetailView({
                       recordId={data?.id || recordId}
                       token={token}
                       apiBaseUrl={apiBaseUrl}
-                      onRefresh={() => hook.fetchChildren?.(data?.id || recordId)}
+                      onRefresh={() => {
+                        hook.fetchChildren?.(data?.id || recordId);
+                        hook.fetchById?.(data?.id || recordId);
+                      }}
                       onSave={handleImportClick}
                       forceOpen={forceOpenImport}
                       onForceOpenHandled={() => setForceOpenImport(false)}
@@ -2151,7 +2160,10 @@ export function DetailView({
                               recordId={data?.id || recordId}
                               token={token}
                               apiBaseUrl={apiBaseUrl}
-                              onRefresh={() => hook.fetchChildren?.(data?.id || recordId)}
+                              onRefresh={() => {
+                                hook.fetchChildren?.(data?.id || recordId);
+                                hook.fetchById?.(data?.id || recordId);
+                              }}
                               onSave={handleImportClick}
                               forceOpen={forceOpenImport}
                               onForceOpenHandled={() => setForceOpenImport(false)}
