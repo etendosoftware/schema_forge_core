@@ -1,8 +1,8 @@
 {
   "version": "0.2.0",
   "generatedAt": "2026-04-29T18:11:24.842Z",
-  "updatedAt": "2026-05-13T11:23:31.535Z",
-  "checksum": "1ea8073753242687",
+  "updatedAt": "2026-05-13T15:59:15.914Z",
+  "checksum": "a601a27239580ae0",
   "frontendContract": {
     "window": {
       "id": "140",
@@ -32,8 +32,7 @@
         }
       ],
       "attachments": true,
-      "layoutType": "gallery",
-      "linesLayout": "classic"
+      "layoutType": "gallery"
     },
     "entities": {
       "product": {

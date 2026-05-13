@@ -7,46 +7,10 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(__dirname, '..', 'useCertExpiry.js'), 'utf8');
 
-// ── daysUntil pure function — copied to avoid importing JSX/alias dependencies ──
-
-function daysUntil(dateStr) {
-  if (!dateStr) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const expiry = new Date(dateStr);
-  expiry.setHours(0, 0, 0, 0);
-  return Math.ceil((expiry - today) / 86_400_000);
-}
-
-function addDays(n) {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
-}
-
-describe('daysUntil — null / falsy inputs', () => {
-  it('returns null for null', () => assert.equal(daysUntil(null), null));
-  it('returns null for empty string', () => assert.equal(daysUntil(''), null));
-  it('returns null for undefined', () => assert.equal(daysUntil(undefined), null));
-});
-
-describe('daysUntil — relative future dates', () => {
-  it('returns 1 for tomorrow', () => assert.equal(daysUntil(addDays(1)), 1));
-  it('returns 30 for 30 days from now', () => assert.equal(daysUntil(addDays(30)), 30));
-  it('returns 60 for 60 days from now', () => assert.equal(daysUntil(addDays(60)), 60));
-  it('returns 0 for today', () => assert.equal(daysUntil(addDays(0)), 0));
-});
-
-describe('daysUntil — past dates', () => {
-  it('returns a negative number for yesterday', () => assert.equal(daysUntil(addDays(-1)), -1));
-  it('returns -30 for 30 days ago', () => assert.equal(daysUntil(addDays(-30)), -30));
-});
-
 // Guards: public API of useCertExpiry.js is intact
 describe('useCertExpiry — exports', () => {
-  it('exports daysUntil as a named function', () => {
-    assert.match(src, /export function daysUntil/);
+  it('re-exports daysUntil from certExpiryUtils', () => {
+    assert.match(src, /export.*daysUntil/);
   });
 
   it('exports useCertExpiry as a named function', () => {
@@ -77,5 +41,19 @@ describe('useCertExpiry — hook structure', () => {
 
   it('includes Authorization header in the fetch', () => {
     assert.match(src, /Authorization.*Bearer/);
+  });
+
+  it('resets daysLeft to null when orgId or token are falsy', () => {
+    assert.match(src, /if \(!orgId \|\| !token\)\s*\{\s*setDaysLeft\(null\)/);
+  });
+
+  it('resets daysLeft to null when response has no valid cert (else branch)', () => {
+    assert.match(src, /\} else \{[\s\S]{0,40}setDaysLeft\(null\)/);
+  });
+
+  it('uses AbortController to cancel in-flight fetch on cleanup', () => {
+    assert.match(src, /new AbortController\(\)/);
+    assert.match(src, /controller\.abort\(\)/);
+    assert.match(src, /controller\.signal\.aborted/);
   });
 });
