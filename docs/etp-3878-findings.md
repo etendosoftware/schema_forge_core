@@ -37,7 +37,7 @@ Re-verified each finding against current `feature/ETP-3981` working tree.
 | 7 | Country/region selector fallbacks duplicated | Medium | Open |
 | 8 | `CreateContactModal` in generic `contract-ui` | Medium | Open |
 | 9 | Related-doc graph traversal duplicated per window | Medium | Open |
-| 10 | `DocChip` rules repeated per window | Medium | Open |
+| 10 | `DocChip` rules repeated per window | Medium | **SOLVED** — registry + `docChipProps()` helper |
 | 11 | `DetailView` knows sales/purchase selector context | Medium | Open |
 | 12 | `businessPartner`/`contacts` alias in quality-gate | Medium | **SOLVED** — centralized in `quality-gate/window-aliases.js` |
 | 13 | `contacts/BusinessPartnerSidebar.jsx` forwarding alias | Low | **PARTIALLY SOLVED** — alias gone, but forked into two full copies |
@@ -301,7 +301,10 @@ Confidence: Medium
 
 Confidence: High
 
-### Medium — DocChip rendering rules are repeated per window
+### Medium — DocChip rendering rules are repeated per window — SOLVED (2026-05-13)
+
+> **Status: SOLVED.** New `tools/app-shell/src/components/related-documents/docChipTypes.jsx` declares `DOCUMENT_CHIP_TYPES` (one entry per doc type: order/invoice/receipt/payment) and a `docChipProps()` helper that produces the full DocChip props from a `{ type, doc, ui, navigate }` tuple plus optional `iconKey`/`title` overrides. The 4 `RelatedDocuments.jsx` windows were rewritten to use it. Pre-existing icon divergence (purchase-order shows goods-receipt with `receipt` icon while purchase-invoice uses `shipment`) is preserved via an explicit `iconKey: 'receipt'` override at the call site — it now lives in one place where it can be unified later if desired. Behavior parity validated by 10 unit tests in `__tests__/docChipTypes.vitest.jsx` that capture the original hand-written props of every call site.
+
 
 **Evidence:**
 

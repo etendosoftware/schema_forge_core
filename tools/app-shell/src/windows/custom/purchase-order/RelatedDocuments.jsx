@@ -2,41 +2,16 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUI } from '@/i18n';
 import {
-  DocChip, RelatedDocumentsShell, STATUS_KEYS, CHIP_ICONS, CHIP_COLORS,
+  DocChip, RelatedDocumentsShell, docChipProps,
   fetchByCriteria, fetchChild, fetchById,
 } from '@/components/related-documents';
 
+// Pre-existing divergence (ETP-3878 F10): this window renders goods-receipt
+// chips with the `receipt` icon, while purchase-invoice uses `shipment`.
+// Preserved via iconKey override below.
 const RELATED_SPECS = [
-  {
-    key: 'goods-receipt',
-    icon: 'receipt',
-    specName: 'goods-receipt',
-    entityName: 'goodsReceipt',
-    filterColumn: 'salesOrder',
-    route: '/goods-receipt',
-    titleKey: 'receiptDoc',
-    format: (row) => ({
-      title: row.documentNo,
-      date: row.movementDate,
-      status: row.documentStatus,
-    }),
-  },
-  {
-    key: 'purchase-invoice',
-    icon: 'invoice',
-    specName: 'purchase-invoice',
-    entityName: 'header',
-    filterColumn: 'salesOrder',
-    route: '/purchase-invoice',
-    titleKey: 'invoiceDoc',
-    format: (row) => ({
-      title: row.documentNo,
-      date: row.invoiceDate,
-      amount: row.grandTotalAmount,
-      currency: row['currency$_identifier'],
-      status: row.documentStatus,
-    }),
-  },
+  { key: 'goods-receipt', type: 'receipt', iconKey: 'receipt', specName: 'goods-receipt', entityName: 'goodsReceipt', filterColumn: 'salesOrder' },
+  { key: 'purchase-invoice', type: 'invoice', specName: 'purchase-invoice', entityName: 'header', filterColumn: 'salesOrder' },
 ];
 
 async function fetchPayments(orderId, token, apiBaseUrl) {
@@ -86,18 +61,10 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
   for (const spec of RELATED_SPECS) {
     const rows = related[spec.key] || [];
     for (const row of rows) {
-      const f = spec.format(row);
       chips.push(
         <DocChip
           key={`${spec.key}-${row.id}`}
-          icon={CHIP_ICONS[spec.icon]}
-          iconColor={CHIP_COLORS[spec.icon]}
-          title={ui(spec.titleKey, { number: f.title })}
-          amount={f.amount}
-          currency={f.currency}
-          status={f.status}
-          statusLabel={ui(STATUS_KEYS[f.status] || f.status)}
-          onClick={() => navigate(`${spec.route}/${row.id}`)}
+          {...docChipProps({ type: spec.type, doc: row, ui, navigate, iconKey: spec.iconKey })}
         />
       );
     }
@@ -105,17 +72,7 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
 
   for (const p of payments) {
     chips.push(
-      <DocChip
-        key={`payment-${p.id}`}
-        icon={CHIP_ICONS.payment}
-        iconColor={CHIP_COLORS.payment}
-        title={ui('paymentDoc', { number: p.documentNo || p.id })}
-        amount={p.amount}
-        currency={p['currency$_identifier']}
-        status={p.status}
-        statusLabel={ui(STATUS_KEYS[p.status] || p.status)}
-        onClick={() => navigate(`/payment-out/${p.id}`)}
-      />
+      <DocChip key={`payment-${p.id}`} {...docChipProps({ type: 'payment', doc: p, ui, navigate })} />
     );
   }
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUI } from '@/i18n';
 import {
-  DocChip, RelatedDocumentsShell, STATUS_KEYS, CHIP_ICONS, CHIP_COLORS,
+  DocChip, RelatedDocumentsShell, docChipProps,
   neoBase, fetchById,
 } from '@/components/related-documents';
 
@@ -72,35 +72,11 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
   const chips = [];
 
   for (const doc of docs) {
-    if (doc.type === 'order') {
-      chips.push(
-        <DocChip
-          key={`order-${doc.id}`}
-          icon={CHIP_ICONS.order}
-          iconColor={CHIP_COLORS.order}
-          title={ui('orderDoc', { number: doc.documentNo })}
-          amount={doc.grandTotalAmount}
-          currency={doc['currency$_identifier']}
-          status={doc.documentStatus}
-          statusLabel={ui(STATUS_KEYS[doc.documentStatus] || doc.documentStatus)}
-          onClick={() => navigate(`/purchase-order/${doc.id}`)}
-        />
-      );
-    } else {
-      chips.push(
-        <DocChip
-          key={`invoice-${doc.id}`}
-          icon={CHIP_ICONS.invoice}
-          iconColor={CHIP_COLORS.invoice}
-          title={ui('invoiceDoc', { number: doc.documentNo })}
-          amount={doc.grandTotalAmount}
-          currency={doc['currency$_identifier']}
-          status={doc.documentStatus}
-          statusLabel={ui(STATUS_KEYS[doc.documentStatus] || doc.documentStatus)}
-          onClick={() => navigate(`/purchase-invoice/${doc.id}`)}
-        />
-      );
-    }
+    const chipType = doc.type === 'order' ? 'order' : 'invoice';
+    const keyPrefix = doc.type === 'order' ? 'order' : 'invoice';
+    chips.push(
+      <DocChip key={`${keyPrefix}-${doc.id}`} {...docChipProps({ type: chipType, doc, ui, navigate })} />
+    );
   }
 
   return (
