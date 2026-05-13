@@ -265,6 +265,7 @@ export default function WarehousePage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      rowQuickActions={{}}
       {...props}
     />
   );

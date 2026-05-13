@@ -3,6 +3,9 @@
   "window": {
     "category": "purchases",
     "name": "Goods Receipt",
+    "sendDocument": {
+      "allowEmail": false
+    },
     "relatedDocuments": true,
     "dateFilterKey": "movementDate",
     "draftMode": {

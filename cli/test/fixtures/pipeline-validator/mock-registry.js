@@ -10,6 +10,9 @@ export const windowLoaders = {
   // window-registry-orphan is listed here but its index.jsx does NOT exist
   'window-registry-orphan': () => Promise.resolve({}),
   // window-orphan-registry is intentionally absent → F3
+  // F11 fixtures (ETP-3914 slice 3)
+  'window-row-quick-actions-ok': () => Promise.resolve({}),
+  'window-row-quick-actions-bad': () => Promise.resolve({}),
 };
 
 export const customLoaders = {};

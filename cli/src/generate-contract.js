@@ -297,9 +297,11 @@ export function generateFrontendContract(schema, rules = []) {
   }
 
   // Lines tab layout. "classic" preserves the side-panel edit flow; "inlineEditable"
-  // uses InlineLinesPanel for in-place row editing. Defaults to "classic" so windows
-  // that don't opt in are unaffected.
-  win.linesLayout = schema.window.linesLayout ?? 'classic';
+  // uses InlineLinesPanel for in-place row editing. Omitted from the contract when
+  // the window doesn't opt in — generate-frontend.js and DetailView both default to
+  // "classic" at runtime, so leaving the key out keeps contracts clean of the
+  // implicit default.
+  if (schema.window.linesLayout) win.linesLayout = schema.window.linesLayout;
 
   return { window: reorderKeys(win, WINDOW_KEY_ORDER), entities };
 }

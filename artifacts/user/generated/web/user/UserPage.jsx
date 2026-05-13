@@ -243,6 +243,7 @@ export default function UserPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      rowQuickActions={{}}
       {...props}
     />
   );

@@ -1,8 +1,8 @@
 {
   "version": "0.27.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-12T13:59:42.851Z",
-  "checksum": "f8c04809530dee80",
+  "updatedAt": "2026-05-12T19:44:01.275Z",
+  "checksum": "819b8cb2efc41b2d",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -43,6 +43,9 @@
       "dateFilterKey": "invoiceDate",
       "noHeaderBorder": true,
       "lineEntityConfig": "invoice",
+      "sendDocument": {
+        "allowEmail": false
+      },
       "layoutType": "default",
       "linesLayout": "inlineEditable"
     },
@@ -3738,6 +3741,9 @@
       "dateFilterKey": "invoiceDate",
       "noHeaderBorder": true,
       "lineEntityConfig": "invoice",
+      "sendDocument": {
+        "allowEmail": false
+      },
       "linesLayout": "inlineEditable"
     },
     "entities": {
