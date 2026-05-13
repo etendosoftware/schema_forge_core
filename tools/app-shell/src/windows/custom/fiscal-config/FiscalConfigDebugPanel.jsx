@@ -162,7 +162,13 @@ const btnBase = {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function FiscalConfigDebugPanel({ orgId, token, apiBaseUrl, onDeleted, onSetMock, activeMockKey }) {
+const CERT_EXPIRY_OPTIONS = [
+  { key: null,  label: 'None' },
+  { key: 45,    label: '45d warn' },
+  { key: 20,    label: '20d crit' },
+];
+
+export default function FiscalConfigDebugPanel({ orgId, token, apiBaseUrl, onDeleted, onSetMock, activeMockKey, mockCertDays, onSetCertDays }) {
   const [collapsed, setCollapsed] = useState(false);
   const [status, setStatus] = useState({});
   const [certDebug, setCertDebug] = useState(null);
@@ -243,6 +249,28 @@ export default function FiscalConfigDebugPanel({ orgId, token, apiBaseUrl, onDel
               >
                 {activeMockKey === 'wizard' ? '✓ ' : ''}Wizard
               </button>
+            </div>
+
+            {/* ── Cert expiry banner ── */}
+            <div style={sectionLabel}>Cert expiry</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
+              {CERT_EXPIRY_OPTIONS.map(opt => {
+                const active = mockCertDays === opt.key;
+                return (
+                  <button
+                    key={String(opt.key)}
+                    onClick={() => onSetCertDays?.(opt.key)}
+                    style={{
+                      ...btnBase,
+                      background: active ? '#1a3a2a' : '#2a2a4e',
+                      borderColor: active ? '#2a7a4a' : '#4040aa',
+                      color: active ? '#b3ffd6' : '#c0c0ff',
+                    }}
+                  >
+                    {active ? '✓ ' : ''}{opt.label}
+                  </button>
+                );
+              })}
             </div>
 
             {/* ── Cert modal debug ── */}

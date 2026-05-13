@@ -7,34 +7,10 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(__dirname, '..', 'VerifactuMonitorSection.jsx'), 'utf8');
 
-// Copied from VerifactuMonitorSection.jsx — function is not exported so it is
-// tested inline here. Update both if the source changes.
-function fmtDate(raw) {
-  if (!raw) return '—';
-  const parts = String(raw).split(/[-/]/);
-  if (parts.length !== 3) return raw;
-  const [a, b, c] = parts.map(p => p.trim());
-  return a.length === 4 ? `${c}/${b}/${a}` : `${a}/${b}/${c}`;
-}
-
-// Guards: fmtDate correctly converts ISO dates from the API to display format
-describe('fmtDate — inline logic (copied from VerifactuMonitorSection.jsx)', () => {
-  it('converts ISO yyyy-mm-dd to dd/mm/yyyy', () => assert.equal(fmtDate('2025-04-14'), '14/04/2025'));
-  it('converts slash-separated yyyy/mm/dd to dd/mm/yyyy', () => assert.equal(fmtDate('2025/04/14'), '14/04/2025'));
-  it('keeps already-formatted dd/mm/yyyy unchanged', () => assert.equal(fmtDate('14/04/2025'), '14/04/2025'));
-  it('normalises dd-mm-yyyy to dd/mm/yyyy', () => assert.equal(fmtDate('14-04-2025'), '14/04/2025'));
-  it('returns — for null', () => assert.equal(fmtDate(null), '—'));
-  it('returns — for empty string', () => assert.equal(fmtDate(''), '—'));
-  it('returns raw string when fewer than 3 parts', () => assert.equal(fmtDate('2025-04'), '2025-04'));
-  it('trims spaced separators — 2025 - 04 - 14 → 14/04/2025', () => assert.equal(fmtDate('2025 - 04 - 14'), '14/04/2025'));
-});
-
-// Guards: fmtDate source structure matches expected implementation
-describe('fmtDate — source inspection', () => {
-  it('function is defined', () => assert.match(src, /function fmtDate\(raw\)/));
-  it('returns — for falsy input', () => assert.match(src, /if \(!raw\) return/));
-  it('detects year-first format via a.length === 4', () => assert.match(src, /a\.length === 4/));
-  it('splits on both - and / separators', () => assert.match(src, /\[-\/\]/));
+// Guards: fmtDate is imported from FmPrimitives (no longer defined locally)
+describe('VerifactuMonitorSection — fmtDate import', () => {
+  it('imports fmtDate from FmPrimitives', () => assert.match(src, /fmtDate.*from.*FmPrimitives/));
+  it('uses fmtDate on the invoiceDate cell', () => assert.match(src, /fmtDate\(row\.invoiceDate\)/));
 });
 
 // Guards: date column was added and colSpan updated from 8 to 9

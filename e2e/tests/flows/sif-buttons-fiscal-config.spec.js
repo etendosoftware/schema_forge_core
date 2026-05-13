@@ -1,10 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { login, navigateTo } from '../helpers/auth.js';
-
-const SIF_BUTTON = /Send to SIF|Enviar a SIF/;
-const SIF_TITLE = /Send to Tax System|Enviar al sistema fiscal/;
-const SIF_BODY_TBAI = /This invoice will be sent to TBAI\.|Esta factura se enviará a TBAI\./;
-const SIF_SUCCESS_TBAI = /Sent to TBAI successfully\.|Enviado a TBAI correctamente\./;
+import { t } from '../helpers/i18n.js';
 
 function responseData(data) {
   return JSON.stringify({ response: { data } });
@@ -123,8 +119,8 @@ test.describe('SIF buttons follow fiscal config in invoice detail views', () => 
     await login(page);
   });
 
-  test('shows Send to SIF for purchase invoices when the org profile is TBAI', async ({ page }) => {
-    await installFiscalProfileMocks(page, 'tbai');
+  test('shows Send to SIF for purchase invoices when the org profile is SII', async ({ page }) => {
+    await installFiscalProfileMocks(page, 'sii');
     await installInvoiceDetailMocks(page, 'purchase-invoice', {
       id: 'PI_1',
       documentNo: 'PI-001',
@@ -139,7 +135,7 @@ test.describe('SIF buttons follow fiscal config in invoice detail views', () => 
 
     await navigateTo(page, 'purchase-invoice/PI_1');
     await expect(page.getByTestId('detail-view')).toBeVisible();
-    await expect(page.getByRole('button', { name: SIF_BUTTON })).toBeVisible();
+    await expect(page.getByRole('button', { name: t('sendToSif') })).toBeVisible();
   });
 
   test('hides Send to SIF for purchase invoices when the org profile is Verifactu', async ({ page }) => {
@@ -158,7 +154,7 @@ test.describe('SIF buttons follow fiscal config in invoice detail views', () => 
 
     await navigateTo(page, 'purchase-invoice/PI_2');
     await expect(page.getByTestId('detail-view')).toBeVisible();
-    await expect(page.getByRole('button', { name: SIF_BUTTON })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: t('sendToSif') })).toHaveCount(0);
   });
 
   test('shows Send to SIF for sales invoices when the org profile is SII+TBAI', async ({ page }) => {
@@ -188,11 +184,11 @@ test.describe('SIF buttons follow fiscal config in invoice detail views', () => 
 
     await navigateTo(page, 'sales-invoice/SI_1');
     await expect(page.getByTestId('detail-view')).toBeVisible();
-    await expect(page.getByRole('button', { name: SIF_BUTTON })).toBeVisible();
+    await expect(page.getByRole('button', { name: t('sendToSif') })).toBeVisible();
   });
 
-  test('shows Send to SIF in the purchase invoice preview modal when the org profile is TBAI', async ({ page }) => {
-    await installFiscalProfileMocks(page, 'tbai');
+  test('shows Send to SIF in the purchase invoice preview modal when the org profile is SII', async ({ page }) => {
+    await installFiscalProfileMocks(page, 'sii');
 
     await page.route('**/sws/neo/purchase-invoice/header?**', async (route) => {
       await route.fulfill({
@@ -233,11 +229,11 @@ test.describe('SIF buttons follow fiscal config in invoice detail views', () => 
     await expect(row).toBeVisible();
     await row.click();
 
-    await expect(page.getByRole('button', { name: SIF_BUTTON })).toBeVisible();
+    await expect(page.getByRole('button', { name: t('sendToSif') })).toBeVisible();
   });
 
   test('executes Send to SIF from the preview modal, shows success, and hides the button after refresh when the target is sent', async ({ page }) => {
-    await installFiscalProfileMocks(page, 'tbai');
+    await installFiscalProfileMocks(page, 'sii');
 
     const invoiceState = installMutableInvoiceDetailMocks(page, 'purchase-invoice', {
       id: 'PI_SEND_1',
@@ -249,7 +245,7 @@ test.describe('SIF buttons follow fiscal config in invoice detail views', () => 
       businessPartner: 'BP_1',
       'businessPartner$_identifier': 'QA Supplier',
       'currency$_identifier': 'EUR',
-      tbaiIssent: false,
+      aeatsiiIssent: false,
     });
 
     await page.route('**/sws/neo/purchase-invoice/header?**', async (route) => {
@@ -268,8 +264,8 @@ test.describe('SIF buttons follow fiscal config in invoice detail views', () => 
       });
     });
 
-    await page.route('**/sws/neo/purchase-invoice/header/PI_SEND_1/action/Em_Tbai_Xmlgenerator', async (route) => {
-      invoiceState.tbaiIssent = true;
+    await page.route('**/sws/neo/purchase-invoice/header/PI_SEND_1/action/Em_aeatsii_send', async (route) => {
+      invoiceState.aeatsiiIssent = true;
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -282,16 +278,16 @@ test.describe('SIF buttons follow fiscal config in invoice detail views', () => 
     await expect(row).toBeVisible();
     await row.click();
 
-    await expect(page.getByRole('button', { name: SIF_BUTTON }).last()).toBeVisible();
-    await page.getByRole('button', { name: SIF_BUTTON }).last().click();
-    const sifDialog = page.locator('div').filter({ has: page.getByRole('heading', { name: SIF_TITLE }) }).last();
-    await expect(sifDialog.getByRole('heading', { name: SIF_TITLE })).toBeVisible();
-    await expect(sifDialog.getByText(SIF_BODY_TBAI)).toBeVisible();
+    await expect(page.getByRole('button', { name: t('sendToSif') }).last()).toBeVisible();
+    await page.getByRole('button', { name: t('sendToSif') }).last().click();
+    const sifDialog = page.locator('div').filter({ has: page.getByRole('heading', { name: t('sendToSifTitle') }) }).last();
+    await expect(sifDialog.getByRole('heading', { name: t('sendToSifTitle') })).toBeVisible();
+    await expect(sifDialog.getByText(t('sendToSifBodySii'))).toBeVisible();
 
-    await sifDialog.getByRole('button', { name: /Enviar|Send/ }).click();
-    await expect(page.getByText(SIF_SUCCESS_TBAI)).toBeVisible();
+    await sifDialog.getByRole('button', { name: t('sendToSifConfirm') }).click();
+    await expect(page.getByText(t('sendToSifSuccessSii'))).toBeVisible();
 
-    await sifDialog.getByRole('button', { name: /Cerrar|Close/ }).click();
-    await expect(page.getByRole('button', { name: SIF_BUTTON })).toHaveCount(0);
+    await sifDialog.getByRole('button', { name: t('close') }).click();
+    await expect(page.getByRole('button', { name: t('sendToSif') })).toHaveCount(0);
   });
 });

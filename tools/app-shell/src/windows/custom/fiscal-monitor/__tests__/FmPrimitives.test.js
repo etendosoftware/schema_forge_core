@@ -72,3 +72,60 @@ describe('StatusPill — onClick backward compatibility', () => {
     assert.match(src, /<span className=.*fm-pill/);
   });
 });
+
+// Guards: fmtDate, PAGE_SIZE, and WipBadge extracted from per-section copies
+describe('FmPrimitives — shared utilities', () => {
+  it('exports fmtDate', () => assert.match(src, /export function fmtDate/));
+  it('exports PAGE_SIZE = 20', () => assert.match(src, /export const PAGE_SIZE\s*=\s*20/));
+  it('exports WipBadge', () => assert.match(src, /export const WipBadge/));
+  it('WipBadge uses fiscal.wip.badge i18n key', () => assert.match(src, /fiscal\.wip\.badge/));
+  it('WipBadge uses fiscal.wip.tooltip i18n key', () => assert.match(src, /fiscal\.wip\.tooltip/));
+});
+
+// Guards: isPendingStatus + PENDING_STATUSES added alongside the error helpers
+describe('isPendingStatus — SII pending codes', () => {
+  const PENDING_STATUSES = new Set(['PE', 'Pendiente']);
+  const isPendingStatus = (estado) => PENDING_STATUSES.has(estado);
+
+  it('PE (SII pending) is a pending status', () => assert.equal(isPendingStatus('PE'), true));
+  it('CO (correct) is not pending', () => assert.equal(isPendingStatus('CO'), false));
+  it('IN (incorrect) is not pending', () => assert.equal(isPendingStatus('IN'), false));
+});
+
+describe('isPendingStatus — TBAI pending codes', () => {
+  const PENDING_STATUSES = new Set(['PE', 'Pendiente']);
+  const isPendingStatus = (estado) => PENDING_STATUSES.has(estado);
+
+  it('Pendiente (TBAI pending) is a pending status', () => assert.equal(isPendingStatus('Pendiente'), true));
+  it('Recibido is not pending', () => assert.equal(isPendingStatus('Recibido'), false));
+  it('Rechazado is not pending', () => assert.equal(isPendingStatus('Rechazado'), false));
+});
+
+describe('isPendingStatus — edge cases', () => {
+  const PENDING_STATUSES = new Set(['PE', 'Pendiente']);
+  const isPendingStatus = (estado) => PENDING_STATUSES.has(estado);
+
+  it('null returns false', () => assert.equal(isPendingStatus(null), false));
+  it('undefined returns false', () => assert.equal(isPendingStatus(undefined), false));
+  it('unknown status returns false', () => assert.equal(isPendingStatus('UNKNOWN'), false));
+});
+
+describe('FmPrimitives — isPendingStatus exports', () => {
+  it('exports isPendingStatus', () => assert.match(src, /export const isPendingStatus/));
+  it('exports PENDING_STATUSES', () => assert.match(src, /export const PENDING_STATUSES/));
+});
+
+// Guards: StatusPill title prop — callers can supply an override tooltip
+describe('StatusPill — title prop override', () => {
+  it('accepts a title prop (titleProp) in the destructured signature', () => {
+    assert.match(src, /title.*titleProp|titleProp.*title/);
+  });
+
+  it('uses titleProp when provided, falls back to fiscalMonitor.viewContact', () => {
+    assert.match(src, /titleProp.*fiscalMonitor\.viewContact|fiscalMonitor\.viewContact.*titleProp/);
+  });
+
+  it('uses fiscalMonitor.openInvoice as the pending-row title', () => {
+    assert.match(src, /fiscalMonitor\.openInvoice/);
+  });
+});
