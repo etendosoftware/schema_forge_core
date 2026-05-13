@@ -428,6 +428,7 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         salesTheme
         labelOverrides={labelOverrides}
         linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -444,6 +445,8 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
       dateFilterKey="orderDate"
       hidePrint
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

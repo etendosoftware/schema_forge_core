@@ -228,6 +228,7 @@ export default function PriceListPage({ windowName, recordId, ...props }) {
       hidePrint
       hideMoreMenu
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
       {...props}
     />
   );

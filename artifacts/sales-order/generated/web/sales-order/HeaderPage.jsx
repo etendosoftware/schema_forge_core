@@ -426,6 +426,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         salesTheme
         labelOverrides={labelOverrides}
         linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -443,6 +444,8 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       bulkActions={(ctx) => <OrderReactivateBulkAction {...ctx} />}
       hidePrint
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

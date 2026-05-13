@@ -544,6 +544,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         bottomSection={PaymentOutBottomPanel}
         requiredHeaderFields={requiredHeaderFields}
         linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -558,6 +559,8 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="paymentDate"
+      rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

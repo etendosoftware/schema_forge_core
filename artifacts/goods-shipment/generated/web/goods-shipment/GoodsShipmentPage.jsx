@@ -271,6 +271,7 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
         requiredHeaderFields={requiredHeaderFields}
         salesTheme
         linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -287,6 +288,8 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
       dateFilterKey="movementDate"
       bulkActions={(ctx) => <BulkInvoiceFromShipment {...ctx} />}
       hidePrint
+      rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

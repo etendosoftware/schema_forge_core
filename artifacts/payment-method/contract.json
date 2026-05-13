@@ -30,8 +30,7 @@
           "Automatic_Withdrawn": "Retiro automático"
         }
       },
-      "layoutType": "default",
-      "linesLayout": "classic"
+      "layoutType": "default"
     },
     "entities": {
       "paymentMethod": {

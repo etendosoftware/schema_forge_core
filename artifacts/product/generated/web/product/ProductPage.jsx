@@ -502,6 +502,7 @@ export default function ProductPage({ windowName, recordId, ...props }) {
       galleryRenderer={(gProps) => <ProductGallery {...gProps} />}
       hidePrint
       hideMoreMenu
+      rowQuickActions={{}}
       {...props}
     />
   );

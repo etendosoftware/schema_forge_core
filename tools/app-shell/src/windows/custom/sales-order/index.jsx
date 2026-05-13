@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useUI } from '@/i18n';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
+import { useRowDelete } from '@/hooks/useRowDelete';
 import { buildPendingDeliveryFilter } from '../shared/pendingDeliveryFilter.js';
 import GeneratedApp from '@generated/sales-order/generated/web/sales-order/index.jsx';
 import HeaderTable from '@generated/sales-order/generated/web/sales-order/HeaderTable';
 import OrderReactivateBulkAction from '@generated/sales-order/custom/OrderReactivateBulkAction';
 import BulkOrderMoreMenu from '@generated/sales-order/custom/BulkOrderMoreMenu';
+import { ConfirmModal, ConfirmResultModal, ManageDocsLauncher } from '@generated/sales-order/custom/OrderCreateInvoice';
 import { ListView } from '@/components/contract-ui';
 
 const LIST_COLUMNS = [
@@ -55,9 +58,78 @@ const draftModeWithModal = {
 
 export default function SalesOrderWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
   useBulkActionToast();
+  const ui = useUI();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [cloneTargets, setCloneTargets] = useState(null);
+  const [confirmRow, setConfirmRow] = useState(null);
+  const [confirmedDocs, setConfirmedDocs] = useState(null);
+  const [manageRow, setManageRow] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const { requestDelete, deleteDialog } = useRowDelete({
+    apiBaseUrl,
+    entity: 'header',
+    token,
+    onSuccess: () => setRefreshKey(k => k + 1),
+  });
+
+  const rowQuickActions = useMemo(() => ({
+    enabled: true,
+    editMode: 'navigate',
+    statusField: 'documentStatus',
+    actions: {
+      edit: { show: true },
+      duplicate: { show: true },
+      delete: { show: true },
+    },
+    onEdit: (row) => navigate(`/${windowName}/${row.id}`),
+    onClone: (row) => setCloneTargets([row]),
+    onDelete: requestDelete,
+    // Row kebab mirrors the detail page: Confirm for drafts (opens the same
+    // ConfirmModal once the detail mounts via state.autoOpenConfirm), and
+    // Reactivate for completed orders without linked documents — same gate as
+    // the detail's menuActions.
+    menuActions: ({ row, status }) => {
+      // For completed orders, only surface "Gestionar..." when there is still
+      // pending shipment or invoice — same criterion used by OrderCreateInvoice's
+      // topbar button. We use the row's deliveryStatus / invoiceStatus percent
+      // columns to avoid an extra fetch per row.
+      const delivery = Number(row?.deliveryStatus ?? 100);
+      const invoice  = Number(row?.invoiceStatus  ?? 100);
+      const needsShip    = status === 'CO' && delivery < 100;
+      const needsInvoice = status === 'CO' && invoice  < 100;
+      let manageLabelKey = null;
+      if      (needsShip && needsInvoice) manageLabelKey = 'soManageShipmentAndInvoice';
+      else if (needsShip)                 manageLabelKey = 'soManageShipment';
+      else if (needsInvoice)              manageLabelKey = 'soManageInvoice';
+      return [
+        {
+          key: 'confirm',
+          label: ui('soConfirmBtn'),
+          visible: status === 'DR',
+          onClick: ({ row: r }) => setConfirmRow(r),
+        },
+        {
+          key: 'manage',
+          label: manageLabelKey ? ui(manageLabelKey) : '',
+          visible: !!manageLabelKey,
+          onClick: ({ row: r }) => setManageRow(r),
+        },
+        {
+          key: 'reactivate',
+          label: ui('reactivate'),
+          labelKey: 'reactivate',
+          successKey: 'reactivated',
+          documentAction: 'RE',
+          visible: status === 'CO' && !row?.hasLinkedDocuments,
+        },
+      ];
+    },
+    onMenuActionExecuted: (action) => {
+      if (action.documentAction) setRefreshKey(k => k + 1);
+    },
+  }), [navigate, windowName, requestDelete, ui]);
 
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
     useCreateContactModal({ apiBaseUrl, token });
@@ -105,6 +177,7 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
         breadcrumb="Sales / Sales Order"
         labelOverrides={LABEL_OVERRIDES}
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
+        rowQuickActions={rowQuickActions}
         token={token}
         apiBaseUrl={apiBaseUrl}
         hidePrint
@@ -121,6 +194,7 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
         refreshTrigger={refreshKey}
         {...rest}
       />
+      {deleteDialog}
       {cloneTargets && createPortal(
         <CloneOrderModal
           records={cloneTargets}
@@ -129,6 +203,41 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
           routePrefix="/sales-order/"
           onClose={() => setCloneTargets(null)}
           onCloned={() => setRefreshKey(k => k + 1)}
+        />,
+        document.body,
+      )}
+      {confirmRow && !confirmedDocs && createPortal(
+        <ConfirmModal
+          orderId={confirmRow.id}
+          data={confirmRow}
+          apiBaseUrl={apiBaseUrl}
+          headers={headers}
+          onClose={() => setConfirmRow(null)}
+          onConfirmed={(docs) => setConfirmedDocs(docs)}
+        />,
+        document.body,
+      )}
+      {manageRow && (
+        <ManageDocsLauncher
+          orderId={manageRow.id}
+          data={manageRow}
+          apiBaseUrl={apiBaseUrl}
+          token={token}
+          onClose={() => setManageRow(null)}
+          onCreated={() => { setManageRow(null); setRefreshKey(k => k + 1); }}
+        />
+      )}
+      {confirmedDocs && createPortal(
+        <ConfirmResultModal
+          docs={confirmedDocs}
+          ui={ui}
+          navigate={navigate}
+          currency={confirmRow?.['currency$_identifier'] || ''}
+          onClose={() => {
+            setConfirmedDocs(null);
+            setConfirmRow(null);
+            setRefreshKey(k => k + 1);
+          }}
         />,
         document.body,
       )}

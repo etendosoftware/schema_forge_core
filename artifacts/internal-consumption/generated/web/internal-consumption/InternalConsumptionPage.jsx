@@ -188,6 +188,7 @@ export default function InternalConsumptionPage({ windowName, recordId, ...props
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="movementDate"
+      rowQuickActions={{}}
       {...props}
     />
   );

@@ -150,6 +150,7 @@ export default function TaxPage({ windowName, recordId, ...props }) {
       hidePrint
       hideMoreMenu
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
       {...props}
     />
   );

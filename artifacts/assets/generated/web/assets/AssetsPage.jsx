@@ -237,6 +237,7 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
       hideListFilters
       hideLink
       hideEyeCount
+      rowQuickActions={{}}
       {...props}
     />
   );

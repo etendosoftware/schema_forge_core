@@ -54,7 +54,8 @@ Rules are grouped by the artifact kind they apply to (see [Artifact Classificati
 | F6 | BLOCK | `contract.version` is lower than the baseline version tracked in the previous commit — a contract downgrade was committed. | Revert the contract change or re-run the pipeline so the version increments forward. |
 | F7 | WARN | `decisions.json` lists the window itself under `excludedEntities` — likely a copy-paste typo. | Remove the self-reference from `excludedEntities`. |
 | F10 | BLOCK | `registry.js` registers a loader for `<window>` but `artifacts/<window>/generated/web/<window>/index.jsx` is missing. | Re-run the pipeline to regenerate the frontend, or remove the stale registry entry. |
-| F11 | BLOCK | `decisions.json` sets `window.linesLayout` to a value outside the supported enum (`"classic"`, `"inlineEditable"`). | Set `window.linesLayout` to one of the supported values, or remove the key to fall back to `"classic"`. |
+| F11 | BLOCK | `decisions.json → window.rowQuickActions.actions.<key>` references a non-canonical key that does not exist in `window.menuActions[].key` or `window.processOverrides`. Canonical keys (`edit`, `duplicate`, `email`, `delete`) are always valid and never trigger F11. | Remove the unknown key from `rowQuickActions.actions`, or add the corresponding entry to `window.menuActions` or `window.processOverrides`. |
+| F12 | BLOCK | `decisions.json` sets `window.linesLayout` to a value outside the supported enum (`"classic"`, `"inlineEditable"`). | Set `window.linesLayout` to one of the supported values, or remove the key to fall back to `"classic"`. |
 
 ### Report rules
 

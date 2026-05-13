@@ -192,6 +192,7 @@ export default function MovementPage({ windowName, recordId, ...props }) {
         bottomSection={GoodsMovementsBottomPanel}
         requiredHeaderFields={requiredHeaderFields}
         linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -206,6 +207,8 @@ export default function MovementPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="movementDate"
+      rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );
