@@ -16751,7 +16751,7 @@
     "addLinesManuallyOrImportFromOrderOrReceipt": "A\u00f1ade l\u00edneas manualmente o imp\u00f3rtalas desde un pedido de compra o albar\u00e1n de recepci\u00f3n",
     "importFromPurchaseOrder": "Importar desde pedido",
     "searchPurchaseOrder": "Buscar pedido de compra...",
-    "importFromGoodsReceipt": "Importar desde env\u00edo",
+    "importFromGoodsReceipt": "Importar desde recibo",
     "searchGoodsReceipt": "Buscar albar\u00e1n de recepci\u00f3n...",
     "loadingLines": "Cargando l\u00edneas...",
     "noLinesFound": "No se encontraron l\u00edneas",
