@@ -19,8 +19,8 @@ describe('useInvoicePdf', () => {
     assert.match(src, /useInvoicePdf\(invoiceId,\s*apiBaseUrl,\s*token\)/);
   });
 
-  it('returns pdfUrl, loading and error', () => {
-    assert.match(src, /return \{ pdfUrl, loading, error \}/);
+  it('returns pdfUrl, pdfBlob, loading and error', () => {
+    assert.match(src, /return \{ pdfUrl, pdfBlob, loading, error \}/);
   });
 
   // ── API endpoints ─────────────────────────────────────────────────────────
