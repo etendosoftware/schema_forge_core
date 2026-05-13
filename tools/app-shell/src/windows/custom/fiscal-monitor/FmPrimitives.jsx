@@ -133,13 +133,7 @@ export const RowActionBtn = ({ onClick, title }) => (
 
 export const PAGE_SIZE = 20;
 
-export function fmtDate(raw) {
-  if (!raw) return '—';
-  const parts = String(raw).split(/[-/]/);
-  if (parts.length !== 3) return raw;
-  const [a, b, c] = parts.map(p => p.trim());
-  return a.length === 4 ? `${c}/${b}/${a}` : `${a}/${b}/${c}`;
-}
+export { fmtDate } from './fmtDateUtils.js';
 
 export const WipBadge = () => {
   const ui = useUI();
