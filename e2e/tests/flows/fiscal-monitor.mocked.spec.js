@@ -133,7 +133,7 @@ test.describe('Fiscal Monitor — SII profile', () => {
     await installFiscalMonitorMocks(page, { siiCfg: SII_CFG });
     await navigateTo(page, 'fiscal-monitor');
 
-    const tabs = page.locator('.fm-tabs');
+    const tabs = page.getByTestId('fm-tabs').first();
     await expect(tabs.getByText(t('fiscalMonitor.sii.tab.issued')).first()).toBeVisible({ timeout: 8_000 });
     await expect(tabs.getByText(t('fiscalMonitor.sii.tab.received')).first()).toBeVisible();
   });
@@ -144,7 +144,7 @@ test.describe('Fiscal Monitor — SII profile', () => {
     await navigateTo(page, 'fiscal-monitor');
 
     // KPI cards render counts from the mock (totalRows = 7 for each endpoint)
-    const cards = page.locator('.fm-kpi');
+    const cards = page.getByTestId('fm-kpi-card');
     await expect(cards.first()).toBeVisible({ timeout: 8_000 });
   });
 });
@@ -173,7 +173,7 @@ test.describe('Fiscal Monitor — Verifactu profile', () => {
     await installFiscalMonitorMocks(page, { vfCfg: VF_CFG });
     await navigateTo(page, 'fiscal-monitor');
 
-    const tabs = page.locator('.fm-tabs');
+    const tabs = page.getByTestId('fm-tabs').first();
     await expect(tabs.getByText(t('fiscalMonitor.verifactu.tab.accepted')).first()).toBeVisible({ timeout: 8_000 });
     await expect(tabs.getByText(t('fiscalMonitor.verifactu.tab.rejected')).first()).toBeVisible();
   });
@@ -207,14 +207,14 @@ test.describe('Fiscal Monitor — KPI card → tab sync', () => {
     await navigateTo(page, 'fiscal-monitor');
 
     // Wait for the section to render
-    await expect(page.locator('.fm-kpi').first()).toBeVisible({ timeout: 8_000 });
+    await expect(page.getByTestId('fm-kpi-card').first()).toBeVisible({ timeout: 8_000 });
 
     // Click the "Facturas recibidas" KPI card (periodo actual)
-    await page.locator('.fm-kpi[role="button"]').filter({ hasText: t('fiscalMonitor.kpi.sii.received') }).first().click();
+    await page.getByTestId('fm-kpi-card').filter({ hasText: t('fiscalMonitor.kpi.sii.received') }).first().click();
     await page.waitForTimeout(300);
 
     // Recibidas tab button (not the period segment) should now be active
-    const activeTab = page.locator('.fm-tabs .tab.active');
+    const activeTab = page.getByTestId('fm-tabs').first().locator('.tab.active');
     await expect(activeTab).toContainText(t('fiscalMonitor.sii.tab.received'));
   });
 });
@@ -226,9 +226,9 @@ test.describe('Fiscal Monitor — period toggle', () => {
     await navigateTo(page, 'fiscal-monitor');
 
     // Wait for section to render
-    await expect(page.locator('.fm-segmented')).toBeVisible({ timeout: 8_000 });
+    await expect(page.getByTestId('fm-period-toggle')).toBeVisible({ timeout: 8_000 });
 
-    const prevBtn = page.locator('.fm-segmented button').filter({ hasText: t('fiscalMonitor.sii.period.previous') });
+    const prevBtn = page.getByTestId('fm-period-toggle').locator('button').filter({ hasText: t('fiscalMonitor.sii.period.previous') });
     await prevBtn.click();
 
     // The previous-period button should now have the active class
@@ -240,10 +240,10 @@ test.describe('Fiscal Monitor — period toggle', () => {
     await installFiscalMonitorMocks(page, { siiCfg: SII_CFG });
     await navigateTo(page, 'fiscal-monitor');
 
-    await expect(page.locator('.fm-segmented')).toBeVisible({ timeout: 8_000 });
+    await expect(page.getByTestId('fm-period-toggle')).toBeVisible({ timeout: 8_000 });
 
-    const prevBtn = page.locator('.fm-segmented button').filter({ hasText: t('fiscalMonitor.sii.period.previous') });
-    const currBtn = page.locator('.fm-segmented button').filter({ hasText: t('fiscalMonitor.sii.period.current') });
+    const prevBtn = page.getByTestId('fm-period-toggle').locator('button').filter({ hasText: t('fiscalMonitor.sii.period.previous') });
+    const currBtn = page.getByTestId('fm-period-toggle').locator('button').filter({ hasText: t('fiscalMonitor.sii.period.current') });
 
     await prevBtn.click();
     await expect(prevBtn).toHaveClass(/active/);

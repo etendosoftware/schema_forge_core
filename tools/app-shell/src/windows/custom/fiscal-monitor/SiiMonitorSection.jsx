@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
-import { StatusPill, NumFactura, Pager, RowActionBtn, isErrorStatus } from './FmPrimitives.jsx';
+import { StatusPill, NumFactura, Pager, RowActionBtn, isErrorStatus, isPendingStatus, fmtDate, PAGE_SIZE } from './FmPrimitives.jsx';
 import {
   SII_SPEC,
   SII_EMITIDAS_ENTITY,
@@ -18,17 +18,7 @@ const SUBTAB_ENTITIES = {
 };
 
 const INVOICE_FK_FIELD = 'aeatsiiInvoice';
-const PAGE_SIZE = 20;
-
 const SII_ERROR_STATUSES = new Set(['IN', 'EE']);
-
-function fmtDate(raw) {
-  if (!raw) return '—';
-  const parts = String(raw).split(/[-/]/);
-  if (parts.length !== 3) return raw;
-  const [a, b, c] = parts.map(p => p.trim());
-  return a.length === 4 ? `${c}/${b}/${a}` : `${a}/${b}/${c}`;
-}
 
 const SII_STATUS_TABS = [
   { key: 'all',    dot: null,      labelKey: 'fiscalMonitor.sii.filter.all' },
@@ -147,7 +137,7 @@ export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, 
       </div>
 
       <div className="fm-tablecard">
-        <div className="fm-tabs">
+        <div className="fm-tabs" data-testid="fm-tabs">
           <button
             className={`tab${tab === 'issued' ? ' active' : ''}`}
             onClick={() => changeTab('issued', period)}
@@ -161,7 +151,7 @@ export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, 
             <DownloadIcon /> {ui('fiscalMonitor.sii.tab.received')}
           </button>
           <div className="spacer" />
-          <div className="fm-segmented">
+          <div className="fm-segmented" data-testid="fm-period-toggle">
             <button
               className={`seg${period === 'current' ? ' active' : ''}`}
               onClick={() => changeTab(tab, 'current')}
@@ -204,7 +194,7 @@ export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, 
         )}
         {!loading && !error && (
           <>
-            <table className="fm-table">
+            <table className="fm-table" data-testid="fm-data-table">
               <thead>
                 <tr>
                   <th><input type="checkbox" /></th>
@@ -239,12 +229,22 @@ export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, 
                     <td>{row.aeatsiiClaveTipo ?? row.aeatsiiClaveTipoFc ?? '—'}</td>
                     <td className="num strong">{row.grandTotalAmount ?? '—'}</td>
                     <td>
-                      <StatusPill
-                        estado={row.aeatsiiEstado}
-                        onClick={isErrorStatus(row.aeatsiiEstado) && row.businessPartner
-                          ? () => onBpClick?.(row.businessPartner)
-                          : undefined}
-                      />
+                      {(() => {
+                        const specHint = tab === 'issued' ? 'sales-invoice' : 'purchase-invoice';
+                        let pillClick;
+                        if (isErrorStatus(row.aeatsiiEstado) && row.businessPartner) {
+                          pillClick = () => onBpClick?.(row.businessPartner);
+                        } else if (isPendingStatus(row.aeatsiiEstado) && row[INVOICE_FK_FIELD]) {
+                          pillClick = () => onInvoiceOpen?.(row[INVOICE_FK_FIELD], specHint);
+                        }
+                        return (
+                          <StatusPill
+                            estado={row.aeatsiiEstado}
+                            onClick={pillClick}
+                            title={isPendingStatus(row.aeatsiiEstado) ? ui('fiscalMonitor.openInvoice') : undefined}
+                          />
+                        );
+                      })()}
                       {row.aeatsiiErrorMsg && (
                         <div style={{ fontSize: 11, color: 'var(--fm-danger-fg)', marginTop: 3 }}>
                           {row.aeatsiiErrorCode ? `[${row.aeatsiiErrorCode}] ` : ''}{row.aeatsiiErrorMsg}

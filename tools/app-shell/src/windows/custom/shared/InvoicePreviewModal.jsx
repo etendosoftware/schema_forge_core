@@ -14,6 +14,7 @@ import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { getPendingSifTargets, getSifBodyKey } from './sifSending.js';
+import SifSendingModal from './SifSendingModal.jsx';
 import { useFiscalStatus } from './useFiscalStatus.js';
 import { StatusPill } from '@/windows/custom/fiscal-monitor/FmPrimitives.jsx';
 import { getInvoiceFiscalTargets } from './fiscalTargets.js';
@@ -64,8 +65,6 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
   const [activeTab, setActiveTab] = useState('general');
   const [invoiceData, setInvoiceData] = useState(invoice);
   const [showSifModal, setShowSifModal] = useState(false);
-  const [sifPhase, setSifPhase] = useState('confirm');
-  const [sifResults, setSifResults] = useState({});
   const { selectedOrg } = useAuth();
   const orgId = selectedOrg?.id ?? null;
   const { profile } = useFiscalConfig(orgId, token, apiBaseUrl);
@@ -231,55 +230,6 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
 
   const sifBodyKey = getSifBodyKey(pendingTargets);
 
-  const callSifProcess = useCallback(async (columnName) => {
-    const res = await fetch(
-      `${base}/${specName}/header/${displayInvoice.id}/action/${columnName}`,
-      { method: 'POST', headers, body: '{}' },
-    );
-    if (!res.ok) {
-      const json = await res.json().catch(() => null);
-      throw new Error(json?.response?.message || json?.message || `HTTP ${res.status}`);
-    }
-    return res.json().catch(() => null);
-  }, [base, displayInvoice?.id, headers, specName]);
-
-  const closeSifModal = useCallback(() => {
-    setShowSifModal(false);
-    setSifPhase('confirm');
-    setSifResults({});
-  }, []);
-
-  const handleSendToSif = useCallback(async () => {
-    setSifPhase('sending');
-    const next = {};
-
-    if (pendingTargets.sendSii) {
-      try {
-        await callSifProcess('Em_aeatsii_send');
-        next.sii = { ok: true };
-      } catch (err) {
-        next.sii = { ok: false, error: err.message };
-      }
-    }
-
-    if (pendingTargets.sendTbai) {
-      try {
-        await callSifProcess('Em_Tbai_Xmlgenerator');
-        next.tbai = { ok: true };
-      } catch (err) {
-        next.tbai = { ok: false, error: err.message };
-      }
-    }
-
-    setSifResults(next);
-
-    if (Object.values(next).some(result => result?.ok)) {
-      await refetchInvoice();
-      fetchPayments();
-    }
-
-    setSifPhase('results');
-  }, [callSifProcess, fetchPayments, pendingTargets, refetchInvoice]);
 
   if (!invoice) return null;
 
@@ -601,88 +551,23 @@ export default function InvoicePreviewModal({ invoice, token, apiBaseUrl, window
       )}
 
       {showSifModal && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="send-to-sif-preview-title"
-          style={{
-            position: 'fixed', inset: 0, zIndex: 60,
-            background: 'rgba(0,0,0,0.4)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+        <SifSendingModal
+          pendingTargets={pendingTargets}
+          bodyKey={sifBodyKey}
+          base={base}
+          specName={specName}
+          recordId={displayInvoice.id}
+          headers={headers}
+          onClose={() => setShowSifModal(false)}
+          onAfterSend={async (next) => {
+            if (Object.values(next).some(r => r?.ok)) {
+              await refetchInvoice();
+              fetchPayments();
+            }
           }}
-        >
-          <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', minWidth: '320px', maxWidth: '480px', width: '100%' }}>
-            <h3 id="send-to-sif-preview-title" style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>
-              {ui('sendToSifTitle')}
-            </h3>
-
-            {sifPhase === 'confirm' && (
-              <>
-                <p style={{ fontSize: '14px', color: '#374151', marginBottom: '20px' }}>
-                  {ui(sifBodyKey)}
-                </p>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                  <button
-                    type="button"
-                    onClick={closeSifModal}
-                    style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', cursor: 'pointer', background: '#fff' }}
-                  >
-                    {ui('cancel')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSendToSif}
-                    style={{ padding: '8px 16px', borderRadius: '8px', background: '#1d4ed8', color: '#fff', border: 'none', cursor: 'pointer' }}
-                  >
-                    {ui('sendToSifConfirm')}
-                  </button>
-                </div>
-              </>
-            )}
-
-            {sifPhase === 'sending' && (
-              <p style={{ fontSize: '14px', color: '#6b7280' }}>
-                {ui('sendToSifSending')}
-              </p>
-            )}
-
-            {sifPhase === 'results' && (
-              <>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
-                  {sifResults.sii && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-                      <span style={{ color: sifResults.sii.ok ? '#10b981' : '#ef4444', fontWeight: 600 }}>
-                        {sifResults.sii.ok ? '✓' : '✗'}
-                      </span>
-                      <span>
-                        {sifResults.sii.ok ? ui('sendToSifSuccessSii') : (sifResults.sii.error || ui('sendToSifErrorSii'))}
-                      </span>
-                    </div>
-                  )}
-                  {sifResults.tbai && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-                      <span style={{ color: sifResults.tbai.ok ? '#10b981' : '#ef4444', fontWeight: 600 }}>
-                        {sifResults.tbai.ok ? '✓' : '✗'}
-                      </span>
-                      <span>
-                        {sifResults.tbai.ok ? ui('sendToSifSuccessTbai') : (sifResults.tbai.error || ui('sendToSifErrorTbai'))}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <button
-                    type="button"
-                    onClick={closeSifModal}
-                    style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', cursor: 'pointer', background: '#fff' }}
-                  >
-                    {ui('close')}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+          zIndex={60}
+          titleId="send-to-sif-preview-title"
+        />
       )}
 
       {/* Send email modal — rendered on top to preserve pdfUrl blob.
