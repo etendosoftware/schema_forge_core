@@ -111,10 +111,16 @@ describe('BottomPanel rollout — all inline-editable windows', () => {
       assert.match(src, /InvoiceBottomPanel\.detailExtraActions = InvoiceLineActions/);
     });
 
-    it('attaches lineMenuActions as a static function returning import-shipment menu item', () => {
+    it('attaches lineMenuActions as a static function returning import-shipment and import-order menu items', () => {
       assert.match(src, /InvoiceBottomPanel\.lineMenuActions = function/);
       assert.match(src, /import-shipment/);
+      assert.match(src, /import-order/);
       assert.match(src, /importRef\.current\?\.openImportModal/);
+      assert.match(src, /importRef\.current\?\.openImportOrderModal/);
+    });
+
+    it('imports ImportFromOrderModal', () => {
+      assert.match(src, /import ImportFromOrderModal from '\.\/ImportFromOrderModal'/);
     });
   });
 

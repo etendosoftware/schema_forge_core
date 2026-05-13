@@ -12,6 +12,40 @@ import { login, navigateTo } from '../helpers/auth.js';
  * Column headers are sortable <button> elements in list views.
  */
 
+// Mocked existing record used by add-line tests.
+// canAddLines requires all requiredHeaderFields to be non-null; navigating to
+// /new leaves movementDate/name/warehouse empty, hiding the add-line button.
+const MOCK_INV_ID = 'mock-pi-e2e-001';
+const MOCK_INV_HEADER = {
+  id: MOCK_INV_ID,
+  movementDate: '2026-01-15',
+  name: 'Test Physical Inventory',
+  warehouse: 'wh-e2e-001',
+  'warehouse$_identifier': 'Main Warehouse',
+  inventoryType: 'N',
+  'inventoryType$_identifier': 'Normal',
+  processed: false,
+};
+
+async function installInventoryMocks(page) {
+  await page.route(`**/sws/neo/physical-inventory/inventory/${MOCK_INV_ID}`, async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ response: { data: [MOCK_INV_HEADER] } }),
+    });
+  });
+  await page.route('**/sws/neo/physical-inventory/inventoryLine*', async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ response: { data: [], totalRows: 0 } }),
+    });
+  });
+}
+
 test.describe('Physical Inventory', () => {
 
   test.beforeEach(async ({ page }) => {
@@ -76,10 +110,10 @@ test.describe('Physical Inventory', () => {
   // --- Inline add line ---
 
   test('Add line button opens inline row with product and count fields', async ({ page }) => {
-    await page.getByTestId('action-new').click();
-    await page.waitForURL('**/physical-inventory/new', { timeout: 5_000 });
+    await installInventoryMocks(page);
+    await page.goto(`/physical-inventory/${MOCK_INV_ID}`);
+    await expect(page.getByTestId('detail-view')).toBeVisible({ timeout: 8_000 });
 
-    // Clicking Add Line saves the header first, then shows the inline add row.
     await page.getByTestId('action-add-line').click();
 
     // Wait for the inline row to appear. Current UI renders numeric inputs without placeholders.
@@ -120,11 +154,12 @@ test.describe('Physical Inventory', () => {
       }),
     }));
 
-    await page.getByTestId('action-new').click();
-    await page.waitForURL('**/physical-inventory/new', { timeout: 5_000 });
+    await installInventoryMocks(page);
+    await page.goto(`/physical-inventory/${MOCK_INV_ID}`);
+    await expect(page.getByTestId('detail-view')).toBeVisible({ timeout: 8_000 });
     await page.getByTestId('action-add-line').click();
 
-    // Wait for inline add row (POST saves the header first, then row appears)
+    // Wait for inline add row
     await expect(page.getByTestId('inline-add-row')).toBeVisible({ timeout: 5_000 });
     const userCountInput = page.getByTestId('inline-add-field-quantityCount');
     await expect(userCountInput).toBeVisible({ timeout: 5_000 });
@@ -197,8 +232,9 @@ test.describe('Physical Inventory', () => {
       }
     });
 
-    await page.getByTestId('action-new').click();
-    await page.waitForURL('**/physical-inventory/new', { timeout: 5_000 });
+    await installInventoryMocks(page);
+    await page.goto(`/physical-inventory/${MOCK_INV_ID}`);
+    await expect(page.getByTestId('detail-view')).toBeVisible({ timeout: 8_000 });
     await page.getByTestId('action-add-line').click();
 
     const userCountInput = page.getByTestId('inline-add-field-quantityCount');
@@ -243,8 +279,9 @@ test.describe('Physical Inventory', () => {
       }
     });
 
-    await page.getByTestId('action-new').click();
-    await page.waitForURL('**/physical-inventory/new', { timeout: 5_000 });
+    await installInventoryMocks(page);
+    await page.goto(`/physical-inventory/${MOCK_INV_ID}`);
+    await expect(page.getByTestId('detail-view')).toBeVisible({ timeout: 8_000 });
     await page.getByTestId('action-add-line').click();
     await expect(page.getByTestId('inline-add-field-quantityCount')).toBeVisible({ timeout: 5_000 });
 
@@ -276,8 +313,9 @@ test.describe('Physical Inventory', () => {
       }
     });
 
-    await page.getByTestId('action-new').click();
-    await page.waitForURL('**/physical-inventory/new', { timeout: 5_000 });
+    await installInventoryMocks(page);
+    await page.goto(`/physical-inventory/${MOCK_INV_ID}`);
+    await expect(page.getByTestId('detail-view')).toBeVisible({ timeout: 8_000 });
     await page.getByTestId('action-add-line').click();
     await expect(page.getByTestId('inline-add-field-quantityCount')).toBeVisible({ timeout: 5_000 });
 
