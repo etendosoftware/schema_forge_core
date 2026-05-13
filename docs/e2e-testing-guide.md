@@ -177,7 +177,9 @@ e2e/
 │   └── flows/
 │       ├── navigation.spec.js        # Dashboard, sidebar, routing
 │       ├── sales-order-crud.spec.js  # Sales Order list + form
-│       └── purchase-order-create.spec.js  # Purchase Order with role/org context
+│       ├── purchase-order-create.spec.js  # Purchase Order with role/org context
+│       ├── invoice-preview-modal.spec.js      # GenericPreviewModal lifecycle (mock mode)
+│       └── invoice-preview-persistence.spec.js # File persistence: GET/POST/DELETE (mock mode)
 ```
 
 ### Discover with agent-browser
@@ -500,6 +502,8 @@ Shared UI components (`EntityForm`, `DetailView`, `ListView`, `DataTable`) emit 
 | `row-quick-actions` | — | RowQuickActions overlay container (per row) |
 | `row-quick-action-{key}` | `row-quick-action-edit`, `-clone`, `-email`, `-more`, `-delete` | Canonical row quick-action buttons |
 | `row-quick-action-delete-confirm` | — | Destructive button inside the row delete confirm dialog |
+| `generic-preview-modal` | — | `GenericPreviewModal` card (the right-anchored panel) |
+| `preview-drop-zone` | — | Drop zone inside GenericPreviewModal managed left panel |
 
 ## Writing a mocked list/detail spec
 
@@ -569,6 +573,44 @@ test.describe('My feature — sales-order', () => {
 ### Canonical reference
 
 `e2e/tests/flows/row-quick-actions.mocked.spec.js` covers the four pilot windows (sales-order, purchase-order, sales-invoice, purchase-invoice) and is the recommended starting point for any list-row UI test. It demonstrates: mocked list+detail endpoints, per-window expected-button matrix, hover→overlay assertion, edit-navigates-to-detail flow, and delete-opens-dialog flow.
+
+## Mock-mode Tests (No Backend Required)
+
+Some tests run entirely in mock mode — no `BASE_URL` and no live Etendo instance. They seed `localStorage` with a fake token via `login()` and intercept API calls with `page.route()` to serve synthetic data.
+
+Key patterns used in `invoice-preview-modal.spec.js` and `invoice-preview-persistence.spec.js`:
+
+```js
+// Seed localStorage token + catch-all 200 for all /sws/** routes
+await login(page);
+
+// Register a specific route override AFTER login() — takes priority (LIFO)
+await page.route('**/sws/neo/preview-file**', (route) => {
+  if (route.request().method() === 'GET') {
+    route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ fileName: 'receipt.pdf', mimeType: 'application/pdf', fileData: '<b64>' }) });
+  } else {
+    route.fallback(); // let POST/DELETE hit the catch-all
+  }
+});
+
+// Assert a network request was made with specific params
+const req = await page.waitForRequest(
+  (r) => r.url().includes('/sws/neo/preview-file') && r.method() === 'GET'
+);
+const url = new URL(req.url(), 'http://localhost');
+expect(url.searchParams.get('specName')).toBe('purchase-invoice');
+
+// Simulate file upload via hidden input
+const fileInput = page.locator('[data-testid="preview-drop-zone"] input[type="file"]');
+await fileInput.setInputFiles({ name: 'receipt.pdf', mimeType: 'application/pdf',
+  buffer: Buffer.from('%PDF-1.4...') });
+```
+
+The locale defaults to `es_ES` in mock mode (no real `LocaleProvider` data). Use regex selectors to handle both locales:
+```js
+page.getByRole('button', { name: /cerrar|close/i })
+```
 
 ## Tips
 
