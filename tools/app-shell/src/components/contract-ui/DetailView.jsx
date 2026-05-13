@@ -4,6 +4,44 @@ import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { AddLineButton } from '@/components/ui/add-line-button.jsx';
 import { X, MoreVertical, Check, Save, List, Printer, Mail, Trash2, Loader2 } from 'lucide-react';
+import { AttachmentIcon } from '@/components/attachments/AttachmentIcon';
+
+const TAB_ICONS = {
+  'custom:attachments': AttachmentIcon,
+};
+
+function TabStripButton({
+  iconKey, label, count, isActive, onClick,
+  paddingY = 'py-2.5', showHoverLine = false, indicatorCls, tMenu, testId,
+}) {
+  const defaultCls = 'absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full';
+  return (
+    <button
+      onClick={onClick}
+      data-testid={testId}
+      className={[
+        `${showHoverLine ? 'group ' : ''}flex items-center gap-2 px-4 ${paddingY} text-sm font-medium transition-colors relative`,
+        isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+      ].join(' ')}
+    >
+      {React.createElement(TAB_ICONS[iconKey] ?? List, { className: 'h-4 w-4' })}
+      {tMenu(label)}
+      {count != null && (
+        <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 text-xs rounded-full bg-muted text-muted-foreground">
+          {count}
+        </span>
+      )}
+      {showHoverLine ? (
+        <span className={[
+          'absolute bottom-0 left-2 right-2 h-0.5 rounded-full transition-colors',
+          isActive ? 'bg-foreground' : 'bg-transparent group-hover:bg-muted-foreground/30',
+        ].join(' ')} />
+      ) : (
+        isActive && <span className={indicatorCls || defaultCls} />
+      )}
+    </button>
+  );
+}
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from '@/components/ui/dialog.jsx';
@@ -126,6 +164,18 @@ function resolveSecondaryRowClickHandler(st, { openCustomModal, openSecondaryLin
 /**
  * Full-page detail view for a single entity record.
  * Two-zone layout: gray top bar + white content card with rounded corner.
+ *
+ * `customTabs` accepts items of shape:
+ *   { key, label, Component, placement = 'footer', props = {} }
+ *
+ * - placement: 'footer' (default) -> renders as a chip row in the bottom Docs section
+ *   (legacy behavior; component receives layout="chips").
+ * - placement: 'tab' -> renders as a first-class tab next to lines/secondaryTabs.
+ *   The component always mounts but receives `isActive` so it can lazy-load data
+ *   the first time it becomes visible.
+ *
+ * In both cases the component receives `{ recordId, data, token, apiBaseUrl, api }`
+ * plus any keys declared in the optional `props` object.
  */
 export function DetailView({
   entity,
@@ -160,6 +210,7 @@ export function DetailView({
   menuActions = [],
   customMenuContent = null,
   hideDeleteWhenComplete = false,
+  customTabsAfterBottom = false,
   hidePrint = false,
   hideSaveStatuses = [],
   hideMoreMenu = false,
@@ -1232,7 +1283,19 @@ export function DetailView({
   const [panelCounts, setPanelCounts] = useState({});
   useEffect(() => { setPanelCounts({}); }, [parentRecordId]);
 
-  // Build tabs: child entity lines + secondary tabs + "Others" tab for non-principal header fields
+  // Split customTabs by placement: 'footer' (default) keeps the existing chip rendering,
+  // 'tab' promotes the item to a first-class tab next to secondaryTabs. The footer block
+  // and the main tab strip therefore consume disjoint slices of customTabs and never
+  // double-render the same entry.
+  const footerCustomTabs = customTabs.filter(ct => (ct?.placement ?? 'footer') === 'footer');
+  const tabCustomTabs = customTabs.filter(ct => ct?.placement === 'tab');
+  const [customTabCounts, setCustomTabCounts] = useState({});
+  const [activeCustomBelowTab, setActiveCustomBelowTab] = useState(0);
+  // Reuse the secondaryTabs/lines/others activeTab state for custom tabs by prefixing
+  // their keys with `custom:` so they cannot collide with secondaryTabs/lines/others/customLines.
+  const customTabKey = (ct) => `custom:${ct.key}`;
+
+  // Build tabs: child entity lines + secondary tabs + custom 'tab' placement + "Others"
   const tabs = [];
   secondaryTabs.forEach((st, i) => {
     const childCount = st.Panel ? (panelCounts[st.key] ?? null) : (!st.isFormTab ? (secondaryHooks[i]?.children?.length ?? null) : null);
@@ -1247,6 +1310,15 @@ export function DetailView({
     }
   } else if (CustomLines) {
     tabs.unshift({ key: 'customLines', label: customLinesLabel });
+  }
+  // Append 'tab' placement custom items after lines/secondary tabs but before Others.
+  // Items may pass `labelKey` to resolve a generic i18n label via useUI() instead of a
+  // hardcoded string in `label`.
+  if (!customTabsAfterBottom) {
+    tabCustomTabs.forEach(ct => {
+      const resolvedLabel = ct.labelKey ? ui(ct.labelKey) : ct.label;
+      tabs.push({ key: customTabKey(ct), label: resolvedLabel, count: customTabCounts[ct.key] ?? null });
+    });
   }
 
   // When primaryTabs is in use, skip auto-adding Others (handled by a primary tab)
@@ -1266,6 +1338,34 @@ export function DetailView({
   if (showOthers === true) {
     tabs.push({ key: 'others', label: othersLabel || ui('others') });
   }
+
+  const isCustomTabActive = tabCustomTabs.some(ct => tabs[activeTab]?.key === customTabKey(ct));
+
+  const renderCustomTabPanels = (resolveIsActive) => tabCustomTabs.map((ct, idx) => {
+    const TabComponent = ct.Component;
+    const isActive = resolveIsActive(ct, idx);
+    return (
+      <div
+        key={customTabKey(ct)}
+        className={`p-2 flex flex-col gap-3${embedded ? ' pointer-events-none' : ''}`}
+        style={isActive ? undefined : { display: 'none' }}
+      >
+        <TabComponent
+          recordId={data?.id || recordId}
+          data={data}
+          token={token}
+          apiBaseUrl={apiBaseUrl}
+          api={api}
+          isActive={isActive}
+          onCountChange={(count) => setCustomTabCounts(prev => {
+            if (prev[ct.key] === count) return prev;
+            return { ...prev, [ct.key]: count };
+          })}
+          {...(ct.props || {})}
+        />
+      </div>
+    );
+  });
 
   useEffect(() => {
     const targetTabKey = location.state?.openSecondaryTab;
@@ -1752,34 +1852,19 @@ export function DetailView({
                         ? 'absolute bottom-0 left-0 right-0 h-[2px] bg-foreground'
                         : 'absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full';
                       return (
-                        <button
+                        <TabStripButton
                           key={tab.key}
+                          iconKey={tab.key}
+                          label={tab.label}
+                          count={tab.count}
+                          isActive={activeTab === idx}
                           onClick={() => { setActiveTab(idx); setSelectedLine(null); setSelectedSecondaryLine(null); }}
-                          className={[
-                            `${secondaryTabsShowHoverLine ? 'group ' : ''}flex items-center gap-2 px-4 ${secondaryTabsPaddingY} text-sm font-medium transition-colors relative`,
-                            activeTab === idx
-                              ? 'text-foreground'
-                              : 'text-muted-foreground hover:text-foreground',
-                          ].join(' ')}
-                        >
-                          <List className="h-4 w-4" />
-                          {tMenu(tab.label)}
-                          {tab.count != null && (
-                            <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 text-xs rounded-full bg-muted text-muted-foreground">
-                              {tab.count}
-                            </span>
-                          )}
-                          {secondaryTabsShowHoverLine ? (
-                            <span className={[
-                              'absolute bottom-0 left-2 right-2 h-0.5 rounded-full transition-colors',
-                              activeTab === idx
-                                ? 'bg-foreground'
-                                : 'bg-transparent group-hover:bg-muted-foreground/30',
-                            ].join(' ')} />
-                          ) : (
-                            activeTab === idx && <span className={tabIndicatorCls} />
-                          )}
-                        </button>
+                          paddingY={secondaryTabsPaddingY}
+                          showHoverLine={secondaryTabsShowHoverLine}
+                          indicatorCls={tabIndicatorCls}
+                          tMenu={tMenu}
+                          testId={`tab-${tab.key}`}
+                        />
                       );
                     })}
                   </div>
@@ -2727,6 +2812,14 @@ export function DetailView({
                     />
                   </div>
                 )}
+
+                {/* Tab content: custom tabs with placement='tab'. We always mount the
+                    component (so it can manage its own internal state and not lose
+                    scroll/pagination on tab switches) but hide inactive ones via
+                    display:none and pass `isActive` so the component can defer its
+                    first fetch until it actually becomes visible. */}
+                {!customTabsAfterBottom && renderCustomTabPanels((ct) => tabs[activeTab]?.key === customTabKey(ct))}
+
                 </div>
 
               </div>
@@ -2746,7 +2839,7 @@ export function DetailView({
             )}
 
             {/* Simple entity (no child): full form only */}
-            {!DetailTable && (
+            {!DetailTable && !isCustomTabActive && (
               <>
                 {summary.length > 0 && (
                   <div className="mt-1">
@@ -2756,12 +2849,11 @@ export function DetailView({
               </>
             )}
 
-            {/* Bottom section: custom (two-column) or default (totals + footer).
-                In inlineEditable mode the parent is a flex column with
-                overflow-hidden, so this wrapper sits naturally at the bottom
-                while the lines area scrolls in the middle. */}
+            {/* Bottom section: hidden when a custom tab (Adjuntos, etc.) is active.
+                In inlineEditable mode the wrapper is shrink-0 so it stays fixed
+                at the bottom while the lines area scrolls in the middle. */}
             <div ref={bottomSectionRef} className={linesLayout === 'inlineEditable' ? 'shrink-0' : ''}>
-            {bottomSection ? (() => {
+            {!isCustomTabActive && (bottomSection ? (() => {
               const BottomComponent = bottomSection;
               return (
                 <BottomComponent
@@ -2813,13 +2905,13 @@ export function DetailView({
                 })()}
 
                 {/* Footer: Related Docs + Notes */}
-                {(customTabs.length > 0 || !!notesField) && (
+                {(footerCustomTabs.length > 0 || !!notesField) && (
                   <div className="mt-1 bg-muted/20 border-t border-border/40" style={{ borderTopWidth: '0.5px' }}>
-                    {customTabs.length > 0 && (
+                    {footerCustomTabs.length > 0 && (
                       <div className={`flex items-start gap-3 px-4 py-2.5 border-b border-border/30${embedded ? ' pointer-events-none' : ''}`} style={{ borderBottomWidth: '0.5px' }}>
                         <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-0.5 shrink-0 w-24">{ui('docs')}</span>
                         <div className="flex-1">
-                          {customTabs.map(ct => {
+                          {footerCustomTabs.map(ct => {
                             const TabComponent = ct.Component;
                             return (
                               <TabComponent
@@ -2830,6 +2922,7 @@ export function DetailView({
                                 apiBaseUrl={apiBaseUrl}
                                 api={api}
                                 layout="chips"
+                                {...(ct.props || {})}
                               />
                             );
                           })}
@@ -2867,6 +2960,32 @@ export function DetailView({
                   </div>
                 )}
               </>
+            ))}
+
+            {/* customTabsAfterBottom: custom tabs rendered below the bottomSection */}
+            {customTabsAfterBottom && tabCustomTabs.length > 0 && (
+              <div className="mt-6">
+                <div className="flex items-center border-b border-border/50">
+                  {tabCustomTabs.map((ct, idx) => {
+                    const isActive = activeCustomBelowTab === idx;
+                    return (
+                      <TabStripButton
+                        key={customTabKey(ct)}
+                        iconKey={customTabKey(ct)}
+                        label={ct.labelKey ? ui(ct.labelKey) : ct.label}
+                        count={customTabCounts[ct.key]}
+                        isActive={isActive}
+                        onClick={() => setActiveCustomBelowTab(idx)}
+                        tMenu={tMenu}
+                        testId={`tab-${customTabKey(ct)}`}
+                      />
+                    );
+                  })}
+                </div>
+                <div>
+                  {renderCustomTabPanels((ct, idx) => activeCustomBelowTab === idx)}
+                </div>
+              </div>
             )}
             </div>
           </div>
@@ -3011,7 +3130,7 @@ export function DetailView({
         const CustomModal = st.customAddModal;
         return (
           <CustomModal
-            key={st.key}
+            key={st.key}  
             open={customModalState.key === st.key}
             onClose={() => setCustomModalState({ key: null, rowId: null })}
             onSaved={() => {

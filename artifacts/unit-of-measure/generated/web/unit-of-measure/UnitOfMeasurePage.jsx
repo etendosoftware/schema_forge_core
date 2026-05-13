@@ -4,6 +4,7 @@ import UnitOfMeasureTable from './UnitOfMeasureTable';
 import UnitOfMeasureForm from './UnitOfMeasureForm';
 import ConversionTable from './ConversionTable';
 import ConversionForm from './ConversionForm';
+import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 
 
@@ -136,6 +137,7 @@ export default function UnitOfMeasurePage({ windowName, recordId, ...props }) {
       api={api}
         hidePrint
         hideMoreMenu
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_UOM", config: {} } }]}
         requiredHeaderFields={requiredHeaderFields}
         {...props}
       />

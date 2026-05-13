@@ -479,9 +479,24 @@ Shared UI components (`EntityForm`, `DetailView`, `ListView`, `DataTable`) emit 
 | `action-{name}` | `action-save`, `action-cancel`, `action-new`, `action-save-draft` | DetailView, ListView buttons |
 | `detail-view` | — | DetailView container |
 | `list-view` | — | ListView container |
+| `tab-{key}` | `tab-lines`, `tab-custom:attachments` | DetailView tab strip buttons (main strip and customTabsAfterBottom strip) |
 | `row-{id}` | `row-ABC123` | DataTable rows |
 | `option-{id}` | `option-ABC123` | SearchInput suggestions |
 | `option-{field}-{id}` | `option-warehouse-ABC123` | SelectorInput / DependentSelect items |
+| `attachments-tab-panel` | — | AttachmentsTab root container |
+| `attachments-dropzone` | — | UploadDropzone drag-and-drop area |
+| `attachments-file-input` | — | Hidden `<input type="file">` — use `setInputFiles()` |
+| `attachments-table` | — | AttachmentsTable `<table>` element |
+| `attachments-empty-state` | — | Empty state shown when no files exist |
+| `attachments-download-all` | — | "Download All (ZIP)" header button |
+| `attachments-delete-all` | — | "Delete All" header button |
+| `attachment-row-{id}` | `attachment-row-att-001` | Individual attachment row |
+| `attachment-name-{id}` | `attachment-name-att-001` | File name cell |
+| `attachment-download-{id}` | `attachment-download-att-001` | Per-row download button (revealed on hover) |
+| `attachment-delete-{id}` | `attachment-delete-att-001` | Per-row delete button (revealed on hover) |
+| `confirm-delete-dialog` | — | ConfirmDeleteDialog content (also used for replace confirmation) |
+| `confirm-delete-confirm` | — | Confirm button inside the dialog |
+| `confirm-delete-cancel` | — | Cancel button inside the dialog |
 | `row-quick-actions` | — | RowQuickActions overlay container (per row) |
 | `row-quick-action-{key}` | `row-quick-action-edit`, `-clone`, `-email`, `-more`, `-delete` | Canonical row quick-action buttons |
 | `row-quick-action-delete-confirm` | — | Destructive button inside the row delete confirm dialog |
@@ -562,4 +577,5 @@ test.describe('My feature — sales-order', () => {
 - **Use role-based selectors** — `getByRole('button', { name: 'Save' })` is more resilient than CSS selectors.
 - **Re-discover after pipeline changes** — when `generate-frontend.js` regenerates a window, run `agent-browser snapshot -i` to verify selectors still match, then update `selectors.js`.
 - **Run a single test** — `cd e2e && npx playwright test tests/flows/purchase-order-create.spec.js --headed`
+- **Run a single suite** — `cd e2e && npx playwright test tests/flows/attachments.mocked.spec.js --headed --grep "Suite C"`
 - **Debug mode** — `make test-e2e-debug` pauses on each step so you can inspect the browser.

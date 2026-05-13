@@ -17,6 +17,7 @@ Users should be able to review existing customer returns, open a specific return
 - Lines tab layout: this window uses `window.linesLayout = "inlineEditable"`. Rows render at 40 px with pencil and trash hover-action icons on the right; clicking pencil flips the row into inline edit; trash removes the row after confirmation. The add-line button and any related panels are unchanged from the classic layout. See `docs/ui-customization.md` section 13 for the full reference.
 - List behavior: the generated page exposes a list view for existing returns and hides create from that list, so record creation is not evidenced from the list surface itself.
 - Detail behavior: the detail view renders the header form, line table, line form, notes, document preview metadata, and a custom Related Documents tab.
+- An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
 
 ## Reactive behavior and dependencies
 
@@ -45,6 +46,7 @@ Users should be able to review existing customer returns, open a specific return
 5. Open Related Documents and confirm the shipment chips navigate back to the originating goods shipment records.
 6. Execute a return lifecycle action such as pick from shipment, receive materials, create invoice, or create order, and verify the record refresh preserves the shipment-linked context and clearly reflects the new document status.
 7. Specifically test whether the UI or backend blocks over-return quantities or shipment/customer mismatches, because those validations are expected semantically but not evidenced in the current implementation artifacts.
+8. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 
@@ -55,3 +57,4 @@ Users should be able to review existing customer returns, open a specific return
 - The Related Documents custom component resolves goods shipments by traversing `customerReturnLine.goodsShipmentLine` and linking to the parent goods shipment records in `artifacts/return-from-customer/custom/RelatedDocuments.jsx`.
 - Research notes in `artifacts/return-from-customer/FINDINGS.md` document the intended customer-return lifecycle and expected shipment/receipt/credit relationships.
 - I did not find dedicated browser automation for this window in the current repository evidence.
+- The generated `CustomerReturnPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `M_InOut` AD table.

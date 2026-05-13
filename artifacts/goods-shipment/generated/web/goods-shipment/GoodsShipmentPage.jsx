@@ -5,6 +5,7 @@ import GoodsShipmentForm from './GoodsShipmentForm';
 import GoodsShipmentLineTable from './GoodsShipmentLineTable';
 import GoodsShipmentLineForm from './GoodsShipmentLineForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
 import GoodsShipmentBottomPanel from '../../../custom/GoodsShipmentBottomPanel';
 import GoodsShipmentActions from '../../../custom/GoodsShipmentActions';
 import BulkInvoiceFromShipment from '../../../custom/BulkInvoiceFromShipment';
@@ -264,7 +265,7 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
         hidePrint
         noHeaderBorder
         notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_InOut", config: {} } }]}
         bottomSection={GoodsShipmentBottomPanel}
         topbarRight={GoodsShipmentActions}
         requiredHeaderFields={requiredHeaderFields}

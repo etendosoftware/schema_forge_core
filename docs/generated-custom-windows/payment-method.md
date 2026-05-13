@@ -20,7 +20,7 @@ This window should let finance and operations administrators define which paymen
 - **Visibility:** visible from **Settings > Payment Method**; the menu entry is present and not hidden.
 - **Implementation type:** generated single-entity window with a custom bottom section (`PaymentGroupsSection`) rendered on the detail page.
 - **Window shape:** single-entity. The contract declares no child/detail entity, so users work on one payment-method record at a time rather than a master-child structure.
-- **Primary interaction:** the list route opens the payment-method dataset; selecting or opening a record shows a detail form whose main generated section currently contains only `Name` and `Description`, with the grouped payment-direction checkboxes rendered below.
+- **Primary interaction:** the list route opens the payment-method dataset; selecting or opening a record shows a detail form whose main generated section currently contains only `Name` and `Description`, with the grouped payment-direction checkboxes rendered below. An **Attachments** tab is placed below the `PaymentGroupsSection` panel (via `customTabsAfterBottom: true`), keeping the toggle controls as the visual focus while still allowing files to be attached to each payment method record.
 - **Available page actions:** the current generated page hides both **Print** and the **More** menu, and no process actions are declared in the contract.
 
 ## Reactive behavior and dependencies
@@ -48,6 +48,7 @@ This window should let finance and operations administrators define which paymen
 5. Toggle `Payment In Allowed` and verify whether `Automatic Receipt` and `Automatic Deposit` become hidden, disabled, or otherwise constrained. If they remain freely editable, record that as the current UI behavior.
 6. Toggle `Payment Out Allowed` and verify whether `Automatic Payment` and `Automatic Withdrawn` become hidden, disabled, or otherwise constrained. If they remain freely editable, record that as the current UI behavior.
 7. Save the record, reopen it, and confirm the chosen toggle combination persists.
+8. Scroll below the `PaymentGroupsSection` panel and confirm the **Attachments** tab strip appears. Upload a file and verify it appears in the table. Confirm "Download all (ZIP)" and "Delete all" appear in the table header when files are present, and that "Delete all" requires confirmation before executing.
 
 ## Automated evidence
 
@@ -55,7 +56,8 @@ This window should let finance and operations administrators define which paymen
 - `tools/app-shell/src/windows/registry.js` registers `payment-method` as a loadable generated window.
 - `artifacts/payment-method/contract.json` defines a single-entity `Payment Method` window with `hidePrint`, `hideMoreMenu`, `customComponents.bottomSection = "PaymentGroupsSection"`, default values for the six boolean fields, and display-logic dependencies from the automatic flags to their corresponding inbound/outbound allow flags.
 - `artifacts/payment-method/generated/web/payment-method/PaymentMethodForm.jsx` shows that the main generated form contains only `Name` and `Description`.
-- `artifacts/payment-method/generated/web/payment-method/PaymentMethodPage.jsx` mounts `PaymentGroupsSection` as the bottom section on the detail page.
+- `artifacts/payment-method/generated/web/payment-method/PaymentMethodPage.jsx` mounts `PaymentGroupsSection` as the bottom section and the generic `AttachmentsTab` below it via `customTabsAfterBottom`.
+- `artifacts/payment-method/decisions.json` declares `customTabsAfterBottom: true`, which positions the `AttachmentsTab` after `PaymentGroupsSection` rather than in the primary tab strip.
 - `tools/app-shell/src/windows/custom/payment-method/PaymentGroupsSection.jsx` confirms the grouped two-card layout for inbound and outbound toggles, and also shows that the current custom component renders each checkbox directly rather than visibly implementing the contract's toggle dependency rules.
 - `docs/generated-custom-windows/app-shell-functional-flows.md` provides the shared authenticated-shell, generic route, and entity list/detail behavior that this window inherits.
 ## Pipeline regeneration — ETP-3908

@@ -18,6 +18,7 @@ Because the line model points back to a return source, this window should primar
 - Visibility: visible in the Purchases menu
 - Implementation type: generated window registered in `tools/app-shell/src/windows/registry.js` and loaded through the generic app-shell window loader
 - Window shape: master-child window with a header entity on `M_InOut` and child lines on `M_InOutLine`.
+- An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
 - Lines tab layout: this window uses `window.linesLayout = "inlineEditable"`. Rows render at 40 px with pencil and trash hover-action icons on the right; clicking pencil flips the row into inline edit; trash removes the row after confirmation. The add-line button and any related panels are unchanged from the classic layout. See `docs/ui-customization.md` section 13 for the full reference.
 
 At list level, the window exposes return-to-vendor shipments as purchase records. At detail level, it renders the shipment header plus child lines and a related-documents tab. The contract uses the default layout, marks `description` as the notes field, and enables related-documents support.
@@ -50,6 +51,7 @@ Current evidence does not show totals, discounts, taxes, or pricing reactions on
 5. Process the shipment and confirm the document moves out of draft and the draft-only actions disappear or become unavailable.
 6. If related documents exist, open the Related Documents tab and verify it links the shipment back to the surrounding return flow.
 7. If stock-movement behavior is important for the rollout, verify separately in the ERP/backend that processing this shipment produces the expected outbound inventory effect, because that consequence is not directly proven by current SPA evidence.
+8. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 - `tools/app-shell/src/menu.json` places `return-to-vendor-shipment` in the Purchases menu.
@@ -59,3 +61,4 @@ Current evidence does not show totals, discounts, taxes, or pricing reactions on
 - `artifacts/return-to-vendor-shipment/generated/web/return-to-vendor-shipment/HeaderForm.jsx` and `LinesForm.jsx` show the currently surfaced header and line fields.
 - `artifacts/return-to-vendor-shipment/FINDINGS.md` documents the intended logistics meaning of this window as vendor outbound movement (`MovementType = V-`) and its relationship to the return-to-vendor authorization flow.
 - There is no dedicated `return-to-vendor-shipment` browser test in current evidence. Shared route loading and generic entity data behavior are documented in `docs/generated-custom-windows/app-shell-functional-flows.md`.
+- The generated `ReturnShipmentPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `M_InOut` AD table.

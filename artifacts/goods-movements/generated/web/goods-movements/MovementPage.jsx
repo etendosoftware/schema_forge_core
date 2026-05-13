@@ -4,6 +4,7 @@ import MovementTable from './MovementTable';
 import MovementForm from './MovementForm';
 import MovementLineTable from './MovementLineTable';
 import MovementLineForm from './MovementLineForm';
+import { AttachmentsTab } from '@/components/attachments';
 import GoodsMovementsBottomPanel from '../../../custom/GoodsMovementsBottomPanel';
 import catalogs from './mockCatalogs';
 
@@ -187,6 +188,7 @@ export default function MovementPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_Movement", config: {} } }]}
         bottomSection={GoodsMovementsBottomPanel}
         requiredHeaderFields={requiredHeaderFields}
         linesLayout="inlineEditable"

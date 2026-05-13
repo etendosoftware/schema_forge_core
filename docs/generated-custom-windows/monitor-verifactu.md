@@ -33,3 +33,7 @@ The `VerifactuMonitorSection` component drives tab switching. KPI counts are der
 
 See [fiscal-monitor.md](fiscal-monitor.md) for the full functional specification,
 debug mode, test plan, and known issues.
+
+## Automated evidence
+
+The `decisions.json` declares `attachments: false`, so the Attachments tab is explicitly disabled for this window.

@@ -19,6 +19,7 @@ Maintain the rules that determine when a receivable or payable becomes due and w
 - **Implementation type:** generated default-layout window loaded from `tools/app-shell/src/windows/registry.js` into the generic `/:windowName` shell route.
 - **Window shape:** single-entity in the current frontend evidence. The visible screen is header-only even though the backend contract still declares a `lines` entity and `/lines` CRUD endpoints.
 - **List/detail behavior:** the list exposes `Search Key`, `Name`, `Overdue Payment Days Rule`, and `Default`; the detail form exposes the five principal fields above and hides both **Print** and **More**.
+- An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
 
 ## Reactive behavior and dependencies
 
@@ -41,6 +42,7 @@ Maintain the rules that determine when a receivable or payable becomes due and w
 3. Confirm the detail form currently exposes only `Search Key`, `Name`, `Offset Month Due`, `Overdue Payment Days Rule`, and `Default`.
 4. Change the `Default` checkbox, save, reopen the record, and confirm the saved state is reflected back in the badge-style display.
 5. Attempt to find fixed-date, next-business-day, or child-line installment controls and confirm they are not currently exposed in the generated UI.
+6. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 
@@ -50,6 +52,7 @@ Maintain the rules that determine when a receivable or payable becomes due and w
 - `artifacts/payment-term/generated/web/payment-term/HeaderForm.jsx`, `HeaderTable.jsx`, and `HeaderPage.jsx` confirm the current list/detail rendering, the visible field set, and the hidden **Print**/**More** controls.
 - `tools/app-shell/src/menu.json` and `tools/app-shell/src/windows/registry.js` confirm menu visibility and route registration.
 - There is no dedicated SPA test for the visible Payment Term window; current automated evidence is contract- and generated-shape based rather than browser-level UI coverage.
+- The generated `HeaderPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `C_PaymentTerm` AD table.
 ## Pipeline regeneration — ETP-3908
 
 Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functional changes to this window.
