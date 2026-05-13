@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import { collectSourceFiles, collectTargetSourceFiles, isJavaScriptModule, parseModuleSource, readJson, repoRelative, walkAst } from './shared.js';
+import { getAliasDirs } from '../window-aliases.js';
 
 const IGNORED_VISIBILITIES = new Set(['discarded', 'system']);
 const SCANNED_ATTRIBUTES = new Set(['title', 'placeholder', 'aria-label']);
@@ -54,7 +55,7 @@ function collectCustomFiles(rootDir, windowDir, windowName) {
   }
 
   const appShellCustomDir = join(rootDir, 'tools', 'app-shell', 'src', 'windows', 'custom');
-  const aliases = windowName === 'contacts' ? ['businessPartner'] : [];
+  const aliases = getAliasDirs(windowName);
   return [
     ...collectSourceFiles(join(windowDir, 'custom'), isNonTestJsModule),
     ...collectSourceFiles(join(appShellCustomDir, windowName), isNonTestJsModule),

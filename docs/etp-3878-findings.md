@@ -39,7 +39,7 @@ Re-verified each finding against current `feature/ETP-3981` working tree.
 | 9 | Related-doc graph traversal duplicated per window | Medium | Open |
 | 10 | `DocChip` rules repeated per window | Medium | Open |
 | 11 | `DetailView` knows sales/purchase selector context | Medium | Open |
-| 12 | `businessPartner`/`contacts` alias in quality-gate | Medium | Open |
+| 12 | `businessPartner`/`contacts` alias in quality-gate | Medium | **SOLVED** — centralized in `quality-gate/window-aliases.js` |
 | 13 | `contacts/BusinessPartnerSidebar.jsx` forwarding alias | Low | **PARTIALLY SOLVED** — alias gone, but forked into two full copies |
 | 14 | Related-doc loading/error lifecycle inconsistent | Low | Open |
 
@@ -353,7 +353,10 @@ Confidence: High
 
 Confidence: High
 
-### Medium — Contacts/businessPartner aliasing is duplicated in quality-gate tooling
+### Medium — Contacts/businessPartner aliasing is duplicated in quality-gate tooling — SOLVED (2026-05-13)
+
+> **Status: SOLVED.** New module `cli/src/quality-gate/window-aliases.js` declares the `{ canonical, aliasDirs }` registry and exposes `resolveCanonicalWindow()` (used by `detect.js`) and `getAliasDirs()` (used by `checks/i18n.js`). Both consumers were refactored to use it. Added `cli/test/quality-gate-window-aliases.test.js` covering registry shape, both helpers, and immutability. Existing detect/i18n tests continue to pass unchanged — they are the contract test for the behavior.
+
 
 **Evidence:**
 
