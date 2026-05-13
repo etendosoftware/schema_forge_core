@@ -103,7 +103,7 @@ export default function AttachmentsTab({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-testid="attachments-tab-panel">
       <UploadDropzone onFiles={handleUpload} config={effectiveConfig} disabled={!recordId} />
 
       <AttachmentsTable

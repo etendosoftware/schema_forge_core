@@ -12,12 +12,13 @@ const TAB_ICONS = {
 
 function TabStripButton({
   iconKey, label, count, isActive, onClick,
-  paddingY = 'py-2.5', showHoverLine = false, indicatorCls, tMenu,
+  paddingY = 'py-2.5', showHoverLine = false, indicatorCls, tMenu, testId,
 }) {
   const defaultCls = 'absolute bottom-0 left-2 right-2 h-0.5 bg-foreground rounded-full';
   return (
     <button
       onClick={onClick}
+      data-testid={testId}
       className={[
         `${showHoverLine ? 'group ' : ''}flex items-center gap-2 px-4 ${paddingY} text-sm font-medium transition-colors relative`,
         isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
@@ -1857,6 +1858,7 @@ export function DetailView({
                           showHoverLine={secondaryTabsShowHoverLine}
                           indicatorCls={tabIndicatorCls}
                           tMenu={tMenu}
+                          testId={`tab-${tab.key}`}
                         />
                       );
                     })}
@@ -2962,6 +2964,7 @@ export function DetailView({
                         isActive={isActive}
                         onClick={() => setActiveCustomBelowTab(idx)}
                         tMenu={tMenu}
+                        testId={`tab-${customTabKey(ct)}`}
                       />
                     );
                   })}

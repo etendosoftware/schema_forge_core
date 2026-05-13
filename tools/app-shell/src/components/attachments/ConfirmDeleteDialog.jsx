@@ -31,7 +31,7 @@ export default function ConfirmDeleteDialog({ open, onClose, onConfirm, title, m
 
   return (
     <Dialog open={open} onOpenChange={(value) => { if (!value) onClose?.(); }}>
-      <DialogContent>
+      <DialogContent data-testid="confirm-delete-dialog">
         <DialogHeader>
           <DialogTitle>{title || ui('confirm')}</DialogTitle>
           <DialogDescription>
@@ -39,10 +39,10 @@ export default function ConfirmDeleteDialog({ open, onClose, onConfirm, title, m
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onClose?.()}>
+          <Button type="button" variant="outline" data-testid="confirm-delete-cancel" onClick={() => onClose?.()}>
             {ui('cancel')}
           </Button>
-          <Button type="button" variant={confirmVariant} onClick={handleConfirm}>
+          <Button type="button" variant={confirmVariant} data-testid="confirm-delete-confirm" onClick={handleConfirm}>
             {confirmLabel || ui('delete')}
           </Button>
         </DialogFooter>

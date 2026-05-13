@@ -51,6 +51,7 @@ The current repo evidence shows a generated finance window with payment-in-speci
 9. Scroll below the `PaymentBottomPanel` and confirm the **Attachments** tab strip and content area are visible. Upload a file, verify it appears in the table with file name, size, upload date, and uploader. Download it, then delete it and confirm the row disappears. When multiple files exist, confirm the "Download all (ZIP)" and "Delete all" actions appear in the table header, and that "Delete all" shows a confirmation dialog before removing all files.
 
 ## Automated evidence
+- `e2e/tests/flows/attachments.mocked.spec.js` (Suites A–D) provides browser-level E2E coverage for the Attachments tab: tab visibility in the `customTabsAfterBottom` strip, empty state, upload (valid file, file too large, invalid MIME, duplicate name), single delete with confirmation, Delete All, individual file download, and Download All (ZIP). All API calls are mocked; no real backend is required.
 - There is no dedicated payment-in UI test in `tools/app-shell` covering the specialized create flow, payment-state actions, or allocation panels.
 - The contract itself contains generated validation coverage for field presence, field types, searchable filters, and default-value typing for `finPayment` and `finPaymentScheduleDetail`, but those checks do not assert rendered payment-specific behavior.
 - Shared shell loading and route behavior are documented centrally in `docs/generated-custom-windows/app-shell-functional-flows.md`.

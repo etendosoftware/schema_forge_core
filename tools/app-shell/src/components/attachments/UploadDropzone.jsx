@@ -99,6 +99,7 @@ export default function UploadDropzone({ onFiles, config = {}, disabled = false 
 
   return (
     <div
+      data-testid="attachments-dropzone"
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -139,6 +140,7 @@ export default function UploadDropzone({ onFiles, config = {}, disabled = false 
         type="file"
         multiple
         hidden
+        data-testid="attachments-file-input"
         accept={allowedMimeTypes?.join(',') ?? undefined}
         onChange={handleInputChange}
         disabled={disabled}

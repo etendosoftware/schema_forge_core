@@ -100,7 +100,7 @@ export default function AttachmentsTable({
   const dataCell = 'px-3 py-0 text-sm text-foreground';
 
   return (
-    <Table>
+    <Table data-testid="attachments-table">
       <TableHeader>
         <TableRow className="h-10">
           <TableHead className={`${headCell} w-10 px-2`}>
@@ -121,6 +121,7 @@ export default function AttachmentsTable({
                 {onDownloadAll && (
                   <button
                     type="button"
+                    data-testid="attachments-download-all"
                     onClick={onDownloadAll}
                     className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
                   >
@@ -131,6 +132,7 @@ export default function AttachmentsTable({
                 {onDeleteAll && (
                   <button
                     type="button"
+                    data-testid="attachments-delete-all"
                     onClick={onDeleteAll}
                     className="flex items-center gap-1.5 text-xs font-medium text-[#D50B3E] hover:text-[#b00834] transition-colors whitespace-nowrap"
                   >
@@ -170,7 +172,7 @@ export default function AttachmentsTable({
         {!loading && !hasItems && !hasUploads && (
           <TableRow>
             <TableCell colSpan={COLUMNS} className="py-10">
-              <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+              <div data-testid="attachments-empty-state" className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                 <FileX className="h-8 w-8" aria-hidden="true" />
                 <span className="text-sm">{ui('attachmentsNoFiles')}</span>
               </div>
@@ -185,14 +187,14 @@ export default function AttachmentsTable({
             ?? null;
           const updatedAt = item.updatedAt ?? item.modifiedAt ?? item.updateDate ?? null;
           return (
-            <TableRow key={item.id} className="group h-10">
+            <TableRow key={item.id} data-testid={`attachment-row-${item.id}`} className="group h-10">
               <TableCell className="w-10 px-2 py-0">
                 <Checkbox
                   checked={selectedIds.has(item.id)}
                   onChange={() => toggleOne(item.id)}
                 />
               </TableCell>
-              <TableCell className={`${dataCell} font-medium`}>
+              <TableCell data-testid={`attachment-name-${item.id}`} className={`${dataCell} font-medium`}>
                 {item.name || item.fileName || item.id}
               </TableCell>
               <TableCell className={dataCell}>{formatBytes(item.size ?? item.fileSize)}</TableCell>
@@ -203,6 +205,7 @@ export default function AttachmentsTable({
                 <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     type="button"
+                    data-testid={`attachment-download-${item.id}`}
                     onClick={() => onDownload?.(item)}
                     className="h-8 w-8 flex items-center justify-center rounded-full text-[#828FA3] hover:bg-[#F5F7F9] transition-all"
                     aria-label={ui('attachmentsDownload')}
@@ -212,6 +215,7 @@ export default function AttachmentsTable({
                   </button>
                   <button
                     type="button"
+                    data-testid={`attachment-delete-${item.id}`}
                     onClick={() => onDelete?.(item)}
                     className="h-8 w-8 flex items-center justify-center rounded-full text-[#D50B3E] hover:bg-[#FEF0F4] transition-all"
                     aria-label={ui('delete')}
