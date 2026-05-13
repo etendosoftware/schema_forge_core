@@ -7,7 +7,7 @@ import ContactForm from './ContactForm';
 import BankAccountTable from './BankAccountTable';
 import BankAccountForm from './BankAccountForm';
 import LocationAddressTable from './LocationAddressTable';
-import LocationEditorModal from '@/windows/custom/contacts/LocationEditorModal';
+import LocationEditorModal from '@/windows/custom/shared/LocationEditorModal';
 import ContactsFinancialPanel from '@/windows/custom/contacts/ContactsFinancialPanel';
 import ContactTypeToggle from '@/windows/custom/contacts/ContactTypeToggle';
 import catalogs from './mockCatalogs';

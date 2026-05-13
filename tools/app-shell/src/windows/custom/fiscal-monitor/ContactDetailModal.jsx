@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Loader2, MapPin, ChevronDown, Check } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { toast } from 'sonner';
-import LocationEditorModal from '@/windows/custom/contacts/LocationEditorModal.jsx';
+import LocationEditorModal from '@/windows/custom/shared/LocationEditorModal.jsx';
 
 async function fetchBp(apiBase, bpId, token) {
   const res = await fetch(`${apiBase}/businessPartner/${bpId}`, {

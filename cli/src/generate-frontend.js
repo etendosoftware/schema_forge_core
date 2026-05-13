@@ -29,6 +29,9 @@ function resolveCustomImport(specName, component, appShellDir) {
   if (existsSync(resolve(`tools/app-shell/src/windows/custom/${dir}/${component}.jsx`))) {
     return `'@/windows/custom/${dir}/${component}'`;
   }
+  if (existsSync(resolve(`tools/app-shell/src/windows/custom/shared/${component}.jsx`))) {
+    return `'@/windows/custom/shared/${component}'`;
+  }
   // Default: artifact-local convention for newly created windows
   return `'../../../custom/${component}'`;
 }

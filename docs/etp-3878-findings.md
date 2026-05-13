@@ -22,9 +22,33 @@ Scope observed:
 - Medium: 6
 - Low: 2
 
+## Status check (2026-05-13)
+
+Re-verified each finding against current `feature/ETP-3981` working tree.
+
+| # | Finding | Severity | Status |
+|---|---------|----------|--------|
+| 1 | sales-invoice → purchase-invoice `InvoicePreviewModal` | High | **SOLVED** — moved to `windows/custom/shared/` |
+| 2 | `PartnerAddressPicker` → contacts `LocationEditorModal` | High | **SOLVED** — moved to `windows/custom/shared/` |
+| 3 | `DataTable` has Internal Consumption branches | High | Open |
+| 4 | `DetailView` embeds line-amount/callout policy | High | Open |
+| 5 | Pipeline defaults `windowName` to `sales-order` | High | Open |
+| 6 | Selector fetch/normalize hand-rolled in N places | Medium | Open |
+| 7 | Country/region selector fallbacks duplicated | Medium | Open |
+| 8 | `CreateContactModal` in generic `contract-ui` | Medium | Open |
+| 9 | Related-doc graph traversal duplicated per window | Medium | Open |
+| 10 | `DocChip` rules repeated per window | Medium | Open |
+| 11 | `DetailView` knows sales/purchase selector context | Medium | Open |
+| 12 | `businessPartner`/`contacts` alias in quality-gate | Medium | Open |
+| 13 | `contacts/BusinessPartnerSidebar.jsx` forwarding alias | Low | **PARTIALLY SOLVED** — alias gone, but forked into two full copies |
+| 14 | Related-doc loading/error lifecycle inconsistent | Low | Open |
+
 ## Issues
 
-### High — sales-invoice depends on a concrete purchase-invoice component
+### High — sales-invoice depends on a concrete purchase-invoice component — SOLVED (2026-05-13)
+
+> **Status: SOLVED.** `InvoicePreviewModal.jsx` now lives at `tools/app-shell/src/windows/custom/shared/InvoicePreviewModal.jsx`. Both `sales-invoice/index.jsx` and `purchase-invoice` import from `../shared/InvoicePreviewModal.jsx`. The purchase-invoice copy was removed; no forwarding alias.
+
 
 **Evidence:**
 
@@ -49,7 +73,10 @@ Scope observed:
 
 Confidence: High
 
-### High — Generic PartnerAddressPicker imports the concrete contacts window modal
+### High — Generic PartnerAddressPicker imports the concrete contacts window modal — SOLVED (2026-05-13)
+
+> **Status: SOLVED.** `LocationEditorModal.jsx` (and its vitest suite) moved from `windows/custom/contacts/` to `windows/custom/shared/`. Updated import sites: `components/contract-ui/PartnerAddressPicker.jsx` and `windows/custom/fiscal-monitor/ContactDetailModal.jsx`. Cleaned up dead `contacts/__tests__` glob in `tools/app-shell/package.json`. The `contactsApiBase` derivation in `PartnerAddressPicker` (replacing the current API segment with `/contacts`) is still there — the modal itself no longer lives in a concrete window, but the contacts API convention coupling remains as a follow-up (overlaps with F7/F8 scope).
+
 
 **Evidence:**
 
@@ -373,7 +400,10 @@ Confidence: High
 
 Confidence: Medium
 
-### Low — contacts/BusinessPartnerSidebar.jsx is a forwarding alias hiding ownership
+### Low — contacts/BusinessPartnerSidebar.jsx is a forwarding alias hiding ownership — PARTIALLY SOLVED (2026-05-13)
+
+> **Status: forwarding alias removed, but ownership not resolved.** `contacts/BusinessPartnerSidebar.jsx` is no longer a one-line re-export — it is now a full 246-line implementation. The sibling `businessPartner/BusinessPartnerSidebar.jsx` (342 lines) still exists. The original symptom (alias hiding cross-window dep) is gone, but the underlying ownership question has been resolved by **forking** rather than by picking one owner. Combine with F12 (quality-gate alias policy) when fixed.
+
 
 **Evidence:**
 
