@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { resolveCanonicalWindow } from './window-aliases.js';
 
 function escapeRegex(text) {
   return text.replace(/[|\\{}()[\]^$+?.]/g, '\\$&');
@@ -30,8 +31,9 @@ function resolveTouchedWindows(filePath, availableWindows) {
   if (availableWindows.includes(customDir)) {
     return [{ window: customDir, source: 'direct' }];
   }
-  if (customDir === 'businessPartner' && availableWindows.includes('contacts')) {
-    return [{ window: 'contacts', source: 'direct' }];
+  const canonical = resolveCanonicalWindow(customDir, availableWindows);
+  if (canonical) {
+    return [{ window: canonical, source: 'direct' }];
   }
   if (customDir === 'shared') {
     return availableWindows.map((window) => ({ window, source: 'global' }));

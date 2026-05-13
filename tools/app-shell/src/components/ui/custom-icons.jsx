@@ -18,6 +18,15 @@ export function SortIcon({ className }) {
   );
 }
 
+export function UploadIcon({ className }) {
+  return (
+    <svg viewBox="2 2 20 20" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
+      <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M12 14.25V4.75M12 4.75L9 7.75M12 4.75L15 7.75"/>
+      <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M4.75 14.75v2.5a2 2 0 0 0 2 2h10.5a2 2 0 0 0 2-2v-2.5"/>
+    </svg>
+  );
+}
+
 export function SearchIcon({ className }) {
   return (
     <svg width="17" height="17" viewBox="0 0 17 17" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">

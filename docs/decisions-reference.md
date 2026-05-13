@@ -73,6 +73,7 @@ Per-locale field label overrides. When the simplified interface needs to rename 
 | `templateConfig` | object | `null` | Layout-specific | Extra config for non-default layouts (e.g., `groupBy`, `dateField`). |
 | `detailEntity` | string \| null | Auto-inferred | Entity name or `null` | Explicitly sets which entity is the detail/lines tab. When omitted, the generator picks the first non-primary entity automatically. Set to `null` to create a header-only page (no detail tab). Set to a specific entity name to override the auto-inference. |
 | `relatedDocuments` | boolean | `false` | — | Enables the Related Documents footer in the detail view. Requires a hand-written `RelatedDocuments.jsx` in `artifacts/{window}/custom/`. The generator emits the import and `customTabs` prop automatically. |
+| `attachments` | boolean \| object | `true` | See below | Adds an "Attachments" tab to the detail view. Auto-enabled on every window with `layoutType: "default"`. Set to `false` to opt out; pass an object to tune client-side limits. See the Attachments subsection below. |
 | `notesField` | string | `null` | Any entity field name | Field to display as a notes/description panel in the detail view footer (e.g., `"description"`). Rendered as an expandable text input. |
 | `documentPreview` | object | `null` | `{ titlePrefix: string }` | Enables the document preview button in the detail header. `titlePrefix` is shown in the preview drawer title (e.g., `"Order"`, `"Invoice"`). |
 | `breadcrumb` | string | `"{category} / {name}"` | Any string | Overrides the auto-generated breadcrumb path shown in the topbar. Useful when the default category/name combination is too verbose (e.g., `"Product"` instead of `"Reference / Product"`). |
@@ -137,6 +138,51 @@ Generates a `{WindowName}StatusBar` component inside `@sf-generated` markers. Th
 | `completedIcon` | string | Lucide icon shown at 100% (e.g., `CheckCircle2`). |
 
 The generator emits `headerContent={(data) => <{WindowName}StatusBar data={data} />}` on the DetailView prop automatically.
+
+### Attachments (`window.attachments`)
+
+Adds a generic "Attachments" tab to the detail view, sitting alongside the standard tabs (Lines, Notes, Related Documents, etc.). The tab is **auto-enabled** on every window whose `layoutType` is `"default"` — no opt-in required. Set `attachments: false` to disable it on a specific window, or pass an object to tune client-side limits.
+
+**Layout gate:** the tab only renders when `window.layoutType === "default"`. Kanban, calendar, gallery, and custom layouts never get the tab, regardless of the `attachments` value.
+
+**Short form** (boolean toggle):
+```json
+{
+  "window": {
+    "attachments": true
+  }
+}
+```
+
+**Opt-out:**
+```json
+{
+  "window": {
+    "attachments": false
+  }
+}
+```
+
+**Extended form** (object with client-side limits):
+```json
+{
+  "window": {
+    "attachments": {
+      "enabled": true,
+      "maxSizeMB": 10,
+      "allowedMimeTypes": ["application/pdf", "image/*"]
+    }
+  }
+}
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | boolean | `true` | Master toggle. Set to `false` for the same effect as `attachments: false`. |
+| `maxSizeMB` | number | `10` | Max file size enforced client-side before upload. The NEO servlet has its own hard limit of 10 MB (`MultipartConfig`); raising this beyond 10 will surface a server error. |
+| `allowedMimeTypes` | string[] | `undefined` (any) | MIME-type allow-list applied client-side. Supports wildcards like `"image/*"`, `"application/*"`. When omitted, every MIME type is accepted. |
+
+**Note:** the frontend resolves the target `tableName` from `frontendContract.entities.header.tableName` automatically — you do **not** configure it in `decisions.json`. The tab does a lazy fetch on activation (no request until the user opens it). Backend storage uses the standard Etendo `AttachImplementationManager` and the `C_FILE` table.
 
 ### Subset Filters (`window.subsetFilters`)
 

@@ -7,8 +7,9 @@ import ContactForm from './ContactForm';
 import BankAccountTable from './BankAccountTable';
 import BankAccountForm from './BankAccountForm';
 import LocationAddressTable from './LocationAddressTable';
-import LocationEditorModal from '@/windows/custom/contacts/LocationEditorModal';
+import LocationEditorModal from '@/windows/custom/shared/LocationEditorModal';
 import ContactsFinancialPanel from '@/windows/custom/contacts/ContactsFinancialPanel';
+import { AttachmentsTab } from '@/components/attachments';
 import ContactTypeToggle from '@/windows/custom/contacts/ContactTypeToggle';
 import catalogs from './mockCatalogs';
 
@@ -697,6 +698,7 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
         ]}
         hidePrint
         hideMoreMenu
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_BPartner", config: {} } }]}
         topbarExtra={ContactTypeToggle}
         requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}

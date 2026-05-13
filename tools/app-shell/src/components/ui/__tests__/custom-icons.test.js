@@ -7,7 +7,7 @@ const src = await readFile(new URL('../custom-icons.jsx', import.meta.url), 'utf
 // ---------------------------------------------------------------------------
 // custom-icons.jsx — source-reading tests (ETP-3660)
 //
-// The file exports three SVG icon components. Since they return JSX and cannot
+// The file exports four SVG icon components. Since they return JSX and cannot
 // be rendered without a DOM + React transform, we verify the module contract
 // through static source analysis.
 // ---------------------------------------------------------------------------
@@ -21,13 +21,17 @@ describe('custom-icons — exports (ETP-3660)', () => {
     assert.match(src, /export function SortIcon/);
   });
 
+  it('exports UploadIcon as a named export', () => {
+    assert.match(src, /export function UploadIcon/);
+  });
+
   it('exports SearchIcon as a named export', () => {
     assert.match(src, /export function SearchIcon/);
   });
 
-  it('has exactly three exported functions (no accidental extras)', () => {
+  it('has exactly four exported functions (no accidental extras)', () => {
     const exports = src.match(/export function \w+/g) ?? [];
-    assert.equal(exports.length, 3);
+    assert.equal(exports.length, 4);
   });
 });
 
@@ -40,6 +44,10 @@ describe('custom-icons — className prop (ETP-3660)', () => {
     assert.match(src, /function SortIcon\s*\(\s*\{[^}]*className[^}]*\}/);
   });
 
+  it('UploadIcon destructures className from props', () => {
+    assert.match(src, /function UploadIcon\s*\(\s*\{[^}]*className[^}]*\}/);
+  });
+
   it('SearchIcon destructures className from props', () => {
     assert.match(src, /function SearchIcon\s*\(\s*\{[^}]*className[^}]*\}/);
   });
@@ -50,6 +58,10 @@ describe('custom-icons — className prop (ETP-3660)', () => {
 
   it('SortIcon passes className to the svg element', () => {
     assert.match(src, /SortIcon[\s\S]*?className=\{className\}/);
+  });
+
+  it('UploadIcon passes className to the svg element', () => {
+    assert.match(src, /UploadIcon[\s\S]*?className=\{className\}/);
   });
 
   it('SearchIcon passes className to the svg element', () => {
@@ -66,16 +78,25 @@ describe('custom-icons — SVG structure (ETP-3660)', () => {
     assert.match(src, /SortIcon[\s\S]*?<svg/);
   });
 
+  it('UploadIcon renders an <svg> element', () => {
+    assert.match(src, /UploadIcon[\s\S]*?<svg/);
+  });
+
   it('SearchIcon renders an <svg> element', () => {
     assert.match(src, /SearchIcon[\s\S]*?<svg/);
   });
 
-  it('all three icons use fill="none" (outline style)', () => {
+  it('all four icons use fill="none" on the svg element', () => {
     const fillNoneMatches = src.match(/fill="none"/g) ?? [];
-    assert.ok(fillNoneMatches.length >= 3, 'Expected at least 3 fill="none" occurrences (one per icon svg)');
+    assert.ok(fillNoneMatches.length >= 4, 'Expected at least 4 fill="none" occurrences (one per icon svg)');
   });
 
-  it('all three icons use currentColor for path fill', () => {
+  it('stroke-based icons use currentColor for strokes', () => {
+    assert.match(src, /UploadIcon[\s\S]*?stroke="currentColor"/);
+    assert.match(src, /RefreshIcon[\s\S]*?stroke="currentColor"/);
+  });
+
+  it('fill-based icons use currentColor for path fill', () => {
     const currentColorMatches = src.match(/fill="currentColor"/g) ?? [];
     assert.ok(currentColorMatches.length >= 3, 'Expected at least 3 fill="currentColor" path occurrences');
   });

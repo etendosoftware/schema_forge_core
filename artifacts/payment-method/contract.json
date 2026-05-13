@@ -1,14 +1,15 @@
 {
   "version": "0.4.0",
   "generatedAt": "2026-04-29T18:12:23.942Z",
-  "updatedAt": "2026-05-12T19:44:33.784Z",
-  "checksum": "9cf422a68c69ede0",
+  "updatedAt": "2026-05-13T15:59:19.480Z",
+  "checksum": "6fd7dae34dbc066e",
   "frontendContract": {
     "window": {
       "id": "3CAAC7D54593489384452416ACF356DD",
       "name": "Payment Method",
       "primaryEntity": "paymentMethod",
       "category": "settings",
+      "customTabsAfterBottom": true,
       "hidePrint": true,
       "hideMoreMenu": true,
       "breadcrumb": "Settings / Payment Method",
@@ -260,6 +261,7 @@
       "name": "Payment Method",
       "primaryEntity": "paymentMethod",
       "category": "settings",
+      "customTabsAfterBottom": true,
       "hidePrint": true,
       "hideMoreMenu": true,
       "breadcrumb": "Settings / Payment Method",

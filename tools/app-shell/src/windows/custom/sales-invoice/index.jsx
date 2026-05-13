@@ -13,6 +13,7 @@ import { useInvoicePdf } from '../shared/useInvoicePdf.js';
 import SalesInvoiceTopbar from './SalesInvoiceTopbar.jsx';
 import InvoiceBottomPanel from '@generated/sales-invoice/custom/InvoiceBottomPanel.jsx';
 import RelatedDocuments from '@generated/sales-invoice/custom/RelatedDocuments.jsx';
+import { AttachmentsTab } from '@/components/attachments';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
@@ -146,7 +147,7 @@ export default function SalesInvoiceWindow(props) {
           bottomSection={InvoiceBottomPanel}
           topbarRight={SalesInvoiceTopbar}
           notesField="description"
-          customTabs={[{ key: 'related', label: ui('relatedDocuments'), Component: RelatedDocuments }]}
+          customTabs={[{ key: 'related', label: ui('relatedDocuments'), Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: 'C_Invoice', config: {} } }]}
           onAfterSave={true}
           refetchAfterSave={true}
           breadcrumb={breadcrumb}

@@ -18,6 +18,7 @@ On `origin/develop`, the generated contract was expanded to model `priceListVers
 - **Visibility:** visible from the `System` section in `tools/app-shell/src/menu.json`.
 - **Implementation type:** custom window. `tools/app-shell/src/windows/registry.js` still registers both generated and custom loaders for `price-list`, and the custom loader takes precedence.
 - **Window shape:** master-child. The visible master entity is `priceList`, but the visible detail area is not the generated `Price List Version` grid. The custom wrapper disables the generated detail entity and injects a custom `Product Price` workspace instead.
+- An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
 
 ## Reactive behavior and dependencies
 - The pricing area depends on the header being saved first. When the record has no persistent id yet, the UI shows a save-first message instead of allowing line maintenance.
@@ -44,6 +45,7 @@ On `origin/develop`, the generated contract was expanded to model `priceListVers
 5. Click `+ Add Product` and confirm the add row captures `Product`, `Unit Price`, and `List Price` only.
 6. Select an existing row and confirm the `Price Detail` side panel shows read-only `Product` plus editable `Unit Price` and `List Price`, with save and delete actions.
 7. Confirm there is no version switcher in the GO UI. If extra versions exist (e.g., created via Classic), the GO page transparently uses the first one returned by `PriceListVersionResolver` and the server logs a warning.
+8. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 - `origin/develop` commit `19f31dd4` regenerated the price-list window to add generated `priceListVersion` / `productPrice` entities and version-level actions.
@@ -55,6 +57,7 @@ On `origin/develop`, the generated contract was expanded to model `priceListVers
 - `modules/com.etendoerp.go/src/.../PriceListVersionResolver.java` centralizes the single-version lookup used by both handlers and warns when more than one version is found, without blocking Classic functionality.
 - `artifacts/price-list/contract.json` now defines `priceListVersion`, `productPrice`, their selectors, and the version-level classic actions that exist in generated metadata but are not exposed by the custom wrapper.
 - `artifacts/price-list/generated/web/price-list/PriceListPage.jsx`, `PriceListVersionForm.jsx`, and `ProductPriceForm.jsx` show the regenerated baseline the custom wrapper is bypassing.
+- The generated `PriceListPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `M_PriceList` AD table.
 ## Pipeline regeneration — ETP-3908
 
 Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functional changes to this window.
