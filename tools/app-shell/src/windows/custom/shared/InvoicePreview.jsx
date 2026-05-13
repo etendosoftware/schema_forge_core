@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Edit2, FileText, Check, Loader2, AlertCircle, Mail, Download, Ban, Wallet, MoreVertical } from 'lucide-react';
 import { Badge } from '@/components/ui/badge.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -96,6 +96,7 @@ function InvoiceActionButtons({ triggerEdit, onEmail, canSendToSif, onOpenSif, c
 export default function InvoicePreview({ invoice, token, apiBaseUrl, windowName, specName = 'purchase-invoice', onClose, onEdit, onInvoiceUpdated = null }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
+  const modalRef = useRef(null);
   const p = useInvoicePreview({ invoice, token, apiBaseUrl, specName, onInvoiceUpdated });
 
   if (!invoice) return null;
@@ -189,9 +190,24 @@ export default function InvoicePreview({ invoice, token, apiBaseUrl, windowName,
 
   const windowLabel = tMenu(specName === 'purchase-invoice' ? 'Purchase Invoice' : 'Sales Invoice');
 
+  const actionButtons = (
+    <InvoiceActionButtons
+      triggerEdit={() => modalRef.current?.triggerEdit?.()}
+      onEmail={p.openEmailModal}
+      canSendToSif={p.canSendToSif}
+      onOpenSif={() => p.setShowSifModal(true)}
+      canAddPayment={p.canAddPayment}
+      onAddPayment={() => p.setShowPaymentModal(true)}
+      isSalesInvoice={p.isSalesInvoice}
+      onDownloadPdf={p.handleDownloadPdf}
+      hasPdf={!!p.pdfUrl}
+    />
+  );
+
   return (
     <>
       <GenericPreviewModal
+        ref={modalRef}
         title={`${windowLabel} ${p.displayInvoice?.documentNo}`}
         subtitle={p.partnerName !== '—' ? `${ui('invoicePreviewClient')} ${p.partnerName}` : undefined}
         leftPanel={leftPanel}
@@ -199,19 +215,7 @@ export default function InvoicePreview({ invoice, token, apiBaseUrl, windowName,
         onClose={onClose}
         onEdit={() => onEdit?.(p.displayInvoice?.id)}
         tabs={tabs}
-        actionButtons={({ triggerEdit: te }) => (
-          <InvoiceActionButtons
-            triggerEdit={te}
-            onEmail={p.openEmailModal}
-            canSendToSif={p.canSendToSif}
-            onOpenSif={() => p.setShowSifModal(true)}
-            canAddPayment={p.canAddPayment}
-            onAddPayment={() => p.setShowPaymentModal(true)}
-            isSalesInvoice={p.isSalesInvoice}
-            onDownloadPdf={p.handleDownloadPdf}
-            hasPdf={!!p.pdfUrl}
-          />
-        )}
+        actionButtons={actionButtons}
       />
 
       {p.showPaymentModal && (

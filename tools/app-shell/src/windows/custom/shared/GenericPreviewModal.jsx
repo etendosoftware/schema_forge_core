@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
 import { X, Upload, Trash2, Loader2 } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { usePreviewAttachment, ACCEPTED_TYPES, ACCEPT_ATTR } from './usePreviewAttachment.js';
@@ -194,7 +194,7 @@ function ManagedLeftPanel({ cfg, leftPanel }) {
  *     - spinner while checking/storing when autoFetch=false
  *     - drop zone when autoFetch=false and no file is cached
  */
-export default function GenericPreviewModal({
+const GenericPreviewModal = forwardRef(function GenericPreviewModal({
   title,
   subtitle,
   leftPanel,
@@ -204,7 +204,7 @@ export default function GenericPreviewModal({
   tabs = [],
   initialTab,
   attachmentConfig,
-}) {
+}, ref) {
   const ui = useUI();
   const [animState, setAnimState] = useState('opening');
   const [activeTab, setActiveTab] = useState(() => initialTab ?? tabs[0]?.key ?? null);
@@ -224,9 +224,9 @@ export default function GenericPreviewModal({
     setTimeout(() => onEdit?.(), 280);
   }, [onEdit]);
 
-  const resolvedActionButtons = typeof actionButtons === 'function'
-    ? actionButtons({ triggerClose, triggerEdit })
-    : (actionButtons ?? null);
+  useImperativeHandle(ref, () => ({ triggerEdit }), [triggerEdit]);
+
+  const resolvedActionButtons = actionButtons ?? null;
 
   const activeContent = tabs.find((t) => t.key === activeTab)?.content ?? null;
 
@@ -317,4 +317,6 @@ export default function GenericPreviewModal({
       </div>
     </div>
   );
-}
+});
+
+export default GenericPreviewModal;
