@@ -219,6 +219,7 @@ export default function InventoryPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="movementDate"
+      rowQuickActions={{}}
       {...props}
     />
   );

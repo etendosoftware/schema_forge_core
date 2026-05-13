@@ -121,6 +121,8 @@ describe('resolveCurated', () => {
       summaryFields: ['grandTotal'],
       salesTheme: false,
       noHeaderBorder: true,
+      // ETP-3914 — rowQuickActions intentionally absent: feature is ON by default,
+      // contract only carries the block when the user overrides defaults.
     });
 
     assert.equal(schema.entities.length, 1);

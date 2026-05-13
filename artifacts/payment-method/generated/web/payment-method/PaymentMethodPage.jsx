@@ -140,6 +140,7 @@ export default function PaymentMethodPage({ windowName, recordId, ...props }) {
       hidePrint
       hideMoreMenu
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
       {...props}
     />
   );

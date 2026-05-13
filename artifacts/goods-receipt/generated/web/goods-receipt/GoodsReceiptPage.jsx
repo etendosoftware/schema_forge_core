@@ -395,6 +395,7 @@ export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
         draftMode={draftMode}
         requiredHeaderFields={requiredHeaderFields}
         linesLayout="inlineEditable"
+        sendDocument={{"enabled":true,"allowEmail":false}}
         {...props}
       />
     );
@@ -409,6 +410,8 @@ export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="movementDate"
+      rowQuickActions={{}}
+      sendDocument={{"enabled":true,"allowEmail":false}}
       {...props}
     />
   );

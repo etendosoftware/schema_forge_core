@@ -8,6 +8,12 @@ const PROFILES = [
   { key: 'verifactu',  label: 'Verifactu' },
 ];
 
+const CERT_EXPIRY_OPTIONS = [
+  { key: null, label: 'None' },
+  { key: 45,   label: '45d warn' },
+  { key: 20,   label: '20d crit' },
+];
+
 const panelStyle = {
   position: 'fixed',
   top: 56,
@@ -23,7 +29,7 @@ const panelStyle = {
   fontFamily: 'var(--font-mono, monospace)',
 };
 
-export default function FiscalMonitorDebugPanel({ activeProfile, onProfileChange, mockData, onMockDataChange }) {
+export default function FiscalMonitorDebugPanel({ activeProfile, onProfileChange, mockData, onMockDataChange, mockCertDays, onSetCertDays }) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -75,6 +81,30 @@ export default function FiscalMonitorDebugPanel({ activeProfile, onProfileChange
               No override — real profile active.
             </div>
           )}
+
+          <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #2d2d4a' }}>
+            <div style={{ fontSize: 10, color: '#a0a0cc', marginBottom: 6 }}>Cert expiry</div>
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
+              {CERT_EXPIRY_OPTIONS.map(opt => {
+                const active = mockCertDays === opt.key;
+                return (
+                  <button
+                    key={String(opt.key)}
+                    onClick={() => onSetCertDays?.(opt.key)}
+                    style={{
+                      background: active ? '#1a3a2a' : '#2d2d4a',
+                      border: '1px solid ' + (active ? '#2a7a4a' : '#3d3d5c'),
+                      borderRadius: 6, color: active ? '#b3ffd6' : '#e0e0ff',
+                      cursor: 'pointer', padding: '3px 8px', fontSize: 11,
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    {active ? '✓ ' : ''}{opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #2d2d4a' }}>
             <div style={{ fontSize: 10, color: '#a0a0cc', marginBottom: 6 }}>Data</div>

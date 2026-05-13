@@ -8,6 +8,7 @@ import React, {
   useState,
 } from 'react';
 import { Pencil, Search, Trash2 } from 'lucide-react';
+import { QUICK_ACTIONS_PILL_CLASS } from './quickActionsStyle.js';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -645,7 +646,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
                 data-testid="line-actions"
               >
                 {showActions && (
-                  <>
+                  <div className={`flex items-center gap-2 h-10 px-3 ${QUICK_ACTIONS_PILL_CLASS}`.trim()}>
                     <button
                       type="button"
                       aria-label={ui('editLineTooltip') ?? 'Edit line'}
@@ -668,7 +669,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
-                  </>
+                  </div>
                 )}
               </div>
             )}

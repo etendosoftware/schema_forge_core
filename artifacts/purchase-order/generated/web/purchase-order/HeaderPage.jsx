@@ -677,6 +677,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}
         linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -694,6 +695,8 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       bulkActions={(ctx) => <PurchaseOrderReactivateBulkAction {...ctx} />}
       hidePrint
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

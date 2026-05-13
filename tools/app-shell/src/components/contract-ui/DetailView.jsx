@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { AddLineButton } from '@/components/ui/add-line-button.jsx';
-import { X, MoreVertical, Check, Save, List, Printer, Send, Trash2, Loader2 } from 'lucide-react';
+import { X, MoreVertical, Check, Save, List, Printer, Mail, Trash2, Loader2 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from '@/components/ui/dialog.jsx';
@@ -28,6 +28,7 @@ import {
 } from '@/lib/lineFieldChange.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { formatAmount } from '@/lib/formatAmount.js';
+import { isDeleteVisibleForRecord } from '@/utils/recordActions.js';
 import DocumentStatusPill from './DocumentStatusPill.jsx';
 
 /**
@@ -1358,7 +1359,9 @@ export function DetailView({
                 const TopbarRightComponent = topbarRight;
                 return <TopbarRightComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} />;
               })()}
-              {/* Send / Print document — uses DocumentPrintDrawer */}
+              {/* Send / Print document — uses DocumentPrintDrawer.
+                  Icon unified with RowQuickActions (envelope/Mail) so the same
+                  "send document" affordance looks identical in detail and list views. */}
               {documentPreview && !isNew && recordId && (
                 <button
                   onClick={() => setShowPrint(true)}
@@ -1366,7 +1369,7 @@ export function DetailView({
                   title={ui('sendPreview')}
                   data-testid="action-document-preview"
                 >
-                  <Send className="h-[15px] w-[15px]" />
+                  <Mail className="h-[15px] w-[15px]" />
                 </button>
               )}
               {/* Print document — shown when documentPreview is not provided */}
@@ -1380,7 +1383,7 @@ export function DetailView({
                 </button>
               )}
               {/* Delete record — hidden when hideDeleteWhenComplete and status matches */}
-              {!isNew && recordId && !(hideDeleteWhenComplete && statusField && data?.[statusField] && data[statusField] !== 'DR' && data[statusField] !== 'RPAP') && (
+              {!isNew && recordId && isDeleteVisibleForRecord({ record: data, statusField, hideDeleteWhenComplete }) && (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   className={`${sqBtnSize} flex items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors`}

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
+import { Mail } from 'lucide-react';
 import { useUI } from '@/i18n';
 
 /**
@@ -21,7 +22,7 @@ import { useUI } from '@/i18n';
  * When provided, the preview uses it directly and download triggers on the blob,
  * bypassing the /api/reports render endpoint entirely.
  */
-export default function SendDocumentModal({ documentType = 'Document', documentNo, bpName, bpEmail, bPartnerId, apiBaseUrl, documentId, windowName, token, onClose, pdfBlobUrl, isClosing = false }) {
+export default function SendDocumentModal({ documentType = 'Document', documentNo, bpName, bpEmail, bPartnerId, apiBaseUrl, documentId, windowName, token, onClose, pdfBlobUrl, pdfBlobLoading = false, isClosing = false, allowEmail = true }) {
   const ui = useUI();
   const hasEmail = bpEmail && bpEmail.includes('@');
   const [to, setTo] = useState(hasEmail ? bpEmail : '');
@@ -53,6 +54,9 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(!pdfBlobUrl);
+  // True while the parent is still generating the blob via useInvoicePdf — suppress
+  // the fallback report-render fetch and show a spinner instead of the error card.
+  const waitingForBlob = pdfBlobLoading && !pdfBlobUrl;
   const [pdfError, setPdfError] = useState(null);
   const [downloading, setDownloading] = useState(false);
 
@@ -64,7 +68,16 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
     // If a pre-rendered blob URL is provided, use it directly
     if (pdfBlobUrl) {
       node.src = `${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=1`;
+      setPdfError(null);
       setPdfLoading(false);
+      return;
+    }
+
+    // Parent indicated a blob is being generated — wait for it instead of falling
+    // back to /api/reports which would set pdfError and show the sad-page card.
+    if (pdfBlobLoading) {
+      setPdfError(null);
+      setPdfLoading(true);
       return;
     }
 
@@ -90,7 +103,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
       }
       setPdfLoading(false);
     })();
-  }, [documentId, token, reportId, pdfBlobUrl]);
+  }, [documentId, token, reportId, pdfBlobUrl, pdfBlobLoading]);
 
   const handleDownload = async () => {
     if (downloading) return;
@@ -148,27 +161,30 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
       <style>{`
         @keyframes sfSlideDownIn { from { transform: translateY(-40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes sfSlideUpOut  { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-40px); opacity: 0; } }
+        @keyframes sfSpin { to { transform: rotate(360deg); } }
       `}</style>
       <div onClick={onClose} className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
         <div onClick={e => e.stopPropagation()} style={{ width: 800, height: 560, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 12, backgroundColor: '#fff', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', border: '0.5px solid #E5E7EB', animation: isClosing ? 'sfSlideUpOut 280ms ease-in forwards' : 'sfSlideDownIn 280ms ease-out' }}>
           <div style={{ padding: '12px 16px', background: '#F5F5F5', borderBottom: '1px solid #E5E5E5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13" />
-                <polygon points="22 2 15 22 11 13 2 9 22 2" />
-              </svg>
+              <Mail size={16} strokeWidth={1.5} color="#374151" />
               <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>{ui('sendModalTitle', { documentType, documentNo })}</span>
             </div>
             <button type="button" onClick={onClose} style={{ fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}>&times;</button>
           </div>
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-          <div style={{ width: '60%', display: 'flex', flexDirection: 'column', borderRight: '0.5px solid #E5E7EB' }}>
+          <div style={{ width: allowEmail ? '60%' : '100%', display: 'flex', flexDirection: 'column', borderRight: allowEmail ? '0.5px solid #E5E7EB' : 'none' }}>
             <div style={{ flex: 1, position: 'relative', background: '#EFEFEF' }}>
               {pdfLoading && (
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13 }}>{ui('sendModalLoadingPreview')}</div>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13, gap: 10 }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'sfSpin 0.9s linear infinite' }}>
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                  <span>{ui('sendModalLoadingPreview')}</span>
+                </div>
               )}
-              {pdfError && (
+              {pdfError && !waitingForBlob && !pdfLoading && (
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', padding: 24, textAlign: 'center', gap: 8 }}>
                   <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                   <span style={{ fontSize: 14, fontWeight: 500, color: '#6B7280' }}>{ui('sendModalPdfPreview')}</span>
@@ -188,6 +204,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
             </button>
           </div>
 
+          {allowEmail && (
           <div style={{ width: '40%', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
             <div>
               <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalTo')}</label>
@@ -221,10 +238,12 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
               />
             </div>
           </div>
+          )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F5F5F5', borderTop: '1px solid #E5E5E5', padding: '10px 16px', flexShrink: 0 }}>
-          <button type="button" onClick={onClose} style={{ fontSize: 13, padding: '6px 14px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>{ui('cancel')}</button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: allowEmail ? 'space-between' : 'flex-end', background: '#F5F5F5', borderTop: '1px solid #E5E5E5', padding: '10px 16px', flexShrink: 0 }}>
+          <button type="button" onClick={onClose} style={{ fontSize: 13, padding: '6px 14px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>{allowEmail ? ui('cancel') : ui('close')}</button>
+          {allowEmail && (
           <button
             type="button"
             onClick={handleSend}
@@ -234,10 +253,11 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
             {sending ? ui('sendModalSending') : (
               <>
                 {ui('sendModalSend')}
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                <Mail size={14} strokeWidth={1.5} />
               </>
             )}
           </button>
+          )}
         </div>
       </div>
     </div>
@@ -249,20 +269,20 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
  * Reusable Send button with instant tooltip. Place in topbarRight components.
  */
 export function SendDocumentButton({ onClick }) {
+  const ui = useUI();
+  const label = ui('quickAction.email');
   return (
     <div style={{ position: 'relative' }} className="group">
       <button
         type="button"
         onClick={onClick}
+        aria-label={label}
         className="flex items-center justify-center p-[7px] rounded-md bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_0px_#1212170D] text-muted-foreground hover:bg-[#F1F5F9] hover:text-foreground transition-colors"
       >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="22" y1="2" x2="11" y2="13" />
-          <polygon points="22 2 15 22 11 13 2 9 22 2" />
-        </svg>
+        <Mail className="h-[15px] w-[15px]" />
       </button>
       <span className="pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-zinc-800 px-2 py-1 text-[11px] text-white opacity-0 group-hover:opacity-100 transition-opacity" style={{ zIndex: 50 }}>
-        Send / Download
+        {label}
       </span>
     </div>
   );

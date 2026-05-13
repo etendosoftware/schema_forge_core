@@ -106,9 +106,37 @@ The extracted NIF is then compared (case-insensitive, hyphen-stripped) against `
 
 `NeoCertificateHelperTest.java` (17 unit tests) covers `parseNifFromDn` and `normalizeNif` for all supported certificate formats.
 
+## Certificate expiry banner (`CertExpiryBanner`)
+
+`CertExpiryBanner.jsx` renders a warning notice when the organization's digital certificate is approaching expiry. It is shown in `FiscalConfigPage.jsx` with `variant="prominent"` (card style, after the page header). `useCertExpiry.js` fetches `GET /certificate?orgId=` on mount and computes the remaining days via the exported `daysUntil(dateStr)` pure helper.
+
+| Days remaining | State | Appearance | Dismissible |
+|----------------|-------|------------|-------------|
+| > 60 | Hidden | — | — |
+| 31 – 60 | Warning | Amber card with ⚠️ icon | Yes |
+| 0 – 30 | Critical | Red card with 🔴 icon | No |
+
+- `daysUntil(dateStr)` zeroes out the time component before subtracting, so boundary days are always counted correctly.
+- When `isCritical` the dismiss button is not rendered; re-opening the page always shows the banner until the cert is renewed.
+- The `dismissed` flag is local to the component instance (resets on page reload) — intentionally, to keep the warning visible to all users who open the page.
+
+i18n keys used:
+- `fiscal.cert.expiry.warn.title` — "Certificate expiring in {days} days"
+- `fiscal.cert.expiry.critical.title` — "Certificate expires in {days} days"
+- `fiscal.cert.expiry.body` — renewal call-to-action sentence
+- `fiscal.cert.expiry.dismiss` — aria-label for the × button
+
+Debug: the debug panel exposes a "Cert expiry" section with three toggle buttons (None / 45d warn / 20d crit) that inject a mock `daysLeft` value into the hook, bypassing the API entirely.
+
 ## `onGoHome` prop
 
 `OnboardingWizard` accepts an optional `onGoHome` prop. If provided, "Ir al inicio" (applied screen) and "Ir al inicio" (skipped screen) will call it instead of `onComplete`. This allows the host application to navigate to a dashboard or first-steps screen rather than staying in the fiscal-config window. When omitted, both buttons fall back to `onComplete`.
+
+## Wizard applied step — cert auto-check
+
+When the wizard reaches the `applied` step, a `useEffect` fires to fetch the current cert status from `GET /certificate?orgId=`. If the cert already exists (i.e. the user uploaded it during the `detail` step via `CertSection`), `setCert()` is called immediately — this prevents the "Upload digital certificate [PENDING]" next-step item from remaining shown after a successful upload.
+
+Without this fetch the wizard's top-level `cert` state would only update when the cert is uploaded through `CertModal` on the applied step itself, not through `CertSection` inside the detail step. The two components have independent state; the API call bridges them.
 
 ## Manual verification
 
@@ -117,6 +145,8 @@ The extracted NIF is then compared (case-insensitive, hyphen-stripped) against `
 3. After confirmation, verify the detail screen shows the Verifactu form. Press "Guardar y aplicar" and confirm the applied screen appears with the success card.
 4. Select "Álava" and choose "SII + TicketBAI", advance to confirm. After confirmation, verify both SiiSection and TbaiSection appear in the detail screen.
 5. Upload a `.p12` certificate in the CertModal; confirm the stepper advances through pick → verify → done (or through the confirmNif step if the org has no taxid). Close and reopen the window — the "Certificado cargado" state should still show (persisted via GET endpoint).
+5a. In the wizard, upload the certificate during the `detail` step (via `CertSection`), then advance to the `applied` step — confirm the "Upload digital certificate" item shows as completed (not PENDING).
+5b. In the debug panel, enable "45d warn" — confirm the amber expiry banner appears in the page header. Enable "20d crit" — confirm it turns red and the dismiss button disappears.
 6. Open `/fiscal-config` with an org that already has an SII record and confirm the wizard is NOT shown — only SiiSection renders.
 7. Open `/fiscal-config` with an org that has both SII and Verifactu records and confirm the conflict warning renders.
 8. Press "Omitir por ahora" on the territory screen and confirm the skipped screen shows with a "← Volver al asistente" button that returns to territory selection.
@@ -137,7 +167,9 @@ The extracted NIF is then compared (case-insensitive, hyphen-stripped) against `
 - `tools/app-shell/src/windows/custom/fiscal-config/__tests__/SiiSection.test.js` — 17 component source-guard tests: forwardRef/`useImperativeHandle`, navarra badge, form fields, PUT endpoint contract, hideSave/hideCert.
 - `tools/app-shell/src/windows/custom/fiscal-config/__tests__/TbaiSection.test.js` — 17 component source-guard tests: enroll date + invoice description validation, PUT endpoint, boolean serialization.
 - `tools/app-shell/src/windows/custom/fiscal-config/__tests__/VerifactuSection.test.js` — 17 component source-guard tests: locked/unlocked badge from `isReady`, disabled controls when locked, tax type select.
-- `tools/app-shell/src/windows/custom/fiscal-config/__tests__/OnboardingWizard.test.js` — 30 component source-guard tests: all 7 territories, wizard steps, system resolution, record creation via POST, cert modal, navigation callbacks.
+- `tools/app-shell/src/windows/custom/fiscal-config/__tests__/OnboardingWizard.test.js` — 36 component source-guard tests: all 7 territories, wizard steps, system resolution, record creation via POST, cert modal, navigation callbacks, cert auto-check on applied step, removed placeholder NextItems.
+- `tools/app-shell/src/windows/custom/fiscal-config/__tests__/useCertExpiry.test.js` — 18 tests: `daysUntil` pure function (null/empty inputs, future/past dates, boundary day), hook source guards (named exports, mockDaysLeft bypass, API endpoint, Authorization header).
+- `tools/app-shell/src/windows/custom/fiscal-config/__tests__/CertExpiryBanner.test.js` — 17 component source-guard tests: visibility thresholds (WARN_DAYS=60, CRITICAL_DAYS=30), dismiss behaviour, variant rendering, i18n keys, color scheme.
 - `e2e/tests/flows/fiscal-config.mocked.spec.js` — 12 Playwright mocked E2E tests: no-org, wizard, SII/TBAI/Verifactu/conflict profiles, wizard flow (territory → confirm → back), cert modal opening; all assertions use `t()` i18n helper.
 - `modules/com.etendoerp.go/.../NeoCertificateHelper.java` — certificate upload + GET endpoints; NIF extraction from X.509 DN; SAVEPOINT-protected org NIF lookup; confirmNif flow.
 - `modules/com.etendoerp.go/.../NeoCertificateHelperTest.java` — 17 unit tests for NIF parsing and normalization.

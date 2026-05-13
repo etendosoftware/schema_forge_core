@@ -3,6 +3,9 @@
   "window": {
     "category": "purchases",
     "name": "Purchase Invoice",
+    "sendDocument": {
+      "allowEmail": false
+    },
     "relatedDocuments": true,
     "notesField": "description",
     "noHeaderBorder": true,

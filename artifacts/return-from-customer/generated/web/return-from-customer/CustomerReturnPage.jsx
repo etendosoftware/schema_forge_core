@@ -399,6 +399,7 @@ export default function CustomerReturnPage({ windowName, recordId, ...props }) {
         requiredHeaderFields={requiredHeaderFields}
         lineConfig={RETURN_ORDER_LINE_CONFIG}
         linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -413,6 +414,8 @@ export default function CustomerReturnPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="orderDate"
+      rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

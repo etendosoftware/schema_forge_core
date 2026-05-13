@@ -152,3 +152,31 @@ describe('SiiMonitorSection — section title', () => {
     assert.match(src, /badge-system/);
   });
 });
+
+// Guards: pending status rows open invoice preview instead of the contact popup
+describe('SiiMonitorSection — pending status opens invoice preview', () => {
+  it('imports isPendingStatus from FmPrimitives', () => {
+    assert.match(src, /isPendingStatus.*from.*FmPrimitives/);
+  });
+
+  it('declares onInvoiceOpen in the function signature', () => {
+    assert.match(src, /onInvoiceOpen\b/);
+  });
+
+  it('onClick callback calls onInvoiceOpen for pending rows', () => {
+    assert.match(src, /isPendingStatus[\s\S]*?onInvoiceOpen/);
+  });
+
+  it('passes the invoice FK field as first arg to onInvoiceOpen', () => {
+    assert.match(src, /onInvoiceOpen\??\.\(row\[INVOICE_FK_FIELD\]/);
+  });
+
+  it('passes sales-invoice hint for issued tab, purchase-invoice for received', () => {
+    assert.match(src, /sales-invoice/);
+    assert.match(src, /purchase-invoice/);
+  });
+
+  it('passes fiscalMonitor.openInvoice as title on pending rows', () => {
+    assert.match(src, /fiscalMonitor\.openInvoice/);
+  });
+});

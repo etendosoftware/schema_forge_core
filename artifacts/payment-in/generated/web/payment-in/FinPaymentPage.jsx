@@ -215,6 +215,7 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
           { key: 'reverse', label: 'Reverse Payment', destructive: true, visible: ["RPPC","RPR","RDNC"].includes(status), columnName: 'aPRMReversePayment',  }
         ]}
         salesTheme
+        sendDocument
         {...props}
       />
     );
@@ -230,6 +231,8 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="paymentDate"
+      rowQuickActions={{}}
+      sendDocument
       {...props}
       onNew={() => setShowNewModal(true)}
     />

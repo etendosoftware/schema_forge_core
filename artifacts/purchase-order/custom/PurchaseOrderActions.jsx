@@ -224,7 +224,7 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
 
 // ── ConfirmModal ───────────────────────────────────────────────────────────────
 
-function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed }) {
+export function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed }) {
   const ui      = useUI();
   const [createReceipt,  setCreateReceipt]  = useState(false);
   const [createInvoice,  setCreateInvoice]  = useState(false);
@@ -517,7 +517,7 @@ function PoCheckboxCard({ checked, onChange, icon, title, subtitle, disabled }) 
 
 // ── CreateDocsModal (CO orders — create docs without re-confirming) ────────────
 
-function CreateDocsModal({ orderId, data, base, headers, currency, derived, onClose, onCreated }) {
+export function CreateDocsModal({ orderId, data, base, headers, currency, derived, onClose, onCreated }) {
   const ui = useUI();
   const {
     needsReceipt, needsInvoice,
@@ -665,7 +665,7 @@ function CreateDocsModal({ orderId, data, base, headers, currency, derived, onCl
 // Shown after confirm or create docs. Displays created docs as clickable cards.
 // Cases: no docs (only confirmed), receipt only, invoice only, or both.
 
-function PoConfirmResultModal({ docs, onClose, navigate, ui, currency, title }) {
+export function PoConfirmResultModal({ docs, onClose, navigate, ui, currency, title }) {
   const { receipt, invoice } = docs;
   const hasDocs = Boolean(receipt?.id || invoice?.id);
 
@@ -948,3 +948,104 @@ const closeBtn = {
   fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4,
   background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF',
 };
+
+// ── ManageDocsLauncher ──────────────────────────────────────────────────────
+// Self-contained mount point for the "Gestionar recepción/factura" flow from
+// the list-view row kebab. Mirrors the fetch+derive logic in
+// PurchaseOrderActions (receipts / invoices / order lines → pending qty &
+// amount) and opens CreateDocsModal once derived data is ready. If nothing is
+// pending the launcher closes silently.
+export function ManageDocsLauncher({ orderId, data, apiBaseUrl, token, onClose, onCreated }) {
+  const ui = useUI();
+  const [fetched, setFetched] = useState(null);
+
+  const base    = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
+  const headers = useMemo(() => ({
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  }), [token]);
+
+  useEffect(() => {
+    if (!orderId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [receiptRes, linesRes, invoiceRes] = await Promise.all([
+          fetch(`${base}/goods-receipt/goodsReceipt?criteria=${CRITERIA('salesOrder', orderId)}&_limit=50`, { headers }),
+          fetch(`${apiBaseUrl}/lines?parentId=${orderId}&_startRow=0&_endRow=999`, { headers }),
+          fetch(`${base}/purchase-invoice/header?criteria=${CRITERIA('salesOrder', orderId)}&_limit=50`, { headers }),
+        ]);
+        if (cancelled) return;
+        const receipts   = receiptRes.ok ? ((await receiptRes.json())?.response?.data ?? []) : [];
+        const orderLines = linesRes.ok   ? ((await linesRes.json())?.response?.data  ?? []) : [];
+        const invoices   = invoiceRes.ok ? ((await invoiceRes.json())?.response?.data ?? []) : [];
+        if (!cancelled) setFetched({ receipts, invoices, orderLines });
+      } catch {
+        if (!cancelled) setFetched({ receipts: [], invoices: [], orderLines: [] });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [orderId, base, headers, apiBaseUrl]);
+
+  if (!fetched) {
+    return createPortal(
+      <div style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.2)', zIndex: 9998,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div style={{ background: '#fff', padding: '16px 24px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Spinner /><span style={{ fontSize: 13 }}>{ui('loading')}</span>
+        </div>
+      </div>,
+      document.body,
+    );
+  }
+
+  const { receipts, invoices, orderLines } = fetched;
+  const receiptsDraft    = receipts.filter(r => r.documentStatus === 'DR');
+  const receiptsComplete = receipts.filter(r => r.documentStatus === 'CO');
+  const invoiceDraft     = invoices.find(i => i.documentStatus === 'DR') ?? null;
+  const invoicesComplete = invoices.filter(i => i.documentStatus === 'CO');
+
+  const qtyOrdered   = orderLines.reduce((s, l) => s + (Number(l.orderedQuantity)   || 0), 0);
+  const qtyDelivered = orderLines.reduce((s, l) => s + (Number(l.deliveredQuantity) || 0), 0);
+  const qtyPending   = Math.max(0, qtyOrdered - qtyDelivered);
+
+  const totalOrder    = Number(data?.grandTotalAmount) || 0;
+  const totalInvoiced = invoicesComplete.reduce((s, i) => s + (Number(i.grandTotalAmount) || 0), 0);
+  const totalPending  = Math.max(0, totalOrder - totalInvoiced);
+
+  const needsReceipt = qtyPending > 0 && receiptsDraft.length === 0;
+  const needsInvoice = totalPending > 0 && !invoiceDraft;
+  const nothingToManage = !needsReceipt && !needsInvoice;
+
+  // Close asynchronously when there's nothing pending — avoids the
+  // "Cannot update a component while rendering" warning that occurs when a
+  // child triggers parent setState during its own render.
+  useEffect(() => {
+    if (nothingToManage) onClose?.();
+  }, [nothingToManage, onClose]);
+
+  if (nothingToManage) return null;
+
+  const derived = {
+    receiptsComplete, invoicesComplete,
+    qtyOrdered, qtyDelivered, qtyPending,
+    totalOrder, totalInvoiced, totalPending,
+    needsReceipt, needsInvoice,
+  };
+
+  return createPortal(
+    <CreateDocsModal
+      orderId={orderId}
+      data={data}
+      base={base}
+      headers={headers}
+      currency={data?.['currency$_identifier'] || ''}
+      derived={derived}
+      onClose={onClose}
+      onCreated={onCreated}
+    />,
+    document.body,
+  );
+}

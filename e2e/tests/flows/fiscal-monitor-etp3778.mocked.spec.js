@@ -202,7 +202,7 @@ test.describe('Verifactu date column — ETP-3778', () => {
 
     await expect(page.getByText(t('fiscalMonitor.verifactu.title'))).toBeVisible({ timeout: 8_000 });
 
-    const table = page.locator('.fm-table').first();
+    const table = page.getByTestId('fm-data-table').first();
     await expect(table.getByText(t('fiscalMonitor.col.date'))).toBeVisible({ timeout: 6_000 });
   });
 
@@ -226,10 +226,10 @@ test.describe('Verifactu date column — ETP-3778', () => {
     await expect(page.getByText(t('fiscalMonitor.verifactu.title'))).toBeVisible({ timeout: 8_000 });
 
     // Switch to Rechazadas tab
-    const rejectedTab = page.locator('.fm-tabs button').filter({ hasText: t('fiscalMonitor.verifactu.tab.rejected') }).first();
+    const rejectedTab = page.getByTestId('fm-tabs').locator('button').filter({ hasText: t('fiscalMonitor.verifactu.tab.rejected') }).first();
     await rejectedTab.click();
 
-    const table = page.locator('.fm-table').first();
+    const table = page.getByTestId('fm-data-table').first();
     await expect(table.getByText(t('fiscalMonitor.col.date'))).toBeVisible({ timeout: 6_000 });
   });
 });
@@ -246,7 +246,7 @@ test.describe('Error status pill → Contact Detail popup — ETP-3778', () => {
     await expect(page.getByText(t('fiscalMonitor.sii.title'))).toBeVisible({ timeout: 8_000 });
 
     // Find and click the error status pill for the AE row
-    const pill = page.locator('.fm-pill.warn, .fm-pill.danger').first();
+    const pill = page.locator('[data-testid="status-pill"]:is([data-status="warn"],[data-status="danger"])').first();
     await expect(pill).toBeVisible({ timeout: 6_000 });
     await pill.click();
 
@@ -262,7 +262,7 @@ test.describe('Error status pill → Contact Detail popup — ETP-3778', () => {
 
     await expect(page.getByText(t('fiscalMonitor.sii.title'))).toBeVisible({ timeout: 8_000 });
 
-    const pill = page.locator('.fm-pill.warn, .fm-pill.danger').first();
+    const pill = page.locator('[data-testid="status-pill"]:is([data-status="warn"],[data-status="danger"])').first();
     await pill.click();
 
     await expect(page.getByText(t('contactDetail.title'))).toBeVisible({ timeout: 6_000 });
@@ -277,7 +277,7 @@ test.describe('Error status pill → Contact Detail popup — ETP-3778', () => {
     await expect(page.getByText(t('fiscalMonitor.sii.title'))).toBeVisible({ timeout: 8_000 });
 
     // The CO success pill must not have role="button" (no onClick applied)
-    const successPill = page.locator('.fm-pill.success').first();
+    const successPill = page.locator('[data-testid="status-pill"][data-status="success"]').first();
     await expect(successPill).toBeVisible({ timeout: 6_000 });
     await expect(successPill).not.toHaveAttribute('role', 'button');
   });
@@ -290,13 +290,13 @@ test.describe('Error status pill → Contact Detail popup — ETP-3778', () => {
 
     await expect(page.getByText(t('fiscalMonitor.sii.title'))).toBeVisible({ timeout: 8_000 });
 
-    const pill = page.locator('.fm-pill.warn, .fm-pill.danger').first();
+    const pill = page.locator('[data-testid="status-pill"]:is([data-status="warn"],[data-status="danger"])').first();
     await pill.click();
     await expect(page.getByText(t('contactDetail.title'))).toBeVisible({ timeout: 6_000 });
 
     // Click the aria-label="close" button inside the modal (scoped to avoid strict-mode
     // violations if other "Cerrar" buttons exist elsewhere on the page)
-    const modal = page.locator('.fixed.inset-0.z-50').first();
+    const modal = page.getByTestId('contact-detail-backdrop').first();
     await modal.getByRole('button', { name: t('close') }).click();
     await expect(page.getByText(t('contactDetail.title'))).not.toBeVisible({ timeout: 4_000 });
   });
@@ -309,12 +309,12 @@ test.describe('Error status pill → Contact Detail popup — ETP-3778', () => {
 
     await expect(page.getByText(t('fiscalMonitor.sii.title'))).toBeVisible({ timeout: 8_000 });
 
-    const pill = page.locator('.fm-pill.warn, .fm-pill.danger').first();
+    const pill = page.locator('[data-testid="status-pill"]:is([data-status="warn"],[data-status="danger"])').first();
     await pill.click();
     await expect(page.getByText(t('contactDetail.title'))).toBeVisible({ timeout: 6_000 });
 
-    // Click the semi-transparent backdrop (fixed inset-0 bg-black/30 div)
-    await page.locator('.fixed.inset-0.bg-black\\/30').click({ position: { x: 5, y: 5 } });
+    // Click the semi-transparent backdrop
+    await page.getByTestId('contact-detail-backdrop').click({ position: { x: 5, y: 5 } });
     await expect(page.getByText(t('contactDetail.title'))).not.toBeVisible({ timeout: 4_000 });
   });
 });
@@ -331,7 +331,7 @@ test.describe('TaxIDKeyPicker dropdown — ETP-3778', () => {
     await expect(page.getByText(t('fiscalMonitor.sii.title'))).toBeVisible({ timeout: 8_000 });
 
     // Open the modal
-    const pill = page.locator('.fm-pill.warn, .fm-pill.danger').first();
+    const pill = page.locator('[data-testid="status-pill"]:is([data-status="warn"],[data-status="danger"])').first();
     await pill.click();
     await expect(page.getByText(t('contactDetail.taxIDKey'))).toBeVisible({ timeout: 6_000 });
 
@@ -351,7 +351,7 @@ test.describe('TaxIDKeyPicker dropdown — ETP-3778', () => {
 
     await expect(page.getByText(t('fiscalMonitor.sii.title'))).toBeVisible({ timeout: 8_000 });
 
-    const pill = page.locator('.fm-pill.warn, .fm-pill.danger').first();
+    const pill = page.locator('[data-testid="status-pill"]:is([data-status="warn"],[data-status="danger"])').first();
     await pill.click();
     await expect(page.getByText(t('contactDetail.taxIDKey'))).toBeVisible({ timeout: 6_000 });
 
@@ -372,7 +372,7 @@ test.describe('TaxIDKeyPicker dropdown — ETP-3778', () => {
 
     await expect(page.getByText(t('fiscalMonitor.sii.title'))).toBeVisible({ timeout: 8_000 });
 
-    const pill = page.locator('.fm-pill.warn, .fm-pill.danger').first();
+    const pill = page.locator('[data-testid="status-pill"]:is([data-status="warn"],[data-status="danger"])').first();
     await pill.click();
     await expect(page.getByText(t('contactDetail.taxIDKey'))).toBeVisible({ timeout: 6_000 });
 
@@ -396,7 +396,7 @@ test.describe('TaxIDKeyPicker dropdown — ETP-3778', () => {
 
     await expect(page.getByText(t('fiscalMonitor.sii.title'))).toBeVisible({ timeout: 8_000 });
 
-    const pill = page.locator('.fm-pill.warn, .fm-pill.danger').first();
+    const pill = page.locator('[data-testid="status-pill"]:is([data-status="warn"],[data-status="danger"])').first();
     await pill.click();
     await expect(page.getByText(t('contactDetail.taxIDKey'))).toBeVisible({ timeout: 6_000 });
 
@@ -416,7 +416,7 @@ test.describe('TaxIDKeyPicker dropdown — ETP-3778', () => {
 
     await expect(page.getByText(t('fiscalMonitor.sii.title'))).toBeVisible({ timeout: 8_000 });
 
-    const pill = page.locator('.fm-pill.warn, .fm-pill.danger').first();
+    const pill = page.locator('[data-testid="status-pill"]:is([data-status="warn"],[data-status="danger"])').first();
     await pill.click();
     await expect(page.getByText(t('contactDetail.taxIDKey'))).toBeVisible({ timeout: 6_000 });
 
@@ -424,8 +424,8 @@ test.describe('TaxIDKeyPicker dropdown — ETP-3778', () => {
     await trigger.click();
     await expect(page.getByRole('listbox')).toBeVisible({ timeout: 4_000 });
 
-    // Mousedown on the fixed backdrop (z-[60]) closes the list
-    await page.locator('.fixed.inset-0.z-\\[60\\]').dispatchEvent('mousedown');
+    // Mousedown on the TaxIDKeyPicker backdrop closes the list
+    await page.getByTestId('taxid-picker-backdrop').dispatchEvent('mousedown');
     await expect(page.getByRole('listbox')).not.toBeVisible({ timeout: 3_000 });
   });
 });

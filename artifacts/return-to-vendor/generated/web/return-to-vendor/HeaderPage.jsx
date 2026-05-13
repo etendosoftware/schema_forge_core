@@ -630,6 +630,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="orderDate"
+      rowQuickActions={{}}
       {...props}
     />
   );

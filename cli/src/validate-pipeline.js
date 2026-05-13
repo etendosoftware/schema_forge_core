@@ -403,27 +403,84 @@ async function ruleF10(artifactDir, artifactName, registryContent, repoRoot = RO
   return null;
 }
 
+/**
+ * Canonical row-quick-action keys that never need to be validated against the menu/process
+ * list — they always have built-in handlers (Edit/Duplicate/Email/Delete).
+ */
+const ROW_QUICK_ACTION_CANONICAL_KEYS = new Set(['edit', 'duplicate', 'email', 'delete']);
+
+/**
+ * F11: `window.rowQuickActions.actions.<key>` references a process key that does NOT exist
+ * in the window's `menuActions` / `processOverrides` declaration.
+ *
+ * Canonical keys (edit/duplicate/email/delete) are always valid and never reported.
+ * Detection runs on the raw `decisions.json` (no contract needed) so it works even before
+ * the contract has been regenerated.
+ *
+ * @param {string} artifactDir
+ * @param {string} artifactName
+ * @returns {Promise<object|null>}
+ */
+function collectAllowedActionKeys(win) {
+  const allowed = new Set();
+  for (const a of (Array.isArray(win.menuActions) ? win.menuActions : [])) {
+    if (a && typeof a.key === 'string') allowed.add(a.key);
+  }
+  if (win.processOverrides && typeof win.processOverrides === 'object') {
+    for (const k of Object.keys(win.processOverrides)) allowed.add(k);
+  }
+  return allowed;
+}
+
+async function ruleF11(artifactDir, artifactName) {
+  const decisionsPath = join(artifactDir, 'decisions.json');
+  if (!(await fileExists(decisionsPath))) return null;
+
+  const decisions = await readJSON(decisionsPath);
+  const win = decisions.window;
+  const rqa = win?.rowQuickActions;
+  if (!rqa || typeof rqa !== 'object') return null;
+  const actions = rqa.actions;
+  if (!actions || typeof actions !== 'object') return null;
+
+  const allowed = collectAllowedActionKeys(win);
+
+  // A `show: false` entry is also pointless if the key doesn't exist, so we still flag it —
+  // the user almost certainly meant a real process and made a typo.
+  const offenders = Object.keys(actions).filter(
+    key => !ROW_QUICK_ACTION_CANONICAL_KEYS.has(key) && !allowed.has(key),
+  );
+
+  if (offenders.length === 0) return null;
+
+  return violation(
+    'F11', artifactName, 'BLOCK',
+    `rowQuickActions.actions references unknown process key(s): ${offenders.join(', ')}. Allowed: canonical (edit, duplicate, email, delete) or any key declared in window.menuActions / window.processOverrides`,
+    `Remove the unknown key(s) from rowQuickActions.actions, or add the corresponding entry to window.menuActions / window.processOverrides in decisions.json`,
+  );
+}
+
 const VALID_LINES_LAYOUTS = ['classic', 'inlineEditable'];
 
 /**
- * F11: window.linesLayout in decisions.json must be one of the supported values.
+ * F12: window.linesLayout in decisions.json must be one of the supported values.
  * @param {string} artifactDir - absolute path to the artifact directory
  * @param {string} artifactName
  */
-async function ruleF11(artifactDir, artifactName) {
+async function ruleF12(artifactDir, artifactName) {
   const decisionsPath = join(artifactDir, 'decisions.json');
   if (!(await fileExists(decisionsPath))) return null;
   let decisions;
   try {
     decisions = JSON.parse(await readFile(decisionsPath, 'utf8'));
   } catch {
-    return skipped('F11', artifactName, 'decisions.json could not be parsed — F11 check skipped');
+    return skipped('F12', artifactName, 'decisions.json could not be parsed — F12 check skipped');
   }
   const value = decisions?.window?.linesLayout;
   if (value === undefined || value === null) return null;
   if (!VALID_LINES_LAYOUTS.includes(value)) {
     return violation(
-      'F11', artifactName, 'BLOCK',
+      'F12', artifactName, 'BLOCK',
       `window.linesLayout = '${value}' is not a supported value`,
       `Set decisions.json window.linesLayout to one of: ${VALID_LINES_LAYOUTS.join(', ')}`,
     );
@@ -570,6 +627,7 @@ export async function validatePipeline({
           skipSet.has('F7') ? null : ruleF7(artifactDir, name),
           skipSet.has('F10') ? null : ruleF10(artifactDir, name, registryContent, root),
           skipSet.has('F11') ? null : ruleF11(artifactDir, name),
+          skipSet.has('F12') ? null : ruleF12(artifactDir, name),
         ];
         const results = await Promise.all(checks);
         for (const r of results) {

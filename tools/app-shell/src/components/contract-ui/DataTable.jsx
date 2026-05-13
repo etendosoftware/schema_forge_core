@@ -22,6 +22,7 @@ import { columnMinWidthPx } from '@/lib/linesColumnWidth.js';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import InternalConsumptionProductSearchDrawer from './InternalConsumptionProductSearchDrawer.jsx';
 import { SelectorInput } from './SelectorInput.jsx';
+import RowQuickActions from './RowQuickActions.jsx';
 
 /**
  * Compact inline combobox for search-type FK fields in rapid line entry.
@@ -248,6 +249,74 @@ function isFalsyBoolean(value) {
   return value === false || value === 'N' || value === 'false';
 }
 
+const INLINE_ADD_IGNORED_PORTAL_SELECTORS = [
+  '[role="dialog"]',
+  '[data-inline-add-portal="true"]',
+  '[role="listbox"]',
+  '[data-radix-popper-content-wrapper]',
+];
+
+function isClickInsideIgnoredPortal(target) {
+  if (!(target instanceof Element)) return false;
+  return INLINE_ADD_IGNORED_PORTAL_SELECTORS.some(sel => target.closest(sel));
+}
+
+function applyLocalSearch(rows, filters, searchQuery) {
+  if (!searchQuery) return rows;
+  const q = searchQuery.toLowerCase();
+  return rows.filter(row =>
+    filters.some(key => String(resolveIdentifier(row, key) ?? '').toLowerCase().includes(q)),
+  );
+}
+
+async function runInlineToggleRequest({
+  apiBaseUrl, entity, row, col, token, checked,
+  toggleKey, setOptimisticToggles, setSavingToggles, onDataMutated,
+}) {
+  setOptimisticToggles(prev => ({ ...prev, [toggleKey]: checked }));
+  setSavingToggles(prev => ({ ...prev, [toggleKey]: true }));
+  try {
+    const res = await fetch(`${apiBaseUrl}/${entity}/${row.id}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ [col.key]: checked }),
+    });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    onDataMutated?.();
+  } catch (error) {
+    setOptimisticToggles(prev => {
+      const next = { ...prev };
+      delete next[toggleKey];
+      return next;
+    });
+    toast.error(error?.message || 'Failed to update record');
+  } finally {
+    setSavingToggles(prev => {
+      const next = { ...prev };
+      delete next[toggleKey];
+      return next;
+    });
+  }
+}
+
+function buildWarehouseByLocatorMap(entity, addRow) {
+  if (entity !== 'internalConsumptionLine') return new Map();
+  const fields = addRow?.fields || [];
+  const catalogs = addRow?.catalogs;
+  const storageBinField = fields.find(f => f.key === 'storageBin');
+  if (!storageBinField || !catalogs) return new Map();
+  const options = getCatalogOptions(catalogs, entity, storageBinField);
+  const map = new Map();
+  for (const opt of options) {
+    if (!opt?.id) continue;
+    map.set(String(opt.id), opt.name || opt.label || opt._identifier || String(opt.id));
+  }
+  return map;
+}
+
 /**
  * Loading skeleton that mimics a table layout.
  */
@@ -301,7 +370,7 @@ const NUMERIC_FIELD_TYPES = new Set(['number', 'integer', 'decimal', 'quantity',
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
-const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, token, apiBaseUrl, entity, selectorContext }, ref) {
+const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, hasQuickActionsColumn, token, apiBaseUrl, entity, selectorContext }, ref) {
   const t = useLabel();
   const ui = useUI();
   const fieldMap = useMemo(() => {
@@ -474,18 +543,12 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     const handler = (e) => {
       const target = e.target;
       if (!(target instanceof Node)) return;
-      if (rowRef.current && rowRef.current.contains(target)) return;
-      if (target instanceof Element) {
-        if (target.closest('[role="dialog"]')) return;
-        if (target.closest('[data-inline-add-portal="true"]')) return;
-        // Radix Select renders its dropdown in a portal outside the row. Treat any
-        // click inside an open listbox/popper as part of the row interaction so the
-        // row is not silently saved with the previous value when the user just picked
-        // a different option (e.g. switching the tax).
-        if (target.closest('[role="listbox"]')) return;
-        if (target.closest('[data-radix-popper-content-wrapper]')) return;
-      }
-      // If a dialog/drawer is currently open anywhere, defer — clicks belong to it.
+      if (rowRef.current?.contains(target)) return;
+      // Skip whitelisted portals: open dialog/drawer, inline-add combo portal, and
+      // Radix Select dropdowns (rendered outside the row via portal). Treating
+      // these as part of the row prevents silent saves when the user is still
+      // interacting with a popover/listbox (e.g. switching the tax).
+      if (isClickInsideIgnoredPortal(target)) return;
       if (document.querySelector('[role="dialog"]')) return;
       if (inflightRef.current) return;
       if (touchedFieldsRef.current.size === 0) {
@@ -818,6 +881,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           {hasCloneColumn && <TableCell className="w-10" />}
         </>
       )}
+      {hasQuickActionsColumn && <TableCell className="w-10" />}
     </TableRow>
   );
 });
@@ -971,6 +1035,33 @@ export function DataTable({
   labelOverrides,
   onDeleteRow,
   onCloneRow,
+  /**
+   * Row Quick Actions overlay (ETP-3914 slice 2).
+   * Optional. When provided and `enabled !== false`, renders a hover-revealed
+   * overlay anchored to the right edge of each row, mirroring DetailView toolbar
+   * actions. Independent of `onDeleteRow` / `onCloneRow` — those continue to work
+   * for legacy callers that have not migrated yet.
+   *
+   * Shape (all keys optional except `enabled`):
+   *   {
+   *     enabled?: boolean,                  // defaults to true when object is present
+   *     editMode?: 'navigate' | 'inline',   // forwarded from decisions.json (slice 3)
+   *     onEdit?: (row) => void,
+   *     onClone?: (row) => void,
+   *     onEmail?: (row) => void,
+   *     onDelete?: (row) => void,
+   *     menuActions?: Array<MenuAction>,    // forwarded to RowQuickActions' kebab
+   *     documentPreview?: boolean | object, // truthy ⇒ show Email button
+   *     statusField?: string,
+   *     hideDeleteWhenComplete?: boolean,
+   *     onMenuActionExecuted?: (action, result) => void,
+   *     // Per-action overrides from decisions.json → window.rowQuickActions.actions.
+   *     // Keyed by canonical name ('edit', 'duplicate', 'email', 'delete') or processKey.
+   *     // Each entry: { show: boolean | 'fixed' | 'kebab', visibleWhen?: string }
+   *     actions?: Record<string, { show?: boolean|'fixed'|'kebab', visibleWhen?: string }>,
+   *   }
+   */
+  rowQuickActions,
   onFilterChange,
   onClearAllFilters,
   columnFilters = {},
@@ -1022,26 +1113,12 @@ export function DataTable({
   const hasActiveFilter = searchQuery.length > 0 || hasColumnFilter;
 
   const filteredData = useMemo(() => {
-    let result = data;
-
     // If onFilterChange is provided, column filters/sort are handled by the backend;
-    // skip local search + column filter loops. Otherwise apply them client-side.
-    if (!onFilterChange) {
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        result = result.filter(row =>
-          filters.some(key => {
-            const val = resolveIdentifier(row, key);
-            return String(val ?? '').toLowerCase().includes(q);
-          })
-        );
-      }
-    }
-
+    // skip local search loop. Otherwise apply it client-side.
+    const searched = onFilterChange ? data : applyLocalSearch(data, filters, searchQuery);
     // Row-level predicate (e.g. numeric conditions like outstandingAmount > 0)
     // is always applied locally — the backend cannot evaluate arbitrary JS predicates.
-    if (rowFilter) result = result.filter(rowFilter);
-    return result;
+    return rowFilter ? searched.filter(rowFilter) : searched;
   }, [data, filters, searchQuery, onFilterChange, rowFilter]);
 
   const visibleColumns = useMemo(
@@ -1054,20 +1131,21 @@ export function DataTable({
     [visibleColumns]
   );
 
-  const internalConsumptionWarehouseByLocator = useMemo(() => {
-    if (entity !== 'internalConsumptionLine') return new Map();
-    const fields = addRow?.fields || [];
-    const catalogs = addRow?.catalogs;
-    const storageBinField = fields.find(f => f.key === 'storageBin');
-    if (!storageBinField || !catalogs) return new Map();
-    const options = getCatalogOptions(catalogs, entity, storageBinField);
-    const map = new Map();
-    for (const opt of options) {
-      if (!opt?.id) continue;
-      map.set(String(opt.id), opt.name || opt.label || opt._identifier || String(opt.id));
-    }
-    return map;
-  }, [entity, addRow?.fields, addRow?.catalogs]);
+  // ETP-3914 — Mirror InlineLinesPanel: when the quick-actions overlay is enabled,
+  // the last visible column's value is hidden on row hover so the floating action
+  // icons visually take its place (no layout shift). Unlike InlineLinesPanel — which
+  // looks specifically for a trailing `amount` column — headers can end in any type
+  // (status, date, etc.), so we always pick the last visible column.
+  const trailingHoverColumn = useMemo(() => {
+    const enabled = !!rowQuickActions && rowQuickActions.enabled !== false;
+    if (!enabled || visibleColumns.length === 0) return null;
+    return visibleColumns[visibleColumns.length - 1];
+  }, [visibleColumns, rowQuickActions]);
+
+  const internalConsumptionWarehouseByLocator = useMemo(
+    () => buildWarehouseByLocatorMap(entity, addRow),
+    [entity, addRow?.fields, addRow?.catalogs],
+  );
 
   const totals = useMemo(() => {
     if (amountColumns.length === 0) return null;
@@ -1079,44 +1157,15 @@ export function DataTable({
   }, [filteredData, amountColumns]);
 
   const handleInlineToggle = useCallback(async (row, col, checked) => {
-    const toggleKey = `${row.id}:${col.key}`;
     if (!apiBaseUrl || !entity || !row?.id || !token) {
       toast.error('Inline toggle is not available in this context');
       return;
     }
-
-    setOptimisticToggles(prev => ({ ...prev, [toggleKey]: checked }));
-    setSavingToggles(prev => ({ ...prev, [toggleKey]: true }));
-
-    try {
-      const res = await fetch(`${apiBaseUrl}/${entity}/${row.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ [col.key]: checked }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Error ${res.status}`);
-      }
-
-      onDataMutated?.();
-    } catch (error) {
-      setOptimisticToggles(prev => {
-        const next = { ...prev };
-        delete next[toggleKey];
-        return next;
-      });
-      toast.error(error?.message || 'Failed to update record');
-    } finally {
-      setSavingToggles(prev => {
-        const next = { ...prev };
-        delete next[toggleKey];
-        return next;
-      });
-    }
+    await runInlineToggleRequest({
+      apiBaseUrl, entity, row, col, token, checked,
+      toggleKey: `${row.id}:${col.key}`,
+      setOptimisticToggles, setSavingToggles, onDataMutated,
+    });
   }, [apiBaseUrl, entity, onDataMutated, token]);
 
   const renderCellValue = (row, col) => {
@@ -1308,10 +1357,13 @@ export function DataTable({
     });
   };
 
-  const deleteCol = onDeleteRow ? 1 : 0;
-  const cloneCol = onCloneRow ? 1 : 0;
+  const quickActionsEnabled = !!rowQuickActions && rowQuickActions.enabled !== false;
+  const legacyDeleteEnabled = !!onDeleteRow && (hoverRowActions || !quickActionsEnabled);
+  const deleteCol = legacyDeleteEnabled ? 1 : 0;
+  const cloneCol = onCloneRow && !quickActionsEnabled ? 1 : 0;
+  const quickActionsCol = quickActionsEnabled ? 1 : 0;
   const actionCols = hoverRowActions ? 1 + deleteCol : deleteCol + cloneCol;
-  const colSpan = visibleColumns.length + (selectable ? 1 : 0) + actionCols;
+  const colSpan = visibleColumns.length + (selectable ? 1 : 0) + actionCols + quickActionsCol;
   const selectedRowBg = hoverRowActions ? 'bg-[#F5F7F9]' : 'bg-primary/5';
 
   return (
@@ -1377,10 +1429,11 @@ export function DataTable({
                 </>
               ) : (
                 <>
-                  {onDeleteRow && <TableHead className="w-10 px-2" />}
-                  {onCloneRow && <TableHead className="w-10 px-2" />}
+                  {legacyDeleteEnabled && <TableHead className="w-10 px-2" />}
+                  {onCloneRow && !quickActionsEnabled && <TableHead className="w-10 px-2" />}
                 </>
               )}
+              {quickActionsEnabled && <TableHead className="w-10 px-2" aria-hidden="true" />}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -1426,16 +1479,25 @@ export function DataTable({
                         </TableCell>
                       );
                     })()}
-                    {visibleColumns.map(col => (
-                      <TableCell
-                        key={col.key}
-                        data-testid={`cell-${row.id ?? idx}-${col.key}`}
-                        data-value={row[col.key] ?? ''}
-                        className={['text-sm', NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right tabular-nums' : ''].filter(Boolean).join(' ')}
-                      >
-                        {renderCellValue(row, col)}
-                      </TableCell>
-                    ))}
+                    {visibleColumns.map(col => {
+                      const isTrailingHover = trailingHoverColumn != null && col === trailingHoverColumn;
+                      return (
+                        <TableCell
+                          key={col.key}
+                          data-testid={`cell-${row.id ?? idx}-${col.key}`}
+                          data-value={row[col.key] ?? ''}
+                          className={['text-sm', NUMERIC_FIELD_TYPES.has(col.type) ? 'text-right tabular-nums' : ''].filter(Boolean).join(' ')}
+                        >
+                          {isTrailingHover ? (
+                            <span className="block transition-opacity group-hover/row:opacity-0 group-focus-within/row:opacity-0">
+                              {renderCellValue(row, col)}
+                            </span>
+                          ) : (
+                            renderCellValue(row, col)
+                          )}
+                        </TableCell>
+                      );
+                    })}
                     {hoverRowActions ? (
                       <>
                         <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
@@ -1505,7 +1567,7 @@ export function DataTable({
                       </>
                     ) : (
                       <>
-                        {onDeleteRow && (
+                        {legacyDeleteEnabled && (
                           <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
                             <button
                               type="button"
@@ -1531,7 +1593,7 @@ export function DataTable({
                             </button>
                           </TableCell>
                         )}
-                        {onCloneRow && (
+                        {onCloneRow && !quickActionsEnabled && (
                           <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
                             <div className="relative group/clonebtn flex items-center justify-center">
                               <button
@@ -1551,6 +1613,27 @@ export function DataTable({
                         )}
                       </>
                     )}
+                    {quickActionsEnabled && (
+                      <TableCell className="w-10 px-2 relative" onClick={(e) => e.stopPropagation()}>
+                        <RowQuickActions
+                          row={row}
+                          entity={entity}
+                          apiBaseUrl={apiBaseUrl}
+                          token={token}
+                          documentPreview={rowQuickActions.documentPreview}
+                          sendDocument={rowQuickActions.sendDocument}
+                          menuActions={rowQuickActions.menuActions}
+                          hideDeleteWhenComplete={rowQuickActions.hideDeleteWhenComplete}
+                          statusField={rowQuickActions.statusField}
+                          onEdit={rowQuickActions.onEdit}
+                          onClone={rowQuickActions.onClone}
+                          onEmail={rowQuickActions.onEmail}
+                          onDelete={rowQuickActions.onDelete}
+                          onMenuActionExecuted={rowQuickActions.onMenuActionExecuted}
+                          actionsConfig={rowQuickActions.actions}
+                        />
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })
@@ -1567,10 +1650,11 @@ export function DataTable({
                 onFieldChange={addRow.onFieldChange}
                 onValuesChange={addRow.onValuesChange}
                   selectable={selectable}
-                  hasDeleteColumn={!hoverRowActions && !!onDeleteRow}
-                  hasCloneColumn={!hoverRowActions && !!onCloneRow}
+                  hasDeleteColumn={!hoverRowActions && legacyDeleteEnabled}
+                  hasCloneColumn={!hoverRowActions && !!onCloneRow && !quickActionsEnabled}
                   hoverRowActions={hoverRowActions}
                   hoverRowHasDelete={hoverRowActions && !!onDeleteRow}
+                  hasQuickActionsColumn={quickActionsEnabled}
                   token={token}
                   apiBaseUrl={apiBaseUrl}
                   entity={entity}
@@ -1596,10 +1680,11 @@ export function DataTable({
                   </>
                 ) : (
                   <>
-                    {onDeleteRow && <TableCell />}
-                    {onCloneRow && <TableCell />}
+                    {legacyDeleteEnabled && <TableCell />}
+                    {onCloneRow && !quickActionsEnabled && <TableCell />}
                   </>
                 )}
+                {quickActionsEnabled && <TableCell />}
               </TableRow>
             </TableFooter>
           )}

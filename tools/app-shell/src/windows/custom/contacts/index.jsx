@@ -97,7 +97,6 @@ export default function ContactsWindow(props) {
           RefreshIconComponent={RefreshIcon}
           iconButtonHover="hover:bg-[#F5F7F9]"
           tablePaddingX="px-2"
-          hoverRowActions={true}
           selectionBarSize="default"
           selectionBarRightActions={selectionBarRightActions}
           toolbarButtonSize="default"
