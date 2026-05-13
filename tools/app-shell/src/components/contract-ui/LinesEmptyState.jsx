@@ -2,7 +2,8 @@ import { useUI } from '@/i18n';
 
 export default function LinesEmptyState({ data, onAddLine, canAddLine = true }) {
   const ui = useUI();
-  if (data?.documentStatus && data.documentStatus !== 'DR') return null;
+  const isDraft = !data?.documentStatus || data.documentStatus === 'DR';
+  if (!isDraft) return null;
 
   return (
     <div style={{
