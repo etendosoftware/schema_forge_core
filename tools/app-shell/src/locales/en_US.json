@@ -2638,7 +2638,7 @@
     },
     "EM_Aeat390_Istotal": {
       "label": "Modelo 390: Generar total",
-      "description": "Este par\u00e1metro incluye un campo con el total"
+      "description": "Este parámetro incluye un campo con el total"
     },
     "ReleaseNo": {
       "label": "Release No",
@@ -8414,7 +8414,7 @@
     },
     "EM_Tbai_Issue_Date": {
       "label": "Fecha de expedicion",
-      "description": "Fecha en la que se registr\u00f3 la factura en el sistema contable."
+      "description": "Fecha en la que se registró la factura en el sistema contable."
     },
     "Iseditlinenetamt": {
       "label": "Edit Line Net Amount",
@@ -10349,12 +10349,12 @@
       "description": "The location of the selected business partner."
     },
     "Descripcion": {
-      "label": "Descripci\u00f3n",
-      "description": "Breve descripci\u00f3n o detalles adicionales sobre la factura."
+      "label": "Descripción",
+      "description": "Breve descripción o detalles adicionales sobre la factura."
     },
     "Policy_Url": {
       "label": "Politica url",
-      "description": "URL de la pol\u00edtica utilizada para el procesamiento de la factura."
+      "description": "URL de la política utilizada para el procesamiento de la factura."
     },
     "T_Due_Trans_Acct": {
       "label": "Tax Due Transitory",
@@ -10365,11 +10365,11 @@
       "description": "SII Exercise"
     },
     "EM_Tbai_Nonsubjectcause": {
-      "label": "TBAI - Causa de No Sujeci\u00f3n",
-      "description": "Raz\u00f3n por la cual la factura no est\u00e1 sujeta a impuestos."
+      "label": "TBAI - Causa de No Sujeción",
+      "description": "Razón por la cual la factura no está sujeta a impuestos."
     },
     "Type_Operation": {
-      "label": "Tipo de Operaci\u00f3n",
+      "label": "Tipo de Operación",
       "description": "Operaciones de Alta o Baja."
     },
     "totalgross": {
@@ -11166,7 +11166,7 @@
     },
     "NumColumn": {
       "label": "Column Number",
-      "description": "Column number in which the current field is set (allowed values \u200b\u200bbetween 1 and 4)"
+      "description": "Column number in which the current field is set (allowed values ​​between 1 and 4)"
     },
     "Obuiapp_View_Impl_ID": {
       "label": "View Implementation",
@@ -11985,8 +11985,8 @@
       "description": "Sent to SII"
     },
     "Epiae_Epigraph_ID": {
-      "label": "Ep\u00edgrafe IAE",
-      "description": "Ep\u00edgrafe del Impuesto sobre Actividades Econ\u00f3micas"
+      "label": "Epígrafe IAE",
+      "description": "Epígrafe del Impuesto sobre Actividades Económicas"
     },
     "Codigo_Csv": {
       "label": "CSV code",
@@ -12069,8 +12069,8 @@
       "description": "Correct synchronization error"
     },
     "Etvfac_C_Invoice_Verifactu_ID": {
-      "label": "Datos Env\u00edo Verifactu",
-      "description": "Datos de env\u00edo de la factura a Verifactu."
+      "label": "Datos Envío Verifactu",
+      "description": "Datos de envío de la factura a Verifactu."
     },
     "Received_Documentno": {
       "label": "Document Number",
@@ -12101,8 +12101,8 @@
       "description": "Month when invoice is sent to SII"
     },
     "Issubsanation": {
-      "label": "Es Subsanaci\u00f3n",
-      "description": "Especifica que se trata de una subsanaci\u00f3n de un registro de facturaci\u00f3n de alta previamente generado."
+      "label": "Es Subsanación",
+      "description": "Especifica que se trata de una subsanación de un registro de facturación de alta previamente generado."
     },
     "Orig_C_Country_ID": {
       "label": "Country of Origin",
@@ -12117,7 +12117,7 @@
       "description": ""
     },
     "Epiae_Code_ID": {
-      "label": "C\u00f3digo",
+      "label": "Código",
       "description": ""
     },
     "EM_OBTIK_Tax_ID_Key": {
@@ -12138,11 +12138,11 @@
     },
     "EM_Etvfac_Invnoidart61d": {
       "label": "Sin ID Destinatario Art61d",
-      "description": "Factura sin identificaci\u00f3n destinatario art\u00edculo 6.1.d) RD 1619/2012."
+      "description": "Factura sin identificación destinatario artículo 6.1.d) RD 1619/2012."
     },
     "EM_Etvfac_Entity_ID": {
       "label": "ID Entidad Productora",
-      "description": "N\u00famero de identificaci\u00f3n de la persona o entidad productora."
+      "description": "Número de identificación de la persona o entidad productora."
     },
     "EM_Aeatsii_Unsubscribe": {
       "label": "Unsubscribe in SII",
@@ -12174,15 +12174,15 @@
     },
     "Orep_Representative_Info_ID": {
       "label": "Representante legal",
-      "description": "Representante legal de la Organizaci\u00f3n"
+      "description": "Representante legal de la Organización"
     },
     "EM_Etvfac_Company_Name": {
       "label": "Nombre Entidad Productora",
-      "description": "Nombre-raz\u00f3n social de la persona o entidad productora."
+      "description": "Nombre-razón social de la persona o entidad productora."
     },
     "EM_Etvfac_Reversed_Invoice": {
       "label": "Factura Rectificada",
-      "description": "Factura original que se utilizar\u00e1 para enlazarla a la rectificativa."
+      "description": "Factura original que se utilizará para enlazarla a la rectificativa."
     },
     "PO_Transportation_Type": {
       "label": "Transportation Type",
@@ -12190,7 +12190,7 @@
     },
     "Auto_Send_Invoices": {
       "label": "Auto enviar facturas al completarse",
-      "description": "Configuraci\u00f3n que permite el env\u00edo autom\u00e1tico de facturas cuando se completen."
+      "description": "Configuración que permite el envío automático de facturas cuando se completen."
     },
     "EM_AEAT349_BP_BaseAmount_S": {
       "label": "Base Imponible del 349 Servicios",
@@ -12205,12 +12205,12 @@
       "description": "Country Tax ID - this field is only required in case the BP does not have an Spanish NIF (Tax ID key = 2, 3, 4, 5 and 6)"
     },
     "Certificate_Password": {
-      "label": "Contrase\u00f1a del Certificado",
-      "description": "La contrase\u00f1a del certificado."
+      "label": "Contraseña del Certificado",
+      "description": "La contraseña del certificado."
     },
     "EM_AEAT349_C_Year_ID": {
-      "label": "A\u00f1o",
-      "description": "Seleccionar el a\u00f1o en caso de que la factura rectificada haya sido declarada anteriormente en el modelo 349"
+      "label": "Año",
+      "description": "Seleccionar el año en caso de que la factura rectificada haya sido declarada anteriormente en el modelo 349"
     },
     "EM_Etvfac_Id_Type": {
       "label": "Tipo ID Entidad Productora",
@@ -12222,7 +12222,7 @@
     },
     "EM_AEAT349_IsCorrective": {
       "label": "Correctiva del 349",
-      "description": "Indica si ser\u00e1 necesario realizar una correcci\u00f3n en el modelo oficial 349"
+      "description": "Indica si será necesario realizar una corrección en el modelo oficial 349"
     },
     "EM_Aeatsii_Ejercicio": {
       "label": "SII exercise",
@@ -12234,7 +12234,7 @@
     },
     "EM_Tbai_Ad_Sequence_ID": {
       "label": "Secuencia de encadenamiento para TBAI",
-      "description": "N\u00famero de secuencia utilizado para el encadenamiento de las facturas."
+      "description": "Número de secuencia utilizado para el encadenamiento de las facturas."
     },
     "taxAmount": {
       "label": "Tax Amount",
@@ -12253,8 +12253,8 @@
       "description": "SII error reason"
     },
     "Etvfac_Inv_Sent_Status_Mv_ID": {
-      "label": "Estado de Env\u00edo de Factura",
-      "description": "Vista materializada que muestra datos de los registros de facturaci\u00f3n enviados a Verifactu."
+      "label": "Estado de Envío de Factura",
+      "description": "Vista materializada que muestra datos de los registros de facturación enviados a Verifactu."
     },
     "Lastname1": {
       "label": "Primer Apellido",
@@ -12265,8 +12265,8 @@
       "description": ""
     },
     "EM_Etvfac_Installation_Number": {
-      "label": "N\u00famero de Instalaci\u00f3n",
-      "description": "N\u00famero de instalaci\u00f3n del sistema inform\u00e1tico de facturaci\u00f3n (SIF) utilizado."
+      "label": "Número de Instalación",
+      "description": "Número de instalación del sistema informático de facturación (SIF) utilizado."
     },
     "EM_Aeatsii_Modified": {
       "label": "Modified in SII",
@@ -12293,7 +12293,7 @@
       "description": "Casilla utilizada para enviar factura a Verifactu."
     },
     "Notary_Name": {
-      "label": "Notar\u00eda",
+      "label": "Notaría",
       "description": ""
     },
     "EM_Aeatsii_Cause_Exemption_ID": {
@@ -12313,8 +12313,8 @@
       "description": "El NIF del emisor."
     },
     "Code_Error": {
-      "label": "C\u00f3digo de Error",
-      "description": "C\u00f3digo de Error."
+      "label": "Código de Error",
+      "description": "Código de Error."
     },
     "EM_Obspti_Isexport": {
       "label": "Export tax",
@@ -12329,8 +12329,8 @@
       "description": "The government defined unique number for assigning and paying taxes."
     },
     "EM_Aeat303_Is_Nat_Per": {
-      "label": "Es Persona F\u00edsica",
-      "description": "Es Persona F\u00edsica"
+      "label": "Es Persona Física",
+      "description": "Es Persona Física"
     },
     "C_Tax_Id_Vat": {
       "label": "VAT Tax",
@@ -12338,7 +12338,7 @@
     },
     "Version_Test": {
       "label": "Version test",
-      "description": "Versi\u00f3n utilizada para el entorno de pruebas."
+      "description": "Versión utilizada para el entorno de pruebas."
     },
     "Docaction": {
       "label": "Reactivate",
@@ -12353,20 +12353,20 @@
       "description": "Operation description to send to SII."
     },
     "EM_Etsg_Date_Operation": {
-      "label": "Fecha operaci\u00f3n",
-      "description": "Fecha en la que se ha realizado la operaci\u00f3n"
+      "label": "Fecha operación",
+      "description": "Fecha en la que se ha realizado la operación"
     },
     "Comunicacion": {
       "label": "Communication type",
       "description": "Communication type"
     },
     "EM_Etvfac_Verifac_Desc": {
-      "label": "Descripci\u00f3n Operaci\u00f3n",
-      "description": "Descripci\u00f3n del objeto de la factura."
+      "label": "Descripción Operación",
+      "description": "Descripción del objeto de la factura."
     },
     "EM_Etvfac_External_Ref": {
       "label": "Referencia Externa",
-      "description": "Dato adicional con el objetivo de que se pueda asociar opcionalmente informaci\u00f3n interna del SIF al registro de facturaci\u00f3n."
+      "description": "Dato adicional con el objetivo de que se pueda asociar opcionalmente información interna del SIF al registro de facturación."
     },
     "EM_Aeatsii_Authorizationno": {
       "label": "Authorization No.",
@@ -12386,7 +12386,7 @@
     },
     "URL_Cancel_Test": {
       "label": "Url para anulacion de factura test",
-      "description": "URL utilizada en entornos de prueba para la anulaci\u00f3n de facturas en TBAI."
+      "description": "URL utilizada en entornos de prueba para la anulación de facturas en TBAI."
     },
     "Fecha_Ultima_Modif_Sii": {
       "label": "SII last modification date",
@@ -12413,12 +12413,12 @@
       "description": "Invoice Cash VAT"
     },
     "EM_Tbai_Exemptioncause": {
-      "label": "TBAI - Causa de Exenci\u00f3n",
-      "description": "Raz\u00f3n por la cual la factura est\u00e1 exenta de impuestos."
+      "label": "TBAI - Causa de Exención",
+      "description": "Razón por la cual la factura está exenta de impuestos."
     },
     "Nif": {
       "label": "NIF",
-      "description": "NIF (N\u00famero de Identificaci\u00f3n Fiscal)"
+      "description": "NIF (Número de Identificación Fiscal)"
     },
     "Tbai_License_Test": {
       "label": "Licencia TBAI test",
@@ -12453,8 +12453,8 @@
       "description": "This Line is generated"
     },
     "EM_Etvfac_Exemption_Cause": {
-      "label": "Verifactu - Causa de Exenci\u00f3n",
-      "description": "Causa de exenci\u00f3n."
+      "label": "Verifactu - Causa de Exención",
+      "description": "Causa de exención."
     },
     "Lastname2": {
       "label": "Segundo Apellido",
@@ -12462,7 +12462,7 @@
     },
     "EM_Etvfac_Reverseinvtype": {
       "label": "Tipo de Factura Rectificativa",
-      "description": "Tipos de rectificaci\u00f3n."
+      "description": "Tipos de rectificación."
     },
     "Intr_Setup_ID": {
       "label": "Intr_Setup_ID",
@@ -12474,7 +12474,7 @@
     },
     "Default_Qr": {
       "label": "QR Por Defecto",
-      "description": "Implementaci\u00f3n por defecto del QR Verifactu en facturas."
+      "description": "Implementación por defecto del QR Verifactu en facturas."
     },
     "EM_OBSPTI_Declaration": {
       "label": "Tax Book Type",
@@ -12493,8 +12493,8 @@
       "description": "Operation date"
     },
     "TAX_Type": {
-      "label": "Impuesto de Aplicaci\u00f3n",
-      "description": "Impuestos indirectos sobre el consumo en Espa\u00f1a."
+      "label": "Impuesto de Aplicación",
+      "description": "Impuestos indirectos sobre el consumo en España."
     },
     "Total_Pymnts_Wrong": {
       "label": "Wrong payments",
@@ -12509,8 +12509,8 @@
       "description": "The periodicity for submitting the Tax Report"
     },
     "em_etvfac_igic_regime": {
-      "label": "R\u00e9gimen Especial IGIC",
-      "description": "Lista de claves de r\u00e9gimen IGIC"
+      "label": "Régimen Especial IGIC",
+      "description": "Lista de claves de régimen IGIC"
     },
     "Intr_C_Invoiceline_ID": {
       "label": "Intr_C_Invoiceline_ID",
@@ -12521,20 +12521,20 @@
       "description": "Cash receipt transaction"
     },
     "EM_Etvfac_Invoice_Status": {
-      "label": "Estado de Env\u00edo a Verifactu",
-      "description": "Muestra el estado de env\u00edo a Verifactu de la factura."
+      "label": "Estado de Envío a Verifactu",
+      "description": "Muestra el estado de envío a Verifactu de la factura."
     },
     "EM_Tbai_Claveregimeniva": {
-      "label": "Clave de R\u00e9gimen Especial de IVA",
-      "description": "C\u00f3digo que identifica si la factura se encuentra bajo un r\u00e9gimen especial de tributaci\u00f3n."
+      "label": "Clave de Régimen Especial de IVA",
+      "description": "Código que identifica si la factura se encuentra bajo un régimen especial de tributación."
     },
     "Aeatsii_Description_ID": {
       "label": "SII Description",
       "description": "SII Description"
     },
     "Calculated_Hashcode": {
-      "label": "C\u00f3digo Hash Calculado",
-      "description": "El c\u00f3digo hash calculado durante la verificaci\u00f3n."
+      "label": "Código Hash Calculado",
+      "description": "El código hash calculado durante la verificación."
     },
     "Error_Msg": {
       "label": "SII error message",
@@ -12542,19 +12542,19 @@
     },
     "Csv": {
       "label": "CSV",
-      "description": "C\u00f3digo Seguro de Verificaci\u00f3n"
+      "description": "Código Seguro de Verificación"
     },
     "Certificate_Pass": {
-      "label": "Contrase\u00f1a del Certificado",
-      "description": "Contrase\u00f1a del Certificado"
+      "label": "Contraseña del Certificado",
+      "description": "Contraseña del Certificado"
     },
     "Production_Env": {
-      "label": "Entorno de Producci\u00f3n",
-      "description": "Indica si el sistema est\u00e1 en un entorno de producci\u00f3n o de prueba."
+      "label": "Entorno de Producción",
+      "description": "Indica si el sistema está en un entorno de producción o de prueba."
     },
     "EM_Etvfac_Ipsi_Regime": {
-      "label": "R\u00e9gimen Especial IPSI",
-      "description": "Identificadores del tipo de r\u00e9gimen IPSI."
+      "label": "Régimen Especial IPSI",
+      "description": "Identificadores del tipo de régimen IPSI."
     },
     "EM_Aeat303_Person_Surnames": {
       "label": "Apellidos",
@@ -12585,12 +12585,12 @@
       "description": "Button that executes SII last connection report."
     },
     "EM_Etvfac_Rect_Create": {
-      "label": "Crear Rectificaci\u00f3n Importe Negativo",
+      "label": "Crear Rectificación Importe Negativo",
       "description": "Clona la factura pero con signo invertido."
     },
     "Etvfac_Verifactu_Config_ID": {
-      "label": "Configuraci\u00f3n Verifactu",
-      "description": "Configuraci\u00f3n general de Verifactu."
+      "label": "Configuración Verifactu",
+      "description": "Configuración general de Verifactu."
     },
     "Aeatsii_Payment_ID": {
       "label": "SII Payment",
@@ -12602,7 +12602,7 @@
     },
     "EM_Tbai_Isreverseinvoice": {
       "label": "Factura Rectificativa",
-      "description": "Indica si la factura es una rectificaci\u00f3n de una anterior."
+      "description": "Indica si la factura es una rectificación de una anterior."
     },
     "EM_Aeat390_Is_BI_And_Cuota": {
       "label": "Modelo 390: Separar Base Imponible y Cuota",
@@ -12614,7 +12614,7 @@
     },
     "URL_Cancel": {
       "label": "Url para anulacion de factura",
-      "description": "URL utilizada para enviar una solicitud de anulaci\u00f3n de una factura registrada en TBAI."
+      "description": "URL utilizada para enviar una solicitud de anulación de una factura registrada en TBAI."
     },
     "Intr_M_Product_ID": {
       "label": "Intr_M_Product_ID",
@@ -12657,7 +12657,7 @@
       "description": "Parameter for a Tax Report"
     },
     "EM_Etaf_Issuer_Name": {
-      "label": "Raz\u00f3n Social de Emisor",
+      "label": "Razón Social de Emisor",
       "description": "Nombre legal del emisor que genera la factura."
     },
     "EM_Aeatsii_Rep_Taxid": {
@@ -12722,7 +12722,7 @@
     },
     "EM_Aeat390_Xml_Element": {
       "label": "Modelo 390: Elemento del fichero XML",
-      "description": "Elemento del fichero XML por el que se representa el par\u00e1metro"
+      "description": "Elemento del fichero XML por el que se representa el parámetro"
     },
     "Operationdate": {
       "label": "Operation Date",
@@ -12733,7 +12733,7 @@
       "description": ""
     },
     "EM_Aeat390_Isperson": {
-      "label": "Persona F\u00edsica 390",
+      "label": "Persona Física 390",
       "description": ""
     },
     "EM_Aeatsii_Isauthorization": {
@@ -12813,8 +12813,8 @@
       "description": "Street number qualifier"
     },
     "EM_Etvfac_Version": {
-      "label": "Versi\u00f3n SIF",
-      "description": "Versi\u00f3n del Sistema Inform\u00e1tico (SIF)."
+      "label": "Versión SIF",
+      "description": "Versión del Sistema Informático (SIF)."
     },
     "Obirb_Invbook_ID": {
       "label": "Invoice Register Book",
@@ -12830,7 +12830,7 @@
     },
     "Incident_Report": {
       "label": "Detalle Incidencia",
-      "description": "Informaci\u00f3n acerca del problema t\u00e9cnico que ocurri\u00f3."
+      "description": "Información acerca del problema técnico que ocurrió."
     },
     "Plazo": {
       "label": "SII sending deadline",
@@ -12842,19 +12842,19 @@
     },
     "License_Name": {
       "label": "Nombre licencia",
-      "description": "Nombre de la licencia utilizada en la integraci\u00f3n de TicketBAI."
+      "description": "Nombre de la licencia utilizada en la integración de TicketBAI."
     },
     "License_Name_Test": {
       "label": "Nombre licencia test",
-      "description": "Nombre de la licencia de prueba utilizada para testear la integraci\u00f3n."
+      "description": "Nombre de la licencia de prueba utilizada para testear la integración."
     },
     "Aeat347_Doctype_ID": {
       "label": "Aeat347_Doctype_ID",
       "description": "AEAT 347 Document type id"
     },
     "EM_Etvfac_Date_Issue": {
-      "label": "Fecha Generaci\u00f3n RF",
-      "description": "Fecha de generaci\u00f3n del registro de facturaci\u00f3n."
+      "label": "Fecha Generación RF",
+      "description": "Fecha de generación del registro de facturación."
     },
     "EM_Etvfac_Inv_Type": {
       "label": "Tipo de Factura",
@@ -12866,11 +12866,11 @@
     },
     "EM_Tbai_Invoiceseq": {
       "label": "Secuencia Factura",
-      "description": "Secuencia num\u00e9rica asignada a la factura."
+      "description": "Secuencia numérica asignada a la factura."
     },
     "EM_Etvfac_System_Name": {
-      "label": "Nombre Sistema Inform\u00e1tico",
-      "description": "Nombre dado por la persona o entidad productora a su sistema inform\u00e1tico de facturaci\u00f3n (SIF)."
+      "label": "Nombre Sistema Informático",
+      "description": "Nombre dado por la persona o entidad productora a su sistema informático de facturación (SIF)."
     },
     "Vatrate": {
       "label": "VAT Rate",
@@ -12882,7 +12882,7 @@
     },
     "EM_Etvfac_Is_Gen_Manual": {
       "label": "Generado Manualmente",
-      "description": "Indicador de como se emiti\u00f3 la factura."
+      "description": "Indicador de como se emitió la factura."
     },
     "Sent_Amount": {
       "label": "Sent amount",
@@ -12894,11 +12894,11 @@
     },
     "EM_Aeat390_Box": {
       "label": "Modelo 390: Casilla",
-      "description": "Casilla a la que corresponde el par\u00e1metro en el Modelo"
+      "description": "Casilla a la que corresponde el parámetro en el Modelo"
     },
     "EM_Etvfac_Issue": {
       "label": "Incidencia",
-      "description": "Indica si hubo un problema t\u00e9cnico en el env\u00edo."
+      "description": "Indica si hubo un problema técnico en el envío."
     },
     "EM_Obspti_Isintracommunity": {
       "label": "Intracommunity tax",
@@ -12930,7 +12930,7 @@
     },
     "Jasperreport_Path": {
       "label": "Ruta de Reporte Jasper",
-      "description": "Ruta del archivo de reporte Jasper utilizado para la generaci\u00f3n de reportes de factura."
+      "description": "Ruta del archivo de reporte Jasper utilizado para la generación de reportes de factura."
     },
     "Total_Fact_Correctas": {
       "label": "Right invoices",
@@ -12942,7 +12942,7 @@
     },
     "Tbai_Valcode_ID": {
       "label": "Tbai_Valcode_ID",
-      "description": "C\u00f3digo de validaci\u00f3n asignado por el sistema TBAI a la factura."
+      "description": "Código de validación asignado por el sistema TBAI a la factura."
     },
     "Isfinal": {
       "label": "Final",
@@ -12977,7 +12977,7 @@
       "description": "The final monetary amount (including taxes) charge listed in a document."
     },
     "Epiae_Orginfo_Epigraph_ID": {
-      "label": "Ep\u00edgrafe del IAE para la Organizaci\u00f3n",
+      "label": "Epígrafe del IAE para la Organización",
       "description": ""
     },
     "EM_AEAT349_C_Bpartner_ID": {
@@ -12990,11 +12990,11 @@
     },
     "Tbai_Config_ID": {
       "label": "Tbai_Config_ID",
-      "description": "Identificador de configuraci\u00f3n del sistema TBAI."
+      "description": "Identificador de configuración del sistema TBAI."
     },
     "Date_Found": {
-      "label": "Fecha Detecci\u00f3n",
-      "description": "Fecha en la que se detect\u00f3 la discrepancia."
+      "label": "Fecha Detección",
+      "description": "Fecha en la que se detectó la discrepancia."
     },
     "C_Invoicetax_Cashvat_V_ID": {
       "label": "Invoice Cash VAT",
@@ -13046,11 +13046,11 @@
     },
     "EM_Etvfac_Qr_Url": {
       "label": "URL para QR Factura",
-      "description": "Contiene la URL con la que se debe formar el c\u00f3digo QR que se a\u00f1adir\u00e1 en la impresi\u00f3n de la factura"
+      "description": "Contiene la URL con la que se debe formar el código QR que se añadirá en la impresión de la factura"
     },
     "EM_Aeat390_Factorymethod": {
-      "label": "Modelo 390: M\u00e9todo de la factor\u00eda",
-      "description": "M\u00e9todo de la factor\u00eda usado para construir el objeto"
+      "label": "Modelo 390: Método de la factoría",
+      "description": "Método de la factoría usado para construir el objeto"
     },
     "EM_Intr_C_Calendar_ID": {
       "label": "Intrastat Calendar",
@@ -13066,19 +13066,19 @@
     },
     "Refresh_Data": {
       "label": "Refrescar Datos",
-      "description": "Refrescar los datos de env\u00edo a Verifactu, organizados por estado."
+      "description": "Refrescar los datos de envío a Verifactu, organizados por estado."
     },
     "EM_Tbai_Issent": {
       "label": "Enviada a TBAI",
-      "description": "Estado de env\u00edo de la factura al sistema TBAI."
+      "description": "Estado de envío de la factura al sistema TBAI."
     },
     "Adjuntos": {
       "label": "Attach XML files",
       "description": "Check that indicates XML files will be attached."
     },
     "EM_Tbai_Voidxmlgenerator": {
-      "label": "Enviar anulaci\u00f3n a TIcketbai",
-      "description": "Permite el env\u00edo de la anulaci\u00f3n de una factura al sistema TicketBAI."
+      "label": "Enviar anulación a TIcketbai",
+      "description": "Permite el envío de la anulación de una factura al sistema TicketBAI."
     },
     "OBTL_Tax_Parameter_ID": {
       "label": "Tax Parameter",
@@ -13093,20 +13093,20 @@
       "description": "This column is to make sure weather this country belongs to European Union Country.."
     },
     "Next_Send_Wait_Time": {
-      "label": "Tiempo de Espera para el Siguiente Env\u00edo",
+      "label": "Tiempo de Espera para el Siguiente Envío",
       "description": "El tiempo de espera para enviar el siguiente grupo de facturas a Verifactu."
     },
     "Error_Reason": {
-      "label": "Descripci\u00f3n Error Registro",
+      "label": "Descripción Error Registro",
       "description": "Error recibido al enviar la factura."
     },
     "Etaf_Audit_Discrepancy_ID": {
-      "label": "Discrepancia de Auditor\u00eda",
-      "description": "Discrepancia en la cadena de registros de la auditor\u00eda."
+      "label": "Discrepancia de Auditoría",
+      "description": "Discrepancia en la cadena de registros de la auditoría."
     },
     "Developer_Nif": {
       "label": "Nif desarrollador",
-      "description": "NIF del desarrollador responsable de la integraci\u00f3n."
+      "description": "NIF del desarrollador responsable de la integración."
     },
     "C_Bpartner_Name": {
       "label": "Business Partner Name",
@@ -13121,8 +13121,8 @@
       "description": "The date you want to put in Document Date field"
     },
     "EM_Etsg_Add_Certificate": {
-      "label": "A\u00f1adir Certificado Digital",
-      "description": "Cargar un certificado digital a esta organizaci\u00f3n."
+      "label": "Añadir Certificado Digital",
+      "description": "Cargar un certificado digital a esta organización."
     },
     "Intr_Lines_ID": {
       "label": "Intr_Lines_ID",
@@ -13133,8 +13133,8 @@
       "description": "Import (DUA)"
     },
     "Invoice_Description": {
-      "label": "Descripci\u00f3n de Facturas",
-      "description": "Descripci\u00f3n general de las facturas emitidas."
+      "label": "Descripción de Facturas",
+      "description": "Descripción general de las facturas emitidas."
     },
     "PoTaxamt": {
       "label": "Purchase Tax Amount",
@@ -13181,7 +13181,7 @@
       "description": ""
     },
     "Schema_Uri_Void": {
-      "label": "Uri del esquema de anulaci\u00f3n para Factura (Cliente)",
+      "label": "Uri del esquema de anulación para Factura (Cliente)",
       "description": "URI del esquema utilizado para anular facturas en el sistema."
     },
     "CheckDate": {
@@ -13202,7 +13202,7 @@
     },
     "Tbai_Destiny_Config_ID": {
       "label": "Destino",
-      "description": "Destino de la configuraci\u00f3n de TicketBAI."
+      "description": "Destino de la configuración de TicketBAI."
     },
     "C_Bpartner_TaxID": {
       "label": "Tax Id",
@@ -13210,7 +13210,7 @@
     },
     "EM_Tbai_Invoicenum": {
       "label": "Serie Factura",
-      "description": "Serie de la factura para su identificaci\u00f3n dentro del sistema."
+      "description": "Serie de la factura para su identificación dentro del sistema."
     },
     "Insiisystemdate": {
       "label": "In SII system date",
@@ -13282,7 +13282,7 @@
     },
     "EM_Etaf_Iscash": {
       "label": "Es en Efectivo",
-      "description": "Indica si el m\u00e9todo de pago es en efectivo. Marcar obligatoriamente si el m\u00e9todo de pago es en efectivo."
+      "description": "Indica si el método de pago es en efectivo. Marcar obligatoriamente si el método de pago es en efectivo."
     },
     "SO_Port": {
       "label": "Port/Airport",
@@ -13318,7 +13318,7 @@
     },
     "em_tbai_qrcode": {
       "label": "Imprimir factura con QR",
-      "description": "Opci\u00f3n para imprimir la factura con un c\u00f3digo QR."
+      "description": "Opción para imprimir la factura con un código QR."
     },
     "Obirb_Invbook_Setup_ID": {
       "label": "Invoices Register Book",
@@ -13337,8 +13337,8 @@
       "description": "Indica si la factura es una factura simplificada."
     },
     "EM_Etvfac_Vat_Regime": {
-      "label": "R\u00e9gimen Especial IVA",
-      "description": "Lista de claves de r\u00e9gimen IVA."
+      "label": "Régimen Especial IVA",
+      "description": "Lista de claves de régimen IVA."
     },
     "Private_Customer": {
       "label": "Private customer",
@@ -13349,7 +13349,7 @@
       "description": "Defines the child tax that will be added to SII-IGIC when invoice belongs to RECM."
     },
     "Expiration_Date": {
-      "label": "Fecha de Expiraci\u00f3n",
+      "label": "Fecha de Expiración",
       "description": "La fecha en la cual el certificado expira."
     },
     "PoTaxbaseamt": {
@@ -13357,8 +13357,8 @@
       "description": "The total sum on which taxes are added for purchase flow"
     },
     "USE_Asproduct_Desc": {
-      "label": "Utilizar descripci\u00f3n tambi\u00e9n para nombre producto",
-      "description": "Indica si la descripci\u00f3n del producto tambi\u00e9n se debe utilizar como el nombre del producto en la factura."
+      "label": "Utilizar descripción también para nombre producto",
+      "description": "Indica si la descripción del producto también se debe utilizar como el nombre del producto en la factura."
     },
     "Obcvat_Manualsettlementline_ID": {
       "label": "Manual Cash VAT Settlement Line",
@@ -13410,7 +13410,7 @@
     },
     "EM_Etvfac_Issue_Description": {
       "label": "Detalle de la Incidencia",
-      "description": "Informaci\u00f3n acerca del problema t\u00e9cnico que ocurri\u00f3."
+      "description": "Información acerca del problema técnico que ocurrió."
     },
     "c_invoicetax_cashvat_v_id": {
       "label": "Invoice Tax Cash VAT",
@@ -13445,16 +13445,16 @@
       "description": "Last query period"
     },
     "EM_Etvfac_System_ID": {
-      "label": "ID Sistema Inform\u00e1tico",
-      "description": "C\u00f3digo identificativo dado por la persona o entidad productora a su sistema inform\u00e1tico de facturaci\u00f3n (SIF)."
+      "label": "ID Sistema Informático",
+      "description": "Código identificativo dado por la persona o entidad productora a su sistema informático de facturación (SIF)."
     },
     "EM_Tbai_Reverseinvoicetype": {
       "label": "Tipo de rectificativa",
       "description": "Tipo de factura rectificativa."
     },
     "em_etvfac_cause_not_taxable": {
-      "label": "Verifactu - Causa No Sujeci\u00f3n",
-      "description": "Tipos de transacciones seg\u00fan su tratamiento fiscal, en relaci\u00f3n a si est\u00e1n sujetas o exentas del impuesto correspondiente."
+      "label": "Verifactu - Causa No Sujeción",
+      "description": "Tipos de transacciones según su tratamiento fiscal, en relación a si están sujetas o exentas del impuesto correspondiente."
     },
     "Tbai_License": {
       "label": "Licencia TBAI",
@@ -13470,11 +13470,11 @@
     },
     "URL_Qr_Base_Test": {
       "label": "Url base para QR Test",
-      "description": "URL base para generar el c\u00f3digo QR en un entorno de pruebas."
+      "description": "URL base para generar el código QR en un entorno de pruebas."
     },
     "Codigo": {
-      "label": "C\u00f3digo",
-      "description": "C\u00f3digo de identificaci\u00f3n de la factura."
+      "label": "Código",
+      "description": "Código de identificación de la factura."
     },
     "EM_Intr_Transportation_Type": {
       "label": "Transportation Type",
@@ -13486,7 +13486,7 @@
     },
     "IN_Vfactu_System": {
       "label": "Fecha de Acogida",
-      "description": "Indica la fecha de adhesi\u00f3n a Verifactu."
+      "description": "Indica la fecha de adhesión a Verifactu."
     },
     "CheckNumber": {
       "label": "Check Number",
@@ -13513,8 +13513,8 @@
       "description": "Indica la fecha que se inicio el sistema."
     },
     "EM_Etvfac_Issubsanation": {
-      "label": "Subsanaci\u00f3n",
-      "description": "Especifica que se trata de una subsanaci\u00f3n de un registro de facturaci\u00f3n de alta previamente generado."
+      "label": "Subsanación",
+      "description": "Especifica que se trata de una subsanación de un registro de facturación de alta previamente generado."
     },
     "doctype": {
       "label": "Document Type",
@@ -13525,7 +13525,7 @@
       "description": "Button than executes a new query about invoices sent to SII."
     },
     "EM_Aeat390_DocumentType": {
-      "label": "Modelo 390: Incluir s\u00f3lo facturas",
+      "label": "Modelo 390: Incluir sólo facturas",
       "description": ""
     },
     "Schema_Uri": {
@@ -13534,7 +13534,7 @@
     },
     "EM_Tbai_Sequence": {
       "label": "Secuencia de encadenamiento",
-      "description": "Secuencia que identifica la relaci\u00f3n entre las facturas emitidas."
+      "description": "Secuencia que identifica la relación entre las facturas emitidas."
     },
     "EM_Aeat390_IsCashVATPayment": {
       "label": "Modelo 390: Importe cobrado/pagado IVA de Caja",
@@ -13554,7 +13554,7 @@
     },
     "IS_Ready": {
       "label": "Marcar Como Listo",
-      "description": "Deja la configuraci\u00f3n lista para usarse."
+      "description": "Deja la configuración lista para usarse."
     },
     "DecTaxAmt": {
       "label": "Deductible tax amount ",
@@ -13566,23 +13566,23 @@
     },
     "URL_Qr_Base": {
       "label": "Url base para QR",
-      "description": "URL base que se utiliza para generar el c\u00f3digo QR en las facturas."
+      "description": "URL base que se utiliza para generar el código QR en las facturas."
     },
     "Authorizationno": {
       "label": "Authorization No.",
       "description": "Authorization number"
     },
     "EM_Tbai_Reverseinvoicecode": {
-      "label": "C\u00f3digo de Factura Rectificativa",
-      "description": "C\u00f3digo asignado a la factura rectificativa."
+      "label": "Código de Factura Rectificativa",
+      "description": "Código asignado a la factura rectificativa."
     },
     "Paymentnumber": {
       "label": "Payment Number",
       "description": "Payment Number"
     },
     "Epigraph": {
-      "label": "Ep\u00edgrafe",
-      "description": "N\u00famero del Ep\u00edgrafe del IAE"
+      "label": "Epígrafe",
+      "description": "Número del Epígrafe del IAE"
     },
     "Aeatsii_Cause_Exemption_ID": {
       "label": "Cause exemption",
@@ -13652,7 +13652,8 @@
       "label": "Country and Region"
     },
     "Business Partner": {
-      "label": "Business Partner"
+      "label": "Business Partner",
+      "newLabel": "New business partner"
     },
     "General Ledger Configuration": {
       "label": "General Ledger Configuration"
@@ -13685,7 +13686,8 @@
       "label": "Warehouse and Storage Bins"
     },
     "Product": {
-      "label": "Product"
+      "label": "Product",
+      "newLabel": "New product"
     },
     "Payment Term": {
       "label": "Payment Term"
@@ -13694,10 +13696,12 @@
       "label": "Shipping Company"
     },
     "Sales Order": {
-      "label": "Sales Order"
+      "label": "Sales Order",
+      "newLabel": "New order"
     },
     "Product Category": {
-      "label": "Product Category"
+      "label": "Product Category",
+      "newLabel": "New category"
     },
     "Price List": {
       "label": "Price List"
@@ -13730,28 +13734,35 @@
       "label": "Report and Process"
     },
     "Sales Invoice": {
-      "label": "Sales Invoice"
+      "label": "Sales Invoice",
+      "newLabel": "New invoice"
     },
     "Physical Inventory": {
-      "label": "Physical Inventory"
+      "label": "Physical Inventory",
+      "newLabel": "New inventory"
     },
     "Goods Shipment": {
-      "label": "Goods Shipment"
+      "label": "Goods Shipment",
+      "newLabel": "New shipment"
     },
     "Goods Movements": {
-      "label": "Goods Movements"
+      "label": "Goods Movements",
+      "newLabel": "New movement"
     },
     "Title": {
       "label": "Title"
     },
     "Purchase Order": {
-      "label": "Purchase Order"
+      "label": "Purchase Order",
+      "newLabel": "New order"
     },
     "Purchase Invoice": {
-      "label": "Purchase Invoice"
+      "label": "Purchase Invoice",
+      "newLabel": "New invoice"
     },
     "Goods Receipt": {
-      "label": "Goods Receipt"
+      "label": "Goods Receipt",
+      "newLabel": "New receipt"
     },
     "Payment Method": {
       "label": "Payment Method"
@@ -13865,7 +13876,8 @@
       "label": "Amortization"
     },
     "Assets": {
-      "label": "Assets"
+      "label": "Assets",
+      "newLabel": "New asset"
     },
     "Discounts and Promotions": {
       "label": "Discounts and Promotions"
@@ -13931,7 +13943,8 @@
       "label": "Maintenance Order"
     },
     "Internal Consumption": {
-      "label": "Internal Consumption"
+      "label": "Internal Consumption",
+      "newLabel": "New consumption"
     },
     "Budget": {
       "label": "Budget"
@@ -14003,7 +14016,8 @@
       "label": "Organization Type"
     },
     "Return Material Receipt": {
-      "label": "Return Material Receipt"
+      "label": "Return Material Receipt",
+      "newLabel": "New return receipt"
     },
     "Landed Cost Distribution Algorithm": {
       "label": "Landed Cost Distribution Algorithm"
@@ -14024,7 +14038,8 @@
       "label": "Execution Process"
     },
     "Return to Vendor Shipment": {
-      "label": "Return to Vendor Shipment"
+      "label": "Return to Vendor Shipment",
+      "newLabel": "New return shipment"
     },
     "Offer Product Category Selector": {
       "label": "Offer Product Category Selector"
@@ -14084,13 +14099,15 @@
       "label": "Prereservation Pick and Edit"
     },
     "Sales Quotation": {
-      "label": "Sales Quotation"
+      "label": "Sales Quotation",
+      "newLabel": "New quotation"
     },
     "Costing Algorithm": {
       "label": "Costing Algorithm"
     },
     "Payment Out": {
-      "label": "Payment Out"
+      "label": "Payment Out",
+      "newLabel": "New payment"
     },
     "Product Characteristic": {
       "label": "Product Characteristic"
@@ -14129,7 +14146,8 @@
       "label": "Landed Cost Type"
     },
     "Financial Account": {
-      "label": "Financial Account"
+      "label": "Financial Account",
+      "newLabel": "New account"
     },
     "RM Receipt Pick and Edit": {
       "label": "RM Receipt Pick and Edit"
@@ -14195,7 +14213,8 @@
       "label": "Attachment Method"
     },
     "Return to Vendor": {
-      "label": "Return to Vendor"
+      "label": "Return to Vendor",
+      "newLabel": "New return"
     },
     "Process Group": {
       "label": "Process Group"
@@ -14225,7 +14244,8 @@
       "label": "Create Invoice Lines From Shipment/Receipt lines"
     },
     "Payment In": {
-      "label": "Payment In"
+      "label": "Payment In",
+      "newLabel": "New receipt"
     },
     "Period Control Log": {
       "label": "Period Control Log"
@@ -14395,8 +14415,8 @@
     "SII Invoices Query": {
       "label": "SII Invoices Query"
     },
-    "Configuraci\u00f3n Verifactu": {
-      "label": "Configuraci\u00f3n Verifactu"
+    "Configuración Verifactu": {
+      "label": "Configuración Verifactu"
     },
     "IAE Activity Type": {
       "label": "IAE Activity Type"
@@ -14416,8 +14436,8 @@
     "Intrastat Supplementary Unit of Measure": {
       "label": "Intrastat Supplementary Unit of Measure"
     },
-    "C\u00f3digo de Actividad": {
-      "label": "C\u00f3digo de Actividad"
+    "Código de Actividad": {
+      "label": "Código de Actividad"
     },
     "AEAT347 Document Types": {
       "label": "AEAT347 Document Types"
@@ -14425,8 +14445,8 @@
     "SII Connections": {
       "label": "SII Connections"
     },
-    "Discrepancias de Auditor\u00eda": {
-      "label": "Discrepancias de Auditor\u00eda"
+    "Discrepancias de Auditoría": {
+      "label": "Discrepancias de Auditoría"
     },
     "SII Cash Receipts": {
       "label": "SII Cash Receipts"
@@ -14455,11 +14475,11 @@
     "SII Configuration": {
       "label": "SII Configuration"
     },
-    "Configuraci\u00f3n TBAI": {
-      "label": "Configuraci\u00f3n TBAI"
+    "Configuración TBAI": {
+      "label": "Configuración TBAI"
     },
-    "Ep\u00edgrafes IAE": {
-      "label": "Ep\u00edgrafes IAE"
+    "Epígrafes IAE": {
+      "label": "Epígrafes IAE"
     },
     "Cash VAT pending to be settled P&E": {
       "label": "Cash VAT pending to be settled P&E"
@@ -14481,6 +14501,30 @@
     },
     "SII Monitor": {
       "label": "SII Monitor"
+    },
+    "Contacts": {
+      "newLabel": "New contact"
+    },
+    "Contact": {
+      "newLabel": "New contact"
+    },
+    "Returns": {
+      "newLabel": "New return"
+    },
+    "Customer Return": {
+      "newLabel": "New return"
+    },
+    "Return Receipt": {
+      "newLabel": "New return receipt"
+    },
+    "Warehouse": {
+      "newLabel": "New warehouse"
+    },
+    "Bank Reconciliation": {
+      "newLabel": "New reconciliation"
+    },
+    "Account": {
+      "newLabel": "New chart of accounts"
     }
   },
   "tabs": {
@@ -15705,8 +15749,8 @@
     "Received Invoices SII Data": {
       "label": "Received Invoices SII Data"
     },
-    "Resultado Validaci\u00f3n": {
-      "label": "Resultado Validaci\u00f3n"
+    "Resultado Validación": {
+      "label": "Resultado Validación"
     },
     "Etendo Payment Tab": {
       "label": "Etendo Payment Tab"
@@ -15849,8 +15893,8 @@
     "Log Hash": {
       "label": "Log Hash"
     },
-    "Facturas Inv\u00e1lidas": {
-      "label": "Facturas Inv\u00e1lidas"
+    "Facturas Inválidas": {
+      "label": "Facturas Inválidas"
     },
     "Number to Word Converter": {
       "label": "Number to Word Converter"
@@ -15900,8 +15944,8 @@
     "Analytics Synchronization Header": {
       "label": "Analytics Synchronization Header"
     },
-    "Cabecera de Configuraci\u00f3n Verifactu": {
-      "label": "Cabecera de Configuraci\u00f3n Verifactu"
+    "Cabecera de Configuración Verifactu": {
+      "label": "Cabecera de Configuración Verifactu"
     },
     "SII cash receipt": {
       "label": "SII cash receipt"
@@ -15963,8 +16007,8 @@
     "Invoice Register Book": {
       "label": "Invoice Register Book"
     },
-    "Sincronizaci\u00f3n": {
-      "label": "Sincronizaci\u00f3n"
+    "Sincronización": {
+      "label": "Sincronización"
     },
     "Ticketbai": {
       "label": "Ticketbai"
@@ -16002,8 +16046,8 @@
     "Batuz": {
       "label": "Batuz"
     },
-    "Discrepancias de Auditor\u00eda - Cabecera": {
-      "label": "Discrepancias de Auditor\u00eda - Cabecera"
+    "Discrepancias de Auditoría - Cabecera": {
+      "label": "Discrepancias de Auditoría - Cabecera"
     },
     "Defined Selector": {
       "label": "Defined Selector"
@@ -16035,8 +16079,8 @@
     "Withholding Parameter": {
       "label": "Withholding Parameter"
     },
-    "C\u00f3digo de Actividad": {
-      "label": "C\u00f3digo de Actividad"
+    "Código de Actividad": {
+      "label": "Código de Actividad"
     },
     "IAE Activity Type": {
       "label": "IAE Activity Type"
@@ -16068,8 +16112,8 @@
     "Widget Class": {
       "label": "Widget Class"
     },
-    "Ep\u00edgrafes IAE": {
-      "label": "Ep\u00edgrafes IAE"
+    "Epígrafes IAE": {
+      "label": "Epígrafes IAE"
     },
     "Intrastat Adquisitions": {
       "label": "Intrastat Adquisitions"
@@ -16347,13 +16391,13 @@
     "refresh": "Refresh",
     "forceAppRefresh": "Force app refresh",
     "newPayment": "New payment",
-    "paymentRecordedLocally": "Payment recorded locally \u2014 it will sync when the endpoint is available",
-    "financeCollections": "Finance \u00b7 Collections",
+    "paymentRecordedLocally": "Payment recorded locally — it will sync when the endpoint is available",
+    "financeCollections": "Finance · Collections",
     "activity": "Activity",
     "closeActivityPanel": "Close activity panel",
     "paymentCreated": "Payment created",
     "linkedToInvoice": "Linked to Invoice #{number}",
-    "statusChangedTo": "Status \u2192 {status}",
+    "statusChangedTo": "Status → {status}",
     "noActivityYet": "No activity yet",
     "add": "Add",
     "unallocatedCredit": "unallocated credit",
@@ -16386,8 +16430,8 @@
     "amount": "Amount",
     "description": "Description",
     "fillAllRequiredFields": "Fill all required fields",
-    "createPayment": "Create payment \u2192",
-    "createCredit": "Create credit \u2192",
+    "createPayment": "Create payment →",
+    "createCredit": "Create credit →",
     "creating": "Creating...",
     "selectBusinessPartnerToViewPendingInvoices": "Select a business partner to view pending invoices.",
     "noInvoicesAppliedToThisPayment": "No invoices applied to this payment.",
@@ -16422,13 +16466,13 @@
     "shipmentRef": "Shipment #",
     "createdAsDraft": "created as Draft",
     "reviewBeforeConfirming": "Review before confirming",
-    "viewInvoice": "View Invoice \u2192",
+    "viewInvoice": "View Invoice →",
     "loadingShipmentLines": "Loading shipment lines...",
     "noLinesInSelectedShipments": "No lines found in selected shipments.",
     "noLinesInThisShipment": "No lines found in this shipment.",
     "draftInvoiceExistsForShipments": "Draft invoice already exists for these shipments",
     "thisShipmentHasDraftInvoice": "This shipment already has a Draft invoice",
-    "viewExistingInvoice": "View existing invoice \u2192",
+    "viewExistingInvoice": "View existing invoice →",
     "createAnotherAnyway": "Create another anyway",
     "selectLinesToInvoice": "Select lines to invoice",
     "createReturnFromShipment": "Create Return from Shipment",
@@ -16480,7 +16524,7 @@
     "priceColUnitPrice": "Unit Price",
     "priceColListPrice": "List Price",
     "priceRemove": "Remove",
-    "priceSelectVersion": "Select version\u2026",
+    "priceSelectVersion": "Select version…",
     "priceZeroPlaceholder": "0.00",
     "priceSalesPrice": "Sales price",
     "priceSalesDescription": "Initial price used for sales lists.",
@@ -16543,7 +16587,6 @@
     "noPendingShipmentsForCustomer": "No pending shipments for this customer.",
     "noShipmentsMatchYourSearch": "No shipments match your search.",
     "noCompletedSalesOrdersForThisCustomer": "No confirmed orders for this customer.",
-    "noOrdersMatchYourSearch": "No orders match your search.",
     "noRelatedDocuments": "No related documents",
     "Complete": "Complete",
     "Confirm & Send": "Confirm & Send",
@@ -16607,7 +16650,7 @@
     "filterPresets": "Saved filters",
     "filterPresetsButton": "My filters",
     "filterPresetsEmpty": "No saved filters yet",
-    "filterPresetSaveCurrent": "Save current filters as\u2026",
+    "filterPresetSaveCurrent": "Save current filters as…",
     "filterPresetDelete": "Delete",
     "filterPresetPromptName": "Name for this filter preset:",
     "filterPresetOverwriteConfirm": "A preset named \"{name}\" already exists. Overwrite?",
@@ -16770,7 +16813,7 @@
     "fetchingAllRecords": "Fetching all records...",
     "renderingReport": "Rendering report...",
     "jsreportNotAvailable": "jsreport not available",
-    "jsreportNotAvailableBanner": "jsreport not available \u2014 PDF, Excel, CSV exports disabled. Start it with:",
+    "jsreportNotAvailableBanner": "jsreport not available — PDF, Excel, CSV exports disabled. Start it with:",
     "excel": "Excel",
     "csv": "CSV",
     "pdf": "PDF",
@@ -16815,7 +16858,7 @@
     "pendingDeliveryOnly": "Pending delivery",
     "clearAllFilters": "Clear all filters",
     "cancelEsc": "Cancel (Esc)",
-    "inlineAddHint": "Enter or click outside to save \u00b7 Esc to cancel",
+    "inlineAddHint": "Enter or click outside to save · Esc to cancel",
     "statusComplete": "Confirmed",
     "statusCompleted": "Confirmed",
     "statusVoid": "Void",
@@ -16901,7 +16944,7 @@
     "invoiceFullyPaid": "Invoice fully paid",
     "paymentRegistered": "Payment registered",
     "fullyPaid": "Fully paid",
-    "viewArrow": "View \u2192",
+    "viewArrow": "View →",
     "paidAmount": "Paid",
     "outstandingLabel": "Outstanding",
     "registerPayment": "Register payment",
@@ -16916,8 +16959,8 @@
     "subject": "Subject",
     "message": "Message",
     "outstandingColon": "Outstanding:",
-    "viewPaymentArrow": "View payment \u2192",
-    "registerPaymentLabel": "+ Register payment \u00b7",
+    "viewPaymentArrow": "View payment →",
+    "registerPaymentLabel": "+ Register payment ·",
     "outstandingLower": "outstanding",
     "emailPlaceholder": "email@company.com",
     "Customer": "Customer",
@@ -16990,8 +17033,8 @@
     "financialSummaryIncome": "Income",
     "financialSummaryExpenses": "Expenses",
     "financialSummaryProfit": "Profit",
-    "yoyUp": "\u2191 {pct}% vs previous year",
-    "yoyDown": "\u2193 {pct}% vs previous year",
+    "yoyUp": "↑ {pct}% vs previous year",
+    "yoyDown": "↓ {pct}% vs previous year",
     "quickActionsTitle": "QUICK ACCESS",
     "quickAccessSalesOrders": "Sales orders",
     "quickAccessSalesInvoices": "Sales invoices",
@@ -17172,9 +17215,9 @@
     "openCopilot": "Open Copilot",
     "copilotWelcome": "Hi! I'm your ERP assistant. What do you need today?",
     "copilotInvoiceResponse": "I'll help you create an invoice. Opening Sales Invoice...\n\nYou can also say 'show pending invoices' to see what's outstanding.",
-    "copilotStockResponse": "Here's a quick stock summary:\n\u2022 Cerveza Ale 0.5L: 150 units\n\u2022 Vino Tinto Reserva: 80 units\n\u2022 Aceite de Oliva 1L: 230 units\n\nWould you like to check a specific product?",
-    "copilotOrderResponse": "You have 5 pending orders:\n\u2022 SO-2026-0234 \u2014 Empresa ABC ($8,500)\n\u2022 SO-2026-0235 \u2014 Tech Solutions ($3,200)\n\u2022 SO-2026-0236 \u2014 Global Trade ($15,000)\n\nShould I open the orders list?",
-    "copilotContactResponse": "I found 156 contacts. Top customers by revenue:\n1. Global Trade Ltd \u2014 $85,000\n2. Empresa ABC \u2014 $52,000\n3. Ib\u00e9rica Industrial \u2014 $34,000\n\nWho are you looking for?",
+    "copilotStockResponse": "Here's a quick stock summary:\n• Cerveza Ale 0.5L: 150 units\n• Vino Tinto Reserva: 80 units\n• Aceite de Oliva 1L: 230 units\n\nWould you like to check a specific product?",
+    "copilotOrderResponse": "You have 5 pending orders:\n• SO-2026-0234 — Empresa ABC ($8,500)\n• SO-2026-0235 — Tech Solutions ($3,200)\n• SO-2026-0236 — Global Trade ($15,000)\n\nShould I open the orders list?",
+    "copilotContactResponse": "I found 156 contacts. Top customers by revenue:\n1. Global Trade Ltd — $85,000\n2. Empresa ABC — $52,000\n3. Ibérica Industrial — $34,000\n\nWho are you looking for?",
     "copilotDefaultResponse": "I can help with invoices, orders, stock, contacts, and more. What would you like to do?",
     "createInvoice": "Create an invoice",
     "checkStockLevels": "Check stock levels",
@@ -17220,21 +17263,21 @@
     "warehouseBarChart": "Bar chart",
     "warehouseExpandChart": "Expand chart",
     "warehouseNoMovementData": "No movement data for this period",
-    "warehouseLoadingStock": "Loading stock data\u2026",
+    "warehouseLoadingStock": "Loading stock data…",
     "warehouseStockError": "Could not load stock data.",
     "warehouseTooltipUnits": "{label}: {n} units",
     "warehouseTransactionsTab": "Transactions",
-    "warehouseFilterPlaceholder": "Filter by product or type\u2026",
+    "warehouseFilterPlaceholder": "Filter by product or type…",
     "warehouseDate": "Date",
     "warehouseProduct": "Product",
     "warehouseType": "Type",
     "warehouseQty": "Qty",
     "warehouseUom": "UoM",
     "warehouseQtyOnHand": "Qty on Hand",
-    "warehouseLoadingProducts": "Loading products\u2026",
+    "warehouseLoadingProducts": "Loading products…",
     "warehouseProductsError": "Could not load products: {error}",
     "warehouseNoStock": "No stock found for this warehouse.",
-    "warehouseLoadingTransactions": "Loading transactions\u2026",
+    "warehouseLoadingTransactions": "Loading transactions…",
     "warehouseTransactionsError": "Could not load transactions: {error}",
     "warehouseNoTransactions": "No transactions found for this warehouse.",
     "warehouseNoFilterResults": "No results match your filter.",
@@ -17243,15 +17286,15 @@
     "warehouseMoveQtyLabel": "Quantity to Transfer",
     "warehouseMoveQtyMax": "(max {n})",
     "warehouseMoveConfirm": "Transfer",
-    "warehouseMoveLoadingWarehouses": "Loading warehouses\u2026",
+    "warehouseMoveLoadingWarehouses": "Loading warehouses…",
     "warehouseMoveNoWarehouses": "No other warehouses available",
     "warehouseMoveActionTooltip": "Transfer to another warehouse",
     "warehouseMoveComingSoon": "Transfer process coming soon",
-    "warehouseMoveTransferring": "Transferring\u2026",
+    "warehouseMoveTransferring": "Transferring…",
     "warehouseMoveSuccess": "Stock transferred successfully",
     "warehouseMoveError": "Transfer failed: {error}",
     "internalConsumptionProcess": "Process",
-    "internalConsumptionProcessing": "Processing\u2026",
+    "internalConsumptionProcessing": "Processing…",
     "internalConsumptionProcessed": "Internal consumption processed successfully",
     "internalConsumptionProcessError": "Could not process: {error}",
     "movTypeVendorReceipt": "Vendor Receipt",
@@ -17310,8 +17353,8 @@
     "revenue": "Revenue",
     "revenueVsExpenses12m": "Revenue vs Expenses (12 months)",
     "topClients12m": "Top Clients (12 months)",
-    "months12ByRevenue": "12 months \u00b7 by revenue",
-    "months12ByQty": "12 months \u00b7 by qty",
+    "months12ByRevenue": "12 months · by revenue",
+    "months12ByQty": "12 months · by qty",
     "noDataAvailable": "No data available",
     "dragCardsToReorder": "Drag cards to reorder. Toggle to show/hide.",
     "dragToReorder": "drag to reorder",
@@ -17352,7 +17395,7 @@
     "onboardingMarketingDescription": "Invoice, record expenses, and get reports in seconds with a simple guided interface.",
     "onboardingSwitchToLoginPrompt": "Already have an account?",
     "onboardingSwitchToLoginAction": "Sign in",
-    "onboardingSwitchToRegisterPrompt": "Don\u2019t have an account yet?",
+    "onboardingSwitchToRegisterPrompt": "Don’t have an account yet?",
     "onboardingSwitchToRegisterAction": "Create account",
     "onboardingRegisterTitle": "Create your free account",
     "onboardingRegisterSubtitle": "Get started in less than 1 minute",
@@ -17390,7 +17433,7 @@
     "onboardingProgressAlmostReady": "One more step",
     "onboardingProgressAlmostDone": "Almost done",
     "onboardingGreetingFallback": "there",
-    "onboardingGreeting": "Hi {name} \ud83d\udc4b",
+    "onboardingGreeting": "Hi {name} 👋",
     "onboardingSetupSubtitle": "We will get everything ready in less than 1 minute",
     "onboardingFullNameLabel": "Full name",
     "onboardingFullNamePlaceholder": "John Doe",
@@ -17445,9 +17488,9 @@
     "vendor": "Vendor",
     "creditTax": "Credit",
     "creditTaxDescription": "Credit line limit for this contact.",
-    "searchAddress": "Search address\u2026",
-    "typeToSearch": "Type to search\u2026",
-    "searching": "Searching\u2026",
+    "searchAddress": "Search address…",
+    "typeToSearch": "Type to search…",
+    "searching": "Searching…",
     "typeAtLeast2Characters": "Type at least 2 characters",
     "setLocation": "Set location",
     "locationSelectorTitle": "Location",
@@ -17477,16 +17520,16 @@
     "soConfirmWithInvoice": "Confirm and invoice",
     "soConfirmWithInvoiceDesc": "A draft invoice will be created",
     "soProcessing": "Processing...",
-    "soConfirmAction": "Confirm \u2192",
+    "soConfirmAction": "Confirm →",
     "soErrorOccurred": "An error occurred",
-    "soManageShipmentAndInvoice": "Manage shipment & invoice \u25be",
-    "soManageShipment": "Manage shipment \u25be",
-    "soManageInvoice": "Manage invoice \u25be",
+    "soManageShipmentAndInvoice": "Manage shipment & invoice ▾",
+    "soManageShipment": "Manage shipment ▾",
+    "soManageInvoice": "Manage invoice ▾",
     "soShipmentSection": "Shipment",
     "soInvoiceSection": "Invoice",
-    "soQtyDeliveredOf": "{delivered} / {total} units delivered \u00b7 {pending} pending",
+    "soQtyDeliveredOf": "{delivered} / {total} units delivered · {pending} pending",
     "soQtyPendingDelivery": "{pending} units pending delivery",
-    "soAmountInvoicedOf": "{invoiced} / {total} invoiced \u00b7 {pending} pending",
+    "soAmountInvoicedOf": "{invoiced} / {total} invoiced · {pending} pending",
     "soAmountPendingInvoice": "{pending} pending invoice",
     "soCreateShipment": "+ Create shipment",
     "soCreateInvoice": "+ Create invoice",
@@ -17505,9 +17548,9 @@
     "soLines": "{count} lines",
     "soLine": "1 line",
     "soSubtotal": "Subtotal",
-    "soConfirmActionShipment": "Confirm + shipment \u2192",
-    "soConfirmActionInvoice": "Confirm + invoice \u2192",
-    "soConfirmActionBoth": "Confirm + shipment + invoice \u2192",
+    "soConfirmActionShipment": "Confirm + shipment →",
+    "soConfirmActionInvoice": "Confirm + invoice →",
+    "soConfirmActionBoth": "Confirm + shipment + invoice →",
     "soGenerateDocs": "Generate documents (optional)",
     "soCreateInvoiceTitle": "Create invoice",
     "soCreateShipmentCheckDesc": "A draft shipment will be created, independent of the invoice",
@@ -17517,7 +17560,7 @@
     "soConfirmedSubtitle": "The following documents were created as drafts:",
     "soConfirmActionOnly": "Confirm order",
     "soManageDocsTitle": "Manage documents",
-    "soCreateDocsBtn": "Create \u2192",
+    "soCreateDocsBtn": "Create →",
     "soDocsCreatedTitle": "Documents created",
     "soOrderConfirmed": "Order confirmed",
     "soOrderConfirmedDesc": "Order #{number} ready to invoice or generate a shipment.",
@@ -17525,8 +17568,8 @@
     "soInvoiceCreated": "Invoice created",
     "soShipmentCreatedNote": "Review quantities before processing delivery.",
     "soClose": "Close",
-    "soViewShipment": "View shipment \u2192",
-    "soViewInvoice": "View invoice \u2192",
+    "soViewShipment": "View shipment →",
+    "soViewInvoice": "View invoice →",
     "datePickerBack": "Back",
     "datePickerOk": "OK",
     "datePickerMonth": "Month",
@@ -17545,9 +17588,9 @@
     "sqCreateOrder": "Create sales order",
     "sqCreateOrderDesc": "For products with stock, deliveries or orders with multiple shipments.",
     "sqInvoiceDirectlyDesc": "For services or sales without physical delivery. No shipment.",
-    "sqConfirmActionOrder": "Confirm \u2192 Sales order",
+    "sqConfirmActionOrder": "Confirm → Sales order",
     "sqOrderCreated": "Order created",
-    "sqViewOrder": "View order \u2192",
+    "sqViewOrder": "View order →",
     "sqOrderConfirmedError": "Quotation confirmed, but order could not be created. ",
     "sqSendToEvalTitle": "Send to Under Evaluation?",
     "sqSendToEvalDesc": "The quotation will be ready to create an order or invoice.",
@@ -17595,7 +17638,7 @@
     "unsavedChangesDesc": "You have changes that haven't been saved yet. What would you like to do?",
     "pricingUpdated": "Pricing updated successfully.",
     "uploadImage": "Upload image",
-    "uploadingImage": "Uploading\u2026",
+    "uploadingImage": "Uploading…",
     "assetsAmortizationPlan": "Amortization Plan",
     "assetsAmortizationPlanDesc": "This shows what will happen to the asset over time.",
     "assetsPlannedLine": "planned line",
@@ -17648,7 +17691,7 @@
     "poConfirmOnlyDesc": "The order is confirmed without generating any additional documents",
     "poConfirmWithInvoice": "Confirm and invoice",
     "poConfirmWithInvoiceDesc": "A draft purchase invoice will be created",
-    "poConfirmAction": "Confirm \u2192",
+    "poConfirmAction": "Confirm →",
     "poProcessing": "Processing...",
     "poErrorOccurred": "An error occurred",
     "poOrderConfirmed": "Order confirmed",
@@ -17659,7 +17702,7 @@
     "poCreateInvoice": "Create invoice",
     "poInvoiceCreated": "Invoice created",
     "poReviewBeforeConfirming": "Review before confirming",
-    "poViewInvoice": "View invoice \u2192",
+    "poViewInvoice": "View invoice →",
     "poReceiveGoodsTitle": "Receive goods",
     "poProduct": "Product",
     "poOrdered": "Ordered",
@@ -17668,7 +17711,7 @@
     "poReceiveAll": "Receive all",
     "poConfirmReceive": "Confirm",
     "poReceiptCreated": "Receipt created",
-    "poViewReceipt": "View receipt \u2192",
+    "poViewReceipt": "View receipt →",
     "poConfirmWithReceipt": "Confirm and receive",
     "poConfirmWithReceiptDesc": "A draft goods receipt will be created",
     "poManageReceiptAndInvoice": "Manage receipt and invoice",
@@ -17678,18 +17721,18 @@
     "poInvoiceSection": "Purchase invoice",
     "poCreateReceipt": "+ Create goods receipt",
     "poPendingReceipt": "units pending to receive",
-    "poQtyReceivedOf": "Received: {received} / {total} units \u00b7 {pending} pending",
+    "poQtyReceivedOf": "Received: {received} / {total} units · {pending} pending",
     "poPendingInvoice": "pending to invoice",
-    "poAmountInvoicedOf": "Invoiced: {invoiced} \u00b7 {pending} pending",
-    "poReceiptDraftChip": "\ud83d\udce6 Receipt #{number} \u00b7 Pending confirmation",
-    "poInvoiceDraftChip": "\ud83e\uddfe Invoice #{number} \u00b7 Pending confirmation",
+    "poAmountInvoicedOf": "Invoiced: {invoiced} · {pending} pending",
+    "poReceiptDraftChip": "📦 Receipt #{number} · Pending confirmation",
+    "poInvoiceDraftChip": "🧾 Invoice #{number} · Pending confirmation",
     "poCreating": "Creating...",
     "poAllReceived": "Received",
     "poAllInvoiced": "Invoiced",
     "poNReceipts": "{count} receipts",
-    "poConfirmActionReceipt": "Confirm + receipt \u2192",
-    "poConfirmActionInvoice": "Confirm + invoice \u2192",
-    "poConfirmActionBoth": "Confirm + receipt + invoice \u2192",
+    "poConfirmActionReceipt": "Confirm + receipt →",
+    "poConfirmActionInvoice": "Confirm + invoice →",
+    "poConfirmActionBoth": "Confirm + receipt + invoice →",
     "poCreateReceiptTitle": "Create goods receipt",
     "poCreateReceiptCheckDesc": "A draft goods receipt will be created",
     "poCreateInvoiceCheckDesc": "A draft purchase invoice will be created",
@@ -17709,11 +17752,11 @@
     "quickAction.delete": "Delete",
     "cloneOrderConfirmTitle": "Clone order",
     "cloneOrderConfirmBody": "A draft copy of this order will be created with the same data.",
-    "cloneOrderAction": "Clone \u2192",
+    "cloneOrderAction": "Clone →",
     "cloneOrderError": "An error occurred while cloning the order",
     "cloneInvoiceConfirmTitle": "Clone invoice",
     "cloneInvoiceConfirmBody": "A draft copy of this invoice will be created with the same data.",
-    "cloneInvoiceAction": "Clone \u2192",
+    "cloneInvoiceAction": "Clone →",
     "cloneInvoiceError": "An error occurred while cloning the invoice",
     "cloneConfirmTitleOne": "Clone document",
     "cloneConfirmTitleMany": "Clone {count} documents",
@@ -17824,11 +17867,11 @@
     "fiscal.territory.ceuta": "Ceuta / Melilla (IPSI)",
     "fiscal.territory.navarra": "Navarre",
     "fiscal.territory.paisvasco": "Basque Country",
-    "fiscal.sii.question": "Is this organization enrolled in SII? (annual revenue > \u20ac6M or voluntary)",
+    "fiscal.sii.question": "Is this organization enrolled in SII? (annual revenue > €6M or voluntary)",
     "fiscal.sii.enrolled": "Yes, enrolled in SII",
     "fiscal.sii.notEnrolled": "No, use Verifactu",
     "fiscal.sii.badge.navarra": "Navarre Tax Authority",
-    "fiscal.tbai.sii.question": "Also obligated for national SII? (revenue > \u20ac6M)",
+    "fiscal.tbai.sii.question": "Also obligated for national SII? (revenue > €6M)",
     "fiscal.tbai.with.sii": "Yes, SII + TBAI",
     "fiscal.tbai.without.sii": "No, TBAI only",
     "fiscal.skip": "Skip for now",
@@ -17840,7 +17883,7 @@
     "fiscal.conflict.title": "Invalid configuration",
     "fiscal.conflict.body": "This organization has both Verifactu and SII/TBAI configured. These systems are incompatible. Remove one before continuing.",
     "fiscal.save": "Save",
-    "fiscal.saving": "Saving\u2026",
+    "fiscal.saving": "Saving…",
     "fiscal.noOrg": "No organization selected in the current session.",
     "fiscal.org.label": "Organization: {name}",
     "fiscal.loadError": "Error loading configuration: {error}",
@@ -17857,15 +17900,15 @@
     "fiscal.cert.step.confirm": "Confirmation",
     "fiscal.cert.close": "Close",
     "fiscal.cert.dropzone.drag": "Drag your certificate here",
-    "fiscal.cert.dropzone.click": "or click to select \u00b7 .p12 or .pfx \u00b7 max. 5 MB",
+    "fiscal.cert.dropzone.click": "or click to select · .p12 or .pfx · max. 5 MB",
     "fiscal.cert.dropzone.changeHint": "click to change",
     "fiscal.cert.pwd.label": "Certificate password",
     "fiscal.cert.pwd.hide": "Hide",
     "fiscal.cert.pwd.show": "Show",
-    "fiscal.cert.pwd.hint": "Etendo does not store the password in plain text \u00b7 AES-256 encryption.",
+    "fiscal.cert.pwd.hint": "Etendo does not store the password in plain text · AES-256 encryption.",
     "fiscal.cert.info.title": "Don't have the certificate?",
-    "fiscal.cert.info.body": "Request it from the FNMT or your Foral Tax Authority. Issuance takes 5\u201310 business days.",
-    "fiscal.cert.verifying.title": "Verifying certificate\u2026",
+    "fiscal.cert.info.body": "Request it from the FNMT or your Foral Tax Authority. Issuance takes 5–10 business days.",
+    "fiscal.cert.verifying.title": "Verifying certificate…",
     "fiscal.cert.verifying.body": "Checking PKCS#12 structure, password, validity and storing in Etendo.",
     "fiscal.cert.nif.warning.title": "The organization has no NIF configured",
     "fiscal.cert.nif.warning.body": "The certificate contains NIF {nif}. If you confirm, it will be set as the organization NIF and the certificate will be stored.",
@@ -17884,7 +17927,7 @@
     "fiscal.cert.btn.cancel": "Cancel",
     "fiscal.cert.btn.verify": "Verify certificate",
     "fiscal.cert.btn.change": "Change file",
-    "fiscal.cert.btn.use": "\u2713 Use this certificate",
+    "fiscal.cert.btn.use": "✓ Use this certificate",
     "fiscal.cert.btn.useNif": "Use NIF {nif}",
     "fiscal.cert.err.format": "Unsupported format. Use a .p12 or .pfx (PKCS#12) file.",
     "fiscal.cert.err.size": "The file exceeds the 5 MB limit.",
@@ -17896,7 +17939,7 @@
     "fiscal.cert.validUntil": "Valid until {date}",
     "fiscal.cert.replace": "Replace",
     "fiscal.cert.none.title": "No certificate",
-    "fiscal.cert.none.hint": "Required to authenticate with the Tax Authority \u00b7 .p12 or .pfx",
+    "fiscal.cert.none.hint": "Required to authenticate with the Tax Authority · .p12 or .pfx",
     "fiscal.cert.upload": "Upload certificate",
     "fiscal.cert.expiry.warn.title": "Certificate expiring in {days} days",
     "fiscal.cert.expiry.critical.title": "Certificate expires in {days} days",
@@ -17946,19 +17989,19 @@
     "fiscal.verifactu.field.systemStop": "System stop",
     "fiscal.verifactu.field.incident": "Incident detail",
     "fiscal.verifactu.field.enrollDate": "Enrollment date",
-    "fiscal.verifactu.saving": "Saving\u2026",
+    "fiscal.verifactu.saving": "Saving…",
     "fiscal.onboarding.step.territory": "Territory",
     "fiscal.onboarding.step.details": "Details",
     "fiscal.onboarding.step.confirm": "Confirm",
     "fiscal.onboarding.org.label": "Organization:",
-    "fiscal.onboarding.back": "\u2190 Back",
-    "fiscal.onboarding.continue": "Continue \u203a",
-    "fiscal.onboarding.saving": "Creating\u2026",
+    "fiscal.onboarding.back": "← Back",
+    "fiscal.onboarding.continue": "Continue ›",
+    "fiscal.onboarding.saving": "Creating…",
     "fiscal.onboarding.goHome": "Go home",
     "fiscal.onboarding.viewConfig": "View configuration",
-    "fiscal.onboarding.back.wizard": "\u2190 Back to wizard",
+    "fiscal.onboarding.back.wizard": "← Back to wizard",
     "fiscal.onboarding.skipped.title": "Configuration skipped",
-    "fiscal.onboarding.skipped.hint": "You can return to this screen at any time from Settings \u2192 Fiscal configuration.",
+    "fiscal.onboarding.skipped.hint": "You can return to this screen at any time from Settings → Fiscal configuration.",
     "fiscal.onboarding.applied.title": "Configuration applied",
     "fiscal.onboarding.applied.subtitle": "{system} is now active for this organization. You can start issuing electronic invoices or adjust operational details whenever you want.",
     "fiscal.onboarding.applied.configured": "{system} configured correctly",
@@ -17971,9 +18014,9 @@
     "fiscal.onboarding.applied.row.chosen": "Chosen system",
     "fiscal.onboarding.applied.row.env": "Environment",
     "fiscal.onboarding.applied.row.activated": "Activated",
-    "fiscal.onboarding.applied.env.sandbox": "Sandbox \u00b7 testing",
-    "fiscal.onboarding.applied.volume.high": "> 6,010,121 \u20ac",
-    "fiscal.onboarding.applied.volume.low": "\u2264 6,010,121 \u20ac",
+    "fiscal.onboarding.applied.env.sandbox": "Sandbox · testing",
+    "fiscal.onboarding.applied.volume.high": "> 6,010,121 €",
+    "fiscal.onboarding.applied.volume.low": "≤ 6,010,121 €",
     "fiscal.onboarding.applied.national.active": "Active",
     "fiscal.onboarding.applied.national.na": "Not applicable",
     "fiscal.onboarding.applied.chosen.sii": "SII voluntary",
@@ -17982,7 +18025,7 @@
     "fiscal.onboarding.cert.upload.title": "Upload digital certificate",
     "fiscal.onboarding.cert.loaded.title": "Digital certificate loaded",
     "fiscal.onboarding.cert.upload.desc": "Required to sign and authenticate invoices. Supports .p12 and .pfx.",
-    "fiscal.onboarding.cert.loaded.desc": "{name} \u00b7 valid until {validTo} \u00b7 click to replace.",
+    "fiscal.onboarding.cert.loaded.desc": "{name} · valid until {validTo} · click to replace.",
     "fiscal.onboarding.cert.pending": "Pending",
     "fiscal.onboarding.next.test.title": "Schedule first test submission",
     "fiscal.onboarding.next.test.desc": "Verify the connection with the Tax Authority in sandbox before going to production.",
@@ -18001,14 +18044,14 @@
     "fiscal.onboarding.breadcrumb.details": "Details",
     "fiscal.onboarding.breadcrumb.manual": "Manual configuration",
     "fiscal.onboarding.confirm.title": "Confirm configuration",
-    "fiscal.onboarding.confirm.subtitle": "Review the data before continuing. You can edit any field later in Settings \u2192 Fiscal configuration.",
+    "fiscal.onboarding.confirm.subtitle": "Review the data before continuing. You can edit any field later in Settings → Fiscal configuration.",
     "fiscal.onboarding.confirm.row.territory": "Territory",
     "fiscal.onboarding.confirm.row.hacienda": "Tax authority",
-    "fiscal.onboarding.confirm.row.national.yes": "Yes \u00b7 also declares SII",
-    "fiscal.onboarding.confirm.row.national.no": "No \u00b7 TicketBAI only",
+    "fiscal.onboarding.confirm.row.national.yes": "Yes · also declares SII",
+    "fiscal.onboarding.confirm.row.national.no": "No · TicketBAI only",
     "fiscal.onboarding.confirm.row.national": "National operation",
-    "fiscal.onboarding.confirm.row.volume.high": "> 6,010,121.04 \u20ac",
-    "fiscal.onboarding.confirm.row.volume.low": "\u2264 6,010,121.04 \u20ac",
+    "fiscal.onboarding.confirm.row.volume.high": "> 6,010,121.04 €",
+    "fiscal.onboarding.confirm.row.volume.low": "≤ 6,010,121.04 €",
     "fiscal.onboarding.confirm.row.volume": "Annual volume",
     "fiscal.onboarding.confirm.row.choice.sii": "Voluntary SII",
     "fiscal.onboarding.confirm.row.choice.verifactu": "Verifactu",
@@ -18016,7 +18059,7 @@
     "fiscal.onboarding.confirm.row.system": "Fiscal system",
     "fiscal.onboarding.confirm.next.title": "Next step",
     "fiscal.onboarding.confirm.next.body": "After confirming, you can add operational details (enrollment dates, submission cadences, test or production environment).",
-    "fiscal.onboarding.confirm.creating": "Creating\u2026",
+    "fiscal.onboarding.confirm.creating": "Creating…",
     "fiscal.onboarding.confirm.btn": "Confirm",
     "fiscal.onboarding.manual.title": "Manual configuration",
     "fiscal.onboarding.manual.subtitle": "Select the territory and fiscal system that corresponds to this organization. You can complete the details later.",
@@ -18033,34 +18076,34 @@
     "fiscal.onboarding.subq.tbai.label": "TicketBAI only",
     "fiscal.onboarding.subq.tbai.desc": "All our invoicing is declared to the Foral Tax Authority of {territory}.",
     "fiscal.onboarding.subq.sii.label": "SII + TicketBAI",
-    "fiscal.onboarding.subq.sii.desc": "We also issue invoices to clients in common territory \u2014 we need to declare through state SII.",
+    "fiscal.onboarding.subq.sii.desc": "We also issue invoices to clients in common territory — we need to declare through state SII.",
     "fiscal.onboarding.subq.volume.title": "What is your annual billing volume?",
-    "fiscal.onboarding.subq.volume.subtitle": "Companies exceeding \u20ac6,010,121.04 in transaction volume are required to submit SII. Below that, you can choose between SII (voluntary) or Verifactu.",
-    "fiscal.onboarding.subq.volume.low.label": "Up to 6,010,121.04 \u20ac per year",
-    "fiscal.onboarding.subq.volume.low.desc": "General regime \u00b7 you can choose between SII (voluntary) or Verifactu in the next step.",
-    "fiscal.onboarding.subq.volume.high.label": "More than 6,010,121.04 \u20ac per year",
-    "fiscal.onboarding.subq.volume.high.desc": "Large company \u00b7 SII mandatory (immediate submission to AEAT).",
+    "fiscal.onboarding.subq.volume.subtitle": "Companies exceeding €6,010,121.04 in transaction volume are required to submit SII. Below that, you can choose between SII (voluntary) or Verifactu.",
+    "fiscal.onboarding.subq.volume.low.label": "Up to 6,010,121.04 € per year",
+    "fiscal.onboarding.subq.volume.low.desc": "General regime · you can choose between SII (voluntary) or Verifactu in the next step.",
+    "fiscal.onboarding.subq.volume.high.label": "More than 6,010,121.04 € per year",
+    "fiscal.onboarding.subq.volume.high.desc": "Large company · SII mandatory (immediate submission to AEAT).",
     "fiscal.onboarding.subq.system.title": "Which system do you prefer?",
     "fiscal.onboarding.subq.system.subtitle": "Both options comply with AEAT regulations. SII sends each invoice instantly; Verifactu signs locally and allows deferred submission.",
     "fiscal.onboarding.subq.verifactu.label": "Verifactu",
-    "fiscal.onboarding.subq.verifactu.desc": "AEAT anti-fraud \u00b7 local signature + QR + deferred submission. Recommended for SMEs.",
+    "fiscal.onboarding.subq.verifactu.desc": "AEAT anti-fraud · local signature + QR + deferred submission. Recommended for SMEs.",
     "fiscal.onboarding.subq.sii.vol.label": "Voluntary SII",
-    "fiscal.onboarding.subq.sii.vol.desc": "Voluntary enrollment \u00b7 immediate submission (4 days). Useful if your main client requires it.",
-    "fiscal.territory.alava": "\u00c1lava",
+    "fiscal.onboarding.subq.sii.vol.desc": "Voluntary enrollment · immediate submission (4 days). Useful if your main client requires it.",
+    "fiscal.territory.alava": "Álava",
     "fiscal.territory.bizkaia": "Bizkaia",
     "fiscal.territory.gipuzkoa": "Gipuzkoa",
-    "fiscal.territory.navarra.systemLong": "SII Foral \u00b7 Navarre Tax Authority",
-    "fiscal.territory.alava.systemLong": "TicketBAI \u00b7 \u00c1lava Tax Authority",
-    "fiscal.territory.bizkaia.systemLong": "TicketBAI \u00b7 Bizkaia Tax Authority",
-    "fiscal.territory.gipuzkoa.systemLong": "TicketBAI \u00b7 Gipuzkoa Tax Authority",
-    "fiscal.territory.baleares.systemLong": "General regime \u00b7 AEAT",
-    "fiscal.territory.canarias.systemLong": "IGIC \u00b7 Canary Islands Tax Authority",
-    "fiscal.territory.ceuta.systemLong": "IPSI \u00b7 Autonomous Cities",
+    "fiscal.territory.navarra.systemLong": "SII Foral · Navarre Tax Authority",
+    "fiscal.territory.alava.systemLong": "TicketBAI · Álava Tax Authority",
+    "fiscal.territory.bizkaia.systemLong": "TicketBAI · Bizkaia Tax Authority",
+    "fiscal.territory.gipuzkoa.systemLong": "TicketBAI · Gipuzkoa Tax Authority",
+    "fiscal.territory.baleares.systemLong": "General regime · AEAT",
+    "fiscal.territory.canarias.systemLong": "IGIC · Canary Islands Tax Authority",
+    "fiscal.territory.ceuta.systemLong": "IPSI · Autonomous Cities",
     "fiscal.territory.navarra.example": "Companies with fiscal domicile in Navarre",
-    "fiscal.territory.alava.example": "Companies based in \u00c1lava",
+    "fiscal.territory.alava.example": "Companies based in Álava",
     "fiscal.territory.bizkaia.example": "Companies based in Bizkaia",
     "fiscal.territory.gipuzkoa.example": "Companies based in Gipuzkoa",
-    "fiscal.territory.baleares.example": "General regime \u00b7 state VAT",
+    "fiscal.territory.baleares.example": "General regime · state VAT",
     "fiscal.territory.canarias.example": "Companies with IGIC instead of VAT",
     "fiscal.territory.ceuta.example": "Companies with IPSI instead of VAT",
     "fiscal.territory.system.sii": "SII",
@@ -18073,7 +18116,7 @@
     "fiscal.territory.group.siiver.label": "SII / VERIFACTU",
     "fiscal.territory.group.siiver.desc": "You will be asked based on your billing volume",
     "fiscal.system.sii.long": "Immediate Information System",
-    "fiscal.system.sii.desc": "Immediate VAT Information Supply \u00b7 AEAT",
+    "fiscal.system.sii.desc": "Immediate VAT Information Supply · AEAT",
     "fiscal.system.tbai.long": "TicketBAI (Basque Country)",
     "fiscal.system.tbai.desc": "Anti-fraud system of the Basque Foral Tax Authorities",
     "fiscal.system.siitbai.long": "National SII and TicketBAI",
@@ -18136,7 +18179,7 @@
     "fiscalMonitor.col.signature": "Signature",
     "fiscalMonitor.col.issuerNIF": "Issuer NIF",
     "fiscalMonitor.col.errorReason": "Error reason",
-    "fiscalMonitor.orgMeta": "Invoice monitor \u00b7 active fiscal system",
+    "fiscalMonitor.orgMeta": "Invoice monitor · active fiscal system",
     "fiscalMonitor.synced": "Synchronized",
     "fiscalMonitor.refresh": "Refresh",
     "fiscalMonitor.setupDescription": "This organization has no active telematic submission system (SII, TicketBAI or Verifactu). Configure it in Fiscal Configuration to start tracking your invoices.",
@@ -18246,10 +18289,10 @@
     "installed": "Installed",
     "addsMenuEntries": "Adds menu entries",
     "uninstall": "Uninstall",
-    "installing": "Installing\u2026",
+    "installing": "Installing…",
     "appStore": "App Store",
-    "appStoreDescription": "External apps built on the Etendo Apps SDK. Each app runs in its own iframe with its own BFF \u2014 installing one here adds its menu entries to the shell; uninstalling removes them. No shell rebuild required.",
-    "appStoreTip": "Tip: this section is hidden by default \u2014 reveal it with",
+    "appStoreDescription": "External apps built on the Etendo Apps SDK. Each app runs in its own iframe with its own BFF — installing one here adds its menu entries to the shell; uninstalling removes them. No shell rebuild required.",
+    "appStoreTip": "Tip: this section is hidden by default — reveal it with",
     "appStoreTipHide": ", hide it with",
     "hideAppStoreTitle": "Hide the App Store from the sidebar",
     "hideAppStore": "Hide App Store",
@@ -18332,7 +18375,7 @@
     "selectedCount": "selected",
     "loadingDetails": "Loading details...",
     "detailReport": "Detail Report",
-    "detailsSuffix": " \u2014 Details",
+    "detailsSuffix": " — Details",
     "invoiceTitle": "Invoice",
     "install": "Install",
     "quotations": "Quotations",
@@ -19483,11 +19526,11 @@
     "General Chart of Accounts Update": {
       "label": "General Chart of Accounts Update"
     },
-    "Configuraci\u00f3n TBAI": {
-      "label": "Configuraci\u00f3n TBAI"
+    "Configuración TBAI": {
+      "label": "Configuración TBAI"
     },
-    "Suministro Inmediato de Informaci\u00f3n (SII)": {
-      "label": "Suministro Inmediato de Informaci\u00f3n (SII)"
+    "Suministro Inmediato de Información (SII)": {
+      "label": "Suministro Inmediato de Información (SII)"
     },
     "AEAT347 Document Types": {
       "label": "AEAT347 Document Types"
@@ -19504,8 +19547,8 @@
     "Intrastat Launcher": {
       "label": "Intrastat Launcher"
     },
-    "Sistemas de Facturaci\u00f3n": {
-      "label": "Sistemas de Facturaci\u00f3n"
+    "Sistemas de Facturación": {
+      "label": "Sistemas de Facturación"
     },
     "Intrastat": {
       "label": "Intrastat"
@@ -19519,8 +19562,8 @@
     "Intrastat Supplementary Unit of Measure": {
       "label": "Intrastat Supplementary Unit of Measure"
     },
-    "Discrepancias de Auditor\u00eda": {
-      "label": "Discrepancias de Auditor\u00eda"
+    "Discrepancias de Auditoría": {
+      "label": "Discrepancias de Auditoría"
     },
     "Multidimensional Tax Report": {
       "label": "Multidimensional Tax Report"
@@ -19528,8 +19571,8 @@
     "Tax key": {
       "label": "Tax key"
     },
-    "Rellenar Fechas de Operaci\u00f3n": {
-      "label": "Rellenar Fechas de Operaci\u00f3n"
+    "Rellenar Fechas de Operación": {
+      "label": "Rellenar Fechas de Operación"
     },
     "SII Cash Receipts": {
       "label": "SII Cash Receipts"
@@ -19540,14 +19583,14 @@
     "Info.Conta.Impuestos": {
       "label": "Info.Conta.Impuestos"
     },
-    "Configuraci\u00f3n Verifactu": {
-      "label": "Configuraci\u00f3n Verifactu"
+    "Configuración Verifactu": {
+      "label": "Configuración Verifactu"
     },
     "TBAI Facturas Enviadas": {
       "label": "TBAI Facturas Enviadas"
     },
-    "C\u00f3digo de Actividad": {
-      "label": "C\u00f3digo de Actividad"
+    "Código de Actividad": {
+      "label": "Código de Actividad"
     },
     "PYMEs Chart of Accounts Update": {
       "label": "PYMEs Chart of Accounts Update"
@@ -19576,8 +19619,8 @@
     "Tax Report": {
       "label": "Tax Report"
     },
-    "Ep\u00edgrafes IAE": {
-      "label": "Ep\u00edgrafes IAE"
+    "Epígrafes IAE": {
+      "label": "Epígrafes IAE"
     },
     "SII Descriptions": {
       "label": "SII Descriptions"

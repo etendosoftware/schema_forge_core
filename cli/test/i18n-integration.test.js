@@ -183,3 +183,123 @@ describe('label fallback chain', () => {
     assert.equal(result, 'myField');
   });
 });
+
+// ---------------------------------------------------------------------------
+// resolveMenuLabel — { field } option
+// ---------------------------------------------------------------------------
+
+// Inline the logic from useMenuLabel.js (tools/app-shell/src/i18n/useMenuLabel.js)
+// since that file uses ESM with import.meta / React hooks.
+function resolveMenuLabel(dictionary, key, { field } = {}) {
+  if (field) {
+    return dictionary?.windows?.[key]?.[field] ?? null;
+  }
+  return (
+    dictionary?.ui?.[key]?.label ??
+    dictionary?.menus?.[key]?.label ??
+    dictionary?.windows?.[key]?.label ??
+    dictionary?.tabs?.[key]?.label ??
+    dictionary?.genericLabels?.[key] ??
+    key
+  );
+}
+
+describe('resolveMenuLabel — { field } option', () => {
+  const dictionary = {
+    ui: {},
+    menus: {},
+    windows: {
+      'Sales Order': { label: 'Pedido de venta', newLabel: 'Nuevo pedido' },
+      'Product': { label: 'Producto' },
+    },
+    tabs: {},
+    genericLabels: {},
+  };
+
+  it('returns the field value when windows[key][field] exists', () => {
+    assert.equal(resolveMenuLabel(dictionary, 'Sales Order', { field: 'newLabel' }), 'Nuevo pedido');
+  });
+
+  it('returns null when key is not in windows', () => {
+    assert.equal(resolveMenuLabel(dictionary, 'Unknown', { field: 'newLabel' }), null);
+  });
+
+  it('returns null when key exists in windows but field is missing', () => {
+    assert.equal(resolveMenuLabel(dictionary, 'Product', { field: 'newLabel' }), null);
+  });
+
+  it('returns null when key is undefined', () => {
+    assert.equal(resolveMenuLabel(dictionary, undefined, { field: 'newLabel' }), null);
+  });
+
+  it('returns null when key is null', () => {
+    assert.equal(resolveMenuLabel(dictionary, null, { field: 'newLabel' }), null);
+  });
+
+  it('without { field }: normal cascade returns label found via windows[key].label', () => {
+    assert.equal(resolveMenuLabel(dictionary, 'Sales Order'), 'Pedido de venta');
+  });
+
+  it('without { field }: falls back to raw key when nothing matches in cascade', () => {
+    assert.equal(resolveMenuLabel(dictionary, 'Unknown Key'), 'Unknown Key');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Locale newLabel consistency
+// ---------------------------------------------------------------------------
+
+const LOCALES_DIR = resolve(import.meta.dirname, '../../tools/app-shell/src/locales');
+
+describe('locale newLabel consistency', () => {
+  const esRaw = readFileSync(join(LOCALES_DIR, 'es_ES.json'), 'utf8');
+  const enRaw = readFileSync(join(LOCALES_DIR, 'en_US.json'), 'utf8');
+  const esLocale = JSON.parse(esRaw);
+  const enLocale = JSON.parse(enRaw);
+
+  const esWindows = esLocale?.windows ?? {};
+  const enWindows = enLocale?.windows ?? {};
+
+  const esKeysWithNewLabel = Object.keys(esWindows).filter((k) => 'newLabel' in esWindows[k]);
+  const enKeysWithNewLabel = Object.keys(enWindows).filter((k) => 'newLabel' in enWindows[k]);
+
+  it('every key with newLabel in es_ES also has newLabel in en_US', () => {
+    const missing = esKeysWithNewLabel.filter((k) => !('newLabel' in (enWindows[k] ?? {})));
+    assert.deepStrictEqual(
+      missing,
+      [],
+      `Keys with newLabel in es_ES but missing in en_US: ${missing.join(', ')}`,
+    );
+  });
+
+  it('every key with newLabel in en_US also has newLabel in es_ES', () => {
+    const missing = enKeysWithNewLabel.filter((k) => !('newLabel' in (esWindows[k] ?? {})));
+    assert.deepStrictEqual(
+      missing,
+      [],
+      `Keys with newLabel in en_US but missing in es_ES: ${missing.join(', ')}`,
+    );
+  });
+
+  it('newLabel values are non-empty strings in es_ES', () => {
+    const bad = esKeysWithNewLabel.filter(
+      (k) => typeof esWindows[k].newLabel !== 'string' || esWindows[k].newLabel.trim() === '',
+    );
+    assert.deepStrictEqual(
+      bad,
+      [],
+      `Keys with empty/non-string newLabel in es_ES: ${bad.join(', ')}`,
+    );
+  });
+
+  it('newLabel values are non-empty strings in en_US', () => {
+    const bad = enKeysWithNewLabel.filter(
+      (k) => typeof enWindows[k].newLabel !== 'string' || enWindows[k].newLabel.trim() === '',
+    );
+    assert.deepStrictEqual(
+      bad,
+      [],
+      `Keys with empty/non-string newLabel in en_US: ${bad.join(', ')}`,
+    );
+  });
+});

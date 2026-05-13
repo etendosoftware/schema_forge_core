@@ -637,7 +637,7 @@ export function ListView({
                   onClick={() => onNew ? onNew() : navigate(`/${windowName}/new`)}
                 >
                   <Plus className="h-4 w-4" />
-                  {newLabel ?? ui('newRecord')}
+                  {newLabel ?? tMenu(entityLabel, { field: 'newLabel' }) ?? ui('newRecord')}
                 </Button>
                 {newActions.length > 0 && (
                   <>
