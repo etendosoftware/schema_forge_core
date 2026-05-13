@@ -148,6 +148,22 @@ const fetchLines = async ({ base, headers, docId, sharedContext }) => {
   const json = await res.json();
   const lines = json?.response?.data || [];
   const { invoiceHeader, productAuxMap, alreadyImportedShipmentLines, alreadyImportedOrderLines } = sharedContext;
+
+  // Batch-fetch the referenced sales order lines to carry their discount into the
+  // invoice. M_InOutLine has no Discount column — the value lives on C_OrderLine.
+  const orderLineIds = [...new Set(lines.filter(l => l.salesOrderLine).map(l => l.salesOrderLine))];
+  const orderDiscounts = {};
+  await Promise.all(orderLineIds.map(async (id) => {
+    try {
+      const r = await fetch(`${base}/sales-order/lines/${id}`, { headers });
+      if (r.ok) {
+        const d = await r.json();
+        const ol = d?.response?.data?.[0];
+        if (ol && Number(ol.discount) > 0) orderDiscounts[id] = Number(ol.discount);
+      }
+    } catch { /* ignore — missing order line means 0 discount */ }
+  }));
+
   return Promise.all(lines.map(async (l) => {
     const imported = alreadyImportedShipmentLines?.has(l.id) || alreadyImportedOrderLines?.has(l.salesOrderLine);
     const qty = Number(l.movementQuantity) || 1;
@@ -161,6 +177,7 @@ const fetchLines = async ({ base, headers, docId, sharedContext }) => {
       _tax: priceData.tax || null,
       _uOM: priceData.uOM || l.uOM || null,
       _alreadyImported: !!imported,
+      _orderDiscount: orderDiscounts[l.salesOrderLine] || 0,
     };
   }));
 };
@@ -178,10 +195,23 @@ const buildLineBody = async ({ line, qty, invoiceId, lineNo, sharedContext, base
   const { invoiceHeader, productAuxMap } = sharedContext;
   // Re-resolve price for the actual import qty so lineNetAmount is correct.
   const priceData = await resolveLinePrice(base, headers, line.product, qty, invoiceHeader, productAuxMap[line.product] || {});
-  const grossUnitPrice = Number(priceData.grossUnitPrice) || 0;
-  const unitPrice = Number(priceData.unitPrice) || grossUnitPrice || Number(line._unitPrice) || 0;
-  const lineNetAmount = Number(priceData.lineNetAmount) || qty * unitPrice;
-  const listPrice = Number(priceData.listPrice) || unitPrice;
+  const calloutGrossUnitPrice = Number(priceData.grossUnitPrice) || 0;
+  const calloutUnitPrice = Number(priceData.unitPrice) || calloutGrossUnitPrice || Number(line._unitPrice) || 0;
+  // listPrice is the catalog price before any discount.
+  const listPrice = Number(priceData.listPrice) || calloutUnitPrice;
+
+  // Carry the discount from the original sales order line (etgoDiscount on invoice).
+  const orderDiscount = Number(line._orderDiscount) || 0;
+  // Apply the discount to derive the actual unit price.
+  const unitPrice = orderDiscount > 0 ? listPrice * (1 - orderDiscount / 100) : calloutUnitPrice;
+  const lineNetAmount = qty * unitPrice;
+
+  // Scale grossUnitPrice by the same discount factor so the tax-inclusive price
+  // stays consistent. If the callout didn't return one, omit it.
+  const grossUnitPrice = (calloutGrossUnitPrice && calloutUnitPrice)
+    ? calloutGrossUnitPrice * (unitPrice / calloutUnitPrice)
+    : calloutGrossUnitPrice;
+
   const tax = priceData.tax || line._tax || null;
   const uOM = priceData.uOM || line._uOM || line.uOM || null;
   return {
@@ -192,6 +222,7 @@ const buildLineBody = async ({ line, qty, invoiceId, lineNo, sharedContext, base
     listPrice,
     ...(grossUnitPrice ? { grossUnitPrice } : {}),
     lineNetAmount,
+    etgoDiscount: orderDiscount,
     tax,
     uOM,
     lineNo,
