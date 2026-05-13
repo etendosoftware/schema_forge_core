@@ -379,11 +379,12 @@ test.describe('TaxIDKeyPicker dropdown — ETP-3778', () => {
     const trigger = page.locator('button[aria-haspopup="listbox"]');
     await trigger.click();
 
-    // Select "Pasaporte"
-    await page.getByRole('option', { name: 'Pasaporte' }).click();
+    // Select the third option from the fixture
+    const selectedOption = TAX_ID_KEY_OPTIONS[2];
+    await page.getByRole('option', { name: selectedOption.label }).click();
 
     // Trigger should now show the selected label
-    await expect(trigger).toContainText('Pasaporte', { timeout: 3_000 });
+    await expect(trigger).toContainText(selectedOption.label, { timeout: 3_000 });
     // Listbox should close after selection
     await expect(page.getByRole('listbox')).not.toBeVisible({ timeout: 3_000 });
   });
