@@ -15,6 +15,7 @@ import AccountingForm from './AccountingForm';
 import ReversedInvoicesTable from './ReversedInvoicesTable';
 import ReversedInvoicesForm from './ReversedInvoicesForm';
 import RelatedDocuments from '@/windows/custom/purchase-invoice/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
 import PurchaseInvoiceBottomPanel from '../../../custom/PurchaseInvoiceBottomPanel';
 import catalogs from './mockCatalogs';
 
@@ -875,7 +876,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         ]}
         noHeaderBorder
         notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Invoice", config: {} } }]}
         bottomSection={PurchaseInvoiceBottomPanel}
         menuActions={({ status }) => [
           { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'reactivated', documentAction: 'RE',  }

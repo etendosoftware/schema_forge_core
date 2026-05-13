@@ -20,7 +20,7 @@ The current repo evidence shows a generated finance window with payment-in-speci
 - Window shape: master-child. The primary entity is `finPayment` and the child dataset is `finPaymentScheduleDetail`, exposed as the payment allocation lines.
 - Lines surface: the allocation child (`finPaymentScheduleDetail`) is managed through the custom `PaymentBottomPanel` component, not through the standard lines table. `decisions.json` sets `detailEntity: null`, so `linesLayout` is not applicable for this window. Allocation management and summary recalculation are handled entirely inside `PaymentBottomPanel`.
 - List interaction: the list shows document number, payment date, received-from business partner, amount, and status, with filters limited to `documentNo`, `paymentDate`, and `businessPartner`.
-- Detail interaction: opening a payment uses the generated detail page with the contract-backed header form, related-documents tab, bottom summary panel, notes field on `description`, and a top-right activity toggle. Creating a payment from the list opens the specialized `NewPaymentModal` instead of the plain generated new-record flow.
+- Detail interaction: opening a payment uses the generated detail page with the contract-backed header form, related-documents tab, bottom summary panel, notes field on `description`, and a top-right activity toggle. An **Attachments** tab is placed below the `PaymentBottomPanel` (via `customTabsAfterBottom: true`), so the payment summary and allocation data remain the primary focus and file attachments appear at the end of the page. Creating a payment from the list opens the specialized `NewPaymentModal` instead of the plain generated new-record flow.
 
 ## Reactive behavior and dependencies
 - Selector dependencies are explicit in the contract and modal flow. `paymentMethod` is a searchable selector, `account` depends on the selected payment method, and `currency` depends on the selected account. In the new-payment modal, changing payment method refetches deposit accounts and resets the selected account.
@@ -48,11 +48,14 @@ The current repo evidence shows a generated finance window with payment-in-speci
 6. On a payment in `RPAP`, confirm `Process Payment` is available. After processing the payment to `RPR`, `RDNC`, or `RPPC`, confirm `Reverse Payment` becomes visible and delete is no longer the expected completion path.
 7. Open the `Lines` child dataset for a payment with allocations and confirm the line surface exposes at least due date, received amount, and invoice payment schedule, all scoped to the current payment via `parentId`.
 8. Create or edit allocation lines tied to invoice schedules and confirm the bottom panel reflects linked invoices and any remaining unallocated credit after refresh.
+9. Scroll below the `PaymentBottomPanel` and confirm the **Attachments** tab strip and content area are visible. Upload a file, verify it appears in the table with file name, size, upload date, and uploader. Download it, then delete it and confirm the row disappears. When multiple files exist, confirm the "Download all (ZIP)" and "Delete all" actions appear in the table header, and that "Delete all" shows a confirmation dialog before removing all files.
 
 ## Automated evidence
+- `e2e/tests/flows/attachments.mocked.spec.js` (Suites A–D) provides browser-level E2E coverage for the Attachments tab: tab visibility in the `customTabsAfterBottom` strip, empty state, upload (valid file, file too large, invalid MIME, duplicate name), single delete with confirmation, Delete All, individual file download, and Download All (ZIP). All API calls are mocked; no real backend is required.
 - There is no dedicated payment-in UI test in `tools/app-shell` covering the specialized create flow, payment-state actions, or allocation panels.
 - The contract itself contains generated validation coverage for field presence, field types, searchable filters, and default-value typing for `finPayment` and `finPaymentScheduleDetail`, but those checks do not assert rendered payment-specific behavior.
 - Shared shell loading and route behavior are documented centrally in `docs/generated-custom-windows/app-shell-functional-flows.md`.
+- `artifacts/payment-in/decisions.json` declares `customTabsAfterBottom: true`, which positions the generic `AttachmentsTab` below `PaymentBottomPanel` rather than in the primary tab strip.
 - Evidence reviewed for this document:
   - `tools/app-shell/src/menu.json`
   - `tools/app-shell/src/windows/registry.js`

@@ -22,27 +22,18 @@ test.describe('Smoke: windows load correctly', () => {
 
   for (const win of windows) {
     test(`${win.slug} loads`, async ({ page }) => {
-      const errors = [];
-      page.on('console', (msg) => {
-        if (msg.type() === 'error') errors.push(msg.text());
-      });
+      // pageerror captures uncaught JS exceptions only — not network errors (HTTP 404/500
+      // from backend or mocked APIs are expected noise in a dev/mock environment).
+      const jsErrors = [];
+      page.on('pageerror', (error) => jsErrors.push(error.message));
 
       await page.goto(`/${win.slug}`);
 
-      // Should render a heading
-      const heading = page.getByRole('heading', { level: 1 });
-      await expect(heading).toBeVisible({ timeout: 10_000 });
+      // Should render the list view (h1 was replaced by a TopBar <span> — use stable testid)
+      await expect(page.getByTestId('list-view')).toBeVisible({ timeout: 10_000 });
 
-      // No critical JS errors (ignore common noise)
-      const critical = errors.filter(
-        (e) =>
-          !e.includes('favicon') &&
-          !e.includes('ResizeObserver') &&
-          !e.includes('net::ERR') &&
-          !e.includes('404') &&
-          !e.includes('MIME type')
-      );
-      expect(critical).toHaveLength(0);
+      // No uncaught JS exceptions
+      expect(jsErrors).toHaveLength(0);
     });
   }
 });

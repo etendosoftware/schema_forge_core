@@ -6,6 +6,7 @@ import CustomerReturnForm from './CustomerReturnForm';
 import CustomerReturnLineTable from './CustomerReturnLineTable';
 import CustomerReturnLineForm from './CustomerReturnLineForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
 import ReturnFromCustomerBottomPanel from '../../../custom/ReturnFromCustomerBottomPanel';
 import catalogs from './mockCatalogs';
 
@@ -394,7 +395,7 @@ export default function CustomerReturnPage({ windowName, recordId, ...props }) {
         documentPreview={{ titlePrefix: 'Return', pdfUrl: null }}
         hideDeleteWhenComplete
         notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Order", config: {} } }]}
         bottomSection={ReturnFromCustomerBottomPanel}
         requiredHeaderFields={requiredHeaderFields}
         lineConfig={RETURN_ORDER_LINE_CONFIG}

@@ -2,19 +2,32 @@
   "$schema": "decisions-v2",
   "window": {
     "category": "monitor",
-    "name": "TBAI Facturas Enviadas"
+    "name": "TBAI Facturas Enviadas",
+    "attachments": false
   },
   "entities": {
     "sincronización": {
       "fields": {
-        "organization": { "visibility": "system", "derivation": "fromParent" },
-        "client": { "visibility": "system", "derivation": "fromParent" }
+        "organization": {
+          "visibility": "system",
+          "derivation": "fromParent"
+        },
+        "client": {
+          "visibility": "system",
+          "derivation": "fromParent"
+        }
       }
     },
     "resultadoValidación": {
       "fields": {
-        "organization": { "visibility": "system", "derivation": "fromParent" },
-        "client": { "visibility": "system", "derivation": "fromParent" }
+        "organization": {
+          "visibility": "system",
+          "derivation": "fromParent"
+        },
+        "client": {
+          "visibility": "system",
+          "derivation": "fromParent"
+        }
       }
     }
   }

@@ -8,6 +8,7 @@ import LinesForm from './LinesForm';
 import BasicDiscountsTable from './BasicDiscountsTable';
 import BasicDiscountsForm from './BasicDiscountsForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
 import ReturnToVendorBottomPanel from '../../../custom/ReturnToVendorBottomPanel';
 import catalogs from './mockCatalogs';
 
@@ -611,7 +612,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'basicDiscounts', label: 'Basic Discounts', Table: BasicDiscountsTable, Form: BasicDiscountsForm },
         ]}
         notesField="returnReason"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Order", config: {} } }]}
         bottomSection={ReturnToVendorBottomPanel}
         requiredHeaderFields={requiredHeaderFields}
         lineConfig={RETURN_ORDER_LINE_CONFIG}

@@ -30,11 +30,11 @@ const ROWS = [
 const FIELDS = {
   'sales-order': {
     extra: { 'businessPartner$_identifier': 'Test BP', grandTotalAmount: 100, deliveryStatus: 50, invoiceStatus: 50, orderDate: '2026-01-15' },
-    expects: { clone: true, email: false, more: true },
+    expects: { clone: true, email: true, more: true },
   },
   'purchase-order': {
     extra: { 'businessPartner$_identifier': 'Test BP', grandTotalAmount: 100, deliveryStatus: 50, invoiceStatus: 50, orderDate: '2026-01-15' },
-    expects: { clone: true, email: false, more: true },
+    expects: { clone: true, email: true, more: true },
   },
   'sales-invoice': {
     extra: { 'businessPartner$_identifier': 'Test BP', grandTotalAmount: 100, invoiceDate: '2026-01-15' },

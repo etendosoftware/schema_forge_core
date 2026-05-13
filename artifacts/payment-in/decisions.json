@@ -14,8 +14,10 @@
       "topbarRight": "PaymentActivityToggle",
       "newRecordComponent": "NewPaymentModal"
     },
+    "attachments": true,
     "detailEntity": null,
     "hideDeleteWhenComplete": true,
+    "customTabsAfterBottom": true,
     "summaryFields": [],
     "menuActions": [
       {
