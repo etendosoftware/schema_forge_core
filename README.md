@@ -15,6 +15,43 @@ Design and tooling layer for building a simplified Etendo interface. Schema Forg
 
 Schema Forge decides **what** to expose. Etendo Go decides **how** to serve it.
 
+## Quick Start
+
+Prerequisites: Node.js >= 22, npm, PostgreSQL access to an Etendo dev database, and GitHub CLI (`gh`).
+
+1. Clone this repository inside your Etendo Core project directory (sibling to `modules/`):
+   ```bash
+   cd /path/to/etendo_core
+   git clone git@github.com:etendosoftware/etendo_schema_forge.git schema_forge
+   cd schema_forge
+   ```
+2. Install dependencies and activate git hooks:
+   ```bash
+   make install
+   ```
+3. Configure environment:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your Etendo root path and DB credentials
+   ```
+4. Refresh the menu cache (requires DB access):
+   ```bash
+   node cli/src/menu-cache.js refresh
+   ```
+5. Start the dev server:
+   ```bash
+   make dev          # with mock data -> http://localhost:3100
+   make dev-mock     # explicit mock mode (required for E2E tests)
+   ```
+6. Run tests:
+   ```bash
+   make test             # CLI unit tests
+   make build            # production build
+   make test-e2e-headless # E2E tests (CI mode, requires make dev-mock running)
+   ```
+
+For the full installation guide including Etendo Core setup, com.etendoerp.go, and jsreport, see the sections below.
+
 ## Prerequisites
 
 Before starting, make sure you have the following installed:
@@ -46,11 +83,11 @@ Before starting, make sure you have the following installed:
 
 ### 1. Start from a working Etendo Core
 
-You need a functional Etendo Core instance as the base. This gives Claude Code full access to the Etendo source code and database.
+You need a functional Etendo Core instance as the base.
 
 ```bash
 cd /path/to/etendo_core
-git checkout feature/ETP-3519
+git checkout <your-branch>
 ```
 
 Make sure Etendo compiles and runs correctly before proceeding.
@@ -63,7 +100,7 @@ Clone this repository **inside** the Etendo project directory (sibling to `modul
 cd /path/to/etendo_core
 git clone git@github.com:etendosoftware/etendo_schema_forge.git schema_forge
 cd schema_forge
-git checkout develop
+git checkout <your-branch>
 ```
 
 ### 3. Clone com.etendoerp.go
@@ -74,7 +111,7 @@ Clone the runtime module into the Etendo `modules/` directory:
 cd /path/to/etendo_core/modules
 git clone git@github.com:etendosoftware/com.etendoerp.go.git
 cd com.etendoerp.go
-git checkout develop
+git checkout <your-branch>
 ```
 
 ### 4. Clone com.etendoerp.openapi (if needed)
@@ -127,29 +164,19 @@ ETENDO_SOURCE_DIR=../src
 After installation, your project should look like this:
 
 ```
-etendo_core/                    ← branch: feature/ETP-3519
+etendo_core/                    ← branch: <your-branch>
 ├── modules/
-│   ├── com.etendoerp.go/       ← branch: develop
+│   ├── com.etendoerp.go/       ← branch: <your-branch>
 │   └── com.etendoerp.openapi/  ← branch: main (if needed)
-├── schema_forge/               ← branch: develop
+├── schema_forge/               ← branch: <your-branch>
 └── gradle.properties
 ```
 
-## jsreport Installation (Draft)
+## jsreport Installation
 
-> ⚠️ **This section is in the process of official integration.** The `com.etendoerp:docker` dependency is not yet part of `com.etendoerp.go` — add it manually until it is integrated.
+jsreport is the report engine used by NEO Headless for PDF report generation. It runs as a Docker container managed by the `com.etendoerp:docker` module, which is already declared as a dependency in `com.etendoerp.go/build.gradle`.
 
-jsreport is the report engine used by NEO Headless for PDF report generation. It runs as a Docker container managed by the `com.etendoerp:docker` module.
-
-### 1. Add the Docker dependency to build.gradle
-
-In the Etendo project's `build.gradle`, add inside the `dependencies` block:
-
-```groovy
-implementation 'com.etendoerp:docker:latest.release'
-```
-
-### 2. Configure gradle.properties
+### 1. Configure gradle.properties
 
 Add the following to the project's `gradle.properties`:
 
@@ -161,7 +188,7 @@ SCHEMA_FORGE_DIR=../../schema_forge
 
 > **Note:** `SCHEMA_FORGE_DIR` is a placeholder — replace it with the actual path to your `schema_forge` directory (relative or absolute).
 
-### 3. Build the jsreport Docker image
+### 2. Build the jsreport Docker image
 
 > **Temporary step:** This manual build will be removed once the image is published to a registry. In a future version, the image will be pulled automatically without needing to build from the Dockerfile.
 
@@ -170,7 +197,7 @@ cd modules/com.etendoerp.go/compose
 docker buildx build -f Dockerfile -t etendo-jsreport:latest .
 ```
 
-### 4. Start jsreport
+### 3. Start jsreport
 
 From the Etendo root directory:
 
@@ -180,7 +207,7 @@ From the Etendo root directory:
 
 This starts the jsreport container (and any other configured Docker resources). The `com.etendoerp:docker` module manages the container lifecycle.
 
-### 5. Server Deployment: Apache Proxy for jsreport
+### 4. Server Deployment: Apache Proxy for jsreport
 
 When deploying to a server (production, staging, experimental), the frontend accesses jsreport through a relative path (`/jsreport/api/report`). In development, Vite proxies this automatically. In a deployed environment, you need to configure your web server to proxy these requests to the jsreport container.
 
