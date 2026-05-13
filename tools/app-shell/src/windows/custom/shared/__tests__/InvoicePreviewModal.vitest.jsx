@@ -231,8 +231,8 @@ describe('InvoicePreviewModal', () => {
     expect(screen.getByText('invoicePreviewNoActivityRecorded')).toBeInTheDocument();
   });
 
-  it('renders drop zone for purchase invoice', () => {
+  it('renders drop zone for purchase invoice', async () => {
     renderPreview({ specName: 'purchase-invoice' });
-    expect(screen.getByText('invoicePreviewUploadYourDocument')).toBeInTheDocument();
+    expect(await screen.findByText('invoicePreviewUploadYourDocument')).toBeInTheDocument();
   });
 });
