@@ -1867,7 +1867,7 @@ export function DetailView({
                     In inlineEditable mode this wrapper is the SOLE scroll
                     container — everything outside (form card, tabs bar,
                     bottom section) stays fixed in viewport. */}
-                <div ref={linesScrollRef} className={linesLayout === 'inlineEditable' && !isCustomTabActive ? 'flex-1 overflow-auto min-h-0' : ''}>
+                <div ref={linesScrollRef} className={linesLayout === 'inlineEditable' ? 'flex-1 overflow-auto min-h-0' : ''}>
                 {tabs[activeTab]?.key === 'lines' && DetailTable && (
                   // Only show the loading spinner on INITIAL load (no children yet).
                   // Subsequent refetches (e.g., after PATCH on a child) keep the table
@@ -2797,7 +2797,6 @@ export function DetailView({
                     />
                   </div>
                 )}
-                </div>
 
                 {/* Tab content: custom tabs with placement='tab'. We always mount the
                     component (so it can manage its own internal state and not lose
@@ -2805,6 +2804,8 @@ export function DetailView({
                     display:none and pass `isActive` so the component can defer its
                     first fetch until it actually becomes visible. */}
                 {!customTabsAfterBottom && renderCustomTabPanels((ct) => tabs[activeTab]?.key === customTabKey(ct))}
+
+                </div>
 
               </div>
             )}
