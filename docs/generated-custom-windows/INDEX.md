@@ -91,6 +91,15 @@ This folder is the entry point for documentation that describes how generated an
 | [sii-monitor.md](sii-monitor.md) | API-only sub-window — SII invoice submission records consumed by FiscalMonitorPage |
 | [monitor-verifactu.md](monitor-verifactu.md) | API-only sub-window — Verifactu invoice submission records consumed by FiscalMonitorPage |
 | [tbai-facturas-enviadas.md](tbai-facturas-enviadas.md) | API-only sub-window — TBAI invoice submission records consumed by FiscalMonitorPage |
+| [sii-config.md](sii-config.md) | Backend artifact window — stores the SII configuration record; surfaced to end users only through `fiscal-config` |
+| [tbai-config.md](tbai-config.md) | Backend artifact window — stores the TBAI configuration record; surfaced to end users only through `fiscal-config` |
+| [verifactu-config.md](verifactu-config.md) | Backend artifact window — stores the Verifactu configuration record; surfaced to end users only through `fiscal-config` |
+
+## Marketplace
+
+| File | Description |
+|------|-------------|
+| [app-store.md](app-store.md) | App-shell surface (not a generated entity window) — installs/uninstalls SDK apps via the hidden Marketplace menu and the `/app-store` route |
 
 ## Scope
 
