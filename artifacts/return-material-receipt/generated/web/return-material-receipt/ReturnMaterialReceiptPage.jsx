@@ -281,7 +281,7 @@ export default function ReturnMaterialReceiptPage({ windowName, recordId, ...pro
         breadcrumb={breadcrumb}
       api={api}
         notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_InOut", config: {} } }]}
+        customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_InOut", config: {} } }]}
         bottomSection={ReturnMaterialReceiptBottomPanel}
         requiredHeaderFields={requiredHeaderFields}
         linesLayout="inlineEditable"

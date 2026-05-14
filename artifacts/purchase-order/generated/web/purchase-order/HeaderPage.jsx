@@ -667,7 +667,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         hideSaveStatuses={["CO","CL","VO"]}
         noHeaderBorder
         notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Order", config: {} } }]}
+        customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Order", config: {} } }]}
         bottomSection={PurchaseOrderBottomPanel}
         topbarRight={PurchaseOrderActions}
         topbarExtra={PurchaseOrderDraftChips}
