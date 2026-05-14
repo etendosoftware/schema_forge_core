@@ -333,9 +333,10 @@ export function useEntity(entity, childEntity, {
   const backendDefaultKeysRef = useRef(new Set());
   // Fields explicitly changed by the user (via handleChange) in the current new-record session.
   const userChangedKeysRef = useRef(new Set());
-  // ETP-3894: snapshot of the form-level fields contract registered by EntityForm.
-  // Used in handleSave to validate required+editable fields before posting to the backend.
-  const formFieldsRef = useRef([]);
+  // ETP-3894: per-form snapshot of visible fields registered by each EntityForm instance.
+  // Keyed by a stable formId (React.useId) so multiple EntityForms accumulate rather than
+  // overwrite each other. handleSave flattens all entries to validate the complete form.
+  const formFieldsRef = useRef(new Map());
 
   // True when editing has diverged from the last-saved selected state.
   // For new records (selected === null): dirty as soon as any non-id field has a value.
@@ -565,10 +566,15 @@ export function useEntity(entity, childEntity, {
     });
   }, []);
 
-  // ETP-3894: EntityForm calls this on mount with its `fields` array so handleSave
-  // can validate required+editable fields client-side before hitting the backend.
-  const registerFields = useCallback((fields) => {
-    formFieldsRef.current = Array.isArray(fields) ? fields : [];
+  // ETP-3894: EntityForm calls this on mount/update with its visible fields and a stable
+  // formId. Passing fields=null on unmount removes that form's entry so stale fields
+  // (e.g. conditionally hidden blocks) don't pollute the validation set.
+  const registerFields = useCallback((fields, formId = '__default__') => {
+    if (fields === null) {
+      formFieldsRef.current.delete(formId);
+    } else {
+      formFieldsRef.current.set(formId, Array.isArray(fields) ? fields : []);
+    }
   }, []);
 
   const handleSave = useCallback(async () => {
@@ -580,7 +586,7 @@ export function useEntity(entity, childEntity, {
     // round-trip and shows per-field errors immediately. Only runs on create — for
     // existing records, `editing` already includes server-resolved values.
     if (isNew) {
-      const fields = formFieldsRef.current || [];
+      const fields = [...formFieldsRef.current.values()].flat();
       const isReadOnly = (f) => {
         if (f.readOnly === true) return true;
         try {
