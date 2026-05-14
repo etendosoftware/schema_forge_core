@@ -48,12 +48,8 @@ const customMenuActions = ({ status }) => [
   },
 ];
 
-export default function SalesQuotationWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
-  const ui = useUI();
-  const [cloneTargets, setCloneTargets] = useState(null);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  const quotationColumns = useMemo(() => ([
+function buildQuotationColumns(ui) {
+  return [
     { key: 'orderDate', column: 'DateOrdered', type: 'date', dot: false },
     { key: 'documentNo', column: 'DocumentNo', type: 'string' },
     { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector' },
@@ -77,14 +73,19 @@ export default function SalesQuotationWindow({ windowName, recordId, token, apiB
     } },
     { key: 'validUntil', column: 'validuntil', type: 'date' },
     { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
-  ]), [ui]);
+  ];
+}
 
-  const CustomQuotationTable = useMemo(
-    () => function CustomQuotationTable(props) {
-      return <QuotationTable columns={quotationColumns} {...props} />;
-    },
-    [quotationColumns],
-  );
+function CustomQuotationTable(props) {
+  const ui = useUI();
+  const quotationColumns = useMemo(() => buildQuotationColumns(ui), [ui]);
+
+  return <QuotationTable columns={quotationColumns} {...props} />;
+}
+
+export default function SalesQuotationWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
+  const [cloneTargets, setCloneTargets] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
     useCreateContactModal({ apiBaseUrl, token });
