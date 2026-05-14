@@ -23,13 +23,13 @@ export function isTokenExpired(token) {
 export function createApiFetch(baseUrl, getToken, onUnauthorized) {
   return async function apiFetch(path, options = {}) {
     const token = getToken();
+    const headers = { ...buildHeaders(token), ...options.headers };
+    // FormData requires the browser to set Content-Type with the multipart boundary
+    if (options.body instanceof FormData) delete headers['Content-Type'];
     const res = await fetch(`${baseUrl != null ? baseUrl : DEFAULT_BASE_URL}${path}`, {
       ...options,
       credentials: 'include',
-      headers: {
-        ...buildHeaders(token),
-        ...options.headers,
-      },
+      headers,
     });
     if (res.status === 401) {
       onUnauthorized();
