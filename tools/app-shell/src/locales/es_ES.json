@@ -18428,6 +18428,68 @@
     "fiscalMonitor.profile.unconfigured": "Sin configurar",
     "fiscalMonitor.profile.conflict": "Conflicto",
     "fiscalMonitor.orgFallback": "Organización",
+    "fiscalDebug.title": "⚙ Debug · Configuración Fiscal",
+    "fiscalDebug.org": "Org.",
+    "fiscalDebug.section.profiles": "Perfiles",
+    "fiscalDebug.section.certExpiry": "Caducidad certificado",
+    "fiscalDebug.section.certModal": "Modal certificado",
+    "fiscalDebug.section.deleteRecords": "Eliminar registros",
+    "fiscalDebug.certExpiry.none": "Ninguno",
+    "fiscalDebug.certExpiry.warn": "Aviso 45d",
+    "fiscalDebug.certExpiry.crit": "Crítico 20d",
+    "fiscalDebug.certModal.pick": "Selección",
+    "fiscalDebug.certModal.fileSel": "Archivo sel.",
+    "fiscalDebug.certModal.pickErr": "Error sel.",
+    "fiscalDebug.certModal.verify": "Verificar",
+    "fiscalDebug.certModal.nifConf": "Conf. NIF",
+    "fiscalDebug.certModal.done": "Listo",
+    "fiscalDebug.certModal.invalidFormat": "Formato no válido. Solo se aceptan archivos .p12 y .pfx.",
+    "fiscalDebug.profile.wizard": "Asistente",
+    "fiscalDebug.profile.sii": "SII",
+    "fiscalDebug.profile.siiNav": "SII Nav",
+    "fiscalDebug.profile.tbai": "TBAI",
+    "fiscalDebug.profile.siiTbai": "SII+TBAI",
+    "fiscalDebug.profile.verifactu": "Verifactu",
+    "fiscalDebug.label.sii": "Configuración SII",
+    "fiscalDebug.label.tbai": "Configuración TBAI",
+    "fiscalDebug.label.verifactu": "Configuración Verifactu",
+    "fiscalDebug.label.cert": "Certificado",
+    "fiscalDebug.deleteAll": "🗑 Eliminar TODO (org. actual)",
+    "fiscalDebug.status.deleted": "✓ {count} eliminados",
+    "fmDebug.title": "⚙ Debug · Monitor Fiscal",
+    "fmDebug.profileOverride": "Sobrescribir perfil",
+    "fmDebug.showingDesignFor": "Mostrando diseño para {profile}.",
+    "fmDebug.noOverride": "Sin sobrescribir — perfil real activo.",
+    "fmDebug.section.certExpiry": "Caducidad certificado",
+    "fmDebug.section.data": "Datos",
+    "fmDebug.mockData": "Datos simulados",
+    "fmDebug.mockDataHint": "Los KPI y filas de tabla son muestras estáticas.",
+    "fmDebug.certExpiry.none": "Ninguno",
+    "fmDebug.certExpiry.warn": "Aviso 45d",
+    "fmDebug.certExpiry.crit": "Crítico 20d",
+    "fmDebug.profile.sii": "SII",
+    "fmDebug.profile.siiNavarra": "SII Navarra",
+    "fmDebug.profile.siiTbai": "SII + TBAI",
+    "fmDebug.profile.tbai": "TBAI",
+    "fmDebug.profile.verifactu": "Verifactu",
+    "purchaseOrder.topbar.deliveryStatus": "Estado de entrega",
+    "purchaseOrder.topbar.invoiceStatus": "Estado de facturación",
+    "quotationStatus.AE": "Evaluación automática",
+    "quotationStatus.CO": "Reservado",
+    "quotationStatus.CL": "Cerrado",
+    "quotationStatus.CA": "Cerrado - Pedido creado",
+    "quotationStatus.CJ": "Cerrado - Rechazado",
+    "quotationStatus.DR": "Borrador",
+    "quotationStatus.ME": "Evaluación manual",
+    "quotationStatus.NA": "No aceptado",
+    "quotationStatus.NC": "No confirmado",
+    "quotationStatus.WP": "No pagado",
+    "quotationStatus.RE": "Reabierto",
+    "quotationStatus.TMP": "Temporal",
+    "quotationStatus.UE": "Bajo evaluación",
+    "quotationStatus.IP": "En curso",
+    "quotationStatus.UNK": "Desconocido",
+    "quotationStatus.VO": "Anulado",
     "sendToSif": "Enviar a SIF",
     "sendToSifTitle": "Enviar al sistema fiscal",
     "sendToSifBodySii": "Esta factura se enviará al SII.",
@@ -19913,6 +19975,30 @@
     }
   },
   "statuses": {
+    "AE": {
+      "label": "Evaluación automática"
+    },
+    "ME": {
+      "label": "Evaluación manual"
+    },
+    "NA": {
+      "label": "No aceptado"
+    },
+    "NC": {
+      "label": "No confirmado"
+    },
+    "WP": {
+      "label": "No pagado"
+    },
+    "RE": {
+      "label": "Reabierto"
+    },
+    "TMP": {
+      "label": "Temporal"
+    },
+    "??": {
+      "label": "Desconocido"
+    },
     "CA": {
       "label": "Cerrado - Pedido creado"
     },
