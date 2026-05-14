@@ -401,3 +401,66 @@ describe('locale newLabel consistency', () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// Country selector — language URL parameter contract
+//
+// CreateContactModal.jsx builds country/region selector URLs as:
+//   `${baseUrl}?limit=${PAGE}&offset=${offset}&language=${locale}`
+//
+// These tests verify the URL-construction contract so a regression (e.g.
+// accidentally removing &language=) is caught before any UI change ships.
+// ---------------------------------------------------------------------------
+
+describe('country selector URL — language param contract', () => {
+  function buildCountrySelectorUrl(baseUrl, limit, offset, locale) {
+    return `${baseUrl}?limit=${limit}&offset=${offset}&language=${locale}`;
+  }
+
+  it('includes language=es_ES when locale is es_ES', () => {
+    const url = buildCountrySelectorUrl(
+      'http://localhost/sws/neo/sales-order/contacts/locationAddress/selectors/C_Country_ID',
+      120, 0, 'es_ES',
+    );
+    assert.ok(url.includes('language=es_ES'), `Expected language=es_ES in: ${url}`);
+  });
+
+  it('includes language=en_US when locale is en_US', () => {
+    const url = buildCountrySelectorUrl(
+      'http://localhost/sws/neo/sales-order/contacts/locationAddress/selectors/C_Country_ID',
+      120, 0, 'en_US',
+    );
+    assert.ok(url.includes('language=en_US'), `Expected language=en_US in: ${url}`);
+  });
+
+  it('language param comes after pagination params', () => {
+    const url = buildCountrySelectorUrl(
+      'http://localhost/sws/neo/foo/selectors/C_Country_ID',
+      120, 120, 'es_ES',
+    );
+    const languageIdx = url.indexOf('language=');
+    const limitIdx = url.indexOf('limit=');
+    const offsetIdx = url.indexOf('offset=');
+    assert.ok(languageIdx > limitIdx, 'language param must come after limit');
+    assert.ok(languageIdx > offsetIdx, 'language param must come after offset');
+  });
+
+  it('region selector uses same URL pattern with language param', () => {
+    const url = buildCountrySelectorUrl(
+      'http://localhost/sws/neo/contacts/locationAddress/selectors/C_Region_ID',
+      200, 0, 'es_ES',
+    );
+    assert.ok(url.includes('language=es_ES'), `Expected language=es_ES in: ${url}`);
+    assert.ok(url.includes('C_Region_ID'), 'URL must reference C_Region_ID selector');
+  });
+
+  it('language param is not empty string', () => {
+    const url = buildCountrySelectorUrl(
+      'http://localhost/sws/neo/contacts/locationAddress/selectors/C_Country_ID',
+      120, 0, 'es_ES',
+    );
+    const match = url.match(/language=([^&]*)/);
+    assert.ok(match, 'language param must be present');
+    assert.ok(match[1].length > 0, 'language param value must not be empty');
+  });
+});

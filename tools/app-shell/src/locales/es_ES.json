@@ -18641,7 +18641,7 @@
     "oauthDeleteDesc": "Esto eliminará permanentemente el cliente y revocará todos sus tokens. Esta acción no se puede deshacer.",
     "oauthRegenerateDesc": "¿Estás seguro? El secreto actual quedará invalidado inmediatamente. Los agentes que usen el secreto anterior dejarán de funcionar.",
     "oauthRevokeDesc": "Esto invalidará todos los tokens activos de este cliente. Los agentes deberán volver a autenticarse.",
-    "firstStepsCompleted": "Completados"
+    "firstStepsCompleted": "Completados",
     "attachments": "Adjuntos",
     "attachmentsDropHere": "Arrastra tu archivo aquí",
     "attachmentsOr": "o",

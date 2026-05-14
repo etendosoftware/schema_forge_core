@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUI } from '@/i18n';
+import { useLocaleState } from '@/i18n/useLocaleState';
 import EntityCreationModal from './EntityCreationModal.jsx';
 import FinancialSection from './FinancialSection.jsx';
 import AddressSection from './AddressSection.jsx';
@@ -95,6 +96,7 @@ export default function CreateContactModal({
   documentType = null,
 }) {
   const ui = useUI();
+  const [locale] = useLocaleState();
   const [opts, setOpts] = useState(EMPTY_OPTS);
   const [retryCount, setRetryCount] = useState(0);
   const [currentCountry, setCurrentCountry] = useState('');
@@ -132,7 +134,7 @@ export default function CreateContactModal({
       let offset = 0;
       const all = [];
       for (let i = 0; i < 20; i++) {
-        const res = await fetch(`${baseUrl}?limit=${PAGE}&offset=${offset}`, { headers: h });
+        const res = await fetch(`${baseUrl}?limit=${PAGE}&offset=${offset}&language=${locale}`, { headers: h });
         if (!res.ok) break;
         const data = await res.json();
         const items = (data?.items || []).map(x => ({ id: x.id, label: x.label || x.name || x.id }));
@@ -197,7 +199,7 @@ export default function CreateContactModal({
 
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bpApiBaseUrl, retryCount]);
+  }, [bpApiBaseUrl, locale, retryCount]);
 
   // Re-fetch regions when country changes
   useEffect(() => {
@@ -209,7 +211,7 @@ export default function CreateContactModal({
     setOpts(o => ({ ...o, regions: { options: [], loading: true, error: null } }));
 
     fetch(
-      `${bpApiBaseUrl}/locationAddress/selectors/C_Region_ID?C_Country_ID=${currentCountry}&limit=200`,
+      `${bpApiBaseUrl}/locationAddress/selectors/C_Region_ID?C_Country_ID=${currentCountry}&limit=200&language=${locale}`,
       { headers }
     )
       .then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
@@ -231,7 +233,7 @@ export default function CreateContactModal({
 
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentCountry, retryRegionCount]);
+  }, [currentCountry, locale, retryRegionCount]);
 
   const handleFieldChange = useCallback((id, value) => {
     if (id === 'country') setCurrentCountry(value);
