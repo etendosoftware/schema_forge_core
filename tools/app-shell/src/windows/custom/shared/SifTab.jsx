@@ -22,58 +22,64 @@ const PURCHASE_CLAVE_TIPO_FC_OPTIONS = [
 
 const inputCls = 'w-full text-xs bg-white border rounded px-2 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50 border-border/40';
 
-const SII_STATUS = {
-  CO: { key: 'sifDataTabs.status.sii.correct', cls: 'bg-green-50 text-green-700 border-green-200' },
-  AE: { key: 'sifDataTabs.status.sii.acceptedWithErrors', cls: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
-  IN: { key: 'sifDataTabs.status.sii.incorrect', cls: 'bg-red-50 text-red-700 border-red-200' },
-  EE: { key: 'sifDataTabs.status.sii.sendError', cls: 'bg-red-50 text-red-700 border-red-200' },
-  PE: { key: 'sifDataTabs.status.sii.pending', cls: 'bg-gray-50 text-gray-500 border-gray-200' },
-  AN: { key: 'sifDataTabs.status.sii.cancelled', cls: 'bg-gray-50 text-gray-500 border-gray-200' },
-  BA: { key: 'sifDataTabs.status.sii.dropped', cls: 'bg-gray-50 text-gray-500 border-gray-200' },
-  NR: { key: 'sifDataTabs.status.sii.notRegistrable', cls: 'bg-gray-50 text-gray-500 border-gray-200' },
+const PILL_CLS = {
+  pending: 'bg-yellow-50 text-yellow-800',
+  success: 'bg-green-50 text-green-700',
+  neutral: 'bg-[#F5F7F9] text-gray-700',
+  danger: 'bg-red-50 text-red-700',
 };
+
+const SII_STATUS = {
+  CO: { key: 'sifDataTabs.status.sii.correct', cls: PILL_CLS.success },
+  AE: { key: 'sifDataTabs.status.sii.acceptedWithErrors', cls: PILL_CLS.pending },
+  IN: { key: 'sifDataTabs.status.sii.incorrect', cls: PILL_CLS.danger },
+  EE: { key: 'sifDataTabs.status.sii.sendError', cls: PILL_CLS.danger },
+  PE: { key: 'sifDataTabs.status.sii.pending', cls: PILL_CLS.pending },
+  AN: { key: 'sifDataTabs.status.sii.cancelled', cls: PILL_CLS.neutral },
+  BA: { key: 'sifDataTabs.status.sii.dropped', cls: PILL_CLS.neutral },
+  NR: { key: 'sifDataTabs.status.sii.notRegistrable', cls: PILL_CLS.neutral },
+};
+
+const SII_DEFAULT = { key: 'sifDataTabs.status.sii.pending', cls: PILL_CLS.pending };
 
 const VERIFACTU_STATUS = {
-  AC: { key: 'sifDataTabs.status.verifactu.accepted', cls: 'bg-green-50 text-green-700 border-green-200' },
-  AE: { key: 'sifDataTabs.status.verifactu.acceptedWithErrors', cls: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
-  IN: { key: 'sifDataTabs.status.verifactu.invalid', cls: 'bg-red-50 text-red-700 border-red-200' },
-  ER: { key: 'sifDataTabs.status.verifactu.rejected', cls: 'bg-red-50 text-red-700 border-red-200' },
-  PE: { key: 'sifDataTabs.status.verifactu.pending', cls: 'bg-gray-50 text-gray-500 border-gray-200' },
+  AC: { key: 'sifDataTabs.status.verifactu.accepted', cls: PILL_CLS.success },
+  AE: { key: 'sifDataTabs.status.verifactu.acceptedWithErrors', cls: PILL_CLS.pending },
+  IN: { key: 'sifDataTabs.status.verifactu.invalid', cls: PILL_CLS.danger },
+  ER: { key: 'sifDataTabs.status.verifactu.rejected', cls: PILL_CLS.danger },
+  PE: { key: 'sifDataTabs.status.verifactu.pending', cls: PILL_CLS.pending },
 };
 
-function SiiStatusBadge({ estado, ui }) {
-  const current = SII_STATUS[estado] ?? {
-    key: 'sifDataTabs.status.sii.notSent',
-    cls: 'bg-gray-50 text-gray-400 border-gray-200',
-  };
+const VERIFACTU_DEFAULT = { key: 'sifDataTabs.status.verifactu.notSent', cls: PILL_CLS.neutral };
+
+const pillCls = (size = 'md') => {
+  const base = 'inline-flex items-center font-normal rounded-full';
+  return size === 'sm'
+    ? `${base} text-[11px] px-2 py-0.5`
+    : `${base} text-xs px-2 py-1`;
+};
+
+function SiiStatusBadge({ estado, ui, size = 'md' }) {
+  const current = SII_STATUS[estado] ?? SII_DEFAULT;
   return (
-    <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded border ${current.cls}`}>
-      {ui(current.key)}
-    </span>
+    <span className={`${pillCls(size)} ${current.cls}`}>{ui(current.key)}</span>
   );
 }
 
-function TbaiBadge({ issent, ui }) {
+function TbaiBadge({ issent, ui, size = 'md' }) {
   const sent = issent === true || issent === 'Y';
   return (
-    <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded border ${
-      sent ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-400 border-gray-200'
-    }`}>
+    <span className={`${pillCls(size)} ${sent ? PILL_CLS.success : PILL_CLS.neutral}`}>
       {ui(sent ? 'sifDataTabs.status.tbai.sent' : 'sifDataTabs.status.tbai.notSent')}
     </span>
   );
 }
 
-function VerifactuBadge({ status, sent, ui }) {
+function VerifactuBadge({ status, sent, ui, size = 'md' }) {
   const normalized = status || (sent === true || sent === 'Y' ? 'AC' : null);
-  const current = VERIFACTU_STATUS[normalized] ?? {
-    key: 'sifDataTabs.status.verifactu.notSent',
-    cls: 'bg-gray-50 text-gray-400 border-gray-200',
-  };
+  const current = VERIFACTU_STATUS[normalized] ?? VERIFACTU_DEFAULT;
   return (
-    <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded border ${current.cls}`}>
-      {ui(current.key)}
-    </span>
+    <span className={`${pillCls(size)} ${current.cls}`}>{ui(current.key)}</span>
   );
 }
 
@@ -94,34 +100,17 @@ function ReadValue({ value }) {
   );
 }
 
-function getRailBadge(target, data, ui) {
-  if (target === 'sii') {
-    const current = SII_STATUS[data?.aeatsiiEstado] ?? {
-      key: 'sifDataTabs.status.sii.notSent',
-      cls: 'bg-gray-50 text-gray-400 border-gray-200',
-    };
-    return <span className={`inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded border ${current.cls}`}>{ui(current.key)}</span>;
-  }
-  if (target === 'tbai') {
-    const sent = data?.tbaiIssent === true || data?.tbaiIssent === 'Y';
-    return (
-      <span className={`inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded border ${
-        sent ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-400 border-gray-200'
-      }`}>
-        {ui(sent ? 'sifDataTabs.status.tbai.sent' : 'sifDataTabs.status.tbai.notSent')}
-      </span>
-    );
-  }
-  if (target === 'verifactu') {
-    const normalized = data?.etvfacInvoiceStatus || (data?.etvfacSentToVerifac === true || data?.etvfacSentToVerifac === 'Y' ? 'AC' : null);
-    const current = VERIFACTU_STATUS[normalized] ?? {
-      key: 'sifDataTabs.status.verifactu.notSent',
-      cls: 'bg-gray-50 text-gray-400 border-gray-200',
-    };
-    return <span className={`inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded border ${current.cls}`}>{ui(current.key)}</span>;
-  }
-  return null;
-}
+const RAIL_META = {
+  sii: { labelKey: 'sifDataTabs.tab.sii', subtitleKey: 'sifDataTabs.rail.sii.subtitle' },
+  tbai: { labelKey: 'sifDataTabs.tab.tbai', subtitleKey: 'sifDataTabs.rail.tbai.subtitle' },
+  verifactu: { labelKey: 'sifDataTabs.tab.verifactu', subtitleKey: 'sifDataTabs.rail.verifactu.subtitle' },
+};
+
+const PANEL_META = {
+  sii: { titleKey: 'sifDataTabs.panel.sii.title', subtitleKey: 'sifDataTabs.panel.sii.subtitle' },
+  tbai: { titleKey: 'sifDataTabs.panel.tbai.title', subtitleKey: 'sifDataTabs.panel.tbai.subtitle' },
+  verifactu: { titleKey: 'sifDataTabs.panel.verifactu.title', subtitleKey: 'sifDataTabs.panel.verifactu.subtitle' },
+};
 
 export default function SifTab({ recordId, data, token, apiBaseUrl }) {
   const ui = useUI();
@@ -212,38 +201,44 @@ export default function SifTab({ recordId, data, token, apiBaseUrl }) {
   }
 
   const railItems = [
-    showSii && { key: 'sii', labelKey: 'sifDataTabs.tab.sii' },
-    showTbai && { key: 'tbai', labelKey: 'sifDataTabs.tab.tbai' },
-    showVerifactu && { key: 'verifactu', labelKey: 'sifDataTabs.tab.verifactu' },
+    showSii && { key: 'sii', ...RAIL_META.sii },
+    showTbai && { key: 'tbai', ...RAIL_META.tbai },
+    showVerifactu && { key: 'verifactu', ...RAIL_META.verifactu },
   ].filter(Boolean);
 
   return (
     <div className="flex gap-4 p-4 h-full min-h-0">
       <div className="w-56 shrink-0 flex flex-col gap-1 border border-border/40 rounded-lg bg-white p-2">
-        {railItems.map(item => (
-          <button
-            key={item.key}
-            type="button"
-            onClick={() => setActiveTab(item.key)}
-            className={`flex items-center justify-between gap-2 px-3 py-2 rounded-md cursor-pointer text-left transition-colors ${
-              effectiveTab === item.key
-                ? 'bg-gray-50 border-l-2 border-primary'
-                : 'hover:bg-gray-50/60'
-            }`}
-          >
-            <span className={`text-xs font-medium ${effectiveTab === item.key ? 'text-primary' : 'text-foreground'}`}>
-              {ui(item.labelKey)}
-            </span>
-            {getRailBadge(item.key, data, ui)}
-          </button>
-        ))}
+        {railItems.map(item => {
+          const active = effectiveTab === item.key;
+          return (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setActiveTab(item.key)}
+              className={`flex flex-col items-start gap-0.5 px-3 py-2 rounded-md cursor-pointer text-left transition-colors ${
+                active ? 'bg-gray-50 border-l-2 border-primary' : 'hover:bg-gray-50/60'
+              }`}
+            >
+              <span className={`text-xs font-semibold ${active ? 'text-primary' : 'text-foreground'}`}>
+                {ui(item.labelKey)}
+              </span>
+              <span className="text-[11px] text-muted-foreground leading-tight">
+                {ui(item.subtitleKey)}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="flex-1 border border-border/40 rounded-lg bg-white overflow-hidden flex flex-col min-h-0">
         {effectiveTab === 'sii' && showSii && (
           <>
-            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border/40">
-              <span className="text-sm font-medium text-foreground">{ui('sifDataTabs.tab.sii')}</span>
+            <div className="flex items-start justify-between gap-3 px-4 py-3 border-b border-border/40">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-semibold text-foreground">{ui(PANEL_META.sii.titleKey)}</span>
+                <span className="text-xs text-muted-foreground">{ui(PANEL_META.sii.subtitleKey)}</span>
+              </div>
               <SiiStatusBadge estado={data?.aeatsiiEstado} ui={ui} />
             </div>
             <div className="grid grid-cols-2 gap-x-5 gap-y-4 p-4 overflow-y-auto">
@@ -310,8 +305,11 @@ export default function SifTab({ recordId, data, token, apiBaseUrl }) {
 
         {effectiveTab === 'tbai' && showTbai && (
           <>
-            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border/40">
-              <span className="text-sm font-medium text-foreground">{ui('sifDataTabs.tab.tbai')}</span>
+            <div className="flex items-start justify-between gap-3 px-4 py-3 border-b border-border/40">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-semibold text-foreground">{ui(PANEL_META.tbai.titleKey)}</span>
+                <span className="text-xs text-muted-foreground">{ui(PANEL_META.tbai.subtitleKey)}</span>
+              </div>
               <TbaiBadge issent={data?.tbaiIssent} ui={ui} />
             </div>
             <div className="grid grid-cols-2 gap-x-5 gap-y-4 p-4 overflow-y-auto">
@@ -330,8 +328,11 @@ export default function SifTab({ recordId, data, token, apiBaseUrl }) {
 
         {effectiveTab === 'verifactu' && showVerifactu && (
           <>
-            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border/40">
-              <span className="text-sm font-medium text-foreground">{ui('sifDataTabs.tab.verifactu')}</span>
+            <div className="flex items-start justify-between gap-3 px-4 py-3 border-b border-border/40">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-semibold text-foreground">{ui(PANEL_META.verifactu.titleKey)}</span>
+                <span className="text-xs text-muted-foreground">{ui(PANEL_META.verifactu.subtitleKey)}</span>
+              </div>
               <VerifactuBadge
                 status={data?.etvfacInvoiceStatus}
                 sent={data?.etvfacSentToVerifac}
