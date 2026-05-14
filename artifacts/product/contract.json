@@ -1,8 +1,8 @@
 {
   "version": "0.2.0",
   "generatedAt": "2026-04-29T18:11:24.842Z",
-  "updatedAt": "2026-05-13T15:59:15.914Z",
-  "checksum": "a601a27239580ae0",
+  "updatedAt": "2026-05-15T16:00:23.886Z",
+  "checksum": "9f67b1a0e223cab2",
   "frontendContract": {
     "window": {
       "id": "140",
@@ -6676,12 +6676,6 @@
         "description": "Read-only logic for 'stocked' in product should be valid JS"
       },
       {
-        "id": "t-rule-declared",
-        "category": "rule-declared",
-        "runner": "node",
-        "description": "Rule 'undefined' (displayLogic) should be declared"
-      },
-      {
         "id": "t-rule-declared-AD-Client-Security-validation",
         "category": "rule-declared",
         "rule": "AD_Client Security validation",
@@ -6766,11 +6760,67 @@
         "description": "Rule 'M_Characteristic in Product' (validation) should be declared"
       },
       {
+        "id": "t-rule-declared-M-Costing-Ispermanent-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "M_Costing-Ispermanent-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'M_Costing-Ispermanent-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-M-Product-AUM-Conversionrate-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "M_Product_AUM-Conversionrate-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'M_Product_AUM-Conversionrate-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-M-Product-IsBOM-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "M_Product-IsBOM-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'M_Product-IsBOM-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-M-Product-IsGeneric-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "M_Product-IsGeneric-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'M_Product-IsGeneric-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-M-Product-Ispricerulebased-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "M_Product-Ispricerulebased-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'M_Product-Ispricerulebased-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-M-Product-IsStocked-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "M_Product-IsStocked-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'M_Product-IsStocked-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
         "id": "t-rule-declared-M-Product-PO-of-the-m-product-id",
         "category": "rule-declared",
         "rule": "M_Product_PO of the m_product_id",
         "runner": "node",
         "description": "Rule 'M_Product_PO of the m_product_id' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-M-Product-Prod-Cat-Selection-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "M_Product-Prod_Cat_Selection-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'M_Product-Prod_Cat_Selection-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-M-Product-Product-Selection-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "M_Product-Product_Selection-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'M_Product-Product_Selection-readOnlyLogic' (readOnlyLogic) should be declared"
       },
       {
         "id": "t-rule-declared-M-ProductCategory-Only-Leaf",
@@ -6792,6 +6842,755 @@
         "rule": "Manual Cost Adjustment",
         "runner": "node",
         "description": "Rule 'Manual Cost Adjustment' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Bill-of-Materials-AD-Client-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Bill of Materials-AD_Client_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Bill of Materials-AD_Client_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Bill-of-Materials-AD-Org-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Bill of Materials-AD_Org_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Bill of Materials-AD_Org_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Bill-of-Materials-Bomprice-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Bill of Materials-Bomprice-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Bill of Materials-Bomprice-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Bill-of-Materials-BOMQty-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Bill of Materials-BOMQty-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Bill of Materials-BOMQty-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Bill-of-Materials-BOMType-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Bill of Materials-BOMType-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Bill of Materials-BOMType-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Bill-of-Materials-Description-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Bill of Materials-Description-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Bill of Materials-Description-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Bill-of-Materials-IsActive-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Bill of Materials-IsActive-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Bill of Materials-IsActive-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Bill-of-Materials-Line-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Bill of Materials-Line-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Bill of Materials-Line-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Bill-of-Materials-M-Product-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Bill of Materials-M_Product_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Bill of Materials-M_Product_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Bill-of-Materials-M-ProductBOM-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Bill of Materials-M_ProductBOM_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Bill of Materials-M_ProductBOM_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Characteristic-Configuration-AD-Image-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Characteristic Configuration-AD_Image_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Characteristic Configuration-AD_Image_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Characteristic-Configuration-Price-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Characteristic Configuration-Price-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Characteristic Configuration-Price-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Characteristics-Define-Image-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Characteristics-Define_Image-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Characteristics-Define_Image-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Characteristics-Define-Price-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Characteristics-Define_Price-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Characteristics-Define_Price-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Characteristics-IsExplodeConf-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Characteristics-IsExplodeConf-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Characteristics-IsExplodeConf-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Characteristics-M-Ch-Subset-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Characteristics-M_Ch_Subset_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Characteristics-M_Ch_Subset_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Characteristics-Pricelist-Type-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Characteristics-Pricelist_Type-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Characteristics-Pricelist_Type-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Costing-Isproduction-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Costing-Isproduction-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Costing-Isproduction-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Intrastat-Conversion-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Intrastat-Conversion-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Intrastat-Conversion-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Intrastat-Intr-C-Uom-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Intrastat-Intr_C_Uom_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Intrastat-Intr_C_Uom_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Manufacturing-Maximumqty-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Manufacturing-Maximumqty-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Manufacturing-Maximumqty-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Allow-Deferred-Sell-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Allow_Deferred_Sell-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Allow_Deferred_Sell-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Attrsetvaluetype-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Attrsetvaluetype-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Attrsetvaluetype-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Bookusingpoprice-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Bookusingpoprice-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Bookusingpoprice-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-C-TaxCategory-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-C_TaxCategory_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-C_TaxCategory_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-C-Uom-Weight-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-C_Uom_Weight_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-C_Uom_Weight_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Copyservicemodifytaxconfig-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Copyservicemodifytaxconfig-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Copyservicemodifytaxconfig-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-CreateVariants-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-CreateVariants-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-CreateVariants-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-DefaultPeriod-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-DefaultPeriod-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-DefaultPeriod-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-DefaultPeriod-Exp-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-DefaultPeriod_Exp-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-DefaultPeriod_Exp-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Deferred-Sell-Max-Days-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Deferred_Sell_Max_Days-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Deferred_Sell_Max_Days-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Discontinued-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Discontinued-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Discontinued-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-DiscontinuedBy-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-DiscontinuedBy-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-DiscontinuedBy-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-EM-Aeat347-Apartment-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-EM_Aeat347_Apartment-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-EM_Aeat347_Apartment-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-EM-Aeat347-Building-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-EM_Aeat347_Building-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-EM_Aeat347_Building-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-EM-Aeat347-Complement-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-EM_Aeat347_Complement-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-EM_Aeat347_Complement-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-EM-Aeat347-County-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-EM_Aeat347_County-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-EM_Aeat347_County-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-EM-Aeat347-Countycode-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-EM_Aeat347_Countycode-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-EM_Aeat347_Countycode-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-EM-Aeat347-Floor-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-EM_Aeat347_Floor-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-EM_Aeat347_Floor-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-EM-Aeat347-Hall-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-EM_Aeat347_Hall-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-EM_Aeat347_Hall-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-EM-Aeat347-Hallway-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-EM_Aeat347_Hallway-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-EM_Aeat347_Hallway-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-EM-Aeat347-Location-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-EM_Aeat347_Location-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-EM_Aeat347_Location-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-EM-Aeat347-Locationtype-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-EM_Aeat347_Locationtype-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-EM_Aeat347_Locationtype-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-EM-Aeat347-Referenceid-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-EM_Aeat347_Referenceid-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-EM_Aeat347_Referenceid-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-EM-Aeat347-Regioncode-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-EM_Aeat347_Regioncode-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-EM_Aeat347_Regioncode-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-EM-Aeat347-Situation-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-EM_Aeat347_Situation-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-EM_Aeat347_Situation-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-EM-Aeat347-Streetname-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-EM_Aeat347_Streetname-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-EM_Aeat347_Streetname-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-EM-Aeat347-Streetnumber-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-EM_Aeat347_Streetnumber-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-EM_Aeat347_Streetnumber-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-EM-Aeat347-Streetnumberqua-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-EM_Aeat347_Streetnumberqua-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-EM_Aeat347_Streetnumberqua-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-EM-Aeat347-Streetnumbertype-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-EM_Aeat347_Streetnumbertype-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-EM_Aeat347_Streetnumbertype-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-EM-Aeat347-Zipcode-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-EM_Aeat347_Zipcode-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-EM_Aeat347_Zipcode-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Enforce-Attribute-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Enforce_Attribute-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Enforce_Attribute-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Expplantype-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Expplantype-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Expplantype-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Generic-Product-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Generic_Product_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Generic_Product_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-IsBOM-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-IsBOM-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-IsBOM-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Isdeferredexpense-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Isdeferredexpense-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Isdeferredexpense-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Isdeferredrevenue-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Isdeferredrevenue-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Isdeferredrevenue-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-IsGeneric-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-IsGeneric-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-IsGeneric-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-IsInvoicePrintDetails-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-IsInvoicePrintDetails-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-IsInvoicePrintDetails-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Islinkedtoproduct-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Islinkedtoproduct-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Islinkedtoproduct-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Ismodifytax-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Ismodifytax-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Ismodifytax-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-IsPickListPrintDetails-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-IsPickListPrintDetails-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-IsPickListPrintDetails-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Ispricerulebased-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Ispricerulebased-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Ispricerulebased-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-IsPurchased-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-IsPurchased-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-IsPurchased-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-IsSold-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-IsSold-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-IsSold-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-IsStocked-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-IsStocked-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-IsStocked-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-IsVerified-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-IsVerified-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-IsVerified-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-M-AttributeSetInstance-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-M_AttributeSetInstance_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-M_AttributeSetInstance_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-M-FreightCategory-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-M_FreightCategory_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-M_FreightCategory_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-M-Locator-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-M_Locator_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-M_Locator_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-MA-Processplan-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-MA_Processplan_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-MA_Processplan_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-ManageVariants-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-ManageVariants-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-ManageVariants-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Overdue-Return-Days-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Overdue_Return_Days-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Overdue_Return_Days-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Periodnumber-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Periodnumber-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Periodnumber-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Periodnumber-Exp-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Periodnumber_Exp-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Periodnumber_Exp-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Print-Description-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Print_Description-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Print_Description-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Processing-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Processing-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Processing-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Prod-Cat-Selection-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Prod_Cat_Selection-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Prod_Cat_Selection-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Product-Selection-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Product_Selection-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Product_Selection-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Production-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Production-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Production-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Quantity-Rule-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Quantity_Rule-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Quantity_Rule-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Relateprodcattaxtoservice-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Relateprodcattaxtoservice-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Relateprodcattaxtoservice-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Relateprodcattoservice-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Relateprodcattoservice-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Relateprodcattoservice-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Relateprodtoservice-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Relateprodtoservice-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Relateprodtoservice-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Revplantype-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Revplantype-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Revplantype-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-S-ExpenseType-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-S_ExpenseType_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-S_ExpenseType_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-S-Resource-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-S_Resource_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-S_Resource_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-ShelfDepth-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-ShelfDepth-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-ShelfDepth-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-ShelfHeight-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-ShelfHeight-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-ShelfHeight-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-ShelfWidth-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-ShelfWidth-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-ShelfWidth-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Stock-Min-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Stock_Min-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Stock_Min-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Unique-Per-Document-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Unique_Per_Document-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Unique_Per_Document-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-UnitsPerPallet-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-UnitsPerPallet-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-UnitsPerPallet-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-UPC-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-UPC-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-UPC-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Updateinvariants-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Updateinvariants-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Updateinvariants-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Volume-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Volume-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Volume-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Product-Weight-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Product-Weight-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Product-Weight-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Purchasing-DiscontinuedBy-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Purchasing-DiscontinuedBy-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Purchasing-DiscontinuedBy-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Purchasing-Qtystd-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Purchasing-Qtystd-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Purchasing-Qtystd-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Transactions-C-Currency-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Transactions-C_Currency_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Transactions-C_Currency_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Transactions-IsCostPermanent-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Transactions-IsCostPermanent-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Transactions-IsCostPermanent-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Transactions-M-AttributeSetInstance-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Transactions-M_AttributeSetInstance_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Transactions-M_AttributeSetInstance_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Transactions-M-Costing-Algorithm-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Transactions-M_Costing_Algorithm_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Transactions-M_Costing_Algorithm_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Transactions-Manualcostadjustment-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Transactions-Manualcostadjustment-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Transactions-Manualcostadjustment-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Transactions-TotalCost-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Transactions-TotalCost-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Transactions-TotalCost-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Transactions-TransactionCost-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Transactions-TransactionCost-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Transactions-TransactionCost-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-Transactions-UnitCost-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-Transactions-UnitCost-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-Transactions-UnitCost-displayLogic' (displayLogic) should be declared"
       },
       {
         "id": "t-rule-declared-Records-belonging-to-any-org-declared-in-the-role",
@@ -9022,7 +9821,7 @@
       }
     ],
     "summary": {
-      "total": 508,
+      "total": 622,
       "byCategory": {
         "action-endpoint": 9,
         "crud-flags": 11,
@@ -9033,14 +9832,14 @@
         "field-type": 75,
         "readonlylogic-evaluable": 2,
         "readonlylogic-valid": 2,
-        "rule-declared": 27,
+        "rule-declared": 141,
         "searchable-filters": 5,
         "selector-endpoint": 23,
         "system-field": 232,
         "visibility": 11
       },
       "byRunner": {
-        "node": 508,
+        "node": 622,
         "junit": 0
       }
     }

@@ -1,7 +1,7 @@
 import { readFile, mkdir, writeFile, readdir, stat } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, sep } from 'node:path';
-import { createDbPool, closePool } from './db.js';
+import { createDbPool, closePool, setCacheMode, flushCacheWrites } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -28,12 +28,23 @@ WHERE t.AD_Window_ID = $1
 `;
 
 const DISPLAY_LOGIC_SQL = `
-SELECT f.Name, f.DisplayLogic, c.ReadOnlyLogic, c.ColumnName
+SELECT f.Name,
+       f.DisplayLogic,
+       c.ReadOnlyLogic,
+       c.ColumnName,
+       t.Name        AS tab_name,
+       t.AD_Tab_ID   AS tab_id,
+       tbl.TableName AS table_name,
+       tbl.AD_Table_ID AS table_id,
+       c.AD_Column_ID AS column_id,
+       f.AD_Field_ID  AS field_id
 FROM AD_Field f
 JOIN AD_Column c ON f.AD_Column_ID = c.AD_Column_ID
 JOIN AD_Tab t ON f.AD_Tab_ID = t.AD_Tab_ID
+JOIN AD_Table tbl ON c.AD_Table_ID = tbl.AD_Table_ID
 WHERE t.AD_Window_ID = $1
   AND (f.DisplayLogic IS NOT NULL OR c.ReadOnlyLogic IS NOT NULL)
+ORDER BY t.SeqNo, t.AD_Tab_ID, f.SeqNo, f.AD_Field_ID, c.AD_Column_ID
 `;
 
 const AUXILIARY_INPUTS_SQL = `
@@ -388,12 +399,28 @@ export async function main(windowId, windowName) {
     }
 
     // Process display/readOnly logic
+    //
+    // Rule naming is intentionally derived from the *source* of each logic
+    // expression so test ids are stable across pipeline runs:
+    //   - DisplayLogic lives on AD_Field, which is unique per (tab, column)
+    //     → `${windowName}-${tabName}-${columnName}-displayLogic`
+    //   - ReadOnlyLogic lives on AD_Column, which is unique per (table, column)
+    //     → `${tableName}-${columnName}-readOnlyLogic`
+    //
+    // The DISPLAY_LOGIC_SQL query joins AD_Field → AD_Column, so a single
+    // column that participates in multiple fields/tabs is returned once per
+    // field. We dedupe ReadOnlyLogic rules per column to avoid emitting the
+    // same rule N times.
+    const seenReadOnlyRule = new Set();
     for (const row of displayLogicRes.rows) {
       if (row.displaylogic) {
         const translated = translateExpression(row.displaylogic);
         rules.push({
+          name: `${windowName}-${row.tab_name}-${row.columnname}-displayLogic`,
           type: 'displayLogic',
           source: 'AD_Field',
+          window: windowName,
+          tab: row.tab_name,
           fieldName: row.name,
           column: row.columnname,
           rawExpression: row.displaylogic,
@@ -403,10 +430,15 @@ export async function main(windowId, windowName) {
       }
 
       if (row.readonlylogic) {
+        const ruleName = `${row.table_name}-${row.columnname}-readOnlyLogic`;
+        if (seenReadOnlyRule.has(ruleName)) continue;
+        seenReadOnlyRule.add(ruleName);
         const translated = translateExpression(row.readonlylogic);
         rules.push({
+          name: ruleName,
           type: 'readOnlyLogic',
           source: 'AD_Column',
+          table: row.table_name,
           fieldName: row.name,
           column: row.columnname,
           rawExpression: row.readonlylogic,
@@ -487,16 +519,34 @@ export async function main(windowId, windowName) {
 
 // CLI entry point
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const windowId = process.argv[2];
-  const windowName = process.argv[3];
+  const flags = process.argv.slice(2).filter((a) => a.startsWith('--'));
+  const positional = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+  const writeCache = flags.includes('--write-cache');
+  const fromCache = flags.includes('--from-cache');
+  if (writeCache && fromCache) {
+    console.error('Error: --write-cache and --from-cache are mutually exclusive');
+    process.exit(1);
+  }
+  if (writeCache) setCacheMode({ mode: 'write' });
+  else if (fromCache) setCacheMode({ mode: 'read' });
+
+  const windowId = positional[0];
+  const windowName = positional[1];
 
   if (!windowId || !windowName) {
-    console.error('Usage: node extract-rules.js <windowId> <windowName>');
+    console.error('Usage: node extract-rules.js [--write-cache|--from-cache] <windowId> <windowName>');
     process.exit(1);
   }
 
-  main(windowId, windowName).catch((err) => {
-    console.error('Rule extraction failed:', err.message);
-    process.exit(1);
-  });
+  main(windowId, windowName)
+    .then(() => {
+      if (writeCache) {
+        const { written, path } = flushCacheWrites();
+        console.log(`Cache: wrote ${written} entries to ${path}`);
+      }
+    })
+    .catch((err) => {
+      console.error('Rule extraction failed:', err.message);
+      process.exit(1);
+    });
 }

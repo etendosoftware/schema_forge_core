@@ -52,7 +52,10 @@ export function capitalize(s) {
 export function toJsIdentifier(s) {
   if (!s) return '';
   const capped = s.charAt(0).toUpperCase() + s.slice(1);
-  return capped.replace(/[^a-zA-Z0-9_$]/g, '');
+  return capped
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9_$]/g, '');
 }
 
 /**
@@ -1434,7 +1437,7 @@ export function generateAll(contract) {
   }
 
   // Generate Page component (handles both header-detail and header-only layouts)
-  files[`${capitalize(primaryEntity)}Page.jsx`] = generatePageComponent(primaryEntity, detailEntity, contract);
+  files[`${toJsIdentifier(primaryEntity)}Page.jsx`] = generatePageComponent(primaryEntity, detailEntity, contract);
 
   // Generate mock catalogs
   files['mockCatalogs.js'] = generateMockCatalogs(contract);

@@ -11,5 +11,5 @@ const fields = [
 export default function LogHashForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-LogHashForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:LogHashForm
