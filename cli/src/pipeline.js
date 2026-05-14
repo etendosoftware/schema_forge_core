@@ -1,5 +1,45 @@
 #!/usr/bin/env node
 
+import { toSpecName } from './push-to-neo.js';
+
+/**
+ * Resolve a window's spec name (kebab-case) from its AD_Window_ID by querying
+ * AD_Window.Name. Throws if the window is not found. Used by the CLI to
+ * eliminate the legacy "default to sales-order" behavior when only a windowId
+ * is provided.
+ *
+ * `queryFn` is injectable for tests: it must return a Promise resolving to
+ * `{ rows: [{ name }] }`. When absent, a real DB pool is created via db.js.
+ */
+export async function resolveWindowNameFromId(windowId, { queryFn } = {}) {
+  if (!windowId) throw new Error('windowId is required to resolve windowName');
+
+  let rows;
+  if (queryFn) {
+    const result = await queryFn(windowId);
+    rows = result?.rows ?? [];
+  } else {
+    const { createDbPool, closePool } = await import('./db.js');
+    const pool = createDbPool();
+    try {
+      const result = await pool.query(
+        'SELECT Name FROM AD_Window WHERE AD_Window_ID = $1',
+        [windowId]
+      );
+      rows = result.rows;
+    } finally {
+      await closePool(pool);
+    }
+  }
+
+  if (!rows || rows.length === 0) {
+    throw new Error(`AD_Window not found for windowId: ${windowId}`);
+  }
+  const name = rows[0].name ?? rows[0].Name;
+  if (!name) throw new Error(`AD_Window row missing Name for windowId: ${windowId}`);
+  return toSpecName(name);
+}
+
 export function validatePipelineInput(input) {
   if (input.menuId || input.menuName) {
     return { valid: true, mode: 'menu' };
@@ -108,9 +148,25 @@ function printNextSteps({ pushToNeoRan, frontendGenerated }) {
 async function main() {
   const parsed = parseArgs(process.argv);
 
-  // Backwards compat: positional args for window mode
-  if (!parsed.processId && !parsed.windowName && parsed.windowId) {
-    parsed.windowName = 'sales-order';
+  // When invoked with only a windowId (positional), resolve windowName from
+  // AD_Window in the DB instead of silently defaulting to 'sales-order'.
+  // The old default could mix artifacts from unrelated windows into
+  // artifacts/sales-order/, so it has been removed.
+  if (
+    !parsed.processId &&
+    !parsed.reportId &&
+    !parsed.menuId &&
+    !parsed.menuName &&
+    !parsed.windowName &&
+    parsed.windowId
+  ) {
+    try {
+      parsed.windowName = await resolveWindowNameFromId(parsed.windowId);
+    } catch (err) {
+      console.error(`Error: could not resolve windowName from windowId "${parsed.windowId}": ${err.message}`);
+      console.error('Pass the windowName explicitly: sf-pipeline <windowId> <windowName>');
+      process.exit(1);
+    }
   }
 
   const validation = validatePipelineInput(parsed);

@@ -238,6 +238,12 @@ function applyForeignKeyProps(field, rawField, fieldDecision) {
   if (dependsOn) field.dependsOn = dependsOn;
   if (fieldDecision.lookup) field.lookup = true;
   if (fieldDecision.popup) field.popup = true;
+  if (fieldDecision.lookupDrawer) field.lookupDrawer = fieldDecision.lookupDrawer;
+  if (fieldDecision.lookupTitle) field.lookupTitle = fieldDecision.lookupTitle;
+  if (Array.isArray(fieldDecision.onSelectMappings) && fieldDecision.onSelectMappings.length > 0) {
+    field.onSelectMappings = fieldDecision.onSelectMappings;
+  }
+  if (fieldDecision.displayFromCatalog) field.displayFromCatalog = fieldDecision.displayFromCatalog;
 }
 
 function applyVisibleFieldProps(field, rawField, fieldDecision) {

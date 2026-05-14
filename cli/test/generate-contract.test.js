@@ -1077,3 +1077,81 @@ describe('generateFrontendContract — UI hints', () => {
     assert.equal(plain.isTranslated, undefined);
   });
 });
+
+// ─── F3 refactor — drawer + display passthroughs ─────────────────────────────
+const drawerSchema = {
+  version: '0.1.0',
+  window: { id: '700', name: 'Internal Consumption', primaryEntity: 'internalConsumption', category: 'inventory' },
+  entities: [{
+    name: 'internalConsumptionLine',
+    table: 'M_InternalConsumptionLine',
+    level: 'line',
+    fields: [
+      { name: 'product', column: 'M_Product_ID', type: 'foreignKey', visibility: 'editable',
+        required: true, searchable: true, grid: true, form: true,
+        reference: 'Product', inputMode: 'search',
+        lookupDrawer: 'internal-consumption-product',
+        lookupTitle: 'Product + Warehouse',
+        onSelectMappings: [
+          { from: 'M_Locator_ID', to: 'storageBin' },
+          { from: 'M_Product_ID', to: 'product' },
+        ] },
+      { name: 'displayedProduct', column: 'EM_DisplayedProduct', type: 'string', visibility: 'editable',
+        required: false, searchable: false, grid: true, form: true,
+        displayFromCatalog: true },
+      { name: 'plain', column: 'PlainCol', type: 'string', visibility: 'editable',
+        required: false, searchable: false, grid: true, form: true },
+    ],
+  }],
+};
+
+describe('generateFrontendContract — F3 drawer + display passthroughs', () => {
+  it('preserves lookupDrawer on contract field', () => {
+    const fc = generateFrontendContract(drawerSchema);
+    const product = fc.entities.internalConsumptionLine.fields.find(f => f.name === 'product');
+    assert.equal(product.lookupDrawer, 'internal-consumption-product');
+  });
+
+  it('preserves lookupTitle on contract field', () => {
+    const fc = generateFrontendContract(drawerSchema);
+    const product = fc.entities.internalConsumptionLine.fields.find(f => f.name === 'product');
+    assert.equal(product.lookupTitle, 'Product + Warehouse');
+  });
+
+  it('preserves onSelectMappings array on contract field', () => {
+    const fc = generateFrontendContract(drawerSchema);
+    const product = fc.entities.internalConsumptionLine.fields.find(f => f.name === 'product');
+    assert.deepStrictEqual(product.onSelectMappings, [
+      { from: 'M_Locator_ID', to: 'storageBin' },
+      { from: 'M_Product_ID', to: 'product' },
+    ]);
+  });
+
+  it('preserves displayFromCatalog on contract field', () => {
+    const fc = generateFrontendContract(drawerSchema);
+    const dp = fc.entities.internalConsumptionLine.fields.find(f => f.name === 'displayedProduct');
+    assert.equal(dp.displayFromCatalog, true);
+  });
+
+  it('omits all four properties when not declared on field', () => {
+    const fc = generateFrontendContract(drawerSchema);
+    const plain = fc.entities.internalConsumptionLine.fields.find(f => f.name === 'plain');
+    assert.equal(plain.lookupDrawer, undefined);
+    assert.equal(plain.lookupTitle, undefined);
+    assert.equal(plain.onSelectMappings, undefined);
+    assert.equal(plain.displayFromCatalog, undefined);
+  });
+
+  it('omits onSelectMappings when array is empty', () => {
+    const emptySchema = {
+      ...drawerSchema,
+      entities: drawerSchema.entities.map(e => ({
+        ...e,
+        fields: e.fields.map(f => f.name === 'product' ? { ...f, onSelectMappings: [] } : f),
+      })),
+    };
+    const fc = generateFrontendContract(emptySchema);
+    const product = fc.entities.internalConsumptionLine.fields.find(f => f.name === 'product');
+    assert.equal(product.onSelectMappings, undefined);
+  });
+});

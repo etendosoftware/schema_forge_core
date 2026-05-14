@@ -30,6 +30,77 @@ import InternalConsumptionProductSearchDrawer from './InternalConsumptionProduct
 import { SelectorInput } from './SelectorInput.jsx';
 import RowQuickActions from './RowQuickActions.jsx';
 
+// Lookup drawer registry. Each entry is a drawer component keyed by the value
+// of a field's contract-level `lookupDrawer` property. Fields without that
+// property fall back to `default`. New drawers (asset, lot, etc.) plug in here
+// without touching the generic DataTable render path.
+const LOOKUP_DRAWERS = {
+  default: ProductSearchDrawer,
+  'internal-consumption-product': InternalConsumptionProductSearchDrawer,
+};
+
+/**
+ * Resolve a value from an object using a dotted path (e.g. `_aux._LOC`).
+ */
+function getByPath(obj, path) {
+  if (obj == null || !path) return undefined;
+  return path.split('.').reduce((acc, key) => (acc == null ? acc : acc[key]), obj);
+}
+
+/**
+ * Apply a field's declarative `onSelectMappings` after a lookup selection.
+ * Each mapping copies a value from the selected `item` into another field on
+ * the row, optionally with a display label resolved from one of several keys.
+ * Replaces window-specific branches like `if (entity === 'internalConsumptionLine')`
+ * with metadata declared in the contract.
+ */
+export function applyOnSelectMappings(field, item, handleChange) {
+  const mappings = field?.onSelectMappings;
+  if (!Array.isArray(mappings) || mappings.length === 0) return;
+  for (const m of mappings) {
+    if (!m || !m.from || !m.to) continue;
+    const value = getByPath(item, m.from);
+    if (value == null) continue;
+    const labelKeys = Array.isArray(m.labelFrom)
+      ? m.labelFrom
+      : (m.labelFrom ? [m.labelFrom] : []);
+    let label;
+    for (const key of labelKeys) {
+      const v = getByPath(item, key);
+      if (v != null && v !== '') { label = v; break; }
+    }
+    handleChange(`${m.to}$_identifier`, label != null ? label : value);
+    handleChange(m.to, value);
+  }
+}
+
+/**
+ * Build display-override maps for every column whose contract field declares
+ * `displayFromCatalog: true`. For each such column we read its add-row catalog
+ * options and produce a `Map<optionId, optionLabel>`, used by `renderCellValue`
+ * to swap a raw FK id for its catalog label (e.g. show warehouse name instead
+ * of locator id). Without the flag, no map is built and nothing changes.
+ */
+export function buildDisplayCatalogMaps(visibleColumns, addRow, entity) {
+  const out = new Map();
+  const fields = addRow?.fields || [];
+  const catalogs = addRow?.catalogs;
+  if (!entity || !catalogs || fields.length === 0) return out;
+  for (const col of visibleColumns) {
+    const field = fields.find(f => f.key === col.key);
+    if (!field || !field.displayFromCatalog) continue;
+    const options = getCatalogOptions(catalogs, entity, field);
+    if (!options || options.length === 0) continue;
+    const map = new Map();
+    for (const opt of options) {
+      if (!opt?.id) continue;
+      map.set(String(opt.id), opt.name || opt.label || opt._identifier || String(opt.id));
+    }
+    if (map.size > 0) out.set(col.key, map);
+  }
+  return out;
+}
+
 /**
  * Compact inline combobox for search-type FK fields in rapid line entry.
  * Text input with filtered dropdown — lightweight alternative to full SearchInput.
@@ -306,21 +377,6 @@ async function runInlineToggleRequest({
       return next;
     });
   }
-}
-
-function buildWarehouseByLocatorMap(entity, addRow) {
-  if (entity !== 'internalConsumptionLine') return new Map();
-  const fields = addRow?.fields || [];
-  const catalogs = addRow?.catalogs;
-  const storageBinField = fields.find(f => f.key === 'storageBin');
-  if (!storageBinField || !catalogs) return new Map();
-  const options = getCatalogOptions(catalogs, entity, storageBinField);
-  const map = new Map();
-  for (const opt of options) {
-    if (!opt?.id) continue;
-    map.set(String(opt.id), opt.name || opt.label || opt._identifier || String(opt.id));
-  }
-  return map;
 }
 
 /**
@@ -685,7 +741,8 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         if (field.type === 'search' && field.lookup) {
           const selectorUrl = apiBaseUrl ? `${apiBaseUrl}/${entity}/selectors/${field.column}` : null;
           const displayLabel = values[field.key + '$_identifier'] || '';
-          const isInternalConsumptionProduct = entity === 'internalConsumptionLine' && field.key === 'product';
+          const drawerKey = field.lookupDrawer || 'default';
+          const lookupTitle = field.lookupTitle || fieldLabel;
           return (
             <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
               <LookupField
@@ -700,23 +757,12 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
                   touchedFieldsRef.current.add(field.key);
                   handleChange(field.key + '$_identifier', item.label || item.name || item._identifier);
                   handleFieldChange(field.key, item.id, item);
-
-                  if (isInternalConsumptionProduct) {
-                    // _aux._LOC holds the M_Locator_ID UUID (from storageBin.id out-field).
-                    // item.warehouse holds the warehouse name (from storageBin.warehouse grid field).
-                    const locatorId = item._aux?._LOC;
-                    const locatorLabel = item.warehouse || item['warehouse$_identifier'] || item.storageBin;
-                    if (locatorId) {
-                      handleChange('storageBin$_identifier', locatorLabel || locatorId);
-                      // Internal Consumption auto-fill should not trigger a second line callout,
-                      // otherwise backend-side locator callouts may override user-entered quantity.
-                      handleChange('storageBin', locatorId);
-                    }
-                  }
+                  // Declarative auto-fill from the contract — see field.onSelectMappings.
+                  applyOnSelectMappings(field, item, handleChange);
                 }}
                 onKeyDown={handleKeyDown}
-                title={isInternalConsumptionProduct ? 'Product + Warehouse' : fieldLabel}
-                useInternalConsumptionDrawer={isInternalConsumptionProduct}
+                title={lookupTitle}
+                drawerKey={drawerKey}
               />
             </TableCell>
           );
@@ -895,9 +941,10 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
 /**
  * Inline field that shows selected value and opens modal on click/focus.
  */
-function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContext, token, onSelect, onKeyDown, inputRef, title, useInternalConsumptionDrawer = false }) {
+function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContext, token, onSelect, onKeyDown, inputRef, title, drawerKey = 'default' }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef(null);
+  const Drawer = LOOKUP_DRAWERS[drawerKey] || LOOKUP_DRAWERS.default;
 
   // Forward ref so parent can focus this field
   useEffect(() => {
@@ -931,39 +978,21 @@ function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContex
           <span className="truncate text-muted-foreground">{placeholder}</span>
         )}
       </button>
-      {useInternalConsumptionDrawer ? (
-        <InternalConsumptionProductSearchDrawer
-          open={open}
-          onClose={() => setOpen(false)}
-          onSelect={(item) => {
-            onSelect(item);
-            setOpen(false);
-            // Restore focus to the field button so keyboard users do not lose
-            // tab position after the picker closes (Enter then saves the row).
-            setTimeout(() => btnRef.current?.focus(), 0);
-          }}
-          selectorUrl={selectorUrl}
-          selectorContext={selectorContext}
-          token={token}
-          title={title ? `Search ${title}` : undefined}
-        />
-      ) : (
-        <ProductSearchDrawer
-          open={open}
-          onClose={() => setOpen(false)}
-          onSelect={(item) => {
-            onSelect(item);
-            setOpen(false);
-            // Restore focus to the field button so keyboard users do not lose
-            // tab position after the picker closes (Enter then saves the row).
-            setTimeout(() => btnRef.current?.focus(), 0);
-          }}
-          selectorUrl={selectorUrl}
-          selectorContext={selectorContext}
-          token={token}
-          title={title ? `Search ${title}` : undefined}
-        />
-      )}
+      <Drawer
+        open={open}
+        onClose={() => setOpen(false)}
+        onSelect={(item) => {
+          onSelect(item);
+          setOpen(false);
+          // Restore focus to the field button so keyboard users do not lose
+          // tab position after the picker closes (Enter then saves the row).
+          setTimeout(() => btnRef.current?.focus(), 0);
+        }}
+        selectorUrl={selectorUrl}
+        selectorContext={selectorContext}
+        token={token}
+        title={title ? `Search ${title}` : undefined}
+      />
     </>
   );
 }
@@ -1150,9 +1179,9 @@ export function DataTable({
     return visibleColumns[visibleColumns.length - 1];
   }, [visibleColumns, rowQuickActions]);
 
-  const internalConsumptionWarehouseByLocator = useMemo(
-    () => buildWarehouseByLocatorMap(entity, addRow),
-    [entity, addRow?.fields, addRow?.catalogs],
+  const displayCatalogMaps = useMemo(
+    () => buildDisplayCatalogMaps(visibleColumns, addRow, entity),
+    [visibleColumns, entity, addRow?.fields, addRow?.catalogs],
   );
 
   const totals = useMemo(() => {
@@ -1184,11 +1213,12 @@ export function DataTable({
       ? optimisticToggles[toggleKey]
       : row[col.key];
     let display = resolveIdentifier(row, col.key);
-    if (entity === 'internalConsumptionLine' && col.key === 'storageBin') {
-      const locatorId = row?.storageBin;
-      if (locatorId != null) {
-        const warehouseLabel = internalConsumptionWarehouseByLocator.get(String(locatorId));
-        if (warehouseLabel) display = warehouseLabel;
+    const displayMap = displayCatalogMaps.get(col.key);
+    if (displayMap) {
+      const fkId = row?.[col.key];
+      if (fkId != null) {
+        const mapped = displayMap.get(String(fkId));
+        if (mapped) display = mapped;
       }
     }
     if (col === visibleColumns[0] && col.type === 'string') {
