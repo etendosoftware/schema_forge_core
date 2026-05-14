@@ -438,6 +438,10 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
         // into the row snapshot before firing the callout.
         selectedItem: extras.selectedItem,
       });
+      // Per-row toast id so editing several cells of the same row in quick
+      // succession collapses into one rolling toast — sonner resets the timer
+      // when an id repeats, instead of stacking a fresh toast for every blur.
+      toast.success(ui('recordSaved'), { id: `inline-save-${row.id}` });
     } catch (err) {
       toast.error(err?.message || ui('networkError'));
     } finally {

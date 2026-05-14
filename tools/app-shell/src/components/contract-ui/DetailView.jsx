@@ -150,15 +150,14 @@ function detailContentPadding(linesLayout, hasSidebar, variant) {
  *
  * Priority:
  *  1. `customAddModal` tabs (e.g. Dirección) → click opens the popup editor.
- *  2. Tabs with a `Form` → click selects the row for the side-panel form.
- *  3. Read-only tabs → no row click handler.
- *
- * Extracted from inline JSX so the call site stays a flat expression (Sonar
- * S3358: avoid nested ternaries).
+ *  2. Tabs with a `Form` AND a non-inline layout → click selects the row for
+ *     the side-panel form.
+ *  3. Inline-editable tabs → no row click handler. Editing happens in place via
+ *     the pencil action; opening a side panel would defeat that UX.
  */
-function resolveSecondaryRowClickHandler(st, { openCustomModal, openSecondaryLine }) {
+function resolveSecondaryRowClickHandler(st, { openCustomModal, openSecondaryLine, linesLayout }) {
   if (st.customAddModal) return openCustomModal;
-  if (st.Form) return openSecondaryLine;
+  if (st.Form && linesLayout !== 'inlineEditable') return openSecondaryLine;
   return undefined;
 }
 
@@ -2573,6 +2572,7 @@ export function DetailView({
                         onRowClick={resolveSecondaryRowClickHandler(st, {
                           openCustomModal: (row) => setCustomModalState({ key: st.key, rowId: row.id }),
                           openSecondaryLine: (row) => { setSelectedSecondaryLine({ ...row, _tabKey: st.key }); setSecondaryLineEdits(null); },
+                          linesLayout,
                         })}
                         // Pencil action for customAddModal tabs (Dirección) opens
                         // the popup editor — rows are not editable in place.

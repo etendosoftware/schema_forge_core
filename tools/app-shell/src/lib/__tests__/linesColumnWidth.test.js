@@ -50,9 +50,9 @@ describe('linesColumnWidth', () => {
       assert.equal(columnFlex({ type: 'foreignKey' }, 1), '0 0 192px');
     });
 
-    it('enum/select columns → 0 0 152px', () => {
-      assert.equal(columnFlex({ type: 'enum' }, 1), '0 0 152px');
-      assert.equal(columnFlex({ type: 'select' }, 1), '0 0 152px');
+    it('enum/select columns → 1 1 224px (string-sized basis so long Select values fit)', () => {
+      assert.equal(columnFlex({ type: 'enum' }, 1), '1 1 224px');
+      assert.equal(columnFlex({ type: 'select' }, 1), '1 1 224px');
     });
 
     it('date columns → 1 1 130px', () => {
@@ -83,8 +83,8 @@ describe('linesColumnWidth', () => {
         [{ type: 'selector' },    1, 192],
         [{ type: 'search' },      1, 192],
         [{ type: 'foreignKey' },  1, 192],
-        [{ type: 'enum' },        1, 152],
-        [{ type: 'select' },      1, 152],
+        [{ type: 'enum' },        1, 224],
+        [{ type: 'select' },      1, 224],
         [{ type: 'date' },        1, 130],
         [{ type: 'string' },      0, 244],  // first col
         [{ type: 'string' },      1, 224],
