@@ -18,7 +18,7 @@ export function useCertExpiry(orgId, token, apiBaseUrl, { mockDaysLeft = null } 
     }
     setDaysLeft(null);
     const controller = new AbortController();
-    fetch(`${neoBase(apiBaseUrl)}/certificate?orgId=${encodeURIComponent(orgId)}`, {
+    fetch(`${neoBase(apiBaseUrl)}/certificate`, {
       headers: { Authorization: `Bearer ${token}` },
       signal: controller.signal,
     })

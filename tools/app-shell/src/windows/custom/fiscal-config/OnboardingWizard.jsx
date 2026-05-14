@@ -236,7 +236,7 @@ export default function OnboardingWizard({ orgId, orgName, token, apiBaseUrl, on
     if (!orgId || !token || !system) return;
     const certCtx = getCertificateContext(system);
     if (!certCtx) return;
-    fetch(`${neoBase(apiBaseUrl)}/certificate?orgId=${encodeURIComponent(orgId)}`, {
+    fetch(`${neoBase(apiBaseUrl)}/certificate`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(r => r.json())

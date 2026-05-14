@@ -27,8 +27,9 @@ describe('useCertExpiry — hook structure', () => {
     assert.match(src, /return.*daysLeft/);
   });
 
-  it('fetches from the /certificate endpoint with orgId', () => {
-    assert.match(src, /certificate\?orgId/);
+  it('fetches from the /certificate endpoint without orgId query param', () => {
+    assert.match(src, /\/certificate`/);
+    assert.doesNotMatch(src, /certificate\?orgId/);
   });
 
   it('sets daysLeft only when the API response has exists and validTo', () => {
