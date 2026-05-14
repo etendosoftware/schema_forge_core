@@ -1899,7 +1899,7 @@ export function DetailView({
                     attached so legacy effects that probe its bounding box keep
                     working; with no overflow on this wrapper they become
                     no-ops on the lines side. */}
-                <div ref={linesScrollRef} className={linesLayout === 'inlineEditable' ? '' : ''}>
+                <div ref={linesScrollRef}>
                 {tabs[activeTab]?.key === 'lines' && DetailTable && (
                   // Only show the loading spinner on INITIAL load (no children yet).
                   // Subsequent refetches (e.g., after PATCH on a child) keep the table
