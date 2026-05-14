@@ -2,8 +2,6 @@ import React, { useState, useMemo, useRef, useEffect, useCallback, forwardRef, u
 import { createPortal } from 'react-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Search, Inbox, X, ChevronDown, Trash2, Copy, Loader2, Pencil, Check } from 'lucide-react';
@@ -11,7 +9,7 @@ import { toast } from 'sonner';
 import { useLabel, useUI, useLocale, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
-import { getStatusDotColor, getStatusGridPillClass, getStatusPillClass, statusLabel } from '@/lib/statusBadge.js';
+import { getStatusDotColor, statusLabel } from '@/lib/statusBadge.js';
 import { StatusTag } from '@/components/ui/status-tag';
 import { Tag } from '@/components/ui/tag';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
@@ -58,20 +56,28 @@ export function applyOnSelectMappings(field, item, handleChange) {
   const mappings = field?.onSelectMappings;
   if (!Array.isArray(mappings) || mappings.length === 0) return;
   for (const m of mappings) {
-    if (!m || !m.from || !m.to) continue;
+    if (!m?.from || !m.to) continue;
     const value = getByPath(item, m.from);
     if (value == null) continue;
-    const labelKeys = Array.isArray(m.labelFrom)
-      ? m.labelFrom
-      : (m.labelFrom ? [m.labelFrom] : []);
+    const labelKeys = getLabelArray(m);
     let label;
     for (const key of labelKeys) {
       const v = getByPath(item, key);
       if (v != null && v !== '') { label = v; break; }
     }
-    handleChange(`${m.to}$_identifier`, label != null ? label : value);
+    handleChange(`${m.to}$_identifier`, label == null ? value : label);
     handleChange(m.to, value);
   }
+}
+
+/**
+ * Get an array of label keys from a mapping object.
+ */
+function getLabelArray(m) {
+  if (Array.isArray(m.labelFrom)) {
+    return m.labelFrom;
+  }
+  return m.labelFrom ? [m.labelFrom] : [];
 }
 
 /**
@@ -88,7 +94,7 @@ export function buildDisplayCatalogMaps(visibleColumns, addRow, entity) {
   if (!entity || !catalogs || fields.length === 0) return out;
   for (const col of visibleColumns) {
     const field = fields.find(f => f.key === col.key);
-    if (!field || !field.displayFromCatalog) continue;
+    if (!field?.displayFromCatalog) continue;
     const options = getCatalogOptions(catalogs, entity, field);
     if (!options || options.length === 0) continue;
     const map = new Map();
@@ -533,8 +539,8 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         for (const f of fields) {
           if (NUMERIC_FIELD_TYPES.has(f.type) && coercedValues[f.key] !== '' && coercedValues[f.key] != null) {
             const raw = String(coercedValues[f.key]);
-            const parsed = f.type === 'integer' ? parseInt(raw, 10) : parseFloat(raw);
-            if (!isNaN(parsed)) coercedValues[f.key] = parsed;
+            const parsed = f.type === 'integer' ? Number.parseInt(raw, 10) : Number.parseFloat(raw);
+            if (!Number.isNaN(parsed)) coercedValues[f.key] = parsed;
           }
         }
         const result = await onAdd(coercedValues);
@@ -552,10 +558,10 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         for (const f of fields) {
           if (f.key === 'lineNo') {
             next[f.key] = nextLineNo;
-          } else if (f.defaultValue !== undefined) {
-            next[f.key] = f.defaultValue;
-          } else {
+          } else if (f.defaultValue === undefined) {
             next[f.key] = '';
+          } else {
+            next[f.key] = f.defaultValue;
           }
         }
         // Clear any $_identifier companion values
@@ -725,7 +731,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           const isTwoDecimalDerived = col.type === 'amount' || col.type === 'price';
           let displayVal = identVal || rawVal;
           if (isTwoDecimalDerived && displayVal != null && displayVal !== '') {
-            const n = typeof displayVal === 'string' ? parseFloat(displayVal) : displayVal;
+            const n = typeof displayVal === 'string' ? Number.parseFloat(displayVal) : displayVal;
             if (Number.isFinite(n)) displayVal = n.toFixed(2);
           }
           return (
@@ -887,7 +893,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         }
         const formatTwoDecimals = (raw) => {
           if (raw == null || raw === '') return '';
-          const n = typeof raw === 'string' ? parseFloat(raw) : raw;
+          const n = typeof raw === 'string' ? Number.parseFloat(raw) : raw;
           return Number.isFinite(n) ? n.toFixed(2) : raw;
         };
         // Always type="text" — numeric inputs would render browser spinner
@@ -908,8 +914,8 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
               onChange={(e) => {
                 const raw = e.target.value;
                 if (isNumeric && raw !== '' && raw !== '-') {
-                  const parsed = field.type === 'integer' ? parseInt(raw, 10) : parseFloat(raw);
-                  handleFieldChange(field.key, isNaN(parsed) ? raw : parsed);
+                  const parsed = field.type === 'integer' ? Number.parseInt(raw, 10) : Number.parseFloat(raw);
+                  handleFieldChange(field.key, Number.isNaN(parsed) ? raw : parsed);
                 } else {
                   handleFieldChange(field.key, raw);
                 }
@@ -1206,10 +1212,17 @@ export function DataTable({
   }, [apiBaseUrl, entity, onDataMutated, token]);
 
   const renderCellValue = (row, col) => {
+    // === custom-render: DE ACA ===
+    // Extract to: renderCustomCell(row, col, { entity, token, apiBaseUrl })
     // Custom render function takes priority
     if (typeof col.render === 'function') return col.render(row, { entity, token, apiBaseUrl });
+    // === custom-render: HASTA ACA ===
+
+    // === resolve-display: DE ACA ===
+    // Extract to helper: resolveCellDisplay(row, col, { optimisticToggles, displayCatalogMaps })
+    // → returns { toggleKey, rawValue, display }
     const toggleKey = `${row.id}:${col.key}`;
-    const rawValue = Object.prototype.hasOwnProperty.call(optimisticToggles, toggleKey)
+    const rawValue = Object.hasOwn(optimisticToggles, toggleKey)
       ? optimisticToggles[toggleKey]
       : row[col.key];
     let display = resolveIdentifier(row, col.key);
@@ -1221,9 +1234,14 @@ export function DataTable({
         if (mapped) display = mapped;
       }
     }
+    // === resolve-display: HASTA ACA ===
+
+    // === first-column-pill: DE ACA ===
+    // Extract to: renderFirstColumnWithPill({ display, pill: col.pill, row })
+    // Only applies when col is the first visible column AND type === 'string'.
     if (col === visibleColumns[0] && col.type === 'string') {
       const pill = col.pill;
-      const pillLabel = pill && pill.when(row) ? pill.label : null;
+      const pillLabel = pill?.when(row) ? pill.label : null;
       return (
         <span className="inline-flex items-center gap-2">
           <span>{display}</span>
@@ -1235,6 +1253,11 @@ export function DataTable({
         </span>
       );
     }
+    // === first-column-pill: HASTA ACA ===
+
+    // === enum-cell: DE ACA ===
+    // Extract to: renderEnumCell({ rawValue, col, tMenu })
+    // 3 sub-variants: display === 'dot' | enumVariants (Tag) | plain <span>.
     if (col.type === 'enum') {
       const raw = rawValue;
       const label = tMenu(col.enumLabels?.[raw] ?? raw);
@@ -1253,6 +1276,11 @@ export function DataTable({
       }
       return <span>{label}</span>;
     }
+    // === enum-cell: HASTA ACA ===
+
+    // === status-cell: DE ACA ===
+    // Extract to: renderStatusCell({ row, col, dictionary })
+    // Variants: display === 'dot' | <StatusTag>.
     if (col.type === 'status') {
       const raw = row[col.key];
       const label = statusLabel(raw, dictionary);
@@ -1267,9 +1295,14 @@ export function DataTable({
       }
       return <StatusTag status={raw} label={label} />;
     }
+    // === status-cell: HASTA ACA ===
+
+    // === percent-cell: DE ACA ===
+    // Extract to: renderPercentCell({ value: row[col.key] })
+    // Pure UI — no closure deps beyond the raw numeric value.
     if (col.type === 'percent') {
       const val = Number(row[col.key]);
-      const pct = isNaN(val) ? 0 : val;
+      const pct = Number.isNaN(val) ? 0 : val;
       const color = pct >= 100 ? 'bg-emerald-500' : pct > 0 ? 'bg-amber-400' : 'bg-slate-200';
       const textColor = pct >= 100 ? 'text-emerald-700' : pct > 0 ? 'text-amber-700' : 'text-slate-400';
       return (
@@ -1281,8 +1314,16 @@ export function DataTable({
         </div>
       );
     }
+    // === percent-cell: HASTA ACA ===
+
+    // === boolean-cell: DE ACA ===
+    // Extract to: renderBooleanCell({ row, col, rawValue, toggleKey, savingToggles,
+    //                                  handleInlineToggle, locale, t, ui })
+    // Has 3 internal blocks (toggle / badge / fallback yes-no-dash) — each can be
+    // its own helper if cognitive complexity is still high after the first split.
     if (col.type === 'boolean') {
       const val = rawValue;
+      // --- boolean-toggle: DE ACA --- (extract: renderBooleanToggle)
       if (col.toggle) {
         const checked = isTruthyBoolean(val);
         const disabled = !!savingToggles[toggleKey] || (!isTruthyBoolean(val) && !isFalsyBoolean(val));
@@ -1303,6 +1344,8 @@ export function DataTable({
           </div>
         );
       }
+      // --- boolean-toggle: HASTA ACA ---
+      // --- boolean-badge: DE ACA --- (extract: renderBooleanBadge — colors OR variants)
       if (col.badge) {
         const resolveBadgeLabel = (raw, fallback) => {
           if (raw && typeof raw === 'object') return raw[locale] ?? raw.en_US ?? fallback;
@@ -1310,12 +1353,7 @@ export function DataTable({
         };
         const trueLabel  = resolveBadgeLabel(col.badgeLabels?.true,  ui('statusComplete'));
         const falseLabel = resolveBadgeLabel(col.badgeLabels?.false, ui('statusInProcess'));
-        if (!col.badgeColors) {
-          const trueVariant = col.badgeVariants?.true ?? 'green';
-          const falseVariant = col.badgeVariants?.false ?? 'neutral';
-          if (isTruthyBoolean(val)) return <Tag variant={trueVariant} label={trueLabel} />;
-          if (isFalsyBoolean(val)) return <Tag variant={falseVariant} label={falseLabel} />;
-        } else {
+        if (col.badgeColors) {
           const trueColor  = col.badgeColors.true  ?? 'bg-emerald-100 text-emerald-800';
           const falseColor = col.badgeColors.false ?? 'bg-amber-100 text-amber-700';
           if (isTruthyBoolean(val)) return (
@@ -1328,17 +1366,30 @@ export function DataTable({
               {falseLabel}
             </span>
           );
+        } else {
+          const trueVariant = col.badgeVariants?.true ?? 'green';
+          const falseVariant = col.badgeVariants?.false ?? 'neutral';
+          if (isTruthyBoolean(val)) return <Tag variant={trueVariant} label={trueLabel} />;
+          if (isFalsyBoolean(val)) return <Tag variant={falseVariant} label={falseLabel} />;
         }
       }
+      // --- boolean-badge: HASTA ACA ---
+      // --- boolean-fallback: DE ACA --- (extract: renderBooleanFallback — yes / no / em-dash)
       if (isTruthyBoolean(val)) return <span className="text-emerald-600">{ui('yes')}</span>;
       if (isFalsyBoolean(val)) return <span className="text-slate-400">{ui('no')}</span>;
       return <span className="text-slate-300">&mdash;</span>;
+      // --- boolean-fallback: HASTA ACA ---
     }
+    // === boolean-cell: HASTA ACA ===
+
+    // === date-cell: DE ACA ===
+    // Extract to: renderDateCell({ raw: row[col.key], col, dateFormatter })
+    // Edge cases under test: yyyy-MM-dd (date-only, no TZ shift), full ISO, null/empty.
     if (col.type === 'date') {
       const raw = row[col.key];
       // Parse date-only strings (yyyy-MM-dd) as local to avoid timezone shift
       const parsed = raw ? (/^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(raw + 'T00:00:00') : new Date(raw)) : null;
-      const formatted = parsed && !isNaN(parsed) ? dateFormatter.format(parsed) : '\u2014';
+      const formatted = parsed && !Number.isNaN(parsed) ? dateFormatter.format(parsed) : '\u2014';
       const dotColor = col.dot === false ? null : getDateDotColor(raw);
       return (
         <span className="inline-flex items-center gap-1.5">
@@ -1347,15 +1398,24 @@ export function DataTable({
         </span>
       );
     }
+    // === date-cell: HASTA ACA ===
+
+    // === amount-cell: DE ACA ===
+    // Extract to: renderAmountCell({ row, col }) — one-liner, optional but consistent.
     if (col.type === 'amount') {
       return <span className="tabular-nums">{formatAmount(row[col.key], row['currency$_identifier'])}</span>;
     }
-    // Truncate long display values
+    // === amount-cell: HASTA ACA ===
+
+    // === truncated-fallback: DE ACA ===
+    // Extract to: renderTruncatedText({ display }) — the default branch when no
+    // specialized type matched. Truncates string values longer than 30 chars.
     const val = display;
     if (typeof val === 'string' && val.length > 30) {
       return <span className="block max-w-[200px] truncate" title={val}>{val}</span>;
     }
     return val;
+    // === truncated-fallback: HASTA ACA ===
   };
 
   if (loading) {

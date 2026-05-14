@@ -49,7 +49,7 @@ Re-verified each finding against current `feature/ETP-3981` working tree.
 | 10 | `DocChip` rules repeated per window | Medium | M | — | **SOLVED** — registry + `docChipProps()` helper |
 | 11 | `DetailView` knows sales/purchase selector context | Medium | L | Low | Open |
 | 12 | `businessPartner`/`contacts` alias in quality-gate | Medium | S | — | **SOLVED** — centralized in `quality-gate/window-aliases.js` |
-| 13 | `contacts/BusinessPartnerSidebar.jsx` forwarding alias | Low | M | Low | **PARTIALLY SOLVED** — alias gone, but forked into two full copies |
+| 13 | `contacts/BusinessPartnerSidebar.jsx` forwarding alias | Low | S | — | **SOLVED** — dead `businessPartner/` dir removed, shared chart moved to `contacts/` |
 | 14 | Related-doc loading/error lifecycle inconsistent | Low | S (free with F9) | High (if bundled) | Open |
 
 ### Recommended order for the remaining open items
@@ -428,9 +428,9 @@ Confidence: High
 
 Confidence: Medium
 
-### Low — contacts/BusinessPartnerSidebar.jsx is a forwarding alias hiding ownership — PARTIALLY SOLVED (2026-05-13)
+### Low — contacts/BusinessPartnerSidebar.jsx is a forwarding alias hiding ownership — SOLVED (2026-05-13)
 
-> **Status: forwarding alias removed, but ownership not resolved.** `contacts/BusinessPartnerSidebar.jsx` is no longer a one-line re-export — it is now a full 246-line implementation. The sibling `businessPartner/BusinessPartnerSidebar.jsx` (342 lines) still exists. The original symptom (alias hiding cross-window dep) is gone, but the underlying ownership question has been resolved by **forking** rather than by picking one owner. Combine with F12 (quality-gate alias policy) when fixed.
+> **Status: SOLVED.** The `windows/custom/businessPartner/` directory was dead code: its only consumer was `contacts/BusinessPartnerSidebar.jsx` importing the named export `BPChartSVGContent`. Nothing else in the app (registry, `App`, dynamic imports, generated artifacts) referenced it — the `business-partner` window in `menu.json` loads from `artifacts/business-partner/generated/`, not from this custom dir. Resolution: extracted `BPChartSVGContent` to its own file `contacts/BPChartSVGContent.jsx`, updated the local import, and deleted `windows/custom/businessPartner/` entirely. The quality-gate alias `{ canonical: 'contacts', aliasDirs: ['businessPartner'] }` in `cli/src/quality-gate/window-aliases.js` is now harmless dead code (no files under that path exist anymore); leaving it in place because removal touches test fixtures and is out of scope for this minimal cleanup.
 
 
 **Evidence:**
