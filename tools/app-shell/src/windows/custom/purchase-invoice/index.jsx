@@ -10,8 +10,6 @@ import PurchaseInvoiceHeaderTable from './PurchaseInvoiceHeaderTable.jsx';
 import HeaderPage from '@generated/purchase-invoice/generated/web/purchase-invoice/HeaderPage';
 import InvoicePreview from '../shared/InvoicePreview.jsx';
 import PurchaseInvoiceTopbar from './PurchaseInvoiceTopbar.jsx';
-import RelatedDocuments from './RelatedDocuments.jsx';
-import { AttachmentsTab } from '@/components/attachments';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
@@ -114,8 +112,6 @@ export default function PurchaseInvoiceWindow(props) {
     { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount', label: ui('outstandingAmount') },
   ];
 
-  const customTabs = [{ key: 'related', label: ui('relatedDocuments'), Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: 'C_Invoice', config: {} } }];
-
   // Pick up the saved record from navigation state when arriving at the list view
   const effectiveRecord = savedRecord ?? location.state?.savedRecord ?? null;
 
@@ -137,7 +133,6 @@ export default function PurchaseInvoiceWindow(props) {
           extraBadges={[]}
           topbarRight={PurchaseInvoiceTopbar}
           notesField="description"
-          customTabs={customTabs}
           breadcrumb={breadcrumb}
           onAfterSave={true}
           refetchAfterSave={true}

@@ -18,7 +18,12 @@ export function columnFlex(col, idx) {
   if (idx === 0) return '1 1 244px';
   if (col.type === 'string' || col.type === 'text') return '1 1 224px';
   if (col.type === 'selector' || col.type === 'search' || col.type === 'foreignKey') return '0 0 192px';
-  if (col.type === 'enum' || col.type === 'select') return '0 0 152px';
+  // Enum/select columns share the string baseline (224px). Their values
+  // include the Select's chevron, so long options like "Use Generic Account
+  // No." need at least as much room as a plain text input of the same length
+  // — settling for the narrower selector tier (192px) clipped the trailing
+  // word inside the trigger. `1 1` keeps the column elastic on top.
+  if (col.type === 'enum' || col.type === 'select') return '1 1 224px';
   if (col.type === 'date') return '1 1 130px';
   return '0 0 120px';
 }
@@ -37,7 +42,7 @@ export function columnMinWidthPx(col, idx) {
   if (idx === 0) return 244;
   if (col.type === 'string' || col.type === 'text') return 224;
   if (col.type === 'selector' || col.type === 'search' || col.type === 'foreignKey') return 192;
-  if (col.type === 'enum' || col.type === 'select') return 152;
+  if (col.type === 'enum' || col.type === 'select') return 224;
   if (col.type === 'date') return 130;
   return 120;
 }

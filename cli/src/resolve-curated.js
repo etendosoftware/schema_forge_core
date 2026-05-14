@@ -529,6 +529,7 @@ const WINDOW_TRUTHY_PROPS = [
   'rowQuickActions',
   'sendDocument',
   'linesLayout',
+  'extraTabs',
 ];
 
 const WINDOW_BOOLEAN_TRUE_PROPS = [
@@ -568,7 +569,7 @@ export const WINDOW_KEY_ORDER = [
   'disableProcessedLock', 'titleField',
   'listViewOptions', 'listBaseFilter', 'quickFilters', 'subsetFilters',
   'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'lineEntityConfig',
-  'attachments', 'rowQuickActions',
+  'extraTabs', 'attachments', 'rowQuickActions',
   'sendDocument',
   'layoutType', 'linesLayout',
 ];

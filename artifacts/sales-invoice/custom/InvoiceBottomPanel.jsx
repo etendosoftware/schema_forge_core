@@ -3,24 +3,20 @@ import { createPortal } from 'react-dom';
 import { useUI } from '@/i18n';
 import { LinesBottomSection } from '@/components/contract-ui';
 import RelatedDocuments from './RelatedDocuments';
-import SifDataTabs from './SifDataTabs';
 import ImportFromShipmentModal from './ImportFromShipmentModal';
 import ImportFromOrderModal from './ImportFromOrderModal';
 
 /**
  * Sales Invoice bottom section. Delegates to the shared LinesBottomSection so
  * the Docs/Notes/Totals layout stays identical to the rest of the
- * inline-editable family; injects the invoice-specific RelatedDocuments and
- * the SIF (fiscal) data tabs as the `notesExtra` slot beneath the notes
- * block — preserving the bespoke fiscal UI without diverging from the
- * shared layout.
+ * inline-editable family. The SIF fiscal data is now rendered in its own
+ * primary tab (via extraTabs in decisions.json), not here.
  */
 export default function InvoiceBottomPanel(props) {
   return (
     <LinesBottomSection
       {...props}
       relatedDocuments={RelatedDocuments}
-      notesExtra={SifDataTabs}
     />
   );
 }

@@ -14,9 +14,11 @@ function fmt(val, curr) {
  *
  *   - Left:  Docs (window-specific `RelatedDocuments` component, passed in via
  *            `relatedDocuments` prop) + optional Notes textarea.
- *   - Right: `DocumentTotalsPanel` with the shared 420px fixed width and
- *            241px fixed height (matches the expanded "Descuento total" state
- *            so toggling the discount doesn't resize the panel).
+ *   - Right: `DocumentTotalsPanel` with the shared 520px fixed width and a
+ *            soft `minHeight: 200` floor so the panel keeps a stable visual
+ *            rhythm but is free to grow with its content. The previous rigid
+ *            pixel-height clamp acted as a floor on the whole bottom section
+ *            and crushed the lines table on viewports near 1366×768.
  *
  * Per-window wrappers (e.g., QuotationBottomPanel) import their custom
  * RelatedDocuments component and forward it to this component as the
@@ -135,10 +137,13 @@ export default function LinesBottomSection({
           <>
             <div className="border-l border-border/50" style={{ borderLeftWidth: '0.5px' }} />
 
-            {/* Right column: Totals — fixed 420px wide / 241px tall to keep the
-                same footprint whether the "Descuento total" row is collapsed or
-                expanded. */}
-            <div className="w-[520px] shrink-0 p-2 flex flex-col justify-start" style={{ height: 241, minHeight: 241, maxHeight: 241 }}>
+            {/* Right column: Totals — fixed 520px wide, with a soft
+                minHeight: 200 floor so the panel keeps a stable visual rhythm
+                but is free to grow with its content (e.g. when the discount
+                row expands). The previous rigid pixel-height clamp acted as a
+                floor on the whole bottom section and crushed the lines table
+                on viewports near 1366×768. */}
+            <div className="w-[520px] shrink-0 p-2 flex flex-col justify-start" style={{ minHeight: 200 }}>
               <DocumentTotalsPanel
                 lines={lines ?? []}
                 pendingLine={pendingLine ?? null}

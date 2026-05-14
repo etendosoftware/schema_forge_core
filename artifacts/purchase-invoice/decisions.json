@@ -33,6 +33,15 @@
     "dateFilterKey": "invoiceDate",
     "lineEntityConfig": "invoice",
     "linesLayout": "inlineEditable",
+    "extraTabs": [
+      {
+        "key": "sif",
+        "labelKey": "sifDataTabs.sectionTitle",
+        "component": "SifTab",
+        "importFrom": "@/windows/custom/shared/SifTab.jsx",
+        "placement": "tab"
+      }
+    ],
     "labelOverrides": {
       "es_ES": {
         "POReference": "Nº documento",

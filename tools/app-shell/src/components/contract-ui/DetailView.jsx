@@ -3,11 +3,12 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { AddLineButton } from '@/components/ui/add-line-button.jsx';
-import { X, MoreVertical, Check, Save, List, Printer, Mail, Trash2, Loader2 } from 'lucide-react';
+import { X, MoreVertical, Check, Save, List, Printer, Mail, Trash2, Loader2, Shield } from 'lucide-react';
 import { AttachmentIcon } from '@/components/attachments/AttachmentIcon';
 
 const TAB_ICONS = {
   'custom:attachments': AttachmentIcon,
+  'custom:sif': Shield,
 };
 
 function TabStripButton({
@@ -149,15 +150,14 @@ function detailContentPadding(linesLayout, hasSidebar, variant) {
  *
  * Priority:
  *  1. `customAddModal` tabs (e.g. Dirección) → click opens the popup editor.
- *  2. Tabs with a `Form` → click selects the row for the side-panel form.
- *  3. Read-only tabs → no row click handler.
- *
- * Extracted from inline JSX so the call site stays a flat expression (Sonar
- * S3358: avoid nested ternaries).
+ *  2. Tabs with a `Form` AND a non-inline layout → click selects the row for
+ *     the side-panel form.
+ *  3. Inline-editable tabs → no row click handler. Editing happens in place via
+ *     the pencil action; opening a side panel would defeat that UX.
  */
-function resolveSecondaryRowClickHandler(st, { openCustomModal, openSecondaryLine }) {
+function resolveSecondaryRowClickHandler(st, { openCustomModal, openSecondaryLine, linesLayout }) {
   if (st.customAddModal) return openCustomModal;
-  if (st.Form) return openSecondaryLine;
+  if (st.Form && linesLayout !== 'inlineEditable') return openSecondaryLine;
   return undefined;
 }
 
@@ -1805,10 +1805,10 @@ export function DetailView({
             </div>
           ) : null;
         })() : null}
-        <div className={`flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-hidden' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'content')}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
+        <div className={`flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'content')}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
-          <div className={`${sidePanel ? 'flex items-start gap-0' : ''} ${linesLayout === 'inlineEditable' ? 'flex-1 min-h-0 flex flex-col' : ''}`}>
-          <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} ${linesLayout === 'inlineEditable' ? 'flex flex-col min-h-0 flex-1' : 'space-y-2'}`}>
+          <div className={`${sidePanel ? 'flex items-start gap-0' : ''} ${linesLayout === 'inlineEditable' ? 'flex flex-col' : ''}`}>
+          <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} ${linesLayout === 'inlineEditable' ? 'flex flex-col' : 'space-y-2'}`}>
             {/* Principal + collapsed fields wrapped in a card */}
             <div className={`${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${embedded ? ' pointer-events-none' : ''}`}>
               <div className={linesLayout === 'inlineEditable' ? 'p-2' : 'p-6'}>
@@ -1867,7 +1867,7 @@ export function DetailView({
 
             {/* Tabs: child entities + Others */}
             {tabs.length > 0 && (
-              <div className={linesLayout === 'inlineEditable' ? 'mt-1 flex-1 flex flex-col min-h-0 relative' : 'mt-6'}>
+              <div className={linesLayout === 'inlineEditable' ? 'mt-1 flex flex-col relative' : 'mt-6'}>
                 <div className={`flex items-center justify-between border-b border-border/50 ${linesLayout === 'inlineEditable' ? 'shrink-0' : ''}`}>
                   <div className="flex items-center gap-0">
                     {tabs.map((tab, idx) => {
@@ -1894,10 +1894,15 @@ export function DetailView({
                 </div>
 
                 {/* Tab content: Lines.
-                    In inlineEditable mode this wrapper is the SOLE scroll
-                    container — everything outside (form card, tabs bar,
-                    bottom section) stays fixed in viewport. */}
-                <div ref={linesScrollRef} className={linesLayout === 'inlineEditable' ? 'flex-1 overflow-auto min-h-0' : ''}>
+                    The lines wrapper flows naturally — no internal scroll, no
+                    flex-1 height capture. All rows render, the bottom section
+                    follows beneath them, and the outer inline-editable column
+                    (line 1806 — overflow-y-auto) provides the single vertical
+                    scroll for the whole document. `linesScrollRef` is still
+                    attached so legacy effects that probe its bounding box keep
+                    working; with no overflow on this wrapper they become
+                    no-ops on the lines side. */}
+                <div ref={linesScrollRef}>
                 {tabs[activeTab]?.key === 'lines' && DetailTable && (
                   // Only show the loading spinner on INITIAL load (no children yet).
                   // Subsequent refetches (e.g., after PATCH on a child) keep the table
@@ -2575,6 +2580,7 @@ export function DetailView({
                         onRowClick={resolveSecondaryRowClickHandler(st, {
                           openCustomModal: (row) => setCustomModalState({ key: st.key, rowId: row.id }),
                           openSecondaryLine: (row) => { setSelectedSecondaryLine({ ...row, _tabKey: st.key }); setSecondaryLineEdits(null); },
+                          linesLayout,
                         })}
                         // Pencil action for customAddModal tabs (Dirección) opens
                         // the popup editor — rows are not editable in place.

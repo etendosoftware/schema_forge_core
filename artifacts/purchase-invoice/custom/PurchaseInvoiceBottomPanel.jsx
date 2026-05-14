@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { useUI } from '@/i18n';
 import { LinesBottomSection } from '@/components/contract-ui';
 import RelatedDocuments from '@/windows/custom/purchase-invoice/RelatedDocuments.jsx';
-import SifDataTabs from './SifDataTabs';
 import ImportFromPurchaseOrderModal from './ImportFromPurchaseOrderModal';
 import ImportFromGoodsReceiptModal from './ImportFromGoodsReceiptModal';
 
@@ -20,7 +19,6 @@ export default function PurchaseInvoiceBottomPanel(props) {
     <LinesBottomSection
       {...props}
       relatedDocuments={RelatedDocuments}
-      notesExtra={SifDataTabs}
     />
   );
 }

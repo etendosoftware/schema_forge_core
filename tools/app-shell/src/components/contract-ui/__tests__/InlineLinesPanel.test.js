@@ -63,6 +63,16 @@ describe('InlineLinesPanel', () => {
     assert.match(src, /onUpdateRow\?\.\(row, col\.key, value/);
   });
 
+  it('emits a deduplicated success toast after each inline save', () => {
+    // Per-row id so editing several cells of the same row collapses into one
+    // rolling toast instead of stacking a fresh one for every blur.
+    assert.match(
+      src,
+      /toast\.success\(ui\('recordSaved'\), \{ id: `inline-save-\$\{row\.id\}` \}\)/,
+      'commitField must fire toast.success with a per-row dedup id on successful PATCH',
+    );
+  });
+
   it('makes selector and search columns inline-editable via SelectorInput', () => {
     const editableTypesMatch = src.match(/EDITABLE_TYPES = new Set\(\[([\s\S]+?)\]\)/);
     assert.ok(editableTypesMatch, 'EDITABLE_TYPES set not found');

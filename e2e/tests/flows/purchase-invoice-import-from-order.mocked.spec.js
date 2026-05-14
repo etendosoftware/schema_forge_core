@@ -206,8 +206,8 @@ async function installMocks(page, { po, poLines, invLines = [], state = {} }) {
 // ---------------------------------------------------------------------------
 
 async function openImportFromOrderModal(page) {
-  // Button text: ui('importFromPurchaseOrder') = "Importar desde pedido" (es) / "Import from order" (en)
-  const btn = page.getByText(/Importar desde pedido|Import from order/i).first();
+  // Button text: ui('importFromPurchaseOrder') = "Importar desde pedido" (es) / "Import from PO" (en)
+  const btn = page.getByText(/Importar desde pedido|Import from PO/i).first();
   await expect(btn).toBeVisible({ timeout: 8_000 });
   await btn.click();
   // Modal opens — wait for the search placeholder to confirm
