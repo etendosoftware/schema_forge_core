@@ -147,6 +147,31 @@ const PANEL_META = {
   verifactu: { titleKey: 'sifDataTabs.panel.verifactu.title', subtitleKey: 'sifDataTabs.panel.verifactu.subtitle' },
 };
 
+function resolveDefaultTab(showSii, showTbai) {
+  if (showSii) return 'sii';
+  if (showTbai) return 'tbai';
+  return 'verifactu';
+}
+
+function resolveEffectiveTab(activeTab, showSii, showTbai, showVerifactu, defaultTab) {
+  if (activeTab === 'sii' && showSii) return 'sii';
+  if (activeTab === 'tbai' && showTbai) return 'tbai';
+  if (activeTab === 'verifactu' && showVerifactu) return 'verifactu';
+  return defaultTab;
+}
+
+function PanelHeader({ titleKey, subtitleKey, badge, ui }) {
+  return (
+    <div className="flex items-start justify-between gap-3 px-4 py-3 border-b border-border/40">
+      <div className="flex flex-col gap-0.5">
+        <span className="text-sm font-semibold text-foreground">{ui(titleKey)}</span>
+        <span className="text-xs text-muted-foreground">{ui(subtitleKey)}</span>
+      </div>
+      {badge}
+    </div>
+  );
+}
+
 export default function SifTab({ recordId, data, token, apiBaseUrl }) {
   const ui = useUI();
   const { selectedOrg } = useAuth();
@@ -172,7 +197,7 @@ export default function SifTab({ recordId, data, token, apiBaseUrl }) {
   const dateReadOnly = !isDraft;
   const siiFieldReadOnly = isSentToSii;
 
-  const defaultTab = showSii ? 'sii' : showTbai ? 'tbai' : 'verifactu';
+  const defaultTab = resolveDefaultTab(showSii, showTbai);
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [siiForm, setSiiForm] = useState({});
   const [savingField, setSavingField] = useState(null);
@@ -185,13 +210,7 @@ export default function SifTab({ recordId, data, token, apiBaseUrl }) {
     );
   }
 
-  const effectiveTab = (activeTab === 'sii' && showSii)
-    ? 'sii'
-    : (activeTab === 'tbai' && showTbai)
-      ? 'tbai'
-      : (activeTab === 'verifactu' && showVerifactu)
-        ? 'verifactu'
-        : defaultTab;
+  const effectiveTab = resolveEffectiveTab(activeTab, showSii, showTbai, showVerifactu, defaultTab);
 
   function getVal(key) {
     return key in siiForm ? siiForm[key] : (data?.[key] ?? '');
@@ -269,13 +288,12 @@ export default function SifTab({ recordId, data, token, apiBaseUrl }) {
       <div className="flex-1 border border-border/40 rounded-lg bg-white overflow-hidden flex flex-col min-h-0">
         {effectiveTab === 'sii' && showSii && (
           <>
-            <div className="flex items-start justify-between gap-3 px-4 py-3 border-b border-border/40">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-sm font-semibold text-foreground">{ui(PANEL_META.sii.titleKey)}</span>
-                <span className="text-xs text-muted-foreground">{ui(PANEL_META.sii.subtitleKey)}</span>
-              </div>
-              <SiiStatusBadge estado={data?.aeatsiiEstado} ui={ui} />
-            </div>
+            <PanelHeader
+              titleKey={PANEL_META.sii.titleKey}
+              subtitleKey={PANEL_META.sii.subtitleKey}
+              badge={<SiiStatusBadge estado={data?.aeatsiiEstado} ui={ui} />}
+              ui={ui}
+            />
             <div className="grid grid-cols-2 gap-x-5 gap-y-4 p-4 overflow-y-auto">
               <Field label={ui('sifDataTabs.field.operationDate')} htmlFor="sif-etsgDateOperation">
                 <DateField
@@ -341,13 +359,12 @@ export default function SifTab({ recordId, data, token, apiBaseUrl }) {
 
         {effectiveTab === 'tbai' && showTbai && (
           <>
-            <div className="flex items-start justify-between gap-3 px-4 py-3 border-b border-border/40">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-sm font-semibold text-foreground">{ui(PANEL_META.tbai.titleKey)}</span>
-                <span className="text-xs text-muted-foreground">{ui(PANEL_META.tbai.subtitleKey)}</span>
-              </div>
-              <TbaiBadge issent={data?.tbaiIssent} ui={ui} />
-            </div>
+            <PanelHeader
+              titleKey={PANEL_META.tbai.titleKey}
+              subtitleKey={PANEL_META.tbai.subtitleKey}
+              badge={<TbaiBadge issent={data?.tbaiIssent} ui={ui} />}
+              ui={ui}
+            />
             <div className="grid grid-cols-2 gap-x-5 gap-y-4 p-4 overflow-y-auto">
               <Field label={ui('sifDataTabs.field.chainSequence')} htmlFor="sif-tbaiSeq">
                 <ReadOnlyValue id="sif-tbaiSeq" value={data?.tbaiSequence} />
@@ -364,17 +381,12 @@ export default function SifTab({ recordId, data, token, apiBaseUrl }) {
 
         {effectiveTab === 'verifactu' && showVerifactu && (
           <>
-            <div className="flex items-start justify-between gap-3 px-4 py-3 border-b border-border/40">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-sm font-semibold text-foreground">{ui(PANEL_META.verifactu.titleKey)}</span>
-                <span className="text-xs text-muted-foreground">{ui(PANEL_META.verifactu.subtitleKey)}</span>
-              </div>
-              <VerifactuBadge
-                status={data?.etvfacInvoiceStatus}
-                sent={data?.etvfacSentToVerifac}
-                ui={ui}
-              />
-            </div>
+            <PanelHeader
+              titleKey={PANEL_META.verifactu.titleKey}
+              subtitleKey={PANEL_META.verifactu.subtitleKey}
+              badge={<VerifactuBadge status={data?.etvfacInvoiceStatus} sent={data?.etvfacSentToVerifac} ui={ui} />}
+              ui={ui}
+            />
             <div className="grid grid-cols-2 gap-x-5 gap-y-4 p-4 overflow-y-auto">
               <Field label={ui('sifDataTabs.field.rfGenerationDate')} htmlFor="sif-vfDate">
                 <ReadOnlyValue id="sif-vfDate" value={data?.etvfacDateIssue} />
