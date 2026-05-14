@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const src = readFileSync(join(__dirname, '..', 'InvoicePreviewModal.jsx'), 'utf8');
+const src = readFileSync(join(__dirname, '..', 'InvoicePreview.jsx'), 'utf8');
 
 describe('InvoicePreviewModal source', () => {
   it('opens InvoicePaymentModal without passing a token prop', () => {
