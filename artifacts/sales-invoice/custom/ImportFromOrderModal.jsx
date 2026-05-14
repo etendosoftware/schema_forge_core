@@ -90,6 +90,7 @@ export default function ImportFromOrderModal(props) {
   return (
     <ImportLinesModal
       {...props}
+      linesEndpoint="sales-invoice/lines"
       titleKey="importFromSalesOrder"
       searchPlaceholderKey="searchSalesOrder"
       emptyMessageKey="noCompletedSalesOrdersForThisCustomer"

@@ -274,12 +274,14 @@ export function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onCo
     return () => { cancelled = true; };
   }, [orderId, apiBaseUrl, headers]);
 
-  const d          = freshData || data || {};
-  const documentNo = d.documentNo || '';
-  const bpName     = d['businessPartner$_identifier'] || '';
-  const grandTotal = Number(d.grandTotalAmount) || 0;
-  const totalLines = d.summedLineAmount ?? d.totalLines ?? grandTotal;
-  const currency   = d['currency$_identifier'] || '';
+  const d              = freshData || data || {};
+  const documentNo     = d.documentNo || '';
+  const bpName         = d['businessPartner$_identifier'] || '';
+  const discountPct    = Number(d.etgoTotalDiscount ?? 0);
+  const discountFactor = discountPct > 0 ? (1 - discountPct / 100) : 1;
+  const grandTotal     = (Number(d.grandTotalAmount) || 0) * discountFactor;
+  const totalLines     = (Number(d.summedLineAmount ?? d.totalLines ?? d.grandTotalAmount ?? 0) || 0) * discountFactor;
+  const currency       = d['currency$_identifier'] || '';
 
   const handleConfirm = async () => {
     if (loading) return;

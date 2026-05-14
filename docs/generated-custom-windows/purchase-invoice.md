@@ -43,7 +43,7 @@ Use this window to register supplier invoices, keep the payable document aligned
 - For `verifactu`, the SIF status block shows a dedicated Verifactu tab with read-only send status details (`etvfacInvoiceStatus`, generation date, CSV, hash, QR URL, and issue detail) even though sending is automatic.
 - Related payment records are downstream dependencies, not free-form links. The custom related-documents component resolves payment-out documents through payment-plan and payment-detail relationships, then links users to `/payment-out/:id`.
 - The preview modal has General, Messages, and History tabs, but only the General tab is backed by invoice/payment data in current evidence. Messages and History are present as empty states.
-- The preview modal also includes a document upload/drop area for purchase invoices, but the current evidence shows only local file preview behavior in the browser; no persisted attachment workflow is visible here.
+- The preview modal includes a document upload/drop area for purchase invoices backed by persistent file storage: uploaded files are sent to `POST /sws/neo/preview-file` and stored in `ETGO_PREVIEW_FILE` keyed by `(clientId, specName, recordId)`. On each subsequent open a `GET /sws/neo/preview-file` restores the cached file; if one exists the drop zone is replaced by a PDF/image viewer with a delete button. The delete button sends `DELETE /sws/neo/preview-file` and restores the drop zone.
 - Save button dirty-state tracking: the "Save Draft" button is disabled whenever there are no pending unsaved changes (`isDirty = false`). Four independent sources make `isDirty` true: (1) any header field value differs from the last-saved record; (2) an add-row form is open on the primary lines tab; (3) an add-row form is open on a secondary child tab; (4) a sidebar line edit is open. The "Confirm" button is never blocked by dirty state — completing an invoice is always allowed regardless of whether header changes are pending. New records always have Save active because backend defaults populate the form immediately on open. After a successful save, the detail view refetches the saved header once so backend-populated fiscal defaults and callout results are reflected immediately, then the button disables automatically. Reverting a changed field back to its original value also disables the button. When a line is added, `refreshHeaderTotals` updates server-computed totals in `editing` without overwriting fields the user explicitly changed, so pending header edits survive line operations.
 
 ## Gap assessment
@@ -52,7 +52,7 @@ Use this window to register supplier invoices, keep the payable document aligned
 - The `DocumentTotalsPanel` shows tax as `grandTotal − netSubtotal` (where `netSubtotal = Σ(qty × listPrice × (1 − discount/100))`). This is a display shortcut that correctly captures the aggregate tax for typical single-tax-rate invoices, but it does not surface per-line or multi-rate tax breakdowns even though the contract exposes tax-related entities.
 - Payment-plan and payment-detail entities exist in the contract and power the custom payment views, but this window does not expose those datasets as first-class editable tabs. If users need schedule editing beyond the modal flows, that remains an open UX gap in current evidence.
 - Messages, History, and email history are placeholders today. The business intent suggests traceability around supplier communications and payable events, but the current implementation does not show persisted conversation or activity feeds.
-- The purchase-invoice preview supports local document upload/preview, but there is no visible evidence that uploaded files are saved, classified, or linked back to the invoice record.
+- The purchase-invoice preview now supports full file persistence: uploaded files are stored server-side in `ETGO_PREVIEW_FILE` and restored on each subsequent open. The drop zone, cached file view, and delete flow are automated and tested end-to-end in `e2e/tests/flows/invoice-preview-persistence.spec.js`.
 - Dedicated automated coverage now exists for the purchase-invoice list/grid contract and for SIF button visibility under mocked fiscal profiles (`artifacts/purchase-invoice/__tests__/contract-integrity.test.js`, `e2e/tests/flows/sif-buttons-fiscal-config.spec.js`), but the broader payable flow still relies on manual verification for full end-to-end confidence.
 - Label-override duplication is a known piece of technical debt. Because the custom list wrapper bypasses the generated `HeaderPage`, it has to carry its own `LABEL_OVERRIDES` constant and forward it into the `ListView`. The same labels are also declared in `decisions.json` for the generated surfaces when needed. Any label change has to be made in both places until the wrapper reuses the generated labels.
 - Header-date format reformatting for the tax selector context lives in a generic component, `tools/app-shell/src/components/contract-ui/DetailView.jsx`, which converts the ISO `YYYY-MM-DD` invoice date into the `DD-MM-YYYY` form that Etendo Classic's PL/pgSQL `to_date()` expects before sending it as `DateInvoiced` in the selector context. This is technical debt to keep in mind: any future change to date handling has to consider both formats, because sending the raw ISO date triggers HTTP 500 with "date/time field value out of range".
@@ -86,13 +86,17 @@ Use this window to register supplier invoices, keep the payable document aligned
   - `tools/app-shell/src/windows/custom/purchase-invoice/index.jsx`
   - `tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceTopbar.jsx` — the payment-status pill (paid/pending amounts) formats monetary values using the org's configured currency via `useCurrency()` and `formatCurrency()`.
   - `tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceBottomPanel.jsx` — subtotal, inferred tax, and total in the footer are formatted using the org's configured currency via `useCurrency()` and `formatCurrency()`.
-  - `tools/app-shell/src/windows/custom/purchase-invoice/InvoicePreviewModal.jsx`
+  - `tools/app-shell/src/windows/custom/shared/InvoicePreview.jsx` — wires `useInvoicePreview` data into `GenericPreviewModal`; drives the left-panel strategy (drop zone vs. cached file vs. spinner), the `attachmentConfig` prop, and the modal action buttons (Send, Add Payment, Download PDF, Edit).
+  - `tools/app-shell/src/windows/custom/shared/GenericPreviewModal.jsx` — domain-agnostic slide-in preview shell. Receives `attachmentConfig` and manages the entire file-persistence lifecycle via `usePreviewAttachment`: GET on mount, drop zone when no file, POST on upload, DELETE on delete button. Emits `data-testid="generic-preview-modal"` and `data-testid="preview-drop-zone"`.
+  - `tools/app-shell/src/windows/custom/shared/usePreviewAttachment.js` — GET/POST/DELETE against `/sws/neo/preview-file`. No-op when `storeCondition=false`. Manages the `storedFile` object URL lifecycle (revoke on unmount).
   - `tools/app-shell/src/windows/custom/purchase-invoice/InvoiceLineTableCustom.jsx` — hardcoded column list: product, description, invoiced quantity, net unit price (`key: 'listPrice'`, `column: 'PriceList'`, `type: 'amount'`), % discount (`key: 'etgoDiscount'`), tax, line gross amount. The editable price field is `listPrice` (PriceList column), not `unitPrice` (PriceActual). `etgoDiscount` (`EM_Etgo_Discount`) is the discount field for invoice lines. This aligns with `addLineFields.entry` in the generated `HeaderPage.jsx` and with the `INVOICE_LINE_CONFIG` used by `DetailView.jsx`.
   - `tools/app-shell/src/windows/custom/purchase-invoice/RelatedDocuments.jsx` — fetches the full purchase order via `fetchById` to render the order chip with formatted title, amount, currency, and status. Goods receipts are fetched via `fetchByCriteria('goods-receipt', ...)` on the same PO id. Payments are resolved through payment-plan → payment-detail → payment-out chain.
   - `tools/app-shell/src/windows/custom/shared/InvoicePaymentModal.jsx`
 - `tools/app-shell/src/hooks/__tests__/useEntity-dirty-state.test.js` verifies the `isDirtyHeader` computation (dirty when editing differs from selected, clean when they match, new-record initial state) and the `refreshHeaderTotals` selective merge (server-computed totals update while user-edited fields in `editing` are preserved using `userChangedKeysRef`).
 - `tools/app-shell/src/components/contract-ui/__tests__/DetailView.dirtyState.test.js` guards the `isDirty` composite expression, the `additionalDirtyState` extension prop, and the save-button disabled conditions (new record always active, existing record gated by `!isDirty`, Confirm button never gated by dirty state).
 - The generated `HeaderPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `C_Invoice` AD table.
+- `e2e/tests/flows/invoice-preview-modal.spec.js` — 5 Playwright tests for `GenericPreviewModal` lifecycle in mock mode: row click opens the modal, X button dismisses it, backdrop click dismisses it, tabs are rendered and switching works, Edit navigates to the detail URL.
+- `e2e/tests/flows/invoice-preview-persistence.spec.js` — 7 Playwright tests for file persistence in mock mode: drop zone visible when no file is cached, GET fires with correct `specName=purchase-invoice` and `recordId`, file upload triggers POST with correct body params, file view is shown when a cached file exists, delete button sends DELETE and restores the drop zone, completed sales invoice fires GET with `specName=sales-invoice`, draft sales invoice does NOT fire GET (storeCondition=false).
 
 ## Pipeline regeneration — ETP-3908
 
@@ -100,3 +104,40 @@ Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functio
 
 - `linesLayout: "classic"` is now written explicitly to `contract.json`; previously the classic layout was the implicit default.
 - `requiredHeaderFields` is now emitted in the page component; this window has no required header fields so the array is empty and there is no behavioral change.
+
+## Import-from-order and import-from-receipt — ETP-3908
+
+Two new line-import flows are now available on draft purchase invoices when a business partner is selected:
+
+**Import from Purchase Order** (`artifacts/purchase-invoice/custom/ImportFromPurchaseOrderModal.jsx`):
+- Lists confirmed purchase orders (`documentStatus=CO`) for the same supplier with `invoiceStatus < 100`.
+- Expanding an order row lazy-loads its lines with product name, ordered quantity, unit price, and discount.
+- Already-imported lines (matched via `salesOrderLine` / `C_OrderLine_ID` on existing invoice lines) are grayed and labeled "Ya importado".
+- Each imported line is POSTed to `/purchase-invoice/lines` with `salesOrderLine`, `invoicedQuantity`, `unitPrice`, `listPrice`, `etgoDiscount`, `tax`, `uOM`, and `lineNo`.
+- `afterImport`: if every imported order shares the same non-zero `etgoTotalDiscount`, a PATCH updates the invoice header with that discount so the `DocumentTotalsPanel` reflects it immediately.
+
+**Import from Goods Receipt** (`artifacts/purchase-invoice/custom/ImportFromGoodsReceiptModal.jsx`):
+- Lists completed goods receipts (`documentStatus=CO`) for the same supplier with `invoiced !== true`.
+- Each receipt row shows its backing purchase order number (`salesOrder$_identifier`) as the secondary label (right side of the row), not the line total.
+- Receipt lines carry no price; prices are resolved via the `/purchase-invoice/lines/callout` cascade (same pattern as `ImportFromShipmentModal` on the sales side).
+- Already-imported lines are detected via `goodsShipmentLine` / `M_InOutLine_ID` on existing invoice lines.
+- The backing PO line (`salesOrderLine` on the receipt line) is looked up in `/purchase-order/lines/{id}` to carry the line-level discount into the invoice.
+- POST body: `goodsShipmentLine`, `salesOrderLine`, `invoicedQuantity`, `unitPrice`, `listPrice`, `etgoDiscount`, `tax`, `uOM`, `lineNo`.
+
+**`PurchaseInvoiceBottomPanel.jsx`** was rewritten to wire both modals:
+- `PurchaseInvoiceLinesEmptyState`: shows "Importar desde envío" (receipt) and "Importar desde pedido" (order) buttons when `isDraft && canAddLine && bpId`. Receipt button is first (mirrors sales-invoice order).
+- `PurchaseInvoiceLineActions` (forwardRef): exposes `openImportReceiptModal` and `openImportOrderModal` via `useImperativeHandle` for use from the "+ Añadir línea" dropdown.
+- `PurchaseInvoiceBottomPanel.lineMenuActions`: returns `[{ key:'import-receipt', … }, { key:'import-order', … }]`.
+
+**`DetailView.jsx` — `onRefresh` after import** now calls both `hook.fetchChildren` (lines) and `hook.fetchById` (header) so `etgoTotalDiscount` set by `afterImport` is immediately reflected in the `DocumentTotalsPanel` without requiring a manual page reload.
+
+**`DetailView.jsx` — `handleTotalDiscountChange`** (saves `etgoTotalDiscount` on blur) now:
+1. Shows `toast.success(ui('totalDiscountSaved'))` on a successful PATCH.
+2. Shows `toast.error(...)` on failure instead of silently swallowing the error.
+3. Calls `hook.handleChange('etgoTotalDiscount', pct)` to update the local editing state so a subsequent document save does not overwrite the freshly persisted discount with the stale header snapshot.
+
+**`ImportLinesModal.jsx`** (`tools/app-shell/src/components/contract-ui/`) is now fully window-agnostic: the previously hardcoded `${base}/sales-invoice/lines` POST endpoint is replaced by a required `linesEndpoint` prop. A runtime guard (`throw new Error(...)`) prevents accidental omission. Existing sales-invoice wrappers pass `linesEndpoint="sales-invoice/lines"` explicitly.
+
+**Automated evidence (ETP-3908)**:
+- `e2e/tests/flows/purchase-invoice-import-from-order.mocked.spec.js` — 4 mocked Playwright tests: single line (asserts POST body fields), multiple lines (asserts 2 POSTs), line-level discount (asserts `etgoDiscount: 15` in POST), order-level discount (asserts header PATCH with `etgoTotalDiscount: 15`).
+- `e2e/tests/flows/purchase-invoice-import-from-receipt.mocked.spec.js` — 3 mocked Playwright tests: single line with callout-resolved price (asserts `goodsShipmentLine` in POST), secondary label shows PO reference, already-imported lines show "ya importado" and are disabled.

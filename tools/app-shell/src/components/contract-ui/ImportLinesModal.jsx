@@ -21,7 +21,9 @@ export default function ImportLinesModal({
   buildLineBody,
   afterImport,
   showPriceColumns = true,
+  linesEndpoint,
 }) {
+  if (!linesEndpoint) throw new Error('ImportLinesModal: linesEndpoint prop is required');
   const ui = useUI();
   const [documents, setDocuments] = useState([]);
   const [sharedContext, setSharedContext] = useState({});
@@ -125,7 +127,7 @@ export default function ImportLinesModal({
         for (const line of lines) {
           const qty = lineQuantities[line.id] ?? (line._maxQty || 0);
           const lineBody = await buildLineBody({ line, qty, invoiceId, lineNo, sharedContext, base, headers });
-          const res = await fetch(`${base}/sales-invoice/lines`, {
+          const res = await fetch(`${base}/${linesEndpoint}`, {
             method: 'POST', headers, body: JSON.stringify(lineBody),
           });
           if (!res.ok) errors++;

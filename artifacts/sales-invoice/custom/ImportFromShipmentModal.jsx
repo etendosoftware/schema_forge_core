@@ -235,6 +235,7 @@ export default function ImportFromShipmentModal(props) {
   return (
     <ImportLinesModal
       {...props}
+      linesEndpoint="sales-invoice/lines"
       titleKey="importFromShipment"
       searchPlaceholderKey="searchShipment"
       emptyMessageKey="noPendingShipmentsForCustomer"

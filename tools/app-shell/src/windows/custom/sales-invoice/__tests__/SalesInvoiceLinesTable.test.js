@@ -12,24 +12,13 @@ describe('SalesInvoiceLinesTable', () => {
     assert.match(src, /export default SalesInvoiceLinesTable/);
   });
 
-  it('renders a DataTable', () => {
-    assert.match(src, /DataTable/);
+  it('delegates rendering to the shared invoice lines table', () => {
+    assert.match(src, /InvoiceLinesTable/);
   });
 
-  it('defines listPrice column with type amount', () => {
-    assert.match(src, /key.*listPrice/);
-    assert.match(src, /type.*amount/);
-  });
-
-  it('uses useCurrency to get the org currency code', () => {
-    assert.match(src, /useCurrency/);
-  });
-
-  it('enriches rows with currency$_identifier fallback', () => {
-    assert.match(src, /currency\$_identifier/);
-  });
-
-  it('passes enriched data to DataTable', () => {
-    assert.match(src, /enrichedData/);
+  it('forwards ref and props to the shared component', () => {
+    assert.match(src, /forwardRef/);
+    assert.match(src, /ref=\{ref\}/);
+    assert.match(src, /\{\.\.\.props\}/);
   });
 });
