@@ -48,27 +48,29 @@ function ReadOnlyValue({ id, value }) {
 
 function CheckboxField({ id, checked, disabled, onToggle }) {
   return (
-    <button
-      type="button"
-      role="checkbox"
-      id={id}
-      aria-checked={checked}
-      disabled={disabled}
-      onClick={() => !disabled && onToggle(!checked)}
-      className={[
-        'h-10 w-10 shrink-0 rounded-lg border border-[#D1D4DB] shadow-[0px_1px_2px_rgba(18,18,23,0.05)]',
-        'flex items-center justify-center transition-colors',
-        'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-        'disabled:cursor-not-allowed disabled:opacity-50',
-        checked ? 'bg-primary text-primary-foreground' : 'bg-transparent',
-      ].join(' ')}
-    >
-      {checked && (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      )}
-    </button>
+    <div className="h-10 flex items-center">
+      <button
+        type="button"
+        role="checkbox"
+        id={id}
+        aria-checked={checked}
+        disabled={disabled}
+        onClick={() => !disabled && onToggle(!checked)}
+        className={[
+          'h-5 w-5 shrink-0 rounded-sm border border-[#D1D4DB] shadow-[0px_1px_2px_rgba(18,18,23,0.05)]',
+          'flex items-center justify-center transition-colors',
+          'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+          'disabled:cursor-not-allowed disabled:opacity-50',
+          checked ? 'bg-primary text-primary-foreground border-primary' : 'bg-transparent',
+        ].join(' ')}
+      >
+        {checked && (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        )}
+      </button>
+    </div>
   );
 }
 
@@ -240,7 +242,7 @@ export default function SifTab({ recordId, data, token, apiBaseUrl }) {
   ].filter(Boolean);
 
   return (
-    <div className="flex gap-4 p-4 h-full min-h-0">
+    <div className="flex gap-2 p-2 h-full min-h-0">
       <div className="w-56 shrink-0 flex flex-col gap-1 border border-border/40 rounded-lg bg-white p-2">
         {railItems.map(item => {
           const active = effectiveTab === item.key;
