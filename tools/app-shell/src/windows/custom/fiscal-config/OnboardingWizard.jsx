@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUI, useLocaleSwitch } from '@/i18n';
 import { fetchById, neoBase } from '@/components/related-documents/helpers.js';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 import {
   buildOnboardingPayloads,
   getFiscalRecordId,
@@ -190,6 +191,7 @@ function ScreenLayout({ children, actions, hint }) {
 export default function OnboardingWizard({ orgId, orgName, token, apiBaseUrl, onComplete, onGoHome }) {
   const ui = useUI();
   const { locale } = useLocaleSwitch();
+  const apiFetch = useApiFetch(neoBase(apiBaseUrl));
 
   const TERRITORIES = {
     navarra:  { ...TERRITORY_META.navarra,  name: ui('fiscal.territory.navarra'),  system: ui('fiscal.territory.system.sii'),    systemLong: ui('fiscal.territory.navarra.systemLong'),  example: ui('fiscal.territory.navarra.example')  },
@@ -233,18 +235,16 @@ export default function OnboardingWizard({ orgId, orgName, token, apiBaseUrl, on
 
   useEffect(() => {
     if (step !== 'applied') return;
-    if (!orgId || !token || !system) return;
+    if (!orgId || !system) return;
     const certCtx = getCertificateContext(system);
     if (!certCtx) return;
-    fetch(`${neoBase(apiBaseUrl)}/certificate`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    apiFetch('/certificate')
       .then(r => r.json())
       .then(data => {
         if (data?.exists) setCert({ name: ui('fiscal.cert.loaded'), validTo: data.validTo ?? '' });
       })
       .catch(() => {});
-  }, [step, orgId, token, apiBaseUrl, system]);
+  }, [step, orgId, apiFetch, system]);
 
   const t = TERRITORIES[selectedTerritory];
 

@@ -1,27 +1,22 @@
 import { useState, useEffect } from 'react';
 import { neoBase } from '@/components/related-documents/helpers.js';
 import { daysUntil } from './certExpiryUtils.js';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 
 export { daysUntil };
 
-export function useCertExpiry(orgId, token, apiBaseUrl, { mockDaysLeft = null } = {}) {
+export function useCertExpiry(apiBaseUrl, { mockDaysLeft = null } = {}) {
   const [daysLeft, setDaysLeft] = useState(null);
+  const apiFetch = useApiFetch(neoBase(apiBaseUrl));
 
   useEffect(() => {
     if (mockDaysLeft !== null) {
       setDaysLeft(mockDaysLeft);
       return;
     }
-    if (!orgId || !token) {
-      setDaysLeft(null);
-      return;
-    }
     setDaysLeft(null);
     const controller = new AbortController();
-    fetch(`${neoBase(apiBaseUrl)}/certificate`, {
-      headers: { Authorization: `Bearer ${token}` },
-      signal: controller.signal,
-    })
+    apiFetch('/certificate', { signal: controller.signal })
       .then(r => r.json())
       .then(data => {
         if (controller.signal.aborted) return;
@@ -33,7 +28,7 @@ export function useCertExpiry(orgId, token, apiBaseUrl, { mockDaysLeft = null } 
       })
       .catch(() => {});
     return () => controller.abort();
-  }, [orgId, token, apiBaseUrl, mockDaysLeft]);
+  }, [apiFetch, mockDaysLeft]);
 
   return { daysLeft };
 }
