@@ -3,11 +3,12 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { AddLineButton } from '@/components/ui/add-line-button.jsx';
-import { X, MoreVertical, Check, Save, List, Printer, Mail, Trash2, Loader2 } from 'lucide-react';
+import { X, MoreVertical, Check, Save, List, Printer, Mail, Trash2, Loader2, Shield } from 'lucide-react';
 import { AttachmentIcon } from '@/components/attachments/AttachmentIcon';
 
 const TAB_ICONS = {
   'custom:attachments': AttachmentIcon,
+  'custom:sif': Shield,
 };
 
 function TabStripButton({

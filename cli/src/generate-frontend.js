@@ -916,7 +916,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // `placement: 'footer'` (default) keeps the legacy chip-footer behavior.
   const customTabItems = [];
   if (relatedDocuments) {
-    customTabItems.push(`{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }`);
+    customTabItems.push(`{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }`);
   }
   if (attachmentsEnabled) {
     const optsLiteral = JSON.stringify(attachmentsOpts);
