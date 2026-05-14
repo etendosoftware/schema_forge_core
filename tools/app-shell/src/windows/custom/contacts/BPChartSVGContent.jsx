@@ -105,7 +105,7 @@ export function BPChartSVGContent({
       {labels.map((lbl, i) => {
         const x = PX + (labels.length <= 1 ? plotW / 2 : (i / (labels.length - 1)) * plotW);
         return (
-          <text key={i} x={x} y={CH - 4} textAnchor="middle" className="fill-muted-foreground" fontSize={fontSize}>
+          <text key={`${lbl}-${i}`} x={x} y={CH - 4} textAnchor="middle" className="fill-muted-foreground" fontSize={fontSize}>
             {lbl}
           </text>
         );
