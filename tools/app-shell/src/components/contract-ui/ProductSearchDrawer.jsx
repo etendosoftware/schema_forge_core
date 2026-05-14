@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Search, X, Loader2, Check } from 'lucide-react';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
+import { formatCurrency } from '@/lib/formatCurrency.js';
+import { useCurrency } from '@/hooks/useCurrency.jsx';
 
 const PAGE_SIZE = 30;
 
@@ -86,6 +88,8 @@ export default function ProductSearchDrawer({
   const activeItemRef = useRef(null);
   const fetchTimer = useRef(null);
   const abortRef = useRef(null);
+  const sessionCurrency = useCurrency();
+  const currency = selectorContext?.currency ?? sessionCurrency;
   const selectorContextRef = useRef(selectorContext);
   // Tracks the raw server-side offset (total rows consumed), independent of dedup count.
   const rawOffsetRef = useRef(0);
@@ -255,7 +259,9 @@ export default function ProductSearchDrawer({
   const getPrice = (item) => {
     const p = item.standardPrice || item.listPrice || item.price;
     if (p == null) return null;
-    return typeof p === 'number' ? p.toFixed(2) : String(p);
+    const num = typeof p === 'number' ? p : parseFloat(p);
+    if (isNaN(num)) return String(p);
+    return currency ? formatCurrency(currency, num) : num.toFixed(2);
   };
   const getImageId = (item) => item.image || null;
   const getImage = (item) => item.imageUrl || item.imageurl || null;

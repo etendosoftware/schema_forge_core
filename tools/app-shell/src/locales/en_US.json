@@ -13652,7 +13652,8 @@
       "label": "Country and Region"
     },
     "Business Partner": {
-      "label": "Business Partner"
+      "label": "Business Partner",
+      "newLabel": "New business partner"
     },
     "General Ledger Configuration": {
       "label": "General Ledger Configuration"
@@ -13685,7 +13686,8 @@
       "label": "Warehouse and Storage Bins"
     },
     "Product": {
-      "label": "Product"
+      "label": "Product",
+      "newLabel": "New product"
     },
     "Payment Term": {
       "label": "Payment Term"
@@ -13694,10 +13696,12 @@
       "label": "Shipping Company"
     },
     "Sales Order": {
-      "label": "Sales Order"
+      "label": "Sales Order",
+      "newLabel": "New order"
     },
     "Product Category": {
-      "label": "Product Category"
+      "label": "Product Category",
+      "newLabel": "New category"
     },
     "Price List": {
       "label": "Price List"
@@ -13730,28 +13734,35 @@
       "label": "Report and Process"
     },
     "Sales Invoice": {
-      "label": "Sales Invoice"
+      "label": "Sales Invoice",
+      "newLabel": "New invoice"
     },
     "Physical Inventory": {
-      "label": "Physical Inventory"
+      "label": "Physical Inventory",
+      "newLabel": "New inventory"
     },
     "Goods Shipment": {
-      "label": "Goods Shipment"
+      "label": "Goods Shipment",
+      "newLabel": "New shipment"
     },
     "Goods Movements": {
-      "label": "Goods Movements"
+      "label": "Goods Movements",
+      "newLabel": "New movement"
     },
     "Title": {
       "label": "Title"
     },
     "Purchase Order": {
-      "label": "Purchase Order"
+      "label": "Purchase Order",
+      "newLabel": "New order"
     },
     "Purchase Invoice": {
-      "label": "Purchase Invoice"
+      "label": "Purchase Invoice",
+      "newLabel": "New invoice"
     },
     "Goods Receipt": {
-      "label": "Goods Receipt"
+      "label": "Goods Receipt",
+      "newLabel": "New receipt"
     },
     "Payment Method": {
       "label": "Payment Method"
@@ -13865,7 +13876,8 @@
       "label": "Amortization"
     },
     "Assets": {
-      "label": "Assets"
+      "label": "Assets",
+      "newLabel": "New asset"
     },
     "Discounts and Promotions": {
       "label": "Discounts and Promotions"
@@ -13931,7 +13943,8 @@
       "label": "Maintenance Order"
     },
     "Internal Consumption": {
-      "label": "Internal Consumption"
+      "label": "Internal Consumption",
+      "newLabel": "New consumption"
     },
     "Budget": {
       "label": "Budget"
@@ -14003,7 +14016,8 @@
       "label": "Organization Type"
     },
     "Return Material Receipt": {
-      "label": "Return Material Receipt"
+      "label": "Return Material Receipt",
+      "newLabel": "New return receipt"
     },
     "Landed Cost Distribution Algorithm": {
       "label": "Landed Cost Distribution Algorithm"
@@ -14024,7 +14038,8 @@
       "label": "Execution Process"
     },
     "Return to Vendor Shipment": {
-      "label": "Return to Vendor Shipment"
+      "label": "Return to Vendor Shipment",
+      "newLabel": "New return shipment"
     },
     "Offer Product Category Selector": {
       "label": "Offer Product Category Selector"
@@ -14084,13 +14099,15 @@
       "label": "Prereservation Pick and Edit"
     },
     "Sales Quotation": {
-      "label": "Sales Quotation"
+      "label": "Sales Quotation",
+      "newLabel": "New quotation"
     },
     "Costing Algorithm": {
       "label": "Costing Algorithm"
     },
     "Payment Out": {
-      "label": "Payment Out"
+      "label": "Payment Out",
+      "newLabel": "New payment"
     },
     "Product Characteristic": {
       "label": "Product Characteristic"
@@ -14129,7 +14146,8 @@
       "label": "Landed Cost Type"
     },
     "Financial Account": {
-      "label": "Financial Account"
+      "label": "Financial Account",
+      "newLabel": "New account"
     },
     "RM Receipt Pick and Edit": {
       "label": "RM Receipt Pick and Edit"
@@ -14195,7 +14213,8 @@
       "label": "Attachment Method"
     },
     "Return to Vendor": {
-      "label": "Return to Vendor"
+      "label": "Return to Vendor",
+      "newLabel": "New return"
     },
     "Process Group": {
       "label": "Process Group"
@@ -14225,7 +14244,8 @@
       "label": "Create Invoice Lines From Shipment/Receipt lines"
     },
     "Payment In": {
-      "label": "Payment In"
+      "label": "Payment In",
+      "newLabel": "New receipt"
     },
     "Period Control Log": {
       "label": "Period Control Log"
@@ -14481,6 +14501,30 @@
     },
     "SII Monitor": {
       "label": "SII Monitor"
+    },
+    "Contacts": {
+      "newLabel": "New contact"
+    },
+    "Contact": {
+      "newLabel": "New contact"
+    },
+    "Returns": {
+      "newLabel": "New return"
+    },
+    "Customer Return": {
+      "newLabel": "New return"
+    },
+    "Return Receipt": {
+      "newLabel": "New return receipt"
+    },
+    "Warehouse": {
+      "newLabel": "New warehouse"
+    },
+    "Bank Reconciliation": {
+      "newLabel": "New reconciliation"
+    },
+    "Account": {
+      "newLabel": "New chart of accounts"
     }
   },
   "tabs": {

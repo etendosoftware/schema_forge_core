@@ -7,17 +7,24 @@ import { useLocale } from './LocaleProvider.jsx';
  *
  * Usage:
  *   const tMenu = useMenuLabel();
- *   tMenu('Home')         // "Inicio" (es_ES) or "Home" (en_US)
- *   tMenu('Dashboard')    // "Panel" (es_ES) or "Dashboard" (en_US)
- *   tMenu('Complete')     // "Completar" (es_ES) or "Complete" (en_US)
+ *   tMenu('Home')                        // "Inicio" (es_ES) or "Home" (en_US)
+ *   tMenu('Sales Order', { field: 'newLabel' })  // "Nuevo pedido" (es_ES) — returns null if not found
  */
 export function useMenuLabel() {
   const dictionary = useLocale();
-  return (key) =>
-    dictionary?.ui?.[key]?.label ??
-    dictionary?.menus?.[key]?.label ??
-    dictionary?.windows?.[key]?.label ??
-    dictionary?.tabs?.[key]?.label ??
-    dictionary?.genericLabels?.[key] ??
-    key;
+  return (key, { field } = {}) => {
+    // When `field` is provided, reads that field directly from windows[key].
+    // Returns null (not the raw key) if the entry or field is missing.
+    if (field) {
+      return dictionary?.windows?.[key]?.[field] ?? null;
+    }
+    return (
+      dictionary?.ui?.[key]?.label ??
+      dictionary?.menus?.[key]?.label ??
+      dictionary?.windows?.[key]?.label ??
+      dictionary?.tabs?.[key]?.label ??
+      dictionary?.genericLabels?.[key] ??
+      key
+    );
+  };
 }

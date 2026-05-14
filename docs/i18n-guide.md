@@ -30,7 +30,7 @@ Each locale file has these top-level sections:
 | Section | Purpose | Example key |
 |---------|---------|-------------|
 | `fields` | AD column labels (auto-extracted from Etendo) | `"C_BPartner_ID": { "label": "Business Partner", "description": "..." }` |
-| `windows` | Window display names | `"Sales Order": { "label": "Pedido de Venta" }` |
+| `windows` | Window display names and button labels | `"Sales Order": { "label": "Pedido de Venta", "newLabel": "Nuevo pedido" }` |
 | `tabs` | Tab display names | `"Order Line": { "label": "Línea de pedido" }` |
 | `menus` | Menu group labels | `"Currency": { "label": "Moneda" }` |
 | `ui` | UI element labels (structured) | `"Absences": { "label": "Ausencias" }` |
@@ -97,6 +97,32 @@ function MyTabs({ tabs }) {
   ));
 }
 ```
+
+#### `{ field }` option — read a specific field from `windows[key]`
+
+Pass `{ field }` to read any field other than `label` directly from the `windows` section, bypassing the cascade. Returns `null` (not the raw key) when the entry or field is missing.
+
+```jsx
+const tMenu = useMenuLabel();
+
+// Resolves windows['Sales Order'].newLabel → "Nuevo pedido" (es_ES)
+// Falls back to null if 'newLabel' is not defined for that window
+const buttonLabel = tMenu(entityLabel, { field: 'newLabel' }) ?? ui('newRecord');
+```
+
+**`newLabel`** is the supported field for the contextual "New" button label in `ListView`. Add it to the `windows` section of both locale files for each window that needs a specific label:
+
+```json
+// es_ES.json → windows
+"Sales Order": { "label": "Pedido de venta", "newLabel": "Nuevo pedido" },
+"Sales Invoice": { "label": "Factura (Cliente)", "newLabel": "Nueva factura" }
+
+// en_US.json → windows
+"Sales Order": { "label": "Sales Order", "newLabel": "New order" },
+"Sales Invoice": { "label": "Sales Invoice", "newLabel": "New invoice" }
+```
+
+Windows without a `newLabel` entry fall back to the generic `ui('newRecord')` key (`"Nuevo"` / `"New"`).
 
 ### Pure functions (non-React contexts)
 
