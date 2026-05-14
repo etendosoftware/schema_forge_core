@@ -6,7 +6,9 @@ import { useUI } from '@/i18n';
 function renderTaxRate(row) {
   const val = row?.rate;
   if (val == null) return '';
-  return <Tag variant="green" label={`+${val} %`} />;
+  if (val > 0)  return <Tag variant="green"   label={`+${val} %`} />;
+  if (val === 0) return <Tag variant="neutral" label="0 %" />;
+  return <Tag variant="red" label={`${val} %`} />;
 }
 
 function TaxScopeCell({ row, fieldKey }) {
