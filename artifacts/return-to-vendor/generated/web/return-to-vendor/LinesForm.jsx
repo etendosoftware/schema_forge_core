@@ -15,7 +15,7 @@ const fields = [
   { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', label: 'Line Net Amount', required: true, readOnly: true, section: 'other', readOnlyLogic: (record) => record['editLineAmount'] !== true || record['gROSSPRICE'] === 'Y' },
   { key: 'lineGrossAmount', column: 'Line_Gross_Amount', type: 'number', label: 'Line Gross Amount', readOnly: true, section: 'other', defaultValue: '0' },
   { key: 'goodsShipmentLine', column: 'M_Inoutline_ID', type: 'selector', label: 'Goods Receipt Line', readOnly: true, section: 'other', reference: 'InOutLine', inputMode: 'selector' },
-  { key: 'tax', column: 'C_Tax_ID', type: 'search', label: 'Tax', required: true, readOnly: true, section: 'other', reference: 'Tax', inputMode: 'search', readOnlyLogic: (record) => record['processed'] === true },
+  { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', required: true, readOnly: true, section: 'principal', reference: 'Tax', inputMode: 'selector', readOnlyLogic: (record) => record['processed'] === true },
   { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'principal' },
   { key: 'deliveredQuantity', column: 'QtyDelivered', type: 'number', label: 'Delivered Quantity', required: true, readOnly: true, section: 'other' },
   { key: 'project', column: 'C_Project_ID', type: 'search', label: 'Project', section: 'principal', reference: 'Project', inputMode: 'search', visible: null, visibilitySource: 'server', displayLogicReason: 'server-macro', readOnlyLogic: (record) => record['posted'] === 'Y' },

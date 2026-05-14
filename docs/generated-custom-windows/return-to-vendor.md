@@ -26,8 +26,10 @@ The Return to Vendor window should let purchasing users register a vendor return
 
 - Header and line behavior are coordinated through the shared app-shell entity flow: opening a header detail also loads its child rows, and adding or updating child rows refreshes both the child collection and the header so summary totals stay current.
 - The vendor context is partially reactive. `businessPartner` has a callout, `partnerAddress` has its own callout, and both fields become read-only once the document is processed or temporarily blocked by `DocStatus='TMP'`. That supports the expectation that vendor selection drives valid address and commercial context.
+- Agentic selector behavior now treats `partnerAddress` as dependent on `businessPartner`, passing `C_BPartner_ID` to the address selector so vendor-return agents do not need to hardcode partner-location IDs.
 - `orderDate` has a line-update callout and defaults to `@#Date@`, which indicates date changes should propagate to line-level context even though the exact downstream field updates are not described in the current evidence.
 - `priceList` has a callout, while `paymentMethod`, `paymentTerms`, `warehouse`, and return-reason selectors are exposed through selector/search endpoints. This shows the header depends on selector-backed commercial configuration rather than free-text entry.
+- Line `tax` is exposed as a selector for the agentic flow. It should be resolved with purchase-mode, header date, price list, and partner-address context before creating or updating return lines.
 - Draft lifecycle actions are status-driven. `Pick/Edit Lines` is only visible while `Processed='N'`, `Process Order` is available while the document is not voided or closed, and `Insert Orphan Line` appears only when the document is still unprocessed and `RMAllowOprhanLine='Y'`.
 - Line anchoring is explicit in current evidence. Each return line carries a read-only `goodsShipmentLine` field mapped to `M_Inoutline_ID` and labeled **Goods Receipt Line**, plus read-only return quantity, net amount, gross amount, tax, and delivered quantity fields. That supports a receipt-linked return flow where users pick source receipt lines first and then review the anchored commercial values.
 - Totals and tax behavior are visible at a summary level. The header page summarizes `summedLineAmount`, `grandTotalAmount`, currency, and delivered state, and the contract exposes a `lineTax` child dataset. The current evidence supports totals and tax visibility, but not the exact recalculation timing or whether taxes can be edited directly as part of the main return workflow.
@@ -46,12 +48,13 @@ The Return to Vendor window should let purchasing users register a vendor return
 1. Open `/return-to-vendor` and confirm the window is reachable from the Purchases menu and loads as a generated list/detail route.
 2. Open a draft record at `/return-to-vendor/<recordId>` and confirm the header shows **Pick/Edit Lines** and **Process Order**. If the business allows orphan lines for that record, confirm **Insert Orphan Line** is also visible.
 3. Use **Pick/Edit Lines** and confirm the resulting child rows include a read-only **Goods Receipt Line** reference, along with return quantity, net/gross amount, tax, and delivered-quantity context.
-4. Change vendor-related header inputs on a draft record and observe whether partner address and other commercial defaults react as expected before the record is processed.
-5. Add or update a child line and confirm the line list refreshes and the header summary values update to reflect the current return totals.
-6. Process the order and confirm document status moves out of draft, draft-only actions disappear or become unavailable, and previously editable header fields become read-only where the contract says they should.
-7. Open the **Related Documents** tab on a return that already has linked records and confirm the window exposes navigation back to the related purchasing flow.
-8. Try selecting or entering a quantity that would exceed the source receipt quantity, and note whether the window blocks it, warns about it, or accepts it without visible validation.
-9. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
+4. Change vendor-related header inputs on a draft record and confirm partner address options are scoped to the selected business partner before the record is processed.
+5. Resolve or edit a line tax value only after the header has date, price list, and partner address context, and confirm the selector returns purchase tax options instead of an empty undiagnosed list.
+6. Add or update a child line and confirm the line list refreshes and the header summary values update to reflect the current return totals.
+7. Process the order and confirm document status moves out of draft, draft-only actions disappear or become unavailable, and previously editable header fields become read-only where the contract says they should.
+8. Open the **Related Documents** tab on a return that already has linked records and confirm the window exposes navigation back to the related purchasing flow.
+9. Try selecting or entering a quantity that would exceed the source receipt quantity, and note whether the window blocks it, warns about it, or accepts it without visible validation.
+10. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 

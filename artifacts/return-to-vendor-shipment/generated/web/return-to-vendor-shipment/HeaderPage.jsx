@@ -73,7 +73,9 @@ export const api = {
       "delete": true,
       "listUrl": "/sws/neo/return-to-vendor-shipment/header",
       "detailUrl": "/sws/neo/return-to-vendor-shipment/header/{id}",
-      "supportedFilters": []
+      "supportedFilters": [
+        "businessPartner"
+      ]
     },
     "lines": {
       "get": true,
@@ -92,7 +94,7 @@ export const api = {
       "entity": "header",
       "field": "businessPartner",
       "column": "C_BPartner_ID",
-      "reference": "BPartner",
+      "reference": "BusinessPartner",
       "inputMode": "search",
       "url": "/sws/neo/return-to-vendor-shipment/header/selectors/businessPartner"
     },
@@ -100,9 +102,18 @@ export const api = {
       "entity": "header",
       "field": "partnerAddress",
       "column": "C_BPartner_Location_ID",
-      "reference": "BPartner_Location",
-      "inputMode": "selector",
-      "url": "/sws/neo/return-to-vendor-shipment/header/selectors/partnerAddress"
+      "reference": "BusinessPartnerLocation",
+      "inputMode": "dependent",
+      "url": "/sws/neo/return-to-vendor-shipment/header/selectors/partnerAddress",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -118,7 +129,20 @@ export const api = {
       "column": "C_Project_ID",
       "reference": "Project",
       "inputMode": "search",
-      "url": "/sws/neo/return-to-vendor-shipment/header/selectors/project"
+      "url": "/sws/neo/return-to-vendor-shipment/header/selectors/project",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "C_BPartner_ID",
+            "source": "parentField",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -158,7 +182,15 @@ export const api = {
       "column": "C_Aum",
       "reference": "UOM",
       "inputMode": "search",
-      "url": "/sws/neo/return-to-vendor-shipment/lines/selectors/operativeUOM"
+      "url": "/sws/neo/return-to-vendor-shipment/lines/selectors/operativeUOM",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "lines",

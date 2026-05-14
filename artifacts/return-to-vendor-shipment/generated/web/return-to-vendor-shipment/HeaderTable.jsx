@@ -3,11 +3,12 @@ import { DataTable, InlineLinesPanel } from '@/components/contract-ui';
 
 // @sf-generated-start columns:header
 const columns = [
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner', required: true },
   { key: 'movementDate', column: 'MovementDate', type: 'date', label: 'Movement Date', required: true },
 ];
 // @sf-generated-end columns:header
 
-const filters = [];
+const filters = ['businessPartner'];
 
 // @sf-generated-start component:HeaderTable
 const HeaderTable = forwardRef(function HeaderTable(props, ref) {

@@ -29,6 +29,7 @@ The main visible parent-child dependency is the standard shipment header to ship
 Observed shipment-specific reactions and dependencies include:
 - **Draft-only actions:** `Pick/Edit Lines` is only shown while `Processed = N`. `Process Shipment` is shown while the document is not closed or voided.
 - **Header editability changes by status:** business partner, partner address, movement date, warehouse, and several accounting dimensions become read-only after processing or posting conditions defined in the contract.
+- **Agentic address dependency:** `partnerAddress` is treated as dependent on `businessPartner`, passing `C_BPartner_ID` to the selector so vendor-return shipment agents can resolve valid partner locations without hardcoded IDs.
 - **Date defaulting:** movement date and accounting date both default to the current date in the contract.
 - **Header-driven callouts:** the contract attaches callouts to business partner, movement date, and warehouse, which suggests dependent updates for address/accounting/warehouse context even though the exact UI result is not documented in current evidence.
 - **Return-source traceability on lines:** the line model includes a read-only `Return to Vendor line` reference (`C_OrderLine_ID`), plus product, movement quantity, UOM, storage bin, and optional attribute-set value.
@@ -46,12 +47,13 @@ Current evidence does not show totals, discounts, taxes, or pricing reactions on
 ## Manual verification
 1. Open `/return-to-vendor-shipment/:recordId` for a draft record.
 2. Confirm the header shows vendor-facing shipment context: business partner, partner address, movement date, accounting date, warehouse, description, and document status.
-3. Confirm draft records expose both `Pick/Edit Lines` and `Process Shipment`.
-4. Use `Pick/Edit Lines` and verify the resulting shipment lines reflect the return source, including product, movement quantity, UOM, storage bin, and the `Return to Vendor line` reference when available.
-5. Process the shipment and confirm the document moves out of draft and the draft-only actions disappear or become unavailable.
-6. If related documents exist, open the Related Documents tab and verify it links the shipment back to the surrounding return flow.
-7. If stock-movement behavior is important for the rollout, verify separately in the ERP/backend that processing this shipment produces the expected outbound inventory effect, because that consequence is not directly proven by current SPA evidence.
-8. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
+3. Select or change a business partner and confirm partner address options are scoped to that selected vendor.
+4. Confirm draft records expose both `Pick/Edit Lines` and `Process Shipment`.
+5. Use `Pick/Edit Lines` and verify the resulting shipment lines reflect the return source, including product, movement quantity, UOM, storage bin, and the `Return to Vendor line` reference when available.
+6. Process the shipment and confirm the document moves out of draft and the draft-only actions disappear or become unavailable.
+7. If related documents exist, open the Related Documents tab and verify it links the shipment back to the surrounding return flow.
+8. If stock-movement behavior is important for the rollout, verify separately in the ERP/backend that processing this shipment produces the expected outbound inventory effect, because that consequence is not directly proven by current SPA evidence.
+9. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 - `tools/app-shell/src/menu.json` places `return-to-vendor-shipment` in the Purchases menu.

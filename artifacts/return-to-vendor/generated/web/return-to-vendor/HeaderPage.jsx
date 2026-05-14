@@ -81,7 +81,9 @@ export const api = {
       "delete": true,
       "listUrl": "/sws/neo/return-to-vendor/header",
       "detailUrl": "/sws/neo/return-to-vendor/header/{id}",
-      "supportedFilters": []
+      "supportedFilters": [
+        "businessPartner"
+      ]
     },
     "lines": {
       "get": true,
@@ -155,7 +157,7 @@ export const api = {
       "entity": "header",
       "field": "businessPartner",
       "column": "C_BPartner_ID",
-      "reference": "BPartner",
+      "reference": "BusinessPartner",
       "inputMode": "search",
       "url": "/sws/neo/return-to-vendor/header/selectors/businessPartner"
     },
@@ -163,9 +165,18 @@ export const api = {
       "entity": "header",
       "field": "partnerAddress",
       "column": "C_BPartner_Location_ID",
-      "reference": "BPartner_Location",
-      "inputMode": "selector",
-      "url": "/sws/neo/return-to-vendor/header/selectors/partnerAddress"
+      "reference": "BusinessPartnerLocation",
+      "inputMode": "dependent",
+      "url": "/sws/neo/return-to-vendor/header/selectors/partnerAddress",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -189,7 +200,15 @@ export const api = {
       "column": "FIN_Paymentmethod_ID",
       "reference": "Paymentmethod",
       "inputMode": "selector",
-      "url": "/sws/neo/return-to-vendor/header/selectors/paymentMethod"
+      "url": "/sws/neo/return-to-vendor/header/selectors/paymentMethod",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -205,7 +224,15 @@ export const api = {
       "column": "M_PriceList_ID",
       "reference": "PriceList",
       "inputMode": "selector",
-      "url": "/sws/neo/return-to-vendor/header/selectors/priceList"
+      "url": "/sws/neo/return-to-vendor/header/selectors/priceList",
+      "context": {
+        "required": [
+          {
+            "param": "isSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -221,7 +248,20 @@ export const api = {
       "column": "C_Project_ID",
       "reference": "Project",
       "inputMode": "search",
-      "url": "/sws/neo/return-to-vendor/header/selectors/project"
+      "url": "/sws/neo/return-to-vendor/header/selectors/project",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "C_BPartner_ID",
+            "source": "parentField",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -269,7 +309,15 @@ export const api = {
       "column": "C_Aum",
       "reference": "UOM",
       "inputMode": "search",
-      "url": "/sws/neo/return-to-vendor/lines/selectors/operativeUOM"
+      "url": "/sws/neo/return-to-vendor/lines/selectors/operativeUOM",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "lines",
@@ -292,8 +340,23 @@ export const api = {
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
-      "inputMode": "search",
-      "url": "/sws/neo/return-to-vendor/lines/selectors/tax"
+      "inputMode": "selector",
+      "url": "/sws/neo/return-to-vendor/lines/selectors/tax",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "DateInvoiced",
+            "source": "parentField",
+            "field": "invoiceDate",
+            "fallbackField": "orderDate",
+            "format": "DD-MM-YYYY"
+          }
+        ]
+      }
     },
     {
       "entity": "lines",

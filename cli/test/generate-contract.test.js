@@ -1155,3 +1155,128 @@ describe('generateFrontendContract — F3 drawer + display passthroughs', () => 
     assert.equal(product.onSelectMappings, undefined);
   });
 });
+
+// ─── Selector Context Metadata (ETP-3955) ─────────────────────────────────────
+
+const contextualFkSchema = {
+  version: '0.1.0',
+  window: { id: '143', name: 'Sales Order', primaryEntity: 'order', category: 'sales' },
+  entities: [
+    {
+      name: 'order',
+      table: 'C_Order',
+      level: 'header',
+      fields: [
+        { name: 'businessPartner', column: 'C_BPartner_ID', type: 'foreignKey',
+          reference: 'BusinessPartner', inputMode: 'search',
+          visibility: 'editable', required: true, searchable: true, grid: true, form: true },
+        { name: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'foreignKey',
+          reference: 'BusinessPartnerLocation', inputMode: 'dependent',
+          dependsOn: { field: 'businessPartner', filterKey: 'C_BPartner_ID' },
+          validationRule: { cascadeParams: ['C_BPartner_ID'] },
+          visibility: 'editable', required: true, searchable: false, grid: false, form: true },
+        { name: 'priceList', column: 'M_PriceList_ID', type: 'foreignKey',
+          reference: 'PriceList', inputMode: 'selector',
+          validationRule: { cascadeParams: ['isSOTrx'] },
+          visibility: 'editable', required: true, searchable: false, grid: false, form: true },
+      ]
+    },
+    {
+      name: 'orderLine',
+      table: 'C_OrderLine',
+      level: 'line',
+      fields: [
+        { name: 'product', column: 'M_Product_ID', type: 'foreignKey',
+          reference: 'Product', inputMode: 'search',
+          visibility: 'editable', required: true, searchable: true, grid: true, form: true },
+        { name: 'tax', column: 'C_Tax_ID', type: 'foreignKey',
+          reference: 'Tax', inputMode: 'selector',
+          validationRule: { cascadeParams: ['DateInvoiced', 'DateOrdered', 'IsSOTrx', 'AD_CLIENT_ID', 'AD_ORG_ID'] },
+          visibility: 'editable', required: true, searchable: false, grid: true, form: true },
+      ]
+    }
+  ]
+};
+
+describe('generateApiPrediction — selector context metadata (ETP-3955)', () => {
+  it('partnerAddress selector includes context with required C_BPartner_ID from dependsOn', () => {
+    const fc = generateFrontendContract(contextualFkSchema);
+    const bc = generateBackendContract(contextualFkSchema);
+    const prediction = generateApiPrediction(contextualFkSchema, fc, bc);
+    const addrSelector = prediction.selectors.find(s => s.field === 'partnerAddress');
+    assert.ok(addrSelector, 'partnerAddress selector should exist');
+    assert.ok(addrSelector.context, 'partnerAddress should have context metadata');
+    assert.ok(addrSelector.context.required, 'context should have required entries');
+    const bpReq = addrSelector.context.required.find(r => r.param === 'C_BPartner_ID');
+    assert.ok(bpReq, 'should require C_BPartner_ID');
+    assert.equal(bpReq.source, 'field');
+    assert.equal(bpReq.field, 'businessPartner');
+  });
+
+  it('priceList selector includes context with required isSOTrx from window category', () => {
+    const fc = generateFrontendContract(contextualFkSchema);
+    const bc = generateBackendContract(contextualFkSchema);
+    const prediction = generateApiPrediction(contextualFkSchema, fc, bc);
+    const plSelector = prediction.selectors.find(s => s.field === 'priceList');
+    assert.ok(plSelector, 'priceList selector should exist');
+    assert.ok(plSelector.context, 'priceList should have context metadata');
+    const isSOTrxReq = plSelector.context.required.find(r => r.param === 'isSOTrx');
+    assert.ok(isSOTrxReq, 'should require isSOTrx context');
+    assert.equal(isSOTrxReq.source, 'windowCategory');
+  });
+
+  it('tax selector includes context with IsSOTrx and DateInvoiced', () => {
+    const fc = generateFrontendContract(contextualFkSchema);
+    const bc = generateBackendContract(contextualFkSchema);
+    const prediction = generateApiPrediction(contextualFkSchema, fc, bc);
+    const taxSelector = prediction.selectors.find(s => s.field === 'tax' && s.entity === 'orderLine');
+    assert.ok(taxSelector, 'tax selector should exist');
+    assert.ok(taxSelector.context, 'tax should have context metadata');
+    const isSOTrxReq = taxSelector.context.required.find(r => r.param === 'IsSOTrx');
+    assert.ok(isSOTrxReq, 'should require IsSOTrx');
+    assert.equal(isSOTrxReq.source, 'windowCategory');
+    const dateReq = taxSelector.context.required.find(r => r.param === 'DateInvoiced');
+    assert.ok(dateReq, 'should require DateInvoiced');
+    assert.equal(dateReq.source, 'parentField');
+    assert.equal(dateReq.field, 'invoiceDate');
+    assert.equal(dateReq.fallbackField, 'orderDate');
+    assert.equal(dateReq.format, 'DD-MM-YYYY');
+  });
+
+  it('purchase-order priceList selector has isSOTrx=N context', () => {
+    const purchaseSchema = {
+      ...contextualFkSchema,
+      window: { ...contextualFkSchema.window, category: 'purchases' },
+    };
+    const fc = generateFrontendContract(purchaseSchema);
+    const bc = generateBackendContract(purchaseSchema);
+    const prediction = generateApiPrediction(purchaseSchema, fc, bc);
+    const plSelector = prediction.selectors.find(s => s.field === 'priceList');
+    assert.ok(plSelector.context, 'priceList should have context');
+    const isSOTrxReq = plSelector.context.required.find(r => r.param === 'isSOTrx');
+    assert.ok(isSOTrxReq);
+  });
+
+  it('selector without validationRule context params has no context metadata', () => {
+    const simpleFkSchema = {
+      version: '0.1.0',
+      window: { id: '700', name: 'Simple FK', primaryEntity: 'item', category: 'test' },
+      entities: [{
+        name: 'item',
+        table: 'M_Item',
+        level: 'header',
+        fields: [
+          { name: 'category', column: 'M_Category_ID', type: 'foreignKey',
+            reference: 'Category', inputMode: 'selector',
+            visibility: 'editable', required: false, searchable: false, grid: false, form: true },
+        ]
+      }]
+    };
+    const fc = generateFrontendContract(simpleFkSchema);
+    const bc = generateBackendContract(simpleFkSchema);
+    const prediction = generateApiPrediction(simpleFkSchema, fc, bc);
+    const catSelector = prediction.selectors.find(s => s.field === 'category');
+    // No dependsOn, no validationRule cascade params, not a priceList -> no context
+    assert.equal(catSelector.context, undefined, 'simple FK without context should have no context metadata');
+  });
+});

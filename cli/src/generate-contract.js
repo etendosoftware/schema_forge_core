@@ -621,6 +621,106 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
 
 
 /**
+ * Build selector context metadata from field dependsOn, validationRule params,
+ * and window category. Returns a context object with required/optional entries.
+ */
+function buildSelectorContext(field, windowCategory) {
+  const context = {};
+  const required = [];
+  const optional = [];
+
+  // dependsOn -> required param from parent field
+  if (field.dependsOn && field.dependsOn.field && field.dependsOn.filterKey) {
+    required.push({
+      param: field.dependsOn.filterKey,
+      source: 'field',
+      field: field.dependsOn.field,
+    });
+  }
+
+  // validationRule cascadeParams -> derive context requirements
+  if (field.validationRule && Array.isArray(field.validationRule.cascadeParams)) {
+    const cascadeParams = field.validationRule.cascadeParams;
+
+    // IsSOTrx / isSOTrx -> window category derived.
+    // Preserve the exact validation-rule parameter name because NEO selector
+    // context keys are consumed by classic validation SQL.
+    let trxParam = null;
+    if (cascadeParams.includes('isSOTrx')) {
+      trxParam = 'isSOTrx';
+    } else if (cascadeParams.includes('IsSOTrx')) {
+      trxParam = 'IsSOTrx';
+    }
+    if (trxParam) {
+      if (windowCategory === 'sales' || windowCategory === 'purchases') {
+        required.push({
+          param: trxParam,
+          source: 'windowCategory',
+        });
+      } else {
+        optional.push({
+          param: trxParam,
+          source: 'windowCategory',
+        });
+      }
+    }
+
+    // DateInvoiced / DateOrdered -> parent field date
+    if (cascadeParams.includes('DateInvoiced') || cascadeParams.includes('DateOrdered')) {
+      required.push({
+        param: 'DateInvoiced',
+        source: 'parentField',
+        field: 'invoiceDate',
+        fallbackField: 'orderDate',
+        format: 'DD-MM-YYYY',
+      });
+    }
+
+    // C_BPartner_ID as cascade param (not already covered by dependsOn)
+    if (cascadeParams.includes('C_BPartner_ID') && !required.some(r => r.param === 'C_BPartner_ID')) {
+      required.push({
+        param: 'C_BPartner_ID',
+        source: 'parentField',
+        field: 'businessPartner',
+      });
+    }
+
+    // priceList / M_PriceList_ID
+    if (cascadeParams.includes('M_PriceList_ID') || cascadeParams.includes('priceList')) {
+      optional.push({
+        param: 'priceList',
+        source: 'parentField',
+        field: 'priceList',
+      });
+    }
+
+    // C_BPartner_Location_ID / partnerAddress
+    if (cascadeParams.includes('C_BPartner_Location_ID')) {
+      optional.push({
+        param: 'C_BPartner_Location_ID',
+        source: 'parentField',
+        field: 'partnerAddress',
+      });
+    }
+  }
+
+  // For priceList selectors without cascade params, derive from window category
+  if (field.column === 'M_PriceList_ID' && required.length === 0 && optional.length === 0) {
+    if (windowCategory === 'sales' || windowCategory === 'purchases') {
+      required.push({
+        param: 'isSOTrx',
+        source: 'windowCategory',
+      });
+    }
+  }
+
+  if (required.length > 0) context.required = required;
+  if (optional.length > 0) context.optional = optional;
+
+  return Object.keys(context).length > 0 ? context : null;
+}
+
+/**
  * Generate API prediction: predicts NEO Headless URLs, selectors, actions, and query params.
  */
 export function generateApiPrediction(schema, frontendContract, backendContract) {
@@ -630,6 +730,7 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
   const crud = {};
   const selectors = [];
   const actions = [];
+  const windowCategory = schema.window.category ?? null;
 
   for (const entity of schema.entities) {
     const entityName = entity.name;
@@ -652,14 +753,17 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
     if (feEntity) {
       for (const field of feEntity.fields) {
         if (field.type === 'foreignKey') {
-          selectors.push({
+          const selectorContext = buildSelectorContext(field, windowCategory);
+          const selEntry = {
             entity: entityName,
             field: field.name,
             column: field.column,
             reference: field.reference,
             inputMode: field.inputMode,
             url: `${baseUrl}/${entityName}/selectors/${field.name}`,
-          });
+          };
+          if (selectorContext) selEntry.context = selectorContext;
+          selectors.push(selEntry);
         }
       }
     }

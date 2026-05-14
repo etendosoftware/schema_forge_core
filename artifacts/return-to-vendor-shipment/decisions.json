@@ -14,6 +14,22 @@
   "entities": {
     "header": {
       "fields": {
+        "businessPartner": {
+          "grid": true,
+          "searchable": true,
+          "reference": "BusinessPartner",
+          "selectorFilter": "isVendor=Y",
+          "section": "principal"
+        },
+        "partnerAddress": {
+          "reference": "BusinessPartnerLocation",
+          "inputMode": "dependent",
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          },
+          "section": "principal"
+        },
         "movementDate": {
           "grid": true
         }

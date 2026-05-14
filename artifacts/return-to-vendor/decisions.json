@@ -15,6 +15,25 @@
   "entities": {
     "header": {
       "fields": {
+        "businessPartner": {
+          "grid": true,
+          "searchable": true,
+          "reference": "BusinessPartner",
+          "selectorFilter": "isVendor=Y",
+          "section": "principal"
+        },
+        "partnerAddress": {
+          "reference": "BusinessPartnerLocation",
+          "inputMode": "dependent",
+          "dependsOn": {
+            "field": "businessPartner",
+            "filterKey": "C_BPartner_ID"
+          },
+          "section": "principal"
+        },
+        "priceList": {
+          "section": "principal"
+        },
         "orderDate": {
           "grid": true
         }
@@ -22,6 +41,12 @@
     },
     "lines": {
       "fields": {
+        "tax": {
+          "grid": true,
+          "form": true,
+          "section": "principal",
+          "inputMode": "selector"
+        },
         "lineGrossAmount": {
           "visibility": "readOnly",
           "grid": true,
