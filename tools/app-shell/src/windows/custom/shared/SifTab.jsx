@@ -172,6 +172,23 @@ function PanelHeader({ titleKey, subtitleKey, badge, ui }) {
   );
 }
 
+function Panel({ titleKey, subtitleKey, badge, ui, children }) {
+  return (
+    <>
+      <PanelHeader titleKey={titleKey} subtitleKey={subtitleKey} badge={badge} ui={ui} />
+      <div className="grid grid-cols-2 gap-x-5 gap-y-4 p-4 overflow-y-auto">{children}</div>
+    </>
+  );
+}
+
+function ReadOnlyField({ id, labelKey, value, ui }) {
+  return (
+    <Field label={ui(labelKey)} htmlFor={id}>
+      <ReadOnlyValue id={id} value={value} />
+    </Field>
+  );
+}
+
 export default function SifTab({ recordId, data, token, apiBaseUrl }) {
   const ui = useUI();
   const { selectedOrg } = useAuth();
@@ -287,124 +304,91 @@ export default function SifTab({ recordId, data, token, apiBaseUrl }) {
 
       <div className="flex-1 border border-border/40 rounded-lg bg-white overflow-hidden flex flex-col min-h-0">
         {effectiveTab === 'sii' && showSii && (
-          <>
-            <PanelHeader
-              titleKey={PANEL_META.sii.titleKey}
-              subtitleKey={PANEL_META.sii.subtitleKey}
-              badge={<SiiStatusBadge estado={data?.aeatsiiEstado} ui={ui} />}
-              ui={ui}
-            />
-            <div className="grid grid-cols-2 gap-x-5 gap-y-4 p-4 overflow-y-auto">
-              <Field label={ui('sifDataTabs.field.operationDate')} htmlFor="sif-etsgDateOperation">
-                <DateField
-                  id="sif-etsgDateOperation"
-                  value={getDateVal('etsgDateOperation')}
-                  onChange={iso => setVal('etsgDateOperation', iso)}
-                  onBlur={() => handleBlur('etsgDateOperation', getDateVal('etsgDateOperation'))}
-                  disabled={dateReadOnly || savingField === 'etsgDateOperation'}
-                />
-              </Field>
-              <Field label={ui('sifDataTabs.field.invoiceType')} htmlFor="sif-siiType">
-                <Select
-                  value={getVal(siiTypeField) || undefined}
-                  onValueChange={val => {
-                    setVal(siiTypeField, val);
-                    patchField(siiTypeField, val);
-                  }}
-                  disabled={siiFieldReadOnly || savingField === siiTypeField}
-                >
-                  <SelectTrigger id="sif-siiType">
-                    <SelectValue placeholder="—" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {siiTypeOptions.map(o => (
-                      <SelectItem key={o.value} value={o.value}>{o.value} — {ui(o.labelKey)}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-              <Field label={ui('sifDataTabs.field.masterDescription')} htmlFor="sif-masterDesc">
-                <ReadOnlyValue id="sif-masterDesc" value={siiDescriptionMasterIdentifier} />
-              </Field>
-              <Field label={ui('sifDataTabs.field.siiDescription')} htmlFor="sif-siiDesc">
-                <Input
-                  id="sif-siiDesc"
-                  type="text"
-                  value={getVal('aeatsiiDescripcionSii')}
-                  onChange={e => setVal('aeatsiiDescripcionSii', e.target.value)}
-                  onBlur={e => handleBlur('aeatsiiDescripcionSii', e.target.value)}
-                  disabled={siiFieldReadOnly || savingField === 'aeatsiiDescripcionSii'}
-                />
-              </Field>
-              <Field label={ui('sifDataTabs.field.exemptionCause')} htmlFor="sif-exemption">
-                <ReadOnlyValue id="sif-exemption" value={data?.['aeatsiiCauseExemption$_identifier']} />
-              </Field>
-              <Field label={ui('sifDataTabs.field.authorization')} htmlFor="sif-auth">
-                <CheckboxField
-                  id="sif-auth"
-                  checked={Boolean(getVal('aeatsiiIsauthorization'))}
-                  disabled={siiFieldReadOnly || savingField === 'aeatsiiIsauthorization'}
-                  onToggle={val => handleCheckboxChange('aeatsiiIsauthorization', val)}
-                />
-              </Field>
-              <Field label={ui('sifDataTabs.field.siiYear')} htmlFor="sif-siiYear">
-                <ReadOnlyValue id="sif-siiYear" value={data?.aeatsiiEjercicio} />
-              </Field>
-              <Field label={ui('sifDataTabs.field.siiPeriod')} htmlFor="sif-siiPeriod">
-                <ReadOnlyValue id="sif-siiPeriod" value={data?.aeatsiiPeriodo} />
-              </Field>
-            </div>
-          </>
+          <Panel
+            titleKey={PANEL_META.sii.titleKey}
+            subtitleKey={PANEL_META.sii.subtitleKey}
+            badge={<SiiStatusBadge estado={data?.aeatsiiEstado} ui={ui} />}
+            ui={ui}
+          >
+            <Field label={ui('sifDataTabs.field.operationDate')} htmlFor="sif-etsgDateOperation">
+              <DateField
+                id="sif-etsgDateOperation"
+                value={getDateVal('etsgDateOperation')}
+                onChange={iso => setVal('etsgDateOperation', iso)}
+                onBlur={() => handleBlur('etsgDateOperation', getDateVal('etsgDateOperation'))}
+                disabled={dateReadOnly || savingField === 'etsgDateOperation'}
+              />
+            </Field>
+            <Field label={ui('sifDataTabs.field.invoiceType')} htmlFor="sif-siiType">
+              <Select
+                value={getVal(siiTypeField) || undefined}
+                onValueChange={val => {
+                  setVal(siiTypeField, val);
+                  patchField(siiTypeField, val);
+                }}
+                disabled={siiFieldReadOnly || savingField === siiTypeField}
+              >
+                <SelectTrigger id="sif-siiType">
+                  <SelectValue placeholder="—" />
+                </SelectTrigger>
+                <SelectContent>
+                  {siiTypeOptions.map(o => (
+                    <SelectItem key={o.value} value={o.value}>{o.value} — {ui(o.labelKey)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <ReadOnlyField id="sif-masterDesc" labelKey="sifDataTabs.field.masterDescription" value={siiDescriptionMasterIdentifier} ui={ui} />
+            <Field label={ui('sifDataTabs.field.siiDescription')} htmlFor="sif-siiDesc">
+              <Input
+                id="sif-siiDesc"
+                type="text"
+                value={getVal('aeatsiiDescripcionSii')}
+                onChange={e => setVal('aeatsiiDescripcionSii', e.target.value)}
+                onBlur={e => handleBlur('aeatsiiDescripcionSii', e.target.value)}
+                disabled={siiFieldReadOnly || savingField === 'aeatsiiDescripcionSii'}
+              />
+            </Field>
+            <ReadOnlyField id="sif-exemption" labelKey="sifDataTabs.field.exemptionCause" value={data?.['aeatsiiCauseExemption$_identifier']} ui={ui} />
+            <Field label={ui('sifDataTabs.field.authorization')} htmlFor="sif-auth">
+              <CheckboxField
+                id="sif-auth"
+                checked={Boolean(getVal('aeatsiiIsauthorization'))}
+                disabled={siiFieldReadOnly || savingField === 'aeatsiiIsauthorization'}
+                onToggle={val => handleCheckboxChange('aeatsiiIsauthorization', val)}
+              />
+            </Field>
+            <ReadOnlyField id="sif-siiYear" labelKey="sifDataTabs.field.siiYear" value={data?.aeatsiiEjercicio} ui={ui} />
+            <ReadOnlyField id="sif-siiPeriod" labelKey="sifDataTabs.field.siiPeriod" value={data?.aeatsiiPeriodo} ui={ui} />
+          </Panel>
         )}
 
         {effectiveTab === 'tbai' && showTbai && (
-          <>
-            <PanelHeader
-              titleKey={PANEL_META.tbai.titleKey}
-              subtitleKey={PANEL_META.tbai.subtitleKey}
-              badge={<TbaiBadge issent={data?.tbaiIssent} ui={ui} />}
-              ui={ui}
-            />
-            <div className="grid grid-cols-2 gap-x-5 gap-y-4 p-4 overflow-y-auto">
-              <Field label={ui('sifDataTabs.field.chainSequence')} htmlFor="sif-tbaiSeq">
-                <ReadOnlyValue id="sif-tbaiSeq" value={data?.tbaiSequence} />
-              </Field>
-              <Field label={ui('sifDataTabs.field.invoiceSeries')} htmlFor="sif-tbaiSerie">
-                <ReadOnlyValue id="sif-tbaiSerie" value={data?.tbaiInvoicenum} />
-              </Field>
-              <Field label={ui('sifDataTabs.field.invoiceSequence')} htmlFor="sif-tbaiInvSeq">
-                <ReadOnlyValue id="sif-tbaiInvSeq" value={data?.tbaiInvoiceseq} />
-              </Field>
-            </div>
-          </>
+          <Panel
+            titleKey={PANEL_META.tbai.titleKey}
+            subtitleKey={PANEL_META.tbai.subtitleKey}
+            badge={<TbaiBadge issent={data?.tbaiIssent} ui={ui} />}
+            ui={ui}
+          >
+            <ReadOnlyField id="sif-tbaiSeq" labelKey="sifDataTabs.field.chainSequence" value={data?.tbaiSequence} ui={ui} />
+            <ReadOnlyField id="sif-tbaiSerie" labelKey="sifDataTabs.field.invoiceSeries" value={data?.tbaiInvoicenum} ui={ui} />
+            <ReadOnlyField id="sif-tbaiInvSeq" labelKey="sifDataTabs.field.invoiceSequence" value={data?.tbaiInvoiceseq} ui={ui} />
+          </Panel>
         )}
 
         {effectiveTab === 'verifactu' && showVerifactu && (
-          <>
-            <PanelHeader
-              titleKey={PANEL_META.verifactu.titleKey}
-              subtitleKey={PANEL_META.verifactu.subtitleKey}
-              badge={<VerifactuBadge status={data?.etvfacInvoiceStatus} sent={data?.etvfacSentToVerifac} ui={ui} />}
-              ui={ui}
-            />
-            <div className="grid grid-cols-2 gap-x-5 gap-y-4 p-4 overflow-y-auto">
-              <Field label={ui('sifDataTabs.field.rfGenerationDate')} htmlFor="sif-vfDate">
-                <ReadOnlyValue id="sif-vfDate" value={data?.etvfacDateIssue} />
-              </Field>
-              <Field label={ui('sifDataTabs.field.csv')} htmlFor="sif-vfCsv">
-                <ReadOnlyValue id="sif-vfCsv" value={data?.cdigoCSV} />
-              </Field>
-              <Field label={ui('sifDataTabs.field.hash')} htmlFor="sif-vfHash">
-                <ReadOnlyValue id="sif-vfHash" value={data?.etvfacHash} />
-              </Field>
-              <Field label={ui('sifDataTabs.field.qrUrl')} htmlFor="sif-vfQr">
-                <ReadOnlyValue id="sif-vfQr" value={data?.etvfacQRURL} />
-              </Field>
-              <Field label={ui('sifDataTabs.field.issueDetail')} htmlFor="sif-vfIssue">
-                <ReadOnlyValue id="sif-vfIssue" value={data?.etvfacIssueDescription} />
-              </Field>
-            </div>
-          </>
+          <Panel
+            titleKey={PANEL_META.verifactu.titleKey}
+            subtitleKey={PANEL_META.verifactu.subtitleKey}
+            badge={<VerifactuBadge status={data?.etvfacInvoiceStatus} sent={data?.etvfacSentToVerifac} ui={ui} />}
+            ui={ui}
+          >
+            <ReadOnlyField id="sif-vfDate" labelKey="sifDataTabs.field.rfGenerationDate" value={data?.etvfacDateIssue} ui={ui} />
+            <ReadOnlyField id="sif-vfCsv" labelKey="sifDataTabs.field.csv" value={data?.cdigoCSV} ui={ui} />
+            <ReadOnlyField id="sif-vfHash" labelKey="sifDataTabs.field.hash" value={data?.etvfacHash} ui={ui} />
+            <ReadOnlyField id="sif-vfQr" labelKey="sifDataTabs.field.qrUrl" value={data?.etvfacQRURL} ui={ui} />
+            <ReadOnlyField id="sif-vfIssue" labelKey="sifDataTabs.field.issueDetail" value={data?.etvfacIssueDescription} ui={ui} />
+          </Panel>
         )}
       </div>
     </div>
