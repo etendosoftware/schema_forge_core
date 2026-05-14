@@ -71,4 +71,20 @@ describe('LinesBottomSection', () => {
   it('imports DocumentTotalsPanel from the local module', () => {
     assert.match(src, /import DocumentTotalsPanel from '\.\/DocumentTotalsPanel\.jsx'/);
   });
+
+  it('totals column uses a soft minHeight floor, not a rigid pixel clamp', () => {
+    // Previously the panel was locked at height/minHeight/maxHeight: 241 which
+    // acted as a floor on the whole bottom section and crushed the lines table
+    // on 1366×768. The fix is a single `minHeight: 200` so the panel keeps a
+    // stable visual rhythm but is free to grow / coexist with a shorter
+    // viewport. Extract just the live `style={{ ... }}` block of the totals
+    // column so historical comment text (which still names the old clamp)
+    // doesn't trip the assertion.
+    const styleMatch = src.match(/w-\[520px\][^>]*style=\{\{([^}]+)\}\}/);
+    assert.ok(styleMatch, 'totals column with w-[520px] + style={{...}} not found');
+    const inlineStyle = styleMatch[1];
+    assert.match(inlineStyle, /minHeight:\s*200/, 'totals wrapper must declare minHeight: 200');
+    assert.doesNotMatch(inlineStyle, /(^|[^a-zA-Z])height:\s*241/, 'rigid `height: 241` must not return on the live style');
+    assert.doesNotMatch(inlineStyle, /maxHeight:\s*241/, 'rigid `maxHeight: 241` must not return on the live style');
+  });
 });
