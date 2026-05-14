@@ -6,6 +6,7 @@ import { TONE_STYLES, BASE_STYLE } from '../status-tag-tokens.js';
 describe('StatusTag — getStatusTone', () => {
   describe('success tone', () => {
     it('maps CO (Completado) to success', () => assert.equal(getStatusTone('CO'), 'success'));
+    it('maps CA (Order Created) to success', () => assert.equal(getStatusTone('CA'), 'success'));
     it('maps PA (Paid) to success', () => assert.equal(getStatusTone('PA'), 'success'));
     it('maps RPPC to success', () => assert.equal(getStatusTone('RPPC'), 'success'));
     it('maps "completed" (lowercase) to success', () => assert.equal(getStatusTone('completed'), 'success'));
@@ -22,7 +23,6 @@ describe('StatusTag — getStatusTone', () => {
 
   describe('destructive tone', () => {
     it('maps VO (Voided) to destructive', () => assert.equal(getStatusTone('VO'), 'destructive'));
-    it('maps CA (Cancelled) to destructive', () => assert.equal(getStatusTone('CA'), 'destructive'));
     it('maps RPVOID to destructive', () => assert.equal(getStatusTone('RPVOID'), 'destructive'));
     it('maps RPVD to destructive', () => assert.equal(getStatusTone('RPVD'), 'destructive'));
     it('maps "voided" (lowercase) to destructive', () => assert.equal(getStatusTone('voided'), 'destructive'));

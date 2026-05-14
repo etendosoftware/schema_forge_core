@@ -1,8 +1,8 @@
 {
-  "version": "0.4.0",
+  "version": "0.8.1",
   "generatedAt": "2026-05-06T15:52:09.982Z",
-  "updatedAt": "2026-05-06T23:10:13.761Z",
-  "checksum": "cc444fa6a8f66f0b",
+  "updatedAt": "2026-05-12T18:38:10.922Z",
+  "checksum": "c151e452e1f559fe",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -15,7 +15,7 @@
       "breadcrumb": "Contact",
       "customComponents": {
         "headerTable": "ContactsTable",
-        "topbarRight": "ContactTypeToggle"
+        "topbarExtra": "ContactTypeToggle"
       },
       "processOverrides": {
         "setNewCurrency": {
@@ -43,6 +43,7 @@
           "label": "Bank Account",
           "addLineFields": [
             "bankName",
+            "country",
             "bankFormat",
             "accountNo",
             "iBAN"
@@ -108,7 +109,8 @@
           "filter": "criteria=%5B%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"
         }
       ],
-      "layoutType": "default"
+      "layoutType": "default",
+      "linesLayout": "inlineEditable"
     },
     "entities": {
       "businessPartner": {
@@ -169,7 +171,11 @@
             "required": true,
             "grid": false,
             "form": true,
-            "section": "principal"
+            "section": "principal",
+            "displayLogic": {
+              "raw": "@EM_Etgo_Isperson@='Y'",
+              "evaluable": true
+            }
           },
           {
             "name": "etgoLastname",
@@ -182,7 +188,11 @@
             "required": true,
             "grid": false,
             "form": true,
-            "section": "principal"
+            "section": "principal",
+            "displayLogic": {
+              "raw": "@EM_Etgo_Isperson@='Y'",
+              "evaluable": true
+            }
           },
           {
             "name": "oBTIKTaxIDKey",
@@ -2837,7 +2847,7 @@
             "tsType": "string",
             "visibility": "editable",
             "required": false,
-            "grid": false,
+            "grid": true,
             "form": true,
             "derivation": {
               "type": "fromConfig",
@@ -2845,7 +2855,8 @@
             },
             "reference": "Country",
             "inputMode": "selector",
-            "defaultValue": "@COUNTRYDEF@"
+            "defaultValue": "@COUNTRYDEF@",
+            "section": "principal"
           },
           {
             "name": "userContact",
@@ -3404,7 +3415,7 @@
             "tsType": "string",
             "visibility": "editable",
             "required": false,
-            "grid": false,
+            "grid": true,
             "form": true,
             "section": "principal"
           },
@@ -3763,7 +3774,7 @@
       "breadcrumb": "Contact",
       "customComponents": {
         "headerTable": "ContactsTable",
-        "topbarRight": "ContactTypeToggle"
+        "topbarExtra": "ContactTypeToggle"
       },
       "processOverrides": {
         "setNewCurrency": {
@@ -3791,6 +3802,7 @@
           "label": "Bank Account",
           "addLineFields": [
             "bankName",
+            "country",
             "bankFormat",
             "accountNo",
             "iBAN"
@@ -3855,7 +3867,8 @@
           "label": "vendors",
           "filter": "criteria=%5B%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"
         }
-      ]
+      ],
+      "linesLayout": "inlineEditable"
     },
     "entities": {
       "businessPartner": {
@@ -10846,6 +10859,22 @@
         "description": "Display logic for 'employee' in businessPartner should have evaluable flag"
       },
       {
+        "id": "t-displaylogic-evaluable-businessPartner-etgoFirstname",
+        "category": "displaylogic-evaluable",
+        "entity": "businessPartner",
+        "field": "etgoFirstname",
+        "runner": "node",
+        "description": "Display logic for 'etgoFirstname' in businessPartner should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-evaluable-businessPartner-etgoLastname",
+        "category": "displaylogic-evaluable",
+        "entity": "businessPartner",
+        "field": "etgoLastname",
+        "runner": "node",
+        "description": "Display logic for 'etgoLastname' in businessPartner should have evaluable flag"
+      },
+      {
         "id": "t-displaylogic-evaluable-businessPartner-paymentMethod",
         "category": "displaylogic-evaluable",
         "entity": "businessPartner",
@@ -11284,6 +11313,22 @@
         "field": "employee",
         "runner": "node",
         "description": "Display logic for 'employee' in businessPartner should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-businessPartner-etgoFirstname",
+        "category": "displaylogic-valid",
+        "entity": "businessPartner",
+        "field": "etgoFirstname",
+        "runner": "node",
+        "description": "Display logic for 'etgoFirstname' in businessPartner should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-businessPartner-etgoLastname",
+        "category": "displaylogic-valid",
+        "entity": "businessPartner",
+        "field": "etgoLastname",
+        "runner": "node",
+        "description": "Display logic for 'etgoLastname' in businessPartner should be valid JS"
       },
       {
         "id": "t-displaylogic-valid-businessPartner-paymentMethod",
@@ -18722,13 +18767,13 @@
       }
     ],
     "summary": {
-      "total": 1064,
+      "total": 1068,
       "byCategory": {
         "action-endpoint": 6,
         "crud-flags": 15,
         "default-value-type": 46,
-        "displaylogic-evaluable": 55,
-        "displaylogic-valid": 55,
+        "displaylogic-evaluable": 57,
+        "displaylogic-valid": 57,
         "field-presence": 142,
         "field-type": 142,
         "rule-declared": 29,
@@ -18738,7 +18783,7 @@
         "visibility": 15
       },
       "byRunner": {
-        "node": 1064,
+        "node": 1068,
         "junit": 0
       }
     }

@@ -35,7 +35,7 @@ The window is read-only. It does not create or modify invoice records; it only d
 useFiscalMonitor(orgId, token, apiBaseUrl)
   ├── detectProfile()           ← fetches 3 config records in parallel
   ├── fetchSiiMonitorData()     ← 4 parallel fetchCount calls (emitidas, recibidas, × 2 periods)
-  ├── fetchTbaiData()           ← 4 parallel calls (total + 3 per-estado criteria filters)
+  ├── fetchTbaiData()           ← 5 parallel calls (total + 4 per-estado criteria filters: Recibido, Rechazado, Error, Pendiente)
   └── fetchVerifactuMonitorData() ← 4 parallel fetchCount calls (1 per status entity)
         ↓
   computeKpis(profile, monitorData) → kpis object
@@ -63,7 +63,13 @@ The tab × period combination maps to one of 4 NEO entities:
 
 All entities live under spec `sii-monitor`. Pagination: 20 rows per page.
 
+**Status filter row** (second row, below the tabs): Todas | Correcto (CO) | Aceptado con errores (AE) | Con errores | Pendiente (PE)
+
+The "Con errores" tab is a composite filter covering both `IN` (Incorrecto) and `EE` (Error de envío). For the real API it sends `operator: "inSet", value: ["IN","EE"]`; for mock data it filters both codes client-side. All other tabs send `operator: "equals"` with the single code.
+
 **Columns:** Date · Invoice number · Cliente/Proveedor · Type (`aeatsiiClaveTipo` / `aeatsiiClaveTipoFc`) · Total · Status pill · CSV AEAT
+
+The Cliente/Proveedor column renders `businessPartnerIdentifier ?? businessPartner` — the Etendo FK identifier field when present, falling back to the raw FK id.
 
 Error rows show `[errorCode] errorMessage` below the status pill in red.
 
@@ -71,13 +77,15 @@ Error rows show `[errorCode] errorMessage` below the status pill in red.
 
 ## TBAI section (`TbaiMonitorSection`)
 
-**Filter tabs:** Todas | Enviadas (Recibido) | Rechazadas | Con error
+**Filter tabs:** Todas | Enviadas (Recibido) | Rechazadas | Con error | Pendientes
 
 Status is server-filtered via a `criteria` JSON parameter on the NEO request (`fieldName: estado, operator: equals, value: <status>`). The "Todas" tab omits the criteria parameter.
 
 Entity: `sincronización` under spec `tbai-facturas-enviadas`.
 
 **Columns:** Date · Invoice number · Description · Signature (check icon when `estado === 'Recibido'`) · Status pill
+
+The Invoice number column renders `invoiceIdentifier ?? invoice` — the Etendo FK identifier field when present, falling back to the raw FK id.
 
 KPI card "Con error / Rechazadas" aggregates both `rechazado` and `error` counts.
 
@@ -95,6 +103,28 @@ Each tab maps to a dedicated NEO entity under spec `monitor-verifactu`:
 | Inválidas | `facturasInválidas` |
 
 **Columns:** Invoice number · Issuer NIF · Type · CSV AEAT · Status pill · Error reason (`[codeError] errorReason`)
+
+## Status-pill click routing
+
+`StatusPill` in `FmPrimitives.jsx` supports three click modes:
+
+| Row state | Click action | Title (tooltip) |
+|-----------|-------------|-----------------|
+| Error (`isErrorStatus`) | Opens `ContactDetailModal` for the invoice's business partner | `fiscalMonitor.viewContact` |
+| Pending (`isPendingStatus`) | Opens `InvoicePreviewModal` for the invoice | `fiscalMonitor.openInvoice` |
+| Any other status | Not clickable | — |
+
+`isPendingStatus` matches `PE` (SII) and `Pendiente` (TBAI). The `StatusPill` component accepts an optional `title` prop that overrides the default tooltip — callers that want the `openInvoice` label pass it explicitly.
+
+For SII rows, the spec hint (`'sales-invoice'` or `'purchase-invoice'`) is derived from the active tab (Emitidas → sales, Recibidas → purchase) so `handleInvoiceOpen` tries the correct spec first. For TBAI rows the hint is always `'sales-invoice'` because TBAI applies to sales invoices only.
+
+## Certificate expiry banner (`CertExpiryBanner`)
+
+`FiscalMonitorPage.jsx` renders `<CertExpiryBanner daysLeft={certDaysLeft} variant="subtle" />` immediately after the `OrgLead` header bar. The subtle variant is a thin strip (no icon card), less intrusive than the prominent variant used in fiscal-config.
+
+`useCertExpiry.js` fetches cert status on mount and is shared between both fiscal pages. See the [fiscal-config](fiscal-config.md#certificate-expiry-banner-certexpirybanner) doc for threshold details and i18n keys.
+
+Debug: the debug panel exposes a "Cert expiry" toggle (None / 45d warn / 20d crit) that bypasses the API call and injects a mock `daysLeft` directly.
 
 ## KPI cards (`FiscalKpiCards`)
 
@@ -114,6 +144,7 @@ Typing the sequence `debugfiscal` anywhere in the app (any page) activates the d
 
 When active, `FiscalMonitorDebugPanel` appears as a fixed dark panel (top-right, z-index 9999):
 - **Profile override buttons** — clicking a profile renders that system's UI even without real config records in the DB. Clicking the active profile again clears the override and falls back to real data.
+- **Cert expiry toggle** — three buttons (None / 45d warn / 20d crit) that inject a mock `daysLeft` into `useCertExpiry`, bypassing the API call.
 - **Mock data toggle** — when on, section components receive `mockRows` from `fiscalMonitorMockData.js` instead of fetching from NEO. KPI counts are computed from `MOCK_MONITOR_DATA` (counts match the actual mock row arrays).
 
 `FiscalConfigDebugPanel` appears in the same position on `/fiscal-config` and allows deleting config records per system (SII, TBAI, Verifactu, certificate) for the current org — useful for resetting onboarding state during development.
@@ -124,10 +155,36 @@ Three arrays with realistic Spanish invoice data:
 
 | Export | System | Rows | Period |
 |--------|--------|------|--------|
-| `MOCK_SII_ROWS` | SII | 8 emitidas (April 2025) + 5 emitidas anterior (March 2025) + 8 recibidas (April 2025) + 4 recibidas anterior (March 2025) = 25 total | `_siiTab` field distinguishes the 4 variants |
-| `MOCK_TBAI_ROWS` | TBAI | 8 rows, May 2025 — 5 Recibido, 2 Rechazado, 1 Error | `estado` field used for filtering |
+| `MOCK_SII_ROWS` | SII | 9 issued (April 2025) + 5 issued previous (March 2025) + 8 received (April 2025) + 4 received previous (March 2025) = 26 total | `_siiTab` field distinguishes the 4 variants; `aeatsiiEstado` uses 2-letter codes (CO/AE/IN/EE/PE) |
+| `MOCK_TBAI_ROWS` | TBAI | 10 rows, May 2025 — 5 Recibido, 2 Rechazado, 1 Error, 2 Pendiente | `estado` field used for filtering; `invoice` = raw FK id, `invoiceIdentifier` = document number |
 | `MOCK_VF_ROWS` | Verifactu | 8 rows — 4 aceptadas, 2 parcialmenteAceptadas, 1 rechazadas, 1 invalidas | `verifactuSendingStatus` field used for filtering |
 | `MOCK_MONITOR_DATA` | All | KPI counts | Must always match the array lengths above |
+
+## Refresh
+
+Both `FiscalMonitorPage` and `FiscalConfigPage` expose a manual refresh control.
+
+**FiscalMonitorPage:** The `OrgLead` bar replaces the static "Sincronizado" indicator with a `RefreshButton` component. When idle it shows a `RefreshCw` icon (Lucide). When loading the icon spins and the button is non-clickable. Clicking calls `refetch()` (re-loads profile + KPIs via `useFiscalMonitor`) and increments `refreshKey` — a counter passed as prop to all three section components. Each section adds `refreshKey` to its row-fetch `useEffect` dependency array, re-triggering the current tab/page/filter fetch without resetting those states.
+
+**FiscalConfigPage:** A small `RefreshCw` icon button in the page header calls `refetch` from `useFiscalConfig`. No `refreshKey` propagation needed — section components re-render completely on `refetch`.
+
+i18n key: `fiscalMonitor.refresh` → "Actualizar" / "Refresh".
+
+## Fiscal Status in InvoicePreviewModal
+
+`StatsPanel` (inside `InvoicePreviewModal`) renders per-system submission status rows directly below the document "Estado" row. Visibility is driven by `getInvoiceFiscalTargets(specName, profile)` — only rows where `showSii`/`showTbai`/`showVerifactu` is `true` are rendered.
+
+Status is fetched by `useFiscalStatus(invoiceId, specName, profile, apiBaseUrl, token)` from `tools/app-shell/src/windows/custom/shared/useFiscalStatus.js`. It queries in parallel (via `Promise.all`) once per active system on mount:
+
+| System | Spec | Entity | FK field | Status field |
+|--------|------|--------|----------|--------------|
+| SII | `sii-monitor` | `issuedInvoices` (then `receivedInvoices` fallback) | `aeatsiiInvoice` | `aeatsiiEstado` |
+| TBAI | `tbai-facturas-enviadas` | `sincronización` | `invoice` | `estado` |
+| Verifactu | `monitor-verifactu` | `facturasAceptadas` → `partiallyAcceptedInvoices` → `facturasRechazadas` → `facturasInválidas` (first match) | `invoice` | `verifactuSendingStatus` |
+
+No match → pill shows `PE` (SII/Verifactu) or `Pendiente` (TBAI). While fetching, rows show a skeleton shimmer.
+
+i18n keys: `invoicePreview.fiscalStatus.sii`, `invoicePreview.fiscalStatus.tbai`, `invoicePreview.fiscalStatus.verifactu`.
 
 ## Interaction model
 
@@ -147,6 +204,8 @@ Three arrays with realistic Spanish invoice data:
 7. Switch tabs in each section under mock data — confirm the rows change (e.g. TBAI "Rechazadas" shows only 2 rows).
 8. Refresh the page with debug mode active — confirm the panel persists (localStorage). Type `debugfiscal` again — confirm it disappears.
 9. Open `/fiscal-config` with debug mode active — confirm `FiscalConfigDebugPanel` appears and delete buttons work.
+10. In the debug panel, enable "45d warn" — confirm the amber subtle strip appears below the OrgLead bar. Enable "20d crit" — confirm it turns red and the dismiss button disappears.
+11. Click a Pending (PE) status pill on an SII row — confirm `InvoicePreviewModal` opens. Click a Pending (Pendiente) status pill on a TBAI row — confirm the same modal opens for that invoice.
 
 ## Automated evidence
 
@@ -159,16 +218,24 @@ Three arrays with realistic Spanish invoice data:
 - `tools/app-shell/src/windows/custom/fiscal-monitor/SiiMonitorSection.jsx` — emitidas/recibidas × actual/anterior; `onTabChange` callback with combined key.
 - `tools/app-shell/src/windows/custom/fiscal-monitor/TbaiMonitorSection.jsx` — server-side criteria filter per status; `onFilterChange` callback.
 - `tools/app-shell/src/windows/custom/fiscal-monitor/VerifactuMonitorSection.jsx` — entity-per-status tab; `onTabChange` callback.
-- `tools/app-shell/src/windows/custom/fiscal-monitor/FmPrimitives.jsx` — shared `StatusPill`, `NumFactura`, `Pager`, `RowActionBtn` primitives.
+- `tools/app-shell/src/windows/custom/fiscal-monitor/fmtDateUtils.js` — pure `fmtDate` helper (no React deps); converts `YYYY-MM-DD` → `DD/MM/YYYY`, passes through already-formatted dates, returns `'—'` for falsy input. Importable in Node.js tests without any alias setup.
+- `tools/app-shell/src/windows/custom/fiscal-monitor/FmPrimitives.jsx` — shared `StatusPill`, `NumFactura`, `Pager`, `RowActionBtn` primitives; `isPendingStatus`/`PENDING_STATUSES` and error-status helpers; re-exports `fmtDate` from `fmtDateUtils.js` and `PAGE_SIZE = 20`.
 - `tools/app-shell/src/windows/custom/fiscal-monitor/useDebugMode.js` — module-level keystroke sequence listener; localStorage persistence; multi-instance sync via listener Set.
-- `tools/app-shell/src/windows/custom/fiscal-monitor/FiscalMonitorDebugPanel.jsx` — profile override + mock data toggle panel.
+- `tools/app-shell/src/windows/custom/fiscal-monitor/FiscalMonitorDebugPanel.jsx` — profile override + cert expiry toggle + mock data toggle panel.
+- `tools/app-shell/src/windows/custom/fiscal-config/useCertExpiry.js` — `daysUntil` pure helper (re-exported from `certExpiryUtils.js`) + `useCertExpiry` hook; shared by fiscal-config and fiscal-monitor pages. Resets `daysLeft` to `null` immediately when `orgId`/`token` become falsy and before each new fetch. Uses `AbortController` to cancel in-flight requests on unmount or deps change, preventing stale responses from resolving after the component is gone or the org has switched.
+- `tools/app-shell/src/windows/custom/fiscal-config/CertExpiryBanner.jsx` — cert expiry warning strip/card; `variant="subtle"` used here, `variant="prominent"` in fiscal-config.
+- `tools/app-shell/src/windows/custom/shared/SifSendingModal.jsx` — shared confirm/sending/results modal with simulated progress bar; used by `SendToSifButton` and `InvoicePreviewModal`.
 - `tools/app-shell/src/windows/custom/fiscal-config/FiscalConfigDebugPanel.jsx` — config record deletion panel (shared debug mode).
 - `tools/app-shell/src/windows/custom/fiscal-monitor/fiscalMonitorMockData.js` — realistic multi-system mock rows + matching KPI counts.
 - `tools/app-shell/src/windows/custom/fiscal-monitor/fiscal-monitor.css` — `.fm-*` design-system CSS; `overflow-y: auto` on `.fm-page` for scroll in fixed shell.
 - `cli/test/fiscal-monitor.utils.test.js` — 18 tests covering `buildMonitorFetchPlan` and `computeKpis` for all profiles and edge cases.
 - `cli/test/fiscal-monitor.mockdata.test.js` — mock data integrity tests: KPI counts match actual row arrays; all rows have required fields.
-- `cli/test/useFiscalMonitor.test.js` — 22 tests covering source guards (named export, Promise.all × ≥2, computeKpis/detectProfile wiring, entity constant exports), `get` helper (URL encoding, Authorization header, response parsing, error handling), `fetchCount` (totalRows extraction, zero fallback), `fetchSiiMonitorData` (4 parallel calls, correct entity names), `fetchVerifactuMonitorData` (4 parallel calls), and `fetchTbaiData` (4 calls, criteria filter with `estado` fieldName).
+- `cli/test/useFiscalMonitor.test.js` — 22 tests covering source guards (named export, Promise.all × ≥2, computeKpis/detectProfile wiring, entity constant exports), `get` helper (URL encoding, Authorization header, response parsing, error handling), `fetchCount` (totalRows extraction, zero fallback), `fetchSiiMonitorData` (4 parallel calls, correct entity names), `fetchVerifactuMonitorData` (4 parallel calls), and `fetchTbaiData` (5 calls: total + Recibido + Rechazado + Error + Pendiente, criteria filter with `estado` fieldName).
 - `tools/app-shell/src/windows/custom/fiscal-monitor/__tests__/FiscalKpiCards.test.js` — 16 component source-guard tests: SII/TBAI/Verifactu variants, `activeKey` active-class logic, `onPick` callback dispatch, `de-DE` number formatting.
-- `tools/app-shell/src/windows/custom/fiscal-monitor/__tests__/SiiMonitorSection.test.js` — 15 component source-guard tests: tab state (issued/received), period segmented control, `initialTab` derivation, `mockRows` bypass, data fetching with pagination params.
+- `tools/app-shell/src/windows/custom/fiscal-monitor/__tests__/SiiMonitorSection.test.js` — 21 component source-guard tests: tab/period state, `initialTab` derivation, `mockRows` bypass, data fetching, pending-pill → `onInvoiceOpen` wiring.
+- `tools/app-shell/src/windows/custom/fiscal-monitor/__tests__/TbaiMonitorSection.test.js` — expanded with pending-pill → `onInvoiceOpen` wiring tests (TBAI sales-only).
+- `tools/app-shell/src/windows/custom/fiscal-monitor/__tests__/fmtDateUtils.test.js` — 12 tests: exports guard, null/falsy → `'—'`, ISO→DD/MM/YYYY conversion, already-formatted pass-through, invalid/non-date inputs. Imports `fmtDate` from the real module (no local copy).
+- `tools/app-shell/src/windows/custom/fiscal-monitor/__tests__/FmPrimitives.test.js` — 41 source-guard tests: `isErrorStatus` (SII/TBAI/Verifactu/edge), `isPendingStatus`/`PENDING_STATUSES` export + status coverage, `StatusPill` onClick/title-prop guards, `fmtDate` re-export guard (matches `export.*fmtDate`), `PAGE_SIZE`, `WipBadge` i18n keys.
+- `tools/app-shell/src/windows/custom/shared/__tests__/SifSendingModal.test.js` — 22 component source-guard tests: props contract, three-phase state machine, progress bar formula/cap/snap, `callProcess` action columns, results display, `onAfterSend` callback.
 - `e2e/tests/flows/fiscal-monitor.mocked.spec.js` — 13 Playwright mocked E2E tests: no-org, unconfigured, SII/TBAI/Verifactu/combined/conflict profiles, KPI card → tab sync, period toggle; all assertions use `t()` i18n helper.
 - i18n: 40+ `fiscalMonitor.*` keys in `en_US.json` / `es_ES.json`; all user-visible strings go through `useUI()`. E2E tests resolved via `e2e/tests/helpers/i18n.js` (locale-switchable).

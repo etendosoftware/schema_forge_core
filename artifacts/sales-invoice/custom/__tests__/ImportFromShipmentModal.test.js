@@ -12,8 +12,10 @@ describe('ImportFromShipmentModal', () => {
     assert.match(src, /export default function ImportFromShipmentModal/);
   });
 
-  it('accepts invoiceId, bpId, base, headers, onClose, and onSuccess props', () => {
-    assert.match(src, /\{\s*invoiceId.*bpId.*base.*headers.*onClose.*onSuccess\s*\}/);
+  it('delegates to the shared ImportLinesModal and forwards parent props', () => {
+    assert.match(src, /from '@\/components\/contract-ui\/ImportLinesModal'/);
+    assert.match(src, /function ImportFromShipmentModal\(props\)/);
+    assert.match(src, /<ImportLinesModal[\s\S]*\{\.\.\.props\}/);
   });
 
   it('fetches shipments and existing invoice lines in parallel', () => {
@@ -25,7 +27,7 @@ describe('ImportFromShipmentModal', () => {
   it('filters shipments by CO status, matching business partner, and not fully invoiced', () => {
     assert.match(src, /documentStatus\s*===\s*'CO'/);
     assert.match(src, /businessPartner\s*===\s*bpId/);
-    assert.match(src, /completelyInvoiced\s*!==\s*true/);
+    assert.match(src, /invoiced\s*!==\s*true/);
   });
 
   it('tracks already-imported shipment lines and order lines', () => {
@@ -34,20 +36,22 @@ describe('ImportFromShipmentModal', () => {
     assert.match(src, /salesOrderLine/);
   });
 
-  it('supports search filtering by document number', () => {
-    assert.match(src, /search/);
-    assert.match(src, /documentNo.*toLowerCase.*includes/s);
+  it('wires the shipment-specific i18n keys for search and empty states', () => {
+    assert.match(src, /searchPlaceholderKey="searchShipment"/);
+    assert.match(src, /emptyMessageKey="noPendingShipmentsForCustomer"/);
+    assert.match(src, /noSearchResultsKey="noShipmentsMatchYourSearch"/);
   });
 
-  it('fetches shipment lines on expand with order line price enrichment', () => {
+  it('fetches shipment lines on expand with callout price enrichment', () => {
     assert.match(src, /fetchLines/);
     assert.match(src, /goods-shipment\/goodsShipmentLine\?parentId=/);
-    assert.match(src, /sales-order\/lines\?parentId=/);
+    assert.match(src, /resolveLinePrice/);
   });
 
-  it('marks lines as already imported and disables their selection', () => {
+  it('marks lines as already imported via shipment and order line ids', () => {
     assert.match(src, /_alreadyImported/);
-    assert.match(src, /disabled.*imported/s);
+    assert.match(src, /alreadyImportedShipmentLines\?\.has\(l\.id\)/);
+    assert.match(src, /alreadyImportedOrderLines\?\.has\(l\.salesOrderLine\)/);
   });
 
   it('creates invoice lines via POST to sales-invoice/lines', () => {
@@ -55,14 +59,15 @@ describe('ImportFromShipmentModal', () => {
     assert.match(src, /method:\s*'POST'/);
   });
 
-  it('uses toast for success, warning, and error feedback', () => {
-    assert.match(src, /toast\.success/);
-    assert.match(src, /toast\.warning/);
-    assert.match(src, /toast\.error/);
+  it('wires the success message key so the shared modal can toast on success', () => {
+    assert.match(src, /successMessageKey="linesImportedFromShipment"/);
+    assert.match(src, /titleKey="importFromShipment"/);
   });
 
-  it('supports line and shipment level toggle selection', () => {
-    assert.match(src, /toggleLine/);
-    assert.match(src, /toggleShipment/);
+  it('injects fetch/build callbacks so the shared modal can drive line selection', () => {
+    assert.match(src, /fetchDocuments=\{fetchDocuments\}/);
+    assert.match(src, /fetchLines=\{fetchLines\}/);
+    assert.match(src, /getDocDisplay=\{getDocDisplay\}/);
+    assert.match(src, /buildLineBody=\{buildLineBody\}/);
   });
 });

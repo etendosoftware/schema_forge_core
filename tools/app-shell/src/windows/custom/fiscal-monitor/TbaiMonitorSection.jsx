@@ -1,18 +1,30 @@
 import { useState, useEffect } from 'react';
 import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
-import { StatusPill, NumFactura, Pager, RowActionBtn } from './FmPrimitives.jsx';
+import { StatusPill, NumFactura, Pager, RowActionBtn, isErrorStatus, isPendingStatus, fmtDate, PAGE_SIZE } from './FmPrimitives.jsx';
 import { TBAI_SPEC, TBAI_ENTITY } from './useFiscalMonitor.js';
 
 const STATUS_FIELD = 'estado';
-const PAGE_SIZE    = 20;
 
 const STATUS_TAB_KEYS = [
-  { key: 'all',      dot: null,      labelKey: 'fiscalMonitor.tbai.tab.all' },
-  { key: 'Recibido', dot: 'success', labelKey: 'fiscalMonitor.tbai.tab.Recibido' },
-  { key: 'Rechazado',dot: 'danger',  labelKey: 'fiscalMonitor.tbai.tab.Rechazado' },
-  { key: 'Error',    dot: 'danger',  labelKey: 'fiscalMonitor.tbai.tab.Error' },
+  { key: 'all',       dot: null,      labelKey: 'fiscalMonitor.tbai.tab.all' },
+  { key: 'Recibido',  dot: 'success', labelKey: 'fiscalMonitor.tbai.tab.Recibido' },
+  { key: 'Rechazado', dot: 'danger',  labelKey: 'fiscalMonitor.tbai.tab.Rechazado' },
+  { key: 'Error',     dot: 'danger',  labelKey: 'fiscalMonitor.tbai.tab.Error' },
+  { key: 'Pendiente', dot: 'pending', labelKey: 'fiscalMonitor.tbai.tab.Pendiente' },
 ];
+
+// Etendo identifier format: "documentNo – date – amount"
+// Parse into the individual parts we need for display.
+function parseIdentifier(row) {
+  const raw = row['invoice$_identifier'] ?? row.invoiceIdentifier ?? null;
+  if (!raw) return { docNo: row.invoice ?? '—', date: '—' };
+  const parts = raw.split(/ [–-] /);
+  return {
+    docNo: parts[0]?.trim() || raw,
+    date:  parts[1]?.trim() || '—',
+  };
+}
 
 async function fetchTbaiList(base, orgId, token, page, statusFilter) {
   const params = new URLSearchParams({
@@ -37,7 +49,7 @@ const CheckIcon = () => (
   </svg>
 );
 
-export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFilter = 'all', mockRows, onFilterChange }) {
+export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFilter = 'all', mockRows, onFilterChange, refreshKey = 0, onInvoiceOpen, onBpClick }) {
   const ui = useUI();
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage]       = useState(1);
@@ -66,7 +78,7 @@ export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFi
       .then(({ data, totalRows }) => { setRows(data); setTotalRows(totalRows); })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [orgId, statusFilter, page, token, apiBaseUrl, mockRows]);
+  }, [orgId, statusFilter, page, token, apiBaseUrl, mockRows, refreshKey]);
 
   useEffect(() => { setPage(1); }, [statusFilter]);
 
@@ -129,31 +141,51 @@ export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFi
                       {ui('fiscalMonitor.empty')}
                     </td>
                   </tr>
-                ) : rows.map((row, i) => (
-                  <tr key={row.id ?? i}>
-                    <td><input type="checkbox" /></td>
-                    <td className="strong">{row.invoiceDate ?? row.creationDate ?? '—'}</td>
-                    <td className="num-factura">
-                      <NumFactura n={row.invoice ?? '—'} />
-                    </td>
-                    <td>{row.descripcion ?? '—'}</td>
-                    <td>
-                      {row.estado === 'Recibido' ? (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--fm-success-fg)', fontWeight: 500, fontSize: 12 }}>
-                          <CheckIcon /> OK
-                        </span>
-                      ) : (
-                        <span style={{ color: 'var(--fm-fg-4)' }}>—</span>
-                      )}
-                    </td>
-                    <td>
-                      <StatusPill estado={row.estado} />
-                    </td>
-                    <td>
-                      <RowActionBtn title={ui('fiscalMonitor.openInvoice')} />
-                    </td>
-                  </tr>
-                ))}
+                ) : rows.map((row, i) => {
+                  const inv = parseIdentifier(row);
+                  return (
+                    <tr key={row.id ?? i}>
+                      <td><input type="checkbox" /></td>
+                      <td className="strong">{fmtDate(row.invoiceDate ?? inv.date)}</td>
+                      <td className="num-factura">
+                        <NumFactura
+                          n={inv.docNo}
+                          onOpen={() => onInvoiceOpen?.(row.invoice, 'sales-invoice')}
+                        />
+                      </td>
+                      <td>{row['invoice$description'] ?? row.descripcion ?? '—'}</td>
+                      <td>
+                        {row.estado === 'Recibido' ? (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--fm-success-fg)', fontWeight: 500, fontSize: 12 }}>
+                            <CheckIcon /> OK
+                          </span>
+                        ) : (
+                          <span style={{ color: 'var(--fm-fg-4)' }}>—</span>
+                        )}
+                      </td>
+                      <td>
+                        {(() => {
+                          let pillClick;
+                          if (isErrorStatus(row.estado) && row.businessPartner) {
+                            pillClick = () => onBpClick?.(row.businessPartner);
+                          } else if (isPendingStatus(row.estado) && row.invoice) {
+                            pillClick = () => onInvoiceOpen?.(row.invoice, 'sales-invoice');
+                          }
+                          return (
+                            <StatusPill
+                              estado={row.estado}
+                              onClick={pillClick}
+                              title={isPendingStatus(row.estado) ? ui('fiscalMonitor.openInvoice') : undefined}
+                            />
+                          );
+                        })()}
+                      </td>
+                      <td>
+                        <RowActionBtn title={ui('fiscalMonitor.openInvoice')} />
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             <Pager total={totalRows} page={page} pageSize={PAGE_SIZE} onPage={setPage} />

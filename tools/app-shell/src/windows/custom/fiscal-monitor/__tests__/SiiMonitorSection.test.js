@@ -77,6 +77,51 @@ describe('SiiMonitorSection — initialTab prop', () => {
   });
 });
 
+// Guards: SiiMonitorSection.fmtDate now uses the same year-first detection as TBAI/VF
+// and trims whitespace from each part (unified across all three monitor sections).
+describe('SiiMonitorSection — fmtDate inline logic (copied from SiiMonitorSection.jsx)', () => {
+  // Copied from SiiMonitorSection.jsx — not exported.
+  function fmtDate(raw) {
+    if (!raw) return '—';
+    const parts = String(raw).split(/[-/]/);
+    if (parts.length !== 3) return raw;
+    const [a, b, c] = parts.map(p => p.trim());
+    return a.length === 4 ? `${c}/${b}/${a}` : `${a}/${b}/${c}`;
+  }
+
+  it('converts ISO yyyy-mm-dd to dd/mm/yyyy', () => assert.equal(fmtDate('2025-04-14'), '14/04/2025'));
+  it('converts yyyy/mm/dd to dd/mm/yyyy', () => assert.equal(fmtDate('2025/04/14'), '14/04/2025'));
+  it('keeps already-formatted dd/mm/yyyy unchanged', () => assert.equal(fmtDate('14/04/2025'), '14/04/2025'));
+  it('normalises dd-mm-yyyy to dd/mm/yyyy', () => assert.equal(fmtDate('14-04-2025'), '14/04/2025'));
+  it('trims spaced separators — 2025 - 04 - 14 → 14/04/2025', () => assert.equal(fmtDate('2025 - 04 - 14'), '14/04/2025'));
+  it('returns — for null', () => assert.equal(fmtDate(null), '—'));
+  it('returns — for empty string', () => assert.equal(fmtDate(''), '—'));
+  it('returns raw string when fewer than 3 parts', () => assert.equal(fmtDate('2025-04'), '2025-04'));
+});
+
+// Guards: onBpClick wiring — StatusPill click must open contact detail for error rows only
+describe('SiiMonitorSection — onBpClick wiring', () => {
+  it('declares onBpClick in the function signature', () => {
+    assert.match(src, /onBpClick\b/);
+  });
+
+  it('imports isErrorStatus from FmPrimitives', () => {
+    assert.match(src, /isErrorStatus.*from.*FmPrimitives/);
+  });
+
+  it('passes onClick prop to StatusPill', () => {
+    assert.match(src, /StatusPill[\s\S]*?onClick=/);
+  });
+
+  it('onClick is conditional on isErrorStatus result', () => {
+    assert.match(src, /isErrorStatus[\s\S]*?onBpClick/);
+  });
+
+  it('onClick callback passes businessPartner to onBpClick', () => {
+    assert.match(src, /onBpClick.*businessPartner/);
+  });
+});
+
 describe('SiiMonitorSection — data fetching', () => {
   it('uses mockRows prop when provided (bypasses fetch)', () => {
     assert.match(src, /mockRows/);
@@ -87,8 +132,8 @@ describe('SiiMonitorSection — data fetching', () => {
     assert.match(src, /setPage\(1\)/);
   });
 
-  it('fetches from the sii-monitor NEO endpoint with organization param', () => {
-    assert.match(src, /organization.*orgId/);
+  it('fetches from the sii-monitor NEO endpoint with parentId param', () => {
+    assert.match(src, /parentId/);
     assert.match(src, /_startRow/);
     assert.match(src, /_endRow/);
   });
@@ -105,5 +150,33 @@ describe('SiiMonitorSection — section title', () => {
 
   it('includes a badge-system SII badge', () => {
     assert.match(src, /badge-system/);
+  });
+});
+
+// Guards: pending status rows open invoice preview instead of the contact popup
+describe('SiiMonitorSection — pending status opens invoice preview', () => {
+  it('imports isPendingStatus from FmPrimitives', () => {
+    assert.match(src, /isPendingStatus.*from.*FmPrimitives/);
+  });
+
+  it('declares onInvoiceOpen in the function signature', () => {
+    assert.match(src, /onInvoiceOpen\b/);
+  });
+
+  it('onClick callback calls onInvoiceOpen for pending rows', () => {
+    assert.match(src, /isPendingStatus[\s\S]*?onInvoiceOpen/);
+  });
+
+  it('passes the invoice FK field as first arg to onInvoiceOpen', () => {
+    assert.match(src, /onInvoiceOpen\??\.\(row\[INVOICE_FK_FIELD\]/);
+  });
+
+  it('passes sales-invoice hint for issued tab, purchase-invoice for received', () => {
+    assert.match(src, /sales-invoice/);
+    assert.match(src, /purchase-invoice/);
+  });
+
+  it('passes fiscalMonitor.openInvoice as title on pending rows', () => {
+    assert.match(src, /fiscalMonitor\.openInvoice/);
   });
 });

@@ -17,10 +17,22 @@ jobs:
           node-version: 22
           cache: npm
 
-      - run: npm ci
+      - run: npm install
 
-      - name: Run all tests
+      - name: CLI tests
         run: node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-results.xml 'cli/test/*.test.js'
+
+      - name: App-shell Node tests
+        run: node --test --test-reporter=spec --test-reporter-destination=stdout 'tools/app-shell/src/**/__tests__/*.test.js'
+
+      - name: App-shell extra tests
+        run: node --test --test-reporter=spec --test-reporter-destination=stdout 'tools/app-shell/test/*.test.js'
+
+      - name: Artifact custom tests
+        run: node --test --test-reporter=spec --test-reporter-destination=stdout 'artifacts/**/__tests__/*.test.js'
+
+      - name: Vitest (React components)
+        run: cd tools/app-shell && npx vitest run
 
       - name: Publish test results
         uses: dorny/test-reporter@v1

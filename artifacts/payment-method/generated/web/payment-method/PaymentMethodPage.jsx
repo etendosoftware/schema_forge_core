@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import PaymentMethodTable from './PaymentMethodTable';
 import PaymentMethodForm from './PaymentMethodForm';
+import { AttachmentsTab } from '@/components/attachments';
 import PaymentGroupsSection from '@/windows/custom/payment-method/PaymentGroupsSection';
 import catalogs from './mockCatalogs';
 
@@ -44,6 +45,10 @@ const processes = [
 // @sf-generated-start draftMode:paymentMethod
 const draftMode = null;
 // @sf-generated-end draftMode:paymentMethod
+
+// @sf-generated-start requiredHeaderFields:paymentMethod
+const requiredHeaderFields = ['name'];
+// @sf-generated-end requiredHeaderFields:paymentMethod
 
 
 
@@ -115,9 +120,12 @@ export default function PaymentMethodPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        customTabsAfterBottom
         hidePrint
         hideMoreMenu
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "FIN_PaymentMethod", config: {} } }]}
         bottomSection={PaymentGroupsSection}
+        requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}
         {...props}
       />
@@ -135,6 +143,7 @@ export default function PaymentMethodPage({ windowName, recordId, ...props }) {
       hidePrint
       hideMoreMenu
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
       {...props}
     />
   );

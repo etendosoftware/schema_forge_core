@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUI } from '@/i18n';
 import {
-  DocChip, RelatedDocumentsShell, STATUS_KEYS, CHIP_ICONS, CHIP_COLORS,
+  DocChip, RelatedDocumentsShell, docChipProps,
   fetchByCriteria, fetchChild, fetchById,
 } from '@/components/related-documents';
 
@@ -28,6 +28,7 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
   const [receipts, setReceipts] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
   const navigate = useNavigate();
   const ui = useUI();
 
@@ -48,60 +49,30 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
         setPayments(paymentResults);
       })
       .finally(() => setLoading(false));
-  }, [recordId, data?.salesOrder, token, apiBaseUrl]);
+  }, [recordId, data?.salesOrder, token, apiBaseUrl, refreshKey]);
 
   const chips = [];
 
   if (purchaseOrder) {
     chips.push(
-      <DocChip
-        key="purchase-order"
-        icon={CHIP_ICONS.order}
-        iconColor={CHIP_COLORS.order}
-        title={ui('orderDoc', { number: purchaseOrder.documentNo })}
-        amount={purchaseOrder.grandTotalAmount}
-        currency={purchaseOrder['currency$_identifier']}
-        status={purchaseOrder.documentStatus}
-        statusLabel={ui(STATUS_KEYS[purchaseOrder.documentStatus] || purchaseOrder.documentStatus)}
-        onClick={() => navigate(`/purchase-order/${purchaseOrder.id}`)}
-      />
+      <DocChip key="purchase-order" {...docChipProps({ type: 'order', doc: purchaseOrder, ui, navigate })} />
     );
   }
 
-  // Goods Receipts linked to the same PO
   for (const r of receipts) {
     chips.push(
-      <DocChip
-        key={`receipt-${r.id}`}
-        icon={CHIP_ICONS.shipment}
-        iconColor={CHIP_COLORS.shipment}
-        title={ui('receiptDoc', { number: r.documentNo })}
-        status={r.documentStatus}
-        statusLabel={ui(STATUS_KEYS[r.documentStatus] || r.documentStatus)}
-        onClick={() => navigate(`/goods-receipt/${r.id}`)}
-      />
+      <DocChip key={`receipt-${r.id}`} {...docChipProps({ type: 'receipt', doc: r, ui, navigate })} />
     );
   }
 
-  // Payments linked to this invoice
   for (const p of payments) {
     chips.push(
-      <DocChip
-        key={`payment-${p.id}`}
-        icon={CHIP_ICONS.payment}
-        iconColor={CHIP_COLORS.payment}
-        title={ui('paymentDoc', { number: p.documentNo || p.id })}
-        amount={p.amount}
-        currency={p['currency$_identifier']}
-        status={p.status}
-        statusLabel={ui(STATUS_KEYS[p.status] || p.status)}
-        onClick={() => navigate(`/payment-out/${p.id}`)}
-      />
+      <DocChip key={`payment-${p.id}`} {...docChipProps({ type: 'payment', doc: p, ui, navigate })} />
     );
   }
 
   return (
-    <RelatedDocumentsShell loading={loading}>
+    <RelatedDocumentsShell loading={loading} onRefresh={() => setRefreshKey(k => k + 1)}>
       {chips}
     </RelatedDocumentsShell>
   );

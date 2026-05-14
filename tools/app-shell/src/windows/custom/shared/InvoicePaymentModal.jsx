@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DateField } from '@/components/ui/date-field';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 import { useUI } from '@/i18n';
 import { formatCurrency } from '@/lib/formatCurrency';
 
@@ -52,8 +53,7 @@ function paymentPrefix(specName) {
  *   outstanding  — number, outstanding amount for this installment
  *   currency     — string, ISO currency code
  *   specName     — "sales-invoice" | "purchase-invoice"
- *   base         — string, API root URL (without spec name, e.g. http://host/sws/neo)
- *   headers      — object, HTTP headers including Authorization
+ *   apiFetch     — function, authenticated API request helper
  *   onCancel     — callback
  *   onSuccess    — callback(paymentData, accountName)
  */
@@ -64,8 +64,7 @@ export function PaymentRegisterForm({
   outstanding,
   currency,
   specName,
-  base,
-  headers,
+  apiFetch,
   onCancel,
   onSuccess,
 }) {
@@ -83,9 +82,9 @@ export function PaymentRegisterForm({
       try {
         let mapped = [];
 
-        const res = await fetch(
-          `${base}/${specName}/header/${invoiceId}/action/invoiceAccounts`,
-          { method: 'POST', headers, body: '{}' },
+        const res = await apiFetch(
+          `/${specName}/header/${invoiceId}/action/invoiceAccounts`,
+          { method: 'POST', body: '{}' },
         );
         if (res.ok) {
           const json = await res.json();
@@ -100,7 +99,7 @@ export function PaymentRegisterForm({
       } catch { /* silent */ }
       finally { setLoadingAccounts(false); }
     })();
-  }, [base, headers, invoiceId, specName]);
+  }, [apiFetch, invoiceId, specName]);
 
   const amountExceeded = amount > outstanding;
 
@@ -111,11 +110,10 @@ export function PaymentRegisterForm({
     setError(null);
     setSaving(true);
     try {
-      const res = await fetch(
-        `${base}/${specName}/header/${invoiceId}/action/registerPayment`,
+      const res = await apiFetch(
+        `/${specName}/header/${invoiceId}/action/registerPayment`,
         {
           method: 'POST',
-          headers,
           body: JSON.stringify({
             scheduleId,
             actual_payment: String(amount),
@@ -196,7 +194,6 @@ export function PaymentRegisterForm({
  *   invoiceId   — string, the invoice record ID
  *   invoiceData — object, full invoice record (amounts, currency, bp, etc.)
  *   specName    — "sales-invoice" | "purchase-invoice"
- *   token       — string, auth token
  *   apiBaseUrl  — string, full base URL including spec, e.g. http://host/sws/neo/sales-invoice
  *   onClose     — callback
  */
@@ -204,18 +201,14 @@ export default function InvoicePaymentModal({
   invoiceId,
   invoiceData,
   specName,
-  token,
   apiBaseUrl,
   onClose,
+  onPaymentAdded,
 }) {
   const ui = useUI();
   // Strip the spec name suffix to get the API root (e.g. http://host/sws/neo)
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
-
-  const headers = useMemo(() => ({
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  }), [token]);
+  const apiFetch = useApiFetch(base);
 
   const currency = invoiceData?.['currency$_identifier'] || '';
   const grandTotal = invoiceData?.grandTotalAmount ?? 0;
@@ -247,26 +240,23 @@ export default function InvoicePaymentModal({
   const fetchPayments = useCallback(async () => {
     if (!invoiceId || !base) return;
     try {
-      const res = await fetch(
-        `${base}/${specName}/header/${invoiceId}/action/invoicePayments`,
-        { method: 'POST', headers, body: '{}' },
+      const res = await apiFetch(
+        `/${specName}/header/${invoiceId}/action/invoicePayments`,
+        { method: 'POST', body: '{}' },
       );
       if (res.ok) setPayments((await res.json())?.response?.data || []);
     } catch { /* silent */ }
     finally { setLoadingPayments(false); }
-  }, [base, headers, invoiceId, specName]);
+  }, [apiFetch, base, invoiceId, specName]);
 
   const fetchInstallments = useCallback(async () => {
     if (!invoiceId || !base) { setLoadingInstallments(false); return; }
     try {
-      const res = await fetch(
-        `${base}/${specName}/paymentPlan?parentId=${invoiceId}&_startRow=0&_endRow=50`,
-        { headers },
-      );
+      const res = await apiFetch(`/${specName}/paymentPlan?parentId=${invoiceId}&_startRow=0&_endRow=50`);
       if (res.ok) setLocalInstallments((await res.json())?.response?.data || []);
     } catch { /* silent */ }
     finally { setLoadingInstallments(false); }
-  }, [base, headers, invoiceId, specName]);
+  }, [apiFetch, base, invoiceId, specName]);
 
   useEffect(() => {
     fetchInstallments();
@@ -292,6 +282,7 @@ export default function InvoicePaymentModal({
     setLoadingPayments(true);
     fetchPayments();
     fetchInstallments();
+    onPaymentAdded?.();
   };
 
   const sorted = useMemo(
@@ -441,8 +432,7 @@ export default function InvoicePaymentModal({
                             outstanding={instOutstanding}
                             currency={currency}
                             specName={specName}
-                            base={base}
-                            headers={headers}
+                            apiFetch={apiFetch}
                             onCancel={() => setActiveFormScheduleId(null)}
                             onSuccess={(pd, an) => handlePaymentSuccess(pd, an, scheduleId)}
                           />

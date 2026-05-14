@@ -5,6 +5,8 @@ import {
   parseUserFilter,
   resolveBackendSort,
   buildBackendFilter,
+  resolveFilterMode,
+  buildAdvancedFilterCriteria,
 } from '../gridQuery.js';
 
 // ---------------------------------------------------------------------------
@@ -473,5 +475,238 @@ describe('buildBackendFilter', () => {
         ],
       );
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// resolveFilterMode
+// ---------------------------------------------------------------------------
+
+describe('resolveFilterMode', () => {
+  it('maps percent type to numeric mode', () => {
+    assert.equal(resolveFilterMode({ key: 'deliveryStatus', type: 'percent' }), 'numeric');
+  });
+
+  it('maps number type to numeric mode', () => {
+    assert.equal(resolveFilterMode({ key: 'qty', type: 'number' }), 'numeric');
+  });
+
+  it('maps amount type to numeric mode', () => {
+    assert.equal(resolveFilterMode({ key: 'total', type: 'amount' }), 'numeric');
+  });
+
+  it('maps status type to enumLabel mode', () => {
+    assert.equal(resolveFilterMode({ key: 'docStatus', type: 'status' }), 'enumLabel');
+  });
+
+  it('maps date type to date mode', () => {
+    assert.equal(resolveFilterMode({ key: 'orderDate', type: 'date' }), 'date');
+  });
+
+  it('maps selector type to identifier mode', () => {
+    assert.equal(resolveFilterMode({ key: 'bp', type: 'selector' }), 'identifier');
+  });
+
+  it('defaults to text for unknown type', () => {
+    assert.equal(resolveFilterMode({ key: 'field', type: 'custom' }), 'text');
+  });
+
+  it('returns text when col is null', () => {
+    assert.equal(resolveFilterMode(null), 'text');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildAdvancedFilterCriteria
+// ---------------------------------------------------------------------------
+
+describe('buildAdvancedFilterCriteria', () => {
+  const columns = [
+    { key: 'documentStatus', column: 'DocStatus', type: 'status' },
+    { key: 'deliveryStatusPurchase', column: 'DeliveryStatusPurchase', type: 'percent' },
+    { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector' },
+    { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  ];
+
+  it('returns null when advancedFilter is null', () => {
+    assert.equal(buildAdvancedFilterCriteria(null, columns), null);
+  });
+
+  it('returns null when conditions array is empty', () => {
+    assert.equal(buildAdvancedFilterCriteria({ rowOperator: 'and', conditions: [] }, columns), null);
+  });
+
+  it('returns null when tableColumns is empty (no column definitions resolved)', () => {
+    const filter = { rowOperator: 'and', conditions: [{ field: 'documentStatus', operator: 'equals', value: 'CO' }] };
+    assert.equal(buildAdvancedFilterCriteria(filter, []), null);
+  });
+
+  it('serializes equals condition on status column', () => {
+    const filter = { rowOperator: 'and', conditions: [{ field: 'documentStatus', operator: 'equals', value: 'CO' }] };
+    assert.deepEqual(buildAdvancedFilterCriteria(filter, columns), [
+      { fieldName: 'documentStatus', operator: 'equals', value: 'CO' },
+    ]);
+  });
+
+  it('serializes lessThan condition on percent column as numeric', () => {
+    const filter = { rowOperator: 'and', conditions: [{ field: 'deliveryStatusPurchase', operator: 'lessThan', value: 100 }] };
+    assert.deepEqual(buildAdvancedFilterCriteria(filter, columns), [
+      { fieldName: 'deliveryStatusPurchase', operator: 'lessThan', value: 100 },
+    ]);
+  });
+
+  it('uses notEqual operator (no trailing s) for negation on status column', () => {
+    const filter = { rowOperator: 'and', conditions: [{ field: 'documentStatus', operator: 'notEqual', value: 'DR' }] };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    assert.deepEqual(result, [{ fieldName: 'documentStatus', operator: 'notEqual', value: 'DR' }]);
+  });
+
+  it('combines two AND conditions into a flat array (pendingDelivery filter shape)', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [
+        { field: 'documentStatus', operator: 'equals', value: 'CO' },
+        { field: 'deliveryStatusPurchase', operator: 'lessThan', value: 100 },
+      ],
+    };
+    assert.deepEqual(buildAdvancedFilterCriteria(filter, columns), [
+      { fieldName: 'documentStatus', operator: 'equals', value: 'CO' },
+      { fieldName: 'deliveryStatusPurchase', operator: 'lessThan', value: 100 },
+    ]);
+  });
+
+  it('wraps OR conditions in an AdvancedCriteria envelope', () => {
+    const filter = {
+      rowOperator: 'or',
+      conditions: [
+        { field: 'documentStatus', operator: 'equals', value: 'CO' },
+        { field: 'documentStatus', operator: 'equals', value: 'DR' },
+      ],
+    };
+    const result = buildAdvancedFilterCriteria(filter, columns);
+    assert.equal(result.length, 1);
+    assert.equal(result[0]._constructor, 'AdvancedCriteria');
+    assert.equal(result[0].operator, 'or');
+    assert.equal(result[0].criteria.length, 2);
+  });
+
+  it('skips conditions whose field key is not in columns', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [
+        { field: 'documentStatus', operator: 'equals', value: 'CO' },
+        { field: 'unknownField', operator: 'equals', value: 'X' },
+      ],
+    };
+    assert.deepEqual(buildAdvancedFilterCriteria(filter, columns), [
+      { fieldName: 'documentStatus', operator: 'equals', value: 'CO' },
+    ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildAdvancedFilterCriteria — buildCriteria hook
+// ---------------------------------------------------------------------------
+
+describe('buildAdvancedFilterCriteria — buildCriteria hook (ETP-3660)', () => {
+  // The __contactType virtual column uses buildCriteria to map enum values
+  // to real backend boolean fields. Test that buildAdvancedFilterCriteria
+  // calls col.buildCriteria(row) and uses its result instead of the default logic.
+
+  const virtualCol = {
+    key: '__contactType',
+    type: 'enum',
+    filterable: true,
+    buildCriteria: (condition) => {
+      const { operator, value } = condition;
+      if (operator === 'equals') {
+        if (value === 'customer') return [{ fieldName: 'customer', operator: 'equals', value: true }];
+        if (value === 'vendor')   return [{ fieldName: 'vendor',   operator: 'equals', value: true }];
+      }
+      if (operator === 'notEqual') {
+        if (value === 'customer') return [{ fieldName: 'customer', operator: 'equals', value: false }];
+        if (value === 'vendor')   return [{ fieldName: 'vendor',   operator: 'equals', value: false }];
+      }
+      return null;
+    },
+  };
+
+  it('operator=equals, value=customer → customer=true', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: '__contactType', operator: 'equals', value: 'customer' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, [virtualCol]);
+    assert.deepEqual(result, [{ fieldName: 'customer', operator: 'equals', value: true }]);
+  });
+
+  it('operator=equals, value=vendor → vendor=true', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: '__contactType', operator: 'equals', value: 'vendor' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, [virtualCol]);
+    assert.deepEqual(result, [{ fieldName: 'vendor', operator: 'equals', value: true }]);
+  });
+
+  it('operator=notEqual, value=customer → customer=false', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: '__contactType', operator: 'notEqual', value: 'customer' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, [virtualCol]);
+    assert.deepEqual(result, [{ fieldName: 'customer', operator: 'equals', value: false }]);
+  });
+
+  it('operator=notEqual, value=vendor → vendor=false', () => {
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: '__contactType', operator: 'notEqual', value: 'vendor' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, [virtualCol]);
+    assert.deepEqual(result, [{ fieldName: 'vendor', operator: 'equals', value: false }]);
+  });
+
+  it('buildCriteria returning null causes the condition to be skipped', () => {
+    // operator 'iContains' is not handled by the virtual col's buildCriteria → returns null
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: '__contactType', operator: 'iContains', value: 'cust' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, [virtualCol]);
+    // All conditions skipped → null
+    assert.equal(result, null);
+  });
+
+  it('buildCriteria is preferred over default logic for string-type columns with buildCriteria', () => {
+    // A column declared as type='string' but with buildCriteria should still use buildCriteria
+    const customStringCol = {
+      key: 'myField',
+      type: 'string',
+      buildCriteria: () => [{ fieldName: 'overridden', operator: 'equals', value: 'custom' }],
+    };
+    const filter = {
+      rowOperator: 'and',
+      conditions: [{ field: 'myField', operator: 'iContains', value: 'anything' }],
+    };
+    const result = buildAdvancedFilterCriteria(filter, [customStringCol]);
+    // Default string logic would produce iContains on 'myField'; buildCriteria overrides it
+    assert.deepEqual(result, [{ fieldName: 'overridden', operator: 'equals', value: 'custom' }]);
+  });
+
+  it('mixes virtual col result with a regular column in the same AND filter', () => {
+    const regularCol = { key: 'documentNo', type: 'string' };
+    const filter = {
+      rowOperator: 'and',
+      conditions: [
+        { field: '__contactType', operator: 'equals', value: 'customer' },
+        { field: 'documentNo', operator: 'iContains', value: 'ORD' },
+      ],
+    };
+    const result = buildAdvancedFilterCriteria(filter, [virtualCol, regularCol]);
+    assert.deepEqual(result, [
+      { fieldName: 'customer', operator: 'equals', value: true },
+      { fieldName: 'documentNo', operator: 'iContains', value: 'ORD' },
+    ]);
   });
 });

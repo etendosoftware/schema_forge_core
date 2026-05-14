@@ -3,25 +3,26 @@
   "window": {
     "category": "purchases",
     "name": "Purchase Invoice",
+    "sendDocument": {
+      "allowEmail": false
+    },
     "relatedDocuments": true,
     "notesField": "description",
+    "noHeaderBorder": true,
     "menuActions": [
-      {
-        "key": "cancel",
-        "label": "Cancel",
-        "labelKey": "cancel",
-        "destructive": true,
-        "visibleWhenStatus": "CO"
-      },
       {
         "key": "reactivate",
         "label": "Reactivate",
         "labelKey": "reactivate",
         "visibleWhenStatus": "CO",
         "documentAction": "RE",
-        "successKey": "actionCompleted"
+        "successKey": "reactivated"
       }
     ],
+    "customComponents": {
+      "headerTable": "InvoiceHeaderTable",
+      "bottomSection": "PurchaseInvoiceBottomPanel"
+    },
     "processOverrides": {},
     "draftMode": {
       "enabled": true,
@@ -31,14 +32,28 @@
     },
     "dateFilterKey": "invoiceDate",
     "lineEntityConfig": "invoice",
+    "linesLayout": "inlineEditable",
+    "extraTabs": [
+      {
+        "key": "sif",
+        "labelKey": "sifDataTabs.sectionTitle",
+        "component": "SifTab",
+        "importFrom": "@/windows/custom/shared/SifTab.jsx",
+        "placement": "tab"
+      }
+    ],
     "labelOverrides": {
       "es_ES": {
         "POReference": "Nº documento",
-        "EM_Etgo_Due_Date": "Vencimiento"
+        "OutstandingAmt": "Pendiente de pago",
+        "EM_Etgo_Due_Date": "Vencimiento",
+        "em_etgo_delivery_status": "Estado de entrega"
       },
       "en_US": {
         "POReference": "Document No.",
-        "EM_Etgo_Due_Date": "Due Date"
+        "OutstandingAmt": "Pending Payment",
+        "EM_Etgo_Due_Date": "Due Date",
+        "em_etgo_delivery_status": "Delivery Status"
       }
     }
   },
@@ -52,7 +67,8 @@
           "grid": false,
           "form": false,
           "searchable": true,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "seq": 20
         },
         "transactionDocument": {
           "visibility": "editable",
@@ -123,15 +139,17 @@
           "section": "principal",
           "reference": "PriceList",
           "inputMode": "selector",
-          "readOnlyLogic": "@Processed@='Y'"
+          "readOnlyLogic": "@Processed@='Y'",
+          "seq": 70
         },
         "orderReference": {
           "visibility": "editable",
           "section": "principal",
           "grid": true,
           "gridOrder": 2,
+          "form": true,
           "searchable": true,
-          "readOnlyLogic": "@Processed@='Y'",
+          "readOnlyLogic": null,
           "seq": 20
         },
         "taxDate": {
@@ -249,6 +267,12 @@
           "form": false,
           "searchable": true
         },
+        "eTGODeliveryStatus": {
+          "visibility": "readOnly",
+          "grid": true,
+          "gridOrder": 8,
+          "form": false
+        },
         "dueAmount": {
           "visibility": "readOnly",
           "form": false,
@@ -326,6 +350,82 @@
         },
         "etgoTotalDiscount": {
           "visibility": "editable",
+          "form": false
+        },
+        "aeatsiiClaveTipoFc": {
+          "visibility": "editable",
+          "form": false
+        },
+        "aeatsiiPurDescription": {
+          "visibility": "editable",
+          "form": false
+        },
+        "aeatsiiDescripcionSii": {
+          "visibility": "editable",
+          "form": false
+        },
+        "aeatsiiCauseExemption": {
+          "visibility": "editable",
+          "form": false
+        },
+        "aeatsiiIsauthorization": {
+          "visibility": "editable",
+          "form": false
+        },
+        "aeatsiiIssent": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "aeatsiiEstado": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "etsgDateOperation": {
+          "visibility": "editable",
+          "form": false
+        },
+        "aeatsiiFechaRegCont": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "aeatsiiEjercicio": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "aeatsiiPeriodo": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "tbaiIssent": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "etvfacInvoiceStatus": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "etvfacSentToVerifac": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "etvfacDateIssue": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "etvfacHash": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "etvfacQRURL": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "etvfacIssueDescription": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "cdigoCSV": {
+          "visibility": "readOnly",
           "form": false
         }
       }

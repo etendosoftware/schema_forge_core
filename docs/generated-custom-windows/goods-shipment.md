@@ -9,7 +9,6 @@ Use this window to register and complete outbound customer shipments. The functi
 - Create or review a shipment header with warehouse, customer, delivery address, movement date, status (rendered as a status badge, not a dot indicator), and invoicing state.
 - Maintain shipment lines that represent the delivered products and quantities for the selected shipment.
 - Complete a draft shipment when it is ready to be executed.
-- Cancel a completed shipment from the detail view when reversal is required.
 - Create a draft sales invoice from one completed shipment or from multiple completed shipments when they are invoiceable together.
 - Start a return flow from a completed shipment so the user can select shipped lines and quantities to send back through the return process.
 - Open related downstream or upstream documents from the shipment, especially the linked sales order and the invoices created from that order.
@@ -22,6 +21,8 @@ Use this window to register and complete outbound customer shipments. The functi
 - Visibility: visible in the Sales menu and not marked hidden in `tools/app-shell/src/menu.json`.
 - Implementation type: custom route entry in `tools/app-shell/src/windows/registry.js` that loads a generated `GoodsShipmentPage` plus shipment-specific custom actions (`GoodsShipmentActions`, `BulkInvoiceFromShipment`, `RelatedDocuments`).
 - Window shape: master-child window. The header entity is `goodsShipment` and the child entity is `goodsShipmentLine`.
+- An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
+- Lines tab layout: this window uses `window.linesLayout = "inlineEditable"`. Rows render at 40 px with pencil and trash hover-action icons on the right; clicking pencil flips the row into inline edit; trash removes the row after confirmation. When the add-row form is open, existing rows stay in `InlineLinesPanel` so column widths remain stable; the form renders in a header-hidden `DataTable` below that handles callouts, selectors, and focus. Clicking "Añadir línea" while a form is already open saves the current line and opens a fresh form scrolled into view. See `docs/ui-customization.md` section 13 for the full reference.
 
 ## Reactive behavior and dependencies
 
@@ -43,7 +44,6 @@ Use this window to register and complete outbound customer shipments. The functi
 - Batch invoice creation is clearly implemented as a draft-invoice flow, but current evidence only proves source shape and endpoint usage, not a browser-tested logistics scenario. It should be treated as supported-by-code with limited automated proof.
 - The documented shipment-to-invoice relationship is order-centric: the related-documents tab resolves invoices through the linked sales order, not by directly querying invoices from the shipment id. If the business expects shipment-specific invoice traceability independent of the order link, that remains an open ambiguity.
 - The top-bar and list invoicing logic check a `completelyInvoiced` flag in custom components, while the contract and generated fields expose the frontend field as `invoiced` / `Iscompletelyinvoiced`. The runtime payload may normalize both names, but this is not explicit in current evidence, so the exact gating behavior for already invoiced shipments remains an implementation ambiguity.
-- The detail view exposes a destructive `Cancel` action placeholder in the generated page definition, but the current visible evidence here does not prove the end-to-end cancellation behavior beyond menu-action presence and status visibility.
 
 ## Manual verification
 
@@ -59,6 +59,7 @@ Use this window to register and complete outbound customer shipments. The functi
 10. Attempt the return flow on a completed shipment and verify whether the backend actually completes the return creation; if it fails, record it as the current functional gap.
 11. Select two or more draft shipments from the list and confirm the bulk-complete action is available. Trigger it and verify all selected shipments move to completed status and a result toast appears.
 12. Open the Send Email modal from the topbar and confirm: the `Para` field is pre-filled with the business partner's email when one is registered in `EM_Etgo_Email`; the field is empty (showing the "no email found" hint) when none is registered; and the modal title reads the translated document name in the active UI language.
+13. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 
@@ -71,3 +72,4 @@ Use this window to register and complete outbound customer shipments. The functi
 - `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the bulk-complete component (CO only, via `buildInOutActions`) mounted in the list selection bar for goods shipments.
 - There is no dedicated browser E2E or interaction test in the current worktree proving the full shipment execution, invoicing, or return flow end to end.
 - `artifacts/goods-shipment/custom/GoodsShipmentActions.jsx` proves the Send Email modal is wired with `bPartnerId` and `apiBaseUrl` so the recipient email is resolved from the contacts spec at open time, and `documentType` is translated via `useMenuLabel()`.
+- The generated `GoodsShipmentPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `M_InOut` AD table.- **ETP-3995 — Related Documents tab i18n**: The generated page file now uses `labelKey: 'relatedDocuments'` in the `customTabs` prop instead of a hardcoded `label: 'Related Documents'` string, so the tab title renders via the active UI language (e.g. "Documentos relacionados" in Spanish) regardless of the browser locale.

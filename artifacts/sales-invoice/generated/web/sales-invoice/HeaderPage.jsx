@@ -7,6 +7,8 @@ import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
+import SifTab from '@/windows/custom/shared/SifTab.jsx';
 import InvoiceBottomPanel from '../../../custom/InvoiceBottomPanel';
 import InvoiceTopbarExtra from '../../../custom/InvoiceTopbarExtra';
 import catalogs from './mockCatalogs';
@@ -15,11 +17,15 @@ import catalogs from './mockCatalogs';
 const breadcrumb = 'Sales / Sales Invoice';
 
 const labelOverrides = {
-  "en_US": {
-    "EM_Etgo_Due_Date": "Due Date"
-  },
   "es_ES": {
-    "EM_Etgo_Due_Date": "Vencimiento"
+    "OutstandingAmt": "Pendiente de pago",
+    "EM_Etgo_Due_Date": "Vencimiento",
+    "em_etgo_delivery_status": "Estado de entrega"
+  },
+  "en_US": {
+    "OutstandingAmt": "Pending Payment",
+    "EM_Etgo_Due_Date": "Due Date",
+    "em_etgo_delivery_status": "Delivery Status"
   }
 };
 
@@ -52,6 +58,10 @@ const draftMode = {
   "label": "Confirm"
 };
 // @sf-generated-end draftMode:header
+
+// @sf-generated-start requiredHeaderFields:header
+const requiredHeaderFields = ['documentNo', 'invoiceDate', 'businessPartner', 'partnerAddress', 'paymentTerms', 'paymentMethod', 'grandTotalAmount', 'summedLineAmount', 'priceList'];
+// @sf-generated-end requiredHeaderFields:header
 
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
@@ -121,6 +131,14 @@ export const api = {
   "selectors": [
     {
       "entity": "header",
+      "field": "adOrgId",
+      "column": "AD_Org_ID",
+      "reference": "Org",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/header/selectors/adOrgId"
+    },
+    {
+      "entity": "header",
       "field": "businessPartner",
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
@@ -166,6 +184,22 @@ export const api = {
       "reference": "PriceList",
       "inputMode": "selector",
       "url": "/sws/neo/sales-invoice/header/selectors/priceList"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiDescription",
+      "column": "EM_Aeatsii_Description_ID",
+      "reference": "aeatsii_description",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/header/selectors/aeatsiiDescription"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiCauseExemption",
+      "column": "EM_Aeatsii_Cause_Exemption_ID",
+      "reference": "aeatsii_cause_exemption",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/header/selectors/aeatsiiCauseExemption"
     },
     {
       "entity": "lines",
@@ -407,11 +441,15 @@ export const api = {
     "category": "sales"
   },
   "labelOverrides": {
-    "en_US": {
-      "EM_Etgo_Due_Date": "Due Date"
-    },
     "es_ES": {
-      "EM_Etgo_Due_Date": "Vencimiento"
+      "OutstandingAmt": "Pendiente de pago",
+      "EM_Etgo_Due_Date": "Vencimiento",
+      "em_etgo_delivery_status": "Estado de entrega"
+    },
+    "en_US": {
+      "OutstandingAmt": "Pending Payment",
+      "EM_Etgo_Due_Date": "Due Date",
+      "em_etgo_delivery_status": "Delivery Status"
     }
   }
 };
@@ -440,19 +478,21 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       api={api}
         hideDeleteWhenComplete
         hidePrint
+        noHeaderBorder
         notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Invoice", config: {} } }, { key: 'sif', labelKey: 'sifDataTabs.sectionTitle', Component: SifTab, placement: 'tab' }]}
         bottomSection={InvoiceBottomPanel}
         topbarRight={InvoiceTopbarExtra}
         menuActions={({ status }) => [
-          { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
-          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', labelKey: 'cancel', onClick: () => {}, },
-          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
+          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'reactivated', documentAction: 'RE',  }
         ]}
         draftMode={draftMode}
+        requiredHeaderFields={requiredHeaderFields}
         salesTheme
         labelOverrides={labelOverrides}
         lineConfig={INVOICE_LINE_CONFIG}
+        linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -469,6 +509,8 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       dateFilterKey="invoiceDate"
       hidePrint
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

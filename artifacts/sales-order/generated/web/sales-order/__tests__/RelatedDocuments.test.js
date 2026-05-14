@@ -5,7 +5,8 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const src = readFileSync(join(__dirname, '..', 'RelatedDocuments.jsx'), 'utf8');
+// The component lives in the custom/ directory, not generated/
+const src = readFileSync(join(__dirname, '..', '..', '..', '..', 'custom', 'RelatedDocuments.jsx'), 'utf8');
 
 describe('RelatedDocuments', () => {
   it('exports a default function component', () => {
@@ -13,31 +14,31 @@ describe('RelatedDocuments', () => {
   });
 
   it('defines RELATED_SPECS with goods-shipment and sales-invoice', () => {
-    assert.match(src, /specName:\s*'goods-shipment'/);
-    assert.match(src, /specName:\s*'sales-invoice'/);
+    assert.match(src, /key:\s*'goods-shipment'/);
+    assert.match(src, /key:\s*'sales-invoice'/);
   });
 
-  it('uses criteria-based filtering (not simple query params)', () => {
-    assert.match(src, /fieldName.*operator.*equals/);
-    assert.match(src, /URLSearchParams.*criteria/);
+  it('uses fetchByCriteria for shipments', () => {
+    assert.match(src, /fetchByCriteria/);
+    assert.match(src, /goodsShipment/);
   });
 
-  it('fetches payments via paymentPlan → paymentDetails chain', () => {
+  it('fetches payments via paymentPlan and paymentDetails chain', () => {
     assert.match(src, /paymentPlan/);
     assert.match(src, /paymentDetails/);
   });
 
-  it('renders nothing when all sections are empty', () => {
-    assert.match(src, /sections\.length === 0.*return null/s);
+  it('always renders through RelatedDocumentsShell (empty state handled by shell)', () => {
+    assert.doesNotMatch(src, /chips\.length === 0/);
+    assert.match(src, /RelatedDocumentsShell/);
   });
 
   it('uses correct entity names (camelCase for NEO)', () => {
-    assert.match(src, /entityName:\s*'goodsShipment'/);
-    assert.match(src, /entityName:\s*'invoice'/);
+    assert.match(src, /goodsShipment/);
     assert.match(src, /finPayment/);
   });
 
-  it('strips spec name from apiBaseUrl to build neoBase', () => {
-    assert.match(src, /replace\(\/\\\/\[/);
+  it('uses neoBase helper to build base URL', () => {
+    assert.match(src, /neoBase/);
   });
 });

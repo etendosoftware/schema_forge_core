@@ -116,7 +116,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { formatCurrency } from '@/lib/formatCurrency';
 
 // Context: component without a document record (sidebar, KPI card, modal)
-export default function MyComponent({ recordId, token, apiBaseUrl }) {
+export default function MyComponent({ recordId, apiBaseUrl }) {
   const orgCurrency = useCurrency() ?? 'USD';
 
   return (
@@ -136,6 +136,23 @@ return (
 ```
 
 `useCurrency()` returns `null` while the session is being resolved on first load. Always coalesce with `?? 'USD'` so that `formatCurrency` always receives a valid string.
+
+### Currency in the product selector (`ProductSearchDrawer`)
+
+`ProductSearchDrawer` resolves currency through `selectorContext.currency`, which is injected by `DetailView` from the active document record (`currency$_identifier`). This means the product prices shown in the drawer always reflect the document's currency, not a hardcoded value.
+
+**Cascade used by the drawer:**
+1. `selectorContext.currency` — document currency, forwarded by `DetailView`
+2. `useCurrency()` — org session currency (fallback when no document is loaded)
+3. `.toFixed(2)` — raw number only if no currency is available at all
+
+When triggering the drawer from a custom component (outside of DetailView), pass the document currency explicitly:
+```jsx
+<ProductSearchDrawer
+  selectorContext={{ currency: documentCurrency, ...otherContext }}
+  ...
+/>
+```
 
 ### `CurrencyProvider` placement
 

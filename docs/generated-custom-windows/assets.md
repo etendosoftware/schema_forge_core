@@ -24,6 +24,7 @@ The Assets window should let a finance user register fixed assets, define how ea
 - Implementation type: generated window route with custom detail surfaces layered into the generated page (`AssetsConfigPanel`, `AssetsAmortizationPanel`, `AssetsSidebar`).
 - Window shape: master-child. The master entity is `assets`; the child surfaces are `amortizationLine` and `assetAcct`.
 - Detail layout: the detail page uses a sidebar layout, exposes an **Overview** tab plus a **Depreciation Setup** tab, and hides print, more-menu, more-details, and list-filter chrome.
+- An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
 - List behavior: the list still exposes supported filters in the contract (`searchKey`, `name`, `assetCategory`, `depreciate`, `fullyDepreciated`), but the visible list-filter UI is intentionally hidden in the shell.
 
 ## Reactive behavior and dependencies
@@ -66,6 +67,7 @@ The Assets window should let a finance user register fixed assets, define how ea
 8. Open the **Asset Amortization** child surface and confirm line ordering follows sequence number, with processed rows becoming non-editable.
 9. Open the **Accounting** child surface and confirm the record exposes selectors for general ledger, accumulated depreciation, and depreciation accounts.
 10. If amortization lines already exist, confirm the asset currency can no longer be edited.
+11. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 
@@ -83,3 +85,12 @@ The Assets window should let a finance user register fixed assets, define how ea
 - `tools/app-shell/src/windows/custom/assets/AssetsAmortizationPanel.jsx` fetches amortization lines by `parentId`, refreshes on `neo:processSuccess`, and shows planned totals/status. Monetary amounts in the amortization table and footer total are formatted using the org's configured currency via `useCurrency()` and `formatCurrency()`.
 - `tools/app-shell/src/windows/custom/assets/AssetsSidebar.jsx` derives depreciation progress from the asset header plus amortization lines. The asset value and planned depreciation metric cards display amounts using the org's configured currency via `useCurrency()` and `formatCurrency()`.
 - No assets-specific browser or component test file was found in `tools/app-shell/test` or `tools/app-shell/src/**/__tests__`, so the automated evidence is structural/code-backed rather than end-to-end behavioral proof.
+- The generated `AssetsPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `A_Asset` AD table.
+
+## Pipeline regeneration — ETP-3908
+
+Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functional changes to this window.
+
+- `linesLayout: "classic"` is now written explicitly to `contract.json`; previously the classic layout was the implicit default.
+- `requiredHeaderFields` is now emitted in the page component; this window has no required header fields so the array is empty and there is no behavioral change.
+- LinesTable template updated in ETP-3908 to include the inline-editable add-row alignment fix. This window uses `linesLayout: "classic"` so the new template branch is dead code here — no behavioral change.

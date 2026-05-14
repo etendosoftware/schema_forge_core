@@ -1,4 +1,6 @@
-function percentPill(label, value) {
+import { useUI } from '@/i18n';
+
+function PercentPill({ label, value }) {
   const n = typeof value === 'string' ? parseFloat(value) : (value ?? 0);
   const pct = Math.round(n);
   const full = pct >= 100;
@@ -20,12 +22,13 @@ function percentPill(label, value) {
 }
 
 export default function PurchaseOrderTopbar({ data }) {
+  const ui = useUI();
   if (!data || data.documentStatus !== 'CO') return null;
 
   return (
     <>
-      {percentPill('Delivery Status', data.deliveryStatusPurchase)}
-      {percentPill('Invoice Status', data.invoiceStatus)}
+      <PercentPill label={ui('purchaseOrder.topbar.deliveryStatus')} value={data.deliveryStatusPurchase} />
+      <PercentPill label={ui('purchaseOrder.topbar.invoiceStatus')} value={data.invoiceStatus} />
     </>
   );
 }

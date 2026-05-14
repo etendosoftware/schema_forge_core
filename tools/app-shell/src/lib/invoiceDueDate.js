@@ -18,9 +18,7 @@ const DOT_COLOR = {
   ok: '#8A8AA3',       // gray-400
 };
 
-const TEXT_COLOR = {
-  overdue: '#D50B3E',  // red-700 — only overdue with balance reinforces with red text
-};
+const TEXT_COLOR = {};
 
 /**
  * Resolve the due-date state for an invoice row.

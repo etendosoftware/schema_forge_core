@@ -4,6 +4,7 @@ import UnitOfMeasureTable from './UnitOfMeasureTable';
 import UnitOfMeasureForm from './UnitOfMeasureForm';
 import ConversionTable from './ConversionTable';
 import ConversionForm from './ConversionForm';
+import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 
 
@@ -31,6 +32,10 @@ const processes = [
 // @sf-generated-start draftMode:unitOfMeasure
 const draftMode = null;
 // @sf-generated-end draftMode:unitOfMeasure
+
+// @sf-generated-start requiredHeaderFields:unitOfMeasure
+const requiredHeaderFields = ['eDICode', 'name', 'standardPrecision', 'costingPrecision', 'default'];
+// @sf-generated-end requiredHeaderFields:unitOfMeasure
 
 // @sf-generated-start addLineFields:conversion
 const addLineFields = {
@@ -132,6 +137,8 @@ export default function UnitOfMeasurePage({ windowName, recordId, ...props }) {
       api={api}
         hidePrint
         hideMoreMenu
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_UOM", config: {} } }]}
+        requiredHeaderFields={requiredHeaderFields}
         {...props}
       />
     );
@@ -147,6 +154,7 @@ export default function UnitOfMeasurePage({ windowName, recordId, ...props }) {
       api={api}
       hidePrint
       hideMoreMenu
+      rowQuickActions={{}}
       {...props}
     />
   );

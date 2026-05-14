@@ -1,39 +1,28 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
+import SendToSifButton from '../shared/SendToSifButton.jsx';
 import InvoicePaymentModal from '../shared/InvoicePaymentModal.jsx';
+import CloneButton from '../shared/CloneButton.jsx';
 import { useUI } from '@/i18n';
 import { formatCurrency } from '@/lib/formatCurrency';
-
-function CopyIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-    </svg>
-  );
-}
-
-const btnCloneStyle = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 5,
-  padding: '5px 12px',
-  borderRadius: 6,
-  fontSize: 13,
-  fontWeight: 500,
-  border: '1px solid #D1D5DB',
-  background: 'transparent',
-  color: '#374151',
-  cursor: 'pointer',
-};
 
 export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUrl, onRefresh }) {
   const navigate = useNavigate();
   const ui = useUI();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showClone, setShowClone] = useState(false);
+
+  useEffect(() => {
+    const handleInvoiceUpdated = (event) => {
+      if (String(event.detail?.invoiceId) !== String(recordId)) return;
+      window.location.reload();
+    };
+
+    window.addEventListener('purchase-invoice:invoice-updated', handleInvoiceUpdated);
+    return () => window.removeEventListener('purchase-invoice:invoice-updated', handleInvoiceUpdated);
+  }, [recordId]);
 
   const headers = useMemo(() => ({
     Authorization: `Bearer ${token}`,
@@ -63,9 +52,14 @@ export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUr
     <>
       {recordId && (
         <>
-          <button type="button" onClick={() => setShowClone(true)} style={btnCloneStyle}>
-            <CopyIcon />{ui('cloneOrderBtn')}
-          </button>
+          <CloneButton onClick={() => setShowClone(true)} title={ui('cloneOrderBtn')} />
+          <SendToSifButton
+            data={data}
+            recordId={recordId}
+            token={token}
+            apiBaseUrl={apiBaseUrl}
+            status={data?.documentStatus}
+          />
           {showClone && createPortal(
             <CloneOrderModal
               recordId={recordId}
@@ -120,7 +114,6 @@ export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUr
           invoiceId={data.id}
           invoiceData={data}
           specName="purchase-invoice"
-          token={token}
           apiBaseUrl={apiBaseUrl}
           onClose={handleModalClose}
         />

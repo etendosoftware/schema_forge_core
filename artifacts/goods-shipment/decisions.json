@@ -10,16 +10,11 @@
     "hidePrint": true,
     "customComponents": {
       "topbarRight": "GoodsShipmentActions",
-      "bulkActions": "BulkInvoiceFromShipment"
+      "bulkActions": "BulkInvoiceFromShipment",
+      "bottomSection": "GoodsShipmentBottomPanel"
     },
-    "menuActions": [
-      {
-        "key": "cancel",
-        "label": "Cancel",
-        "destructive": true,
-        "visibleWhenStatus": "CO"
-      }
-    ],
+    "linesLayout": "inlineEditable",
+    "menuActions": [],
     "processOverrides": {
       "documentAction": {
         "label": "Complete",

@@ -56,7 +56,7 @@ function PopupSearchInput({ field, value, displayValue, onChange, label, selecto
         type="button"
         onClick={() => setOpen(true)}
         data-testid={`field-${field.key}`}
-        className="w-full h-10 text-sm rounded-md border border-input bg-background px-3 text-left flex items-center gap-2 hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
+        className="w-full h-10 text-sm rounded-lg border border-[#D1D4DB] bg-background p-2 text-left flex items-center gap-2 shadow-[0px_1px_2px_rgba(18,18,23,0.05)] hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
       >
         <Search className="h-4 w-4 text-muted-foreground shrink-0" />
         {displayText ? (
@@ -195,6 +195,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
   const createBtn = canCreate ? (
     <button
       type="button"
+      data-testid={`action-create-${field.key}`}
       className="w-full text-left px-3 py-2 text-sm font-medium hover:bg-blue-50 border-b border-border/40 transition-colors"
       style={{ color: '#202452' }}
       onMouseDown={e => { e.preventDefault(); setOpen(false); createCtx.onOpen(query, handleSelect); }}
@@ -263,7 +264,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
             <button
               key={opt.id}
               type="button"
-              data-testid={`option-${opt.id}`}
+              data-testid={`option-${field.key}-${opt.id}`}
               className="w-full text-left px-3 py-2 text-sm hover:bg-muted/50 cursor-pointer"
               onMouseDown={() => handleSelect(opt)}
             >
@@ -403,7 +404,7 @@ function LookupFormField({ field, value, displayValue, selectorUrl, selectorCont
         type="button"
         data-testid={`field-${field.key}`}
         onClick={() => setOpen(true)}
-        className="w-full flex items-center gap-2 h-9 rounded-md border border-input bg-background px-3 text-sm text-left hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
+        className="w-full flex items-center gap-2 h-10 rounded-lg border border-[#D1D4DB] bg-background p-2 text-sm text-left shadow-[0px_1px_2px_rgba(18,18,23,0.05)] hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
       >
         <Search className="h-4 w-4 text-muted-foreground shrink-0" />
         {display ? (
@@ -474,16 +475,22 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   // tabs where visibility depends on a sibling checkbox value (no server round-trip needed).
   displayFields = displayFields.filter(f => evalDisplayLogic(f, data));
 
+  // Stable ID unique to this EntityForm instance. Used as the Map key in useEntity's
+  // formFieldsRef so multiple EntityForms on the same screen accumulate rather than
+  // overwrite each other.
+  const formId = React.useId();
+
   // Register only the currently visible fields with useEntity so handleSave validates
   // what the user can actually see and fill — not hidden fields controlled by displayLogic.
+  // Cleanup removes this form's entry when the component unmounts (e.g. conditional blocks).
   React.useEffect(() => {
-    if (typeof registerFields === 'function') {
-      registerFields(displayFields);
-    }
+    if (typeof registerFields !== 'function') return;
+    registerFields(displayFields, formId);
+    return () => registerFields(null, formId);
   // displayFields is recomputed on every render; the effect intentionally re-runs
   // whenever visibility changes so the validation set stays in sync with the form.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [registerFields, data, displayLogic, fields, excludeFields, section, layout]);
+  }, [registerFields, formId, data, displayLogic, fields, excludeFields, section, layout]);
 
   if (displayFields.length === 0) return null;
 
@@ -512,13 +519,19 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     const displayValue = f.type === 'number' && isReadOnly && Number.isFinite(Number(rawDisplayValue))
       ? parseFloat(Number(rawDisplayValue).toFixed(10))
       : rawDisplayValue;
-    // Shared read-only rendering for FK-style fields (dependent, selector, search)
+    // Shared read-only rendering for FK-style fields (dependent, selector, search).
     const renderReadOnlyFk = () => (
-      <div key={f.key} className="space-y-1.5">
+      <div key={f.key} data-testid={`field-${f.key}`} className="space-y-1.5">
         <Label htmlFor={f.key} className="text-sm text-muted-foreground font-medium">
           {label}
         </Label>
-        <Input value={resolveIdentifier(data, f.key) || data?.[f.key] || ''} disabled className="bg-muted/50" />
+        <Input
+          id={f.key}
+          name={f.key}
+          value={resolveIdentifier(data, f.key) || data?.[f.key] || ''}
+          disabled
+          className="bg-muted/50"
+        />
       </div>
     );
     if (f.type === 'checkbox') {
@@ -815,7 +828,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
             onBlur={() => onFieldBlur?.(f.key)}
             disabled={isReadOnly}
             className={[
-              'flex w-full rounded-md border border-input px-3 py-2 text-sm shadow-sm',
+              'flex w-full rounded-lg border border-[#D1D4DB] p-2 text-sm shadow-[0px_1px_2px_rgba(18,18,23,0.05)]',
               'placeholder:text-muted-foreground resize-none flex-1 min-h-[96px]',
               'focus:outline-none focus:ring-2 focus:ring-primary',
               isReadOnly ? 'bg-muted/50 cursor-default' : 'bg-background',

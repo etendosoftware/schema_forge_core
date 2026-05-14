@@ -3,6 +3,7 @@ import { useUI } from '@/i18n';
 import { useLocaleSwitch } from '@/i18n';
 import { formatDashboardAmount, localeFromUi } from '@/lib/dashboardNumberFormat.js';
 import { createDashboardNavigation, resolveDashboardNavigation } from '@/lib/dashboardNavigation.js';
+import { DashboardCard, DashboardEmptyState } from './_shared';
 
 function CountBadge({ count }) {
   return (
@@ -47,75 +48,13 @@ export function CollectionsPaymentsCard({ pendingAmounts = {}, currencyLabel = '
   ) || '/purchase-invoice?filter=overdue';
 
   return (
-    <div
-      className="overflow-hidden bg-white"
-      style={{
-        boxSizing: 'border-box',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        padding: '0px',
-        width: '100%',
-        height: '100%',
-        border: '1px solid #E8EAEF',
-        borderRadius: '8px',
-      }}
-    >
-      <div
-        style={{
-          boxSizing: 'border-box',
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          padding: '8px 12px',
-          gap: '16px',
-          width: '100%',
-          height: '48px',
-          background: '#F5F7F9',
-          borderBottom: '1px solid #E8EAEF',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            padding: '0px',
-            gap: '10px',
-            width: 'auto',
-            height: '16px',
-          }}
-        >
-          <span
-            style={{
-              height: '16px',
-              fontFamily: 'Inter',
-              fontStyle: 'normal',
-              fontWeight: 500,
-              fontSize: '12px',
-              lineHeight: '16px',
-              color: '#282833',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {ui('collectionsPaymentsTitle')}
-          </span>
-        </div>
-      </div>
-      
+    <DashboardCard title={ui('collectionsPaymentsTitle')}>
       {hasNoData ? (
-        <div className="flex-1 flex items-center justify-center w-full">
-          <div className="flex flex-col items-center" style={{ gap: '12px' }}>
-            <div className="flex flex-col items-center" style={{ padding: '0px 20px', gap: '4px' }}>
-              <p style={{ fontSize: '20px', fontWeight: 600, lineHeight: '28px', textAlign: 'center', color: '#121217' }}>
-                {ui('collectionsPaymentsEmptyTitle')}
-              </p>
-              <p style={{ fontSize: '12px', fontWeight: 400, lineHeight: '16px', textAlign: 'center', color: '#282833' }}>
-                {ui('collectionsPaymentsEmptySubtitle')}
-              </p>
-            </div>
-          </div>
-        </div>
+        <DashboardEmptyState
+          title={ui('collectionsPaymentsEmptyTitle')}
+          subtitle={ui('collectionsPaymentsEmptySubtitle')}
+          textPadding="0px 20px"
+        />
       ) : (
       <div
         style={{
@@ -340,6 +279,6 @@ export function CollectionsPaymentsCard({ pendingAmounts = {}, currencyLabel = '
         </Link>
       </div>
       )}
-    </div>
+    </DashboardCard>
   );
 }

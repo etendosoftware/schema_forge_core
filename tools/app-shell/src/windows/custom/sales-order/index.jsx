@@ -1,11 +1,15 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useUI } from '@/i18n';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
+import { useRowDelete } from '@/hooks/useRowDelete';
+import { buildPendingDeliveryFilter } from '../shared/pendingDeliveryFilter.js';
 import GeneratedApp from '@generated/sales-order/generated/web/sales-order/index.jsx';
 import HeaderTable from '@generated/sales-order/generated/web/sales-order/HeaderTable';
 import OrderReactivateBulkAction from '@generated/sales-order/custom/OrderReactivateBulkAction';
 import BulkOrderMoreMenu from '@generated/sales-order/custom/BulkOrderMoreMenu';
+import { ConfirmModal, ConfirmResultModal, ManageDocsLauncher } from '@generated/sales-order/custom/OrderCreateInvoice';
 import { ListView } from '@/components/contract-ui';
 
 const LIST_COLUMNS = [
@@ -14,8 +18,8 @@ const LIST_COLUMNS = [
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner' },
   { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
-  { key: 'deliveryStatus', column: 'DeliveryStatus', type: 'percent', label: 'Shipment Status' },
   { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'percent', label: 'Invoice Status' },
+  { key: 'deliveryStatus', column: 'DeliveryStatus', type: 'percent', label: 'Shipment Status' },
 ];
 
 function CustomHeaderTable(props) {
@@ -27,17 +31,20 @@ import { CreateContactContext } from '@/components/contract-ui/CreateContactCont
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 import LinesEmptyState from '@/components/contract-ui/LinesEmptyState.jsx';
 
-// Mirrors artifacts/sales-order/generated/web/sales-order/HeaderPage.jsx.
-// Kept in sync manually because the generator does not expose labelOverrides yet,
-// and the list view bulkActions prop is hand-rolled here (drift with decisions.json).
+// Mirrors artifacts/sales-order/decisions.json → window.labelOverrides.
+// The list view here bypasses the generated HeaderPage and renders ListView
+// directly, so the generator-emitted labelOverrides do not reach it. Mirror
+// here until the wrapper consumes the spec's labelOverrides at runtime.
 const LABEL_OVERRIDES = {
   es_ES: {
     C_BPartner_ID: 'Contacto',
     DeliveryStatus: 'Estado de entrega',
+    InvoiceStatus: 'Estado de facturación',
   },
   en_US: {
     C_BPartner_ID: 'Contact',
     DeliveryStatus: 'Delivery Status',
+    InvoiceStatus: 'Invoicing Status',
   },
 };
 
@@ -51,9 +58,78 @@ const draftModeWithModal = {
 
 export default function SalesOrderWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
   useBulkActionToast();
+  const ui = useUI();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [cloneTargets, setCloneTargets] = useState(null);
+  const [confirmRow, setConfirmRow] = useState(null);
+  const [confirmedDocs, setConfirmedDocs] = useState(null);
+  const [manageRow, setManageRow] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const { requestDelete, deleteDialog } = useRowDelete({
+    apiBaseUrl,
+    entity: 'header',
+    token,
+    onSuccess: () => setRefreshKey(k => k + 1),
+  });
+
+  const rowQuickActions = useMemo(() => ({
+    enabled: true,
+    editMode: 'navigate',
+    statusField: 'documentStatus',
+    actions: {
+      edit: { show: true },
+      duplicate: { show: true },
+      delete: { show: true },
+    },
+    onEdit: (row) => navigate(`/${windowName}/${row.id}`),
+    onClone: (row) => setCloneTargets([row]),
+    onDelete: requestDelete,
+    // Row kebab mirrors the detail page: Confirm for drafts (opens the same
+    // ConfirmModal once the detail mounts via state.autoOpenConfirm), and
+    // Reactivate for completed orders without linked documents — same gate as
+    // the detail's menuActions.
+    menuActions: ({ row, status }) => {
+      // For completed orders, only surface "Gestionar..." when there is still
+      // pending shipment or invoice — same criterion used by OrderCreateInvoice's
+      // topbar button. We use the row's deliveryStatus / invoiceStatus percent
+      // columns to avoid an extra fetch per row.
+      const delivery = Number(row?.deliveryStatus ?? 100);
+      const invoice  = Number(row?.invoiceStatus  ?? 100);
+      const needsShip    = status === 'CO' && delivery < 100;
+      const needsInvoice = status === 'CO' && invoice  < 100;
+      let manageLabelKey = null;
+      if      (needsShip && needsInvoice) manageLabelKey = 'soManageShipmentAndInvoice';
+      else if (needsShip)                 manageLabelKey = 'soManageShipment';
+      else if (needsInvoice)              manageLabelKey = 'soManageInvoice';
+      return [
+        {
+          key: 'confirm',
+          label: ui('soConfirmBtn'),
+          visible: status === 'DR',
+          onClick: ({ row: r }) => setConfirmRow(r),
+        },
+        {
+          key: 'manage',
+          label: manageLabelKey ? ui(manageLabelKey) : '',
+          visible: !!manageLabelKey,
+          onClick: ({ row: r }) => setManageRow(r),
+        },
+        {
+          key: 'reactivate',
+          label: ui('reactivate'),
+          labelKey: 'reactivate',
+          successKey: 'reactivated',
+          documentAction: 'RE',
+          visible: status === 'CO' && !row?.hasLinkedDocuments,
+        },
+      ];
+    },
+    onMenuActionExecuted: (action) => {
+      if (action.documentAction) setRefreshKey(k => k + 1);
+    },
+  }), [navigate, windowName, requestDelete, ui]);
 
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
     useCreateContactModal({ apiBaseUrl, token });
@@ -68,7 +144,6 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
           apiBaseUrl={apiBaseUrl}
           draftMode={draftModeWithModal}
           linesEmptyState={LinesEmptyState}
-          addLineGuard={(d) => !!d?.businessPartner}
           {...rest}
         />
         {createContactState && createPortal(
@@ -89,19 +164,8 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
     );
   }
 
-  const docStatus = searchParams.get('DocStatus');
-  const filterParam = searchParams.get('filter');
-  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
-
-  const QUICK_FILTERS = [
-    {
-      label: 'pendingDeliveryOnly',
-      filter: `criteria=${encodeURIComponent(JSON.stringify([
-        { fieldName: 'deliveryStatus', operator: 'lessThan', value: 100 },
-      ]))}`,
-    },
-  ];
-  const initialQuickFilterIndex = filterParam === 'pendingDelivery' ? 0 : null;
+  const { initialColumnFilters, isPendingDelivery, initialAdvancedFilter } =
+    buildPendingDeliveryFilter(searchParams, 'deliveryStatus');
 
   return (
     <>
@@ -113,6 +177,7 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
         breadcrumb="Sales / Sales Order"
         labelOverrides={LABEL_OVERRIDES}
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
+        rowQuickActions={rowQuickActions}
         token={token}
         apiBaseUrl={apiBaseUrl}
         hidePrint
@@ -123,12 +188,13 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
           </>
         )}
         initialColumnFilters={initialColumnFilters}
-        quickFilters={QUICK_FILTERS}
-        initialQuickFilterIndex={initialQuickFilterIndex}
+        initialAdvancedFilter={initialAdvancedFilter}
+        initialColumns={isPendingDelivery ? LIST_COLUMNS : null}
         dateFilterKey="orderDate"
         refreshTrigger={refreshKey}
         {...rest}
       />
+      {deleteDialog}
       {cloneTargets && createPortal(
         <CloneOrderModal
           records={cloneTargets}
@@ -137,6 +203,41 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
           routePrefix="/sales-order/"
           onClose={() => setCloneTargets(null)}
           onCloned={() => setRefreshKey(k => k + 1)}
+        />,
+        document.body,
+      )}
+      {confirmRow && !confirmedDocs && createPortal(
+        <ConfirmModal
+          orderId={confirmRow.id}
+          data={confirmRow}
+          apiBaseUrl={apiBaseUrl}
+          headers={headers}
+          onClose={() => setConfirmRow(null)}
+          onConfirmed={(docs) => setConfirmedDocs(docs)}
+        />,
+        document.body,
+      )}
+      {manageRow && (
+        <ManageDocsLauncher
+          orderId={manageRow.id}
+          data={manageRow}
+          apiBaseUrl={apiBaseUrl}
+          token={token}
+          onClose={() => setManageRow(null)}
+          onCreated={() => { setManageRow(null); setRefreshKey(k => k + 1); }}
+        />
+      )}
+      {confirmedDocs && createPortal(
+        <ConfirmResultModal
+          docs={confirmedDocs}
+          ui={ui}
+          navigate={navigate}
+          currency={confirmRow?.['currency$_identifier'] || ''}
+          onClose={() => {
+            setConfirmedDocs(null);
+            setConfirmRow(null);
+            setRefreshKey(k => k + 1);
+          }}
         />,
         document.body,
       )}

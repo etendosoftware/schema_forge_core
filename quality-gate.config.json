@@ -14,9 +14,9 @@
   "blastRadius": [
     { "pattern": "artifacts/*/decisions.json", "scope": "touched-window" },
     { "pattern": "artifacts/*/contract.json", "scope": "touched-window" },
-    { "pattern": "artifacts/*/custom/**", "scope": "touched-window" },
-    { "pattern": "artifacts/*/generated/**", "scope": "touched-window" },
-    { "pattern": "tools/app-shell/src/windows/custom/*/**", "scope": "touched-window" },
+    { "pattern": "artifacts/*/custom/**", "scope": "touched-window", "excludePatterns": ["artifacts/**/custom/**/__tests__/**", "artifacts/**/custom/**/*.test.js", "artifacts/**/custom/**/*.spec.js"] },
+    { "pattern": "artifacts/*/generated/**", "scope": "touched-window", "excludePatterns": ["artifacts/**/generated/**/__tests__/**", "artifacts/**/generated/**/*.test.js", "artifacts/**/generated/**/*.spec.js"] },
+    { "pattern": "tools/app-shell/src/windows/custom/*/**", "scope": "touched-window", "excludePatterns": ["tools/app-shell/src/windows/custom/**/__tests__/**", "tools/app-shell/src/windows/custom/**/*.test.js", "tools/app-shell/src/windows/custom/**/*.spec.js"] },
     { "pattern": "cli/src/generate-frontend.js", "scope": "all-windows" },
     { "pattern": "cli/src/generate-contract.js", "scope": "all-windows" },
     { "pattern": "cli/src/resolve-curated.js", "scope": "all-windows" },
@@ -37,6 +37,9 @@
       "hiddenContainsGrossUnitPriceAndPriceList": true
     },
     "draftModeReadOnlyLogic": true,
+    "draftModeReadOnlyLogicAllowlist": [
+      "purchase-invoice.header.orderReference"
+    ],
     "notNullRequiresRequired": true,
     "customFormPathRoot": "@/windows/custom/"
   }

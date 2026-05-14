@@ -29,8 +29,8 @@ describe('QuotationTopbarActions', () => {
     assert.match(src, /SendDocumentModal/);
   });
 
-  it('passes documentType Quotation to SendDocumentModal', () => {
-    assert.match(src, /documentType="Quotation"/);
+  it('passes documentType from tMenu to SendDocumentModal', () => {
+    assert.match(src, /documentType=\{tMenu\('Sales Quotation'\)\}/);
   });
 
   it('passes windowName sales-quotation to SendDocumentModal', () => {

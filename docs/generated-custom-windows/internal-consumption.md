@@ -18,6 +18,8 @@ Use this window to register stock consumed inside the organization rather than s
 - **Visibility:** visible from the Inventory menu as **Internal Consumption**.
 - **Implementation type:** generated window with a custom More-menu action component (`InternalConsumptionActions`).
 - **Window shape:** master-child. The header entity is `internalConsumption` and the line entity is `internalConsumptionLine`. The list route opens headers; the record route opens a detail page with child lines.
+- An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
+- Lines tab layout: this window uses `window.linesLayout = "inlineEditable"`. Rows render at 40 px with pencil and trash hover-action icons on the right; clicking pencil flips the row into inline edit; trash removes the row after confirmation. When the add-row form is open, existing rows stay in `InlineLinesPanel` so column widths remain stable; the form renders in a header-hidden `DataTable` below that handles callouts, selectors, and focus. Clicking "Añadir línea" while a form is already open saves the current line and opens a fresh form scrolled into view. See `docs/ui-customization.md` section 13 for the full reference.
 
 ## Reactive behavior and dependencies
 
@@ -46,6 +48,7 @@ Use this window to register stock consumed inside the organization rather than s
 5. After processing, re-open edit mode and confirm Movement Date is no longer editable if the backend marks the record as processed.
 6. Open a voided record, if one exists, and confirm the custom **Process** action is not shown.
 7. If the business expects product-driven UOM updates, change Product on a draft line and verify whether UOM reacts automatically or remains unresolved in the current implementation.
+8. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 
@@ -53,3 +56,4 @@ Use this window to register stock consumed inside the organization rather than s
 - `artifacts/internal-consumption/contract.json` and `artifacts/internal-consumption/generated/web/internal-consumption/InternalConsumptionPage.jsx` show the master-child structure, status field, Draft/Completed/Voided enum, custom menu injection, child selectors, and the `processNow` action endpoint.
 - `artifacts/internal-consumption/generated/web/internal-consumption/InternalConsumptionForm.jsx` and `InternalConsumptionLineForm.jsx` show the visible editable fields, the `movementDate` read-only rule tied to `processed`, the line defaults, and the read-only UOM field.
 - `docs/generated-custom-windows/app-shell-functional-flows.md` documents the shared routed-window behavior and the generic detail flow where child creation posts `parentId` and refreshes both header and children.
+- The generated `InternalConsumptionPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `M_InternalConsumption` AD table.

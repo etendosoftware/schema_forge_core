@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import { toast } from 'sonner';
 import { INVOICE_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
-import HeaderTable from './HeaderTable';
+import HeaderTable from '../../../custom/InvoiceHeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
@@ -15,6 +15,9 @@ import AccountingForm from './AccountingForm';
 import ReversedInvoicesTable from './ReversedInvoicesTable';
 import ReversedInvoicesForm from './ReversedInvoicesForm';
 import RelatedDocuments from '@/windows/custom/purchase-invoice/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
+import SifTab from '@/windows/custom/shared/SifTab.jsx';
+import PurchaseInvoiceBottomPanel from '../../../custom/PurchaseInvoiceBottomPanel';
 import catalogs from './mockCatalogs';
 
 
@@ -23,11 +26,15 @@ const breadcrumb = 'Purchases / Purchase Invoice';
 const labelOverrides = {
   "es_ES": {
     "POReference": "Nº documento",
-    "EM_Etgo_Due_Date": "Vencimiento"
+    "OutstandingAmt": "Pendiente de pago",
+    "EM_Etgo_Due_Date": "Vencimiento",
+    "em_etgo_delivery_status": "Estado de entrega"
   },
   "en_US": {
     "POReference": "Document No.",
-    "EM_Etgo_Due_Date": "Due Date"
+    "OutstandingAmt": "Pending Payment",
+    "EM_Etgo_Due_Date": "Due Date",
+    "em_etgo_delivery_status": "Delivery Status"
   }
 };
 
@@ -58,6 +65,10 @@ const draftMode = {
   "label": "Confirm"
 };
 // @sf-generated-end draftMode:header
+
+// @sf-generated-start requiredHeaderFields:header
+const requiredHeaderFields = ['invoiceDate', 'businessPartner', 'partnerAddress', 'priceList', 'paymentTerms', 'paymentMethod'];
+// @sf-generated-end requiredHeaderFields:header
 
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
@@ -318,6 +329,22 @@ export const api = {
       "reference": "Project",
       "inputMode": "search",
       "url": "/sws/neo/purchase-invoice/header/selectors/project"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiPurDescription",
+      "column": "EM_Aeatsii_Pur_Description_ID",
+      "reference": "aeatsii_description",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/header/selectors/aeatsiiPurDescription"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiCauseExemption",
+      "column": "EM_Aeatsii_Cause_Exemption_ID",
+      "reference": "aeatsii_cause_exemption",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/header/selectors/aeatsiiCauseExemption"
     },
     {
       "entity": "lines",
@@ -807,11 +834,15 @@ export const api = {
   "labelOverrides": {
     "es_ES": {
       "POReference": "Nº documento",
-      "EM_Etgo_Due_Date": "Vencimiento"
+      "OutstandingAmt": "Pendiente de pago",
+      "EM_Etgo_Due_Date": "Vencimiento",
+      "em_etgo_delivery_status": "Estado de entrega"
     },
     "en_US": {
       "POReference": "Document No.",
-      "EM_Etgo_Due_Date": "Due Date"
+      "OutstandingAmt": "Pending Payment",
+      "EM_Etgo_Due_Date": "Due Date",
+      "em_etgo_delivery_status": "Delivery Status"
     }
   }
 };
@@ -844,15 +875,19 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'accounting', label: 'Accounting', Table: AccountingTable, Form: AccountingForm },
           { key: 'reversedInvoices', label: 'Reversed Invoices', Table: ReversedInvoicesTable, Form: ReversedInvoicesForm },
         ]}
+        noHeaderBorder
         notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Invoice", config: {} } }, { key: 'sif', labelKey: 'sifDataTabs.sectionTitle', Component: SifTab, placement: 'tab' }]}
+        bottomSection={PurchaseInvoiceBottomPanel}
         menuActions={({ status }) => [
-          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', labelKey: 'cancel', onClick: () => {}, },
-          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'actionCompleted', documentAction: 'RE',  }
+          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'reactivated', documentAction: 'RE',  }
         ]}
         draftMode={draftMode}
+        requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}
         lineConfig={INVOICE_LINE_CONFIG}
+        linesLayout="inlineEditable"
+        sendDocument={{"enabled":true,"allowEmail":false}}
         {...props}
       />
     );
@@ -868,6 +903,8 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       api={api}
       dateFilterKey="invoiceDate"
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
+      sendDocument={{"enabled":true,"allowEmail":false}}
       {...props}
     />
   );

@@ -1,10 +1,38 @@
 import { useUI } from '@/i18n';
 
-export default function LinesEmptyState({ data, onAddLine, canAddLine = true }) {
+export default function LinesEmptyState({
+  data,
+  onAddLine,
+  canAddLine = true,
+  description,
+  secondaryAction,
+}) {
   const ui = useUI();
-  const isDraft = data?.documentStatus === 'DR';
-
+  const isDraft = !data?.documentStatus || data.documentStatus === 'DR';
   if (!isDraft) return null;
+
+  const primaryButton = canAddLine ? (
+    <button
+      type="button"
+      data-testid="action-add-lines-empty-state"
+      onClick={onAddLine}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5,
+        borderRadius: 8,
+        padding: '6px 14px',
+        fontSize: 13,
+        fontWeight: 500,
+        background: '#18181b',
+        color: '#fff',
+        border: 'none',
+        cursor: 'pointer',
+      }}
+    >
+      + {ui('addLines')}
+    </button>
+  ) : null;
 
   return (
     <div style={{
@@ -16,7 +44,7 @@ export default function LinesEmptyState({ data, onAddLine, canAddLine = true }) 
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-    }}>
+    }} data-testid="lines-empty-state">
       <div style={{
         width: 40,
         height: 40,
@@ -34,33 +62,18 @@ export default function LinesEmptyState({ data, onAddLine, canAddLine = true }) 
           <line x1="8" y1="17" x2="13" y2="17" />
         </svg>
       </div>
-      <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: 4 }}>
+      <span data-testid="lines-empty-state-title" style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: 4 }}>
         {ui('noLinesYet')}
       </span>
-      <span style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 20 }}>
-        {ui('addLinesManually')}
+      <span data-testid="lines-empty-state-description" style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 20 }}>
+        {description ?? ui('addLinesManually')}
       </span>
-      {canAddLine && (
-        <button
-          type="button"
-          onClick={onAddLine}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 5,
-            borderRadius: 8,
-            padding: '6px 14px',
-            fontSize: 13,
-            fontWeight: 500,
-            background: '#18181b',
-            color: '#fff',
-            border: 'none',
-            cursor: 'pointer',
-          }}
-        >
-          + {ui('addLines')}
-        </button>
-      )}
+      {secondaryAction ? (
+        <div style={{ display: 'flex', gap: 8 }}>
+          {primaryButton}
+          {secondaryAction}
+        </div>
+      ) : primaryButton}
     </div>
   );
 }

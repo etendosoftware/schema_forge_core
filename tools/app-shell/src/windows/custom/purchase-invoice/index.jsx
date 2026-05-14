@@ -1,19 +1,18 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
-import { useUI } from '@/i18n';
+import { useUI, useMenuLabel } from '@/i18n';
 import BulkDocumentAction from '@/components/contract-ui/BulkDocumentAction';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
+import { useRowDelete } from '@/hooks/useRowDelete';
 import PurchaseInvoiceHeaderTable from './PurchaseInvoiceHeaderTable.jsx';
 import HeaderPage from '@generated/purchase-invoice/generated/web/purchase-invoice/HeaderPage';
-import InvoiceLineTableCustom from './InvoiceLineTableCustom.jsx';
-import InvoicePreviewModal from '../shared/InvoicePreviewModal.jsx';
+import InvoicePreview from '../shared/InvoicePreview.jsx';
 import PurchaseInvoiceTopbar from './PurchaseInvoiceTopbar.jsx';
-import PurchaseInvoiceBottomPanel from './PurchaseInvoiceBottomPanel.jsx';
 import OcrSidePanel from '../shared/OcrSidePanel.jsx';
-import RelatedDocuments from './RelatedDocuments.jsx';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
+import SendDocumentModal from '@/components/contract-ui/SendDocumentModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
@@ -21,32 +20,44 @@ import { useCreateContactModal } from '@/components/contract-ui/useCreateContact
 /* eslint-disable react/prop-types */
 
 const LIST_COLUMNS = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string', label: 'Document No.' },
+  { key: 'orderReference', column: 'POReference', type: 'string', label: 'Document No.' },
   { key: 'invoiceDate', column: 'DateInvoiced', type: 'date', label: 'Invoice Date' },
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner' },
   { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount' },
 ];
-// Mirrors artifacts/purchase-invoice/generated/web/purchase-invoice/HeaderPage.jsx
-// Kept in sync manually because the generator does not expose it yet.
+// Mirrors PurchaseInvoiceHeaderTable columns (key + column + type only) so that
+// buildAdvancedFilterCriteria can resolve filter modes on the first render,
+// before DataTable fires onColumnsReady.
+const OVERDUE_INITIAL_COLUMNS = [
+  { key: 'invoiceDate', column: 'DateInvoiced', type: 'date' },
+  { key: 'orderReference', column: 'POReference', type: 'string' },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector' },
+  { key: 'documentStatus', column: 'DocStatus', type: 'status' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
+  { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
+  { key: 'eTGODueDate', column: 'em_etgo_due_date', type: 'date' },
+];
+
+// Mirrors artifacts/purchase-invoice/decisions.json → window.labelOverrides.
+// The list view here bypasses the generated HeaderPage and renders ListView
+// directly, so the generator-emitted labelOverrides do not reach it. Mirror
+// here until the wrapper consumes the spec's labelOverrides at runtime.
 const LABEL_OVERRIDES = {
-  es_ES: { POReference: 'Nº documento' },
-  en_US: { POReference: 'Document No.' },
+  es_ES: {
+    POReference: 'Nº documento',
+    OutstandingAmt: 'Pendiente de pago',
+    em_etgo_delivery_status: 'Estado de entrega',
+  },
+  en_US: {
+    POReference: 'Document No.',
+    OutstandingAmt: 'Pending Payment',
+    em_etgo_delivery_status: 'Delivery Status',
+  },
 };
 
-let previewRowSetterRef = null;
-
-/**
- * PurchaseInvoiceTable — generated table wrapper that opens the preview modal.
- * Columns are driven by decisions.json via the generated HeaderTable.
- */
 function PurchaseInvoiceTable(props) {
-  return (
-    <PurchaseInvoiceHeaderTable
-      {...props}
-      onNavigate={(row) => previewRowSetterRef?.(row)}
-    />
-  );
+  return <PurchaseInvoiceHeaderTable {...props} />;
 }
 
 /**
@@ -63,14 +74,37 @@ export default function PurchaseInvoiceWindow(props) {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const ui = useUI();
+  const tMenu = useMenuLabel();
   const [savedRecord, setSavedRecord] = useState(null);
-  const [previewRow, setPreviewRow] = useState(null);
   const [cloneTargets, setCloneTargets] = useState(null);
+  const [emailRow, setEmailRow] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
     useCreateContactModal({ apiBaseUrl, token });
   const breadcrumb = 'Purchases / Purchase Invoice';
-  previewRowSetterRef = setPreviewRow;
+
+  const { requestDelete, deleteDialog } = useRowDelete({
+    apiBaseUrl,
+    entity: 'header',
+    token,
+    onSuccess: () => setRefreshKey(k => k + 1),
+  });
+
+  const rowQuickActions = useMemo(() => ({
+    enabled: true,
+    editMode: 'navigate',
+    documentPreview: true,
+    actions: {
+      edit: { show: true },
+      duplicate: { show: true },
+      email: { show: true },
+      delete: { show: true },
+    },
+    onEdit: (row) => navigate(`/${windowName}/${row.id}`),
+    onClone: (row) => setCloneTargets([row]),
+    onEmail: (row) => setEmailRow(row),
+    onDelete: requestDelete,
+  }), [navigate, windowName, requestDelete]);
 
   const summary = [
     { key: 'summedLineAmount', column: 'TotalLines', type: 'amount', label: ui('totalNetAmount') },
@@ -78,8 +112,6 @@ export default function PurchaseInvoiceWindow(props) {
     { key: 'totalPaid', column: 'Totalpaid', type: 'amount', label: ui('paidAmount') },
     { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount', label: ui('outstandingAmount') },
   ];
-
-  const customTabs = [{ key: 'related', label: ui('relatedDocuments'), Component: RelatedDocuments }];
 
   // Pick up the saved record from navigation state when arriving at the list view
   const effectiveRecord = savedRecord ?? location.state?.savedRecord ?? null;
@@ -97,19 +129,16 @@ export default function PurchaseInvoiceWindow(props) {
       <CreateContactContext.Provider value={createContactCtxValue}>
         <HeaderPage
           {...props}
-          DetailTable={InvoiceLineTableCustom}
           secondaryTabs={[]}
           summary={summary}
           extraBadges={[]}
           topbarRight={PurchaseInvoiceTopbar}
-          bottomSection={PurchaseInvoiceBottomPanel}
           sidePanel={OcrSidePanel}
           sidePanelStyle={{ width: 360 }}
           notesField="description"
-          customTabs={customTabs}
           breadcrumb={breadcrumb}
           onAfterSave={true}
-          addLineGuard={(d) => !!d?.businessPartner}
+          refetchAfterSave={true}
         />
         {createContactState && createPortal(
           <CreateContactModal
@@ -131,19 +160,27 @@ export default function PurchaseInvoiceWindow(props) {
 
   const filterParam = searchParams.get('filter');
   const docStatus = searchParams.get('DocStatus');
-  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
 
-  const todayIso = new Date().toISOString().slice(0, 10);
-  const INVOICE_QUICK_FILTERS = [
-    {
-      label: 'overdueOnly',
-      filter: `criteria=${encodeURIComponent(JSON.stringify([
-        { fieldName: 'outstandingAmount', operator: 'greaterThan', value: 0 },
-        { fieldName: 'eTGODueDate', operator: 'lessThan', value: todayIso },
-      ]))}`,
-    },
-  ];
-  const initialQuickFilterIndex = filterParam === 'overdue' ? 0 : null;
+  const isOverdue = filterParam === 'overdue';
+  const isPaymentsDueToday = filterParam === 'paymentsDueToday';
+  const isInvoiceFilter = isOverdue || isPaymentsDueToday;
+
+  const todayISO = new Date().toISOString().slice(0, 10);
+
+  const initialAdvancedFilter = isInvoiceFilter
+    ? {
+        rowOperator: 'and',
+        conditions: [
+          { field: 'documentStatus', operator: 'equals', value: 'CO' },
+          { field: 'outstandingAmount', operator: 'greaterThan', value: 0 },
+          ...(isPaymentsDueToday
+            ? [{ field: 'eTGODueDate', operator: 'equals', value: todayISO }]
+            : []),
+        ],
+      }
+    : null;
+
+  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
 
   return (
     <>
@@ -155,13 +192,44 @@ export default function PurchaseInvoiceWindow(props) {
         breadcrumb={breadcrumb}
         labelOverrides={LABEL_OVERRIDES}
         initialColumnFilters={initialColumnFilters}
-        quickFilters={INVOICE_QUICK_FILTERS}
-        initialQuickFilterIndex={initialQuickFilterIndex}
+        initialAdvancedFilter={initialAdvancedFilter}
+        initialColumns={isInvoiceFilter ? OVERDUE_INITIAL_COLUMNS : null}
         dateFilterKey="invoiceDate"
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
+        rowQuickActions={rowQuickActions}
+        sendDocument={{ enabled: true, allowEmail: false }}
         bulkActions={(ctx) => <BulkDocumentAction {...ctx} />}
         refreshTrigger={refreshKey}
+        renderPreview={({ row, onClose, onEdit }) => (
+          <InvoicePreview
+            invoice={row}
+            token={token}
+            apiBaseUrl={apiBaseUrl}
+            windowName={windowName}
+            specName="purchase-invoice"
+            onClose={onClose}
+            onEdit={onEdit}
+          />
+        )}
+        externalPreviewRow={effectiveRecord}
+        onExternalPreviewClose={clearSavedRecord}
       />
+      {deleteDialog}
+      {emailRow && createPortal(
+        <SendDocumentModal
+          documentType={tMenu('Purchase Invoice')}
+          documentNo={emailRow.documentNo}
+          bpName={emailRow['businessPartner$_identifier']}
+          bPartnerId={emailRow.businessPartner}
+          apiBaseUrl={apiBaseUrl}
+          documentId={emailRow.id}
+          windowName={windowName}
+          token={token}
+          allowEmail={false}
+          onClose={() => setEmailRow(null)}
+        />,
+        document.body,
+      )}
       {cloneTargets && createPortal(
         <CloneOrderModal
           records={cloneTargets}
@@ -174,23 +242,6 @@ export default function PurchaseInvoiceWindow(props) {
           onCloned={() => setRefreshKey(k => k + 1)}
         />,
         document.body,
-      )}
-      {(previewRow || effectiveRecord) && (
-        <InvoicePreviewModal
-          invoice={previewRow || effectiveRecord}
-          token={token}
-          apiBaseUrl={apiBaseUrl}
-          windowName={windowName}
-          onClose={() => {
-            setPreviewRow(null);
-            clearSavedRecord();
-          }}
-          onEdit={(id) => {
-            setPreviewRow(null);
-            clearSavedRecord();
-            navigate(`/${windowName}/${id}`);
-          }}
-        />
       )}
     </>
   );

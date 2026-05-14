@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T19:05:52.312Z",
-  "updatedAt": "2026-05-06T11:41:39.123Z",
-  "checksum": "26d437cfb33b6035",
+  "updatedAt": "2026-05-13T15:59:17.665Z",
+  "checksum": "248e72bf83cc52c1",
   "frontendContract": {
     "window": {
       "id": "E547CE89D4C04429B6340FFA44E70716",
@@ -15,6 +15,7 @@
       "notesField": "description",
       "relatedDocuments": true,
       "hideDeleteWhenComplete": true,
+      "customTabsAfterBottom": true,
       "customComponents": {
         "bottomSection": "PaymentBottomPanel",
         "topbarRight": "PaymentActivityToggle",
@@ -58,6 +59,7 @@
       "summaryFields": [],
       "salesTheme": true,
       "dateFilterKey": "paymentDate",
+      "attachments": true,
       "layoutType": "default"
     },
     "entities": {
@@ -473,6 +475,7 @@
       "notesField": "description",
       "relatedDocuments": true,
       "hideDeleteWhenComplete": true,
+      "customTabsAfterBottom": true,
       "customComponents": {
         "bottomSection": "PaymentBottomPanel",
         "topbarRight": "PaymentActivityToggle",
@@ -515,7 +518,8 @@
       "detailEntity": null,
       "summaryFields": [],
       "salesTheme": true,
-      "dateFilterKey": "paymentDate"
+      "dateFilterKey": "paymentDate",
+      "attachments": true
     },
     "entities": {
       "finPayment": {

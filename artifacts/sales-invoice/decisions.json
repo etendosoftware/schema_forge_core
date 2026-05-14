@@ -9,30 +9,30 @@
     "notesField": "description",
     "hideDeleteWhenComplete": true,
     "hidePrint": true,
+    "noHeaderBorder": true,
     "customComponents": {
       "headerTable": "InvoiceHeaderTable",
       "bottomSection": "InvoiceBottomPanel",
       "topbarRight": "InvoiceTopbarExtra"
     },
+    "linesLayout": "inlineEditable",
+    "extraTabs": [
+      {
+        "key": "sif",
+        "labelKey": "sifDataTabs.sectionTitle",
+        "component": "SifTab",
+        "importFrom": "@/windows/custom/shared/SifTab.jsx",
+        "placement": "tab"
+      }
+    ],
     "menuActions": [
-      {
-        "key": "duplicate",
-        "label": "Duplicate"
-      },
-      {
-        "key": "cancel",
-        "label": "Cancel",
-        "labelKey": "cancel",
-        "destructive": true,
-        "visibleWhenStatus": "CO"
-      },
       {
         "key": "reactivate",
         "label": "Reactivate",
         "labelKey": "reactivate",
         "visibleWhenStatus": "CO",
         "documentAction": "RE",
-        "successKey": "actionCompleted"
+        "successKey": "reactivated"
       }
     ],
     "secondaryTabs": {},
@@ -45,11 +45,15 @@
     },
     "dateFilterKey": "invoiceDate",
     "labelOverrides": {
-      "en_US": {
-        "EM_Etgo_Due_Date": "Due Date"
-      },
       "es_ES": {
-        "EM_Etgo_Due_Date": "Vencimiento"
+        "OutstandingAmt": "Pendiente de pago",
+        "EM_Etgo_Due_Date": "Vencimiento",
+        "em_etgo_delivery_status": "Estado de entrega"
+      },
+      "en_US": {
+        "OutstandingAmt": "Pending Payment",
+        "EM_Etgo_Due_Date": "Due Date",
+        "em_etgo_delivery_status": "Delivery Status"
       }
     }
   },
@@ -194,6 +198,12 @@
           "form": false,
           "searchable": true
         },
+        "eTGODeliveryStatus": {
+          "visibility": "readOnly",
+          "grid": true,
+          "gridOrder": 8,
+          "form": false
+        },
         "isPaid": {
           "visibility": "readOnly",
           "grid": false,
@@ -241,7 +251,9 @@
           "name": "adClientId"
         },
         "organization": {
-          "name": "adOrgId"
+          "name": "adOrgId",
+          "visibility": "readOnly",
+          "form": false
         },
         "transactionDocument": {
           "name": "cDocTypeTargetId"
@@ -284,6 +296,62 @@
         },
         "etgoTotalDiscount": {
           "visibility": "editable",
+          "form": false
+        },
+        "aeatsiiClaveTipo": {
+          "visibility": "editable",
+          "form": false
+        },
+        "aeatsiiDescription": {
+          "visibility": "editable",
+          "form": false
+        },
+        "aeatsiiDescripcionSii": {
+          "visibility": "editable",
+          "form": false
+        },
+        "aeatsiiCauseExemption": {
+          "visibility": "editable",
+          "form": false
+        },
+        "aeatsiiIsauthorization": {
+          "visibility": "editable",
+          "form": false
+        },
+        "aeatsiiIssent": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "aeatsiiEstado": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "tbaiIssent": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "etsgDateOperation": {
+          "visibility": "editable",
+          "form": false
+        },
+        "aeatsiiEjercicio": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "aeatsiiPeriodo": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "tbaiSequence": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "tbaiInvoicenum": {
+          "visibility": "readOnly",
+          "form": false
+        },
+        "tbaiInvoiceseq": {
+          "visibility": "readOnly",
           "form": false
         }
       }

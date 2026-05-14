@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import { collectSourceFiles, collectTargetSourceFiles, isJavaScriptModule, parseModuleSource, readJson, repoRelative, walkAst } from './shared.js';
+import { getAliasDirs } from '../window-aliases.js';
 
 const IGNORED_VISIBILITIES = new Set(['discarded', 'system']);
 const SCANNED_ATTRIBUTES = new Set(['title', 'placeholder', 'aria-label']);
@@ -42,18 +43,24 @@ function collectTranslatorAliases(ast) {
   return aliases;
 }
 
+function isNonTestJsModule(filePath) {
+  return isJavaScriptModule(filePath)
+    && !filePath.split(sep).includes('__tests__')
+    && !/\.(?:test|spec)\.[jt]sx?$/.test(filePath);
+}
+
 function collectCustomFiles(rootDir, windowDir, windowName) {
   if (windowName.startsWith('app-shell:')) {
     return collectTargetSourceFiles(rootDir, windowName);
   }
 
   const appShellCustomDir = join(rootDir, 'tools', 'app-shell', 'src', 'windows', 'custom');
-  const aliases = windowName === 'contacts' ? ['businessPartner'] : [];
+  const aliases = getAliasDirs(windowName);
   return [
-    ...collectSourceFiles(join(windowDir, 'custom'), isJavaScriptModule),
-    ...collectSourceFiles(join(appShellCustomDir, windowName), isJavaScriptModule),
-    ...aliases.flatMap((alias) => collectSourceFiles(join(appShellCustomDir, alias), isJavaScriptModule)),
-    ...collectSourceFiles(join(appShellCustomDir, 'shared'), isJavaScriptModule),
+    ...collectSourceFiles(join(windowDir, 'custom'), isNonTestJsModule),
+    ...collectSourceFiles(join(appShellCustomDir, windowName), isNonTestJsModule),
+    ...aliases.flatMap((alias) => collectSourceFiles(join(appShellCustomDir, alias), isNonTestJsModule)),
+    ...collectSourceFiles(join(appShellCustomDir, 'shared'), isNonTestJsModule),
   ].sort((left, right) => left.localeCompare(right));
 }
 

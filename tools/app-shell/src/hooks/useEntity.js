@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { resolveBackendSort, buildBackendFilter } from '@/lib/gridQuery.js';
 import { toast } from 'sonner';
 import { useAuth } from '@/auth/AuthContext.jsx';
@@ -14,7 +14,7 @@ function buildHeaders(token) {
 /**
  * Extract a human-readable error message from a NEO Headless error response.
  */
-async function extractErrorMessage(res, ui) {
+export async function extractErrorMessage(res, ui) {
   try {
     const data = await res.json();
 
@@ -307,6 +307,7 @@ export function useEntity(entity, childEntity, {
   columnDefs = EMPTY_DEFS,
   skipListFetch = false,
   trailingFilter = null,
+  refetchAfterSave = false,
 }) {
   const { logout } = useAuth();
   const ui = useUI();
@@ -332,9 +333,23 @@ export function useEntity(entity, childEntity, {
   const backendDefaultKeysRef = useRef(new Set());
   // Fields explicitly changed by the user (via handleChange) in the current new-record session.
   const userChangedKeysRef = useRef(new Set());
-  // ETP-3894: snapshot of the form-level fields contract registered by EntityForm.
-  // Used in handleSave to validate required+editable fields before posting to the backend.
-  const formFieldsRef = useRef([]);
+  // ETP-3894: per-form snapshot of visible fields registered by each EntityForm instance.
+  // Keyed by a stable formId (React.useId) so multiple EntityForms accumulate rather than
+  // overwrite each other. handleSave flattens all entries to validate the complete form.
+  const formFieldsRef = useRef(new Map());
+
+  // True when editing has diverged from the last-saved selected state.
+  // For new records (selected === null): dirty as soon as any non-id field has a value.
+  const isDirtyHeader = useMemo(() => {
+    if (!selected) {
+      return Object.keys(editing || {}).some(
+        k => k !== 'id' && editing[k] != null && editing[k] !== ''
+      );
+    }
+    return Object.entries(editing || {}).some(
+      ([key, val]) => key !== 'id' && val !== selected[key]
+    );
+  }, [editing, selected]);
 
   const headers = buildHeaders(token);
 
@@ -462,6 +477,32 @@ export function useEntity(entity, childEntity, {
       .catch(() => setLoading(false));
   }, [apiBaseUrl, entity, token, fetchChildren]);
 
+  // Lightweight header refresh used after line add/update/delete operations.
+  // Unlike fetchById, this preserves fields the user has explicitly edited (tracked in
+  // userChangedKeysRef) so pending header changes survive line operations.
+  // Only server-computed fields (totals, sequence numbers) get updated in editing.
+  const refreshHeaderTotals = useCallback((id) => {
+    if (!id) return;
+    fetch(`${apiBaseUrl}/${entity}/${id}`, { headers })
+      .then(res => {
+        if (!res.ok) throw new Error(`${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        const row = normalizeRecord(data?.response?.data?.[0] ?? data, entity);
+        setSelected(row);
+        setEditing(prev => {
+          if (!prev) return { ...row };
+          const merged = { ...prev };
+          for (const [key, val] of Object.entries(row)) {
+            if (!userChangedKeysRef.current.has(key)) merged[key] = val;
+          }
+          return merged;
+        });
+      })
+      .catch(() => {});
+  }, [apiBaseUrl, entity, headers]);
+
   const handleSelect = useCallback((row) => {
     setSelected(row);
     setEditing(row ? { ...row } : null);
@@ -525,10 +566,15 @@ export function useEntity(entity, childEntity, {
     });
   }, []);
 
-  // ETP-3894: EntityForm calls this on mount with its `fields` array so handleSave
-  // can validate required+editable fields client-side before hitting the backend.
-  const registerFields = useCallback((fields) => {
-    formFieldsRef.current = Array.isArray(fields) ? fields : [];
+  // ETP-3894: EntityForm calls this on mount/update with its visible fields and a stable
+  // formId. Passing fields=null on unmount removes that form's entry so stale fields
+  // (e.g. conditionally hidden blocks) don't pollute the validation set.
+  const registerFields = useCallback((fields, formId = '__default__') => {
+    if (fields === null) {
+      formFieldsRef.current.delete(formId);
+    } else {
+      formFieldsRef.current.set(formId, Array.isArray(fields) ? fields : []);
+    }
   }, []);
 
   const handleSave = useCallback(async () => {
@@ -540,7 +586,7 @@ export function useEntity(entity, childEntity, {
     // round-trip and shows per-field errors immediately. Only runs on create — for
     // existing records, `editing` already includes server-resolved values.
     if (isNew) {
-      const fields = formFieldsRef.current || [];
+      const fields = [...formFieldsRef.current.values()].flat();
       const isReadOnly = (f) => {
         if (f.readOnly === true) return true;
         try {
@@ -643,15 +689,25 @@ export function useEntity(entity, childEntity, {
       if (res.ok) {
         const data = await res.json();
         const saved = normalizeRecord(data?.response?.data?.[0] ?? data, entity);
-        setSelected(saved);
-        setEditing({ ...saved });
+        if (saved?.id && refetchAfterSave) {
+          await fetch(`${apiBaseUrl}/${entity}/${saved.id}`, { headers })
+            .then(refetchRes => (refetchRes.ok ? refetchRes.json() : null))
+            .then(refetchData => {
+              const fullSaved = normalizeRecord(refetchData?.response?.data?.[0] ?? refetchData ?? saved, entity);
+              setSelected(fullSaved);
+              setEditing({ ...fullSaved });
+            })
+            .catch(() => {
+              setSelected(saved);
+              setEditing({ ...saved });
+            });
+        } else {
+          setSelected(saved);
+          setEditing({ ...saved });
+        }
         setSaveError(null);
         setFieldErrors({});
         toast.success(isNew ? ui('recordCreated') : ui('recordSaved'));
-        // NOTE: deliberately do NOT call refresh() here — the POST response already
-        // contains the full saved record and we feed it to setSelected/setEditing above.
-        // Callers that need the list reloaded (handleDelete, handleSaveAndProcess) call
-        // refresh() themselves. See docs/plans/sales-order-save-performance.md (Etapa 1.1).
         return saved;
       } else {
         // ETP-3894: parse a structured MISSING_REQUIRED_FIELDS 400 from the backend so
@@ -690,7 +746,7 @@ export function useEntity(entity, childEntity, {
     } finally {
       setIsSaving(false);
     }
-  }, [editing, selected, apiBaseUrl, entity, token, ui]);
+  }, [editing, selected, apiBaseUrl, entity, refetchAfterSave, token, ui]);
 
   const handleDelete = useCallback(async () => {
     if (!selected?.id) return;
@@ -745,9 +801,10 @@ export function useEntity(entity, childEntity, {
         return null;
       }
       const data = await res.json().catch(() => null);
-      // Refresh children and header (totals recalculated by backend)
+      // Refresh children and header totals. refreshHeaderTotals preserves any
+      // pending header edits in editing while updating server-computed fields (totals).
       fetchChildren(selected.id);
-      fetchById(selected.id);
+      refreshHeaderTotals(selected.id);
       setSaveError(null);
       toast.success(ui('lineAdded'));
       return normalizeRecord(data?.response?.data?.[0] ?? data, childEntity) ?? true;
@@ -765,14 +822,14 @@ export function useEntity(entity, childEntity, {
       if (typeof fieldOrObject === 'object') return { ...c, ...fieldOrObject };
       return { ...c, [fieldOrObject]: value };
     }));
-    if (selected?.id) fetchById(selected.id);
-  }, [selected, fetchById]);
+    if (selected?.id) refreshHeaderTotals(selected.id);
+  }, [selected, refreshHeaderTotals]);
 
   const handleDeleteChild = useCallback((childId) => {
     setChildren(prev => prev.filter(c => String(c.id) !== String(childId)));
-    // Refetch header to update totals after line deletion
-    if (selected?.id) fetchById(selected.id);
-  }, [selected, fetchById]);
+    // Refresh header to update totals after line deletion
+    if (selected?.id) refreshHeaderTotals(selected.id);
+  }, [selected, refreshHeaderTotals]);
 
   const handleSaveAndProcess = useCallback(async (draftModeConfig) => {
     const saved = await handleSave();
@@ -845,6 +902,7 @@ export function useEntity(entity, childEntity, {
 
   return {
     items, selected, editing, children, childrenLoading, loading, loadingMore, hasMore, saveError, isSaving,
+    isDirtyHeader,
     fieldErrors, registerFields,
     handleSelect, handleNew, handleChange, handleSave, handleSaveAndProcess, handleDelete, handleProcess,
     handleAddChild, handleUpdateChild, handleDeleteChild, primeSaved,

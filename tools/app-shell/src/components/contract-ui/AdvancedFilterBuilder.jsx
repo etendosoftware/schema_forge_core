@@ -39,24 +39,24 @@ import { DistinctValuesList } from './DistinctValuesList.jsx';
  */
 
 const OPERATORS_BY_MODE = {
-  text:         ['iContains', 'iNotContains', 'iEquals', 'iNotEquals', 'isNull', 'isNotNull'],
-  identifier:   ['iContains', 'iNotContains', 'equals', 'notEquals', 'isNull', 'isNotNull'],
-  enumLabel:    ['equals', 'notEquals', 'inSet', 'isNull', 'isNotNull'],
+  text:         ['iContains', 'iNotContains', 'iEquals', 'iNotEqual', 'isNull', 'isNotNull'],
+  identifier:   ['iContains', 'iNotContains', 'equals', 'notEqual', 'isNull', 'isNotNull'],
+  enumLabel:    ['equals', 'notEqual', 'inSet', 'isNull', 'isNotNull'],
   booleanLabel: ['equals'],
-  numeric:      ['equals', 'notEquals', 'greaterThan', 'greaterOrEqual', 'lessThan', 'lessOrEqual', 'between', 'isNull', 'isNotNull'],
+  numeric:      ['equals', 'notEqual', 'greaterThan', 'greaterOrEqual', 'lessThan', 'lessOrEqual', 'between', 'isNull', 'isNotNull'],
   date:         ['equals', 'lessThan', 'greaterThan', 'between', 'isNull', 'isNotNull'],
 };
 
 // Text-style ops: user types free text (backend filters on `$_identifier`).
-const TEXTUAL_IDENT_OPS = new Set(['iContains', 'iNotContains', 'iEquals', 'iNotEquals']);
+const TEXTUAL_IDENT_OPS = new Set(['iContains', 'iNotContains', 'iEquals', 'iNotEqual']);
 
 const OP_LABEL_KEY = {
   iContains: 'opContains',
   iNotContains: 'opNotContains',
   iEquals: 'opIs',
-  iNotEquals: 'opIsNot',
+  iNotEqual: 'opIsNot',
   equals: 'opIs',
-  notEquals: 'opIsNot',
+  notEqual: 'opIsNot',
   greaterThan: 'opGreaterThan',
   greaterOrEqual: 'opGreaterOrEqual',
   lessThan: 'opLessThan',
@@ -859,6 +859,11 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
       out.push(c);
     }
     if (value && !seen.has(value)) { seen.add(value); out.push(value); }
+    // Fallback: for virtual columns with static enumLabels and no dynamic data, use the
+    // enumLabels keys directly so the picker is not empty.
+    if (out.length === 0) {
+      for (const c of Object.keys(labelMap)) { if (!seen.has(c)) out.push(c); }
+    }
     return out;
   }, [distinct.values, distinct.search, inMemoryCodes, value, labelMap, dictionary]);
 
