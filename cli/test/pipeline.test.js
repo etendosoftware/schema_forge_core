@@ -3,7 +3,7 @@ import { strict as assert } from 'node:assert';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildPipelineSteps, validatePipelineInput } from '../src/pipeline.js';
+import { buildPipelineSteps, validatePipelineInput, resolveWindowNameFromId } from '../src/pipeline.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const cliRoot = resolve(__dirname, '..');
@@ -120,6 +120,74 @@ describe('buildPipelineSteps', () => {
     const interactiveSteps = steps.filter(s => s.interactive === true);
     assert.equal(interactiveSteps.length, 1, `Expected exactly 1 interactive step, found ${interactiveSteps.length}`);
     assert.equal(interactiveSteps[0].name, 'translate-todos', 'translate-todos should be the only interactive step');
+  });
+});
+
+describe('resolveWindowNameFromId', () => {
+  it('returns the kebab-case spec name when AD_Window is found', async () => {
+    const calls = [];
+    const queryFn = async (id) => {
+      calls.push(id);
+      return { rows: [{ name: 'Purchase Invoice' }] };
+    };
+    const result = await resolveWindowNameFromId('ABC123', { queryFn });
+    assert.equal(result, 'purchase-invoice');
+    assert.deepEqual(calls, ['ABC123']);
+  });
+
+  it('handles camelCase names by splitting and lower-casing', async () => {
+    const queryFn = async () => ({ rows: [{ name: 'BusinessPartner' }] });
+    const result = await resolveWindowNameFromId('X', { queryFn });
+    assert.equal(result, 'business-partner');
+  });
+
+  it('accepts capitalized Name column key (Postgres returns lowercased by default but be defensive)', async () => {
+    const queryFn = async () => ({ rows: [{ Name: 'Sales Order' }] });
+    const result = await resolveWindowNameFromId('X', { queryFn });
+    assert.equal(result, 'sales-order');
+  });
+
+  it('throws when AD_Window has no row for the given id', async () => {
+    const queryFn = async () => ({ rows: [] });
+    await assert.rejects(
+      () => resolveWindowNameFromId('UNKNOWN', { queryFn }),
+      /AD_Window not found for windowId: UNKNOWN/
+    );
+  });
+
+  it('throws when row is missing the Name column', async () => {
+    const queryFn = async () => ({ rows: [{}] });
+    await assert.rejects(
+      () => resolveWindowNameFromId('X', { queryFn }),
+      /AD_Window row missing Name/
+    );
+  });
+
+  it('throws when windowId is empty', async () => {
+    await assert.rejects(
+      () => resolveWindowNameFromId('', { queryFn: async () => ({ rows: [] }) }),
+      /windowId is required/
+    );
+  });
+
+  it('propagates DB errors instead of swallowing them', async () => {
+    const queryFn = async () => { throw new Error('connection refused'); };
+    await assert.rejects(
+      () => resolveWindowNameFromId('X', { queryFn }),
+      /connection refused/
+    );
+  });
+
+  it('does NOT silently default to sales-order on missing windowName (regression for F5)', async () => {
+    // The old behavior was: if windowId is provided without windowName,
+    // pipeline silently set windowName = 'sales-order'. This test guards the
+    // helper that replaces that behavior — it must throw on lookup failure,
+    // never return a fallback value.
+    const queryFn = async () => ({ rows: [] });
+    await assert.rejects(
+      () => resolveWindowNameFromId('999999', { queryFn }),
+      (err) => !/sales-order/.test(err.message) && /AD_Window not found/.test(err.message)
+    );
   });
 });
 

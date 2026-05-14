@@ -9,6 +9,8 @@ import AccountingForm from './AccountingForm';
 import ExecutionHistoryTable from './ExecutionHistoryTable';
 import ExecutionHistoryForm from './ExecutionHistoryForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
+import PaymentOutBottomPanel from '../../../custom/PaymentOutBottomPanel';
 import catalogs from './mockCatalogs';
 
 
@@ -36,6 +38,10 @@ const processes = [
 // @sf-generated-start draftMode:header
 const draftMode = null;
 // @sf-generated-end draftMode:header
+
+// @sf-generated-start requiredHeaderFields:header
+const requiredHeaderFields = ['documentNo', 'paymentMethod', 'account', 'currency'];
+// @sf-generated-end requiredHeaderFields:header
 
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
@@ -534,7 +540,11 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'executionHistory', label: 'Execution History', Table: ExecutionHistoryTable, Form: ExecutionHistoryForm },
         ]}
         notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "FIN_Payment", config: {} } }]}
+        bottomSection={PaymentOutBottomPanel}
+        requiredHeaderFields={requiredHeaderFields}
+        linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -549,6 +559,8 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="paymentDate"
+      rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

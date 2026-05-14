@@ -176,6 +176,10 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.dependsOn) mapped.dependsOn = f.dependsOn;
       if (f.lookup) mapped.lookup = true;
       if (f.popup) mapped.popup = true;
+      if (f.lookupDrawer) mapped.lookupDrawer = f.lookupDrawer;
+      if (f.lookupTitle) mapped.lookupTitle = f.lookupTitle;
+      if (Array.isArray(f.onSelectMappings) && f.onSelectMappings.length > 0) mapped.onSelectMappings = f.onSelectMappings;
+      if (f.displayFromCatalog) mapped.displayFromCatalog = f.displayFromCatalog;
       if (Array.isArray(f.forceCalloutFields) && f.forceCalloutFields.length > 0) mapped.forceCalloutFields = f.forceCalloutFields;
 
       // UI hints
@@ -295,6 +299,13 @@ export function generateFrontendContract(schema, rules = []) {
   if (win.layoutType === 'kanban' || win.layoutType === 'calendar') {
     win.templateConfig = schema.window.templateConfig ?? null;
   }
+
+  // Lines tab layout. "classic" preserves the side-panel edit flow; "inlineEditable"
+  // uses InlineLinesPanel for in-place row editing. Omitted from the contract when
+  // the window doesn't opt in — generate-frontend.js and DetailView both default to
+  // "classic" at runtime, so leaving the key out keeps contracts clean of the
+  // implicit default.
+  if (schema.window.linesLayout) win.linesLayout = schema.window.linesLayout;
 
   return { window: reorderKeys(win, WINDOW_KEY_ORDER), entities };
 }

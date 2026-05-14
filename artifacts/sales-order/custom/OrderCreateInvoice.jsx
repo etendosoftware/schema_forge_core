@@ -40,6 +40,7 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
   const [confirmedDocs,  setConfirmedDocs]  = useState(null); // set after confirm+reload when both docs created
   const [confirmedTitle, setConfirmedTitle] = useState(null); // null = "Order confirmed", string = custom title
   const [showClone,      setShowClone]      = useState(false);
+  const [isCloneHovered, setIsCloneHovered] = useState(false);
 
   const status      = data?.documentStatus;
   const isDraft     = status === 'DR';
@@ -115,8 +116,8 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
     : null;
 
   const cloneButton = (
-    <button type="button" onClick={() => setShowClone(true)} style={btnCloneStyle}>
-      <CopyIcon />{ui('cloneOrderBtn')}
+    <button type="button" onClick={() => setShowClone(true)} style={{...btnCloneStyle, background: isCloneHovered ? '#F1F5F9' : '#FFFFFF'}} title={ui('cloneOrderBtn')} onMouseEnter={() => setIsCloneHovered(true)} onMouseLeave={() => setIsCloneHovered(false)}>
+      <CopyIcon />
     </button>
   );
   const clonePortal = showClone ? createPortal(
@@ -238,8 +239,7 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
 
 // ── ConfirmModal ───────────────────────────────────────────────────────────────
 
-function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed }) {
-  const navigate = useNavigate();
+export function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed }) {
   const ui       = useUI();
   const [createShipment,  setCreateShipment]  = useState(false);
   const [createInvoice,   setCreateInvoice]   = useState(false);
@@ -274,12 +274,14 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
     return () => { cancelled = true; };
   }, [orderId, apiBaseUrl, headers]);
 
-  const d          = freshData || data || {};
-  const documentNo = d.documentNo || '';
-  const bpName     = d['businessPartner$_identifier'] || '';
-  const grandTotal = Number(d.grandTotalAmount) || 0;
-  const totalLines = d.summedLineAmount ?? d.totalLines ?? grandTotal;
-  const currency   = d['currency$_identifier'] || '';
+  const d              = freshData || data || {};
+  const documentNo     = d.documentNo || '';
+  const bpName         = d['businessPartner$_identifier'] || '';
+  const discountPct    = Number(d.etgoTotalDiscount ?? 0);
+  const discountFactor = discountPct > 0 ? (1 - discountPct / 100) : 1;
+  const grandTotal     = (Number(d.grandTotalAmount) || 0) * discountFactor;
+  const totalLines     = (Number(d.summedLineAmount ?? d.totalLines ?? d.grandTotalAmount ?? 0) || 0) * discountFactor;
+  const currency       = d['currency$_identifier'] || '';
 
   const handleConfirm = async () => {
     if (loading) return;
@@ -517,7 +519,7 @@ function SoCheckboxCard({ checked, onChange, icon, title, subtitle, disabled }) 
 
 // ── CreateDocsModal (CO orders — create docs without re-confirming) ───────────
 
-function CreateDocsModal({ orderId, data, base, headers, currency, derived, onClose, onCreated }) {
+export function CreateDocsModal({ orderId, data, base, headers, currency, derived, onClose, onCreated }) {
   const ui = useUI();
   const {
     needsShip, needsInvoice,
@@ -819,9 +821,10 @@ const iconBtnStyle = {
 };
 
 const btnCloneStyle = {
-  display: 'inline-flex', alignItems: 'center', gap: 5,
-  padding: '5px 12px', borderRadius: 6, fontSize: 13, fontWeight: 500,
-  border: '1px solid #D1D5DB', background: 'transparent', color: '#374151', cursor: 'pointer',
+  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+  padding: '7px', borderRadius: 6,
+  border: '1px solid #D1D4DB', background: '#FFFFFF', color: '#64748B', cursor: 'pointer',
+  boxShadow: '0px 1px 2px 0px #1212170D',
 };
 
 const closeBtn = {
@@ -833,7 +836,7 @@ const closeBtn = {
 // Shown after order confirmation (always). Displays created docs as clickable cards.
 // Cases: no docs (only confirmed), shipment only, invoice only, or both.
 
-function ConfirmResultModal({ docs, onClose, navigate, ui, currency, title }) {
+export function ConfirmResultModal({ docs, onClose, navigate, ui, currency, title }) {
   const { shipment, invoice } = docs;
   const hasDocs = Boolean(shipment?.id || invoice?.id);
 
@@ -946,5 +949,107 @@ function ResultDocCard({ icon, label, amount, currency, color, ui, onClick }) {
         <path d="M9 18l6-6-6-6" />
       </svg>
     </div>
+  );
+}
+
+// ── ManageDocsLauncher ──────────────────────────────────────────────────────
+// Self-contained mount point for the "Gestionar envío/factura" flow from the
+// list-view row kebab. Replicates the fetch+derive logic that OrderCreateInvoice
+// runs in the detail page (shipments / invoices / order lines → pending qty &
+// amount) and opens CreateDocsModal once derived data is ready. If nothing is
+// pending the launcher closes silently.
+export function ManageDocsLauncher({ orderId, data, apiBaseUrl, token, onClose, onCreated }) {
+  const ui = useUI();
+  const [fetched, setFetched] = useState(null);
+
+  const base    = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
+  const headers = useMemo(() => ({
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  }), [token]);
+
+  useEffect(() => {
+    if (!orderId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [shipRes, linesRes, invRes] = await Promise.all([
+          fetch(`${base}/goods-shipment/goodsShipment?criteria=${CRITERIA('salesOrder', orderId)}&_limit=50`, { headers }),
+          fetch(`${apiBaseUrl}/lines?parentId=${orderId}&_startRow=0&_endRow=999`, { headers }),
+          fetch(`${apiBaseUrl}/header/${orderId}/action/listInvoices`, { headers }),
+        ]);
+        if (cancelled) return;
+        const shipments  = shipRes.ok  ? ((await shipRes.json())?.response?.data  ?? []) : [];
+        const orderLines = linesRes.ok ? ((await linesRes.json())?.response?.data ?? []) : [];
+        const invoices   = invRes.ok   ? ((await invRes.json())?.response?.data   ?? []) : [];
+        if (!cancelled) setFetched({ shipments, invoices, orderLines });
+      } catch {
+        if (!cancelled) setFetched({ shipments: [], invoices: [], orderLines: [] });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [orderId, base, headers, apiBaseUrl]);
+
+  if (!fetched) {
+    // Lightweight overlay so the user gets feedback while the row's docs load.
+    return createPortal(
+      <div style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.2)', zIndex: 9998,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div style={{ background: '#fff', padding: '16px 24px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Spinner /><span style={{ fontSize: 13 }}>{ui('loading')}</span>
+        </div>
+      </div>,
+      document.body,
+    );
+  }
+
+  const { shipments, invoices, orderLines } = fetched;
+  const shipmentsDraft   = shipments.filter(s => s.documentStatus === 'DR');
+  const shipmentsComplete = shipments.filter(s => s.documentStatus === 'CO');
+  const invoiceDraft     = invoices.find(i => i.documentStatus === 'DR') ?? null;
+  const invoicesComplete = invoices.filter(i => i.documentStatus === 'CO');
+
+  const qtyOrdered   = orderLines.reduce((s, l) => s + (Number(l.orderedQuantity)   || 0), 0);
+  const qtyDelivered = orderLines.reduce((s, l) => s + (Number(l.deliveredQuantity) || 0), 0);
+  const qtyPending   = Math.max(0, qtyOrdered - qtyDelivered);
+
+  const totalOrder    = Number(data?.grandTotalAmount) || 0;
+  const totalInvoiced = invoicesComplete.reduce((s, i) => s + (Number(i.grandTotalAmount) || 0), 0);
+  const totalPending  = Math.max(0, totalOrder - totalInvoiced);
+
+  const needsShip    = qtyPending > 0 && shipmentsDraft.length === 0;
+  const needsInvoice = totalPending > 0 && !invoiceDraft;
+  const nothingToManage = !needsShip && !needsInvoice;
+
+  // Close asynchronously when there's nothing pending — avoids the
+  // "Cannot update a component while rendering" warning that occurs when a
+  // child triggers parent setState during its own render.
+  useEffect(() => {
+    if (nothingToManage) onClose?.();
+  }, [nothingToManage, onClose]);
+
+  if (nothingToManage) return null;
+
+  const derived = {
+    shipmentsComplete, invoicesComplete,
+    qtyOrdered, qtyDelivered, qtyPending,
+    totalOrder, totalInvoiced, totalPending,
+    needsShip, needsInvoice,
+  };
+
+  return createPortal(
+    <CreateDocsModal
+      orderId={orderId}
+      data={data}
+      base={base}
+      headers={headers}
+      currency={data?.['currency$_identifier'] || ''}
+      derived={derived}
+      onClose={onClose}
+      onCreated={onCreated}
+    />,
+    document.body,
   );
 }

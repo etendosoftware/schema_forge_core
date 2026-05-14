@@ -5,6 +5,8 @@ import GoodsShipmentForm from './GoodsShipmentForm';
 import GoodsShipmentLineTable from './GoodsShipmentLineTable';
 import GoodsShipmentLineForm from './GoodsShipmentLineForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
+import GoodsShipmentBottomPanel from '../../../custom/GoodsShipmentBottomPanel';
 import GoodsShipmentActions from '../../../custom/GoodsShipmentActions';
 import BulkInvoiceFromShipment from '../../../custom/BulkInvoiceFromShipment';
 import catalogs from './mockCatalogs';
@@ -35,6 +37,10 @@ const processes = [
 // @sf-generated-start draftMode:goodsShipment
 const draftMode = null;
 // @sf-generated-end draftMode:goodsShipment
+
+// @sf-generated-start requiredHeaderFields:goodsShipment
+const requiredHeaderFields = ['documentNo', 'warehouse', 'businessPartner', 'partnerAddress', 'movementDate', 'invoiced'];
+// @sf-generated-end requiredHeaderFields:goodsShipment
 
 // @sf-generated-start addLineFields:goodsShipmentLine
 const addLineFields = {
@@ -259,9 +265,13 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
         hidePrint
         noHeaderBorder
         notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_InOut", config: {} } }]}
+        bottomSection={GoodsShipmentBottomPanel}
         topbarRight={GoodsShipmentActions}
+        requiredHeaderFields={requiredHeaderFields}
         salesTheme
+        linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -278,6 +288,8 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
       dateFilterKey="movementDate"
       bulkActions={(ctx) => <BulkInvoiceFromShipment {...ctx} />}
       hidePrint
+      rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

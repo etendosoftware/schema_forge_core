@@ -23,6 +23,7 @@ The contract and generated assets indicate that conversion handling is part of t
 - Window shape: intended master-child window (`unitOfMeasure` header with `conversion` detail entity in the contract), but the current mounted page behaves like a single-entity header window because it only renders the header list/detail flow.
 - List behavior: the generated list uses the header entity and shows Name, Symbol, and a rendered UOM Type badge.
 - Detail behavior: opening a record mounts the generated `UnitOfMeasureForm` for the header entity only; the current page does not mount a child conversion panel or subtable.
+- An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
 
 ## Reactive behavior and dependencies
 
@@ -47,6 +48,7 @@ The contract and generated assets indicate that conversion handling is part of t
 3. Open the UOM Type field and confirm it offers Area, Length, Time, Volume, and Weight.
 4. Save a header change and reopen the record to confirm the updated values persist.
 5. Confirm the current detail page does not expose a conversion table or conversion form, even though conversion behavior exists in the contract and generated bundle.
+6. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 
@@ -56,3 +58,12 @@ The contract and generated assets indicate that conversion handling is part of t
 - `artifacts/unit-of-measure/generated/web/unit-of-measure/UnitOfMeasureForm.jsx` exposes the current header fields and UOM Type enum options.
 - `artifacts/unit-of-measure/generated/web/unit-of-measure/UnitOfMeasurePage.jsx` mounts only the header list/detail flow, which is why conversion maintenance is currently a documented gap.
 - There is no dedicated SPA test proving visible conversion behavior for this window; current automated evidence is contract- and source-shape-based rather than browser-level.
+- The generated `UnitOfMeasurePage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `C_UOM` AD table.
+
+## Pipeline regeneration — ETP-3908
+
+Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functional changes to this window.
+
+- `linesLayout: "classic"` is now written explicitly to `contract.json`; previously the classic layout was the implicit default.
+- `requiredHeaderFields` is now emitted in the page component; this window has no required header fields so the array is empty and there is no behavioral change.
+- LinesTable template updated in ETP-3908 to include the inline-editable add-row alignment fix. This window uses `linesLayout: "classic"` so the new template branch is dead code here — no behavioral change.

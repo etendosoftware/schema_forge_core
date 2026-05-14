@@ -161,14 +161,26 @@ async function installConfirmMocks(page, state) {
  * which avoids depending on a specific selector for the topbar button.
  */
 async function openConfirmAndTickBoth(page) {
-  await page.evaluate(() => {
-    window.dispatchEvent(new CustomEvent('sales-order:open-confirm-modal'));
-  });
+  // Ensure DetailView (and its topbarRight OrderCreateInvoice) has mounted
+  // before dispatching — domcontentloaded fires before React renders.
+  await expect(page.getByTestId('detail-view')).toBeVisible({ timeout: 8_000 });
 
-  // Both checkbox cards must render
+  // Retry dispatching the event in case OrderCreateInvoice listener
+  // hasn't been registered yet (useEffect runs after paint).
   const shipmentCard = page.getByText(/Crear albarán|Create shipment/i).first();
+  for (let attempt = 0; attempt < 5; attempt++) {
+    await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent('sales-order:open-confirm-modal'));
+    });
+    try {
+      await expect(shipmentCard).toBeVisible({ timeout: 1000 });
+      break;
+    } catch (e) {
+      if (attempt === 4) throw e;
+    }
+  }
+
   const invoiceCard = page.getByText(/Crear factura|Create invoice/i).first();
-  await expect(shipmentCard).toBeVisible({ timeout: 5000 });
   await expect(invoiceCard).toBeVisible();
 
   await shipmentCard.click();

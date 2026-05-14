@@ -4,6 +4,7 @@ import ProductTable from './ProductTable';
 import ProductForm from './ProductForm';
 import ProductPriceBar from '@/windows/custom/product/ProductPriceBar';
 import ProductAdditionalInfoPanel from '@/windows/custom/product/ProductAdditionalInfoPanel';
+import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 import ProductGallery from '@/windows/custom/product/ProductGallery';
 import ProductSidebar from '@/windows/custom/product/ProductSidebar';
@@ -32,6 +33,10 @@ const processes = [
 // @sf-generated-start draftMode:product
 const draftMode = null;
 // @sf-generated-end draftMode:product
+
+// @sf-generated-start requiredHeaderFields:product
+const requiredHeaderFields = ['searchKey', 'name', 'uOM', 'productCategory', 'taxCategory', 'purchase', 'sale', 'productType', 'stocked', 'returnable'];
+// @sf-generated-end requiredHeaderFields:product
 
 
 
@@ -467,9 +472,12 @@ export default function ProductPage({ windowName, recordId, ...props }) {
           { key: 'general', label: 'General' },
           { key: 'additionalInfo', label: 'Additional Info', Panel: ProductAdditionalInfoPanel },
         ]}
+        customTabsAfterBottom
         hidePrint
         hideMoreMenu
         contentBg="bg-slate-50"
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_Product", config: {} } }]}
+        requiredHeaderFields={requiredHeaderFields}
         {...props}
         sidebarContent={(data) => (
           <ProductSidebar
@@ -494,6 +502,7 @@ export default function ProductPage({ windowName, recordId, ...props }) {
       galleryRenderer={(gProps) => <ProductGallery {...gProps} />}
       hidePrint
       hideMoreMenu
+      rowQuickActions={{}}
       {...props}
     />
   );

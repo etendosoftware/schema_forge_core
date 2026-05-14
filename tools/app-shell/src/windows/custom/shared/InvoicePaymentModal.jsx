@@ -203,6 +203,7 @@ export default function InvoicePaymentModal({
   specName,
   apiBaseUrl,
   onClose,
+  onPaymentAdded,
 }) {
   const ui = useUI();
   // Strip the spec name suffix to get the API root (e.g. http://host/sws/neo)
@@ -281,6 +282,7 @@ export default function InvoicePaymentModal({
     setLoadingPayments(true);
     fetchPayments();
     fetchInstallments();
+    onPaymentAdded?.();
   };
 
   const sorted = useMemo(

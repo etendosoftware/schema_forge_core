@@ -38,7 +38,7 @@ const icons = {
 };
 
 const FmKpi = ({ label, num, icon, tone = 'default', sub, active, onClick }) => (
-  <div className={`fm-kpi${active ? ' active' : ''}`} onClick={onClick} role="button" tabIndex={0}>
+  <div className={`fm-kpi${active ? ' active' : ''}`} data-testid="fm-kpi-card" onClick={onClick} role="button" tabIndex={0}>
     <div className="row1">
       <div className="label">{label}</div>
       <div className={`ico ${tone}`}>{icon}</div>

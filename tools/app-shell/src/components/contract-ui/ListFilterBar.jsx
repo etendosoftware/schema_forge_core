@@ -309,6 +309,7 @@ export function ListFilterBar({
         <Popover open={statusMenuOpen} onOpenChange={setStatusMenuOpen}>
           <PopoverTrigger asChild>
             <Button
+              data-testid="filter-status"
               variant="outline"
               size="sm"
               className={[
@@ -344,6 +345,7 @@ export function ListFilterBar({
         <Popover open={dateMenuOpen} onOpenChange={setDateMenuOpen}>
           <PopoverTrigger asChild>
             <Button
+              data-testid="filter-date"
               variant="outline"
               size="sm"
               className={[
@@ -440,6 +442,7 @@ export function ListFilterBar({
         <PopoverTrigger asChild>
           <button
             type="button"
+            data-testid="filter-advanced"
             title={ui('advancedFilters')}
             className="relative h-9 w-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"
           >
@@ -568,7 +571,10 @@ function CalendarWithPicker({ month, onMonthChange, selected, onSelect, modifier
   };
 
   return (
-    <div>
+    // Fixed width keeps both views (calendar / picker) occupying the same
+    // horizontal footprint so the panel does not resize when the user
+    // switches into the month/year selector.
+    <div className="w-[244px]">
       {/* Header row: label (clickable) + nav arrows */}
       <div className="flex items-center justify-between h-8 px-2">
         <button
@@ -589,6 +595,9 @@ function CalendarWithPicker({ month, onMonthChange, selected, onSelect, modifier
         </div>
       </div>
 
+      {/* min-h matches the natural calendar height (weekdays + 6 weeks)
+          so the picker view does not collapse vertically. */}
+      <div className="min-h-[244px]">
       {view === 'calendar' ? (
         <Calendar
           mode="single"
@@ -665,6 +674,7 @@ function CalendarWithPicker({ month, onMonthChange, selected, onSelect, modifier
           <div className="pb-2" />
         </div>
       )}
+      </div>
     </div>
   );
 }

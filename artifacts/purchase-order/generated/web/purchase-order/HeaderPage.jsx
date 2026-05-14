@@ -6,6 +6,8 @@ import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
+import PurchaseOrderBottomPanel from '../../../custom/PurchaseOrderBottomPanel';
 import PurchaseOrderActions from '../../../custom/PurchaseOrderActions';
 import PurchaseOrderDraftChips from '../../../custom/PurchaseOrderDraftChips';
 import PurchaseOrderReactivateBulkAction from '../../../custom/PurchaseOrderReactivateBulkAction';
@@ -58,6 +60,10 @@ const draftMode = {
   "label": "poConfirmBtn"
 };
 // @sf-generated-end draftMode:header
+
+// @sf-generated-start requiredHeaderFields:header
+const requiredHeaderFields = ['businessPartner', 'documentNo', 'orderDate', 'partnerAddress', 'scheduledDeliveryDate', 'paymentTerms', 'priceList', 'grandTotalAmount', 'summedLineAmount'];
+// @sf-generated-end requiredHeaderFields:header
 
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
@@ -661,14 +667,18 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         hideSaveStatuses={["CO","CL","VO"]}
         noHeaderBorder
         notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Order", config: {} } }]}
+        bottomSection={PurchaseOrderBottomPanel}
         topbarRight={PurchaseOrderActions}
         topbarExtra={PurchaseOrderDraftChips}
         menuActions={({ data, status }) => [
           { key: 'reactivate', label: 'Reactivate', visible: status === 'CO' && !data?.hasLinkedDocuments, labelKey: 'reactivate', successKey: 'reactivated', documentAction: 'RE',  }
         ]}
         draftMode={draftMode}
+        requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}
+        linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -686,6 +696,8 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       bulkActions={(ctx) => <PurchaseOrderReactivateBulkAction {...ctx} />}
       hidePrint
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

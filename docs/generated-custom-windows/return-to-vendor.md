@@ -19,6 +19,8 @@ The Return to Vendor window should let purchasing users register a vendor return
 - **Visibility:** Visible in the Purchases menu.
 - **Implementation type:** Generated standard list/detail window registered in `tools/app-shell/src/windows/registry.js`, using the shared app-shell generated route flow plus a generated detail page that adds a related-documents tab.
 - **Window shape:** Master-child window. The primary `header` entity is backed by `C_Order`, the main child table is `lines` on `C_OrderLine`, and the generated detail page also exposes secondary child tabs such as `basicDiscounts`.
+- An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
+- Lines tab layout: this window uses `window.linesLayout = "inlineEditable"`. Rows render at 40 px with pencil and trash hover-action icons on the right; clicking pencil flips the row into inline edit; trash removes the row after confirmation. When the add-row form is open, existing rows stay in `InlineLinesPanel` so column widths remain stable; the form renders in a header-hidden `DataTable` below that handles callouts, selectors, and focus. Clicking "Añadir línea" while a form is already open saves the current line and opens a fresh form scrolled into view. See `docs/ui-customization.md` section 13 for the full reference.
 
 ## Reactive behavior and dependencies
 
@@ -49,6 +51,7 @@ The Return to Vendor window should let purchasing users register a vendor return
 6. Process the order and confirm document status moves out of draft, draft-only actions disappear or become unavailable, and previously editable header fields become read-only where the contract says they should.
 7. Open the **Related Documents** tab on a return that already has linked records and confirm the window exposes navigation back to the related purchasing flow.
 8. Try selecting or entering a quantity that would exceed the source receipt quantity, and note whether the window blocks it, warns about it, or accepts it without visible validation.
+9. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 
@@ -58,3 +61,4 @@ The Return to Vendor window should let purchasing users register a vendor return
 - `artifacts/return-to-vendor/generated/web/return-to-vendor/HeaderPage.jsx` shows the generated detail page is a master-child `DetailView` with `lines` as the detail entity, `basicDiscounts` as a secondary tab, summary cards for totals/currency/delivered state, and a custom `Related Documents` tab.
 - `artifacts/return-to-vendor/generated/web/return-to-vendor/index.jsx` exposes CRUD URLs for `header`, `lines`, `lineTax`, `basicDiscounts`, `tax`, `paymentOutPlan`, and `paymentOutDetails`, which confirms the return order participates in a broader purchasing and settlement surface even though the current window narrative centers on the header-plus-lines workflow.
 - No dedicated return-to-vendor UI test was found in `tools/app-shell`; the current evidence is contract-backed and source-backed rather than browser-level automated proof.
+- The generated `HeaderPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `C_Order` AD table.

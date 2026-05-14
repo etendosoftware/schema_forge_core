@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useUI } from '@/i18n';
 import { CreatableSearchSelect } from './CreatableSearchSelect.jsx';
-import LocationEditorModal from '../../windows/custom/contacts/LocationEditorModal.jsx';
+import LocationEditorModal from '../../windows/custom/shared/LocationEditorModal.jsx';
 
 /**
  * PartnerAddressPicker — address selector for C_BPartner_Location_ID fields.

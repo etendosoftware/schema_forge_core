@@ -1,16 +1,35 @@
 // Shared UI primitives for the Fiscal Monitor.
 import { useUI } from '@/i18n';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+export const ERROR_STATUSES = new Set([
+  'IN', 'EE', 'AE',                            // SII
+  'Rechazado', 'Error',                         // TBAI
+  'rejected', 'invalid', 'partiallyAccepted',   // Verifactu
+]);
+export const isErrorStatus = (estado) => ERROR_STATUSES.has(estado);
+
+export const PENDING_STATUSES = new Set([
+  'PE',        // SII
+  'Pendiente', // TBAI
+]);
+export const isPendingStatus = (estado) => PENDING_STATUSES.has(estado);
 
 const STATUS_CONFIG = {
-  // SII
-  Correcto:           { cls: 'success', labelKey: 'fiscalMonitor.status.sii.Correcto' },
-  AceptadoConErrores: { cls: 'warn',    labelKey: 'fiscalMonitor.status.sii.AceptadoConErrores' },
-  Incorrecto:         { cls: 'danger',  labelKey: 'fiscalMonitor.status.sii.Incorrecto' },
-  Pendiente:          { cls: 'pending', labelKey: 'fiscalMonitor.status.sii.Pendiente' },
+  // SII — API returns 2-letter codes from AD_Ref_List
+  CO: { cls: 'success', labelKey: 'fiscalMonitor.status.sii.CO' },
+  AE: { cls: 'warn',    labelKey: 'fiscalMonitor.status.sii.AE' },
+  IN: { cls: 'danger',  labelKey: 'fiscalMonitor.status.sii.IN' },
+  PE: { cls: 'pending', labelKey: 'fiscalMonitor.status.sii.PE' },
+  EE: { cls: 'danger',  labelKey: 'fiscalMonitor.status.sii.EE' },
+  AN: { cls: 'neutral', labelKey: 'fiscalMonitor.status.sii.AN' },
+  BA: { cls: 'neutral', labelKey: 'fiscalMonitor.status.sii.BA' },
+  NR: { cls: 'neutral', labelKey: 'fiscalMonitor.status.sii.NR' },
   // TBAI — reuse existing tbai.status.* keys
   Recibido:           { cls: 'success', labelKey: 'fiscalMonitor.tbai.status.Recibido' },
   Rechazado:          { cls: 'danger',  labelKey: 'fiscalMonitor.tbai.status.Rechazado' },
   Error:              { cls: 'danger',  labelKey: 'fiscalMonitor.tbai.status.Error' },
+  Pendiente:          { cls: 'pending', labelKey: 'fiscalMonitor.tbai.status.Pendiente' },
   // Verifactu
   accepted:           { cls: 'success', labelKey: 'fiscalMonitor.status.vf.accepted' },
   partiallyAccepted:  { cls: 'warn',    labelKey: 'fiscalMonitor.status.vf.partiallyAccepted' },
@@ -18,12 +37,26 @@ const STATUS_CONFIG = {
   invalid:            { cls: 'danger',  labelKey: 'fiscalMonitor.status.vf.invalid' },
 };
 
-export const StatusPill = ({ estado }) => {
+export const StatusPill = ({ estado, onClick, title: titleProp }) => {
   const ui = useUI();
   const cfg = STATUS_CONFIG[estado];
   const cls  = cfg?.cls  ?? 'pending';
   const text = cfg ? ui(cfg.labelKey) : (estado ?? '—');
-  return <span className={`fm-pill ${cls}`}>{text}</span>;
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        className={`fm-pill ${cls}`}
+        data-testid="status-pill"
+        data-status={cls}
+        onClick={onClick}
+        title={titleProp ?? ui('fiscalMonitor.viewContact')}
+      >
+        {text}
+      </button>
+    );
+  }
+  return <span className={`fm-pill ${cls}`} data-testid="status-pill" data-status={cls}>{text}</span>;
 };
 
 const ExtLinkIcon = () => (
@@ -97,3 +130,27 @@ export const RowActionBtn = ({ onClick, title }) => (
     </svg>
   </button>
 );
+
+export const PAGE_SIZE = 20;
+
+export { fmtDate } from './fmtDateUtils.js';
+
+export const WipBadge = () => {
+  const ui = useUI();
+  return (
+    <div className="absolute top-3 right-4 z-10">
+      <TooltipProvider delayDuration={600}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300 cursor-default select-none">
+              ⚠ {ui('fiscal.wip.badge')}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-[260px] text-center">
+            {ui('fiscal.wip.tooltip')}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
+  );
+};

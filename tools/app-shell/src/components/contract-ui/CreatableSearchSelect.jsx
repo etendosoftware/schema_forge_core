@@ -223,7 +223,7 @@ export function CreatableSearchSelect({
           disabled={isDisabled}
           required={field.required && !isDisabled}
           autoComplete="off"
-          className="w-full h-9 pl-8 pr-8 text-sm rounded-md border border-input bg-transparent focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full h-10 pl-8 pr-8 text-sm rounded-lg border border-[#D1D4DB] bg-transparent shadow-[0px_1px_2px_rgba(18,18,23,0.05)] focus:ring-2 focus:ring-primary focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           onChange={(e) => {
             isEditingRef.current = true;
             setQuery(e.target.value);
@@ -256,11 +256,12 @@ export function CreatableSearchSelect({
       </div>
 
       {showDropdown && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
+        <div data-testid={`options-${field.key}`} className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
           {/* Create action — always pinned at the top */}
           {createLabel && onCreateRequest && (
             <button
               type="button"
+              data-testid={`action-create-${field.key}`}
               className="w-full text-left px-3 py-2 text-sm font-medium hover:bg-blue-50 border-b border-border/40 transition-colors"
               style={{ color: '#202452' }}
               onMouseDown={(e) => { e.preventDefault(); handleCreate(); }}

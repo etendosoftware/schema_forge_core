@@ -29,6 +29,9 @@ function resolveCustomImport(specName, component, appShellDir) {
   if (existsSync(resolve(`tools/app-shell/src/windows/custom/${dir}/${component}.jsx`))) {
     return `'@/windows/custom/${dir}/${component}'`;
   }
+  if (existsSync(resolve(`tools/app-shell/src/windows/custom/shared/${component}.jsx`))) {
+    return `'@/windows/custom/shared/${component}'`;
+  }
   // Default: artifact-local convention for newly created windows
   return `'../../../custom/${component}'`;
 }
@@ -191,8 +194,14 @@ export function generateTableComponent(entityName, contract) {
     let renderPart = '';
     if (f.cellType === 'depreciationProgress') renderPart = ', render: renderDepreciationProgress';
     else if (f.cellType === 'taxRate') renderPart = ', render: renderTaxRate';
-    else if (f.cellType === 'taxScope') renderPart = `, render: (row) => renderTaxScope(row, '${f.name}')`;
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart} },`;
+    else if (f.cellType === 'taxScope') renderPart = `, render: (row) => <TaxScopeCell row={row} fieldKey="${f.name}" />`;
+    // Flags consumed by InlineLinesPanel to drive inline-edit affordances:
+    //  - required → suppress the empty option in the SelectorInput dropdown.
+    //  - lookup / popup → swap the dropdown for a ProductSearchDrawer modal.
+    const requiredPart = f.required ? ', required: true' : '';
+    const lookupPart = f.lookup ? ', lookup: true' : '';
+    const popupPart = f.popup ? ', popup: true' : '';
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${popupPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -245,7 +254,8 @@ function TaxScopeCell({ row, fieldKey }) {
   const needsUiImport = neededCellTypes.has('taxScope');
   const uiImport = needsUiImport ? `import { useUI } from '@/i18n';\n` : '';
 
-  return `import { DataTable } from '@/components/contract-ui';
+  return `import { forwardRef } from 'react';
+import { DataTable, InlineLinesPanel } from '@/components/contract-ui';
 ${tagImport}${uiImport}${depreciationProgressHelper}${taxRateHelper}${taxScopeHelper}
 ${MARKERS.GENERATED_START(`columns:${entityName}`)}
 const columns = [
@@ -256,9 +266,28 @@ ${MARKERS.GENERATED_END(`columns:${entityName}`)}
 const filters = [${filtersArray}];
 
 ${MARKERS.GENERATED_START(`component:${compName}`)}
-export default function ${compName}(props) {
+const ${compName} = forwardRef(function ${compName}(props, ref) {
+  // Inline-editable layout always uses InlineLinesPanel for existing rows so column
+  // widths (flex layout) never shift when the add-row form opens. When addRow is
+  // active we render a header-hidden, data-hidden DataTable below for just the
+  // add-row form — it owns callouts, selectors, validation and the imperative flush
+  // ref. The ref is forwarded to InlineLinesPanel so DetailView can flush pending
+  // inline edits on global save.
+  if (props.linesLayout === 'inlineEditable') {
+    if (props.addRow?.active) {
+      return (
+        <>
+          <InlineLinesPanel ref={ref} columns={columns} {...props} addRow={undefined} />
+          <DataTable columns={columns} filters={filters} {...props} hideHeader hideDataRows />
+        </>
+      );
+    }
+    return <InlineLinesPanel ref={ref} columns={columns} {...props} />;
+  }
   return <DataTable columns={columns} filters={filters} {...props} />;
-}
+});
+
+export default ${compName};
 ${MARKERS.GENERATED_END(`component:${compName}`)}
 `;
 }
@@ -519,6 +548,20 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Status field gets a badge in the header; summary strip uses only fields with explicit section:'summary'.
   // Prefer DocStatus column (document workflow status) if present, even when form:false.
   const allEntityFields = contract.frontendContract.entities[headerEntity]?.fields ?? [];
+
+  // Required form fields on the header. DetailView uses this as the default
+  // gate for "+ Añadir línea" — the button only appears when all of these are
+  // filled in `data`. Windows can still override with their own addLineGuard
+  // prop for more complex business rules.
+  const requiredHeaderFieldNames = allEntityFields
+    .filter(f => f.required && f.form && f.visibility !== 'discarded' && f.visibility !== 'system')
+    .map(f => f.name);
+  // Built without a nested template literal (Sonar S4624): plain concat
+  // around each name keeps the outer template flat.
+  const quotedRequiredHeaderFields = requiredHeaderFieldNames.map(n => "'" + n + "'").join(', ');
+  const requiredHeaderFieldsArray = requiredHeaderFieldNames.length > 0
+    ? `[${quotedRequiredHeaderFields}]`
+    : '[]';
   const docStatusField = allEntityFields.find(f => f.column === 'DocStatus');
   const statusFieldOverride = contract.frontendContract.window.statusField;
   const statusField = statusFieldOverride
@@ -622,7 +665,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const forceCalloutFieldsPart = Array.isArray(f.forceCalloutFields) && f.forceCalloutFields.length > 0
       ? `, forceCalloutFields: ${JSON.stringify(f.forceCalloutFields)}`
       : '';
-    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart} },`;
+    const lookupDrawerPart = f.lookupDrawer ? `, lookupDrawer: '${String(f.lookupDrawer).replace(/'/g, "\\'")}'` : '';
+    const lookupTitlePart = f.lookupTitle ? `, lookupTitle: '${String(f.lookupTitle).replace(/'/g, "\\'")}'` : '';
+    const onSelectMappingsPart = Array.isArray(f.onSelectMappings) && f.onSelectMappings.length > 0
+      ? `, onSelectMappings: ${JSON.stringify(f.onSelectMappings)}`
+      : '';
+    const displayFromCatalogPart = f.displayFromCatalog ? `, displayFromCatalog: true` : '';
+    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart} },`;
   }).join('\n');
 
   const derivedArray = derivedFields.map(f => {
@@ -666,11 +715,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const notesField = windowConfig.notesField ?? null;
   const relatedDocuments = windowConfig.relatedDocuments ?? false;
   const hideDeleteWhenComplete = windowConfig.hideDeleteWhenComplete ?? false;
+  const customTabsAfterBottom = windowConfig.customTabsAfterBottom ?? false;
   const hidePrint = windowConfig.hidePrint ?? false;
   const hideSaveStatuses = windowConfig.hideSaveStatuses ?? [];
   const hideMoreMenu = windowConfig.hideMoreMenu ?? false;
   const hideMoreDetails = windowConfig.hideMoreDetails ?? false;
   const noHeaderBorder = windowConfig.noHeaderBorder ?? false;
+  const linesLayout = windowConfig.linesLayout ?? 'classic';
   const listViewOptions = windowConfig.listViewOptions ?? null;
   const listBaseFilter = windowConfig.listBaseFilter ?? null;
   const quickFilters = windowConfig.quickFilters ?? null;
@@ -688,6 +739,56 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const titleField = windowConfig.titleField ?? null;
   const salesTheme = windowConfig.salesTheme ?? false;
   const lineEntityConfig = windowConfig.lineEntityConfig ?? null;
+  // ETP-3914 — Row Quick Actions overlay config (defaults injected by resolve-curated.js).
+  // When the entire feature is disabled we skip emitting the prop so the list view is
+  // identical to the pre-feature behavior.
+  const rowQuickActions = windowConfig.rowQuickActions ?? null;
+  // ETP-3914 — Send/Download envelope gate.
+  // Eligibility heuristic: header has a non-discarded `documentNo` field (the
+  // structural signature of a transactional document). Master-data windows
+  // (tax, product, UOM…) never satisfy this and stay silent automatically.
+  // `decisions.json → window.sendDocument` is copied verbatim into the contract
+  // and overrides eligibility in both directions:
+  //   { enabled: false }              → force off (even if eligible)
+  //   { enabled: true }               → force on (even if non-eligible)
+  //   { allowEmail: false }           → keep eligibility, hide email column
+  // Both fields default to `true` when omitted. We only emit the JSX prop when
+  // the feature is on, so non-eligible windows render no envelope.
+  const sendDocumentOverride = windowConfig.sendDocument || null;
+  const isDocumentalWindow = allEntityFields.some(
+    f => f.name === 'documentNo' && f.visibility !== 'discarded',
+  );
+  const sdEnabled = sendDocumentOverride?.enabled !== undefined
+    ? !!sendDocumentOverride.enabled
+    : isDocumentalWindow;
+  const sdAllowEmail = sendDocumentOverride?.allowEmail !== false;
+  const sendDocument = sdEnabled ? { enabled: true, allowEmail: sdAllowEmail } : null;
+
+  // Attachments tab — enabled by default on standard (default) layout windows.
+  // Opt out per-window via `window.attachments: false` in decisions.json, or
+  // pass an object to forward options to the AttachmentsTab component (e.g.
+  // `{ enabled: true, accept: '.pdf', maxSizeMb: 10 }`).
+  const attachmentsCfg = windowConfig.attachments ?? true;
+  // attachments are auto-enabled on default layout; on other layouts they must be
+  // explicitly opted-in via `window.attachments: true` (or an options object) in decisions.json.
+  const attachmentsExplicit = windowConfig.attachments !== undefined;
+  let attachmentsEnabled =
+    (layoutType === 'default' || attachmentsExplicit) &&
+    attachmentsCfg !== false &&
+    (typeof attachmentsCfg !== 'object' || attachmentsCfg?.enabled !== false);
+  const attachmentsOpts = typeof attachmentsCfg === 'object' && attachmentsCfg !== null
+    ? attachmentsCfg
+    : {};
+  // Resolve header DB table name from the contract — required by AttachmentsTab
+  // to build the NEO endpoint `/sws/neo/attachments/{tableName}/{recordId}`.
+  const headerEntityContract = contract?.frontendContract?.entities?.[headerEntity];
+  const headerTableName = headerEntityContract?.tableName ?? null;
+  if (attachmentsEnabled && !headerTableName) {
+    console.warn(
+      `[generate-frontend] AttachmentsTab disabled for "${headerEntity}": header entity has no tableName in contract.`
+    );
+    attachmentsEnabled = false;
+  }
 
   // Detect secondary child entities for additional tabs
   const secondaryTabsDecl = windowConfig.secondaryTabs;
@@ -721,7 +822,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
           const optionsPart = (type === 'select' && f.enumValues?.length)
             ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
             : '';
-          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart} }`;
+          const lookupDrawerPart = f.lookupDrawer ? `, lookupDrawer: '${String(f.lookupDrawer).replace(/'/g, "\\'")}'` : '';
+          const lookupTitlePart = f.lookupTitle ? `, lookupTitle: '${String(f.lookupTitle).replace(/'/g, "\\'")}'` : '';
+          const onSelectMappingsPart = Array.isArray(f.onSelectMappings) && f.onSelectMappings.length > 0
+            ? `, onSelectMappings: ${JSON.stringify(f.onSelectMappings)}`
+            : '';
+          const displayFromCatalogPart = f.displayFromCatalog ? `, displayFromCatalog: true` : '';
+          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart} }`;
         }).filter(Boolean);
         return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName };
       });
@@ -811,12 +918,28 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const notesFieldProp = notesField
     ? `\n        notesField="${notesField}"`
     : '';
-  const customTabsProp = relatedDocuments
-    ? `\n        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}`
+  // customTabs accumulator — DetailView supports items with shape
+  //   { key, label, Component, placement?: 'tab' | 'footer', props?: {} }
+  // `placement: 'tab'` renders as a main tab (Lines/Notes style);
+  // `placement: 'footer'` (default) keeps the legacy chip-footer behavior.
+  const customTabItems = [];
+  if (relatedDocuments) {
+    customTabItems.push(`{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }`);
+  }
+  if (attachmentsEnabled) {
+    const optsLiteral = JSON.stringify(attachmentsOpts);
+    customTabItems.push(
+      `{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: ${JSON.stringify(headerTableName)}, config: ${optsLiteral} } }`
+    );
+  }
+  const customTabsProp = customTabItems.length > 0
+    ? `\n        customTabs={[${customTabItems.join(', ')}]}`
     : '';
 
   // hideDeleteWhenComplete prop
   const hideDeleteProp = hideDeleteWhenComplete ? '\n        hideDeleteWhenComplete' : '';
+  // customTabsAfterBottom prop
+  const customTabsAfterBottomProp = customTabsAfterBottom ? '\n        customTabsAfterBottom' : '';
 
   // hidePrint prop (DetailView)
   const hidePrintProp = hidePrint ? '\n        hidePrint' : '';
@@ -830,6 +953,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hideMoreDetailsProp = hideMoreDetails ? '\n        hideMoreDetails' : '';
   // noHeaderBorder prop (DetailView)
   const noHeaderBorderProp = noHeaderBorder ? '\n        noHeaderBorder' : '';
+  // linesLayout prop (DetailView). Only emit when non-default to keep generated
+  // output diff-free for windows that don't opt in.
+  const linesLayoutProp = linesLayout && linesLayout !== 'classic'
+    ? `\n        linesLayout="${linesLayout}"`
+    : '';
   // listViewOptions props
   const listViewOptionsProp = listViewOptions
     ? `\n      listViewOptions={${JSON.stringify(listViewOptions)}}`
@@ -943,12 +1071,20 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     ? `import RelatedDocuments from ${resolveCustomImport(specName, 'RelatedDocuments')};\n`
     : '';
 
+  // Build optional import for the generic AttachmentsTab component
+  const attachmentsImport = attachmentsEnabled
+    ? `import { AttachmentsTab } from '@/components/attachments';\n`
+    : '';
+
   // Draft mode config from frontend contract
   const draftModeConfig = contract.frontendContract.entities[headerEntity]?.draftMode;
   const draftModeValue = draftModeConfig?.enabled
     ? JSON.stringify(draftModeConfig, null, 2)
     : 'null';
   const draftModeProp = draftModeConfig?.enabled ? '\n        draftMode={draftMode}' : '';
+  const requiredHeaderFieldsProp = requiredHeaderFieldNames.length > 0
+    ? '\n        requiredHeaderFields={requiredHeaderFields}'
+    : '';
 
   // entityLabel / detailLabel / detailTabIndex from window decisions config
   const entityLabel = windowConfig.entityLabel || toLabel(headerEntity);
@@ -1061,6 +1197,34 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     ? `\nconst labelOverrides = ${JSON.stringify(labelOverridesConfig, null, 2)};\n`
     : '';
 
+  // ETP-3914 — rowQuickActions prop forwarded to ListView.
+  // The feature is ON by default for every window. The contract only carries a block
+  // when the user wants to override defaults (decisions.json → window.rowQuickActions).
+  // The generator forwards whatever is declared verbatim; an empty `{}` is enough to
+  // mount the overlay since DataTable + RowQuickActions resolve defaults at runtime.
+  // We skip emission entirely only when the user explicitly set `enabled: false`.
+  let rowQuickActionsProp = '';
+  if (!rowQuickActions || rowQuickActions.enabled !== false) {
+    const declarativePart = rowQuickActions ?? {};
+    rowQuickActionsProp = `\n      rowQuickActions={${JSON.stringify(declarativePart)}}`;
+  }
+
+  // ETP-3914 — Send/Download envelope prop. ListView routes it into DataTable →
+  // RowQuickActions to control the email quick action, and mounts the generic
+  // SendDocumentModal when no host-supplied `onEmail` exists. When both defaults
+  // match (enabled + allowEmail), emit the bare attribute (`sendDocument`) which
+  // JSX treats as `={true}` — runtime gates use `enabled !== false` and optional
+  // chaining, so a plain `true` behaves identically to `{enabled:true,allowEmail:true}`
+  // while keeping generated files clean of redundant default objects.
+  let sendDocumentProp = '';
+  let sendDocumentDetailProp = '';
+  if (sendDocument) {
+    const isDefaults = sendDocument.enabled === true && sendDocument.allowEmail === true;
+    const propValue = isDefaults ? '' : `={${JSON.stringify(sendDocument)}}`;
+    sendDocumentProp = `\n      sendDocument${propValue}`;
+    sendDocumentDetailProp = `\n        sendDocument${propValue}`;
+  }
+
   // newActions support — split button dropdown on the list view
   const hasNewActions = newActionsConfig.length > 0;
   const newActionsStatements = newActionsWithComponents.map(a => {
@@ -1094,7 +1258,7 @@ ${headerTableImport}
 import ${headerName}Form from './${headerName}Form';${detailEntity ? `
 import ${detailName}Table from './${detailName}Table';
 import ${detailName}Form from './${detailName}Form';` : ''}
-${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${formFooterImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
+${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${formFooterImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${attachmentsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
 ${isGallery ? `import ${headerName}Gallery from ${resolveCustomImport(specName || headerEntity, `${headerName}Gallery`)};` : ''}${isSidebar ? `
 import ${headerName}Sidebar from ${resolveCustomImport(specName || headerEntity, `${headerName}Sidebar`)};` : (isGallery ? `
 import ${headerName}DetailHeader from ${resolveCustomImport(specName || headerEntity, `${headerName}DetailHeader`)};` : '')}${statusBarImport}
@@ -1123,6 +1287,10 @@ ${MARKERS.GENERATED_END(`processes:${headerEntity}`)}
 ${MARKERS.GENERATED_START(`draftMode:${headerEntity}`)}
 const draftMode = ${draftModeValue};
 ${MARKERS.GENERATED_END(`draftMode:${headerEntity}`)}
+
+${MARKERS.GENERATED_START(`requiredHeaderFields:${headerEntity}`)}
+const requiredHeaderFields = ${requiredHeaderFieldsArray};
+${MARKERS.GENERATED_END(`requiredHeaderFields:${headerEntity}`)}
 
 ${detailEntity ? `${MARKERS.GENERATED_START(`addLineFields:${detailEntity}`)}
 const addLineFields = {
@@ -1159,7 +1327,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
         {...props}${sidebarContentProp}
       />
     );
@@ -1173,7 +1341,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}
       {...props}${customComponents.newRecordComponent ? `
       onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}
     />${customComponents.newRecordComponent ? `

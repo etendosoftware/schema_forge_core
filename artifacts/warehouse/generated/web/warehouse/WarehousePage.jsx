@@ -3,6 +3,7 @@ import { ListView, DetailView } from '@/components/contract-ui';
 import WarehouseTable from './WarehouseTable';
 import WarehouseForm from './WarehouseForm';
 import WarehouseTransactionsTable from '@/windows/custom/warehouse/WarehouseTransactionsTable';
+import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 
 
@@ -30,6 +31,10 @@ const processes = [
 // @sf-generated-start draftMode:warehouse
 const draftMode = null;
 // @sf-generated-end draftMode:warehouse
+
+// @sf-generated-start requiredHeaderFields:warehouse
+const requiredHeaderFields = ['searchKey', 'name', 'locationAddress', 'allocated'];
+// @sf-generated-end requiredHeaderFields:warehouse
 
 
 
@@ -247,6 +252,8 @@ export default function WarehousePage({ windowName, recordId, ...props }) {
         secondaryTabs={[
           { key: 'productTransactions', label: 'Transactions', Panel: WarehouseTransactionsTable },
         ]}
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_Warehouse", config: {} } }]}
+        requiredHeaderFields={requiredHeaderFields}
         {...props}
       />
     );
@@ -260,6 +267,7 @@ export default function WarehousePage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      rowQuickActions={{}}
       {...props}
     />
   );

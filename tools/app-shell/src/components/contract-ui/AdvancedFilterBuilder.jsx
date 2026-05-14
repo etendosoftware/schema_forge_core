@@ -859,6 +859,11 @@ function DistinctEnumPicker({ col, entity, apiBaseUrl, rows, value, onChange, ui
       out.push(c);
     }
     if (value && !seen.has(value)) { seen.add(value); out.push(value); }
+    // Fallback: for virtual columns with static enumLabels and no dynamic data, use the
+    // enumLabels keys directly so the picker is not empty.
+    if (out.length === 0) {
+      for (const c of Object.keys(labelMap)) { if (!seen.has(c)) out.push(c); }
+    }
     return out;
   }, [distinct.values, distinct.search, inMemoryCodes, value, labelMap, dictionary]);
 

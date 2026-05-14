@@ -18,8 +18,10 @@ Receive material back into stock after a sales-side return flow. The window is o
 - Visibility: visible from the Sales menu and not marked hidden in `tools/app-shell/src/menu.json`.
 - Implementation type: generated window loaded through `tools/app-shell/src/windows/registry.js`.
 - Window shape: master-child. The detail view uses `returnMaterialReceipt` as the header entity and `returnMaterialReceiptLine` as the child entity.
+- Lines tab layout: this window uses `window.linesLayout = "inlineEditable"`. Rows render at 40 px with pencil and trash hover-action icons on the right; clicking pencil flips the row into inline edit; trash removes the row after confirmation. When the add-row form is open, existing rows stay in `InlineLinesPanel` so column widths remain stable; the form renders in a header-hidden `DataTable` below that handles callouts, selectors, and focus. Clicking "Añadir línea" while a form is already open saves the current line and opens a fresh form scrolled into view. See `docs/ui-customization.md` section 13 for the full reference.
 - Header interaction: the header form exposes movement date, business partner, warehouse, dependent partner address, a read-only sales order field, tracking number, and notes.
 - Line interaction: the child table and form expose line number, product, movement quantity, UOM, order quantity, and sales-order-line context.
+- An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
 
 ## Reactive behavior and dependencies
 
@@ -46,6 +48,7 @@ Receive material back into stock after a sales-side return flow. The window is o
 4. Use **Create From** or another source-driven action and verify whether lines are generated from the source order or RMA context; if they are not, treat that as a functional gap.
 5. Process the receipt with a document action and confirm whether the record becomes read-only in completed or voided states.
 6. Open **Related Documents** and confirm the sales-order chip navigates back to the originating sales order.
+7. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 
@@ -55,3 +58,4 @@ Receive material back into stock after a sales-side return flow. The window is o
 - `artifacts/return-material-receipt/custom/RelatedDocuments.jsx` fetches the linked sales order and navigates to `/sales-order/${order.id}` from the related-documents chip.
 - `artifacts/return-material-receipt/decisions.json` retains rules for processed-state read-only behavior, business-partner address defaulting, RMA-based line autofill, and product-to-UOM autofill, but these are source-level signals rather than browser-verified behavior.
 - I did not find dedicated browser automation for this specific window; shared route and generated-window loading evidence is documented in `docs/generated-custom-windows/app-shell-functional-flows.md`.
+- The generated `ReturnMaterialReceiptPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `M_InOut` AD table.

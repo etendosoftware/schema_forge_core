@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, TrendingUp, TrendingDown, Check, Minus, Sparkles, Plus } from 'lucide-react';
+import { TrendingUp, TrendingDown, Check, Minus, Sparkles, Plus } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { useLocaleSwitch } from '@/i18n';
 import { useCopilot } from '@/components/CopilotContext';
 import { formatDashboardAmount, formatDashboardNumber, localeFromUi } from '@/lib/dashboardNumberFormat.js';
+import { DashboardCard, DashboardEmptyState, DashboardRowChevron } from './_shared';
 
 function TrendPill({ pct }) {
   if (pct === null || pct === undefined) return null;
@@ -65,103 +66,17 @@ export function BestProductsList({ sellers = [], products = [], currencyLabel = 
   const hasNegativeTrend = !hasPositiveTrend && rows.some((r) => (r.trendPct ?? 0) < 0);
 
   return (
-    <div
-      className="overflow-hidden bg-white"
-      style={{
-        boxSizing: 'border-box',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        padding: '0px',
-        width: '100%',
-        height: '100%',
-        border: '1px solid #E8EAEF',
-        borderRadius: '8px',
-      }}
-    >
-      <div
-        style={{
-          boxSizing: 'border-box',
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          padding: '8px 12px',
-          gap: '16px',
-          width: '100%',
-          height: '48px',
-          background: '#F5F7F9',
-          borderBottom: '1px solid #E8EAEF',
-          flex: 'none',
-          order: 0,
-          alignSelf: 'stretch',
-          flexGrow: 0,
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            padding: '0px',
-            gap: '10px',
-            width: 'auto',
-            height: '16px',
-          }}
-        >
-          <span
-            style={{
-              height: '16px',
-              fontFamily: 'Inter',
-              fontStyle: 'normal',
-              fontWeight: 500,
-              fontSize: '12px',
-              lineHeight: '16px',
-              color: '#282833',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {ui('bestProductsTitle')}
-          </span>
-        </div>
-      </div>
-
+    <DashboardCard title={ui('bestProductsTitle')}>
       {hasNoData ? (
-        <div className="flex-1 flex items-center justify-center w-full">
-          <div className="flex flex-col items-center" style={{ gap: '12px', width: '340px' }}>
-            <div className="flex flex-col items-center" style={{ gap: '4px' }}>
-              <p style={{ fontSize: '20px', fontWeight: 600, lineHeight: '28px', textAlign: 'center', color: '#121217' }}>
-                {ui('bestProductsEmptyTitle')}
-              </p>
-              <p style={{ fontSize: '12px', fontWeight: 400, lineHeight: '16px', textAlign: 'center', color: '#282833' }}>
-                {ui('bestProductsEmptySubtitle')}
-              </p>
-            </div>
-            <div className="flex flex-row items-center" style={{ gap: '12px' }}>
-              <button
-                type="button"
-                onClick={openCopilot}
-                className="flex items-center justify-center"
-                style={{ padding: '4px 8px', height: '32px', background: '#FFFFFF', border: '1px solid #D1D4DB', boxShadow: '0px 1px 2px rgba(18,18,23,0.05)', borderRadius: '8px', gap: '4px', cursor: 'pointer' }}
-              >
-                <Sparkles style={{ width: '20px', height: '20px', color: '#828FA3' }} />
-                <span style={{ fontSize: '14px', fontWeight: 500, lineHeight: '24px', color: '#121217' }}>
-                  {ui('createWithCopilot')}
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/sales-invoice/new')}
-                className="flex items-center justify-center"
-                style={{ padding: '4px 8px', height: '32px', background: '#121217', borderRadius: '8px', gap: '4px', cursor: 'pointer', border: 'none' }}
-              >
-                <Plus style={{ width: '20px', height: '20px', color: 'rgba(255,255,255,0.9)' }} />
-                <span style={{ fontSize: '14px', fontWeight: 500, lineHeight: '24px', color: '#FFFFFF' }}>
-                  {ui('newSale')}
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <DashboardEmptyState
+          title={ui('bestProductsEmptyTitle')}
+          subtitle={ui('bestProductsEmptySubtitle')}
+          width="340px"
+          actions={[
+            { key: 'copilot', icon: Sparkles, label: ui('createWithCopilot'), onClick: openCopilot, variant: 'secondary' },
+            { key: 'new', icon: Plus, label: ui('newSale'), onClick: () => navigate('/sales-invoice/new'), variant: 'primary' },
+          ]}
+        />
       ) : (<>
       <div
         style={{
@@ -324,25 +239,13 @@ export function BestProductsList({ sellers = [], products = [], currencyLabel = 
                     </span>
                   </div>
                 </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    alignItems: 'flex-start',
-                    padding: '0px 4px 0px 0px',
-                    width: '28px',
-                    height: '24px',
-                    flexShrink: 0,
-                  }}
-                >
-                  <ChevronRight style={{ width: '16px', height: '16px', color: '#828FA3' }} />
-                </div>
+                <DashboardRowChevron />
               </div>
             );
           })
         )}
       </div>
       </>)}
-    </div>
+    </DashboardCard>
   );
 }

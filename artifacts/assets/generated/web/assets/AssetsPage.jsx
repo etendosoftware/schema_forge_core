@@ -4,6 +4,7 @@ import AssetsTable from './AssetsTable';
 import AssetsForm from './AssetsForm';
 import AssetsAmortizationPanel from '@/windows/custom/assets/AssetsAmortizationPanel';
 import AssetsConfigPanel from '@/windows/custom/assets/AssetsConfigPanel';
+import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 
 import AssetsSidebar from '@/windows/custom/assets/AssetsSidebar';
@@ -33,6 +34,10 @@ const processes = [
 // @sf-generated-start draftMode:assets
 const draftMode = null;
 // @sf-generated-end draftMode:assets
+
+// @sf-generated-start requiredHeaderFields:assets
+const requiredHeaderFields = ['searchKey', 'name', 'assetCategory'];
+// @sf-generated-end requiredHeaderFields:assets
 
 
 
@@ -200,6 +205,8 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
         hideMoreMenu
         hideMoreDetails
         contentBg="bg-slate-50"
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "A_Asset", config: {} } }]}
+        requiredHeaderFields={requiredHeaderFields}
         detailSortBy="sEQNoAsset asc"
         titleField="name"
         lockWhenProcessed={false}
@@ -230,6 +237,7 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
       hideListFilters
       hideLink
       hideEyeCount
+      rowQuickActions={{}}
       {...props}
     />
   );

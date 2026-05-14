@@ -238,6 +238,12 @@ function applyForeignKeyProps(field, rawField, fieldDecision) {
   if (dependsOn) field.dependsOn = dependsOn;
   if (fieldDecision.lookup) field.lookup = true;
   if (fieldDecision.popup) field.popup = true;
+  if (fieldDecision.lookupDrawer) field.lookupDrawer = fieldDecision.lookupDrawer;
+  if (fieldDecision.lookupTitle) field.lookupTitle = fieldDecision.lookupTitle;
+  if (Array.isArray(fieldDecision.onSelectMappings) && fieldDecision.onSelectMappings.length > 0) {
+    field.onSelectMappings = fieldDecision.onSelectMappings;
+  }
+  if (fieldDecision.displayFromCatalog) field.displayFromCatalog = fieldDecision.displayFromCatalog;
 }
 
 function applyVisibleFieldProps(field, rawField, fieldDecision) {
@@ -520,10 +526,14 @@ const WINDOW_TRUTHY_PROPS = [
   'dateFilterKey',
   'statusEnumLabels',
   'lineEntityConfig',
+  'rowQuickActions',
+  'sendDocument',
+  'linesLayout',
 ];
 
 const WINDOW_BOOLEAN_TRUE_PROPS = [
   'hideDeleteWhenComplete',
+  'customTabsAfterBottom',
   'hidePrint',
   'hideMoreMenu',
   'hideMoreDetails',
@@ -534,7 +544,10 @@ const WINDOW_BOOLEAN_TRUE_PROPS = [
   'noHeaderBorder',
 ];
 
-const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb'];
+// `attachments` is defined-only (not truthy) so an explicit `false` from
+// decisions.json reaches the contract and disables the AttachmentsTab in the
+// generator. Accepted shapes: boolean | { enabled?: boolean, ...options }.
+const WINDOW_DEFINED_PROPS = ['contentBg', 'breadcrumb', 'attachments'];
 const WINDOW_NOT_NULL_PROPS = ['detailTabIndex', 'salesTheme'];
 
 // Canonical key order for the contract window object. Stabilizes contract.json
@@ -544,7 +557,7 @@ export const WINDOW_KEY_ORDER = [
   'id', 'name', 'primaryEntity', 'category',
   'sidebarLayout', 'templateConfig',
   'documentPreview', 'notesField', 'relatedDocuments',
-  'hideDeleteWhenComplete', 'hidePrint', 'hideSaveStatuses',
+  'hideDeleteWhenComplete', 'customTabsAfterBottom', 'hidePrint', 'hideSaveStatuses',
   'hideMoreMenu', 'hideMoreDetails', 'contentBg',
   'hideListFilters', 'hideLink', 'hideEyeCount', 'breadcrumb',
   'customComponents', 'menuActions', 'processOverrides',
@@ -555,7 +568,9 @@ export const WINDOW_KEY_ORDER = [
   'disableProcessedLock', 'titleField',
   'listViewOptions', 'listBaseFilter', 'quickFilters', 'subsetFilters',
   'dateFilterKey', 'statusEnumLabels', 'noHeaderBorder', 'lineEntityConfig',
-  'layoutType',
+  'attachments', 'rowQuickActions',
+  'sendDocument',
+  'layoutType', 'linesLayout',
 ];
 
 // Generic helper: returns a new object with keys in `canonicalOrder` first
@@ -615,6 +630,12 @@ function applyWindowDecisions(window, windowDecisions) {
   if ('detailEntity' in windowDecisions) {
     window.detailEntity = windowDecisions.detailEntity;
   }
+
+  // ETP-3914 — Row Quick Actions: the user declaration (if any) is copied verbatim via
+  // WINDOW_TRUTHY_PROPS. Windows that don't declare `rowQuickActions` get the feature
+  // enabled with canonical defaults at runtime — no contract block needed. The block
+  // is only emitted when the user wants to override defaults (hide an action, disable
+  // the feature, add `visibleWhen`, promote a process to a fixed slot, etc.).
 }
 
 function applyWindowDraftModeToPrimaryEntity(curatedEntities, windowDecisions) {

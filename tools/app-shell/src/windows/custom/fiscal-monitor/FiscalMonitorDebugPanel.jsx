@@ -1,11 +1,18 @@
 import { useState } from 'react';
+import { useUI } from '@/i18n';
 
 const PROFILES = [
-  { key: 'sii',        label: 'SII' },
-  { key: 'sii-navarra',label: 'SII Navarra' },
-  { key: 'sii+tbai',   label: 'SII + TBAI' },
-  { key: 'tbai',       label: 'TBAI' },
-  { key: 'verifactu',  label: 'Verifactu' },
+  { key: 'sii',        labelKey: 'fmDebug.profile.sii' },
+  { key: 'sii-navarra',labelKey: 'fmDebug.profile.siiNavarra' },
+  { key: 'sii+tbai',   labelKey: 'fmDebug.profile.siiTbai' },
+  { key: 'tbai',       labelKey: 'fmDebug.profile.tbai' },
+  { key: 'verifactu',  labelKey: 'fmDebug.profile.verifactu' },
+];
+
+const CERT_EXPIRY_OPTIONS = [
+  { key: null, labelKey: 'fmDebug.certExpiry.none' },
+  { key: 45,   labelKey: 'fmDebug.certExpiry.warn' },
+  { key: 20,   labelKey: 'fmDebug.certExpiry.crit' },
 ];
 
 const panelStyle = {
@@ -23,14 +30,15 @@ const panelStyle = {
   fontFamily: 'var(--font-mono, monospace)',
 };
 
-export default function FiscalMonitorDebugPanel({ activeProfile, onProfileChange, mockData, onMockDataChange }) {
+export default function FiscalMonitorDebugPanel({ activeProfile, onProfileChange, mockData, onMockDataChange, mockCertDays, onSetCertDays }) {
+  const ui = useUI();
   const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div style={panelStyle}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: collapsed ? 0 : 8 }}>
         <span style={{ fontSize: 10, letterSpacing: '0.08em', color: '#a0a0cc', textTransform: 'uppercase' }}>
-          ⚙ Debug · Fiscal Monitor
+          {ui('fmDebug.title')}
         </span>
         <button
           onClick={() => setCollapsed(c => !c)}
@@ -42,9 +50,9 @@ export default function FiscalMonitorDebugPanel({ activeProfile, onProfileChange
 
       {!collapsed && (
         <>
-          <div style={{ fontSize: 10, color: '#a0a0cc', marginBottom: 6 }}>Profile override</div>
+          <div style={{ fontSize: 10, color: '#a0a0cc', marginBottom: 6 }}>{ui('fmDebug.profileOverride')}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {PROFILES.map(({ key, label }) => (
+            {PROFILES.map(({ key, labelKey }) => (
               <button
                 key={key}
                 onClick={() => onProfileChange(activeProfile === key ? null : key)}
@@ -61,23 +69,47 @@ export default function FiscalMonitorDebugPanel({ activeProfile, onProfileChange
                   transition: 'background .1s',
                 }}
               >
-                {activeProfile === key ? '✓ ' : '  '}{label}
+                {activeProfile === key ? '✓ ' : '  '}{ui(labelKey)}
               </button>
             ))}
           </div>
           {activeProfile && (
             <div style={{ marginTop: 8, fontSize: 10, color: '#7a7aaa', lineHeight: 1.4 }}>
-              Showing design for <strong style={{ color: '#e0e0ff' }}>{activeProfile}</strong>.
+              {ui('fmDebug.showingDesignFor', { profile: activeProfile })}
             </div>
           )}
           {!activeProfile && (
             <div style={{ marginTop: 8, fontSize: 10, color: '#7a7aaa' }}>
-              No override — real profile active.
+              {ui('fmDebug.noOverride')}
             </div>
           )}
 
           <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #2d2d4a' }}>
-            <div style={{ fontSize: 10, color: '#a0a0cc', marginBottom: 6 }}>Data</div>
+            <div style={{ fontSize: 10, color: '#a0a0cc', marginBottom: 6 }}>{ui('fmDebug.section.certExpiry')}</div>
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
+              {CERT_EXPIRY_OPTIONS.map(opt => {
+                const active = mockCertDays === opt.key;
+                return (
+                  <button
+                    key={String(opt.key)}
+                    onClick={() => onSetCertDays?.(opt.key)}
+                    style={{
+                      background: active ? '#1a3a2a' : '#2d2d4a',
+                      border: '1px solid ' + (active ? '#2a7a4a' : '#3d3d5c'),
+                      borderRadius: 6, color: active ? '#b3ffd6' : '#e0e0ff',
+                      cursor: 'pointer', padding: '3px 8px', fontSize: 11,
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    {active ? '✓ ' : ''}{ui(opt.labelKey)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #2d2d4a' }}>
+            <div style={{ fontSize: 10, color: '#a0a0cc', marginBottom: 6 }}>{ui('fmDebug.section.data')}</div>
             <button
               onClick={() => onMockDataChange(!mockData)}
               style={{
@@ -94,11 +126,11 @@ export default function FiscalMonitorDebugPanel({ activeProfile, onProfileChange
                 transition: 'background .1s',
               }}
             >
-              {mockData ? '✓ ' : '  '}Mock data
+              {mockData ? '✓ ' : '  '}{ui('fmDebug.mockData')}
             </button>
             {mockData && (
               <div style={{ marginTop: 5, fontSize: 10, color: '#7a7aaa', lineHeight: 1.4 }}>
-                KPIs and table rows are static samples.
+                {ui('fmDebug.mockDataHint')}
               </div>
             )}
           </div>

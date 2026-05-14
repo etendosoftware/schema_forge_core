@@ -27,6 +27,62 @@ npm install -g agent-browser && agent-browser install   # Optional: install agen
 
 ---
 
+## Deployed MCP OAuth2 Smoke
+
+`e2e/tests/flows/mcp-oauth-pkce.smoke.spec.js` validates the public MCP/OAuth integration after deploy. It models the browser flow started by `opencode mcp auth etendo`: clean session, OAuth authorize URL, login, requested permissions, explicit authorization, local callback, and PKCE token exchange. The UI preserves the original `/authorize?...` URL through onboarding with a local-only `returnTo` parameter, then resumes the authorization screen after environment login. It is skipped by default because it targets a deployed environment, uses real smoke credentials, can create an OAuth client through DCR, and binds a local callback server.
+
+Run it explicitly:
+
+```bash
+cd e2e
+npm run test:mcp-oauth-smoke
+```
+
+Before running, export or otherwise provide `E2E_MCP_OAUTH_SMOKE=1`, `E2E_MCP_SMOKE_USER`, `E2E_MCP_SMOKE_PASSWORD`, and `E2E_MCP_OAUTH_CLIENT_ID` in the shell or CI environment.
+
+Use DCR instead of a pre-created client when the environment allows dynamic registration:
+
+```bash
+cd e2e
+npm run test:mcp-oauth-smoke
+```
+
+For DCR, provide `E2E_MCP_OAUTH_SMOKE=1`, `E2E_MCP_SMOKE_USER`, `E2E_MCP_SMOKE_PASSWORD`, and `E2E_MCP_OAUTH_ENABLE_DCR=1` in the shell or CI environment.
+
+If DCR creates the client but `/etendo/oauth2/authorize` returns `invalid_scope`, the environment is not granting the requested MCP scopes to dynamically registered clients. In that case, create a client from the OAuth2 Clients administration page with a System Administrator role, enable `neo:read`, `neo:write`, `neo:process`, `neo:report`, and `neo:*`, then pass its id through `E2E_MCP_OAUTH_CLIENT_ID`.
+
+Configuration variables:
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `E2E_MCP_PUBLIC_BASE_URL` | `https://go.experimental.etendo.cloud` | Public viewer origin used for discovery checks |
+| `E2E_MCP_RESOURCE` | `${E2E_MCP_PUBLIC_BASE_URL}/mcp` | Expected protected resource value |
+| `E2E_MCP_ENDPOINT` | `${E2E_MCP_PUBLIC_BASE_URL}/mcp` | MCP endpoint used for the WAF/method smoke |
+| `E2E_MCP_OAUTH_AUTHORIZE_URL` | `${E2E_MCP_PUBLIC_BASE_URL}/etendo/oauth2/authorize` | Backend authorization endpoint |
+| `E2E_MCP_OAUTH_TOKEN_URL` | `${E2E_MCP_PUBLIC_BASE_URL}/etendo/oauth2/token` | Token endpoint for the PKCE exchange |
+| `E2E_MCP_OAUTH_REGISTRATION_URL` | `${E2E_MCP_PUBLIC_BASE_URL}/etendo/oauth2/register` | DCR endpoint |
+| `E2E_MCP_OAUTH_SCOPES` | `neo:read neo:write neo:process neo:report neo:*` | Requested MCP scopes |
+| `E2E_MCP_OAUTH_CLIENT_ID` | none | Existing OAuth client ID |
+| `E2E_MCP_OAUTH_CLIENT_SECRET` | none | Optional client secret |
+| `E2E_MCP_OAUTH_TOKEN_AUTH_METHOD` | `client_secret_post` | Use `client_secret_basic`, `client_secret_post`, or `none` |
+| `E2E_MCP_OAUTH_ENABLE_DCR` | `0` | Set to `1` to create a client dynamically |
+| `E2E_MCP_OAUTH_DCR_INITIAL_ACCESS_TOKEN` | none | Optional bearer token for protected DCR |
+| `E2E_MCP_OAUTH_REDIRECT_URI` | local random port | Fixed callback URI when the client requires one; must use `127.0.0.1`, `localhost`, or `[::1]`, include an explicit port, and use the callback path registered for the client |
+
+The smoke performs these checks:
+
+1. `/.well-known/oauth-authorization-server` returns JSON with public HTTPS URLs.
+2. `/.well-known/oauth-protected-resource` returns JSON with the expected MCP resource.
+3. `POST /mcp` is not blocked by CloudFront/WAF as a method-level `403`.
+4. An unauthenticated authorization request does not resolve to only the Vite/PWA shell.
+5. The user reaches the standard login flow, logs in, returns to OAuth with the original parameters, sees the requested permissions prompt, explicitly authorizes access, receives `code` and `state`, and exchanges the code for an `access_token` with PKCE.
+
+The app service worker must not serve `index.html` for backend or metadata navigations. `tools/app-shell/vite.config.js` keeps `/etendo/*`, `/mcp`, and `/.well-known/*` in the Workbox navigation fallback denylist while leaving `/authorize` as a SPA route.
+
+After deploying a service worker or routing change, invalidate CloudFront for `/sw.js`, `/registerSW.js`, `/index.html`, and `/assets/*`. For one local browser session, close and reopen the browser or unregister the existing service worker before retrying MCP authorization.
+
+---
+
 ## Method 1: Record a Flow (Recommended for new tests)
 
 The fastest way to create a test. You interact with the app in a real browser, and Playwright records every action as code. Then Claude takes that recording and turns it into a proper test with assertions and validations.
@@ -423,9 +479,96 @@ Shared UI components (`EntityForm`, `DetailView`, `ListView`, `DataTable`) emit 
 | `action-{name}` | `action-save`, `action-cancel`, `action-new`, `action-save-draft` | DetailView, ListView buttons |
 | `detail-view` | — | DetailView container |
 | `list-view` | — | ListView container |
+| `tab-{key}` | `tab-lines`, `tab-custom:attachments` | DetailView tab strip buttons (main strip and customTabsAfterBottom strip) |
 | `row-{id}` | `row-ABC123` | DataTable rows |
 | `option-{id}` | `option-ABC123` | SearchInput suggestions |
 | `option-{field}-{id}` | `option-warehouse-ABC123` | SelectorInput / DependentSelect items |
+| `attachments-tab-panel` | — | AttachmentsTab root container |
+| `attachments-dropzone` | — | UploadDropzone drag-and-drop area |
+| `attachments-file-input` | — | Hidden `<input type="file">` — use `setInputFiles()` |
+| `attachments-table` | — | AttachmentsTable `<table>` element |
+| `attachments-empty-state` | — | Empty state shown when no files exist |
+| `attachments-download-all` | — | "Download All (ZIP)" header button |
+| `attachments-delete-all` | — | "Delete All" header button |
+| `attachment-row-{id}` | `attachment-row-att-001` | Individual attachment row |
+| `attachment-name-{id}` | `attachment-name-att-001` | File name cell |
+| `attachment-download-{id}` | `attachment-download-att-001` | Per-row download button (revealed on hover) |
+| `attachment-delete-{id}` | `attachment-delete-att-001` | Per-row delete button (revealed on hover) |
+| `confirm-delete-dialog` | — | ConfirmDeleteDialog content (also used for replace confirmation) |
+| `confirm-delete-confirm` | — | Confirm button inside the dialog |
+| `confirm-delete-cancel` | — | Cancel button inside the dialog |
+| `row-quick-actions` | — | RowQuickActions overlay container (per row) |
+| `row-quick-action-{key}` | `row-quick-action-edit`, `-clone`, `-email`, `-more`, `-delete` | Canonical row quick-action buttons |
+| `row-quick-action-delete-confirm` | — | Destructive button inside the row delete confirm dialog |
+
+## Writing a mocked list/detail spec
+
+For features that live on the list grid (e.g. RowQuickActions) you can run specs against `make dev` without an Etendo backend. The `login()` helper in `tests/helpers/auth.js` seeds a fake token and a generic `**/sws/**` mock that returns empty lists. Install **more specific** routes after login to feed synthetic rows — Playwright matches routes in **reverse registration order**, so specific wins over generic.
+
+### Minimal template
+
+```js
+import { test, expect } from '@playwright/test';
+import { login } from '../helpers/auth.js';
+
+const ROWS = [
+  { id: 'row-001', documentNo: 'DOC-001', documentStatus: 'DR' },
+  { id: 'row-002', documentNo: 'DOC-002', documentStatus: 'CO' },
+];
+
+async function installListMock(page, spec) {
+  await page.route(`**/sws/neo/${spec}/header**`, async (route) => {
+    const req = route.request();
+    const url = req.url();
+    if (req.method() === 'GET' && !/\/header\/[^/?]+/.test(url)) {
+      // List fetch
+      return route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({ response: { data: ROWS, totalRows: ROWS.length } }),
+      });
+    }
+    if (req.method() === 'GET') {
+      // Detail fetch — match by id and return a single-element envelope
+      const m = url.match(/\/header\/([^/?]+)/);
+      const found = ROWS.find(r => r.id === m?.[1]) ?? ROWS[0];
+      return route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({ response: { data: [found] } }),
+      });
+    }
+    return route.fallback();
+  });
+}
+
+test.describe('My feature — sales-order', () => {
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await installListMock(page, 'sales-order');
+    await page.goto('/sales-order');
+    await page.waitForLoadState('networkidle').catch(() => {});
+  });
+
+  test('hover reveals the overlay', async ({ page }) => {
+    const row = page.locator('tbody tr').filter({ hasText: 'DOC-001' }).first();
+    await row.hover();
+    await expect(row.getByTestId('row-quick-actions')).toBeVisible();
+    await expect(row.getByTestId('row-quick-action-edit')).toBeVisible();
+  });
+});
+```
+
+### Conventions for mocked specs
+
+- **File name suffix `.mocked.spec.js`** — distinguishes from specs that need a real backend.
+- **Identify rows by display text**, not by index — `tbody tr.filter({ hasText: 'DOC-001' })` survives reorderings.
+- **Use `getByTestId()`** instead of `[data-testid="..."]` — built-in retry and cleaner traces.
+- **Match list vs detail by regex on the URL** — `/\/header\/[^/?]+/.test(url)` is the detail GET.
+- **Custom field keys** — some windows expose the document number under a different field (e.g. purchase-invoice uses `orderReference`, not `documentNo`). Mirror the value into both keys when mocking so a single locator works across windows.
+- **Per-window expected buttons** — if your overlay/feature is gated by the custom window file (`onClone`, `onEmail`, `menuActions`, `documentPreview`), parametrize the asserts so each window verifies its own wiring (catches regressions where a custom window stops passing a handler).
+
+### Canonical reference
+
+`e2e/tests/flows/row-quick-actions.mocked.spec.js` covers the four pilot windows (sales-order, purchase-order, sales-invoice, purchase-invoice) and is the recommended starting point for any list-row UI test. It demonstrates: mocked list+detail endpoints, per-window expected-button matrix, hover→overlay assertion, edit-navigates-to-detail flow, and delete-opens-dialog flow.
 
 ## Tips
 
@@ -434,4 +577,5 @@ Shared UI components (`EntityForm`, `DetailView`, `ListView`, `DataTable`) emit 
 - **Use role-based selectors** — `getByRole('button', { name: 'Save' })` is more resilient than CSS selectors.
 - **Re-discover after pipeline changes** — when `generate-frontend.js` regenerates a window, run `agent-browser snapshot -i` to verify selectors still match, then update `selectors.js`.
 - **Run a single test** — `cd e2e && npx playwright test tests/flows/purchase-order-create.spec.js --headed`
+- **Run a single suite** — `cd e2e && npx playwright test tests/flows/attachments.mocked.spec.js --headed --grep "Suite C"`
 - **Debug mode** — `make test-e2e-debug` pauses on each step so you can inspect the browser.

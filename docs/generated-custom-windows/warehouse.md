@@ -22,6 +22,7 @@ Use this window to maintain the warehouse master record and understand what is p
 - Window shape: single-entity warehouse master with additional child/secondary surfaces. The contract declares no single `detailEntity`; instead, the record page combines the warehouse header with storage-bin, bin-content, products, and transactions interactions around the selected warehouse.
 - List interaction: the list is the warehouse master list, searchable by `searchKey` and `name`. Opening a record switches to the warehouse detail workspace.
 - Detail interaction: the detail page keeps the warehouse form as the main record, adds sidebar summary content, adds a custom `Products` primary tab, and exposes a `Transactions` secondary tab. Storage-bin and bin-content data remain part of the available warehouse child surface area through the generated contract/API, even though the custom window emphasizes product and transaction views.
+- An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
 
 ## Reactive behavior and dependencies
 
@@ -55,6 +56,7 @@ Use this window to maintain the warehouse master record and understand what is p
 6. Complete a move and confirm the flow creates a warehouse transfer effect that is later visible in warehouse transactions or refreshed stock totals.
 7. In `Transactions`, confirm filtering and sorting work on movement date, product, type, and quantity, and confirm the rows behave as historical review rather than inline editing.
 8. Verify whether the current warehouse detail page exposes a direct way to inspect or maintain storage bins and raw bin contents from the same workspace; if that path is missing or indirect, record it as a functional gap.
+9. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 
@@ -64,3 +66,12 @@ Use this window to maintain the warehouse master record and understand what is p
 - `artifacts/warehouse/contract.json` and generated warehouse files provide direct source evidence for the available warehouse, storage-bin, product-transactions, and bin-contents entities, selectors, and declared actions.
 - `tools/app-shell/src/windows/custom/warehouse/__tests__/WarehouseSummary.test.js` verifies that `WarehouseSummary` uses `niceScale` and `formatDashboardAxisTick` for both chart types, that no local `fmtY` function is present, that line-chart dots are hover-only, and that the bar-chart tooltip receives the `ui` prop.
 - No dedicated browser-level warehouse window test was found for the full multi-surface interaction flow. Use `docs/generated-custom-windows/app-shell-functional-flows.md` for shared shell/route/loading evidence and rely on manual verification for warehouse-specific behavior.
+- The generated `WarehousePage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `M_Warehouse` AD table.
+
+## Pipeline regeneration — ETP-3908
+
+Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functional changes to this window.
+
+- `linesLayout: "classic"` is now written explicitly to `contract.json`; previously the classic layout was the implicit default.
+- `requiredHeaderFields` is now emitted in the page component; this window has no required header fields so the array is empty and there is no behavioral change.
+- LinesTable template updated in ETP-3908 to include the inline-editable add-row alignment fix. This window uses `linesLayout: "classic"` so the new template branch is dead code here — no behavioral change.

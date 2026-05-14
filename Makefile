@@ -1,4 +1,4 @@
-.PHONY: test test-all-coverage test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-with-shell dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate sonar sonar-coverage menu-cache uuid
+.PHONY: test test-all-coverage test-ci test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-with-shell dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate sonar sonar-coverage menu-cache uuid
 
 # --- Testing ---
 
@@ -24,6 +24,25 @@ test-all-coverage: ## Run ALL unit tests (Node + Vitest) with coverage reports
 	@echo ""
 	@echo "Coverage reports saved in coverage/"
 	@echo "  cli-lcov.info, appshell-lcov.info, appshell-test-lcov.info, artifacts-lcov.info, vitest-lcov.info"
+
+test-ci: ## Run all unit tests and write JUnit XML reports (CI mode)
+	@mkdir -p test-results
+	node --test \
+	  --test-reporter=spec --test-reporter-destination=stdout \
+	  --test-reporter=junit --test-reporter-destination=test-results/cli.xml \
+	  'cli/test/*.test.js'
+	node --test \
+	  --test-reporter=spec --test-reporter-destination=stdout \
+	  --test-reporter=junit --test-reporter-destination=test-results/appshell-node.xml \
+	  'tools/app-shell/src/**/__tests__/*.test.js' \
+	  'tools/app-shell/test/*.test.js'
+	node --test \
+	  --test-reporter=spec --test-reporter-destination=stdout \
+	  --test-reporter=junit --test-reporter-destination=test-results/artifacts.xml \
+	  'artifacts/**/__tests__/*.test.js'
+	cd tools/app-shell && npx vitest run \
+	  --reporter=junit \
+	  --outputFile=../../test-results/vitest.xml
 
 validate-pipeline: ## Validate pipeline completeness across all artifacts
 	node cli/src/validate-pipeline.js --format=text

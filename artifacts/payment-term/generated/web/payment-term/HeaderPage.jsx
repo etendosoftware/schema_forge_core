@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import HeaderTable from './HeaderTable';
 import HeaderForm from './HeaderForm';
+import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 
 
@@ -41,6 +42,10 @@ const processes = [
 // @sf-generated-start draftMode:header
 const draftMode = null;
 // @sf-generated-end draftMode:header
+
+// @sf-generated-start requiredHeaderFields:header
+const requiredHeaderFields = ['searchKey', 'name', 'offsetMonthDue', 'overduePaymentDaysRule'];
+// @sf-generated-end requiredHeaderFields:header
 
 
 
@@ -113,6 +118,8 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       api={api}
         hidePrint
         hideMoreMenu
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_PaymentTerm", config: {} } }]}
+        requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}
         {...props}
       />
@@ -130,6 +137,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       hidePrint
       hideMoreMenu
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
       {...props}
     />
   );

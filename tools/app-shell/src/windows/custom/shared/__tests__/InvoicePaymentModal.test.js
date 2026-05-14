@@ -19,10 +19,11 @@ describe('InvoicePaymentModal', () => {
     assert.match(src, /export function PaymentRegisterForm/);
   });
 
-  it('accepts invoiceId, invoiceData, specName, apiBaseUrl, and onClose props without token', () => {
+  it('accepts invoiceId, invoiceData, specName, apiBaseUrl, onClose, and onPaymentAdded props without token', () => {
     assert.match(src, /invoiceId/);
     assert.match(src, /invoiceData/);
     assert.match(src, /specName/);
+    assert.match(src, /onPaymentAdded/);
     assert.doesNotMatch(src, /export default function InvoicePaymentModal\(\{[^}]*\btoken\b/s);
   });
 
@@ -107,6 +108,10 @@ describe('InvoicePaymentModal', () => {
 
   it('re-fetches installments and payments after a payment is registered', () => {
     assert.match(src, /handlePaymentSuccess/);
+  });
+
+  it('calls onPaymentAdded after a successful payment registration', () => {
+    assert.match(src, /onPaymentAdded\?\.\(\)/);
   });
 
   // ── Sorting ────────────────────────────────────────────────────────────────
