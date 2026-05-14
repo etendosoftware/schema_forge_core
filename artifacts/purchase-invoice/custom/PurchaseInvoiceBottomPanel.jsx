@@ -1,7 +1,6 @@
 import { useUI } from '@/i18n';
 import { LinesBottomSection } from '@/components/contract-ui';
 import RelatedDocuments from '@/windows/custom/purchase-invoice/RelatedDocuments.jsx';
-import SifDataTabs from './SifDataTabs';
 
 /* eslint-disable react/prop-types */
 
@@ -16,7 +15,6 @@ export default function PurchaseInvoiceBottomPanel(props) {
     <LinesBottomSection
       {...props}
       relatedDocuments={RelatedDocuments}
-      notesExtra={SifDataTabs}
     />
   );
 }

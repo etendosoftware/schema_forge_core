@@ -729,6 +729,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const detailSortBy = windowConfig.detailSortBy ?? null;
   const titleField = windowConfig.titleField ?? null;
   const salesTheme = windowConfig.salesTheme ?? false;
+  const extraTabs = windowConfig.extraTabs ?? [];
   const lineEntityConfig = windowConfig.lineEntityConfig ?? null;
   // ETP-3914 — Row Quick Actions overlay config (defaults injected by resolve-curated.js).
   // When the entire feature is disabled we skip emitting the prop so the list view is
@@ -923,6 +924,12 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       `{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: ${JSON.stringify(headerTableName)}, config: ${optsLiteral} } }`
     );
   }
+  extraTabs.forEach(et => {
+    const labelPart = et.labelKey ? `labelKey: '${et.labelKey}'` : `label: '${JSON.stringify(et.label)}'`;
+    customTabItems.push(
+      `{ key: '${et.key}', ${labelPart}, Component: ${et.component}, placement: 'tab' }`
+    );
+  });
   const customTabsProp = customTabItems.length > 0
     ? `\n        customTabs={[${customTabItems.join(', ')}]}`
     : '';
@@ -1065,6 +1072,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Build optional import for the generic AttachmentsTab component
   const attachmentsImport = attachmentsEnabled
     ? `import { AttachmentsTab } from '@/components/attachments';\n`
+    : '';
+
+  // Build optional imports for extra custom tabs (window.extraTabs in decisions.json)
+  const extraTabsImport = extraTabs.length > 0
+    ? extraTabs.map(et => `import ${et.component} from '${et.importFrom}';\n`).join('')
     : '';
 
   // Draft mode config from frontend contract
@@ -1249,7 +1261,7 @@ ${headerTableImport}
 import ${headerName}Form from './${headerName}Form';${detailEntity ? `
 import ${detailName}Table from './${detailName}Table';
 import ${detailName}Form from './${detailName}Form';` : ''}
-${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${formFooterImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${attachmentsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
+${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${formFooterImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${attachmentsImport}${extraTabsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
 ${isGallery ? `import ${headerName}Gallery from ${resolveCustomImport(specName || headerEntity, `${headerName}Gallery`)};` : ''}${isSidebar ? `
 import ${headerName}Sidebar from ${resolveCustomImport(specName || headerEntity, `${headerName}Sidebar`)};` : (isGallery ? `
 import ${headerName}DetailHeader from ${resolveCustomImport(specName || headerEntity, `${headerName}DetailHeader`)};` : '')}${statusBarImport}

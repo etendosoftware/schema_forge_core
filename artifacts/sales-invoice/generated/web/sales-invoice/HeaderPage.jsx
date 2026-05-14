@@ -8,6 +8,7 @@ import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
 import { AttachmentsTab } from '@/components/attachments';
+import SifTab from '@/windows/custom/shared/SifTab.jsx';
 import InvoiceBottomPanel from '../../../custom/InvoiceBottomPanel';
 import InvoiceTopbarExtra from '../../../custom/InvoiceTopbarExtra';
 import catalogs from './mockCatalogs';
@@ -479,7 +480,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         hidePrint
         noHeaderBorder
         notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Invoice", config: {} } }]}
+        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Invoice", config: {} } }, { key: 'sif', labelKey: 'sifDataTabs.sectionTitle', Component: SifTab, placement: 'tab' }]}
         bottomSection={InvoiceBottomPanel}
         topbarRight={InvoiceTopbarExtra}
         menuActions={({ status }) => [

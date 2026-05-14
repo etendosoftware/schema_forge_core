@@ -16,6 +16,15 @@
       "topbarRight": "InvoiceTopbarExtra"
     },
     "linesLayout": "inlineEditable",
+    "extraTabs": [
+      {
+        "key": "sif",
+        "labelKey": "sifDataTabs.sectionTitle",
+        "component": "SifTab",
+        "importFrom": "@/windows/custom/shared/SifTab.jsx",
+        "placement": "tab"
+      }
+    ],
     "menuActions": [
       {
         "key": "reactivate",
