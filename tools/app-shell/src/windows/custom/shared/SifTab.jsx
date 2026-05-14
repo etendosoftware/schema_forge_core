@@ -1,6 +1,10 @@
 import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useUI } from '@/i18n';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { DateField } from '@/components/ui/date-field';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
 import { normalizeDateInputValue } from '@/windows/custom/fiscal-config/fiscalConfig.utils.js';
 import { useAuth } from '@/auth/AuthContext';
@@ -20,7 +24,53 @@ const PURCHASE_CLAVE_TIPO_FC_OPTIONS = [
   { value: 'F1', labelKey: 'sifDataTabs.option.invoice' },
 ];
 
-const inputCls = 'w-full text-xs bg-white border rounded px-2 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50 border-border/40';
+function Field({ label, htmlFor, children }) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={htmlFor} className="text-sm text-foreground font-medium">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+function ReadOnlyValue({ id, value }) {
+  return (
+    <Input
+      id={id}
+      type="text"
+      value={value ?? '—'}
+      disabled
+      readOnly
+      className="bg-muted/40"
+    />
+  );
+}
+
+function CheckboxField({ id, checked, disabled, onToggle }) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      id={id}
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => !disabled && onToggle(!checked)}
+      className={[
+        'h-10 w-10 shrink-0 rounded-lg border border-[#D1D4DB] shadow-[0px_1px_2px_rgba(18,18,23,0.05)]',
+        'flex items-center justify-center transition-colors',
+        'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+        'disabled:cursor-not-allowed disabled:opacity-50',
+        checked ? 'bg-primary text-primary-foreground' : 'bg-transparent',
+      ].join(' ')}
+    >
+      {checked && (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      )}
+    </button>
+  );
+}
 
 const PILL_CLS = {
   pending: 'bg-yellow-50 text-yellow-800',
@@ -80,23 +130,6 @@ function VerifactuBadge({ status, sent, ui, size = 'md' }) {
   const current = VERIFACTU_STATUS[normalized] ?? VERIFACTU_DEFAULT;
   return (
     <span className={`${pillCls(size)} ${current.cls}`}>{ui(current.key)}</span>
-  );
-}
-
-function FieldRow({ label, children }) {
-  return (
-    <div className="flex flex-col gap-0.5 min-w-0">
-      <span className="text-[11px] text-muted-foreground leading-tight">{label}</span>
-      <div className="min-w-0">{children}</div>
-    </div>
-  );
-}
-
-function ReadValue({ value }) {
-  return (
-    <div className={`${inputCls} min-h-[36px] flex items-center`}>
-      {value ?? <span className="text-muted-foreground/40">-</span>}
-    </div>
   );
 }
 
@@ -242,63 +275,64 @@ export default function SifTab({ recordId, data, token, apiBaseUrl }) {
               <SiiStatusBadge estado={data?.aeatsiiEstado} ui={ui} />
             </div>
             <div className="grid grid-cols-2 gap-x-5 gap-y-4 p-4 overflow-y-auto">
-              <FieldRow label={ui('sifDataTabs.field.operationDate')}>
-                <input
-                  type="date"
-                  className={inputCls}
+              <Field label={ui('sifDataTabs.field.operationDate')} htmlFor="sif-etsgDateOperation">
+                <DateField
+                  id="sif-etsgDateOperation"
                   value={getDateVal('etsgDateOperation')}
-                  onChange={e => setVal('etsgDateOperation', e.target.value)}
-                  onBlur={e => handleBlur('etsgDateOperation', e.target.value)}
+                  onChange={iso => setVal('etsgDateOperation', iso)}
+                  onBlur={() => handleBlur('etsgDateOperation', getDateVal('etsgDateOperation'))}
                   disabled={dateReadOnly || savingField === 'etsgDateOperation'}
                 />
-              </FieldRow>
-              <FieldRow label={ui('sifDataTabs.field.invoiceType')}>
-                <select
-                  className={inputCls}
-                  value={getVal(siiTypeField)}
-                  onChange={e => setVal(siiTypeField, e.target.value)}
-                  onBlur={e => handleBlur(siiTypeField, e.target.value)}
+              </Field>
+              <Field label={ui('sifDataTabs.field.invoiceType')} htmlFor="sif-siiType">
+                <Select
+                  value={getVal(siiTypeField) || undefined}
+                  onValueChange={val => {
+                    setVal(siiTypeField, val);
+                    patchField(siiTypeField, val);
+                  }}
                   disabled={siiFieldReadOnly || savingField === siiTypeField}
                 >
-                  <option value="">-</option>
-                  {siiTypeOptions.map(o => (
-                    <option key={o.value} value={o.value}>{o.value} - {ui(o.labelKey)}</option>
-                  ))}
-                </select>
-              </FieldRow>
-              <FieldRow label={ui('sifDataTabs.field.masterDescription')}>
-                <ReadValue value={siiDescriptionMasterIdentifier} />
-              </FieldRow>
-              <FieldRow label={ui('sifDataTabs.field.siiDescription')}>
-                <input
+                  <SelectTrigger id="sif-siiType">
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {siiTypeOptions.map(o => (
+                      <SelectItem key={o.value} value={o.value}>{o.value} — {ui(o.labelKey)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label={ui('sifDataTabs.field.masterDescription')} htmlFor="sif-masterDesc">
+                <ReadOnlyValue id="sif-masterDesc" value={siiDescriptionMasterIdentifier} />
+              </Field>
+              <Field label={ui('sifDataTabs.field.siiDescription')} htmlFor="sif-siiDesc">
+                <Input
+                  id="sif-siiDesc"
                   type="text"
-                  className={inputCls}
                   value={getVal('aeatsiiDescripcionSii')}
                   onChange={e => setVal('aeatsiiDescripcionSii', e.target.value)}
                   onBlur={e => handleBlur('aeatsiiDescripcionSii', e.target.value)}
                   disabled={siiFieldReadOnly || savingField === 'aeatsiiDescripcionSii'}
                 />
-              </FieldRow>
-              <FieldRow label={ui('sifDataTabs.field.exemptionCause')}>
-                <ReadValue value={data?.['aeatsiiCauseExemption$_identifier']} />
-              </FieldRow>
-              <FieldRow label={ui('sifDataTabs.field.authorization')}>
-                <div className={`${inputCls} min-h-[36px] flex items-center`}>
-                  <input
-                    type="checkbox"
-                    checked={Boolean(getVal('aeatsiiIsauthorization'))}
-                    onChange={e => !siiFieldReadOnly && handleCheckboxChange('aeatsiiIsauthorization', e.target.checked)}
-                    disabled={siiFieldReadOnly || savingField === 'aeatsiiIsauthorization'}
-                    className={siiFieldReadOnly ? 'cursor-default' : 'cursor-pointer'}
-                  />
-                </div>
-              </FieldRow>
-              <FieldRow label={ui('sifDataTabs.field.siiYear')}>
-                <ReadValue value={data?.aeatsiiEjercicio} />
-              </FieldRow>
-              <FieldRow label={ui('sifDataTabs.field.siiPeriod')}>
-                <ReadValue value={data?.aeatsiiPeriodo} />
-              </FieldRow>
+              </Field>
+              <Field label={ui('sifDataTabs.field.exemptionCause')} htmlFor="sif-exemption">
+                <ReadOnlyValue id="sif-exemption" value={data?.['aeatsiiCauseExemption$_identifier']} />
+              </Field>
+              <Field label={ui('sifDataTabs.field.authorization')} htmlFor="sif-auth">
+                <CheckboxField
+                  id="sif-auth"
+                  checked={Boolean(getVal('aeatsiiIsauthorization'))}
+                  disabled={siiFieldReadOnly || savingField === 'aeatsiiIsauthorization'}
+                  onToggle={val => handleCheckboxChange('aeatsiiIsauthorization', val)}
+                />
+              </Field>
+              <Field label={ui('sifDataTabs.field.siiYear')} htmlFor="sif-siiYear">
+                <ReadOnlyValue id="sif-siiYear" value={data?.aeatsiiEjercicio} />
+              </Field>
+              <Field label={ui('sifDataTabs.field.siiPeriod')} htmlFor="sif-siiPeriod">
+                <ReadOnlyValue id="sif-siiPeriod" value={data?.aeatsiiPeriodo} />
+              </Field>
             </div>
           </>
         )}
@@ -313,15 +347,15 @@ export default function SifTab({ recordId, data, token, apiBaseUrl }) {
               <TbaiBadge issent={data?.tbaiIssent} ui={ui} />
             </div>
             <div className="grid grid-cols-2 gap-x-5 gap-y-4 p-4 overflow-y-auto">
-              <FieldRow label={ui('sifDataTabs.field.chainSequence')}>
-                <ReadValue value={data?.tbaiSequence} />
-              </FieldRow>
-              <FieldRow label={ui('sifDataTabs.field.invoiceSeries')}>
-                <ReadValue value={data?.tbaiInvoicenum} />
-              </FieldRow>
-              <FieldRow label={ui('sifDataTabs.field.invoiceSequence')}>
-                <ReadValue value={data?.tbaiInvoiceseq} />
-              </FieldRow>
+              <Field label={ui('sifDataTabs.field.chainSequence')} htmlFor="sif-tbaiSeq">
+                <ReadOnlyValue id="sif-tbaiSeq" value={data?.tbaiSequence} />
+              </Field>
+              <Field label={ui('sifDataTabs.field.invoiceSeries')} htmlFor="sif-tbaiSerie">
+                <ReadOnlyValue id="sif-tbaiSerie" value={data?.tbaiInvoicenum} />
+              </Field>
+              <Field label={ui('sifDataTabs.field.invoiceSequence')} htmlFor="sif-tbaiInvSeq">
+                <ReadOnlyValue id="sif-tbaiInvSeq" value={data?.tbaiInvoiceseq} />
+              </Field>
             </div>
           </>
         )}
@@ -340,21 +374,21 @@ export default function SifTab({ recordId, data, token, apiBaseUrl }) {
               />
             </div>
             <div className="grid grid-cols-2 gap-x-5 gap-y-4 p-4 overflow-y-auto">
-              <FieldRow label={ui('sifDataTabs.field.rfGenerationDate')}>
-                <ReadValue value={data?.etvfacDateIssue} />
-              </FieldRow>
-              <FieldRow label={ui('sifDataTabs.field.csv')}>
-                <ReadValue value={data?.cdigoCSV} />
-              </FieldRow>
-              <FieldRow label={ui('sifDataTabs.field.hash')}>
-                <ReadValue value={data?.etvfacHash} />
-              </FieldRow>
-              <FieldRow label={ui('sifDataTabs.field.qrUrl')}>
-                <ReadValue value={data?.etvfacQRURL} />
-              </FieldRow>
-              <FieldRow label={ui('sifDataTabs.field.issueDetail')}>
-                <ReadValue value={data?.etvfacIssueDescription} />
-              </FieldRow>
+              <Field label={ui('sifDataTabs.field.rfGenerationDate')} htmlFor="sif-vfDate">
+                <ReadOnlyValue id="sif-vfDate" value={data?.etvfacDateIssue} />
+              </Field>
+              <Field label={ui('sifDataTabs.field.csv')} htmlFor="sif-vfCsv">
+                <ReadOnlyValue id="sif-vfCsv" value={data?.cdigoCSV} />
+              </Field>
+              <Field label={ui('sifDataTabs.field.hash')} htmlFor="sif-vfHash">
+                <ReadOnlyValue id="sif-vfHash" value={data?.etvfacHash} />
+              </Field>
+              <Field label={ui('sifDataTabs.field.qrUrl')} htmlFor="sif-vfQr">
+                <ReadOnlyValue id="sif-vfQr" value={data?.etvfacQRURL} />
+              </Field>
+              <Field label={ui('sifDataTabs.field.issueDetail')} htmlFor="sif-vfIssue">
+                <ReadOnlyValue id="sif-vfIssue" value={data?.etvfacIssueDescription} />
+              </Field>
             </div>
           </>
         )}
