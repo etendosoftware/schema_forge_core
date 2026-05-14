@@ -14506,27 +14506,35 @@
       "newLabel": "Nuevo movimiento"
     },
     "Contacts": {
+      "label": "Contactos",
       "newLabel": "Nuevo contacto"
     },
     "Contact": {
+      "label": "Contacto",
       "newLabel": "Nuevo contacto"
     },
     "Returns": {
+      "label": "Devoluciones",
       "newLabel": "Nueva devolución"
     },
     "Customer Return": {
+      "label": "Devolución del Cliente",
       "newLabel": "Nueva devolución"
     },
     "Return Receipt": {
+      "label": "Albarán de Devolución",
       "newLabel": "Nuevo albarán de devolución"
     },
     "Warehouse": {
+      "label": "Almacén",
       "newLabel": "Nuevo almacén"
     },
     "Bank Reconciliation": {
+      "label": "Conciliación Bancaria",
       "newLabel": "Nueva conciliación"
     },
     "Account": {
+      "label": "Cuenta",
       "newLabel": "Nuevo plan de cuentas"
     }
   },
