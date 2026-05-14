@@ -1,4 +1,3 @@
-import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -15,6 +14,7 @@ describe('fiscal-models.css — key class families', () => {
   it('defines fm-kpi-strip', () => assert.match(css, /\.fm-kpi-strip/));
   it('defines fm-table (dense)', () => assert.match(css, /\.fm-table/));
   it('defines fm-present-modal', () => assert.match(css, /\.fm-present-modal/));
+<<<<<<< HEAD
   it('defines fm-aeat-cell', () => assert.match(css, /\.fm-aeat-cell/));
 });
 
@@ -33,4 +33,4 @@ describe('Stepper — structure', () => {
   it('accepts steps and current props', () => assert.match(src, /steps.*current|current.*steps/));
   it('marks done steps', () => assert.match(src, /fm-stepper__step--done/));
   it('marks active step', () => assert.match(src, /fm-stepper__step--active/));
-});
+||||||| parent of 71796981 (Feature ETP-3778: add FmCommon with StatusPillMenu, KpiCard, Tabs, SectionCard)

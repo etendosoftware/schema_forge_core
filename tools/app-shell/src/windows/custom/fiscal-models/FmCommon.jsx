@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
 import { useUI } from '@/i18n';
+<<<<<<< HEAD
 import { STATUS_COLOR, STATUS_ICON, STATUS_ORDER } from './fiscalModelsUtils.js';
 import './fiscal-models.css';
 
@@ -230,6 +230,4 @@ export function NumberedStepper({ steps, current }) {
           </React.Fragment>
         );
       })}
-    </div>
-  );
-}
+||||||| parent of 71796981 (Feature ETP-3778: add FmCommon with StatusPillMenu, KpiCard, Tabs, SectionCard)
