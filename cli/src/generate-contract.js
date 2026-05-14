@@ -176,6 +176,10 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.dependsOn) mapped.dependsOn = f.dependsOn;
       if (f.lookup) mapped.lookup = true;
       if (f.popup) mapped.popup = true;
+      if (f.lookupDrawer) mapped.lookupDrawer = f.lookupDrawer;
+      if (f.lookupTitle) mapped.lookupTitle = f.lookupTitle;
+      if (Array.isArray(f.onSelectMappings) && f.onSelectMappings.length > 0) mapped.onSelectMappings = f.onSelectMappings;
+      if (f.displayFromCatalog) mapped.displayFromCatalog = f.displayFromCatalog;
       if (Array.isArray(f.forceCalloutFields) && f.forceCalloutFields.length > 0) mapped.forceCalloutFields = f.forceCalloutFields;
 
       // UI hints

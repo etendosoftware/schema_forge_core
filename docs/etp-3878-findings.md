@@ -26,22 +26,41 @@ Scope observed:
 
 Re-verified each finding against current `feature/ETP-3981` working tree.
 
-| # | Finding | Severity | Status |
-|---|---------|----------|--------|
-| 1 | sales-invoice → purchase-invoice `InvoicePreviewModal` | High | **SOLVED** — moved to `windows/custom/shared/` |
-| 2 | `PartnerAddressPicker` → contacts `LocationEditorModal` | High | **SOLVED** — moved to `windows/custom/shared/` |
-| 3 | `DataTable` has Internal Consumption branches | High | Open |
-| 4 | `DetailView` embeds line-amount/callout policy | High | Open |
-| 5 | Pipeline defaults `windowName` to `sales-order` | High | Open |
-| 6 | Selector fetch/normalize hand-rolled in N places | Medium | Open |
-| 7 | Country/region selector fallbacks duplicated | Medium | Open |
-| 8 | `CreateContactModal` in generic `contract-ui` | Medium | Open |
-| 9 | Related-doc graph traversal duplicated per window | Medium | Open |
-| 10 | `DocChip` rules repeated per window | Medium | **SOLVED** — registry + `docChipProps()` helper |
-| 11 | `DetailView` knows sales/purchase selector context | Medium | Open |
-| 12 | `businessPartner`/`contacts` alias in quality-gate | Medium | **SOLVED** — centralized in `quality-gate/window-aliases.js` |
-| 13 | `contacts/BusinessPartnerSidebar.jsx` forwarding alias | Low | **PARTIALLY SOLVED** — alias gone, but forked into two full copies |
-| 14 | Related-doc loading/error lifecycle inconsistent | Low | Open |
+**Scoring legend:**
+- **Impact** (risk + blast radius if left unfixed): High / Medium / Low — preserved from the original audit.
+- **Effort** (estimated cost to fix end-to-end, including tests and ripple changes): S / M / L / XL.
+  - S = a few hours, single file or surgical change.
+  - M = half/full day, touches a handful of files but no architectural change.
+  - L = multi-day, introduces a new abstraction (hook/policy/registry) and migrates several call sites.
+  - XL = week+, requires contract/metadata schema changes plus migrations across most windows.
+- **ROI** = impact ÷ effort, useful to pick the next item. Higher ROI = better bang for the buck.
+
+| # | Finding | Impact | Effort | ROI | Status |
+|---|---------|--------|--------|-----|--------|
+| 1 | sales-invoice → purchase-invoice `InvoicePreviewModal` | High | S | — | **SOLVED** — moved to `windows/custom/shared/` |
+| 2 | `PartnerAddressPicker` → contacts `LocationEditorModal` | High | S | — | **SOLVED** — moved to `windows/custom/shared/` |
+| 3 | `DataTable` has Internal Consumption branches | High | L | — | **SOLVED** — declarative drawer/auto-fill metadata |
+| 4 | `DetailView` embeds line-amount/callout policy | High | XL | Low | Open |
+| 5 | Pipeline defaults `windowName` to `sales-order` | High | S | — | **SOLVED** — resolves from `AD_Window` via `resolveWindowNameFromId()` |
+| 6 | Selector fetch/normalize hand-rolled in N places | Medium | L | Medium | Open |
+| 7 | Country/region selector fallbacks duplicated | Medium | S | High | Open |
+| 8 | `CreateContactModal` in generic `contract-ui` | Medium | M | Medium | Open |
+| 9 | Related-doc graph traversal duplicated per window | Medium | L | Medium | Open |
+| 10 | `DocChip` rules repeated per window | Medium | M | — | **SOLVED** — registry + `docChipProps()` helper |
+| 11 | `DetailView` knows sales/purchase selector context | Medium | L | Low | Open |
+| 12 | `businessPartner`/`contacts` alias in quality-gate | Medium | S | — | **SOLVED** — centralized in `quality-gate/window-aliases.js` |
+| 13 | `contacts/BusinessPartnerSidebar.jsx` forwarding alias | Low | M | Low | **PARTIALLY SOLVED** — alias gone, but forked into two full copies |
+| 14 | Related-doc loading/error lifecycle inconsistent | Low | S (free with F9) | High (if bundled) | Open |
+
+### Recommended order for the remaining open items
+
+1. ~~**F5** (High / S) — quick win, removes a dangerous silent default.~~ **DONE 2026-05-13**
+2. **F7** (Medium / S) — small, kills duplicated fallback policy before it grows further.
+3. **F9 + F14** (Medium+Low / L) — bundle them: a proper `useRelatedDocuments` hook fixes both at once.
+4. **F8** (Medium / M) — clears the way for further contacts cleanups.
+5. **F6** (Medium / L) — selector client; unblocks future selector-related refactors.
+6. **F11** (Medium / L) — once contract metadata grows context support.
+7. **F4** (High / XL) — biggest refactor, schedule deliberately; do after F6/F11 so the policy plumbing already exists.
 
 ## Issues
 
@@ -159,7 +178,10 @@ Confidence: High
 
 Confidence: High
 
-### High — Pipeline silently defaults missing windowName to sales-order
+### High — Pipeline silently defaults missing windowName to sales-order — SOLVED (2026-05-13)
+
+> **Status: SOLVED.** The silent `parsed.windowName = 'sales-order'` fallback was removed from `cli/src/pipeline.js`. When invoked with only `windowId` (and not in menu/process/report mode), the CLI now resolves `windowName` from `AD_Window.Name` via the new exported helper `resolveWindowNameFromId(windowId, { queryFn })` (kebab-cased through `toSpecName()`). Lookup failures error out with a clear message instead of writing artifacts to the wrong window directory. The helper accepts an injectable `queryFn` for tests; 8 unit tests in `cli/test/pipeline.test.js` cover success, camelCase normalization, missing rows, missing `Name`, empty `windowId`, propagated DB errors, and a regression guard that asserts the error never mentions `sales-order`.
+
 
 **Evidence:**
 

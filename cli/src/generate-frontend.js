@@ -656,7 +656,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const forceCalloutFieldsPart = Array.isArray(f.forceCalloutFields) && f.forceCalloutFields.length > 0
       ? `, forceCalloutFields: ${JSON.stringify(f.forceCalloutFields)}`
       : '';
-    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart} },`;
+    const lookupDrawerPart = f.lookupDrawer ? `, lookupDrawer: '${String(f.lookupDrawer).replace(/'/g, "\\'")}'` : '';
+    const lookupTitlePart = f.lookupTitle ? `, lookupTitle: '${String(f.lookupTitle).replace(/'/g, "\\'")}'` : '';
+    const onSelectMappingsPart = Array.isArray(f.onSelectMappings) && f.onSelectMappings.length > 0
+      ? `, onSelectMappings: ${JSON.stringify(f.onSelectMappings)}`
+      : '';
+    const displayFromCatalogPart = f.displayFromCatalog ? `, displayFromCatalog: true` : '';
+    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart} },`;
   }).join('\n');
 
   const derivedArray = derivedFields.map(f => {
@@ -807,7 +813,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
           const optionsPart = (type === 'select' && f.enumValues?.length)
             ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
             : '';
-          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart} }`;
+          const lookupDrawerPart = f.lookupDrawer ? `, lookupDrawer: '${String(f.lookupDrawer).replace(/'/g, "\\'")}'` : '';
+          const lookupTitlePart = f.lookupTitle ? `, lookupTitle: '${String(f.lookupTitle).replace(/'/g, "\\'")}'` : '';
+          const onSelectMappingsPart = Array.isArray(f.onSelectMappings) && f.onSelectMappings.length > 0
+            ? `, onSelectMappings: ${JSON.stringify(f.onSelectMappings)}`
+            : '';
+          const displayFromCatalogPart = f.displayFromCatalog ? `, displayFromCatalog: true` : '';
+          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart} }`;
         }).filter(Boolean);
         return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName };
       });
