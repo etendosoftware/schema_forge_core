@@ -16514,7 +16514,7 @@
     "addLinesManuallyOrImportFromPurchaseOrder": "Add lines manually or import from a purchase order",
     "addLinesManually": "Add lines manually",
     "addLinesManuallyOrImportFromOrderOrReceipt": "Add lines manually or import from a purchase order or goods receipt",
-    "importFromPurchaseOrder": "Import from order",
+    "importFromPurchaseOrder": "Import from PO",
     "searchPurchaseOrder": "Search purchase order...",
     "importFromGoodsReceipt": "Import from receipt",
     "searchGoodsReceipt": "Search goods receipt...",
