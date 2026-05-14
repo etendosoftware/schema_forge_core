@@ -420,7 +420,7 @@ describe('fiscal-config source guards', () => {
   it('uses contract-specific ids for SII, TBAI and Verifactu saves', () => {
     assert.match(siiSectionSrc, /getFiscalRecordId\(record, 'SII'\)/);
     assert.match(siiSectionSrc, /serializeBooleanFields\(form, \['acogidaAlSII', 'entornoDeProduccin', 'adjuntarArchivosXML', 'postedInvoices', 'recc', 'redeme'\]\)/);
-    assert.match(wizardSrc, /ref=\{system === 'SII\+TBAI' \|\| system === 'TBAI' \? tbaiRef : undefined\}/);
+    assert.match(wizardSrc, /ref=\{tbaiRef\}/);
     assert.match(verifactuSectionSrc, /getFiscalRecordId\(record, 'VERIFACTU'\)/);
     assert.match(verifactuSectionSrc, /apiFetch\(`\/verifactu-config\//);
     assert.match(verifactuSectionSrc, /buildVerifactuUpdatePayload\(form\)/);
@@ -460,7 +460,7 @@ describe('fiscal-config source guards', () => {
     assert.match(wizardSrc, /getAllowedSystemsForTerritory\(selectedTerritory\)/);
     assert.match(wizardSrc, /disabled=\{!selectedTerritory \|\| !manualSystem\}/);
     assert.match(wizardSrc, /fiscal\.onboarding\.manual\.system\.placeholder/);
-    assert.match(wizardSrc, /onClick=\{\(\) => \{ setManualSystem\(null\); goTo\('manual'\); \}\}/);
+    assert.match(wizardSrc, /onGoToManual=\{\(\) => \{ setManualSystem\(null\); goTo\('manual'\); \}\}/);
   });
 
   it('returns manual users to the manual screen from confirm', () => {
@@ -472,7 +472,7 @@ describe('fiscal-config source guards', () => {
     assert.match(wizardSrc, /setAlsoNational\(null\);/);
     assert.match(wizardSrc, /setVolume\(null\);/);
     assert.match(wizardSrc, /setLowChoice\(null\);/);
-    assert.match(wizardSrc, /handleTerritorySelection\(territoryId, \{ clearManualSystem: true \}\)/);
+    assert.match(wizardSrc, /onSelectTerritory\(territoryId, \{ clearManualSystem: true \}\)/);
   });
 
   it('saves single-system detail steps before navigating to applied', () => {
