@@ -32,7 +32,7 @@ The window is read-only. It does not create or modify invoice records; it only d
 ## Data architecture
 
 ```
-useFiscalMonitor(orgId, token, apiBaseUrl)
+useFiscalMonitor(orgId, apiBaseUrl)
   ├── detectProfile()           ← fetches 3 config records in parallel
   ├── fetchSiiMonitorData()     ← 4 parallel fetchCount calls (emitidas, recibidas, × 2 periods)
   ├── fetchTbaiData()           ← 5 parallel calls (total + 4 per-estado criteria filters: Recibido, Rechazado, Error, Pendiente)
@@ -174,7 +174,7 @@ i18n key: `fiscalMonitor.refresh` → "Actualizar" / "Refresh".
 
 `StatsPanel` (inside `InvoicePreviewModal`) renders per-system submission status rows directly below the document "Estado" row. Visibility is driven by `getInvoiceFiscalTargets(specName, profile)` — only rows where `showSii`/`showTbai`/`showVerifactu` is `true` are rendered.
 
-Status is fetched by `useFiscalStatus(invoiceId, specName, profile, apiBaseUrl, token)` from `tools/app-shell/src/windows/custom/shared/useFiscalStatus.js`. It queries in parallel (via `Promise.all`) once per active system on mount:
+Status is fetched by `useFiscalStatus(invoiceId, specName, profile, apiBaseUrl)` from `tools/app-shell/src/windows/custom/shared/useFiscalStatus.js`. It queries in parallel (via `Promise.all`) once per active system on mount:
 
 | System | Spec | Entity | FK field | Status field |
 |--------|------|--------|----------|--------------|
@@ -222,7 +222,7 @@ i18n keys: `invoicePreview.fiscalStatus.sii`, `invoicePreview.fiscalStatus.tbai`
 - `tools/app-shell/src/windows/custom/fiscal-monitor/FmPrimitives.jsx` — shared `StatusPill`, `NumFactura`, `Pager`, `RowActionBtn` primitives; `isPendingStatus`/`PENDING_STATUSES` and error-status helpers; re-exports `fmtDate` from `fmtDateUtils.js` and `PAGE_SIZE = 20`.
 - `tools/app-shell/src/windows/custom/fiscal-monitor/useDebugMode.js` — module-level keystroke sequence listener; localStorage persistence; multi-instance sync via listener Set.
 - `tools/app-shell/src/windows/custom/fiscal-monitor/FiscalMonitorDebugPanel.jsx` — profile override + cert expiry toggle + mock data toggle panel.
-- `tools/app-shell/src/windows/custom/fiscal-config/useCertExpiry.js` — `daysUntil` pure helper (re-exported from `certExpiryUtils.js`) + `useCertExpiry` hook; shared by fiscal-config and fiscal-monitor pages. Resets `daysLeft` to `null` immediately when `orgId`/`token` become falsy and before each new fetch. Uses `AbortController` to cancel in-flight requests on unmount or deps change, preventing stale responses from resolving after the component is gone or the org has switched.
+- `tools/app-shell/src/windows/custom/fiscal-config/useCertExpiry.js` — `daysUntil` pure helper (re-exported from `certExpiryUtils.js`) + `useCertExpiry` hook; shared by fiscal-config and fiscal-monitor pages. Sources auth via `useApiFetch` — no token prop needed. Resets `daysLeft` to `null` immediately before each new fetch and on unmount. Uses `AbortController` to cancel in-flight requests on unmount or deps change, preventing stale responses from resolving after the component is gone or the org has switched.
 - `tools/app-shell/src/windows/custom/fiscal-config/CertExpiryBanner.jsx` — cert expiry warning strip/card; `variant="subtle"` used here, `variant="prominent"` in fiscal-config.
 - `tools/app-shell/src/windows/custom/shared/SifSendingModal.jsx` — shared confirm/sending/results modal with simulated progress bar; used by `SendToSifButton` and `InvoicePreviewModal`.
 - `tools/app-shell/src/windows/custom/fiscal-config/FiscalConfigDebugPanel.jsx` — config record deletion panel (shared debug mode).
@@ -230,12 +230,12 @@ i18n keys: `invoicePreview.fiscalStatus.sii`, `invoicePreview.fiscalStatus.tbai`
 - `tools/app-shell/src/windows/custom/fiscal-monitor/fiscal-monitor.css` — `.fm-*` design-system CSS; `overflow-y: auto` on `.fm-page` for scroll in fixed shell.
 - `cli/test/fiscal-monitor.utils.test.js` — 18 tests covering `buildMonitorFetchPlan` and `computeKpis` for all profiles and edge cases.
 - `cli/test/fiscal-monitor.mockdata.test.js` — mock data integrity tests: KPI counts match actual row arrays; all rows have required fields.
-- `cli/test/useFiscalMonitor.test.js` — 22 tests covering source guards (named export, Promise.all × ≥2, computeKpis/detectProfile wiring, entity constant exports), `get` helper (URL encoding, Authorization header, response parsing, error handling), `fetchCount` (totalRows extraction, zero fallback), `fetchSiiMonitorData` (4 parallel calls, correct entity names), `fetchVerifactuMonitorData` (4 parallel calls), and `fetchTbaiData` (5 calls: total + Recibido + Rechazado + Error + Pendiente, criteria filter with `estado` fieldName).
+- `cli/test/useFiscalMonitor.test.js` — 22 tests covering source guards (named export, Promise.all × ≥2, computeKpis/detectProfile wiring, entity constant exports), `get` helper (URL encoding, `useApiFetch` usage instead of manual Authorization headers, response parsing, error handling), `fetchCount` (totalRows extraction, zero fallback), `fetchSiiMonitorData` (4 parallel calls, correct entity names), `fetchVerifactuMonitorData` (4 parallel calls), and `fetchTbaiData` (5 calls: total + Recibido + Rechazado + Error + Pendiente, criteria filter with `estado` fieldName).
 - `tools/app-shell/src/windows/custom/fiscal-monitor/__tests__/FiscalKpiCards.test.js` — 16 component source-guard tests: SII/TBAI/Verifactu variants, `activeKey` active-class logic, `onPick` callback dispatch, `de-DE` number formatting.
 - `tools/app-shell/src/windows/custom/fiscal-monitor/__tests__/SiiMonitorSection.test.js` — 21 component source-guard tests: tab/period state, `initialTab` derivation, `mockRows` bypass, data fetching, pending-pill → `onInvoiceOpen` wiring.
 - `tools/app-shell/src/windows/custom/fiscal-monitor/__tests__/TbaiMonitorSection.test.js` — expanded with pending-pill → `onInvoiceOpen` wiring tests (TBAI sales-only).
 - `tools/app-shell/src/windows/custom/fiscal-monitor/__tests__/fmtDateUtils.test.js` — 12 tests: exports guard, null/falsy → `'—'`, ISO→DD/MM/YYYY conversion, already-formatted pass-through, invalid/non-date inputs. Imports `fmtDate` from the real module (no local copy).
 - `tools/app-shell/src/windows/custom/fiscal-monitor/__tests__/FmPrimitives.test.js` — 41 source-guard tests: `isErrorStatus` (SII/TBAI/Verifactu/edge), `isPendingStatus`/`PENDING_STATUSES` export + status coverage, `StatusPill` onClick/title-prop guards, `fmtDate` re-export guard (matches `export.*fmtDate`), `PAGE_SIZE`, `WipBadge` i18n keys.
-- `tools/app-shell/src/windows/custom/shared/__tests__/SifSendingModal.test.js` — 22 component source-guard tests: props contract, three-phase state machine, progress bar formula/cap/snap, `callProcess` action columns, results display, `onAfterSend` callback.
+- `tools/app-shell/src/windows/custom/shared/__tests__/SifSendingModal.test.js` — 22 component source-guard tests: props contract (no `headers` — auth via `useApiFetch`), three-phase state machine, progress bar formula/cap/snap, `callProcess` action columns, results display, `onAfterSend` callback.
 - `e2e/tests/flows/fiscal-monitor.mocked.spec.js` — 13 Playwright mocked E2E tests: no-org, unconfigured, SII/TBAI/Verifactu/combined/conflict profiles, KPI card → tab sync, period toggle; all assertions use `t()` i18n helper.
 - i18n: 40+ `fiscalMonitor.*` keys in `en_US.json` / `es_ES.json`; all user-visible strings go through `useUI()`. E2E tests resolved via `e2e/tests/helpers/i18n.js` (locale-switchable).
