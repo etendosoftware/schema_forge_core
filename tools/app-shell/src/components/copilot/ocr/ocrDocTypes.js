@@ -15,9 +15,92 @@ export const OCR_DOC_TYPES = [
     id: 'purchase-invoice',
     routePrefix: '/purchase-invoice/',
     toolName: 'SimpleOcrTool',
-    structuredOutput: 'Invoice',
     eventName: 'copilot:ocr-prefill:purchase-invoice',
-    question: 'Extract all invoice fields: vendor name, document number, invoice date, line items (description, quantity, unit price). Return strict JSON.',
+    question: 'Extract all invoice fields: vendor name, document number, invoice date, due date (fecha de vencimiento — payment due date), line items (description, quantity, unit price). Return strict JSON.',
+    // AD_Tab_ID of the Purchase Invoice header tab. Required by the AttachFile
+    // webhook so the uploaded PDF lands in the AD_Attachment grid for the new
+    // record. Look up via: SELECT ad_tab_id FROM ad_tab JOIN ad_window USING(ad_window_id)
+    // WHERE ad_window.name='Purchase Invoice' AND tablevel=0.
+    tabId: '290',
+    headerFields: [
+      {
+        key: 'vendor',
+        kind: 'entity',
+        label: 'ocrReviewVendorLabel',
+        extractFrom: ['vendor_name', 'tax_id'],
+        entitySpec: 'contacts/businessPartner',
+        filter: 'active = true',
+        preResolve: 'findBp',
+        createComponent: 'CreateContactModal',
+        createDocumentType: 'purchase',
+        createPrefilledFrom: {
+          name: 'vendor_name',
+        },
+      },
+      {
+        key: 'documentNo',
+        kind: 'text',
+        label: 'ocrReviewDocumentNoLabel',
+        extractFrom: 'document_no',
+        placeholder: 'ocrReviewDocumentNoPlaceholder',
+      },
+      {
+        key: 'invoiceDate',
+        kind: 'date',
+        label: 'ocrReviewInvoiceDateLabel',
+        extractFrom: 'invoice_date',
+      },
+      {
+        key: 'dueDate',
+        kind: 'date',
+        label: 'ocrReviewDueDateLabel',
+        extractFrom: 'due_date',
+      },
+    ],
+    lineColumns: [
+      {
+        key: 'description',
+        kind: 'text',
+        label: 'ocrLinesColDescription',
+        extractFrom: 'description',
+      },
+      {
+        key: 'quantity',
+        kind: 'number',
+        label: 'ocrLinesColQuantity',
+        extractFrom: 'quantity',
+        width: 'w-24',
+      },
+      {
+        key: 'unitPrice',
+        kind: 'number',
+        label: 'ocrLinesColUnitPrice',
+        extractFrom: 'unit_price',
+        width: 'w-28',
+      },
+      {
+        key: 'tax',
+        kind: 'entity',
+        label: 'ocrLinesColTax',
+        extractFrom: 'tax_label',
+        entitySpec: 'tax/tax',
+        preResolve: 'findTax',
+        emptyOptionLabel: 'ocrLinesTaxDefault',
+        searchPlaceholder: 'ocrLinesTaxSearch',
+        noMatchesLabel: 'ocrLinesTaxNoMatches',
+        clearLabel: 'ocrLinesTaxClear',
+        width: 'w-48',
+      },
+    ],
+    // Line-level fields the descriptor needs but the review modal doesn't
+    // surface. Fed into the LLM output schema by buildOcrSchema.
+    extraLineFields: [
+      {
+        name: 'tax_rate',
+        kind: 'number',
+        description: "Numeric tax percentage on this line if printed (e.g., 21.0 for '21%' or 'IVA 21%'). Null if only a textual label is shown or no tax info is present.",
+      },
+    ],
   },
 ];
 

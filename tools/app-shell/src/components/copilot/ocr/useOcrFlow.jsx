@@ -1,36 +1,94 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import { getOcrDocType } from './ocrDocTypes';
 import { useBatch } from './ingest/useBatch';
 import { buildPurchaseInvoiceBatch } from './ingest/purchaseInvoiceDescriptor';
-import ContactCreatePopup from './ContactCreatePopup';
 import ProductResolverPopup from './ProductResolverPopup';
+import OcrReviewModal from './OcrReviewModal';
+import OcrLinesReviewModal from './OcrLinesReviewModal';
+import { deriveContactsApiBase } from './contactApi';
+import { CREATE_COMPONENTS, PRE_RESOLVERS } from './strategies';
 
 /* eslint-disable react/prop-types */
 
-/**
- * Map a doc-type id to the descriptor that turns its OCR JSON into a list of
- * batch operations. Adding a new window is one line in this registry plus the
- * descriptor file itself — no other code in this hook changes.
- */
+// Maps doc-type id to the descriptor that builds its /batch ops. Adding a new
+// window is one entry here plus the descriptor file.
 const DESCRIPTORS = {
   'purchase-invoice': buildPurchaseInvoiceBatch,
 };
 
-/**
- * Drives the OCR-to-batch flow:
- *
- *   1. Listen for the per-doctype window event the extractor dispatches.
- *   2. Hand the extracted JSON to the descriptor; the descriptor decides
- *      what client-side lookups to run and surfaces a popup (e.g.
- *      ContactCreatePopup) if a prerequisite needs the user.
- *   3. POST the resulting batch to /sws/neo/batch — atomic create or rollback.
- *   4. Toast the outcome and refresh the form.
- *
- * The hook is intentionally thin. There is no per-record orchestration left
- * (no visibility poll, no N+1 line POSTs, no allSettled bookkeeping); the
- * server owns the transaction and the descriptor owns the per-window mapping.
- */
+async function resolveField(field, extracted, context) {
+  const resolver = PRE_RESOLVERS[field.preResolve];
+  if (!resolver) return null;
+  const value = Array.isArray(field.extractFrom)
+    ? extracted?.[field.extractFrom[0]] ?? extracted?.[field.extractFrom[1]] ?? null
+    : extracted?.[field.extractFrom] ?? null;
+  return resolver({
+    ...context,
+    field,
+    value,
+    extracted,
+  });
+}
+
+async function resolvePreResolvedFields(fields, extracted, context) {
+  const entries = await Promise.all((fields || []).map(async (field) => {
+    if (!field?.preResolve) return [field.key, null];
+    return [field.key, await resolveField(field, extracted, context)];
+  }));
+  return Object.fromEntries(entries.filter(([key, value]) => key && value));
+}
+
+function mapLineValue(column, row) {
+  if (column.kind === 'entity') {
+    const idKey = `${column.key}_id`;
+    const rateKey = `${column.key}_rate`;
+    return {
+      ...row,
+      [idKey]: row?.[idKey] ?? row?.tax_id ?? null,
+      [rateKey]: row?.[rateKey] ?? row?.tax_rate ?? null,
+    };
+  }
+  return row;
+}
+
+async function resolveLines(columns, lines, context) {
+  const entityColumns = (columns || []).filter((column) => column?.kind === 'entity' && column?.preResolve);
+  if (entityColumns.length === 0) return Array.isArray(lines) ? lines : [];
+
+  return Promise.all((Array.isArray(lines) ? lines : []).map(async (line) => {
+    let nextLine = { ...line };
+    for (const column of entityColumns) {
+      const resolved = await resolveField(column, nextLine, context);
+      if (!resolved) continue;
+      const idKey = `${column.key}_id`;
+      const rateKey = `${column.key}_rate`;
+      nextLine = {
+        ...nextLine,
+        [column.extractFrom]: resolved.label || nextLine?.[column.extractFrom] || '',
+        [idKey]: resolved.id || null,
+      };
+      if (resolved.rate != null) nextLine[rateKey] = resolved.rate;
+      if (column.key === 'tax') {
+        nextLine.tax_id = resolved.id || nextLine.tax_id || null;
+        if (resolved.rate != null) nextLine.tax_rate = resolved.rate;
+      }
+    }
+    return mapLineValue(entityColumns[0], nextLine);
+  }));
+}
+
+function mapCreateComponents(fields) {
+  return Object.fromEntries((fields || []).map((field) => [
+    field.key,
+    field.createComponent ? CREATE_COMPONENTS[field.createComponent] || null : null,
+  ]));
+}
+
+function hasLinesToReview(docType, payload) {
+  return Boolean(docType?.lineColumns?.length) && Array.isArray(payload?.line_items) && payload.line_items.length > 0;
+}
+
 export function useOcrFlow({
   docTypeId,
   token,
@@ -43,39 +101,76 @@ export function useOcrFlow({
 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
-  const [pendingModal, setPendingModal] = useState(null);
 
-  // Returns a Promise that resolves when the rendered modal calls `resolve`.
-  // Used by descriptor callbacks (e.g. askUserForBp) to pause until the user
-  // confirms or cancels — agents bypass this entirely.
-  const openModal = useCallback((render) => new Promise((resolve) => {
-    const close = (value) => {
-      setPendingModal(null);
-      resolve(value);
-    };
-    setPendingModal(() => render({ resolve: close }));
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewExtracted, setReviewExtracted] = useState(null);
+  const [reviewPreResolved, setReviewPreResolved] = useState({});
+  const [reviewResolving, setReviewResolving] = useState(false);
+  const resolveRef = useRef(null);
+
+  const [linesOpen, setLinesOpen] = useState(false);
+  const [linesPayload, setLinesPayload] = useState([]);
+  const linesResolveRef = useRef(null);
+
+  const [pendingPopup, setPendingPopup] = useState(null);
+
+  const askUserForProducts = useCallback(({ unmatched, selectorUrl, productSpecUrl }) => new Promise((resolve) => {
+    const close = (value) => { setPendingPopup(null); resolve(value); };
+    setPendingPopup(
+      <ProductResolverPopup
+        unmatched={unmatched}
+        selectorUrl={selectorUrl}
+        productSpecUrl={productSpecUrl}
+        token={token}
+        onSubmit={(picks) => close(picks)}
+        onCancel={() => close(null)}
+      />
+    );
+  }), [token]);
+
+  const closeReview = (value) => {
+    setReviewOpen(false);
+    setReviewExtracted(null);
+    setReviewPreResolved({});
+    setReviewResolving(false);
+    const fn = resolveRef.current;
+    resolveRef.current = null;
+    if (fn) fn(value);
+  };
+
+  const closeLines = (value) => {
+    setLinesOpen(false);
+    setLinesPayload([]);
+    const fn = linesResolveRef.current;
+    linesResolveRef.current = null;
+    if (fn) fn(value);
+  };
+
+  const askUserToReviewLines = useCallback((lines) => new Promise((resolve) => {
+    linesResolveRef.current = resolve;
+    setLinesPayload(Array.isArray(lines) ? lines : []);
+    setLinesOpen(true);
   }), []);
 
-  const askUserForBp = useCallback(({ prefilled }) => openModal(({ resolve }) => (
-    <ContactCreatePopup
-      item={{ kind: 'createContact', payload: { prefilled } }}
-      apiBaseUrl={apiBaseUrl}
-      token={token}
-      onSubmit={(decision) => resolve(decision?.fields || null)}
-      onCancel={() => resolve(null)}
-    />
-  )), [apiBaseUrl, token, openModal]);
-
-  const askUserForProducts = useCallback(({ unmatched, selectorUrl, productSpecUrl }) => openModal(({ resolve }) => (
-    <ProductResolverPopup
-      unmatched={unmatched}
-      selectorUrl={selectorUrl}
-      productSpecUrl={productSpecUrl}
-      token={token}
-      onSubmit={(picks) => resolve(picks)}
-      onCancel={() => resolve(null)}
-    />
-  )), [token, openModal]);
+  const askUserToReview = useCallback((extracted) => new Promise((resolve) => {
+    resolveRef.current = resolve;
+    // Resolve pre-resolvers BEFORE opening the modal so the initial render
+    // already shows the matched vendor with its toggle on. OcrReviewModal seeds
+    // its row state from `preResolved` in a useState initializer that only
+    // runs on mount, so a late update would otherwise be ignored.
+    setReviewExtracted(extracted);
+    setReviewPreResolved({});
+    setReviewResolving(true);
+    (async () => {
+      const preResolved = await resolvePreResolvedFields(docType?.headerFields, extracted, {
+        token,
+        apiBaseUrl,
+      });
+      setReviewPreResolved(preResolved);
+      setReviewResolving(false);
+      setReviewOpen(true);
+    })();
+  }), [docType, token, apiBaseUrl]);
 
   useEffect(() => {
     if (!docType?.eventName) return undefined;
@@ -90,7 +185,31 @@ export function useOcrFlow({
       setLoading(true);
       setResult(null);
       try {
-        const built = await buildBatch(payload, { token, apiBaseUrl, askUserForBp, askUserForProducts });
+        const reviewed = await askUserToReview(payload);
+        if (!reviewed) {
+          showResult({ ok: 0, failed: [{ reason: 'cancelled_by_user' }] });
+          setResult({ committed: false, cancelled: true });
+          return;
+        }
+        const extractedLines = hasLinesToReview(docType, payload)
+          ? await resolveLines(docType.lineColumns, payload.line_items, { token, apiBaseUrl })
+          : [];
+        let reviewedLines = null;
+        if (extractedLines.length > 0) {
+          reviewedLines = await askUserToReviewLines(extractedLines);
+          if (!reviewedLines) {
+            showResult({ ok: 0, failed: [{ reason: 'cancelled_by_user' }] });
+            setResult({ committed: false, cancelled: true });
+            return;
+          }
+        }
+        const built = await buildBatch(payload, {
+          token,
+          apiBaseUrl,
+          askUserForProducts,
+          reviewedHeader: reviewed,
+          reviewedLines,
+        });
         if (!built || built.cancelled) {
           showResult({ ok: 0, failed: [{ reason: 'cancelled_by_user' }] });
           setResult({ committed: false, cancelled: true });
@@ -143,7 +262,37 @@ export function useOcrFlow({
 
     window.addEventListener(docType.eventName, handler);
     return () => window.removeEventListener(docType.eventName, handler);
-  }, [docType, token, apiBaseUrl, askUserForBp, askUserForProducts, runBatch, showResult, onRefresh]);
+  }, [docType, token, apiBaseUrl, askUserToReview, askUserToReviewLines, askUserForProducts, runBatch, showResult, onRefresh]);
+
+  const contactsBase = apiBaseUrl ? deriveContactsApiBase(apiBaseUrl) : null;
+  let pendingModal = pendingPopup;
+  if (linesOpen) {
+    pendingModal = (
+      <OcrLinesReviewModal
+        columns={docType.lineColumns}
+        lines={linesPayload}
+        token={token}
+        apiBaseUrl={apiBaseUrl}
+        onSubmit={(value) => closeLines(value)}
+        onCancel={() => closeLines(null)}
+      />
+    );
+  }
+  if (reviewOpen) {
+    pendingModal = (
+      <OcrReviewModal
+        extracted={reviewExtracted}
+        fields={docType.headerFields}
+        preResolved={reviewPreResolved}
+        resolving={reviewResolving}
+        contactsBase={contactsBase}
+        apiBaseUrl={apiBaseUrl}
+        token={token}
+        onSubmit={(value) => closeReview(value)}
+        onCancel={() => closeReview(null)}
+      />
+    );
+  }
 
   return { result, loading, pendingModal };
 }

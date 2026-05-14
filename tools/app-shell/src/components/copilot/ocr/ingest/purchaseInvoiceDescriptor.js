@@ -1,5 +1,5 @@
-import { simSearch } from '@/lib/simSearch';
-import { deriveContactsApiBase } from '../contactApi';
+import { simSearch } from '../../../../lib/simSearch.js';
+import { deriveContactsApiBase } from '../contactApi.js';
 
 /**
  * Translate the vision-LLM extracted JSON for a purchase invoice into a list
@@ -63,7 +63,7 @@ async function findBpLocation({ token, apiBaseUrl, bpId }) {
  * otherwise null. Multiple-candidate disambiguation is intentionally left to
  * the popup — by the time we trigger it the user is already in the loop.
  */
-async function findBp({ token, apiBaseUrl, taxId, name }) {
+export async function findBp({ token, apiBaseUrl, taxId, name }) {
   if (!apiBaseUrl || !token) return null;
   // apiBaseUrl points at the host spec (e.g. /sws/neo/purchase-invoice).
   // The contacts spec lives at the sibling /sws/neo/contacts; derive it the
@@ -119,6 +119,74 @@ async function runProductSimSearch({ token, lines }) {
 }
 
 /**
+ * Build a single search term for a tax line. The PDF can show:
+ *   - a textual label only ("Exento", "IVA 21%", "IVA Compras 21%")
+ *   - a numeric rate only ("21%", "12")
+ *   - both at once
+ *
+ * We prefer the label because it carries more signal for trigram similarity.
+ * Falling back to "<rate>%" still produces a usable search term for plain
+ * percentages because pg_trgm matches the "<digits>%" tail against tax
+ * identifiers like "IVA Compras 21%".
+ *
+ * Exported for testing.
+ */
+export function buildTaxSearchTerm(line) {
+  const label = String(line?.tax_label ?? '').trim();
+  if (label) return label;
+  const rateRaw = line?.tax_rate;
+  // Number(null) is 0, so guard against null/undefined before coercing.
+  if (rateRaw == null) return null;
+  const rate = Number(rateRaw);
+  if (!Number.isFinite(rate)) return null;
+  return `${rate}%`;
+}
+
+export async function findTax({ token, value, extracted }) {
+  const term = String(value ?? extracted?.tax_label ?? '').trim();
+  if (!token || !term) return null;
+  const matches = await simSearch({
+    token,
+    entityName: 'FinancialMgmtTaxRate',
+    items: [term],
+    minSimPercent: 50,
+    qtyResults: 1,
+  });
+  const match = matches?.[0];
+  return match?.id ? { id: match.id, label: match.name || term } : null;
+}
+
+/**
+ * Resolve the C_Tax_ID for each invoice line via simSearch on
+ * FinancialMgmtTaxRate. The webhook runs through OBDal/OBContext, so client
+ * and organization filters are inherited from the user session — no need to
+ * pass them explicitly.
+ *
+ * Returns an array of length lines.length with one entry per line: the
+ * matched tax id or null. Lines without any tax info also return null.
+ *
+ * minSimPercent intentionally raised to 50 to reduce false positives from
+ * unrelated rate-only queries ("21%" must look like a real tax identifier
+ * in the catalog before we accept the match).
+ */
+export async function resolveTaxesForLines({ token, lines }) {
+  if (!token || !Array.isArray(lines) || lines.length === 0) return [];
+  const terms = lines.map(buildTaxSearchTerm);
+  if (terms.every(t => !t)) return Array(lines.length).fill(null);
+  // simSearch returns one slot per requested item; empty terms produce no match.
+  const items = terms.map(t => t || '');
+  const matches = await simSearch({
+    token,
+    entityName: 'FinancialMgmtTaxRate',
+    items,
+    minSimPercent: 50,
+    qtyResults: 1,
+  });
+  // Normalise to id-or-null array indexed by line idx.
+  return matches.map(m => m?.id || null);
+}
+
+/**
  * Resolve the vendor BP. Returns one of:
  *   - { bpId, bpCreate: null, locationCreate: null }   — existing BP found
  *   - { bpId: null, bpCreate, locationCreate? }        — user filled the popup
@@ -170,12 +238,15 @@ async function resolvePartnerAddress({ token, apiBaseUrl, bpId, locationCreate }
   return null;
 }
 
-function buildHeaderBody(safe, bpId, partnerAddress) {
+function buildHeaderBody(safe, bpId, partnerAddress, extras = {}) {
   const headerBody = {};
-  if (nonBlank(safe.document_no)) headerBody.orderReference = String(safe.document_no).trim();
-  if (nonBlank(safe.invoice_date)) headerBody.invoiceDate = toIsoDate(safe.invoice_date);
+  const documentNo = extras.documentNo ?? safe.document_no;
+  if (nonBlank(documentNo)) headerBody.orderReference = String(documentNo).trim();
+  const invoiceDate = extras.invoiceDate ?? safe.invoice_date;
+  if (nonBlank(invoiceDate)) headerBody.invoiceDate = toIsoDate(invoiceDate);
   headerBody.businessPartner = bpId || '$ref:bp';
   if (partnerAddress) headerBody.partnerAddress = partnerAddress;
+  if (nonBlank(extras.dueDate)) headerBody.dueDate = toIsoDate(extras.dueDate);
   return headerBody;
 }
 
@@ -222,8 +293,12 @@ async function resolveProductsForLines({ lines, productMatches, askUserForProduc
  * c_invline_chk_restrictions_trg rejects rows where M_Product_ID is null with
  * @InvoiceLineAmountMustBeZero@, so any still-unresolved line is dropped from
  * the batch and surfaced for the user to add manually.
+ *
+ * `taxByIdx` is optional: when a tax id was resolved client-side it is set on
+ * the line; otherwise the field is omitted so NEO's tax callout can still
+ * derive a default from the product + business partner + invoice date.
  */
-function buildLineOps(lines, productByIdx) {
+export function buildLineOps(lines, productByIdx, taxByIdx = {}) {
   const lineOps = [];
   const unmatched = [];
   lines.forEach((line, idx) => {
@@ -233,12 +308,14 @@ function buildLineOps(lines, productByIdx) {
       return;
     }
     const body = { product: productId };
+    if (nonBlank(line?.description)) body.description = String(line.description).trim();
     if (nonBlank(line?.quantity)) body.invoicedQuantity = Number(line.quantity);
     if (nonBlank(line?.unit_price)) {
       const price = Number(line.unit_price);
       body.unitPrice = price;
       body.listPrice = price;
     }
+    if (taxByIdx[idx]) body.tax = taxByIdx[idx];
     lineOps.push({
       id: `ln${idx}`,
       spec: 'purchase-invoice',
@@ -252,14 +329,48 @@ function buildLineOps(lines, productByIdx) {
 
 export async function buildPurchaseInvoiceBatch(extracted, ctx) {
   const safe = extracted || {};
-  const lines = Array.isArray(safe.line_items) ? safe.line_items : [];
-  const { token, apiBaseUrl, askUserForBp, askUserForProducts } = ctx || {};
+  const rawLines = Array.isArray(safe.line_items) ? safe.line_items : [];
+  const { token, apiBaseUrl, askUserForBp, askUserForProducts, reviewedHeader, reviewedLines } = ctx || {};
 
-  const productMatches = await runProductSimSearch({ token, lines });
+  // Merge OCR lines with the user's per-line edits. When the lines modal
+  // isn't in play (no `reviewedLines`), fall back to the raw OCR data.
+  const lines = rawLines.map((line, idx) => {
+    const override = reviewedLines?.[idx];
+    if (!override) return { ...line };
+    return {
+      ...line,
+      description: nonBlank(override.description) ? override.description : line?.description,
+      quantity: nonBlank(override.quantity) ? override.quantity : line?.quantity,
+      unit_price: nonBlank(override.unit_price) ? override.unit_price : line?.unit_price,
+      tax_label: nonBlank(override.tax_label) ? override.tax_label : line?.tax_label,
+      tax_rate: override.tax_rate ?? line?.tax_rate,
+      _tax_id: override.tax_id || null,
+    };
+  });
 
-  const bpResolution = await resolveBpOrAskUser({ token, apiBaseUrl, safe, askUserForBp });
-  if (bpResolution.cancelled) return { cancelled: true };
-  const { bpId, bpCreate, locationCreate } = bpResolution;
+  // Run product + tax simSearch in parallel — both hit the same webhook and
+  // are independent of the BP resolution path.
+  const [productMatches, taxIds] = await Promise.all([
+    runProductSimSearch({ token, lines }),
+    resolveTaxesForLines({ token, lines }),
+  ]);
+
+  // Vendor: prefer the review modal's resolution; fall back to the legacy
+  // ContactCreatePopup branch when the modal isn't in play.
+  let bpId = null;
+  let bpCreate = null;
+  let locationCreate = null;
+  if (reviewedHeader?.vendor) {
+    bpId = reviewedHeader.vendor.bpId || null;
+    bpCreate = reviewedHeader.vendor.bpCreate || null;
+    locationCreate = reviewedHeader.vendor.locationCreate || null;
+  } else {
+    const bpResolution = await resolveBpOrAskUser({ token, apiBaseUrl, safe, askUserForBp });
+    if (bpResolution.cancelled) return { cancelled: true };
+    bpId = bpResolution.bpId;
+    bpCreate = bpResolution.bpCreate;
+    locationCreate = bpResolution.locationCreate;
+  }
 
   const partnerAddress = await resolvePartnerAddress({ token, apiBaseUrl, bpId, locationCreate });
 
@@ -272,6 +383,15 @@ export async function buildPurchaseInvoiceBatch(extracted, ctx) {
   if (productResolution.cancelled) return { cancelled: true };
   const { productByIdx } = productResolution;
 
+  // Map idx → tax id: user's explicit pick from the lines modal wins,
+  // simSearch result is the fallback.
+  const taxByIdx = {};
+  lines.forEach((line, idx) => {
+    const explicit = line?._tax_id;
+    if (explicit) taxByIdx[idx] = explicit;
+    else if (taxIds[idx]) taxByIdx[idx] = taxIds[idx];
+  });
+
   const ops = [];
   if (bpCreate) ops.push(bpCreate);
   if (locationCreate) ops.push(locationCreate);
@@ -279,9 +399,13 @@ export async function buildPurchaseInvoiceBatch(extracted, ctx) {
     id: 'inv',
     spec: 'purchase-invoice',
     entity: 'Header',
-    body: buildHeaderBody(safe, bpId, partnerAddress),
+    body: buildHeaderBody(safe, bpId, partnerAddress, {
+      documentNo: reviewedHeader?.documentNo ?? null,
+      invoiceDate: reviewedHeader?.invoiceDate ?? null,
+      dueDate: reviewedHeader?.dueDate ?? safe.due_date ?? null,
+    }),
   });
-  const { lineOps, unmatched } = buildLineOps(lines, productByIdx);
+  const { lineOps, unmatched } = buildLineOps(lines, productByIdx, taxByIdx);
   ops.push(...lineOps);
 
   return { ops, unmatched };

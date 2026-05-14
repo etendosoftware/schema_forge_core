@@ -1403,7 +1403,7 @@ export function DetailView({
                     ? headerExtra(slotProps)
                     : headerExtra
                 )}
-                {!headerExtra && ocrDocType && (
+                {!headerExtra && !sidePanel && ocrDocType && (
                   <Suspense fallback={null}>
                     <LazyOcrInlineUploader {...slotProps} docTypeId={ocrDocType.id} />
                   </Suspense>
@@ -2244,11 +2244,11 @@ export function DetailView({
           </div>
           {sidePanel && (
             <div
-              className="w-[280px] shrink-0 self-stretch pl-0 pr-3"
+              className="w-[280px] shrink-0 self-stretch border-l border-gray-200 pl-3 pr-3"
               style={sidePanelStyle}
             >
               {typeof sidePanel === 'function'
-                ? React.createElement(sidePanel, { recordId: data?.id || recordId, data, token, apiBaseUrl, api })
+                ? React.createElement(sidePanel, { recordId: data?.id || recordId, data, token, apiBaseUrl, api, isNew })
                 : sidePanel}
             </div>
           )}

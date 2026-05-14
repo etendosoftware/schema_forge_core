@@ -46,7 +46,6 @@ export default function ProductResolverPopup({
 
   // selections: { [idx]: { id, label } | null }
   const [selections, setSelections] = useState({});
-  const [openIdx, setOpenIdx] = useState(null);
 
   const cancel = () => onCancel?.();
   const submit = () => {
@@ -80,8 +79,6 @@ export default function ProductResolverPopup({
               row={row}
               selection={selections[row.idx] || null}
               onSelect={(value) => setSelections(prev => ({ ...prev, [row.idx]: value }))}
-              isOpen={openIdx === row.idx}
-              onOpenChange={(open) => setOpenIdx(open ? row.idx : null)}
               selectorUrl={selectorUrl}
               productSpecUrl={productSpecUrl}
               authHeader={authHeader}
@@ -110,7 +107,7 @@ export default function ProductResolverPopup({
   );
 }
 
-function ProductRow({ row, selection, onSelect, isOpen, onOpenChange, selectorUrl, productSpecUrl, authHeader, token, ui }) {
+function ProductRow({ row, selection, onSelect, selectorUrl, productSpecUrl, authHeader, token, ui }) {
   const [creating, setCreating] = useState(false);
 
   return (
@@ -132,32 +129,16 @@ function ProductRow({ row, selection, onSelect, isOpen, onOpenChange, selectorUr
         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
           {ui('ocrProductPick')}
         </div>
-        <button
-          type="button"
-          onClick={() => onOpenChange(true)}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-between gap-2"
-        >
-          <span className={`truncate ${selection ? 'text-gray-900' : 'text-gray-500'}`}>
-            {selection?.label || ui('ocrProductSkip')}
-          </span>
-          <ChevronDown size={16} className="text-gray-500 shrink-0" />
-        </button>
-      </div>
-
-      {isOpen && (
-        <SelectorDialog
-          title={ui('ocrProductPick')}
-          initialQuery={row.description}
+        <InlineSelector
           selectorUrl={selectorUrl}
           authHeader={authHeader}
-          currentId={selection?.id || null}
-          onPick={(value) => { onSelect(value); onOpenChange(false); }}
-          onClose={() => onOpenChange(false)}
+          initialQuery={row.description}
+          value={selection}
+          onPick={onSelect}
+          onCreateNew={productSpecUrl ? () => setCreating(true) : null}
           ui={ui}
-          createLabel={ui('ocrProductCreateNew')}
-          onCreateNew={productSpecUrl ? () => { onOpenChange(false); setCreating(true); } : null}
         />
-      )}
+      </div>
 
       {creating && (
         <ProductCreateForm
@@ -170,6 +151,147 @@ function ProductRow({ row, selection, onSelect, isOpen, onOpenChange, selectorUr
           ui={ui}
         />
       )}
+    </div>
+  );
+}
+
+function InlineSelector({ selectorUrl, authHeader, initialQuery, value, onPick, onCreateNew, ui }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const wrapRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // Seed query with the extracted description the first time the picker opens.
+  const [seeded, setSeeded] = useState(false);
+  useEffect(() => {
+    if (open && !seeded) {
+      setQuery(initialQuery || '');
+      setSeeded(true);
+      setTimeout(() => inputRef.current?.focus(), 0);
+    }
+  }, [open, seeded, initialQuery]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const handle = (event) => {
+      if (wrapRef.current && !wrapRef.current.contains(event.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || !selectorUrl) return undefined;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      setFailed(false);
+      try {
+        const params = new URLSearchParams({
+          limit: String(SELECTOR_PAGE_SIZE),
+          offset: '0',
+        });
+        const trimmed = query.trim();
+        if (trimmed) {
+          const escaped = trimmed.replace(/'/g, "''");
+          params.set('_query', trimmed);
+          params.set('name', trimmed);
+          params.set('_neoWhere', `lower(name) like '%${escaped.toLowerCase()}%' and active = true`);
+        }
+        const res = await fetch(`${selectorUrl}?${params}`, { headers: authHeader });
+        if (!res.ok) throw new Error(`status ${res.status}`);
+        const data = await res.json();
+        const list = data?.items ?? data?.response?.data ?? [];
+        if (!cancelled) setItems(Array.isArray(list) ? list : []);
+      } catch {
+        if (!cancelled) { setItems([]); setFailed(true); }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }, SEARCH_DEBOUNCE_MS);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [open, query, selectorUrl, authHeader]);
+
+  const options = useMemo(() => {
+    const seen = new Set();
+    const out = [];
+    for (const item of items) {
+      if (!item?.id || seen.has(item.id)) continue;
+      seen.add(item.id);
+      out.push({ id: item.id, label: item.label || item.name || item._identifier || item.id });
+    }
+    return out;
+  }, [items]);
+
+  const handlePick = (option) => {
+    onPick({ id: option.id, label: option.label });
+    setOpen(false);
+  };
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-between gap-2"
+      >
+        <span className={`truncate ${value ? 'text-gray-900' : 'text-gray-500'}`}>
+          {value?.label || ui('ocrProductSkip')}
+        </span>
+        <ChevronDown size={16} className="text-gray-500 shrink-0" />
+      </button>
+    );
+  }
+
+  return (
+    <div className="relative" ref={wrapRef}>
+      <div className="flex items-center gap-2 rounded-lg border border-gray-900 bg-white px-3 py-2">
+        <Search size={14} className="text-gray-400 shrink-0" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={ui('ocrProductSearchPlaceholder')}
+          className="flex-1 text-sm text-gray-900 placeholder-gray-500 outline-none"
+        />
+        {loading && <Loader2 size={14} className="animate-spin text-gray-400" />}
+      </div>
+      <div className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+        {onCreateNew && (
+          <button
+            type="button"
+            onClick={onCreateNew}
+            className="flex w-full items-center gap-2 border-b border-gray-100 px-3 py-2 text-left text-sm text-blue-700 hover:bg-blue-50"
+          >
+            <Plus size={14} className="shrink-0" />
+            <span className="truncate">{ui('ocrProductCreateNew')}</span>
+          </button>
+        )}
+        {!loading && failed && (
+          <div className="px-3 py-2 text-xs text-gray-500">{ui('ocrProductLoadError')}</div>
+        )}
+        {!loading && !failed && options.length === 0 && (
+          <div className="px-3 py-2 text-xs text-gray-500">{ui('noResults')}</div>
+        )}
+        {options.map(o => (
+          <button
+            key={o.id}
+            type="button"
+            onClick={() => handlePick(o)}
+            className={[
+              'flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50',
+              value?.id === o.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-800',
+            ].join(' ')}
+          >
+            <span className="w-4 shrink-0">{value?.id === o.id ? <Check size={14} /> : null}</span>
+            <span className="truncate">{o.label}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

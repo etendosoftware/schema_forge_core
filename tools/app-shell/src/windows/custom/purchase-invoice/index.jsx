@@ -11,6 +11,7 @@ import InvoiceLineTableCustom from './InvoiceLineTableCustom.jsx';
 import InvoicePreviewModal from '../shared/InvoicePreviewModal.jsx';
 import PurchaseInvoiceTopbar from './PurchaseInvoiceTopbar.jsx';
 import PurchaseInvoiceBottomPanel from './PurchaseInvoiceBottomPanel.jsx';
+import OcrSidePanel from '../shared/OcrSidePanel.jsx';
 import RelatedDocuments from './RelatedDocuments.jsx';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
@@ -102,6 +103,8 @@ export default function PurchaseInvoiceWindow(props) {
           extraBadges={[]}
           topbarRight={PurchaseInvoiceTopbar}
           bottomSection={PurchaseInvoiceBottomPanel}
+          sidePanel={OcrSidePanel}
+          sidePanelStyle={{ width: 360 }}
           notesField="description"
           customTabs={customTabs}
           breadcrumb={breadcrumb}

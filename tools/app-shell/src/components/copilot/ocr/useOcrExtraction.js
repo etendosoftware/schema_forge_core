@@ -50,11 +50,17 @@ function parseLooseJson(text) {
  * its JSON output. Skips the agent reasoning roundtrip (~1–3s) and the
  * post-formatting step by calling `/executeTool` instead of `/question`.
  *
+ * Schema sourcing: when `structuredOutputSchema` is provided, the literal
+ * JSON Schema is sent and the tool ignores `structuredOutput`. The latter is
+ * kept for callers that still rely on named Pydantic schemas in
+ * `tools/schemas/`.
+ *
  * @param {{
  *   token: string,
  *   toolName?: string,
  *   question: string,
  *   structuredOutput?: string,
+ *   structuredOutputSchema?: object,
  *   agentId?: string,
  * }} params
  */
@@ -63,6 +69,7 @@ export function useOcrExtraction({
   toolName = 'SimpleOcrTool',
   question,
   structuredOutput,
+  structuredOutputSchema,
   agentId,
 }) {
   const [status, setStatus] = useState('idle');
@@ -95,7 +102,8 @@ export function useOcrExtraction({
     setStatus('extracting');
     try {
       const toolParams = { path: uploadedPath, question };
-      if (structuredOutput) toolParams.structured_output = structuredOutput;
+      if (structuredOutputSchema) toolParams.structured_output_schema = structuredOutputSchema;
+      else if (structuredOutput) toolParams.structured_output = structuredOutput;
 
       const resp = await executeTool(token, {
         toolName,
@@ -115,7 +123,7 @@ export function useOcrExtraction({
       setStatus('error');
       throw err;
     }
-  }, [token, toolName, question, structuredOutput, agentId]);
+  }, [token, toolName, question, structuredOutput, structuredOutputSchema, agentId]);
 
   const reset = useCallback(() => {
     setStatus('idle');
