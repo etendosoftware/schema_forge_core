@@ -18,7 +18,13 @@ import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { resolveColumnLabel } from '@/lib/resolveColumnLabel.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { applyCalloutUpdates } from '@/lib/applyCalloutUpdates.js';
-import { columnMinWidthPx } from '@/lib/linesColumnWidth.js';
+import { columnMinWidthPx, columnFlex } from '@/lib/linesColumnWidth.js';
+
+// Extracts grow flag and basis (px) from a columnFlex() shorthand string.
+function flexSpec(col, idx) {
+  const [g, , b] = columnFlex(col, idx).split(' ');
+  return { grow: parseInt(g, 10), basis: parseInt(b, 10) };
+}
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import InternalConsumptionProductSearchDrawer from './InternalConsumptionProductSearchDrawer.jsx';
 import { SelectorInput } from './SelectorInput.jsx';
@@ -1103,6 +1109,8 @@ export function DataTable({
   onSaveRow = null,
   onCancelEdit = null,
   clearSelectionTrigger = 0,
+  hideHeader = false,
+  hideDataRows = false,
 }) {
   const t = useLabel(labelOverrides);
   const tMenu = useMenuLabel();
@@ -1399,11 +1407,40 @@ export function DataTable({
   return (
     <div className="space-y-0">
       <div className={linesLayout === 'inlineEditable' ? '[&>div]:!overflow-visible' : 'overflow-x-auto overflow-y-visible'}>
-        <Table>
-          <TableHeader className={linesLayout === 'inlineEditable' ? 'sticky top-0 z-20 bg-white' : ''}>
+        <Table style={hideHeader ? { tableLayout: 'fixed', width: '100%' } : undefined}>
+          {/* When hideHeader is true (add-row-only mode), a <colgroup> drives column
+              widths with the same fixed/auto split used by InlineLinesPanel's flex
+              layout. Fixed-size columns (flex-grow: 0) get explicit pixel widths;
+              flexible columns (flex-grow: 1) get no width so the browser shares
+              remaining space equally — matching flex's equal-grow distribution.
+              table-layout: fixed makes the browser honour those col widths exactly. */}
+          {hideHeader && (
+            <colgroup>
+              {selectable && <col style={{ width: 40 }} />}
+              {visibleColumns.map((col, colIdx) => {
+                const { grow, basis } = flexSpec(col, colIdx);
+                return grow === 0
+                  ? <col key={col.key} style={{ width: basis }} />
+                  : <col key={col.key} />;
+              })}
+              {hoverRowActions && <col style={{ width: 40 }} />}
+              {hoverRowActions && onDeleteRow && <col style={{ width: 40 }} />}
+              {!hoverRowActions && legacyDeleteEnabled && <col style={{ width: 40 }} />}
+              {!hoverRowActions && onCloneRow && !quickActionsEnabled && <col style={{ width: 40 }} />}
+              {quickActionsEnabled && <col style={{ width: 40 }} />}
+            </colgroup>
+          )}
+          <TableHeader
+            className={linesLayout === 'inlineEditable' ? 'sticky top-0 z-20 bg-white' : ''}
+            aria-hidden={hideHeader || undefined}
+            style={hideHeader ? { display: 'none' } : undefined}
+          >
             <TableRow className="border-b border-border/40">
               {selectable && (
-                <TableHead className="w-10 px-3 align-middle" onClick={(e) => e.stopPropagation()}>
+                <TableHead
+                  className="w-10 px-3 align-middle"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Checkbox
                     checked={allSelected}
                     indeterminate={someSelected}
@@ -1416,10 +1453,6 @@ export function DataTable({
                 const colLabel = resolveColumnLabel(col, locale, t);
                 const isSorted = sortColumn === col.key;
                 const isSortable = col.sortable !== false;
-                // In inline-editable mode, mirror the column widths used by
-                // InlineLinesPanel so the header wraps identically whether
-                // the user sees the flex layout (rows present) or the HTML
-                // table layout (inline-add row active).
                 const headStyle = linesLayout === 'inlineEditable'
                   ? { minWidth: columnMinWidthPx(col, colIdx) }
                   : undefined;
@@ -1467,7 +1500,7 @@ export function DataTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredData.length === 0 && !addRow?.active ? (
+            {!hideDataRows && (filteredData.length === 0 && !addRow?.active ? (
               <TableRow data-empty-state="">
                 <TableCell colSpan={colSpan} className="p-0">
                   <EmptyState hasFilter={hasActiveFilter} totalCount={data.length} />
@@ -1667,7 +1700,7 @@ export function DataTable({
                   </TableRow>
                 );
               })
-            )}
+            ))}
             {addRow?.active && (
               <InlineAddRow
                 ref={addRow.ref}

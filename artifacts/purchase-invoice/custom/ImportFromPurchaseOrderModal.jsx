@@ -2,14 +2,14 @@ import ImportLinesModal from '@/components/contract-ui/ImportLinesModal';
 
 const fetchDocuments = async ({ base, headers, bpId, invoiceId }) => {
   const [ordersRes, invLinesRes] = await Promise.all([
-    fetch(`${base}/sales-order/header?_startRow=0&_endRow=500&_sortBy=creationDate desc`, { headers }),
-    fetch(`${base}/sales-invoice/lines?parentId=${invoiceId}&_startRow=0&_endRow=200`, { headers }),
+    fetch(`${base}/purchase-order/header?_startRow=0&_endRow=500&_sortBy=creationDate desc`, { headers }),
+    fetch(`${base}/purchase-invoice/lines?parentId=${invoiceId}&_startRow=0&_endRow=200`, { headers }),
   ]);
 
   const alreadyImportedOrderLines = new Set();
   if (invLinesRes.ok) {
     const invLines = (await invLinesRes.json())?.response?.data || [];
-    invLines.forEach(il => { if (il.cOrderlineId) alreadyImportedOrderLines.add(il.cOrderlineId); });
+    invLines.forEach(il => { if (il.salesOrderLine) alreadyImportedOrderLines.add(il.salesOrderLine); });
   }
 
   let documents = [];
@@ -29,7 +29,7 @@ const fetchDocuments = async ({ base, headers, bpId, invoiceId }) => {
 };
 
 const fetchLines = async ({ base, headers, docId, sharedContext }) => {
-  const res = await fetch(`${base}/sales-order/lines?parentId=${docId}&_startRow=0&_endRow=200`, { headers });
+  const res = await fetch(`${base}/purchase-order/lines?parentId=${docId}&_startRow=0&_endRow=200`, { headers });
   if (!res.ok) return [];
   const json = await res.json();
   const lines = json?.response?.data || [];
@@ -58,7 +58,7 @@ const afterImport = async ({ importedDocIds, sharedContext, base, headers, invoi
   if (discounts.length === 0) return;
   const uniqueDiscounts = [...new Set(discounts)];
   if (uniqueDiscounts.length !== 1) return;
-  await fetch(`${base}/sales-invoice/header/${invoiceId}`, {
+  await fetch(`${base}/purchase-invoice/header/${invoiceId}`, {
     method: 'PATCH',
     headers,
     body: JSON.stringify({ etgoTotalDiscount: uniqueDiscounts[0] }),
@@ -82,20 +82,20 @@ const buildLineBody = async ({ line, qty, invoiceId, lineNo }) => {
     tax: line.tax || null,
     uOM: line.uOM || null,
     lineNo,
-    cOrderlineId: line.id,
+    salesOrderLine: line.id,
   };
 };
 
-export default function ImportFromOrderModal(props) {
+export default function ImportFromPurchaseOrderModal(props) {
   return (
     <ImportLinesModal
       {...props}
-      linesEndpoint="sales-invoice/lines"
-      titleKey="importFromSalesOrder"
-      searchPlaceholderKey="searchSalesOrder"
-      emptyMessageKey="noCompletedSalesOrdersForThisCustomer"
+      linesEndpoint="purchase-invoice/lines"
+      titleKey="importFromPurchaseOrder"
+      searchPlaceholderKey="searchPurchaseOrder"
+      emptyMessageKey="noCompletedPurchaseOrdersForThisSupplier"
       noSearchResultsKey="noOrdersMatchYourSearch"
-      successMessageKey="linesImportedFromSalesOrder"
+      successMessageKey="linesImportedFromPurchaseOrder"
       fetchDocuments={fetchDocuments}
       fetchLines={fetchLines}
       getDocDisplay={getDocDisplay}
