@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(__dirname, '..', 'useInvoicePdf.js'), 'utf8');
+const sharedSrc = readFileSync(join(__dirname, '..', 'documentPdf.js'), 'utf8');
 
 describe('useInvoicePdf', () => {
 
@@ -47,21 +48,21 @@ describe('useInvoicePdf', () => {
   });
 
   it('sends Bearer token in all API requests', () => {
-    assert.match(src, /Authorization.*Bearer.*token/);
+    assert.match(sharedSrc, /Authorization.*Bearer.*token/);
   });
 
   // ── PDF rendering ─────────────────────────────────────────────────────────
 
   it('renders the PDF via jsreport at /jsreport/api/report', () => {
-    assert.match(src, /\/jsreport\/api\/report/);
+    assert.match(sharedSrc, /\/jsreport\/api\/report/);
   });
 
   it('uses the handlebars engine', () => {
-    assert.match(src, /engine.*handlebars|handlebars.*engine/);
+    assert.match(sharedSrc, /engine.*handlebars|handlebars.*engine/);
   });
 
   it('uses the chrome-pdf recipe for PDF generation', () => {
-    assert.match(src, /chrome-pdf/);
+    assert.match(sharedSrc, /chrome-pdf/);
   });
 
   it('creates a blob URL from the jsreport response', () => {
@@ -70,7 +71,7 @@ describe('useInvoicePdf', () => {
 
   it('embeds the company logo in the rendered template when available', () => {
     assert.match(src, /companyLogoDataUrl/);
-    assert.match(src, /inv-logo-img/);
+    assert.match(sharedSrc, /inv-logo-img/);
   });
 
   it('renders the company identity block with name, address and tax ID', () => {
@@ -84,12 +85,12 @@ describe('useInvoicePdf', () => {
   });
 
   it('fetches the full partner location from the contacts locationAddress endpoint', () => {
-    assert.match(src, /contacts\/locationAddress\/\$\{locationId\}/);
+    assert.match(sharedSrc, /contacts\/locationAddress\/\$\{locationId\}/);
   });
 
   it('builds multi-line customer address output for the PDF', () => {
     assert.match(src, /customerAddressLines/);
-    assert.match(src, /inv-address-lines/);
+    assert.match(sharedSrc, /inv-address-lines/);
   });
 
   // ── Memory management ─────────────────────────────────────────────────────
