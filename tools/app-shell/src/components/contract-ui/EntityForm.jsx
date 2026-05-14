@@ -475,16 +475,22 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
   // tabs where visibility depends on a sibling checkbox value (no server round-trip needed).
   displayFields = displayFields.filter(f => evalDisplayLogic(f, data));
 
+  // Stable ID unique to this EntityForm instance. Used as the Map key in useEntity's
+  // formFieldsRef so multiple EntityForms on the same screen accumulate rather than
+  // overwrite each other.
+  const formId = React.useId();
+
   // Register only the currently visible fields with useEntity so handleSave validates
   // what the user can actually see and fill — not hidden fields controlled by displayLogic.
+  // Cleanup removes this form's entry when the component unmounts (e.g. conditional blocks).
   React.useEffect(() => {
-    if (typeof registerFields === 'function') {
-      registerFields(displayFields);
-    }
+    if (typeof registerFields !== 'function') return;
+    registerFields(displayFields, formId);
+    return () => registerFields(null, formId);
   // displayFields is recomputed on every render; the effect intentionally re-runs
   // whenever visibility changes so the validation set stays in sync with the form.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [registerFields, data, displayLogic, fields, excludeFields, section, layout]);
+  }, [registerFields, formId, data, displayLogic, fields, excludeFields, section, layout]);
 
   if (displayFields.length === 0) return null;
 

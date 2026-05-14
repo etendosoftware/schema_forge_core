@@ -1849,6 +1849,7 @@ export function DetailView({
                       apiBaseUrl={apiBaseUrl}
                       selectorContext={selectorContextByEntity[entity]}
                       labelOverrides={labelOverrides}
+                      registerFields={hook.registerFields}
                       fieldErrors={hook.fieldErrors}
                       onFieldBlur={autoSaveOnBlur ? handleFieldBlur : undefined}
                     />
