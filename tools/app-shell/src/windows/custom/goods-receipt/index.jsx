@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import GoodsReceiptTable from '@generated/goods-receipt/generated/web/goods-receipt/GoodsReceiptTable';
 import GeneratedApp from '@generated/goods-receipt/generated/web/goods-receipt/index.jsx';
 import GoodsReceiptBottomPanel from './GoodsReceiptBottomPanel.jsx';
@@ -5,6 +6,7 @@ import RelatedDocuments from './RelatedDocuments.jsx';
 import { AttachmentsTab } from '@/components/attachments';
 import BulkDocumentAction, { buildInOutActions } from '@/components/contract-ui/BulkDocumentAction';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
+import { useUI } from '@/i18n';
 
 const HEADER_COLUMNS = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
@@ -21,6 +23,11 @@ function CustomHeaderTable(props) {
 
 export default function GoodsReceiptWindow(props) {
   useBulkActionToast();
+  const ui = useUI();
+  const customTabs = useMemo(() => ([
+    { key: 'related', label: ui('relatedDocuments'), Component: RelatedDocuments },
+    { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: 'M_InOut', config: {} } },
+  ]), [ui]);
   return (
     <GeneratedApp
       {...props}
@@ -28,7 +35,7 @@ export default function GoodsReceiptWindow(props) {
       secondaryTabs={[]}
       notesField="description"
       bottomSection={GoodsReceiptBottomPanel}
-      customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: 'M_InOut', config: {} } }]}
+      customTabs={customTabs}
       bulkActions={(ctx) => (
         <BulkDocumentAction {...ctx} entity="goodsReceipt" buildActions={buildInOutActions} />
       )}

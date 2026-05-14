@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { XCircle } from 'lucide-react';
+import { useUI } from '@/i18n';
 import GeneratedApp from '@generated/sales-quotation/generated/web/sales-quotation/index.jsx';
 import QuotationTable from '@generated/sales-quotation/generated/web/sales-quotation/QuotationTable';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
@@ -9,23 +10,12 @@ import { CreateContactContext } from '@/components/contract-ui/CreateContactCont
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 import LinesEmptyState from '@/components/contract-ui/LinesEmptyState.jsx';
 
-const QUOTATION_COLUMNS = [
-  { key: 'orderDate', column: 'DateOrdered', type: 'date', dot: false },
-  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector' },
-  { key: 'documentStatus', column: 'DocStatus', type: 'status', enumLabels: { 'AE': 'Automatic Evaluation', 'CO': 'Booked', 'CL': 'Closed', 'CA': 'Closed - Order Created', 'CJ': 'Closed - Rejected', 'DR': 'Draft', 'ME': 'Manual Evaluation', 'NA': 'Not Accepted', 'NC': 'Not Confirmed', 'WP': 'Not Paid', 'RE': 'Re-Opened', 'TMP': 'Temporal', 'UE': 'Under Evaluation', 'IP': 'Under Way', '??': 'Unknown', 'VO': 'Voided' } },
-  { key: 'validUntil', column: 'validuntil', type: 'date' },
-  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
-];
-
+// labelOverrides feed useLabel(labelOverrides) inside the generated table to
+// rename per-window AD columns (locale-keyed map, not user-visible strings).
 const LABEL_OVERRIDES = {
   es_ES: { C_BPartner_ID: 'Contacto', DateOrdered: 'Fecha cotización' },
   en_US: { C_BPartner_ID: 'Contact',  DateOrdered: 'Quotation Date'   },
 };
-
-function CustomQuotationTable(props) {
-  return <QuotationTable columns={QUOTATION_COLUMNS} {...props} />;
-}
 
 const draftModeWithModal = {
   enabled: true,
@@ -59,8 +49,42 @@ const customMenuActions = ({ status }) => [
 ];
 
 export default function SalesQuotationWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
+  const ui = useUI();
   const [cloneTargets, setCloneTargets] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const quotationColumns = useMemo(() => ([
+    { key: 'orderDate', column: 'DateOrdered', type: 'date', dot: false },
+    { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+    { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector' },
+    { key: 'documentStatus', column: 'DocStatus', type: 'status', enumLabels: {
+      AE: ui('quotationStatus.AE'),
+      CO: ui('quotationStatus.CO'),
+      CL: ui('quotationStatus.CL'),
+      CA: ui('quotationStatus.CA'),
+      CJ: ui('quotationStatus.CJ'),
+      DR: ui('quotationStatus.DR'),
+      ME: ui('quotationStatus.ME'),
+      NA: ui('quotationStatus.NA'),
+      NC: ui('quotationStatus.NC'),
+      WP: ui('quotationStatus.WP'),
+      RE: ui('quotationStatus.RE'),
+      TMP: ui('quotationStatus.TMP'),
+      UE: ui('quotationStatus.UE'),
+      IP: ui('quotationStatus.IP'),
+      '??': ui('quotationStatus.UNK'),
+      VO: ui('quotationStatus.VO'),
+    } },
+    { key: 'validUntil', column: 'validuntil', type: 'date' },
+    { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
+  ]), [ui]);
+
+  const CustomQuotationTable = useMemo(
+    () => function CustomQuotationTable(props) {
+      return <QuotationTable columns={quotationColumns} {...props} />;
+    },
+    [quotationColumns],
+  );
 
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
     useCreateContactModal({ apiBaseUrl, token });
