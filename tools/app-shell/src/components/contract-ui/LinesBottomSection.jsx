@@ -135,10 +135,13 @@ export default function LinesBottomSection({
           <>
             <div className="border-l border-border/50" style={{ borderLeftWidth: '0.5px' }} />
 
-            {/* Right column: Totals — fixed 420px wide / 241px tall to keep the
-                same footprint whether the "Descuento total" row is collapsed or
-                expanded. */}
-            <div className="w-[520px] shrink-0 p-2 flex flex-col justify-start" style={{ height: 241, minHeight: 241, maxHeight: 241 }}>
+            {/* Right column: Totals — fixed 520px wide, min-height 200px so the
+                panel keeps a stable visual rhythm but is allowed to grow with
+                its content (e.g. when "Descuento total" expands). The previous
+                hard `height: 241 / minHeight: 241 / maxHeight: 241` clamp acted
+                as a floor on the whole bottom section and crushed the lines
+                table on viewports around 1368×768. */}
+            <div className="w-[520px] shrink-0 p-2 flex flex-col justify-start" style={{ minHeight: 200 }}>
               <DocumentTotalsPanel
                 lines={lines ?? []}
                 pendingLine={pendingLine ?? null}
