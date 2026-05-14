@@ -76,14 +76,14 @@ describe('BottomPanel rollout — all inline-editable windows', () => {
   describe('sales-invoice InvoiceBottomPanel — rich static extension points', () => {
     const src = readArtifact('sales-invoice', 'InvoiceBottomPanel.jsx');
 
-    it('wraps LinesBottomSection with relatedDocuments and notesExtra={SifDataTabs}', () => {
+    it('wraps LinesBottomSection with relatedDocuments (SIF moved to dedicated tab in ETP-3995)', () => {
       assert.match(src, /LinesBottomSection/);
       assert.match(src, /relatedDocuments=\{RelatedDocuments\}/);
-      assert.match(src, /notesExtra=\{SifDataTabs\}/);
+      assert.doesNotMatch(src, /notesExtra=\{SifDataTabs\}/);
     });
 
-    it('imports SifDataTabs from the local module', () => {
-      assert.match(src, /import SifDataTabs from '\.\/SifDataTabs'/);
+    it('does NOT import SifDataTabs (SIF is now a dedicated extraTab, not a notesExtra slot)', () => {
+      assert.doesNotMatch(src, /import SifDataTabs from '\.\/SifDataTabs'/);
     });
 
     it('imports ImportFromShipmentModal', () => {
@@ -176,8 +176,8 @@ describe('BottomPanel rollout — all inline-editable windows', () => {
       assert.match(src, /relatedDocuments=\{RelatedDocuments\}/);
     });
 
-    it('passes SifDataTabs as the notesExtra slot', () => {
-      assert.match(src, /notesExtra=\{SifDataTabs\}/);
+    it('does NOT pass SifDataTabs as notesExtra (SIF moved to dedicated extraTab in ETP-3995)', () => {
+      assert.doesNotMatch(src, /notesExtra=\{SifDataTabs\}/);
     });
 
     it('declares PurchaseInvoiceLinesEmptyState and attaches as linesEmptyState', () => {
