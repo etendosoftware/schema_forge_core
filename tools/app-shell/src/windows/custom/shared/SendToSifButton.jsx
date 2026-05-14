@@ -5,7 +5,7 @@ import { useAuth } from '@/auth/AuthContext';
 import { getPendingSifTargets, getSifBodyKey } from './sifSending.js';
 import SifSendingModal from './SifSendingModal.jsx';
 
-export default function SendToSifButton({ data, recordId, token, apiBaseUrl, status }) {
+export default function SendToSifButton({ data, recordId, apiBaseUrl, status }) {
   const ui = useUI();
   const [modalOpen, setModalOpen] = useState(false);
   const specName = apiBaseUrl?.split('/').filter(Boolean).pop() || 'sales-invoice';
@@ -14,10 +14,6 @@ export default function SendToSifButton({ data, recordId, token, apiBaseUrl, sta
   const { selectedOrg } = useAuth();
   const orgId = selectedOrg?.id ?? null;
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
-  const headers = useMemo(() => ({
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  }), [token]);
 
   const { profile } = useFiscalConfig(orgId, apiBaseUrl);
   const pendingTargets = getPendingSifTargets(specName, profile, data);
@@ -43,7 +39,6 @@ export default function SendToSifButton({ data, recordId, token, apiBaseUrl, sta
           base={base}
           specName={specName}
           recordId={recordId}
-          headers={headers}
           onClose={() => setModalOpen(false)}
           onAfterSend={(next) => {
             if (Object.values(next).some(r => r?.ok)) {

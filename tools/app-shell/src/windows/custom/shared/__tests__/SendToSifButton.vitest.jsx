@@ -11,7 +11,11 @@ vi.mock('@/windows/custom/fiscal-config/useFiscalConfig.js', () => ({
 }));
 
 vi.mock('@/auth/AuthContext', () => ({
-  useAuth: () => ({ selectedOrg: { id: 'ORG_1' } }),
+  useAuth: () => ({ selectedOrg: { id: 'ORG_1' }, token: 'tok', logout: () => {} }),
+}));
+
+vi.mock('@/auth/useApiFetch.js', () => ({
+  useApiFetch: (base) => (path, options = {}) => global.fetch(`${base}${path}`, options),
 }));
 
 import SendToSifButton from '../SendToSifButton.jsx';
@@ -23,7 +27,6 @@ function renderButton(overrides = {}) {
       tbaiIssent: false,
     },
     recordId: 'INV_1',
-    token: 'tok',
     apiBaseUrl: '/sws/neo/sales-invoice',
     status: 'CO',
   };
