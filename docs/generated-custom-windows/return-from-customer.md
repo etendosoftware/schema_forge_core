@@ -57,4 +57,4 @@ Users should be able to review existing customer returns, open a specific return
 - The Related Documents custom component resolves goods shipments by traversing `customerReturnLine.goodsShipmentLine` and linking to the parent goods shipment records in `artifacts/return-from-customer/custom/RelatedDocuments.jsx`.
 - Research notes in `artifacts/return-from-customer/FINDINGS.md` document the intended customer-return lifecycle and expected shipment/receipt/credit relationships.
 - I did not find dedicated browser automation for this window in the current repository evidence.
-- The generated `CustomerReturnPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `M_InOut` AD table.
+- The generated `CustomerReturnPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `M_InOut` AD table.- **ETP-3995 — Related Documents tab i18n**: The generated page file now uses `labelKey: 'relatedDocuments'` in the `customTabs` prop instead of a hardcoded `label: 'Related Documents'` string, so the tab title renders via the active UI language (e.g. "Documentos relacionados" in Spanish) regardless of the browser locale.
