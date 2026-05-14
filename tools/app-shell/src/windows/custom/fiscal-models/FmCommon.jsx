@@ -1,5 +1,4 @@
 import { useUI } from '@/i18n';
-<<<<<<< HEAD
 import { STATUS_COLOR, STATUS_ICON, STATUS_ORDER } from './fiscalModelsUtils.js';
 import './fiscal-models.css';
 
