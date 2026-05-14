@@ -18,6 +18,7 @@ import SendDocumentModal from '@/components/contract-ui/SendDocumentModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
+import { useInvoicePdf } from '../shared/useInvoicePdf.js';
 
 /* eslint-disable react/prop-types */
 

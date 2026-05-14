@@ -123,7 +123,7 @@ test.describe('Invoice Preview — modal lifecycle (purchase invoice)', () => {
     await openPreview(page);
 
     // Edit button text: "Editar" (es_ES) or "Edit" (en_US)
-    const editBtn = page.getByRole('button', { name: /editar|edit/i });
+    const editBtn = page.getByTestId('generic-preview-modal').getByRole('button', { name: /editar|edit/i });
     await editBtn.click();
 
     // After the closingUp animation (280ms), the window navigates to the detail page.
