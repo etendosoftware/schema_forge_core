@@ -381,6 +381,9 @@ export function DetailView({
   // Imperative handles to in-progress inline add rows so we can commit them
   // before header save (mirrors clicking the green check on an editing line).
   const primaryAddRowRef = useRef(null);
+  // Bumped after rapid-entry flush so the scroll-to-bottom effect re-runs even
+  // though addingLine stays true (state didn't change → effect wouldn't refire).
+  const [addLineScrollNonce, setAddLineScrollNonce] = useState(0);
   const linesScrollRef = useRef(null);
   const bottomSectionRef = useRef(null);
   const secondaryAddRowRefs = useRef({});
@@ -580,7 +583,7 @@ export function DetailView({
     // in scrollHeight before we compute the target offset.
     rafId = requestAnimationFrame(() => { rafId = requestAnimationFrame(startScroll); });
     return () => { cancelled = true; cancelAnimationFrame(rafId); };
-  }, [addingLine, linesLayout]);
+  }, [addingLine, linesLayout, addLineScrollNonce]);
 
   // Selection toolbar lifecycle: mount on first select, keep mounted with a
   // slide-out animation while count drops to 0, then unmount.
@@ -833,9 +836,22 @@ export function DetailView({
       });
       return;
     }
+    if (addingLine && primaryAddRowRef.current?.flush) {
+      await primaryAddRowRef.current.flush({ closeAfterSave: false });
+      // The outside-click handler (mousedown capture) fires before this click
+      // handler and may have already submitted the row with closeAfterSave:true,
+      // calling onCancel() and closing the form. Ensure the form is (re)opened
+      // for the next line regardless of which path flush took.
+      setAddingLine(true);
+      setEditingChild(null);
+      // Force the scroll-to-bottom effect to re-run — addingLine stayed true so
+      // React won't refire the effect on its own.
+      setAddLineScrollNonce(n => n + 1);
+      return;
+    }
     setAddingLine(prev => !prev);
     setEditingChild(null);
-  }, [isNew, hook, navigate, windowName]);
+  }, [isNew, hook, navigate, windowName, addingLine]);
 
   // Save header first (if new → navigate with flag; if existing → save in place), then open import modal.
   const handleImportClick = useCallback(async () => {
@@ -2226,16 +2242,21 @@ export function DetailView({
                           style={{ display: 'flex', flexDirection: 'column', gap: 6, borderTop: '0.5px solid var(--color-border-tertiary, #e5e7eb)', padding: linesLayout === 'inlineEditable' ? 8 : '10px 16px' }}
                         >
                           {allEntryFields.length > 0 && (
-                            <AddLineButton
-                              onClick={handleAddLineClick}
-                              label={ui('addLine')}
-                              menuActions={getLineMenuActions
-                                ? getLineMenuActions({ data, importRef: extraActionsRef }).map(a => ({
-                                    ...a,
-                                    label: typeof a.label === 'string' ? (ui(a.label) || a.label) : a.label,
-                                  }))
-                                : undefined}
-                            />
+                            // alignSelf:flex-start keeps this span from being stretched by
+                            // the flex-column parent — otherwise data-inline-add-portal would
+                            // cover the whole 1840px bar and the outside-click save would never fire.
+                            <span data-inline-add-portal="true" style={{ alignSelf: 'flex-start' }}>
+                              <AddLineButton
+                                onClick={handleAddLineClick}
+                                label={ui('addLine')}
+                                menuActions={getLineMenuActions
+                                  ? getLineMenuActions({ data, importRef: extraActionsRef }).map(a => ({
+                                      ...a,
+                                      label: typeof a.label === 'string' ? (ui(a.label) || a.label) : a.label,
+                                    }))
+                                  : undefined}
+                              />
+                            </span>
                           )}
                           {DetailExtraActions && (
                             <DetailExtraActions
@@ -2730,17 +2751,19 @@ export function DetailView({
                       // Wrapper measured by the secondary selection bar — its
                       // `position: fixed` portal overlays exactly this region.
                       <div ref={getSecondaryAddLineWrapperRef(st.key)} className="relative">
-                        <AddLineButton
-                          onClick={() => {
-                            if (st.customAddModal) {
-                              void handleCustomModalAddClick(st.key);
-                            } else {
-                              void handleSecondaryAddLineToggle(st.key);
-                            }
-                          }}
-                          label={ui('addEntity', { label: tMenu(st.label) })}
-                          hideChevron={hideAddLineChevron}
-                        />
+                        <span data-inline-add-portal="true">
+                          <AddLineButton
+                            onClick={() => {
+                              if (st.customAddModal) {
+                                void handleCustomModalAddClick(st.key);
+                              } else {
+                                void handleSecondaryAddLineToggle(st.key);
+                              }
+                            }}
+                            label={ui('addEntity', { label: tMenu(st.label) })}
+                            hideChevron={hideAddLineChevron}
+                          />
+                        </span>
                         {linesLayout === 'inlineEditable' && (api?.crud?.[st.key]?.delete ?? true) && (
                           <LinesSelectionBar
                             visible={secondaryBarVisible[st.key] ?? false}
