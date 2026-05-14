@@ -1204,8 +1204,15 @@ export function DataTable({
   }, [apiBaseUrl, entity, onDataMutated, token]);
 
   const renderCellValue = (row, col) => {
+    // === custom-render: DE ACA ===
+    // Extract to: renderCustomCell(row, col, { entity, token, apiBaseUrl })
     // Custom render function takes priority
     if (typeof col.render === 'function') return col.render(row, { entity, token, apiBaseUrl });
+    // === custom-render: HASTA ACA ===
+
+    // === resolve-display: DE ACA ===
+    // Extract to helper: resolveCellDisplay(row, col, { optimisticToggles, displayCatalogMaps })
+    // → returns { toggleKey, rawValue, display }
     const toggleKey = `${row.id}:${col.key}`;
     const rawValue = Object.hasOwn(optimisticToggles, toggleKey)
       ? optimisticToggles[toggleKey]
@@ -1219,6 +1226,11 @@ export function DataTable({
         if (mapped) display = mapped;
       }
     }
+    // === resolve-display: HASTA ACA ===
+
+    // === first-column-pill: DE ACA ===
+    // Extract to: renderFirstColumnWithPill({ display, pill: col.pill, row })
+    // Only applies when col is the first visible column AND type === 'string'.
     if (col === visibleColumns[0] && col.type === 'string') {
       const pill = col.pill;
       const pillLabel = pill?.when(row) ? pill.label : null;
@@ -1233,6 +1245,11 @@ export function DataTable({
         </span>
       );
     }
+    // === first-column-pill: HASTA ACA ===
+
+    // === enum-cell: DE ACA ===
+    // Extract to: renderEnumCell({ rawValue, col, tMenu })
+    // 3 sub-variants: display === 'dot' | enumVariants (Tag) | plain <span>.
     if (col.type === 'enum') {
       const raw = rawValue;
       const label = tMenu(col.enumLabels?.[raw] ?? raw);
@@ -1251,6 +1268,11 @@ export function DataTable({
       }
       return <span>{label}</span>;
     }
+    // === enum-cell: HASTA ACA ===
+
+    // === status-cell: DE ACA ===
+    // Extract to: renderStatusCell({ row, col, dictionary })
+    // Variants: display === 'dot' | <StatusTag>.
     if (col.type === 'status') {
       const raw = row[col.key];
       const label = statusLabel(raw, dictionary);
@@ -1265,6 +1287,11 @@ export function DataTable({
       }
       return <StatusTag status={raw} label={label} />;
     }
+    // === status-cell: HASTA ACA ===
+
+    // === percent-cell: DE ACA ===
+    // Extract to: renderPercentCell({ value: row[col.key] })
+    // Pure UI — no closure deps beyond the raw numeric value.
     if (col.type === 'percent') {
       const val = Number(row[col.key]);
       const pct = Number.isNaN(val) ? 0 : val;
@@ -1279,8 +1306,16 @@ export function DataTable({
         </div>
       );
     }
+    // === percent-cell: HASTA ACA ===
+
+    // === boolean-cell: DE ACA ===
+    // Extract to: renderBooleanCell({ row, col, rawValue, toggleKey, savingToggles,
+    //                                  handleInlineToggle, locale, t, ui })
+    // Has 3 internal blocks (toggle / badge / fallback yes-no-dash) — each can be
+    // its own helper if cognitive complexity is still high after the first split.
     if (col.type === 'boolean') {
       const val = rawValue;
+      // --- boolean-toggle: DE ACA --- (extract: renderBooleanToggle)
       if (col.toggle) {
         const checked = isTruthyBoolean(val);
         const disabled = !!savingToggles[toggleKey] || (!isTruthyBoolean(val) && !isFalsyBoolean(val));
@@ -1301,6 +1336,8 @@ export function DataTable({
           </div>
         );
       }
+      // --- boolean-toggle: HASTA ACA ---
+      // --- boolean-badge: DE ACA --- (extract: renderBooleanBadge — colors OR variants)
       if (col.badge) {
         const resolveBadgeLabel = (raw, fallback) => {
           if (raw && typeof raw === 'object') return raw[locale] ?? raw.en_US ?? fallback;
@@ -1328,10 +1365,18 @@ export function DataTable({
           if (isFalsyBoolean(val)) return <Tag variant={falseVariant} label={falseLabel} />;
         }
       }
+      // --- boolean-badge: HASTA ACA ---
+      // --- boolean-fallback: DE ACA --- (extract: renderBooleanFallback — yes / no / em-dash)
       if (isTruthyBoolean(val)) return <span className="text-emerald-600">{ui('yes')}</span>;
       if (isFalsyBoolean(val)) return <span className="text-slate-400">{ui('no')}</span>;
       return <span className="text-slate-300">&mdash;</span>;
+      // --- boolean-fallback: HASTA ACA ---
     }
+    // === boolean-cell: HASTA ACA ===
+
+    // === date-cell: DE ACA ===
+    // Extract to: renderDateCell({ raw: row[col.key], col, dateFormatter })
+    // Edge cases under test: yyyy-MM-dd (date-only, no TZ shift), full ISO, null/empty.
     if (col.type === 'date') {
       const raw = row[col.key];
       // Parse date-only strings (yyyy-MM-dd) as local to avoid timezone shift
@@ -1345,15 +1390,24 @@ export function DataTable({
         </span>
       );
     }
+    // === date-cell: HASTA ACA ===
+
+    // === amount-cell: DE ACA ===
+    // Extract to: renderAmountCell({ row, col }) — one-liner, optional but consistent.
     if (col.type === 'amount') {
       return <span className="tabular-nums">{formatAmount(row[col.key], row['currency$_identifier'])}</span>;
     }
-    // Truncate long display values
+    // === amount-cell: HASTA ACA ===
+
+    // === truncated-fallback: DE ACA ===
+    // Extract to: renderTruncatedText({ display }) — the default branch when no
+    // specialized type matched. Truncates string values longer than 30 chars.
     const val = display;
     if (typeof val === 'string' && val.length > 30) {
       return <span className="block max-w-[200px] truncate" title={val}>{val}</span>;
     }
     return val;
+    // === truncated-fallback: HASTA ACA ===
   };
 
   if (loading) {
