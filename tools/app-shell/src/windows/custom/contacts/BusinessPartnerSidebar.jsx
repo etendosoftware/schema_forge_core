@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ArrowUpRight, ChevronDown, Calendar } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { BPChartSVGContent } from '@/windows/custom/businessPartner/BusinessPartnerSidebar';
+import { BPChartSVGContent } from './BPChartSVGContent';
 import { useUI, useLocaleSwitch } from '@/i18n';
 import { useCurrency } from '@/hooks/useCurrency';
 import { formatCurrency } from '@/lib/formatCurrency';
