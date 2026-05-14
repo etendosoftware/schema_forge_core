@@ -1,9 +1,13 @@
+import { useCallback } from 'react';
 import { useLocale } from './LocaleProvider.jsx';
 
 /**
  * Hook that returns a translator function for menu group names, tab labels,
  * and other UI strings.
  * Looks up keys in: ui → menus → windows → tabs → genericLabels → raw key.
+ *
+ * The returned function is memoized on the dictionary so it is safe to use as
+ * a dependency of `useMemo`/`useEffect`. See useUI for the rationale.
  *
  * Usage:
  *   const tMenu = useMenuLabel();
@@ -12,9 +16,7 @@ import { useLocale } from './LocaleProvider.jsx';
  */
 export function useMenuLabel() {
   const dictionary = useLocale();
-  return (key, { field } = {}) => {
-    // When `field` is provided, reads that field directly from windows[key].
-    // Returns null (not the raw key) if the entry or field is missing.
+  return useCallback((key, { field } = {}) => {
     if (field) {
       return dictionary?.windows?.[key]?.[field] ?? null;
     }
@@ -26,5 +28,5 @@ export function useMenuLabel() {
       dictionary?.genericLabels?.[key] ??
       key
     );
-  };
+  }, [dictionary]);
 }

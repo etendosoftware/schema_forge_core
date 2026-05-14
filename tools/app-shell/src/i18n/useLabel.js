@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useLocale, useLocaleSwitch } from './LocaleProvider.jsx';
 import { resolveLabel } from './resolveLabel.js';
 
@@ -10,6 +11,9 @@ import { resolveLabel } from './resolveLabel.js';
  *
  * Resolution chain: labelOverrides[locale][column] → dictionary.fields[column] → null
  *
+ * The returned function is memoized so it stays stable across renders as long
+ * as the dictionary and overrides do not change. See useUI for the rationale.
+ *
  * Usage:
  *   const t = useLabel();
  *   t('C_BPartner_ID')   // "Business Partner"
@@ -21,5 +25,8 @@ export function useLabel(labelOverrides) {
   const dictionary = useLocale();
   const { locale } = useLocaleSwitch();
   const langOverrides = labelOverrides?.[locale] ?? null;
-  return (columnName) => resolveLabel(dictionary, columnName, langOverrides);
+  return useCallback(
+    (columnName) => resolveLabel(dictionary, columnName, langOverrides),
+    [dictionary, langOverrides],
+  );
 }
