@@ -223,7 +223,6 @@ export default function InvoicePreview({ invoice, token, apiBaseUrl, windowName,
           invoiceId={p.displayInvoice?.id}
           invoiceData={p.displayInvoice}
           specName={specName}
-          token={token}
           apiBaseUrl={apiBaseUrl}
           onClose={() => {
             p.setShowPaymentModal(false);

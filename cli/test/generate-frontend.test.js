@@ -637,6 +637,49 @@ describe('generatePageComponent', () => {
     assert.ok(!code.includes('animate-pulse'));
     assert.ok(!code.includes('shadow-sm'));
   });
+
+  it('preserves token for gallery detail header custom components until they migrate', () => {
+    const galleryContract = {
+      apiPrediction: { baseUrl: '/sws/neo/product', specName: 'product' },
+      frontendContract: {
+        window: { id: '101', name: 'Product', primaryEntity: 'product', category: 'reference', layoutType: 'gallery' },
+        entities: {
+          product: {
+            fields: [
+              { name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+            ],
+            searchableFields: ['name'],
+            computedFields: [],
+          },
+        },
+      },
+      backendContract: { processEndpoints: [] },
+    };
+    const code = generatePageComponent('product', null, galleryContract);
+    assert.ok(code.includes('headerContent={'), 'should render the gallery detail header slot');
+    assert.ok(code.includes('token={props.token}'), 'gallery custom header should receive token for legacy compatibility');
+  });
+
+  it('preserves token for sidebar custom components until they migrate', () => {
+    const sidebarContract = {
+      frontendContract: {
+        window: { id: '102', name: 'Contacts', primaryEntity: 'contact', category: 'crm', sidebarLayout: true },
+        entities: {
+          contact: {
+            fields: [
+              { name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+            ],
+            searchableFields: ['name'],
+            computedFields: [],
+          },
+        },
+      },
+      backendContract: { processEndpoints: [] },
+    };
+    const code = generatePageComponent('contact', null, sidebarContract);
+    assert.ok(code.includes('sidebarContent='), 'should render the sidebar slot');
+    assert.ok(code.includes('token={props.token}'), 'sidebar custom component should receive token for legacy compatibility');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -644,7 +687,7 @@ describe('generatePageComponent', () => {
 // ---------------------------------------------------------------------------
 
 describe('generateIndexComponent', () => {
-  it('generates entry point with token, apiBaseUrl, window props for master-detail', () => {
+  it('generates entry point with token, apiBaseUrl, and window props for master-detail', () => {
     const code = generateIndexComponent('order', 'orderLine', masterDetailContract);
     assert.ok(code.includes('token'));
     assert.ok(code.includes('apiBaseUrl'));
@@ -1315,7 +1358,7 @@ describe('generatePageComponent - newRecordComponent', () => {
 
   it('passes token, apiBaseUrl, and windowName to modal', () => {
     const code = generatePageComponent('finPayment', null, newRecordContract);
-    assert.ok(code.includes('token={props.token}'), 'should pass token');
+    assert.ok(code.includes('token={props.token}'), 'should pass token for legacy compatibility');
     assert.ok(code.includes('apiBaseUrl={props.apiBaseUrl}'), 'should pass apiBaseUrl');
     assert.ok(code.includes('windowName={windowName}'), 'should pass windowName');
   });

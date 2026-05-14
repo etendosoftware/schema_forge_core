@@ -24,6 +24,10 @@ vi.mock('@/components/ui/date-field', () => ({
   ),
 }));
 
+vi.mock('@/auth/useApiFetch.js', () => ({
+  useApiFetch: (baseUrl = '') => (path, options) => fetch(`${baseUrl}${path}`, options),
+}));
+
 // --- Import under test ----------------------------------------------------
 
 import InvoicePaymentModal from '../InvoicePaymentModal.jsx';
@@ -56,7 +60,6 @@ function renderModal(overrides = {}) {
     invoiceId: 'inv-1',
     invoiceData: sampleInvoice,
     specName: 'sales-invoice',
-    token: 'tok',
     apiBaseUrl: '/api/sales-invoice',
     onClose: vi.fn(),
   };

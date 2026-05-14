@@ -26,7 +26,14 @@ vi.mock('@/lib/statusBadge.js', () => ({
 }));
 
 vi.mock('@/windows/custom/shared/InvoicePaymentModal.jsx', () => ({
-  default: () => <div data-testid="payment-modal">Payment Modal</div>,
+  default: (props) => (
+    <div
+      data-testid="payment-modal"
+      data-has-token={Object.prototype.hasOwnProperty.call(props, 'token') ? 'true' : 'false'}
+    >
+      Payment Modal
+    </div>
+  ),
 }));
 
 vi.mock('@/windows/custom/shared/useInvoicePdf.js', () => ({
@@ -181,6 +188,12 @@ describe('InvoicePreviewModal', () => {
     expect(screen.getAllByText('invoicePreviewSend').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('invoicePreviewAddPayment').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('invoicePreviewEdit')).toBeInTheDocument();
+  });
+
+  it('opens the payment modal without passing a token prop', () => {
+    renderPreview();
+    fireEvent.click(screen.getAllByText('invoicePreviewAddPayment')[0]);
+    expect(screen.getByTestId('payment-modal')).toHaveAttribute('data-has-token', 'false');
   });
 
   it('shows Send to SIF in the preview actions when the fiscal profile enables it', () => {
