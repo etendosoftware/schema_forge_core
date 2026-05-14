@@ -26,12 +26,12 @@ export default function PurchaseInvoiceHeaderTable(props) {
 
   const { selectedOrg } = useAuth();
   const orgId = selectedOrg?.id ?? null;
-  const { profile } = useFiscalConfig(orgId, token, apiBaseUrl);
+  const { profile } = useFiscalConfig(orgId, apiBaseUrl);
 
   const targets = useMemo(() => getInvoiceFiscalTargets('purchase-invoice', profile), [profile]);
 
   const ids = useMemo(() => (data || []).map(r => r.id).filter(Boolean), [data]);
-  const { statusMap, loading: fiscalLoading } = useInvoiceListFiscalStatus(ids, 'purchase-invoice', profile, apiBaseUrl, token, orgId);
+  const { statusMap, loading: fiscalLoading } = useInvoiceListFiscalStatus(ids, 'purchase-invoice', profile, apiBaseUrl, orgId);
 
   const siiColLabel = gl['invoiceList.col.siiStatus']       || 'SII Status';
   const vfColLabel  = gl['invoiceList.col.verifactuStatus'] || 'Verifactu Status';
