@@ -231,8 +231,8 @@ async function installMocks(page, { receipt, receiptLines, alreadyImported = [],
 // ---------------------------------------------------------------------------
 
 async function openImportFromReceiptModal(page) {
-  // Button text: ui('importFromGoodsReceipt') = "Importar desde envío" (es) / "Import from shipment" (en)
-  const btn = page.getByText('Importar desde envío').or(page.getByText('Import from shipment')).first();
+  // Button text: ui('importFromGoodsReceipt') = "Importar desde recibo" (es) / "Import from receipt" (en)
+  const btn = page.getByText('Importar desde recibo').or(page.getByText('Import from receipt')).first();
   await expect(btn).toBeVisible({ timeout: 8_000 });
   await btn.click();
   // Modal opens — wait for the receipt row to appear (fastest observable signal)
