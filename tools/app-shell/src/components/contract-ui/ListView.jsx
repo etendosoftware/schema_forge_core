@@ -77,6 +77,9 @@ export function ListView({
   // a custom `onEmail`, ListView mounts a generic SendDocumentModal driven by
   // the row data so any documental window gets the envelope for free.
   sendDocument = null,
+  renderPreview = null,
+  externalPreviewRow = null,
+  onExternalPreviewClose = null,
 }) {
   // Subset filters — radio-style, always one active, applied first.
   const [activeSubsetIndex, setActiveSubsetIndex] = useState(() => {
@@ -354,6 +357,22 @@ export function ListView({
   }, [favActive, hook.items.length]);
   const [selectedRows, setSelectedRows] = useState([]);
   const [clearSelectionCounter, setClearSelectionCounter] = useState(0);
+  const [previewRow, setPreviewRow] = useState(null);
+  const activePreviewRow = previewRow ?? externalPreviewRow ?? null;
+
+  const handlePreviewClose = useCallback(() => {
+    if (previewRow) {
+      setPreviewRow(null);
+    } else {
+      onExternalPreviewClose?.();
+    }
+  }, [previewRow, onExternalPreviewClose]);
+
+  const handlePreviewEdit = useCallback((id) => {
+    setPreviewRow(null);
+    onExternalPreviewClose?.();
+    navigate(`/${windowName}/${id}`);
+  }, [navigate, windowName, onExternalPreviewClose]);
   const clearSelection = useCallback(() => {
     setSelectedRows([]);
     setClearSelectionCounter((c) => c + 1);
@@ -426,6 +445,7 @@ export function ListView({
   }, [hook.hasMore, hook.loadingMore, hook.loadMore]);
 
   return (
+    <>
     <div className="flex-1 min-h-0 flex flex-col" data-testid="list-view">
       {/* White content card with rounded top-left corner */}
       <div className="flex-1 flex flex-col bg-white rounded-tl-2xl overflow-hidden min-h-0">
@@ -707,7 +727,7 @@ export function ListView({
                   <Table
                     entity={entity}
                     data={hook.items}
-                    onNavigate={(row) => navigate(`/${windowName}/${row.id}`)}
+                    onNavigate={renderPreview ? (row) => setPreviewRow(row) : (row) => navigate(`/${windowName}/${row.id}`)}
                     onSelectionChange={setSelectedRows}
                     onDataMutated={hook.refresh}
                     isRowSelectable={isRowSelectable}
@@ -783,5 +803,11 @@ export function ListView({
         />
       )}
     </div>
+    {activePreviewRow && renderPreview?.({
+      row: activePreviewRow,
+      onClose: handlePreviewClose,
+      onEdit: handlePreviewEdit,
+    })}
+    </>
   );
 }

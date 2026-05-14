@@ -8,7 +8,7 @@ import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import { useRowDelete } from '@/hooks/useRowDelete';
 import PurchaseInvoiceHeaderTable from './PurchaseInvoiceHeaderTable.jsx';
 import HeaderPage from '@generated/purchase-invoice/generated/web/purchase-invoice/HeaderPage';
-import InvoicePreviewModal from '../shared/InvoicePreviewModal.jsx';
+import InvoicePreview from '../shared/InvoicePreview.jsx';
 import PurchaseInvoiceTopbar from './PurchaseInvoiceTopbar.jsx';
 import RelatedDocuments from './RelatedDocuments.jsx';
 import { AttachmentsTab } from '@/components/attachments';
@@ -57,19 +57,8 @@ const LABEL_OVERRIDES = {
   },
 };
 
-let previewRowSetterRef = null;
-
-/**
- * PurchaseInvoiceTable — generated table wrapper that opens the preview modal.
- * Columns are driven by decisions.json via the generated HeaderTable.
- */
 function PurchaseInvoiceTable(props) {
-  return (
-    <PurchaseInvoiceHeaderTable
-      {...props}
-      onNavigate={(row) => previewRowSetterRef?.(row)}
-    />
-  );
+  return <PurchaseInvoiceHeaderTable {...props} />;
 }
 
 /**
@@ -88,14 +77,12 @@ export default function PurchaseInvoiceWindow(props) {
   const ui = useUI();
   const tMenu = useMenuLabel();
   const [savedRecord, setSavedRecord] = useState(null);
-  const [previewRow, setPreviewRow] = useState(null);
   const [cloneTargets, setCloneTargets] = useState(null);
   const [emailRow, setEmailRow] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
     useCreateContactModal({ apiBaseUrl, token });
   const breadcrumb = 'Purchases / Purchase Invoice';
-  previewRowSetterRef = setPreviewRow;
 
   const { requestDelete, deleteDialog } = useRowDelete({
     apiBaseUrl,
@@ -215,6 +202,19 @@ export default function PurchaseInvoiceWindow(props) {
         sendDocument={{ enabled: true, allowEmail: false }}
         bulkActions={(ctx) => <BulkDocumentAction {...ctx} />}
         refreshTrigger={refreshKey}
+        renderPreview={({ row, onClose, onEdit }) => (
+          <InvoicePreview
+            invoice={row}
+            token={token}
+            apiBaseUrl={apiBaseUrl}
+            windowName={windowName}
+            specName="purchase-invoice"
+            onClose={onClose}
+            onEdit={onEdit}
+          />
+        )}
+        externalPreviewRow={effectiveRecord}
+        onExternalPreviewClose={clearSavedRecord}
       />
       {deleteDialog}
       {emailRow && createPortal(
@@ -244,24 +244,6 @@ export default function PurchaseInvoiceWindow(props) {
           onCloned={() => setRefreshKey(k => k + 1)}
         />,
         document.body,
-      )}
-      {(previewRow || effectiveRecord) && (
-        <InvoicePreviewModal
-          invoice={previewRow || effectiveRecord}
-          token={token}
-          apiBaseUrl={apiBaseUrl}
-          windowName={windowName}
-          specName="purchase-invoice"
-          onClose={() => {
-            setPreviewRow(null);
-            clearSavedRecord();
-          }}
-          onEdit={(id) => {
-            setPreviewRow(null);
-            clearSavedRecord();
-            navigate(`/${windowName}/${id}`);
-          }}
-        />
       )}
     </>
   );

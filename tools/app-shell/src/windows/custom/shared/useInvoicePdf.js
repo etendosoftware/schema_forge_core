@@ -398,6 +398,7 @@ async function renderInvoicePdf(data) {
 export function useInvoicePdf(invoiceId, apiBaseUrl, token) {
   const ui = useUI();
   const [pdfUrl, setPdfUrl] = useState(null);
+  const [pdfBlob, setPdfBlob] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const prevUrlRef = useRef(null);
@@ -438,6 +439,7 @@ export function useInvoicePdf(invoiceId, apiBaseUrl, token) {
     setLoading(true);
     setError(null);
     setPdfUrl(null);
+    setPdfBlob(null);
 
     (async () => {
       try {
@@ -447,6 +449,7 @@ export function useInvoicePdf(invoiceId, apiBaseUrl, token) {
         const url = URL.createObjectURL(blob);
         prevUrlRef.current = url;
         setPdfUrl(url);
+        setPdfBlob(blob);
       } catch (err) {
         if (!cancelled) setError(err.message);
       } finally {
@@ -456,7 +459,7 @@ export function useInvoicePdf(invoiceId, apiBaseUrl, token) {
 
     return () => {
       cancelled = true;
-      // Revoke previous blob URL to free memory
+      setPdfBlob(null);
       if (prevUrlRef.current) {
         URL.revokeObjectURL(prevUrlRef.current);
         prevUrlRef.current = null;
@@ -464,5 +467,5 @@ export function useInvoicePdf(invoiceId, apiBaseUrl, token) {
     };
   }, [invoiceId, apiBaseUrl, token]);
 
-  return { pdfUrl, loading, error };
+  return { pdfUrl, pdfBlob, loading, error };
 }
