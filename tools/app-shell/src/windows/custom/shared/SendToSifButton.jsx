@@ -19,7 +19,7 @@ export default function SendToSifButton({ data, recordId, token, apiBaseUrl, sta
     'Content-Type': 'application/json',
   }), [token]);
 
-  const { profile } = useFiscalConfig(orgId, token, apiBaseUrl);
+  const { profile } = useFiscalConfig(orgId, apiBaseUrl);
   const pendingTargets = getPendingSifTargets(specName, profile, data);
   const hasPendingTargets = pendingTargets.sendSii || pendingTargets.sendTbai;
 

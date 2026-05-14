@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 import { StatusPill, NumFactura, Pager, RowActionBtn, isErrorStatus, isPendingStatus, fmtDate, PAGE_SIZE } from './FmPrimitives.jsx';
 import { TBAI_SPEC, TBAI_ENTITY } from './useFiscalMonitor.js';
 
@@ -26,7 +27,7 @@ function parseIdentifier(row) {
   };
 }
 
-async function fetchTbaiList(base, orgId, token, page, statusFilter) {
+async function fetchTbaiList(apiFetch, orgId, page, statusFilter) {
   const params = new URLSearchParams({
     organization: orgId,
     _startRow: String((page - 1) * PAGE_SIZE),
@@ -35,9 +36,7 @@ async function fetchTbaiList(base, orgId, token, page, statusFilter) {
   if (statusFilter && statusFilter !== 'all') {
     params.set('criteria', JSON.stringify([{ fieldName: STATUS_FIELD, operator: 'equals', value: statusFilter }]));
   }
-  const res = await fetch(`${base}/${TBAI_SPEC}/${encodeURIComponent(TBAI_ENTITY)}?${params}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await apiFetch(`/${TBAI_SPEC}/${encodeURIComponent(TBAI_ENTITY)}?${params}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const json = await res.json();
   return { data: json?.response?.data ?? [], totalRows: json?.response?.totalRows ?? 0 };
@@ -49,8 +48,9 @@ const CheckIcon = () => (
   </svg>
 );
 
-export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFilter = 'all', mockRows, onFilterChange, refreshKey = 0, onInvoiceOpen, onBpClick }) {
+export default function TbaiMonitorSection({ orgId, apiBaseUrl, initialFilter = 'all', mockRows, onFilterChange, refreshKey = 0, onInvoiceOpen, onBpClick }) {
   const ui = useUI();
+  const apiFetch = useApiFetch(neoBase(apiBaseUrl));
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage]       = useState(1);
   const [rows, setRows]       = useState([]);
@@ -74,11 +74,11 @@ export default function TbaiMonitorSection({ orgId, token, apiBaseUrl, initialFi
     if (!orgId) return;
     setLoading(true);
     setError(null);
-    fetchTbaiList(neoBase(apiBaseUrl), orgId, token, page, statusFilter)
+    fetchTbaiList(apiFetch, orgId, page, statusFilter)
       .then(({ data, totalRows }) => { setRows(data); setTotalRows(totalRows); })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [orgId, statusFilter, page, token, apiBaseUrl, mockRows, refreshKey]);
+  }, [orgId, statusFilter, page, apiBaseUrl, mockRows, refreshKey]);
 
   useEffect(() => { setPage(1); }, [statusFilter]);
 

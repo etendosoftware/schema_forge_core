@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUI, useLocaleSwitch } from '@/i18n';
-import { fetchById, neoBase } from '@/components/related-documents/helpers.js';
+import { neoBase } from '@/components/related-documents/helpers.js';
 import { useApiFetch } from '@/auth/useApiFetch.js';
 import {
   buildOnboardingPayloads,
@@ -42,10 +42,10 @@ const TERRITORY_GROUP_META = [
 
 // ── Network ───────────────────────────────────────────────────────────────────
 
-async function postRecord(url, body, token) {
-  const res = await fetch(url, {
+async function postRecord(path, body, apiFetch) {
+  const res = await apiFetch(path, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(await res.text().catch(() => res.statusText));
@@ -53,11 +53,15 @@ async function postRecord(url, body, token) {
   return json?.response?.data?.[0] ?? null;
 }
 
-async function createAndFetchRecord({ base, specName, entityName, body, token, system, apiBaseUrl }) {
-  const created = await postRecord(`${base}/${specName}/${entityName}`, body, token);
+async function createAndFetchRecord({ specName, entityName, body, apiFetch, system }) {
+  const created = await postRecord(`/${specName}/${entityName}`, body, apiFetch);
   const recordId = getFiscalRecordId(created, system);
   if (!recordId) return created;
-  return await fetchById(specName, entityName, recordId, token, apiBaseUrl) ?? created;
+  const fetched = await apiFetch(`/${specName}/${entityName}/${recordId}`)
+    .then(r => r.ok ? r.json() : null)
+    .then(j => j?.response?.data?.[0] || null)
+    .catch(() => null);
+  return fetched ?? created;
 }
 
 // ── Primitive components ──────────────────────────────────────────────────────
@@ -188,7 +192,7 @@ function ScreenLayout({ children, actions, hint }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function OnboardingWizard({ orgId, orgName, token, apiBaseUrl, onComplete, onGoHome }) {
+export default function OnboardingWizard({ orgId, orgName, apiBaseUrl, onComplete, onGoHome }) {
   const ui = useUI();
   const { locale } = useLocaleSwitch();
   const apiFetch = useApiFetch(neoBase(apiBaseUrl));
@@ -275,42 +279,35 @@ export default function OnboardingWizard({ orgId, orgName, token, apiBaseUrl, on
     setSaving(true);
     setError(null);
     try {
-      const base = neoBase(apiBaseUrl);
       const org = { adOrgId: orgId };
       const records = {};
       const payloads = buildOnboardingPayloads(sys, terrId);
 
       if (payloads.sii) {
         records.sii = await createAndFetchRecord({
-          base,
           specName: 'sii-config',
           entityName: SII_ENTITY,
           body: { ...org, ...payloads.sii },
-          token,
+          apiFetch,
           system: 'SII',
-          apiBaseUrl,
         });
       }
       if (payloads.tbai) {
         records.tbai = await createAndFetchRecord({
-          base,
           specName: 'tbai-config',
           entityName: TBAI_ENTITY,
           body: { ...org, ...payloads.tbai },
-          token,
+          apiFetch,
           system: 'TBAI',
-          apiBaseUrl,
         });
       }
       if (payloads.verifactu) {
         records.verifactu = await createAndFetchRecord({
-          base,
           specName: 'verifactu-config',
           entityName: VERIFACTU_ENTITY,
           body: { ...org, ...payloads.verifactu },
-          token,
+          apiFetch,
           system: 'VERIFACTU',
-          apiBaseUrl,
         });
       }
       setCreatedRecords(records);
@@ -416,7 +413,6 @@ export default function OnboardingWizard({ orgId, orgName, token, apiBaseUrl, on
           <CertModal
             context={certContext}
             orgId={orgId}
-            token={token}
             apiBaseUrl={apiBaseUrl}
             onClose={() => setCertModalOpen(false)}
             onUpload={(c) => { setCert(c); setCertModalOpen(false); }}
@@ -484,7 +480,6 @@ export default function OnboardingWizard({ orgId, orgName, token, apiBaseUrl, on
             <SiiSection
               ref={system === 'SII+TBAI' || system === 'SII' ? siiRef : undefined}
               record={createdRecords.sii}
-              token={token}
               apiBaseUrl={apiBaseUrl}
               orgId={orgId}
               onSave={() => {}}
@@ -503,7 +498,6 @@ export default function OnboardingWizard({ orgId, orgName, token, apiBaseUrl, on
             <TbaiSection
               ref={system === 'SII+TBAI' || system === 'TBAI' ? tbaiRef : undefined}
               record={createdRecords.tbai}
-              token={token}
               apiBaseUrl={apiBaseUrl}
               orgId={orgId}
               onSave={() => {}}
@@ -514,14 +508,13 @@ export default function OnboardingWizard({ orgId, orgName, token, apiBaseUrl, on
         )}
 
         {system === 'SII+TBAI' && (
-          <CertSection context="sii" orgId={orgId} token={token} apiBaseUrl={apiBaseUrl} />
+          <CertSection context="sii" orgId={orgId} apiBaseUrl={apiBaseUrl} />
         )}
 
         {system === 'VERIFACTU' && createdRecords.verifactu && (
           <VerifactuSection
             ref={verifactuRef}
             record={createdRecords.verifactu}
-            token={token}
             apiBaseUrl={apiBaseUrl}
             orgId={orgId}
             onSave={() => {}}

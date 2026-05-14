@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useUI } from '@/i18n';
 import { useAuth } from '@/auth/AuthContext';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
 import { normalizeDateInputValue } from '@/windows/custom/fiscal-config/fiscalConfig.utils.js';
 import { getInvoiceFiscalTargets } from '@/windows/custom/shared/fiscalTargets.js';
@@ -20,18 +21,15 @@ export const PURCHASE_CLAVE_TIPO_FC_OPTIONS = [
   { value: 'F1', labelKey: 'sifDataTabs.option.invoice' },
 ];
 
-export function useSifFieldPatcher({ data, recordId, token, apiBaseUrl }) {
+export function useSifFieldPatcher({ data, recordId, apiBaseUrl }) {
   const ui = useUI();
   const { selectedOrg } = useAuth();
   const orgId = selectedOrg?.id ?? null;
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const specName = apiBaseUrl?.split('/').filter(Boolean).pop() || 'sales-invoice';
-  const headers = useMemo(() => ({
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  }), [token]);
+  const apiFetch = useApiFetch(base);
 
-  const { profile } = useFiscalConfig(orgId, token, apiBaseUrl);
+  const { profile } = useFiscalConfig(orgId, apiBaseUrl);
   const { showSii, showTbai, showVerifactu } = getInvoiceFiscalTargets(specName, profile);
   const isPurchaseInvoice = specName === 'purchase-invoice';
   const siiTypeField = isPurchaseInvoice ? 'aeatsiiClaveTipoFc' : 'aeatsiiClaveTipo';
@@ -63,9 +61,8 @@ export function useSifFieldPatcher({ data, recordId, token, apiBaseUrl }) {
   async function patchField(fieldKey, value) {
     setSavingField(fieldKey);
     try {
-      const res = await fetch(`${base}/${specName}/header/${recordId}`, {
+      const res = await apiFetch(`/${specName}/header/${recordId}`, {
         method: 'PATCH',
-        headers,
         body: JSON.stringify({ [fieldKey]: value }),
       });
       if (!res.ok) {

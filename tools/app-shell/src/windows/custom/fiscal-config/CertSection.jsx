@@ -2,24 +2,24 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 import CertModal from './CertModal.jsx';
 
-export default function CertSection({ context, orgId, token, apiBaseUrl }) {
+export default function CertSection({ context, orgId, apiBaseUrl }) {
   const ui = useUI();
+  const apiFetch = useApiFetch(neoBase(apiBaseUrl));
   const [cert, setCert]   = useState(null);
   const [open, setOpen]   = useState(false);
 
   useEffect(() => {
-    if (!orgId || !token) return;
-    fetch(`${neoBase(apiBaseUrl)}/certificate?orgId=${encodeURIComponent(orgId)}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    if (!orgId) return;
+    apiFetch(`/certificate?orgId=${encodeURIComponent(orgId)}`)
       .then(r => r.json())
       .then(data => {
         if (data?.exists) setCert({ name: ui('fiscal.cert.loaded'), validTo: data.validTo ?? '' });
       })
       .catch(() => {});
-  }, [orgId, token, apiBaseUrl]);
+  }, [orgId, apiBaseUrl]);
 
   return (
     <>
@@ -55,7 +55,6 @@ export default function CertSection({ context, orgId, token, apiBaseUrl }) {
         <CertModal
           context={context}
           orgId={orgId}
-          token={token}
           apiBaseUrl={apiBaseUrl}
           onClose={() => setOpen(false)}
           onUpload={(c) => { setCert(c); setOpen(false); }}

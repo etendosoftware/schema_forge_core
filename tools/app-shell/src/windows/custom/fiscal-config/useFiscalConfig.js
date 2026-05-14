@@ -1,23 +1,25 @@
 import { useState, useEffect, useCallback } from 'react';
 import { detectProfile } from './fiscalConfig.utils.js';
 import { neoBase } from '@/components/related-documents/helpers.js';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 
 // Confirmed from artifacts/*/contract.json → backendContract.window.primaryEntity
 const SII_ENTITY = 'siiConfiguration';
 const TBAI_ENTITY = 'header';
 const VERIFACTU_ENTITY = 'cabeceraDeConfiguraciónVerifactu';
 
-async function fetchRecord(base, specName, entityName, orgId, token) {
+async function fetchRecord(apiFetch, specName, entityName, orgId) {
   const params = new URLSearchParams({ organization: orgId, _limit: '1' });
-  const res = await fetch(`${base}/${specName}/${entityName}?${params}`, {
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+  const res = await apiFetch(`/${specName}/${entityName}?${params}`, {
+    headers: { 'Content-Type': 'application/json' },
   });
   if (!res.ok) throw new Error(`Failed to load ${specName}: HTTP ${res.status}`);
   const json = await res.json();
   return json?.response?.data?.[0] ?? null;
 }
 
-export function useFiscalConfig(orgId, token, apiBaseUrl) {
+export function useFiscalConfig(orgId, apiBaseUrl) {
+  const apiFetch = useApiFetch(neoBase(apiBaseUrl));
   const [state, setState] = useState({
     loading: false,
     error: null,
@@ -34,11 +36,10 @@ export function useFiscalConfig(orgId, token, apiBaseUrl) {
     }
     setState(s => ({ ...s, loading: true, error: null }));
     try {
-      const base = neoBase(apiBaseUrl);
       const [sii, tbai, verifactu] = await Promise.all([
-        fetchRecord(base, 'sii-config', SII_ENTITY, orgId, token),
-        fetchRecord(base, 'tbai-config', TBAI_ENTITY, orgId, token),
-        fetchRecord(base, 'verifactu-config', VERIFACTU_ENTITY, orgId, token),
+        fetchRecord(apiFetch, 'sii-config', SII_ENTITY, orgId),
+        fetchRecord(apiFetch, 'tbai-config', TBAI_ENTITY, orgId),
+        fetchRecord(apiFetch, 'verifactu-config', VERIFACTU_ENTITY, orgId),
       ]);
       setState({
         loading: false,
@@ -51,7 +52,7 @@ export function useFiscalConfig(orgId, token, apiBaseUrl) {
     } catch (err) {
       setState(s => ({ ...s, loading: false, error: err.message }));
     }
-  }, [orgId, token, apiBaseUrl]);
+  }, [orgId, apiFetch]);
 
   useEffect(() => { load(); }, [load]);
 

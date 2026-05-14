@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 
 function MiniStepper({ step, ui }) {
   const STEPS = [
@@ -36,8 +37,9 @@ function MiniStepper({ step, ui }) {
   );
 }
 
-export default function CertModal({ context, orgId, token, apiBaseUrl, onClose, onUpload, debugInitialState }) {
+export default function CertModal({ context, orgId, apiBaseUrl, onClose, onUpload, debugInitialState }) {
   const ui = useUI();
+  const apiFetch = useApiFetch(neoBase(apiBaseUrl));
 
   const CONTEXT_SUBTITLE = {
     tbai:      ui('fiscal.cert.subtitle.tbai'),
@@ -82,9 +84,8 @@ export default function CertModal({ context, orgId, token, apiBaseUrl, onClose, 
       formData.append('password', pwd);
       if (setOrgNif) formData.append('setOrgNif', 'true');
 
-      const res = await fetch(`${neoBase(apiBaseUrl)}/certificate`, {
+      const res = await apiFetch(`/certificate`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 

@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { neoBase } from '@/components/related-documents/helpers.js';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 import { getInvoiceFiscalTargets } from './fiscalTargets.js';
 
 const SII_SPEC  = 'sii-monitor';
 const TBAI_SPEC = 'tbai-facturas-enviadas';
 const VF_SPEC   = 'monitor-verifactu';
 
-async function fetchInSetStatus(base, spec, entity, extraParams, fields, ids, token) {
+async function fetchInSetStatus(apiFetch, spec, entity, extraParams, fields, ids) {
   const { fkField, statusField } = fields;
   if (!ids.length) return {};
   const params = new URLSearchParams({
@@ -15,9 +16,7 @@ async function fetchInSetStatus(base, spec, entity, extraParams, fields, ids, to
     _endRow: String(ids.length),
     criteria: JSON.stringify([{ fieldName: fkField, operator: 'inSet', value: ids }]),
   });
-  const res = await fetch(`${base}/${spec}/${encodeURIComponent(entity)}?${params}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await apiFetch(`/${spec}/${encodeURIComponent(entity)}?${params}`);
   if (!res.ok) return {};
   const json = await res.json();
   const rows = json?.response?.data ?? [];
@@ -28,39 +27,37 @@ async function fetchInSetStatus(base, spec, entity, extraParams, fields, ids, to
   return map;
 }
 
-async function fetchSiiParentId(base, orgId, token) {
+async function fetchSiiParentId(apiFetch, orgId) {
   const params = new URLSearchParams({ organization: orgId, _limit: '1' });
-  const res = await fetch(`${base}/${SII_SPEC}/organizations?${params}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await apiFetch(`/${SII_SPEC}/organizations?${params}`);
   if (!res.ok) return null;
   const json = await res.json();
   return json?.response?.data?.[0]?.id ?? null;
 }
 
-export function useInvoiceListFiscalStatus(ids, specName, profile, apiBaseUrl, token, orgId) {
+export function useInvoiceListFiscalStatus(ids, specName, profile, apiBaseUrl, orgId) {
   const [state, setState] = useState({ statusMap: null, loading: false });
+  const apiFetch = useApiFetch(neoBase(apiBaseUrl));
 
   const idsKey = ids?.join(',') ?? '';
 
   useEffect(() => {
-    if (!idsKey || !apiBaseUrl || !token || !profile || !orgId) return;
+    if (!idsKey || !apiBaseUrl || !apiFetch || !profile || !orgId) return;
     const targets = getInvoiceFiscalTargets(specName, profile);
     if (!targets.showSii && !targets.showTbai && !targets.showVerifactu) return;
 
     let cancelled = false;
     setState({ statusMap: null, loading: true });
-    const base = neoBase(apiBaseUrl);
     const idList = idsKey.split(',').filter(Boolean);
 
     (async () => {
       let siiMap = {};
       if (targets.showSii) {
-        const parentId = await fetchSiiParentId(base, orgId, token);
+        const parentId = await fetchSiiParentId(apiFetch, orgId);
         if (parentId) {
           const [issued, received] = await Promise.all([
-            fetchInSetStatus(base, SII_SPEC, 'issuedInvoices',  { parentId }, { fkField: 'aeatsiiInvoice', statusField: 'aeatsiiEstado' }, idList, token),
-            fetchInSetStatus(base, SII_SPEC, 'receivedInvoices', { parentId }, { fkField: 'aeatsiiInvoice', statusField: 'aeatsiiEstado' }, idList, token),
+            fetchInSetStatus(apiFetch, SII_SPEC, 'issuedInvoices',  { parentId }, { fkField: 'aeatsiiInvoice', statusField: 'aeatsiiEstado' }, idList),
+            fetchInSetStatus(apiFetch, SII_SPEC, 'receivedInvoices', { parentId }, { fkField: 'aeatsiiInvoice', statusField: 'aeatsiiEstado' }, idList),
           ]);
           siiMap = { ...received, ...issued };
         }
@@ -68,16 +65,16 @@ export function useInvoiceListFiscalStatus(ids, specName, profile, apiBaseUrl, t
 
       let tbaiMap = {};
       if (targets.showTbai) {
-        tbaiMap = await fetchInSetStatus(base, TBAI_SPEC, 'sincronización', { organization: orgId }, { fkField: 'invoice', statusField: 'estado' }, idList, token);
+        tbaiMap = await fetchInSetStatus(apiFetch, TBAI_SPEC, 'sincronización', { organization: orgId }, { fkField: 'invoice', statusField: 'estado' }, idList);
       }
 
       let vfMap = {};
       if (targets.showVerifactu) {
         const maps = await Promise.all([
-          fetchInSetStatus(base, VF_SPEC, 'facturasAceptadas',           { organization: orgId }, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList, token),
-          fetchInSetStatus(base, VF_SPEC, 'partiallyAcceptedInvoices',   { organization: orgId }, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList, token),
-          fetchInSetStatus(base, VF_SPEC, 'facturasRechazadas',          { organization: orgId }, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList, token),
-          fetchInSetStatus(base, VF_SPEC, 'facturasInválidas',           { organization: orgId }, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList, token),
+          fetchInSetStatus(apiFetch, VF_SPEC, 'facturasAceptadas',           { organization: orgId }, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList),
+          fetchInSetStatus(apiFetch, VF_SPEC, 'partiallyAcceptedInvoices',   { organization: orgId }, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList),
+          fetchInSetStatus(apiFetch, VF_SPEC, 'facturasRechazadas',          { organization: orgId }, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList),
+          fetchInSetStatus(apiFetch, VF_SPEC, 'facturasInválidas',           { organization: orgId }, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList),
         ]);
         for (const m of maps) Object.assign(vfMap, m);
       }
@@ -95,7 +92,7 @@ export function useInvoiceListFiscalStatus(ids, specName, profile, apiBaseUrl, t
     })().catch(() => { if (!cancelled) setState({ statusMap: {}, loading: false }); });
 
     return () => { cancelled = true; };
-  }, [idsKey, specName, profile, apiBaseUrl, token, orgId]);
+  }, [idsKey, specName, profile, apiBaseUrl, apiFetch, orgId]);
 
   return state;
 }

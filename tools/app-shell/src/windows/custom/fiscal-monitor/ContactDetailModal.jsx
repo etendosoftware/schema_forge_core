@@ -1,31 +1,28 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Loader2, MapPin, ChevronDown, Check } from 'lucide-react';
 import { useUI } from '@/i18n';
+import { useAuth } from '@/auth/AuthContext.jsx';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 import { toast } from 'sonner';
 import LocationEditorModal from '@/windows/custom/shared/LocationEditorModal.jsx';
 
-async function fetchBp(apiBase, bpId, token) {
-  const res = await fetch(`${apiBase}/businessPartner/${bpId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+async function fetchBp(apiFetch, bpId) {
+  const res = await apiFetch(`/businessPartner/${bpId}`);
   if (!res.ok) return null;
   const json = await res.json();
   return json?.response?.data?.[0] ?? json?.data?.[0] ?? null;
 }
 
-async function fetchFirstLocation(apiBase, bpId, token) {
-  const res = await fetch(`${apiBase}/locationAddress?parentId=${bpId}&_startRow=0&_endRow=1`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+async function fetchFirstLocation(apiFetch, bpId) {
+  const res = await apiFetch(`/locationAddress?parentId=${bpId}&_startRow=0&_endRow=1`);
   if (!res.ok) return null;
   const json = await res.json();
   return json?.response?.data?.[0] ?? null;
 }
 
-async function fetchTaxIDKeyOptions(apiBase, token) {
-  const url = `${apiBase}/businessPartner/selectors/EM_OBTIK_Tax_ID_Key?limit=50&offset=0`;
+async function fetchTaxIDKeyOptions(apiFetch) {
   try {
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await apiFetch(`/businessPartner/selectors/EM_OBTIK_Tax_ID_Key?limit=50&offset=0`);
     if (!res.ok) return [];
     const json = await res.json();
     const items = json?.items ?? json?.response?.data ?? [];
@@ -156,8 +153,10 @@ function TaxIDKeyPicker({ options, value, onChange, loading, ui }) {
   );
 }
 
-export default function ContactDetailModal({ open, onClose, bpId, token, contactsApiBase }) {
+export default function ContactDetailModal({ open, onClose, bpId, contactsApiBase }) {
   const ui = useUI();
+  const { token } = useAuth();
+  const apiFetch = useApiFetch(contactsApiBase);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [keyOptsLoading, setKeyOptsLoading] = useState(false);
@@ -176,9 +175,9 @@ export default function ContactDetailModal({ open, onClose, bpId, token, contact
     setName(''); setTaxID(''); setTaxIDKey(''); setLocation(null); setTaxIDKeyOptions([]);
 
     Promise.all([
-      fetchBp(contactsApiBase, bpId, token),
-      fetchFirstLocation(contactsApiBase, bpId, token),
-      fetchTaxIDKeyOptions(contactsApiBase, token),
+      fetchBp(apiFetch, bpId),
+      fetchFirstLocation(apiFetch, bpId),
+      fetchTaxIDKeyOptions(apiFetch),
     ]).then(([bp, loc, keyOpts]) => {
       if (cancelled) return;
       if (bp) {
@@ -193,15 +192,15 @@ export default function ContactDetailModal({ open, onClose, bpId, token, contact
     });
 
     return () => { cancelled = true; };
-  }, [open, bpId, contactsApiBase, token]);
+  }, [open, bpId, contactsApiBase]);
 
   async function handleSave() {
     if (saving || !bpId) return;
     setSaving(true);
     try {
-      const res = await fetch(`${contactsApiBase}/businessPartner/${bpId}`, {
+      const res = await apiFetch(`/businessPartner/${bpId}`, {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ taxID: taxID || null, oBTIKTaxIDKey: taxIDKey || null }),
       });
       if (res.ok) {
@@ -216,7 +215,7 @@ export default function ContactDetailModal({ open, onClose, bpId, token, contact
   }
 
   async function reloadLocation() {
-    const loc = await fetchFirstLocation(contactsApiBase, bpId, token);
+    const loc = await fetchFirstLocation(apiFetch, bpId);
     setLocation(loc);
   }
 

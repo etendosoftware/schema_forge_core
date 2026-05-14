@@ -33,7 +33,7 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
     loading, error, profile,
     siiRecord, tbaiRecord, verifactuRecord,
     refetch,
-  } = useFiscalConfig(orgId, token, apiBaseUrl);
+  } = useFiscalConfig(orgId, apiBaseUrl);
 
   // When mock is active, bypass API result entirely
   const effectiveProfile = mockOverride
@@ -93,7 +93,6 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
           <OnboardingWizard
             orgId={orgId}
             orgName={selectedOrg?.name}
-            token={token}
             apiBaseUrl={apiBaseUrl}
             onComplete={refetch}
             onGoHome={() => navigate('/dashboard')}
@@ -166,7 +165,6 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
         {showContent && effectiveProfile === 'sii' && (
           <SiiSection
             record={effectiveSii}
-            token={token}
             apiBaseUrl={apiBaseUrl}
             orgId={orgId}
             onSave={refetch}
@@ -177,7 +175,6 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
         {showContent && effectiveProfile === 'sii-navarra' && (
           <SiiSection
             record={effectiveSii}
-            token={token}
             apiBaseUrl={apiBaseUrl}
             orgId={orgId}
             onSave={refetch}
@@ -190,7 +187,6 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
             <SiiSection
               ref={siiRef}
               record={effectiveSii}
-              token={token}
               apiBaseUrl={apiBaseUrl}
               orgId={orgId}
               onSave={() => {}}
@@ -204,7 +200,6 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
               <TbaiSection
                 ref={tbaiRef}
                 record={effectiveTbai}
-                token={token}
                 apiBaseUrl={apiBaseUrl}
                 orgId={orgId}
                 onSave={() => {}}
@@ -214,7 +209,7 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
               {tbaiError && <p className="text-sm text-destructive">{ui('fiscal.tbai.error', { error: tbaiError })}</p>}
             </div>
 
-            <CertSection context="sii" orgId={orgId} token={token} apiBaseUrl={apiBaseUrl} />
+            <CertSection context="sii" orgId={orgId} apiBaseUrl={apiBaseUrl} />
 
             <Button onClick={handleCombinedSave} disabled={combinedSaving}>
               {combinedSaving ? ui('fiscal.saving') : ui('fiscal.save')}
@@ -225,7 +220,6 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
         {showContent && effectiveProfile === 'tbai' && (
           <TbaiSection
             record={effectiveTbai}
-            token={token}
             apiBaseUrl={apiBaseUrl}
             orgId={orgId}
             onSave={refetch}
@@ -235,7 +229,6 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
         {showContent && effectiveProfile === 'verifactu' && (
           <VerifactuSection
             record={effectiveVerifactu}
-            token={token}
             apiBaseUrl={apiBaseUrl}
             orgId={orgId}
             onSave={refetch}
