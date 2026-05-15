@@ -199,33 +199,6 @@ function mapActivity(handlerData) {
 
 const COMPLETED_INVOICE_STATUSES = new Set(['CO', 'CL']);
 
-function parseInvoiceDate(input) {
-  if (!input) return null;
-
-  if (/^\d{4}-\d{2}-\d{2}/.test(input)) {
-    const parsed = new Date(input);
-    return Number.isNaN(parsed.getTime()) ? null : parsed;
-  }
-
-  const ddmmyyyy = String(input).match(/^(\d{2})-(\d{2})-(\d{4})$/);
-  if (!ddmmyyyy) return null;
-
-  const day = Number(ddmmyyyy[1]);
-  const month = Number(ddmmyyyy[2]);
-  const year = Number(ddmmyyyy[3]);
-  const parsed = new Date(year, month - 1, day);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-function isWithinLastDays(input, days) {
-  const parsed = parseInvoiceDate(input);
-  if (!parsed) return false;
-
-  const now = new Date();
-  const threshold = new Date(now.getFullYear(), now.getMonth(), now.getDate() - days);
-  return parsed >= threshold;
-}
-
 /**
  * Map recent invoices handler response.
  * Handler returns: [{id, client, date, amount, status}]
@@ -235,7 +208,6 @@ function mapRecentInvoices(handlerData) {
 
   return handlerData
     .filter((inv) => COMPLETED_INVOICE_STATUSES.has(inv?.status))
-    .filter((inv) => isWithinLastDays(inv?.date, 7))
     .map((inv) => ({
       id: inv.id || '',
       documentNo: inv.documentNo || inv.document_no || inv.docNo || null,

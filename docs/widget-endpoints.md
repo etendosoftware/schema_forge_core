@@ -32,7 +32,7 @@ Dashboard pages can also consume entity endpoints under `/sws/neo/dashboard/{ent
 
 | Entity | URL | Handler | Description |
 |--------|-----|---------|-------------|
-| `recent-invoices` | `GET /sws/neo/dashboard/recent-invoices` | `widgetRecentInvoicesHandler` | Completed sales invoices (`CO`, `CL`) from the last 7 days, max 10 records |
+| `recent-invoices` | `GET /sws/neo/dashboard/recent-invoices` | `widgetRecentInvoicesHandler` | Completed sales invoices (`CO`, `CL`) for the requested `?range=`, max 10 records, sorted newest first |
 
 ## Response Format
 
@@ -346,7 +346,7 @@ Fields: `id` (unique), `author` (display name), `text` (message), `timestamp` (I
 }
 ```
 
-Data is filtered to sales invoices (`issotrx = 'Y'`) in completed statuses (`CO`, `CL`) with `dateinvoiced` in the last 7 days, sorted by newest first, limited to 10 rows.
+Data is filtered to sales invoices (`issotrx = 'Y'`) in completed statuses (`CO`, `CL`) within the requested `?range=` period, sorted by newest first, limited to 10 rows. When no range is supplied the fallback covers the last 30 days anchored to the most recent invoice date.
 
 Dashboard monetary widgets render values with an ISO currency prefix and fixed en-US numeric separators to avoid symbol and locale ambiguity in multi-currency orgs (for example, `EUR 7,284.20`).
 
