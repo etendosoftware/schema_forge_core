@@ -23,14 +23,12 @@ describe('OcrSidePanel — structure', () => {
   });
 
   it('lazy-loads OcrInlineUploader instead of importing eagerly', () => {
-    // OCR is a heavy, route-conditional flow — it must not be in the main bundle.
     assert.match(src, /lazy\(\s*\(\)\s*=>\s*import\(/);
     assert.match(src, /OcrInlineUploader/);
     assert.match(src, /Suspense/);
   });
 
   it('matches the OCR doc type from the current route', () => {
-    // matchOcrDocType is the pipeline that decides which OCR tool/schema applies.
     assert.match(src, /matchOcrDocType\(location\.pathname\)/);
   });
 
@@ -41,32 +39,26 @@ describe('OcrSidePanel — structure', () => {
 
 describe('OcrSidePanel — FileTab gating', () => {
   it('renders the OcrInlineUploader when isNew (new record path)', () => {
-    // The inline OCR path uses recordId === 'new'. DetailView forwards that
-    // boolean as `isNew` to the sidePanel callback so we mirror the same gate.
     assert.match(src, /if \(props\.isNew\)/);
     assert.match(src, /<LazyOcrInlineUploader\s+\{\.\.\.props\}\s*\/>/);
   });
 
   it('renders the AttachmentsView when not isNew (edit path)', () => {
-    // After save the form is bound to the record and we switch to a viewer
-    // of the attachments persisted via the AttachFile webhook.
     assert.match(src, /return <AttachmentsView \{\.\.\.props\} \/>/);
   });
 });
 
 describe('OcrSidePanel — AttachmentsView', () => {
-  it('looks up the docType to derive the AD_Tab_ID for the listing call', () => {
-    assert.match(src, /getOcrDocType\(docTypeId\)\?\.tabId/);
+  it('looks up the docType to derive the AD table name for the listing call', () => {
+    assert.match(src, /getOcrDocType\(docTypeId\)\?\.tableName/);
   });
 
-  it('calls listAttachments({ token, tabId, recordId }) inside an effect', () => {
-    assert.match(src, /listAttachments\(\{\s*token,\s*tabId,\s*recordId\s*\}\)/);
+  it('calls listAttachments with tableName + apiBaseUrl inside an effect', () => {
+    assert.match(src, /listAttachments\(\{\s*token,\s*tableName,\s*recordId,\s*apiBaseUrl\s*\}\)/);
   });
 
-  it('renders the first PDF inline via PdfViewer using a blob URL', () => {
-    // base64ToBlobUrl + LazyPdfViewer keep the heavy pdf.js worker out of the
-    // main bundle and isolate the URL.createObjectURL lifecycle in the effect.
-    assert.match(src, /base64ToBlobUrl\(/);
+  it('renders the first PDF inline via PdfViewer using a blob URL from NEO', () => {
+    assert.match(src, /fetchAttachmentBlobUrl\(/);
     assert.match(src, /<LazyPdfViewer url=\{pdfUrl\}/);
   });
 
@@ -90,7 +82,6 @@ describe('OcrSidePanel — i18n', () => {
   });
 
   it('does not contain hardcoded Spanish strings (must go through ui())', () => {
-    // Spot-check a few literals from the Figma to make sure no one inlined them.
     assert.doesNotMatch(src, />\s*Subir Factura\s*</);
     assert.doesNotMatch(src, />\s*Próximamente\s*</);
     assert.doesNotMatch(src, />\s*Archivo\s*</);
