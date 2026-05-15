@@ -190,7 +190,7 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
     });
 
     return () => { cancelled = true; };
-  }, [open, bpId, contactsApiBase]);
+  }, [open, bpId, contactsApiBase, apiFetch]);
 
   async function handleSave() {
     if (saving || !bpId) return;

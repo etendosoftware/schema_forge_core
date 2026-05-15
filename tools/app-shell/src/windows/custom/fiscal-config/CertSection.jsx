@@ -12,13 +12,14 @@ export default function CertSection({ context, orgId, apiBaseUrl }) {
   const [open, setOpen]   = useState(false);
 
   useEffect(() => {
+    if (!orgId || !apiBaseUrl) return;
     apiFetch(`/certificate`)
       .then(r => r.json())
       .then(data => {
         if (data?.exists) setCert({ name: ui('fiscal.cert.loaded'), validTo: data.validTo ?? '' });
       })
       .catch(() => {});
-  }, [apiFetch, ui]);
+  }, [apiFetch, ui, orgId, apiBaseUrl]);
 
   return (
     <>
