@@ -21,7 +21,7 @@ A user should be able to:
 
 ## Interaction model
 
-- Route: `/goods-receipt`, `/goods-receipt/:recordId`
+- Route: `/goods-receipt`, `/goods-receipt/:recordId`. The custom window wrapper reads `?DocStatus=<value>` from the URL and pre-applies it as a column filter (`documentStatus`) using the parsed `enumLabel` descriptor format required by `buildBackendFilter`. The dashboard card "Recepciones pendientes" navigates here with `?DocStatus=DR` so the list starts filtered to draft receipts awaiting processing.
 - Visibility: visible from the Purchases menu under Operations
 - Implementation type: custom window override registered in `tools/app-shell/src/windows/registry.js`, built on top of the generated goods-receipt window
 - Window shape: master-child window with a header record (`goodsReceipt`) and child received lines (`goodsReceiptLine`).

@@ -163,29 +163,22 @@ function mapPendingTasks(handlerData) {
   });
 }
 
-function inferPendingTaskKey(task) {
-  const text = String(task?.text ?? '').toLowerCase();
+const PENDING_TASK_RULES = [
+  { match: (l, t) => l === '/sales-invoice' || t.includes('overdue invoices'),            singular: 'overdueInvoices',        plural: 'overdueInvoices_plural'        },
+  { match: (l, t) => l.startsWith('/goods-receipt') || t.includes('pending reception'),   singular: 'pendingReceptions',      plural: 'pendingReceptions_plural'      },
+  { match: (l, t) => l.startsWith('/goods-shipment') || t.includes('pending delivery'),   singular: 'pendingSalesDeliveries', plural: 'pendingSalesDeliveries_plural' },
+  { match: (l, t) => t.includes('collection') && t.includes('due today'),                 singular: 'collectionsDueToday',    plural: 'collectionsDueToday_plural'    },
+  { match: (l, t) => t.includes('payment') && t.includes('due today'),                    singular: 'paymentsDueToday',       plural: 'paymentsDueToday_plural'       },
+  { match: (l, t) => l === '/physical-inventory' || t.includes('low stock alert'),        singular: 'lowStockAlert',          plural: 'lowStockAlerts'                },
+];
 
+function inferPendingTaskKey(task) {
   if (task?.taskKey) return task.taskKey;
-  if (task?.link === '/sales-invoice' || text.includes('overdue invoices')) {
-    return task?.count === 1 ? 'overdueInvoices' : 'overdueInvoices_plural';
-  }
-  if (task?.link?.startsWith('/goods-receipt') || text.includes('pending reception')) {
-    return task?.count === 1 ? 'pendingReceptions' : 'pendingReceptions_plural';
-  }
-  if (task?.link?.startsWith('/goods-shipment') || text.includes('pending delivery')) {
-    return task?.count === 1 ? 'pendingSalesDeliveries' : 'pendingSalesDeliveries_plural';
-  }
-  if (text.includes('collection') && text.includes('due today')) {
-    return task?.count === 1 ? 'collectionsDueToday' : 'collectionsDueToday_plural';
-  }
-  if (text.includes('payment') && text.includes('due today')) {
-    return task?.count === 1 ? 'paymentsDueToday' : 'paymentsDueToday_plural';
-  }
-  if (task?.link === '/physical-inventory' || text.includes('low stock alert')) {
-    return task?.count === 1 ? 'lowStockAlert' : 'lowStockAlerts';
-  }
-  return null;
+  const text = String(task?.text ?? '').toLowerCase();
+  const link = task?.link ?? '';
+  const rule = PENDING_TASK_RULES.find(r => r.match(link, text));
+  if (!rule) return null;
+  return task?.count === 1 ? rule.singular : rule.plural;
 }
 
 /**
