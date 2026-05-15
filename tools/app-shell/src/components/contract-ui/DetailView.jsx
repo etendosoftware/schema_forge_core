@@ -1871,7 +1871,7 @@ export function DetailView({
               </>
             );
           })()}
-          <div className={`${sidePanel ? 'flex items-start gap-0' : ''} ${linesLayout === 'inlineEditable' ? 'flex flex-col' : ''}`}>
+          <div className={`${sidePanel ? 'flex items-start gap-0' : (linesLayout === 'inlineEditable' ? 'flex flex-col' : '')}`}>
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} ${linesLayout === 'inlineEditable' ? 'flex flex-col' : 'space-y-2'}`}>
 
             {/* Principal + collapsed fields wrapped in a card */}

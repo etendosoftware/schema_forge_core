@@ -93,7 +93,7 @@ describe('buildOcrSchema — purchase-invoice doc type', () => {
 
   it('covers every field the descriptor relies on', () => {
     // Header fields the descriptor reads from `safe.*`.
-    for (const key of ['vendor_name', 'tax_id', 'document_no', 'invoice_date', 'due_date']) {
+    for (const key of ['vendor_name', 'tax_id', 'document_no', 'invoice_date']) {
       assert.ok(schema.properties[key], `missing header field: ${key}`);
     }
     // Line item fields the descriptor reads from each `line.*`.

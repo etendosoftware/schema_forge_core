@@ -17,7 +17,10 @@ function normaliseRow(line, columns) {
 
 export default function OcrLinesReviewModal({ columns = [], lines = [], token, apiBaseUrl, onSubmit, onCancel }) {
   const ui = useUI();
-  const [rows, setRows] = useState(() => lines.map((line) => normaliseRow(line, columns)));
+  const [rows, setRows] = useState(() => lines.map((line) => ({
+    ...normaliseRow(line, columns),
+    _rowId: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2),
+  })));
 
   const update = (idx, patch) => {
     setRows((prev) => prev.map((row, rowIdx) => (rowIdx === idx ? { ...row, ...patch } : row)));
@@ -63,7 +66,7 @@ export default function OcrLinesReviewModal({ columns = [], lines = [], token, a
               </thead>
               <tbody>
                 {rows.map((row, idx) => (
-                  <tr key={idx} className="border-t border-gray-100 align-middle">
+                  <tr key={row._rowId} className="border-t border-gray-100 align-middle">
                     {columns.map((column) => (
                       <td key={column.key} className="px-2 py-2">
                         <KindRenderer

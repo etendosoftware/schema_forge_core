@@ -21,9 +21,8 @@ describe('ocrDocTypes config contract', () => {
     assert.match(src, /preResolve:\s*'findTax'/);
   });
 
-  it('keeps documentNo, invoiceDate, dueDate as explicit header fields', () => {
+  it('keeps documentNo and invoiceDate as explicit header fields', () => {
     assert.match(src, /key:\s*'documentNo'[\s\S]*kind:\s*'text'/);
     assert.match(src, /key:\s*'invoiceDate'[\s\S]*kind:\s*'date'/);
-    assert.match(src, /key:\s*'dueDate'[\s\S]*kind:\s*'date'/);
   });
 });

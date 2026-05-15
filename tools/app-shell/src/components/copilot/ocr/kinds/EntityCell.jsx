@@ -1,74 +1,40 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, Loader2, Search } from 'lucide-react';
 import { useUI } from '@/i18n';
+import {
+  deriveEntityEndpoint,
+  useClickOutside,
+  useEntitySearch,
+} from './entityLookup';
 
-/* eslint-disable react/prop-types */
-
-const SEARCH_DEBOUNCE_MS = 250;
 const SEARCH_LIMIT = 30;
-
-function escHql(value) {
-  return String(value).replace(/'/g, "''");
-}
-
-function deriveEntityEndpoint(column = {}, apiBaseUrl) {
-  const [spec, entity] = String(column.entitySpec || '').split('/');
-  if (!spec || !entity) return null;
-  if (!apiBaseUrl) return `/sws/neo/${spec}/${entity}`;
-  return `${apiBaseUrl.replace(/\/[^/]+$/, `/${spec}`)}/${entity}`;
-}
 
 export default function EntityCell({ column, value, token, apiBaseUrl, onChange }) {
   const ui = useUI();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
   const wrapRef = useRef(null);
   const inputRef = useRef(null);
-  const endpoint = useMemo(() => deriveEntityEndpoint(column, apiBaseUrl), [column, apiBaseUrl]);
+
+  const endpoint = useMemo(
+    () => deriveEntityEndpoint({ entitySpec: column?.entitySpec, apiBaseUrl }),
+    [column, apiBaseUrl],
+  );
 
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 0);
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return undefined;
-    const handle = (event) => {
-      if (wrapRef.current && !wrapRef.current.contains(event.target)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handle);
-    return () => document.removeEventListener('mousedown', handle);
-  }, [open]);
+  useClickOutside(wrapRef, open, () => setOpen(false));
 
-  useEffect(() => {
-    if (!open || !token || !endpoint) return undefined;
-    let cancelled = false;
-    const trimmed = query.trim();
-    const timer = setTimeout(async () => {
-      setLoading(true);
-      const filter = column.filter || 'active = true';
-      const where = trimmed
-        ? `lower(name) like lower('%${escHql(trimmed)}%') and ${filter}`
-        : filter;
-      const url = `${endpoint}?_neoWhere=${encodeURIComponent(where)}&limit=${SEARCH_LIMIT}`;
-      try {
-        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-        if (!res.ok) throw new Error(`status ${res.status}`);
-        const json = await res.json();
-        const data = json?.response?.data ?? json?.data ?? [];
-        if (!cancelled) setItems(Array.isArray(data) ? data : []);
-      } catch {
-        if (!cancelled) setItems([]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }, SEARCH_DEBOUNCE_MS);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [open, query, token, endpoint, column.filter]);
+  const { items, loading } = useEntitySearch({
+    open,
+    endpoint,
+    token,
+    query,
+    filter: column?.filter,
+    limit: SEARCH_LIMIT,
+  });
 
   const chipLabel = value?.label || ui(column.emptyOptionLabel || 'ocrLinesTaxDefault');
   const chipDim = value ? '' : 'italic text-gray-500';
@@ -119,6 +85,10 @@ export default function EntityCell({ column, value, token, apiBaseUrl, onChange 
         )}
         {items.map((item) => {
           const label = item.name || item._identifier || item.id;
+          const selected = value?.id === item.id;
+          const itemCls = selected
+            ? 'bg-blue-50 font-medium text-blue-700'
+            : 'text-gray-800';
           return (
             <button
               key={item.id}
@@ -127,12 +97,9 @@ export default function EntityCell({ column, value, token, apiBaseUrl, onChange 
                 onChange({ id: item.id, label });
                 setOpen(false);
               }}
-              className={[
-                'flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50',
-                value?.id === item.id ? 'bg-blue-50 font-medium text-blue-700' : 'text-gray-800',
-              ].join(' ')}
+              className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 ${itemCls}`}
             >
-              <span className="w-4 shrink-0">{value?.id === item.id ? <Check size={14} /> : null}</span>
+              <span className="w-4 shrink-0">{selected ? <Check size={14} /> : null}</span>
               <span className="truncate">{label}</span>
             </button>
           );

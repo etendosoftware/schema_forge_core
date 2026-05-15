@@ -246,8 +246,7 @@ function buildHeaderBody(safe, bpId, partnerAddress, extras = {}) {
   if (nonBlank(invoiceDate)) headerBody.invoiceDate = toIsoDate(invoiceDate);
   headerBody.businessPartner = bpId || '$ref:bp';
   if (partnerAddress) headerBody.partnerAddress = partnerAddress;
-  if (nonBlank(extras.dueDate)) headerBody.dueDate = toIsoDate(extras.dueDate);
-  return headerBody;
+    return headerBody;
 }
 
 /**
@@ -402,7 +401,6 @@ export async function buildPurchaseInvoiceBatch(extracted, ctx) {
     body: buildHeaderBody(safe, bpId, partnerAddress, {
       documentNo: reviewedHeader?.documentNo ?? null,
       invoiceDate: reviewedHeader?.invoiceDate ?? null,
-      dueDate: reviewedHeader?.dueDate ?? safe.due_date ?? null,
     }),
   });
   const { lineOps, unmatched } = buildLineOps(lines, productByIdx, taxByIdx);

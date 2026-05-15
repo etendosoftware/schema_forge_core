@@ -33,6 +33,22 @@ function normalizeText(value) {
  *   onSubmit       — receives a map { [idx]: productId | null }
  *   onCancel       — discards the import entirely
  */
+function SelectorOption({ option, selected, onPick, sizing = 'compact' }) {
+  const base = 'flex w-full items-center gap-2 text-left hover:bg-gray-50';
+  const pad = sizing === 'compact' ? 'px-3 py-2 text-sm' : 'px-4 py-2.5 text-sm';
+  const tone = selected ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-800';
+  return (
+    <button
+      type="button"
+      onClick={() => onPick(option)}
+      className={`${base} ${pad} ${tone}`}
+    >
+      <span className="w-4 shrink-0">{selected ? <Check size={14} /> : null}</span>
+      <span className="truncate">{option.label}</span>
+    </button>
+  );
+}
+
 export default function ProductResolverPopup({
   unmatched = [],
   selectorUrl,
@@ -278,18 +294,12 @@ function InlineSelector({ selectorUrl, authHeader, initialQuery, value, onPick, 
           <div className="px-3 py-2 text-xs text-gray-500">{ui('noResults')}</div>
         )}
         {options.map(o => (
-          <button
+          <SelectorOption
             key={o.id}
-            type="button"
-            onClick={() => handlePick(o)}
-            className={[
-              'flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50',
-              value?.id === o.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-800',
-            ].join(' ')}
-          >
-            <span className="w-4 shrink-0">{value?.id === o.id ? <Check size={14} /> : null}</span>
-            <span className="truncate">{o.label}</span>
-          </button>
+            option={o}
+            selected={value?.id === o.id}
+            onPick={handlePick}
+          />
         ))}
       </div>
     </div>
@@ -433,18 +443,13 @@ function SelectorDialog({
           )}
           {!loading && !failed && filtered.length > 0 && (
             filtered.map(o => (
-              <button
+              <SelectorOption
                 key={o.id}
-                type="button"
-                onClick={() => onPick({ id: o.id, label: o.label })}
-                className={[
-                  'w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left hover:bg-gray-50',
-                  currentId === o.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-800',
-                ].join(' ')}
-              >
-                <span className="w-4 shrink-0">{currentId === o.id ? <Check size={14} /> : null}</span>
-                <span className="truncate">{o.label}</span>
-              </button>
+                option={o}
+                selected={currentId === o.id}
+                onPick={(opt) => onPick({ id: opt.id, label: opt.label })}
+                sizing="comfortable"
+              />
             ))
           )}
         </div>

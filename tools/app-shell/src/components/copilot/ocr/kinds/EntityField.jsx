@@ -1,25 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Loader2, Plus, Search } from 'lucide-react';
 import { useUI } from '@/i18n';
+import {
+  deriveEntityEndpoint,
+  useClickOutside,
+  useEntitySearch,
+} from './entityLookup';
 
-/* eslint-disable react/prop-types */
-
-const SEARCH_DEBOUNCE_MS = 250;
 const SEARCH_LIMIT = 20;
-
-function escHql(value) {
-  return String(value).replace(/'/g, "''");
-}
-
-function deriveEntityEndpoint(field = {}, contactsBase, apiBaseUrl) {
-  const [spec, entity] = String(field.entitySpec || '').split('/');
-  if (!spec || !entity) return null;
-  if (spec === 'contacts') {
-    return contactsBase ? `${contactsBase}/${entity}` : null;
-  }
-  if (!apiBaseUrl) return `/sws/neo/${spec}/${entity}`;
-  return `${apiBaseUrl.replace(/\/[^/]+$/, `/${spec}`)}/${entity}`;
-}
 
 export default function EntityField({
   field,
@@ -31,9 +19,6 @@ export default function EntityField({
   onChange,
 }) {
   const ui = useUI();
-  // When pre-resolution didn't pick a vendor, seed the search box with the
-  // OCR-extracted hint (e.g. vendor_name) so the dropdown shows candidates
-  // on first focus instead of forcing the user to retype the name.
   const initialHint = useMemo(() => {
     if (value?.id) return '';
     const extracted = field?.extracted || {};
@@ -45,50 +30,25 @@ export default function EntityField({
     return '';
   }, [field, value]);
   const [query, setQuery] = useState(initialHint);
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(Boolean(initialHint));
   const [showCreate, setShowCreate] = useState(false);
   const wrapRef = useRef(null);
-  const endpoint = useMemo(() => deriveEntityEndpoint(field, contactsBase, apiBaseUrl), [field, contactsBase, apiBaseUrl]);
 
-  useEffect(() => {
-    if (!open) return undefined;
-    const handle = (event) => {
-      if (wrapRef.current && !wrapRef.current.contains(event.target)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handle);
-    return () => document.removeEventListener('mousedown', handle);
-  }, [open]);
+  const endpoint = useMemo(
+    () => deriveEntityEndpoint({ entitySpec: field?.entitySpec, apiBaseUrl, contactsBase }),
+    [field, contactsBase, apiBaseUrl],
+  );
 
-  useEffect(() => {
-    if (!open || !endpoint || !token) return undefined;
-    let cancelled = false;
-    const trimmed = query.trim();
-    const timer = setTimeout(async () => {
-      setLoading(true);
-      const filter = field.filter || 'active = true';
-      const where = trimmed
-        ? `lower(name) like lower('%${escHql(trimmed)}%') and ${filter}`
-        : filter;
-      const url = `${endpoint}?_neoWhere=${encodeURIComponent(where)}&limit=${SEARCH_LIMIT}`;
-      try {
-        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-        if (!res.ok) throw new Error(`status ${res.status}`);
-        const json = await res.json();
-        const data = json?.response?.data ?? json?.data ?? [];
-        if (!cancelled) setItems(Array.isArray(data) ? data : []);
-      } catch {
-        if (!cancelled) setItems([]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }, SEARCH_DEBOUNCE_MS);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [open, endpoint, field.filter, query, token]);
+  useClickOutside(wrapRef, open, () => setOpen(false));
+
+  const { items, loading } = useEntitySearch({
+    open,
+    endpoint,
+    token,
+    query,
+    filter: field?.filter,
+    limit: SEARCH_LIMIT,
+  });
 
   const handleCreateSubmit = (decision) => {
     const record = decision?.created;

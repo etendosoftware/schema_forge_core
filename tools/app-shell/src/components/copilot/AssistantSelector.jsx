@@ -37,7 +37,7 @@ export function AssistantSelector({
   }, [assistants, filter, featuredOnly]);
 
   return (
-    <div className="flex flex-1 flex-col p-4">
+    <div className="flex flex-1 min-h-0 flex-col p-4">
       {/* Welcome message */}
       <div className="rounded-lg border border-border/60 bg-muted/40 p-3 text-sm text-foreground">
         {welcomeMessage || ui('copilotWelcome')}

@@ -16,7 +16,7 @@ export const OCR_DOC_TYPES = [
     routePrefix: '/purchase-invoice/',
     toolName: 'SimpleOcrTool',
     eventName: 'copilot:ocr-prefill:purchase-invoice',
-    question: 'Extract all invoice fields: vendor name, document number, invoice date, due date (fecha de vencimiento — payment due date), line items (description, quantity, unit price). Return strict JSON.',
+    question: 'Extract all invoice fields: vendor name, document number, invoice date, line items (description, quantity, unit price). Return strict JSON.',
     // AD_Tab_ID of the Purchase Invoice header tab. Required by the AttachFile
     // webhook so the uploaded PDF lands in the AD_Attachment grid for the new
     // record. Look up via: SELECT ad_tab_id FROM ad_tab JOIN ad_window USING(ad_window_id)
@@ -49,12 +49,6 @@ export const OCR_DOC_TYPES = [
         kind: 'date',
         label: 'ocrReviewInvoiceDateLabel',
         extractFrom: 'invoice_date',
-      },
-      {
-        key: 'dueDate',
-        kind: 'date',
-        label: 'ocrReviewDueDateLabel',
-        extractFrom: 'due_date',
       },
     ],
     lineColumns: [

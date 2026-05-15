@@ -152,7 +152,7 @@ export default function OcrReviewModal({
                   : currentValue}
                 checked={Boolean(entry.enabled && hasResolvedValue)}
                 onToggle={(checked) => updateField(field.key, { enabled: checked })}
-                toggleDisabled={field.key === 'vendor' ? resolving || !hasResolvedValue : !getExtractedValue(extracted, field)}
+                toggleDisabled={(field.key === 'vendor' && resolving) || !hasResolvedValue}
                 expanded={!entry.enabled || !hasResolvedValue}
               >
                 <KindRenderer
