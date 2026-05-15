@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Loader2, MapPin, ChevronDown, Check } from 'lucide-react';
 import { useUI } from '@/i18n';
-import { useAuth } from '@/auth/AuthContext.jsx';
 import { useApiFetch } from '@/auth/useApiFetch.js';
 import { toast } from 'sonner';
 import LocationEditorModal from '@/windows/custom/shared/LocationEditorModal.jsx';
@@ -155,7 +154,6 @@ function TaxIDKeyPicker({ options, value, onChange, loading, ui }) {
 
 export default function ContactDetailModal({ open, onClose, bpId, contactsApiBase }) {
   const ui = useUI();
-  const { token } = useAuth();
   const apiFetch = useApiFetch(contactsApiBase);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -345,7 +343,6 @@ export default function ContactDetailModal({ open, onClose, bpId, contactsApiBas
           rowId={location?.id ?? null}
           bpId={bpId}
           apiBase={contactsApiBase}
-          token={token}
         />
       )}
     </div>

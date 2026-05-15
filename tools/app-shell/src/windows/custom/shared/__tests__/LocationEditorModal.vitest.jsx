@@ -19,6 +19,10 @@ vi.mock('sonner', () => ({
   toast: { error: vi.fn(), success: vi.fn() },
 }));
 
+vi.mock('@/auth/AuthContext.jsx', () => ({
+  useAuth: () => ({ token: 'test-token', logout: () => {} }),
+}));
+
 // --- Import under test ----------------------------------------------------
 
 import LocationEditorModal from '../LocationEditorModal.jsx';

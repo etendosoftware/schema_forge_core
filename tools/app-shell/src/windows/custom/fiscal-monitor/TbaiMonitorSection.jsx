@@ -78,7 +78,7 @@ export default function TbaiMonitorSection({ orgId, apiBaseUrl, initialFilter = 
       .then(({ data, totalRows }) => { setRows(data); setTotalRows(totalRows); })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [orgId, statusFilter, page, apiBaseUrl, mockRows, refreshKey]);
+  }, [orgId, statusFilter, page, apiFetch, mockRows, refreshKey]);
 
   useEffect(() => { setPage(1); }, [statusFilter]);
 

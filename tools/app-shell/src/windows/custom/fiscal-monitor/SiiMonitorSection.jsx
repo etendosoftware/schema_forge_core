@@ -117,7 +117,7 @@ export default function SiiMonitorSection({ orgId, apiBaseUrl, parentId, initial
       .then(({ data, totalRows }) => { setRows(data); setTotalRows(totalRows); })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [parentId, entityKey, page, apiBaseUrl, mockRows, statusFilter, refreshKey]);
+  }, [parentId, entityKey, page, apiFetch, mockRows, statusFilter, refreshKey]);
 
   useEffect(() => { setPage(1); }, [tab, period, statusFilter]);
 
