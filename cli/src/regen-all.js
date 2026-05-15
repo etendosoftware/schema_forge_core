@@ -196,9 +196,7 @@ async function runPipeline(name, windowId, { pushToNeo, skipExtract }) {
   console.log(`    ${count} components generated`);
 }
 
-async function main() {
-  const opts = parseArgs(process.argv);
-
+async function configureCacheMode(opts) {
   if (opts.writeCache && opts.fromCache) {
     console.error('Error: --write-cache and --from-cache are mutually exclusive');
     process.exit(1);
@@ -207,10 +205,10 @@ async function main() {
     const { setCacheMode } = await import('./db.js');
     setCacheMode({ mode: opts.writeCache ? 'write' : 'read' });
   }
+}
 
+async function selectWindows(opts) {
   let windows = await getActiveWindows();
-
-  // Apply --only filter
   if (opts.only) {
     const available = new Set(windows.map(w => w.name));
     const invalid = opts.only.filter(n => !available.has(n));
@@ -219,12 +217,10 @@ async function main() {
     }
     windows = windows.filter(w => opts.only.includes(w.name));
   }
+  return windows;
+}
 
-  if (windows.length === 0) {
-    console.log('No active windows to process.');
-    return;
-  }
-
+function logRunHeader(opts, windows) {
   console.log(`\n=== Schema Forge: Regenerate All ===`);
   console.log(`Windows (${windows.length}): ${windows.map(w => w.name).join(', ')}`);
   console.log(`Push to NEO: ${opts.pushToNeo ? 'YES' : 'no'}`);
@@ -232,16 +228,12 @@ async function main() {
   if (opts.writeCache) console.log(`Cache mode: WRITE (will refresh cli/cache/ad-snapshot.json)`);
   if (opts.fromCache) console.log(`Cache mode: READ (no DB connection — serving from cli/cache/ad-snapshot.json)`);
   console.log();
+}
 
-  if (opts.dryRun) {
-    console.log('Dry run — nothing executed.');
-    return;
-  }
-
+async function runAllPipelines(windows, opts) {
   let passed = 0;
   let failed = 0;
   const errors = [];
-
   for (const { name, windowId } of windows) {
     console.log(`\n[${passed + failed + 1}/${windows.length}] ${name}`);
     try {
@@ -254,6 +246,27 @@ async function main() {
       console.error(`  ✗ FAILED: ${err.message}`);
     }
   }
+  return { passed, failed, errors };
+}
+
+async function main() {
+  const opts = parseArgs(process.argv);
+  await configureCacheMode(opts);
+
+  const windows = await selectWindows(opts);
+  if (windows.length === 0) {
+    console.log('No active windows to process.');
+    return;
+  }
+
+  logRunHeader(opts, windows);
+
+  if (opts.dryRun) {
+    console.log('Dry run — nothing executed.');
+    return;
+  }
+
+  const { passed, failed, errors } = await runAllPipelines(windows, opts);
 
   if (opts.writeCache) {
     const { flushCacheWrites } = await import('./db.js');

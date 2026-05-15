@@ -170,6 +170,37 @@ function parseGradleProperties(filePath) {
  * @param {object} [config] - Explicit DB config (host, port, user, password, database)
  * @param {string} [gradlePropertiesPath] - Path to gradle.properties (overrides auto-discovery)
  */
+function loadGradleConfig(gradlePropertiesPath) {
+  const gradlePath = gradlePropertiesPath
+    || process.env.ETENDO_GRADLE_PROPERTIES
+    || findGradleProperties();
+  if (!gradlePath) return null;
+  try {
+    return parseGradleProperties(gradlePath);
+  } catch {
+    // File not found or unreadable — caller falls through to env vars / defaults
+    return null;
+  }
+}
+
+function extractGradleHostPort(gradle) {
+  if (!gradle) return { host: null, port: null };
+  let host = null;
+  let port = null;
+  if (gradle['bbdd.url']) {
+    const urlMatch = gradle['bbdd.url'].match(/postgresql:\/\/([^:/]+)(?::(\d+))?/);
+    if (urlMatch) {
+      host = urlMatch[1];
+      if (urlMatch[2]) port = parseInt(urlMatch[2], 10);
+    }
+  }
+  // bbdd.port overrides URL port if present
+  if (gradle['bbdd.port']) {
+    port = parseInt(gradle['bbdd.port'], 10);
+  }
+  return { host, port };
+}
+
 export function createDbPool(config, gradlePropertiesPath) {
   // 'read' mode never opens a real connection — return the stub pool.
   if (cacheMode === 'read') {
@@ -181,36 +212,8 @@ export function createDbPool(config, gradlePropertiesPath) {
     return cacheMode === 'write' ? wrapPoolWithCache(pool) : pool;
   }
 
-  // Try to read gradle.properties
-  let gradle = null;
-  const gradlePath = gradlePropertiesPath
-    || process.env.ETENDO_GRADLE_PROPERTIES
-    || findGradleProperties();
-
-  if (gradlePath) {
-    try {
-      gradle = parseGradleProperties(gradlePath);
-    } catch {
-      // File not found or unreadable — fall through to env vars / defaults
-    }
-  }
-
-  // Resolve host: gradle bbdd.url contains jdbc:postgresql://host:port
-  let gradleHost = null;
-  let gradlePort = null;
-  if (gradle) {
-    if (gradle['bbdd.url']) {
-      const urlMatch = gradle['bbdd.url'].match(/postgresql:\/\/([^:/]+)(?::(\d+))?/);
-      if (urlMatch) {
-        gradleHost = urlMatch[1];
-        if (urlMatch[2]) gradlePort = parseInt(urlMatch[2], 10);
-      }
-    }
-    // bbdd.port overrides URL port if present
-    if (gradle['bbdd.port']) {
-      gradlePort = parseInt(gradle['bbdd.port'], 10);
-    }
-  }
+  const gradle = loadGradleConfig(gradlePropertiesPath);
+  const { host: gradleHost, port: gradlePort } = extractGradleHostPort(gradle);
 
   const pool = new pg.Pool({
     host: process.env.ETENDO_DB_HOST || (gradleHost === 'db' ? 'localhost' : gradleHost) || 'localhost',

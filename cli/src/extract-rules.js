@@ -353,6 +353,107 @@ async function walkForFile(dir, targetName) {
   return null;
 }
 
+async function processCalloutRow(row, sourceDir) {
+  let sourceAnalysis;
+  if (sourceDir && row.classname) {
+    const source = await findSource(sourceDir, row.classname);
+    sourceAnalysis = analyzeJavaSource(source);
+  } else {
+    sourceAnalysis = analyzeJavaSource(null);
+  }
+  return buildRuleFromCallout(row, sourceAnalysis);
+}
+
+function buildValidationRule(row) {
+  return {
+    type: 'validation',
+    source: 'AD_Val_Rule',
+    id: row.ad_val_rule_id,
+    name: row.name,
+    column: row.columnname,
+    code: row.code,
+    isSimple: isSimpleValidation(row.code),
+  };
+}
+
+function buildDisplayLogicRule(row, windowName) {
+  const translated = translateExpression(row.displaylogic);
+  return {
+    name: `${windowName}-${row.tab_name}-${row.columnname}-displayLogic`,
+    type: 'displayLogic',
+    source: 'AD_Field',
+    window: windowName,
+    tab: row.tab_name,
+    fieldName: row.name,
+    column: row.columnname,
+    rawExpression: row.displaylogic,
+    translated: translated.success ? translated.result : null,
+    translationError: translated.success ? undefined : translated.error,
+  };
+}
+
+function buildReadOnlyLogicRule(row) {
+  const translated = translateExpression(row.readonlylogic);
+  return {
+    name: `${row.table_name}-${row.columnname}-readOnlyLogic`,
+    type: 'readOnlyLogic',
+    source: 'AD_Column',
+    table: row.table_name,
+    fieldName: row.name,
+    column: row.columnname,
+    rawExpression: row.readonlylogic,
+    translated: translated.success ? translated.result : null,
+    translationError: translated.success ? undefined : translated.error,
+  };
+}
+
+// Rule naming is intentionally derived from the *source* of each logic
+// expression so test ids are stable across pipeline runs:
+//   - DisplayLogic lives on AD_Field, which is unique per (tab, column)
+//     → `${windowName}-${tabName}-${columnName}-displayLogic`
+//   - ReadOnlyLogic lives on AD_Column, which is unique per (table, column)
+//     → `${tableName}-${columnName}-readOnlyLogic`
+// The DISPLAY_LOGIC_SQL query joins AD_Field → AD_Column, so a single
+// column that participates in multiple fields/tabs is returned once per
+// field. We dedupe ReadOnlyLogic rules per column to avoid emitting the
+// same rule N times.
+function appendDisplayAndReadOnlyRules(rules, rows, windowName) {
+  const seenReadOnlyRule = new Set();
+  for (const row of rows) {
+    if (row.displaylogic) {
+      rules.push(buildDisplayLogicRule(row, windowName));
+    }
+    if (row.readonlylogic) {
+      const ruleName = `${row.table_name}-${row.columnname}-readOnlyLogic`;
+      if (seenReadOnlyRule.has(ruleName)) continue;
+      seenReadOnlyRule.add(ruleName);
+      rules.push(buildReadOnlyLogicRule(row));
+    }
+  }
+}
+
+async function buildProcessRule(row, sourceDir) {
+  let sourceAnalysis = null;
+  if (sourceDir && row.classname) {
+    const source = await findSource(sourceDir, row.classname);
+    sourceAnalysis = analyzeJavaSource(source);
+  }
+  return {
+    type: 'process',
+    source: row.mechanism === 'obuiapp_process' ? 'OBUIAPP_Process' : 'AD_Process',
+    mechanism: row.mechanism,
+    id: row.process_id ?? row.obuiapp_process_id,
+    name: row.name,
+    className: row.classname,
+    column: row.column_name,
+    ...(sourceAnalysis && {
+      hasDml: sourceAnalysis.hasDml,
+      loc: sourceAnalysis.loc,
+      complexity: determineComplexity(sourceAnalysis),
+    }),
+  };
+}
+
 /**
  * Main orchestrator: queries 4 SQL sources + optional Java analysis.
  * Writes artifacts/{windowName}/rules-raw.json.
@@ -373,103 +474,15 @@ export async function main(windowId, windowName) {
 
     const rules = [];
 
-    // Process callouts with optional source analysis
     for (const row of calloutsRes.rows) {
-      let sourceAnalysis = null;
-      if (sourceDir && row.classname) {
-        const source = await findSource(sourceDir, row.classname);
-        sourceAnalysis = analyzeJavaSource(source);
-      } else {
-        sourceAnalysis = analyzeJavaSource(null);
-      }
-      rules.push(buildRuleFromCallout(row, sourceAnalysis));
+      rules.push(await processCalloutRow(row, sourceDir));
     }
-
-    // Process validation rules
     for (const row of validationsRes.rows) {
-      rules.push({
-        type: 'validation',
-        source: 'AD_Val_Rule',
-        id: row.ad_val_rule_id,
-        name: row.name,
-        column: row.columnname,
-        code: row.code,
-        isSimple: isSimpleValidation(row.code),
-      });
+      rules.push(buildValidationRule(row));
     }
-
-    // Process display/readOnly logic
-    //
-    // Rule naming is intentionally derived from the *source* of each logic
-    // expression so test ids are stable across pipeline runs:
-    //   - DisplayLogic lives on AD_Field, which is unique per (tab, column)
-    //     → `${windowName}-${tabName}-${columnName}-displayLogic`
-    //   - ReadOnlyLogic lives on AD_Column, which is unique per (table, column)
-    //     → `${tableName}-${columnName}-readOnlyLogic`
-    //
-    // The DISPLAY_LOGIC_SQL query joins AD_Field → AD_Column, so a single
-    // column that participates in multiple fields/tabs is returned once per
-    // field. We dedupe ReadOnlyLogic rules per column to avoid emitting the
-    // same rule N times.
-    const seenReadOnlyRule = new Set();
-    for (const row of displayLogicRes.rows) {
-      if (row.displaylogic) {
-        const translated = translateExpression(row.displaylogic);
-        rules.push({
-          name: `${windowName}-${row.tab_name}-${row.columnname}-displayLogic`,
-          type: 'displayLogic',
-          source: 'AD_Field',
-          window: windowName,
-          tab: row.tab_name,
-          fieldName: row.name,
-          column: row.columnname,
-          rawExpression: row.displaylogic,
-          translated: translated.success ? translated.result : null,
-          translationError: translated.success ? undefined : translated.error,
-        });
-      }
-
-      if (row.readonlylogic) {
-        const ruleName = `${row.table_name}-${row.columnname}-readOnlyLogic`;
-        if (seenReadOnlyRule.has(ruleName)) continue;
-        seenReadOnlyRule.add(ruleName);
-        const translated = translateExpression(row.readonlylogic);
-        rules.push({
-          name: ruleName,
-          type: 'readOnlyLogic',
-          source: 'AD_Column',
-          table: row.table_name,
-          fieldName: row.name,
-          column: row.columnname,
-          rawExpression: row.readonlylogic,
-          translated: translated.success ? translated.result : null,
-          translationError: translated.success ? undefined : translated.error,
-        });
-      }
-    }
-
-    // Process document processes (3 mechanisms + hardcoded)
+    appendDisplayAndReadOnlyRules(rules, displayLogicRes.rows, windowName);
     for (const row of processesRes.rows) {
-      let sourceAnalysis = null;
-      if (sourceDir && row.classname) {
-        const source = await findSource(sourceDir, row.classname);
-        sourceAnalysis = analyzeJavaSource(source);
-      }
-
-      rules.push({
-        type: 'process',
-        source: row.mechanism === 'obuiapp_process' ? 'OBUIAPP_Process' : 'AD_Process',
-        mechanism: row.mechanism,
-        id: row.process_id ?? row.obuiapp_process_id,
-        name: row.name,
-        className: row.classname,
-        column: row.column_name,
-        ...(sourceAnalysis && {
-          hasDml: sourceAnalysis.hasDml,
-          loc: sourceAnalysis.loc,
-          complexity: determineComplexity(sourceAnalysis),
-        }),
-      });
+      rules.push(await buildProcessRule(row, sourceDir));
     }
 
     // Process auxiliary inputs (computed variables for DisplayLogic)

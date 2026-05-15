@@ -423,6 +423,19 @@ function compareCommonFile(relPath, originalFiles, exportedFiles, ok, changed, e
 // For any other shape we return null and callers fall back to the file-level
 // "changed" listing.
 // ---------------------------------------------------------------------------
+function diffRowFields(prevRow, predRow) {
+  const prevFields = rowToFieldMap(prevRow);
+  const predFields = rowToFieldMap(predRow);
+  const allKeys = new Set([...Object.keys(prevFields), ...Object.keys(predFields)]);
+  const diffs = {};
+  for (const k of allKeys) {
+    if (prevFields[k] !== predFields[k]) {
+      diffs[k] = { prev: prevFields[k] ?? null, pred: predFields[k] ?? null };
+    }
+  }
+  return diffs;
+}
+
 function summarizeDataDrift(originalRoot, exportedRoot) {
   if (originalRoot.tag !== 'data' || exportedRoot.tag !== 'data') return null;
   const originalRows = indexRowsByPk(originalRoot);
@@ -435,20 +448,11 @@ function summarizeDataDrift(originalRoot, exportedRoot) {
     if (!originalRows.has(pk)) added.push({ pk, tag: predRow.tag, fields: rowToFieldMap(predRow) });
   }
   for (const [pk, prevRow] of originalRows) {
-    if (!exportedRows.has(pk)) removed.push({ pk, tag: prevRow.tag, fields: rowToFieldMap(prevRow) });
-  }
-  for (const [pk, prevRow] of originalRows) {
-    const predRow = exportedRows.get(pk);
-    if (!predRow) continue;
-    const prevFields = rowToFieldMap(prevRow);
-    const predFields = rowToFieldMap(predRow);
-    const allKeys = new Set([...Object.keys(prevFields), ...Object.keys(predFields)]);
-    const diffs = {};
-    for (const k of allKeys) {
-      if (prevFields[k] !== predFields[k]) {
-        diffs[k] = { prev: prevFields[k] ?? null, pred: predFields[k] ?? null };
-      }
+    if (!exportedRows.has(pk)) {
+      removed.push({ pk, tag: prevRow.tag, fields: rowToFieldMap(prevRow) });
+      continue;
     }
+    const diffs = diffRowFields(prevRow, exportedRows.get(pk));
     if (Object.keys(diffs).length > 0) {
       changed.push({ pk, tag: prevRow.tag, diffs });
     }
@@ -517,6 +521,25 @@ function truncate(value, max = 160) {
   return JSON.stringify(str.slice(0, max - 1) + '…');
 }
 
+function printAddedOrRemovedRows(label, sign, rows) {
+  if (rows.length === 0) return;
+  console.log(`  ${label}:`);
+  for (const row of rows) {
+    console.log(`    ${sign} ${row.tag} ${row.pk}${rowHint(row.fields)}`);
+  }
+}
+
+function printChangedRows(rows) {
+  if (rows.length === 0) return;
+  console.log('  Changed rows:');
+  for (const row of rows) {
+    console.log(`    ~ ${row.tag} ${row.pk}${rowHint(rowToFieldMapFromDiffs(row.diffs))}`);
+    for (const [col, { prev, pred }] of Object.entries(row.diffs)) {
+      console.log(`        ${col}: ${truncate(prev)} → ${truncate(pred)}`);
+    }
+  }
+}
+
 function printDriftDetails(driftDetails) {
   const paths = Object.keys(driftDetails).sort((a, b) => a.localeCompare(b));
   if (paths.length === 0) return;
@@ -528,27 +551,9 @@ function printDriftDetails(driftDetails) {
     console.log(`  + added:   ${added.length}`);
     console.log(`  - removed: ${removed.length}`);
     console.log(`  ~ changed: ${changed.length}`);
-    if (added.length > 0) {
-      console.log('  Added rows:');
-      for (const row of added) {
-        console.log(`    + ${row.tag} ${row.pk}${rowHint(row.fields)}`);
-      }
-    }
-    if (removed.length > 0) {
-      console.log('  Removed rows:');
-      for (const row of removed) {
-        console.log(`    - ${row.tag} ${row.pk}${rowHint(row.fields)}`);
-      }
-    }
-    if (changed.length > 0) {
-      console.log('  Changed rows:');
-      for (const row of changed) {
-        console.log(`    ~ ${row.tag} ${row.pk}${rowHint(rowToFieldMapFromDiffs(row.diffs))}`);
-        for (const [col, { prev, pred }] of Object.entries(row.diffs)) {
-          console.log(`        ${col}: ${truncate(prev)} → ${truncate(pred)}`);
-        }
-      }
-    }
+    printAddedOrRemovedRows('Added rows', '+', added);
+    printAddedOrRemovedRows('Removed rows', '-', removed);
+    printChangedRows(changed);
     console.log();
   }
 }

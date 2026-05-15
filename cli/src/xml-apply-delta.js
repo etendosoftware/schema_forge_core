@@ -133,33 +133,17 @@ function stripDeltaMeta(deltaRow) {
  *
  * Returns the new array of rows. Input arrays are not mutated.
  */
-function applyTableDelta({
-  tag, prevRows, deltaTable, specName, ctx,
-}) {
-  const pk = TABLES.find(t => t.tag === tag).pk;
-  const naturalKeyFn = NATURAL_KEY_FNS[tag];
-
-  // Resolve which rows belong to specName (so we only touch those).
-  const isOwned = (row) => {
-    if (tag === 'ETGO_SF_SPEC') return row.NAME === specName;
-    if (tag === 'ETGO_SF_ENTITY') return ctx.specIdToName.get(row.ETGO_SF_SPEC_ID) === specName;
-    if (tag === 'ETGO_SF_FIELD') {
-      const parentNK = ctx.entityIdToNK.get(row.ETGO_SF_ENTITY_ID);
-      return parentNK != null && parentNK.startsWith(specName + '/');
-    }
-    return false;
-  };
-
-  // 1) Drop deletes (by PK). Deletes from the delta only ever reference
-  //    rows owned by this spec (neo-delta.js guarantees that).
-  const deletePks = new Set();
-  for (const d of deltaTable.deletes || []) {
-    if (d[pk]) deletePks.add(d[pk]);
+function isRowOwnedBySpec(tag, row, specName, ctx) {
+  if (tag === 'ETGO_SF_SPEC') return row.NAME === specName;
+  if (tag === 'ETGO_SF_ENTITY') return ctx.specIdToName.get(row.ETGO_SF_SPEC_ID) === specName;
+  if (tag === 'ETGO_SF_FIELD') {
+    const parentNK = ctx.entityIdToNK.get(row.ETGO_SF_ENTITY_ID);
+    return parentNK != null && parentNK.startsWith(specName + '/');
   }
+  return false;
+}
 
-  // 2) Build a natural-key → row index for OWNED rows. Foreign rows are kept
-  //    aside untouched. Drop foreign rows whose PK matches a delete (shouldn't
-  //    happen in practice, but we guard).
+function partitionPrevRows({ prevRows, pk, deletePks, isOwned, naturalKeyFn, ctx }) {
   const ownedByNK = new Map(); // naturalKey → prev row
   const passthrough = [];
   for (const row of prevRows) {
@@ -174,15 +158,13 @@ function applyTableDelta({
     }
     ownedByNK.set(nk, row);
   }
+  return { ownedByNK, passthrough };
+}
 
-  // 3) Apply upserts. For each, if its natural key matches an owned prev row,
-  //    MERGE the upsert's columns onto the prev row (delta wins per-column),
-  //    keeping the prev PK and any prev columns the delta does not touch.
-  //    This mirrors SQL UPDATE semantics: untouched columns survive. Otherwise,
-  //    append the upsert row using its delta-supplied PK.
+function applyUpsertsToOwned({ upserts, ownedByNK, pk }) {
   const resultOwned = [];
   const consumedNKs = new Set();
-  for (const upsert of deltaTable.upserts || []) {
+  for (const upsert of upserts) {
     const nk = upsert._naturalKey;
     const deltaCols = stripDeltaMeta(upsert);
     const match = nk != null ? ownedByNK.get(nk) : null;
@@ -195,6 +177,43 @@ function applyTableDelta({
       resultOwned.push(deltaCols);
     }
   }
+  return { resultOwned, consumedNKs };
+}
+
+/**
+ * Apply a per-table delta on top of an array of prev rows. The spec name is
+ * required so we only touch rows that belong to it; rows from other specs
+ * pass through untouched.
+ *
+ * Returns the new array of rows. Input arrays are not mutated.
+ */
+function applyTableDelta({
+  tag, prevRows, deltaTable, specName, ctx,
+}) {
+  const pk = TABLES.find(t => t.tag === tag).pk;
+  const naturalKeyFn = NATURAL_KEY_FNS[tag];
+  const isOwned = (row) => isRowOwnedBySpec(tag, row, specName, ctx);
+
+  // 1) Drop deletes (by PK). Deletes from the delta only ever reference
+  //    rows owned by this spec (neo-delta.js guarantees that).
+  const deletePks = new Set();
+  for (const d of deltaTable.deletes || []) {
+    if (d[pk]) deletePks.add(d[pk]);
+  }
+
+  // 2) Build a natural-key → row index for OWNED rows. Foreign rows are kept
+  //    aside untouched.
+  const { ownedByNK, passthrough } = partitionPrevRows({
+    prevRows, pk, deletePks, isOwned, naturalKeyFn, ctx,
+  });
+
+  // 3) Apply upserts. For each, if its natural key matches an owned prev row,
+  //    MERGE the upsert's columns onto the prev row (delta wins per-column),
+  //    keeping the prev PK and any prev columns the delta does not touch.
+  //    Otherwise, append the upsert row using its delta-supplied PK.
+  const { resultOwned, consumedNKs } = applyUpsertsToOwned({
+    upserts: deltaTable.upserts || [], ownedByNK, pk,
+  });
 
   // 4) Owned rows that were NOT consumed by an upsert and NOT deleted survive.
   //    (computeWindowDelta emits one upsert per live natural key + explicit

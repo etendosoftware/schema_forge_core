@@ -162,45 +162,12 @@ export function computeWindowDelta(args) {
 
   // ---- Index prev-XML ----------------------------------------------------
 
-  const prevSpecByName = indexByNaturalKey(prevSnapshot.spec, (r) => r.NAME);
-  // Entities & fields in prev-XML use NEO UUIDs for parent FKs, but we want
-  // to align by AD natural keys. So we re-index using a lookup from
-  // prev spec-id → spec name.
-  const prevSpecIdToName = new Map();
-  for (const row of prevSnapshot.spec) {
-    if (row.ETGO_SF_SPEC_ID && row.NAME) {
-      prevSpecIdToName.set(row.ETGO_SF_SPEC_ID, row.NAME);
-    }
-  }
-  const prevEntityIdToNatural = new Map(); // ETGO_SF_ENTITY_ID → naturalKey
-  const prevEntityByNatural = indexByNaturalKey(
-    prevSnapshot.entity,
-    (r) => {
-      const sName = prevSpecIdToName.get(r.ETGO_SF_SPEC_ID);
-      if (!sName || !r.AD_TAB_ID) return null;
-      const nk = entityNaturalKey(sName, r.AD_TAB_ID);
-      prevEntityIdToNatural.set(r.ETGO_SF_ENTITY_ID, nk);
-      return nk;
-    },
-  );
-  const prevFieldByNatural = indexByNaturalKey(
-    prevSnapshot.field,
-    (r) => {
-      const parentNK = prevEntityIdToNatural.get(r.ETGO_SF_ENTITY_ID);
-      if (!parentNK || !r.AD_COLUMN_ID) return null;
-      // parentNK = "<spec>/<tabId>". Append columnId.
-      return `${parentNK}/${r.AD_COLUMN_ID}`;
-    },
-  );
+  const { prevSpecByName, prevEntityByNatural, prevFieldByNatural } =
+    indexPrevSnapshot(prevSnapshot);
 
   // ---- Group AD columns by table ----------------------------------------
 
-  const colsByTable = new Map();
-  for (const col of adColumns) {
-    const tid = col.ad_table_id;
-    if (!colsByTable.has(tid)) colsByTable.set(tid, []);
-    colsByTable.get(tid).push(col);
-  }
+  const colsByTable = groupColumnsByTable(adColumns);
 
   // ---- Build SPEC upsert ------------------------------------------------
 
@@ -309,111 +276,25 @@ export function computeWindowDelta(args) {
 
   // ---- Apply visibility from contract (mirrors stepUpdateFieldVisibility) ----
 
-  const contractFields = extractFieldsFromContract(contract.backendContract);
-  const fieldDefaultExprs = buildFieldDefaultExprMap(decisions);
-
-  // push-to-neo's stepUpdateFieldVisibility resolves visibility PER-ENTITY:
-  // upsertSingleField runs WHERE sf.etgo_sf_entity_id = $1 AND c.columnname = $2.
-  // The same ad_column_id (e.g. IsCustomer on C_BPartner) can belong to
-  // several entities (businessPartner / customer / vendorCreditor) with
-  // DIFFERENT contract visibilities, so we MUST index by (entityId, ad_column_id)
-  // instead of by ad_column_id alone. We resolve column names → ad_column_ids
-  // per table (the columnname space is per-table), and entityId from tabId.
-  const tabIdToTableId = new Map();
-  for (const tab of adTabs) {
-    tabIdToTableId.set(String(tab.ad_tab_id), String(tab.ad_table_id));
-  }
-  const colIdByTableAndName = new Map();
-  for (const c of adColumns) {
-    const key = `${String(c.ad_table_id)}/${String(c.columnname).toLowerCase()}`;
-    colIdByTableAndName.set(key, c.ad_column_id);
-  }
-  const contractFieldByEntityAndColumn = new Map(); // `${entityId}/${adColumnId}` → visibility
-
-  // Build the GLOBAL contract columnname set (case-SENSITIVE). Mirrors
-  // stepExcludeNonContractFields, which builds
-  //   new Set(allFields.map(f => f.column))
-  // and checks with .has(row.columnname) — both case-sensitive. A field is
-  // excluded if its AD columnname is not present verbatim in any contract
-  // entity. Case mismatches (`C_Orderline_ID` AD vs `C_OrderLine_ID`
-  // contract) therefore intentionally fall through to "exclude". We mirror
-  // that bug-for-bug so the offline delta matches what push-to-neo writes.
-  const contractColumnSet = new Set(
-    contractFields.map((f) => String(f.column)),
-  );
-
-  for (const f of contractFields) {
-    if (!f.tabId) continue;
-    const tableId = tabIdToTableId.get(String(f.tabId));
-    if (!tableId) continue;
-    const adColumnId = colIdByTableAndName.get(
-      `${tableId}/${String(f.column).toLowerCase()}`,
-    );
-    if (!adColumnId) continue;
-
-    const entityNK = entityNaturalKey(specName, f.tabId);
-    const entityId = entityIdByNK.get(entityNK);
-    if (!entityId) continue;
-
-    const vis = mapVisibility(f.visibility);
-    const defaultKey = `${f.entityName}.${f.fieldName}`;
-    contractFieldByEntityAndColumn.set(`${entityId}/${String(adColumnId)}`, {
-      isIncluded: vis.isIncluded,
-      isReadOnly: vis.isReadOnly,
-      defaultValue: defaultKey in fieldDefaultExprs
-        ? fieldDefaultExprs[defaultKey]
-        : undefined,
-    });
-  }
-
-  // Index columns by ad_column_id for the exclude step.
-  const colMetaById = new Map();
-  for (const c of adColumns) {
-    colMetaById.set(String(c.ad_column_id), c);
-  }
-
-  // Now set ISINCLUDED/ISREADONLY/DEFAULTVALUE on each field row.
-  for (const row of fieldUpserts) {
-    const colHit = contractFieldByEntityAndColumn.get(
-      `${row.ETGO_SF_ENTITY_ID}/${String(row.AD_COLUMN_ID)}`,
-    );
-    if (colHit) {
-      row.ISINCLUDED = colHit.isIncluded;
-      row.ISREADONLY = colHit.isReadOnly;
-      if (colHit.defaultValue !== undefined && colHit.defaultValue !== null) {
-        row.DEFAULTVALUE = String(colHit.defaultValue);
-      }
-    } else {
-      // stepExcludeNonContractFields: a field is excluded only when its
-      // columnname does NOT appear in ANY contract entity. ISREADONLY is not
-      // touched here — it stays at the populateSpec default 'N'.
-      const colMeta = colMetaById.get(String(row.AD_COLUMN_ID));
-      if (colMeta && !contractColumnSet.has(String(colMeta.columnname))) {
-        row.ISINCLUDED = 'N';
-      }
-    }
-  }
+  applyContractVisibilityToFields({
+    specName,
+    contract,
+    decisions,
+    adTabs,
+    adColumns,
+    entityIdByNK,
+    fieldUpserts,
+  });
 
   // ---- Compute deletes from prev-XML -----------------------------------
 
-  // Live natural keys for THIS spec only — we never touch other specs.
-  const liveEntityKeys = new Set(entityUpserts.map((e) => e._naturalKey));
-  const liveFieldKeys  = new Set(fieldUpserts.map((f)  => f._naturalKey));
-
-  const entityDeletes = [];
-  for (const [nk, row] of prevEntityByNatural) {
-    if (!nk.startsWith(specName + '/')) continue;
-    if (!liveEntityKeys.has(nk)) {
-      entityDeletes.push({ _naturalKey: nk, ETGO_SF_ENTITY_ID: row.ETGO_SF_ENTITY_ID });
-    }
-  }
-  const fieldDeletes = [];
-  for (const [nk, row] of prevFieldByNatural) {
-    if (!nk.startsWith(specName + '/')) continue;
-    if (!liveFieldKeys.has(nk)) {
-      fieldDeletes.push({ _naturalKey: nk, ETGO_SF_FIELD_ID: row.ETGO_SF_FIELD_ID });
-    }
-  }
+  const { entityDeletes, fieldDeletes } = computeDeletesForSpec({
+    specName,
+    prevEntityByNatural,
+    prevFieldByNatural,
+    entityUpserts,
+    fieldUpserts,
+  });
 
   // Spec is never auto-deleted by push-to-neo (the operator removes a spec
   // by deleting the artifact dir). We still expose an empty array for
@@ -477,6 +358,156 @@ function resolveEntityOverrides(tab, contract) {
   }
   // Fall back: if no entity matches by tabName/tabId, use AD tab name.
   return { contractName: null, javaQualifier: undefined };
+}
+
+function indexPrevSnapshot(prevSnapshot) {
+  const prevSpecByName = indexByNaturalKey(prevSnapshot.spec, (r) => r.NAME);
+  // Entities & fields in prev-XML use NEO UUIDs for parent FKs, but we want
+  // to align by AD natural keys. So we re-index using a lookup from
+  // prev spec-id → spec name.
+  const prevSpecIdToName = new Map();
+  for (const row of prevSnapshot.spec) {
+    if (row.ETGO_SF_SPEC_ID && row.NAME) {
+      prevSpecIdToName.set(row.ETGO_SF_SPEC_ID, row.NAME);
+    }
+  }
+  const prevEntityIdToNatural = new Map(); // ETGO_SF_ENTITY_ID → naturalKey
+  const prevEntityByNatural = indexByNaturalKey(
+    prevSnapshot.entity,
+    (r) => {
+      const sName = prevSpecIdToName.get(r.ETGO_SF_SPEC_ID);
+      if (!sName || !r.AD_TAB_ID) return null;
+      const nk = entityNaturalKey(sName, r.AD_TAB_ID);
+      prevEntityIdToNatural.set(r.ETGO_SF_ENTITY_ID, nk);
+      return nk;
+    },
+  );
+  const prevFieldByNatural = indexByNaturalKey(
+    prevSnapshot.field,
+    (r) => {
+      const parentNK = prevEntityIdToNatural.get(r.ETGO_SF_ENTITY_ID);
+      if (!parentNK || !r.AD_COLUMN_ID) return null;
+      // parentNK = "<spec>/<tabId>". Append columnId.
+      return `${parentNK}/${r.AD_COLUMN_ID}`;
+    },
+  );
+  return { prevSpecByName, prevEntityByNatural, prevFieldByNatural };
+}
+
+function groupColumnsByTable(adColumns) {
+  const colsByTable = new Map();
+  for (const col of adColumns) {
+    const tid = col.ad_table_id;
+    if (!colsByTable.has(tid)) colsByTable.set(tid, []);
+    colsByTable.get(tid).push(col);
+  }
+  return colsByTable;
+}
+
+function buildContractVisibilityIndex({ specName, contractFields, fieldDefaultExprs, adTabs, adColumns, entityIdByNK }) {
+  // push-to-neo's stepUpdateFieldVisibility resolves visibility PER-ENTITY:
+  // upsertSingleField runs WHERE sf.etgo_sf_entity_id = $1 AND c.columnname = $2.
+  // The same ad_column_id (e.g. IsCustomer on C_BPartner) can belong to
+  // several entities (businessPartner / customer / vendorCreditor) with
+  // DIFFERENT contract visibilities, so we MUST index by (entityId, ad_column_id)
+  // instead of by ad_column_id alone.
+  const tabIdToTableId = new Map();
+  for (const tab of adTabs) {
+    tabIdToTableId.set(String(tab.ad_tab_id), String(tab.ad_table_id));
+  }
+  const colIdByTableAndName = new Map();
+  for (const c of adColumns) {
+    const key = `${String(c.ad_table_id)}/${String(c.columnname).toLowerCase()}`;
+    colIdByTableAndName.set(key, c.ad_column_id);
+  }
+  const result = new Map();
+  for (const f of contractFields) {
+    if (!f.tabId) continue;
+    const tableId = tabIdToTableId.get(String(f.tabId));
+    if (!tableId) continue;
+    const adColumnId = colIdByTableAndName.get(
+      `${tableId}/${String(f.column).toLowerCase()}`,
+    );
+    if (!adColumnId) continue;
+    const entityId = entityIdByNK.get(entityNaturalKey(specName, f.tabId));
+    if (!entityId) continue;
+    const vis = mapVisibility(f.visibility);
+    const defaultKey = `${f.entityName}.${f.fieldName}`;
+    result.set(`${entityId}/${String(adColumnId)}`, {
+      isIncluded: vis.isIncluded,
+      isReadOnly: vis.isReadOnly,
+      defaultValue: defaultKey in fieldDefaultExprs
+        ? fieldDefaultExprs[defaultKey]
+        : undefined,
+    });
+  }
+  return result;
+}
+
+function applyContractVisibilityToFields({ specName, contract, decisions, adTabs, adColumns, entityIdByNK, fieldUpserts }) {
+  const contractFields = extractFieldsFromContract(contract.backendContract);
+  const fieldDefaultExprs = buildFieldDefaultExprMap(decisions);
+
+  // Build the GLOBAL contract columnname set (case-SENSITIVE). Mirrors
+  // stepExcludeNonContractFields, which builds
+  //   new Set(allFields.map(f => f.column))
+  // and checks with .has(row.columnname) — both case-sensitive. A field is
+  // excluded if its AD columnname is not present verbatim in any contract
+  // entity. Case mismatches (`C_Orderline_ID` AD vs `C_OrderLine_ID`
+  // contract) therefore intentionally fall through to "exclude". We mirror
+  // that bug-for-bug so the offline delta matches what push-to-neo writes.
+  const contractColumnSet = new Set(contractFields.map((f) => String(f.column)));
+
+  const contractFieldByEntityAndColumn = buildContractVisibilityIndex({
+    specName, contractFields, fieldDefaultExprs, adTabs, adColumns, entityIdByNK,
+  });
+
+  // Index columns by ad_column_id for the exclude step.
+  const colMetaById = new Map();
+  for (const c of adColumns) {
+    colMetaById.set(String(c.ad_column_id), c);
+  }
+
+  for (const row of fieldUpserts) {
+    const colHit = contractFieldByEntityAndColumn.get(
+      `${row.ETGO_SF_ENTITY_ID}/${String(row.AD_COLUMN_ID)}`,
+    );
+    if (colHit) {
+      row.ISINCLUDED = colHit.isIncluded;
+      row.ISREADONLY = colHit.isReadOnly;
+      if (colHit.defaultValue !== undefined && colHit.defaultValue !== null) {
+        row.DEFAULTVALUE = String(colHit.defaultValue);
+      }
+    } else {
+      // stepExcludeNonContractFields: a field is excluded only when its
+      // columnname does NOT appear in ANY contract entity. ISREADONLY is not
+      // touched here — it stays at the populateSpec default 'N'.
+      const colMeta = colMetaById.get(String(row.AD_COLUMN_ID));
+      if (colMeta && !contractColumnSet.has(String(colMeta.columnname))) {
+        row.ISINCLUDED = 'N';
+      }
+    }
+  }
+}
+
+function computeDeletesForSpec({ specName, prevEntityByNatural, prevFieldByNatural, entityUpserts, fieldUpserts }) {
+  // Live natural keys for THIS spec only — we never touch other specs.
+  const liveEntityKeys = new Set(entityUpserts.map((e) => e._naturalKey));
+  const liveFieldKeys  = new Set(fieldUpserts.map((f)  => f._naturalKey));
+  const prefix = specName + '/';
+  const entityDeletes = [];
+  for (const [nk, row] of prevEntityByNatural) {
+    if (nk.startsWith(prefix) && !liveEntityKeys.has(nk)) {
+      entityDeletes.push({ _naturalKey: nk, ETGO_SF_ENTITY_ID: row.ETGO_SF_ENTITY_ID });
+    }
+  }
+  const fieldDeletes = [];
+  for (const [nk, row] of prevFieldByNatural) {
+    if (nk.startsWith(prefix) && !liveFieldKeys.has(nk)) {
+      fieldDeletes.push({ _naturalKey: nk, ETGO_SF_FIELD_ID: row.ETGO_SF_FIELD_ID });
+    }
+  }
+  return { entityDeletes, fieldDeletes };
 }
 
 function buildFieldDefaultExprMap(decisions) {
