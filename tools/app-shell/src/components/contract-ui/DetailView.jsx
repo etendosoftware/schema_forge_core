@@ -78,6 +78,12 @@ const LazyOcrInlineUploader = lazy(() => import('@/components/copilot/ocr/OcrInl
  * Evaluate a simple Etendo display-logic expression (@Field@='Value') against record data.
  * Returns true (visible) if the expression cannot be parsed or if the field is missing from data.
  */
+function sidePanelWrapperCls(hasSidePanel, linesLayout) {
+  if (hasSidePanel) return 'flex items-start gap-0';
+  if (linesLayout === 'inlineEditable') return 'flex flex-col';
+  return '';
+}
+
 function evalDisplayLogicRaw(expr, data) {
   if (!expr) return true;
   const clauses = [...expr.matchAll(/@(\w+)@\s*(!?=)\s*'([^']*)'/g)];
@@ -1871,7 +1877,7 @@ export function DetailView({
               </>
             );
           })()}
-          <div className={`${sidePanel ? 'flex items-start gap-0' : (linesLayout === 'inlineEditable' ? 'flex flex-col' : '')}`}>
+          <div className={sidePanelWrapperCls(!!sidePanel, linesLayout)}>
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} ${linesLayout === 'inlineEditable' ? 'flex flex-col' : 'space-y-2'}`}>
 
             {/* Principal + collapsed fields wrapped in a card */}

@@ -93,6 +93,7 @@ export default function OcrReviewModal({
       return [field.key, {
         enabled: hasUsableValue(field, initialValue),
         value: initialValue,
+        editing: false,
       }];
     }),
   ));
@@ -140,7 +141,7 @@ export default function OcrReviewModal({
 
         <div className="space-y-1 py-2">
           {fields.map((field) => {
-            const entry = state[field.key] || { enabled: false, value: null };
+            const entry = state[field.key] || { enabled: false, value: null, editing: false };
             const currentValue = formatValue(entry.value);
             const hasResolvedValue = hasUsableValue(field, entry.value);
             return (
@@ -151,9 +152,9 @@ export default function OcrReviewModal({
                   ? ui('ocrReviewVendorChecking')
                   : currentValue}
                 checked={Boolean(entry.enabled && hasResolvedValue)}
-                onToggle={(checked) => updateField(field.key, { enabled: checked })}
+                onToggle={(checked) => updateField(field.key, { enabled: checked, editing: checked ? state[field.key]?.editing : false })}
                 toggleDisabled={(field.key === 'vendor' && resolving) || !hasResolvedValue}
-                expanded={!entry.enabled || !hasResolvedValue}
+                expanded={!entry.enabled || !hasResolvedValue || entry.editing}
               >
                 <KindRenderer
                   mode="field"
@@ -164,7 +165,7 @@ export default function OcrReviewModal({
                   apiBaseUrl={apiBaseUrl}
                   contactsBase={contactsBase}
                   createComponent={field.createComponent ? CREATE_COMPONENTS[field.createComponent] : null}
-                  onChange={(value) => updateField(field.key, { value, enabled: true })}
+                  onChange={(value) => updateField(field.key, { value, enabled: true, editing: true })}
                 />
               </FieldRow>
             );

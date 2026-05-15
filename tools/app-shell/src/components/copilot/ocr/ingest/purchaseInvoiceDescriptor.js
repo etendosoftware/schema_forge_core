@@ -246,7 +246,7 @@ function buildHeaderBody(safe, bpId, partnerAddress, extras = {}) {
   if (nonBlank(invoiceDate)) headerBody.invoiceDate = toIsoDate(invoiceDate);
   headerBody.businessPartner = bpId || '$ref:bp';
   if (partnerAddress) headerBody.partnerAddress = partnerAddress;
-    return headerBody;
+  return headerBody;
 }
 
 /**

@@ -19,7 +19,7 @@ export default function OcrLinesReviewModal({ columns = [], lines = [], token, a
   const ui = useUI();
   const [rows, setRows] = useState(() => lines.map((line) => ({
     ...normaliseRow(line, columns),
-    _rowId: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2),
+    _rowId: crypto.randomUUID(),
   })));
 
   const update = (idx, patch) => {
