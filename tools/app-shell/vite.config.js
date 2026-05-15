@@ -87,7 +87,7 @@ function mcpWellKnownPlugin() {
 
         const sendJson = (payload) => {
           res.setHeader('Content-Type', 'application/json');
-          res.setHeader('Access-Control-Allow-Origin', '*');
+          res.setHeader('Access-Control-Allow-Origin', base);
           res.end(JSON.stringify(payload));
         };
 
