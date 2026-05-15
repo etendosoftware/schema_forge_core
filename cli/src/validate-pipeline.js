@@ -5,7 +5,7 @@
  * Pipeline completeness validator. Detects incomplete pipeline runs by checking
  * git-tracked artifact files for consistency across the pipeline stages.
  *
- * Failure modes (F1–F10) are defined in docs/plans/2026-04-16-pipeline-completeness-validator.md
+ * Failure modes are defined in docs/pipeline-validator-reference.md.
  *
  * Usage:
  *   node cli/src/validate-pipeline.js [--scope=name1,name2] [--staged] [--changed-since=<ref>] [--strict] [--format=text|json] [--skip=F4,F7]
@@ -15,7 +15,7 @@
  *   1 = blocking violations present
  */
 
-import { readFile, readdir, access } from 'node:fs/promises';
+import { readFile, readdir, access, stat } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -300,6 +300,10 @@ function compareSemver(a, b) {
   return 0;
 }
 
+function contractVersionAtLeast(contract, version) {
+  return compareSemver(contract?.version ?? '0.0.0', version) >= 0;
+}
+
 /**
  * F7: Window has decisions.json but the artifact name is listed in excludedEntities.
  */
@@ -488,6 +492,192 @@ async function ruleF12(artifactDir, artifactName) {
   return null;
 }
 
+/**
+ * F13: Window contract is missing apiPrediction.actions with edge cases (ETP-3956).
+ * Every action in apiPrediction must have at least 3 edge cases.
+ */
+async function ruleF13(artifactDir, artifactName) {
+  const contractPath = join(artifactDir, 'contract.json');
+  if (!(await fileExists(contractPath))) return null;
+  let contract;
+  try {
+    contract = JSON.parse(await readFile(contractPath, 'utf8'));
+  } catch {
+    return skipped('F13', artifactName, 'contract.json could not be parsed');
+  }
+
+  // Only enforce on contracts generated with action classification (v0.7.0+)
+  if (!contractVersionAtLeast(contract, '0.7.0')) return null;
+
+  const actions = contract?.apiPrediction?.actions ?? [];
+  for (const action of actions) {
+    if (!Array.isArray(action.edgeCases) || action.edgeCases.length < 3) {
+      return violation(
+        'F13', artifactName, 'BLOCK',
+        `Action '${action.name || action.field}' has fewer than 3 edge cases (${action.edgeCases?.length ?? 0})`,
+        `Every process/action must declare at least 3 edge cases. Update the action classification in generate-contract.js or add curated overrides.`,
+      );
+    }
+  }
+  return null;
+}
+
+/**
+ * F14: Window contract is missing formState section (ETP-3957).
+ * Contracts for windows with editable fields must include formState metadata.
+ */
+async function ruleF14(artifactDir, artifactName) {
+  const contractPath = join(artifactDir, 'contract.json');
+  if (!(await fileExists(contractPath))) return null;
+  let contract;
+  try {
+    contract = JSON.parse(await readFile(contractPath, 'utf8'));
+  } catch {
+    return skipped('F14', artifactName, 'contract.json could not be parsed');
+  }
+
+  if (!contractVersionAtLeast(contract, '0.7.0')) return null;
+
+  if (!contract.formState) {
+    return violation(
+      'F14', artifactName, 'BLOCK',
+      `Contract is missing formState section`,
+      `Re-run the contract generator to include formState metadata for agent form fidelity.`,
+    );
+  }
+  return null;
+}
+
+/**
+ * F15: Window contract is missing agentProfile section (ETP-3958).
+ * Contracts must include agentProfile for agent planning.
+ */
+async function ruleF15(artifactDir, artifactName) {
+  const contractPath = join(artifactDir, 'contract.json');
+  if (!(await fileExists(contractPath))) return null;
+  let contract;
+  try {
+    contract = JSON.parse(await readFile(contractPath, 'utf8'));
+  } catch {
+    return skipped('F15', artifactName, 'contract.json could not be parsed');
+  }
+
+  if (!contractVersionAtLeast(contract, '0.7.0')) return null;
+
+  if (!contract.agentProfile) {
+    return violation(
+      'F15', artifactName, 'BLOCK',
+      `Contract is missing agentProfile section`,
+      `Re-run the contract generator to include agentProfile metadata for agent planning.`,
+    );
+  }
+
+  const profile = contract.agentProfile;
+  const missingFormField = findMissingReference(
+    [
+      ...(profile.minimumCreate?.headerFields ?? []),
+      ...(profile.minimumCreate?.lineFields ?? []),
+    ],
+    collectFormStateFields(contract),
+  );
+  if (missingFormField) return agentProfileFieldViolation(artifactName, missingFormField);
+
+  const missingSelector = findMissingReference(
+    (profile.selectorContexts ?? []).map(selectorContextField).filter(Boolean),
+    new Set((contract.apiPrediction?.selectors ?? []).map(selector => selector.field)),
+  );
+  if (missingSelector) return agentProfileSelectorViolation(artifactName, missingSelector);
+
+  const missingAction = findMissingReference(
+    profile.actions ?? [],
+    new Set((contract.apiPrediction?.actions ?? []).map(action => action.name)),
+  );
+  if (missingAction) return agentProfileActionViolation(artifactName, missingAction);
+
+  return null;
+}
+
+function collectFormStateFields(contract) {
+  const formFields = new Set();
+  for (const entity of Object.values(contract.formState?.entities ?? {})) {
+    for (const field of Object.keys(entity.fields ?? {})) {
+      formFields.add(field);
+    }
+  }
+  return formFields;
+}
+
+function findMissingReference(references, knownReferences) {
+  return references.find(reference => !knownReferences.has(reference));
+}
+
+function selectorContextField(selector) {
+  return typeof selector === 'string' ? selector : selector?.field;
+}
+
+function agentProfileFieldViolation(artifactName, field) {
+  return violation(
+    'F15', artifactName, 'BLOCK',
+    `agentProfile.minimumCreate references non-existent field '${field}'`,
+    `Fix the agentProfile generator or curated profile to reference only existing formState fields.`,
+  );
+}
+
+function agentProfileSelectorViolation(artifactName, field) {
+  return violation(
+    'F15', artifactName, 'BLOCK',
+    `agentProfile.selectorContexts references non-existent selector '${field}'`,
+    `Fix the agentProfile generator or curated profile to reference only existing selectors.`,
+  );
+}
+
+function agentProfileActionViolation(artifactName, action) {
+  return violation(
+    'F15', artifactName, 'BLOCK',
+    `agentProfile.actions references non-existent action '${action}'`,
+    `Fix the agentProfile generator or curated profile to reference only existing actions.`,
+  );
+}
+
+/**
+ * F16: No manual edits detected under generated directories (ETP-3959).
+ * Checks that generated files have not been manually edited by comparing
+ * their modification time against the contract.json modification time.
+ * If generated files are newer than contract.json, they may have been manually edited.
+ */
+async function ruleF16(artifactDir, artifactName) {
+  const contractPath = join(artifactDir, 'contract.json');
+  const generatedDir = join(artifactDir, 'generated');
+
+  if (!(await fileExists(contractPath))) return null;
+  if (!(await dirExists(generatedDir))) return null;
+
+  const contractStat = await stat(contractPath);
+  const contractMtime = contractStat.mtimeMs;
+
+  // Check a few key generated files
+  const keyFiles = [
+    join(generatedDir, 'web', artifactName, 'index.jsx'),
+    join(generatedDir, 'web', artifactName, 'HeaderPage.jsx'),
+    join(generatedDir, 'web', artifactName, 'ListPage.jsx'),
+  ];
+
+  for (const filePath of keyFiles) {
+    if (await fileExists(filePath)) {
+      const fileStat = await stat(filePath);
+      // If generated file is more than 1 minute newer than contract, flag it
+      if (fileStat.mtimeMs > contractMtime + 60000) {
+        return violation(
+          'F16', artifactName, 'BLOCK',
+          `Generated file ${filePath.replace(artifactDir, '')} appears to have been manually edited (newer than contract.json)`,
+          `Never manually edit artifacts/*/generated/. Fix the generator (generate-frontend.js, resolve-curated.js) instead.`,
+        );
+      }
+    }
+  }
+  return null;
+}
+
 // ---------------------------------------------------------------------------
 // Artifact discovery
 // ---------------------------------------------------------------------------
@@ -519,6 +709,135 @@ async function getStagedArtifacts(root) {
   } catch {
     return null;
   }
+}
+
+async function loadRegistryContent(registryPath) {
+  try {
+    return await readFile(registryPath, 'utf-8');
+  } catch {
+    // Registry file not found or unreadable — F3/F10 checks will emit skipped entries.
+    return null;
+  }
+}
+
+async function resolveArtifactNames(scope, root, artifactsRoot) {
+  if (scope === 'staged') {
+    const staged = await getStagedArtifacts(root);
+    return staged ?? [];
+  }
+  if (Array.isArray(scope)) return scope;
+  return discoverArtifacts(artifactsRoot);
+}
+
+async function runEnabledChecks(checks, skipSet) {
+  const pendingChecks = checks.map(check => (skipSet.has(check.rule) ? null : check.run()));
+  return (await Promise.all(pendingChecks)).filter(Boolean);
+}
+
+async function runWindowChecks(artifactDir, artifactName, registryContent, root, skipSet) {
+  return runEnabledChecks([
+    { rule: 'F1', run: () => ruleF1(artifactDir, artifactName) },
+    { rule: 'F2', run: () => ruleF2(artifactDir, artifactName) },
+    { rule: 'F3', run: () => ruleF3(artifactDir, artifactName, registryContent) },
+    { rule: 'F4', run: () => ruleF4(artifactDir, artifactName) },
+    { rule: 'F5', run: () => ruleF5(artifactDir, artifactName) },
+    { rule: 'F6', run: () => ruleF6(artifactDir, artifactName) },
+    { rule: 'F7', run: () => ruleF7(artifactDir, artifactName) },
+    { rule: 'F10', run: () => ruleF10(artifactDir, artifactName, registryContent, root) },
+    { rule: 'F11', run: () => ruleF11(artifactDir, artifactName) },
+    { rule: 'F12', run: () => ruleF12(artifactDir, artifactName) },
+    { rule: 'F13', run: () => ruleF13(artifactDir, artifactName) },
+    { rule: 'F14', run: () => ruleF14(artifactDir, artifactName) },
+    { rule: 'F15', run: () => ruleF15(artifactDir, artifactName) },
+    { rule: 'F16', run: () => ruleF16(artifactDir, artifactName) },
+  ], skipSet);
+}
+
+async function runSingleCheck(rule, callback, skipSet) {
+  if (skipSet.has(rule)) return [];
+  const result = await callback();
+  return result ? [result] : [];
+}
+
+function tagArtifactKind(results, artifactKind) {
+  return results.map(result => ({ ...result, artifactKind }));
+}
+
+async function runAggregateSectionChecks(artifactDir, artifactName, skipSet) {
+  const f9Results = await runSingleCheck('F9', () => ruleF9(artifactDir, artifactName), skipSet);
+  const f4Results = await runSingleCheck('F4', () => ruleF4(artifactDir, artifactName), skipSet);
+  return [...f9Results, ...f4Results];
+}
+
+async function runChecksForArtifact({ kind, artifactDir, artifactName, registryContent, root, skipSet, strict }) {
+  if (kind === 'window') {
+    return tagArtifactKind(
+      await runWindowChecks(artifactDir, artifactName, registryContent, root, skipSet),
+      'window',
+    );
+  }
+  if (kind === 'report') {
+    return tagArtifactKind(
+      await runSingleCheck('F8', () => ruleF8(artifactDir, artifactName), skipSet),
+      'report',
+    );
+  }
+  if (kind === 'aggregate') {
+    return tagArtifactKind(
+      await runSingleCheck('F9', () => ruleF9(artifactDir, artifactName), skipSet),
+      'aggregate',
+    );
+  }
+  if (kind === 'aggregate-section') {
+    return tagArtifactKind(
+      await runAggregateSectionChecks(artifactDir, artifactName, skipSet),
+      'aggregate-section',
+    );
+  }
+  if (CUSTOM_ONLY_ARTIFACTS.has(artifactName)) {
+    return [skipped('CUSTOM-ONLY', artifactName, 'Intentional custom-only artifact — no contract pipeline')];
+  }
+  return [violation(
+    'UNKNOWN', artifactName, strict ? 'BLOCK' : 'WARN',
+    `Artifact directory '${artifactName}' has no recognizable pipeline files`,
+    `Investigate the directory contents and run the appropriate pipeline`,
+    { artifactKind: 'unknown' },
+  )];
+}
+
+function applyStrictMode(results, strict) {
+  return results.map(result => {
+    if (strict && result.severity === 'WARN') {
+      return { ...result, severity: 'BLOCK', strictPromoted: true };
+    }
+    return result;
+  });
+}
+
+function summarizeResults(processedResults, artifactNames) {
+  const violations = processedResults.filter(r => r.kind !== 'skipped' && r.severity !== 'SKIP');
+  const skippedEntries = processedResults.filter(r => r.kind === 'skipped' || r.severity === 'SKIP');
+  const blocking = violations.filter(v => v.severity === 'BLOCK').length;
+  const warnings = violations.filter(v => v.severity === 'WARN').length;
+  const artifactStatus = new Map(artifactNames.map(name => [name, 'ok']));
+
+  for (const entry of violations) artifactStatus.set(entry.artifact, 'violation');
+  for (const entry of skippedEntries) {
+    if (artifactStatus.get(entry.artifact) !== 'violation') artifactStatus.set(entry.artifact, 'skipped');
+  }
+
+  return {
+    violations,
+    skipped: skippedEntries,
+    summary: {
+      total: violations.length,
+      blocking,
+      warnings,
+      skipped: skippedEntries.length,
+      /** ok = number of artifacts with no violations and no skipped checks */
+      ok: [...artifactStatus.values()].filter(status => status === 'ok').length,
+    },
+  };
 }
 
 /**
@@ -573,159 +892,28 @@ export async function validatePipeline({
 } = {}) {
   const artifactsRoot = _artifactsRoot ?? join(root, 'artifacts');
   const resolvedRegistryPath = registryPath ?? join(root, 'tools', 'app-shell', 'src', 'windows', 'registry.js');
-
-  // Load registry content for F3 and F10
-  // null = unreadable (F3/F10 will emit skipped entries instead of false BLOCKs)
-  let registryContent = null;
-  try {
-    registryContent = await readFile(resolvedRegistryPath, 'utf-8');
-  } catch {
-    // Registry file not found or unreadable — F3/F10 checks will emit skipped entries
-    registryContent = null;
-  }
-
-  // Determine which artifacts to check
-  let artifactNames;
-  if (scope === 'staged') {
-    const staged = await getStagedArtifacts(root);
-    if (staged === null || staged.length === 0) {
-      // No staged artifacts — nothing to check
-      return {
-        violations: [],
-        skipped: [],
-        summary: { total: 0, blocking: 0, warnings: 0, skipped: 0, ok: 0 },
-      };
-    }
-    artifactNames = staged;
-  } else if (Array.isArray(scope)) {
-    artifactNames = scope;
-  } else {
-    artifactNames = await discoverArtifacts(artifactsRoot);
-  }
-
+  const registryContent = await loadRegistryContent(resolvedRegistryPath);
+  const artifactNames = await resolveArtifactNames(scope, root, artifactsRoot);
   const skipSet = new Set(skip.map(s => s.toUpperCase()));
-
   const allResults = []; // mix of violations and skipped entries
 
   for (const name of artifactNames) {
     const artifactDir = join(artifactsRoot, name);
-
-    // Verify directory exists (in staged mode the entry may have been deleted)
     if (!(await dirExists(artifactDir))) continue;
 
     const kind = await classifyArtifact(artifactDir);
-
-    switch (kind) {
-      case 'window': {
-        const checks = [
-          skipSet.has('F1') ? null : ruleF1(artifactDir, name),
-          skipSet.has('F2') ? null : ruleF2(artifactDir, name),
-          skipSet.has('F3') ? null : ruleF3(artifactDir, name, registryContent),
-          skipSet.has('F4') ? null : ruleF4(artifactDir, name),
-          skipSet.has('F5') ? null : ruleF5(artifactDir, name),
-          skipSet.has('F6') ? null : ruleF6(artifactDir, name),
-          skipSet.has('F7') ? null : ruleF7(artifactDir, name),
-          skipSet.has('F10') ? null : ruleF10(artifactDir, name, registryContent, root),
-          skipSet.has('F11') ? null : ruleF11(artifactDir, name),
-          skipSet.has('F12') ? null : ruleF12(artifactDir, name),
-        ];
-        const results = await Promise.all(checks);
-        for (const r of results) {
-          if (r) allResults.push({ ...r, artifactKind: 'window' });
-        }
-        break;
-      }
-      case 'report': {
-        if (!skipSet.has('F8')) {
-          const r = await ruleF8(artifactDir, name);
-          if (r) allResults.push({ ...r, artifactKind: 'report' });
-        }
-        break;
-      }
-      case 'aggregate': {
-        // aggregate has both aggregate-contract.json and generated/ → no F9 violation
-        // But still run F9 as a sanity check (should return null)
-        if (!skipSet.has('F9')) {
-          const r = await ruleF9(artifactDir, name);
-          if (r) allResults.push({ ...r, artifactKind: 'aggregate' });
-        }
-        break;
-      }
-      case 'aggregate-section': {
-        // F9: check if it has generated/ but no aggregate-contract.json
-        // NOTE: real aggregate sections (sales/, crm/) are intentional — they have generated/
-        // but have aggregate-contract.json in the actual repo, so F9 doesn't fire there.
-        // "pure" sections like sales/ that never had a contract are whitelisted by design
-        // because they don't trigger F9 (they have no contract files at all).
-        if (!skipSet.has('F9')) {
-          const r = await ruleF9(artifactDir, name);
-          if (r) allResults.push({ ...r, artifactKind: 'aggregate-section' });
-        }
-        // F4: also run here — a window artifact that lost its contract.json would land here
-        // if it still has decisions.json. We detect via decisions.json presence.
-        if (!skipSet.has('F4')) {
-          const r = await ruleF4(artifactDir, name);
-          if (r) allResults.push({ ...r, artifactKind: 'aggregate-section' });
-        }
-        break;
-      }
-      case 'unknown':
-        if (CUSTOM_ONLY_ARTIFACTS.has(name)) {
-          allResults.push(skipped('CUSTOM-ONLY', name, 'Intentional custom-only artifact — no contract pipeline'));
-          break;
-        }
-        // Unknown artifacts: emit as warning (or block with --strict)
-        allResults.push(violation(
-          'UNKNOWN', name, strict ? 'BLOCK' : 'WARN',
-          `Artifact directory '${name}' has no recognizable pipeline files`,
-          `Investigate the directory contents and run the appropriate pipeline`,
-          { artifactKind: 'unknown' },
-        ));
-        break;
-    }
+    allResults.push(...await runChecksForArtifact({
+      kind,
+      artifactDir,
+      artifactName: name,
+      registryContent,
+      root,
+      skipSet,
+      strict,
+    }));
   }
 
-  // If --strict, promote WARN violations to BLOCK
-  const processedResults = allResults.map(r => {
-    if (strict && r.severity === 'WARN') {
-      return { ...r, severity: 'BLOCK', strictPromoted: true };
-    }
-    return r;
-  });
-
-  // Separate by kind
-  const violations = processedResults.filter(r => r.kind !== 'skipped' && r.severity !== 'SKIP');
-  const skippedEntries = processedResults.filter(r => r.kind === 'skipped' || r.severity === 'SKIP');
-
-  const blocking = violations.filter(v => v.severity === 'BLOCK').length;
-  const warnings = violations.filter(v => v.severity === 'WARN').length;
-
-  // Compute ok count per-artifact (worst-case wins: violation > skipped > ok).
-  // This prevents ok from going negative when an artifact emits multiple violations.
-  /** @type {Map<string, 'violation'|'skipped'|'ok'>} */
-  const artifactStatus = new Map(artifactNames.map(n => [n, 'ok']));
-  for (const entry of violations) {
-    artifactStatus.set(entry.artifact, 'violation');
-  }
-  for (const entry of skippedEntries) {
-    if (artifactStatus.get(entry.artifact) !== 'violation') {
-      artifactStatus.set(entry.artifact, 'skipped');
-    }
-  }
-  const okCount = [...artifactStatus.values()].filter(s => s === 'ok').length;
-
-  return {
-    violations,
-    skipped: skippedEntries,
-    summary: {
-      total: violations.length,
-      blocking,
-      warnings,
-      skipped: skippedEntries.length,
-      /** ok = number of artifacts with no violations and no skipped checks */
-      ok: okCount,
-    },
-  };
+  return summarizeResults(applyStrictMode(allResults, strict), artifactNames);
 }
 
 // ---------------------------------------------------------------------------

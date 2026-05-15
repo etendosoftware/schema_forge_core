@@ -535,3 +535,40 @@ describe('--scope flag (validatePipeline API)', () => {
     assert.equal(opts.staged, true);
   });
 });
+
+// ─── Agentic Corrections Quality Gates (ETP-3959) ────────────────────────────
+
+describe('ETP-3959 quality gates', () => {
+  it('F13: action with fewer than 3 edge cases is blocked on v0.7.0+', async () => {
+    const result = await runOnFixtures(['window-f13-edge-cases']);
+    const f13 = result.violations.find(v => v.rule === 'F13');
+    assert.ok(f13, 'F13 should fire for actions with <3 edge cases');
+    assert.equal(f13.severity, 'BLOCK');
+  });
+
+  it('F13: skips enforcement on contracts below v0.7.0', async () => {
+    const result = await runOnFixtures(['window-f13-old-version']);
+    const f13 = result.violations.find(v => v.rule === 'F13');
+    assert.ok(!f13, 'F13 should not fire on old contracts');
+  });
+
+  it('F14: missing formState is blocked on v0.7.0+', async () => {
+    const result = await runOnFixtures(['window-f14-no-formstate']);
+    const f14 = result.violations.find(v => v.rule === 'F14');
+    assert.ok(f14, 'F14 should fire for missing formState');
+    assert.equal(f14.severity, 'BLOCK');
+  });
+
+  it('F15: missing agentProfile is blocked on v0.7.0+', async () => {
+    const result = await runOnFixtures(['window-f15-no-profile']);
+    const f15 = result.violations.find(v => v.rule === 'F15');
+    assert.ok(f15, 'F15 should fire for missing agentProfile');
+    assert.equal(f15.severity, 'BLOCK');
+  });
+
+  it('F15: profile referencing non-existent field is blocked', async () => {
+    const result = await runOnFixtures(['window-f15-bad-ref']);
+    const f15 = result.violations.find(v => v.rule === 'F15');
+    assert.ok(f15, 'F15 should fire for bad profile references');
+  });
+});
