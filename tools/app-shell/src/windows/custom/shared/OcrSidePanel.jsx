@@ -171,7 +171,7 @@ export default function OcrSidePanel(props) {
         <button
           type="button"
           className="rounded-md border border-gray-200 bg-white p-1.5 text-muted-foreground hover:text-foreground"
-          aria-label="More"
+          aria-label={ui('ocrSidePanelMore')}
         >
           <MoreVertical className="h-4 w-4" />
         </button>
