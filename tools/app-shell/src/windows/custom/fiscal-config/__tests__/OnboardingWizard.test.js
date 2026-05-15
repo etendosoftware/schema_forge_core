@@ -166,3 +166,34 @@ describe('OnboardingWizard — navigation', () => {
     assert.match(src, /onGoHome/);
   });
 });
+
+// Guards: applied step auto-checks cert status so "Upload certificate [PENDING]" is not
+// shown as pending when the user already uploaded it during the detail step.
+describe('OnboardingWizard — cert status fetch on applied step', () => {
+  it('imports useEffect', () => {
+    assert.match(src, /useEffect/);
+  });
+
+  it('fetches certificate status when step is applied', () => {
+    assert.match(src, /step.*applied[\s\S]*?certificate|certificate[\s\S]*?step.*applied/);
+  });
+
+  it('calls setCert with the loaded cert data when the API returns exists: true', () => {
+    assert.match(src, /data\?\.exists[\s\S]*?setCert|setCert[\s\S]*?data\?\.exists/);
+  });
+
+  it('passes orgId as a URL query param when fetching cert status', () => {
+    assert.match(src, /certificate\?orgId/);
+  });
+});
+
+// Guards: wizard summary (applied step) must not include removed placeholder items
+describe('OnboardingWizard — applied step NextItems', () => {
+  it('does not include "Schedule first test submission" text in the source', () => {
+    assert.doesNotMatch(src, /Schedule first test/);
+  });
+
+  it('does not include "Ask Copilot" text in the source', () => {
+    assert.doesNotMatch(src, /Ask Copilot/);
+  });
+});

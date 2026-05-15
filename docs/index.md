@@ -19,6 +19,12 @@
 |------|-------------|
 | [e2e-testing-guide.md](e2e-testing-guide.md) | E2E testing guide: discover with agent-browser, automate with Playwright |
 
+## Tooling
+
+| File | Description |
+|------|-------------|
+| [sonarqube-access.md](sonarqube-access.md) | **SonarQube quick access**: bypass RTK with `rtk proxy`, project keys, useful endpoints, local scanner fallback |
+
 ## Field & Pipeline Reference
 
 | File | Description |

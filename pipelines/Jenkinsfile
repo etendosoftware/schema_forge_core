@@ -147,7 +147,12 @@ pipeline {
                                     }
                                     echo "Epic Branch resolved: ${env.EPIC_BRANCH}"
                                 } else {
-                                    echo "No parent epic returned by Jira for ${taskName} (will fall back to develop)."
+                                    // TODO: Jira should always resolve the parent epic for a feature branch.
+                                    // If we hit this, the Jira ticket is missing the Epic Link — fix it there.
+                                    // Meanwhile, fall back to the current working epic so the build keeps
+                                    // matching what etendo_core hardcodes below.
+                                    env.EPIC_BRANCH = 'epic/ETP-3504'
+                                    echo "⚠️ No parent epic returned by Jira for ${taskName} — defaulting EPIC_BRANCH to ${env.EPIC_BRANCH}. Fix the Jira ticket's Epic Link."
                                 }
                             }
 

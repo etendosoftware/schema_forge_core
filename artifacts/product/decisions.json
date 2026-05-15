@@ -9,6 +9,8 @@
     "hidePrint": true,
     "hideMoreMenu": true,
     "contentBg": "bg-slate-50",
+    "attachments": true,
+    "customTabsAfterBottom": true,
     "detailEntity": null,
     "headerExtra": {
       "customForm": "ProductPriceBar"

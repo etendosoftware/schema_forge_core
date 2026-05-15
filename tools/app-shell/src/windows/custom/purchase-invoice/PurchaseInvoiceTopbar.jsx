@@ -114,7 +114,6 @@ export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUr
           invoiceId={data.id}
           invoiceData={data}
           specName="purchase-invoice"
-          token={token}
           apiBaseUrl={apiBaseUrl}
           onClose={handleModalClose}
         />

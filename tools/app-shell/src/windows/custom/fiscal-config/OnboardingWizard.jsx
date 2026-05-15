@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUI, useLocaleSwitch } from '@/i18n';
 import { fetchById, neoBase } from '@/components/related-documents/helpers.js';
@@ -231,6 +231,21 @@ export default function OnboardingWizard({ orgId, orgName, token, apiBaseUrl, on
   const tbaiRef = useRef(null);
   const verifactuRef = useRef(null);
 
+  useEffect(() => {
+    if (step !== 'applied') return;
+    if (!orgId || !token || !system) return;
+    const certCtx = getCertificateContext(system);
+    if (!certCtx) return;
+    fetch(`${neoBase(apiBaseUrl)}/certificate?orgId=${encodeURIComponent(orgId)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data?.exists) setCert({ name: ui('fiscal.cert.loaded'), validTo: data.validTo ?? '' });
+      })
+      .catch(() => {});
+  }, [step, orgId, token, apiBaseUrl, system]);
+
   const t = TERRITORIES[selectedTerritory];
 
   const canContinueSubQ = t && (
@@ -393,18 +408,6 @@ export default function OnboardingWizard({ orgId, orgName, token, apiBaseUrl, on
                   onClick={() => setCertModalOpen(true)}
                 />
               )}
-              <NextItem
-                icon="📅"
-                title={ui('fiscal.onboarding.next.test.title')}
-                desc={ui('fiscal.onboarding.next.test.desc')}
-                onClick={onComplete}
-              />
-              <NextItem
-                icon="✨"
-                title={ui('fiscal.onboarding.next.copilot.title')}
-                desc={ui('fiscal.onboarding.next.copilot.desc')}
-                onClick={onComplete}
-              />
             </div>
           </div>
         </ScreenLayout>

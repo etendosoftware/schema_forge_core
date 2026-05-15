@@ -9,11 +9,22 @@
     "notesField": "description",
     "hideDeleteWhenComplete": true,
     "hidePrint": true,
+    "noHeaderBorder": true,
     "customComponents": {
       "headerTable": "InvoiceHeaderTable",
       "bottomSection": "InvoiceBottomPanel",
       "topbarRight": "InvoiceTopbarExtra"
     },
+    "linesLayout": "inlineEditable",
+    "extraTabs": [
+      {
+        "key": "sif",
+        "labelKey": "sifDataTabs.sectionTitle",
+        "component": "SifTab",
+        "importFrom": "@/windows/custom/shared/SifTab.jsx",
+        "placement": "tab"
+      }
+    ],
     "menuActions": [
       {
         "key": "reactivate",

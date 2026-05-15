@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Search, X, Loader2, Check } from 'lucide-react';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
+import { formatCurrency } from '@/lib/formatCurrency.js';
+import { useCurrency } from '@/hooks/useCurrency.jsx';
 
 const PAGE_SIZE = 30;
 
@@ -86,6 +88,8 @@ export default function ProductSearchDrawer({
   const activeItemRef = useRef(null);
   const fetchTimer = useRef(null);
   const abortRef = useRef(null);
+  const sessionCurrency = useCurrency();
+  const currency = selectorContext?.currency ?? sessionCurrency;
   const selectorContextRef = useRef(selectorContext);
   // Tracks the raw server-side offset (total rows consumed), independent of dedup count.
   const rawOffsetRef = useRef(0);
@@ -255,7 +259,9 @@ export default function ProductSearchDrawer({
   const getPrice = (item) => {
     const p = item.standardPrice || item.listPrice || item.price;
     if (p == null) return null;
-    return typeof p === 'number' ? p.toFixed(2) : String(p);
+    const num = typeof p === 'number' ? p : parseFloat(p);
+    if (isNaN(num)) return String(p);
+    return currency ? formatCurrency(currency, num) : num.toFixed(2);
   };
   const getImageId = (item) => item.image || null;
   const getImage = (item) => item.imageUrl || item.imageurl || null;
@@ -268,6 +274,7 @@ export default function ProductSearchDrawer({
 
       <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh]" onClick={onClose}>
         <div
+          data-testid="product-search-drawer"
           className="w-full max-w-xl bg-background rounded-xl border border-border shadow-2xl flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={handleKeyDown}
@@ -280,6 +287,7 @@ export default function ProductSearchDrawer({
             <Search className="h-4 w-4 text-muted-foreground shrink-0" />
             <input
               ref={inputRef}
+              data-testid="product-search-input"
               type="text"
               value={query}
               onChange={(e) => { setQuery(e.target.value); doFetch(e.target.value, 0); }}
@@ -320,6 +328,7 @@ export default function ProductSearchDrawer({
                     <li key={item.id} ref={isActive ? activeItemRef : null}>
                       <button
                         type="button"
+                        data-testid={`product-search-option-${item.id}`}
                         onClick={() => handleSelect(item)}
                         className={`w-full text-left px-4 py-2 transition-colors cursor-pointer flex items-center gap-3 border-l-2 ${
                           isActive

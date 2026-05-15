@@ -121,6 +121,8 @@ describe('resolveCurated', () => {
       summaryFields: ['grandTotal'],
       salesTheme: false,
       noHeaderBorder: true,
+      // ETP-3914 — rowQuickActions intentionally absent: feature is ON by default,
+      // contract only carries the block when the user overrides defaults.
     });
 
     assert.equal(schema.entities.length, 1);
@@ -166,5 +168,88 @@ describe('resolveCurated', () => {
       impactIfOmitted: 'Customer defaults would not be applied.',
       translated: { expression: 'customerChanged' },
     }]);
+  });
+});
+
+// ─── F3 refactor — lookupDrawer / lookupTitle / onSelectMappings / displayFromCatalog ───
+describe('resolveCurated — field-level drawer + display passthroughs (F3)', () => {
+  const schemaRaw = {
+    window: { id: '600', name: 'Internal Consumption' },
+    entities: [{
+      name: 'mInternalConsumptionLine',
+      tableName: 'M_InternalConsumptionLine',
+      tabId: '10',
+      tabName: 'Lines',
+      fields: [
+        { name: 'product', columnName: 'M_Product_ID', label: 'Product', type: 'foreignKey',
+          visibility: 'editable', reference: { type: 'Search', targetTable: 'M_Product' } },
+        { name: 'displayedProduct', columnName: 'DisplayedProduct_ID', label: 'Displayed Product',
+          type: 'foreignKey', visibility: 'editable',
+          reference: { type: 'Search', targetTable: 'M_Product' } },
+        { name: 'plain', columnName: 'PlainCol', label: 'Plain', type: 'string', visibility: 'editable' },
+      ],
+    }],
+  };
+
+  const decisions = {
+    version: 2,
+    window: { name: 'Internal Consumption' },
+    entities: {
+      mInternalConsumptionLine: {
+        name: 'internalConsumptionLine',
+        fields: {
+          product: {
+            lookupDrawer: 'internal-consumption-product',
+            lookupTitle: 'Product + Warehouse',
+            onSelectMappings: [
+              { from: 'M_Locator_ID', to: 'storageBin' },
+              { from: 'M_Product_ID', to: 'product' },
+            ],
+          },
+          displayedProduct: { displayFromCatalog: true },
+          plain: {},
+        },
+      },
+    },
+    rules: {},
+  };
+
+  it('passes lookupDrawer + lookupTitle from decisions to curated field', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const product = schema.entities[0].fields.find(f => f.name === 'product');
+    assert.equal(product.lookupDrawer, 'internal-consumption-product');
+    assert.equal(product.lookupTitle, 'Product + Warehouse');
+  });
+
+  it('passes onSelectMappings array from decisions to curated field', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const product = schema.entities[0].fields.find(f => f.name === 'product');
+    assert.deepEqual(product.onSelectMappings, [
+      { from: 'M_Locator_ID', to: 'storageBin' },
+      { from: 'M_Product_ID', to: 'product' },
+    ]);
+  });
+
+  it('passes displayFromCatalog from decisions to curated field', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const dp = schema.entities[0].fields.find(f => f.name === 'displayedProduct');
+    assert.equal(dp.displayFromCatalog, true);
+  });
+
+  it('does NOT add any of the four properties when not declared', async () => {
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, decisions);
+    const plain = schema.entities[0].fields.find(f => f.name === 'plain');
+    assert.equal(plain.lookupDrawer, undefined);
+    assert.equal(plain.lookupTitle, undefined);
+    assert.equal(plain.onSelectMappings, undefined);
+    assert.equal(plain.displayFromCatalog, undefined);
+  });
+
+  it('ignores empty onSelectMappings array (does not set property)', async () => {
+    const emptyDecisions = JSON.parse(JSON.stringify(decisions));
+    emptyDecisions.entities.mInternalConsumptionLine.fields.product.onSelectMappings = [];
+    const { schema } = await resolveCurated(schemaRaw, { rules: [] }, emptyDecisions);
+    const product = schema.entities[0].fields.find(f => f.name === 'product');
+    assert.equal(product.onSelectMappings, undefined);
   });
 });

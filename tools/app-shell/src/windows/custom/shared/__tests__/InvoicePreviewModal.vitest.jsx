@@ -26,11 +26,32 @@ vi.mock('@/lib/statusBadge.js', () => ({
 }));
 
 vi.mock('@/windows/custom/shared/InvoicePaymentModal.jsx', () => ({
-  default: () => <div data-testid="payment-modal">Payment Modal</div>,
+  default: (props) => (
+    <div
+      data-testid="payment-modal"
+      data-has-token={Object.prototype.hasOwnProperty.call(props, 'token') ? 'true' : 'false'}
+    >
+      Payment Modal
+    </div>
+  ),
 }));
 
 vi.mock('@/windows/custom/shared/useInvoicePdf.js', () => ({
-  useInvoicePdf: () => ({ pdfUrl: null, loading: false, error: null }),
+  useInvoicePdf: () => ({ pdfUrl: null, pdfBlob: null, loading: false, error: null }),
+}));
+
+vi.mock('@/windows/custom/shared/usePreviewAttachment.js', () => ({
+  usePreviewAttachment: () => ({
+    storedFile: null,
+    isBusy: false,
+    storeFailed: false,
+    storeFile: vi.fn(),
+    storeBlob: vi.fn(),
+    storeUrl: vi.fn(),
+    deleteFile: vi.fn(),
+  }),
+  ACCEPTED_TYPES: { 'application/pdf': 'pdf', 'image/png': 'image' },
+  ACCEPT_ATTR: 'application/pdf,image/png',
 }));
 
 vi.mock('@/windows/custom/shared/PdfViewer.jsx', () => ({
@@ -169,13 +190,19 @@ describe('InvoicePreviewModal', () => {
     expect(screen.getByText('invoicePreviewEdit')).toBeInTheDocument();
   });
 
-  it('shows Send to SIF in the preview actions when the fiscal profile enables it', () => {
+  it('opens the payment modal without passing a token prop', () => {
     renderPreview();
+    fireEvent.click(screen.getAllByText('invoicePreviewAddPayment')[0]);
+    expect(screen.getByTestId('payment-modal')).toHaveAttribute('data-has-token', 'false');
+  });
+
+  it('shows Send to SIF in the preview actions when the fiscal profile enables it', () => {
+    renderPreview({ specName: 'sales-invoice' });
     expect(screen.getByText('sendToSif')).toBeInTheDocument();
   });
 
   it('opens the SIF confirmation modal from the preview action', () => {
-    renderPreview();
+    renderPreview({ specName: 'sales-invoice' });
     fireEvent.click(screen.getByText('sendToSif'));
     expect(screen.getByText('sendToSifTitle')).toBeInTheDocument();
     expect(screen.getByText('sendToSifBodyTbai')).toBeInTheDocument();
@@ -209,14 +236,14 @@ describe('InvoicePreviewModal', () => {
         json: () => Promise.resolve({ response: { data: [] } }),
       });
 
-    renderPreview();
+    renderPreview({ specName: 'sales-invoice' });
     fireEvent.click(screen.getByText('sendToSif'));
     fireEvent.click(screen.getByText('sendToSifConfirm'));
 
     await screen.findByRole('button', { name: 'close' });
 
-    expect(screen.getByText(/Purchase Invoice INV-001/i)).toBeInTheDocument();
-    expect(dispatchSpy).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'purchase-invoice:invoice-updated' }));
+    expect(screen.getByText(/Sales Invoice INV-001/i)).toBeInTheDocument();
+    expect(dispatchSpy).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'sales-invoice:invoice-updated' }));
   });
 
   it('shows empty messages panel when messages tab is clicked', () => {
@@ -233,6 +260,6 @@ describe('InvoicePreviewModal', () => {
 
   it('renders drop zone for purchase invoice', () => {
     renderPreview({ specName: 'purchase-invoice' });
-    expect(screen.getByText('invoicePreviewUploadYourDocument')).toBeInTheDocument();
+    expect(screen.getByTestId('preview-drop-zone')).toBeInTheDocument();
   });
 });

@@ -48,7 +48,7 @@ test.describe('Sales Invoice — overdue filter', () => {
 
     await expect(
       page.locator('[role="dialog"], [data-radix-popper-content-wrapper]')
-        .locator('button', { hasText: /Total Pendiente|Outstanding Amount/ })
+        .locator('button', { hasText: /Pendiente de pago|Pending Payment/ })
         .first()
     ).toBeVisible({ timeout: 3_000 });
   });

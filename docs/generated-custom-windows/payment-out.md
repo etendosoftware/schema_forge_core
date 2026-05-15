@@ -19,8 +19,10 @@ Use this window to register and complete outgoing payments to vendors or other p
 - **Visibility:** visible in the Finance menu through `tools/app-shell/src/menu.json`.
 - **Implementation type:** custom app-shell route. `tools/app-shell/src/windows/registry.js` resolves `payment-out` to `tools/app-shell/src/windows/custom/payment-out/index.jsx`, which wraps the generated payment-out app from `artifacts/payment-out/generated/web/payment-out/index.jsx`.
 - **Window shape:** master-child. The primary record is the payment header (`header` / generated `finPayment` page), and the main child working surface is **Lines**.
+- Lines tab layout: this window uses `window.linesLayout = "inlineEditable"`. Rows render at 40 px with pencil and trash hover-action icons on the right; clicking pencil flips the row into inline edit; trash removes the row after confirmation. When the add-row form is open, existing rows stay in `InlineLinesPanel` so column widths remain stable; the form renders in a header-hidden `DataTable` below that handles callouts, selectors, and focus. Clicking "Añadir línea" while a form is already open saves the current line and opens a fresh form scrolled into view. See `docs/ui-customization.md` section 13 for the full reference.
 - **Current visible detail composition:** the generated page is list/detail based, and the custom wrapper keeps the header plus **Lines**, uses `description` as notes, removes generated secondary tabs, and adds a custom **Related Documents** tab.
 - **Contract-backed secondary surfaces:** the payment-out contract and generated API still define **Execution History**, **Exchange rates**, **Used Credit Source**, and **Accounting** entities even though the custom wrapper does not currently expose those generated secondary tabs in the app-shell detail view.
+- An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
 
 ## Reactive behavior and dependencies
 
@@ -51,6 +53,7 @@ Use this window to register and complete outgoing payments to vendors or other p
 6. Move a record through statuses where possible and confirm **Add Details**, **Payment Process**, and **Execute Payment** appear only in the documented lifecycle states.
 7. Verify whether **Execution History**, **Exchange rates**, **Used Credit Source**, and **Accounting** are reachable anywhere in the current payment-out detail UI. If they are not visible, record that as a confirmed app-shell gap rather than assuming backend support is enough.
 8. If multi-currency or credit scenarios are available, verify whether exchange-rate rows, used-credit rows, header totals, and accounting review data update after line or lifecycle changes.
+9. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 
@@ -58,3 +61,4 @@ Use this window to register and complete outgoing payments to vendors or other p
 - Current payment-out UI composition is directly evidenced by `tools/app-shell/src/windows/custom/payment-out/index.jsx`, `tools/app-shell/src/windows/custom/payment-out/RelatedDocuments.jsx`, and `artifacts/payment-out/generated/web/payment-out/FinPaymentPage.jsx` plus `index.jsx`.
 - Payment fields, child entities, selector endpoints, action endpoints, callouts, display logic, and read-only/computed behavior are contract-backed in `artifacts/payment-out/contract.json` and shaped by `artifacts/payment-out/decisions.json`.
 - No payment-out-specific browser or node test was found that proves end-to-end outgoing-payment lifecycle behavior, multi-currency recalculation, credit usage, posting effects, or exposure of the contract-defined secondary surfaces.
+- The generated `FinPaymentPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `FIN_Payment` AD table.- **ETP-3995 — Related Documents tab i18n**: The generated page file now uses `labelKey: 'relatedDocuments'` in the `customTabs` prop instead of a hardcoded `label: 'Related Documents'` string, so the tab title renders via the active UI language (e.g. "Documentos relacionados" in Spanish) regardless of the browser locale.

@@ -6,9 +6,11 @@
     "breadcrumb": "Inventory / Internal Consumption",
     "statusField": "status",
     "customComponents": {
-      "moreMenuContent": "InternalConsumptionActions"
+      "moreMenuContent": "InternalConsumptionActions",
+      "bottomSection": "InternalConsumptionBottomPanel"
     },
-    "dateFilterKey": "movementDate"
+    "dateFilterKey": "movementDate",
+    "linesLayout": "inlineEditable"
   },
   "entities": {
     "header": {
@@ -86,7 +88,16 @@
         "product": {
           "grid": true,
           "searchable": true,
-          "lookup": true
+          "lookup": true,
+          "lookupDrawer": "internal-consumption-product",
+          "lookupTitle": "Product + Warehouse",
+          "onSelectMappings": [
+            {
+              "from": "_aux._LOC",
+              "to": "storageBin",
+              "labelFrom": ["warehouse", "warehouse$_identifier", "storageBin"]
+            }
+          ]
         },
         "movementQuantity": {
           "grid": true
@@ -98,6 +109,7 @@
         "storageBin": {
           "grid": true,
           "label": "Warehouse",
+          "displayFromCatalog": true,
           "reason": "Each warehouse has exactly 1 storage bin; shown as warehouse selector for user clarity"
         },
         "description": {

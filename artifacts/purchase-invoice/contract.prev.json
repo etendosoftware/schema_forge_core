@@ -1,8 +1,8 @@
 {
   "version": "0.27.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-08T15:16:17.377Z",
-  "checksum": "d8491e14e014b5f4",
+  "updatedAt": "2026-05-14T13:06:26.128Z",
+  "checksum": "b9d33d8f97572db2",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -11,6 +11,10 @@
       "category": "purchases",
       "notesField": "description",
       "relatedDocuments": true,
+      "customComponents": {
+        "headerTable": "InvoiceHeaderTable",
+        "bottomSection": "PurchaseInvoiceBottomPanel"
+      },
       "menuActions": [
         {
           "key": "reactivate",
@@ -37,8 +41,22 @@
         }
       },
       "dateFilterKey": "invoiceDate",
+      "noHeaderBorder": true,
       "lineEntityConfig": "invoice",
-      "layoutType": "default"
+      "extraTabs": [
+        {
+          "key": "sif",
+          "labelKey": "sifDataTabs.sectionTitle",
+          "component": "SifTab",
+          "importFrom": "@/windows/custom/shared/SifTab.jsx",
+          "placement": "tab"
+        }
+      ],
+      "sendDocument": {
+        "allowEmail": false
+      },
+      "layoutType": "default",
+      "linesLayout": "inlineEditable"
     },
     "entities": {
       "header": {
@@ -3700,6 +3718,10 @@
       "category": "purchases",
       "notesField": "description",
       "relatedDocuments": true,
+      "customComponents": {
+        "headerTable": "InvoiceHeaderTable",
+        "bottomSection": "PurchaseInvoiceBottomPanel"
+      },
       "menuActions": [
         {
           "key": "reactivate",
@@ -3726,7 +3748,21 @@
         }
       },
       "dateFilterKey": "invoiceDate",
-      "lineEntityConfig": "invoice"
+      "noHeaderBorder": true,
+      "lineEntityConfig": "invoice",
+      "extraTabs": [
+        {
+          "key": "sif",
+          "labelKey": "sifDataTabs.sectionTitle",
+          "component": "SifTab",
+          "importFrom": "@/windows/custom/shared/SifTab.jsx",
+          "placement": "tab"
+        }
+      ],
+      "sendDocument": {
+        "allowEmail": false
+      },
+      "linesLayout": "inlineEditable"
     },
     "entities": {
       "header": {

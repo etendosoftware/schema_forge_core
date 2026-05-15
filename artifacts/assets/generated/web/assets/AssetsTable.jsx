@@ -1,4 +1,5 @@
-import { DataTable } from '@/components/contract-ui';
+import { forwardRef } from 'react';
+import { DataTable, InlineLinesPanel } from '@/components/contract-ui';
 
 function renderDepreciationProgress(row) {
   const pct = row.assetValue > 0
@@ -18,20 +19,39 @@ function renderDepreciationProgress(row) {
 
 // @sf-generated-start columns:assets
 const columns = [
-  { key: 'name', column: 'Name', type: 'string', label: 'Name' },
-  { key: 'assetCategory', column: 'A_Asset_Group_ID', type: 'selector', label: 'Asset Category' },
+  { key: 'name', column: 'Name', type: 'string', label: 'Name', required: true },
+  { key: 'assetCategory', column: 'A_Asset_Group_ID', type: 'selector', label: 'Asset Category', required: true },
   { key: 'purchaseDate', column: 'Datepurchased', type: 'date', label: 'Purchase Date' },
   { key: 'depreciationStartDate', column: 'Amortizationstartdate', type: 'date', label: 'Depreciation Start Date' },
   { key: 'assetValue', column: 'AssetValueAmt', type: 'amount', label: 'Asset Value', summable: true },
   { key: 'depreciatedValue', column: 'Depreciatedvalue', type: 'amount', label: 'Depreciated Value', summable: true },
-  { key: 'fullyDepreciated', column: 'IsFullyDepreciated', type: 'boolean', label: 'Fully Depreciated', render: renderDepreciationProgress },
+  { key: 'fullyDepreciated', column: 'IsFullyDepreciated', type: 'boolean', label: 'Fully Depreciated', render: renderDepreciationProgress, required: true },
 ];
 // @sf-generated-end columns:assets
 
 const filters = ['searchKey', 'name', 'assetCategory', 'depreciate', 'fullyDepreciated'];
 
 // @sf-generated-start component:AssetsTable
-export default function AssetsTable(props) {
+const AssetsTable = forwardRef(function AssetsTable(props, ref) {
+  // Inline-editable layout always uses InlineLinesPanel for existing rows so column
+  // widths (flex layout) never shift when the add-row form opens. When addRow is
+  // active we render a header-hidden, data-hidden DataTable below for just the
+  // add-row form — it owns callouts, selectors, validation and the imperative flush
+  // ref. The ref is forwarded to InlineLinesPanel so DetailView can flush pending
+  // inline edits on global save.
+  if (props.linesLayout === 'inlineEditable') {
+    if (props.addRow?.active) {
+      return (
+        <>
+          <InlineLinesPanel ref={ref} columns={columns} {...props} addRow={undefined} />
+          <DataTable columns={columns} filters={filters} {...props} hideHeader hideDataRows />
+        </>
+      );
+    }
+    return <InlineLinesPanel ref={ref} columns={columns} {...props} />;
+  }
   return <DataTable columns={columns} filters={filters} {...props} />;
-}
+});
+
+export default AssetsTable;
 // @sf-generated-end component:AssetsTable

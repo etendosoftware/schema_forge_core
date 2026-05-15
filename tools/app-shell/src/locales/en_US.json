@@ -13652,7 +13652,8 @@
       "label": "Country and Region"
     },
     "Business Partner": {
-      "label": "Business Partner"
+      "label": "Business Partner",
+      "newLabel": "New business partner"
     },
     "General Ledger Configuration": {
       "label": "General Ledger Configuration"
@@ -13685,7 +13686,8 @@
       "label": "Warehouse and Storage Bins"
     },
     "Product": {
-      "label": "Product"
+      "label": "Product",
+      "newLabel": "New product"
     },
     "Payment Term": {
       "label": "Payment Term"
@@ -13694,10 +13696,12 @@
       "label": "Shipping Company"
     },
     "Sales Order": {
-      "label": "Sales Order"
+      "label": "Sales Order",
+      "newLabel": "New order"
     },
     "Product Category": {
-      "label": "Product Category"
+      "label": "Product Category",
+      "newLabel": "New category"
     },
     "Price List": {
       "label": "Price List"
@@ -13730,28 +13734,35 @@
       "label": "Report and Process"
     },
     "Sales Invoice": {
-      "label": "Sales Invoice"
+      "label": "Sales Invoice",
+      "newLabel": "New invoice"
     },
     "Physical Inventory": {
-      "label": "Physical Inventory"
+      "label": "Physical Inventory",
+      "newLabel": "New inventory"
     },
     "Goods Shipment": {
-      "label": "Goods Shipment"
+      "label": "Goods Shipment",
+      "newLabel": "New shipment"
     },
     "Goods Movements": {
-      "label": "Goods Movements"
+      "label": "Goods Movements",
+      "newLabel": "New movement"
     },
     "Title": {
       "label": "Title"
     },
     "Purchase Order": {
-      "label": "Purchase Order"
+      "label": "Purchase Order",
+      "newLabel": "New order"
     },
     "Purchase Invoice": {
-      "label": "Purchase Invoice"
+      "label": "Purchase Invoice",
+      "newLabel": "New invoice"
     },
     "Goods Receipt": {
-      "label": "Goods Receipt"
+      "label": "Goods Receipt",
+      "newLabel": "New receipt"
     },
     "Payment Method": {
       "label": "Payment Method"
@@ -13865,7 +13876,8 @@
       "label": "Amortization"
     },
     "Assets": {
-      "label": "Assets"
+      "label": "Assets",
+      "newLabel": "New asset"
     },
     "Discounts and Promotions": {
       "label": "Discounts and Promotions"
@@ -13931,7 +13943,8 @@
       "label": "Maintenance Order"
     },
     "Internal Consumption": {
-      "label": "Internal Consumption"
+      "label": "Internal Consumption",
+      "newLabel": "New consumption"
     },
     "Budget": {
       "label": "Budget"
@@ -14003,7 +14016,8 @@
       "label": "Organization Type"
     },
     "Return Material Receipt": {
-      "label": "Return Material Receipt"
+      "label": "Return Material Receipt",
+      "newLabel": "New return receipt"
     },
     "Landed Cost Distribution Algorithm": {
       "label": "Landed Cost Distribution Algorithm"
@@ -14024,7 +14038,8 @@
       "label": "Execution Process"
     },
     "Return to Vendor Shipment": {
-      "label": "Return to Vendor Shipment"
+      "label": "Return to Vendor Shipment",
+      "newLabel": "New return shipment"
     },
     "Offer Product Category Selector": {
       "label": "Offer Product Category Selector"
@@ -14084,13 +14099,15 @@
       "label": "Prereservation Pick and Edit"
     },
     "Sales Quotation": {
-      "label": "Sales Quotation"
+      "label": "Sales Quotation",
+      "newLabel": "New quotation"
     },
     "Costing Algorithm": {
       "label": "Costing Algorithm"
     },
     "Payment Out": {
-      "label": "Payment Out"
+      "label": "Payment Out",
+      "newLabel": "New payment"
     },
     "Product Characteristic": {
       "label": "Product Characteristic"
@@ -14129,7 +14146,8 @@
       "label": "Landed Cost Type"
     },
     "Financial Account": {
-      "label": "Financial Account"
+      "label": "Financial Account",
+      "newLabel": "New account"
     },
     "RM Receipt Pick and Edit": {
       "label": "RM Receipt Pick and Edit"
@@ -14195,7 +14213,8 @@
       "label": "Attachment Method"
     },
     "Return to Vendor": {
-      "label": "Return to Vendor"
+      "label": "Return to Vendor",
+      "newLabel": "New return"
     },
     "Process Group": {
       "label": "Process Group"
@@ -14225,7 +14244,8 @@
       "label": "Create Invoice Lines From Shipment/Receipt lines"
     },
     "Payment In": {
-      "label": "Payment In"
+      "label": "Payment In",
+      "newLabel": "New receipt"
     },
     "Period Control Log": {
       "label": "Period Control Log"
@@ -14481,6 +14501,30 @@
     },
     "SII Monitor": {
       "label": "SII Monitor"
+    },
+    "Contacts": {
+      "newLabel": "New contact"
+    },
+    "Contact": {
+      "newLabel": "New contact"
+    },
+    "Returns": {
+      "newLabel": "New return"
+    },
+    "Customer Return": {
+      "newLabel": "New return"
+    },
+    "Return Receipt": {
+      "newLabel": "New return receipt"
+    },
+    "Warehouse": {
+      "newLabel": "New warehouse"
+    },
+    "Bank Reconciliation": {
+      "newLabel": "New reconciliation"
+    },
+    "Account": {
+      "newLabel": "New chart of accounts"
     }
   },
   "tabs": {
@@ -16316,6 +16360,8 @@
     "saveAndProcess": "Save & {action}",
     "process": "Process",
     "cancel": "Cancel",
+    "confirm": "Confirm",
+    "retry": "Retry",
     "discard": "Discard",
     "optional": "optional",
     "delete": "Delete",
@@ -16505,12 +16551,17 @@
     "notes": "Notes",
     "addLines": "Add Lines",
     "importFromShipment": "Import from Shipment",
+    "importFromSalesOrder": "Import from order",
     "noLinesYet": "No lines yet",
     "addLinesManuallyOrImportFromShipment": "Add lines manually or import from a shipment",
+    "addLinesManuallyOrImportFromShipmentOrOrder": "Add lines manually or import from a shipment or order",
     "addLinesManuallyOrImportFromPurchaseOrder": "Add lines manually or import from a purchase order",
     "addLinesManually": "Add lines manually",
-    "importFromPurchaseOrder": "Import from Purchase Order",
+    "addLinesManuallyOrImportFromOrderOrReceipt": "Add lines manually or import from a purchase order or goods receipt",
+    "importFromPurchaseOrder": "Import from PO",
     "searchPurchaseOrder": "Search purchase order...",
+    "importFromGoodsReceipt": "Import from receipt",
+    "searchGoodsReceipt": "Search goods receipt...",
     "loadingLines": "Loading lines...",
     "noLinesFound": "No lines found",
     "importQty": "Import Qty",
@@ -16536,7 +16587,16 @@
     "invoiceDate": "Invoice Date",
     "noProductsFound": "No products found",
     "addNoteHint": "Add a note...",
+    "linesImportedFromSalesOrder": "Lines imported from order",
     "linesImportedFromShipment": "Lines imported from shipment",
+    "linesImportedFromGoodsReceipt": "Lines imported from goods receipt",
+    "noPendingShipmentsForCustomer": "No pending shipments for this customer.",
+    "noShipmentsMatchYourSearch": "No shipments match your search.",
+    "noCompletedSalesOrdersForThisCustomer": "No confirmed orders for this customer.",
+    "totalDiscountSaved": "Total discount saved",
+    "noPendingGoodsReceiptsForSupplier": "No pending goods receipts for this supplier.",
+    "noGoodsReceiptsMatchYourSearch": "No goods receipts match your search.",
+    "noCompletedPurchaseOrdersForThisSupplier": "No confirmed purchase orders for this supplier.",
     "noRelatedDocuments": "No related documents",
     "Complete": "Complete",
     "Confirm & Send": "Confirm & Send",
@@ -16651,12 +16711,22 @@
     "invoicePreviewDate": "Date",
     "invoicePreviewDueDate": "Due date",
     "invoicePreviewStatus": "Status",
+    "invoicePreview.fiscalStatus.sii": "SII Status",
+    "invoicePreview.fiscalStatus.tbai": "TBAI Status",
+    "invoicePreview.fiscalStatus.verifactu": "Verifactu Status",
+    "invoiceList.col.siiStatus": "SII Status",
+    "invoiceList.col.tbaiStatus": "TBAI Status",
+    "invoiceList.col.verifactuStatus": "Verifactu Status",
     "invoicePreviewNoPaymentsRecorded": "No payments recorded",
     "invoicePreviewPendingSync": "pending sync",
     "invoicePreviewDropFileHere": "Drop file here",
     "invoicePreviewUploadYourDocument": "Upload your document",
     "invoicePreviewClickHereToUploadYourFile": "Click here to upload your file",
     "invoicePreviewAcceptedDocumentTypes": "PDF, JPG, PNG, WebP, GIF",
+    "dropZoneDropHere": "Drop file here",
+    "dropZoneUploadPrompt": "Upload your document",
+    "dropZoneBrowse": "Click here to upload your file",
+    "dropZoneAcceptedTypes": "PDF, JPG, PNG, WebP, GIF",
     "invoicePreviewNoMessagesYet": "No messages yet",
     "invoicePreviewNoActivityRecorded": "No activity recorded",
     "invoicePreviewCannotAddPaymentsToDraftInvoice": "Cannot add payments to a draft invoice",
@@ -16897,6 +16967,7 @@
     "amountExceedsOutstanding": "Amount exceeds outstanding",
     "alreadyImported": "already imported",
     "searchShipment": "Search shipment...",
+    "searchSalesOrder": "Search order...",
     "paymentPlan": "Payment Plan",
     "dueShort": "Due",
     "subject": "Subject",
@@ -16912,7 +16983,9 @@
     "bpRevenueThisMonth": "Revenue this month",
     "bpExpensesThisMonth": "Expenses this month",
     "bpSalesPurchases": "Sales & Purchases",
+    "bpLast3Months": "Last 3 months",
     "bpLast6Months": "Last 6 months",
+    "bpExpand": "Expand",
     "bpRevenue": "Revenue",
     "bpExpenses": "Expenses",
     "bpSalesPurchasesChartAria": "Sales and purchases trend",
@@ -17686,6 +17759,11 @@
     "poBulkOrderHasDraftInvoice": "Order {documentNo} already has a draft purchase invoice.",
     "poBulkOrderHasDraftReceipt": "Order {documentNo} already has a draft goods receipt.",
     "cloneOrderBtn": "Clone",
+    "quickAction.edit": "Edit",
+    "quickAction.clone": "Duplicate",
+    "quickAction.email": "Send / Download",
+    "quickAction.more": "More actions",
+    "quickAction.delete": "Delete",
     "cloneOrderConfirmTitle": "Clone order",
     "cloneOrderConfirmBody": "A draft copy of this order will be created with the same data.",
     "cloneOrderAction": "Clone →",
@@ -17725,6 +17803,8 @@
     "quantitiesUpdated": "System quantities updated",
     "errorUpdatingQuantities": "Failed to update system quantities",
     "deleteRowTooltip": "Delete",
+    "editLineTooltip": "Edit line",
+    "selectRow": "Select row",
     "recordDeleted": "Record deleted",
     "recordsDeleted": "{count} record(s) deleted",
     "recordsCouldNotBeDeleted": "{count} record(s) could not be deleted",
@@ -17875,6 +17955,10 @@
     "fiscal.cert.none.title": "No certificate",
     "fiscal.cert.none.hint": "Required to authenticate with the Tax Authority · .p12 or .pfx",
     "fiscal.cert.upload": "Upload certificate",
+    "fiscal.cert.expiry.warn.title": "Certificate expiring in {days} days",
+    "fiscal.cert.expiry.critical.title": "Certificate expires in {days} days",
+    "fiscal.cert.expiry.body": "Renew your digital certificate to avoid interruptions in fiscal submissions.",
+    "fiscal.cert.expiry.dismiss": "Dismiss",
     "fiscal.sii.legend.status": "Status",
     "fiscal.sii.legend.env": "Environment",
     "fiscal.sii.legend.sends": "Submissions",
@@ -18062,6 +18146,15 @@
     "fiscalMonitor.next": "Next",
     "fiscalMonitor.pagination": "Page {page} of {total}",
     "fiscalMonitor.openInvoice": "Open invoice",
+    "fiscalMonitor.viewContact": "View contact details",
+    "contactDetail.title": "Contact Details",
+    "contactDetail.name": "Name",
+    "contactDetail.taxID": "Tax ID",
+    "contactDetail.taxIDKey": "Residence Country Tax ID Key",
+    "contactDetail.location": "Location",
+    "contactDetail.editLocation": "Edit",
+    "contactDetail.saved": "Contact saved",
+    "contactDetail.saveError": "Failed to save contact",
     "fiscalMonitor.col.invoiceNumber": "Invoice No.",
     "fiscalMonitor.section.sii": "SII",
     "fiscalMonitor.section.tbai": "TBAI",
@@ -18102,6 +18195,7 @@
     "fiscalMonitor.col.errorReason": "Error reason",
     "fiscalMonitor.orgMeta": "Invoice monitor · active fiscal system",
     "fiscalMonitor.synced": "Synchronized",
+    "fiscalMonitor.refresh": "Refresh",
     "fiscalMonitor.setupDescription": "This organization has no active telematic submission system (SII, TicketBAI or Verifactu). Configure it in Fiscal Configuration to start tracking your invoices.",
     "fiscalMonitor.setupCta": "Configure fiscal system",
     "fiscalMonitor.errorTitle": "Error loading data",
@@ -18124,6 +18218,10 @@
     "fiscalMonitor.tbai.tab.Recibido": "Sent (Received)",
     "fiscalMonitor.tbai.tab.Rechazado": "Rejected",
     "fiscalMonitor.tbai.tab.Error": "With error",
+    "fiscalMonitor.tbai.tab.Pendiente": "Pending",
+    "fiscalMonitor.tbai.status.Pendiente": "Pending",
+    "fiscalMonitor.sii.filter.all": "All",
+    "fiscalMonitor.sii.filter.errors": "With errors",
     "fiscalMonitor.status.sii.CO": "Correct",
     "fiscalMonitor.status.sii.AE": "Accepted with errors",
     "fiscalMonitor.status.sii.IN": "Incorrect",
@@ -18142,6 +18240,68 @@
     "fiscalMonitor.profile.unconfigured": "Not configured",
     "fiscalMonitor.profile.conflict": "Conflict",
     "fiscalMonitor.orgFallback": "Organization",
+    "fiscalDebug.title": "⚙ Debug · Fiscal Config",
+    "fiscalDebug.org": "Org",
+    "fiscalDebug.section.profiles": "Profiles",
+    "fiscalDebug.section.certExpiry": "Cert expiry",
+    "fiscalDebug.section.certModal": "Cert modal",
+    "fiscalDebug.section.deleteRecords": "Delete records",
+    "fiscalDebug.certExpiry.none": "None",
+    "fiscalDebug.certExpiry.warn": "45d warn",
+    "fiscalDebug.certExpiry.crit": "20d crit",
+    "fiscalDebug.certModal.pick": "Pick",
+    "fiscalDebug.certModal.fileSel": "File sel.",
+    "fiscalDebug.certModal.pickErr": "Pick err",
+    "fiscalDebug.certModal.verify": "Verify",
+    "fiscalDebug.certModal.nifConf": "NIF conf.",
+    "fiscalDebug.certModal.done": "Done",
+    "fiscalDebug.certModal.invalidFormat": "Invalid format. Only .p12 and .pfx files are accepted.",
+    "fiscalDebug.profile.wizard": "Wizard",
+    "fiscalDebug.profile.sii": "SII",
+    "fiscalDebug.profile.siiNav": "SII Nav",
+    "fiscalDebug.profile.tbai": "TBAI",
+    "fiscalDebug.profile.siiTbai": "SII+TBAI",
+    "fiscalDebug.profile.verifactu": "Verifactu",
+    "fiscalDebug.label.sii": "SII Config",
+    "fiscalDebug.label.tbai": "TBAI Config",
+    "fiscalDebug.label.verifactu": "Verifactu Config",
+    "fiscalDebug.label.cert": "Certificate",
+    "fiscalDebug.deleteAll": "🗑 Delete ALL (current org)",
+    "fiscalDebug.status.deleted": "✓ {count} del",
+    "fmDebug.title": "⚙ Debug · Fiscal Monitor",
+    "fmDebug.profileOverride": "Profile override",
+    "fmDebug.showingDesignFor": "Showing design for {profile}.",
+    "fmDebug.noOverride": "No override — real profile active.",
+    "fmDebug.section.certExpiry": "Cert expiry",
+    "fmDebug.section.data": "Data",
+    "fmDebug.mockData": "Mock data",
+    "fmDebug.mockDataHint": "KPIs and table rows are static samples.",
+    "fmDebug.certExpiry.none": "None",
+    "fmDebug.certExpiry.warn": "45d warn",
+    "fmDebug.certExpiry.crit": "20d crit",
+    "fmDebug.profile.sii": "SII",
+    "fmDebug.profile.siiNavarra": "SII Navarra",
+    "fmDebug.profile.siiTbai": "SII + TBAI",
+    "fmDebug.profile.tbai": "TBAI",
+    "fmDebug.profile.verifactu": "Verifactu",
+    "purchaseOrder.topbar.deliveryStatus": "Delivery Status",
+    "purchaseOrder.topbar.invoiceStatus": "Invoice Status",
+    "quotationStatus.AE": "Automatic Evaluation",
+    "quotationStatus.CO": "Booked",
+    "quotationStatus.CL": "Closed",
+    "quotationStatus.CA": "Closed - Order Created",
+    "quotationStatus.CJ": "Closed - Rejected",
+    "quotationStatus.DR": "Draft",
+    "quotationStatus.ME": "Manual Evaluation",
+    "quotationStatus.NA": "Not Accepted",
+    "quotationStatus.NC": "Not Confirmed",
+    "quotationStatus.WP": "Not Paid",
+    "quotationStatus.RE": "Re-Opened",
+    "quotationStatus.TMP": "Temporal",
+    "quotationStatus.UE": "Under Evaluation",
+    "quotationStatus.IP": "Under Way",
+    "quotationStatus.UNK": "Unknown",
+    "quotationStatus.VO": "Voided",
     "sendToSif": "Send to SIF",
     "sendToSifTitle": "Send to Tax System",
     "sendToSifBodySii": "This invoice will be sent to SII.",
@@ -18157,6 +18317,15 @@
     "sifDataTabs.tab.sii": "SII",
     "sifDataTabs.tab.tbai": "TBAI",
     "sifDataTabs.tab.verifactu": "Verifactu",
+    "sifDataTabs.rail.sii.subtitle": "Immediate Supply",
+    "sifDataTabs.rail.tbai.subtitle": "TicketBAI",
+    "sifDataTabs.rail.verifactu.subtitle": "Verifactu",
+    "sifDataTabs.panel.sii.title": "Immediate Information Supply",
+    "sifDataTabs.panel.sii.subtitle": "AEAT · Form 303",
+    "sifDataTabs.panel.tbai.title": "TicketBAI · Bizkaia Provincial Treasury",
+    "sifDataTabs.panel.tbai.subtitle": "Version 1.2 · Fingerprint chain active",
+    "sifDataTabs.panel.verifactu.title": "Verifactu",
+    "sifDataTabs.panel.verifactu.subtitle": "AEAT · Real-time invoice reporting",
     "sifDataTabs.errorSavingField": "Error saving field",
     "sifDataTabs.option.invoice": "Invoice",
     "sifDataTabs.option.simplifiedInvoice": "Simplified invoice",
@@ -18197,7 +18366,157 @@
     "sifDataTabs.status.verifactu.invalid": "Invalid",
     "sifDataTabs.status.verifactu.rejected": "Rejected",
     "sifDataTabs.status.verifactu.pending": "Pending",
-    "sifDataTabs.status.verifactu.notSent": "Not sent"
+    "sifDataTabs.status.verifactu.notSent": "Not sent",
+    "recentSalesInvoices": "Recent Sales Invoices",
+    "recentPurchaseInvoices": "Recent Purchase Invoices",
+    "bankAccountsSummary": "Bank Accounts Summary",
+    "taxObligations": "Tax Obligations",
+    "installed": "Installed",
+    "addsMenuEntries": "Adds menu entries",
+    "uninstall": "Uninstall",
+    "installing": "Installing…",
+    "appStore": "App Store",
+    "appStoreDescription": "External apps built on the Etendo Apps SDK. Each app runs in its own iframe with its own BFF — installing one here adds its menu entries to the shell; uninstalling removes them. No shell rebuild required.",
+    "appStoreTip": "Tip: this section is hidden by default — reveal it with",
+    "appStoreTipHide": ", hide it with",
+    "hideAppStoreTitle": "Hide the App Store from the sidebar",
+    "hideAppStore": "Hide App Store",
+    "artifactSchemaRaw": "Schema Raw",
+    "artifactSchemaCurated": "Schema Curated",
+    "artifactContract": "Contract",
+    "artifactsTitle": "Artifacts",
+    "searchWindows": "Search windows...",
+    "noWindowsFound": "No windows found",
+    "selectWindowFromList": "Select a window from the list",
+    "currentVersion": "Current version",
+    "noDataToDisplay": "No data to display",
+    "closeDetailPanel": "Close detail panel",
+    "activitySummary": "Activity Summary",
+    "lastSale": "Last sale",
+    "totalInvoiced12m": "Total invoiced (12m)",
+    "pendingBalanceLabel": "Pending balance",
+    "totalInvoicedHeader": "Total Invoiced",
+    "pendingBalanceHeader": "Pending Balance",
+    "category": "Category",
+    "viewKanban": "Kanban",
+    "viewList": "List",
+    "recentActivities": "Recent Activities",
+    "teamActivity": "Team Activity",
+    "firstStepsPageTitle": "First Steps",
+    "firstStepsCopilotBanner": "Copilot can help you set it up",
+    "firstStepsStart": "Start",
+    "firstStepsPrepareAccount": "Let's get your account ready",
+    "firstStepsSubtitle": "Follow these steps and in less than 10 minutes you'll be ready to start.",
+    "completed": "Completed",
+    "firstStepsConfigure": "Configure",
+    "minutes": "min",
+    "markAsCompleted": "Mark as completed",
+    "firstStepsCreateAccount": "Create account",
+    "firstStepsCompanyData": "Company data",
+    "firstStepsCompanyDataDesc": "Add the basic information to issue documents.",
+    "firstStepsCustomizeInvoices": "Customize your invoices",
+    "firstStepsConnectBank": "Connect your bank",
+    "firstStepsSetupPayments": "Set up payment methods",
+    "firstStepsInviteTeam": "Invite your team",
+    "firstStepsFirstInvoice": "Create your first invoice",
+    "employeeDirectory": "Employee Directory",
+    "hrUpdates": "HR Updates",
+    "stockLevels": "Stock Levels",
+    "minimum": "minimum",
+    "recentMovements": "Recent Movements",
+    "oauth2Clients": "OAuth2 Clients",
+    "manageMcpCredentials": "Manage MCP agent credentials",
+    "loadingClients": "Loading clients...",
+    "noOAuth2Clients": "No OAuth2 clients",
+    "createClientDescription": "Create a client to allow MCP agents to authenticate with Etendo.",
+    "createFirstClient": "Create First Client",
+    "clientId": "Client ID",
+    "scopes": "Scopes",
+    "active": "Active",
+    "clickToCopy": "Click to copy",
+    "regenerateSecret": "Regenerate Secret",
+    "revokeTokens": "Revoke Tokens",
+    "deleteClientDesc": "This will permanently delete the client and revoke all its tokens. This action cannot be undone.",
+    "regenerateSecretDesc": "Are you sure? The current secret will be invalidated immediately. Any agents using the old secret will stop working.",
+    "revokeTokensDesc": "This will invalidate all active tokens for this client. Agents will need to re-authenticate.",
+    "recentTimeEntries": "Recent Time Entries",
+    "recentDocuments": "Recent Documents",
+    "purchaseOrders": "Purchase Orders",
+    "docNo": "Doc No",
+    "documentNo": "Document No",
+    "settings": "Settings",
+    "settingsDescription": "Manage your session context. Changing role or organization will re-authenticate your session.",
+    "currentSession": "Current Session",
+    "user": "User",
+    "activeContext": "Active Context",
+    "balanceSheet": "Balance Sheet",
+    "profitLoss": "P&L",
+    "profitLossTitle": "Profit & Loss",
+    "agingReceivable": "Aging Receivable",
+    "agingReceivableTitle": "Aging of Receivables",
+    "agingPayable": "Aging Payable",
+    "agingPayableTitle": "Aging of Payables",
+    "required": "Required",
+    "selectedCount": "selected",
+    "loadingDetails": "Loading details...",
+    "detailReport": "Detail Report",
+    "detailsSuffix": " — Details",
+    "invoiceTitle": "Invoice",
+    "install": "Install",
+    "quotations": "Quotations",
+    "location": "Location",
+    "oauthClientNew": "New Client",
+    "oauthClientManage": "Manage MCP agent credentials",
+    "oauthClientNoClients": "No OAuth2 clients",
+    "oauthClientNoClientsDesc": "Create a client to allow MCP agents to authenticate with Etendo.",
+    "oauthClientCreateFirst": "Create First Client",
+    "oauthClientId": "Client ID",
+    "oauthScopes": "Scopes",
+    "oauthActive": "Active",
+    "oauthInactive": "Inactive",
+    "oauthRegenerateSecret": "Regenerate Secret",
+    "oauthRevokeTokens": "Revoke Tokens",
+    "oauthClickToCopy": "Click to copy",
+    "oauthDeleteDesc": "This will permanently delete the client and revoke all its tokens. This action cannot be undone.",
+    "oauthRegenerateDesc": "Are you sure? The current secret will be invalidated immediately. Any agents using the old secret will stop working.",
+    "oauthRevokeDesc": "This will invalidate all active tokens for this client. Agents will need to re-authenticate.",
+    "firstStepsCompleted": "Completed",
+    "attachments": "Attachments",
+    "attachmentsDropHere": "Drop your file here",
+    "attachmentsOr": "or",
+    "attachmentsBrowse": "select a file",
+    "attachmentsAllowedFormats": "Supported formats: {types}",
+    "attachmentsDefaultTypesLabel": "PDF, Word, Excel, PowerPoint, Images",
+    "attachmentsFileName": "File name",
+    "attachmentsSize": "File size",
+    "attachmentsUploadedAt": "Uploaded",
+    "attachmentsUpdatedAt": "Last updated",
+    "attachmentsUploadedBy": "Uploaded by",
+    "attachmentsUnknownUser": "Unknown user",
+    "attachmentsDownload": "Download",
+    "attachmentsDelete": "Delete",
+    "attachmentsEdit": "Edit",
+    "attachmentsDownloadAll": "Download all (ZIP)",
+    "attachmentsDeleteAll": "Delete all",
+    "attachmentsRemoveAllTitle": "Remove Attachments",
+    "attachmentsRemoveAllMessage": "Are you sure you want to permanently remove all the attachments of this record?",
+    "attachmentsDeleteAllSuccess": "All attachments deleted",
+    "attachmentsDeleteAllError": "Failed to delete all attachments",
+    "attachmentsConfirmDelete": "Delete this attachment?",
+    "attachmentsEditDescription": "Edit description",
+    "attachmentsDescription": "Description",
+    "attachmentsNoFiles": "No attachments yet",
+    "attachmentsUploading": "Uploading…",
+    "attachmentsUploadSuccess": "File uploaded",
+    "attachmentsUploadError": "Upload failed: {reason}",
+    "attachmentsDeleteSuccess": "Attachment deleted",
+    "attachmentsDeleteError": "Delete failed",
+    "attachmentsUpdateSuccess": "Description updated",
+    "attachmentsUpdateError": "Failed to update description",
+    "attachmentsFileTooLarge": "File too large (max {max} MB)",
+    "attachmentsInvalidType": "File type not allowed",
+    "attachmentsConfirmReplace": "The file you are trying to upload already exists, so it will be replaced by the new one. Are you sure you want to continue?",
+    "attachmentsContinue": "Continue"
   },
   "menus": {
     "Currency": {
@@ -19456,6 +19775,30 @@
     }
   },
   "statuses": {
+    "AE": {
+      "label": "Automatic Evaluation"
+    },
+    "ME": {
+      "label": "Manual Evaluation"
+    },
+    "NA": {
+      "label": "Not Accepted"
+    },
+    "NC": {
+      "label": "Not Confirmed"
+    },
+    "WP": {
+      "label": "Not Paid"
+    },
+    "RE": {
+      "label": "Re-Opened"
+    },
+    "TMP": {
+      "label": "Temporal"
+    },
+    "??": {
+      "label": "Unknown"
+    },
     "CA": {
       "label": "Closed - Order Created"
     },

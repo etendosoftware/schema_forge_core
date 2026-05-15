@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { useEntity } from '@/hooks/useEntity';
+import { useRowDelete } from '@/hooks/useRowDelete';
 import { useMenuLabel, useLabel, useUI } from '@/i18n';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
 import { ArrowUpDown, ChevronDown, Plus, Link2, Printer, LayoutGrid, LayoutList, RefreshCw, Eye, Copy } from 'lucide-react';
 import ReportDrawer from './ReportDrawer.jsx';
 import DocumentPrintDrawer, { printDocuments } from './DocumentPrintDrawer.jsx';
+import SendDocumentModal from './SendDocumentModal.jsx';
 import { ListFilterBar } from './ListFilterBar.jsx';
 import { buildAdvancedFilterCriteria } from '@/lib/gridQuery';
 import { useWindowFilterPresets } from '@/hooks/useWindowFilterPresets';
@@ -66,6 +68,18 @@ export function ListView({
   hoverRowActions = false,
   selectionBarSize = 'sm',
   selectionBarRightActions = null,
+  // ETP-3914 — Row Quick Actions overlay. Forwarded to the inner DataTable through the
+  // generated `${headerName}Table` (which spreads its props). Optional. See DataTable.jsx
+  // for the full shape.
+  rowQuickActions = null,
+  // ETP-3914 — Resolved Send/Download config from the contract
+  // (`window.sendDocument`). When `enabled !== false` and the host did not wire
+  // a custom `onEmail`, ListView mounts a generic SendDocumentModal driven by
+  // the row data so any documental window gets the envelope for free.
+  sendDocument = null,
+  renderPreview = null,
+  externalPreviewRow = null,
+  onExternalPreviewClose = null,
 }) {
   // Subset filters — radio-style, always one active, applied first.
   const [activeSubsetIndex, setActiveSubsetIndex] = useState(() => {
@@ -276,6 +290,54 @@ export function ListView({
   }, [refreshTrigger]);
 
   const navigate = useNavigate();
+  // ETP-3914 — when rowQuickActions is enabled but the host did not supply
+  // onEdit/onDelete, wire sensible defaults: navigate to detail and reuse the
+  // shared delete confirm + DELETE pipeline. Custom overrides that pass their
+  // own handlers (sales-order, purchase-order, sales-invoice, purchase-invoice)
+  // win — we only fill blanks.
+  const quickActionsEnabled = !!rowQuickActions && rowQuickActions.enabled !== false;
+  const { requestDelete: defaultRequestDelete, deleteDialog: defaultDeleteDialog } = useRowDelete({
+    apiBaseUrl,
+    entity: entity || 'header',
+    token,
+    onSuccess: () => refreshRef.current?.(),
+  });
+  // ETP-3914 — Generic Send/Download mount: when the window is eligible
+  // (sendDocument.enabled !== false) and the host did NOT supply onEmail, open
+  // the modal on row click using only the data we already have on the row.
+  const [emailRow, setEmailRow] = useState(null);
+  // Auto-detect documental windows from the contract: if the host did not pass
+  // `sendDocument` explicitly, mirror the generator's eligibility heuristic
+  // (`generate-frontend.js`) at runtime — windows whose header exposes a
+  // `documentNo` column get the envelope enabled with default `allowEmail: true`.
+  // Master-data windows (no documentNo) stay silent automatically. This keeps
+  // custom windows (which render ListView directly, bypassing GeneratedApp)
+  // from having to opt in manually.
+  const effectiveSendDocument = useMemo(() => {
+    if (sendDocument != null) return sendDocument;
+    const hasDocumentNo = tableColumns.some(c => c.key === 'documentNo');
+    return hasDocumentNo ? { enabled: true, allowEmail: true } : null;
+  }, [sendDocument, tableColumns]);
+  const sendDocumentEnabled = !!effectiveSendDocument && effectiveSendDocument.enabled !== false;
+  const allowEmail = effectiveSendDocument?.allowEmail !== false;
+
+  const effectiveRowQuickActions = useMemo(() => {
+    if (!quickActionsEnabled) return rowQuickActions;
+    const merged = {
+      ...rowQuickActions,
+      onEdit: rowQuickActions.onEdit
+        || ((row) => row?.id && navigate(`/${windowName || entity}/${row.id}`)),
+      onDelete: rowQuickActions.onDelete || defaultRequestDelete,
+    };
+    // Thread sendDocument through to DataTable → RowQuickActions for the gate,
+    // and inject a default onEmail when the window is eligible but the host
+    // didn't wire one.
+    if (effectiveSendDocument && !merged.sendDocument) merged.sendDocument = effectiveSendDocument;
+    if (sendDocumentEnabled && !merged.onEmail) {
+      merged.onEmail = (row) => setEmailRow(row);
+    }
+    return merged;
+  }, [quickActionsEnabled, rowQuickActions, navigate, windowName, entity, defaultRequestDelete, effectiveSendDocument, sendDocumentEnabled]);
   const tMenu = useMenuLabel();
   const t = useLabel(labelOverrides);
   const ui = useUI();
@@ -295,6 +357,22 @@ export function ListView({
   }, [favActive, hook.items.length]);
   const [selectedRows, setSelectedRows] = useState([]);
   const [clearSelectionCounter, setClearSelectionCounter] = useState(0);
+  const [previewRow, setPreviewRow] = useState(null);
+  const activePreviewRow = previewRow ?? externalPreviewRow ?? null;
+
+  const handlePreviewClose = useCallback(() => {
+    if (previewRow) {
+      setPreviewRow(null);
+    } else {
+      onExternalPreviewClose?.();
+    }
+  }, [previewRow, onExternalPreviewClose]);
+
+  const handlePreviewEdit = useCallback((id) => {
+    setPreviewRow(null);
+    onExternalPreviewClose?.();
+    navigate(`/${windowName}/${id}`);
+  }, [navigate, windowName, onExternalPreviewClose]);
   const clearSelection = useCallback(() => {
     setSelectedRows([]);
     setClearSelectionCounter((c) => c + 1);
@@ -367,6 +445,7 @@ export function ListView({
   }, [hook.hasMore, hook.loadingMore, hook.loadMore]);
 
   return (
+    <>
     <div className="flex-1 min-h-0 flex flex-col" data-testid="list-view">
       {/* White content card with rounded top-left corner */}
       <div className="flex-1 flex flex-col bg-white rounded-tl-2xl overflow-hidden min-h-0">
@@ -578,7 +657,7 @@ export function ListView({
                   onClick={() => onNew ? onNew() : navigate(`/${windowName}/new`)}
                 >
                   <Plus className="h-4 w-4" />
-                  {newLabel ?? ui('newRecord')}
+                  {newLabel ?? tMenu(entityLabel, { field: 'newLabel' }) ?? ui('newRecord')}
                 </Button>
                 {newActions.length > 0 && (
                   <>
@@ -648,7 +727,7 @@ export function ListView({
                   <Table
                     entity={entity}
                     data={hook.items}
-                    onNavigate={(row) => navigate(`/${windowName}/${row.id}`)}
+                    onNavigate={renderPreview ? (row) => setPreviewRow(row) : (row) => navigate(`/${windowName}/${row.id}`)}
                     onSelectionChange={setSelectedRows}
                     onDataMutated={hook.refresh}
                     isRowSelectable={isRowSelectable}
@@ -668,6 +747,7 @@ export function ListView({
                     rowFilter={effectiveRowFilter}
                     hoverRowActions={hoverRowActions}
                     clearSelectionTrigger={clearSelectionCounter}
+                    rowQuickActions={effectiveRowQuickActions}
                   />
                 )
               }
@@ -703,6 +783,31 @@ export function ListView({
         documentIds={selectedRows.map(r => r.id || r)}
         token={token}
       />
+      {quickActionsEnabled && !rowQuickActions?.onDelete && defaultDeleteDialog}
+      {/* ETP-3914 — Generic Send/Download modal mount for any documental window
+          that did not bring its own `onEmail`. Custom windows that mount the
+          modal manually (sales-invoice, purchase-invoice) keep doing so because
+          their `rowQuickActions.onEmail` wins over the default injected above. */}
+      {emailRow && sendDocumentEnabled && !rowQuickActions?.onEmail && (
+        <SendDocumentModal
+          documentType={tMenu(entityLabel) || entityLabel || entity}
+          documentNo={emailRow.documentNo}
+          bpName={emailRow['businessPartner$_identifier']}
+          bPartnerId={emailRow.businessPartner}
+          apiBaseUrl={apiBaseUrl}
+          documentId={emailRow.id}
+          windowName={windowName}
+          token={token}
+          allowEmail={allowEmail}
+          onClose={() => setEmailRow(null)}
+        />
+      )}
     </div>
+    {activePreviewRow && renderPreview?.({
+      row: activePreviewRow,
+      onClose: handlePreviewClose,
+      onEdit: handlePreviewEdit,
+    })}
+    </>
   );
 }

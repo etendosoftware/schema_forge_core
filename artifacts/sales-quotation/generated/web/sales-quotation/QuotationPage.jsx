@@ -6,6 +6,8 @@ import QuotationForm from './QuotationForm';
 import QuotationLineTable from './QuotationLineTable';
 import QuotationLineForm from './QuotationLineForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
+import QuotationBottomPanel from '../../../custom/QuotationBottomPanel';
 import QuotationTopbarActions from '../../../custom/QuotationTopbarActions';
 import catalogs from './mockCatalogs';
 
@@ -59,6 +61,10 @@ const draftMode = {
   ]
 };
 // @sf-generated-end draftMode:quotation
+
+// @sf-generated-start requiredHeaderFields:quotation
+const requiredHeaderFields = ['documentNo', 'orderDate', 'businessPartner', 'partnerAddress', 'priceList', 'paymentTerms', 'grandTotalAmount', 'summedLineAmount'];
+// @sf-generated-end requiredHeaderFields:quotation
 
 // @sf-generated-start addLineFields:quotationLine
 const addLineFields = {
@@ -411,14 +417,18 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
         hideSaveStatuses={["CA","ETGO_CI","CL","VO","CJ"]}
         noHeaderBorder
         notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Order", config: {} } }]}
+        bottomSection={QuotationBottomPanel}
         topbarRight={QuotationTopbarActions}
         menuActions={({ status }) => [
           { key: 'reject', label: 'Reject', destructive: true, visible: ["UE"].includes(status), labelKey: 'rejectQuotation', onClick: () => {}, }
         ]}
         draftMode={draftMode}
+        requiredHeaderFields={requiredHeaderFields}
         salesTheme
         labelOverrides={labelOverrides}
+        linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -435,6 +445,8 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
       dateFilterKey="orderDate"
       hidePrint
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

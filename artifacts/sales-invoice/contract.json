@@ -1,8 +1,8 @@
 {
   "version": "0.24.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
-  "updatedAt": "2026-05-08T11:14:41.858Z",
-  "checksum": "1a0649f317a65706",
+  "updatedAt": "2026-05-14T13:06:25.905Z",
+  "checksum": "89d141d7fb8b1a1f",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -44,8 +44,19 @@
         }
       },
       "dateFilterKey": "invoiceDate",
+      "noHeaderBorder": true,
       "lineEntityConfig": "invoice",
-      "layoutType": "default"
+      "extraTabs": [
+        {
+          "key": "sif",
+          "labelKey": "sifDataTabs.sectionTitle",
+          "component": "SifTab",
+          "importFrom": "@/windows/custom/shared/SifTab.jsx",
+          "placement": "tab"
+        }
+      ],
+      "layoutType": "default",
+      "linesLayout": "inlineEditable"
     },
     "entities": {
       "header": {
@@ -1577,7 +1588,18 @@
         }
       },
       "dateFilterKey": "invoiceDate",
-      "lineEntityConfig": "invoice"
+      "noHeaderBorder": true,
+      "lineEntityConfig": "invoice",
+      "extraTabs": [
+        {
+          "key": "sif",
+          "labelKey": "sifDataTabs.sectionTitle",
+          "component": "SifTab",
+          "importFrom": "@/windows/custom/shared/SifTab.jsx",
+          "placement": "tab"
+        }
+      ],
+      "linesLayout": "inlineEditable"
     },
     "entities": {
       "header": {

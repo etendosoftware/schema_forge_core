@@ -4,6 +4,7 @@ import PriceListTable from './PriceListTable';
 import PriceListForm from './PriceListForm';
 import PriceListVersionTable from './PriceListVersionTable';
 import PriceListVersionForm from './PriceListVersionForm';
+import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 
 
@@ -41,6 +42,10 @@ const processes = [
 // @sf-generated-start draftMode:priceList
 const draftMode = null;
 // @sf-generated-end draftMode:priceList
+
+// @sf-generated-start requiredHeaderFields:priceList
+const requiredHeaderFields = ['name', 'currency', 'salesPriceList', 'costBasedPriceList', 'priceIncludesTax', 'default'];
+// @sf-generated-end requiredHeaderFields:priceList
 
 // @sf-generated-start addLineFields:priceListVersion
 const addLineFields = {
@@ -204,6 +209,8 @@ export default function PriceListPage({ windowName, recordId, ...props }) {
       api={api}
         hidePrint
         hideMoreMenu
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_PriceList", config: {} } }]}
+        requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}
         {...props}
       />
@@ -221,6 +228,7 @@ export default function PriceListPage({ windowName, recordId, ...props }) {
       hidePrint
       hideMoreMenu
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
       {...props}
     />
   );

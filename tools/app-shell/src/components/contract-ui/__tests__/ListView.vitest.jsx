@@ -10,7 +10,7 @@ vi.mock('react-router-dom', () => ({
 // Mock i18n hooks
 vi.mock('@/i18n', () => ({
   useLabel: () => (key) => key,
-  useMenuLabel: () => (key) => key,
+  useMenuLabel: () => (key, { field } = {}) => field ? null : key,
   useUI: () => (key) => key,
   useLocaleSwitch: () => ({ locale: 'en_US', setLocale: vi.fn() }),
 }));

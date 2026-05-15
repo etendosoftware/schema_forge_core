@@ -3,8 +3,12 @@
   "window": {
     "category": "purchases",
     "name": "Purchase Invoice",
+    "sendDocument": {
+      "allowEmail": false
+    },
     "relatedDocuments": true,
     "notesField": "description",
+    "noHeaderBorder": true,
     "menuActions": [
       {
         "key": "reactivate",
@@ -15,6 +19,10 @@
         "successKey": "reactivated"
       }
     ],
+    "customComponents": {
+      "headerTable": "InvoiceHeaderTable",
+      "bottomSection": "PurchaseInvoiceBottomPanel"
+    },
     "processOverrides": {},
     "draftMode": {
       "enabled": true,
@@ -24,6 +32,16 @@
     },
     "dateFilterKey": "invoiceDate",
     "lineEntityConfig": "invoice",
+    "linesLayout": "inlineEditable",
+    "extraTabs": [
+      {
+        "key": "sif",
+        "labelKey": "sifDataTabs.sectionTitle",
+        "component": "SifTab",
+        "importFrom": "@/windows/custom/shared/SifTab.jsx",
+        "placement": "tab"
+      }
+    ],
     "labelOverrides": {
       "es_ES": {
         "POReference": "Nº documento",

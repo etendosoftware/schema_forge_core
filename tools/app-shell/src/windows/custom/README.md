@@ -47,7 +47,16 @@ const customLoaders = {
 Custom window components receive the same props as any generated window:
 
 ```jsx
-export default function MyWindowCustom({ token, apiBaseUrl, windowName, recordId, window }) {
-  // ...
+import { useApiFetch } from '@/auth/useApiFetch.js';
+
+export default function MyWindowCustom({ apiBaseUrl, windowName, recordId, window }) {
+  const apiFetch = useApiFetch(apiBaseUrl);
+
+  // Use apiFetch(...) for authenticated requests.
 }
 ```
+
+Generated and legacy extension points may still receive a `token` prop while
+contract-ui and existing custom components are migrated. Do not add new local
+`Authorization` header construction when touching a component; prefer
+`useApiFetch(apiBaseUrl)` for new or migrated API calls.

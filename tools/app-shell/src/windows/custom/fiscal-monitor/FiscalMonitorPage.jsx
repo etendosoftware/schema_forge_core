@@ -1,9 +1,15 @@
 import { useState } from 'react';
+import { useCertExpiry } from '../fiscal-config/useCertExpiry.js';
+import CertExpiryBanner from '../fiscal-config/CertExpiryBanner.jsx';
+import { RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI } from '@/i18n';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { neoBase } from '@/components/related-documents/helpers.js';
 import { useFiscalMonitor } from './useFiscalMonitor.js';
+import { WipBadge } from './FmPrimitives.jsx';
+import InvoicePreviewModal from '../shared/InvoicePreviewModal.jsx';
+import ContactDetailModal from './ContactDetailModal.jsx';
 import { useDebugMode } from './useDebugMode.js';
 import { computeKpis } from './fiscalMonitor.utils.js';
 import { MOCK_MONITOR_DATA, MOCK_SII_ROWS, MOCK_TBAI_ROWS, MOCK_VF_ROWS } from './fiscalMonitorMockData.js';
@@ -32,7 +38,20 @@ const ProfileBadge = ({ profile, labels = {} }) => {
   );
 };
 
-const OrgLead = ({ org, profile, ui }) => {
+const RefreshButton = ({ loading, onRefresh, ui }) => (
+  <button
+    className="fm-orglead-refresh"
+    onClick={loading ? undefined : onRefresh}
+    disabled={loading}
+    aria-label={ui('fiscalMonitor.refresh')}
+    title={ui('fiscalMonitor.refresh')}
+    style={{ background: 'none', border: 'none', cursor: loading ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+  >
+    <RefreshCw size={14} className={loading ? 'animate-spin' : ''} style={{ color: 'var(--fm-fg-3)' }} />
+  </button>
+);
+
+const OrgLead = ({ org, profile, ui, onRefresh, loading }) => {
   const profileLabels = {
     sii: 'SII', tbai: 'TBAI', 'sii+tbai': 'SII + TBAI',
     'sii-navarra': 'SII Navarra', verifactu: 'Verifactu',
@@ -51,8 +70,7 @@ const OrgLead = ({ org, profile, ui }) => {
       </div>
     </div>
     <div className="r">
-      <span className="syncdot" />
-      {ui('fiscalMonitor.synced')}
+      <RefreshButton loading={loading} onRefresh={onRefresh} ui={ui} />
     </div>
   </div>
   );
@@ -84,7 +102,7 @@ function useDebugState(orgId, token, apiBaseUrl) {
   const [debugProfile, setDebugProfile] = useState(null);
   const [mockData,     setMockData]     = useState(false);
 
-  const { loading, error, profile: realProfile, kpis: realKpis, siiParentId } = useFiscalMonitor(orgId, token, apiBaseUrl);
+  const { loading, error, profile: realProfile, kpis: realKpis, siiParentId, refetch } = useFiscalMonitor(orgId, token, apiBaseUrl);
 
   const profile = (debugMode && debugProfile) ? debugProfile : realProfile;
 
@@ -104,28 +122,13 @@ function useDebugState(orgId, token, apiBaseUrl) {
 
   return {
     loading, error, profile, kpis, siiParentId,
+    refetch,
     siiMockRows, tbaiMockRows, vfMockRows,
     debugMode, debugProfile, setDebugProfile,
     mockData, setMockData, debugOverrideActive,
   };
 }
 
-const WipBadge = ({ ui }) => (
-  <div className="absolute top-3 right-4 z-10">
-    <TooltipProvider delayDuration={600}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300 cursor-default select-none">
-            ⚠ {ui('fiscal.wip.badge')}
-          </span>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" className="max-w-[260px] text-center">
-          {ui('fiscal.wip.tooltip')}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  </div>
-);
 
 export default function FiscalMonitorPage({ token, apiBaseUrl }) {
   const ui = useUI();
@@ -135,13 +138,49 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
   const [siiInitialTab,     setSiiInitialTab]     = useState('issued');
   const [tbaiInitialFilter, setTbaiInitialFilter] = useState('all');
   const [veriInitialTab,    setVeriInitialTab]    = useState('accepted');
+  const [refreshKey,        setRefreshKey]        = useState(0);
+  const [mockCertDays,      setMockCertDays]      = useState(null);
+  const [previewInvoice,    setPreviewInvoice]    = useState(null);
+  const [previewSpec,       setPreviewSpec]       = useState('sales-invoice');
+  const [bpPopup,           setBpPopup]           = useState(null);
+  const contactsApiBase = `${neoBase(apiBaseUrl)}/contacts`;
 
   const {
     loading, error, profile, kpis, siiParentId,
+    refetch,
     siiMockRows, tbaiMockRows, vfMockRows,
     debugMode, debugProfile, setDebugProfile,
     mockData, setMockData, debugOverrideActive,
   } = useDebugState(orgId, token, apiBaseUrl);
+
+  const { daysLeft: certDaysLeft } = useCertExpiry(orgId, token, apiBaseUrl, { mockDaysLeft: mockCertDays });
+
+  function handleRefresh() {
+    refetch();
+    setRefreshKey(k => k + 1);
+  }
+
+  async function handleInvoiceOpen(invoiceId, specHint = 'sales-invoice') {
+    if (!invoiceId) return;
+    const base = neoBase(apiBaseUrl);
+    const headers = { Authorization: `Bearer ${token}` };
+    const specs = specHint === 'sales-invoice'
+      ? ['sales-invoice', 'purchase-invoice']
+      : ['purchase-invoice', 'sales-invoice'];
+    for (const spec of specs) {
+      try {
+        const res = await fetch(`${base}/${spec}/header/${invoiceId}`, { headers });
+        if (!res.ok) continue;
+        const json = await res.json();
+        const inv = json?.response?.data?.[0] ?? null;
+        if (inv?.id) {
+          setPreviewSpec(spec);
+          setPreviewInvoice(inv);
+          return;
+        }
+      } catch { /* try next */ }
+    }
+  }
 
   const DebugPanel = debugMode ? (
     <FiscalMonitorDebugPanel
@@ -149,6 +188,8 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
       onProfileChange={setDebugProfile}
       mockData={mockData}
       onMockDataChange={setMockData}
+      mockCertDays={mockCertDays}
+      onSetCertDays={setMockCertDays}
     />
   ) : null;
 
@@ -157,7 +198,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
       <>
         {DebugPanel}
         <div className="relative fm-wrap fm-page" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <WipBadge ui={ui} />
+          <WipBadge />
           <div className="fm-skeleton" style={{ height: 64, borderRadius: 12 }} />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
             {[1,2,3,4].map(i => <div key={i} className="fm-skeleton" style={{ height: 100, borderRadius: 12 }} />)}
@@ -173,7 +214,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
       <>
         {DebugPanel}
         <div className="relative fm-wrap fm-page">
-          <WipBadge ui={ui} />
+          <WipBadge />
           <div className="fm-empty">
             <div className="ill" style={{ background: '#FEF0F4', color: '#D50B3E' }}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -192,7 +233,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
     return (
       <>
         {DebugPanel}
-        <div className="relative fm-wrap fm-page"><WipBadge ui={ui} /><FmEmpty ui={ui} /></div>
+        <div className="relative fm-wrap fm-page"><WipBadge /><FmEmpty ui={ui} /></div>
       </>
     );
   }
@@ -202,7 +243,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
       <>
         {DebugPanel}
         <div className="relative fm-wrap fm-page">
-          <WipBadge ui={ui} />
+          <WipBadge />
           <div className="fm-empty">
             <div className="ill" style={{ background: '#FEF0F4', color: '#D50B3E' }}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -224,8 +265,9 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
     <>
       {DebugPanel}
     <div className="relative fm-wrap fm-page">
-      <WipBadge ui={ui} />
-      <OrgLead org={org} profile={profile} ui={ui} />
+      <WipBadge />
+      <OrgLead org={org} profile={profile} ui={ui} onRefresh={handleRefresh} loading={loading} />
+      <CertExpiryBanner daysLeft={certDaysLeft} variant="subtle" />
 
       {(profile === 'sii' || profile === 'sii-navarra' || profile === 'sii+tbai') && (
         <>
@@ -241,6 +283,9 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
             initialTab={siiInitialTab}
             mockRows={siiMockRows}
             onTabChange={setSiiInitialTab}
+            refreshKey={refreshKey}
+            onInvoiceOpen={handleInvoiceOpen}
+            onBpClick={(bpId) => setBpPopup(bpId)}
           />
         </>
       )}
@@ -264,6 +309,9 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
             initialFilter={tbaiInitialFilter}
             mockRows={tbaiMockRows}
             onFilterChange={setTbaiInitialFilter}
+            refreshKey={refreshKey}
+            onInvoiceOpen={handleInvoiceOpen}
+            onBpClick={(bpId) => setBpPopup(bpId)}
           />
         </>
       )}
@@ -281,10 +329,31 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
             initialTab={veriInitialTab}
             mockRows={vfMockRows}
             onTabChange={setVeriInitialTab}
+            refreshKey={refreshKey}
+            onInvoiceOpen={handleInvoiceOpen}
+            onBpClick={(bpId) => setBpPopup(bpId)}
           />
         </>
       )}
     </div>
+    {previewInvoice && (
+      <InvoicePreviewModal
+        invoice={previewInvoice}
+        token={token}
+        apiBaseUrl={`${neoBase(apiBaseUrl)}/${previewSpec}`}
+        specName={previewSpec}
+        onClose={() => setPreviewInvoice(null)}
+      />
+    )}
+    {bpPopup && (
+      <ContactDetailModal
+        open={!!bpPopup}
+        onClose={() => setBpPopup(null)}
+        bpId={bpPopup}
+        token={token}
+        contactsApiBase={contactsApiBase}
+      />
+    )}
     </>
   );
 }

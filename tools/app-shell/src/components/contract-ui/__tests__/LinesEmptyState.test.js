@@ -41,8 +41,13 @@ describe('LinesEmptyState', () => {
     assert.match(src, /ui\('noLinesYet'\)/);
   });
 
-  it('renders addLinesManually i18n key', () => {
+  it('renders addLinesManually i18n key as default description', () => {
     assert.match(src, /ui\('addLinesManually'\)/);
+  });
+
+  it('accepts a description prop that overrides the default description', () => {
+    assert.match(src, /description/);
+    assert.match(src, /description\s*\?\?\s*ui\('addLinesManually'\)/);
   });
 
   it('renders addLines i18n key inside the button', () => {
@@ -50,7 +55,7 @@ describe('LinesEmptyState', () => {
   });
 
   it('gates the add button on canAddLine', () => {
-    assert.match(src, /canAddLine\s*&&/);
+    assert.match(src, /canAddLine\s*\?/);
   });
 
   it('calls onAddLine when the button is clicked', () => {
@@ -60,5 +65,19 @@ describe('LinesEmptyState', () => {
   it('renders a document SVG icon', () => {
     assert.match(src, /<svg/);
     assert.match(src, /M14 2H6/);
+  });
+
+  it('accepts a secondaryAction prop for extra buttons', () => {
+    assert.match(src, /secondaryAction/);
+  });
+
+  it('wraps buttons in a flex container when secondaryAction is provided', () => {
+    assert.match(src, /secondaryAction\s*\?/);
+    assert.match(src, /display:\s*'flex'/);
+    assert.match(src, /gap:\s*8/);
+  });
+
+  it('renders primaryButton without wrapper when secondaryAction is absent', () => {
+    assert.match(src, /:\s*primaryButton/);
   });
 });

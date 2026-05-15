@@ -4,6 +4,7 @@ import ProductCategoryTable from './ProductCategoryTable';
 import ProductCategoryForm from './ProductCategoryForm';
 import AssignedProductsTable from './AssignedProductsTable';
 import AssignedProductsForm from './AssignedProductsForm';
+import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 
 
@@ -31,6 +32,10 @@ const processes = [
 // @sf-generated-start draftMode:productCategory
 const draftMode = null;
 // @sf-generated-end draftMode:productCategory
+
+// @sf-generated-start requiredHeaderFields:productCategory
+const requiredHeaderFields = ['searchKey', 'name', 'default', 'summaryLevel'];
+// @sf-generated-end requiredHeaderFields:productCategory
 
 // @sf-generated-start addLineFields:assignedProducts
 const addLineFields = {
@@ -187,6 +192,8 @@ export default function ProductCategoryPage({ windowName, recordId, ...props }) 
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_Product_Category", config: {} } }]}
+        requiredHeaderFields={requiredHeaderFields}
         {...props}
       />
     );
@@ -200,6 +207,7 @@ export default function ProductCategoryPage({ windowName, recordId, ...props }) 
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      rowQuickActions={{}}
       {...props}
     />
   );

@@ -13847,10 +13847,12 @@
       "label": "País, provincia y ciudad"
     },
     "Business Partner": {
-      "label": "Terceros"
+      "label": "Terceros",
+      "newLabel": "Nuevo tercero"
     },
     "Return Material Receipt": {
-      "label": "Recibo devolución de material"
+      "label": "Recibo devolución de material",
+      "newLabel": "Nuevo albarán de devolución"
     },
     "General Ledger Configuration": {
       "label": "Esquema contable"
@@ -13886,7 +13888,8 @@
       "label": "Almacén y huecos"
     },
     "Product": {
-      "label": "Producto"
+      "label": "Producto",
+      "newLabel": "Nuevo producto"
     },
     "Payment Term": {
       "label": "Condiciones de pago"
@@ -13895,10 +13898,12 @@
       "label": "Transportista"
     },
     "Sales Order": {
-      "label": "Pedido de venta"
+      "label": "Pedido de venta",
+      "newLabel": "Nuevo pedido"
     },
     "Product Category": {
-      "label": "Categoría del producto"
+      "label": "Categoría del producto",
+      "newLabel": "Nueva categoría"
     },
     "Price List": {
       "label": "Tarifa"
@@ -13931,16 +13936,19 @@
       "label": "Informes y procesos"
     },
     "Sales Invoice": {
-      "label": "Factura (Cliente)"
+      "label": "Factura (Cliente)",
+      "newLabel": "Nueva factura"
     },
     "Physical Inventory": {
-      "label": "Inventario físico"
+      "label": "Inventario físico",
+      "newLabel": "Nuevo inventario"
     },
     "Cost Adjustment": {
       "label": "Ajuste de Costes"
     },
     "Goods Shipment": {
-      "label": "Albarán (Cliente)"
+      "label": "Albarán (Cliente)",
+      "newLabel": "Nuevo albarán"
     },
     "Goods Movement": {
       "label": "Movimiento entre almacenes"
@@ -13952,13 +13960,16 @@
       "label": "Entradas de Datos Importados"
     },
     "Purchase Order": {
-      "label": "Pedido de compra"
+      "label": "Pedido de compra",
+      "newLabel": "Nuevo pedido"
     },
     "Purchase Invoice": {
-      "label": "Factura (Proveedor)"
+      "label": "Factura (Proveedor)",
+      "newLabel": "Nueva factura"
     },
     "Goods Receipt": {
-      "label": "Albarán (Proveedor)"
+      "label": "Albarán (Proveedor)",
+      "newLabel": "Nuevo albarán"
     },
     "Form": {
       "label": "Formulario"
@@ -14033,7 +14044,8 @@
       "label": "Rol permisos"
     },
     "Return to Vendor Shipment": {
-      "label": "Devolución a albarán de proveedor"
+      "label": "Devolución a albarán de proveedor",
+      "newLabel": "Nuevo albarán de devolución"
     },
     "Alert": {
       "label": "Alertas"
@@ -14105,13 +14117,15 @@
       "label": "Elegir y editar de reservas"
     },
     "Sales Quotation": {
-      "label": "Presupuesto de ventas"
+      "label": "Presupuesto de ventas",
+      "newLabel": "Nuevo presupuesto"
     },
     "Costing Algorithm": {
       "label": "Algoritmo de cálculo de costes"
     },
     "Payment Out": {
-      "label": "Pago"
+      "label": "Pago",
+      "newLabel": "Nuevo pago"
     },
     "Product Characteristic": {
       "label": "Característica de producto"
@@ -14165,7 +14179,8 @@
       "label": "Amortización"
     },
     "Assets": {
-      "label": "Activosa"
+      "label": "Activos",
+      "newLabel": "Nuevo activo"
     },
     "Discounts and Promotions": {
       "label": "Modificación de precios"
@@ -14231,7 +14246,8 @@
       "label": "Parte de Mantenimiento"
     },
     "Internal Consumption": {
-      "label": "Consumo interno"
+      "label": "Consumo interno",
+      "newLabel": "Nuevo consumo"
     },
     "Budget": {
       "label": "Presupuesto"
@@ -14291,7 +14307,8 @@
       "label": "Tipo de Landed Cost"
     },
     "Financial Account": {
-      "label": "Cuenta financiera"
+      "label": "Cuenta financiera",
+      "newLabel": "Nueva cuenta"
     },
     "RM Receipt Pick and Edit": {
       "label": "Elegir y editar recibo de devolución de material"
@@ -14354,7 +14371,8 @@
       "label": "Método de Adjuntos"
     },
     "Return to Vendor": {
-      "label": "Devolución a proveedor"
+      "label": "Devolución a proveedor",
+      "newLabel": "Nueva devolución"
     },
     "Process Group": {
       "label": "Grupo de Procesos"
@@ -14384,7 +14402,8 @@
       "label": "Crear Líneas de Factura Desde Líneas de Albarán"
     },
     "Payment In": {
-      "label": "Cobro"
+      "label": "Cobro",
+      "newLabel": "Nuevo cobro"
     },
     "Period Control Log": {
       "label": "Histórico de Control de Periodos"
@@ -14483,7 +14502,40 @@
       "label": "Código de Actividad"
     },
     "Goods Movements": {
-      "label": "Movimientos de mercancía"
+      "label": "Movimientos de mercancía",
+      "newLabel": "Nuevo movimiento"
+    },
+    "Contacts": {
+      "label": "Contactos",
+      "newLabel": "Nuevo contacto"
+    },
+    "Contact": {
+      "label": "Contacto",
+      "newLabel": "Nuevo contacto"
+    },
+    "Returns": {
+      "label": "Devoluciones",
+      "newLabel": "Nueva devolución"
+    },
+    "Customer Return": {
+      "label": "Devolución del Cliente",
+      "newLabel": "Nueva devolución"
+    },
+    "Return Receipt": {
+      "label": "Albarán de Devolución",
+      "newLabel": "Nuevo albarán de devolución"
+    },
+    "Warehouse": {
+      "label": "Almacén",
+      "newLabel": "Nuevo almacén"
+    },
+    "Bank Reconciliation": {
+      "label": "Conciliación Bancaria",
+      "newLabel": "Nueva conciliación"
+    },
+    "Account": {
+      "label": "Cuenta",
+      "newLabel": "Nuevo plan de cuentas"
     }
   },
   "tabs": {
@@ -16553,6 +16605,8 @@
     "saveAndProcess": "Guardar y {action}",
     "process": "Procesar",
     "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "retry": "Reintentar",
     "discard": "Descartar",
     "optional": "opcional",
     "reactivate": "Reactivar",
@@ -16742,12 +16796,17 @@
     "notes": "Notas",
     "addLines": "Añadir líneas",
     "importFromShipment": "Importar desde envío",
+    "importFromSalesOrder": "Importar desde pedido",
     "noLinesYet": "Sin líneas todavía",
     "addLinesManuallyOrImportFromShipment": "Añade líneas manualmente o impórtalas desde un envío",
+    "addLinesManuallyOrImportFromShipmentOrOrder": "Añade líneas manualmente o impórtalas desde un envío o pedido",
     "addLinesManuallyOrImportFromPurchaseOrder": "Añade líneas manualmente o impórtalas desde un pedido de compra",
     "addLinesManually": "Añade líneas manualmente",
-    "importFromPurchaseOrder": "Importar desde pedido de compra",
+    "addLinesManuallyOrImportFromOrderOrReceipt": "Añade líneas manualmente o impórtalas desde un pedido de compra o albarán de recepción",
+    "importFromPurchaseOrder": "Importar desde pedido",
     "searchPurchaseOrder": "Buscar pedido de compra...",
+    "importFromGoodsReceipt": "Importar desde recibo",
+    "searchGoodsReceipt": "Buscar albarán de recepción...",
     "loadingLines": "Cargando líneas...",
     "noLinesFound": "No se encontraron líneas",
     "importQty": "Cant. a importar",
@@ -16762,7 +16821,7 @@
     "noLinesWereImported": "No se importó ninguna línea",
     "failedToImportLines": "No se pudieron importar las líneas",
     "noCompletedPurchaseOrdersWithPendingQuantitiesForThisVendor": "No hay pedidos de compra completados con cantidades pendientes para este proveedor.",
-    "noOrdersMatchYourSearch": "Ningún pedido coincide con tu búsqueda.",
+    "noOrdersMatchYourSearch": "Ningún pedido coincide con la búsqueda.",
     "noPaymentDetailsFound": "No se encontraron detalles de pago",
     "financialAccount": "Cuenta financiera",
     "receivedAmount": "Importe recibido",
@@ -16773,7 +16832,16 @@
     "invoiceDate": "Fecha de factura",
     "noProductsFound": "No se encontraron productos",
     "addNoteHint": "Añadir una nota...",
+    "linesImportedFromSalesOrder": "Líneas importadas desde pedido",
     "linesImportedFromShipment": "Líneas importadas desde envío",
+    "linesImportedFromGoodsReceipt": "Líneas importadas desde albarán de recepción",
+    "noPendingShipmentsForCustomer": "No hay albaranes pendientes para este cliente.",
+    "noShipmentsMatchYourSearch": "Ningún albarán coincide con la búsqueda.",
+    "noCompletedSalesOrdersForThisCustomer": "No hay pedidos confirmados para este cliente.",
+    "totalDiscountSaved": "Descuento total guardado",
+    "noPendingGoodsReceiptsForSupplier": "No hay albaranes de recepción pendientes para este proveedor.",
+    "noGoodsReceiptsMatchYourSearch": "Ningún albarán de recepción coincide con la búsqueda.",
+    "noCompletedPurchaseOrdersForThisSupplier": "No hay pedidos de compra confirmados para este proveedor.",
     "noRelatedDocuments": "Sin documentos relacionados",
     "Complete": "Completar",
     "Confirm & Send": "Confirmar y enviar",
@@ -16888,12 +16956,22 @@
     "invoicePreviewDate": "Fecha",
     "invoicePreviewDueDate": "Fecha de vencimiento",
     "invoicePreviewStatus": "Estado",
+    "invoicePreview.fiscalStatus.sii": "Estado SII",
+    "invoicePreview.fiscalStatus.tbai": "Estado TBAI",
+    "invoicePreview.fiscalStatus.verifactu": "Estado Verifactu",
+    "invoiceList.col.siiStatus": "Estado SII",
+    "invoiceList.col.tbaiStatus": "Estado TBAI",
+    "invoiceList.col.verifactuStatus": "Estado Verifactu",
     "invoicePreviewNoPaymentsRecorded": "No hay pagos registrados",
     "invoicePreviewPendingSync": "pendiente de sincronización",
     "invoicePreviewDropFileHere": "Suelta el archivo aquí",
     "invoicePreviewUploadYourDocument": "Sube tu documento",
     "invoicePreviewClickHereToUploadYourFile": "Haz clic aquí para subir tu archivo",
     "invoicePreviewAcceptedDocumentTypes": "PDF, JPG, PNG, WebP, GIF",
+    "dropZoneDropHere": "Suelta el archivo aquí",
+    "dropZoneUploadPrompt": "Sube tu documento",
+    "dropZoneBrowse": "Haz clic aquí para subir tu archivo",
+    "dropZoneAcceptedTypes": "PDF, JPG, PNG, WebP, GIF",
     "invoicePreviewNoMessagesYet": "Aún no hay mensajes",
     "invoicePreviewNoActivityRecorded": "No hay actividad registrada",
     "invoicePreviewCannotAddPaymentsToDraftInvoice": "No se pueden añadir pagos a una factura en borrador",
@@ -17137,6 +17215,7 @@
     "paymentAccount": "Cuenta",
     "amountExceedsOutstanding": "El importe supera el pendiente",
     "alreadyImported": "ya importado",
+    "searchSalesOrder": "Buscar pedido...",
     "searchShipment": "Buscar albarán...",
     "paymentPlan": "Plan de pagos",
     "dueShort": "Vence",
@@ -17156,7 +17235,9 @@
     "bpRevenueThisMonth": "Ingresos del mes",
     "bpExpensesThisMonth": "Gastos del mes",
     "bpSalesPurchases": "Ventas y compras",
+    "bpLast3Months": "Últimos 3 meses",
     "bpLast6Months": "Últimos 6 meses",
+    "bpExpand": "Expandir",
     "bpRevenue": "Ingresos",
     "bpExpenses": "Gastos",
     "bpSalesPurchasesChartAria": "Tendencia de ventas y compras",
@@ -17931,6 +18012,11 @@
     "poBulkOrderHasDraftInvoice": "Pedido {documentNo} ya tiene una factura en borrador.",
     "poBulkOrderHasDraftReceipt": "Pedido {documentNo} ya tiene un albarán en borrador.",
     "cloneOrderBtn": "Clonar",
+    "quickAction.edit": "Editar",
+    "quickAction.clone": "Duplicar",
+    "quickAction.email": "Enviar / Descargar",
+    "quickAction.more": "Más acciones",
+    "quickAction.delete": "Eliminar",
     "cloneOrderConfirmTitle": "Clonar pedido",
     "cloneOrderConfirmBody": "Se creará una copia en borrador de este pedido con los mismos datos.",
     "cloneOrderAction": "Clonar →",
@@ -17970,6 +18056,8 @@
     "quantitiesUpdated": "Cantidades del sistema actualizadas",
     "errorUpdatingQuantities": "Error al actualizar las cantidades del sistema",
     "deleteRowTooltip": "Eliminar",
+    "editLineTooltip": "Editar línea",
+    "selectRow": "Seleccionar fila",
     "recordDeleted": "Registro eliminado",
     "recordsDeleted": "{count} registro(s) eliminado(s)",
     "recordsCouldNotBeDeleted": "{count} registro(s) no pudieron ser eliminados",
@@ -18120,6 +18208,10 @@
     "fiscal.cert.none.title": "Sin certificado",
     "fiscal.cert.none.hint": "Necesario para autenticar con la Hacienda · .p12 o .pfx",
     "fiscal.cert.upload": "Subir certificado",
+    "fiscal.cert.expiry.warn.title": "El certificado vence en {days} días",
+    "fiscal.cert.expiry.critical.title": "El certificado vence en {days} días",
+    "fiscal.cert.expiry.body": "Renueva tu certificado digital para evitar interrupciones en los envíos fiscales.",
+    "fiscal.cert.expiry.dismiss": "Cerrar",
     "fiscal.sii.legend.status": "Estado",
     "fiscal.sii.legend.env": "Entorno",
     "fiscal.sii.legend.sends": "Envíos",
@@ -18307,6 +18399,15 @@
     "fiscalMonitor.next": "Siguiente",
     "fiscalMonitor.pagination": "Página {page} de {total}",
     "fiscalMonitor.openInvoice": "Abrir factura",
+    "fiscalMonitor.viewContact": "Ver detalles del contacto",
+    "contactDetail.title": "Detalles del contacto",
+    "contactDetail.name": "Nombre",
+    "contactDetail.taxID": "NIF/CIF",
+    "contactDetail.taxIDKey": "Clave de identificación fiscal del país de residencia",
+    "contactDetail.location": "Dirección",
+    "contactDetail.editLocation": "Editar",
+    "contactDetail.saved": "Contacto guardado",
+    "contactDetail.saveError": "Error al guardar el contacto",
     "fiscalMonitor.col.invoiceNumber": "Nº Factura",
     "fiscalMonitor.section.sii": "SII",
     "fiscalMonitor.section.tbai": "TBAI",
@@ -18347,6 +18448,7 @@
     "fiscalMonitor.col.errorReason": "Motivo error",
     "fiscalMonitor.orgMeta": "Monitor de facturas · sistema fiscal activo",
     "fiscalMonitor.synced": "Sincronizado",
+    "fiscalMonitor.refresh": "Actualizar",
     "fiscalMonitor.setupDescription": "Esta organización aún no tiene activo un sistema de envío telemático (SII, TicketBAI o Verifactu). Configúralo en Configuración Fiscal para empezar a ver el estado de tus facturas.",
     "fiscalMonitor.setupCta": "Configurar sistema fiscal",
     "fiscalMonitor.errorTitle": "Error cargando datos",
@@ -18369,6 +18471,10 @@
     "fiscalMonitor.tbai.tab.Recibido": "Enviadas (Recibido)",
     "fiscalMonitor.tbai.tab.Rechazado": "Rechazadas",
     "fiscalMonitor.tbai.tab.Error": "Con error",
+    "fiscalMonitor.tbai.tab.Pendiente": "Pendientes",
+    "fiscalMonitor.tbai.status.Pendiente": "Pendiente",
+    "fiscalMonitor.sii.filter.all": "Todas",
+    "fiscalMonitor.sii.filter.errors": "Con errores",
     "fiscalMonitor.status.sii.CO": "Correcto",
     "fiscalMonitor.status.sii.AE": "Aceptado con errores",
     "fiscalMonitor.status.sii.IN": "Incorrecto",
@@ -18387,6 +18493,68 @@
     "fiscalMonitor.profile.unconfigured": "Sin configurar",
     "fiscalMonitor.profile.conflict": "Conflicto",
     "fiscalMonitor.orgFallback": "Organización",
+    "fiscalDebug.title": "⚙ Debug · Configuración Fiscal",
+    "fiscalDebug.org": "Org.",
+    "fiscalDebug.section.profiles": "Perfiles",
+    "fiscalDebug.section.certExpiry": "Caducidad certificado",
+    "fiscalDebug.section.certModal": "Modal certificado",
+    "fiscalDebug.section.deleteRecords": "Eliminar registros",
+    "fiscalDebug.certExpiry.none": "Ninguno",
+    "fiscalDebug.certExpiry.warn": "Aviso 45d",
+    "fiscalDebug.certExpiry.crit": "Crítico 20d",
+    "fiscalDebug.certModal.pick": "Selección",
+    "fiscalDebug.certModal.fileSel": "Archivo sel.",
+    "fiscalDebug.certModal.pickErr": "Error sel.",
+    "fiscalDebug.certModal.verify": "Verificar",
+    "fiscalDebug.certModal.nifConf": "Conf. NIF",
+    "fiscalDebug.certModal.done": "Listo",
+    "fiscalDebug.certModal.invalidFormat": "Formato no válido. Solo se aceptan archivos .p12 y .pfx.",
+    "fiscalDebug.profile.wizard": "Asistente",
+    "fiscalDebug.profile.sii": "SII",
+    "fiscalDebug.profile.siiNav": "SII Nav",
+    "fiscalDebug.profile.tbai": "TBAI",
+    "fiscalDebug.profile.siiTbai": "SII+TBAI",
+    "fiscalDebug.profile.verifactu": "Verifactu",
+    "fiscalDebug.label.sii": "Configuración SII",
+    "fiscalDebug.label.tbai": "Configuración TBAI",
+    "fiscalDebug.label.verifactu": "Configuración Verifactu",
+    "fiscalDebug.label.cert": "Certificado",
+    "fiscalDebug.deleteAll": "🗑 Eliminar TODO (org. actual)",
+    "fiscalDebug.status.deleted": "✓ {count} eliminados",
+    "fmDebug.title": "⚙ Debug · Monitor Fiscal",
+    "fmDebug.profileOverride": "Sobrescribir perfil",
+    "fmDebug.showingDesignFor": "Mostrando diseño para {profile}.",
+    "fmDebug.noOverride": "Sin sobrescribir — perfil real activo.",
+    "fmDebug.section.certExpiry": "Caducidad certificado",
+    "fmDebug.section.data": "Datos",
+    "fmDebug.mockData": "Datos simulados",
+    "fmDebug.mockDataHint": "Los KPI y filas de tabla son muestras estáticas.",
+    "fmDebug.certExpiry.none": "Ninguno",
+    "fmDebug.certExpiry.warn": "Aviso 45d",
+    "fmDebug.certExpiry.crit": "Crítico 20d",
+    "fmDebug.profile.sii": "SII",
+    "fmDebug.profile.siiNavarra": "SII Navarra",
+    "fmDebug.profile.siiTbai": "SII + TBAI",
+    "fmDebug.profile.tbai": "TBAI",
+    "fmDebug.profile.verifactu": "Verifactu",
+    "purchaseOrder.topbar.deliveryStatus": "Estado de entrega",
+    "purchaseOrder.topbar.invoiceStatus": "Estado de facturación",
+    "quotationStatus.AE": "Evaluación automática",
+    "quotationStatus.CO": "Reservado",
+    "quotationStatus.CL": "Cerrado",
+    "quotationStatus.CA": "Cerrado - Pedido creado",
+    "quotationStatus.CJ": "Cerrado - Rechazado",
+    "quotationStatus.DR": "Borrador",
+    "quotationStatus.ME": "Evaluación manual",
+    "quotationStatus.NA": "No aceptado",
+    "quotationStatus.NC": "No confirmado",
+    "quotationStatus.WP": "No pagado",
+    "quotationStatus.RE": "Reabierto",
+    "quotationStatus.TMP": "Temporal",
+    "quotationStatus.UE": "Bajo evaluación",
+    "quotationStatus.IP": "En curso",
+    "quotationStatus.UNK": "Desconocido",
+    "quotationStatus.VO": "Anulado",
     "sendToSif": "Enviar a SIF",
     "sendToSifTitle": "Enviar al sistema fiscal",
     "sendToSifBodySii": "Esta factura se enviará al SII.",
@@ -18402,6 +18570,15 @@
     "sifDataTabs.tab.sii": "SII",
     "sifDataTabs.tab.tbai": "TBAI",
     "sifDataTabs.tab.verifactu": "Verifactu",
+    "sifDataTabs.rail.sii.subtitle": "Suministro Inmediato",
+    "sifDataTabs.rail.tbai.subtitle": "TicketBAI",
+    "sifDataTabs.rail.verifactu.subtitle": "Verifactu",
+    "sifDataTabs.panel.sii.title": "Suministro Inmediato de Información",
+    "sifDataTabs.panel.sii.subtitle": "AEAT · Modelo 303",
+    "sifDataTabs.panel.tbai.title": "TicketBAI · Hacienda Foral de Bizkaia",
+    "sifDataTabs.panel.tbai.subtitle": "Versión 1.2 · Cadena de huellas activa",
+    "sifDataTabs.panel.verifactu.title": "Verifactu",
+    "sifDataTabs.panel.verifactu.subtitle": "AEAT · Notificación de facturas en tiempo real",
     "sifDataTabs.errorSavingField": "Error al guardar el campo",
     "sifDataTabs.option.invoice": "Factura",
     "sifDataTabs.option.simplifiedInvoice": "Factura simplificada",
@@ -18442,7 +18619,157 @@
     "sifDataTabs.status.verifactu.invalid": "Inválida",
     "sifDataTabs.status.verifactu.rejected": "Rechazada",
     "sifDataTabs.status.verifactu.pending": "Pendiente",
-    "sifDataTabs.status.verifactu.notSent": "No enviada"
+    "sifDataTabs.status.verifactu.notSent": "No enviada",
+    "recentSalesInvoices": "Facturas de venta recientes",
+    "recentPurchaseInvoices": "Facturas de compra recientes",
+    "bankAccountsSummary": "Resumen de cuentas bancarias",
+    "taxObligations": "Obligaciones fiscales",
+    "installed": "Instalado",
+    "addsMenuEntries": "Añade entradas de menú",
+    "uninstall": "Desinstalar",
+    "installing": "Instalando…",
+    "appStore": "Tienda de aplicaciones",
+    "appStoreDescription": "Aplicaciones externas creadas con el SDK de Etendo. Cada app se ejecuta en su propio iframe — instalarla añade sus entradas de menú al shell; desinstalarla las elimina. No se necesita reconstruir el shell.",
+    "appStoreTip": "Sugerencia: esta sección está oculta por defecto — revélala con",
+    "appStoreTipHide": ", ocúltala con",
+    "hideAppStoreTitle": "Ocultar la tienda de aplicaciones de la barra lateral",
+    "hideAppStore": "Ocultar tienda",
+    "artifactSchemaRaw": "Schema Raw",
+    "artifactSchemaCurated": "Schema Curado",
+    "artifactContract": "Contrato",
+    "artifactsTitle": "Artefactos",
+    "searchWindows": "Buscar ventanas...",
+    "noWindowsFound": "No se encontraron ventanas",
+    "selectWindowFromList": "Selecciona una ventana de la lista",
+    "currentVersion": "Versión actual",
+    "noDataToDisplay": "No hay datos para mostrar",
+    "closeDetailPanel": "Cerrar panel de detalle",
+    "activitySummary": "Resumen de actividad",
+    "lastSale": "Última venta",
+    "totalInvoiced12m": "Total facturado (12m)",
+    "pendingBalanceLabel": "Saldo pendiente",
+    "totalInvoicedHeader": "Total facturado",
+    "pendingBalanceHeader": "Saldo pendiente",
+    "category": "Categoría",
+    "viewKanban": "Kanban",
+    "viewList": "Lista",
+    "recentActivities": "Actividades recientes",
+    "teamActivity": "Actividad del equipo",
+    "firstStepsPageTitle": "Primeros pasos",
+    "firstStepsCopilotBanner": "Copilot puede ayudarte a configurarlo",
+    "firstStepsStart": "Empezar",
+    "firstStepsPrepareAccount": "Vamos a preparar tu cuenta",
+    "firstStepsSubtitle": "Sigue estos pasos y en menos de 10 minutos tendrás todo listo para empezar.",
+    "completed": "Completados",
+    "firstStepsConfigure": "Configurar",
+    "minutes": "min",
+    "markAsCompleted": "Marcar como completado",
+    "firstStepsCreateAccount": "Crear cuenta",
+    "firstStepsCompanyData": "Datos de tu empresa",
+    "firstStepsCompanyDataDesc": "Añade la información básica para emitir documentos.",
+    "firstStepsCustomizeInvoices": "Personaliza tus facturas",
+    "firstStepsConnectBank": "Conecta tu banco",
+    "firstStepsSetupPayments": "Configura métodos de pago",
+    "firstStepsInviteTeam": "Invita a tu equipo",
+    "firstStepsFirstInvoice": "Crea tu primera factura",
+    "employeeDirectory": "Directorio de empleados",
+    "hrUpdates": "Novedades de RRHH",
+    "stockLevels": "Niveles de stock",
+    "minimum": "mínimo",
+    "recentMovements": "Movimientos recientes",
+    "oauth2Clients": "Clientes OAuth2",
+    "manageMcpCredentials": "Gestionar credenciales de agentes MCP",
+    "loadingClients": "Cargando clientes...",
+    "noOAuth2Clients": "No hay clientes OAuth2",
+    "createClientDescription": "Crea un cliente para que los agentes MCP puedan autenticarse con Etendo.",
+    "createFirstClient": "Crear primer cliente",
+    "clientId": "ID de cliente",
+    "scopes": "Permisos",
+    "active": "Activo",
+    "clickToCopy": "Clic para copiar",
+    "regenerateSecret": "Regenerar secreto",
+    "revokeTokens": "Revocar tokens",
+    "deleteClientDesc": "Esto eliminará permanentemente el cliente y revocará todos sus tokens. Esta acción no se puede deshacer.",
+    "regenerateSecretDesc": "¿Estás seguro? El secreto actual quedará invalidado inmediatamente. Los agentes que usen el secreto antiguo dejarán de funcionar.",
+    "revokeTokensDesc": "Esto invalidará todos los tokens activos de este cliente. Los agentes deberán volver a autenticarse.",
+    "recentTimeEntries": "Entradas de tiempo recientes",
+    "recentDocuments": "Documentos recientes",
+    "purchaseOrders": "Órdenes de compra",
+    "docNo": "Nº doc.",
+    "documentNo": "Nº documento",
+    "settings": "Configuración",
+    "settingsDescription": "Gestiona el contexto de tu sesión. Cambiar el rol u organización volverá a autenticar tu sesión.",
+    "currentSession": "Sesión actual",
+    "user": "Usuario",
+    "activeContext": "Contexto activo",
+    "balanceSheet": "Balance general",
+    "profitLoss": "P&G",
+    "profitLossTitle": "Pérdidas y ganancias",
+    "agingReceivable": "Aging de cobros",
+    "agingReceivableTitle": "Antigüedad de cobros",
+    "agingPayable": "Aging de pagos",
+    "agingPayableTitle": "Antigüedad de pagos",
+    "required": "Requerido",
+    "selectedCount": "seleccionados",
+    "loadingDetails": "Cargando detalles...",
+    "detailReport": "Informe de detalle",
+    "detailsSuffix": " — Detalles",
+    "invoiceTitle": "Factura",
+    "install": "Instalar",
+    "quotations": "Cotizaciones",
+    "location": "Ubicación",
+    "oauthClientNew": "Nuevo cliente",
+    "oauthClientManage": "Gestionar credenciales de agentes MCP",
+    "oauthClientNoClients": "Sin clientes OAuth2",
+    "oauthClientNoClientsDesc": "Crea un cliente para permitir que los agentes MCP se autentiquen con Etendo.",
+    "oauthClientCreateFirst": "Crear primer cliente",
+    "oauthClientId": "ID de cliente",
+    "oauthScopes": "Alcances",
+    "oauthActive": "Activo",
+    "oauthInactive": "Inactivo",
+    "oauthRegenerateSecret": "Regenerar secreto",
+    "oauthRevokeTokens": "Revocar tokens",
+    "oauthClickToCopy": "Clic para copiar",
+    "oauthDeleteDesc": "Esto eliminará permanentemente el cliente y revocará todos sus tokens. Esta acción no se puede deshacer.",
+    "oauthRegenerateDesc": "¿Estás seguro? El secreto actual quedará invalidado inmediatamente. Los agentes que usen el secreto anterior dejarán de funcionar.",
+    "oauthRevokeDesc": "Esto invalidará todos los tokens activos de este cliente. Los agentes deberán volver a autenticarse.",
+    "firstStepsCompleted": "Completados",
+    "attachments": "Adjuntos",
+    "attachmentsDropHere": "Arrastra tu archivo aquí",
+    "attachmentsOr": "o",
+    "attachmentsBrowse": "selecciona un archivo",
+    "attachmentsAllowedFormats": "Formatos compatibles: {types}",
+    "attachmentsDefaultTypesLabel": "PDF, Word, Excel, PowerPoint, Imágenes",
+    "attachmentsFileName": "Nombre del archivo",
+    "attachmentsSize": "Tamaño del archivo",
+    "attachmentsUploadedAt": "Fecha de carga",
+    "attachmentsUpdatedAt": "Última actualización",
+    "attachmentsUploadedBy": "Subido por",
+    "attachmentsUnknownUser": "Usuario desconocido",
+    "attachmentsDownload": "Descargar",
+    "attachmentsDelete": "Eliminar",
+    "attachmentsEdit": "Editar",
+    "attachmentsDownloadAll": "Descargar todo (ZIP)",
+    "attachmentsDeleteAll": "Eliminar todo",
+    "attachmentsRemoveAllTitle": "Eliminar adjuntos",
+    "attachmentsRemoveAllMessage": "¿Está seguro de que desea eliminar permanentemente todos los adjuntos de este registro?",
+    "attachmentsDeleteAllSuccess": "Todos los adjuntos eliminados",
+    "attachmentsDeleteAllError": "Error al eliminar todos los adjuntos",
+    "attachmentsConfirmDelete": "¿Eliminar este adjunto?",
+    "attachmentsEditDescription": "Editar descripción",
+    "attachmentsDescription": "Descripción",
+    "attachmentsNoFiles": "Aún no hay adjuntos",
+    "attachmentsUploading": "Subiendo…",
+    "attachmentsUploadSuccess": "Archivo subido",
+    "attachmentsUploadError": "Error al subir: {reason}",
+    "attachmentsDeleteSuccess": "Adjunto eliminado",
+    "attachmentsDeleteError": "Error al eliminar",
+    "attachmentsUpdateSuccess": "Descripción actualizada",
+    "attachmentsUpdateError": "Error al actualizar la descripción",
+    "attachmentsFileTooLarge": "Archivo demasiado grande (máx {max} MB)",
+    "attachmentsInvalidType": "Tipo de archivo no permitido",
+    "attachmentsConfirmReplace": "El archivo que intenta subir ya existe, por lo que será reemplazado por el nuevo. ¿Está seguro de que desea continuar?",
+    "attachmentsContinue": "Continuar"
   },
   "menus": {
     "Tax": {
@@ -19722,6 +20049,30 @@
     }
   },
   "statuses": {
+    "AE": {
+      "label": "Evaluación automática"
+    },
+    "ME": {
+      "label": "Evaluación manual"
+    },
+    "NA": {
+      "label": "No aceptado"
+    },
+    "NC": {
+      "label": "No confirmado"
+    },
+    "WP": {
+      "label": "No pagado"
+    },
+    "RE": {
+      "label": "Reabierto"
+    },
+    "TMP": {
+      "label": "Temporal"
+    },
+    "??": {
+      "label": "Desconocido"
+    },
     "CA": {
       "label": "Cerrado - Pedido creado"
     },
