@@ -32,7 +32,7 @@ Dashboard pages can also consume entity endpoints under `/sws/neo/dashboard/{ent
 
 | Entity | URL | Handler | Description |
 |--------|-----|---------|-------------|
-| `recent-invoices` | `GET /sws/neo/dashboard/recent-invoices` | `widgetRecentInvoicesHandler` | Completed sales invoices (`CO`, `CL`) for the requested `?range=`, max 10 records, sorted newest first |
+| `recent-invoices` | `GET /sws/neo/dashboard/recent-invoices` | `widgetRecentInvoicesHandler` | Completed sales invoices (`CO`, `CL`) for the requested `?range=`, max **5** records, sorted newest first |
 
 ## Response Format
 
@@ -278,6 +278,8 @@ Single object with parallel `labels` (month abbreviations) and `values` (amounts
 
 ### widget-pending-tasks
 
+Each task uses either `filter` (quick-filter preset) or `params` (column-filter map) in its navigation object — never both.
+
 ```json
 {
   "response": {
@@ -292,14 +294,37 @@ Single object with parallel `labels` (month abbreviations) and `values` (amounts
         },
         "link": "/sales-invoice?filter=overdue",
         "amount": "$12,400"
+      },
+      {
+        "type": "info",
+        "text": "4 goods receipts pending",
+        "navigation": {
+          "type": "list",
+          "window": "goods-receipt",
+          "params": { "DocStatus": "DR" }
+        },
+        "link": "/goods-receipt?DocStatus=DR",
+        "count": 4,
+        "taskKey": "pendingReceptions_plural"
       }
     ],
-    "count": 4
+    "count": 2
   }
 }
 ```
 
-Fields: `type` (`warning`|`info`), `text` (description), `navigation` (preferred semantic target), `link` (legacy route path during migration), `amount` (optional formatted string), `detail` (optional extra text).
+Fields: `type` (`warning`|`info`), `text` (description), `navigation` (preferred semantic target — uses `filter` for quick-filter presets or `params` for column-filter pre-population), `link` (legacy route path during migration), `count` (numeric), `taskKey` (i18n key used by `PendingTasksRail`), `amount` (optional formatted string), `detail` (optional extra text).
+
+**Task inventory** (as of ETP-4004):
+
+| taskKey | Window | Navigation type | Target |
+|---------|--------|----------------|--------|
+| `overdueInvoices` | `sales-invoice` | `filter` | `overdue` |
+| `collectionsDueToday` | `sales-invoice` | `filter` | `collectionsDueToday` |
+| `paymentsDueToday` | `purchase-invoice` | `filter` | `paymentsDueToday` |
+| `pendingReceptions` | `goods-receipt` | `params` | `DocStatus=DR` |
+| `pendingSalesDeliveries` | `sales-order` | `filter` | `pendingDelivery` |
+| `lowStockAlerts` | `physical-inventory` | — | direct link |
 
 ### widget-activity
 
