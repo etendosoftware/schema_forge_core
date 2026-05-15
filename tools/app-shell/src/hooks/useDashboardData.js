@@ -151,8 +151,8 @@ function mapPendingTasks(handlerData) {
         paymentsDueToday_plural: '/purchase-invoice?filter=overdue',
         pendingReceptions: '/goods-receipt?DocStatus=DR',
         pendingReceptions_plural: '/goods-receipt?DocStatus=DR',
-        pendingSalesDeliveries: '/sales-order?filter=pendingDelivery',
-        pendingSalesDeliveries_plural: '/sales-order?filter=pendingDelivery',
+        pendingSalesDeliveries: '/goods-shipment?DocStatus=DR',
+        pendingSalesDeliveries_plural: '/goods-shipment?DocStatus=DR',
       };
       if (FILTER_LINKS[mapped.taskKey]) {
         mapped.link = FILTER_LINKS[mapped.taskKey];
@@ -173,7 +173,7 @@ function inferPendingTaskKey(task) {
   if (task?.link?.startsWith('/goods-receipt') || text.includes('pending reception')) {
     return task?.count === 1 ? 'pendingReceptions' : 'pendingReceptions_plural';
   }
-  if (task?.link?.startsWith('/sales-order?filter=pendingDelivery') || text.includes('pending delivery')) {
+  if (task?.link?.startsWith('/goods-shipment') || text.includes('pending delivery')) {
     return task?.count === 1 ? 'pendingSalesDeliveries' : 'pendingSalesDeliveries_plural';
   }
   if (text.includes('collection') && text.includes('due today')) {
