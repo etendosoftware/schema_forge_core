@@ -30,7 +30,20 @@ describe('isTokenExpired', () => {
     assert.equal(isTokenExpired(''), true);
   });
 
-  it('returns false for non-empty token', () => {
-    assert.equal(isTokenExpired('some-token'), false);
+  it('returns false for a valid (non-expired) JWT', () => {
+    // header: {"alg":"none"}, payload: {"sub":"u","exp":9999999999}
+    const validToken = 'eyJhbGciOiJub25lIn0.eyJzdWIiOiJ1IiwiZXhwIjo5OTk5OTk5OTk5fQ.sig';
+    assert.equal(isTokenExpired(validToken), false);
+  });
+
+  it('returns true for an expired JWT', () => {
+    // header: {"alg":"none"}, payload: {"sub":"u","exp":1000000000}
+    const expiredToken = 'eyJhbGciOiJub25lIn0.eyJzdWIiOiJ1IiwiZXhwIjoxMDAwMDAwMDAwfQ.sig';
+    assert.equal(isTokenExpired(expiredToken), true);
+  });
+
+  it('returns true for a malformed token', () => {
+    assert.equal(isTokenExpired('not.a.jwt'), true);
+    assert.equal(isTokenExpired('some-token'), true);
   });
 });

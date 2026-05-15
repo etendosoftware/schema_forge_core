@@ -1,12 +1,12 @@
 export function detectBaseUrl() {
+  if (typeof window === 'undefined') return '';
   const path = window.location.pathname;
   const webIdx = path.indexOf('/web/');
   if (webIdx !== -1) return path.substring(0, webIdx);
-  return import.meta.env.VITE_API_BASE || '';
+  return import.meta.env?.VITE_API_BASE || '';
 }
 
 const DEFAULT_BASE_URL = detectBaseUrl();
-console.log('[api.js] DEFAULT_BASE_URL:', JSON.stringify(DEFAULT_BASE_URL), 'pathname:', window.location.pathname, 'VITE_API_BASE:', import.meta.env.VITE_API_BASE);
 
 export function buildHeaders(token) {
   const headers = { 'Content-Type': 'application/json' };
@@ -17,7 +17,13 @@ export function buildHeaders(token) {
 }
 
 export function isTokenExpired(token) {
-  return !token;
+  if (!token) return true;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000 < Date.now();
+  } catch {
+    return true;
+  }
 }
 
 export function createApiFetch(baseUrl, getToken, onUnauthorized) {
