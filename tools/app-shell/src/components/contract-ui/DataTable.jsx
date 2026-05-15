@@ -459,7 +459,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     for (const f of fields) {
       if (f.key === 'lineNo') {
         empty[f.key] = defaultLineNo;
-      } else if (f.defaultValue !== undefined) {
+      } else if (f.defaultValue !== undefined && !/^@[^@]+@$/.test(String(f.defaultValue))) {
         empty[f.key] = f.defaultValue;
       } else {
         empty[f.key] = '';
