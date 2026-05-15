@@ -306,9 +306,21 @@ Each task uses either `filter` (quick-filter preset) or `params` (column-filter 
         "link": "/goods-receipt?DocStatus=DR",
         "count": 4,
         "taskKey": "pendingReceptions_plural"
+      },
+      {
+        "type": "info",
+        "text": "9 goods shipments pending",
+        "navigation": {
+          "type": "list",
+          "window": "goods-shipment",
+          "params": { "DocStatus": "DR" }
+        },
+        "link": "/goods-shipment?DocStatus=DR",
+        "count": 9,
+        "taskKey": "pendingSalesDeliveries_plural"
       }
     ],
-    "count": 2
+    "count": 3
   }
 }
 ```
@@ -323,7 +335,7 @@ Fields: `type` (`warning`|`info`), `text` (description), `navigation` (preferred
 | `collectionsDueToday` | `sales-invoice` | `filter` | `collectionsDueToday` |
 | `paymentsDueToday` | `purchase-invoice` | `filter` | `paymentsDueToday` |
 | `pendingReceptions` | `goods-receipt` | `params` | `DocStatus=DR` |
-| `pendingSalesDeliveries` | `sales-order` | `filter` | `pendingDelivery` |
+| `pendingSalesDeliveries` | `goods-shipment` | `params` | `DocStatus=DR` |
 | `lowStockAlerts` | `physical-inventory` | — | direct link |
 
 ### widget-activity
