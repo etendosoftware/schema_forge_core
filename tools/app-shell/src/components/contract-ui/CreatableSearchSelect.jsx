@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { ChevronDown, Loader2, X } from 'lucide-react';
+import { ChevronDown, Loader2 } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
+import { SelectorChip } from './SelectorChip.jsx';
 
 /**
  * CreatableSearchSelect — generic search-style selector with an inline "Create X" action.
@@ -235,24 +236,13 @@ export function CreatableSearchSelect({
     */
     <div className={`relative flex h-10 w-full items-center rounded-lg border border-[#D1D4DB] bg-transparent shadow-[0px_1px_2px_rgba(18,18,23,0.05)] pl-2 pr-2 gap-1 focus-within:ring-2 focus-within:ring-primary${isDisabled ? ' opacity-50 cursor-not-allowed' : ''}`}>
       {showChip ? (
-        <button
-          type="button"
+        <SelectorChip
+          label={displayValue || query}
           onClick={handleChipClick}
-          data-testid={`field-${field.key}-chip`}
-          className="inline-flex items-center gap-1 max-w-full min-w-0 px-2 py-1 rounded-lg bg-[#F5F7F9] text-sm text-[#3F3F50] hover:brightness-95 transition cursor-text"
-        >
-          <span className="truncate">{displayValue || query}</span>
-          <span
-            role="button"
-            tabIndex={0}
-            aria-label={ui('clear')}
-            onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleClear(); }}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClear(); } }}
-            className="shrink-0 inline-flex items-center justify-center"
-          >
-            <X className="h-4 w-4 text-[#828FA3] hover:text-foreground transition-colors" />
-          </span>
-        </button>
+          onClear={handleClear}
+          clearAriaLabel={ui('clear')}
+          testId={`field-${field.key}-chip`}
+        />
       ) : (
         <input
           ref={inputRef}

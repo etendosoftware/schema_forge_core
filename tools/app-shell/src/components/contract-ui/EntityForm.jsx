@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { DateField } from '@/components/ui/date-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Check, ChevronDown, ChevronsUpDown, Loader2, Search, X } from 'lucide-react';
+import { ChevronDown, Loader2, Search, X } from 'lucide-react';
 import { useLabel, useLocaleSwitch, useMenuLabel, useUI } from '@/i18n';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
@@ -13,6 +13,7 @@ import { ImageField } from './ImageField.jsx';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import { CreateContactContext } from './CreateContactContext.js';
 import { PartnerAddressPicker } from './PartnerAddressPicker.jsx';
+import { SelectorChip } from './SelectorChip.jsx';
 import { SelectorInput } from './SelectorInput.jsx';
 
 function buildSelectPlaceholder(ui, label) {
@@ -41,6 +42,18 @@ function evalDisplayLogic(field, data) {
 
 function buildSearchPlaceholder(ui, label) {
   return `${ui('searchLabelPrefix')} ${label}...`;
+}
+
+/**
+ * Resolve the grid utility classes for an EntityForm container.
+ * Extracted from a nested ternary to satisfy Sonar S3358 — the three branches
+ * (override via `cols`, horizontal header form, vertical line form) have
+ * distinct visual contracts and should read as independent statements.
+ */
+function resolveGridClass(cols, layout) {
+  if (cols) return 'grid';
+  if (layout === 'horizontal') return 'grid grid-cols-2 gap-x-5 gap-y-5 md:grid-cols-4';
+  return 'grid grid-cols-2 gap-3 md:grid-cols-3';
 }
 
 /**
@@ -231,24 +244,13 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
     */
     <div className="relative flex h-10 w-full items-center rounded-lg border border-[#D1D4DB] bg-transparent shadow-[0px_1px_2px_rgba(18,18,23,0.05)] pl-2 pr-2 gap-1 focus-within:ring-2 focus-within:ring-primary">
       {showChip ? (
-        <button
-          type="button"
+        <SelectorChip
+          label={displayValue || query}
           onClick={handleChipClick}
-          data-testid={`field-${field.key}-chip`}
-          className="inline-flex items-center gap-1 max-w-full min-w-0 px-2 py-1 rounded-lg bg-[#F5F7F9] text-sm text-[#3F3F50] hover:brightness-95 transition cursor-text"
-        >
-          <span className="truncate">{displayValue || query}</span>
-          <span
-            role="button"
-            tabIndex={0}
-            aria-label={ui('clear')}
-            onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleClear(); }}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClear(); } }}
-            className="shrink-0 inline-flex items-center justify-center"
-          >
-            <X className="h-4 w-4 text-[#828FA3] hover:text-foreground transition-colors" />
-          </span>
-        </button>
+          onClear={handleClear}
+          clearAriaLabel={ui('clear')}
+          testId={`field-${field.key}-chip`}
+        />
       ) : (
         <input
           ref={inputRef}
@@ -533,11 +535,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
 
   if (displayFields.length === 0) return null;
 
-  const gridClass = cols
-    ? 'grid'
-    : (layout === 'horizontal'
-      ? 'grid grid-cols-2 gap-x-5 gap-y-5 md:grid-cols-4'
-      : 'grid grid-cols-2 gap-3 md:grid-cols-3');
+  const gridClass = resolveGridClass(cols, layout);
   const gridStyle = cols ? { gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 } : undefined;
 
   // If there's an image field, pin it to the right — rest of fields render in a 3-col grid on the left
