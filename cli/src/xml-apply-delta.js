@@ -258,7 +258,7 @@ function escapeCdata(value) {
 }
 
 function serializeRow(tag, row) {
-  const keys = Object.keys(row).sort();
+  const keys = Object.keys(row).sort((a, b) => a.localeCompare(b));
   const lines = [`<${tag}>`];
   for (const k of keys) {
     const v = row[k];
@@ -277,11 +277,9 @@ function serializeRow(tag, row) {
  */
 export function serializeTable(tag, rows) {
   const pk = TABLES.find(t => t.tag === tag).pk;
-  const sorted = [...rows].sort((a, b) => {
-    const ka = String(a[pk] || '');
-    const kb = String(b[pk] || '');
-    return ka < kb ? -1 : ka > kb ? 1 : 0;
-  });
+  const sorted = [...rows].sort((a, b) =>
+    String(a[pk] || '').localeCompare(String(b[pk] || '')),
+  );
   const body = sorted.map(r => serializeRow(tag, r)).join('\n');
   const header = `<?xml version='1.0' encoding='UTF-8'?>\n<data>\n`;
   const footer = `\n</data>\n`;
@@ -294,13 +292,14 @@ export function serializeTable(tag, rows) {
 
 function parseCliArgs(argv) {
   const opts = {};
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (a === '--prev-xml-dir') opts.prevXmlDir = argv[++i];
+  const queue = [...argv];
+  while (queue.length > 0) {
+    const a = queue.shift();
+    if (a === '--prev-xml-dir') opts.prevXmlDir = queue.shift();
     else if (a.startsWith('--prev-xml-dir=')) opts.prevXmlDir = a.slice('--prev-xml-dir='.length);
-    else if (a === '--delta') opts.delta = argv[++i];
+    else if (a === '--delta') opts.delta = queue.shift();
     else if (a.startsWith('--delta=')) opts.delta = a.slice('--delta='.length);
-    else if (a === '--out-dir') opts.outDir = argv[++i];
+    else if (a === '--out-dir') opts.outDir = queue.shift();
     else if (a.startsWith('--out-dir=')) opts.outDir = a.slice('--out-dir='.length);
     else if (a === '--help' || a === '-h') opts.help = true;
     else throw new Error(`Unknown argument: ${a}`);

@@ -501,24 +501,21 @@ export function serializeDelta(delta) {
     const out = {};
     // Put _naturalKey first for human review, then the rest alphabetically.
     if ('_naturalKey' in row) out._naturalKey = row._naturalKey;
-    for (const k of Object.keys(row).sort()) {
+    for (const k of Object.keys(row).sort((a, b) => a.localeCompare(b))) {
       if (k === '_naturalKey') continue;
       out[k] = row[k];
     }
     return out;
   };
   const sortRows = (rows) => rows.map(sortRow);
+  const byNaturalKey = (a, b) => a._naturalKey.localeCompare(b._naturalKey);
   const tables = {};
   // Fixed table order matches dependency order: spec → entity → field.
   for (const tag of ['ETGO_SF_SPEC', 'ETGO_SF_ENTITY', 'ETGO_SF_FIELD']) {
     const t = delta.tables[tag];
     tables[tag] = {
-      upserts: sortRows([...t.upserts].sort((a, b) =>
-        a._naturalKey < b._naturalKey ? -1 : a._naturalKey > b._naturalKey ? 1 : 0,
-      )),
-      deletes: sortRows([...t.deletes].sort((a, b) =>
-        a._naturalKey < b._naturalKey ? -1 : a._naturalKey > b._naturalKey ? 1 : 0,
-      )),
+      upserts: sortRows([...t.upserts].sort(byNaturalKey)),
+      deletes: sortRows([...t.deletes].sort(byNaturalKey)),
     };
   }
   return { spec: delta.spec, tables };

@@ -41,7 +41,7 @@ function stableStringify(value) {
   if (Array.isArray(value)) {
     return '[' + value.map(stableStringify).join(',') + ']';
   }
-  const keys = Object.keys(value).sort();
+  const keys = Object.keys(value).sort((a, b) => a.localeCompare(b));
   return '{' + keys.map((k) => JSON.stringify(k) + ':' + stableStringify(value[k])).join(',') + '}';
 }
 
@@ -80,7 +80,7 @@ export function readCache(path) {
  */
 export function writeCache(path, entries) {
   const sorted = {};
-  for (const k of Object.keys(entries).sort()) {
+  for (const k of Object.keys(entries).sort((a, b) => a.localeCompare(b))) {
     sorted[k] = entries[k];
   }
   mkdirSync(dirname(path), { recursive: true });

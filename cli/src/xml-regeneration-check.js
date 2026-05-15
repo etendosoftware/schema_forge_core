@@ -518,7 +518,7 @@ function truncate(value, max = 160) {
 }
 
 function printDriftDetails(driftDetails) {
-  const paths = Object.keys(driftDetails).sort();
+  const paths = Object.keys(driftDetails).sort((a, b) => a.localeCompare(b));
   if (paths.length === 0) return;
   console.log('Drift detail (per-row, per-field):');
   console.log('-'.repeat(60));
