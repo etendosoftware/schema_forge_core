@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 import { StatusPill, NumFactura, Pager, RowActionBtn, isErrorStatus, isPendingStatus, fmtDate, PAGE_SIZE } from './FmPrimitives.jsx';
 import {
   SII_SPEC,
@@ -41,7 +42,7 @@ const DownloadIcon = () => (
   </svg>
 );
 
-async function fetchSubtab(base, entity, parentId, page, token, statusFilter) {
+async function fetchSubtab(apiFetch, entity, parentId, page, statusFilter) {
   const params = new URLSearchParams({
     parentId,
     _startRow: String((page - 1) * PAGE_SIZE),
@@ -52,16 +53,15 @@ async function fetchSubtab(base, entity, parentId, page, token, statusFilter) {
     const operator      = statusFilter === 'errors' ? 'inSet'      : 'equals';
     params.set('criteria', JSON.stringify([{ fieldName: 'aeatsiiEstado', operator, value: criteriaValue }]));
   }
-  const res = await fetch(`${base}/${SII_SPEC}/${encodeURIComponent(entity)}?${params}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await apiFetch(`/${SII_SPEC}/${encodeURIComponent(entity)}?${params}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const json = await res.json();
   return { data: json?.response?.data ?? [], totalRows: json?.response?.totalRows ?? 0 };
 }
 
-export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, initialTab = 'issued', mockRows, onTabChange, refreshKey = 0, onInvoiceOpen, onBpClick }) {
+export default function SiiMonitorSection({ orgId, apiBaseUrl, parentId, initialTab = 'issued', mockRows, onTabChange, refreshKey = 0, onInvoiceOpen, onBpClick }) {
   const ui = useUI();
+  const apiFetch = useApiFetch(neoBase(apiBaseUrl));
   const [tab, setTab]             = useState('issued');
   const [period, setPeriod]       = useState('current');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -113,12 +113,11 @@ export default function SiiMonitorSection({ orgId, token, apiBaseUrl, parentId, 
     if (!parentId) return;
     setLoading(true);
     setError(null);
-    const base = neoBase(apiBaseUrl);
-    fetchSubtab(base, SUBTAB_ENTITIES[entityKey], parentId, page, token, statusFilter)
+    fetchSubtab(apiFetch, SUBTAB_ENTITIES[entityKey], parentId, page, statusFilter)
       .then(({ data, totalRows }) => { setRows(data); setTotalRows(totalRows); })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [parentId, entityKey, page, token, apiBaseUrl, mockRows, statusFilter, refreshKey]);
+  }, [parentId, entityKey, page, apiFetch, mockRows, statusFilter, refreshKey]);
 
   useEffect(() => { setPage(1); }, [tab, period, statusFilter]);
 

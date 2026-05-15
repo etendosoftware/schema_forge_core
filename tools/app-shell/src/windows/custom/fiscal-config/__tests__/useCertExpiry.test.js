@@ -27,8 +27,14 @@ describe('useCertExpiry — hook structure', () => {
     assert.match(src, /return.*daysLeft/);
   });
 
-  it('fetches from the /certificate endpoint with orgId', () => {
-    assert.match(src, /certificate\?orgId/);
+  it('fetches from the /certificate endpoint without orgId query param', () => {
+    assert.match(src, /apiFetch\(['"]\/certificate['"]/);
+    assert.doesNotMatch(src, /certificate\?orgId/);
+  });
+
+  it('uses useApiFetch to obtain the authenticated fetch function', () => {
+    assert.match(src, /useApiFetch/);
+    assert.match(src, /apiFetch/);
   });
 
   it('sets daysLeft only when the API response has exists and validTo', () => {
@@ -37,14 +43,6 @@ describe('useCertExpiry — hook structure', () => {
 
   it('short-circuits immediately when mockDaysLeft is not null', () => {
     assert.match(src, /if \(mockDaysLeft !== null\)/);
-  });
-
-  it('includes Authorization header in the fetch', () => {
-    assert.match(src, /Authorization.*Bearer/);
-  });
-
-  it('resets daysLeft to null when orgId or token are falsy', () => {
-    assert.match(src, /if \(!orgId \|\| !token\)\s*\{\s*setDaysLeft\(null\)/);
   });
 
   it('resets daysLeft to null when response has no valid cert (else branch)', () => {

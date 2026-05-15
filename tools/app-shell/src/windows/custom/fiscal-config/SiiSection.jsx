@@ -7,22 +7,15 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 import CertSection from './CertSection.jsx';
 import { getFiscalRecordId, isEtendoTrue, mapSiiRecordToForm, serializeBooleanFields } from './fiscalConfig.utils.js';
 
 const SII_ENTITY = 'siiConfiguration';
 
-async function putSii(base, id, body, token) {
-  const res = await fetch(`${base}/sii-config/${SII_ENTITY}/${id}`, {
-    method: 'PUT',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(await res.text().catch(() => res.statusText));
-}
-
-const SiiSection = forwardRef(function SiiSection({ record, token, apiBaseUrl, orgId, onSave, variant, hideSave, hideCert }, ref) {
+const SiiSection = forwardRef(function SiiSection({ record, apiBaseUrl, orgId, onSave, variant, hideSave, hideCert }, ref) {
   const ui = useUI();
+  const apiFetch = useApiFetch(neoBase(apiBaseUrl));
   const [form, setForm] = useState(mapSiiRecordToForm(record));
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState(null);
@@ -46,12 +39,12 @@ const SiiSection = forwardRef(function SiiSection({ record, token, apiBaseUrl, o
     setSaving(true);
     setError(null);
     try {
-      await putSii(
-        neoBase(apiBaseUrl),
-        recordId,
-        serializeBooleanFields(form, ['acogidaAlSII', 'entornoDeProduccin', 'adjuntarArchivosXML', 'postedInvoices', 'recc', 'redeme']),
-        token,
-      );
+      const res = await apiFetch(`/sii-config/${SII_ENTITY}/${recordId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(serializeBooleanFields(form, ['acogidaAlSII', 'entornoDeProduccin', 'adjuntarArchivosXML', 'postedInvoices', 'recc', 'redeme'])),
+      });
+      if (!res.ok) throw new Error(await res.text().catch(() => res.statusText));
       onSave();
     } catch (err) {
       setError(err.message);
@@ -143,7 +136,7 @@ const SiiSection = forwardRef(function SiiSection({ record, token, apiBaseUrl, o
         </div>
       </fieldset>
 
-      {!hideCert && <CertSection context="sii" orgId={orgId} token={token} apiBaseUrl={apiBaseUrl} />}
+      {!hideCert && <CertSection context="sii" orgId={orgId} apiBaseUrl={apiBaseUrl} />}
 
       <fieldset className="space-y-4 border-0 p-0 m-0">
         <legend className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{ui('fiscal.sii.legend.actions')}</legend>
@@ -152,12 +145,11 @@ const SiiSection = forwardRef(function SiiSection({ record, token, apiBaseUrl, o
           type="button"
           onClick={async () => {
             try {
-              const base = neoBase(apiBaseUrl);
               const recordId = getFiscalRecordId(record, 'SII');
               if (!recordId) throw new Error(ui('fiscal.sii.err.noRecordId'));
-              const res = await fetch(`${base}/sii-config/${SII_ENTITY}/${recordId}/action/validHash`, {
+              const res = await apiFetch(`/sii-config/${SII_ENTITY}/${recordId}/action/validHash`, {
                 method: 'POST',
-                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' },
               });
               if (!res.ok) throw new Error(await res.text().catch(() => res.statusText));
               onSave();

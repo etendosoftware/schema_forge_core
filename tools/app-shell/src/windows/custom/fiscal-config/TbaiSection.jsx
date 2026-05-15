@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 import CertSection from './CertSection.jsx';
 import {
   getFiscalRecordId,
@@ -19,17 +20,9 @@ import {
 // Confirmed from artifacts/tbai-config/contract.json → backendContract.window.primaryEntity
 const TBAI_ENTITY = 'header';
 
-async function putTbai(base, id, body, token) {
-  const res = await fetch(`${base}/tbai-config/${TBAI_ENTITY}/${id}`, {
-    method: 'PUT',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(await res.text().catch(() => res.statusText));
-}
-
-const TbaiSection = forwardRef(function TbaiSection({ record, token, apiBaseUrl, orgId, onSave, hideSave, hideCert }, ref) {
+const TbaiSection = forwardRef(function TbaiSection({ record, apiBaseUrl, orgId, onSave, hideSave, hideCert }, ref) {
   const ui = useUI();
+  const apiFetch = useApiFetch(neoBase(apiBaseUrl));
   const [form, setForm] = useState({
     tbaisystemdate:         normalizeDateInputValue(record?.tbaisystemdate),
     productionEnv:          normalizeEtendoBoolean(record?.productionEnv),
@@ -62,12 +55,12 @@ const TbaiSection = forwardRef(function TbaiSection({ record, token, apiBaseUrl,
     setSaving(true);
     setError(null);
     try {
-      await putTbai(
-        neoBase(apiBaseUrl),
-        recordId,
-        serializeBooleanFields(form, ['productionEnv', 'uSEAsproductDesc', 'autoSendInvoices', 'validatePreviousInvoice']),
-        token,
-      );
+      const res = await apiFetch(`/tbai-config/${TBAI_ENTITY}/${recordId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(serializeBooleanFields(form, ['productionEnv', 'uSEAsproductDesc', 'autoSendInvoices', 'validatePreviousInvoice'])),
+      });
+      if (!res.ok) throw new Error(await res.text().catch(() => res.statusText));
       onSave();
     } catch (err) {
       setError(err.message);
@@ -133,7 +126,7 @@ const TbaiSection = forwardRef(function TbaiSection({ record, token, apiBaseUrl,
         </div>
       </fieldset>
 
-      {!hideCert && <CertSection context="tbai" orgId={orgId} token={token} apiBaseUrl={apiBaseUrl} />}
+      {!hideCert && <CertSection context="tbai" orgId={orgId} apiBaseUrl={apiBaseUrl} />}
 
       {error && <p className="text-sm text-destructive">{error}</p>}
       {!hideSave && (

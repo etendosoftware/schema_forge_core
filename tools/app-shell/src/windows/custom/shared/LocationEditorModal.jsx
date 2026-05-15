@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Loader2, Search, ChevronDown, Check } from 'lucide-react';
 import { useUI, useLabel } from '@/i18n';
+import { useAuth } from '@/auth/AuthContext.jsx';
 import { toast } from 'sonner';
 
 const EMPTY_FORM = { address: '', address2: '', postalCode: '', city: '', country: '', countryLabel: '', region: '', regionLabel: '', shipToAddress: true, invoiceToAddress: true };
@@ -41,7 +42,6 @@ async function fetchSelectorPage(url, headers) {
  *   rowId           — string|null: C_BPartner_Location_ID of existing record (null = create)
  *   bpId            — string: parent Business Partner ID (required for create)
  *   apiBase         — string: e.g. "/sws/neo/contacts"
- *   token           — string: JWT bearer token
  */
 export default function LocationEditorModal({
   open,
@@ -50,11 +50,11 @@ export default function LocationEditorModal({
   rowId: bplLinkId,
   bpId,
   apiBase: contactsApiBase,
-  token,
   selectorContext = {},
 }) {
   const ui = useUI();
   const t = useLabel();
+  const { token } = useAuth();
   const [form, setForm] = useState(EMPTY_FORM);
   const [countries, setCountries] = useState([]);
   const [countrySelectorBase, setCountrySelectorBase] = useState('');

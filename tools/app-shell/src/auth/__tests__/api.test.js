@@ -33,6 +33,12 @@ describe('isTokenExpired', () => {
   });
 });
 
+describe('createApiFetch — FormData handling', () => {
+  it('deletes Content-Type when body is FormData so the browser sets the multipart boundary', () => {
+    assert.match(src, /instanceof FormData[\s\S]*?delete headers\[.Content-Type.\]/);
+  });
+});
+
 describe('detectBaseUrl', () => {
   it('is exported and reads window.location.pathname', () => {
     assert.match(src, /export function detectBaseUrl/);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useUI } from '@/i18n';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 import { neoBase } from '@/components/related-documents/helpers.js';
 import { StatusPill, NumFactura, Pager, RowActionBtn, isErrorStatus, fmtDate, PAGE_SIZE } from './FmPrimitives.jsx';
 import {
@@ -27,22 +28,21 @@ const STATUS_TABS = [
   { id: 'invalid',           dot: 'danger',  labelKey: 'fiscalMonitor.verifactu.tab.invalid' },
 ];
 
-async function fetchStatusTab(base, entity, orgId, page, token) {
+async function fetchStatusTab(apiFetch, entity, orgId, page) {
   const params = new URLSearchParams({
     organization: orgId,
     _startRow: String((page - 1) * PAGE_SIZE),
     _endRow:   String(page * PAGE_SIZE),
   });
-  const res = await fetch(`${base}/${VF_SPEC}/${encodeURIComponent(entity)}?${params}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await apiFetch(`/${VF_SPEC}/${encodeURIComponent(entity)}?${params}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const json = await res.json();
   return { data: json?.response?.data ?? [], totalRows: json?.response?.totalRows ?? 0 };
 }
 
-export default function VerifactuMonitorSection({ orgId, token, apiBaseUrl, initialTab = 'accepted', mockRows, onTabChange, refreshKey = 0, onInvoiceOpen, onBpClick }) {
+export default function VerifactuMonitorSection({ orgId, apiBaseUrl, initialTab = 'accepted', mockRows, onTabChange, refreshKey = 0, onInvoiceOpen, onBpClick }) {
   const ui = useUI();
+  const apiFetch = useApiFetch(neoBase(apiBaseUrl));
   const [activeTab, setActiveTab] = useState('accepted');
   const [page, setPage]     = useState(1);
   const [rows, setRows]     = useState([]);
@@ -64,12 +64,11 @@ export default function VerifactuMonitorSection({ orgId, token, apiBaseUrl, init
     if (!orgId) return;
     setLoading(true);
     setError(null);
-    const base = neoBase(apiBaseUrl);
-    fetchStatusTab(base, STATUS_ENTITIES[activeTab] ?? VF_ACEPTADAS_ENTITY, orgId, page, token)
+    fetchStatusTab(apiFetch, STATUS_ENTITIES[activeTab] ?? VF_ACEPTADAS_ENTITY, orgId, page)
       .then(({ data, totalRows }) => { setRows(data); setTotalRows(totalRows); })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [orgId, activeTab, page, token, apiBaseUrl, mockRows, refreshKey]);
+  }, [orgId, activeTab, page, apiFetch, mockRows, refreshKey]);
 
   useEffect(() => { setPage(1); }, [activeTab]);
 

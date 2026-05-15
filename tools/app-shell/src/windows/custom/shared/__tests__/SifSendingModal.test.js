@@ -30,11 +30,12 @@ describe('SifSendingModal — props contract', () => {
     assert.match(src, /sendTbai/);
   });
 
-  it('accepts base, specName, recordId, headers for the API call', () => {
+  it('accepts base, specName, recordId for the API call (token sourced via useApiFetch)', () => {
     assert.match(src, /base\b/);
     assert.match(src, /specName\b/);
     assert.match(src, /recordId\b/);
-    assert.match(src, /headers\b/);
+    assert.doesNotMatch(src, /\bheaders\b.*prop|prop.*\bheaders\b/);
+    assert.match(src, /useApiFetch/);
   });
 
   it('accepts onClose callback', () => {

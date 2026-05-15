@@ -79,14 +79,14 @@ Records are POST-created during wizard confirmation step and then edited in the 
 
 ## Certificate upload (CertModal + CertSection)
 
-`CertSection.jsx` renders the certificate status widget inside SII, TBAI, and Verifactu section forms. On mount it calls `GET /sws/neo/certificate?orgId=` to restore the cert status from `etsg_certificate`, so the "loaded" state persists across window refreshes. `CertModal.jsx` is the 3-step upload modal (pick → verify spinner → done/confirmNif).
+`CertSection.jsx` renders the certificate status widget inside SII, TBAI, and Verifactu section forms. On mount it calls `GET /sws/neo/certificate` (org inferred from the bearer token) to restore the cert status from `etsg_certificate`, so the "loaded" state persists across window refreshes. `CertModal.jsx` is the 3-step upload modal (pick → verify spinner → done/confirmNif).
 
 ### Backend endpoints (`NeoCertificateHelper`)
 
 | Method | Path | Purpose |
 |--------|------|---------|
 | `POST` | `/sws/neo/certificate` | Upload a PKCS#12 cert via `multipart/form-data` (fields: `certificate`, `orgId`, `password`, optional `setOrgNif`) |
-| `GET`  | `/sws/neo/certificate?orgId=` | Return `{exists, validTo}` for the active cert of that org |
+| `GET`  | `/sws/neo/certificate` | Return `{exists, validTo}` for the active cert (org inferred from bearer token) |
 
 The upload delegates to `AddCertificateToOrg` (existing SIF process) via reflection.
 
@@ -108,7 +108,7 @@ The extracted NIF is then compared (case-insensitive, hyphen-stripped) against `
 
 ## Certificate expiry banner (`CertExpiryBanner`)
 
-`CertExpiryBanner.jsx` renders a warning notice when the organization's digital certificate is approaching expiry. It is shown in `FiscalConfigPage.jsx` with `variant="prominent"` (card style, after the page header). `useCertExpiry.js` fetches `GET /certificate?orgId=` on mount and computes the remaining days via the exported `daysUntil(dateStr)` pure helper.
+`CertExpiryBanner.jsx` renders a warning notice when the organization's digital certificate is approaching expiry. It is shown in `FiscalConfigPage.jsx` with `variant="prominent"` (card style, after the page header). `useCertExpiry.js` fetches `GET /certificate` on mount (org inferred from bearer token) and computes the remaining days via the exported `daysUntil(dateStr)` pure helper.
 
 | Days remaining | State | Appearance | Dismissible |
 |----------------|-------|------------|-------------|
@@ -134,7 +134,7 @@ Debug: the debug panel exposes a "Cert expiry" section with three toggle buttons
 
 ## Wizard applied step — cert auto-check
 
-When the wizard reaches the `applied` step, a `useEffect` fires to fetch the current cert status from `GET /certificate?orgId=`. If the cert already exists (i.e. the user uploaded it during the `detail` step via `CertSection`), `setCert()` is called immediately — this prevents the "Upload digital certificate [PENDING]" next-step item from remaining shown after a successful upload.
+When the wizard reaches the `applied` step, a `useEffect` fires to fetch the current cert status from `GET /certificate` (org inferred from bearer token). If the cert already exists (i.e. the user uploaded it during the `detail` step via `CertSection`), `setCert()` is called immediately — this prevents the "Upload digital certificate [PENDING]" next-step item from remaining shown after a successful upload.
 
 Without this fetch the wizard's top-level `cert` state would only update when the cert is uploaded through `CertModal` on the applied step itself, not through `CertSection` inside the detail step. The two components have independent state; the API call bridges them.
 
@@ -163,14 +163,14 @@ Without this fetch the wizard's top-level `cert` state would only update when th
 - `tools/app-shell/src/windows/custom/fiscal-config/fiscalConfig.utils.js` — `detectProfile`, `resolveSystem`, `getTerritoryDefaults`, `getCertificateContext`.
 - `cli/test/fiscal-config.utils.test.js` — 92 regression tests covering profile detection, onboarding payloads, contract-specific ids, Verifactu save guards, SII field mapping, CertModal upload flow, and confirmNif flow (all passing).
 - `tools/app-shell/src/windows/custom/fiscal-config/useFiscalConfig.js` — parallel fetcher hook for the 3 config records.
-- `cli/test/useFiscalConfig.test.js` — 16 tests covering source guards (named export, Promise.all, entity constants, detectProfile wiring), `fetchRecord` URL construction, Authorization header, response parsing (empty/missing data), and error handling.
+- `cli/test/useFiscalConfig.test.js` — 16 tests covering source guards (named export, Promise.all, entity constants, detectProfile wiring), `fetchRecord` URL construction via `useApiFetch` (no manual Authorization header), response parsing (empty/missing data), and error handling.
 - `tools/app-shell/src/windows/custom/fiscal-config/__tests__/SiiSection.test.js` — 17 component source-guard tests: forwardRef/`useImperativeHandle`, navarra badge, form fields, PUT endpoint contract, hideSave/hideCert.
 - `tools/app-shell/src/windows/custom/fiscal-config/__tests__/TbaiSection.test.js` — 17 component source-guard tests: enroll date + invoice description validation, PUT endpoint, boolean serialization.
 - `tools/app-shell/src/windows/custom/fiscal-config/__tests__/VerifactuSection.test.js` — 17 component source-guard tests: locked/unlocked badge from `isReady`, disabled controls when locked, tax type select.
 - `tools/app-shell/src/windows/custom/fiscal-config/__tests__/OnboardingWizard.test.js` — 36 component source-guard tests: all 7 territories, wizard steps, system resolution, record creation via POST, cert modal, navigation callbacks, cert auto-check on applied step, removed placeholder NextItems.
 - `tools/app-shell/src/windows/custom/fiscal-config/certExpiryUtils.js` — pure `daysUntil` helper (no React deps); validates month (1–12) and day (1–31); round-trips the constructed `Date.UTC` value through `getUTCFullYear/Month/Date` to reject impossible dates (e.g. `2026-02-31` → March); builds `todayUtc` from `getUTCFullYear/Month/Date` so the boundary is UTC midnight in every timezone; imported by `useCertExpiry.js` and directly importable in Node.js tests.
 - `tools/app-shell/src/windows/custom/fiscal-config/__tests__/certExpiryUtils.test.js` — 21 tests: exports guard (named function, `Date.UTC`, `getUTCFullYear` usage, round-trip check), null/falsy inputs, future dates (1/30/60 days, today=0), past dates, non-ISO inputs (bare string, slash-delimited), out-of-range components (month 0, month 13, day 0, day 32, impossible Feb 31, impossible Apr 31 → all `null`).
-- `tools/app-shell/src/windows/custom/fiscal-config/__tests__/useCertExpiry.test.js` — 11 source-guard tests: re-exports `daysUntil`, exports `useCertExpiry`, `mockDaysLeft` bypass, `return { daysLeft }`, `/certificate?orgId` endpoint, `Authorization: Bearer` header, null-reset on falsy `orgId`/`token` (inside guard block), null-reset in else branch when cert is absent, `AbortController` usage (`new AbortController`, `controller.abort()` cleanup, `signal.aborted` check before `setDaysLeft`).
+- `tools/app-shell/src/windows/custom/fiscal-config/__tests__/useCertExpiry.test.js` — 11 source-guard tests: re-exports `daysUntil`, exports `useCertExpiry`, `mockDaysLeft` bypass, `return { daysLeft }`, `/certificate` endpoint (no `?orgId` — backend infers org from token), `useApiFetch` usage (no manual `Authorization` header), null-reset before each fetch and in the else branch when cert is absent, `AbortController` usage (`new AbortController`, `controller.abort()` cleanup, `signal.aborted` check before `setDaysLeft`).
 - `tools/app-shell/src/windows/custom/fiscal-config/__tests__/CertExpiryBanner.test.js` — 17 component source-guard tests: visibility thresholds (WARN_DAYS=60, CRITICAL_DAYS=30), dismiss behaviour, variant rendering, i18n keys, color scheme.
 - `e2e/tests/flows/fiscal-config.mocked.spec.js` — 12 Playwright mocked E2E tests: no-org, wizard, SII/TBAI/Verifactu/conflict profiles, wizard flow (territory → confirm → back), cert modal opening; all assertions use `t()` i18n helper.
 - `modules/com.etendoerp.go/.../NeoCertificateHelper.java` — certificate upload + GET endpoints; NIF extraction from X.509 DN; SAVEPOINT-protected org NIF lookup; confirmNif flow.

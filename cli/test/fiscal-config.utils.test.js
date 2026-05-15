@@ -420,9 +420,10 @@ describe('fiscal-config source guards', () => {
   it('uses contract-specific ids for SII, TBAI and Verifactu saves', () => {
     assert.match(siiSectionSrc, /getFiscalRecordId\(record, 'SII'\)/);
     assert.match(siiSectionSrc, /serializeBooleanFields\(form, \['acogidaAlSII', 'entornoDeProduccin', 'adjuntarArchivosXML', 'postedInvoices', 'recc', 'redeme'\]\)/);
-    assert.match(wizardSrc, /ref=\{system === 'SII\+TBAI' \|\| system === 'TBAI' \? tbaiRef : undefined\}/);
+    assert.match(wizardSrc, /ref=\{tbaiRef\}/);
     assert.match(verifactuSectionSrc, /getFiscalRecordId\(record, 'VERIFACTU'\)/);
-    assert.match(verifactuSectionSrc, /putVerifactu\(neoBase\(apiBaseUrl\), recordId, buildVerifactuUpdatePayload\(form\), token\)/);
+    assert.match(verifactuSectionSrc, /apiFetch\(`\/verifactu-config\//);
+    assert.match(verifactuSectionSrc, /buildVerifactuUpdatePayload\(form\)/);
   });
 
   it('uses SII contract field names instead of legacy raw column aliases', () => {
@@ -459,7 +460,7 @@ describe('fiscal-config source guards', () => {
     assert.match(wizardSrc, /getAllowedSystemsForTerritory\(selectedTerritory\)/);
     assert.match(wizardSrc, /disabled=\{!selectedTerritory \|\| !manualSystem\}/);
     assert.match(wizardSrc, /fiscal\.onboarding\.manual\.system\.placeholder/);
-    assert.match(wizardSrc, /onClick=\{\(\) => \{ setManualSystem\(null\); goTo\('manual'\); \}\}/);
+    assert.match(wizardSrc, /onGoToManual=\{\(\) => \{ setManualSystem\(null\); goTo\('manual'\); \}\}/);
   });
 
   it('returns manual users to the manual screen from confirm', () => {
@@ -471,7 +472,7 @@ describe('fiscal-config source guards', () => {
     assert.match(wizardSrc, /setAlsoNational\(null\);/);
     assert.match(wizardSrc, /setVolume\(null\);/);
     assert.match(wizardSrc, /setLowChoice\(null\);/);
-    assert.match(wizardSrc, /handleTerritorySelection\(territoryId, \{ clearManualSystem: true \}\)/);
+    assert.match(wizardSrc, /onSelectTerritory\(territoryId, \{ clearManualSystem: true \}\)/);
   });
 
   it('saves single-system detail steps before navigating to applied', () => {
@@ -484,10 +485,9 @@ describe('fiscal-config source guards', () => {
   });
 
   it('refetches created fiscal records by id before rendering detail forms', () => {
-    assert.match(wizardSrc, /import \{ fetchById, neoBase \} from '@\/components\/related-documents\/helpers\.js';/);
     assert.match(wizardSrc, /async function createAndFetchRecord\(/);
     assert.match(wizardSrc, /const recordId = getFiscalRecordId\(created, system\);/);
-    assert.match(wizardSrc, /return await fetchById\(specName, entityName, recordId, token, apiBaseUrl\) \?\? created;/);
+    assert.match(wizardSrc, /apiFetch\(`\/\$\{specName\}\/\$\{entityName\}\/\$\{recordId\}`\)/);
   });
 
   it('does not expose data-only fiscal specs as window loaders', () => {
@@ -532,15 +532,15 @@ describe('CertModal — real certificate upload endpoint', () => {
     assert.match(certModalSrc, /setCertDetails\(null\)/);
   });
 
-  it('accepts orgId, token, apiBaseUrl props', () => {
-    assert.match(certModalSrc, /\{ context, orgId, token, apiBaseUrl,/);
+  it('accepts orgId and apiBaseUrl props without a token prop', () => {
+    assert.match(certModalSrc, /\{ context, orgId, apiBaseUrl,/);
+    assert.doesNotMatch(certModalSrc, /export default function CertModal\(\{[^}]*\btoken\b/s);
   });
 
-  it('CertSection forwards orgId, token, apiBaseUrl to CertModal', () => {
-    assert.match(certSectionSrc, /orgId, token, apiBaseUrl/);
+  it('CertSection forwards orgId and apiBaseUrl to CertModal without token', () => {
     assert.match(certSectionSrc, /orgId=\{orgId\}/);
-    assert.match(certSectionSrc, /token=\{token\}/);
     assert.match(certSectionSrc, /apiBaseUrl=\{apiBaseUrl\}/);
+    assert.doesNotMatch(certSectionSrc, /token=\{token\}/);
   });
 
   it('SiiSection passes orgId to CertSection', () => {
@@ -560,9 +560,10 @@ describe('CertModal — real certificate upload endpoint', () => {
     assert.ok(orgIdCount >= 4, `Expected orgId passed to at least 4 section instances, got ${orgIdCount}`);
   });
 
-  it('OnboardingWizard passes orgId, token, apiBaseUrl to its CertModal', () => {
+  it('OnboardingWizard passes orgId and apiBaseUrl to its CertModal without token', () => {
     assert.match(wizardSrc, /orgId=\{orgId\}/);
-    assert.match(wizardSrc, /token=\{token\}\s+apiBaseUrl=\{apiBaseUrl\}/s);
+    assert.match(wizardSrc, /apiBaseUrl=\{apiBaseUrl\}/);
+    assert.doesNotMatch(wizardSrc, /CertModal[\s\S]{0,200}token=\{token\}/);
   });
 
   it('OnboardingWizard detail step passes orgId to SiiSection and TbaiSection', () => {

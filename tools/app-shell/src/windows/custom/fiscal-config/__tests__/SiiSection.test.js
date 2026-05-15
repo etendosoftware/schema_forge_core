@@ -86,8 +86,9 @@ describe('SiiSection — PUT request', () => {
     assert.match(src, /SII_ENTITY/);
   });
 
-  it('passes Authorization Bearer token', () => {
-    assert.match(src, /Authorization.*Bearer/);
+  it('uses useApiFetch for authenticated requests', () => {
+    assert.match(src, /useApiFetch/);
+    assert.match(src, /apiFetch/);
   });
 
   it('serializes boolean fields before sending', () => {

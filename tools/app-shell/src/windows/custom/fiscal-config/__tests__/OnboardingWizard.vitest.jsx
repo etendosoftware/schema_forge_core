@@ -15,6 +15,10 @@ vi.mock('@/components/ui/button', () => ({
   ),
 }));
 
+vi.mock('@/auth/useApiFetch.js', () => ({
+  useApiFetch: () => vi.fn(() => Promise.resolve({ json: () => Promise.resolve({}) })),
+}));
+
 vi.mock('@/components/related-documents/helpers.js', () => ({
   fetchById: vi.fn(() => Promise.resolve(null)),
   neoBase: (url) => url?.replace(/\/[^/]+$/, '') ?? '',

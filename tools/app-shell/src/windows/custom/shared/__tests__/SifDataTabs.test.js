@@ -13,8 +13,9 @@ describe('SifDataTabs', () => {
     assert.match(src, /export default function SifDataTabs/);
   });
 
-  it('accepts data, recordId, token, and apiBaseUrl props', () => {
-    assert.match(src, /\{\s*data.*recordId.*token.*apiBaseUrl\s*\}/);
+  it('accepts data, recordId, and apiBaseUrl props (no token)', () => {
+    assert.match(src, /\{\s*data.*recordId.*apiBaseUrl\s*\}/);
+    assert.doesNotMatch(src, /export default function SifDataTabs\([^)]*token/);
   });
 
   it('delegates form state and PATCH logic to the shared useSifFieldPatcher hook', () => {
@@ -56,6 +57,11 @@ describe('useSifFieldPatcher (shared hook backing SifDataTabs and SifTab)', () =
     assert.match(hookSrc, /aeatsiiClaveTipoFc/);
     assert.match(hookSrc, /aeatsiiPurDescription\$_identifier/);
     assert.match(hookSrc, /PURCHASE_CLAVE_TIPO_FC_OPTIONS/);
+  });
+
+  it('uses useApiFetch instead of manual Authorization header', () => {
+    assert.match(hookSrc, /useApiFetch/);
+    assert.doesNotMatch(hookSrc, /Authorization.*Bearer/);
   });
 
   it('calls PATCH on the current spec header endpoint', () => {

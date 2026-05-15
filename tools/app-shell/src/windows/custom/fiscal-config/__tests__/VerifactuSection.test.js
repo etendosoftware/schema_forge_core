@@ -86,8 +86,9 @@ describe('VerifactuSection — PUT request', () => {
     assert.match(src, /buildVerifactuUpdatePayload/);
   });
 
-  it('passes Authorization Bearer token', () => {
-    assert.match(src, /Authorization.*Bearer/);
+  it('uses useApiFetch for authenticated requests', () => {
+    assert.match(src, /useApiFetch/);
+    assert.match(src, /apiFetch/);
   });
 });
 
