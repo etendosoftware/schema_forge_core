@@ -22,6 +22,7 @@ export const OCR_DOC_TYPES = [
     // record. Look up via: SELECT ad_tab_id FROM ad_tab JOIN ad_window USING(ad_window_id)
     // WHERE ad_window.name='Purchase Invoice' AND tablevel=0.
     tabId: '290',
+    tableName: 'C_Invoice',
     headerFields: [
       {
         key: 'vendor',

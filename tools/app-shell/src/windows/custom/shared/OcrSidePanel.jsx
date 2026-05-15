@@ -2,7 +2,7 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { MoreVertical, FileText, MessageSquare, History, Loader2 } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { matchOcrDocType, getOcrDocType } from '@/components/copilot/ocr/ocrDocTypes';
-import { listAttachments, base64ToBlobUrl } from '@/components/copilot/ocr/listAttachments';
+import { listAttachments, fetchAttachmentBlobUrl } from '@/components/copilot/ocr/listAttachments';
 import { useLocation } from 'react-router-dom';
 
 const LazyOcrInlineUploader = lazy(() => import('@/components/copilot/ocr/OcrInlineUploader.jsx'));
@@ -58,15 +58,15 @@ function FileTab(props) {
  * PDF inline. Falls back to a quiet empty-state when nothing is attached —
  * common for records created before OCR or for non-OCR docs.
  */
-function AttachmentsView({ recordId, token, docTypeId }) {
+function AttachmentsView({ recordId, token, apiBaseUrl, docTypeId }) {
   const ui = useUI();
-  const tabId = getOcrDocType(docTypeId)?.tabId;
+  const tableName = getOcrDocType(docTypeId)?.tableName;
   const [loading, setLoading] = useState(true);
   const [attachments, setAttachments] = useState([]);
   const [pdfUrl, setPdfUrl] = useState(null);
 
   useEffect(() => {
-    if (!recordId || !tabId || !token) {
+    if (!recordId || !tableName || !token) {
       setLoading(false);
       return undefined;
     }
@@ -74,14 +74,18 @@ function AttachmentsView({ recordId, token, docTypeId }) {
     let createdUrl = null;
     setLoading(true);
     (async () => {
-      const list = await listAttachments({ token, tabId, recordId });
+      const list = await listAttachments({ token, tableName, recordId, apiBaseUrl });
       if (cancelled) return;
       setAttachments(list);
       // Render the first PDF inline; non-PDF rows still appear in the list.
       const firstPdf = list.find(a => /\.pdf$/i.test(a.name || ''));
-      if (firstPdf?.base64) {
-        createdUrl = base64ToBlobUrl(firstPdf.base64, 'application/pdf');
-        setPdfUrl(createdUrl);
+      if (firstPdf?.id) {
+        createdUrl = await fetchAttachmentBlobUrl({ token, attachmentId: firstPdf.id, apiBaseUrl });
+        if (cancelled) {
+          if (createdUrl) URL.revokeObjectURL(createdUrl);
+          return;
+        }
+        if (createdUrl) setPdfUrl(createdUrl);
       }
       setLoading(false);
     })();
@@ -89,7 +93,7 @@ function AttachmentsView({ recordId, token, docTypeId }) {
       cancelled = true;
       if (createdUrl) URL.revokeObjectURL(createdUrl);
     };
-  }, [recordId, tabId, token]);
+  }, [recordId, tableName, token, apiBaseUrl]);
 
   if (loading) {
     return (
