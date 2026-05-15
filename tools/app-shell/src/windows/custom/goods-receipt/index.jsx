@@ -35,7 +35,7 @@ export default function GoodsReceiptWindow(props) {
     <GeneratedApp
       {...props}
       Table={CustomHeaderTable}
-      initialColumnFilters={docStatus ? { documentStatus: docStatus } : undefined}
+      initialColumnFilters={docStatus ? { documentStatus: { mode: 'enumLabel', value: [docStatus] } } : undefined}
       secondaryTabs={[]}
       notesField="description"
       bottomSection={GoodsReceiptBottomPanel}
