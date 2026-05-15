@@ -79,14 +79,14 @@ Records are POST-created during wizard confirmation step and then edited in the 
 
 ## Certificate upload (CertModal + CertSection)
 
-`CertSection.jsx` renders the certificate status widget inside SII, TBAI, and Verifactu section forms. On mount it calls `GET /sws/neo/certificate?orgId=` to restore the cert status from `etsg_certificate`, so the "loaded" state persists across window refreshes. `CertModal.jsx` is the 3-step upload modal (pick → verify spinner → done/confirmNif).
+`CertSection.jsx` renders the certificate status widget inside SII, TBAI, and Verifactu section forms. On mount it calls `GET /sws/neo/certificate` (org inferred from the bearer token) to restore the cert status from `etsg_certificate`, so the "loaded" state persists across window refreshes. `CertModal.jsx` is the 3-step upload modal (pick → verify spinner → done/confirmNif).
 
 ### Backend endpoints (`NeoCertificateHelper`)
 
 | Method | Path | Purpose |
 |--------|------|---------|
 | `POST` | `/sws/neo/certificate` | Upload a PKCS#12 cert via `multipart/form-data` (fields: `certificate`, `orgId`, `password`, optional `setOrgNif`) |
-| `GET`  | `/sws/neo/certificate?orgId=` | Return `{exists, validTo}` for the active cert of that org |
+| `GET`  | `/sws/neo/certificate` | Return `{exists, validTo}` for the active cert (org inferred from bearer token) |
 
 The upload delegates to `AddCertificateToOrg` (existing SIF process) via reflection.
 
@@ -108,7 +108,7 @@ The extracted NIF is then compared (case-insensitive, hyphen-stripped) against `
 
 ## Certificate expiry banner (`CertExpiryBanner`)
 
-`CertExpiryBanner.jsx` renders a warning notice when the organization's digital certificate is approaching expiry. It is shown in `FiscalConfigPage.jsx` with `variant="prominent"` (card style, after the page header). `useCertExpiry.js` fetches `GET /certificate?orgId=` on mount and computes the remaining days via the exported `daysUntil(dateStr)` pure helper.
+`CertExpiryBanner.jsx` renders a warning notice when the organization's digital certificate is approaching expiry. It is shown in `FiscalConfigPage.jsx` with `variant="prominent"` (card style, after the page header). `useCertExpiry.js` fetches `GET /certificate` on mount (org inferred from bearer token) and computes the remaining days via the exported `daysUntil(dateStr)` pure helper.
 
 | Days remaining | State | Appearance | Dismissible |
 |----------------|-------|------------|-------------|
@@ -134,7 +134,7 @@ Debug: the debug panel exposes a "Cert expiry" section with three toggle buttons
 
 ## Wizard applied step — cert auto-check
 
-When the wizard reaches the `applied` step, a `useEffect` fires to fetch the current cert status from `GET /certificate?orgId=`. If the cert already exists (i.e. the user uploaded it during the `detail` step via `CertSection`), `setCert()` is called immediately — this prevents the "Upload digital certificate [PENDING]" next-step item from remaining shown after a successful upload.
+When the wizard reaches the `applied` step, a `useEffect` fires to fetch the current cert status from `GET /certificate` (org inferred from bearer token). If the cert already exists (i.e. the user uploaded it during the `detail` step via `CertSection`), `setCert()` is called immediately — this prevents the "Upload digital certificate [PENDING]" next-step item from remaining shown after a successful upload.
 
 Without this fetch the wizard's top-level `cert` state would only update when the cert is uploaded through `CertModal` on the applied step itself, not through `CertSection` inside the detail step. The two components have independent state; the API call bridges them.
 
