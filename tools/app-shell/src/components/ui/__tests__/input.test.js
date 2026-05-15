@@ -14,7 +14,7 @@ function extractInputClass(source) {
   return match ? match[1] : null;
 }
 
-describe('Input — Figma form-input dimensions (ETP-3893)', () => {
+describe('Input — Figma form-input tokens (ETP-3893 + ETP-4000)', () => {
   const inputClass = extractInputClass(src);
 
   it('source exposes a single canonical class string', () => {
@@ -37,13 +37,26 @@ describe('Input — Figma form-input dimensions (ETP-3893)', () => {
     assert.match(inputClass, /(^|\s)p-2(\s|$)/);
   });
 
-  it('uses the Figma xs shadow', () => {
-    assert.match(inputClass, /shadow-\[0px_1px_2px_rgba\(18,18,23,0\.05\)\]/);
+  it('uses the Figma form fill #F5F7F9 (ETP-4000)', () => {
+    assert.match(inputClass, /bg-\[#F5F7F9\]/);
+  });
+
+  it('uses the Figma placeholder color #828FA3 (ETP-4000)', () => {
+    assert.match(inputClass, /placeholder:text-\[#828FA3\]/);
+  });
+
+  it('does NOT carry a drop shadow — Figma ETP-4000 renders the field flat', () => {
+    assert.doesNotMatch(inputClass, /(^|\s)shadow-/, 'no Tailwind shadow utility should be on the base Input');
+    assert.doesNotMatch(inputClass, /shadow-\[0px_1px_2px_rgba\(18,18,23,0\.05\)\]/);
   });
 
   it('does NOT regress to the legacy h-9 / rounded-md / shadow-sm trio', () => {
     assert.doesNotMatch(inputClass, /(^|\s)h-9(\s|$)/);
     assert.doesNotMatch(inputClass, /(^|\s)rounded-md(\s|$)/);
     assert.doesNotMatch(inputClass, /(^|\s)shadow-sm(\s|$)/);
+  });
+
+  it('does NOT use the legacy bg-transparent (ETP-4000 sets the form fill)', () => {
+    assert.doesNotMatch(inputClass, /(^|\s)bg-transparent(\s|$)/);
   });
 });
