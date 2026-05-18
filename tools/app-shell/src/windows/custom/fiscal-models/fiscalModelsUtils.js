@@ -37,6 +37,131 @@ export function formatAmount(amount) {
   return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
 }
 
+export function formatPercent(value) {
+  if (value == null) return '—';
+  return new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 }).format(value) + ' %';
+}
+
 export function fmtDecl(decl) {
   return `${decl.model} ${decl.year} ${formatPeriod(decl.period)}`;
+}
+
+function roundEur(n) {
+  return Math.round(n * 100) / 100;
+}
+
+/**
+ * Maps aggregated invoice data to 303 box numbers, mirroring AEAT303Report2014 logic.
+ *
+ * @param {object} data
+ *   salesByRate     { '21':{base,tax}, '10':{base,tax}, '7':{base,tax}, '8':{base,tax}, '4':{base,tax}, '0':{base,tax}, '2':{base,tax} }
+ *   ecByRate        recargo equivalencia: { '1.4':{base,tax}, '5.2':{base,tax}, '0.5':{base,tax} }
+ *   euPurch         { base, tax }  — intracomunitarias adquisiciones (boxes 10/11)
+ *   ispPurch        { base, tax }  — inversión sujeto pasivo (boxes 12/13)
+ *   purchNormal     { base, tax }  — operaciones interiores corrientes (boxes 28/29)
+ *   purchInvGoods   { base, tax }  — bienes inversión (boxes 30/31)
+ *   purchImport     { base, tax }  — importaciones corrientes (boxes 32/33)
+ *   purchImportInv  { base, tax }  — importaciones inversión (boxes 34/35)
+ *   purchIntraCorr  { base, tax }  — intracom. corrientes (boxes 36/37)
+ *   purchIntraInv   { base, tax }  — intracom. inversión (boxes 38/39)
+ *   purchRectif     { base, tax }  — rectificaciones (boxes 40/41)
+ *   specialComp     number         — compensaciones régimen especial (box 42)
+ *   invAdjust       number         — regularización bienes inversión (box 43)
+ *   proRataFinal    number         — regularización prorrata (box 44)
+ *   previousCompensation number    — compensación período anterior (box 67, info only)
+ *   intracommSales  number         — entregas intracom. exentas (box 59)
+ *   exports         number         — exportaciones (box 60)
+ *
+ * @returns {{ boxes: {[boxNum:number]: number}, summary: {accrued,deductible,result} }}
+ */
+export function computeBoxes303(data) {
+  const b = {};
+
+  // ── Sales / Devengada ──────────────────────────────────────────
+  // 21% → boxes [7, -, 9]; 10%+7%+8% (merged) → [4, -, 6]; 4%+5% → [1, -, 3]
+  // 0% → [150, -, 152]; 2% (2026 new) → [165, -, 167]
+  const salesMerge = [
+    { rates: ['21'],         boxes: [7, 9] },
+    { rates: ['10', '7', '8'], boxes: [4, 6] },
+    { rates: ['4', '5'],     boxes: [1, 3] },
+    { rates: ['0'],          boxes: [150, 152] },
+    { rates: ['2'],          boxes: [165, 167] },
+  ];
+  const byRate = data.salesByRate ?? {};
+  for (const { rates, boxes: [baseBox, taxBox] } of salesMerge) {
+    let base = 0, tax = 0;
+    for (const r of rates) {
+      base += byRate[r]?.base ?? 0;
+      tax  += byRate[r]?.tax  ?? 0;
+    }
+    if (base) b[baseBox] = roundEur(base);
+    if (tax)  b[taxBox]  = roundEur(tax);
+  }
+
+  // EU acquisitions → boxes 10, 11
+  const euPurch = data.euPurch ?? {};
+  if (euPurch.base) b[10] = roundEur(euPurch.base);
+  if (euPurch.tax)  b[11] = roundEur(euPurch.tax);
+
+  // ISP (inverse charge) → boxes 12, 13
+  const ispPurch = data.ispPurch ?? {};
+  if (ispPurch.base) b[12] = roundEur(ispPurch.base);
+  if (ispPurch.tax)  b[13] = roundEur(ispPurch.tax);
+
+  // Recargo equivalencia by rate → [1.4%: 19/21], [5.2%: 22/24], [0.5%: 16/18]
+  // (1.75% recargo 2023+ → 156/158; 0.62%/0.5% → 16/18)
+  const ecRateMap = { '1.4': [19, 21], '5.2': [22, 24], '0.5': [16, 18], '1.75': [156, 158] };
+  const ecByRate = data.ecByRate ?? {};
+  for (const [rate, [baseBox, taxBox]] of Object.entries(ecRateMap)) {
+    const d = ecByRate[rate] ?? {};
+    if (d.base) b[baseBox] = roundEur(d.base);
+    if (d.tax)  b[taxBox]  = roundEur(d.tax);
+  }
+
+  // Total devengada (box 27) = sum of all output tax cuotas
+  const accruedBoxes = [3, 6, 9, 11, 13, 15, 18, 21, 24, 152, 158, 167];
+  const accrued = accruedBoxes.reduce((s, box) => s + (b[box] ?? 0), 0);
+  b[27] = roundEur(accrued);
+
+  // ── Purchases / Deducible ──────────────────────────────────────
+  const purch = [
+    [data.purchNormal,    28, 29],
+    [data.purchInvGoods,  30, 31],
+    [data.purchImport,    32, 33],
+    [data.purchImportInv, 34, 35],
+    [data.purchIntraCorr, 36, 37],
+    [data.purchIntraInv,  38, 39],
+    [data.purchRectif,    40, 41],
+  ];
+  for (const [d, baseBox, taxBox] of purch) {
+    if (d?.base) b[baseBox] = roundEur(d.base);
+    if (d?.tax)  b[taxBox]  = roundEur(d.tax);
+  }
+
+  if (data.specialComp  != null) b[42] = roundEur(data.specialComp);
+  if (data.invAdjust    != null) b[43] = roundEur(data.invAdjust);
+  if (data.proRataFinal != null) b[44] = roundEur(data.proRataFinal);
+
+  // Total deducible (box 45) = (29+31+33+35+37+39+41+42+43+44)
+  const deductBoxes = [29, 31, 33, 35, 37, 39, 41, 42, 43, 44];
+  const deductible = deductBoxes.reduce((s, box) => s + (b[box] ?? 0), 0);
+  b[45] = roundEur(deductible);
+
+  // Resultado (box 46) = 27 − 45
+  b[46] = roundEur((b[27] ?? 0) - (b[45] ?? 0));
+
+  // ── Info adicional ─────────────────────────────────────────────
+  if (data.intracommSales != null) b[59] = roundEur(data.intracommSales);
+  if (data.exports        != null) b[60] = roundEur(data.exports);
+
+  const summary = {
+    accrued:    b[27] ?? 0,
+    deductible: b[45] ?? 0,
+    result:     b[46] ?? 0,
+  };
+  if (data.previousCompensation != null) {
+    summary.previousCompensation = data.previousCompensation;
+  }
+
+  return { boxes: b, summary };
 }
