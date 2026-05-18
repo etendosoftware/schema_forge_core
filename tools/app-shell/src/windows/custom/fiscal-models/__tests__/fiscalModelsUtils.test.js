@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   STATUSES, STATUS_COLOR, STATUS_ORDER,
-  formatPeriod, formatAmount, fmtDecl, formatPercent,
+  formatPeriod, formatAmount, fmtDecl, formatPercent, computeUpcomingDeadlines,
 } from '../fiscalModelsUtils.js';
 
 describe('STATUSES — enum completeness', () => {
@@ -62,5 +62,82 @@ describe('fmtDecl', () => {
     const result = fmtDecl({ model: '349', year: 2026, period: '03' });
     assert.ok(result.includes('349'));
     assert.ok(result.includes('2026'));
+  });
+});
+
+describe('computeUpcomingDeadlines', () => {
+  const D = (model, year, period, status) => ({
+    id: `${model}-${year}-${period}`, model, year, period, status,
+  });
+
+  it('excludes presentado', () => {
+    assert.equal(computeUpcomingDeadlines([D('303', 2026, 'T1', 'presentado')]).length, 0);
+  });
+  it('excludes presentadoAcuse', () => {
+    assert.equal(computeUpcomingDeadlines([D('303', 2026, 'T1', 'presentadoAcuse')]).length, 0);
+  });
+  it('excludes presentadoOtra', () => {
+    assert.equal(computeUpcomingDeadlines([D('303', 2026, 'T1', 'presentadoOtra')]).length, 0);
+  });
+  it('excludes omitido', () => {
+    assert.equal(computeUpcomingDeadlines([D('303', 2026, 'T1', 'omitido')]).length, 0);
+  });
+  it('includes borrador', () => {
+    assert.equal(computeUpcomingDeadlines([D('303', 2026, 'T1', 'borrador')]).length, 1);
+  });
+  it('includes pendiente', () => {
+    assert.equal(computeUpcomingDeadlines([D('349', 2026, '04', 'pendiente')]).length, 1);
+  });
+  it('T1 deadline is April 20 of the same year', () => {
+    const [{ deadline }] = computeUpcomingDeadlines([D('303', 2026, 'T1', 'borrador')]);
+    assert.equal(deadline.getFullYear(), 2026);
+    assert.equal(deadline.getMonth(), 3);
+    assert.equal(deadline.getDate(), 20);
+  });
+  it('T2 deadline is July 20', () => {
+    const [{ deadline }] = computeUpcomingDeadlines([D('303', 2026, 'T2', 'borrador')]);
+    assert.equal(deadline.getMonth(), 6);
+    assert.equal(deadline.getDate(), 20);
+  });
+  it('T3 deadline is October 20', () => {
+    const [{ deadline }] = computeUpcomingDeadlines([D('303', 2026, 'T3', 'borrador')]);
+    assert.equal(deadline.getMonth(), 9);
+    assert.equal(deadline.getDate(), 20);
+  });
+  it('T4 deadline is January 20 of next year', () => {
+    const [{ deadline }] = computeUpcomingDeadlines([D('303', 2025, 'T4', 'pendiente')]);
+    assert.equal(deadline.getFullYear(), 2026);
+    assert.equal(deadline.getMonth(), 0);
+    assert.equal(deadline.getDate(), 20);
+  });
+  it('monthly period 04 deadline is May 20', () => {
+    const [{ deadline }] = computeUpcomingDeadlines([D('349', 2026, '04', 'pendiente')]);
+    assert.equal(deadline.getFullYear(), 2026);
+    assert.equal(deadline.getMonth(), 4);
+    assert.equal(deadline.getDate(), 20);
+  });
+  it('monthly period 12 deadline is January 20 of next year', () => {
+    const [{ deadline }] = computeUpcomingDeadlines([D('349', 2025, '12', 'pendiente')]);
+    assert.equal(deadline.getFullYear(), 2026);
+    assert.equal(deadline.getMonth(), 0);
+    assert.equal(deadline.getDate(), 20);
+  });
+  it('sorts chronologically (earlier deadline first)', () => {
+    const decls = [D('303', 2026, 'T2', 'borrador'), D('303', 2026, 'T1', 'borrador')];
+    const result = computeUpcomingDeadlines(decls);
+    assert.ok(result[0].deadline < result[1].deadline);
+  });
+  it('respects limit parameter', () => {
+    const decls = ['T1', 'T2', 'T3', 'T4'].map(p => D('303', 2026, p, 'pendiente'));
+    assert.equal(computeUpcomingDeadlines(decls, 2).length, 2);
+  });
+  it('returns empty array when all completed', () => {
+    const decls = [D('303', 2026, 'T1', 'presentadoAcuse'), D('349', 2026, '04', 'omitido')];
+    assert.equal(computeUpcomingDeadlines(decls).length, 0);
+  });
+  it('each result item has decl and deadline properties', () => {
+    const [item] = computeUpcomingDeadlines([D('303', 2026, 'T1', 'borrador')]);
+    assert.ok(item.decl);
+    assert.ok(item.deadline instanceof Date);
   });
 });

@@ -165,3 +165,35 @@ export function computeBoxes303(data) {
 
   return { boxes: b, summary };
 }
+
+const COMPLETED_STATUSES = new Set([
+  'presentado', 'presentadoOtra', 'presentadoAcuse', 'omitido',
+]);
+
+function getDeadlineDate(model, year, period) {
+  if (/^T\d$/.test(period)) {
+    const q = parseInt(period[1], 10);
+    const month = q === 4 ? 1 : q * 3 + 1;
+    const y = q === 4 ? year + 1 : year;
+    return new Date(y, month - 1, 20);
+  }
+  if (/^\d{2}$/.test(period)) {
+    const m = parseInt(period, 10);
+    const nextM = m === 12 ? 1 : m + 1;
+    const y = m === 12 ? year + 1 : year;
+    return new Date(y, nextM - 1, 20);
+  }
+  return null;
+}
+
+export function computeUpcomingDeadlines(decls, limit = 5) {
+  return decls
+    .filter(d => !COMPLETED_STATUSES.has(d.status))
+    .map(d => {
+      const deadline = getDeadlineDate(d.model, d.year, d.period);
+      return deadline ? { decl: d, deadline } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.deadline - b.deadline)
+    .slice(0, limit);
+}
