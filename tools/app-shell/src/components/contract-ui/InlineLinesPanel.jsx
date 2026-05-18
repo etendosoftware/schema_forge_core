@@ -150,7 +150,7 @@ function ReadCell({ row, col, locale, t, ui }) {
 /**
  * Edit-mode cell. Returns null for non-editable types so the caller falls back to read mode.
  */
-function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus, entity, token, apiBaseUrl, selectorContext }) {
+function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus, entity, token, apiBaseUrl, selectorContext, isInvalid }) {
   const inputRef = useRef(null);
   useEffect(() => {
     // Only steal focus on initial mount when nothing else is focused. Cells re-mount
@@ -270,7 +270,7 @@ function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus
           onCancel?.();
         }
       }}
-      className={`h-7 px-2 text-sm border-input${isNumeric ? ' text-right tabular-nums' : ''}`}
+      className={`h-7 px-2 text-sm${isNumeric ? ' text-right tabular-nums' : ''}${isInvalid ? ' border-red-500 focus-visible:ring-red-500' : ' border-input'}`}
       {...numericProps}
     />
   );
@@ -349,6 +349,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
   }, [editingRowId]);
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [pendingDelete, setPendingDelete] = useState(null);
+  const [invalidCell, setInvalidCell] = useState(null);
 
   // Active in-flight edit. Holds the latest pending field commit so a global "Save"
   // can flush it via the imperative ref before the document save runs.
@@ -423,12 +424,14 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
 
   const commitField = useCallback(async (row, col, value, extras = {}) => {
     if (isDocumentReadOnly) return;
+    setInvalidCell(null);
     const original = row[col.key];
     // Skip if unchanged (string compare for safety against type drift).
     if (String(original ?? '') === String(value ?? '')) return;
     if (col.min !== undefined && value !== '' && value != null) {
       const num = parseFloat(value);
       if (!isNaN(num) && num < col.min) {
+        setInvalidCell({ rowId: row.id, colKey: col.key });
         toast.error(ui('fieldMinValueError'));
         return;
       }
@@ -644,6 +647,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
                       token={token}
                       apiBaseUrl={apiBaseUrl}
                       selectorContext={selectorContext}
+                      isInvalid={invalidCell?.rowId === row.id && invalidCell?.colKey === col.key}
                       onCommit={(val, extras) => commitField(row, col, val, extras)}
                       onCancel={() => setEditingRowId(null)}
                     />

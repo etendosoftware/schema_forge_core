@@ -469,6 +469,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
 
   const [values, setValues] = useState(buildEmpty);
   const [isSaving, setIsSaving] = useState(false);
+  const [invalidFields, setInvalidFields] = useState(new Set());
   const firstInputRef = useRef(null);
   const rowRef = useRef(null);
   const touchedFieldsRef = useRef(new Set());
@@ -532,6 +533,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
       return !isNaN(Number(v)) && Number(v) < f.min;
     });
     if (belowMin.length > 0) {
+      setInvalidFields(new Set(belowMin.map(f => f.key)));
       toast.error(ui('fieldMinValueError'));
       const firstInvalid = belowMin[0];
       const inputEl = document.querySelector(`[data-testid="field-${firstInvalid.key}"]`);
@@ -645,6 +647,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
   // Wrap handleChange to also notify parent (for callout triggering)
   const handleFieldChange = useCallback((key, val, selectedItem) => {
     touchedFieldsRef.current.add(key);
+    setInvalidFields(prev => { if (!prev.has(key)) return prev; const n = new Set(prev); n.delete(key); return n; });
     // Build a snapshot of current + new values for the callout formState
     const snapshot = { ...values, [key]: val };
     handleChange(key, val);
@@ -936,7 +939,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
               onKeyDown={handleKeyDown}
               placeholder={fieldLabel}
               required={field.required}
-              className={`w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none${isNumeric ? ' text-right tabular-nums' : ''}`}
+              className={`w-full h-8 text-sm rounded-md border bg-white px-2 focus:ring-2 focus:outline-none${isNumeric ? ' text-right tabular-nums' : ''}${invalidFields.has(field.key) ? ' border-red-500 focus:ring-red-500' : ' border-input focus:ring-primary'}`}
             />
           </TableCell>
         );
