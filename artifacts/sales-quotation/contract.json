@@ -1,8 +1,8 @@
 {
   "version": "0.6.0",
   "generatedAt": "2026-04-30T15:42:46.907Z",
-  "updatedAt": "2026-05-08T12:44:37.431Z",
-  "checksum": "05c3dc4a9d755fb6",
+  "updatedAt": "2026-05-18T23:19:54.880Z",
+  "checksum": "1810bb2635ffbd1f",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -56,11 +56,13 @@
       "labelOverrides": {
         "es_ES": {
           "C_BPartner_ID": "Contacto",
-          "C_Reject_Reason_ID": "Razón de rechazo"
+          "C_Reject_Reason_ID": "Razón de rechazo",
+          "DateOrdered": "Fecha de presupuesto"
         },
         "en_US": {
           "C_BPartner_ID": "Contact",
-          "C_Reject_Reason_ID": "Reject Reason"
+          "C_Reject_Reason_ID": "Reject Reason",
+          "DateOrdered": "Quotation Date"
         }
       },
       "dateFilterKey": "orderDate",
@@ -893,11 +895,13 @@
       "labelOverrides": {
         "es_ES": {
           "C_BPartner_ID": "Contacto",
-          "C_Reject_Reason_ID": "Razón de rechazo"
+          "C_Reject_Reason_ID": "Razón de rechazo",
+          "DateOrdered": "Fecha de presupuesto"
         },
         "en_US": {
           "C_BPartner_ID": "Contact",
-          "C_Reject_Reason_ID": "Reject Reason"
+          "C_Reject_Reason_ID": "Reject Reason",
+          "DateOrdered": "Quotation Date"
         }
       },
       "dateFilterKey": "orderDate",
@@ -2690,11 +2694,13 @@
     "labelOverrides": {
       "es_ES": {
         "C_BPartner_ID": "Contacto",
-        "C_Reject_Reason_ID": "Razón de rechazo"
+        "C_Reject_Reason_ID": "Razón de rechazo",
+        "DateOrdered": "Fecha de presupuesto"
       },
       "en_US": {
         "C_BPartner_ID": "Contact",
-        "C_Reject_Reason_ID": "Reject Reason"
+        "C_Reject_Reason_ID": "Reject Reason",
+        "DateOrdered": "Quotation Date"
       }
     }
   },
