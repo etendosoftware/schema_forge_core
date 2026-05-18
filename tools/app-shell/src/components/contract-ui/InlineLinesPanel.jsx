@@ -426,6 +426,13 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
     const original = row[col.key];
     // Skip if unchanged (string compare for safety against type drift).
     if (String(original ?? '') === String(value ?? '')) return;
+    if (col.min !== undefined && value !== '' && value != null) {
+      const num = parseFloat(value);
+      if (!isNaN(num) && num < col.min) {
+        toast.error(ui('fieldMinValueError'));
+        return;
+      }
+    }
     pendingEditRef.current = { rowId: row.id, key: col.key };
     try {
       await onUpdateRow?.(row, col.key, value, {

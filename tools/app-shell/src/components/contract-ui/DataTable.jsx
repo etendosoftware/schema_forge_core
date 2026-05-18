@@ -525,6 +525,20 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
       inputEl?.focus?.({ preventScroll: true });
       return Promise.resolve(false);
     }
+    const belowMin = fields.filter(f => {
+      if (f.min === undefined) return false;
+      const v = valuesRef.current[f.key];
+      if (v == null || v === '') return false;
+      return !isNaN(Number(v)) && Number(v) < f.min;
+    });
+    if (belowMin.length > 0) {
+      const labels = belowMin.map(f => f.label || f.key).join(', ');
+      toast.error(`${ui('fieldMinValueError')}: ${labels}`);
+      const firstInvalid = belowMin[0];
+      const inputEl = document.querySelector(`[data-testid="field-${firstInvalid.key}"]`);
+      inputEl?.focus?.({ preventScroll: true });
+      return Promise.resolve(false);
+    }
     setIsSaving(true);
     const run = (async () => {
       try {

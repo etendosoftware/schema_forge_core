@@ -17616,6 +17616,7 @@
     "sqNoLinesError": "The quotation cannot be confirmed because it has no lines",
     "soNoLinesError": "The order cannot be confirmed because it has no lines",
     "invNoLinesError": "The invoice cannot be confirmed because it has no lines",
+    "fieldMinValueError": "Value cannot be negative",
     "sqOrderConfirmedInvoiceError": "Quotation confirmed, but invoice could not be created. ",
     "rejectQuotation": "Reject",
     "rejectQuotationTitle": "Reject quotation",

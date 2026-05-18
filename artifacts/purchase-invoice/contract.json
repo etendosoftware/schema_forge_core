@@ -1,8 +1,8 @@
 {
-  "version": "0.27.0",
+  "version": "0.28.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-14T13:06:26.128Z",
-  "checksum": "b9d33d8f97572db2",
+  "updatedAt": "2026-05-18T15:52:02.728Z",
+  "checksum": "019e0eedc1b00d8c",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -1412,6 +1412,7 @@
             "defaultValue": "1",
             "section": "principal",
             "gridOrder": 3,
+            "min": 0,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Invoice_Amt"
             },
@@ -1436,6 +1437,7 @@
             "columnType": "amount",
             "section": "principal",
             "gridOrder": 4,
+            "min": 0,
             "displayLogic": {
               "raw": "@GROSSPRICE@='N'",
               "evaluable": true
@@ -1464,6 +1466,7 @@
             "defaultValue": "0",
             "section": "principal",
             "gridOrder": 5,
+            "min": 0,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,

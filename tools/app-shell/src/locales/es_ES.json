@@ -17869,6 +17869,7 @@
     "sqNoLinesError": "El presupuesto no puede confirmarse porque no tiene líneas",
     "soNoLinesError": "El pedido no puede confirmarse porque no tiene líneas",
     "invNoLinesError": "La factura no puede confirmarse porque no tiene líneas",
+    "fieldMinValueError": "El valor no puede ser negativo",
     "sqOrderConfirmedInvoiceError": "El presupuesto fue procesado pero no se pudo crear la factura. ",
     "rejectQuotation": "Rechazar",
     "rejectQuotationTitle": "Rechazar Presupuesto",
