@@ -7,7 +7,7 @@ function formatCell(val, colType) {
   return colType === 'percent' ? formatPercent(val) : formatAmount(val);
 }
 
-export default function FmBoxes303({ boxes, year, period, sectionIds }) {
+export default function FmBoxes303({ boxes, year, period, sectionIds, identification }) {
   const ui = useUI();
   const t = ui;
   const layout = getLayout303(year, period);
@@ -27,6 +27,38 @@ export default function FmBoxes303({ boxes, year, period, sectionIds }) {
   return (
     <div className="fm-aeat-table">
       {sections.map((section, si) => {
+        if (section.sectionType === 'identificacion') {
+          const textFields = section.fields.filter(f => f.type === 'text');
+          const checkboxFields = section.fields.filter(f => f.type === 'checkbox');
+          return (
+            <div key={si} className="fm-aeat-section">
+              <div className="fm-aeat-section__title">{t(section.titleKey)}</div>
+              <div className="fm-aeat-ident">
+                <div className="fm-aeat-ident-fields">
+                  {textFields.map(f => (
+                    <div key={f.id} className="fm-aeat-ident-field">
+                      <span className="fm-aeat-ident-field__label">{t(f.labelKey)}</span>
+                      <div className="fm-aeat-ident-field__value">{identification?.[f.id] ?? ''}</div>
+                    </div>
+                  ))}
+                </div>
+                {checkboxFields.map(f => (
+                  <div key={f.id} className="fm-aeat-ident-cb">
+                    <span className="fm-aeat-ident-cb__label">{t(f.labelKey)}</span>
+                    <input
+                      type="checkbox"
+                      className={`fm-aeat-ident-cb__check${f.readOnly ? ' fm-aeat-ident-cb__check--readonly' : ''}`}
+                      checked={identification?.[f.id] ?? false}
+                      disabled={f.readOnly}
+                      onChange={() => {}}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
         const cols = section.colHeaderKeys?.length || 1;
         return (
           <div key={si} className="fm-aeat-section">

@@ -19068,7 +19068,22 @@
     "fm.box.row.entregas_bienes_inv_vol": "Entregas de bienes de inversión",
     "fm.box.row.total_operaciones": "Total volumen de operaciones (Art. 121 Ley IVA)",
     "fm.upcoming.title": "Próximos vencimientos",
-    "fm.upcoming.empty": "Sin vencimientos próximos"
+    "fm.upcoming.empty": "Sin vencimientos próximos",
+    "fm.page.identificacion": "Identificación",
+    "fm.box.section.identificacion": "1 - Identificación",
+    "fm.ident.nif": "NIF",
+    "fm.ident.nombre": "Apellidos y Nombre o Razón Social",
+    "fm.ident.redeme": "Sujeto pasivo inscrito en el Registro de devolución mensual (art. 30 RIVA)",
+    "fm.ident.reg_simplif": "Sujeto pasivo que tributa exclusivamente en régimen simplificado",
+    "fm.ident.autoliquid": "Autoliquidación conjunta",
+    "fm.ident.crit_caja": "Sujeto pasivo acogido al régimen especial del criterio de Caja (art. 163 undecies LIVA)",
+    "fm.ident.dest_crit_caja": "Sujeto pasivo destinatario de operaciones acogidas al régimen especial del criterio de caja",
+    "fm.ident.prorrata_espec": "Opción por la aplicación de la prorrata especial (art. 103.Dos.1º LIVA)",
+    "fm.ident.rev_prorrata": "Revocación de la opción por la aplicación de la prorrata especial (art. 103.Dos.1º LIVA)",
+    "fm.ident.concurso": "Sujeto pasivo declarado en concurso de acreedores en el presente período de liquidación",
+    "fm.ident.sii": "Sujeto pasivo acogido voluntariamente al SII",
+    "fm.ident.vol_operac": "Sujeto pasivo con volumen anual de operaciones distinto de cero (art. 121 LIVA)",
+    "fm.ident.dep_aduanero": "Sujeto pasivo con derecho a deducir pago a cuenta de entregas de gasolinas, gasóleos y biocarburantes posteriores a la ultimación del régimen de depósito distinto del aduanero"
   },
   "menus": {
     "Goods Movement": { "label": "Movimiento de mercancías" },
@@ -20712,6 +20727,21 @@
     "fm.box.row.diferencia": "Diferencia",
     "fm.box.row.resultado_declaracion": "Resultado de la declaración",
     "fm.upcoming.title": "Próximos vencimientos",
-    "fm.upcoming.empty": "Sin vencimientos próximos"
+    "fm.upcoming.empty": "Sin vencimientos próximos",
+    "fm.page.identificacion": "Identificación",
+    "fm.box.section.identificacion": "1 - Identificación",
+    "fm.ident.nif": "NIF",
+    "fm.ident.nombre": "Apellidos y Nombre o Razón Social",
+    "fm.ident.redeme": "Sujeto pasivo inscrito en el Registro de devolución mensual (art. 30 RIVA)",
+    "fm.ident.reg_simplif": "Sujeto pasivo que tributa exclusivamente en régimen simplificado",
+    "fm.ident.autoliquid": "Autoliquidación conjunta",
+    "fm.ident.crit_caja": "Sujeto pasivo acogido al régimen especial del criterio de Caja (art. 163 undecies LIVA)",
+    "fm.ident.dest_crit_caja": "Sujeto pasivo destinatario de operaciones acogidas al régimen especial del criterio de caja",
+    "fm.ident.prorrata_espec": "Opción por la aplicación de la prorrata especial (art. 103.Dos.1º LIVA)",
+    "fm.ident.rev_prorrata": "Revocación de la opción por la aplicación de la prorrata especial (art. 103.Dos.1º LIVA)",
+    "fm.ident.concurso": "Sujeto pasivo declarado en concurso de acreedores en el presente período de liquidación",
+    "fm.ident.sii": "Sujeto pasivo acogido voluntariamente al SII",
+    "fm.ident.vol_operac": "Sujeto pasivo con volumen anual de operaciones distinto de cero (art. 121 LIVA)",
+    "fm.ident.dep_aduanero": "Sujeto pasivo con derecho a deducir pago a cuenta de entregas de gasolinas, gasóleos y biocarburantes posteriores a la ultimación del régimen de depósito distinto del aduanero"
   }
 }

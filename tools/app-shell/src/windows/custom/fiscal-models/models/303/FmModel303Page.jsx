@@ -393,6 +393,7 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
       <div className="fm-page__body">
         {activeTab === 'boxes' && (() => {
           const BOX_PAGES = [
+            { titleKey: 'fm.page.identificacion',  sections: ['identificacion'] },
             { titleKey: 'fm.page.liquidacion',    sections: ['iva_devengado', 'iva_deducible', 'resultado'] },
             { titleKey: 'fm.page.info_adicional', sections: ['info_adicional'] },
             { titleKey: 'fm.page.resultado_final',sections: ['resultado_final'] },
@@ -425,6 +426,7 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
                 year={decl.year}
                 period={decl.period}
                 sectionIds={page.sections}
+                identification={decl.identification}
               />
             </SectionCard>
           );

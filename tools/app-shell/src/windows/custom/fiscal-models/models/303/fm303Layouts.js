@@ -29,8 +29,29 @@ const IVA_DED_COLS = [
 
 // BASE reflects the full 2026 AEAT Modelo 303 form (source: official PDF, May 2026).
 const BASE = {
-  sectionOrder: ['iva_devengado', 'iva_deducible', 'resultado', 'info_adicional', 'resultado_final'],
+  sectionOrder: ['identificacion', 'iva_devengado', 'iva_deducible', 'resultado', 'info_adicional', 'resultado_final'],
   sections: {
+    identificacion: {
+      sectionType: 'identificacion',
+      titleKey: 'fm.box.section.identificacion',
+      colHeaderKeys: [],
+      fields: [
+        { id: 'nif',            labelKey: 'fm.ident.nif',            type: 'text',     readOnly: true  },
+        { id: 'nombre',         labelKey: 'fm.ident.nombre',         type: 'text',     readOnly: true  },
+        { id: 'redeme',         labelKey: 'fm.ident.redeme',         type: 'checkbox', readOnly: false },
+        { id: 'reg_simplif',    labelKey: 'fm.ident.reg_simplif',    type: 'checkbox', readOnly: false },
+        { id: 'autoliquid',     labelKey: 'fm.ident.autoliquid',     type: 'checkbox', readOnly: true  },
+        { id: 'crit_caja',      labelKey: 'fm.ident.crit_caja',      type: 'checkbox', readOnly: false },
+        { id: 'dest_crit_caja', labelKey: 'fm.ident.dest_crit_caja', type: 'checkbox', readOnly: false },
+        { id: 'prorrata_espec', labelKey: 'fm.ident.prorrata_espec', type: 'checkbox', readOnly: false },
+        { id: 'rev_prorrata',   labelKey: 'fm.ident.rev_prorrata',   type: 'checkbox', readOnly: true  },
+        { id: 'concurso',       labelKey: 'fm.ident.concurso',       type: 'checkbox', readOnly: false },
+        { id: 'sii',            labelKey: 'fm.ident.sii',            type: 'checkbox', readOnly: false },
+        { id: 'vol_operac',     labelKey: 'fm.ident.vol_operac',     type: 'checkbox', readOnly: false },
+        { id: 'dep_aduanero',   labelKey: 'fm.ident.dep_aduanero',   type: 'checkbox', readOnly: true  },
+      ],
+      rows: [],
+    },
     iva_devengado: {
       titleKey: 'fm.box.section.iva_devengado',
       colHeaderKeys: IVA_DEV_COLS,

@@ -41,6 +41,11 @@ describe('FmModel303Page — i18n completeness', () => {
   });
 });
 
+describe('FmModel303Page — identificacion page', () => {
+  it('includes identificacion in BOX_PAGES', () => assert.match(src, /identificacion/));
+  it('passes identification prop to FmBoxes303', () => assert.match(src, /identification=/));
+});
+
 describe('FmModel303Page — no removed features', () => {
   it('does not reference AuditReasonModal', () => assert.doesNotMatch(src, /AuditReasonModal/));
   it('does not reference CellHistoryPanel', () => assert.doesNotMatch(src, /CellHistoryPanel/));
