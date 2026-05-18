@@ -34,6 +34,7 @@ const BASE = {
     iva_devengado: {
       titleKey: 'fm.box.section.iva_devengado',
       colHeaderKeys: IVA_DEV_COLS,
+      colTypes: ['amount', 'percent', 'amount'],
       rows: [
         { id: '150',             cells: [150, 151, 152], fixedValues: { 151: 0    } },
         { id: '165',             cells: [165, 166, 167] },

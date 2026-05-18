@@ -1,7 +1,11 @@
 import React from 'react';
 import { useUI } from '@/i18n';
 import { getLayout303 } from './fm303Layouts.js';
-import { formatAmount } from '../../fiscalModelsUtils.js';
+import { formatAmount, formatPercent } from '../../fiscalModelsUtils.js';
+
+function formatCell(val, colType) {
+  return colType === 'percent' ? formatPercent(val) : formatAmount(val);
+}
 
 export default function FmBoxes303({ boxes, year, period, sectionIds }) {
   const ui = useUI();
@@ -56,7 +60,7 @@ export default function FmBoxes303({ boxes, year, period, sectionIds }) {
                     <div key={ci} className={`fm-aeat-cell${isFixed ? ' fm-aeat-cell--fixed' : ''}`}>
                       <span className="fm-aeat-cell__num">{String(boxNum).padStart(2, '0')}</span>
                       <span className="fm-aeat-cell__value">
-                        {val != null ? formatAmount(val) : '—'}
+                        {val != null ? formatCell(val, section.colTypes?.[ci] ?? 'amount') : '—'}
                       </span>
                     </div>
                   );
