@@ -26,6 +26,12 @@ export default function FmCatalogPage({ onBack, onSave, activeModels, token, api
   const lockedIds = new Set(CATALOG.filter(m => m.locked).map(m => m.id));
   const activeCount = Object.entries(active).filter(([id, v]) => v && !lockedIds.has(id)).length;
 
+  const sortedCatalog = [...CATALOG].sort((a, b) => {
+    const keyA = (active[a.id] && !a.locked) ? 0 : a.locked ? 2 : 1;
+    const keyB = (active[b.id] && !b.locked) ? 0 : b.locked ? 2 : 1;
+    return keyA - keyB || parseInt(a.id, 10) - parseInt(b.id, 10);
+  });
+
   return (
     <div className="fm-page">
       {/* Header */}
@@ -52,65 +58,61 @@ export default function FmCatalogPage({ onBack, onSave, activeModels, token, api
       {/* Description bar */}
       <div className="fm-catalog-desc">{t('fm.catalog.sub')}</div>
 
-      {/* Card grid */}
+      {/* Card grid — flat, sorted: active → inactive → locked */}
       <div className="fm-catalog-body">
-        {['iva', 'ret'].map(cat => (
-          <div key={cat} className="fm-catalog-group">
-            <div className="fm-catalog-group__label">{t(`fm.catalog.cat.${cat}`)}</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
-              {CATALOG.filter(m => m.cat === cat).map(model => {
-                const isActive = active[model.id];
-                const isLocked = model.locked;
-                return (
-                  <div
-                    key={model.id}
-                    className={`fm-catalog-card${isLocked ? ' fm-catalog-card--locked' : isActive ? (cat === 'ret' ? ' fm-catalog-card--active-ret' : ' fm-catalog-card--active') : ''}`}
-                  >
-                    <span className={`fm-catalog-card__badge fm-catalog-card__badge--${cat}`}>
-                      {model.id}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
+          {sortedCatalog.map(model => {
+            const isActive = active[model.id];
+            const isLocked = model.locked;
+            const cat = model.cat;
+            return (
+              <div
+                key={model.id}
+                className={`fm-catalog-card${isLocked ? ' fm-catalog-card--locked' : isActive ? (cat === 'ret' ? ' fm-catalog-card--active-ret' : ' fm-catalog-card--active') : ''}`}
+              >
+                <span className={`fm-catalog-card__badge fm-catalog-card__badge--${cat}`}>
+                  {model.id}
+                </span>
+                <div className="fm-catalog-card__body">
+                  <div className="fm-catalog-card__name">{t(`fm.catalog.${model.id}.name`)}</div>
+                  <div className="fm-catalog-card__desc">{t(`fm.catalog.${model.id}.desc`)}</div>
+                  <div className="fm-catalog-card__meta">
+                    <span className="fm-catalog-card__pill">
+                      {t(`fm.catalog.periodicity.${model.periodicity}`)}
                     </span>
-                    <div className="fm-catalog-card__body">
-                      <div className="fm-catalog-card__name">{t(`fm.catalog.${model.id}.name`)}</div>
-                      <div className="fm-catalog-card__desc">{t(`fm.catalog.${model.id}.desc`)}</div>
-                      <div className="fm-catalog-card__meta">
-                        <span className="fm-catalog-card__pill">
-                          {t(`fm.catalog.periodicity.${model.periodicity}`)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="fm-catalog-card__actions">
-                      {isLocked ? (
-                        <span className="fm-catalog-card__locked-badge">
-                          <Lock size={10} strokeWidth={2} />
-                          {t('fm.catalog.coming_soon')}
-                        </span>
-                      ) : (
-                        <>
-                          <button
-                            className={`fm-catalog-toggle ${isActive ? 'fm-catalog-toggle--active' : 'fm-catalog-toggle--inactive'}`}
-                            onClick={() => toggleModel(model.id)}
-                          >
-                            {isActive ? t('fm.catalog.deactivate') : t('fm.catalog.activate')}
-                          </button>
-                          {isActive && CONFIGURABLE.has(model.id) && (
-                            <button
-                              className="fm-catalog-config-btn"
-                              title={t('fm.config.title')}
-                              aria-label={t('fm.config.title')}
-                              onClick={() => setConfigModel(model.id)}
-                            >
-                              <Settings2 size={14} strokeWidth={1.75} />
-                            </button>
-                          )}
-                        </>
-                      )}
-                    </div>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+                </div>
+                <div className="fm-catalog-card__actions">
+                  {isLocked ? (
+                    <span className="fm-catalog-card__locked-badge">
+                      <Lock size={10} strokeWidth={2} />
+                      {t('fm.catalog.coming_soon')}
+                    </span>
+                  ) : (
+                    <>
+                      <button
+                        className={`fm-catalog-toggle ${isActive ? 'fm-catalog-toggle--active' : 'fm-catalog-toggle--inactive'}`}
+                        onClick={() => toggleModel(model.id)}
+                      >
+                        {isActive ? t('fm.catalog.deactivate') : t('fm.catalog.activate')}
+                      </button>
+                      {isActive && CONFIGURABLE.has(model.id) && (
+                        <button
+                          className="fm-catalog-config-btn"
+                          title={t('fm.config.title')}
+                          aria-label={t('fm.config.title')}
+                          onClick={() => setConfigModel(model.id)}
+                        >
+                          <Settings2 size={14} strokeWidth={1.75} />
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {configModel && (
