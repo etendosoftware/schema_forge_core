@@ -16987,6 +16987,7 @@
     "sendModalMessagePlaceholder": "Añade un mensaje personal...",
     "sendModalSend": "Enviar",
     "sendModalSending": "Enviando...",
+    "sendModalSentSuccess": "{documentType} enviado",
     "sendModalDownloading": "Descargando...",
     "sendModalLoadingPreview": "Cargando vista previa...",
     "sendModalPdfPreview": "Vista previa PDF",

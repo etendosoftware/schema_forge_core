@@ -16742,6 +16742,7 @@
     "sendModalMessagePlaceholder": "Add a personal message...",
     "sendModalSend": "Send",
     "sendModalSending": "Sending...",
+    "sendModalSentSuccess": "{documentType} sent",
     "sendModalDownloading": "Downloading...",
     "sendModalLoadingPreview": "Loading preview...",
     "sendModalPdfPreview": "PDF preview",

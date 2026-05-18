@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Mail } from 'lucide-react';
+import { Mail, Search } from 'lucide-react';
 import { useUI } from '@/i18n';
 
 /**
@@ -27,13 +27,15 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
   const hasEmail = bpEmail && bpEmail.includes('@');
   const [to, setTo] = useState(hasEmail ? bpEmail : '');
   const [emailLoading, setEmailLoading] = useState(false);
+  const [contacts, setContacts] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [toPristine, setToPristine] = useState(true);
 
-  // Auto-fetch etgoEmail from the contacts endpoint when bpEmail is not pre-filled.
+  // Fetch all contacts for the current BP to populate the "Para" search dropdown.
   useEffect(() => {
-    if (hasEmail || !bPartnerId || !apiBaseUrl || !token) return;
+    if (!bPartnerId || !apiBaseUrl || !token) return;
     let cancelled = false;
     setEmailLoading(true);
-    // Replace the trailing spec name in apiBaseUrl with "contacts" to hit the contacts spec.
     const contactsBaseUrl = apiBaseUrl.replace(/\/[^/]+$/, '/contacts');
     fetch(`${contactsBaseUrl}/businessPartner/${bPartnerId}`, {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -41,14 +43,31 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (cancelled) return;
-        const record = d?.response?.data?.[0] ?? d?.data?.[0];
-        const fetched = record?.etgoEmail;
-        if (fetched && fetched.includes('@')) setTo(fetched);
+        const records = d?.response?.data ?? d?.data ?? [];
+        const withEmail = records.filter(r => r?.etgoEmail?.includes('@'));
+        setContacts(withEmail);
+        if (!hasEmail && withEmail.length > 0) setTo(withEmail[0].etgoEmail);
       })
-      .catch(() => { /* keep field empty on error */ })
+      .catch(() => {})
       .finally(() => { if (!cancelled) setEmailLoading(false); });
     return () => { cancelled = true; };
   }, [hasEmail, bPartnerId, apiBaseUrl, token]);
+
+  const filteredContacts = contacts.filter(c => {
+    const q = to.toLowerCase();
+    const email = (c.etgoEmail || '').toLowerCase();
+    const fn = (c.etgoFirstname || '').toLowerCase();
+    const ln = (c.etgoLastname || '').toLowerCase();
+    const name = (c.name || '').toLowerCase();
+    return email.includes(q) || fn.includes(q) || ln.includes(q) || name.includes(q);
+  });
+
+  const getContactLabel = (c) => {
+    const full = [c.etgoFirstname, c.etgoLastname].filter(Boolean).join(' ') || c.name || '';
+    return full ? `${full} <${c.etgoEmail}>` : c.etgoEmail;
+  };
+
+  const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
   const [subject, setSubject] = useState(`${documentType} #${documentNo} — ${bpName}`);
   const [message, setMessage] = useState('');
@@ -150,7 +169,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
   const handleSend = () => {
     setSending(true);
     setTimeout(() => {
-      toast.success(`${documentType} sent ✓`);
+      toast.success(ui('sendModalSentSuccess', { documentType }));
       setSending(false);
       onClose();
     }, 800);
@@ -206,16 +225,37 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
 
           {allowEmail && (
           <div style={{ width: '40%', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
-            <div>
+            <div style={{ position: 'relative' }}>
               <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalTo')}</label>
-              <input
-                type="email"
-                value={to}
-                onChange={e => setTo(e.target.value)}
-                placeholder="email@company.com"
-                style={{ width: '100%', fontSize: 13, padding: '8px 10px', border: `0.5px solid ${!to && !emailLoading ? '#ef4444' : '#d1d5db'}`, borderRadius: 6, outline: 'none', color: '#111827', boxSizing: 'border-box' }}
-              />
-              {!to && !emailLoading && (
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  value={to}
+                  onChange={e => { setTo(e.target.value); setShowDropdown(true); setToPristine(false); }}
+                  onFocus={() => { contacts.length > 0 && setShowDropdown(true); setToPristine(false); }}
+                  onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+                  placeholder={emailLoading ? '' : 'email@company.com'}
+                  style={{ width: '100%', fontSize: 13, padding: '8px 32px 8px 10px', border: `0.5px solid ${!isValidEmail(to) && !emailLoading && !toPristine && !showDropdown ? '#ef4444' : '#d1d5db'}`, borderRadius: 6, outline: 'none', color: '#111827', boxSizing: 'border-box' }}
+                />
+                <Search size={13} strokeWidth={1.5} color="#9ca3af" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+              </div>
+              {showDropdown && filteredContacts.length > 0 && (
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, background: '#fff', border: '0.5px solid #d1d5db', borderRadius: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: 160, overflowY: 'auto', marginTop: 2 }}>
+                  {filteredContacts.map(c => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onMouseDown={() => { setTo(c.etgoEmail); setShowDropdown(false); }}
+                      style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 10px', fontSize: 12, color: '#111827', background: 'none', border: 'none', borderBottom: '0.5px solid #f3f4f6', cursor: 'pointer' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#F3F4F6'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
+                    >
+                      {getContactLabel(c)}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {!isValidEmail(to) && !emailLoading && !toPristine && !showDropdown && (
                 <span style={{ fontSize: 11, color: '#ef4444', marginTop: 3, display: 'block' }}>{ui('sendModalNoEmail')}</span>
               )}
             </div>
@@ -247,8 +287,8 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
           <button
             type="button"
             onClick={handleSend}
-            disabled={!to.trim() || sending}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, padding: '6px 16px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: (!to.trim() || sending) ? 'not-allowed' : 'pointer', opacity: (!to.trim() || sending) ? 0.4 : 1 }}
+            disabled={!isValidEmail(to) || sending}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, padding: '6px 16px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: (!isValidEmail(to) || sending) ? 'not-allowed' : 'pointer', opacity: (!isValidEmail(to) || sending) ? 0.4 : 1 }}
           >
             {sending ? ui('sendModalSending') : (
               <>
