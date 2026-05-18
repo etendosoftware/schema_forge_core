@@ -4,12 +4,35 @@ import { useDraggable } from '../fiscal-monitor/useDraggable.js';
 
 // ── Mock payloads ─────────────────────────────────────────────────
 
+// Real Q1 2026 data — GOOrg (ad_org_id 61849243BE89460EB70866880A545D50)
+const REAL_303_BOXES = {
+  7:  3248,       // base ventas 21%
+  9:  682.08,     // cuota ventas 21%
+  27: 682.08,     // total devengada
+  28: 16659,      // base compras corrientes 21%
+  29: 3498.39,    // cuota compras corrientes 21%
+  45: 3498.39,    // total deducible
+  46: -2816.31,   // diferencia (27 − 45) → compensar
+};
+
+// Large demo dataset for visual testing of the form layout
+const DEMO_303_BOXES = {
+  7:  215385,
+  9:  45230.85,
+  27: 45230.80,
+  28: 157386,
+  29: 33051.05,
+  45: 33051.05,
+  46: 12179.75,
+};
+
 const MOCK_303 = {
   id: 'debug-303-2026-T1', model: '303', year: 2026, period: 'T1',
   type: 'ord', status: 'borrador', nif: 'B12345678',
-  result: { kind: 'ingresar', amount: 12179.75 },
+  result: { kind: 'compensar', amount: 2816.31 },
   incidents: { blocking: 0, warning: 0, items: [] },
-  summary: { accrued: 45230.80, deductible: 33051.05, result: 12179.75, previousCompensation: 2100 },
+  summary: { accrued: 682.08, deductible: 3498.39, result: -2816.31 },
+  boxes: REAL_303_BOXES,
   file: null, sources: [], history: [],
   updatedAt: '14/05/2026',
 };
@@ -24,7 +47,7 @@ const MOCK_349 = {
 
 const MOCK_SUMMARY = {
   accrued: 45230.80, deductible: 33051.05,
-  result: 12179.75, previousCompensation: 2100,
+  result: 12179.75,
   prev: { accrued: 38400.00, deductible: 31200.50, result: 7199.50 },
 };
 
@@ -310,10 +333,12 @@ export default function FmDebugPanel({ view, setView }) {
           {tab === 'data' && (
             <>
               {[
-                { label: 'Summary',          active: !!decl?.summary,               onInject: () => patchDecl({ summary: MOCK_SUMMARY }),   onClear: () => patchDecl({ summary: null }) },
-                { label: 'File',             active: !!decl?.file,                  onInject: () => patchDecl({ file: MOCK_FILE }),          onClear: () => patchDecl({ file: null }) },
-                { label: 'Sources (4 rows)', active: (decl?.sources ?? []).length > 0, onInject: () => patchDecl({ sources: MOCK_SOURCES }), onClear: () => patchDecl({ sources: [] }) },
-                { label: 'History (4)',      active: (decl?.history ?? []).length > 0, onInject: () => patchDecl({ history: MOCK_HISTORY }), onClear: () => patchDecl({ history: [] }) },
+                { label: 'Summary',          active: !!decl?.summary,                              onInject: () => patchDecl({ summary: MOCK_SUMMARY }),          onClear: () => patchDecl({ summary: null }) },
+                { label: 'Boxes · real',     active: decl?.boxes?.[7] === REAL_303_BOXES[7],       onInject: () => patchDecl({ boxes: REAL_303_BOXES, result: { kind:'compensar', amount:2816.31 }, summary: { accrued:682.08, deductible:3498.39, result:-2816.31 } }), onClear: () => patchDecl({ boxes: {} }) },
+                { label: 'Boxes · demo',     active: decl?.boxes?.[7] === DEMO_303_BOXES[7],       onInject: () => patchDecl({ boxes: DEMO_303_BOXES, result: { kind:'ingresar',  amount:12179.75 }, summary: { accrued:45230.80, deductible:33051.05, result:12179.75 } }), onClear: () => patchDecl({ boxes: {} }) },
+                { label: 'File',             active: !!decl?.file,                                 onInject: () => patchDecl({ file: MOCK_FILE }),                 onClear: () => patchDecl({ file: null }) },
+                { label: 'Sources (4 rows)', active: (decl?.sources ?? []).length > 0,            onInject: () => patchDecl({ sources: MOCK_SOURCES }),           onClear: () => patchDecl({ sources: [] }) },
+                { label: 'History (4)',      active: (decl?.history ?? []).length > 0,            onInject: () => patchDecl({ history: MOCK_HISTORY }),           onClear: () => patchDecl({ history: [] }) },
               ].map(({ label, active, onInject, onClear }) => (
                 <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, padding: '5px 8px', borderRadius: 6, background: '#0f0f1e', border: '1px solid #2d2d4a' }}>
                   <div>
