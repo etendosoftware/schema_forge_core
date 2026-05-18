@@ -17,6 +17,51 @@ function contactMatchesQuery(c, q) {
     || (c.name || '').toLowerCase().includes(q);
 }
 
+async function renderPdfIntoIframe(node, reportId, documentId, token, setPdfLoading, setPdfError) {
+  setPdfLoading(true);
+  setPdfError(null);
+  try {
+    const res = await fetch(`/api/reports/${reportId}/render`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ format: 'html', params: { documentId } }),
+    });
+    if (!res.ok) throw new Error(`Preview failed (${res.status})`);
+    const html = await res.text();
+    node.src = 'about:blank';
+    node.onload = () => {
+      try { const doc = node.contentDocument; doc.open(); doc.write(html); doc.close(); } catch {}
+      node.onload = null;
+    };
+  } catch (err) {
+    setPdfError(err.message);
+  }
+  setPdfLoading(false);
+}
+
+async function fetchAndDownloadPdf(reportId, documentId, windowName, documentNo, token) {
+  const res = await fetch(`/api/reports/${reportId}/render`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ format: 'html', params: { documentId } }),
+  });
+  if (!res.ok) throw new Error('Failed to render');
+  const html = await res.text();
+  const pdfRes = await fetch('/jsreport/api/report', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ template: { content: html, engine: 'none', recipe: 'chrome-pdf', chrome: { format: 'A4', marginTop: '10mm', marginBottom: '10mm', marginLeft: '10mm', marginRight: '10mm' } }, data: {} }),
+  });
+  if (!pdfRes.ok) throw new Error('PDF generation failed');
+  const blob = await pdfRes.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${windowName}-${documentNo}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 /**
  * Reusable Send/Download modal for any document (invoice, order, quotation, shipment).
  *
@@ -102,27 +147,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
     }
 
     if (!documentId || !token) return;
-    (async () => {
-      setPdfLoading(true);
-      setPdfError(null);
-      try {
-        const res = await fetch(`/api/reports/${reportId}/render`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ format: 'html', params: { documentId } }),
-        });
-        if (!res.ok) throw new Error(`Preview failed (${res.status})`);
-        const html = await res.text();
-        node.src = 'about:blank';
-        node.onload = () => {
-          try { const doc = node.contentDocument; doc.open(); doc.write(html); doc.close(); } catch {}
-          node.onload = null;
-        };
-      } catch (err) {
-        setPdfError(err.message);
-      }
-      setPdfLoading(false);
-    })();
+    renderPdfIntoIframe(node, reportId, documentId, token, setPdfLoading, setPdfError);
   }, [documentId, token, reportId, pdfBlobUrl, pdfBlobLoading]);
 
   const handleDownload = async () => {
@@ -141,26 +166,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
 
     setDownloading(true);
     try {
-      const res = await fetch(`/api/reports/${reportId}/render`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ format: 'html', params: { documentId } }),
-      });
-      if (!res.ok) throw new Error('Failed to render');
-      const html = await res.text();
-      const pdfRes = await fetch('/jsreport/api/report', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ template: { content: html, engine: 'none', recipe: 'chrome-pdf', chrome: { format: 'A4', marginTop: '10mm', marginBottom: '10mm', marginLeft: '10mm', marginRight: '10mm' } }, data: {} }),
-      });
-      if (!pdfRes.ok) throw new Error('PDF generation failed');
-      const blob = await pdfRes.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${windowName}-${documentNo}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
+      await fetchAndDownloadPdf(reportId, documentId, windowName, documentNo, token);
     } catch (err) {
       toast.error(err.message);
     }
