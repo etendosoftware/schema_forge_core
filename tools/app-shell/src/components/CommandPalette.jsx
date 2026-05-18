@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUI } from '@/i18n';
+import { useUI, useMenuLabel } from '@/i18n';
 import {
   CommandDialog,
   CommandEmpty,
@@ -37,6 +37,7 @@ export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const ui = useUI();
+  const tMenu = useMenuLabel();
 
   useEffect(() => {
     const down = (e) => {
@@ -62,7 +63,7 @@ export function CommandPalette() {
         {menuConfig.menu.map((group) => {
           const Icon = ICON_MAP[group.icon] || Package;
           return (
-            <CommandGroup key={group.group} heading={group.group}>
+            <CommandGroup key={group.group} heading={tMenu(group.group)}>
               {group.items.map((item) => (
                 <CommandItem
                   key={item.name}
@@ -70,7 +71,7 @@ export function CommandPalette() {
                   onSelect={() => handleSelect(item.name)}
                 >
                   <Icon className="mr-2 h-4 w-4" />
-                  <span>{item.label}</span>
+                  <span>{tMenu(item.label)}</span>
                 </CommandItem>
               ))}
             </CommandGroup>
