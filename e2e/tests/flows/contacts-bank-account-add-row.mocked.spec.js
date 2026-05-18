@@ -189,14 +189,10 @@ test.describe('Contacts — Cuenta Bancaria inline-add-row', () => {
     await expect(bankTab).toBeVisible({ timeout: 10_000 });
     await bankTab.click();
 
-    // Look for the "+ Add" button for the bankAccount tab
-    const addBtn = page.getByTestId('action-add-bankAccount')
-      .or(page.getByRole('button', { name: /add.*bank|agregar.*cuenta|nueva.*cuenta/i }));
-    if (await addBtn.count() === 0) {
-      test.skip(true, 'Add button not found for bankAccount tab — tab may use a different layout');
-      return;
-    }
-    await addBtn.first().click();
+    // AddLineButton always renders with data-testid="action-add-line"
+    const addBtn = page.getByTestId('action-add-line');
+    await expect(addBtn).toBeVisible({ timeout: 8_000 });
+    await addBtn.click();
     // Inline add row should appear
     await expect(page.getByTestId('inline-add-row')).toBeVisible({ timeout: 5_000 });
   });
@@ -206,13 +202,9 @@ test.describe('Contacts — Cuenta Bancaria inline-add-row', () => {
     await expect(bankTab).toBeVisible({ timeout: 10_000 });
     await bankTab.click();
 
-    const addBtn = page.getByTestId('action-add-bankAccount')
-      .or(page.getByRole('button', { name: /add.*bank|agregar.*cuenta|nueva.*cuenta/i }));
-    if (await addBtn.count() === 0) {
-      test.skip(true, 'Add button not found for bankAccount tab');
-      return;
-    }
-    await addBtn.first().click();
+    const addBtn = page.getByTestId('action-add-line');
+    await expect(addBtn).toBeVisible({ timeout: 8_000 });
+    await addBtn.click();
     await expect(page.getByTestId('inline-add-row')).toBeVisible({ timeout: 5_000 });
 
     // The country field should not contain the literal placeholder "@COUNTRYDEF@"
@@ -254,13 +246,9 @@ test.describe('Contacts — Cuenta Bancaria inline-add-row', () => {
     await expect(bankTab).toBeVisible({ timeout: 10_000 });
     await bankTab.click();
 
-    const addBtn = page.getByTestId('action-add-bankAccount')
-      .or(page.getByRole('button', { name: /add.*bank|agregar.*cuenta|nueva.*cuenta/i }));
-    if (await addBtn.count() === 0) {
-      test.skip(true, 'Add button not found for bankAccount tab');
-      return;
-    }
-    await addBtn.first().click();
+    const addBtn = page.getByTestId('action-add-line');
+    await expect(addBtn).toBeVisible({ timeout: 8_000 });
+    await addBtn.click();
     await expect(page.getByTestId('inline-add-row')).toBeVisible({ timeout: 5_000 });
 
     // Fill bankFormat as IBAN to trigger the country validation path
@@ -320,13 +308,9 @@ test.describe('Contacts — Cuenta Bancaria inline-add-row', () => {
     await expect(bankTab).toBeVisible({ timeout: 10_000 });
     await bankTab.click();
 
-    const addBtn = page.getByTestId('action-add-bankAccount')
-      .or(page.getByRole('button', { name: /add.*bank|agregar.*cuenta|nueva.*cuenta/i }));
-    if (await addBtn.count() === 0) {
-      test.skip(true, 'Add button not found for bankAccount tab');
-      return;
-    }
-    await addBtn.first().click();
+    const addBtn = page.getByTestId('action-add-line');
+    await expect(addBtn).toBeVisible({ timeout: 8_000 });
+    await addBtn.click();
     await expect(page.getByTestId('inline-add-row')).toBeVisible({ timeout: 5_000 });
 
     const confirmBtn = page.getByTestId('inline-add-confirm')
