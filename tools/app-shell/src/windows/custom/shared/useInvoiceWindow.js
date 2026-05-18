@@ -1,12 +1,14 @@
 import { useCallback } from 'react';
 
-export const INVOICE_DRAFT_MODE = {
-  enabled: true,
-  processField: 'documentAction',
-  processValue: 'CO',
-  label: 'Confirm',
-  disableWhenEmpty: true,
-};
+export function getInvoiceDraftMode(ui) {
+  return {
+    enabled: true,
+    processField: 'documentAction',
+    processValue: 'CO',
+    label: ui('confirm'),
+    disableWhenEmpty: true,
+  };
+}
 
 export function buildInvoiceRowQuickActions(navigate, windowName, setCloneTargets, setEmailRow, requestDelete) {
   return {

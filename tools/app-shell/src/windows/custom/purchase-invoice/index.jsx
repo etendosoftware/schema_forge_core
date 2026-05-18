@@ -15,7 +15,7 @@ import SendDocumentModal from '@/components/contract-ui/SendDocumentModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
-import { INVOICE_DRAFT_MODE, buildInvoiceRowQuickActions, useClearSavedRecord } from '../shared/useInvoiceWindow.js';
+import { getInvoiceDraftMode, buildInvoiceRowQuickActions, useClearSavedRecord } from '../shared/useInvoiceWindow.js';
 
 /* eslint-disable react/prop-types */
 
@@ -106,7 +106,7 @@ export default function PurchaseInvoiceWindow(props) {
   const effectiveRecord = savedRecord ?? location.state?.savedRecord ?? null;
 
   const clearSavedRecord = useClearSavedRecord(setSavedRecord, location, navigate);
-  const draftModeOverride = INVOICE_DRAFT_MODE;
+  const draftModeOverride = getInvoiceDraftMode(ui);
 
   if (recordId) {
     return (

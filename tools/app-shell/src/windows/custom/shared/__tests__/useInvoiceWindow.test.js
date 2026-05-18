@@ -1,26 +1,32 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { INVOICE_DRAFT_MODE, buildInvoiceRowQuickActions } from '../useInvoiceWindow.js';
+import { getInvoiceDraftMode, buildInvoiceRowQuickActions } from '../useInvoiceWindow.js';
 
 const src = readFileSync(new URL('../useInvoiceWindow.js', import.meta.url), 'utf8');
 
+const fakeUi = (key) => `__${key}__`;
+
 describe('useInvoiceWindow', () => {
-  describe('INVOICE_DRAFT_MODE', () => {
+  describe('getInvoiceDraftMode', () => {
     it('is enabled', () => {
-      assert.equal(INVOICE_DRAFT_MODE.enabled, true);
+      assert.equal(getInvoiceDraftMode(fakeUi).enabled, true);
     });
 
     it('uses documentAction as processField', () => {
-      assert.equal(INVOICE_DRAFT_MODE.processField, 'documentAction');
+      assert.equal(getInvoiceDraftMode(fakeUi).processField, 'documentAction');
     });
 
     it('uses CO as processValue', () => {
-      assert.equal(INVOICE_DRAFT_MODE.processValue, 'CO');
+      assert.equal(getInvoiceDraftMode(fakeUi).processValue, 'CO');
     });
 
     it('disables when the document has no lines', () => {
-      assert.equal(INVOICE_DRAFT_MODE.disableWhenEmpty, true);
+      assert.equal(getInvoiceDraftMode(fakeUi).disableWhenEmpty, true);
+    });
+
+    it('resolves the label via the ui() translator', () => {
+      assert.equal(getInvoiceDraftMode(fakeUi).label, '__confirm__');
     });
   });
 
