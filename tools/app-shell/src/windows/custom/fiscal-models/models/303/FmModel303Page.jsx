@@ -34,6 +34,7 @@ function buildBoxIncidentMap(incidents) {
 }
 
 function SourcesTab({ decl, t }) {
+  const [onlyIncidents, setOnlyIncidents] = useState(false);
   const sources = decl.sources ?? [];
   const boxIncidentMap = buildBoxIncidentMap(decl.incidents?.items ?? []);
 
@@ -41,10 +42,26 @@ function SourcesTab({ decl, t }) {
     return (source.boxes ?? '').split(',').flatMap(b => boxIncidentMap[b.trim()] ?? []);
   }
 
+  const incidentRowCount = sources.filter(r => rowIncidents(r).length > 0).length;
+  const visible = onlyIncidents ? sources.filter(r => rowIncidents(r).length > 0) : sources;
+
+  const filterBtn = incidentRowCount > 0 && (
+    <button
+      className={`fm-toolbar__pill${onlyIncidents ? ' fm-toolbar__pill--active-dark' : ''}`}
+      style={{ fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+      onClick={() => setOnlyIncidents(v => !v)}
+    >
+      <TriangleAlert size={11} strokeWidth={2} />
+      {t('fm.sources.filter.incidents') ?? 'Con incidencias'}
+      <span className="fm-toolbar__count-badge">{incidentRowCount}</span>
+    </button>
+  );
+
   return (
     <SectionCard
       title={t('fm.sources.title')}
       sub={t('fm.sources.sub')}
+      right={filterBtn}
       flush
     >
       {sources.length === 0 ? (
@@ -70,7 +87,10 @@ function SourcesTab({ decl, t }) {
               </tr>
             </thead>
             <tbody>
-              {sources.map((r, i) => {
+              {visible.length === 0 && (
+                <tr><td colSpan={9} style={{ textAlign:'center', color:'#9ca3af', padding:'24px 0', fontSize:13 }}>{t('fm.incidents.empty') ?? 'Sin incidencias'}</td></tr>
+              )}
+              {visible.map((r, i) => {
                 const incs = rowIncidents(r);
                 const hasBlock = incs.some(inc => inc.severity === 'block');
                 const hasWarn  = incs.length > 0 && !hasBlock;
