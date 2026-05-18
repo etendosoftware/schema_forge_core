@@ -3,6 +3,20 @@ import { toast } from 'sonner';
 import { Mail, Search } from 'lucide-react';
 import { useUI } from '@/i18n';
 
+const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
+function getContactLabel(c) {
+  const full = [c.etgoFirstname, c.etgoLastname].filter(Boolean).join(' ') || c.name || '';
+  return full ? `${full} <${c.etgoEmail}>` : c.etgoEmail;
+}
+
+function contactMatchesQuery(c, q) {
+  return (c.etgoEmail || '').toLowerCase().includes(q)
+    || (c.etgoFirstname || '').toLowerCase().includes(q)
+    || (c.etgoLastname || '').toLowerCase().includes(q)
+    || (c.name || '').toLowerCase().includes(q);
+}
+
 /**
  * Reusable Send/Download modal for any document (invoice, order, quotation, shipment).
  *
@@ -53,21 +67,8 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
     return () => { cancelled = true; };
   }, [hasEmail, bPartnerId, apiBaseUrl, token]);
 
-  const filteredContacts = contacts.filter(c => {
-    const q = to.toLowerCase();
-    const email = (c.etgoEmail || '').toLowerCase();
-    const fn = (c.etgoFirstname || '').toLowerCase();
-    const ln = (c.etgoLastname || '').toLowerCase();
-    const name = (c.name || '').toLowerCase();
-    return email.includes(q) || fn.includes(q) || ln.includes(q) || name.includes(q);
-  });
-
-  const getContactLabel = (c) => {
-    const full = [c.etgoFirstname, c.etgoLastname].filter(Boolean).join(' ') || c.name || '';
-    return full ? `${full} <${c.etgoEmail}>` : c.etgoEmail;
-  };
-
-  const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+  const q = to.toLowerCase();
+  const filteredContacts = contacts.filter(c => contactMatchesQuery(c, q));
 
   const [subject, setSubject] = useState(`${documentType} #${documentNo} — ${bpName}`);
   const [message, setMessage] = useState('');
