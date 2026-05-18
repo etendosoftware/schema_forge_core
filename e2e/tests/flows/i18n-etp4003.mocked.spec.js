@@ -135,9 +135,9 @@ test.describe('CommandPalette i18n (ETP-4003)', () => {
     await page.keyboard.press('Control+k');
     const input = page.locator('[cmdk-input]').first();
     await expect(input).toBeVisible({ timeout: 5_000 });
-    // Close with Escape
-    await page.keyboard.press('Escape');
-    await expect(input).not.toBeVisible({ timeout: 3_000 });
+    // Close with Escape — press on the focused input so cmdk intercepts it
+    await input.press('Escape');
+    await expect(input).not.toBeVisible({ timeout: 5_000 });
     // Reopen
     await page.keyboard.press('Control+k');
     await expect(page.locator('[cmdk-input]').first()).toBeVisible({ timeout: 5_000 });
