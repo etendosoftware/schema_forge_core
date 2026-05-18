@@ -90,6 +90,7 @@ const DEFAULT_ACTIVE = { '303': true, '349': true };
 
 // ── Upcoming deadlines helpers ───────────────────────────────────
 const MONTH_NAMES_ES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+const MONTH_LABELS_ES = ['', 'Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 function formatDeadlineHeader(date) {
   return `${date.getDate()} ${MONTH_NAMES_ES[date.getMonth()]}`;
@@ -97,7 +98,7 @@ function formatDeadlineHeader(date) {
 
 function formatPeriodLabel(period) {
   if (/^T\d$/.test(period)) return `T${period[1]}`;
-  if (/^\d{2}$/.test(period)) return `${parseInt(period, 10)}M`;
+  if (/^\d{2}$/.test(period)) return MONTH_LABELS_ES[parseInt(period, 10)] ?? period;
   return period;
 }
 
@@ -120,10 +121,18 @@ function UpcomingDeadlines({ decls, onSelect, t }) {
             <div className="fm-upcoming__date-label">{formatDeadlineHeader(g.date)}</div>
             {g.items.map(({ decl }) => (
               <div key={decl.id} className="fm-upcoming__row" onClick={() => onSelect?.(decl)}>
-                <span className={`fm-upcoming__badge fm-upcoming__badge--${decl.model}`}>{decl.model}</span>
+                <div className={`fm-upcoming__badge fm-upcoming__badge--${decl.model}`}>
+                  <span className="fm-upcoming__badge-label">Modelo</span>
+                  <span className="fm-upcoming__badge-num">{decl.model}</span>
+                </div>
                 <div className="fm-upcoming__info">
                   <div className="fm-upcoming__model-label">{t(`fm.catalog.${decl.model}.name`) ?? `Modelo ${decl.model}`}</div>
-                  <div className="fm-upcoming__period">{decl.year} · {formatPeriodLabel(decl.period)}</div>
+                  <div className="fm-upcoming__meta">
+                    <span className="fm-upcoming__period">{formatPeriodLabel(decl.period)}</span>
+                    <span className={`fm-upcoming__status fm-upcoming__status--${STATUS_COLOR[decl.status]}`}>
+                      {t(`fm.status.${decl.status}`) ?? decl.status}
+                    </span>
+                  </div>
                 </div>
                 <span className="fm-upcoming__arrow">›</span>
               </div>
@@ -247,21 +256,24 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
         </button>
       </div>
 
-      {/* ── Upcoming deadlines ───────────────────────────────────── */}
-      <UpcomingDeadlines decls={decls} onSelect={onSelect} t={t} />
+      {/* ── Body: sidebar + main ─────────────────────────────────── */}
+      <div className="fm-list-body">
 
-      {/* ── Section header ───────────────────────────────────────── */}
-      <div className="fm-section-header">
-        <span className="fm-section-header__title">{t('fm.list.title')}</span>
-        <span className="fm-section-header__count">{filtered.length} {t('fm.list.count')}</span>
-        <div className="fm-section-header__actions">
-          <button className="fm-section-header__icon-btn" title="Filtrar" aria-label="Filtrar"><ListFilter size={14} strokeWidth={1.75} /></button>
-          <button className="fm-section-header__icon-btn" title="Ordenar" aria-label="Ordenar"><ArrowUpDown size={14} strokeWidth={1.75} /></button>
-        </div>
-      </div>
+        <UpcomingDeadlines decls={decls} onSelect={onSelect} t={t} />
 
-      {/* ── Table ────────────────────────────────────────────────── */}
-      <div className="fm-table-wrap">
+        <div className="fm-list-main">
+          {/* ── Section header ─────────────────────────────────── */}
+          <div className="fm-section-header">
+            <span className="fm-section-header__title">{t('fm.list.title')}</span>
+            <span className="fm-section-header__count">{filtered.length} {t('fm.list.count')}</span>
+            <div className="fm-section-header__actions">
+              <button className="fm-section-header__icon-btn" title="Filtrar" aria-label="Filtrar"><ListFilter size={14} strokeWidth={1.75} /></button>
+              <button className="fm-section-header__icon-btn" title="Ordenar" aria-label="Ordenar"><ArrowUpDown size={14} strokeWidth={1.75} /></button>
+            </div>
+          </div>
+
+          {/* ── Table ──────────────────────────────────────────── */}
+          <div className="fm-table-wrap">
         {filtered.length === 0
           ? <EmptyState />
           : (
@@ -322,7 +334,10 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
               </tbody>
             </table>
           )}
-      </div>
+        </div>{/* fm-table-wrap */}
+        </div>{/* fm-list-main */}
+
+      </div>{/* fm-list-body */}
 
       {/* ── Overlays ─────────────────────────────────────────────── */}
       {showConfig  && <ConfigDrawer onClose={() => setShowConfig(false)} token={token} apiBaseUrl={apiBaseUrl} />}
