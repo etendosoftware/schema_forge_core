@@ -19,9 +19,8 @@ const STEP_LABELS = ['Pendiente','Borrador','Listo','Presentado'];
 
 const KEYS = [
   { id:'E', label:'Entregas' },
-  { id:'A', label:'Adquisiciones' },
-  { id:'T', label:'Triangulares' },
   { id:'S', label:'Servicios prestados' },
+  { id:'A', label:'Adquisiciones' },
   { id:'I', label:'Servicios recibidos' },
 ];
 
@@ -31,7 +30,6 @@ const MOCK_OPERATORS = [
   { id:3, nif:'DE123456789',   name:'Bayern Technik GmbH',        key:'E', base:17600.00, vies:'valid',   origin:'3 facturas venta' },
   { id:4, nif:'PT501234567',   name:'Lusitana Serviços Lda',      key:'S', base:650.00,   vies:'pending', origin:'1 factura servicio' },
   { id:5, nif:'NL123456789B01',name:'Amsterdam Trading BV',       key:'I', base:1450.00,  vies:'valid',   origin:'2 facturas recibidas' },
-  { id:6, nif:'BE0123456789',  name:'Brussels Export SA',         key:'T', base:0.00,     vies:'valid',   origin:'1 triangular' },
   { id:7, nif:'PL1234567890',  name:'Kraków Components sp.z.o.o.',key:'A', base:3200.00,  vies:'valid',   origin:'1 factura compra' },
 ];
 
