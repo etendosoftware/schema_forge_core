@@ -1023,7 +1023,7 @@ function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContex
         selectorUrl={selectorUrl}
         selectorContext={selectorContext}
         token={token}
-        title={title ? `Search ${title}` : undefined}
+        title={title || undefined}
       />
     </>
   );
@@ -1040,7 +1040,7 @@ function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) 
         type="button"
         onClick={() => setOpen(true)}
         className="h-8 w-8 flex items-center justify-center rounded border border-input hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors shrink-0"
-        title={`Search ${title || ''}`}
+        title={title || ''}
       >
         <Search className="h-3.5 w-3.5" />
       </button>
@@ -1051,7 +1051,7 @@ function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) 
         selectorUrl={selectorUrl}
         selectorContext={selectorContext}
         token={token}
-        title={title ? `Search ${title}` : undefined}
+        title={title || undefined}
       />
     </>
   );

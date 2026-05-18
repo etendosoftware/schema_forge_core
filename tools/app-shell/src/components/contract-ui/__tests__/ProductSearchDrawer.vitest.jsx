@@ -6,6 +6,23 @@ vi.mock('@/lib/buildUrlWithParams.js', () => ({
   buildUrlWithParams: (url) => url,
 }));
 
+vi.mock('@/i18n', () => ({
+  useUI: () => (key, params) => {
+    const map = {
+      searchLabelPrefix: 'Search',
+      product: 'Product',
+      productSearchNoResults: params?.query ? `No results for "${params.query}"` : 'No results',
+      productSearchCount: params?.count != null ? `${params.count} products` : 'products',
+      productSearchNavigate: 'navigate',
+      productSearchSelect: 'select',
+      productSearchClose: 'close',
+    };
+    return map[key] ?? key;
+  },
+  useLabel: () => (key) => key,
+  useMenuLabel: () => (key) => key,
+}));
+
 import ProductSearchDrawer from '../ProductSearchDrawer.jsx';
 
 // Mock global fetch
@@ -42,7 +59,7 @@ const BASE_PROPS = {
   onSelect: vi.fn(),
   selectorUrl: 'http://localhost:8080/etendo/neo/sales-order/sales-order-line/selectors/product',
   token: 'test-token',
-  title: 'Search Product',
+  title: 'Product',
 };
 
 describe('ProductSearchDrawer', () => {
