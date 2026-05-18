@@ -37,23 +37,24 @@ test.describe('Purchase Order - Partner Address Bug', () => {
     await bpField.click();
     await clickFirstStableOption(page, 'option-businessPartner-');
 
-    // After BP selection, CreatableSearchSelect either:
-    //   a) auto-selects the first BP location (FIC parity), which swaps the
-    //      input for a Figma chip carrying the address label, or
-    //   b) leaves the input enabled — the user opens the dropdown manually.
-    // Both paths prove the bug ("empty dropdown") is fixed: in (a) an option
-    // was picked, in (b) options are listable. Wait for either state.
-    await Promise.race([
-      partnerAddressChip.waitFor({ state: 'visible', timeout: 10_000 }),
-      partnerAddressInput.waitFor({ state: 'visible', timeout: 10_000 })
-        .then(() => expect(partnerAddressInput).toBeEnabled({ timeout: 5_000 })),
-    ]);
+    // After BP selection, CreatableSearchSelect fetches addresses and either:
+    //   a) auto-selects the first BP location (FIC parity) → shows a chip, or
+    //   b) leaves the input enabled for manual selection.
+    // Wait for the component to reach a STABLE state before interacting.
+    // Using waitForFunction avoids the race where Promise.race resolves
+    // mid-auto-selection and the subsequent click hits a detaching element.
+    await page.waitForFunction(() => {
+      const chip = document.querySelector('[data-testid="field-partnerAddress-chip"]');
+      const input = document.querySelector('[data-testid="field-partnerAddress"]');
+      return !!(chip || (input && !input.disabled));
+    }, { timeout: 12_000 });
 
     if (await partnerAddressChip.isVisible()) {
       // Auto-selected an address → the chip label is the proof that options loaded.
       await expect(partnerAddressChip).toHaveText(/\S/);
     } else {
       // Manual mode → open the dropdown and assert at least one option.
+      await expect(partnerAddressInput).toBeEnabled();
       await partnerAddressInput.click();
       await expect(page.locator('[data-testid^="option-partnerAddress-"]').first()).toBeVisible({ timeout: 5_000 });
     }
