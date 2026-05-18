@@ -532,8 +532,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
       return !isNaN(Number(v)) && Number(v) < f.min;
     });
     if (belowMin.length > 0) {
-      const labels = belowMin.map(f => f.label || f.key).join(', ');
-      toast.error(`${ui('fieldMinValueError')}: ${labels}`);
+      toast.error(ui('fieldMinValueError'));
       const firstInvalid = belowMin[0];
       const inputEl = document.querySelector(`[data-testid="field-${firstInvalid.key}"]`);
       inputEl?.focus?.({ preventScroll: true });
