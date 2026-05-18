@@ -4,7 +4,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useUI } from '@/i18n';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import { useRowDelete } from '@/hooks/useRowDelete';
-import { buildPendingDeliveryFilter } from '../shared/pendingDeliveryFilter.js';
 import { ListView } from '@/components/contract-ui';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
@@ -163,9 +162,6 @@ export default function PurchaseOrderWindow(props) {
     );
   }
 
-  const { initialColumnFilters, isPendingDelivery, initialAdvancedFilter } =
-    buildPendingDeliveryFilter(searchParams, 'deliveryStatusPurchase');
-
   return (
     <>
       <ListView
@@ -183,9 +179,6 @@ export default function PurchaseOrderWindow(props) {
             <PurchaseOrderReactivateBulkAction {...ctx} />
           </>
         )}
-        initialColumnFilters={initialColumnFilters}
-        initialAdvancedFilter={initialAdvancedFilter}
-        initialColumns={isPendingDelivery ? LIST_COLUMNS : null}
         dateFilterKey="orderDate"
         refreshTrigger={refreshKey}
         {...props}

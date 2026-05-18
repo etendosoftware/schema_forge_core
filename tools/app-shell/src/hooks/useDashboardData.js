@@ -149,10 +149,10 @@ function mapPendingTasks(handlerData) {
         collectionsDueToday_plural: '/sales-invoice?filter=overdue',
         paymentsDueToday: '/purchase-invoice?filter=overdue',
         paymentsDueToday_plural: '/purchase-invoice?filter=overdue',
-        pendingReceptions: '/purchase-order?filter=pendingDelivery',
-        pendingReceptions_plural: '/purchase-order?filter=pendingDelivery',
-        pendingSalesDeliveries: '/sales-order?filter=pendingDelivery',
-        pendingSalesDeliveries_plural: '/sales-order?filter=pendingDelivery',
+        pendingReceptions: '/goods-receipt?DocStatus=DR',
+        pendingReceptions_plural: '/goods-receipt?DocStatus=DR',
+        pendingSalesDeliveries: '/goods-shipment?DocStatus=DR',
+        pendingSalesDeliveries_plural: '/goods-shipment?DocStatus=DR',
       };
       if (FILTER_LINKS[mapped.taskKey]) {
         mapped.link = FILTER_LINKS[mapped.taskKey];
@@ -163,29 +163,22 @@ function mapPendingTasks(handlerData) {
   });
 }
 
-function inferPendingTaskKey(task) {
-  const text = String(task?.text ?? '').toLowerCase();
+const PENDING_TASK_RULES = [
+  { match: (l, t) => l === '/sales-invoice' || t.includes('overdue invoices'),            singular: 'overdueInvoices',        plural: 'overdueInvoices_plural'        },
+  { match: (l, t) => l.startsWith('/goods-receipt') || t.includes('pending reception'),   singular: 'pendingReceptions',      plural: 'pendingReceptions_plural'      },
+  { match: (l, t) => l.startsWith('/goods-shipment') || t.includes('pending delivery'),   singular: 'pendingSalesDeliveries', plural: 'pendingSalesDeliveries_plural' },
+  { match: (l, t) => t.includes('collection') && t.includes('due today'),                 singular: 'collectionsDueToday',    plural: 'collectionsDueToday_plural'    },
+  { match: (l, t) => t.includes('payment') && t.includes('due today'),                    singular: 'paymentsDueToday',       plural: 'paymentsDueToday_plural'       },
+  { match: (l, t) => l === '/physical-inventory' || t.includes('low stock alert'),        singular: 'lowStockAlert',          plural: 'lowStockAlerts'                },
+];
 
+function inferPendingTaskKey(task) {
   if (task?.taskKey) return task.taskKey;
-  if (task?.link === '/sales-invoice' || text.includes('overdue invoices')) {
-    return task?.count === 1 ? 'overdueInvoices' : 'overdueInvoices_plural';
-  }
-  if (task?.link?.startsWith('/purchase-order?filter=pendingDelivery') || text.includes('pending reception')) {
-    return task?.count === 1 ? 'pendingReceptions' : 'pendingReceptions_plural';
-  }
-  if (task?.link?.startsWith('/sales-order?filter=pendingDelivery') || text.includes('pending delivery')) {
-    return task?.count === 1 ? 'pendingSalesDeliveries' : 'pendingSalesDeliveries_plural';
-  }
-  if (text.includes('collection') && text.includes('due today')) {
-    return task?.count === 1 ? 'collectionsDueToday' : 'collectionsDueToday_plural';
-  }
-  if (text.includes('payment') && text.includes('due today')) {
-    return task?.count === 1 ? 'paymentsDueToday' : 'paymentsDueToday_plural';
-  }
-  if (task?.link === '/physical-inventory' || text.includes('low stock alert')) {
-    return task?.count === 1 ? 'lowStockAlert' : 'lowStockAlerts';
-  }
-  return null;
+  const text = String(task?.text ?? '').toLowerCase();
+  const link = task?.link ?? '';
+  const rule = PENDING_TASK_RULES.find(r => r.match(link, text));
+  if (!rule) return null;
+  return task?.count === 1 ? rule.singular : rule.plural;
 }
 
 /**
@@ -199,33 +192,6 @@ function mapActivity(handlerData) {
 
 const COMPLETED_INVOICE_STATUSES = new Set(['CO', 'CL']);
 
-function parseInvoiceDate(input) {
-  if (!input) return null;
-
-  if (/^\d{4}-\d{2}-\d{2}/.test(input)) {
-    const parsed = new Date(input);
-    return Number.isNaN(parsed.getTime()) ? null : parsed;
-  }
-
-  const ddmmyyyy = String(input).match(/^(\d{2})-(\d{2})-(\d{4})$/);
-  if (!ddmmyyyy) return null;
-
-  const day = Number(ddmmyyyy[1]);
-  const month = Number(ddmmyyyy[2]);
-  const year = Number(ddmmyyyy[3]);
-  const parsed = new Date(year, month - 1, day);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-function isWithinLastDays(input, days) {
-  const parsed = parseInvoiceDate(input);
-  if (!parsed) return false;
-
-  const now = new Date();
-  const threshold = new Date(now.getFullYear(), now.getMonth(), now.getDate() - days);
-  return parsed >= threshold;
-}
-
 /**
  * Map recent invoices handler response.
  * Handler returns: [{id, client, date, amount, status}]
@@ -235,7 +201,6 @@ function mapRecentInvoices(handlerData) {
 
   return handlerData
     .filter((inv) => COMPLETED_INVOICE_STATUSES.has(inv?.status))
-    .filter((inv) => isWithinLastDays(inv?.date, 7))
     .map((inv) => ({
       id: inv.id || '',
       documentNo: inv.documentNo || inv.document_no || inv.docNo || null,

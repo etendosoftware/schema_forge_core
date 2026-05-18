@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import GoodsReceiptTable from '@generated/goods-receipt/generated/web/goods-receipt/GoodsReceiptTable';
 import GeneratedApp from '@generated/goods-receipt/generated/web/goods-receipt/index.jsx';
 import GoodsReceiptBottomPanel from './GoodsReceiptBottomPanel.jsx';
@@ -24,6 +25,8 @@ function CustomHeaderTable(props) {
 export default function GoodsReceiptWindow(props) {
   useBulkActionToast();
   const ui = useUI();
+  const [searchParams] = useSearchParams();
+  const docStatus = searchParams.get('DocStatus') || undefined;
   const customTabs = useMemo(() => ([
     { key: 'related', label: ui('relatedDocuments'), Component: RelatedDocuments },
     { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: 'M_InOut', config: {} } },
@@ -32,6 +35,7 @@ export default function GoodsReceiptWindow(props) {
     <GeneratedApp
       {...props}
       Table={CustomHeaderTable}
+      initialColumnFilters={docStatus ? { documentStatus: { mode: 'enumLabel', value: [docStatus] } } : undefined}
       secondaryTabs={[]}
       notesField="description"
       bottomSection={GoodsReceiptBottomPanel}

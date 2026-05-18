@@ -34,6 +34,7 @@ export function RecentSalesList({ invoices = [], currencyLabel = '' }) {
         />
       ) : (
       <div
+        data-testid="recent-sales-list"
         className="dashboard-scroll"
         style={{
           display: 'flex',
@@ -52,6 +53,7 @@ export function RecentSalesList({ invoices = [], currencyLabel = '' }) {
               return (
                 <Link
                   key={inv.id || i}
+                  data-testid={`recent-sales-item-${inv.id || i}`}
                   to={target}
                   className="hover:bg-[#F5F7F9] transition-colors"
                   style={{
