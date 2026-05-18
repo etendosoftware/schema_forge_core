@@ -1,8 +1,8 @@
 {
   "version": "0.19.0",
   "generatedAt": "2026-04-30T15:42:46.497Z",
-  "updatedAt": "2026-05-11T16:08:18.213Z",
-  "checksum": "602fefe58d6a786d",
+  "updatedAt": "2026-05-18T13:50:02.832Z",
+  "checksum": "f108ff9c3152a4b2",
   "frontendContract": {
     "window": {
       "id": "181",
@@ -21,20 +21,9 @@
       "customComponents": {
         "topbarRight": "PurchaseOrderActions",
         "topbarExtra": "PurchaseOrderDraftChips",
-        "bulkActions": "PurchaseOrderReactivateBulkAction",
         "bottomSection": "PurchaseOrderBottomPanel"
       },
-      "menuActions": [
-        {
-          "key": "reactivate",
-          "label": "Reactivate",
-          "labelKey": "reactivate",
-          "visibleWhenStatus": "CO",
-          "visibleWhenFieldFalse": "hasLinkedDocuments",
-          "documentAction": "RE",
-          "successKey": "reactivated"
-        }
-      ],
+      "menuActions": [],
       "secondaryTabs": {},
       "labelOverrides": {
         "es_ES": {
@@ -2293,20 +2282,9 @@
       "customComponents": {
         "topbarRight": "PurchaseOrderActions",
         "topbarExtra": "PurchaseOrderDraftChips",
-        "bulkActions": "PurchaseOrderReactivateBulkAction",
         "bottomSection": "PurchaseOrderBottomPanel"
       },
-      "menuActions": [
-        {
-          "key": "reactivate",
-          "label": "Reactivate",
-          "labelKey": "reactivate",
-          "visibleWhenStatus": "CO",
-          "visibleWhenFieldFalse": "hasLinkedDocuments",
-          "documentAction": "RE",
-          "successKey": "reactivated"
-        }
-      ],
+      "menuActions": [],
       "secondaryTabs": {},
       "labelOverrides": {
         "es_ES": {
