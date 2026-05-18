@@ -321,6 +321,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
   const [editingRowId, setEditingRowId] = useState(null);
   const [hoveredRowId, setHoveredRowId] = useState(null);
   const panelRef = useRef(null);
+  const hasValidationErrorRef = useRef(false);
 
   // Close edit mode when the user clicks outside the editing row. Defers the state
   // update to the next tick so any focused input fires its onBlur first — that triggers
@@ -342,7 +343,10 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
       for (const sel of portalSelectors) {
         if (e.target.closest?.(sel)) return;
       }
-      setTimeout(() => setEditingRowId(null), 0);
+      setTimeout(() => {
+        if (hasValidationErrorRef.current) return;
+        setEditingRowId(null);
+      }, 0);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -424,6 +428,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
 
   const commitField = useCallback(async (row, col, value, extras = {}) => {
     if (isDocumentReadOnly) return;
+    hasValidationErrorRef.current = false;
     setInvalidCell(null);
     const original = row[col.key];
     // Skip if unchanged (string compare for safety against type drift).
@@ -431,6 +436,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
     if (col.min !== undefined && value !== '' && value != null) {
       const num = parseFloat(value);
       if (!isNaN(num) && num < col.min) {
+        hasValidationErrorRef.current = true;
         setInvalidCell({ rowId: row.id, colKey: col.key });
         toast.error(ui('fieldMinValueError'));
         return;
