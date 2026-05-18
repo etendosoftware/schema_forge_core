@@ -426,7 +426,7 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
                 year={decl.year}
                 period={decl.period}
                 sectionIds={page.sections}
-                identification={decl.identification}
+                identification={{ nif: decl.nif ?? '', nombre: decl.nombre ?? '', ...(decl.identification ?? {}) }}
               />
             </SectionCard>
           );
