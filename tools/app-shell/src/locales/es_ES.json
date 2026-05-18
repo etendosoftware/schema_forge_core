@@ -16988,6 +16988,13 @@
     "sendModalMessagePlaceholder": "Añade un mensaje personal...",
     "sendModalSend": "Enviar",
     "sendModalSending": "Enviando...",
+    "sendModalSentSuccess": "{documentType} enviado",
+    "invalidAmount": "Ingresá un importe válido",
+    "productSearchNoResults": "Sin resultados para \"{query}\"",
+    "productSearchCount": "{count} productos",
+    "productSearchNavigate": "navegar",
+    "productSearchSelect": "seleccionar",
+    "productSearchClose": "cerrar",
     "sendModalDownloading": "Descargando...",
     "sendModalLoadingPreview": "Cargando vista previa...",
     "sendModalPdfPreview": "Vista previa PDF",
@@ -18776,6 +18783,17 @@
     "attachmentsContinue": "Continuar"
   },
   "menus": {
+    "Goods Movement": { "label": "Movimiento de mercancías" },
+    "Bank Reconciliation": { "label": "Conciliación bancaria" },
+    "Chart of Accounts": { "label": "Plan de cuentas" },
+    "Recurring Invoice": { "label": "Factura recurrente" },
+    "Fiscal Monitor": { "label": "Monitor fiscal" },
+    "Fiscal Configuration": { "label": "Configuración fiscal" },
+    "Connect with Claude": { "label": "Conectar con Claude" },
+    "Smart Scan": { "label": "Escaneo inteligente" },
+    "Quick Sales Order": { "label": "Pedido de venta rápido" },
+    "Quick Purchase Order": { "label": "Pedido de compra rápido" },
+    "OAuth2 Clients": { "label": "Clientes OAuth2" },
     "Tax": {
       "label": "Impuesto"
     },

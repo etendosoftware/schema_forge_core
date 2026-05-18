@@ -104,7 +104,7 @@ export function PaymentRegisterForm({
   const amountExceeded = amount > outstanding;
 
   const handleSubmit = async () => {
-    if (!amount || amount <= 0) { setError('Enter a valid amount'); return; }
+    if (!amount || amount <= 0) { setError(ui('invalidAmount')); return; }
     if (amountExceeded) return;
     if (!accountId) { setError('Select an account'); return; }
     setError(null);
