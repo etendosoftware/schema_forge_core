@@ -91,6 +91,24 @@ This window should let a user create, review, confirm, and manage sales orders f
 17. Open an existing draft order without touching any field and confirm the "Save" and "Save Draft" buttons are **disabled**. Change any header field and confirm they become enabled. Save and confirm they disable again. Revert the changed field to its original value without saving and confirm the buttons disable once more. Add a line: once the add-row is submitted, the buttons should disable again if no header changes remain pending. Confirm the "Confirm" button stays enabled throughout all these states.
 18. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
+## Validation & Error Handling — ETP-4005
+
+### Inline line validation (min: 0 constraint)
+
+Fields with a `min: 0` constraint — `orderedQuantity` and `discount` — now show a red border when the user types a negative value during inline edit. The row remains open and the save/confirm path for that row is blocked until the value is corrected or the edit is cancelled. The constraint is enforced client-side by `InlineLinesPanel` using the `min` metadata from the contract field definition.
+
+### Required field validation on new inline line
+
+When a new inline line is submitted with a required field left empty (for example, `product`), the empty field is highlighted with a red border and a toast notification is shown. The add-row remains open so the user can correct the missing value without losing the rest of the entered data.
+
+### Single toast on document confirmation
+
+Previously, completing a document produced two successive toasts — "Registro guardado" followed by "Registro procesado". After ETP-4005 only the "Registro procesado" toast fires on a successful confirmation. The intermediate save toast was removed to reduce noise in the confirmation flow.
+
+### Callout message sanitization
+
+Backend callout messages are sanitized before display: HTML tags (such as `<br/>`) are stripped and common redundant prefixes ("Note:", "Warning:") are removed from the message string. Users see plain-text callout feedback without raw markup.
+
 ## Automated evidence
 
 - `tools/app-shell/src/windows/custom/sales-order/index.jsx` proves the custom list/detail wrapper, clone modal, inline contact creation wiring, and `pendingDelivery` quick filter.

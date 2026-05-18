@@ -127,6 +127,28 @@ i18n keys added: `invoicePdfSubtotalNoDiscount`, `invoicePdfProductDiscount`, `i
 16. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 17. On a draft invoice tied to a customer that has at least one completed (not fully invoiced) sales order, open `Import from Sales Order` and confirm: only that customer's completed-and-not-fully-invoiced orders appear; expanding an order lists its lines with already-imported lines marked and disabled; submitting creates invoice lines that reference the source order (`cOrderlineId`). If every imported order carried the same non-zero `etgoTotalDiscount`, confirm the invoice header now shows that same total discount; if the imported orders carry different discounts (or none), the header discount is left untouched.
 
+## Validation & Error Handling — ETP-4005
+
+### Inline line validation (min: 0 constraint)
+
+Fields with a `min: 0` constraint — `invoicedQuantity`, `listPrice`, and `etgoDiscount` — now show a red border when the user types a negative value during inline edit. The row remains open and the save/confirm path for that row is blocked until the value is corrected or the edit is cancelled. The constraint is enforced client-side by `InlineLinesPanel` using the `min` metadata from the contract field definition.
+
+### Required field validation on new inline line
+
+When a new inline line is submitted with a required field left empty (for example, `product`), the empty field is highlighted with a red border and a toast notification is shown. The add-row remains open so the user can correct the missing value without losing the rest of the entered data.
+
+### Single toast on document confirmation
+
+Previously, completing a document produced two successive toasts — "Registro guardado" followed by "Registro procesado". After ETP-4005 only the "Registro procesado" toast fires on a successful confirmation. The intermediate save toast was removed to reduce noise in the confirmation flow.
+
+### Callout message sanitization
+
+Backend callout messages are sanitized before display: HTML tags (such as `<br/>`) are stripped and common redundant prefixes ("Note:", "Warning:") are removed from the message string. Users see plain-text callout feedback without raw markup.
+
+### Payment modal date validation
+
+The `date` field in `AddPaymentModal` / `InvoicePaymentModal` now carries a red asterisk (*) indicating it is required. The "Confirm payment" button is disabled while the date field is empty, preventing submission without a date. When the user attempts submission with no date or when the backend returns a 400 response, a descriptive translated error message is shown instead of the raw "Failed (400)" string. The error message is resolved via the i18n key `paymentDateRequired` in both `en_US.json` and `es_ES.json`.
+
 ## Automated evidence
 
 - `tools/app-shell/src/menu.json` shows `sales-invoice` is visible in the `Sales` menu.

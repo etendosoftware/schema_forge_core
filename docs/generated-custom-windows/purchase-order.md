@@ -92,6 +92,24 @@ The current evidence shows a purchase-order-specific experience rather than a ge
 18. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 19. On `/purchase-order`, hover over any row and confirm a quick-action overlay appears at the right of the row with Edit, Duplicate, Send Email, Delete, and a kebab. Trigger Edit and verify it navigates to the detail view; trigger Duplicate and Send Email and verify they reuse the same flows as the detail topbar. On a completed order with pending receipt or invoice work, open the row kebab and confirm `Gestionar recepción / factura` is listed; trigger it and verify it opens the same create-docs modal used from the detail page. On a fully fulfilled order, trigger the same kebab item and confirm the launcher closes silently without opening a modal.
 
+## Validation & Error Handling — ETP-4005
+
+### Inline line validation (min: 0 constraint)
+
+Fields with a `min: 0` constraint — `orderedQuantity` and `discount` — now show a red border when the user types a negative value during inline edit. The row remains open and the save/confirm path for that row is blocked until the value is corrected or the edit is cancelled. The constraint is enforced client-side by `InlineLinesPanel` using the `min` metadata from the contract field definition.
+
+### Required field validation on new inline line
+
+When a new inline line is submitted with a required field left empty (for example, `product`), the empty field is highlighted with a red border and a toast notification is shown. The add-row remains open so the user can correct the missing value without losing the rest of the entered data.
+
+### Single toast on document confirmation
+
+Previously, completing a document produced two successive toasts — "Registro guardado" followed by "Registro procesado". After ETP-4005 only the "Registro procesado" toast fires on a successful confirmation. The intermediate save toast was removed to reduce noise in the confirmation flow.
+
+### Callout message sanitization
+
+Backend callout messages are sanitized before display: HTML tags (such as `<br/>`) are stripped and common redundant prefixes ("Note:", "Warning:") are removed from the message string. Users see plain-text callout feedback without raw markup.
+
 ## Automated evidence
 
 - `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the generic bulk action component; `artifacts/purchase-order/custom/PurchaseOrderReactivateBulkAction.jsx` re-exports it as the list selection bar entry for purchase orders, supporting both CO and RE based on selected row statuses. The reactivate path uses `rowFilter: (row) => !row.hasLinkedDocuments` so orders with linked receipts or invoices are skipped and counted as errors in the bulk result toast rather than submitted.
