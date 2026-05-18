@@ -67,6 +67,7 @@ const MOCK_DECLARATIONS = [
   { id:'349-2025-05', model:'349', year:2025, period:'05', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_05.349',  updatedAt:'18/06/2025' },
   { id:'349-2025-04', model:'349', year:2025, period:'04', type:'ord', status:'omitido',          result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null,           updatedAt:'10/05/2025' },
   { id:'349-2025-03', model:'349', year:2025, period:'03', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_03.349',  updatedAt:'19/04/2025' },
+  { id:'349-2026-T1', model:'349', year:2026, period:'T1', type:'ord', status:'pendiente',   result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null, updatedAt:'—' },
   { id:'303-2026-T1', model:'303', year:2026, period:'T1', type:'ord', status:'borrador',         result:{kind:'compensar',amount:2816.31}, incidents:{blocking:2,warning:3,items:[
     { severity:'block', origin:'Casilla 28', message:'El total de cuota devengada no coincide con la suma de las cuotas parciales', suggestion:'Revisa las cuotas de los tipos 21%, 10% y 4%' },
     { severity:'block', origin:'Casilla 69', message:'El resultado de la liquidación está pendiente de confirmar', suggestion:'Verifica que el resultado neto sea correcto antes de generar el fichero' },
