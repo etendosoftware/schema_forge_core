@@ -12,8 +12,8 @@ import PaymentPlanTable from './PaymentPlanTable';
 import PaymentPlanForm from './PaymentPlanForm';
 import AccountingTable from './AccountingTable';
 import AccountingForm from './AccountingForm';
-import ReversedInvoicesTable from './ReversedInvoicesTable';
-import ReversedInvoicesForm from './ReversedInvoicesForm';
+import TaxTable from './TaxTable';
+import TaxForm from './TaxForm';
 import RelatedDocuments from '@/windows/custom/purchase-invoice/RelatedDocuments';
 import { AttachmentsTab } from '@/components/attachments';
 import SifTab from '@/windows/custom/shared/SifTab.jsx';
@@ -28,13 +28,17 @@ const labelOverrides = {
     "POReference": "Nº documento",
     "OutstandingAmt": "Pendiente de pago",
     "EM_Etgo_Due_Date": "Vencimiento",
-    "em_etgo_delivery_status": "Estado de entrega"
+    "em_etgo_delivery_status": "Estado de entrega",
+    "C_DocTypeTarget_ID": "Tipo de documento",
+    "EM_Etgo_Origin_Invoice_ID": "Factura origen"
   },
   "en_US": {
     "POReference": "Document No.",
     "OutstandingAmt": "Pending Payment",
     "EM_Etgo_Due_Date": "Due Date",
-    "em_etgo_delivery_status": "Delivery Status"
+    "em_etgo_delivery_status": "Delivery Status",
+    "C_DocTypeTarget_ID": "Document Type",
+    "EM_Etgo_Origin_Invoice_ID": "Origin Invoice"
   }
 };
 
@@ -67,7 +71,7 @@ const draftMode = {
 // @sf-generated-end draftMode:header
 
 // @sf-generated-start requiredHeaderFields:header
-const requiredHeaderFields = ['invoiceDate', 'businessPartner', 'partnerAddress', 'priceList', 'paymentTerms', 'paymentMethod'];
+const requiredHeaderFields = ['transactionDocument', 'invoiceDate', 'businessPartner', 'partnerAddress', 'priceList', 'paymentTerms', 'paymentMethod'];
 // @sf-generated-end requiredHeaderFields:header
 
 // @sf-generated-start addLineFields:lines
@@ -186,17 +190,6 @@ export const api = {
       "delete": true,
       "listUrl": "/sws/neo/purchase-invoice/paymentDetails",
       "detailUrl": "/sws/neo/purchase-invoice/paymentDetails/{id}",
-      "supportedFilters": []
-    },
-    "reversedInvoices": {
-      "get": true,
-      "getById": true,
-      "post": true,
-      "put": true,
-      "patch": true,
-      "delete": true,
-      "listUrl": "/sws/neo/purchase-invoice/reversedInvoices",
-      "detailUrl": "/sws/neo/purchase-invoice/reversedInvoices/{id}",
       "supportedFilters": []
     },
     "accounting": {
@@ -345,6 +338,14 @@ export const api = {
       "reference": "aeatsii_cause_exemption",
       "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/header/selectors/aeatsiiCauseExemption"
+    },
+    {
+      "entity": "header",
+      "field": "etgoOriginInvoice",
+      "column": "EM_Etgo_Origin_Invoice_ID",
+      "reference": "Invoice",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/header/selectors/etgoOriginInvoice"
     },
     {
       "entity": "lines",
@@ -513,14 +514,6 @@ export const api = {
       "reference": "Payment",
       "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/paymentDetails/selectors/finPaymentID"
-    },
-    {
-      "entity": "reversedInvoices",
-      "field": "reversedInvoice",
-      "column": "Reversed_C_Invoice_ID",
-      "reference": "Invoice",
-      "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/reversedInvoices/selectors/reversedInvoice"
     },
     {
       "entity": "accounting",
@@ -836,13 +829,17 @@ export const api = {
       "POReference": "Nº documento",
       "OutstandingAmt": "Pendiente de pago",
       "EM_Etgo_Due_Date": "Vencimiento",
-      "em_etgo_delivery_status": "Estado de entrega"
+      "em_etgo_delivery_status": "Estado de entrega",
+      "C_DocTypeTarget_ID": "Tipo de documento",
+      "EM_Etgo_Origin_Invoice_ID": "Factura origen"
     },
     "en_US": {
       "POReference": "Document No.",
       "OutstandingAmt": "Pending Payment",
       "EM_Etgo_Due_Date": "Due Date",
-      "em_etgo_delivery_status": "Delivery Status"
+      "em_etgo_delivery_status": "Delivery Status",
+      "C_DocTypeTarget_ID": "Document Type",
+      "EM_Etgo_Origin_Invoice_ID": "Origin Invoice"
     }
   }
 };
@@ -873,7 +870,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'basicDiscounts', label: 'Basic Discounts', Table: BasicDiscountsTable, Form: BasicDiscountsForm },
           { key: 'paymentPlan', label: 'Payment Plan', Table: PaymentPlanTable, Form: PaymentPlanForm },
           { key: 'accounting', label: 'Accounting', Table: AccountingTable, Form: AccountingForm },
-          { key: 'reversedInvoices', label: 'Reversed Invoices', Table: ReversedInvoicesTable, Form: ReversedInvoicesForm },
+          { key: 'tax', label: 'Tax', Table: TaxTable, Form: TaxForm },
         ]}
         noHeaderBorder
         notesField="description"

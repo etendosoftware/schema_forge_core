@@ -49,7 +49,8 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 99.44,
     "eTGODueDate": "2026-01-15",
-    "eTGODeliveryStatus": "DR"
+    "eTGODeliveryStatus": "DR",
+    "etgoOriginInvoice": "Sample etgoOriginInvoice"
   },
   {
     "id": "mock-header-002",
@@ -99,7 +100,8 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 96.94,
     "eTGODueDate": "2026-01-16",
-    "eTGODeliveryStatus": "CO"
+    "eTGODeliveryStatus": "CO",
+    "etgoOriginInvoice": "Sample etgoOriginInvoice"
   },
   {
     "id": "mock-header-003",
@@ -149,7 +151,8 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 12.48,
     "eTGODueDate": "2026-01-17",
-    "eTGODeliveryStatus": "VO"
+    "eTGODeliveryStatus": "VO",
+    "etgoOriginInvoice": "Sample etgoOriginInvoice"
   },
   {
     "id": "mock-header-004",
@@ -199,7 +202,8 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 96.31,
     "eTGODueDate": "2026-01-18",
-    "eTGODeliveryStatus": "IP"
+    "eTGODeliveryStatus": "IP",
+    "etgoOriginInvoice": "Sample etgoOriginInvoice"
   },
   {
     "id": "mock-header-005",
@@ -249,7 +253,8 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 31.27,
     "eTGODueDate": "2026-01-19",
-    "eTGODeliveryStatus": "DR"
+    "eTGODeliveryStatus": "DR",
+    "etgoOriginInvoice": "Sample etgoOriginInvoice"
   },
   {
     "id": "mock-header-006",
@@ -299,7 +304,8 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 76.52,
     "eTGODueDate": "2026-01-20",
-    "eTGODeliveryStatus": "CO"
+    "eTGODeliveryStatus": "CO",
+    "etgoOriginInvoice": "Sample etgoOriginInvoice"
   },
   {
     "id": "mock-header-007",
@@ -349,7 +355,8 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 2.66,
     "eTGODueDate": "2026-01-21",
-    "eTGODeliveryStatus": "VO"
+    "eTGODeliveryStatus": "VO",
+    "etgoOriginInvoice": "Sample etgoOriginInvoice"
   },
   {
     "id": "mock-header-008",
@@ -399,7 +406,8 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 10.03,
     "eTGODueDate": "2026-01-22",
-    "eTGODeliveryStatus": "IP"
+    "eTGODeliveryStatus": "IP",
+    "etgoOriginInvoice": "Sample etgoOriginInvoice"
   },
   {
     "id": "mock-header-009",
@@ -449,7 +457,8 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 93.97,
     "eTGODueDate": "2026-01-23",
-    "eTGODeliveryStatus": "DR"
+    "eTGODeliveryStatus": "DR",
+    "etgoOriginInvoice": "Sample etgoOriginInvoice"
   },
   {
     "id": "mock-header-010",
@@ -499,7 +508,8 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 1.1,
     "eTGODueDate": "2026-01-24",
-    "eTGODeliveryStatus": "CO"
+    "eTGODeliveryStatus": "CO",
+    "etgoOriginInvoice": "Sample etgoOriginInvoice"
   },
   {
     "id": "mock-header-011",
@@ -549,7 +559,8 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 79.99,
     "eTGODueDate": "2026-01-25",
-    "eTGODeliveryStatus": "VO"
+    "eTGODeliveryStatus": "VO",
+    "etgoOriginInvoice": "Sample etgoOriginInvoice"
   },
   {
     "id": "mock-header-012",
@@ -599,7 +610,8 @@ export const header = [
     "etvfacSentToVerifac": "Sample etvfacSentToVerifac",
     "etgoTotalDiscount": 53.61,
     "eTGODueDate": "2026-01-26",
-    "eTGODeliveryStatus": "IP"
+    "eTGODeliveryStatus": "IP",
+    "etgoOriginInvoice": "Sample etgoOriginInvoice"
   }
 ];
 
@@ -1760,69 +1772,6 @@ export const paymentDetails = [
     "canceled": "Sample canceled",
     "finPaymentID": "Sample finPaymentID",
     "invoicePaid": "Sample invoicePaid",
-    "headerId": "mock-header-012"
-  }
-];
-
-export const reversedInvoices = [
-  {
-    "id": "mock-reversedInvoices-001",
-    "reversedInvoice": "Sample reversedInvoice",
-    "headerId": "mock-header-001"
-  },
-  {
-    "id": "mock-reversedInvoices-002",
-    "reversedInvoice": "Sample reversedInvoice",
-    "headerId": "mock-header-002"
-  },
-  {
-    "id": "mock-reversedInvoices-003",
-    "reversedInvoice": "Sample reversedInvoice",
-    "headerId": "mock-header-003"
-  },
-  {
-    "id": "mock-reversedInvoices-004",
-    "reversedInvoice": "Sample reversedInvoice",
-    "headerId": "mock-header-004"
-  },
-  {
-    "id": "mock-reversedInvoices-005",
-    "reversedInvoice": "Sample reversedInvoice",
-    "headerId": "mock-header-005"
-  },
-  {
-    "id": "mock-reversedInvoices-006",
-    "reversedInvoice": "Sample reversedInvoice",
-    "headerId": "mock-header-006"
-  },
-  {
-    "id": "mock-reversedInvoices-007",
-    "reversedInvoice": "Sample reversedInvoice",
-    "headerId": "mock-header-007"
-  },
-  {
-    "id": "mock-reversedInvoices-008",
-    "reversedInvoice": "Sample reversedInvoice",
-    "headerId": "mock-header-008"
-  },
-  {
-    "id": "mock-reversedInvoices-009",
-    "reversedInvoice": "Sample reversedInvoice",
-    "headerId": "mock-header-009"
-  },
-  {
-    "id": "mock-reversedInvoices-010",
-    "reversedInvoice": "Sample reversedInvoice",
-    "headerId": "mock-header-010"
-  },
-  {
-    "id": "mock-reversedInvoices-011",
-    "reversedInvoice": "Sample reversedInvoice",
-    "headerId": "mock-header-011"
-  },
-  {
-    "id": "mock-reversedInvoices-012",
-    "reversedInvoice": "Sample reversedInvoice",
     "headerId": "mock-header-012"
   }
 ];

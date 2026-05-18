@@ -47,13 +47,17 @@
         "POReference": "Nº documento",
         "OutstandingAmt": "Pendiente de pago",
         "EM_Etgo_Due_Date": "Vencimiento",
-        "em_etgo_delivery_status": "Estado de entrega"
+        "em_etgo_delivery_status": "Estado de entrega",
+        "C_DocTypeTarget_ID": "Tipo de documento",
+        "EM_Etgo_Origin_Invoice_ID": "Factura origen"
       },
       "en_US": {
         "POReference": "Document No.",
         "OutstandingAmt": "Pending Payment",
         "EM_Etgo_Due_Date": "Due Date",
-        "em_etgo_delivery_status": "Delivery Status"
+        "em_etgo_delivery_status": "Delivery Status",
+        "C_DocTypeTarget_ID": "Document Type",
+        "EM_Etgo_Origin_Invoice_ID": "Origin Invoice"
       }
     }
   },
@@ -72,10 +76,12 @@
         },
         "transactionDocument": {
           "visibility": "editable",
-          "section": "other",
-          "form": false,
+          "section": "principal",
+          "form": true,
+          "seq": 15,
           "reference": "DocumentType",
           "inputMode": "selector",
+          "readOnlyLogicJs": "!!record.id",
           "readOnlyLogic": null
         },
         "invoiceDate": {
@@ -427,6 +433,15 @@
         "cdigoCSV": {
           "visibility": "readOnly",
           "form": false
+        },
+        "etgoOriginInvoice": {
+          "visibility": "editable",
+          "section": "principal",
+          "form": true,
+          "seq": 16,
+          "reference": "Invoice",
+          "inputMode": "selector",
+          "readOnlyLogicJs": "record['processed'] === true"
         }
       }
     },
@@ -751,7 +766,8 @@
           "grid": true,
           "readOnlyLogic": null
         }
-      }
+      },
+      "exclude": true
     },
     "lineTax": {
       "exclude": true
@@ -795,28 +811,72 @@
     },
     "intrastat": {
       "fields": {
-        "client": { "order": 1 },
-        "organization": { "order": 2 },
-        "invoiceLine": { "order": 3 },
-        "product": { "order": 4 },
-        "incoterms": { "order": 5 },
-        "transactionType": { "order": 6 },
-        "transportationType": { "order": 7 },
-        "portAirport": { "order": 8 },
-        "statisticalRegime": { "order": 9 },
-        "origCountry": { "order": 10 },
-        "nC8Code": { "order": 11 },
-        "netMassKg": { "order": 12 },
-        "hasSuplementaryUnit": { "order": 13 },
-        "conversionRate": { "order": 14 },
-        "staticalValue": { "order": 15 },
-        "supplementaryUOM": { "order": 16 },
-        "active": { "order": 17 },
-        "intrCInvoiceline": { "order": 18 },
-        "creationDate": { "order": 19 },
-        "createdBy": { "order": 20 },
-        "updated": { "order": 21 },
-        "updatedBy": { "order": 22 }
+        "client": {
+          "order": 1
+        },
+        "organization": {
+          "order": 2
+        },
+        "invoiceLine": {
+          "order": 3
+        },
+        "product": {
+          "order": 4
+        },
+        "incoterms": {
+          "order": 5
+        },
+        "transactionType": {
+          "order": 6
+        },
+        "transportationType": {
+          "order": 7
+        },
+        "portAirport": {
+          "order": 8
+        },
+        "statisticalRegime": {
+          "order": 9
+        },
+        "origCountry": {
+          "order": 10
+        },
+        "nC8Code": {
+          "order": 11
+        },
+        "netMassKg": {
+          "order": 12
+        },
+        "hasSuplementaryUnit": {
+          "order": 13
+        },
+        "conversionRate": {
+          "order": 14
+        },
+        "staticalValue": {
+          "order": 15
+        },
+        "supplementaryUOM": {
+          "order": 16
+        },
+        "active": {
+          "order": 17
+        },
+        "intrCInvoiceline": {
+          "order": 18
+        },
+        "creationDate": {
+          "order": 19
+        },
+        "createdBy": {
+          "order": 20
+        },
+        "updated": {
+          "order": 21
+        },
+        "updatedBy": {
+          "order": 22
+        }
       }
     }
   },
@@ -935,7 +995,7 @@
       "type": "readOnlyLogic",
       "entity": "invoice",
       "decision": "Keep",
-      "description": "Most header fields become read-only when document is processed (Processed=Y). Covers: documentNo, invoiceDate, businessPartner, partnerAddress, currency, paymentTerms, paymentMethod, priceList, transactionDocument.",
+      "description": "Most header fields become read-only when document is processed (Processed=Y). Covers: documentNo, invoiceDate, businessPartner, partnerAddress, currency, paymentTerms, paymentMethod, priceList. Note: transactionDocument uses readOnlyLogicJs (locks after first save via d=>!!d.id).",
       "impactIfOmitted": "Users could edit fields on confirmed invoices, breaking data integrity."
     },
     "READONLY_Processed_Lines": {
