@@ -19066,7 +19066,9 @@
     "fm.box.row.op_agencias_viajes": "Operaciones en régimen especial de Agencias de Viajes",
     "fm.box.row.entregas_inmuebles": "Entregas de bienes inmuebles y operaciones financieras no habituales",
     "fm.box.row.entregas_bienes_inv_vol": "Entregas de bienes de inversión",
-    "fm.box.row.total_operaciones": "Total volumen de operaciones (Art. 121 Ley IVA)"
+    "fm.box.row.total_operaciones": "Total volumen de operaciones (Art. 121 Ley IVA)",
+    "fm.upcoming.title": "Próximos vencimientos",
+    "fm.upcoming.empty": "Sin vencimientos próximos"
   },
   "menus": {
     "Goods Movement": { "label": "Movimiento de mercancías" },
@@ -20708,6 +20710,8 @@
     "fm.box.row.regularizacion": "Regularización",
     "fm.box.row.total_deducir": "Total a deducir",
     "fm.box.row.diferencia": "Diferencia",
-    "fm.box.row.resultado_declaracion": "Resultado de la declaración"
+    "fm.box.row.resultado_declaracion": "Resultado de la declaración",
+    "fm.upcoming.title": "Próximos vencimientos",
+    "fm.upcoming.empty": "Sin vencimientos próximos"
   }
 }

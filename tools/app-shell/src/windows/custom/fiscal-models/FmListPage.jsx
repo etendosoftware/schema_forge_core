@@ -4,7 +4,7 @@ import { LayoutGrid, Settings2, ListFilter, ArrowUpDown } from 'lucide-react';
 import { StatusPillMenu, EmptyState } from './FmCommon.jsx';
 import { ConfigDrawer, NewDeclModal } from './FmOverlays.jsx';
 import FmCatalogPage from './FmCatalogPage.jsx';
-import { formatAmount, STATUS_COLOR, STATUS_ORDER } from './fiscalModelsUtils.js';
+import { formatAmount, STATUS_COLOR, STATUS_ORDER, computeUpcomingDeadlines } from './fiscalModelsUtils.js';
 
 function StatusSelect({ value, options, onChange }) {
   const t = useUI();
@@ -67,25 +67,63 @@ const MOCK_DECLARATIONS = [
   { id:'349-2025-05', model:'349', year:2025, period:'05', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_05.349',  updatedAt:'18/06/2025' },
   { id:'349-2025-04', model:'349', year:2025, period:'04', type:'ord', status:'omitido',          result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null,           updatedAt:'10/05/2025' },
   { id:'349-2025-03', model:'349', year:2025, period:'03', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_03.349',  updatedAt:'19/04/2025' },
-  { id:'303-2026-T1', model:'303', year:2026, period:'T1', type:'ord', status:'borrador',         result:{kind:'ingresar',amount:12179.75}, incidents:{blocking:2,warning:3,items:[
+  { id:'303-2026-T1', model:'303', year:2026, period:'T1', type:'ord', status:'borrador',         result:{kind:'compensar',amount:2816.31}, incidents:{blocking:2,warning:3,items:[
     { severity:'block', origin:'Casilla 28', message:'El total de cuota devengada no coincide con la suma de las cuotas parciales', suggestion:'Revisa las cuotas de los tipos 21%, 10% y 4%' },
     { severity:'block', origin:'Casilla 69', message:'El resultado de la liquidación está pendiente de confirmar', suggestion:'Verifica que el resultado neto sea correcto antes de generar el fichero' },
     { severity:'warn',  origin:'Casilla 48', message:'No se han detectado facturas de compra para este período', suggestion:'Comprueba si hay facturas de compra no registradas' },
     { severity:'warn',  origin:'Casilla 64', message:'El total deducible es inferior al período anterior en más de un 30%', suggestion:'Verifica si es coherente con la actividad del trimestre' },
     { severity:'warn',  origin:'NIF declarante', message:'El NIF del declarante no está verificado en la AEAT', suggestion:'Confirma el NIF en la configuración del declarante' },
-  ]}, file:null, boxes:{}, updatedAt:'14/05/2026', current:true },
+  ]}, file:null, boxes:{ 7:3248, 9:682.08, 27:682.08, 28:16659, 29:3498.39, 45:3498.39, 46:-2816.31 }, summary:{ accrued:682.08, deductible:3498.39, result:-2816.31 }, updatedAt:'14/05/2026', current:true },
   { id:'303-2025-T4', model:'303', year:2025, period:'T4', type:'ord', status:'presentadoAcuse',  result:{kind:'compensar',amount:2100}, incidents:{blocking:0,warning:0}, file:'2025_T4.303', updatedAt:'28/01/2026' },
 ];
 
 const DEFAULT_ACTIVE = { '303': true, '349': true };
 
-// ── KPI computation ──────────────────────────────────────────────
-function buildBanners(decls) {
-  const open303   = decls.filter(d => d.model === '303' && !['presentado','presentadoOtra','presentadoAcuse','omitido'].includes(d.status)).length;
-  const pend349   = decls.filter(d => d.model === '349' && ['pendiente','borrador'].includes(d.status)).length;
-  const blocking  = decls.reduce((n,d) => n + (d.incidents?.blocking ?? 0), 0);
-  const warning   = decls.reduce((n,d) => n + (d.incidents?.warning  ?? 0), 0);
-  return { open303, pend349, blocking, warning };
+// ── Upcoming deadlines helpers ───────────────────────────────────
+const MONTH_NAMES_ES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+
+function formatDeadlineHeader(date) {
+  return `${date.getDate()} ${MONTH_NAMES_ES[date.getMonth()]}`;
+}
+
+function formatPeriodLabel(period) {
+  if (/^T\d$/.test(period)) return `T${period[1]}`;
+  if (/^\d{2}$/.test(period)) return `${parseInt(period, 10)}M`;
+  return period;
+}
+
+function UpcomingDeadlines({ decls, onSelect, t }) {
+  const items = computeUpcomingDeadlines(decls);
+  const groups = [];
+  const seen = {};
+  for (const item of items) {
+    const key = item.deadline.toISOString().slice(0, 10);
+    if (!seen[key]) { seen[key] = []; groups.push({ key, date: item.deadline, items: seen[key] }); }
+    seen[key].push(item);
+  }
+  return (
+    <div className="fm-upcoming">
+      <div className="fm-upcoming__header">{t('fm.upcoming.title')}</div>
+      {groups.length === 0
+        ? <div className="fm-upcoming__empty">{t('fm.upcoming.empty')}</div>
+        : groups.map(g => (
+          <div key={g.key} className="fm-upcoming__group">
+            <div className="fm-upcoming__date-label">{formatDeadlineHeader(g.date)}</div>
+            {g.items.map(({ decl }) => (
+              <div key={decl.id} className="fm-upcoming__row" onClick={() => onSelect?.(decl)}>
+                <span className={`fm-upcoming__badge fm-upcoming__badge--${decl.model}`}>{decl.model}</span>
+                <div className="fm-upcoming__info">
+                  <div className="fm-upcoming__model-label">{t(`fm.catalog.${decl.model}.name`) ?? `Modelo ${decl.model}`}</div>
+                  <div className="fm-upcoming__period">{decl.year} · {formatPeriodLabel(decl.period)}</div>
+                </div>
+                <span className="fm-upcoming__arrow">›</span>
+              </div>
+            ))}
+          </div>
+        ))
+      }
+    </div>
+  );
 }
 
 // ── Sub-components ───────────────────────────────────────────────
@@ -144,7 +182,6 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
     return true;
   });
 
-  const banners = buildBanners(decls);
   const activeCount = Object.values(activeModels).filter(Boolean).length;
 
   const toggleSelect = (id) => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -201,41 +238,8 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
         </button>
       </div>
 
-      {/* ── KPI Banners ──────────────────────────────────────────── */}
-      <div className="fm-kpi-banners">
-        <div className="fm-kpi-banner">
-          <div className="fm-kpi-banner__label">{t('fm.kpi.m303_open')}</div>
-          <div className="fm-kpi-banner__body">
-            <span className="fm-kpi-banner__num">{banners.open303}</span>
-            <span className="fm-kpi-banner__desc">{t('fm.kpi.m303_open_sub')}</span>
-          </div>
-        </div>
-        <div className="fm-kpi-banner">
-          <div className="fm-kpi-banner__label">{t('fm.kpi.m349_pending')}</div>
-          <div className="fm-kpi-banner__body">
-            <span className="fm-kpi-banner__num">{banners.pend349}</span>
-            <span className="fm-kpi-banner__desc">{t('fm.kpi.m349_pending_sub')}</span>
-          </div>
-        </div>
-        <div className="fm-kpi-banner">
-          <div className="fm-kpi-banner__label">{t('fm.kpi.fiscal_incidents')}</div>
-          <div className="fm-kpi-banner__body">
-            <span className="fm-kpi-banner__num">{banners.blocking + banners.warning}</span>
-            {banners.blocking > 0 && (
-              <span className="fm-kpi-banner__blocking">{banners.blocking} {t('fm.kpi.deadline_blocking')}</span>
-            )}
-            <span className="fm-kpi-banner__desc">{t('fm.kpi.fiscal_incidents_sub')}</span>
-          </div>
-        </div>
-        <div className="fm-kpi-banner">
-          <div className="fm-kpi-banner__label">{t('fm.kpi.deadline')}</div>
-          <div className="fm-kpi-banner__body" style={{ gap: 10 }}>
-            <span className="fm-kpi-banner__date">20 may</span>
-            <span className="fm-kpi-banner__days">12 {t('fm.kpi.deadline_days')}</span>
-          </div>
-          <div className="fm-kpi-banner__sub">Modelo 349 · 04/2026</div>
-        </div>
-      </div>
+      {/* ── Upcoming deadlines ───────────────────────────────────── */}
+      <UpcomingDeadlines decls={decls} onSelect={onSelect} t={t} />
 
       {/* ── Section header ───────────────────────────────────────── */}
       <div className="fm-section-header">

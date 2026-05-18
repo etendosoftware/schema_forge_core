@@ -11,10 +11,10 @@ describe('FmListPage — exports', () => {
   it('has a default export', () => assert.match(src, /export default/));
 });
 
-describe('FmListPage — KPI banners', () => {
-  it('renders kpi banner container', () => assert.match(src, /fm-kpi-banner/));
-  it('shows model 303 open count', () => assert.match(src, /open303/));
-  it('shows model 349 pending count', () => assert.match(src, /pend349/));
+describe('FmListPage — upcoming deadlines widget', () => {
+  it('renders fm-upcoming container', () => assert.match(src, /fm-upcoming/));
+  it('uses computeUpcomingDeadlines', () => assert.match(src, /computeUpcomingDeadlines/));
+  it('passes decls to the widget', () => assert.match(src, /decls={decls}/));
 });
 
 describe('FmListPage — table', () => {
