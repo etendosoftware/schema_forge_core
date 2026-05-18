@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
@@ -15,6 +15,7 @@ import SendDocumentModal from '@/components/contract-ui/SendDocumentModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
+import { INVOICE_DRAFT_MODE, buildInvoiceRowQuickActions, useClearSavedRecord } from '../shared/useInvoiceWindow.js';
 
 /* eslint-disable react/prop-types */
 
@@ -89,21 +90,10 @@ export default function PurchaseInvoiceWindow(props) {
     onSuccess: () => setRefreshKey(k => k + 1),
   });
 
-  const rowQuickActions = useMemo(() => ({
-    enabled: true,
-    editMode: 'navigate',
-    documentPreview: true,
-    actions: {
-      edit: { show: true },
-      duplicate: { show: true },
-      email: { show: true },
-      delete: { show: true },
-    },
-    onEdit: (row) => navigate(`/${windowName}/${row.id}`),
-    onClone: (row) => setCloneTargets([row]),
-    onEmail: (row) => setEmailRow(row),
-    onDelete: requestDelete,
-  }), [navigate, windowName, requestDelete]);
+  const rowQuickActions = useMemo(
+    () => buildInvoiceRowQuickActions(navigate, windowName, setCloneTargets, setEmailRow, requestDelete),
+    [navigate, windowName, requestDelete],
+  );
 
   const summary = [
     { key: 'summedLineAmount', column: 'TotalLines', type: 'amount', label: ui('totalNetAmount') },
@@ -115,15 +105,8 @@ export default function PurchaseInvoiceWindow(props) {
   // Pick up the saved record from navigation state when arriving at the list view
   const effectiveRecord = savedRecord ?? location.state?.savedRecord ?? null;
 
-  const clearSavedRecord = useCallback(() => {
-    setSavedRecord(null);
-    // Clear navigation state so the modal doesn't reappear on browser back/forward
-    if (location.state?.savedRecord) {
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-  }, [location, navigate]);
-
-  const draftModeOverride = { enabled: true, processField: 'documentAction', processValue: 'CO', label: 'Confirm', disableWhenEmpty: true };
+  const clearSavedRecord = useClearSavedRecord(setSavedRecord, location, navigate);
+  const draftModeOverride = INVOICE_DRAFT_MODE;
 
   if (recordId) {
     return (

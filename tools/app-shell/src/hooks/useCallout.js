@@ -3,8 +3,8 @@ import { toast } from 'sonner';
 
 function sanitizeCalloutMessage(raw) {
   return raw
-    .replace(/<br\s*\/?>/gi, ' ')
-    .replace(/<[^>]+>/g, '')
+    .replace(/<br[^>]{0,10}>/gi, ' ')
+    .replace(/<[^>]{0,200}>/g, '')
     .replace(/^(Note|Warning|Error):\s*/i, '')
     .trim();
 }

@@ -147,6 +147,12 @@ function ReadCell({ row, col, locale, t, ui }) {
   return <span>{display ?? ''}</span>;
 }
 
+function editInputClassName(isNumeric, isInvalid) {
+  const numericClass = isNumeric ? ' text-right tabular-nums' : '';
+  const borderClass = isInvalid ? 'border-red-500 focus-visible:ring-red-500' : 'border-input';
+  return `h-7 px-2 text-sm bg-white${numericClass} ${borderClass}`;
+}
+
 function isValueBelowMin(col, value) {
   if (col.min === undefined || value === '' || value == null) return false;
   const num = parseFloat(value);
@@ -276,7 +282,7 @@ function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus
           onCancel?.();
         }
       }}
-      className={`h-7 px-2 text-sm bg-white${isNumeric ? ' text-right tabular-nums' : ''}${isInvalid ? ' border-red-500 focus-visible:ring-red-500' : ' border-input'}`}
+      className={editInputClassName(isNumeric, isInvalid)}
       {...numericProps}
     />
   );
