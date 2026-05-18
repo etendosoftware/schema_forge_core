@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useUI } from '@/i18n';
 import { LayoutGrid, Settings2, ListFilter, ArrowUpDown } from 'lucide-react';
-import { StatusPillMenu, EmptyState } from './FmCommon.jsx';
+import { StatusPillMenu, ResultPill, EmptyState } from './FmCommon.jsx';
 import { ConfigDrawer, NewDeclModal } from './FmOverlays.jsx';
 import FmCatalogPage from './FmCatalogPage.jsx';
 import { formatAmount, STATUS_COLOR, STATUS_ORDER, computeUpcomingDeadlines } from './fiscalModelsUtils.js';
@@ -318,10 +318,16 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
                       <StatusPillMenu status={decl.status} onStatusChange={s => handleStatusChange(decl.id, s)} />
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      {decl.result?.kind === 'informativa'
-                        ? <span style={{ color: '#9ca3af' }}>—</span>
-                        : <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>{formatAmount(decl.result?.amount)}</span>
-                      }
+                      {decl.result?.kind ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+                          <ResultPill kind={decl.result.kind} label={t(`fm.result.${decl.result.kind}`) ?? decl.result.kind} />
+                          {decl.result.kind !== 'informativa' && decl.result.amount != null && (
+                            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>
+                              {formatAmount(decl.result.amount)}
+                            </span>
+                          )}
+                        </div>
+                      ) : <span style={{ color: '#9ca3af' }}>—</span>}
                     </td>
                     <td>
                       <IncidentsCell blocking={decl.incidents?.blocking ?? 0} warning={decl.incidents?.warning ?? 0} t={t} />
