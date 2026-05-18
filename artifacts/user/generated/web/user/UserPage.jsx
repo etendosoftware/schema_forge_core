@@ -4,10 +4,11 @@ import UserTable from './UserTable';
 import UserForm from './UserForm';
 import UserRolesTable from './UserRolesTable';
 import UserRolesForm from './UserRolesForm';
+import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 
 
-const breadcrumb = 'Configuracion / User';
+const breadcrumb = 'Settings / User';
 
 
 // @sf-generated-start summary:user
@@ -34,6 +35,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:user
 
+// @sf-generated-start requiredHeaderFields:user
+const requiredHeaderFields = ['name', 'username', 'locked', 'lastPasswordUpdate'];
+// @sf-generated-end requiredHeaderFields:user
+
 // @sf-generated-start addLineFields:userRoles
 const addLineFields = {
   entry: [
@@ -49,7 +54,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:userRoles
 
-const api = {
+export const api = {
   "specName": "user",
   "baseUrl": "/sws/neo/user",
   "crud": {
@@ -193,16 +198,18 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=userDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "settings"
   }
 };
 
 // @sf-generated-start component:UserPage
 export default function UserPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -223,6 +230,8 @@ export default function UserPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "AD_User", config: {} } }]}
+        requiredHeaderFields={requiredHeaderFields}
         {...props}
       />
     );
@@ -236,6 +245,7 @@ export default function UserPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      rowQuickActions={{}}
       {...props}
     />
   );

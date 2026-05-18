@@ -205,7 +205,7 @@ The SPA can load from cache when offline, but all meaningful operations (list, s
 | **RTL support** | Not implemented |
 | **Number formatting** | Unknown (may not be locale-aware) |
 | **Date formatting** | Unknown (may not be locale-aware) |
-| **Currency formatting** | Unknown (Etendo is multi-currency, this needs special handling) |
+| **Currency formatting** | Implemented — `formatCurrency(code, value)` in `@/lib/formatCurrency` + `useCurrency()` hook resolve org currency from session. See `docs/ui-design-guidelines.md`. |
 
 ### 6.2 Adding a New Locale
 
@@ -221,30 +221,21 @@ The SPA can load from cache when offline, but all meaningful operations (list, s
 |-----|--------|----------|
 | **Missing number formatting** | Users see numbers in US format regardless of locale (1,000.00 vs 1.000,00) | CRITICAL for non-US deployments |
 | **Missing date formatting** | Dates show as MM/DD/YYYY instead of locale-appropriate format | CRITICAL for non-US deployments |
-| **Missing currency formatting** | Currency symbols and positions not locale-aware | CRITICAL for multi-currency ERP |
+| **Missing currency formatting** | ~~Currency symbols and positions not locale-aware~~ **Resolved in ETP-3855** — `formatCurrency` handles symbol placement per ISO 4217 code. | ~~CRITICAL~~ Done |
 | **No RTL support** | Arabic, Hebrew users cannot use the application | WARNING (only if RTL locales are needed) |
 | **Error messages not localized** | Backend error messages arrive in English regardless of user locale | WARNING |
 | **Hardcoded strings in components** | Any string not going through i18n system won't translate | WARNING |
 
-### 6.4 Recommended Approach for Formatting
+### 6.4 Formatting Utilities (implemented)
 
-Use the `Intl` API (built into all modern browsers):
+Currency formatting is now handled by canonical shared utilities. Do not use raw `Intl` calls for money in window components — always use the shared layer.
 
-```javascript
-// Number formatting
-new Intl.NumberFormat('es-ES', { style: 'decimal' }).format(1234.56)
-// → "1.234,56"
+| Use case | Utility | Import |
+|----------|---------|--------|
+| Money in custom window components (sidebars, topbars, modals) | `formatCurrency(isoCode, value)` | `@/lib/formatCurrency` |
+| Money in dashboard widgets receiving a label string from the API | `formatDashboardAmount(value, label, locale)` | `@/lib/dashboardNumberFormat` |
 
-// Date formatting
-new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium' }).format(new Date())
-// → "11 mar 2026"
-
-// Currency formatting
-new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(1234.56)
-// → "1.234,56 €"
-```
-
-Integrate this into shared formatting utilities used by all generated windows.
+The org's ISO 4217 currency code is resolved by `useCurrency()` (hook, `@/hooks/useCurrency`) which reads from `/sws/neo/session`. Full usage guide and anti-patterns: `docs/ui-design-guidelines.md#monetary-amount-formatting`.
 
 ---
 

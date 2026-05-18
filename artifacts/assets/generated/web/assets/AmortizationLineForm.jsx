@@ -14,5 +14,5 @@ const fields = [
 export default function AmortizationLineForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-AmortizationLineForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:AmortizationLineForm

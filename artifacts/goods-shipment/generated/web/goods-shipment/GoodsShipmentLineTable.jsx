@@ -1,9 +1,10 @@
-import { DataTable } from '@/components/contract-ui';
+import { forwardRef } from 'react';
+import { DataTable, InlineLinesPanel } from '@/components/contract-ui';
 
 // @sf-generated-start columns:goodsShipmentLine
 const columns = [
-  { key: 'product', column: 'M_Product_ID', type: 'string', label: 'Product' },
-  { key: 'movementQuantity', column: 'MovementQty', type: 'number', label: 'Movement Quantity' },
+  { key: 'product', column: 'M_Product_ID', type: 'selector', label: 'Product' },
+  { key: 'movementQuantity', column: 'MovementQty', type: 'number', label: 'Movement Quantity', required: true },
   { key: 'orderQuantity', column: 'QuantityOrder', type: 'number', label: 'Order Quantity' },
 ];
 // @sf-generated-end columns:goodsShipmentLine
@@ -11,7 +12,26 @@ const columns = [
 const filters = ['product'];
 
 // @sf-generated-start component:GoodsShipmentLineTable
-export default function GoodsShipmentLineTable(props) {
+const GoodsShipmentLineTable = forwardRef(function GoodsShipmentLineTable(props, ref) {
+  // Inline-editable layout always uses InlineLinesPanel for existing rows so column
+  // widths (flex layout) never shift when the add-row form opens. When addRow is
+  // active we render a header-hidden, data-hidden DataTable below for just the
+  // add-row form — it owns callouts, selectors, validation and the imperative flush
+  // ref. The ref is forwarded to InlineLinesPanel so DetailView can flush pending
+  // inline edits on global save.
+  if (props.linesLayout === 'inlineEditable') {
+    if (props.addRow?.active) {
+      return (
+        <>
+          <InlineLinesPanel ref={ref} columns={columns} {...props} addRow={undefined} />
+          <DataTable columns={columns} filters={filters} {...props} hideHeader hideDataRows />
+        </>
+      );
+    }
+    return <InlineLinesPanel ref={ref} columns={columns} {...props} />;
+  }
   return <DataTable columns={columns} filters={filters} {...props} />;
-}
+});
+
+export default GoodsShipmentLineTable;
 // @sf-generated-end component:GoodsShipmentLineTable

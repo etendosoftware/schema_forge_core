@@ -1,0 +1,128 @@
+{
+  "$schema": "decisions-v2",
+  "window": {
+    "category": "configuration",
+    "name": "SII Config",
+    "attachments": false
+  },
+  "entities": {
+    "siiConfiguration": {
+      "fields": {
+        "organization": {
+          "visibility": "system",
+          "derivation": "fromParent"
+        },
+        "acogidaAlSII": {
+          "visibility": "editable"
+        },
+        "fechaAcogidaSII": {
+          "visibility": "editable"
+        },
+        "plazoLmiteDeEnvoASII": {
+          "visibility": "editable"
+        },
+        "cadenciaEnvoFacturasVentaASII": {
+          "visibility": "editable"
+        },
+        "cadenciaEnvoFacturasCompraASII": {
+          "visibility": "editable"
+        },
+        "entornoDeProduccin": {
+          "visibility": "editable"
+        },
+        "adjuntarArchivosXML": {
+          "visibility": "editable"
+        },
+        "recc": {
+          "visibility": "editable"
+        },
+        "redeme": {
+          "visibility": "editable"
+        },
+        "monitordate": {
+          "visibility": "editable"
+        },
+        "navarra": {
+          "visibility": "system",
+          "derivation": "fromConfig"
+        },
+        "guipuzcoa": {
+          "visibility": "system",
+          "derivation": "fromConfig"
+        },
+        "postedInvoices": {
+          "visibility": "editable"
+        },
+        "taxtype": {
+          "visibility": "system",
+          "derivation": "fromConfig"
+        },
+        "authorizationno": {
+          "visibility": "editable"
+        },
+        "active": {
+          "visibility": "system",
+          "derivation": "fromConfig",
+          "defaultValue": "Y"
+        },
+        "validHash": {
+          "visibility": "editable"
+        },
+        "client": {
+          "visibility": "system",
+          "derivation": "fromParent"
+        },
+        "configuracinSII": {
+          "visibility": "system",
+          "derivation": "fromConfig"
+        },
+        "nuevaConsultaFacturasASII": {
+          "visibility": "discarded"
+        },
+        "informeltimaConexinSII": {
+          "visibility": "discarded"
+        },
+        "cIF": {
+          "visibility": "readOnly"
+        },
+        "conexiones": {
+          "visibility": "readOnly"
+        },
+        "creationDate": {
+          "visibility": "system",
+          "derivation": "fromConfig"
+        },
+        "createdBy": {
+          "visibility": "system",
+          "derivation": "fromConfig"
+        },
+        "cashVAT": {
+          "visibility": "editable"
+        },
+        "lastQueryBook": {
+          "visibility": "readOnly"
+        },
+        "lastQueryExercise": {
+          "visibility": "readOnly"
+        },
+        "lastQueryPeriod": {
+          "visibility": "readOnly"
+        },
+        "sinceJanuary2017": {
+          "visibility": "readOnly"
+        },
+        "updateInvoices": {
+          "visibility": "discarded"
+        },
+        "updated": {
+          "visibility": "system",
+          "derivation": "fromConfig"
+        },
+        "updatedBy": {
+          "visibility": "system",
+          "derivation": "fromConfig"
+        }
+      }
+    }
+  }
+}

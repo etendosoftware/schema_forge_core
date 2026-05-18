@@ -43,4 +43,12 @@ describe('InventoryMenuContent', () => {
     assert.match(src, /useUI/);
     assert.match(src, /from\s+['"]@\/i18n['"]/);
   });
+
+  it('returns null when recordId is new', () => {
+    assert.match(src, /recordId\s*===\s*['"]new['"]/);
+  });
+
+  it('returns null when data.processed is true', () => {
+    assert.match(src, /data\?\.processed\s*===\s*true/);
+  });
 });

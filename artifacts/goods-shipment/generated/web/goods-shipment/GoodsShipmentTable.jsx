@@ -1,21 +1,41 @@
-import { DataTable } from '@/components/contract-ui';
+import { forwardRef } from 'react';
+import { DataTable, InlineLinesPanel } from '@/components/contract-ui';
 
 // @sf-generated-start columns:goodsShipment
 const columns = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string', label: 'Document No.' },
-  { key: 'warehouse', column: 'M_Warehouse_ID', type: 'string', label: 'Warehouse' },
-  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string', label: 'Business Partner' },
-  { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'string', label: 'Partner Address' },
-  { key: 'movementDate', column: 'MovementDate', type: 'date', label: 'Movement Date' },
-  { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status', display: 'dot' },
-  { key: 'invoiced', column: 'Iscompletelyinvoiced', type: 'boolean', label: 'Completely Invoiced', badge: true, badgeLabels: {"true":"Invoiced","false":"Pending"} },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string', label: 'Document No.', required: true },
+  { key: 'warehouse', column: 'M_Warehouse_ID', type: 'selector', label: 'Warehouse', required: true },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner', required: true },
+  { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'selector', label: 'Partner Address', required: true },
+  { key: 'movementDate', column: 'MovementDate', type: 'date', label: 'Movement Date', required: true },
+  { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status', enumLabels: { 'CL': 'Closed', 'CO': 'Completed', 'DR': 'Draft', 'NA': 'Not Accepted', 'WP': 'Not Paid', 'RE': 'Re-Opened', 'TEMP': 'Temporal', 'IP': 'Under Way', '??': 'Unknown', 'VO': 'Voided' }, required: true },
+  { key: 'invoiced', column: 'Iscompletelyinvoiced', type: 'boolean', label: 'Completely Invoiced', badge: true, badgeLabels: {"true":"Invoiced","false":"Pending"}, required: true },
 ];
 // @sf-generated-end columns:goodsShipment
 
 const filters = ['documentNo', 'warehouse', 'businessPartner', 'movementDate', 'documentStatus'];
 
 // @sf-generated-start component:GoodsShipmentTable
-export default function GoodsShipmentTable(props) {
+const GoodsShipmentTable = forwardRef(function GoodsShipmentTable(props, ref) {
+  // Inline-editable layout always uses InlineLinesPanel for existing rows so column
+  // widths (flex layout) never shift when the add-row form opens. When addRow is
+  // active we render a header-hidden, data-hidden DataTable below for just the
+  // add-row form — it owns callouts, selectors, validation and the imperative flush
+  // ref. The ref is forwarded to InlineLinesPanel so DetailView can flush pending
+  // inline edits on global save.
+  if (props.linesLayout === 'inlineEditable') {
+    if (props.addRow?.active) {
+      return (
+        <>
+          <InlineLinesPanel ref={ref} columns={columns} {...props} addRow={undefined} />
+          <DataTable columns={columns} filters={filters} {...props} hideHeader hideDataRows />
+        </>
+      );
+    }
+    return <InlineLinesPanel ref={ref} columns={columns} {...props} />;
+  }
   return <DataTable columns={columns} filters={filters} {...props} />;
-}
+});
+
+export default GoodsShipmentTable;
 // @sf-generated-end component:GoodsShipmentTable

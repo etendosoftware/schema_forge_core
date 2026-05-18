@@ -24,5 +24,5 @@ const fields = [
 export default function AccountingForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-AccountingForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:AccountingForm

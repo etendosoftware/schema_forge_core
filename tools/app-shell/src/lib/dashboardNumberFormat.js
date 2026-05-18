@@ -1,4 +1,4 @@
-import { formatAmount } from '@/lib/formatAmount.js';
+const DASHBOARD_NUMBER_LOCALE = 'en-US';
 
 export function localeFromUi(locale) {
   return locale === 'es_ES' ? 'es-ES' : 'en-US';
@@ -13,19 +13,18 @@ export function formatDashboardNumber(value, locale = 'en-US', options = {}) {
     maximumFractionDigits = 0,
   } = options;
 
-  return new Intl.NumberFormat(locale, {
+  return new Intl.NumberFormat(DASHBOARD_NUMBER_LOCALE, {
     minimumFractionDigits,
     maximumFractionDigits,
   }).format(num);
 }
 
 export function formatDashboardAmount(value, currencyLabel, locale = 'en-US') {
-  const raw = formatAmount(value, currencyLabel);
   const num = Number(value);
 
-  if (!Number.isFinite(num)) return raw;
+  if (!Number.isFinite(num)) return String(value ?? '\u2014');
 
-  const localizedAmount = new Intl.NumberFormat(locale, {
+  const localizedAmount = new Intl.NumberFormat(DASHBOARD_NUMBER_LOCALE, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(Math.abs(num));
@@ -34,10 +33,12 @@ export function formatDashboardAmount(value, currencyLabel, locale = 'en-US') {
     return num < 0 ? `-${localizedAmount}` : localizedAmount;
   }
 
-  const match = raw.match(/[0-9][0-9,.-]*/);
-  if (!match) return raw;
+  const normalizedLabel = String(currencyLabel).trim();
+  const codeMatch = normalizedLabel.toUpperCase().match(/\b[A-Z]{3}\b/);
+  const currencyCode = codeMatch ? codeMatch[0] : normalizedLabel.toUpperCase();
+  const formatted = `${currencyCode} ${localizedAmount}`;
 
-  return raw.replace(match[0], localizedAmount);
+  return num < 0 ? `-${formatted}` : formatted;
 }
 
 export function formatDashboardCompact(value, { locale = 'en-US', currencyLabel = '', maxDecimals = 1 } = {}) {
@@ -68,4 +69,46 @@ export function formatDashboardCompact(value, { locale = 'en-US', currencyLabel 
 
 export function formatDashboardAxisTick(value, locale = 'en-US') {
   return formatDashboardCompact(value, { locale, maxDecimals: 1 });
+}
+
+export function niceScale(dataMax) {
+  if (dataMax <= 0) return { niceMax: 100, ticks: [0, 25, 50, 75, 100] };
+
+  const exp = Math.floor(Math.log10(dataMax));
+  const niceFactors = [1, 2, 2.5, 5, 10, 20, 25, 50];
+
+  for (let e = exp - 1; e <= exp + 1; e++) {
+    const base = Math.pow(10, e);
+    for (const f of niceFactors) {
+      const step = f * base;
+      const niceMax = Math.ceil(dataMax / step - 1e-10) * step;
+      const count = Math.round(niceMax / step) + 1;
+      if (count >= 4 && count <= 6) {
+        return { niceMax, ticks: Array.from({ length: count }, (_, i) => i * step) };
+      }
+    }
+  }
+
+  const step = Math.pow(10, exp);
+  const niceMax = Math.ceil(dataMax / step) * step;
+  const count = Math.round(niceMax / step) + 1;
+  return { niceMax, ticks: Array.from({ length: count }, (_, i) => i * step) };
+}
+
+export function toBezierPath(pts) {
+  if (pts.length === 0) return '';
+  if (pts.length === 1) return `M ${pts[0].x},${pts[0].y}`;
+  let d = `M ${pts[0].x},${pts[0].y}`;
+  for (let i = 1; i < pts.length; i++) {
+    const prev = pts[i - 1];
+    const curr = pts[i];
+    const cpx = (curr.x - prev.x) * 0.35;
+    d += ` C ${prev.x + cpx},${prev.y} ${curr.x - cpx},${curr.y} ${curr.x},${curr.y}`;
+  }
+  return d;
+}
+
+export function toBezierFillPath(pts, baseY) {
+  if (pts.length === 0) return '';
+  return `${toBezierPath(pts)} L ${pts[pts.length - 1].x},${baseY} L ${pts[0].x},${baseY} Z`;
 }

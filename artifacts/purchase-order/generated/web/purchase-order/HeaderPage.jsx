@@ -1,21 +1,42 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
+import { toast } from 'sonner';
 import HeaderTable from './HeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
+import PurchaseOrderBottomPanel from '../../../custom/PurchaseOrderBottomPanel';
 import PurchaseOrderActions from '../../../custom/PurchaseOrderActions';
 import PurchaseOrderDraftChips from '../../../custom/PurchaseOrderDraftChips';
+import PurchaseOrderReactivateBulkAction from '../../../custom/PurchaseOrderReactivateBulkAction';
 import catalogs from './mockCatalogs';
 
 
 const breadcrumb = 'Purchases / Purchase Order';
 
+const labelOverrides = {
+  "es_ES": {
+    "C_BPartner_ID": "Contacto",
+    "DatePromised": "Fecha de entrega esperada",
+    "DeliveryStatusPurchase": "Estado de entrega",
+    "InvoiceStatus": "Estado de facturación"
+  },
+  "en_US": {
+    "C_BPartner_ID": "Contact",
+    "DatePromised": "Expected Delivery Date",
+    "DeliveryStatusPurchase": "Delivery Status",
+    "InvoiceStatus": "Invoicing Status"
+  }
+};
+
 
 // @sf-generated-start summary:header
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
+  { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
 ];
 
 const statusField = 'documentStatus';
@@ -32,29 +53,44 @@ const processes = [
 // @sf-generated-end processes:header
 
 // @sf-generated-start draftMode:header
-const draftMode = null;
+const draftMode = {
+  "enabled": true,
+  "processField": "documentAction",
+  "processValue": "CO",
+  "label": "poConfirmBtn"
+};
 // @sf-generated-end draftMode:header
+
+// @sf-generated-start requiredHeaderFields:header
+const requiredHeaderFields = ['businessPartner', 'documentNo', 'orderDate', 'partnerAddress', 'scheduledDeliveryDate', 'paymentTerms', 'priceList', 'grandTotalAmount', 'summedLineAmount'];
+// @sf-generated-end requiredHeaderFields:header
 
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
   entry: [
-    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity' },
-    { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
-    { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', required: true, label: 'Line Net Amount' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, label: 'Tax', reference: 'Tax', inputMode: 'selector' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["listPrice","unitPrice","tax","uOM","grossUnitPrice","discount"] },
+    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
+    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity', defaultValue: 1 },
+    { key: 'listPrice', column: 'PriceList', type: 'number', required: true, label: 'Net List Price' },
+    { key: 'discount', column: 'Discount', type: 'number', label: 'Discount %', defaultValue: 0 },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineGrossAmount","grossUnitPrice","lineNetAmount"] },
   ],
   derived: [
-    { key: 'discount', column: 'Discount', type: 'number', label: 'Discount %' },
+
   ],
   hidden: [
     { key: 'grossUnitPrice', value: '0' },
+    { key: 'warehouse', fromParent: 'warehouse' },
+    { key: 'shippingCompany', fromParent: 'shippingCompany' },
+    { key: 'orderDate', fromParent: 'orderDate' },
     { key: 'scheduledDeliveryDate', fromParent: 'scheduledDeliveryDate' },
+    { key: 'partnerAddress', fromParent: 'partnerAddress' },
+    { key: 'currency', fromParent: 'currency' },
   ],
 };
 // @sf-generated-end addLineFields:lines
 
-const api = {
+export const api = {
   "specName": "purchase-order",
   "baseUrl": "/sws/neo/purchase-order",
   "crud": {
@@ -127,7 +163,7 @@ const api = {
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
       "inputMode": "search",
-      "url": "/sws/neo/purchase-order/header/selectors/businessPartner?isVendor=Y"
+      "url": "/sws/neo/purchase-order/header/selectors/businessPartner"
     },
     {
       "entity": "header",
@@ -204,6 +240,13 @@ const api = {
     },
     {
       "entity": "header",
+      "field": "shippingCompany",
+      "column": "M_Shipper_ID",
+      "reference": "Shipper",
+      "url": "/sws/neo/purchase-order/header/selectors/shippingCompany"
+    },
+    {
+      "entity": "header",
       "field": "charge",
       "column": "C_Charge_ID",
       "url": "/sws/neo/purchase-order/header/selectors/charge"
@@ -258,6 +301,14 @@ const api = {
     },
     {
       "entity": "lines",
+      "field": "tax",
+      "column": "C_Tax_ID",
+      "reference": "Tax",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-order/lines/selectors/tax"
+    },
+    {
+      "entity": "lines",
       "field": "operativeUOM",
       "column": "C_Aum",
       "reference": "UOM",
@@ -273,14 +324,6 @@ const api = {
     },
     {
       "entity": "lines",
-      "field": "tax",
-      "column": "C_Tax_ID",
-      "reference": "Tax",
-      "inputMode": "selector",
-      "url": "/sws/neo/purchase-order/lines/selectors/tax"
-    },
-    {
-      "entity": "lines",
       "field": "warehouse",
       "column": "M_Warehouse_ID",
       "reference": "Warehouse",
@@ -292,13 +335,6 @@ const api = {
       "column": "M_Shipper_ID",
       "reference": "Shipper",
       "url": "/sws/neo/purchase-order/lines/selectors/shippingCompany"
-    },
-    {
-      "entity": "lines",
-      "field": "businessPartner",
-      "column": "C_BPartner_ID",
-      "reference": "BusinessPartner",
-      "url": "/sws/neo/purchase-order/lines/selectors/businessPartner"
     },
     {
       "entity": "lines",
@@ -501,19 +537,19 @@ const api = {
     },
     {
       "entity": "header",
-      "field": "posted",
-      "column": "Posted",
-      "url": "/sws/neo/purchase-order/header/{id}/action/posted",
-      "processId": "57496FB9CF9E4E8F847224017941570E",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
       "field": "processNow",
       "column": "Processing",
       "url": "/sws/neo/purchase-order/header/{id}/action/processNow",
       "processId": "104",
       "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "posted",
+      "column": "Posted",
+      "url": "/sws/neo/purchase-order/header/{id}/action/posted",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
     },
     {
       "entity": "header",
@@ -580,7 +616,7 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=purchase-orderDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
@@ -591,18 +627,21 @@ const api = {
   "labelOverrides": {
     "es_ES": {
       "C_BPartner_ID": "Contacto",
-      "DatePromised": "Fecha de entrega esperada"
+      "DatePromised": "Fecha de entrega esperada",
+      "DeliveryStatusPurchase": "Estado de entrega",
+      "InvoiceStatus": "Estado de facturación"
     },
     "en_US": {
       "C_BPartner_ID": "Contact",
-      "DatePromised": "Expected Delivery Date"
+      "DatePromised": "Expected Delivery Date",
+      "DeliveryStatusPurchase": "Delivery Status",
+      "InvoiceStatus": "Invoicing Status"
     }
   }
 };
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -628,9 +667,18 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         hideSaveStatuses={["CO","CL","VO"]}
         noHeaderBorder
         notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Order", config: {} } }]}
+        bottomSection={PurchaseOrderBottomPanel}
         topbarRight={PurchaseOrderActions}
         topbarExtra={PurchaseOrderDraftChips}
+        menuActions={({ data, status }) => [
+          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO' && !data?.hasLinkedDocuments, labelKey: 'reactivate', successKey: 'reactivated', documentAction: 'RE',  }
+        ]}
+        draftMode={draftMode}
+        requiredHeaderFields={requiredHeaderFields}
+        labelOverrides={labelOverrides}
+        linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -644,7 +692,12 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="orderDate"
+      bulkActions={(ctx) => <PurchaseOrderReactivateBulkAction {...ctx} />}
       hidePrint
+      labelOverrides={labelOverrides}
+      rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

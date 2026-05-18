@@ -12,10 +12,10 @@ const fields = [
   { key: 'origCountry', column: 'Orig_C_Country_ID', type: 'search', label: 'Country of Origin', section: 'other', reference: 'Country', inputMode: 'search', readOnlyLogic: (record) => record['iNTR_INVOICE'] === 'Y' },
   { key: 'nC8Code', column: 'NC8_Code', type: 'text', label: 'Commodity Code', section: 'other', readOnlyLogic: (record) => record['iNTR_INVOICE'] === 'Y' },
   { key: 'netMassKg', column: 'Netmass_Kg', type: 'number', label: 'Net Mass (Kg)', section: 'other', readOnlyLogic: (record) => record['iNTR_INVOICE'] === 'Y' },
-  { key: 'hasSuplementaryUnit', column: 'Hasunit', type: 'checkbox', label: 'Has Suplementary Unit', required: true, section: 'other', defaultValue: 'N', readOnlyLogic: (record) => record['iNTR_INVOICE'] === 'Y' },
+  { key: 'hasSuplementaryUnit', column: 'Hasunit', type: 'checkbox', label: 'Has Suplementary Unit', required: true, section: 'other', readOnlyLogic: (record) => record['iNTR_INVOICE'] === 'Y' },
   { key: 'conversionRate', column: 'Conversion', type: 'number', label: 'Conversion Rate', section: 'other', readOnlyLogic: (record) => record['iNTR_INVOICE'] === 'Y' },
-  { key: 'supplementaryUOM', column: 'Intr_C_Uom_ID', type: 'selector', label: 'Supplementary UOM', section: 'other', reference: 'Intr_C_Uom', inputMode: 'selector', readOnlyLogic: (record) => record['iNTR_INVOICE'] === 'Y' },
   { key: 'staticalValue', column: 'Statical_Amt', type: 'number', label: 'Statical Value', section: 'other', readOnlyLogic: (record) => record['iNTR_INVOICE'] === 'Y' },
+  { key: 'supplementaryUOM', column: 'Intr_C_Uom_ID', type: 'selector', label: 'Supplementary UOM', section: 'other', reference: 'Intr_C_Uom', inputMode: 'selector', readOnlyLogic: (record) => record['iNTR_INVOICE'] === 'Y' },
 ];
 // @sf-generated-end fields:intrastat
 
@@ -23,5 +23,5 @@ const fields = [
 export default function IntrastatForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-IntrastatForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:IntrastatForm

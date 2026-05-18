@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import FinPaymentTable from './FinPaymentTable';
 import FinPaymentForm from './FinPaymentForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
 import PaymentBottomPanel from '../../../custom/PaymentBottomPanel';
 import PaymentActivityToggle from '../../../custom/PaymentActivityToggle';
 import NewPaymentModal from '../../../custom/NewPaymentModal';
@@ -36,9 +37,13 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:finPayment
 
+// @sf-generated-start requiredHeaderFields:finPayment
+const requiredHeaderFields = [];
+// @sf-generated-end requiredHeaderFields:finPayment
 
 
-const api = {
+
+export const api = {
   "specName": "payment-in",
   "baseUrl": "/sws/neo/payment-in",
   "crud": {
@@ -173,10 +178,13 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=payment-inDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "finance"
   }
 };
 
@@ -200,14 +208,16 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
       api={api}
         documentPreview={{ titlePrefix: 'Payment', pdfUrl: null }}
         hideDeleteWhenComplete
+        customTabsAfterBottom
         notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "FIN_Payment", config: {} } }]}
         bottomSection={PaymentBottomPanel}
         topbarRight={PaymentActivityToggle}
         menuActions={({ status }) => [
           { key: 'reverse', label: 'Reverse Payment', destructive: true, visible: ["RPPC","RPR","RDNC"].includes(status), columnName: 'aPRMReversePayment',  }
         ]}
         salesTheme
+        sendDocument
         {...props}
       />
     );
@@ -222,6 +232,9 @@ export default function FinPaymentPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="paymentDate"
+      rowQuickActions={{}}
+      sendDocument
       {...props}
       onNew={() => setShowNewModal(true)}
     />

@@ -1,20 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { FileText, Printer, FileDown, FileSpreadsheet, Eye, Loader2, X, ArrowLeft, ChevronDown, Search, MoreVertical, Plus, Bell, Sparkles, Mic } from 'lucide-react';
+import { FileText, Printer, FileDown, FileSpreadsheet, Eye, Loader2, X, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DateField } from '@/components/ui/date-field';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import ProductSearchDrawer from '@/components/contract-ui/ProductSearchDrawer.jsx';
-import LocaleSwitcher from '@/components/LocaleSwitcher.jsx';
-import { UserAvatarButton } from '@/components/UserAvatarButton.jsx';
-
-const FORMATS = [
-  { id: 'preview', label: 'Preview', icon: Eye },
-  { id: 'pdf', label: 'PDF', icon: FileDown },
-  { id: 'xlsx', label: 'Excel', icon: FileSpreadsheet },
-  { id: 'csv', label: 'CSV', icon: FileText },
-];
+import { useSetPageMeta } from '@/components/layout/PageMetaContext';
+import { useFavorites } from '@/components/layout/FavoritesContext';
 
 // Etendo context path prefix (e.g. "/etendo" in production, "" in local dev where
 // Vite proxies /sws/* directly). Same logic as auth/api.js detectBaseUrl().
@@ -160,7 +154,7 @@ function SelectorPopup({ open, onClose, onSelect, selector, title, extraParams =
             </button>
           ))}
           <div ref={sentinelRef} className="py-1 flex justify-center">
-            {loadingMore && <span className="text-xs text-muted-foreground">Loading more...</span>}
+            {loadingMore && <span className="text-xs text-muted-foreground">{ui('loadingMore')}</span>}
           </div>
         </div>
       </div>
@@ -495,7 +489,7 @@ function PopupMultiSelector({ selector, label, onChange }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={e => { if (e.target === e.currentTarget) setOpen(false); }}>
           <div className="bg-white rounded-xl shadow-2xl w-[480px] max-h-[560px] flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
-              <h3 className="text-sm font-semibold">Select {label}</h3>
+              <h3 className="text-sm font-semibold">{ui('selectLabelPrefix')} {label}</h3>
               <button onClick={() => setOpen(false)} className="text-lg leading-none text-muted-foreground hover:text-foreground">&times;</button>
             </div>
             <div className="px-4 py-2 border-b border-border/30">
@@ -612,7 +606,7 @@ function SingleSelectModal({ selector, label, value, displayValue, onChange, has
                 type="text"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="Search..."
+                placeholder={ui('searchPlaceholder')}
                 className="w-full h-8 px-2 text-sm border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
             </div>
@@ -641,9 +635,9 @@ function SingleSelectModal({ selector, label, value, displayValue, onChange, has
 }
 
 const SIDEBAR_SECTIONS = [
-  { key: 'primary', label: 'reportScope' },
-  { key: 'dimensions', label: 'refineDimensions' },
-  { key: 'options', label: 'displayOptions' },
+  { key: 'primary', labelKey: 'reportScope' },
+  { key: 'dimensions', labelKey: 'refineDimensions' },
+  { key: 'options', labelKey: 'displayOptions' },
 ];
 
 function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, resetKey, token, selectedOrgId, roleOrgIds }) {
@@ -736,7 +730,7 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
                 ><X className="h-3.5 w-3.5" /></button>
               )}
             </div>
-            {hasError && <p className="text-[10px] text-destructive mt-1">Required</p>}
+            {hasError && <p className="text-[10px] text-destructive mt-1">{ui('required')}</p>}
           </div>
         );
       }
@@ -764,7 +758,7 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
             roleOrgIds={roleOrgIds}
             selectedWarehouseId={params.M_Warehouse_ID || ''}
           />
-          {hasError && <p className="text-[10px] text-destructive mt-1">Required</p>}
+          {hasError && <p className="text-[10px] text-destructive mt-1">{ui('required')}</p>}
         </div>
       );
     }
@@ -814,17 +808,31 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
       );
     }
 
-    // date, number, text
+    if (p.type === 'date') {
+      return (
+        <div key={p.name}>
+          {labelEl}
+          <DateField
+            value={params[p.name] || ''}
+            onChange={(iso) => handleChange(p.name, iso)}
+            className={errorBorder}
+          />
+          {hasError && <p className="text-[10px] text-destructive mt-1">{ui('required')}</p>}
+        </div>
+      );
+    }
+
+    // number, text
     return (
       <div key={p.name}>
         {labelEl}
         <input
-          type={p.type === 'date' ? 'date' : p.type === 'number' ? 'number' : 'text'}
+          type={p.type === 'number' ? 'number' : 'text'}
           value={params[p.name] || ''}
           onChange={e => handleChange(p.name, e.target.value)}
           className={`w-full h-9 px-2 text-sm rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary/30 border ${errorBorder}`}
         />
-        {hasError && <p className="text-[10px] text-destructive mt-1">Required</p>}
+        {hasError && <p className="text-[10px] text-destructive mt-1">{ui('required')}</p>}
       </div>
     );
   };
@@ -868,12 +876,12 @@ function ReportSidebar({ report, params, onChange, onSubmit, onReset, loading, r
 
       <div className="flex-1 overflow-y-auto">
         <div className="px-4 py-4 space-y-6">
-          {SIDEBAR_SECTIONS.map(({ key, label }) => {
+          {SIDEBAR_SECTIONS.map(({ key, labelKey }) => {
             const sectionParams = grouped[key];
             if (!sectionParams?.length) return null;
             return (
               <div key={key}>
-                <h4 className="text-xs font-semibold text-foreground mb-3">{ui(label)}</h4>
+                <h4 className="text-xs font-semibold text-foreground mb-3">{ui(labelKey)}</h4>
                 {renderSection(key, sectionParams)}
               </div>
             );
@@ -951,23 +959,23 @@ function DrillDownViewer({ report, token, baseParams, bpId, targetReportId, extr
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-2">
       <div className="flex items-center gap-2 px-1">
-        {[{ id: 'preview', label: 'Preview', icon: Eye }, { id: 'pdf', label: 'PDF', icon: FileDown }, { id: 'xlsx', label: 'Excel', icon: FileSpreadsheet }].map(f => (
+        {[{ id: 'preview', labelKey: 'preview', icon: Eye }, { id: 'pdf', labelKey: 'PDF', icon: FileDown }, { id: 'xlsx', labelKey: 'Excel', icon: FileSpreadsheet }].map(f => (
           <button key={f.id} onClick={() => fetchFormat(f.id)} disabled={loading}
             className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-medium border border-border bg-background hover:bg-muted disabled:opacity-50">
-            <f.icon className="h-3.5 w-3.5" />{f.label}
+            <f.icon className="h-3.5 w-3.5" />{ui(f.labelKey)}
           </button>
         ))}
       </div>
       <div className="flex-1 bg-white rounded-lg border border-border/30 overflow-hidden relative">
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 gap-2 text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" /><span>Loading details...</span>
+            <Loader2 className="h-5 w-5 animate-spin" /><span>{ui('loadingDetails')}</span>
           </div>
         )}
         {error && (
           <div className="absolute inset-0 flex items-center justify-center text-destructive text-sm px-8 text-center">{error}</div>
         )}
-        <iframe ref={iframeRef} title="Detail Report" className="w-full h-full border-0" />
+        <iframe ref={iframeRef} title={ui('detailReport')} className="w-full h-full border-0" />
       </div>
     </div>
   );
@@ -1120,69 +1128,31 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds, catego
     setResetKey(k => k + 1);
   };
 
+  const { toggleFavorite, isFavorite } = useFavorites();
   const title = report.title?.[locale] || report.title?.en_US || report.title?.es_ES || report.id;
   const categoryLabel = categoryFilter && CATEGORY_LABELS[categoryFilter]
     ? tMenu(CATEGORY_LABELS[categoryFilter].en)
     : null;
   const breadcrumb = [categoryLabel, tMenu('Reports'), title].filter(Boolean).join(' / ');
+  const favKey = categoryFilter
+    ? `report-viewer?category=${categoryFilter}&report=${report.id}`
+    : `report-viewer?report=${report.id}`;
+  const favActive = isFavorite(favKey);
+
+  const favLabel = report.title?.en_US || report.title?.en || report.id;
+  const favLabels = report.title && typeof report.title === 'object' ? report.title : undefined;
+  useSetPageMeta({ title, breadcrumb, onBack, onAddToFavorites: () => toggleFavorite(favKey, favLabel, favLabels), isFavorite: favActive }, [favActive]);
+
   const DOWNLOAD_FORMATS = [
-    { id: 'html', label: 'preview', icon: Eye },
-    { id: 'pdf', label: 'PDF', icon: FileDown },
-    { id: 'xlsx', label: 'Excel', icon: FileSpreadsheet },
-    { id: 'csv', label: 'CSV', icon: FileText },
+    { id: 'html', labelKey: 'preview', icon: Eye },
+    { id: 'pdf', labelKey: 'PDF', icon: FileDown },
+    { id: 'xlsx', labelKey: 'Excel', icon: FileSpreadsheet },
+    { id: 'csv', labelKey: 'CSV', icon: FileText },
   ];
 
   return (
     <>
-      <div className="h-full flex flex-col">
-        {/* ===== Main header ===== */}
-        <div className="px-6 pt-3 pb-3 shrink-0">
-          <div className="flex items-center gap-4">
-            {/* Left: back + title + menu */}
-            <div className="shrink-0">
-              <div className="flex items-center gap-2">
-                <button onClick={onBack} className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-                  <ArrowLeft className="h-4 w-4" />
-                </button>
-                <h1 className="text-xl font-bold text-foreground">{title}</h1>
-                <button className="text-muted-foreground hover:text-foreground">
-                  <MoreVertical className="h-4 w-4" />
-                </button>
-              </div>
-              {breadcrumb && (
-                <p className="text-sm text-muted-foreground mt-0.5 pl-10">{breadcrumb}</p>
-              )}
-            </div>
-
-            {/* Center: global search */}
-            <div className="flex-1 flex justify-center">
-              <div className="relative w-full max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder={ui('searchPlaceholder')}
-                  readOnly
-                  tabIndex={-1}
-                  className="w-full h-9 rounded-lg border border-border/50 bg-white/60 pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none transition-colors cursor-default"
-                />
-                <Mic className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
-              </div>
-            </div>
-
-            {/* Right: action icons */}
-            <div className="flex items-center gap-1 shrink-0">
-              <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-                <Sparkles className="h-4 w-4" />
-              </button>
-              <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-                <Bell className="h-4 w-4" />
-              </button>
-              <LocaleSwitcher />
-              <UserAvatarButton />
-            </div>
-          </div>
-        </div>
-
+      <div className="flex-1 min-h-0 flex flex-col">
         {/* ===== Content: sidebar + right panel ===== */}
         <div className="flex-1 flex overflow-hidden">
           {/* Left sidebar */}
@@ -1215,7 +1185,7 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds, catego
                   return (
                     <button key={fmt.id} onClick={() => renderReport(fmt.id)} disabled={loading}
                       className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium border border-border bg-white text-foreground hover:bg-muted/50 disabled:opacity-40">
-                      <Icon className="h-3.5 w-3.5" />{ui(fmt.label)}
+                      <Icon className="h-3.5 w-3.5" />{ui(fmt.labelKey)}
                     </button>
                   );
                 })}
@@ -1232,7 +1202,7 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds, catego
             <div className="bg-white rounded-lg shadow-sm h-full overflow-hidden relative border border-border/30">
               {loading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 gap-2 text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin" /><span>Rendering report...</span>
+                  <Loader2 className="h-5 w-5 animate-spin" /><span>{ui('renderingReport')}</span>
                 </div>
               )}
               {error && (
@@ -1267,7 +1237,7 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds, catego
                   </div>
                 </div>
               )}
-              <iframe ref={iframeRef} title="Report" className="w-full h-full border-0" />
+              <iframe ref={iframeRef} title={ui('report')} className="w-full h-full border-0" />
             </div>
           </div>
         </div>
@@ -1278,7 +1248,7 @@ function ReportViewer({ report, onBack, token, selectedOrgId, roleOrgIds, catego
       <Dialog open={!!drillDownBp} onOpenChange={(o) => !o && setDrillDownBp(null)}>
         <DialogContent className="max-w-5xl w-[85vw] h-[70vh] flex flex-col gap-3 p-4">
           <DialogHeader className="shrink-0">
-            <DialogTitle>{drillDownBp?.name} — Details</DialogTitle>
+            <DialogTitle>{drillDownBp?.name}{ui('detailsSuffix')}</DialogTitle>
           </DialogHeader>
           {drillDownBp && (
             <DrillDownViewer
@@ -1331,14 +1301,80 @@ const CATEGORY_LABELS = {
   other: { en: 'Other', es: 'Otros' },
 };
 
+function ReportList({ reports, loading, searchQuery, setSearchQuery, categoryFilter, selectReport, locale, localeLangKey }) {
+  const tMenu = useMenuLabel();
+  const ui = useUI();
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const favKey = categoryFilter ? `report-viewer?category=${categoryFilter}` : 'report-viewer';
+  const favActive = isFavorite(favKey);
+
+  const categoryBreadcrumb = categoryFilter && CATEGORY_LABELS[categoryFilter]
+    ? tMenu(CATEGORY_LABELS[categoryFilter].en)
+    : null;
+  const breadcrumb = categoryBreadcrumb ? `${categoryBreadcrumb} / ${tMenu('Reports')}` : null;
+
+  useSetPageMeta({
+    title: tMenu('Reports'),
+    breadcrumb,
+    onAddToFavorites: () => toggleFavorite(favKey, 'Reports'),
+    isFavorite: favActive,
+  }, [favActive]);
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filtered = reports.filter(r => {
+    const matchesCategory = !categoryFilter || r.category === categoryFilter;
+    if (!matchesCategory) return false;
+    if (!normalizedQuery) return true;
+    const title = (r.title?.[locale] || r.title?.en_US || r.title?.es_ES || r.id || '').toLowerCase();
+    return title.includes(normalizedQuery);
+  });
+
+  const grouped = {};
+  for (const r of filtered) {
+    const cat = r.category || 'other';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(r);
+  }
+
+  return (
+    <div className="flex-1 min-h-0 overflow-auto px-6 py-6">
+      {loading ? (
+        <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" /> {ui('loading')}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center text-muted-foreground py-12">
+          <FileText className="h-10 w-10 mx-auto mb-3 opacity-30" />
+          <p>{ui('noResults')}</p>
+        </div>
+      ) : (
+        <div className="space-y-6 max-w-2xl">
+          {Object.entries(grouped).map(([cat, catReports]) => (
+            <div key={cat}>
+              {!categoryFilter && Object.keys(grouped).length > 1 && (
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                  {CATEGORY_LABELS[cat]?.[localeLangKey] || cat}
+                </h2>
+              )}
+              <div className="grid gap-3">
+                {catReports.map(r => (
+                  <ReportCard key={r.id} report={r} onRun={selectReport} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ReportViewerPage() {
   const { token, selectedRole, selectedOrg } = useAuth();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
-  const tMenu = useMenuLabel();
-  const ui = useUI();
   const { locale } = useLocaleSwitch();
   const localeLangKey = locale === 'es_ES' ? 'es' : 'en';
   const categoryFilter = searchParams.get('category');
@@ -1379,110 +1415,16 @@ export default function ReportViewerPage() {
     );
   }
 
-  // Group reports by category, optionally filtering
-  const normalizedQuery = searchQuery.trim().toLowerCase();
-  const filtered = reports.filter(r => {
-    const matchesCategory = !categoryFilter || r.category === categoryFilter;
-    if (!matchesCategory) return false;
-    if (!normalizedQuery) return true;
-    const title = (r.title?.[locale] || r.title?.en_US || r.title?.es_ES || r.id || '').toLowerCase();
-    return title.includes(normalizedQuery);
-  });
-
-  const grouped = {};
-  for (const r of filtered) {
-    const cat = r.category || 'other';
-    if (!grouped[cat]) grouped[cat] = [];
-    grouped[cat].push(r);
-  }
-
-  const categoryTitle = categoryFilter && CATEGORY_LABELS[categoryFilter]
-    ? CATEGORY_LABELS[categoryFilter].es
-    : null;
-
-  const categoryBreadcrumb = categoryFilter && CATEGORY_LABELS[categoryFilter]
-    ? tMenu(CATEGORY_LABELS[categoryFilter].en)
-    : null;
-  const breadcrumb = categoryBreadcrumb ? `${categoryBreadcrumb} / ${tMenu('Reports')}` : null;
-
   return (
-    <div className="h-full flex flex-col">
-      <div className="px-6 pt-3 pb-3">
-        <div className="flex items-center gap-4">
-          {/* Left: title + menu */}
-          <div className="shrink-0">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-foreground">{tMenu('Reports')}</h1>
-              <button className="text-muted-foreground hover:text-foreground">
-                <MoreVertical className="h-4 w-4" />
-              </button>
-            </div>
-            {breadcrumb && (
-              <p className="text-sm text-muted-foreground mt-0.5">{breadcrumb}</p>
-            )}
-          </div>
-
-          {/* Center: global search */}
-          <div className="flex-1 flex justify-center">
-            <div className="relative w-full max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder={ui('searchPlaceholder')}
-                className="w-full h-9 rounded-lg border border-border/50 bg-white/60 pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-colors"
-              />
-              <Mic className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40" />
-            </div>
-          </div>
-
-          {/* Right: action icons */}
-          <div className="flex items-center gap-1 shrink-0">
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-              <Sparkles className="h-4 w-4" />
-            </button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-              <Plus className="h-4 w-4" />
-            </button>
-            <button className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-              <Bell className="h-4 w-4" />
-            </button>
-            <LocaleSwitcher />
-            <UserAvatarButton />
-          </div>
-        </div>
-      </div>
-      <div className="flex-1 overflow-auto px-6 pb-6">
-        {loading ? (
-          <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" /> Loading reports...
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center text-muted-foreground py-12">
-            <FileText className="h-10 w-10 mx-auto mb-3 opacity-30" />
-            <p>No reports found</p>
-            <p className="text-xs mt-1">No reports configured yet</p>
-          </div>
-        ) : (
-          <div className="space-y-6 max-w-2xl">
-            {Object.entries(grouped).map(([cat, catReports]) => (
-              <div key={cat}>
-                {!categoryFilter && Object.keys(grouped).length > 1 && (
-                  <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                    {CATEGORY_LABELS[cat]?.[localeLangKey] || cat}
-                  </h2>
-                )}
-                <div className="grid gap-3">
-                  {catReports.map(r => (
-                    <ReportCard key={r.id} report={r} onRun={selectReport} />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+    <ReportList
+      reports={reports}
+      loading={loading}
+      searchQuery={searchQuery}
+      setSearchQuery={setSearchQuery}
+      categoryFilter={categoryFilter}
+      selectReport={selectReport}
+      locale={locale}
+      localeLangKey={localeLangKey}
+    />
   );
 }

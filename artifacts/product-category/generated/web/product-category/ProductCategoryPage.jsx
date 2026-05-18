@@ -4,6 +4,7 @@ import ProductCategoryTable from './ProductCategoryTable';
 import ProductCategoryForm from './ProductCategoryForm';
 import AssignedProductsTable from './AssignedProductsTable';
 import AssignedProductsForm from './AssignedProductsForm';
+import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 
 
@@ -32,6 +33,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:productCategory
 
+// @sf-generated-start requiredHeaderFields:productCategory
+const requiredHeaderFields = ['searchKey', 'name', 'default', 'summaryLevel'];
+// @sf-generated-end requiredHeaderFields:productCategory
+
 // @sf-generated-start addLineFields:assignedProducts
 const addLineFields = {
   entry: [
@@ -46,7 +51,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:assignedProducts
 
-const api = {
+export const api = {
   "specName": "product-category",
   "baseUrl": "/sws/neo/product-category",
   "crud": {
@@ -155,16 +160,18 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=product-categoryDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "inventory"
   }
 };
 
 // @sf-generated-start component:ProductCategoryPage
 export default function ProductCategoryPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -185,6 +192,8 @@ export default function ProductCategoryPage({ windowName, recordId, ...props }) 
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_Product_Category", config: {} } }]}
+        requiredHeaderFields={requiredHeaderFields}
         {...props}
       />
     );
@@ -198,6 +207,7 @@ export default function ProductCategoryPage({ windowName, recordId, ...props }) 
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      rowQuickActions={{}}
       {...props}
     />
   );

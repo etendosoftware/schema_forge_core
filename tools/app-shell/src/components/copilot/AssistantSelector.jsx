@@ -37,7 +37,7 @@ export function AssistantSelector({
   }, [assistants, filter, featuredOnly]);
 
   return (
-    <div className="flex flex-1 flex-col p-4">
+    <div className="flex flex-1 min-h-0 flex-col p-4">
       {/* Welcome message */}
       <div className="rounded-lg border border-border/60 bg-muted/40 p-3 text-sm text-foreground">
         {welcomeMessage || ui('copilotWelcome')}
@@ -64,12 +64,13 @@ export function AssistantSelector({
 
       {/* Assistant grid */}
       <div className="mt-4 flex-1 overflow-y-auto">
-        {isLoading ? (
+        {isLoading && (
           <div className="flex h-full items-center justify-center gap-2 text-sm text-muted-foreground">
             <LoaderCircle className="h-4 w-4 animate-spin" />
             <span>{ui('copilotLoadingAssistants')}</span>
           </div>
-        ) : filteredAssistants.length > 0 ? (
+        )}
+        {!isLoading && filteredAssistants.length > 0 && (
           <div className="flex flex-col gap-2">
             {filteredAssistants.map((assistant) => (
               <button
@@ -92,7 +93,8 @@ export function AssistantSelector({
               </button>
             ))}
           </div>
-        ) : (
+        )}
+        {!isLoading && filteredAssistants.length === 0 && (
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
             {error || ui('copilotNoAssistants')}
           </div>

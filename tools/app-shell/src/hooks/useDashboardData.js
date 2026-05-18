@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { kpisConfig, actions } from '@generated/dashboard/generated/config';
 import { useAuth } from '@/auth/AuthContext';
 import { createDashboardNavigation } from '@/lib/dashboardNavigation.js';
+import { useDashboardDateRange } from '@/components/dashboard/DashboardDateRangeContext';
 
 /* ------------------------------------------------------------------
  * Constants
@@ -25,8 +26,9 @@ function getApiBase() {
  * Fetch a dashboard widget endpoint.
  * All widget endpoints live under /sws/neo/dashboard/{entity}.
  */
-async function fetchWidget(apiBase, token, entity) {
-  const url = `${apiBase}/sws/neo/dashboard/${entity}`;
+async function fetchWidget(apiBase, token, entity, range) {
+  const qs = range ? `?range=${encodeURIComponent(range)}` : '';
+  const url = `${apiBase}/sws/neo/dashboard/${entity}${qs}`;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
 
@@ -64,7 +66,8 @@ function fmtAmount(n) {
  * Handler returns: [{key, label, value, format, trend, icon}, ...]
  */
 function mapKpis(handlerData) {
-  if (!handlerData || handlerData.length === 0) return null;
+  if (!handlerData) return null;
+  if (handlerData.length === 0) return [];
 
   // Build a lookup from handler data keyed by `key`
   const byKey = {};
@@ -142,16 +145,14 @@ function mapPendingTasks(handlerData) {
       const FILTER_LINKS = {
         overdueInvoices: '/sales-invoice?filter=overdue',
         overdueInvoices_plural: '/sales-invoice?filter=overdue',
-        salesOrdersToConfirm: '/sales-order?DocStatus=DR',
-        salesOrdersToConfirm_plural: '/sales-order?DocStatus=DR',
-        salesInvoicesToConfirm: '/sales-invoice?DocStatus=DR',
-        salesInvoicesToConfirm_plural: '/sales-invoice?DocStatus=DR',
-        pendingShipments: '/goods-shipment?DocStatus=DR',
-        pendingShipments_plural: '/goods-shipment?DocStatus=DR',
-        purchaseOrdersToConfirm: '/purchase-order?DocStatus=DR',
-        purchaseOrdersToConfirm_plural: '/purchase-order?DocStatus=DR',
-        purchaseInvoicesToConfirm: '/purchase-invoice?DocStatus=DR',
-        purchaseInvoicesToConfirm_plural: '/purchase-invoice?DocStatus=DR',
+        collectionsDueToday: '/sales-invoice?filter=overdue',
+        collectionsDueToday_plural: '/sales-invoice?filter=overdue',
+        paymentsDueToday: '/purchase-invoice?filter=overdue',
+        paymentsDueToday_plural: '/purchase-invoice?filter=overdue',
+        pendingReceptions: '/purchase-order?filter=pendingDelivery',
+        pendingReceptions_plural: '/purchase-order?filter=pendingDelivery',
+        pendingSalesDeliveries: '/sales-order?filter=pendingDelivery',
+        pendingSalesDeliveries_plural: '/sales-order?filter=pendingDelivery',
       };
       if (FILTER_LINKS[mapped.taskKey]) {
         mapped.link = FILTER_LINKS[mapped.taskKey];
@@ -169,20 +170,17 @@ function inferPendingTaskKey(task) {
   if (task?.link === '/sales-invoice' || text.includes('overdue invoices')) {
     return task?.count === 1 ? 'overdueInvoices' : 'overdueInvoices_plural';
   }
-  if (task?.link?.startsWith('/sales-order') || (text.includes('sales order') && text.includes('pending confirmation'))) {
-    return task?.count === 1 ? 'salesOrdersToConfirm' : 'salesOrdersToConfirm_plural';
+  if (task?.link?.startsWith('/purchase-order?filter=pendingDelivery') || text.includes('pending reception')) {
+    return task?.count === 1 ? 'pendingReceptions' : 'pendingReceptions_plural';
   }
-  if (task?.link?.startsWith('/sales-invoice?DocStatus=DR') || (text.includes('sales invoice') && text.includes('pending confirmation'))) {
-    return task?.count === 1 ? 'salesInvoicesToConfirm' : 'salesInvoicesToConfirm_plural';
+  if (task?.link?.startsWith('/sales-order?filter=pendingDelivery') || text.includes('pending delivery')) {
+    return task?.count === 1 ? 'pendingSalesDeliveries' : 'pendingSalesDeliveries_plural';
   }
-  if (task?.link?.startsWith('/goods-shipment') || text.includes('pending shipment')) {
-    return task?.count === 1 ? 'pendingShipments' : 'pendingShipments_plural';
+  if (text.includes('collection') && text.includes('due today')) {
+    return task?.count === 1 ? 'collectionsDueToday' : 'collectionsDueToday_plural';
   }
-  if (task?.link?.startsWith('/purchase-order') || text.includes('purchase orders to confirm')) {
-    return task?.count === 1 ? 'purchaseOrdersToConfirm' : 'purchaseOrdersToConfirm_plural';
-  }
-  if (task?.link?.startsWith('/purchase-invoice') || (text.includes('purchase invoice') && text.includes('pending confirmation'))) {
-    return task?.count === 1 ? 'purchaseInvoicesToConfirm' : 'purchaseInvoicesToConfirm_plural';
+  if (text.includes('payment') && text.includes('due today')) {
+    return task?.count === 1 ? 'paymentsDueToday' : 'paymentsDueToday_plural';
   }
   if (task?.link === '/physical-inventory' || text.includes('low stock alert')) {
     return task?.count === 1 ? 'lowStockAlert' : 'lowStockAlerts';
@@ -240,6 +238,7 @@ function mapRecentInvoices(handlerData) {
     .filter((inv) => isWithinLastDays(inv?.date, 7))
     .map((inv) => ({
       id: inv.id || '',
+      documentNo: inv.documentNo || inv.document_no || inv.docNo || null,
       client: inv.client || '',
       date: inv.date || '',
       amount: inv.amount || 0,
@@ -259,9 +258,11 @@ function mapRecentInvoices(handlerData) {
 function mapBestProducts(handlerData) {
   if (!handlerData || handlerData.length === 0) return null;
   return handlerData.map((p) => ({
+    id: p.id || p.productId || p.mProductId || '',
     name: p.name || '',
     qty: p.qty || 0,
     amount: p.amount || 0,
+    trendPct: p.trendPct ?? null,
   }));
 }
 
@@ -272,9 +273,11 @@ function mapBestProducts(handlerData) {
 function mapBestSellers(handlerData) {
   if (!handlerData || handlerData.length === 0) return null;
   return handlerData.map((s) => ({
+    id: s.id || s.productId || s.mProductId || '',
     name: s.name || '',
     qty: s.qty || 0,
     uom: s.uom || '',
+    trendPct: s.trendPct ?? null,
   }));
 }
 
@@ -370,6 +373,7 @@ function buildEmptyFallback() {
  */
 export function useDashboardData() {
   const { token } = useAuth();
+  const { range } = useDashboardDateRange();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -389,15 +393,15 @@ export function useDashboardData() {
         invoicesRes, bestProductsRes, bestSellersRes, pendingAmountsRes,
         topClientsRes,
       ] = await Promise.allSettled([
-        fetchWidget(apiBase, token, 'kpis'),
-        fetchWidget(apiBase, token, 'trends'),
-        fetchWidget(apiBase, token, 'pending-tasks'),
-        fetchWidget(apiBase, token, 'activity'),
-        fetchWidget(apiBase, token, 'recent-invoices'),
-        fetchWidget(apiBase, token, 'best-products'),
-        fetchWidget(apiBase, token, 'best-sellers'),
-        fetchWidget(apiBase, token, 'pending-amounts'),
-        fetchWidget(apiBase, token, 'top-clients'),
+        fetchWidget(apiBase, token, 'kpis', range),
+        fetchWidget(apiBase, token, 'trends', range),
+        fetchWidget(apiBase, token, 'pending-tasks', range),
+        fetchWidget(apiBase, token, 'activity', range),
+        fetchWidget(apiBase, token, 'recent-invoices', range),
+        fetchWidget(apiBase, token, 'best-products', range),
+        fetchWidget(apiBase, token, 'best-sellers', range),
+        fetchWidget(apiBase, token, 'pending-amounts', range),
+        fetchWidget(apiBase, token, 'top-clients', range),
       ]);
 
       const kpisData    = kpisRes.status    === 'fulfilled' ? kpisRes.value    : null;
@@ -438,7 +442,7 @@ export function useDashboardData() {
       const mappedTrends = mapTrends(trendsData);
 
       setData({
-        kpis: mappedKpis ?? empty.kpis,
+        kpis: mappedKpis !== null ? mappedKpis : empty.kpis,
         revenueTrend: mappedTrends ?? empty.revenueTrend,
         expenseTrend: mappedTrends?.expenseValues ?? [],
         topClients: mapTopClients(topClientsData) ?? [],
@@ -455,7 +459,7 @@ export function useDashboardData() {
     } finally {
       setLoading(false);
     }
-  }, [token, apiBase]);
+  }, [token, apiBase, range]);
 
   useEffect(() => {
     fetchData();

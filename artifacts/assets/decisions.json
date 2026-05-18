@@ -26,12 +26,20 @@
     "secondaryTabs": {},
     "detailEntity": null,
     "primaryTabs": [
-      { "key": "general", "label": "Overview" },
-      { "key": "configuration", "label": "Depreciation Setup", "panel": "AssetsConfigPanel" }
+      {
+        "key": "general",
+        "label": "Overview"
+      },
+      {
+        "key": "configuration",
+        "label": "Depreciation Setup",
+        "panel": "AssetsConfigPanel"
+      }
     ],
     "headerExtra": {
       "customForm": "AssetsAmortizationPanel"
-    }
+    },
+    "dateFilterKey": "purchaseDate"
   },
   "entities": {
     "assets": {

@@ -2,13 +2,13 @@ import { EntityForm } from '@/components/contract-ui';
 
 // @sf-generated-start fields:quotationLine
 const fields = [
-  { key: 'product', column: 'M_Product_ID', type: 'search', label: 'Product', required: true, section: 'principal', reference: 'Product', inputMode: 'search', readOnlyLogic: (record) => record['processed'] === true },
+  { key: 'product', column: 'M_Product_ID', type: 'search', label: 'Product', required: true, lookup: true, section: 'principal', reference: 'Product', inputMode: 'search', readOnlyLogic: (record) => record['processed'] === true },
+  { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'principal' },
   { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', label: 'Ordered Quantity', required: true, section: 'principal', defaultValue: '1', readOnlySource: 'server', readOnlyLogicReason: 'session-variable' },
-  { key: 'unitPrice', column: 'PriceActual', type: 'number', label: 'Net Unit Price', required: true, section: 'principal', readOnlyLogic: (record) => record['processed'] === true || record['gROSSPRICE'] === 'Y' },
-  { key: 'lineNetAmount', column: 'LineNetAmt', type: 'number', label: 'Line Net Amount', required: true, readOnly: true, section: 'other', readOnlyLogic: (record) => record['editLineAmount'] !== true || record['gROSSPRICE'] === 'Y' },
-  { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', required: true, section: 'principal', reference: 'Tax', inputMode: 'selector', readOnlyLogic: (record) => record['processed'] === true },
+  { key: 'listPrice', column: 'PriceList', type: 'number', label: 'Net List Price', required: true, section: 'principal', readOnlyLogic: (record) => record['processed'] === true },
   { key: 'discount', column: 'Discount', type: 'number', label: 'Discount', section: 'other', defaultValue: '0', readOnlyLogic: (record) => record['processed'] === true },
-  { key: 'description', column: 'Description', type: 'textarea', label: 'Description', section: 'other' },
+  { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', required: true, section: 'other', reference: 'Tax', inputMode: 'selector', readOnlyLogic: (record) => record['processed'] === true },
+  { key: 'lineGrossAmount', column: 'Line_Gross_Amount', type: 'number', label: 'Line Gross Amount', readOnly: true, section: 'principal', defaultValue: '0' },
 ];
 // @sf-generated-end fields:quotationLine
 
@@ -16,5 +16,5 @@ const fields = [
 export default function QuotationLineForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-QuotationLineForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:QuotationLineForm

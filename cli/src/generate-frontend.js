@@ -29,6 +29,9 @@ function resolveCustomImport(specName, component, appShellDir) {
   if (existsSync(resolve(`tools/app-shell/src/windows/custom/${dir}/${component}.jsx`))) {
     return `'@/windows/custom/${dir}/${component}'`;
   }
+  if (existsSync(resolve(`tools/app-shell/src/windows/custom/shared/${component}.jsx`))) {
+    return `'@/windows/custom/shared/${component}'`;
+  }
   // Default: artifact-local convention for newly created windows
   return `'../../../custom/${component}'`;
 }
@@ -39,6 +42,17 @@ function resolveCustomImport(specName, component, appShellDir) {
 export function capitalize(s) {
   if (!s) return '';
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/**
+ * Capitalize and strip characters that are invalid in a JS identifier.
+ * Needed when entity/tab names contain parens, accents or spaces
+ * (e.g. "issuedInvoices(previousPeriod)" → "IssuedInvoicespreviousPeriod").
+ */
+export function toJsIdentifier(s) {
+  if (!s) return '';
+  const capped = s.charAt(0).toUpperCase() + s.slice(1);
+  return capped.replace(/[^a-zA-Z0-9_$]/g, '');
 }
 
 /**
@@ -90,6 +104,15 @@ export function getReadOnlyFields(contract, entityName) {
 }
 
 /**
+ * Etendo session/system macros (`@#Date@`, `@#User@`, `@#Client@`, ...) are
+ * resolved server-side by NeoDefaultsService. Emitting them as a frontend
+ * defaultValue would leak the literal token into inputs, so skip them here.
+ */
+function isEtendoSessionMacro(value) {
+  return typeof value === 'string' && /^@#[\w]+@$/.test(value);
+}
+
+/**
  * Map a contract field type to a column/field type for the declarative config.
  */
 function mapFieldType(field) {
@@ -107,6 +130,7 @@ function mapFieldType(field) {
   if (field.type === 'amount') return 'amount';
   if (['number', 'integer', 'quantity', 'price', 'decimal'].includes(field.type)) return 'number';
   if (field.type === 'date') return 'date';
+  if (field.type === 'foreignKey') return 'selector';
   return 'string';
 }
 
@@ -146,7 +170,7 @@ export function generateTableComponent(entityName, contract) {
     gridFields.splice(pos - 1, 0, f);
   }
   const searchableFields = entity.searchableFields ?? [];
-  const compName = `${capitalize(entityName)}Table`;
+  const compName = `${toJsIdentifier(entityName)}Table`;
 
   // Collect known cell type render helpers needed by this table
   const neededCellTypes = new Set(gridFields.map(f => f.cellType).filter(Boolean));
@@ -154,7 +178,7 @@ export function generateTableComponent(entityName, contract) {
   const columnsArray = gridFields.map(f => {
     const type = mapFieldType(f);
     const selectionPart = f.isSelectionColumn ? ', isSelectionColumn: true' : '';
-    const enumLabelsPart = (type === 'enum' && f.enumValues?.length)
+    const enumLabelsPart = ((type === 'enum' || type === 'status') && f.enumValues?.length)
       ? `, enumLabels: { ${f.enumValues.map(o => `'${o.value}': '${o.name.replace(/'/g, "\\'")}'`).join(', ')} }`
       : '';
     const labelPart = f.label ? `, label: '${f.label.replace(/'/g, "\\'")}'` : '';
@@ -162,11 +186,22 @@ export function generateTableComponent(entityName, contract) {
     const badgePart = (f.badge && !f.cellType) ? ', badge: true' : '';
     const badgeLabelsPart = f.badgeLabels ? `, badgeLabels: ${JSON.stringify(f.badgeLabels)}` : '';
     const badgeColorsPart = f.badgeColors ? `, badgeColors: ${JSON.stringify(f.badgeColors)}` : '';
+    const badgeVariantsPart = f.badgeVariants ? `, badgeVariants: ${JSON.stringify(f.badgeVariants)}` : '';
+    const enumVariantsPart = f.enumVariants ? `, enumVariants: ${JSON.stringify(f.enumVariants)}` : '';
     const labelsPart = f.labels ? `, labels: ${JSON.stringify(f.labels)}` : '';
     const summablePart = f.summable ? ', summable: true' : '';
     const displayPart = f.display ? `, display: '${f.display}'` : '';
-    const renderPart = f.cellType === 'depreciationProgress' ? ', render: renderDepreciationProgress' : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${summablePart}${displayPart}${renderPart} },`;
+    let renderPart = '';
+    if (f.cellType === 'depreciationProgress') renderPart = ', render: renderDepreciationProgress';
+    else if (f.cellType === 'taxRate') renderPart = ', render: renderTaxRate';
+    else if (f.cellType === 'taxScope') renderPart = `, render: (row) => <TaxScopeCell row={row} fieldKey="${f.name}" />`;
+    // Flags consumed by InlineLinesPanel to drive inline-edit affordances:
+    //  - required → suppress the empty option in the SelectorInput dropdown.
+    //  - lookup / popup → swap the dropdown for a ProductSearchDrawer modal.
+    const requiredPart = f.required ? ', required: true' : '';
+    const lookupPart = f.lookup ? ', lookup: true' : '';
+    const popupPart = f.popup ? ', popup: true' : '';
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${popupPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -190,8 +225,40 @@ function renderDepreciationProgress(row) {
 }
 ` : '';
 
-  return `import { DataTable } from '@/components/contract-ui';
-${depreciationProgressHelper}
+  const taxRateHelper = neededCellTypes.has('taxRate') ? `
+function renderTaxRate(row) {
+  const val = row?.rate;
+  if (val == null) return '';
+  if (val > 0)  return <Tag variant="green"   label={\`+\${val} %\`} />;
+  if (val === 0) return <Tag variant="neutral" label="0 %" />;
+  return <Tag variant="red" label={\`\${val} %\`} />;
+}
+` : '';
+
+  const taxScopeHelper = neededCellTypes.has('taxScope') ? `
+function TaxScopeCell({ row, fieldKey }) {
+  const ui = useUI();
+  const value = fieldKey ? row?.[fieldKey] : (row?.applicableTo ?? row?.salesPurchaseType);
+  const showSales    = value === 'B' || value === 'S';
+  const showPurchase = value === 'B' || value === 'P';
+  if (!showSales && !showPurchase) return value ?? '';
+  return (
+    <span className="inline-flex items-center gap-1">
+      {showSales    && <Tag variant="blue"   label={ui('taxScopeSales')} />}
+      {showPurchase && <Tag variant="purple" label={ui('taxScopePurchase')} />}
+    </span>
+  );
+}
+` : '';
+
+  const needsTagImport = neededCellTypes.has('taxRate') || neededCellTypes.has('taxScope');
+  const tagImport = needsTagImport ? `import { Tag } from '@/components/ui/tag';\n` : '';
+  const needsUiImport = neededCellTypes.has('taxScope');
+  const uiImport = needsUiImport ? `import { useUI } from '@/i18n';\n` : '';
+
+  return `import { forwardRef } from 'react';
+import { DataTable, InlineLinesPanel } from '@/components/contract-ui';
+${tagImport}${uiImport}${depreciationProgressHelper}${taxRateHelper}${taxScopeHelper}
 ${MARKERS.GENERATED_START(`columns:${entityName}`)}
 const columns = [
 ${columnsArray}
@@ -201,9 +268,28 @@ ${MARKERS.GENERATED_END(`columns:${entityName}`)}
 const filters = [${filtersArray}];
 
 ${MARKERS.GENERATED_START(`component:${compName}`)}
-export default function ${compName}(props) {
+const ${compName} = forwardRef(function ${compName}(props, ref) {
+  // Inline-editable layout always uses InlineLinesPanel for existing rows so column
+  // widths (flex layout) never shift when the add-row form opens. When addRow is
+  // active we render a header-hidden, data-hidden DataTable below for just the
+  // add-row form — it owns callouts, selectors, validation and the imperative flush
+  // ref. The ref is forwarded to InlineLinesPanel so DetailView can flush pending
+  // inline edits on global save.
+  if (props.linesLayout === 'inlineEditable') {
+    if (props.addRow?.active) {
+      return (
+        <>
+          <InlineLinesPanel ref={ref} columns={columns} {...props} addRow={undefined} />
+          <DataTable columns={columns} filters={filters} {...props} hideHeader hideDataRows />
+        </>
+      );
+    }
+    return <InlineLinesPanel ref={ref} columns={columns} {...props} />;
+  }
   return <DataTable columns={columns} filters={filters} {...props} />;
-}
+});
+
+export default ${compName};
 ${MARKERS.GENERATED_END(`component:${compName}`)}
 `;
 }
@@ -226,7 +312,7 @@ export function generateFormComponent(entityName, contract) {
       if (b.seq != null) return 1;
       return 0;
     });
-  const compName = `${capitalize(entityName)}Form`;
+  const compName = `${toJsIdentifier(entityName)}Form`;
 
   // Classify fields into sections: first N editable non-readOnly fields are 'principal', rest are 'other'.
   // Fields with explicit section in the contract take precedence.
@@ -258,7 +344,15 @@ export function generateFormComponent(entityName, contract) {
     // Section classification
     const sectionPart = `, section: '${fieldSections[idx]}'`;
     // UI hints
-    const defaultValuePart = f.defaultValue ? `, defaultValue: '${f.defaultValue.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
+    // Skip redundant unchecked defaults on YESNO/checkbox fields: backend NeoDefaultsService
+    // already coerces missing/'N'/false to false, so emitting them only bloats generated files.
+    const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
+    const skipServerMacro = isEtendoSessionMacro(f.defaultValue);
+    const defaultValuePart = (!skipCheckboxDefault && !skipServerMacro && f.defaultValue !== undefined && f.defaultValue !== null && f.defaultValue !== '')
+      ? (typeof f.defaultValue === 'number'
+          ? `, defaultValue: ${f.defaultValue}`
+          : `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'`)
+      : '';
     const helpPart = f.help ? `, help: '${f.help.replace(/'/g, "\\'")}'` : '';
     const fieldGroupPart = f.fieldGroup ? `, fieldGroup: '${f.fieldGroup.replace(/'/g, "\\'")}'` : '';
     const precisionPart = f.precision ? `, precision: ${f.precision}` : '';
@@ -307,7 +401,7 @@ ${MARKERS.GENERATED_START(`component:${compName}`)}
 export default function ${compName}(props) {
   return <EntityForm fields={fields}${colsProp} {...props} />;
 }
-${compName}.hasCollapsedFields = ${hasCollapsed};
+${hasCollapsed ? `${compName}.hasCollapsedFields = true;\n` : ''}
 ${MARKERS.GENERATED_END(`component:${compName}`)}
 `;
 }
@@ -317,7 +411,7 @@ ${MARKERS.GENERATED_END(`component:${compName}`)}
  * Returns an object with { componentCode, lucideImports } strings.
  */
 function generateStatusBarComponent(headerEntity, statusBarConfig) {
-  const headerName = capitalize(headerEntity);
+  const headerName = toJsIdentifier(headerEntity);
   const { cards = [], progress } = statusBarConfig;
 
   // Collect unique lucide icon names
@@ -440,8 +534,8 @@ ${MARKERS.GENERATED_END(`statusBar:${headerEntity}`)}`;
  * Produces a thin declarative component that routes by recordId.
  */
 export function generatePageComponent(headerEntity, detailEntity, contract) {
-  const headerName = capitalize(headerEntity);
-  const detailName = detailEntity ? capitalize(detailEntity) : null;
+  const headerName = toJsIdentifier(headerEntity);
+  const detailName = detailEntity ? toJsIdentifier(detailEntity) : null;
   const compName = `${headerName}Page`;
   const layoutType = contract?.frontendContract?.window?.layoutType ?? 'default';
   const isGallery = layoutType === 'gallery';
@@ -456,6 +550,20 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // Status field gets a badge in the header; summary strip uses only fields with explicit section:'summary'.
   // Prefer DocStatus column (document workflow status) if present, even when form:false.
   const allEntityFields = contract.frontendContract.entities[headerEntity]?.fields ?? [];
+
+  // Required form fields on the header. DetailView uses this as the default
+  // gate for "+ Añadir línea" — the button only appears when all of these are
+  // filled in `data`. Windows can still override with their own addLineGuard
+  // prop for more complex business rules.
+  const requiredHeaderFieldNames = allEntityFields
+    .filter(f => f.required && f.form && f.visibility !== 'discarded' && f.visibility !== 'system')
+    .map(f => f.name);
+  // Built without a nested template literal (Sonar S4624): plain concat
+  // around each name keeps the outer template flat.
+  const quotedRequiredHeaderFields = requiredHeaderFieldNames.map(n => "'" + n + "'").join(', ');
+  const requiredHeaderFieldsArray = requiredHeaderFieldNames.length > 0
+    ? `[${quotedRequiredHeaderFields}]`
+    : '[]';
   const docStatusField = allEntityFields.find(f => f.column === 'DocStatus');
   const statusFieldOverride = contract.frontendContract.window.statusField;
   const statusField = statusFieldOverride
@@ -521,8 +629,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       }),
   ].join('\n');
 
-  // Separate entry fields (user types) from auto-derived fields (price, tax, discount, amount)
-  const autoPatterns = /price|tax|discount|amount|total|cost|net/i;
+  // Separate entry fields (user types) from auto-derived fields (price, tax, amount)
+  // Note: discount is intentionally excluded — it is user-editable and triggers SL_Order_Amt recalculation.
+  const autoPatterns = /price|tax|amount|total|cost|net/i;
   const derivedFields = detailEditableFields.filter(f =>
     autoPatterns.test(f.name) && !f.required && !f.reference
   );
@@ -545,14 +654,26 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const dependsOnPart = f.dependsOn
       ? `, dependsOn: { field: '${f.dependsOn.field}', filterKey: '${f.dependsOn.filterKey}' }`
       : '';
-    // Include defaultValue for quantity/numeric fields so the add-line form starts with a sensible value
+    // Include defaultValue for quantity/numeric fields so the add-line form starts with a sensible value.
+    // Skip redundant unchecked defaults on YESNO/checkbox fields (backend coerces to false anyway).
     const rawDv = f.defaultValue;
     let defaultValuePart = '';
-    if (rawDv !== undefined && rawDv !== null && rawDv !== '') {
+    const skipCheckboxDefault = type === 'checkbox' && (rawDv === 'N' || rawDv === false);
+    const skipServerMacro = isEtendoSessionMacro(rawDv);
+    if (!skipCheckboxDefault && !skipServerMacro && rawDv !== undefined && rawDv !== null && rawDv !== '') {
       const numDv = Number(rawDv);
       defaultValuePart = `, defaultValue: ${(!isNaN(numDv) && String(rawDv).trim() !== '') ? numDv : `'${String(rawDv).replace(/'/g, "\\'")}'`}`;
     }
-    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart} },`;
+    const forceCalloutFieldsPart = Array.isArray(f.forceCalloutFields) && f.forceCalloutFields.length > 0
+      ? `, forceCalloutFields: ${JSON.stringify(f.forceCalloutFields)}`
+      : '';
+    const lookupDrawerPart = f.lookupDrawer ? `, lookupDrawer: '${String(f.lookupDrawer).replace(/'/g, "\\'")}'` : '';
+    const lookupTitlePart = f.lookupTitle ? `, lookupTitle: '${String(f.lookupTitle).replace(/'/g, "\\'")}'` : '';
+    const onSelectMappingsPart = Array.isArray(f.onSelectMappings) && f.onSelectMappings.length > 0
+      ? `, onSelectMappings: ${JSON.stringify(f.onSelectMappings)}`
+      : '';
+    const displayFromCatalogPart = f.displayFromCatalog ? `, displayFromCatalog: true` : '';
+    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart} },`;
   }).join('\n');
 
   const derivedArray = derivedFields.map(f => {
@@ -563,7 +684,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${labelPart}${referencePart}${inputModePart} },`;
   }).join('\n');
 
-  const hiddenDefaultsArray = hiddenDefaultFields.map(f => {
+  const hiddenDefaultsArray = hiddenDefaultFields
+    .filter(f => !String(f.defaultValue).startsWith('@SQL=') && !isEtendoSessionMacro(f.defaultValue))
+    .map(f => {
     const rawDefault = String(f.defaultValue);
     const parentColMatch = rawDefault.match(/^@(\w+)@$/);
     if (parentColMatch) {
@@ -580,7 +703,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   // API prediction config
   const apiPrediction = contract.apiPrediction;
   const apiBlock = apiPrediction
-    ? `\nconst api = ${JSON.stringify(apiPrediction, null, 2)};\n`
+    ? `\nexport const api = ${JSON.stringify(apiPrediction, null, 2)};\n`
     : '';
   const apiProp = apiPrediction ? '\n      api={api}' : '';
 
@@ -594,14 +717,18 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const notesField = windowConfig.notesField ?? null;
   const relatedDocuments = windowConfig.relatedDocuments ?? false;
   const hideDeleteWhenComplete = windowConfig.hideDeleteWhenComplete ?? false;
+  const customTabsAfterBottom = windowConfig.customTabsAfterBottom ?? false;
   const hidePrint = windowConfig.hidePrint ?? false;
   const hideSaveStatuses = windowConfig.hideSaveStatuses ?? [];
   const hideMoreMenu = windowConfig.hideMoreMenu ?? false;
   const hideMoreDetails = windowConfig.hideMoreDetails ?? false;
   const noHeaderBorder = windowConfig.noHeaderBorder ?? false;
+  const linesLayout = windowConfig.linesLayout ?? 'classic';
   const listViewOptions = windowConfig.listViewOptions ?? null;
   const listBaseFilter = windowConfig.listBaseFilter ?? null;
   const quickFilters = windowConfig.quickFilters ?? null;
+  const subsetFilters = windowConfig.subsetFilters ?? null;
+  const dateFilterKey = windowConfig.dateFilterKey ?? null;
   const contentBg = windowConfig.contentBg ?? null;
   const hideListFilters = windowConfig.hideListFilters ?? false;
   const hideLink = windowConfig.hideLink ?? false;
@@ -613,6 +740,58 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const detailSortBy = windowConfig.detailSortBy ?? null;
   const titleField = windowConfig.titleField ?? null;
   const salesTheme = windowConfig.salesTheme ?? false;
+  const extraTabs = windowConfig.extraTabs ?? [];
+  const lineEntityConfig = windowConfig.lineEntityConfig ?? null;
+  // ETP-3914 — Row Quick Actions overlay config (defaults injected by resolve-curated.js).
+  // When the entire feature is disabled we skip emitting the prop so the list view is
+  // identical to the pre-feature behavior.
+  const rowQuickActions = windowConfig.rowQuickActions ?? null;
+  // ETP-3914 — Send/Download envelope gate.
+  // Eligibility heuristic: header has a non-discarded `documentNo` field (the
+  // structural signature of a transactional document). Master-data windows
+  // (tax, product, UOM…) never satisfy this and stay silent automatically.
+  // `decisions.json → window.sendDocument` is copied verbatim into the contract
+  // and overrides eligibility in both directions:
+  //   { enabled: false }              → force off (even if eligible)
+  //   { enabled: true }               → force on (even if non-eligible)
+  //   { allowEmail: false }           → keep eligibility, hide email column
+  // Both fields default to `true` when omitted. We only emit the JSX prop when
+  // the feature is on, so non-eligible windows render no envelope.
+  const sendDocumentOverride = windowConfig.sendDocument || null;
+  const isDocumentalWindow = allEntityFields.some(
+    f => f.name === 'documentNo' && f.visibility !== 'discarded',
+  );
+  const sdEnabled = sendDocumentOverride?.enabled !== undefined
+    ? !!sendDocumentOverride.enabled
+    : isDocumentalWindow;
+  const sdAllowEmail = sendDocumentOverride?.allowEmail !== false;
+  const sendDocument = sdEnabled ? { enabled: true, allowEmail: sdAllowEmail } : null;
+
+  // Attachments tab — enabled by default on standard (default) layout windows.
+  // Opt out per-window via `window.attachments: false` in decisions.json, or
+  // pass an object to forward options to the AttachmentsTab component (e.g.
+  // `{ enabled: true, accept: '.pdf', maxSizeMb: 10 }`).
+  const attachmentsCfg = windowConfig.attachments ?? true;
+  // attachments are auto-enabled on default layout; on other layouts they must be
+  // explicitly opted-in via `window.attachments: true` (or an options object) in decisions.json.
+  const attachmentsExplicit = windowConfig.attachments !== undefined;
+  let attachmentsEnabled =
+    (layoutType === 'default' || attachmentsExplicit) &&
+    attachmentsCfg !== false &&
+    (typeof attachmentsCfg !== 'object' || attachmentsCfg?.enabled !== false);
+  const attachmentsOpts = typeof attachmentsCfg === 'object' && attachmentsCfg !== null
+    ? attachmentsCfg
+    : {};
+  // Resolve header DB table name from the contract — required by AttachmentsTab
+  // to build the NEO endpoint `/sws/neo/attachments/{tableName}/{recordId}`.
+  const headerEntityContract = contract?.frontendContract?.entities?.[headerEntity];
+  const headerTableName = headerEntityContract?.tableName ?? null;
+  if (attachmentsEnabled && !headerTableName) {
+    console.warn(
+      `[generate-frontend] AttachmentsTab disabled for "${headerEntity}": header entity has no tableName in contract.`
+    );
+    attachmentsEnabled = false;
+  }
 
   // Detect secondary child entities for additional tabs
   const secondaryTabsDecl = windowConfig.secondaryTabs;
@@ -626,10 +805,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
         const isFormTab = cfg.tabMode === 'form-only';
         const isPanelTab = !!cfg.customPanel;
         const PanelName = cfg.customPanel ?? null;
-        const FormName = cfg.customForm ?? `${capitalize(key)}Form`;
-        const TableName = cfg.customTable ?? `${capitalize(key)}Table`;
+        const FormName = cfg.customForm ?? `${toJsIdentifier(key)}Form`;
+        const TableName = cfg.customTable ?? `${toJsIdentifier(key)}Table`;
         const addLineFieldKeys = cfg.addLineFields ?? [];
         const requireSavedRecord = cfg.requireSavedRecord === true;
+        const customAddModalName = cfg.customAddModal ?? null;
         const entityFields = contract.frontendContract.entities[key]?.fields ?? [];
         const addLineEntries = addLineFieldKeys.map(fk => {
           const f = entityFields.find(ef => ef.name === fk);
@@ -639,13 +819,21 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
           const labelPart = f.label ? `, label: '${f.label}'` : '';
           const referencePart = f.reference ? `, reference: '${f.reference}'` : '';
           const inputModePart = f.inputMode ? `, inputMode: '${f.inputMode}'` : '';
-          const defaultValuePart = f.defaultValue ? `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
+          // Skip redundant unchecked defaults on YESNO/checkbox fields (backend coerces to false anyway).
+          const skipCheckboxDefault = type === 'checkbox' && (f.defaultValue === 'N' || f.defaultValue === false);
+          const defaultValuePart = (!skipCheckboxDefault && f.defaultValue) ? `, defaultValue: '${String(f.defaultValue).replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '')}'` : '';
           const optionsPart = (type === 'select' && f.enumValues?.length)
             ? `, options: [${f.enumValues.map(o => `{ value: '${o.value}', label: '${o.name.replace(/'/g, "\\'")}' }`).join(', ')}]`
             : '';
-          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart} }`;
+          const lookupDrawerPart = f.lookupDrawer ? `, lookupDrawer: '${String(f.lookupDrawer).replace(/'/g, "\\'")}'` : '';
+          const lookupTitlePart = f.lookupTitle ? `, lookupTitle: '${String(f.lookupTitle).replace(/'/g, "\\'")}'` : '';
+          const onSelectMappingsPart = Array.isArray(f.onSelectMappings) && f.onSelectMappings.length > 0
+            ? `, onSelectMappings: ${JSON.stringify(f.onSelectMappings)}`
+            : '';
+          const displayFromCatalogPart = f.displayFromCatalog ? `, displayFromCatalog: true` : '';
+          return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart} }`;
         }).filter(Boolean);
-        return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord };
+        return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName };
       });
   } else {
     // Fallback: hardcoded known list + entity inference (backward compat)
@@ -672,8 +860,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
         key: name,
         label: entity.tabName || toLabel(name),
         isFormTab: false,
-        TableName: `${capitalize(name)}Table`,
-        FormName: `${capitalize(name)}Form`,
+        TableName: `${toJsIdentifier(name)}Table`,
+        FormName: `${toJsIdentifier(name)}Form`,
         addLineEntries: [],
       }));
 
@@ -695,10 +883,14 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       const tableImportPath = (t.isCustomTable && specName)
         ? resolveCustomImport(specName, t.TableName).replace(/'/g, '')
         : `./${t.TableName}`;
+      const customModalImport = (t.isCustomAddModal && specName)
+        ? `\nimport ${t.CustomAddModalName} from ${resolveCustomImport(specName, t.CustomAddModalName)};`
+        : '';
       if (t.isFormTab) {
-        return `import ${t.FormName} from '${formImportPath}';`;
+        return `import ${t.FormName} from '${formImportPath}';${customModalImport}`;
       }
-      return `import ${t.TableName} from '${tableImportPath}';\nimport ${t.FormName} from '${formImportPath}';`;
+      const formImport = (t.isCustomAddModal && !t.isCustomForm) ? '' : `\nimport ${t.FormName} from '${formImportPath}';`;
+      return `import ${t.TableName} from '${tableImportPath}';${formImport}${customModalImport}`;
     })
     .join('\n');
 
@@ -713,7 +905,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     const addLinePart = t.addLineEntries.length > 0
       ? `, addLineFields: { entry: [\n${t.addLineEntries.join(',\n')},\n          ], derived: [], hidden: [] }`
       : '';
-    return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}, Form: ${t.FormName}${addLinePart}${requireSavedPart} },`;
+    const customAddModalPart = t.CustomAddModalName ? `, customAddModal: ${t.CustomAddModalName}` : '';
+    const formProp = (t.isCustomAddModal && !t.isCustomForm) ? '' : `, Form: ${t.FormName}`;
+    return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart} },`;
   }).join('\n');
 
   const secondaryTabsProp = secondaryTabDefs.length > 0
@@ -727,12 +921,34 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const notesFieldProp = notesField
     ? `\n        notesField="${notesField}"`
     : '';
-  const customTabsProp = relatedDocuments
-    ? `\n        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}`
+  // customTabs accumulator — DetailView supports items with shape
+  //   { key, label, Component, placement?: 'tab' | 'footer', props?: {} }
+  // `placement: 'tab'` renders as a main tab (Lines/Notes style);
+  // `placement: 'footer'` (default) keeps the legacy chip-footer behavior.
+  const customTabItems = [];
+  if (relatedDocuments) {
+    customTabItems.push(`{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }`);
+  }
+  if (attachmentsEnabled) {
+    const optsLiteral = JSON.stringify(attachmentsOpts);
+    customTabItems.push(
+      `{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: ${JSON.stringify(headerTableName)}, config: ${optsLiteral} } }`
+    );
+  }
+  extraTabs.forEach(et => {
+    const labelPart = et.labelKey ? `labelKey: '${et.labelKey}'` : `label: '${JSON.stringify(et.label)}'`;
+    customTabItems.push(
+      `{ key: '${et.key}', ${labelPart}, Component: ${et.component}, placement: 'tab' }`
+    );
+  });
+  const customTabsProp = customTabItems.length > 0
+    ? `\n        customTabs={[${customTabItems.join(', ')}]}`
     : '';
 
   // hideDeleteWhenComplete prop
   const hideDeleteProp = hideDeleteWhenComplete ? '\n        hideDeleteWhenComplete' : '';
+  // customTabsAfterBottom prop
+  const customTabsAfterBottomProp = customTabsAfterBottom ? '\n        customTabsAfterBottom' : '';
 
   // hidePrint prop (DetailView)
   const hidePrintProp = hidePrint ? '\n        hidePrint' : '';
@@ -746,6 +962,11 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hideMoreDetailsProp = hideMoreDetails ? '\n        hideMoreDetails' : '';
   // noHeaderBorder prop (DetailView)
   const noHeaderBorderProp = noHeaderBorder ? '\n        noHeaderBorder' : '';
+  // linesLayout prop (DetailView). Only emit when non-default to keep generated
+  // output diff-free for windows that don't opt in.
+  const linesLayoutProp = linesLayout && linesLayout !== 'classic'
+    ? `\n        linesLayout="${linesLayout}"`
+    : '';
   // listViewOptions props
   const listViewOptionsProp = listViewOptions
     ? `\n      listViewOptions={${JSON.stringify(listViewOptions)}}`
@@ -756,8 +977,18 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const quickFiltersProp = quickFilters
     ? `\n      quickFilters={${JSON.stringify(quickFilters)}}`
     : '';
+  const subsetFiltersProp = subsetFilters
+    ? `\n      subsetFilters={${JSON.stringify(subsetFilters)}}`
+    : '';
+  const dateFilterKeyProp = dateFilterKey
+    ? `\n      dateFilterKey="${dateFilterKey}"`
+    : '';
   // contentBg prop
   const contentBgProp = contentBg ? `\n        contentBg="${contentBg}"` : '';
+  // lineConfig prop — emitted when the window uses a non-default line pricing config
+  const LINE_CONFIG_SYMBOLS = { invoice: 'INVOICE_LINE_CONFIG', returnOrder: 'RETURN_ORDER_LINE_CONFIG' };
+  const lineConfigSymbol = lineEntityConfig ? (LINE_CONFIG_SYMBOLS[lineEntityConfig] ?? null) : null;
+  const lineConfigProp = lineConfigSymbol ? `\n        lineConfig={${lineConfigSymbol}}` : '';
   // ListView toolbar props
   const hidePrintListProp = hidePrint ? '\n      hidePrint' : '';
   const hideMoreMenuListProp = hideMoreMenu ? '\n      hideMoreMenu' : '';
@@ -814,17 +1045,33 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     : `import ${headerName}Table from './${headerName}Table';`;
 
   // menuActions prop
+  const menuActionsNeedsData = menuActionsConfig.some(a => a.visibleWhenFieldFalse);
+  const menuActionsFnParams = menuActionsNeedsData ? '({ data, status })' : '({ status })';
   const menuActionsProp = menuActionsConfig.length > 0
-    ? `\n        menuActions={({ status }) => [\n${menuActionsConfig.map(a => {
-        const vis = a.visibleWhenStatus
+    ? `\n        menuActions={${menuActionsFnParams} => [\n${menuActionsConfig.map(a => {
+        const statusVis = a.visibleWhenStatus
           ? Array.isArray(a.visibleWhenStatus)
-            ? `visible: ${JSON.stringify(a.visibleWhenStatus)}.includes(status)`
-            : `visible: status === '${a.visibleWhenStatus}'`
+            ? `${JSON.stringify(a.visibleWhenStatus)}.includes(status)`
+            : `status === '${a.visibleWhenStatus}'`
           : '';
+        const fieldVis = a.visibleWhenFieldFalse ? `!data?.${a.visibleWhenFieldFalse}` : '';
+        const visParts = [statusVis, fieldVis].filter(Boolean);
+        const vis = visParts.length > 0 ? `visible: ${visParts.join(' && ')}, ` : '';
         const destr = a.destructive ? 'destructive: true, ' : '';
-        const col = a.columnName ? `columnName: '${a.columnName}', ` : `onClick: () => {},`;
-        const visPart = vis ? `${vis}, ` : '';
-        return `          { key: '${a.key}', label: '${a.label}', ${destr}${visPart}${col} }`;
+        // Handler precedence: documentAction (declarative DocAction) > columnName (AD process button) > onClick placeholder
+        let handler;
+        if (a.documentAction) {
+          handler = `documentAction: '${a.documentAction}', `;
+        } else if (a.columnName) {
+          handler = `columnName: '${a.columnName}', `;
+        } else {
+          handler = `onClick: () => {},`;
+        }
+        const labelKeyPart = a.labelKey ? `labelKey: '${a.labelKey}', ` : '';
+        const successPart = a.successKey
+          ? `successKey: '${a.successKey}', `
+          : a.successMessage ? `successMessage: '${String(a.successMessage).replace(/'/g, "\\'")}', ` : '';
+        return `          { key: '${a.key}', label: '${a.label}', ${destr}${vis}${labelKeyPart}${successPart}${handler} }`;
       }).join(',\n')}\n        ]}`
     : '';
 
@@ -833,12 +1080,25 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     ? `import RelatedDocuments from ${resolveCustomImport(specName, 'RelatedDocuments')};\n`
     : '';
 
+  // Build optional import for the generic AttachmentsTab component
+  const attachmentsImport = attachmentsEnabled
+    ? `import { AttachmentsTab } from '@/components/attachments';\n`
+    : '';
+
+  // Build optional imports for extra custom tabs (window.extraTabs in decisions.json)
+  const extraTabsImport = extraTabs.length > 0
+    ? extraTabs.map(et => `import ${et.component} from '${et.importFrom}';\n`).join('')
+    : '';
+
   // Draft mode config from frontend contract
   const draftModeConfig = contract.frontendContract.entities[headerEntity]?.draftMode;
   const draftModeValue = draftModeConfig?.enabled
     ? JSON.stringify(draftModeConfig, null, 2)
     : 'null';
   const draftModeProp = draftModeConfig?.enabled ? '\n        draftMode={draftMode}' : '';
+  const requiredHeaderFieldsProp = requiredHeaderFieldNames.length > 0
+    ? '\n        requiredHeaderFields={requiredHeaderFields}'
+    : '';
 
   // entityLabel / detailLabel / detailTabIndex from window decisions config
   const entityLabel = windowConfig.entityLabel || toLabel(headerEntity);
@@ -951,6 +1211,34 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
     ? `\nconst labelOverrides = ${JSON.stringify(labelOverridesConfig, null, 2)};\n`
     : '';
 
+  // ETP-3914 — rowQuickActions prop forwarded to ListView.
+  // The feature is ON by default for every window. The contract only carries a block
+  // when the user wants to override defaults (decisions.json → window.rowQuickActions).
+  // The generator forwards whatever is declared verbatim; an empty `{}` is enough to
+  // mount the overlay since DataTable + RowQuickActions resolve defaults at runtime.
+  // We skip emission entirely only when the user explicitly set `enabled: false`.
+  let rowQuickActionsProp = '';
+  if (!rowQuickActions || rowQuickActions.enabled !== false) {
+    const declarativePart = rowQuickActions ?? {};
+    rowQuickActionsProp = `\n      rowQuickActions={${JSON.stringify(declarativePart)}}`;
+  }
+
+  // ETP-3914 — Send/Download envelope prop. ListView routes it into DataTable →
+  // RowQuickActions to control the email quick action, and mounts the generic
+  // SendDocumentModal when no host-supplied `onEmail` exists. When both defaults
+  // match (enabled + allowEmail), emit the bare attribute (`sendDocument`) which
+  // JSX treats as `={true}` — runtime gates use `enabled !== false` and optional
+  // chaining, so a plain `true` behaves identically to `{enabled:true,allowEmail:true}`
+  // while keeping generated files clean of redundant default objects.
+  let sendDocumentProp = '';
+  let sendDocumentDetailProp = '';
+  if (sendDocument) {
+    const isDefaults = sendDocument.enabled === true && sendDocument.allowEmail === true;
+    const propValue = isDefaults ? '' : `={${JSON.stringify(sendDocument)}}`;
+    sendDocumentProp = `\n      sendDocument${propValue}`;
+    sendDocumentDetailProp = `\n        sendDocument${propValue}`;
+  }
+
   // newActions support — split button dropdown on the list view
   const hasNewActions = newActionsConfig.length > 0;
   const newActionsStatements = newActionsWithComponents.map(a => {
@@ -979,12 +1267,12 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const needsFragment = customComponents.newRecordComponent || newActionsWithComponents.length > 0;
 
   return `import { ${needsUseState ? 'useState, ' : ''}useEffect } from 'react';
-import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}
+import { ListView, DetailView } from '@/components/contract-ui';${menuActionsConfig.length > 0 ? `\nimport { toast } from 'sonner';` : ''}${lineConfigSymbol ? `\nimport { ${lineConfigSymbol} } from '@/hooks/useLineGrossAmount';` : ''}
 ${headerTableImport}
 import ${headerName}Form from './${headerName}Form';${detailEntity ? `
 import ${detailName}Table from './${detailName}Table';
 import ${detailName}Form from './${detailName}Form';` : ''}
-${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${formFooterImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
+${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${formFooterImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${attachmentsImport}${extraTabsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
 ${isGallery ? `import ${headerName}Gallery from ${resolveCustomImport(specName || headerEntity, `${headerName}Gallery`)};` : ''}${isSidebar ? `
 import ${headerName}Sidebar from ${resolveCustomImport(specName || headerEntity, `${headerName}Sidebar`)};` : (isGallery ? `
 import ${headerName}DetailHeader from ${resolveCustomImport(specName || headerEntity, `${headerName}DetailHeader`)};` : '')}${statusBarImport}
@@ -1013,6 +1301,10 @@ ${MARKERS.GENERATED_END(`processes:${headerEntity}`)}
 ${MARKERS.GENERATED_START(`draftMode:${headerEntity}`)}
 const draftMode = ${draftModeValue};
 ${MARKERS.GENERATED_END(`draftMode:${headerEntity}`)}
+
+${MARKERS.GENERATED_START(`requiredHeaderFields:${headerEntity}`)}
+const requiredHeaderFields = ${requiredHeaderFieldsArray};
+${MARKERS.GENERATED_END(`requiredHeaderFields:${headerEntity}`)}
 
 ${detailEntity ? `${MARKERS.GENERATED_START(`addLineFields:${detailEntity}`)}
 const addLineFields = {
@@ -1049,7 +1341,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
         {...props}${sidebarContentProp}
       />
     );
@@ -1063,7 +1355,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}
       {...props}${customComponents.newRecordComponent ? `
       onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}
     />${customComponents.newRecordComponent ? `
@@ -1080,19 +1372,17 @@ ${MARKERS.GENERATED_END(`component:${compName}`)}
  * Accepts { token, apiBaseUrl, window } props.
  */
 export function generateIndexComponent(headerEntity, detailEntity, contract) {
-  const headerName = capitalize(headerEntity);
+  const headerName = toJsIdentifier(headerEntity);
   const category = contract?.frontendContract?.window?.category ?? 'general';
   const windowName = contract?.frontendContract?.window?.name ?? toLabel(headerEntity);
   const apiPrediction = contract?.apiPrediction;
 
-  const apiBlock = apiPrediction
-    ? `\nconst api = ${JSON.stringify(apiPrediction, null, 2)};\n`
-    : '';
   const apiProp = apiPrediction ? ' api={api}' : '';
-  return `import ${headerName}Page from './${headerName}Page';
+  const apiImport = apiPrediction ? `, { api }` : '';
+  return `import ${headerName}Page${apiImport} from './${headerName}Page';
 
 const windowMeta = { category: '${category}', name: '${windowName}' };
-${apiBlock}
+
 ${MARKERS.GENERATED_START('component:App')}
 export default function App({ windowName, recordId, token, apiBaseUrl, window, ...rest }) {
   return <${headerName}Page windowName={windowName} recordId={recordId} token={token} apiBaseUrl={apiBaseUrl} window={window || windowMeta}${apiProp} {...rest} />;
@@ -1101,129 +1391,24 @@ ${MARKERS.GENERATED_END('component:App')}
 `;
 }
 
-// --- Mock Catalog Data Pools ---
-
-const CATALOG_DATA = {
-  BusinessPartner: Array.from({ length: 15 }, (_, i) => ({
-    id: `bp-${String(i + 1).padStart(3, '0')}`,
-    name: [
-      'Acme Corp', 'TechFlow Inc', 'Global Trade Ltd', 'Summit Industries',
-      'Pacific Partners', 'Alpine Solutions', 'Meridian Group', 'Vertex Systems',
-      'Atlas Manufacturing', 'Nova Enterprises', 'Pinnacle Services', 'Horizon Labs',
-      'Cedar Holdings', 'Sterling & Co', 'Quantum Logistics',
-    ][i],
-  })),
-  Product: Array.from({ length: 20 }, (_, i) => ({
-    id: `prod-${String(i + 1).padStart(3, '0')}`,
-    name: [
-      'Laptop Pro 15', 'USB-C Cable', 'Wireless Mouse', 'Mechanical Keyboard',
-      'Monitor 27"', 'Webcam HD', 'Headset Pro', 'Docking Station',
-      'SSD 1TB', 'RAM 16GB', 'Power Supply 750W', 'Network Switch',
-      'Printer Laser', 'Scanner Flatbed', 'External HDD 2TB', 'Tablet 10"',
-      'Router Pro', 'UPS Battery', 'Graphics Card', 'CPU Cooler',
-    ][i],
-    price: [1299, 15, 29, 89, 549, 79, 149, 199, 109, 65, 95, 45, 299, 189, 79, 449, 129, 159, 699, 49][i],
-    uomId: 'uom-001',
-  })),
-  User: Array.from({ length: 8 }, (_, i) => ({
-    id: `user-${String(i + 1).padStart(3, '0')}`,
-    name: [
-      'Alice Johnson', 'Bob Smith', 'Carol Williams', 'David Brown',
-      'Eva Martinez', 'Frank Lee', 'Grace Kim', 'Henry Davis',
-    ][i],
-  })),
-  Warehouse: Array.from({ length: 5 }, (_, i) => ({
-    id: `wh-${String(i + 1).padStart(3, '0')}`,
-    name: ['Main Warehouse', 'East Distribution Center', 'West Hub', 'North Storage', 'South Logistics'][i],
-  })),
-  Currency: [
-    { id: 'USD', name: 'US Dollar', symbol: '$' },
-    { id: 'EUR', name: 'Euro', symbol: 'EUR' },
-    { id: 'GBP', name: 'Pound Sterling', symbol: 'GBP' },
-    { id: 'ARS', name: 'Argentine Peso', symbol: 'ARS' },
-  ],
-  PriceList: Array.from({ length: 4 }, (_, i) => ({
-    id: `pl-${String(i + 1).padStart(3, '0')}`,
-    name: ['Standard Price List', 'Wholesale Prices', 'Retail Prices', 'VIP Pricing'][i],
-  })),
-  PaymentTerm: Array.from({ length: 5 }, (_, i) => ({
-    id: `pt-${String(i + 1).padStart(3, '0')}`,
-    name: ['Immediate', 'Net 15', 'Net 30', 'Net 60', '2/10 Net 30'][i],
-  })),
-  PaymentMethod: Array.from({ length: 4 }, (_, i) => ({
-    id: `pm-${String(i + 1).padStart(3, '0')}`,
-    name: ['Wire Transfer', 'Credit Card', 'Check', 'Cash'][i],
-  })),
-  Tax: Array.from({ length: 6 }, (_, i) => ({
-    id: `tax-${String(i + 1).padStart(3, '0')}`,
-    name: ['VAT 21%', 'VAT 10%', 'VAT 0%', 'Sales Tax 8.5%', 'Exempt', 'Reduced Rate 5%'][i],
-    rate: [21, 10, 0, 8.5, 0, 5][i],
-  })),
-  UOM: Array.from({ length: 5 }, (_, i) => ({
-    id: `uom-${String(i + 1).padStart(3, '0')}`,
-    name: ['Each', 'Box', 'Kg', 'Meter', 'Liter'][i],
-  })),
-  StorageBin: Array.from({ length: 10 }, (_, i) => ({
-    id: `sb-${String(i + 1).padStart(3, '0')}`,
-    name: ['A-01-01', 'A-01-02', 'A-02-01', 'A-02-02', 'B-01-01', 'B-01-02', 'B-02-01', 'B-02-02', 'C-01-01', 'C-01-02'][i],
-    warehouseId: `wh-${String(Math.floor(i / 2) + 1).padStart(3, '0')}`,
-  })),
-  ProductCategory: Array.from({ length: 9 }, (_, i) => ({
-    id: `cat-${String(i + 1).padStart(3, '0')}`,
-    name: ['Electronics', 'Accessories', 'Peripherals', 'Displays', 'Audio', 'Storage', 'Components', 'Networking', 'Power'][i],
-  })),
-  BusinessPartnerLocation: Array.from({ length: 20 }, (_, i) => ({
-    id: `bploc-${String(i + 1).padStart(3, '0')}`,
-    name: [
-      'HQ - 100 Main St', 'Branch - 200 Oak Ave', 'Warehouse - 300 Elm Dr',
-      'Office - 50 Pine Rd', 'Factory - 400 Maple Ln', 'Store - 150 Cedar Blvd',
-      'Depot - 250 Birch Way', 'Lab - 75 Spruce Ct', 'HQ - 500 Willow St',
-      'Branch - 600 Ash Ave', 'Office - 10 Palm Dr', 'Store - 20 Ivy Rd',
-      'Depot - 30 Fern Ln', 'Lab - 40 Sage Blvd', 'HQ - 55 Rose Way',
-      'Branch - 65 Lily Ct', 'Office - 70 Daisy St', 'Store - 80 Tulip Ave',
-      'Depot - 90 Orchid Dr', 'Lab - 95 Violet Rd',
-    ][i],
-    businessPartnerId: `bp-${String(Math.floor(i / 2) + 1).padStart(3, '0')}`,
-  })),
-};
-
 /**
- * Collect all unique reference names from a contract's frontend entities.
+ * Generate a mockCatalogs.js stub.
+ *
+ * Historically this emitted fake FK reference data (e.g. "Acme Corp", "Wire Transfer")
+ * as a fallback for selector dropdowns. Those fakes leaked into production UIs and
+ * caused a visible "flash of wrong values" when opening a dropdown before the real
+ * `/selector` response arrived. The file is kept (still imported by HeaderPage.jsx)
+ * but now exports an empty catalog — all selector data comes from the real backend.
  */
-function collectReferences(contract) {
-  const refs = new Set();
-  for (const entity of Object.values(contract.frontendContract.entities)) {
-    for (const field of entity.fields) {
-      if (field.reference) refs.add(field.reference);
-    }
-  }
-  return refs;
-}
-
-/**
- * Generate a mockCatalogs.js file with reference data for all FK fields in the contract.
- */
-export function generateMockCatalogs(contract) {
-  const refs = collectReferences(contract);
-  const lines = [
-    '// Auto-generated mock catalogs for FK reference data - do not edit manually',
+export function generateMockCatalogs(_contract) {
+  return [
+    '// Auto-generated - intentionally empty. Selector data comes from the real backend.',
     '',
     'const catalogs = {};',
     '',
-  ];
-
-  for (const ref of refs) {
-    const data = CATALOG_DATA[ref];
-    if (data) {
-      lines.push(`catalogs['${ref}'] = ${JSON.stringify(data, null, 2)};`);
-      lines.push('');
-    }
-  }
-
-  lines.push('export default catalogs;');
-  lines.push('');
-
-  return lines.join('\n');
+    'export default catalogs;',
+    '',
+  ].join('\n');
 }
 
 /**
@@ -1243,7 +1428,7 @@ export function generateAll(contract) {
 
   // Generate Table + Form for each entity
   for (const entityName of entityNames) {
-    const capName = capitalize(entityName);
+    const capName = toJsIdentifier(entityName);
     files[`${capName}Table.jsx`] = generateTableComponent(entityName, contract);
     files[`${capName}Form.jsx`] = generateFormComponent(entityName, contract);
   }

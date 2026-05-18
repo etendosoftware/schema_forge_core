@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import PaymentMethodTable from './PaymentMethodTable';
 import PaymentMethodForm from './PaymentMethodForm';
+import { AttachmentsTab } from '@/components/attachments';
 import PaymentGroupsSection from '@/windows/custom/payment-method/PaymentGroupsSection';
 import catalogs from './mockCatalogs';
 
@@ -12,6 +13,7 @@ const labelOverrides = {
   "es_ES": {
     "Name": "Nombre",
     "Description": "Descripción",
+    "Isactive": "Activo",
     "Payin_Allow": "Cobro permitido",
     "Automatic_Receipt": "Cobro automático",
     "Automatic_Deposit": "Depósito automático",
@@ -44,9 +46,13 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:paymentMethod
 
+// @sf-generated-start requiredHeaderFields:paymentMethod
+const requiredHeaderFields = ['name'];
+// @sf-generated-end requiredHeaderFields:paymentMethod
 
 
-const api = {
+
+export const api = {
   "specName": "payment-method",
   "baseUrl": "/sws/neo/payment-method",
   "crud": {
@@ -74,16 +80,31 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=name"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "settings"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "Name": "Nombre",
+      "Description": "Descripción",
+      "Isactive": "Activo",
+      "Payin_Allow": "Cobro permitido",
+      "Automatic_Receipt": "Cobro automático",
+      "Automatic_Deposit": "Depósito automático",
+      "Payout_Allow": "Pago permitido",
+      "Automatic_Payment": "Pago automático",
+      "Automatic_Withdrawn": "Retiro automático"
+    }
   }
 };
 
 // @sf-generated-start component:PaymentMethodPage
 export default function PaymentMethodPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -99,9 +120,12 @@ export default function PaymentMethodPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        customTabsAfterBottom
         hidePrint
         hideMoreMenu
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "FIN_PaymentMethod", config: {} } }]}
         bottomSection={PaymentGroupsSection}
+        requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}
         {...props}
       />
@@ -119,6 +143,7 @@ export default function PaymentMethodPage({ windowName, recordId, ...props }) {
       hidePrint
       hideMoreMenu
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
       {...props}
     />
   );

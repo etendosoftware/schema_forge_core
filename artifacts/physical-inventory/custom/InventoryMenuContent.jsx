@@ -14,6 +14,9 @@ export default function InventoryMenuContent({ data, recordId, token, apiBaseUrl
   const [showModal, setShowModal] = useState(false);
   const [updating, setUpdating] = useState(false);
 
+  if (!recordId || recordId === 'new') return null;
+  if (data?.processed === true || data?.processed === 'Y') return null;
+
   const handleUpdateQuantities = async () => {
     onClose();
     setUpdating(true);

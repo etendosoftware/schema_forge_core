@@ -1,0 +1,175 @@
+name: Pipeline Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'artifacts/**'
+      - 'tools/app-shell/src/windows/registry.js'
+      - 'cli/src/generate-**'
+      - 'cli/src/resolve-**'
+      - 'cli/src/push-**'
+      - 'cli/src/validate-pipeline.js'
+      - '.github/workflows/pipeline-validate.yml'
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm install
+
+      - name: Determine scope (PR = changed artifacts only, push = full repo)
+        id: scope
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # Collect artifact names that changed in this PR (three-dot diff against base branch).
+            # Use `|| true` so grep's exit code 1 (no matches) does not fail the step.
+            CHANGED=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" \
+              | { grep -oE '^artifacts/[^/]+/' || true; } \
+              | sed 's|artifacts/||;s|/||' \
+              | sort -u \
+              | tr '\n' ',' \
+              | sed 's/,$//')
+            echo "changed_since=origin/${{ github.base_ref }}" >> "$GITHUB_OUTPUT"
+            echo "artifact_names=${CHANGED}" >> "$GITHUB_OUTPUT"
+            if [[ -z "$CHANGED" ]]; then
+              echo "empty=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "empty=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "changed_since=" >> "$GITHUB_OUTPUT"
+            echo "artifact_names=" >> "$GITHUB_OUTPUT"
+            echo "empty=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate pipeline completeness
+        id: validate
+        if: steps.scope.outputs.empty != 'true'
+        # Shadow mode: continue-on-error keeps the job green even with violations.
+        # This collects real-world data before we flip to enforce mode (P6).
+        continue-on-error: true
+        shell: bash
+        run: |
+          if [[ -n "${{ steps.scope.outputs.changed_since }}" ]]; then
+            node cli/src/validate-pipeline.js \
+              --changed-since="${{ steps.scope.outputs.changed_since }}" \
+              --format=json | tee validation.json
+          else
+            node cli/src/validate-pipeline.js --format=json | tee validation.json
+          fi
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Upload validation report
+        if: steps.scope.outputs.empty != 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-report
+          path: validation.json
+          if-no-files-found: ignore
+
+      - name: Post or update PR comment with violations
+        if: >
+          github.event_name == 'pull_request' &&
+          steps.scope.outputs.empty != 'true' &&
+          always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- pipeline-validator -->';
+
+            // Read the validation report (may not exist if the validate step was skipped)
+            let report;
+            try {
+              report = JSON.parse(fs.readFileSync('validation.json', 'utf8'));
+            } catch {
+              // No report file — nothing to post
+              return;
+            }
+
+            const violations = report.violations ?? [];
+            const summary = report.summary ?? {};
+
+            // If no violations at all, delete any existing comment and bail out
+            const issue_number = context.issue.number;
+            const existingComments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = existingComments.find(
+              c => c.user?.login === 'github-actions[bot]' && c.body?.includes(marker)
+            );
+
+            if (violations.length === 0) {
+              if (existing) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existing.id,
+                });
+              }
+              return;
+            }
+
+            // Group violations by rule
+            const byRule = {};
+            for (const v of violations) {
+              if (!byRule[v.rule]) byRule[v.rule] = [];
+              byRule[v.rule].push(v);
+            }
+
+            const blocks = violations.filter(v => v.severity === 'BLOCK').length;
+            const warns  = violations.filter(v => v.severity === 'WARN').length;
+
+            let body = `${marker}\n`;
+            body += `## Pipeline Validation (shadow mode)\n\n`;
+            body += `> **Advisory only** — this check is in shadow mode and will not block merges.\n\n`;
+            body += `Found **${violations.length}** violation(s): ${blocks} blocking, ${warns} warning(s).\n\n`;
+
+            for (const [rule, vs] of Object.entries(byRule)) {
+              body += `### ${rule}\n`;
+              for (const v of vs) {
+                const badge = v.severity === 'BLOCK' ? '🔴 BLOCK' : '🟡 WARN';
+                body += `- ${badge} \`${v.artifact}\` — ${v.message}\n`;
+                body += `  **Fix:** ${v.fix}\n`;
+              }
+              body += '\n';
+            }
+
+            body += `<details><summary>Summary</summary>\n\n`;
+            body += `\`\`\`\nblocking: ${summary.blocking ?? 0}\nwarnings: ${summary.warnings ?? 0}\nskipped: ${summary.skipped ?? 0}\nok: ${summary.ok ?? 0}\n\`\`\`\n</details>`;
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number,
+                body,
+              });
+            }

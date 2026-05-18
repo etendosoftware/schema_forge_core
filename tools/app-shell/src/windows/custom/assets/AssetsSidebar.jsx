@@ -1,12 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useUI } from '@/i18n';
-
-function fmt(v) {
-  if (v == null || v === '') return '—';
-  const n = Number(v);
-  if (isNaN(n)) return '—';
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
+import { useCurrency } from '@/hooks/useCurrency';
+import { formatCurrency } from '@/lib/formatCurrency';
 
 function MetricCard({ label, value, subtitle, tint = null }) {
   if (tint === 'green') {
@@ -79,6 +74,7 @@ function countCompletedLines(lines, depreciatedValue) {
 
 export default function AssetsSidebar({ data, recordId, token, apiBaseUrl }) {
   const ui = useUI();
+  const orgCurrency = useCurrency() ?? 'USD';
   const [lineStats, setLineStats] = useState({ total: 0, completed: 0 });
 
   const depreciatedValue = Number(data?.depreciatedValue ?? 0);
@@ -115,12 +111,12 @@ export default function AssetsSidebar({ data, recordId, token, apiBaseUrl }) {
         <div className="px-4 pb-4 flex flex-col gap-3">
           <MetricCard
             label={ui('assetsCurrentValue')}
-            value={hasData ? `€ ${fmt(assetValue)}` : '—'}
+            value={hasData ? formatCurrency(orgCurrency, assetValue) : '—'}
             subtitle={ui('assetsBookValue')}
           />
           <MetricCard
             label={ui('assetsPlannedDepreciation')}
-            value={hasData ? `€ ${fmt(depreciatedPlan)}` : '—'}
+            value={hasData ? formatCurrency(orgCurrency, depreciatedPlan) : '—'}
             subtitle={ui('assetsTotalScheduled')}
             tint="green"
           />

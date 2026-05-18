@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
-import { toast } from 'sonner';
 import GoodsShipmentTable from './GoodsShipmentTable';
 import GoodsShipmentForm from './GoodsShipmentForm';
 import GoodsShipmentLineTable from './GoodsShipmentLineTable';
 import GoodsShipmentLineForm from './GoodsShipmentLineForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
+import GoodsShipmentBottomPanel from '../../../custom/GoodsShipmentBottomPanel';
 import GoodsShipmentActions from '../../../custom/GoodsShipmentActions';
 import BulkInvoiceFromShipment from '../../../custom/BulkInvoiceFromShipment';
 import catalogs from './mockCatalogs';
@@ -29,8 +30,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:goodsShipment
 const processes = [
-  { name: 'eTBLKCBulkcompletion', label: 'Bulk Completion', style: 'positive',
-    displayLogicRaw: "@DocStatus@!'CL'&@DocStatus@!'VO'" },
+
 ];
 // @sf-generated-end processes:goodsShipment
 
@@ -38,11 +38,15 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:goodsShipment
 
+// @sf-generated-start requiredHeaderFields:goodsShipment
+const requiredHeaderFields = ['documentNo', 'warehouse', 'businessPartner', 'partnerAddress', 'movementDate', 'invoiced'];
+// @sf-generated-end requiredHeaderFields:goodsShipment
+
 // @sf-generated-start addLineFields:goodsShipmentLine
 const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity' },
+    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity', defaultValue: 0 },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
   derived: [
@@ -54,7 +58,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:goodsShipmentLine
 
-const api = {
+export const api = {
   "specName": "goods-shipment",
   "baseUrl": "/sws/neo/goods-shipment",
   "crud": {
@@ -170,19 +174,11 @@ const api = {
     },
     {
       "entity": "goodsShipment",
-      "field": "eTBLKCBulkcompletion",
-      "column": "EM_Etblkc_Bulkcompletion",
-      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/eTBLKCBulkcompletion",
-      "processId": "33338B1F2C4F499EBA4F5547BE0B2A4E",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "goodsShipment",
-      "field": "sendMaterials",
-      "column": "RM_Shipment_Pickedit",
-      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/sendMaterials",
-      "processId": "4AD70293357245AB96E59C2CDB43A35D",
-      "processType": "obuiapp"
+      "field": "generateTo",
+      "column": "GenerateTo",
+      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/generateTo",
+      "processId": "154",
+      "processType": "classic"
     },
     {
       "entity": "goodsShipment",
@@ -202,11 +198,11 @@ const api = {
     },
     {
       "entity": "goodsShipment",
-      "field": "generateTo",
-      "column": "GenerateTo",
-      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/generateTo",
-      "processId": "154",
-      "processType": "classic"
+      "field": "sendMaterials",
+      "column": "RM_Shipment_Pickedit",
+      "url": "/sws/neo/goods-shipment/goodsShipment/{id}/action/sendMaterials",
+      "processId": "4AD70293357245AB96E59C2CDB43A35D",
+      "processType": "obuiapp"
     },
     {
       "entity": "goodsShipmentLine",
@@ -233,16 +229,18 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=goods-shipmentDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "sales"
   }
 };
 
 // @sf-generated-start component:GoodsShipmentPage
 export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -267,12 +265,13 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
         hidePrint
         noHeaderBorder
         notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_InOut", config: {} } }]}
+        bottomSection={GoodsShipmentBottomPanel}
         topbarRight={GoodsShipmentActions}
-        menuActions={({ status }) => [
-          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
-        ]}
+        requiredHeaderFields={requiredHeaderFields}
         salesTheme
+        linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -286,8 +285,11 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="movementDate"
       bulkActions={(ctx) => <BulkInvoiceFromShipment {...ctx} />}
       hidePrint
+      rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

@@ -1,10 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { EntityForm } from '@/components/contract-ui';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ChevronDown, MapPin, Tag, Pencil, X as XIcon } from 'lucide-react';
+import { ChevronDown, Tag } from 'lucide-react';
 import { useUI } from '@/i18n';
-import LocationEditorModal from './LocationEditorModal';
 
 const PRE_SAVE_BILLING_PREF_FIELDS = [
   'priceList',
@@ -30,6 +27,28 @@ function resolveId(value) {
 
 // ─── Discount select ────────────────────────────────────────────────────────
 
+function YesNoRadio({ label, value, onChange }) {
+  const ui = useUI();
+  const isChecked = value === true || value === 'Y' || value === 'true';
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-sm font-medium text-[#121217]">{label}</p>
+      <div className="flex items-center gap-5 h-10">
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input type="radio" checked={!isChecked} onChange={() => onChange(false)}
+            className="w-4 h-4 accent-[#121217] cursor-pointer" />
+          <span className="text-sm text-[#121217]">{ui('no')}</span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input type="radio" checked={isChecked} onChange={() => onChange(true)}
+            className="w-4 h-4 accent-[#121217] cursor-pointer" />
+          <span className="text-sm text-[#121217]">{ui('yes')}</span>
+        </label>
+      </div>
+    </div>
+  );
+}
+
 function DiscountSelect({ value, options, onChange, loading }) {
   const ui = useUI();
   return (
@@ -38,7 +57,7 @@ function DiscountSelect({ value, options, onChange, loading }) {
         <Tag size={13} className="text-muted-foreground" />
       </div>
       <select
-        className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm appearance-none cursor-pointer hover:border-ring transition-colors disabled:opacity-50"
+        className="h-10 w-full rounded-lg border border-[#D1D4DB] bg-white pl-8 pr-3 text-sm appearance-none cursor-pointer shadow-[0px_1px_2px_rgba(18,18,23,0.05)] transition-colors disabled:cursor-not-allowed"
         value={value ?? ''}
         onChange={e => onChange(e.target.value || null)}
         disabled={loading}
@@ -49,101 +68,6 @@ function DiscountSelect({ value, options, onChange, loading }) {
         ))}
       </select>
       <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground" />
-    </div>
-  );
-}
-
-function DiscountCard({ value, options, onChange, loading, ui }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 flex flex-col gap-3">
-      <div className="flex items-center gap-2 px-1">
-        <span className="text-sm font-bold text-gray-800">{ui('basicDiscount')}</span>
-      </div>
-      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden p-1">
-        <DiscountSelect
-          value={value}
-          options={options}
-          onChange={onChange}
-          loading={loading}
-        />
-      </div>
-    </div>
-  );
-}
-
-function LocationCard({ records, loading, onEdit, onDelete, onAdd, ui }) {
-  const count = records?.length ?? 0;
-
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2 px-1">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-sm font-bold text-gray-800">{ui('locationAddress')}</span>
-          {count > 0 && (
-            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold bg-slate-100 text-slate-700">
-              {count}
-            </span>
-          )}
-        </div>
-
-        {!loading && (
-          <button
-            type="button"
-            onClick={onAdd}
-            title={ui('addLocation')}
-            aria-label={ui('addLocation')}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-base font-semibold leading-none text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-800 shrink-0"
-          >
-            +
-          </button>
-        )}
-      </div>
-
-      {loading ? (
-        <div className="h-10 rounded-xl bg-white/70 animate-pulse" />
-      ) : (
-        <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-          {count > 0 ? (
-            records.map((rec, idx) => {
-              let label = rec['locationAddress$_identifier'] || rec.name || '';
-              if (label === '., ') label = '';
-
-              return (
-                <div
-                  key={rec.id}
-                  className={`flex items-center gap-3 px-4 py-2.5 text-sm ${idx > 0 ? 'border-t border-gray-100' : ''}`}
-                >
-                  <MapPin size={13} className="text-slate-400 shrink-0" />
-                  <span className="flex-1 truncate text-gray-800">
-                    {label || ui('locationSelectorTitle')}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => onEdit(rec.locationAddress, rec.id)}
-                    title={ui('edit')}
-                    className="text-gray-400 hover:text-gray-700 transition-colors p-0.5 shrink-0"
-                  >
-                    <Pencil size={13} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDelete(rec.id)}
-                    title={ui('removeLocation')}
-                    className="text-gray-400 hover:text-red-500 transition-colors p-0.5 shrink-0"
-                  >
-                    <XIcon size={13} />
-                  </button>
-                </div>
-              );
-            })
-          ) : (
-            <div className="px-4 py-3 text-sm text-gray-400">
-              {ui('locationSelectorTitle')}
-            </div>
-          )}
-        </div>
-      )}
-
     </div>
   );
 }
@@ -159,21 +83,27 @@ export default function BillingPreferencesForm(props) {
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   const organizationId = resolveId(data?.organization ?? data?.adOrgId ?? data?.ad_org_id);
   const clientId = resolveId(data?.client ?? data?.adClientId ?? data?.ad_client_id);
-  // { open, bplId: C_Location_ID|null, bplLinkId: C_BPartner_Location_ID|null }
-  const [locationModal, setLocationModal] = useState({ open: false, bplId: null, bplLinkId: null });
-  const [deleteLocationId, setDeleteLocationId] = useState(null);
-
-  // Sub-entity records (current BP's discount + addresses)
+  // Sub-entity records (current BP's discount)
   const [discountRecord, setDiscountRecord] = useState(undefined); // undefined=loading, null=none
-  const [addressRecords, setAddressRecords] = useState(undefined); // undefined=loading, array otherwise
 
+  const paymentMethodId = resolveId(data?.paymentMethod);
+  const pOPaymentMethodId = resolveId(data?.pOPaymentMethod);
   const selectorContext = useMemo(() => {
     const ctx = {};
     if (organizationId) ctx.AD_Org_ID = organizationId;
     if (clientId) ctx.AD_Client_ID = clientId;
     if (bpId) ctx.parentId = bpId;
+    // SQL validation rules on FIN/PO_Financial_Account_ID resolve @Fin_Paymentmethod_ID@
+    // and @PO_Paymentmethod_ID@ from the request context.
+    if (paymentMethodId) ctx.Fin_Paymentmethod_ID = paymentMethodId;
+    if (pOPaymentMethodId) ctx.PO_Paymentmethod_ID = pOPaymentMethodId;
     return ctx;
-  }, [organizationId, clientId, bpId]);
+  }, [organizationId, clientId, bpId, paymentMethodId, pOPaymentMethodId]);
+
+  // FIN_Paymentmethod_ID validationRule uses @FIN_ISRECEIPT@ to filter by direction:
+  // 'Y' = incoming (customer pays us), 'N' = outgoing (we pay vendor).
+  const customerSelectorContext = useMemo(() => ({ ...selectorContext, FIN_ISRECEIPT: 'Y' }), [selectorContext]);
+  const vendorSelectorContext   = useMemo(() => ({ ...selectorContext, FIN_ISRECEIPT: 'N' }), [selectorContext]);
   // Available discount catalog
   const [discountOptions, setDiscountOptions] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -186,12 +116,6 @@ export default function BillingPreferencesForm(props) {
       .then(r => r.ok ? r.json() : null)
       .then(d => setDiscountRecord(d?.response?.data?.[0] ?? null))
       .catch(() => setDiscountRecord(null));
-
-    // Fetch all location/address records for this BP
-    fetch(`${apiBase}/locationAddress?parentId=${bpId}&_startRow=0&_endRow=50`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => setAddressRecords(d?.response?.data ?? []))
-      .catch(() => setAddressRecords([]));
 
     // Fetch available discounts catalog
     const discountParams = new URLSearchParams({ limit: '200', offset: '0' });
@@ -239,29 +163,6 @@ export default function BillingPreferencesForm(props) {
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
-  async function refreshAddressRecords() {
-    const d = await fetch(
-      `${apiBase}/locationAddress?parentId=${bpId}&_startRow=0&_endRow=50`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    )
-      .then(r => (r.ok ? r.json() : null))
-      .catch(() => null);
-    setAddressRecords(d?.response?.data ?? []);
-  }
-
-  async function handleDeleteLocation(bplLinkId) {
-    if (!bplLinkId) return;
-    await fetch(`${apiBase}/locationAddress/${bplLinkId}`, {
-      method: 'DELETE',
-      headers,
-    }).catch(() => {});
-    await refreshAddressRecords();
-  }
-
-  function openLocationModal(bplId, bplLinkId) {
-    setLocationModal({ open: true, bplId: bplId ?? null, bplLinkId: bplLinkId ?? null });
-  }
-
   async function handleDiscountChange(newDiscountId) {
     if (saving) return;
     setSaving(true);
@@ -307,61 +208,47 @@ export default function BillingPreferencesForm(props) {
   // ── Render ────────────────────────────────────────────────────────────────
 
   const discountLoading = discountRecord === undefined;
-  const addressLoading = addressRecords === undefined;
   const currentDiscountId = discountRecord?.discount ?? null;
 
   const customerCheckboxField = [
     { key: 'customer', column: 'IsCustomer', type: 'checkbox', label: ui('customer'), required: true, section: 'principal' },
   ];
 
-  const customerBillingFields = [
+  const customerTopBillingFields = [
     { key: 'priceList', column: 'M_PriceList_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
     { key: 'paymentMethod', column: 'FIN_Paymentmethod_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
-    { key: 'paymentTerms', column: 'C_PaymentTerm_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
     { key: 'account', column: 'FIN_Financial_Account_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
-    { key: 'customerBlocking', column: 'Customer_Blocking', type: 'checkbox', section: 'principal' },
+  ];
+  const customerPaymentTermsField = [
+    { key: 'paymentTerms', column: 'C_PaymentTerm_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
   ];
 
   const vendorCheckboxField = [
     { key: 'vendor', column: 'IsVendor', type: 'checkbox', label: ui('vendor'), required: true, section: 'principal' },
   ];
 
-  const vendorBillingFields = [
+  const vendorTopBillingFields = [
     { key: 'purchasePricelist', column: 'PO_PriceList_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
     { key: 'pOPaymentMethod', column: 'PO_Paymentmethod_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
-    { key: 'pOPaymentTerms', column: 'PO_PaymentTerm_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
     { key: 'pOFinancialAccount', column: 'PO_Financial_Account_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
-    { key: 'vendorBlocking', column: 'Vendor_Blocking', type: 'checkbox', section: 'principal' },
+  ];
+  const vendorPaymentTermsField = [
+    { key: 'pOPaymentTerms', column: 'PO_PaymentTerm_ID', type: 'selector', section: 'principal', inputMode: 'selector' },
   ];
 
   return (
-    <>
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
 
-      {/* ── Discount + Address inline fields ─────────────────────────── */}
+      {/* ── Descuento ──────────────────────────────────────────────── */}
       {bpId && (
-        <>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 items-start">
-            <DiscountCard
-              value={currentDiscountId}
-              options={discountOptions}
-              onChange={handleDiscountChange}
-              loading={discountLoading || saving}
-              ui={ui}
-            />
-
-            <LocationCard
-              records={addressRecords ?? []}
-              loading={addressLoading}
-              onEdit={openLocationModal}
-              onDelete={setDeleteLocationId}
-              onAdd={() => openLocationModal(null, null)}
-              ui={ui}
-            />
-          </div>
-
-          <div className="border-t border-border" />
-        </>
+        <div className="w-[236px]">
+          <DiscountSelect
+            value={currentDiscountId}
+            options={discountOptions}
+            onChange={handleDiscountChange}
+            loading={discountLoading || saving}
+          />
+        </div>
       )}
 
       {!canEditBillingPreferences ? (
@@ -370,66 +257,55 @@ export default function BillingPreferencesForm(props) {
         </div>
       ) : (
         <>
-          {/* ── Customer / Vendor billing ─────────────────────────────────── */}
-          <EntityForm {...props} fields={customerCheckboxField} selectorContext={selectorContext} />
-          {data?.customer && (
-            <div className="pl-4 border-l-2 border-border">
-              <EntityForm {...props} fields={customerBillingFields} selectorContext={selectorContext} />
+          {/* ── Cliente ───────────────────────────────────────────────────── */}
+          <div className="bg-[#F5F7F9] rounded-lg p-3 flex flex-col gap-3">
+            <div className="[&_.pt-6]:pt-0">
+              <EntityForm {...props} fields={customerCheckboxField} selectorContext={customerSelectorContext} />
             </div>
-          )}
+            {data?.customer && (
+              <>
+                <EntityForm {...props} fields={customerTopBillingFields} selectorContext={customerSelectorContext} />
+                <div className="flex flex-row gap-5 items-start">
+                  <div className="flex-1 min-w-0">
+                    <EntityForm {...props} fields={customerPaymentTermsField} cols={1} selectorContext={customerSelectorContext} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <YesNoRadio
+                      label={ui('customerBlockField')}
+                      value={data?.customerBlocking}
+                      onChange={(val) => onChange?.('customerBlocking', val, 'Customer_Blocking')}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
 
-          <EntityForm {...props} fields={vendorCheckboxField} selectorContext={selectorContext} />
-          {data?.vendor && (
-            <div className="pl-4 border-l-2 border-border">
-              <EntityForm {...props} fields={vendorBillingFields} selectorContext={selectorContext} />
+          {/* ── Proveedor ─────────────────────────────────────────────────── */}
+          <div className="bg-[#F5F7F9] rounded-lg p-3 flex flex-col gap-3">
+            <div className="[&_.pt-6]:pt-0">
+              <EntityForm {...props} fields={vendorCheckboxField} selectorContext={vendorSelectorContext} />
             </div>
-          )}
+            {data?.vendor && (
+              <>
+                <EntityForm {...props} fields={vendorTopBillingFields} selectorContext={vendorSelectorContext} />
+                <div className="flex flex-row gap-5 items-start">
+                  <div className="flex-1 min-w-0">
+                    <EntityForm {...props} fields={vendorPaymentTermsField} cols={1} selectorContext={vendorSelectorContext} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <YesNoRadio
+                      label={ui('vendorBlockField')}
+                      value={data?.vendorBlocking}
+                      onChange={(val) => onChange?.('vendorBlocking', val, 'Vendor_Blocking')}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </>
       )}
     </div>
-
-    {bpId && (
-      <LocationEditorModal
-        open={locationModal.open}
-        onClose={() => setLocationModal({ open: false, bplId: null, bplLinkId: null })}
-        onSaved={async () => {
-          await refreshAddressRecords();
-          setLocationModal({ open: false, bplId: null, bplLinkId: null });
-        }}
-        bplId={locationModal.bplId}
-        bplLinkId={locationModal.bplLinkId}
-        bpId={bpId}
-        contactsApiBase={apiBase}
-        token={token}
-        selectorContext={selectorContext}
-      />
-    )}
-
-    <Dialog open={Boolean(deleteLocationId)} onOpenChange={(open) => { if (!open) setDeleteLocationId(null); }}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>{ui('deleteConfirmTitle')}</DialogTitle>
-          <DialogDescription>{ui('deleteConfirmMessage')}</DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline" size="sm">{ui('cancel')}</Button>
-          </DialogClose>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={async () => {
-              const currentId = deleteLocationId;
-              setDeleteLocationId(null);
-              await handleDeleteLocation(currentId);
-            }}
-          >
-            {ui('delete')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-
-    </>
   );
 }

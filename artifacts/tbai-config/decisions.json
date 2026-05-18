@@ -1,0 +1,71 @@
+{
+  "$schema": "decisions-v2",
+  "window": {
+    "category": "configuration",
+    "name": "TBAI Config",
+    "attachments": false
+  },
+  "entities": {
+    "header": {
+      "fields": {
+        "organization": {
+          "visibility": "system",
+          "derivation": "fromParent"
+        },
+        "active": {
+          "visibility": "system",
+          "derivation": "fromConfig",
+          "defaultValue": "Y"
+        },
+        "etsgSifTerritory": {
+          "visibility": "readOnly"
+        },
+        "tbaisystemdate": {
+          "visibility": "editable"
+        },
+        "productionEnv": {
+          "visibility": "editable"
+        },
+        "invoiceDescription": {
+          "visibility": "editable"
+        },
+        "uSEAsproductDesc": {
+          "visibility": "editable"
+        },
+        "autoSendInvoices": {
+          "visibility": "editable"
+        },
+        "jasperreportPath": {
+          "visibility": "editable"
+        },
+        "validatePreviousInvoice": {
+          "visibility": "editable"
+        },
+        "tbaiConfigID": {
+          "visibility": "system",
+          "derivation": "fromConfig"
+        },
+        "client": {
+          "visibility": "system",
+          "derivation": "fromParent"
+        },
+        "creationDate": {
+          "visibility": "system",
+          "derivation": "fromConfig"
+        },
+        "createdBy": {
+          "visibility": "system",
+          "derivation": "fromConfig"
+        },
+        "updated": {
+          "visibility": "system",
+          "derivation": "fromConfig"
+        },
+        "updatedBy": {
+          "visibility": "system",
+          "derivation": "fromConfig"
+        }
+      }
+    }
+  }
+}

@@ -8,9 +8,9 @@ const fields = [
   { key: 'name', column: 'Name', type: 'text', label: 'Name', required: true, section: 'principal', defaultValue: '.' },
   { key: 'fax', column: 'Fax', type: 'text', label: 'Fax', section: 'principal' },
   { key: 'shipToAddress', column: 'IsShipTo', type: 'checkbox', label: 'Shipping Address', required: true, section: 'principal', defaultValue: 'Y' },
-  { key: 'invoiceToAddress', column: 'IsBillTo', type: 'checkbox', label: 'Invoicing Address', required: true, section: 'other', defaultValue: 'Y' },
+  { key: 'invoiceToAddress', column: 'IsBillTo', type: 'checkbox', label: 'Invoicing Address', required: true, section: 'principal', defaultValue: 'Y' },
   { key: 'active', column: 'IsActive', type: 'checkbox', label: 'Active', required: true, readOnly: true, section: 'other' },
-  { key: 'taxLocation', column: 'IsTaxLocation', type: 'checkbox', label: 'Tax Location', required: true, section: 'other', defaultValue: 'N' },
+  { key: 'taxLocation', column: 'IsTaxLocation', type: 'checkbox', label: 'Tax Location', required: true, section: 'principal' },
 ];
 // @sf-generated-end fields:locationAddress
 
@@ -18,5 +18,5 @@ const fields = [
 export default function LocationAddressForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-LocationAddressForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:LocationAddressForm

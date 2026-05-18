@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { useUI } from '@/i18n';
+import { useUI, useMenuLabel } from '@/i18n';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -31,6 +31,7 @@ function Spinner() {
 export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }) {
   const navigate = useNavigate();
   const ui = useUI();
+  const tMenu = useMenuLabel();
   const [showConfirm,   setShowConfirm]   = useState(false);
   const [showSend,      setShowSend]      = useState(false);
   const [showActions,   setShowActions]   = useState(false);
@@ -39,6 +40,7 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
   const [confirmedDocs,  setConfirmedDocs]  = useState(null); // set after confirm+reload when both docs created
   const [confirmedTitle, setConfirmedTitle] = useState(null); // null = "Order confirmed", string = custom title
   const [showClone,      setShowClone]      = useState(false);
+  const [isCloneHovered, setIsCloneHovered] = useState(false);
 
   const status      = data?.documentStatus;
   const isDraft     = status === 'DR';
@@ -50,6 +52,13 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
     'Content-Type': 'application/json',
   }), [token]);
 
+
+  // draftMode confirm button (DetailView) dispatches this event to open the confirm modal
+  useEffect(() => {
+    const handler = () => setShowConfirm(true);
+    window.addEventListener('sales-order:open-confirm-modal', handler);
+    return () => window.removeEventListener('sales-order:open-confirm-modal', handler);
+  }, []);
 
   // OrderDraftChips (topbarExtra) dispatches this event when a grouped chip is clicked
   useEffect(() => {
@@ -107,8 +116,8 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
     : null;
 
   const cloneButton = (
-    <button type="button" onClick={() => setShowClone(true)} style={btnCloneStyle}>
-      <CopyIcon />{ui('cloneOrderBtn')}
+    <button type="button" onClick={() => setShowClone(true)} style={{...btnCloneStyle, background: isCloneHovered ? '#F1F5F9' : '#FFFFFF'}} title={ui('cloneOrderBtn')} onMouseEnter={() => setIsCloneHovered(true)} onMouseLeave={() => setIsCloneHovered(false)}>
+      <CopyIcon />
     </button>
   );
   const clonePortal = showClone ? createPortal(
@@ -176,11 +185,6 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
 
   return (
     <>
-      {isDraft && (
-        <button type="button" onClick={() => setShowConfirm(true)} style={btnPrimaryStyle}>
-          {ui('soConfirmBtn')}
-        </button>
-      )}
       {/* Main action button — only shown when action is still pending */}
       {isCompleted && buttonLabel && (
         <button type="button" onClick={() => openModal(null)} style={btnPrimaryStyle}>
@@ -216,10 +220,11 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
       )}
       {isDraft && showSend && createPortal(
         <SendDocumentModal
-          documentType="SalesOrder"
+          documentType={tMenu('Sales Order')}
           documentNo={data?.documentNo}
           bpName={data?.['businessPartner$_identifier']}
-          bpEmail={data?.['userContact$_identifier']}
+          bPartnerId={data?.businessPartner}
+          apiBaseUrl={apiBaseUrl}
           documentId={recordId}
           windowName="sales-order"
           token={token}
@@ -234,15 +239,17 @@ export default function OrderCreateInvoice({ data, recordId, token, apiBaseUrl }
 
 // ── ConfirmModal ───────────────────────────────────────────────────────────────
 
-function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed }) {
-  const navigate = useNavigate();
+export function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed }) {
   const ui       = useUI();
-  const [createShipment, setCreateShipment] = useState(false);
-  const [createInvoice,  setCreateInvoice]  = useState(false);
-  const [loading,        setLoading]        = useState(false);
-  const [error,          setError]          = useState(null);
-  const [lineCount,      setLineCount]      = useState(null);
-  const [freshData,      setFreshData]      = useState(null);
+  const [createShipment,  setCreateShipment]  = useState(false);
+  const [createInvoice,   setCreateInvoice]   = useState(false);
+  const [loading,         setLoading]         = useState(false);
+  const [error,           setError]           = useState(null);
+  const [lineCount,       setLineCount]       = useState(null);
+  const [freshData,       setFreshData]       = useState(null);
+  const [orderConfirmed,  setOrderConfirmed]  = useState(false);
+  const [shipmentResult,  setShipmentResult]  = useState(null);
+  const [invoiceResult,   setInvoiceResult]   = useState(null);
 
   // Fetch fresh record + line count on mount
   useEffect(() => {
@@ -267,34 +274,50 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
     return () => { cancelled = true; };
   }, [orderId, apiBaseUrl, headers]);
 
-  const d          = freshData || data || {};
-  const documentNo = d.documentNo || '';
-  const bpName     = d['businessPartner$_identifier'] || '';
-  const grandTotal = Number(d.grandTotalAmount) || 0;
-  const totalLines = d.summedLineAmount ?? d.totalLines ?? grandTotal;
-  const currency   = d['currency$_identifier'] || '';
+  const d              = freshData || data || {};
+  const documentNo     = d.documentNo || '';
+  const bpName         = d['businessPartner$_identifier'] || '';
+  const discountPct    = Number(d.etgoTotalDiscount ?? 0);
+  const discountFactor = discountPct > 0 ? (1 - discountPct / 100) : 1;
+  const grandTotal     = (Number(d.grandTotalAmount) || 0) * discountFactor;
+  const totalLines     = (Number(d.summedLineAmount ?? d.totalLines ?? d.grandTotalAmount ?? 0) || 0) * discountFactor;
+  const currency       = d['currency$_identifier'] || '';
 
   const handleConfirm = async () => {
     if (loading) return;
     setLoading(true);
     setError(null);
-    try {
-      // Step 1: Confirm the order (always)
-      const processRes = await fetch(
-        `${apiBaseUrl}/header/${orderId}/action/documentAction`,
-        { method: 'POST', headers, body: JSON.stringify({ docAction: 'CO' }) },
-      );
-      if (!processRes.ok) {
-        const e = await processRes.json().catch(() => null);
-        throw new Error(e?.response?.message || `Error (${processRes.status})`);
-      }
-      window.dispatchEvent(new CustomEvent('sales-order:document-created'));
 
-      // Step 2: Create shipment if checked
-      let shipmentId = null;
-      let shipmentDocNo = '';
-      let shipmentAmount = null;
-      if (createShipment) {
+    // Step 1: Confirm the order — must succeed before anything else.
+    // If this fails the order is still in DR, so the rest of the flow makes no sense.
+    if (!orderConfirmed) {
+      try {
+        const processRes = await fetch(
+          `${apiBaseUrl}/header/${orderId}/action/documentAction`,
+          { method: 'POST', headers, body: JSON.stringify({ docAction: 'CO' }) },
+        );
+        if (!processRes.ok) {
+          const e = await processRes.json().catch(() => null);
+          throw new Error(e?.response?.message || `Error (${processRes.status})`);
+        }
+        setOrderConfirmed(true);
+        window.dispatchEvent(new CustomEvent('sales-order:document-created'));
+      } catch (e) {
+        setError(e.message || ui('soErrorOccurred'));
+        setLoading(false);
+        return;
+      }
+    }
+
+    // Steps 2 and 3 are independent: the invoice uses order quantities, not
+    // shipment quantities. A failure in one must NOT prevent the other from
+    // running. Errors are accumulated and shown together at the end.
+    const errors = [];
+
+    // Step 2: Create shipment if checked and not already done
+    let currentShipment = null;
+    if (createShipment && !shipmentResult) {
+      try {
         const res = await fetch(`${apiBaseUrl}/header/${orderId}/action/createShipment`,
           { method: 'POST', headers, body: JSON.stringify({}) });
         if (!res.ok) {
@@ -302,17 +325,17 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
           throw new Error(ui('soOrderConfirmedShipmentError') + (e?.response?.message || `Error (${res.status})`));
         }
         const doc = (await res.json())?.response?.data;
-        shipmentId     = doc?.id ?? null;
-        shipmentDocNo  = doc?.documentNo ?? '';
-        shipmentAmount = doc?.grandTotalAmount ?? null;
+        currentShipment = { id: doc?.id ?? null, documentNo: doc?.documentNo ?? '', amount: doc?.grandTotalAmount ?? null };
+        setShipmentResult(currentShipment);
+      } catch (e) {
+        errors.push(e.message || ui('soErrorOccurred'));
       }
+    }
 
-      // Step 3: Create invoice if checked.
-      // Uses order quantities (ordered - already invoiced), independent of the shipment above.
-      let invoiceId = null;
-      let invoiceDocNo = '';
-      let invoiceAmount = null;
-      if (createInvoice) {
+    // Step 3: Create invoice if checked and not already done.
+    let currentInvoice = null;
+    if (createInvoice && !invoiceResult) {
+      try {
         const res = await fetch(`${apiBaseUrl}/header/${orderId}/action/createDraftInvoice`,
           { method: 'POST', headers, body: JSON.stringify({}) });
         if (!res.ok) {
@@ -320,21 +343,28 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
           throw new Error(ui('soOrderConfirmedInvoiceError') + (e?.response?.message || `Error (${res.status})`));
         }
         const doc = (await res.json())?.response?.data;
-        invoiceId     = doc?.id ?? null;
-        invoiceDocNo  = doc?.documentNo ?? '';
-        invoiceAmount = doc?.grandTotalAmount ?? null;
+        currentInvoice = { id: doc?.id ?? null, documentNo: doc?.documentNo ?? '', amount: doc?.grandTotalAmount ?? null };
+        setInvoiceResult(currentInvoice);
+      } catch (e) {
+        errors.push(e.message || ui('soErrorOccurred'));
       }
-
-      // Always show the result modal — never navigate from here
-      onConfirmed({
-        shipment: shipmentId ? { id: shipmentId, documentNo: shipmentDocNo, amount: shipmentAmount } : null,
-        invoice:  invoiceId  ? { id: invoiceId,  documentNo: invoiceDocNo,  amount: invoiceAmount  } : null,
-      });
-
-    } catch (e) {
-      setError(e.message || ui('soErrorOccurred'));
-      setLoading(false);
     }
+
+    // If any step failed, surface all errors and keep the modal open so the
+    // user can retry. The successful steps are already locked via state, so
+    // the next attempt will skip them.
+    if (errors.length > 0) {
+      setError(errors.join('\n'));
+      setLoading(false);
+      return;
+    }
+
+    // All requested steps succeeded — close the modal with whatever was created.
+    // Use the current attempt's result first; fall back to persisted result from a prior attempt.
+    onConfirmed({
+      shipment: currentShipment ?? shipmentResult,
+      invoice:  currentInvoice  ?? invoiceResult,
+    });
   };
 
   const primaryLabel = (() => {
@@ -344,8 +374,24 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
     return ui('soConfirmActionOnly');
   })();
 
+  // If the user closes the modal AFTER step 1 succeeded (or any document was
+  // already created), route the close through `onConfirmed` so the result
+  // modal opens with whatever exists and the page reloads on its own close.
+  // Otherwise the order is silently in CO state but the UI keeps showing DR,
+  // and reopening the modal would re-attempt step 1 → @AlreadyPosted@.
+  const handleClose = () => {
+    if (orderConfirmed || shipmentResult || invoiceResult) {
+      onConfirmed({
+        shipment: shipmentResult,
+        invoice:  invoiceResult,
+      });
+      return;
+    }
+    onClose();
+  };
+
   return (
-    <div onClick={onClose} style={overlayStyle}>
+    <div onClick={handleClose} style={overlayStyle}>
       <div onClick={e => e.stopPropagation()} style={{ ...cardStyle, width: 460 }}>
 
         {/* Title row */}
@@ -353,7 +399,7 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
           <div style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>
             {ui('soConfirmTitle', { number: documentNo })}
           </div>
-          <button type="button" onClick={onClose} style={closeBtn}>&times;</button>
+          <button type="button" onClick={handleClose} style={closeBtn}>&times;</button>
         </div>
 
         {/* Blue summary card */}
@@ -390,29 +436,31 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
             {ui('soGenerateDocs')}
           </div>
           <SoCheckboxCard
-            checked={createShipment}
-            onChange={() => setCreateShipment(v => !v)}
+            checked={createShipment || Boolean(shipmentResult)}
+            onChange={() => !shipmentResult && setCreateShipment(v => !v)}
             icon="🚚"
             title={ui('soCreateShipmentTitle')}
-            subtitle={ui('soCreateShipmentCheckDesc')}
+            subtitle={shipmentResult ? ui('soAlreadyCreated') : ui('soCreateShipmentCheckDesc')}
+            disabled={Boolean(shipmentResult)}
           />
           <SoCheckboxCard
-            checked={createInvoice}
-            onChange={() => setCreateInvoice(v => !v)}
+            checked={createInvoice || Boolean(invoiceResult)}
+            onChange={() => !invoiceResult && setCreateInvoice(v => !v)}
             icon="🧾"
             title={ui('soCreateInvoiceTitle')}
-            subtitle={ui('soCreateInvoiceCheckDesc')}
+            subtitle={invoiceResult ? ui('soAlreadyCreated') : ui('soCreateInvoiceCheckDesc')}
+            disabled={Boolean(invoiceResult)}
           />
         </div>
 
         {error && (
-          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA' }}>
+          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA', whiteSpace: 'pre-line' }}>
             {error}
           </div>
         )}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '12px 20px', borderTop: '0.5px solid #E5E7EB' }}>
-          <button type="button" onClick={onClose} disabled={loading} style={{ ...btnSecondary, opacity: loading ? 0.5 : 1 }}>
+          <button type="button" onClick={handleClose} disabled={loading} style={{ ...btnSecondary, opacity: loading ? 0.5 : 1 }}>
             {ui('cancel')}
           </button>
           <button type="button" onClick={handleConfirm} disabled={loading}
@@ -428,21 +476,23 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
 
 // ── SoCheckboxCard ─────────────────────────────────────────────────────────────
 
-function SoCheckboxCard({ checked, onChange, icon, title, subtitle }) {
+function SoCheckboxCard({ checked, onChange, icon, title, subtitle, disabled }) {
   return (
     <div
-      onClick={onChange}
+      onClick={disabled ? undefined : onChange}
       style={{
         display: 'flex', alignItems: 'center', gap: 12,
-        padding: checked ? '11px 13px' : '12px 14px', borderRadius: 8, cursor: 'pointer',
-        border: checked ? '2px solid #3B82F6' : '1px solid #E5E7EB',
-        background: checked ? '#EFF6FF' : '#fff',
+        padding: checked ? '11px 13px' : '12px 14px', borderRadius: 8,
+        cursor: disabled ? 'default' : 'pointer',
+        border: disabled ? '2px solid #10B981' : (checked ? '2px solid #3B82F6' : '1px solid #E5E7EB'),
+        background: disabled ? '#ECFDF5' : (checked ? '#EFF6FF' : '#fff'),
+        opacity: disabled ? 0.85 : 1,
         transition: 'border-color 0.15s, background 0.15s',
       }}
     >
       <span style={{ fontSize: 15, lineHeight: 1, flexShrink: 0 }}>{icon}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 500, color: checked ? '#2563EB' : '#111827' }}>
+        <div style={{ fontSize: 13, fontWeight: 500, color: disabled ? '#059669' : (checked ? '#2563EB' : '#111827') }}>
           {title}
         </div>
         <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 3, lineHeight: 1.4 }}>
@@ -452,12 +502,12 @@ function SoCheckboxCard({ checked, onChange, icon, title, subtitle }) {
       {/* Checkbox indicator */}
       <div style={{
         width: 18, height: 18, borderRadius: 4, flexShrink: 0,
-        border: checked ? 'none' : '1.5px solid #D1D5DB',
-        background: checked ? '#3B82F6' : '#fff',
+        border: (checked || disabled) ? 'none' : '1.5px solid #D1D5DB',
+        background: disabled ? '#10B981' : (checked ? '#3B82F6' : '#fff'),
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         transition: 'background 0.15s',
       }}>
-        {checked && (
+        {(checked || disabled) && (
           <svg width="11" height="9" viewBox="0 0 11 9" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="1 4 4 7.5 10 1" />
           </svg>
@@ -469,7 +519,7 @@ function SoCheckboxCard({ checked, onChange, icon, title, subtitle }) {
 
 // ── CreateDocsModal (CO orders — create docs without re-confirming) ───────────
 
-function CreateDocsModal({ orderId, data, base, headers, currency, derived, onClose, onCreated }) {
+export function CreateDocsModal({ orderId, data, base, headers, currency, derived, onClose, onCreated }) {
   const ui = useUI();
   const {
     needsShip, needsInvoice,
@@ -591,7 +641,7 @@ function CreateDocsModal({ orderId, data, base, headers, currency, derived, onCl
         </div>
 
         {error && (
-          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA' }}>
+          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA', whiteSpace: 'pre-line' }}>
             {error}
           </div>
         )}
@@ -662,7 +712,7 @@ function CloneModal({ orderId, data, apiBaseUrl, headers, onClose, onCloned }) {
     setLoading(true);
     setError(null);
     try {
-      const res  = await fetch(`${apiBaseUrl}/header/${orderId}/action/cloneOrder`, { method: 'POST', headers });
+      const res  = await fetch(`${apiBaseUrl}/header/${orderId}/action/cloneRecord`, { method: 'POST', headers });
       const json = await res.json();
       if (!res.ok) {
         setError(json?.response?.error?.message || ui('cloneOrderError'));
@@ -771,9 +821,10 @@ const iconBtnStyle = {
 };
 
 const btnCloneStyle = {
-  display: 'inline-flex', alignItems: 'center', gap: 5,
-  padding: '5px 12px', borderRadius: 6, fontSize: 13, fontWeight: 500,
-  border: '1px solid #D1D5DB', background: 'transparent', color: '#374151', cursor: 'pointer',
+  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+  padding: '7px', borderRadius: 6,
+  border: '1px solid #D1D4DB', background: '#FFFFFF', color: '#64748B', cursor: 'pointer',
+  boxShadow: '0px 1px 2px 0px #1212170D',
 };
 
 const closeBtn = {
@@ -785,7 +836,7 @@ const closeBtn = {
 // Shown after order confirmation (always). Displays created docs as clickable cards.
 // Cases: no docs (only confirmed), shipment only, invoice only, or both.
 
-function ConfirmResultModal({ docs, onClose, navigate, ui, currency, title }) {
+export function ConfirmResultModal({ docs, onClose, navigate, ui, currency, title }) {
   const { shipment, invoice } = docs;
   const hasDocs = Boolean(shipment?.id || invoice?.id);
 
@@ -898,5 +949,107 @@ function ResultDocCard({ icon, label, amount, currency, color, ui, onClick }) {
         <path d="M9 18l6-6-6-6" />
       </svg>
     </div>
+  );
+}
+
+// ── ManageDocsLauncher ──────────────────────────────────────────────────────
+// Self-contained mount point for the "Gestionar envío/factura" flow from the
+// list-view row kebab. Replicates the fetch+derive logic that OrderCreateInvoice
+// runs in the detail page (shipments / invoices / order lines → pending qty &
+// amount) and opens CreateDocsModal once derived data is ready. If nothing is
+// pending the launcher closes silently.
+export function ManageDocsLauncher({ orderId, data, apiBaseUrl, token, onClose, onCreated }) {
+  const ui = useUI();
+  const [fetched, setFetched] = useState(null);
+
+  const base    = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
+  const headers = useMemo(() => ({
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  }), [token]);
+
+  useEffect(() => {
+    if (!orderId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [shipRes, linesRes, invRes] = await Promise.all([
+          fetch(`${base}/goods-shipment/goodsShipment?criteria=${CRITERIA('salesOrder', orderId)}&_limit=50`, { headers }),
+          fetch(`${apiBaseUrl}/lines?parentId=${orderId}&_startRow=0&_endRow=999`, { headers }),
+          fetch(`${apiBaseUrl}/header/${orderId}/action/listInvoices`, { headers }),
+        ]);
+        if (cancelled) return;
+        const shipments  = shipRes.ok  ? ((await shipRes.json())?.response?.data  ?? []) : [];
+        const orderLines = linesRes.ok ? ((await linesRes.json())?.response?.data ?? []) : [];
+        const invoices   = invRes.ok   ? ((await invRes.json())?.response?.data   ?? []) : [];
+        if (!cancelled) setFetched({ shipments, invoices, orderLines });
+      } catch {
+        if (!cancelled) setFetched({ shipments: [], invoices: [], orderLines: [] });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [orderId, base, headers, apiBaseUrl]);
+
+  if (!fetched) {
+    // Lightweight overlay so the user gets feedback while the row's docs load.
+    return createPortal(
+      <div style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.2)', zIndex: 9998,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div style={{ background: '#fff', padding: '16px 24px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Spinner /><span style={{ fontSize: 13 }}>{ui('loading')}</span>
+        </div>
+      </div>,
+      document.body,
+    );
+  }
+
+  const { shipments, invoices, orderLines } = fetched;
+  const shipmentsDraft   = shipments.filter(s => s.documentStatus === 'DR');
+  const shipmentsComplete = shipments.filter(s => s.documentStatus === 'CO');
+  const invoiceDraft     = invoices.find(i => i.documentStatus === 'DR') ?? null;
+  const invoicesComplete = invoices.filter(i => i.documentStatus === 'CO');
+
+  const qtyOrdered   = orderLines.reduce((s, l) => s + (Number(l.orderedQuantity)   || 0), 0);
+  const qtyDelivered = orderLines.reduce((s, l) => s + (Number(l.deliveredQuantity) || 0), 0);
+  const qtyPending   = Math.max(0, qtyOrdered - qtyDelivered);
+
+  const totalOrder    = Number(data?.grandTotalAmount) || 0;
+  const totalInvoiced = invoicesComplete.reduce((s, i) => s + (Number(i.grandTotalAmount) || 0), 0);
+  const totalPending  = Math.max(0, totalOrder - totalInvoiced);
+
+  const needsShip    = qtyPending > 0 && shipmentsDraft.length === 0;
+  const needsInvoice = totalPending > 0 && !invoiceDraft;
+  const nothingToManage = !needsShip && !needsInvoice;
+
+  // Close asynchronously when there's nothing pending — avoids the
+  // "Cannot update a component while rendering" warning that occurs when a
+  // child triggers parent setState during its own render.
+  useEffect(() => {
+    if (nothingToManage) onClose?.();
+  }, [nothingToManage, onClose]);
+
+  if (nothingToManage) return null;
+
+  const derived = {
+    shipmentsComplete, invoicesComplete,
+    qtyOrdered, qtyDelivered, qtyPending,
+    totalOrder, totalInvoiced, totalPending,
+    needsShip, needsInvoice,
+  };
+
+  return createPortal(
+    <CreateDocsModal
+      orderId={orderId}
+      data={data}
+      base={base}
+      headers={headers}
+      currency={data?.['currency$_identifier'] || ''}
+      derived={derived}
+      onClose={onClose}
+      onCreated={onCreated}
+    />,
+    document.body,
   );
 }

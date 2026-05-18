@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import HeaderTable from './HeaderTable';
 import HeaderForm from './HeaderForm';
+import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 
 
@@ -42,9 +43,13 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:header
 
+// @sf-generated-start requiredHeaderFields:header
+const requiredHeaderFields = ['searchKey', 'name', 'offsetMonthDue', 'overduePaymentDaysRule'];
+// @sf-generated-end requiredHeaderFields:header
 
 
-const api = {
+
+export const api = {
   "specName": "payment-term",
   "baseUrl": "/sws/neo/payment-term",
   "crud": {
@@ -73,16 +78,29 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=name"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "settings"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "Value": "Clave",
+      "Name": "Nombre",
+      "Description": "Descripción",
+      "FixMonthOffset": "Meses de desplazamiento",
+      "NetDays": "Días",
+      "IsDefault": "Por defecto",
+      "IsActive": "Activo"
+    }
   }
 };
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -100,6 +118,8 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       api={api}
         hidePrint
         hideMoreMenu
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_PaymentTerm", config: {} } }]}
+        requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}
         {...props}
       />
@@ -117,6 +137,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       hidePrint
       hideMoreMenu
       labelOverrides={labelOverrides}
+      rowQuickActions={{}}
       {...props}
     />
   );

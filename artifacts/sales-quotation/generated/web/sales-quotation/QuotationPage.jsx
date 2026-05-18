@@ -6,11 +6,24 @@ import QuotationForm from './QuotationForm';
 import QuotationLineTable from './QuotationLineTable';
 import QuotationLineForm from './QuotationLineForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
+import QuotationBottomPanel from '../../../custom/QuotationBottomPanel';
 import QuotationTopbarActions from '../../../custom/QuotationTopbarActions';
 import catalogs from './mockCatalogs';
 
 
 const breadcrumb = 'Sales / Sales Quotation';
+
+const labelOverrides = {
+  "es_ES": {
+    "C_BPartner_ID": "Contacto",
+    "C_Reject_Reason_ID": "Razón de rechazo"
+  },
+  "en_US": {
+    "C_BPartner_ID": "Contact",
+    "C_Reject_Reason_ID": "Reject Reason"
+  }
+};
 
 
 // @sf-generated-start summary:quotation
@@ -34,20 +47,37 @@ const processes = [
 // @sf-generated-end processes:quotation
 
 // @sf-generated-start draftMode:quotation
-const draftMode = null;
+const draftMode = {
+  "enabled": true,
+  "processField": "documentAction",
+  "processValue": "CO",
+  "label": "soConfirmBtn",
+  "completedStatuses": [
+    "CA",
+    "ETGO_CI",
+    "CL",
+    "VO",
+    "CJ"
+  ]
+};
 // @sf-generated-end draftMode:quotation
+
+// @sf-generated-start requiredHeaderFields:quotation
+const requiredHeaderFields = ['documentNo', 'orderDate', 'businessPartner', 'partnerAddress', 'priceList', 'paymentTerms', 'grandTotalAmount', 'summedLineAmount'];
+// @sf-generated-end requiredHeaderFields:quotation
 
 // @sf-generated-start addLineFields:quotationLine
 const addLineFields = {
   entry: [
-    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity' },
-    { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, label: 'Tax', reference: 'Tax', inputMode: 'selector' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["listPrice","unitPrice","tax","uOM","grossUnitPrice","discount"] },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
+    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity', defaultValue: 1 },
+    { key: 'listPrice', column: 'PriceList', type: 'number', required: true, label: 'Net List Price' },
+    { key: 'discount', column: 'Discount', type: 'number', label: 'Discount', defaultValue: 0 },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineGrossAmount","grossUnitPrice","lineNetAmount"] },
   ],
   derived: [
-    { key: 'discount', column: 'Discount', type: 'number', label: 'Discount' },
+
   ],
   hidden: [
 
@@ -55,7 +85,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:quotationLine
 
-const api = {
+export const api = {
   "specName": "sales-quotation",
   "baseUrl": "/sws/neo/sales-quotation",
   "crud": {
@@ -97,7 +127,7 @@ const api = {
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
       "inputMode": "search",
-      "url": "/sws/neo/sales-quotation/quotation/selectors/businessPartner?isCustomer=Y"
+      "url": "/sws/neo/sales-quotation/quotation/selectors/businessPartner"
     },
     {
       "entity": "quotation",
@@ -122,6 +152,22 @@ const api = {
       "reference": "Paymentmethod",
       "inputMode": "selector",
       "url": "/sws/neo/sales-quotation/quotation/selectors/paymentMethod"
+    },
+    {
+      "entity": "quotation",
+      "field": "paymentTerms",
+      "column": "C_PaymentTerm_ID",
+      "reference": "PaymentTerm",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/paymentTerms"
+    },
+    {
+      "entity": "quotation",
+      "field": "rejectReason",
+      "column": "C_Reject_Reason_ID",
+      "reference": "Reject_Reason",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-quotation/quotation/selectors/rejectReason"
     },
     {
       "entity": "quotation",
@@ -324,7 +370,7 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=sales-quotationDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
@@ -334,17 +380,18 @@ const api = {
   },
   "labelOverrides": {
     "es_ES": {
-      "C_BPartner_ID": "Contacto"
+      "C_BPartner_ID": "Contacto",
+      "C_Reject_Reason_ID": "Razón de rechazo"
     },
     "en_US": {
-      "C_BPartner_ID": "Contact"
+      "C_BPartner_ID": "Contact",
+      "C_Reject_Reason_ID": "Reject Reason"
     }
   }
 };
 
 // @sf-generated-start component:QuotationPage
 export default function QuotationPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -367,15 +414,21 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
       api={api}
         hideDeleteWhenComplete
         hidePrint
+        hideSaveStatuses={["CA","ETGO_CI","CL","VO","CJ"]}
         noHeaderBorder
         notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Order", config: {} } }]}
+        bottomSection={QuotationBottomPanel}
         topbarRight={QuotationTopbarActions}
         menuActions={({ status }) => [
-          { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
-          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
+          { key: 'reject', label: 'Reject', destructive: true, visible: ["UE"].includes(status), labelKey: 'rejectQuotation', onClick: () => {}, }
         ]}
+        draftMode={draftMode}
+        requiredHeaderFields={requiredHeaderFields}
         salesTheme
+        labelOverrides={labelOverrides}
+        linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -389,7 +442,11 @@ export default function QuotationPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="orderDate"
       hidePrint
+      labelOverrides={labelOverrides}
+      rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

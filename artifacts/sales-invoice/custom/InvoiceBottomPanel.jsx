@@ -1,131 +1,60 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { createPortal } from 'react-dom';
-import { toast } from 'sonner';
 import { useUI } from '@/i18n';
+import { LinesBottomSection } from '@/components/contract-ui';
 import RelatedDocuments from './RelatedDocuments';
 import ImportFromShipmentModal from './ImportFromShipmentModal';
-
-function fmt(val, curr) {
-  const n = typeof val === 'string' ? parseFloat(val) : (val ?? 0);
-  const s = n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return curr ? `${s} ${curr}` : s;
-}
+import ImportFromOrderModal from './ImportFromOrderModal';
 
 /**
- * InvoiceBottomPanel — two-column bottom block for Invoice detail.
- *
- * Left:  DOCS chips + NOTES text field (secondary background)
- * Right: Subtotal / Tax / Total
- *
- * Payment status is shown in the topbar (InvoiceTopbarExtra).
+ * Sales Invoice bottom section. Delegates to the shared LinesBottomSection so
+ * the Docs/Notes/Totals layout stays identical to the rest of the
+ * inline-editable family. The SIF fiscal data is now rendered in its own
+ * primary tab (via extraTabs in decisions.json), not here.
  */
-export default function InvoiceBottomPanel({
-  recordId, data, token, apiBaseUrl, api, summary,
-  notesField, onFieldChange, notesFocused, setNotesFocused,
-}) {
-  const ui = useUI();
-  const currency = data?.['currency$_identifier'] || '';
-
-  const subtotalField = summary?.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('summed') || f.key.toLowerCase().includes('totallines') || f.key.toLowerCase().includes('lineamount')));
-  const totalField = summary?.find(f => f.type === 'amount' && (f.key.toLowerCase().includes('grand') || (f.key.toLowerCase().includes('total') && !f.key.toLowerCase().includes('line'))));
-  const subtotal = subtotalField ? data?.[subtotalField.key] : null;
-  const total = totalField ? data?.[totalField.key] : null;
-  const taxes = (subtotal != null && total != null) ? total - subtotal : null;
-
+export default function InvoiceBottomPanel(props) {
   return (
-    <div className="flex flex-col">
-      <div className="flex">
-      {/* ── Left column: Docs + Notes ── */}
-      <div className="flex-1 min-w-0 py-4 px-1 bg-muted/30 rounded-bl-lg">
-        {/* DOCS */}
-        <div className="flex items-start gap-3 px-3 pb-3">
-          <span className="text-[11px] font-medium text-foreground uppercase shrink-0 w-24 pt-0.5" style={{ letterSpacing: '0.04em' }}>
-            {ui('docs')}
-          </span>
-          <div className="flex-1">
-            <RelatedDocuments
-              recordId={recordId}
-              data={data}
-              token={token}
-              apiBaseUrl={apiBaseUrl}
-              api={api}
-              layout="chips"
-            />
-          </div>
-        </div>
-
-        {/* NOTES */}
-        {notesField && (
-          <div className="flex items-start gap-3 px-3 mt-3 pt-3 border-t border-border/40" style={{ borderTopWidth: '0.5px' }}>
-            <span className="text-[11px] font-medium text-foreground uppercase shrink-0 w-24 pt-1.5" style={{ letterSpacing: '0.04em' }}>
-              {ui('notes')}
-            </span>
-            <div className="flex-1">
-              {notesFocused ? (
-                <textarea
-                  value={data?.[notesField] || ''}
-                  onChange={(e) => onFieldChange?.(notesField, e.target.value)}
-                  onBlur={() => setNotesFocused?.(false)}
-                  placeholder={ui('addNoteHint')}
-                  rows={2}
-                  autoFocus
-                  className="w-full text-xs bg-white border border-border/40 rounded px-2.5 py-1.5 resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground/40"
-                  style={{ borderWidth: '0.5px' }}
-                />
-              ) : (
-                <div
-                  tabIndex={0}
-                  role="textbox"
-                  onClick={() => setNotesFocused?.(true)}
-                  onFocus={() => setNotesFocused?.(true)}
-                  className="w-full text-xs px-2.5 py-1.5 cursor-text min-h-[1.5rem] text-foreground/80 border border-transparent rounded hover:border-border/30 transition-colors"
-                >
-                  {data?.[notesField] || <span className="text-muted-foreground/40">{ui('addNoteHint')}</span>}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ── Vertical separator ── */}
-      <div className="border-l border-border/50" style={{ borderLeftWidth: '0.5px' }} />
-
-      {/* ── Right column: Totals only ── */}
-      <div className="w-[280px] shrink-0 py-4 px-4">
-        <div className="text-sm space-y-0.5">
-          {subtotal != null && (
-            <div className="flex justify-between py-1 px-1">
-              <span className="text-muted-foreground">{ui('subtotal')}</span>
-              <span className="tabular-nums">{fmt(subtotal, currency)}</span>
-            </div>
-          )}
-          {taxes != null && taxes !== 0 && (
-            <div className="flex justify-between py-1 px-1">
-              <span className="text-muted-foreground">{ui('tax')}</span>
-              <span className="tabular-nums">{fmt(taxes, currency)}</span>
-            </div>
-          )}
-          {total != null && (
-            <div className="flex justify-between py-1.5 px-1 border-t border-border/40 font-semibold text-base" style={{ borderTopWidth: '0.5px' }}>
-              <span>{ui('total')}</span>
-              <span className="tabular-nums">{fmt(total, currency)}</span>
-            </div>
-          )}
-        </div>
-      </div>
-      </div>
-    </div>
+    <LinesBottomSection
+      {...props}
+      relatedDocuments={RelatedDocuments}
+    />
   );
 }
 
-function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, token, apiBaseUrl }) {
+function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, token, apiBaseUrl, onSave, forceOpen, onForceOpenHandled, onRefresh }) {
   const ui = useUI();
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showImportOrderModal, setShowImportOrderModal] = useState(false);
+  const pendingModal = useRef('shipment');
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
+
+  useEffect(() => {
+    if (forceOpen) {
+      if (pendingModal.current === 'order') { setShowImportOrderModal(true); } else { setShowImportModal(true); }
+      onForceOpenHandled?.();
+    }
+  }, [forceOpen, onForceOpenHandled]);
+
+  const handleImportClick = async () => {
+    pendingModal.current = 'shipment';
+    if (onSave) {
+      const shouldOpen = await onSave();
+      if (!shouldOpen) return;
+    }
+    setShowImportModal(true);
+  };
+
+  const handleImportOrderClick = async () => {
+    pendingModal.current = 'order';
+    if (onSave) {
+      const shouldOpen = await onSave();
+      if (!shouldOpen) return;
+    }
+    setShowImportOrderModal(true);
+  };
 
   return (
     <div style={{ margin: '24px 16px', padding: '32px 24px', background: 'var(--color-background-secondary)', borderRadius: 'var(--border-radius-lg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
@@ -138,20 +67,30 @@ function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, 
         </svg>
       </div>
       <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: 4 }}>{ui('noLinesYet')}</span>
-      <span style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 20 }}>{ui('addLinesManuallyOrImportFromShipment')}</span>
+      <span style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 20 }}>{ui('addLinesManuallyOrImportFromShipmentOrOrder')}</span>
       {isDraft && canAddLine && (
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
           <button type="button" onClick={onAddLine} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, background: '#18181b', color: '#fff', border: 'none', cursor: 'pointer' }}>
             + {ui('addLines')}
           </button>
           {bpId && (
-            <button type="button" onClick={() => setShowImportModal(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
+            <button type="button" onClick={handleImportClick} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
               {ui('importFromShipment')}
+            </button>
+          )}
+          {bpId && (
+            <button type="button" onClick={handleImportOrderClick} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              {ui('importFromSalesOrder')}
             </button>
           )}
         </div>
@@ -163,7 +102,18 @@ function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, 
           base={base}
           headers={headers}
           onClose={() => setShowImportModal(false)}
-          onSuccess={() => { setShowImportModal(false); toast.success(ui('linesImportedFromShipment')); window.location.reload(); }}
+          onSuccess={() => { setShowImportModal(false); onRefresh?.(); }}
+        />,
+        document.body,
+      )}
+      {showImportOrderModal && createPortal(
+        <ImportFromOrderModal
+          invoiceId={recordId}
+          bpId={bpId}
+          base={base}
+          headers={headers}
+          onClose={() => setShowImportOrderModal(false)}
+          onSuccess={() => { setShowImportOrderModal(false); onRefresh?.(); }}
         />,
         document.body,
       )}
@@ -171,30 +121,70 @@ function InvoiceLinesEmptyState({ data, onAddLine, canAddLine = true, recordId, 
   );
 }
 
-function InvoiceLineActions({ data, recordId, token, apiBaseUrl }) {
+// forwardRef so DetailView can imperatively trigger the import modal from a menu
+// item in the "+ Añadir línea" dropdown — see InvoiceBottomPanel.lineMenuActions
+// below. `hideTrigger` lets DetailView mount this only for the modal portal
+// (the visible link is suppressed when the menu item is in use).
+const InvoiceLineActions = forwardRef(function InvoiceLineActions(
+  { data, recordId, token, apiBaseUrl, onSave, forceOpen, onForceOpenHandled, hideTrigger = false, onRefresh },
+  ref,
+) {
   const ui = useUI();
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showImportOrderModal, setShowImportOrderModal] = useState(false);
+  const pendingModal = useRef('shipment');
   const isDraft = data?.documentStatus === 'DR';
   const bpId = data?.businessPartner;
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
-  if (!isDraft || !bpId) return null;
+  useEffect(() => {
+    if (forceOpen) {
+      if (pendingModal.current === 'order') { setShowImportOrderModal(true); } else { setShowImportModal(true); }
+      onForceOpenHandled?.();
+    }
+  }, [forceOpen, onForceOpenHandled]);
+
+  const openModal = async () => {
+    pendingModal.current = 'shipment';
+    if (onSave) {
+      const shouldOpen = await onSave();
+      if (!shouldOpen) return;
+    }
+    setShowImportModal(true);
+  };
+
+  const openOrderModal = async () => {
+    pendingModal.current = 'order';
+    if (onSave) {
+      const shouldOpen = await onSave();
+      if (!shouldOpen) return;
+    }
+    setShowImportOrderModal(true);
+  };
+
+  useImperativeHandle(ref, () => ({ openImportModal: openModal, openImportOrderModal: openOrderModal }), [onSave]);
+
+  if (!isDraft || !bpId) {
+    return null;
+  }
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setShowImportModal(true)}
-        style={{ all: 'unset', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-secondary, #6b7280)', cursor: 'pointer' }}
-      >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="17 8 12 3 7 8" />
-          <line x1="12" y1="3" x2="12" y2="15" />
-        </svg>
-        {ui('importFromShipment')}
-      </button>
+      {!hideTrigger && (
+        <button
+          type="button"
+          onClick={openModal}
+          style={{ all: 'unset', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-secondary, #6b7280)', cursor: 'pointer' }}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          {ui('importFromShipment')}
+        </button>
+      )}
       {showImportModal && createPortal(
         <ImportFromShipmentModal
           invoiceId={recordId}
@@ -202,13 +192,49 @@ function InvoiceLineActions({ data, recordId, token, apiBaseUrl }) {
           base={base}
           headers={headers}
           onClose={() => setShowImportModal(false)}
-          onSuccess={() => { setShowImportModal(false); toast.success(ui('linesImportedFromShipment')); window.location.reload(); }}
+          onSuccess={() => { setShowImportModal(false); onRefresh?.(); }}
+        />,
+        document.body,
+      )}
+      {showImportOrderModal && createPortal(
+        <ImportFromOrderModal
+          invoiceId={recordId}
+          bpId={bpId}
+          base={base}
+          headers={headers}
+          onClose={() => setShowImportOrderModal(false)}
+          onSuccess={() => { setShowImportOrderModal(false); onRefresh?.(); }}
         />,
         document.body,
       )}
     </>
   );
-}
+});
 
 InvoiceBottomPanel.linesEmptyState = InvoiceLinesEmptyState;
 InvoiceBottomPanel.detailExtraActions = InvoiceLineActions;
+
+/**
+ * Returns the menu items for the "+ Añadir línea" dropdown chevron. Plain
+ * function (NOT a hook) — called every render of DetailView at the top level,
+ * so React's hook-order tracking isn't involved. The `importRef` points at the
+ * `InvoiceLineActions` instance mounted by DetailView with `hideTrigger`, which
+ * exposes `openImportModal` via `useImperativeHandle`.
+ */
+InvoiceBottomPanel.lineMenuActions = function lineMenuActions({ data, importRef }) {
+  const isDraft = data?.documentStatus === 'DR';
+  const bpId = data?.businessPartner;
+  if (!isDraft || !bpId) return [];
+  return [
+    {
+      key: 'import-shipment',
+      label: 'importFromShipment',
+      onClick: () => importRef.current?.openImportModal?.(),
+    },
+    {
+      key: 'import-order',
+      label: 'importFromSalesOrder',
+      onClick: () => importRef.current?.openImportOrderModal?.(),
+    },
+  ];
+};

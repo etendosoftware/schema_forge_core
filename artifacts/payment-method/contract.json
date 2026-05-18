@@ -1,13 +1,15 @@
 {
-  "version": "0.3.0",
-  "generatedAt": "2026-04-14T18:08:24.582Z",
-  "checksum": "c09ba3c23acc4676",
+  "version": "0.4.0",
+  "generatedAt": "2026-04-29T18:12:23.942Z",
+  "updatedAt": "2026-05-13T15:59:19.480Z",
+  "checksum": "6fd7dae34dbc066e",
   "frontendContract": {
     "window": {
       "id": "3CAAC7D54593489384452416ACF356DD",
       "name": "Payment Method",
       "primaryEntity": "paymentMethod",
-      "category": "configuracion",
+      "category": "settings",
+      "customTabsAfterBottom": true,
       "hidePrint": true,
       "hideMoreMenu": true,
       "breadcrumb": "Settings / Payment Method",
@@ -48,6 +50,7 @@
             "required": true,
             "grid": true,
             "form": true,
+            "sourceRequired": true,
             "section": "principal",
             "seq": 1
           },
@@ -76,6 +79,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "Y"
+            },
             "defaultValue": "Y",
             "section": "principal",
             "seq": 10
@@ -91,6 +99,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N",
             "section": "principal",
             "seq": 11,
@@ -110,6 +123,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N",
             "section": "principal",
             "seq": 12,
@@ -129,6 +147,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "Y"
+            },
             "defaultValue": "Y",
             "section": "principal",
             "seq": 20
@@ -144,6 +167,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N",
             "section": "principal",
             "seq": 21,
@@ -163,6 +191,11 @@
             "required": true,
             "grid": false,
             "form": false,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "N"
+            },
             "defaultValue": "N",
             "section": "principal",
             "seq": 22,
@@ -227,7 +260,8 @@
       "id": "3CAAC7D54593489384452416ACF356DD",
       "name": "Payment Method",
       "primaryEntity": "paymentMethod",
-      "category": "configuracion",
+      "category": "settings",
+      "customTabsAfterBottom": true,
       "hidePrint": true,
       "hideMoreMenu": true,
       "breadcrumb": "Settings / Payment Method",
@@ -570,13 +604,13 @@
       },
       "sorting": {
         "param": "_sortBy",
-        "example": "_sortBy=payment-methodDate"
+        "example": "_sortBy=creationDate desc"
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
     },
     "window": {
-      "category": "configuracion"
+      "category": "settings"
     },
     "labelOverrides": {
       "es_ES": {
@@ -595,230 +629,14 @@
   "testManifest": {
     "tests": [
       {
-        "id": "t-1",
-        "category": "field-presence",
-        "entity": "paymentMethod",
-        "field": "name",
-        "runner": "node",
-        "description": "Field 'name' should be present in paymentMethod"
-      },
-      {
-        "id": "t-2",
-        "category": "field-presence",
-        "entity": "paymentMethod",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should be present in paymentMethod"
-      },
-      {
-        "id": "t-3",
-        "category": "field-presence",
-        "entity": "paymentMethod",
-        "field": "payinAllow",
-        "runner": "node",
-        "description": "Field 'payinAllow' should be present in paymentMethod"
-      },
-      {
-        "id": "t-4",
-        "category": "field-presence",
-        "entity": "paymentMethod",
-        "field": "automaticReceipt",
-        "runner": "node",
-        "description": "Field 'automaticReceipt' should be present in paymentMethod"
-      },
-      {
-        "id": "t-5",
-        "category": "field-presence",
-        "entity": "paymentMethod",
-        "field": "automaticDeposit",
-        "runner": "node",
-        "description": "Field 'automaticDeposit' should be present in paymentMethod"
-      },
-      {
-        "id": "t-6",
-        "category": "field-presence",
-        "entity": "paymentMethod",
-        "field": "payoutAllow",
-        "runner": "node",
-        "description": "Field 'payoutAllow' should be present in paymentMethod"
-      },
-      {
-        "id": "t-7",
-        "category": "field-presence",
-        "entity": "paymentMethod",
-        "field": "automaticPayment",
-        "runner": "node",
-        "description": "Field 'automaticPayment' should be present in paymentMethod"
-      },
-      {
-        "id": "t-8",
-        "category": "field-presence",
-        "entity": "paymentMethod",
-        "field": "automaticWithdrawn",
-        "runner": "node",
-        "description": "Field 'automaticWithdrawn' should be present in paymentMethod"
-      },
-      {
-        "id": "t-9",
-        "category": "field-type",
-        "entity": "paymentMethod",
-        "field": "name",
-        "runner": "node",
-        "description": "Field 'name' should have type 'string' in paymentMethod"
-      },
-      {
-        "id": "t-10",
-        "category": "field-type",
-        "entity": "paymentMethod",
-        "field": "description",
-        "runner": "node",
-        "description": "Field 'description' should have type 'string' in paymentMethod"
-      },
-      {
-        "id": "t-11",
-        "category": "field-type",
-        "entity": "paymentMethod",
-        "field": "payinAllow",
-        "runner": "node",
-        "description": "Field 'payinAllow' should have type 'boolean' in paymentMethod"
-      },
-      {
-        "id": "t-12",
-        "category": "field-type",
-        "entity": "paymentMethod",
-        "field": "automaticReceipt",
-        "runner": "node",
-        "description": "Field 'automaticReceipt' should have type 'boolean' in paymentMethod"
-      },
-      {
-        "id": "t-13",
-        "category": "field-type",
-        "entity": "paymentMethod",
-        "field": "automaticDeposit",
-        "runner": "node",
-        "description": "Field 'automaticDeposit' should have type 'boolean' in paymentMethod"
-      },
-      {
-        "id": "t-14",
-        "category": "field-type",
-        "entity": "paymentMethod",
-        "field": "payoutAllow",
-        "runner": "node",
-        "description": "Field 'payoutAllow' should have type 'boolean' in paymentMethod"
-      },
-      {
-        "id": "t-15",
-        "category": "field-type",
-        "entity": "paymentMethod",
-        "field": "automaticPayment",
-        "runner": "node",
-        "description": "Field 'automaticPayment' should have type 'boolean' in paymentMethod"
-      },
-      {
-        "id": "t-16",
-        "category": "field-type",
-        "entity": "paymentMethod",
-        "field": "automaticWithdrawn",
-        "runner": "node",
-        "description": "Field 'automaticWithdrawn' should have type 'boolean' in paymentMethod"
-      },
-      {
-        "id": "t-17",
-        "category": "searchable-filters",
-        "entity": "paymentMethod",
-        "field": "name",
-        "runner": "node",
-        "description": "Field 'name' should be a supported filter for paymentMethod"
-      },
-      {
-        "id": "t-18",
-        "category": "visibility",
+        "id": "t-crud-flags-paymentMethod",
+        "category": "crud-flags",
         "entity": "paymentMethod",
         "runner": "node",
-        "description": "Entity 'paymentMethod' should only expose visible fields in frontend"
+        "description": "CRUD flags for 'paymentMethod' should all be booleans"
       },
       {
-        "id": "t-19",
-        "category": "displaylogic-valid",
-        "entity": "paymentMethod",
-        "field": "automaticReceipt",
-        "runner": "node",
-        "description": "Display logic for 'automaticReceipt' in paymentMethod should be valid JS"
-      },
-      {
-        "id": "t-20",
-        "category": "displaylogic-valid",
-        "entity": "paymentMethod",
-        "field": "automaticDeposit",
-        "runner": "node",
-        "description": "Display logic for 'automaticDeposit' in paymentMethod should be valid JS"
-      },
-      {
-        "id": "t-21",
-        "category": "displaylogic-valid",
-        "entity": "paymentMethod",
-        "field": "automaticPayment",
-        "runner": "node",
-        "description": "Display logic for 'automaticPayment' in paymentMethod should be valid JS"
-      },
-      {
-        "id": "t-22",
-        "category": "displaylogic-valid",
-        "entity": "paymentMethod",
-        "field": "automaticWithdrawn",
-        "runner": "node",
-        "description": "Display logic for 'automaticWithdrawn' in paymentMethod should be valid JS"
-      },
-      {
-        "id": "t-23",
-        "category": "displaylogic-evaluable",
-        "entity": "paymentMethod",
-        "field": "automaticReceipt",
-        "runner": "node",
-        "description": "Display logic for 'automaticReceipt' in paymentMethod should have evaluable flag"
-      },
-      {
-        "id": "t-24",
-        "category": "displaylogic-evaluable",
-        "entity": "paymentMethod",
-        "field": "automaticDeposit",
-        "runner": "node",
-        "description": "Display logic for 'automaticDeposit' in paymentMethod should have evaluable flag"
-      },
-      {
-        "id": "t-25",
-        "category": "displaylogic-evaluable",
-        "entity": "paymentMethod",
-        "field": "automaticPayment",
-        "runner": "node",
-        "description": "Display logic for 'automaticPayment' in paymentMethod should have evaluable flag"
-      },
-      {
-        "id": "t-26",
-        "category": "displaylogic-evaluable",
-        "entity": "paymentMethod",
-        "field": "automaticWithdrawn",
-        "runner": "node",
-        "description": "Display logic for 'automaticWithdrawn' in paymentMethod should have evaluable flag"
-      },
-      {
-        "id": "t-27",
-        "category": "default-value-type",
-        "entity": "paymentMethod",
-        "field": "payinAllow",
-        "runner": "node",
-        "description": "Default value for 'payinAllow' in paymentMethod should be a string"
-      },
-      {
-        "id": "t-28",
-        "category": "default-value-type",
-        "entity": "paymentMethod",
-        "field": "automaticReceipt",
-        "runner": "node",
-        "description": "Default value for 'automaticReceipt' in paymentMethod should be a string"
-      },
-      {
-        "id": "t-29",
+        "id": "t-default-value-type-paymentMethod-automaticDeposit",
         "category": "default-value-type",
         "entity": "paymentMethod",
         "field": "automaticDeposit",
@@ -826,15 +644,7 @@
         "description": "Default value for 'automaticDeposit' in paymentMethod should be a string"
       },
       {
-        "id": "t-30",
-        "category": "default-value-type",
-        "entity": "paymentMethod",
-        "field": "payoutAllow",
-        "runner": "node",
-        "description": "Default value for 'payoutAllow' in paymentMethod should be a string"
-      },
-      {
-        "id": "t-31",
+        "id": "t-default-value-type-paymentMethod-automaticPayment",
         "category": "default-value-type",
         "entity": "paymentMethod",
         "field": "automaticPayment",
@@ -842,7 +652,15 @@
         "description": "Default value for 'automaticPayment' in paymentMethod should be a string"
       },
       {
-        "id": "t-32",
+        "id": "t-default-value-type-paymentMethod-automaticReceipt",
+        "category": "default-value-type",
+        "entity": "paymentMethod",
+        "field": "automaticReceipt",
+        "runner": "node",
+        "description": "Default value for 'automaticReceipt' in paymentMethod should be a string"
+      },
+      {
+        "id": "t-default-value-type-paymentMethod-automaticWithdrawn",
         "category": "default-value-type",
         "entity": "paymentMethod",
         "field": "automaticWithdrawn",
@@ -850,15 +668,278 @@
         "description": "Default value for 'automaticWithdrawn' in paymentMethod should be a string"
       },
       {
-        "id": "t-33",
-        "category": "system-field",
+        "id": "t-default-value-type-paymentMethod-payinAllow",
+        "category": "default-value-type",
         "entity": "paymentMethod",
-        "field": "organization",
+        "field": "payinAllow",
         "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for paymentMethod"
+        "description": "Default value for 'payinAllow' in paymentMethod should be a string"
       },
       {
-        "id": "t-34",
+        "id": "t-default-value-type-paymentMethod-payoutAllow",
+        "category": "default-value-type",
+        "entity": "paymentMethod",
+        "field": "payoutAllow",
+        "runner": "node",
+        "description": "Default value for 'payoutAllow' in paymentMethod should be a string"
+      },
+      {
+        "id": "t-displaylogic-evaluable-paymentMethod-automaticDeposit",
+        "category": "displaylogic-evaluable",
+        "entity": "paymentMethod",
+        "field": "automaticDeposit",
+        "runner": "node",
+        "description": "Display logic for 'automaticDeposit' in paymentMethod should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-evaluable-paymentMethod-automaticPayment",
+        "category": "displaylogic-evaluable",
+        "entity": "paymentMethod",
+        "field": "automaticPayment",
+        "runner": "node",
+        "description": "Display logic for 'automaticPayment' in paymentMethod should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-evaluable-paymentMethod-automaticReceipt",
+        "category": "displaylogic-evaluable",
+        "entity": "paymentMethod",
+        "field": "automaticReceipt",
+        "runner": "node",
+        "description": "Display logic for 'automaticReceipt' in paymentMethod should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-evaluable-paymentMethod-automaticWithdrawn",
+        "category": "displaylogic-evaluable",
+        "entity": "paymentMethod",
+        "field": "automaticWithdrawn",
+        "runner": "node",
+        "description": "Display logic for 'automaticWithdrawn' in paymentMethod should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-valid-paymentMethod-automaticDeposit",
+        "category": "displaylogic-valid",
+        "entity": "paymentMethod",
+        "field": "automaticDeposit",
+        "runner": "node",
+        "description": "Display logic for 'automaticDeposit' in paymentMethod should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-paymentMethod-automaticPayment",
+        "category": "displaylogic-valid",
+        "entity": "paymentMethod",
+        "field": "automaticPayment",
+        "runner": "node",
+        "description": "Display logic for 'automaticPayment' in paymentMethod should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-paymentMethod-automaticReceipt",
+        "category": "displaylogic-valid",
+        "entity": "paymentMethod",
+        "field": "automaticReceipt",
+        "runner": "node",
+        "description": "Display logic for 'automaticReceipt' in paymentMethod should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-paymentMethod-automaticWithdrawn",
+        "category": "displaylogic-valid",
+        "entity": "paymentMethod",
+        "field": "automaticWithdrawn",
+        "runner": "node",
+        "description": "Display logic for 'automaticWithdrawn' in paymentMethod should be valid JS"
+      },
+      {
+        "id": "t-field-presence-paymentMethod-automaticDeposit",
+        "category": "field-presence",
+        "entity": "paymentMethod",
+        "field": "automaticDeposit",
+        "runner": "node",
+        "description": "Field 'automaticDeposit' should be present in paymentMethod"
+      },
+      {
+        "id": "t-field-presence-paymentMethod-automaticPayment",
+        "category": "field-presence",
+        "entity": "paymentMethod",
+        "field": "automaticPayment",
+        "runner": "node",
+        "description": "Field 'automaticPayment' should be present in paymentMethod"
+      },
+      {
+        "id": "t-field-presence-paymentMethod-automaticReceipt",
+        "category": "field-presence",
+        "entity": "paymentMethod",
+        "field": "automaticReceipt",
+        "runner": "node",
+        "description": "Field 'automaticReceipt' should be present in paymentMethod"
+      },
+      {
+        "id": "t-field-presence-paymentMethod-automaticWithdrawn",
+        "category": "field-presence",
+        "entity": "paymentMethod",
+        "field": "automaticWithdrawn",
+        "runner": "node",
+        "description": "Field 'automaticWithdrawn' should be present in paymentMethod"
+      },
+      {
+        "id": "t-field-presence-paymentMethod-description",
+        "category": "field-presence",
+        "entity": "paymentMethod",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should be present in paymentMethod"
+      },
+      {
+        "id": "t-field-presence-paymentMethod-name",
+        "category": "field-presence",
+        "entity": "paymentMethod",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be present in paymentMethod"
+      },
+      {
+        "id": "t-field-presence-paymentMethod-payinAllow",
+        "category": "field-presence",
+        "entity": "paymentMethod",
+        "field": "payinAllow",
+        "runner": "node",
+        "description": "Field 'payinAllow' should be present in paymentMethod"
+      },
+      {
+        "id": "t-field-presence-paymentMethod-payoutAllow",
+        "category": "field-presence",
+        "entity": "paymentMethod",
+        "field": "payoutAllow",
+        "runner": "node",
+        "description": "Field 'payoutAllow' should be present in paymentMethod"
+      },
+      {
+        "id": "t-field-type-paymentMethod-automaticDeposit",
+        "category": "field-type",
+        "entity": "paymentMethod",
+        "field": "automaticDeposit",
+        "runner": "node",
+        "description": "Field 'automaticDeposit' should have type 'boolean' in paymentMethod"
+      },
+      {
+        "id": "t-field-type-paymentMethod-automaticPayment",
+        "category": "field-type",
+        "entity": "paymentMethod",
+        "field": "automaticPayment",
+        "runner": "node",
+        "description": "Field 'automaticPayment' should have type 'boolean' in paymentMethod"
+      },
+      {
+        "id": "t-field-type-paymentMethod-automaticReceipt",
+        "category": "field-type",
+        "entity": "paymentMethod",
+        "field": "automaticReceipt",
+        "runner": "node",
+        "description": "Field 'automaticReceipt' should have type 'boolean' in paymentMethod"
+      },
+      {
+        "id": "t-field-type-paymentMethod-automaticWithdrawn",
+        "category": "field-type",
+        "entity": "paymentMethod",
+        "field": "automaticWithdrawn",
+        "runner": "node",
+        "description": "Field 'automaticWithdrawn' should have type 'boolean' in paymentMethod"
+      },
+      {
+        "id": "t-field-type-paymentMethod-description",
+        "category": "field-type",
+        "entity": "paymentMethod",
+        "field": "description",
+        "runner": "node",
+        "description": "Field 'description' should have type 'string' in paymentMethod"
+      },
+      {
+        "id": "t-field-type-paymentMethod-name",
+        "category": "field-type",
+        "entity": "paymentMethod",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should have type 'string' in paymentMethod"
+      },
+      {
+        "id": "t-field-type-paymentMethod-payinAllow",
+        "category": "field-type",
+        "entity": "paymentMethod",
+        "field": "payinAllow",
+        "runner": "node",
+        "description": "Field 'payinAllow' should have type 'boolean' in paymentMethod"
+      },
+      {
+        "id": "t-field-type-paymentMethod-payoutAllow",
+        "category": "field-type",
+        "entity": "paymentMethod",
+        "field": "payoutAllow",
+        "runner": "node",
+        "description": "Field 'payoutAllow' should have type 'boolean' in paymentMethod"
+      },
+      {
+        "id": "t-rule-declared",
+        "category": "rule-declared",
+        "runner": "node",
+        "description": "Rule 'undefined' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-AD-Client-Security-validation",
+        "category": "rule-declared",
+        "rule": "AD_Client Security validation",
+        "runner": "node",
+        "description": "Rule 'AD_Client Security validation' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-AD-Org-Security-validation",
+        "category": "rule-declared",
+        "rule": "AD_Org Security validation",
+        "runner": "node",
+        "description": "Rule 'AD_Org Security validation' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-FIN-Payment-In-status-validation",
+        "category": "rule-declared",
+        "rule": "FIN_Payment In status validation",
+        "runner": "node",
+        "description": "Rule 'FIN_Payment In status validation' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-FIN-Payment-Out-status-validation",
+        "category": "rule-declared",
+        "rule": "FIN_Payment Out status validation",
+        "runner": "node",
+        "description": "Rule 'FIN_Payment Out status validation' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Payment-IN-Accounts",
+        "category": "rule-declared",
+        "rule": "Payment IN Accounts",
+        "runner": "node",
+        "description": "Rule 'Payment IN Accounts' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Payment-OUT-Accounts",
+        "category": "rule-declared",
+        "rule": "Payment OUT Accounts",
+        "runner": "node",
+        "description": "Rule 'Payment OUT Accounts' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SE-PaymentMethod-FIN-Paymentmethod-ID",
+        "category": "rule-declared",
+        "rule": "SE_PaymentMethod_FIN_Paymentmethod_ID",
+        "runner": "node",
+        "description": "Rule 'SE_PaymentMethod_FIN_Paymentmethod_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-searchable-filters-paymentMethod-name",
+        "category": "searchable-filters",
+        "entity": "paymentMethod",
+        "field": "name",
+        "runner": "node",
+        "description": "Field 'name' should be a supported filter for paymentMethod"
+      },
+      {
+        "id": "t-system-field-paymentMethod-active",
         "category": "system-field",
         "entity": "paymentMethod",
         "field": "active",
@@ -866,135 +947,7 @@
         "description": "System field 'active' should exist in backend but not frontend for paymentMethod"
       },
       {
-        "id": "t-35",
-        "category": "system-field",
-        "entity": "paymentMethod",
-        "field": "obpmtType",
-        "runner": "node",
-        "description": "System field 'obpmtType' should exist in backend but not frontend for paymentMethod"
-      },
-      {
-        "id": "t-36",
-        "category": "system-field",
-        "entity": "paymentMethod",
-        "field": "payinIsMulticurrency",
-        "runner": "node",
-        "description": "System field 'payinIsMulticurrency' should exist in backend but not frontend for paymentMethod"
-      },
-      {
-        "id": "t-37",
-        "category": "system-field",
-        "entity": "paymentMethod",
-        "field": "payinExecutionType",
-        "runner": "node",
-        "description": "System field 'payinExecutionType' should exist in backend but not frontend for paymentMethod"
-      },
-      {
-        "id": "t-38",
-        "category": "system-field",
-        "entity": "paymentMethod",
-        "field": "payinExecutionProcessID",
-        "runner": "node",
-        "description": "System field 'payinExecutionProcessID' should exist in backend but not frontend for paymentMethod"
-      },
-      {
-        "id": "t-39",
-        "category": "system-field",
-        "entity": "paymentMethod",
-        "field": "payinDeferred",
-        "runner": "node",
-        "description": "System field 'payinDeferred' should exist in backend but not frontend for paymentMethod"
-      },
-      {
-        "id": "t-40",
-        "category": "system-field",
-        "entity": "paymentMethod",
-        "field": "uponReceiptUse",
-        "runner": "node",
-        "description": "System field 'uponReceiptUse' should exist in backend but not frontend for paymentMethod"
-      },
-      {
-        "id": "t-41",
-        "category": "system-field",
-        "entity": "paymentMethod",
-        "field": "uponDepositUse",
-        "runner": "node",
-        "description": "System field 'uponDepositUse' should exist in backend but not frontend for paymentMethod"
-      },
-      {
-        "id": "t-42",
-        "category": "system-field",
-        "entity": "paymentMethod",
-        "field": "iNUponClearingUse",
-        "runner": "node",
-        "description": "System field 'iNUponClearingUse' should exist in backend but not frontend for paymentMethod"
-      },
-      {
-        "id": "t-43",
-        "category": "system-field",
-        "entity": "paymentMethod",
-        "field": "payoutIsMulticurrency",
-        "runner": "node",
-        "description": "System field 'payoutIsMulticurrency' should exist in backend but not frontend for paymentMethod"
-      },
-      {
-        "id": "t-44",
-        "category": "system-field",
-        "entity": "paymentMethod",
-        "field": "payoutExecutionType",
-        "runner": "node",
-        "description": "System field 'payoutExecutionType' should exist in backend but not frontend for paymentMethod"
-      },
-      {
-        "id": "t-45",
-        "category": "system-field",
-        "entity": "paymentMethod",
-        "field": "payoutExecutionProcessID",
-        "runner": "node",
-        "description": "System field 'payoutExecutionProcessID' should exist in backend but not frontend for paymentMethod"
-      },
-      {
-        "id": "t-46",
-        "category": "system-field",
-        "entity": "paymentMethod",
-        "field": "payoutDeferred",
-        "runner": "node",
-        "description": "System field 'payoutDeferred' should exist in backend but not frontend for paymentMethod"
-      },
-      {
-        "id": "t-47",
-        "category": "system-field",
-        "entity": "paymentMethod",
-        "field": "uponPaymentUse",
-        "runner": "node",
-        "description": "System field 'uponPaymentUse' should exist in backend but not frontend for paymentMethod"
-      },
-      {
-        "id": "t-48",
-        "category": "system-field",
-        "entity": "paymentMethod",
-        "field": "uponWithdrawalUse",
-        "runner": "node",
-        "description": "System field 'uponWithdrawalUse' should exist in backend but not frontend for paymentMethod"
-      },
-      {
-        "id": "t-49",
-        "category": "system-field",
-        "entity": "paymentMethod",
-        "field": "oUTUponClearingUse",
-        "runner": "node",
-        "description": "System field 'oUTUponClearingUse' should exist in backend but not frontend for paymentMethod"
-      },
-      {
-        "id": "t-50",
-        "category": "system-field",
-        "entity": "paymentMethod",
-        "field": "paymentMethod",
-        "runner": "node",
-        "description": "System field 'paymentMethod' should exist in backend but not frontend for paymentMethod"
-      },
-      {
-        "id": "t-51",
+        "id": "t-system-field-paymentMethod-client",
         "category": "system-field",
         "entity": "paymentMethod",
         "field": "client",
@@ -1002,15 +955,7 @@
         "description": "System field 'client' should exist in backend but not frontend for paymentMethod"
       },
       {
-        "id": "t-52",
-        "category": "system-field",
-        "entity": "paymentMethod",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for paymentMethod"
-      },
-      {
-        "id": "t-53",
+        "id": "t-system-field-paymentMethod-createdBy",
         "category": "system-field",
         "entity": "paymentMethod",
         "field": "createdBy",
@@ -1018,7 +963,119 @@
         "description": "System field 'createdBy' should exist in backend but not frontend for paymentMethod"
       },
       {
-        "id": "t-54",
+        "id": "t-system-field-paymentMethod-creationDate",
+        "category": "system-field",
+        "entity": "paymentMethod",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for paymentMethod"
+      },
+      {
+        "id": "t-system-field-paymentMethod-iNUponClearingUse",
+        "category": "system-field",
+        "entity": "paymentMethod",
+        "field": "iNUponClearingUse",
+        "runner": "node",
+        "description": "System field 'iNUponClearingUse' should exist in backend but not frontend for paymentMethod"
+      },
+      {
+        "id": "t-system-field-paymentMethod-obpmtType",
+        "category": "system-field",
+        "entity": "paymentMethod",
+        "field": "obpmtType",
+        "runner": "node",
+        "description": "System field 'obpmtType' should exist in backend but not frontend for paymentMethod"
+      },
+      {
+        "id": "t-system-field-paymentMethod-organization",
+        "category": "system-field",
+        "entity": "paymentMethod",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for paymentMethod"
+      },
+      {
+        "id": "t-system-field-paymentMethod-oUTUponClearingUse",
+        "category": "system-field",
+        "entity": "paymentMethod",
+        "field": "oUTUponClearingUse",
+        "runner": "node",
+        "description": "System field 'oUTUponClearingUse' should exist in backend but not frontend for paymentMethod"
+      },
+      {
+        "id": "t-system-field-paymentMethod-payinDeferred",
+        "category": "system-field",
+        "entity": "paymentMethod",
+        "field": "payinDeferred",
+        "runner": "node",
+        "description": "System field 'payinDeferred' should exist in backend but not frontend for paymentMethod"
+      },
+      {
+        "id": "t-system-field-paymentMethod-payinExecutionProcessID",
+        "category": "system-field",
+        "entity": "paymentMethod",
+        "field": "payinExecutionProcessID",
+        "runner": "node",
+        "description": "System field 'payinExecutionProcessID' should exist in backend but not frontend for paymentMethod"
+      },
+      {
+        "id": "t-system-field-paymentMethod-payinExecutionType",
+        "category": "system-field",
+        "entity": "paymentMethod",
+        "field": "payinExecutionType",
+        "runner": "node",
+        "description": "System field 'payinExecutionType' should exist in backend but not frontend for paymentMethod"
+      },
+      {
+        "id": "t-system-field-paymentMethod-payinIsMulticurrency",
+        "category": "system-field",
+        "entity": "paymentMethod",
+        "field": "payinIsMulticurrency",
+        "runner": "node",
+        "description": "System field 'payinIsMulticurrency' should exist in backend but not frontend for paymentMethod"
+      },
+      {
+        "id": "t-system-field-paymentMethod-paymentMethod",
+        "category": "system-field",
+        "entity": "paymentMethod",
+        "field": "paymentMethod",
+        "runner": "node",
+        "description": "System field 'paymentMethod' should exist in backend but not frontend for paymentMethod"
+      },
+      {
+        "id": "t-system-field-paymentMethod-payoutDeferred",
+        "category": "system-field",
+        "entity": "paymentMethod",
+        "field": "payoutDeferred",
+        "runner": "node",
+        "description": "System field 'payoutDeferred' should exist in backend but not frontend for paymentMethod"
+      },
+      {
+        "id": "t-system-field-paymentMethod-payoutExecutionProcessID",
+        "category": "system-field",
+        "entity": "paymentMethod",
+        "field": "payoutExecutionProcessID",
+        "runner": "node",
+        "description": "System field 'payoutExecutionProcessID' should exist in backend but not frontend for paymentMethod"
+      },
+      {
+        "id": "t-system-field-paymentMethod-payoutExecutionType",
+        "category": "system-field",
+        "entity": "paymentMethod",
+        "field": "payoutExecutionType",
+        "runner": "node",
+        "description": "System field 'payoutExecutionType' should exist in backend but not frontend for paymentMethod"
+      },
+      {
+        "id": "t-system-field-paymentMethod-payoutIsMulticurrency",
+        "category": "system-field",
+        "entity": "paymentMethod",
+        "field": "payoutIsMulticurrency",
+        "runner": "node",
+        "description": "System field 'payoutIsMulticurrency' should exist in backend but not frontend for paymentMethod"
+      },
+      {
+        "id": "t-system-field-paymentMethod-updated",
         "category": "system-field",
         "entity": "paymentMethod",
         "field": "updated",
@@ -1026,7 +1083,7 @@
         "description": "System field 'updated' should exist in backend but not frontend for paymentMethod"
       },
       {
-        "id": "t-55",
+        "id": "t-system-field-paymentMethod-updatedBy",
         "category": "system-field",
         "entity": "paymentMethod",
         "field": "updatedBy",
@@ -1034,81 +1091,58 @@
         "description": "System field 'updatedBy' should exist in backend but not frontend for paymentMethod"
       },
       {
-        "id": "t-56",
-        "category": "rule-declared",
-        "rule": "SE_PaymentMethod_FIN_Paymentmethod_ID",
+        "id": "t-system-field-paymentMethod-uponDepositUse",
+        "category": "system-field",
+        "entity": "paymentMethod",
+        "field": "uponDepositUse",
         "runner": "node",
-        "description": "Rule 'SE_PaymentMethod_FIN_Paymentmethod_ID' (callout) should be declared"
+        "description": "System field 'uponDepositUse' should exist in backend but not frontend for paymentMethod"
       },
       {
-        "id": "t-57",
-        "category": "rule-declared",
-        "rule": "Payment OUT Accounts",
+        "id": "t-system-field-paymentMethod-uponPaymentUse",
+        "category": "system-field",
+        "entity": "paymentMethod",
+        "field": "uponPaymentUse",
         "runner": "node",
-        "description": "Rule 'Payment OUT Accounts' (validation) should be declared"
+        "description": "System field 'uponPaymentUse' should exist in backend but not frontend for paymentMethod"
       },
       {
-        "id": "t-58",
-        "category": "rule-declared",
-        "rule": "Payment IN Accounts",
+        "id": "t-system-field-paymentMethod-uponReceiptUse",
+        "category": "system-field",
+        "entity": "paymentMethod",
+        "field": "uponReceiptUse",
         "runner": "node",
-        "description": "Rule 'Payment IN Accounts' (validation) should be declared"
+        "description": "System field 'uponReceiptUse' should exist in backend but not frontend for paymentMethod"
       },
       {
-        "id": "t-59",
-        "category": "rule-declared",
-        "rule": "FIN_Payment Out status validation",
+        "id": "t-system-field-paymentMethod-uponWithdrawalUse",
+        "category": "system-field",
+        "entity": "paymentMethod",
+        "field": "uponWithdrawalUse",
         "runner": "node",
-        "description": "Rule 'FIN_Payment Out status validation' (validation) should be declared"
+        "description": "System field 'uponWithdrawalUse' should exist in backend but not frontend for paymentMethod"
       },
       {
-        "id": "t-60",
-        "category": "rule-declared",
-        "rule": "AD_Client Security validation",
-        "runner": "node",
-        "description": "Rule 'AD_Client Security validation' (validation) should be declared"
-      },
-      {
-        "id": "t-61",
-        "category": "rule-declared",
-        "rule": "FIN_Payment In status validation",
-        "runner": "node",
-        "description": "Rule 'FIN_Payment In status validation' (validation) should be declared"
-      },
-      {
-        "id": "t-62",
-        "category": "rule-declared",
-        "rule": "AD_Org Security validation",
-        "runner": "node",
-        "description": "Rule 'AD_Org Security validation' (validation) should be declared"
-      },
-      {
-        "id": "t-63",
-        "category": "rule-declared",
-        "runner": "node",
-        "description": "Rule 'undefined' (displayLogic) should be declared"
-      },
-      {
-        "id": "t-64",
-        "category": "crud-flags",
+        "id": "t-visibility-paymentMethod",
+        "category": "visibility",
         "entity": "paymentMethod",
         "runner": "node",
-        "description": "CRUD flags for 'paymentMethod' should all be booleans"
+        "description": "Entity 'paymentMethod' should only expose visible fields in frontend"
       }
     ],
     "summary": {
       "total": 64,
       "byCategory": {
+        "crud-flags": 1,
+        "default-value-type": 6,
+        "displaylogic-evaluable": 4,
+        "displaylogic-valid": 4,
         "field-presence": 8,
         "field-type": 8,
-        "searchable-filters": 1,
-        "visibility": 1,
-        "displaylogic-valid": 4,
-        "displaylogic-evaluable": 4,
-        "default-value-type": 6,
-        "system-field": 23,
         "rule-declared": 8,
-        "crud-flags": 1
+        "searchable-filters": 1,
+        "system-field": 23,
+        "visibility": 1
       },
       "byRunner": {
         "node": 64,

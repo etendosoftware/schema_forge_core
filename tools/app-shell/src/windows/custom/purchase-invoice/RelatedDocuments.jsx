@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUI } from '@/i18n';
 import {
-  DocChip, RelatedDocumentsShell, STATUS_KEYS, CHIP_ICONS, CHIP_COLORS,
+  DocChip, RelatedDocumentsShell, docChipProps,
   fetchByCriteria, fetchChild, fetchById,
 } from '@/components/related-documents';
 
@@ -24,9 +24,11 @@ async function fetchPayments(invoiceId, token, apiBaseUrl) {
 }
 
 export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) {
+  const [purchaseOrder, setPurchaseOrder] = useState(null);
   const [receipts, setReceipts] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
   const navigate = useNavigate();
   const ui = useUI();
 
@@ -34,68 +36,43 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
     if (!recordId) return;
     setLoading(true);
     const orderId = data?.salesOrder;
+    const orderPromise = orderId
+      ? fetchById('purchase-order', 'header', orderId, token, apiBaseUrl).catch(() => null)
+      : Promise.resolve(null);
     const receiptPromise = orderId
       ? fetchByCriteria('goods-receipt', 'goodsReceipt', 'salesOrder', orderId, token, apiBaseUrl)
       : Promise.resolve([]);
-    Promise.all([receiptPromise, fetchPayments(recordId, token, apiBaseUrl)])
-      .then(([receiptRows, paymentResults]) => {
+    Promise.all([orderPromise, receiptPromise, fetchPayments(recordId, token, apiBaseUrl)])
+      .then(([orderResult, receiptRows, paymentResults]) => {
+        setPurchaseOrder(orderResult);
         setReceipts(receiptRows);
         setPayments(paymentResults);
       })
       .finally(() => setLoading(false));
-  }, [recordId, data?.salesOrder, token, apiBaseUrl]);
+  }, [recordId, data?.salesOrder, token, apiBaseUrl, refreshKey]);
 
   const chips = [];
 
-  // Purchase Order from header data
-  const orderId = data?.salesOrder;
-  const orderLabel = data?.['salesOrder$_identifier'];
-  if (orderId) {
+  if (purchaseOrder) {
     chips.push(
-      <DocChip
-        key="purchase-order"
-        icon={CHIP_ICONS.order}
-        iconColor={CHIP_COLORS.order}
-        title={orderLabel || ui('orderDoc', { number: orderId })}
-        onClick={() => navigate(`/purchase-order/${orderId}`)}
-      />
+      <DocChip key="purchase-order" {...docChipProps({ type: 'order', doc: purchaseOrder, ui, navigate })} />
     );
   }
 
-  // Goods Receipts linked to the same PO
   for (const r of receipts) {
     chips.push(
-      <DocChip
-        key={`receipt-${r.id}`}
-        icon={CHIP_ICONS.shipment}
-        iconColor={CHIP_COLORS.shipment}
-        title={ui('receiptDoc', { number: r.documentNo })}
-        status={r.documentStatus}
-        statusLabel={ui(STATUS_KEYS[r.documentStatus] || r.documentStatus)}
-        onClick={() => navigate(`/goods-receipt/${r.id}`)}
-      />
+      <DocChip key={`receipt-${r.id}`} {...docChipProps({ type: 'receipt', doc: r, ui, navigate })} />
     );
   }
 
-  // Payments linked to this invoice
   for (const p of payments) {
     chips.push(
-      <DocChip
-        key={`payment-${p.id}`}
-        icon={CHIP_ICONS.payment}
-        iconColor={CHIP_COLORS.payment}
-        title={ui('paymentDoc', { number: p.documentNo || p.id })}
-        amount={p.amount}
-        currency={p['currency$_identifier']}
-        status={p.status}
-        statusLabel={ui(STATUS_KEYS[p.status] || p.status)}
-        onClick={() => navigate(`/payment-out/${p.id}`)}
-      />
+      <DocChip key={`payment-${p.id}`} {...docChipProps({ type: 'payment', doc: p, ui, navigate })} />
     );
   }
 
   return (
-    <RelatedDocumentsShell loading={loading}>
+    <RelatedDocumentsShell loading={loading} onRefresh={() => setRefreshKey(k => k + 1)}>
       {chips}
     </RelatedDocumentsShell>
   );

@@ -6,12 +6,36 @@ import ContactTable from './ContactTable';
 import ContactForm from './ContactForm';
 import BankAccountTable from './BankAccountTable';
 import BankAccountForm from './BankAccountForm';
+import LocationAddressTable from './LocationAddressTable';
+import LocationEditorModal from '@/windows/custom/shared/LocationEditorModal';
 import ContactsFinancialPanel from '@/windows/custom/contacts/ContactsFinancialPanel';
+import { AttachmentsTab } from '@/components/attachments';
+import ContactTypeToggle from '@/windows/custom/contacts/ContactTypeToggle';
 import catalogs from './mockCatalogs';
 
-import BusinessPartnerSidebar from '@/windows/custom/businessPartner/BusinessPartnerSidebar';
+import BusinessPartnerSidebar from '@/windows/custom/contacts/BusinessPartnerSidebar';
 
 const breadcrumb = 'Contact';
+
+const labelOverrides = {
+  "en_US": {
+    "Name": "Legal Name",
+    "FIN_Financial_Account_ID": "Account",
+    "PO_Financial_Account_ID": "Account",
+    "EM_Etgo_Web": "Website",
+    "EM_Etgo_Firstname": "First Name",
+    "EM_Etgo_Lastname": "Last Name"
+  },
+  "es_ES": {
+    "Name": "Razón Social",
+    "EM_Etgo_Identifier": "Identificador",
+    "FIN_Financial_Account_ID": "Cuenta",
+    "PO_Financial_Account_ID": "Cuenta",
+    "EM_Etgo_Web": "Página web",
+    "EM_Etgo_Firstname": "Nombre",
+    "EM_Etgo_Lastname": "Apellidos"
+  }
+};
 
 
 // @sf-generated-start summary:businessPartner
@@ -36,9 +60,13 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:businessPartner
 
+// @sf-generated-start requiredHeaderFields:businessPartner
+const requiredHeaderFields = ['name', 'etgoFirstname', 'etgoLastname', 'oBTIKTaxIDKey', 'setNewCurrency', 'creditLimit'];
+// @sf-generated-end requiredHeaderFields:businessPartner
 
 
-const api = {
+
+export const api = {
   "specName": "contacts",
   "baseUrl": "/sws/neo/contacts",
   "crud": {
@@ -52,7 +80,6 @@ const api = {
       "listUrl": "/sws/neo/contacts/businessPartner",
       "detailUrl": "/sws/neo/contacts/businessPartner/{id}",
       "supportedFilters": [
-        "searchKey",
         "name"
       ]
     },
@@ -602,10 +629,32 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=contactsDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "contact"
+  },
+  "labelOverrides": {
+    "en_US": {
+      "Name": "Legal Name",
+      "FIN_Financial_Account_ID": "Account",
+      "PO_Financial_Account_ID": "Account",
+      "EM_Etgo_Web": "Website",
+      "EM_Etgo_Firstname": "First Name",
+      "EM_Etgo_Lastname": "Last Name"
+    },
+    "es_ES": {
+      "Name": "Razón Social",
+      "EM_Etgo_Identifier": "Identificador",
+      "FIN_Financial_Account_ID": "Cuenta",
+      "PO_Financial_Account_ID": "Cuenta",
+      "EM_Etgo_Web": "Página web",
+      "EM_Etgo_Firstname": "Nombre",
+      "EM_Etgo_Lastname": "Apellidos"
+    }
   }
 };
 
@@ -636,10 +685,12 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
           ], derived: [], hidden: [] }, requireSavedRecord: true },
           { key: 'bankAccount', label: 'Bank Account', Table: BankAccountTable, Form: BankAccountForm, addLineFields: { entry: [
           { key: 'bankName', column: 'Bank_Name', type: 'text', label: 'Bank Name' },
+          { key: 'country', column: 'C_Country_ID', type: 'selector', label: 'Country', reference: 'Country', inputMode: 'selector', defaultValue: '@COUNTRYDEF@' },
           { key: 'bankFormat', column: 'BankFormat', type: 'select', required: true, label: 'Bank Account Format', defaultValue: 'GENERIC', options: [{ value: 'GENERIC', label: 'Use Generic Account No.' }, { value: 'IBAN', label: 'Use IBAN' }, { value: 'SWIFT', label: 'Use SWIFT + Generic Account No.' }, { value: 'SPANISH', label: 'Use Spanish' }] },
           { key: 'accountNo', column: 'AccountNo', type: 'text', label: 'Generic Account No.' },
           { key: 'iBAN', column: 'Iban', type: 'text', label: 'IBAN' },
           ], derived: [], hidden: [] }, requireSavedRecord: true },
+          { key: 'locationAddress', label: 'Location', Table: LocationAddressTable, customAddModal: LocationEditorModal, requireSavedRecord: true },
         ]}
         primaryTabs={[
           { key: 'general', label: 'General' },
@@ -647,6 +698,11 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
         ]}
         hidePrint
         hideMoreMenu
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_BPartner", config: {} } }]}
+        topbarExtra={ContactTypeToggle}
+        requiredHeaderFields={requiredHeaderFields}
+        labelOverrides={labelOverrides}
+        linesLayout="inlineEditable"
         {...props}
         sidebarContent={(data) => (
           <BusinessPartnerSidebar
@@ -668,11 +724,13 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
-      listViewOptions={{"hidePrint":true,"hideEye":true,"hideCounter":true,"hideLink":true,"hideFilters":true}}
+      listViewOptions={{"hidePrint":true,"hideEye":true,"hideCounter":true,"hideLink":true}}
       baseFilter="criteria=%7B%22operator%22%3A%22or%22%2C%22criteria%22%3A%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%2C%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D%7D"
-      quickFilters={[{"label":"All","filter":null},{"label":"Customers","filter":"criteria=%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"},{"label":"Vendors","filter":"criteria=%5B%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"}]}
+      subsetFilters={[{"label":"all"},{"label":"customers","filter":"criteria=%5B%7B%22fieldName%22%3A%22customer%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"},{"label":"vendors","filter":"criteria=%5B%7B%22fieldName%22%3A%22vendor%22%2C%22operator%22%3A%22equals%22%2C%22value%22%3Atrue%7D%5D"}]}
       hidePrint
       hideMoreMenu
+      labelOverrides={labelOverrides}
+      rowQuickActions={{}}
       {...props}
     />
   );

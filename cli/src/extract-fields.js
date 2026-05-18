@@ -559,7 +559,7 @@ LEFT JOIN obuisel_selector sel ON sel.ad_reference_id = c.ad_reference_value_id
 LEFT JOIN ad_table sel_tgt ON sel.ad_table_id = sel_tgt.ad_table_id
 WHERE w.AD_Window_ID = $1
   AND t.IsActive = 'Y'
-ORDER BY t.SeqNo, f.SeqNo
+ORDER BY t.SeqNo, t.Name, t.AD_Tab_ID, f.SeqNo, f.AD_Field_ID
 `;
 
 /**
@@ -631,7 +631,7 @@ WHERE w.AD_Window_ID = $1
     SELECT 1 FROM AD_Field f2
     WHERE f2.AD_Tab_ID = t.AD_Tab_ID AND f2.AD_Column_ID = c.AD_Column_ID
   )
-ORDER BY t.SeqNo, c.ColumnName
+ORDER BY t.SeqNo, t.Name, t.AD_Tab_ID, c.ColumnName, c.AD_Column_ID
 `;
 
 /**
@@ -667,11 +667,14 @@ export async function main(windowId, windowName) {
     const enumValuesMap = {};
     if (listRefIds.length > 0) {
       const enumResult = await pool.query(
+        // Force C collation on Name + add Value as final tiebreaker so the
+        // option order is identical across DBs with different lc_collate
+        // (e.g. C vs es_ES.UTF-8, which treat punctuation differently).
         `SELECT rl.AD_Reference_ID, rl.Value, rl.Name
          FROM AD_Ref_List rl
          WHERE rl.AD_Reference_ID = ANY($1)
            AND rl.IsActive = 'Y'
-         ORDER BY rl.SeqNo, rl.Name`,
+         ORDER BY rl.SeqNo NULLS LAST, rl.Name COLLATE "C", rl.Value COLLATE "C"`,
         [listRefIds]
       );
       for (const row of enumResult.rows) {
@@ -689,7 +692,7 @@ export async function main(windowId, windowName) {
     const artifactsDir = join(ROOT, 'artifacts', resolvedName);
     await mkdir(artifactsDir, { recursive: true });
     const outputPath = join(artifactsDir, 'schema-raw.json');
-    await writeFile(outputPath, JSON.stringify(schema, null, 2), 'utf-8');
+    await writeFile(outputPath, JSON.stringify(schema, null, 2) + '\n', 'utf-8');
 
     console.log(`Schema written to ${outputPath}`);
     console.log(`  Entities: ${schema.entities.length}`);

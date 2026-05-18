@@ -24,37 +24,37 @@ describe('SalesOrderWindow custom wrapper', () => {
 
   it('passes onCloneRow to ListView', () => {
     assert.match(src, /onCloneRow/);
-    assert.match(src, /setCloneTarget/);
+    assert.match(src, /setCloneTargets/);
   });
 
-  it('manages cloneTarget state', () => {
+  it('manages cloneTargets state', () => {
     assert.match(src, /useState/);
-    assert.match(src, /cloneTarget/);
+    assert.match(src, /cloneTargets/);
   });
 
-  it('renders CloneOrderModal via portal when cloneTarget is set', () => {
+  it('renders CloneOrderModal via portal when cloneTargets is set', () => {
     assert.match(src, /CloneOrderModal/);
     assert.match(src, /createPortal/);
     assert.match(src, /document\.body/);
   });
 
-  it('passes orderId and data from the clicked row to CloneOrderModal', () => {
-    assert.match(src, /orderId.*cloneTarget\.id/);
-    assert.match(src, /data.*cloneTarget/);
+  it('passes records and routePrefix to CloneOrderModal', () => {
+    assert.match(src, /records=\{cloneTargets\}/);
+    assert.match(src, /routePrefix="\/sales-order\/"/);
   });
 
-  it('navigates to the new sales order after a successful clone', () => {
-    assert.match(src, /useNavigate/);
-    assert.match(src, /\/sales-order\/\$\{newId\}/);
+  it('increments refreshKey after a successful clone', () => {
+    assert.match(src, /onCloned=\{/);
+    assert.match(src, /setRefreshKey/);
   });
 
-  it('clears cloneTarget on modal close', () => {
-    assert.match(src, /setCloneTarget\(null\)/);
+  it('clears cloneTargets on modal close', () => {
+    assert.match(src, /setCloneTargets\(null\)/);
   });
 
-  it('builds Authorization headers from the token prop', () => {
-    assert.match(src, /Authorization.*Bearer.*token/);
-    assert.match(src, /useMemo/);
+  it('derives headers from useCreateContactModal', () => {
+    assert.match(src, /useCreateContactModal/);
+    assert.match(src, /headers/);
   });
 
   it('uses Sales Order entity label and breadcrumb', () => {

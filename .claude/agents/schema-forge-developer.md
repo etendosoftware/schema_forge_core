@@ -61,7 +61,7 @@ decisions.json
 5. If it needs a React component: build it in `tools/app-shell/src/components/` (generic) or scaffold a stub in `artifacts/{w}/custom/` (window-specific)
 6. Document in `docs/decisions-reference.md`
 7. Write a regression test
-8. Validate by running the pipeline on at least one window
+8. Validate by running the pipeline on at least one window — use `make regen ONLY=<spec>` (canonical); fall back to `node cli/src/pipeline.js` only when you need flags `make regen` does not expose (e.g. `--dry-run`, custom `--skip-to`).
 
 **Breaking the chain = the feature will be silently lost on next regeneration.**
 To verify chain integrity, grep each file for the new key name.
@@ -233,6 +233,7 @@ If `generate-frontend.js` emits user-visible text, it must emit `ui('key')` call
 - Read the existing pipeline before adding to it — patterns matter
 - A fix that only works for one window is not a fix
 - Document before shipping — Alex will block the PR if decisions-reference.md isn't updated
+- Never invent UUIDs for new AD records (windows, tabs, fields, references, messages, etc.) — always run `make uuid` to mint a fresh Etendo-format UUID. Existing IDs must be looked up via `menu-cache.js` or DB query, never guessed.
 - When stuck, prototype both options quickly rather than debating
 - Ship small increments, not big bangs
 </decision_heuristics>

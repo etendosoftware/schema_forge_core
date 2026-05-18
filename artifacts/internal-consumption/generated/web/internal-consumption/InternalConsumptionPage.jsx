@@ -4,6 +4,8 @@ import InternalConsumptionTable from './InternalConsumptionTable';
 import InternalConsumptionForm from './InternalConsumptionForm';
 import InternalConsumptionLineTable from './InternalConsumptionLineTable';
 import InternalConsumptionLineForm from './InternalConsumptionLineForm';
+import { AttachmentsTab } from '@/components/attachments';
+import InternalConsumptionBottomPanel from '../../../custom/InternalConsumptionBottomPanel';
 import InternalConsumptionActions from '../../../custom/InternalConsumptionActions';
 import catalogs from './mockCatalogs';
 
@@ -33,13 +35,17 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:internalConsumption
 
+// @sf-generated-start requiredHeaderFields:internalConsumption
+const requiredHeaderFields = ['movementDate', 'name'];
+// @sf-generated-end requiredHeaderFields:internalConsumption
+
 // @sf-generated-start addLineFields:internalConsumptionLine
 const addLineFields = {
   entry: [
-    { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.' },
-    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity' },
-    { key: 'storageBin', column: 'M_Locator_ID', type: 'search', required: true, label: 'Warehouse', reference: 'Locator', inputMode: 'search' },
+    { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.', defaultValue: '@SQL=SELECT COALESCE(MAX(LINE),0)+10 AS DefaultValue FROM M_INTERNAL_CONSUMPTIONLINE WHERE M_INTERNAL_CONSUMPTION_ID=@M_INTERNAL_CONSUMPTION_ID@' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', lookupDrawer: 'internal-consumption-product', lookupTitle: 'Product + Warehouse', onSelectMappings: [{"from":"_aux._LOC","to":"storageBin","labelFrom":["warehouse","warehouse$_identifier","storageBin"]}] },
+    { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity', defaultValue: 0 },
+    { key: 'storageBin', column: 'M_Locator_ID', type: 'search', required: true, label: 'Warehouse', reference: 'Locator', inputMode: 'search', displayFromCatalog: true },
   ],
   derived: [
 
@@ -50,7 +56,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:internalConsumptionLine
 
-const api = {
+export const api = {
   "specName": "internal-consumption",
   "baseUrl": "/sws/neo/internal-consumption",
   "crud": {
@@ -131,16 +137,18 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=internal-consumptionDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "inventory"
   }
 };
 
 // @sf-generated-start component:InternalConsumptionPage
 export default function InternalConsumptionPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -161,7 +169,11 @@ export default function InternalConsumptionPage({ windowName, recordId, ...props
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_Internal_Consumption", config: {} } }]}
+        bottomSection={InternalConsumptionBottomPanel}
         customMenuContent={InternalConsumptionActions}
+        requiredHeaderFields={requiredHeaderFields}
+        linesLayout="inlineEditable"
         {...props}
       />
     );
@@ -175,6 +187,8 @@ export default function InternalConsumptionPage({ windowName, recordId, ...props
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="movementDate"
+      rowQuickActions={{}}
       {...props}
     />
   );

@@ -1,37 +1,68 @@
+import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
-import { toast } from 'sonner';
+import { RETURN_ORDER_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import CustomerReturnTable from './CustomerReturnTable';
 import CustomerReturnForm from './CustomerReturnForm';
 import CustomerReturnLineTable from './CustomerReturnLineTable';
 import CustomerReturnLineForm from './CustomerReturnLineForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
+import ReturnFromCustomerBottomPanel from '../../../custom/ReturnFromCustomerBottomPanel';
 import catalogs from './mockCatalogs';
 
+
 const breadcrumb = 'Sales / Returns';
+
 
 // @sf-generated-start summary:customerReturn
 const summary = [
   { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
-  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
 ];
 
 const statusField = 'documentStatus';
 // @sf-generated-end summary:customerReturn
 
+// @sf-generated-start extraBadges:customerReturn
+const extraBadges = [];
+// @sf-generated-end extraBadges:customerReturn
+
 // @sf-generated-start processes:customerReturn
 const processes = [
-  { name: 'Process Return', label: 'Complete Return', style: 'positive', columnName: 'documentAction' },
+
 ];
 // @sf-generated-end processes:customerReturn
 
+// @sf-generated-start draftMode:customerReturn
+const draftMode = null;
+// @sf-generated-end draftMode:customerReturn
+
+// @sf-generated-start requiredHeaderFields:customerReturn
+const requiredHeaderFields = ['summedLineAmount', 'documentNo', 'orderDate', 'businessPartner', 'partnerAddress', 'warehouse'];
+// @sf-generated-end requiredHeaderFields:customerReturn
+
 // @sf-generated-start addLineFields:customerReturnLine
-const addLineFields = { entry: [], derived: [], hidden: [] };
+const addLineFields = {
+  entry: [
+    { key: 'lineNo', column: 'Line', type: 'number', required: true, label: 'Line No.', defaultValue: '@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM C_OrderLine WHERE C_Order_ID=@C_Order_ID@' },
+    { key: 'attributeSetValue', column: 'M_AttributeSetInstance_ID', type: 'text', label: 'Attribute Set Value' },
+    { key: 'cReturnReasonID', column: 'C_Return_Reason_ID', type: 'search', lookup: true, label: 'Return Reason', reference: 'Return_Reason', inputMode: 'search' },
+    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Returned Quantity', defaultValue: 1 },
+    { key: 'goodsShipmentLine', column: 'M_Inoutline_ID', type: 'search', label: 'Goods Shipment Line', reference: 'InOutLine', inputMode: 'search' },
+    { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
+  ],
+  derived: [
+
+  ],
+  hidden: [
+
+  ],
+};
 // @sf-generated-end addLineFields:customerReturnLine
 
-const api = {
-  "specName": "return-from-customer",
-  "baseUrl": "/sws/neo/return-from-customer",
+export const api = {
+  "specName": "returns",
+  "baseUrl": "/sws/neo/returns",
   "crud": {
     "customerReturn": {
       "get": true,
@@ -40,8 +71,8 @@ const api = {
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/return-from-customer/customerReturn",
-      "detailUrl": "/sws/neo/return-from-customer/customerReturn/{id}",
+      "listUrl": "/sws/neo/returns/customerReturn",
+      "detailUrl": "/sws/neo/returns/customerReturn/{id}",
       "supportedFilters": [
         "documentStatus",
         "documentNo",
@@ -56,8 +87,8 @@ const api = {
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/return-from-customer/customerReturnLine",
-      "detailUrl": "/sws/neo/return-from-customer/customerReturnLine/{id}",
+      "listUrl": "/sws/neo/returns/customerReturnLine",
+      "detailUrl": "/sws/neo/returns/customerReturnLine/{id}",
       "supportedFilters": [
         "goodsShipmentLine"
       ]
@@ -70,7 +101,7 @@ const api = {
       "column": "C_Return_Reason_ID",
       "reference": "Return_Reason",
       "inputMode": "search",
-      "url": "/sws/neo/return-from-customer/customerReturn/selectors/cReturnReasonID"
+      "url": "/sws/neo/returns/customerReturn/selectors/cReturnReasonID"
     },
     {
       "entity": "customerReturn",
@@ -78,7 +109,7 @@ const api = {
       "column": "C_BPartner_ID",
       "reference": "BPartner",
       "inputMode": "search",
-      "url": "/sws/neo/return-from-customer/customerReturn/selectors/businessPartner"
+      "url": "/sws/neo/returns/customerReturn/selectors/businessPartner"
     },
     {
       "entity": "customerReturn",
@@ -86,7 +117,7 @@ const api = {
       "column": "C_BPartner_Location_ID",
       "reference": "BPartner_Location",
       "inputMode": "dependent",
-      "url": "/sws/neo/return-from-customer/customerReturn/selectors/partnerAddress"
+      "url": "/sws/neo/returns/customerReturn/selectors/partnerAddress"
     },
     {
       "entity": "customerReturn",
@@ -94,7 +125,15 @@ const api = {
       "column": "M_Warehouse_ID",
       "reference": "Warehouse",
       "inputMode": "search",
-      "url": "/sws/neo/return-from-customer/customerReturn/selectors/warehouse"
+      "url": "/sws/neo/returns/customerReturn/selectors/warehouse"
+    },
+    {
+      "entity": "customerReturn",
+      "field": "etvfacReversedInvoice",
+      "column": "EM_Etvfac_Reversed_Invoice",
+      "reference": "Invoice",
+      "inputMode": "search",
+      "url": "/sws/neo/returns/customerReturn/selectors/etvfacReversedInvoice"
     },
     {
       "entity": "customerReturn",
@@ -102,7 +141,7 @@ const api = {
       "column": "SalesRep_ID",
       "reference": "User",
       "inputMode": "selector",
-      "url": "/sws/neo/return-from-customer/customerReturn/selectors/salesRepresentative"
+      "url": "/sws/neo/returns/customerReturn/selectors/salesRepresentative"
     },
     {
       "entity": "customerReturnLine",
@@ -110,7 +149,7 @@ const api = {
       "column": "M_Product_ID",
       "reference": "Product",
       "inputMode": "search",
-      "url": "/sws/neo/return-from-customer/customerReturnLine/selectors/product"
+      "url": "/sws/neo/returns/customerReturnLine/selectors/product"
     },
     {
       "entity": "customerReturnLine",
@@ -118,7 +157,7 @@ const api = {
       "column": "C_Return_Reason_ID",
       "reference": "Return_Reason",
       "inputMode": "search",
-      "url": "/sws/neo/return-from-customer/customerReturnLine/selectors/cReturnReasonID"
+      "url": "/sws/neo/returns/customerReturnLine/selectors/cReturnReasonID"
     },
     {
       "entity": "customerReturnLine",
@@ -126,7 +165,7 @@ const api = {
       "column": "C_UOM_ID",
       "reference": "UOM",
       "inputMode": "selector",
-      "url": "/sws/neo/return-from-customer/customerReturnLine/selectors/uOM"
+      "url": "/sws/neo/returns/customerReturnLine/selectors/uOM"
     },
     {
       "entity": "customerReturnLine",
@@ -134,7 +173,7 @@ const api = {
       "column": "C_Tax_ID",
       "reference": "Tax",
       "inputMode": "selector",
-      "url": "/sws/neo/return-from-customer/customerReturnLine/selectors/tax"
+      "url": "/sws/neo/returns/customerReturnLine/selectors/tax"
     },
     {
       "entity": "customerReturnLine",
@@ -142,135 +181,175 @@ const api = {
       "column": "M_Inoutline_ID",
       "reference": "InOutLine",
       "inputMode": "search",
-      "url": "/sws/neo/return-from-customer/customerReturnLine/selectors/goodsShipmentLine"
+      "url": "/sws/neo/returns/customerReturnLine/selectors/goodsShipmentLine"
     }
   ],
   "actions": [
     {
       "entity": "customerReturn",
-      "field": "rMReceiveMaterials",
-      "column": "RM_ReceiveMaterials",
-      "url": "/sws/neo/return-from-customer/customerReturn/{id}/action/rMReceiveMaterials"
-    },
-    {
-      "entity": "customerReturn",
       "field": "documentAction",
       "column": "DocAction",
-      "url": "/sws/neo/return-from-customer/customerReturn/{id}/action/documentAction"
+      "url": "/sws/neo/returns/customerReturn/{id}/action/documentAction",
+      "processId": "104",
+      "processType": "classic"
     },
     {
       "entity": "customerReturn",
-      "field": "rMAddOrphanLine",
-      "column": "RM_AddOrphanLine",
-      "url": "/sws/neo/return-from-customer/customerReturn/{id}/action/rMAddOrphanLine"
+      "field": "rMReceiveMaterials",
+      "column": "RM_ReceiveMaterials",
+      "url": "/sws/neo/returns/customerReturn/{id}/action/rMReceiveMaterials"
     },
     {
       "entity": "customerReturn",
       "field": "rMPickFromShipment",
       "column": "RM_PickFromShipment",
-      "url": "/sws/neo/return-from-customer/customerReturn/{id}/action/rMPickFromShipment"
+      "url": "/sws/neo/returns/customerReturn/{id}/action/rMPickFromShipment",
+      "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
+      "processType": "obuiapp"
+    },
+    {
+      "entity": "customerReturn",
+      "field": "rMAddOrphanLine",
+      "column": "RM_AddOrphanLine",
+      "url": "/sws/neo/returns/customerReturn/{id}/action/rMAddOrphanLine",
+      "processId": "23D1B163EC0B41F790CE39BF01DA320E",
+      "processType": "classic"
     },
     {
       "entity": "customerReturn",
       "field": "rMCreateInvoice",
       "column": "RM_CreateInvoice",
-      "url": "/sws/neo/return-from-customer/customerReturn/{id}/action/rMCreateInvoice"
+      "url": "/sws/neo/returns/customerReturn/{id}/action/rMCreateInvoice",
+      "processId": "FF80808133362F6A013336781FCE0066",
+      "processType": "classic"
     },
     {
       "entity": "customerReturn",
       "field": "processNow",
       "column": "Processing",
-      "url": "/sws/neo/return-from-customer/customerReturn/{id}/action/processNow"
+      "url": "/sws/neo/returns/customerReturn/{id}/action/processNow",
+      "processId": "104",
+      "processType": "classic"
     },
     {
       "entity": "customerReturn",
       "field": "copyFrom",
       "column": "CopyFrom",
-      "url": "/sws/neo/return-from-customer/customerReturn/{id}/action/copyFrom"
+      "url": "/sws/neo/returns/customerReturn/{id}/action/copyFrom",
+      "processId": "211",
+      "processType": "classic"
     },
     {
       "entity": "customerReturn",
       "field": "generateTemplate",
       "column": "Generatetemplate",
-      "url": "/sws/neo/return-from-customer/customerReturn/{id}/action/generateTemplate"
+      "url": "/sws/neo/returns/customerReturn/{id}/action/generateTemplate",
+      "processId": "800022",
+      "processType": "classic"
     },
     {
       "entity": "customerReturn",
       "field": "copyFromPO",
       "column": "CopyFromPO",
-      "url": "/sws/neo/return-from-customer/customerReturn/{id}/action/copyFromPO"
+      "url": "/sws/neo/returns/customerReturn/{id}/action/copyFromPO",
+      "processId": "8B81D80B06364566B87853FEECAB5DE0",
+      "processType": "obuiapp"
     },
     {
       "entity": "customerReturn",
       "field": "posted",
       "column": "Posted",
-      "url": "/sws/neo/return-from-customer/customerReturn/{id}/action/posted"
+      "url": "/sws/neo/returns/customerReturn/{id}/action/posted",
+      "processId": "57496FB9CF9E4E8F847224017941570E",
+      "processType": "obuiapp"
     },
     {
       "entity": "customerReturn",
       "field": "calculatePromotions",
       "column": "Calculate_Promotions",
-      "url": "/sws/neo/return-from-customer/customerReturn/{id}/action/calculatePromotions"
+      "url": "/sws/neo/returns/customerReturn/{id}/action/calculatePromotions",
+      "processId": "9EB2228A60684C0DBEC12D5CD8D85218",
+      "processType": "classic"
     },
     {
       "entity": "customerReturn",
       "field": "cancelandreplace",
       "column": "Cancelandreplace",
-      "url": "/sws/neo/return-from-customer/customerReturn/{id}/action/cancelandreplace"
+      "url": "/sws/neo/returns/customerReturn/{id}/action/cancelandreplace",
+      "processId": "A2FAF49712D1445ABE750315CE1B473A",
+      "processType": "obuiapp"
     },
     {
       "entity": "customerReturn",
       "field": "confirmcancelandreplace",
       "column": "Confirmcancelandreplace",
-      "url": "/sws/neo/return-from-customer/customerReturn/{id}/action/confirmcancelandreplace"
+      "url": "/sws/neo/returns/customerReturn/{id}/action/confirmcancelandreplace",
+      "processId": "0C2AFAEFB67B4CB8A1429195EB119A49",
+      "processType": "obuiapp"
     },
     {
       "entity": "customerReturn",
       "field": "createOrder",
       "column": "Convertquotation",
-      "url": "/sws/neo/return-from-customer/customerReturn/{id}/action/createOrder"
+      "url": "/sws/neo/returns/customerReturn/{id}/action/createOrder",
+      "processId": "A3FE1F9892394386A49FB707AA50A0FA",
+      "processType": "classic"
     },
     {
       "entity": "customerReturn",
       "field": "createPOLines",
       "column": "Create_POLines",
-      "url": "/sws/neo/return-from-customer/customerReturn/{id}/action/createPOLines"
+      "url": "/sws/neo/returns/customerReturn/{id}/action/createPOLines",
+      "processId": "6995A4C2592D434A9E16B71E1694CBCA",
+      "processType": "obuiapp"
     },
     {
       "entity": "customerReturn",
       "field": "aPRMAddPayment",
       "column": "EM_APRM_AddPayment",
-      "url": "/sws/neo/return-from-customer/customerReturn/{id}/action/aPRMAddPayment"
+      "url": "/sws/neo/returns/customerReturn/{id}/action/aPRMAddPayment",
+      "processId": "9BED7889E1034FE68BD85D5D16857320",
+      "processType": "obuiapp"
     },
     {
       "entity": "customerReturn",
       "field": "rMPickfromreceipt",
       "column": "RM_Pickfromreceipt",
-      "url": "/sws/neo/return-from-customer/customerReturn/{id}/action/rMPickfromreceipt"
+      "url": "/sws/neo/returns/customerReturn/{id}/action/rMPickfromreceipt",
+      "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
+      "processType": "obuiapp"
     },
     {
       "entity": "customerReturnLine",
       "field": "selectOrderLine",
       "column": "Relate_Orderline",
-      "url": "/sws/neo/return-from-customer/customerReturnLine/{id}/action/selectOrderLine"
+      "url": "/sws/neo/returns/customerReturnLine/{id}/action/selectOrderLine",
+      "processId": "C4265E27C8134096B49DFBF69369DFC6",
+      "processType": "obuiapp"
     },
     {
       "entity": "customerReturnLine",
       "field": "explode",
       "column": "Explode",
-      "url": "/sws/neo/return-from-customer/customerReturnLine/{id}/action/explode"
+      "url": "/sws/neo/returns/customerReturnLine/{id}/action/explode",
+      "processId": "DFC78024B1F54CBB95DC73425BA6687F",
+      "processType": "classic"
     },
     {
       "entity": "customerReturnLine",
       "field": "managePrereservation",
       "column": "Manage_Prereservation",
-      "url": "/sws/neo/return-from-customer/customerReturnLine/{id}/action/managePrereservation"
+      "url": "/sws/neo/returns/customerReturnLine/{id}/action/managePrereservation",
+      "processId": "70E42AD47E5F4698A9ACCCAF3EB72B9E",
+      "processType": "obuiapp"
     },
     {
       "entity": "customerReturnLine",
       "field": "manageReservation",
       "column": "Manage_Reservation",
-      "url": "/sws/neo/return-from-customer/customerReturnLine/{id}/action/manageReservation"
+      "url": "/sws/neo/returns/customerReturnLine/{id}/action/manageReservation",
+      "processId": "5F547560D3DE401AA0B570F22E2C6C06",
+      "processType": "obuiapp"
     }
   ],
   "queryParams": {
@@ -281,16 +360,18 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=return-from-customerDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "sales"
   }
 };
 
 // @sf-generated-start component:CustomerReturnPage
 export default function CustomerReturnPage({ windowName, recordId, ...props }) {
-  // @sf-custom-slot hooks:CustomerReturnPage
   if (recordId) {
     return (
       <DetailView
@@ -301,6 +382,7 @@ export default function CustomerReturnPage({ windowName, recordId, ...props }) {
         DetailForm={CustomerReturnLineForm}
         summary={summary}
         statusField={statusField}
+        extraBadges={extraBadges}
         processes={processes}
         addLineFields={addLineFields}
         catalogs={catalogs}
@@ -309,12 +391,16 @@ export default function CustomerReturnPage({ windowName, recordId, ...props }) {
         windowName={windowName}
         recordId={recordId}
         breadcrumb={breadcrumb}
-        notesField="description"
+      api={api}
         documentPreview={{ titlePrefix: 'Return', pdfUrl: null }}
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
-        api={api}
         hideDeleteWhenComplete
-        menuActions={() => []}
+        notesField="description"
+        customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Order", config: {} } }]}
+        bottomSection={ReturnFromCustomerBottomPanel}
+        requiredHeaderFields={requiredHeaderFields}
+        lineConfig={RETURN_ORDER_LINE_CONFIG}
+        linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -324,15 +410,15 @@ export default function CustomerReturnPage({ windowName, recordId, ...props }) {
     <ListView
       entity="customerReturn"
       Table={CustomerReturnTable}
-      entityLabel="Customer Returns"
+      entityLabel="Returns"
       windowName={windowName}
       breadcrumb={breadcrumb}
-      hideCreate
       api={api}
+      dateFilterKey="orderDate"
+      rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );
 }
 // @sf-generated-end component:CustomerReturnPage
-
-// @sf-custom-slot section:CustomerReturnPage-custom

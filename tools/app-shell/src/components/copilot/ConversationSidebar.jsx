@@ -91,23 +91,23 @@ export function ConversationSidebar({
 
       {/* Active conversations list */}
       <div className="flex-1 overflow-y-auto px-2 py-1">
-        {isLoading ? (
+        {isLoading && (
           <div className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
             <LoaderCircle className="h-4 w-4 animate-spin" />
           </div>
-        ) : filteredActive.length > 0 ? (
-          filteredActive.map((conv) => (
-            <ConversationItem
-              key={conv.conversation_id}
-              conversation={conv}
-              isActive={conv.conversation_id === activeConversationId}
-              isArchived={false}
-              onSelect={() => onSelect?.(conv)}
-              onDelete={() => onDelete?.(conv.conversation_id)}
-              onRename={(newTitle) => onRename?.(conv.conversation_id, newTitle)}
-            />
-          ))
-        ) : (
+        )}
+        {!isLoading && filteredActive.length > 0 && filteredActive.map((conv) => (
+          <ConversationItem
+            key={conv.conversation_id}
+            conversation={conv}
+            isActive={conv.conversation_id === activeConversationId}
+            isArchived={false}
+            onSelect={() => onSelect?.(conv)}
+            onDelete={() => onDelete?.(conv.conversation_id)}
+            onRename={(newTitle) => onRename?.(conv.conversation_id, newTitle)}
+          />
+        ))}
+        {!isLoading && filteredActive.length === 0 && (
           <div className="py-4 text-center text-sm text-muted-foreground">
             {ui('copilotNoConversations')}
           </div>
@@ -145,25 +145,25 @@ export function ConversationSidebar({
 
             {archiveOpen && (
               <div className="mt-1">
-                {isLoadingArchived ? (
+                {isLoadingArchived && (
                   <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
                     <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
                   </div>
-                ) : filteredArchived.length > 0 ? (
-                  filteredArchived.map((conv) => (
-                    <ConversationItem
-                      key={conv.conversation_id}
-                      conversation={conv}
-                      isActive={conv.conversation_id === activeConversationId}
-                      isArchived={true}
-                      onSelect={() => onSelect?.(conv)}
-                      onRestore={() => onRestore?.(conv.conversation_id)}
-                      onPermanentDelete={() =>
-                        onPermanentDelete?.(conv.conversation_id)
-                      }
-                    />
-                  ))
-                ) : (
+                )}
+                {!isLoadingArchived && filteredArchived.length > 0 && filteredArchived.map((conv) => (
+                  <ConversationItem
+                    key={conv.conversation_id}
+                    conversation={conv}
+                    isActive={conv.conversation_id === activeConversationId}
+                    isArchived={true}
+                    onSelect={() => onSelect?.(conv)}
+                    onRestore={() => onRestore?.(conv.conversation_id)}
+                    onPermanentDelete={() =>
+                      onPermanentDelete?.(conv.conversation_id)
+                    }
+                  />
+                ))}
+                {!isLoadingArchived && filteredArchived.length === 0 && (
                   <div className="py-2 text-center text-xs text-muted-foreground">
                     {ui('copilotNoArchivedConversations')}
                   </div>

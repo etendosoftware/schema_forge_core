@@ -96,6 +96,102 @@ Both at `z-50` because the Sidebar is `z-40` and both scrim and panel need to co
 
 ---
 
+## Monetary Amount Formatting
+
+All monetary amounts displayed in the app must use the shared formatting utilities. Never use bare `toLocaleString()` for money, and never hardcode a currency code.
+
+### Two utilities — different contexts
+
+| Utility | Import path | When to use |
+|---------|-------------|-------------|
+| `formatCurrency(currencyCode, value)` | `@/lib/formatCurrency` | Custom window components (sidebars, bottom panels, topbar, modals). The org currency comes from `useCurrency()` or from the document record. |
+| `formatDashboardAmount(value, currencyLabel, locale)` | `@/lib/dashboardNumberFormat` | Dashboard widgets (`KPIHeader`, `FinancialTrendChart`, `TopClientsList`, etc.) that receive a `currencyLabel` string from the widget endpoint response. |
+
+These utilities are **not interchangeable**. Custom window components always know the org currency as an ISO 4217 code and must use `formatCurrency`. Dashboard components receive a free-form label from the backend and must use `formatDashboardAmount`.
+
+### Standard pattern for custom window components
+
+```jsx
+import { useCurrency } from '@/hooks/useCurrency';
+import { formatCurrency } from '@/lib/formatCurrency';
+
+// Context: component without a document record (sidebar, KPI card, modal)
+export default function MyComponent({ recordId, apiBaseUrl }) {
+  const orgCurrency = useCurrency() ?? 'USD';
+
+  return (
+    <span>{formatCurrency(orgCurrency, someAmountValue)}</span>
+  );
+}
+```
+
+```jsx
+// Context: component with a document record (topbar, bottom panel)
+// The document's own currency takes precedence over the org default.
+const currency = data['currency$_identifier'] || 'USD';
+
+return (
+  <span>{formatCurrency(currency, data.grandTotalAmount)}</span>
+);
+```
+
+`useCurrency()` returns `null` while the session is being resolved on first load. Always coalesce with `?? 'USD'` so that `formatCurrency` always receives a valid string.
+
+### Currency in the product selector (`ProductSearchDrawer`)
+
+`ProductSearchDrawer` resolves currency through `selectorContext.currency`, which is injected by `DetailView` from the active document record (`currency$_identifier`). This means the product prices shown in the drawer always reflect the document's currency, not a hardcoded value.
+
+**Cascade used by the drawer:**
+1. `selectorContext.currency` — document currency, forwarded by `DetailView`
+2. `useCurrency()` — org session currency (fallback when no document is loaded)
+3. `.toFixed(2)` — raw number only if no currency is available at all
+
+When triggering the drawer from a custom component (outside of DetailView), pass the document currency explicitly:
+```jsx
+<ProductSearchDrawer
+  selectorContext={{ currency: documentCurrency, ...otherContext }}
+  ...
+/>
+```
+
+### `CurrencyProvider` placement
+
+`CurrencyProvider` must wrap the app routes inside `<AuthProvider>`. It fetches the org currency once via the `/sws/neo/session` endpoint as soon as a token is available.
+
+```jsx
+<AuthProvider>
+  <CurrencyProvider>
+    <AppRoutes />
+  </CurrencyProvider>
+</AuthProvider>
+```
+
+Do not instantiate `CurrencyProvider` inside individual window components — one instance at the root is sufficient.
+
+### What NOT to do
+
+```jsx
+// BAD: hardcoded currency code
+value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+
+// BAD: bare toLocaleString without currency symbol
+amount.toLocaleString();
+
+// BAD: using formatDashboardAmount in a custom window component
+// (it accepts a free-form label, not an ISO code, and has different formatting rules)
+formatDashboardAmount(amount, 'USD', 'en-US');
+```
+
+### Symbol placement rules (handled automatically by `formatCurrency`)
+
+`formatCurrency` follows standard symbol placement per currency:
+- Symbol **before** the amount by default: `$1,234.50`, `$99.00`
+- Symbol **after** the amount with a space for: EUR, SEK, NOK, DKK, CZK, HUF, PLN — e.g. `1,234.50 €`
+
+Callers never need to know these rules — they just pass the ISO 4217 code.
+
+---
+
 ## Column Alignment in Tables
 
 - **`type: 'amount'`** columns → `text-right` on cells and footer totals, `text-left` on headers.

@@ -4,6 +4,7 @@ import AssetsTable from './AssetsTable';
 import AssetsForm from './AssetsForm';
 import AssetsAmortizationPanel from '@/windows/custom/assets/AssetsAmortizationPanel';
 import AssetsConfigPanel from '@/windows/custom/assets/AssetsConfigPanel';
+import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 
 import AssetsSidebar from '@/windows/custom/assets/AssetsSidebar';
@@ -34,9 +35,13 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:assets
 
+// @sf-generated-start requiredHeaderFields:assets
+const requiredHeaderFields = ['searchKey', 'name', 'assetCategory'];
+// @sf-generated-end requiredHeaderFields:assets
 
 
-const api = {
+
+export const api = {
   "specName": "assets",
   "baseUrl": "/sws/neo/assets",
   "crud": {
@@ -164,16 +169,18 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=assetsDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "finance"
   }
 };
 
 // @sf-generated-start component:AssetsPage
 export default function AssetsPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -198,6 +205,8 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
         hideMoreMenu
         hideMoreDetails
         contentBg="bg-slate-50"
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "A_Asset", config: {} } }]}
+        requiredHeaderFields={requiredHeaderFields}
         detailSortBy="sEQNoAsset asc"
         titleField="name"
         lockWhenProcessed={false}
@@ -222,11 +231,13 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="purchaseDate"
       hidePrint
       hideMoreMenu
       hideListFilters
       hideLink
       hideEyeCount
+      rowQuickActions={{}}
       {...props}
     />
   );

@@ -4,6 +4,7 @@ import ProductTable from './ProductTable';
 import ProductForm from './ProductForm';
 import ProductPriceBar from '@/windows/custom/product/ProductPriceBar';
 import ProductAdditionalInfoPanel from '@/windows/custom/product/ProductAdditionalInfoPanel';
+import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 import ProductGallery from '@/windows/custom/product/ProductGallery';
 import ProductSidebar from '@/windows/custom/product/ProductSidebar';
@@ -33,9 +34,13 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:product
 
+// @sf-generated-start requiredHeaderFields:product
+const requiredHeaderFields = ['searchKey', 'name', 'uOM', 'productCategory', 'taxCategory', 'purchase', 'sale', 'productType', 'stocked', 'returnable'];
+// @sf-generated-end requiredHeaderFields:product
 
 
-const api = {
+
+export const api = {
   "specName": "product",
   "baseUrl": "/sws/neo/product",
   "crud": {
@@ -435,16 +440,18 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=productDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "inventory"
   }
 };
 
 // @sf-generated-start component:ProductPage
 export default function ProductPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -465,9 +472,12 @@ export default function ProductPage({ windowName, recordId, ...props }) {
           { key: 'general', label: 'General' },
           { key: 'additionalInfo', label: 'Additional Info', Panel: ProductAdditionalInfoPanel },
         ]}
+        customTabsAfterBottom
         hidePrint
         hideMoreMenu
         contentBg="bg-slate-50"
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_Product", config: {} } }]}
+        requiredHeaderFields={requiredHeaderFields}
         {...props}
         sidebarContent={(data) => (
           <ProductSidebar
@@ -490,6 +500,9 @@ export default function ProductPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       galleryRenderer={(gProps) => <ProductGallery {...gProps} />}
+      hidePrint
+      hideMoreMenu
+      rowQuickActions={{}}
       {...props}
     />
   );

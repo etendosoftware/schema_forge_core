@@ -1,13 +1,12 @@
-import { DataTable } from '@/components/contract-ui';
+import { forwardRef } from 'react';
+import InvoiceLinesTable from '../shared/InvoiceLinesTable.jsx';
 
-const columns = [
-  { key: 'product',           column: 'M_Product_ID', type: 'string' },
-  { key: 'invoicedQuantity',  column: 'QtyInvoiced',  type: 'string', label: 'Quantity' },
-  { key: 'unitPrice',         column: 'PriceActual',  type: 'string' },
-  { key: 'tax',               column: 'C_Tax_ID',     type: 'string' },
-  { key: 'lineNetAmount',     column: 'LineNetAmt',   type: 'amount' },
-];
+// forwardRef so DetailView can imperatively clear the selection / flush
+// pending edits via inlineLinesRef. Mirrors the generated LinesTable pattern:
+// when linesLayout='inlineEditable' and not in add-row mode, hand off to
+// InlineLinesPanel for hover actions, inline edit, and clearSelection.
+const InvoiceLineTableCustom = forwardRef(function InvoiceLineTableCustom(props, ref) {
+  return <InvoiceLinesTable ref={ref} productRequired taxRequired {...props} />;
+});
 
-export default function InvoiceLineTableCustom(props) {
-  return <DataTable columns={columns} filters={[]} {...props} />;
-}
+export default InvoiceLineTableCustom;

@@ -1,20 +1,65 @@
-.PHONY: test test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate dev build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview
+.PHONY: test test-all-coverage test-ci test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-with-shell dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate sonar sonar-coverage menu-cache uuid
 
 # --- Testing ---
 
-test: ## Run all CLI tests
+test: ## Run all unit tests (CLI + app-shell + artifacts + vitest)
 	cd cli && node --test 'test/*.test.js'
+	node --test 'tools/app-shell/src/**/__tests__/*.test.js'
+	node --test 'tools/app-shell/test/*.test.js'
+	node --test 'artifacts/**/__tests__/*.test.js'
+	cd tools/app-shell && npx vitest run
+
+test-all-coverage: ## Run ALL unit tests (Node + Vitest) with coverage reports
+	@mkdir -p coverage
+	@echo "=== CLI tests ==="
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/cli-lcov.info 'cli/test/*.test.js'
+	@echo "=== App-shell Node tests ==="
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-lcov.info 'tools/app-shell/src/**/__tests__/*.test.js'
+	@echo "=== App-shell extra tests ==="
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-test-lcov.info 'tools/app-shell/test/*.test.js'
+	@echo "=== Artifact custom tests ==="
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/artifacts-lcov.info 'artifacts/**/__tests__/*.test.js'
+	@echo "=== Vitest (React components) ==="
+	cd tools/app-shell && npx vitest run --coverage && cp coverage/vitest/lcov.info ../../coverage/vitest-lcov.info
+	@echo ""
+	@echo "Coverage reports saved in coverage/"
+	@echo "  cli-lcov.info, appshell-lcov.info, appshell-test-lcov.info, artifacts-lcov.info, vitest-lcov.info"
+
+test-ci: ## Run all unit tests and write JUnit XML reports (CI mode)
+	@mkdir -p test-results
+	node --test \
+	  --test-reporter=spec --test-reporter-destination=stdout \
+	  --test-reporter=junit --test-reporter-destination=test-results/cli.xml \
+	  'cli/test/*.test.js'
+	node --test \
+	  --test-reporter=spec --test-reporter-destination=stdout \
+	  --test-reporter=junit --test-reporter-destination=test-results/appshell-node.xml \
+	  'tools/app-shell/src/**/__tests__/*.test.js' \
+	  'tools/app-shell/test/*.test.js'
+	node --test \
+	  --test-reporter=spec --test-reporter-destination=stdout \
+	  --test-reporter=junit --test-reporter-destination=test-results/artifacts.xml \
+	  'artifacts/**/__tests__/*.test.js'
+	cd tools/app-shell && npx vitest run \
+	  --reporter=junit \
+	  --outputFile=../../test-results/vitest.xml
+
+validate-pipeline: ## Validate pipeline completeness across all artifacts
+	node cli/src/validate-pipeline.js --format=text
 
 test-frontend: ## Run only frontend generator tests
 	cd cli && node --test 'test/generate-frontend.test.js'
 
+
+quality-gate: ## Run Schema Forge quality gate for PR-affected windows
+	node cli/src/quality-gate.js --pr-affected --baseline-ref origin/main --format md
 # --- E2E Testing (Playwright) ---
 
 test-e2e: ## Run E2E tests with visible browser
 	cd e2e && npx playwright test --headed
 
 test-e2e-headless: ## Run E2E tests headless (CI mode)
-	cd e2e && npx playwright test --headed=false
+	cd e2e && CI=true npx playwright test
 
 test-e2e-debug: ## Run E2E tests in debug mode (step by step)
 	cd e2e && npx playwright test --debug
@@ -36,10 +81,47 @@ install-e2e: ## Install E2E dependencies + browsers
 generate: ## Generate frontend from Sales Order contract
 	node cli/src/generate-frontend.js artifacts/sales-order/contract.json
 
+PUSH_TO_NEO ?= 0
+SKIP_EXTRACT ?= 0
+ONLY ?=
+
+regen: ## Re-run full pipeline for all active windows (HELP=1 or `make regen-help` for options)
+	@if [ "$(HELP)" = "1" ]; then $(MAKE) -s regen-help; exit 0; fi; \
+	REGEN_ARGS=""; \
+	if [ "$(PUSH_TO_NEO)" = "1" ]; then REGEN_ARGS="$$REGEN_ARGS --push-to-neo"; fi; \
+	if [ "$(SKIP_EXTRACT)" = "1" ]; then REGEN_ARGS="$$REGEN_ARGS --skip-extract"; fi; \
+	if [ -n "$(ONLY)" ]; then REGEN_ARGS="$$REGEN_ARGS --only $(ONLY)"; fi; \
+	node cli/src/regen-all.js $$REGEN_ARGS
+
+regen-help: ## Show usage and examples for `make regen`
+	@echo "Usage: make regen [VAR=value ...]"
+	@echo ""
+	@echo "Variables:"
+	@echo "  ONLY=<spec>[,<spec>...]   Run only the given window spec(s) (kebab-case, matches artifacts/<spec>/)"
+	@echo "  PUSH_TO_NEO=1             Push the resulting config to NEO Headless after regenerating"
+	@echo "  SKIP_EXTRACT=1            Skip the DB extraction step (reuse existing schema-raw.json)"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make regen                                # all active windows"
+	@echo "  make regen ONLY=tax                       # only the tax window"
+	@echo "  make regen ONLY=tax,product               # tax + product"
+	@echo "  make regen ONLY=tax SKIP_EXTRACT=1        # only tax, skip DB extraction"
+	@echo "  make regen ONLY=tax PUSH_TO_NEO=1         # only tax + push to NEO"
+	@echo ""
+	@echo "Notes:"
+	@echo "  - Window specs are the directory names under artifacts/ (kebab-case)."
+	@echo "  - For a single window, you can also run: node cli/src/resolve-curated.js --window <spec> --write"
+
 # --- Dev Server ---
 
 dev: ## Start app-shell dev server (http://localhost:3100)
 	cd tools/app-shell && npm run dev
+
+dev-with-shell: ## Start app-shell + spike-hello-app together (shell 3100, UI 5173, API 4100)
+	cd tools/spike-hello-app && npm run dev:with-shell
+
+dev-mock: ## Start app-shell dev server with mock data (http://localhost:3100) — required for E2E tests
+	cd tools/app-shell && npm run dev:mock
 
 build: ## Build app-shell for production
 	cd tools/app-shell && npm run build
@@ -47,8 +129,15 @@ build: ## Build app-shell for production
 
 # --- Setup ---
 
-install: ## Install all workspace dependencies
+menu-cache: ## Refresh the AD menu cache from the database
+	node cli/src/menu-cache.js refresh
+
+uuid: ## Generate a new Etendo-format UUID (32 uppercase hex chars, no hyphens)
+	@uuidgen | tr -d '-' | tr '[:lower:]' '[:upper:]'
+
+install: ## Install all workspace dependencies and activate git hooks
 	npm install
+	git config core.hooksPath .githooks
 
 # --- Deploy ---
 
@@ -93,6 +182,19 @@ report-stop: ## Stop jsreport Docker container
 report-preview: ## Preview Business Partner listing report
 	node cli/src/report-preview.js --artifact business-partner --report listing
 
+# --- Static Analysis (SonarQube) ---
+
+sonar: ## Run SonarQube analysis on Schema Forge JS/JSX code
+	sonar-scanner -Dproject.settings=sonar-project.properties
+
+sonar-coverage: ## Run all tests with coverage then SonarQube analysis
+	@mkdir -p coverage
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/cli-lcov.info 'cli/test/*.test.js'
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-lcov.info 'tools/app-shell/src/**/__tests__/*.test.js'
+	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-test-lcov.info 'tools/app-shell/test/*.test.js'
+	cd tools/app-shell && npx vitest run --coverage && cp coverage/vitest/lcov.info ../../coverage/vitest-lcov.info
+	sonar-scanner -Dproject.settings=sonar-project.properties
+
 # --- Cleanup ---
 
 clean: ## Remove generated artifacts and build output
@@ -101,6 +203,11 @@ clean: ## Remove generated artifacts and build output
 # --- Help ---
 
 help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-18s\033[0m %s\n", $$1, $$2}'
+	@echo ""; \
+	echo "\033[1mSchema Forge — Available targets\033[0m"; \
+	echo ""; \
+	awk '/^# ---/{gsub(/^# --- | ---$$/,"");printf "\033[1;33m%s\033[0m\n",$$0;next} \
+	     /^[a-zA-Z][a-zA-Z0-9_-]*:.*## /{n=index($$0,": ## ");if(n>0){printf "  \033[36m%-22s\033[0m %s\n",substr($$0,1,n-1),substr($$0,n+5)}}' Makefile; \
+	echo ""
 
 .DEFAULT_GOAL := help

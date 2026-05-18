@@ -1,11 +1,14 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
 import { toast } from 'sonner';
+import { INVOICE_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import HeaderTable from '../../../custom/InvoiceHeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
+import SifTab from '@/windows/custom/shared/SifTab.jsx';
 import InvoiceBottomPanel from '../../../custom/InvoiceBottomPanel';
 import InvoiceTopbarExtra from '../../../custom/InvoiceTopbarExtra';
 import catalogs from './mockCatalogs';
@@ -13,13 +16,25 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Sales Invoice';
 
+const labelOverrides = {
+  "es_ES": {
+    "OutstandingAmt": "Pendiente de pago",
+    "EM_Etgo_Due_Date": "Vencimiento",
+    "em_etgo_delivery_status": "Estado de entrega"
+  },
+  "en_US": {
+    "OutstandingAmt": "Pending Payment",
+    "EM_Etgo_Due_Date": "Due Date",
+    "em_etgo_delivery_status": "Delivery Status"
+  }
+};
+
 
 // @sf-generated-start summary:header
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
-  { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
 ];
 
 const statusField = 'documentStatus';
@@ -30,37 +45,44 @@ const extraBadges = [];
 // @sf-generated-end extraBadges:header
 
 // @sf-generated-start processes:header
-const processes = [];
+const processes = [
+
+];
 // @sf-generated-end processes:header
 
 // @sf-generated-start draftMode:header
 const draftMode = {
-  enabled: true,
-  processField: 'documentAction',
-  processValue: 'CO',
-  label: 'Confirm',
+  "enabled": true,
+  "processField": "documentAction",
+  "processValue": "CO",
+  "label": "Confirm"
 };
 // @sf-generated-end draftMode:header
+
+// @sf-generated-start requiredHeaderFields:header
+const requiredHeaderFields = ['documentNo', 'invoiceDate', 'businessPartner', 'partnerAddress', 'paymentTerms', 'paymentMethod', 'grandTotalAmount', 'summedLineAmount', 'priceList'];
+// @sf-generated-end requiredHeaderFields:header
 
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
   entry: [
-    { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity', defaultValue: 1 },
-    { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["listPrice","unitPrice","tax","uOM","grossUnitPrice"] },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
+    { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity', defaultValue: 1 },
+    { key: 'listPrice', column: 'PriceList', type: 'number', required: true, label: 'List Price' },
+    { key: 'etgoDiscount', column: 'EM_Etgo_Discount', type: 'number', label: 'Discount %', defaultValue: 0 },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineNetAmount"] },
   ],
   derived: [
 
   ],
   hidden: [
-
+    { key: 'grossUnitPrice', value: '0' },
   ],
 };
 // @sf-generated-end addLineFields:lines
 
-const api = {
+export const api = {
   "specName": "sales-invoice",
   "baseUrl": "/sws/neo/sales-invoice",
   "crud": {
@@ -77,7 +99,8 @@ const api = {
         "documentNo",
         "invoiceDate",
         "businessPartner",
-        "documentStatus"
+        "documentStatus",
+        "eTGODueDate"
       ]
     },
     "lines": {
@@ -108,11 +131,19 @@ const api = {
   "selectors": [
     {
       "entity": "header",
+      "field": "adOrgId",
+      "column": "AD_Org_ID",
+      "reference": "Org",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/header/selectors/adOrgId"
+    },
+    {
+      "entity": "header",
       "field": "businessPartner",
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
       "inputMode": "search",
-      "url": "/sws/neo/sales-invoice/header/selectors/C_BPartner_ID?isCustomer=Y"
+      "url": "/sws/neo/sales-invoice/header/selectors/businessPartner"
     },
     {
       "entity": "header",
@@ -152,7 +183,23 @@ const api = {
       "column": "M_PriceList_ID",
       "reference": "PriceList",
       "inputMode": "selector",
-      "url": "/sws/neo/sales-invoice/header/selectors/M_PriceList_ID?isSOTrx=Y"
+      "url": "/sws/neo/sales-invoice/header/selectors/priceList"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiDescription",
+      "column": "EM_Aeatsii_Description_ID",
+      "reference": "aeatsii_description",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/header/selectors/aeatsiiDescription"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiCauseExemption",
+      "column": "EM_Aeatsii_Cause_Exemption_ID",
+      "reference": "aeatsii_cause_exemption",
+      "inputMode": "selector",
+      "url": "/sws/neo/sales-invoice/header/selectors/aeatsiiCauseExemption"
     },
     {
       "entity": "lines",
@@ -276,14 +323,6 @@ const api = {
     },
     {
       "entity": "header",
-      "field": "eTBLKCBulkcompletion",
-      "column": "EM_Etblkc_Bulkcompletion",
-      "url": "/sws/neo/sales-invoice/header/{id}/action/eTBLKCBulkcompletion",
-      "processId": "272C8D38EF3245BF882E623CE92AB4E7",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
       "field": "tbaiVoidxmlgenerator",
       "column": "EM_Tbai_Voidxmlgenerator",
       "url": "/sws/neo/sales-invoice/header/{id}/action/tbaiVoidxmlgenerator",
@@ -308,18 +347,18 @@ const api = {
     },
     {
       "entity": "header",
-      "field": "generateTo",
-      "column": "GenerateTo",
-      "url": "/sws/neo/sales-invoice/header/{id}/action/generateTo",
-      "processId": "142",
-      "processType": "classic"
-    },
-    {
-      "entity": "header",
       "field": "processNow",
       "column": "Processing",
       "url": "/sws/neo/sales-invoice/header/{id}/action/processNow",
       "processId": "111",
+      "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "generateTo",
+      "column": "GenerateTo",
+      "url": "/sws/neo/sales-invoice/header/{id}/action/generateTo",
+      "processId": "142",
       "processType": "classic"
     },
     {
@@ -393,16 +432,30 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=sales-invoiceDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "sales"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "OutstandingAmt": "Pendiente de pago",
+      "EM_Etgo_Due_Date": "Vencimiento",
+      "em_etgo_delivery_status": "Estado de entrega"
+    },
+    "en_US": {
+      "OutstandingAmt": "Pending Payment",
+      "EM_Etgo_Due_Date": "Due Date",
+      "em_etgo_delivery_status": "Delivery Status"
+    }
   }
 };
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -415,7 +468,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         statusField={statusField}
         extraBadges={extraBadges}
         processes={processes}
-        draftMode={draftMode}
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Header"
@@ -426,15 +478,21 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       api={api}
         hideDeleteWhenComplete
         hidePrint
+        noHeaderBorder
         notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Invoice", config: {} } }, { key: 'sif', labelKey: 'sifDataTabs.sectionTitle', Component: SifTab, placement: 'tab' }]}
         bottomSection={InvoiceBottomPanel}
         topbarRight={InvoiceTopbarExtra}
         menuActions={({ status }) => [
-          { key: 'duplicate', label: 'Duplicate', onClick: () => {}, },
-          { key: 'cancel', label: 'Cancel', destructive: true, visible: status === 'CO', onClick: () => {}, }
+          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'reactivated', documentAction: 'RE',  }
         ]}
+        draftMode={draftMode}
+        requiredHeaderFields={requiredHeaderFields}
         salesTheme
+        labelOverrides={labelOverrides}
+        lineConfig={INVOICE_LINE_CONFIG}
+        linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -448,7 +506,11 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="invoiceDate"
       hidePrint
+      labelOverrides={labelOverrides}
+      rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

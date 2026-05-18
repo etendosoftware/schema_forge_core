@@ -9,6 +9,8 @@ import AccountingForm from './AccountingForm';
 import ExecutionHistoryTable from './ExecutionHistoryTable';
 import ExecutionHistoryForm from './ExecutionHistoryForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
+import PaymentOutBottomPanel from '../../../custom/PaymentOutBottomPanel';
 import catalogs from './mockCatalogs';
 
 
@@ -37,22 +39,26 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:header
 
+// @sf-generated-start requiredHeaderFields:header
+const requiredHeaderFields = ['documentNo', 'paymentMethod', 'account', 'currency'];
+// @sf-generated-end requiredHeaderFields:header
+
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
   entry: [
-    { key: 'amount', column: 'Amount', type: 'number', required: true, label: 'Paid Amount' },
+    { key: 'amount', column: 'Amount', type: 'number', required: true, label: 'Paid Amount', defaultValue: 0 },
     { key: 'invoicePaymentSchedule', column: 'FIN_Payment_Schedule_Invoice', type: 'search', lookup: true, label: 'Invoice Payment Schedule', reference: 'Payment_Schedule', inputMode: 'search' },
   ],
   derived: [
 
   ],
   hidden: [
-
+    { key: 'canceled', value: 'N' },
   ],
 };
 // @sf-generated-end addLineFields:lines
 
-const api = {
+export const api = {
   "specName": "payment-out",
   "baseUrl": "/sws/neo/payment-out",
   "crud": {
@@ -497,10 +503,13 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=payment-outDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "finance"
   }
 };
 
@@ -531,7 +540,11 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'executionHistory', label: 'Execution History', Table: ExecutionHistoryTable, Form: ExecutionHistoryForm },
         ]}
         notesField="description"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "FIN_Payment", config: {} } }]}
+        bottomSection={PaymentOutBottomPanel}
+        requiredHeaderFields={requiredHeaderFields}
+        linesLayout="inlineEditable"
+        sendDocument
         {...props}
       />
     );
@@ -545,6 +558,9 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="paymentDate"
+      rowQuickActions={{}}
+      sendDocument
       {...props}
     />
   );

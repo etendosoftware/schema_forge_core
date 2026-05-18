@@ -3,6 +3,7 @@ import { ListView, DetailView } from '@/components/contract-ui';
 import WarehouseTable from './WarehouseTable';
 import WarehouseForm from './WarehouseForm';
 import WarehouseTransactionsTable from '@/windows/custom/warehouse/WarehouseTransactionsTable';
+import { AttachmentsTab } from '@/components/attachments';
 import catalogs from './mockCatalogs';
 
 
@@ -31,9 +32,13 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:warehouse
 
+// @sf-generated-start requiredHeaderFields:warehouse
+const requiredHeaderFields = ['searchKey', 'name', 'locationAddress', 'allocated'];
+// @sf-generated-end requiredHeaderFields:warehouse
 
 
-const api = {
+
+export const api = {
   "specName": "warehouse",
   "baseUrl": "/sws/neo/warehouse",
   "crud": {
@@ -217,16 +222,18 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=warehouseDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "inventory"
   }
 };
 
 // @sf-generated-start component:WarehousePage
 export default function WarehousePage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -245,6 +252,8 @@ export default function WarehousePage({ windowName, recordId, ...props }) {
         secondaryTabs={[
           { key: 'productTransactions', label: 'Transactions', Panel: WarehouseTransactionsTable },
         ]}
+        customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_Warehouse", config: {} } }]}
+        requiredHeaderFields={requiredHeaderFields}
         {...props}
       />
     );
@@ -258,6 +267,7 @@ export default function WarehousePage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      rowQuickActions={{}}
       {...props}
     />
   );

@@ -4,7 +4,7 @@ import { EntityForm } from '@/components/contract-ui';
 const fields = [
   { key: 'employee', column: 'IsEmployee', type: 'checkbox', label: 'Employee', required: true, section: 'principal' },
   { key: 'isSalesRepresentative', column: 'IsSalesRep', type: 'checkbox', label: 'Is Sales Representative', required: true, section: 'principal' },
-  { key: 'operator', column: 'Isworker', type: 'checkbox', label: 'Operator', section: 'principal', defaultValue: 'N' },
+  { key: 'operator', column: 'Isworker', type: 'checkbox', label: 'Operator', section: 'principal' },
   { key: 'salaryCategory', column: 'C_Salary_Category_ID', type: 'selector', label: 'Current Salary Category', readOnly: true, section: 'other', reference: 'Salary_Category', inputMode: 'selector' },
 ];
 // @sf-generated-end fields:employee
@@ -13,5 +13,5 @@ const fields = [
 export default function EmployeeForm(props) {
   return <EntityForm fields={fields} {...props} />;
 }
-EmployeeForm.hasCollapsedFields = false;
+
 // @sf-generated-end component:EmployeeForm

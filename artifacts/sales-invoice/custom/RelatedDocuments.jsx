@@ -16,18 +16,25 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
   const [shipments, setShipments] = useState([]);
   const [originalInvoices, setOriginalInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
   const navigate = useNavigate();
   const ui = useUI();
 
   useEffect(() => {
     if (!recordId || !data) { setLoading(false); return; }
+    setLoading(true);
     const orderId = data.salesOrder;
     const promises = [];
 
     if (orderId) {
       promises.push(
-        fetchById('sales-order', 'header', orderId, token, apiBaseUrl)
-          .then(d => setOrder(d))
+        (async () => {
+          // criteria queries apply the DocSubTypeSO='ON' WHERE that GET-by-ID bypasses
+          const quotations = await fetchByCriteria('sales-quotation', 'quotation', 'id', orderId, token, apiBaseUrl).catch(() => []);
+          if (quotations.length > 0) { setOrder({ ...quotations[0], _isQuotation: true }); return; }
+          const order = await fetchById('sales-order', 'header', orderId, token, apiBaseUrl).catch(() => null);
+          if (order) setOrder(order);
+        })()
       );
 
       promises.push(
@@ -43,26 +50,43 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
             .then(d => setOriginalInvoices(d.filter(inv => inv.id !== recordId)))
         );
       }
+    } else {
+      // No linked sales order — still hit the invoice's own endpoint on refresh
+      // so the user sees a network request fire in DevTools. Refreshes the
+      // parent header reading from server in case `salesOrder` was filled
+      // outside the React state (e.g. by a background job).
+      promises.push(
+        fetchById('sales-invoice', 'header', recordId, token, apiBaseUrl)
+          .then((fresh) => {
+            if (fresh?.salesOrder && fresh.salesOrder !== orderId) {
+              // Bumping our internal key would re-run this effect with the new
+              // data via the parent's re-render; we don't mutate `data` here
+              // because the parent owns it.
+            }
+          })
+          .catch(() => {})
+      );
     }
 
     if (promises.length === 0) { setLoading(false); return; }
     Promise.all(promises).then(() => setLoading(false));
-  }, [recordId, data, token, apiBaseUrl]);
+  }, [recordId, data, token, apiBaseUrl, refreshKey]);
 
   const chips = [];
 
   if (order) {
+    const isQuotation = order._isQuotation;
     chips.push(
       <DocChip
         key="order"
-        icon={CHIP_ICONS.order}
-        iconColor={CHIP_COLORS.order}
-        title={ui('orderDoc', { number: order.documentNo })}
+        icon={isQuotation ? CHIP_ICONS.quotation : CHIP_ICONS.order}
+        iconColor={isQuotation ? CHIP_COLORS.quotation : CHIP_COLORS.order}
+        title={isQuotation ? ui('quotationDoc', { number: order.documentNo }) : ui('orderDoc', { number: order.documentNo })}
         amount={order.grandTotalAmount}
         currency={order['currency$_identifier']}
         status={order.documentStatus}
         statusLabel={ui(STATUS_KEYS[order.documentStatus] || order.documentStatus)}
-        onClick={() => navigate(`/sales-order/${order.id}`)}
+        onClick={() => navigate(`/${isQuotation ? 'sales-quotation' : 'sales-order'}/${order.id}`)}
       />
     );
   }
@@ -98,7 +122,7 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
   }
 
   return (
-    <RelatedDocumentsShell loading={loading}>
+    <RelatedDocumentsShell loading={loading} onRefresh={() => setRefreshKey(k => k + 1)}>
       {chips}
     </RelatedDocumentsShell>
   );

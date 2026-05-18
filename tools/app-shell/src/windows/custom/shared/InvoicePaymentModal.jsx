@@ -1,6 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DateField } from '@/components/ui/date-field';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 import { useUI } from '@/i18n';
+import { formatCurrency } from '@/lib/formatCurrency';
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
@@ -11,12 +14,7 @@ const STATUS_LABELS = {
 
 function fmt(val, curr) {
   const n = typeof val === 'string' ? parseFloat(val) : (val ?? 0);
-  if (curr) {
-    try {
-      return new Intl.NumberFormat(undefined, { style: 'currency', currency: curr }).format(n);
-    } catch { /* fallback if currency code is invalid */ }
-  }
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return formatCurrency(curr || 'USD', n);
 }
 
 function fmtDate(raw) {
@@ -55,8 +53,7 @@ function paymentPrefix(specName) {
  *   outstanding  — number, outstanding amount for this installment
  *   currency     — string, ISO currency code
  *   specName     — "sales-invoice" | "purchase-invoice"
- *   base         — string, API root URL (without spec name, e.g. http://host/sws/neo)
- *   headers      — object, HTTP headers including Authorization
+ *   apiFetch     — function, authenticated API request helper
  *   onCancel     — callback
  *   onSuccess    — callback(paymentData, accountName)
  */
@@ -67,8 +64,7 @@ export function PaymentRegisterForm({
   outstanding,
   currency,
   specName,
-  base,
-  headers,
+  apiFetch,
   onCancel,
   onSuccess,
 }) {
@@ -86,9 +82,9 @@ export function PaymentRegisterForm({
       try {
         let mapped = [];
 
-        const res = await fetch(
-          `${base}/${specName}/header/${invoiceId}/action/invoiceAccounts`,
-          { method: 'POST', headers, body: '{}' },
+        const res = await apiFetch(
+          `/${specName}/header/${invoiceId}/action/invoiceAccounts`,
+          { method: 'POST', body: '{}' },
         );
         if (res.ok) {
           const json = await res.json();
@@ -103,7 +99,7 @@ export function PaymentRegisterForm({
       } catch { /* silent */ }
       finally { setLoadingAccounts(false); }
     })();
-  }, [base, headers, invoiceId, specName]);
+  }, [apiFetch, invoiceId, specName]);
 
   const amountExceeded = amount > outstanding;
 
@@ -114,11 +110,10 @@ export function PaymentRegisterForm({
     setError(null);
     setSaving(true);
     try {
-      const res = await fetch(
-        `${base}/${specName}/header/${invoiceId}/action/registerPayment`,
+      const res = await apiFetch(
+        `/${specName}/header/${invoiceId}/action/registerPayment`,
         {
           method: 'POST',
-          headers,
           body: JSON.stringify({
             scheduleId,
             actual_payment: String(amount),
@@ -144,8 +139,7 @@ export function PaymentRegisterForm({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         <div>
           <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>{ui('paymentDate')}</label>
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="text-sm tabular-nums"
-            style={{ width: '100%', border: '0.5px solid #E5E7EB', borderRadius: 4, padding: '6px 10px', outline: 'none', boxSizing: 'border-box' }} />
+          <DateField value={date} onChange={setDate} />
         </div>
         <div>
           <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>{ui('paymentAmount')} ({currency})</label>
@@ -200,7 +194,6 @@ export function PaymentRegisterForm({
  *   invoiceId   — string, the invoice record ID
  *   invoiceData — object, full invoice record (amounts, currency, bp, etc.)
  *   specName    — "sales-invoice" | "purchase-invoice"
- *   token       — string, auth token
  *   apiBaseUrl  — string, full base URL including spec, e.g. http://host/sws/neo/sales-invoice
  *   onClose     — callback
  */
@@ -208,18 +201,14 @@ export default function InvoicePaymentModal({
   invoiceId,
   invoiceData,
   specName,
-  token,
   apiBaseUrl,
   onClose,
+  onPaymentAdded,
 }) {
   const ui = useUI();
   // Strip the spec name suffix to get the API root (e.g. http://host/sws/neo)
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
-
-  const headers = useMemo(() => ({
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  }), [token]);
+  const apiFetch = useApiFetch(base);
 
   const currency = invoiceData?.['currency$_identifier'] || '';
   const grandTotal = invoiceData?.grandTotalAmount ?? 0;
@@ -251,26 +240,23 @@ export default function InvoicePaymentModal({
   const fetchPayments = useCallback(async () => {
     if (!invoiceId || !base) return;
     try {
-      const res = await fetch(
-        `${base}/${specName}/header/${invoiceId}/action/invoicePayments`,
-        { method: 'POST', headers, body: '{}' },
+      const res = await apiFetch(
+        `/${specName}/header/${invoiceId}/action/invoicePayments`,
+        { method: 'POST', body: '{}' },
       );
       if (res.ok) setPayments((await res.json())?.response?.data || []);
     } catch { /* silent */ }
     finally { setLoadingPayments(false); }
-  }, [base, headers, invoiceId, specName]);
+  }, [apiFetch, base, invoiceId, specName]);
 
   const fetchInstallments = useCallback(async () => {
     if (!invoiceId || !base) { setLoadingInstallments(false); return; }
     try {
-      const res = await fetch(
-        `${base}/${specName}/paymentPlan?parentId=${invoiceId}&_startRow=0&_endRow=50`,
-        { headers },
-      );
+      const res = await apiFetch(`/${specName}/paymentPlan?parentId=${invoiceId}&_startRow=0&_endRow=50`);
       if (res.ok) setLocalInstallments((await res.json())?.response?.data || []);
     } catch { /* silent */ }
     finally { setLoadingInstallments(false); }
-  }, [base, headers, invoiceId, specName]);
+  }, [apiFetch, base, invoiceId, specName]);
 
   useEffect(() => {
     fetchInstallments();
@@ -296,6 +282,7 @@ export default function InvoicePaymentModal({
     setLoadingPayments(true);
     fetchPayments();
     fetchInstallments();
+    onPaymentAdded?.();
   };
 
   const sorted = useMemo(
@@ -372,14 +359,15 @@ export default function InvoicePaymentModal({
                         <span style={{ fontSize: 12, fontWeight: 500, color: '#374151' }}>{ui('installment')} {idx + 1}</span>
                         <span style={{ color: '#d1d5db' }}>&middot;</span>
                         <span className="tabular-nums" style={{ fontSize: 12, fontWeight: 500, color: '#111827' }}>{fmt(instAmount, currency)}</span>
-                        <span style={{ fontSize: 11, color: '#9ca3af' }}>
-                          {Math.round(instAmount / (localTotal || grandTotal || 1) * 100)}%
-                        </span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span className="tabular-nums" style={{ fontSize: 11, color: '#6B7280' }}>{fmtDate(inst.dueDate)}</span>
                         <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 8px', borderRadius: 9999, backgroundColor: badgeStyle.bg, color: badgeStyle.color }}>
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                          {status === 'paid'
+                            ? ui('statusPaid')
+                            : status === 'partial'
+                              ? ui('statusPartiallyExecuted')
+                              : ui('statusPending')}
                         </span>
                       </div>
                     </div>
@@ -409,7 +397,7 @@ export default function InvoicePaymentModal({
                                   </div>
                                   <button type="button" onClick={() => navToPayment(p.id)}
                                     style={{ fontSize: 11, fontWeight: 500, color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                                    View &rarr;
+                                    {ui('viewArrow')}
                                   </button>
                                 </div>
                                 <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -444,8 +432,7 @@ export default function InvoicePaymentModal({
                             outstanding={instOutstanding}
                             currency={currency}
                             specName={specName}
-                            base={base}
-                            headers={headers}
+                            apiFetch={apiFetch}
                             onCancel={() => setActiveFormScheduleId(null)}
                             onSuccess={(pd, an) => handlePaymentSuccess(pd, an, scheduleId)}
                           />
@@ -460,6 +447,21 @@ export default function InvoicePaymentModal({
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Register another payment — shown between list and confirmation when partially paid */}
+          {confirmation && !fullyPaid && (
+            <div style={{ marginTop: 8 }}>
+              <button type="button" onClick={() => {
+                const nextInst = sorted.find(i => parseFloat(i.outstandingAmount) > 0);
+                const nextScheduleId = nextInst ? (nextInst.finPaymentScheduleID || nextInst.id) : null;
+                setConfirmation(null);
+                if (nextScheduleId) setActiveFormScheduleId(nextScheduleId);
+              }}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '0.5px dashed #d1d5db', background: 'transparent', fontSize: 12, color: '#6B7280', cursor: 'pointer', textAlign: 'center' }}>
+                + {ui('registerPayment')} &middot; {fmt(localOutstanding, currency)} {ui('outstandingLabel').toLowerCase()}
+              </button>
             </div>
           )}
 

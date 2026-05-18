@@ -209,12 +209,12 @@ describe('getReadOnlyFields', () => {
 describe('generateTableComponent', () => {
   it('imports DataTable from contract-ui', () => {
     const code = generateTableComponent('order', masterDetailContract);
-    assert.ok(code.includes("import { DataTable } from '@/components/contract-ui'"));
+    assert.ok(code.includes("import { DataTable, InlineLinesPanel } from '@/components/contract-ui'"));
   });
 
   it('exports a named component with PascalCase entity name + Table', () => {
     const code = generateTableComponent('order', masterDetailContract);
-    assert.ok(code.includes('export default function OrderTable'));
+    assert.ok(code.includes('export default OrderTable'));
   });
 
   it('renders DataTable with columns, filters, and spread props', () => {
@@ -581,6 +581,33 @@ describe('generatePageComponent', () => {
     assert.ok(code.includes("inputMode: 'selector'"));
   });
 
+  it('emits forceCalloutFields as JSON array when declared on entry field', () => {
+    const contract = {
+      ...masterDetailContract,
+      frontendContract: {
+        ...masterDetailContract.frontendContract,
+        entities: {
+          ...masterDetailContract.frontendContract.entities,
+          orderLine: {
+            ...masterDetailContract.frontendContract.entities.orderLine,
+            fields: masterDetailContract.frontendContract.entities.orderLine.fields.map(f =>
+              f.name === 'product'
+                ? { ...f, forceCalloutFields: ['quantity', 'tax'] }
+                : f
+            ),
+          },
+        },
+      },
+    };
+    const code = generatePageComponent('order', 'orderLine', contract);
+    assert.ok(code.includes('forceCalloutFields: ["quantity","tax"]'), `expected forceCalloutFields in generated code, got:\n${code}`);
+  });
+
+  it('omits forceCalloutFields when not declared on entry field', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(!code.includes('forceCalloutFields'));
+  });
+
   it('passes config props to MasterDetailPage', () => {
     const code = generatePageComponent('order', 'orderLine', masterDetailContract);
     assert.ok(code.includes('entity="order"'));
@@ -610,6 +637,49 @@ describe('generatePageComponent', () => {
     assert.ok(!code.includes('animate-pulse'));
     assert.ok(!code.includes('shadow-sm'));
   });
+
+  it('preserves token for gallery detail header custom components until they migrate', () => {
+    const galleryContract = {
+      apiPrediction: { baseUrl: '/sws/neo/product', specName: 'product' },
+      frontendContract: {
+        window: { id: '101', name: 'Product', primaryEntity: 'product', category: 'reference', layoutType: 'gallery' },
+        entities: {
+          product: {
+            fields: [
+              { name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+            ],
+            searchableFields: ['name'],
+            computedFields: [],
+          },
+        },
+      },
+      backendContract: { processEndpoints: [] },
+    };
+    const code = generatePageComponent('product', null, galleryContract);
+    assert.ok(code.includes('headerContent={'), 'should render the gallery detail header slot');
+    assert.ok(code.includes('token={props.token}'), 'gallery custom header should receive token for legacy compatibility');
+  });
+
+  it('preserves token for sidebar custom components until they migrate', () => {
+    const sidebarContract = {
+      frontendContract: {
+        window: { id: '102', name: 'Contacts', primaryEntity: 'contact', category: 'crm', sidebarLayout: true },
+        entities: {
+          contact: {
+            fields: [
+              { name: 'name', column: 'Name', type: 'string', tsType: 'string', visibility: 'editable', required: true, grid: true, form: true },
+            ],
+            searchableFields: ['name'],
+            computedFields: [],
+          },
+        },
+      },
+      backendContract: { processEndpoints: [] },
+    };
+    const code = generatePageComponent('contact', null, sidebarContract);
+    assert.ok(code.includes('sidebarContent='), 'should render the sidebar slot');
+    assert.ok(code.includes('token={props.token}'), 'sidebar custom component should receive token for legacy compatibility');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -617,7 +687,7 @@ describe('generatePageComponent', () => {
 // ---------------------------------------------------------------------------
 
 describe('generateIndexComponent', () => {
-  it('generates entry point with token, apiBaseUrl, window props for master-detail', () => {
+  it('generates entry point with token, apiBaseUrl, and window props for master-detail', () => {
     const code = generateIndexComponent('order', 'orderLine', masterDetailContract);
     assert.ok(code.includes('token'));
     assert.ok(code.includes('apiBaseUrl'));
@@ -670,14 +740,16 @@ describe('generateIndexComponent', () => {
 // ---------------------------------------------------------------------------
 
 describe('generateMockCatalogs', () => {
-  it('generates catalog entries for all FK references in the contract', () => {
+  // The generator used to emit hardcoded fake FK data (e.g. "Acme Corp", "Wire Transfer").
+  // That data leaked into production UIs as a flash of wrong values before real /selector
+  // responses arrived. The generator now emits an empty catalog — selector data always
+  // comes from the backend. The file is kept so the `import catalogs from './mockCatalogs'`
+  // in HeaderPage.jsx keeps resolving.
+
+  it('emits an empty catalogs object (no fake FK data)', () => {
     const code = generateMockCatalogs(masterDetailContract);
-    assert.ok(code.includes("catalogs['BusinessPartner']"));
-    assert.ok(code.includes("catalogs['Warehouse']"));
-    assert.ok(code.includes("catalogs['PriceList']"));
-    assert.ok(code.includes("catalogs['Product']"));
-    assert.ok(code.includes("catalogs['Tax']"));
-    assert.ok(code.includes("catalogs['BusinessPartnerLocation']"));
+    assert.ok(code.includes('const catalogs = {}'));
+    assert.ok(!code.includes("catalogs['"), 'should not emit any hardcoded catalog entries');
   });
 
   it('exports catalogs as default export', () => {
@@ -685,40 +757,19 @@ describe('generateMockCatalogs', () => {
     assert.ok(code.includes('export default catalogs'));
   });
 
-  it('starts with auto-generated comment', () => {
+  it('starts with an explanatory auto-generated comment', () => {
     const code = generateMockCatalogs(masterDetailContract);
-    assert.ok(code.startsWith('// Auto-generated mock catalogs'));
+    assert.ok(code.startsWith('// Auto-generated'));
   });
 
-  it('catalog data contains id and name fields', () => {
+  it('does not leak known legacy fake values', () => {
     const code = generateMockCatalogs(masterDetailContract);
-    assert.ok(code.includes('"id"'));
-    assert.ok(code.includes('"name"'));
+    for (const fake of ['Acme Corp', 'Wire Transfer', 'Laptop Pro 15', 'Main Warehouse']) {
+      assert.ok(!code.includes(fake), `legacy fake "${fake}" should no longer appear`);
+    }
   });
 
-  it('BusinessPartner data has bp- prefix ids', () => {
-    const code = generateMockCatalogs(masterDetailContract);
-    assert.ok(code.includes('"bp-'));
-    assert.ok(code.includes('Acme Corp'));
-  });
-
-  it('BusinessPartnerLocation data has businessPartnerId for dependent filtering', () => {
-    const code = generateMockCatalogs(masterDetailContract);
-    assert.ok(code.includes('"businessPartnerId"'));
-  });
-
-  it('Tax data has rate property', () => {
-    const code = generateMockCatalogs(masterDetailContract);
-    assert.ok(code.includes('"rate"'));
-  });
-
-  it('Product data has price and uomId', () => {
-    const code = generateMockCatalogs(masterDetailContract);
-    assert.ok(code.includes('"price"'));
-    assert.ok(code.includes('"uomId"'));
-  });
-
-  it('handles contract with no FK references', () => {
+  it('emits the same empty output regardless of contract shape', () => {
     const noFkContract = {
       frontendContract: {
         window: { id: '1', name: 'Test', primaryEntity: 'test', category: 'test' },
@@ -732,30 +783,7 @@ describe('generateMockCatalogs', () => {
       },
       backendContract: { processEndpoints: [] },
     };
-    const code = generateMockCatalogs(noFkContract);
-    assert.ok(code.includes('const catalogs = {}'));
-    assert.ok(code.includes('export default catalogs'));
-    // Should not contain any catalog assignments
-    assert.ok(!code.includes("catalogs['"));
-  });
-
-  it('skips references not found in CATALOG_DATA', () => {
-    const unknownRefContract = {
-      frontendContract: {
-        window: { id: '1', name: 'Test', primaryEntity: 'test', category: 'test' },
-        entities: {
-          test: {
-            fields: [{ name: 'custom', type: 'foreignKey', tsType: 'string', visibility: 'editable', required: false, grid: true, form: true, reference: 'UnknownEntity', inputMode: 'search' }],
-            searchableFields: [],
-            computedFields: [],
-          },
-        },
-      },
-      backendContract: { processEndpoints: [] },
-    };
-    const code = generateMockCatalogs(unknownRefContract);
-    assert.ok(!code.includes("catalogs['UnknownEntity']"));
-    assert.ok(code.includes('export default catalogs'));
+    assert.equal(generateMockCatalogs(noFkContract), generateMockCatalogs(masterDetailContract));
   });
 });
 
@@ -888,7 +916,7 @@ describe('field type mapping edge cases', () => {
 // ---------------------------------------------------------------------------
 
 describe('addLineFields derived field separation', () => {
-  it('puts price/tax/discount/amount pattern fields in derived array', () => {
+  it('puts price/tax/amount pattern fields in derived; discount stays in entry', () => {
     const contract = {
       frontendContract: {
         window: { id: '1', name: 'Test', primaryEntity: 'header', category: 'test' },
@@ -919,12 +947,14 @@ describe('addLineFields derived field separation', () => {
     assert.ok(entryMatch);
     assert.ok(derivedMatch);
 
-    // product is in entry
+    // product and discount are in entry — discount is user-editable, not auto-derived
     assert.ok(entryMatch[1].includes("key: 'product'"));
-    // price/discount/amount fields are in derived
+    assert.ok(entryMatch[1].includes("key: 'discount'"));
+    // price/amount fields are in derived
     assert.ok(derivedMatch[1].includes("key: 'unitPrice'"));
-    assert.ok(derivedMatch[1].includes("key: 'discount'"));
     assert.ok(derivedMatch[1].includes("key: 'netAmount'"));
+    // discount must NOT be in derived
+    assert.ok(!derivedMatch[1].includes("key: 'discount'"));
   });
 
   it('excludes readOnly detail fields from addLineFields entirely', () => {
@@ -1096,10 +1126,10 @@ describe('generatePageComponent - apiPrediction', () => {
 });
 
 describe('generateIndexComponent - apiPrediction', () => {
-  it('emits api const in master-detail index when apiPrediction present', () => {
+  it('imports api from Page component in master-detail index when apiPrediction present', () => {
     const code = generateIndexComponent('order', 'orderLine', contractWithApi);
-    assert.ok(code.includes('const api ='), 'should declare api const');
-    assert.ok(code.includes('"specName": "sales-order"'), 'should include specName');
+    assert.ok(code.includes("import OrderPage, { api } from './OrderPage'"), 'should import api from Page');
+    assert.ok(!code.includes('const api ='), 'should not redefine api const');
   });
 
   it('passes api prop in master-detail index', () => {
@@ -1107,10 +1137,10 @@ describe('generateIndexComponent - apiPrediction', () => {
     assert.ok(code.includes('api={api}'), 'should pass api prop to Page component');
   });
 
-  it('emits api const in single-entity index when apiPrediction present', () => {
+  it('imports api from Page component in single-entity index when apiPrediction present', () => {
     const code = generateIndexComponent('item', null, singleEntityContractWithApi);
-    assert.ok(code.includes('const api ='), 'should declare api const');
-    assert.ok(code.includes('"specName": "simple-item"'), 'should include specName');
+    assert.ok(code.includes("import ItemPage, { api } from './ItemPage'"), 'should import api from Page');
+    assert.ok(!code.includes('const api ='), 'should not redefine api const');
   });
 
   it('passes api prop in single-entity index', () => {
@@ -1328,7 +1358,7 @@ describe('generatePageComponent - newRecordComponent', () => {
 
   it('passes token, apiBaseUrl, and windowName to modal', () => {
     const code = generatePageComponent('finPayment', null, newRecordContract);
-    assert.ok(code.includes('token={props.token}'), 'should pass token');
+    assert.ok(code.includes('token={props.token}'), 'should pass token for legacy compatibility');
     assert.ok(code.includes('apiBaseUrl={props.apiBaseUrl}'), 'should pass apiBaseUrl');
     assert.ok(code.includes('windowName={windowName}'), 'should pass windowName');
   });
@@ -1358,5 +1388,322 @@ describe('generateTableComponent - isSelectionColumn hint', () => {
     const plainLine = code.split('\n').find(l => l.includes("key: 'plainField'"));
     assert.ok(plainLine, 'plainField should exist');
     assert.ok(!plainLine.includes('isSelectionColumn'), 'plainField should not have isSelectionColumn');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// menuActions — visibleWhenFieldFalse
+// ---------------------------------------------------------------------------
+
+const makeMenuContract = (menuActions) => ({
+  frontendContract: {
+    window: { id: '1', name: 'Test', primaryEntity: 'header', category: 'sales', menuActions },
+    entities: {
+      header: {
+        fields: [
+          { name: 'docStatus', column: 'DocStatus', type: 'string', tsType: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+        ],
+        searchableFields: [],
+        computedFields: [],
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+});
+
+describe('generatePageComponent — menuActions visibleWhenFieldFalse', () => {
+  it('uses ({ status }) params when no action has visibleWhenFieldFalse', () => {
+    const contract = makeMenuContract([
+      { key: 'cancel', label: 'Cancel', destructive: true, visibleWhenStatus: 'CO' },
+    ]);
+    const code = generatePageComponent('header', null, contract);
+    assert.ok(code.includes('({ status }) =>'), 'should use ({ status }) when no field condition');
+    assert.ok(!code.includes('({ data, status }) =>'), 'should NOT destructure data when not needed');
+  });
+
+  it('uses ({ data, status }) params when any action has visibleWhenFieldFalse', () => {
+    const contract = makeMenuContract([
+      { key: 'reactivate', label: 'Reactivate', visibleWhenStatus: 'CO', visibleWhenFieldFalse: 'hasLinkedDocuments', documentAction: 'RE' },
+    ]);
+    const code = generatePageComponent('header', null, contract);
+    assert.ok(code.includes('({ data, status }) =>'), 'should destructure data when field condition is used');
+  });
+
+  it('generates compound condition when both visibleWhenStatus and visibleWhenFieldFalse are set', () => {
+    const contract = makeMenuContract([
+      { key: 'reactivate', label: 'Reactivate', visibleWhenStatus: 'CO', visibleWhenFieldFalse: 'hasLinkedDocuments', documentAction: 'RE' },
+    ]);
+    const code = generatePageComponent('header', null, contract);
+    assert.ok(
+      code.includes("visible: status === 'CO' && !data?.hasLinkedDocuments"),
+      'should combine status check and field check with &&',
+    );
+  });
+
+  it('generates only field condition when visibleWhenStatus is absent', () => {
+    const contract = makeMenuContract([
+      { key: 'duplicate', label: 'Duplicate', visibleWhenFieldFalse: 'isDraft' },
+    ]);
+    const code = generatePageComponent('header', null, contract);
+    assert.ok(code.includes('visible: !data?.isDraft'), 'should emit only field condition when no status filter');
+    assert.ok(!code.includes('status ==='), 'should not include status check when visibleWhenStatus is absent');
+  });
+
+  it('other actions in the same list keep their original condition unaffected', () => {
+    const contract = makeMenuContract([
+      { key: 'cancel', label: 'Cancel', destructive: true, visibleWhenStatus: 'CO' },
+      { key: 'reactivate', label: 'Reactivate', visibleWhenStatus: 'CO', visibleWhenFieldFalse: 'hasLinkedDocuments', documentAction: 'RE' },
+    ]);
+    const code = generatePageComponent('header', null, contract);
+    assert.ok(
+      code.includes("visible: status === 'CO' && !data?.hasLinkedDocuments"),
+      'reactivate should have compound condition',
+    );
+    assert.ok(
+      code.includes("key: 'cancel'"),
+      'cancel action should still be present',
+    );
+    // Cancel has only visibleWhenStatus, its condition should NOT include data?.
+    const cancelLine = code.split('\n').find(l => l.includes("key: 'cancel'"));
+    assert.ok(cancelLine, 'cancel line must exist');
+    assert.ok(!cancelLine.includes('data?.'), 'cancel should not reference data field');
+  });
+
+  it('generates documentAction prop when set', () => {
+    const contract = makeMenuContract([
+      { key: 'reactivate', label: 'Reactivate', visibleWhenStatus: 'CO', visibleWhenFieldFalse: 'hasLinkedDocuments', documentAction: 'RE', successKey: 'actionCompleted' },
+    ]);
+    const code = generatePageComponent('header', null, contract);
+    assert.ok(code.includes("documentAction: 'RE'"), 'should emit documentAction');
+    assert.ok(code.includes("successKey: 'actionCompleted'"), 'should emit successKey');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// linesLayout — inline-editable lines flag
+// ---------------------------------------------------------------------------
+
+const inlineEditableContract = {
+  frontendContract: {
+    window: { id: '200', name: 'Sales Quotation', primaryEntity: 'order', category: 'sales', linesLayout: 'inlineEditable' },
+    entities: {
+      order: {
+        fields: [
+          { name: 'documentNo', column: 'DocumentNo', type: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+          { name: 'businessPartner', column: 'C_BPartner_ID', type: 'foreignKey', visibility: 'editable', required: true, grid: true, form: true, inputMode: 'search' },
+          { name: 'grandTotal', column: 'GrandTotal', type: 'amount', visibility: 'readOnly', required: false, grid: true, form: true },
+          { name: 'docStatus', column: 'DocStatus', type: 'string', visibility: 'readOnly', required: true, grid: true, form: true },
+        ],
+        searchableFields: ['documentNo', 'businessPartner'],
+        computedFields: [],
+      },
+      orderLine: {
+        fields: [
+          { name: 'product', column: 'M_Product_ID', type: 'foreignKey', visibility: 'editable', required: true, grid: true, form: true, inputMode: 'search', lookup: true },
+          { name: 'quantity', column: 'QtyOrdered', type: 'number', visibility: 'editable', required: true, grid: true, form: true },
+          { name: 'lineAmount', column: 'LineNetAmt', type: 'amount', visibility: 'readOnly', required: false, grid: true, form: true },
+        ],
+        searchableFields: [],
+        computedFields: [],
+        addLineFields: { entry: [{ key: 'product', required: true, lookup: true }, { key: 'quantity', defaultValue: 1 }], derived: [] },
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+};
+
+describe('generatePageComponent — linesLayout', () => {
+  it('emits linesLayout="inlineEditable" on DetailView when window declares it', () => {
+    const code = generatePageComponent('order', 'orderLine', inlineEditableContract);
+    assert.ok(code.includes('linesLayout="inlineEditable"'), 'DetailView must receive linesLayout prop');
+  });
+
+  it('does NOT emit linesLayout prop for classic layout (default)', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(!code.includes('linesLayout='), 'classic layout must not emit any linesLayout prop');
+  });
+
+  it('generated table component uses forwardRef for inline-editable windows', () => {
+    const code = generateTableComponent('orderLine', inlineEditableContract);
+    assert.ok(code.includes('forwardRef'), 'table must use forwardRef so DetailView can call flushPendingEdits');
+    assert.ok(code.includes('InlineLinesPanel'), 'table must render InlineLinesPanel when linesLayout is active');
+  });
+
+  it('generated table falls back to DataTable when linesLayout is classic', () => {
+    const code = generateTableComponent('order', masterDetailContract);
+    assert.ok(code.includes('DataTable'), 'classic table must render DataTable');
+    assert.ok(code.includes('InlineLinesPanel'), 'classic table still imports InlineLinesPanel (dual-mode render)');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F3 refactor — lookupDrawer / lookupTitle / onSelectMappings / displayFromCatalog
+// (emission in generated addLineFields entry array — primary + secondary-tab paths)
+// ---------------------------------------------------------------------------
+
+const drawerOnSelect = [
+  { from: 'M_Locator_ID', to: 'storageBin' },
+  { from: 'M_Product_ID', to: 'product' },
+];
+
+// Primary path (master-detail addLineFields, ~line 659): replicate masterDetailContract
+// with drawer/title/mappings/displayFromCatalog on the orderLine product field.
+const drawerMasterDetailContract = {
+  ...masterDetailContract,
+  frontendContract: {
+    ...masterDetailContract.frontendContract,
+    entities: {
+      ...masterDetailContract.frontendContract.entities,
+      orderLine: {
+        ...masterDetailContract.frontendContract.entities.orderLine,
+        fields: masterDetailContract.frontendContract.entities.orderLine.fields.map(f => {
+          if (f.name === 'product') {
+            return {
+              ...f,
+              lookupDrawer: 'internal-consumption-product',
+              lookupTitle: 'Product + Warehouse',
+              onSelectMappings: drawerOnSelect,
+              displayFromCatalog: true,
+            };
+          }
+          return f;
+        }),
+      },
+    },
+  },
+};
+
+describe('generatePageComponent — F3 drawer + display emission (primary addLineFields)', () => {
+  it('emits lookupDrawer in addLineFields entry for the first search field', () => {
+    const code = generatePageComponent('order', 'orderLine', drawerMasterDetailContract);
+    assert.ok(
+      code.includes("lookupDrawer: 'internal-consumption-product'"),
+      'expected lookupDrawer literal in generated addLineFields entry',
+    );
+  });
+
+  it('emits lookupTitle in addLineFields entry for the first search field', () => {
+    const code = generatePageComponent('order', 'orderLine', drawerMasterDetailContract);
+    assert.ok(
+      code.includes("lookupTitle: 'Product + Warehouse'"),
+      'expected lookupTitle literal in generated addLineFields entry',
+    );
+  });
+
+  it('emits onSelectMappings as JSON array in addLineFields entry', () => {
+    const code = generatePageComponent('order', 'orderLine', drawerMasterDetailContract);
+    assert.ok(
+      code.includes(`onSelectMappings: ${JSON.stringify(drawerOnSelect)}`),
+      'expected onSelectMappings JSON in generated addLineFields entry',
+    );
+  });
+
+  it('emits displayFromCatalog: true in addLineFields entry', () => {
+    const code = generatePageComponent('order', 'orderLine', drawerMasterDetailContract);
+    assert.ok(
+      code.includes('displayFromCatalog: true'),
+      'expected displayFromCatalog: true in generated addLineFields entry',
+    );
+  });
+
+  it('omits all four keys when no field declares them (negative)', () => {
+    const code = generatePageComponent('order', 'orderLine', masterDetailContract);
+    assert.ok(!code.includes('lookupDrawer:'), 'lookupDrawer should NOT appear');
+    assert.ok(!code.includes('lookupTitle:'), 'lookupTitle should NOT appear');
+    assert.ok(!code.includes('onSelectMappings:'), 'onSelectMappings should NOT appear');
+    assert.ok(!code.includes('displayFromCatalog:'), 'displayFromCatalog should NOT appear');
+  });
+});
+
+// Secondary-tab path (~line 789): supplied via window.secondaryTabs declarative config.
+// Use a header-only window with a sibling entity referenced as a secondary tab.
+const secondaryTabContract = {
+  frontendContract: {
+    window: {
+      id: '800',
+      name: 'Internal Consumption',
+      primaryEntity: 'internalConsumption',
+      category: 'inventory',
+      secondaryTabs: {
+        internalConsumptionLine: {
+          label: 'Lines',
+          tabOrder: 1,
+          addLineFields: ['product', 'displayedProduct', 'plain'],
+        },
+      },
+    },
+    entities: {
+      internalConsumption: {
+        fields: [
+          { name: 'documentNo', column: 'DocumentNo', type: 'string', tsType: 'string',
+            visibility: 'readOnly', required: true, grid: true, form: true },
+        ],
+        searchableFields: ['documentNo'],
+        computedFields: [],
+      },
+      internalConsumptionLine: {
+        fields: [
+          { name: 'product', column: 'M_Product_ID', type: 'foreignKey', tsType: 'string',
+            visibility: 'editable', required: true, grid: true, form: true,
+            reference: 'Product', inputMode: 'search',
+            lookupDrawer: 'internal-consumption-product',
+            lookupTitle: 'Product + Warehouse',
+            onSelectMappings: drawerOnSelect },
+          { name: 'displayedProduct', column: 'EM_DisplayedProduct', type: 'string', tsType: 'string',
+            visibility: 'editable', required: false, grid: true, form: true,
+            displayFromCatalog: true },
+          { name: 'plain', column: 'PlainCol', type: 'string', tsType: 'string',
+            visibility: 'editable', required: false, grid: true, form: true },
+        ],
+        searchableFields: [],
+        computedFields: [],
+      },
+    },
+  },
+  backendContract: { processEndpoints: [] },
+};
+
+describe('generatePageComponent — F3 drawer + display emission (secondary-tab addLineFields)', () => {
+  it('emits lookupDrawer for product in secondary-tab addLineFields entry', () => {
+    const code = generatePageComponent('internalConsumption', null, secondaryTabContract);
+    assert.ok(
+      code.includes("lookupDrawer: 'internal-consumption-product'"),
+      'expected lookupDrawer literal in secondary-tab addLineFields entry',
+    );
+  });
+
+  it('emits lookupTitle for product in secondary-tab addLineFields entry', () => {
+    const code = generatePageComponent('internalConsumption', null, secondaryTabContract);
+    assert.ok(
+      code.includes("lookupTitle: 'Product + Warehouse'"),
+      'expected lookupTitle literal in secondary-tab addLineFields entry',
+    );
+  });
+
+  it('emits onSelectMappings JSON for product in secondary-tab addLineFields entry', () => {
+    const code = generatePageComponent('internalConsumption', null, secondaryTabContract);
+    assert.ok(
+      code.includes(`onSelectMappings: ${JSON.stringify(drawerOnSelect)}`),
+      'expected onSelectMappings JSON in secondary-tab addLineFields entry',
+    );
+  });
+
+  it('emits displayFromCatalog: true for displayedProduct in secondary-tab addLineFields entry', () => {
+    const code = generatePageComponent('internalConsumption', null, secondaryTabContract);
+    assert.ok(
+      code.includes('displayFromCatalog: true'),
+      'expected displayFromCatalog: true in secondary-tab addLineFields entry',
+    );
+  });
+
+  it('omits all four keys for a plain field in secondary-tab addLineFields entry (negative)', () => {
+    const code = generatePageComponent('internalConsumption', null, secondaryTabContract);
+    // Extract just the plain-field entry chunk to assert keys are absent on it.
+    const plainEntry = code.match(/\{\s*key:\s*'plain'[^}]*\}/);
+    assert.ok(plainEntry, 'expected the plain entry to be emitted');
+    assert.ok(!plainEntry[0].includes('lookupDrawer'), 'plain entry must not include lookupDrawer');
+    assert.ok(!plainEntry[0].includes('lookupTitle'), 'plain entry must not include lookupTitle');
+    assert.ok(!plainEntry[0].includes('onSelectMappings'), 'plain entry must not include onSelectMappings');
+    assert.ok(!plainEntry[0].includes('displayFromCatalog'), 'plain entry must not include displayFromCatalog');
   });
 });

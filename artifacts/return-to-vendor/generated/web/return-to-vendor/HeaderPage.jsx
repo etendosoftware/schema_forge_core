@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
+import { RETURN_ORDER_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import HeaderTable from './HeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
@@ -7,6 +8,8 @@ import LinesForm from './LinesForm';
 import BasicDiscountsTable from './BasicDiscountsTable';
 import BasicDiscountsForm from './BasicDiscountsForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
+import ReturnToVendorBottomPanel from '../../../custom/ReturnToVendorBottomPanel';
 import catalogs from './mockCatalogs';
 
 
@@ -17,7 +20,7 @@ const breadcrumb = 'Purchases / Return to Vendor';
 const summary = [
   { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
   { key: 'summedLineAmount', column: 'TotalLines', type: 'amount' },
-  { key: 'currency', column: 'C_Currency_ID', type: 'string' },
+  { key: 'currency', column: 'C_Currency_ID', type: 'selector' },
   { key: 'delivered', column: 'IsDelivered', type: 'boolean' },
 ];
 
@@ -30,10 +33,10 @@ const extraBadges = [];
 
 // @sf-generated-start processes:header
 const processes = [
-  { name: 'rMPickfromreceipt', label: 'Pick/Edit Lines', style: 'positive',
-    displayLogicRaw: "@Processed@='N'" },
   { name: 'documentAction', label: 'Process Order', style: 'positive',
     displayLogicRaw: "@DocStatus@!'VO'&@DocStatus@!'CL'" },
+  { name: 'rMPickfromreceipt', label: 'Pick/Edit Lines', style: 'positive',
+    displayLogicRaw: "@Processed@='N'" },
   { name: 'rMAddOrphanLine', label: 'Insert Orphan Line', style: 'positive',
     displayLogicRaw: "@Processed@='N' & @RMAllowOprhanLine@='Y'" },
 ];
@@ -42,6 +45,10 @@ const processes = [
 // @sf-generated-start draftMode:header
 const draftMode = null;
 // @sf-generated-end draftMode:header
+
+// @sf-generated-start requiredHeaderFields:header
+const requiredHeaderFields = ['documentAction', 'orderDate', 'businessPartner', 'partnerAddress', 'warehouse', 'paymentTerms', 'priceList', 'documentStatus', 'grandTotalAmount', 'summedLineAmount', 'currency', 'delivered'];
+// @sf-generated-end requiredHeaderFields:header
 
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
@@ -61,7 +68,7 @@ const addLineFields = {
 };
 // @sf-generated-end addLineFields:lines
 
-const api = {
+export const api = {
   "specName": "return-to-vendor",
   "baseUrl": "/sws/neo/return-to-vendor",
   "crud": {
@@ -388,19 +395,19 @@ const api = {
   "actions": [
     {
       "entity": "header",
-      "field": "rMPickfromreceipt",
-      "column": "RM_Pickfromreceipt",
-      "url": "/sws/neo/return-to-vendor/header/{id}/action/rMPickfromreceipt",
-      "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
       "field": "documentAction",
       "column": "DocAction",
       "url": "/sws/neo/return-to-vendor/header/{id}/action/documentAction",
       "processId": "104",
       "processType": "classic"
+    },
+    {
+      "entity": "header",
+      "field": "rMPickfromreceipt",
+      "column": "RM_Pickfromreceipt",
+      "url": "/sws/neo/return-to-vendor/header/{id}/action/rMPickfromreceipt",
+      "processId": "A2C19D0EF6594D14A64BC62E99A89CC3",
+      "processType": "obuiapp"
     },
     {
       "entity": "header",
@@ -569,16 +576,18 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=return-to-vendorDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "purchases"
   }
 };
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -603,7 +612,11 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'basicDiscounts', label: 'Basic Discounts', Table: BasicDiscountsTable, Form: BasicDiscountsForm },
         ]}
         notesField="returnReason"
-        customTabs={[{ key: 'related', label: 'Related Documents', Component: RelatedDocuments }]}
+        customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Order", config: {} } }]}
+        bottomSection={ReturnToVendorBottomPanel}
+        requiredHeaderFields={requiredHeaderFields}
+        lineConfig={RETURN_ORDER_LINE_CONFIG}
+        linesLayout="inlineEditable"
         {...props}
       />
     );
@@ -617,6 +630,8 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="orderDate"
+      rowQuickActions={{}}
       {...props}
     />
   );

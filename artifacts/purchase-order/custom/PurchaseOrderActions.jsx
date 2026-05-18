@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { useUI } from '@/i18n';
+import { useUI, useMenuLabel } from '@/i18n';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -31,6 +31,7 @@ function Spinner() {
 export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl, onProcess }) {
   const navigate = useNavigate();
   const ui = useUI();
+  const tMenu = useMenuLabel();
   const [showConfirm,   setShowConfirm]   = useState(false);
   const [showSend,      setShowSend]      = useState(false);
   const [showActions,   setShowActions]   = useState(false);
@@ -39,6 +40,7 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
   const [confirmedDocs,  setConfirmedDocs]  = useState(null);
   const [confirmedTitle, setConfirmedTitle] = useState(null); // null = "PO confirmed", string = custom title
   const [showClone,      setShowClone]      = useState(false);
+  const [isCloneHovered, setIsCloneHovered] = useState(false);
 
   const status      = data?.documentStatus;
   const isDraft     = status === 'DR';
@@ -49,6 +51,13 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
     Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',
   }), [token]);
+
+  // draftMode confirm button (DetailView) dispatches this event to open the confirm modal
+  useEffect(() => {
+    const handler = () => setShowConfirm(true);
+    window.addEventListener('purchase-order:open-confirm-modal', handler);
+    return () => window.removeEventListener('purchase-order:open-confirm-modal', handler);
+  }, []);
 
   // PurchaseOrderDraftChips (topbarExtra) dispatches this event when a grouped chip is clicked
   useEffect(() => {
@@ -101,8 +110,8 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
     : null;
 
   const cloneButton = (
-    <button type="button" onClick={() => setShowClone(true)} style={btnCloneStyle}>
-      <CopyIcon />{ui('cloneOrderBtn')}
+    <button type="button" onClick={() => setShowClone(true)} style={{...btnCloneStyle, background: isCloneHovered ? '#F1F5F9' : '#FFFFFF'}} title={ui('cloneOrderBtn')} onMouseEnter={() => setIsCloneHovered(true)} onMouseLeave={() => setIsCloneHovered(false)}>
+      <CopyIcon />
     </button>
   );
 
@@ -162,28 +171,6 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
 
   return (
     <>
-      {isDraft && (
-        <>
-          <button type="button" onClick={() => setShowConfirm(true)} style={btnPrimaryStyle}>
-            {ui('poConfirmBtn')}
-          </button>
-          {/* Delete icon */}
-          <button
-            type="button"
-            aria-label={ui('delete')}
-            style={{ ...iconBtnStyle, color: '#ef4444', borderColor: '#fecaca' }}
-            onClick={() => onProcess?.('delete')}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6l-1 14H6L5 6" />
-              <path d="M10 11v6" />
-              <path d="M14 11v6" />
-              <path d="M9 6V4h6v2" />
-            </svg>
-          </button>
-        </>
-      )}
       {isCompleted && buttonLabel && (
         <button type="button" onClick={() => setShowActions(true)} style={btnPrimaryStyle}>
           {buttonLabel}
@@ -218,10 +205,11 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
       )}
       {(isDraft || isCompleted) && showSend && createPortal(
         <SendDocumentModal
-          documentType="PurchaseOrder"
+          documentType={tMenu('Purchase Order')}
           documentNo={data?.documentNo}
           bpName={data?.['businessPartner$_identifier']}
-          bpEmail={data?.['userContact$_identifier']}
+          bPartnerId={data?.businessPartner}
+          apiBaseUrl={apiBaseUrl}
           documentId={recordId}
           windowName="purchase-order"
           token={token}
@@ -236,14 +224,17 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
 
 // ── ConfirmModal ───────────────────────────────────────────────────────────────
 
-function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed }) {
+export function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed }) {
   const ui      = useUI();
-  const [createReceipt, setCreateReceipt] = useState(false);
-  const [createInvoice, setCreateInvoice] = useState(false);
-  const [loading,       setLoading]       = useState(false);
-  const [error,         setError]         = useState(null);
-  const [freshData,     setFreshData]     = useState(null);
-  const [lineCount,     setLineCount]     = useState(null);
+  const [createReceipt,  setCreateReceipt]  = useState(false);
+  const [createInvoice,  setCreateInvoice]  = useState(false);
+  const [loading,        setLoading]        = useState(false);
+  const [error,          setError]          = useState(null);
+  const [freshData,      setFreshData]      = useState(null);
+  const [lineCount,      setLineCount]      = useState(null);
+  const [orderConfirmed, setOrderConfirmed] = useState(false);
+  const [receiptResult,  setReceiptResult]  = useState(null);
+  const [invoiceResult,  setInvoiceResult]  = useState(null);
 
   const orderUrl = `${apiBaseUrl}/header`;
 
@@ -271,50 +262,73 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
     return () => { cancelled = true; };
   }, [orderId, orderUrl, apiBaseUrl, headers]);
 
-  const d          = freshData || data || {};
-  const documentNo = d.documentNo || '';
-  const bpName     = d['businessPartner$_identifier'] || '';
-  const grandTotal = Number(d.grandTotalAmount ?? d.grandTotal ?? 0) || 0;
-  const totalLines = d.summedLineAmount ?? d.totalLines ?? grandTotal;
-  const currency   = d['currency$_identifier'] || '';
+  const d              = freshData || data || {};
+  const documentNo     = d.documentNo || '';
+  const bpName         = d['businessPartner$_identifier'] || '';
+  const discountPct    = Number(d.etgoTotalDiscount ?? 0);
+  const discountFactor = discountPct > 0 ? (1 - discountPct / 100) : 1;
+  const grandTotal     = (Number(d.grandTotalAmount ?? d.grandTotal ?? 0) || 0) * discountFactor;
+  const totalLines     = (Number(d.summedLineAmount ?? d.totalLines ?? d.grandTotalAmount ?? 0) || 0) * discountFactor;
+  const currency       = d['currency$_identifier'] || '';
 
   const handleConfirm = async () => {
     if (loading) return;
     setLoading(true);
     setError(null);
-    try {
-      // Step 1: Confirm the order (always)
-      const processRes = await fetch(
-        `${orderUrl}/${orderId}/action/documentAction`,
-        { method: 'POST', headers, body: JSON.stringify({ docAction: 'CO' }) },
-      );
-      if (!processRes.ok) {
-        const e = await processRes.json().catch(() => null);
-        throw new Error(e?.response?.message || e?.message || `Error (${processRes.status})`);
+
+    // Step 1: Confirm the order — must succeed before anything else.
+    // If this fails the order is still in DR, so the rest of the flow makes no sense.
+    if (!orderConfirmed) {
+      try {
+        const processRes = await fetch(
+          `${orderUrl}/${orderId}/action/documentAction`,
+          { method: 'POST', headers, body: JSON.stringify({ docAction: 'CO' }) },
+        );
+        if (!processRes.ok) {
+          const e = await processRes.json().catch(() => null);
+          throw new Error(e?.response?.message || e?.message || `Error (${processRes.status})`);
+        }
+        setOrderConfirmed(true);
+        window.dispatchEvent(new CustomEvent('purchase-order:document-created'));
+      } catch (e) {
+        setError(e.message || ui('poErrorOccurred'));
+        setLoading(false);
+        return;
       }
-      window.dispatchEvent(new CustomEvent('purchase-order:document-created'));
+    }
 
-      const result = {};
+    // Steps 2 and 3 are independent: the invoice uses order quantities, not
+    // receipt quantities. A failure in one must NOT prevent the other from
+    // running. Errors are accumulated and shown together at the end.
+    const errors = [];
 
-      // Step 2: Create goods receipt if checked
-      if (createReceipt) {
+    // Step 2: Create goods receipt if checked and not already done
+    let currentReceipt = null;
+    if (createReceipt && !receiptResult) {
+      try {
         const res = await fetch(`${orderUrl}/${orderId}/action/createGoodsReceipt`,
           { method: 'POST', headers, body: JSON.stringify({}) });
         if (!res.ok) {
           const e = await res.json().catch(() => null);
-          throw new Error(e?.response?.message || e?.message || `Error (${res.status})`);
+          throw new Error(ui('poOrderConfirmedReceiptError') + ' ' + (e?.response?.message || e?.message || `Error (${res.status})`));
         }
         const doc = (await res.json())?.response?.data;
         const docObj = Array.isArray(doc) ? doc[0] : doc;
-        result.receipt = {
+        currentReceipt = {
           id:         docObj?.id ?? null,
           documentNo: docObj?.documentNo ?? '',
           amount:     docObj?.grandTotalAmount ?? null,
         };
+        setReceiptResult(currentReceipt);
+      } catch (e) {
+        errors.push(e.message || ui('poErrorOccurred'));
       }
+    }
 
-      // Step 3: Create purchase invoice if checked
-      if (createInvoice) {
+    // Step 3: Create purchase invoice if checked and not already done
+    let currentInvoice = null;
+    if (createInvoice && !invoiceResult) {
+      try {
         const res = await fetch(`${orderUrl}/${orderId}/action/createPurchaseInvoice`,
           { method: 'POST', headers, body: JSON.stringify({}) });
         if (!res.ok) {
@@ -323,18 +337,33 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
         }
         const doc = (await res.json())?.response?.data;
         const docObj = Array.isArray(doc) ? doc[0] : doc;
-        result.invoice = {
+        currentInvoice = {
           id:         docObj?.id ?? null,
           documentNo: docObj?.documentNo ?? '',
           amount:     docObj?.grandTotalAmount ?? null,
         };
+        setInvoiceResult(currentInvoice);
+      } catch (e) {
+        errors.push(e.message || ui('poErrorOccurred'));
       }
-
-      onConfirmed(result);
-    } catch (e) {
-      setError(e.message || ui('poErrorOccurred'));
-      setLoading(false);
     }
+
+    // If any step failed, surface all errors and keep the modal open so the
+    // user can retry. The successful steps are already locked via state, so
+    // the next attempt will skip them.
+    if (errors.length > 0) {
+      setError(errors.join('\n'));
+      setLoading(false);
+      return;
+    }
+
+    // All requested steps succeeded — close the modal with whatever was created.
+    const result = {};
+    const finalReceipt = currentReceipt ?? receiptResult;
+    const finalInvoice = currentInvoice ?? invoiceResult;
+    if (finalReceipt) result.receipt = finalReceipt;
+    if (finalInvoice) result.invoice = finalInvoice;
+    onConfirmed(result);
   };
 
   const primaryLabel = (() => {
@@ -344,8 +373,24 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
     return ui('soConfirmActionOnly');
   })();
 
+  // If the user closes the modal AFTER step 1 succeeded (or any document was
+  // already created), route the close through `onConfirmed` so the result
+  // modal opens with whatever exists and the page reloads on its own close.
+  // Otherwise the order is silently in CO state but the UI keeps showing DR,
+  // and reopening the modal would re-attempt step 1 → @AlreadyPosted@.
+  const handleClose = () => {
+    if (orderConfirmed || receiptResult || invoiceResult) {
+      const result = {};
+      if (receiptResult) result.receipt = receiptResult;
+      if (invoiceResult) result.invoice = invoiceResult;
+      onConfirmed(result);
+      return;
+    }
+    onClose();
+  };
+
   return (
-    <div onClick={onClose} style={overlayStyle}>
+    <div onClick={handleClose} style={overlayStyle}>
       <div onClick={e => e.stopPropagation()} style={{ ...cardStyle, width: 460 }}>
 
         {/* Title row */}
@@ -353,7 +398,7 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
           <div style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>
             {ui('poConfirmTitle', { number: documentNo })}
           </div>
-          <button type="button" onClick={onClose} style={closeBtn}>&times;</button>
+          <button type="button" onClick={handleClose} style={closeBtn}>&times;</button>
         </div>
 
         {/* Blue summary card */}
@@ -390,33 +435,36 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
             {ui('soGenerateDocs')}
           </div>
           <PoCheckboxCard
-            checked={createReceipt}
-            onChange={() => setCreateReceipt(v => !v)}
+            checked={createReceipt || Boolean(receiptResult)}
+            onChange={() => !receiptResult && setCreateReceipt(v => !v)}
             icon="📦"
             title={ui('poCreateReceiptTitle')}
-            subtitle={ui('poCreateReceiptCheckDesc')}
+            subtitle={receiptResult ? ui('soAlreadyCreated') : ui('poCreateReceiptCheckDesc')}
+            disabled={Boolean(receiptResult)}
           />
           <PoCheckboxCard
-            checked={createInvoice}
-            onChange={() => setCreateInvoice(v => !v)}
+            checked={createInvoice || Boolean(invoiceResult)}
+            onChange={() => !invoiceResult && setCreateInvoice(v => !v)}
             icon="🧾"
             title={ui('soCreateInvoiceTitle')}
-            subtitle={ui('poCreateInvoiceCheckDesc')}
+            subtitle={invoiceResult ? ui('soAlreadyCreated') : ui('poCreateInvoiceCheckDesc')}
+            disabled={Boolean(invoiceResult)}
           />
         </div>
 
         {error && (
-          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA' }}>
+          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA', whiteSpace: 'pre-line' }}>
             {error}
           </div>
         )}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '12px 20px', borderTop: '0.5px solid #E5E7EB' }}>
-          <button type="button" onClick={onClose} disabled={loading}
+          <button type="button" onClick={handleClose} disabled={loading}
             style={{ ...btnSecondary, opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
             {ui('cancel')}
           </button>
           <button type="button" onClick={handleConfirm} disabled={loading}
+            data-testid="action-confirm-modal"
             style={{ ...btnPrimaryStyle, opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             {loading && <Spinner />}
             {loading ? ui('poProcessing') : primaryLabel}
@@ -429,21 +477,23 @@ function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onConfirmed
 
 // ── PoCheckboxCard ─────────────────────────────────────────────────────────────
 
-function PoCheckboxCard({ checked, onChange, icon, title, subtitle }) {
+function PoCheckboxCard({ checked, onChange, icon, title, subtitle, disabled }) {
   return (
     <div
-      onClick={onChange}
+      onClick={disabled ? undefined : onChange}
       style={{
         display: 'flex', alignItems: 'center', gap: 12,
-        padding: checked ? '11px 13px' : '12px 14px', borderRadius: 8, cursor: 'pointer',
-        border: checked ? '2px solid #3B82F6' : '1px solid #E5E7EB',
-        background: checked ? '#EFF6FF' : '#fff',
+        padding: checked ? '11px 13px' : '12px 14px', borderRadius: 8,
+        cursor: disabled ? 'default' : 'pointer',
+        border: disabled ? '2px solid #10B981' : (checked ? '2px solid #3B82F6' : '1px solid #E5E7EB'),
+        background: disabled ? '#ECFDF5' : (checked ? '#EFF6FF' : '#fff'),
+        opacity: disabled ? 0.85 : 1,
         transition: 'border-color 0.15s, background 0.15s',
       }}
     >
       <span style={{ fontSize: 15, lineHeight: 1, flexShrink: 0 }}>{icon}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 500, color: checked ? '#2563EB' : '#111827' }}>
+        <div style={{ fontSize: 13, fontWeight: 500, color: disabled ? '#059669' : (checked ? '#2563EB' : '#111827') }}>
           {title}
         </div>
         <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 3, lineHeight: 1.4 }}>
@@ -452,12 +502,12 @@ function PoCheckboxCard({ checked, onChange, icon, title, subtitle }) {
       </div>
       <div style={{
         width: 18, height: 18, borderRadius: 4, flexShrink: 0,
-        border: checked ? 'none' : '1.5px solid #D1D5DB',
-        background: checked ? '#3B82F6' : '#fff',
+        border: (checked || disabled) ? 'none' : '1.5px solid #D1D5DB',
+        background: disabled ? '#10B981' : (checked ? '#3B82F6' : '#fff'),
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         transition: 'background 0.15s',
       }}>
-        {checked && (
+        {(checked || disabled) && (
           <svg width="11" height="9" viewBox="0 0 11 9" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="1 4 4 7.5 10 1" />
           </svg>
@@ -469,7 +519,7 @@ function PoCheckboxCard({ checked, onChange, icon, title, subtitle }) {
 
 // ── CreateDocsModal (CO orders — create docs without re-confirming) ────────────
 
-function CreateDocsModal({ orderId, data, base, headers, currency, derived, onClose, onCreated }) {
+export function CreateDocsModal({ orderId, data, base, headers, currency, derived, onClose, onCreated }) {
   const ui = useUI();
   const {
     needsReceipt, needsInvoice,
@@ -593,7 +643,7 @@ function CreateDocsModal({ orderId, data, base, headers, currency, derived, onCl
         </div>
 
         {error && (
-          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA' }}>
+          <div style={{ padding: '8px 20px', fontSize: 12, color: '#DC2626', background: '#FEF2F2', borderTop: '0.5px solid #FECACA', whiteSpace: 'pre-line' }}>
             {error}
           </div>
         )}
@@ -617,7 +667,7 @@ function CreateDocsModal({ orderId, data, base, headers, currency, derived, onCl
 // Shown after confirm or create docs. Displays created docs as clickable cards.
 // Cases: no docs (only confirmed), receipt only, invoice only, or both.
 
-function PoConfirmResultModal({ docs, onClose, navigate, ui, currency, title }) {
+export function PoConfirmResultModal({ docs, onClose, navigate, ui, currency, title }) {
   const { receipt, invoice } = docs;
   const hasDocs = Boolean(receipt?.id || invoice?.id);
 
@@ -781,7 +831,7 @@ function CloneModal({ orderId, data, apiBaseUrl, headers, onClose, onCloned }) {
     setLoading(true);
     setError(null);
     try {
-      const res  = await fetch(`${apiBaseUrl}/header/${orderId}/action/cloneOrder`, { method: 'POST', headers });
+      const res  = await fetch(`${apiBaseUrl}/header/${orderId}/action/cloneRecord`, { method: 'POST', headers });
       const json = await res.json();
       if (!res.ok) {
         setError(json?.response?.error?.message || ui('cloneOrderError'));
@@ -882,9 +932,10 @@ const btnSecondary = {
 };
 
 const btnCloneStyle = {
-  display: 'inline-flex', alignItems: 'center', gap: 5,
-  padding: '5px 12px', borderRadius: 6, fontSize: 13, fontWeight: 500,
-  border: '1px solid #D1D5DB', background: 'transparent', color: '#374151', cursor: 'pointer',
+  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+  padding: '7px', borderRadius: 6,
+  border: '1px solid #D1D4DB', background: '#FFFFFF', color: '#64748B', cursor: 'pointer',
+  boxShadow: '0px 1px 2px 0px #1212170D',
 };
 
 const iconBtnStyle = {
@@ -899,3 +950,104 @@ const closeBtn = {
   fontSize: 18, lineHeight: 1, padding: '2px 6px', borderRadius: 4,
   background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF',
 };
+
+// ── ManageDocsLauncher ──────────────────────────────────────────────────────
+// Self-contained mount point for the "Gestionar recepción/factura" flow from
+// the list-view row kebab. Mirrors the fetch+derive logic in
+// PurchaseOrderActions (receipts / invoices / order lines → pending qty &
+// amount) and opens CreateDocsModal once derived data is ready. If nothing is
+// pending the launcher closes silently.
+export function ManageDocsLauncher({ orderId, data, apiBaseUrl, token, onClose, onCreated }) {
+  const ui = useUI();
+  const [fetched, setFetched] = useState(null);
+
+  const base    = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
+  const headers = useMemo(() => ({
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  }), [token]);
+
+  useEffect(() => {
+    if (!orderId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [receiptRes, linesRes, invoiceRes] = await Promise.all([
+          fetch(`${base}/goods-receipt/goodsReceipt?criteria=${CRITERIA('salesOrder', orderId)}&_limit=50`, { headers }),
+          fetch(`${apiBaseUrl}/lines?parentId=${orderId}&_startRow=0&_endRow=999`, { headers }),
+          fetch(`${base}/purchase-invoice/header?criteria=${CRITERIA('salesOrder', orderId)}&_limit=50`, { headers }),
+        ]);
+        if (cancelled) return;
+        const receipts   = receiptRes.ok ? ((await receiptRes.json())?.response?.data ?? []) : [];
+        const orderLines = linesRes.ok   ? ((await linesRes.json())?.response?.data  ?? []) : [];
+        const invoices   = invoiceRes.ok ? ((await invoiceRes.json())?.response?.data ?? []) : [];
+        if (!cancelled) setFetched({ receipts, invoices, orderLines });
+      } catch {
+        if (!cancelled) setFetched({ receipts: [], invoices: [], orderLines: [] });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [orderId, base, headers, apiBaseUrl]);
+
+  if (!fetched) {
+    return createPortal(
+      <div style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.2)', zIndex: 9998,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div style={{ background: '#fff', padding: '16px 24px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Spinner /><span style={{ fontSize: 13 }}>{ui('loading')}</span>
+        </div>
+      </div>,
+      document.body,
+    );
+  }
+
+  const { receipts, invoices, orderLines } = fetched;
+  const receiptsDraft    = receipts.filter(r => r.documentStatus === 'DR');
+  const receiptsComplete = receipts.filter(r => r.documentStatus === 'CO');
+  const invoiceDraft     = invoices.find(i => i.documentStatus === 'DR') ?? null;
+  const invoicesComplete = invoices.filter(i => i.documentStatus === 'CO');
+
+  const qtyOrdered   = orderLines.reduce((s, l) => s + (Number(l.orderedQuantity)   || 0), 0);
+  const qtyDelivered = orderLines.reduce((s, l) => s + (Number(l.deliveredQuantity) || 0), 0);
+  const qtyPending   = Math.max(0, qtyOrdered - qtyDelivered);
+
+  const totalOrder    = Number(data?.grandTotalAmount) || 0;
+  const totalInvoiced = invoicesComplete.reduce((s, i) => s + (Number(i.grandTotalAmount) || 0), 0);
+  const totalPending  = Math.max(0, totalOrder - totalInvoiced);
+
+  const needsReceipt = qtyPending > 0 && receiptsDraft.length === 0;
+  const needsInvoice = totalPending > 0 && !invoiceDraft;
+  const nothingToManage = !needsReceipt && !needsInvoice;
+
+  // Close asynchronously when there's nothing pending — avoids the
+  // "Cannot update a component while rendering" warning that occurs when a
+  // child triggers parent setState during its own render.
+  useEffect(() => {
+    if (nothingToManage) onClose?.();
+  }, [nothingToManage, onClose]);
+
+  if (nothingToManage) return null;
+
+  const derived = {
+    receiptsComplete, invoicesComplete,
+    qtyOrdered, qtyDelivered, qtyPending,
+    totalOrder, totalInvoiced, totalPending,
+    needsReceipt, needsInvoice,
+  };
+
+  return createPortal(
+    <CreateDocsModal
+      orderId={orderId}
+      data={data}
+      base={base}
+      headers={headers}
+      currency={data?.['currency$_identifier'] || ''}
+      derived={derived}
+      onClose={onClose}
+      onCreated={onCreated}
+    />,
+    document.body,
+  );
+}

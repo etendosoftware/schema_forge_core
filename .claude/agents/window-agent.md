@@ -17,7 +17,7 @@ model: inherit
 - Discover window/process IDs via `node cli/src/menu-cache.js search "<name>"`
 - Query Etendo AD tables to extract field metadata, display logic, callouts, and selectors
 - Read and edit `artifacts/{window}/decisions.json` with full schema awareness
-- Run the full pipeline: extract → classify → contract → push-to-neo → generate frontend
+- Run the full pipeline: extract → classify → contract → push-to-neo → generate frontend (default entrypoint: `make regen ONLY=<spec> [PUSH_TO_NEO=1]`; fall back to `pipeline.js` only when extra flags are needed)
 - Onboard new windows from scratch (discovery → extraction → base decisions → pipeline)
 - Run migrations when `decisions.json` is at an older version
 - Validate that decisions.json changes flow through the pipeline chain correctly
@@ -26,6 +26,7 @@ model: inherit
 <what_i_never_do>
 - Edit files inside `artifacts/{window}/generated/` directly — fixes go in the generator
 - Hardcode or guess window/process/menu IDs — always query the DB or menu-cache
+- Invent or hand-type UUIDs for new AD records — always run `make uuid` to mint a fresh Etendo-format UUID (32 uppercase hex, no hyphens)
 - Skip reading `artifacts/{window}/decisions.json` before modifying it
 - Run `push-to-neo.js` without reminding to run `./gradlew export.database` after
 - Commit or work directly on the main branch — ALWAYS work on a feature branch in a worktree
@@ -118,14 +119,30 @@ If you add a field and it's not read by `generate-frontend.js`, it won't survive
 <pipeline_execution>
 ## Running the Pipeline
 
-### Preferred: Use `pipeline.js` (runs all steps automatically)
+### Canonical: `make regen` (use this by default)
+
+`make regen` is the canonical wrapper for iterating on decisions and regenerating UI. **Reach for it first** — it runs extract → resolve → generate (→ optional push) with the right defaults, on one or many windows.
+
+```bash
+make regen ONLY=<spec>                        # one window: extract + resolve + generate
+make regen ONLY=<spec> PUSH_TO_NEO=1          # same + push to NEO Headless
+make regen ONLY=<spec> SKIP_EXTRACT=1         # reuse existing schema-raw.json (no DB hit)
+make regen ONLY=tax,product                   # multiple windows in one run
+make regen                                    # all active windows
+make regen-help                               # full option list
+```
+
+After `PUSH_TO_NEO=1`: remind the user to run `./gradlew export.database` in Etendo root.
+
+### Lower-level: `pipeline.js` (when `make regen` does not fit)
+
+Use `pipeline.js` for flags `make regen` does not expose — `--dry-run`, custom `--skip-to <phase>`, `--menu-id`, interactive translate-todos, etc.
 
 ```bash
 # Full pipeline (extract + classify + contract + push + frontend)
 node cli/src/pipeline.js --menu-name "Window Name"
 
 # Partial re-run (skip extraction, start from resolve-curated)
-# Use when decisions.json was edited but schema didn't change
 node cli/src/pipeline.js --menu-name "Window Name" --skip-to resolve-curated --skip-interactive
 
 # Dry run (no DB writes during push-to-neo)
@@ -141,7 +158,7 @@ Pipeline flags:
 - `--skip-interactive` — skip interactive steps (translate-todos)
 - `--dry-run` — push-to-neo won't write to DB
 
-### Individual scripts (only if pipeline.js doesn't fit)
+### Individual scripts (only if neither `make regen` nor `pipeline.js` fits)
 
 ```bash
 # Extract from DB — positional args: <windowId> <spec-name>

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { useCopilotChat } from './copilot/useCopilotChat.js';
 import { useAuth } from '@/auth/AuthContext.jsx';
 
@@ -25,8 +25,13 @@ export function CopilotProvider({ children }) {
     });
   }, [actions]);
 
+  const value = useMemo(
+    () => ({ isOpen, open, close, toggle, state, actions, token }),
+    [isOpen, open, close, toggle, state, actions, token],
+  );
+
   return (
-    <CopilotContext.Provider value={{ isOpen, open, close, toggle, state, actions, token }}>
+    <CopilotContext.Provider value={value}>
       {children}
     </CopilotContext.Provider>
   );

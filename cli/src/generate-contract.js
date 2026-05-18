@@ -1,6 +1,26 @@
 import { createHash } from 'node:crypto';
 import { toSpecName } from './push-to-neo.js';
-import { autoSimplifyEntityName } from './resolve-curated.js';
+import { autoSimplifyEntityName, reorderKeys, WINDOW_KEY_ORDER } from './resolve-curated.js';
+
+// Slug helper for deterministic test IDs: collapse non-alphanumerics to hyphens, trim.
+const slug = (s) => String(s ?? '')
+  .replace(/[^A-Za-z0-9]+/g, '-')
+  .replace(/(?:^-)|(?:-$)/g, '');
+
+// Factory for monotonically-disambiguating ID maker. Each call returns a fresh closure
+// so different generators don't share state.
+function createIdMaker() {
+  const seenIds = new Set();
+  return (...parts) => {
+    const base = `t-${parts.map(slug).filter(Boolean).join('-')}`;
+    if (!seenIds.has(base)) { seenIds.add(base); return base; }
+    let n = 2;
+    while (seenIds.has(`${base}-${n}`)) n++;
+    const id = `${base}-${n}`;
+    seenIds.add(id);
+    return id;
+  };
+}
 
 const TS_TYPE_MAP = {
   string: 'string',
@@ -147,6 +167,8 @@ export function generateFrontendContract(schema, rules = []) {
         grid: f.grid,
         form: f.form,
       };
+      if (f.sourceRequired === true) mapped.sourceRequired = true;
+      if (f.derivation) mapped.derivation = f.derivation;
       if (f.columnType) mapped.columnType = f.columnType;
       if (f.reference) mapped.reference = f.reference;
       if (f.enumValues) mapped.enumValues = f.enumValues;
@@ -154,9 +176,14 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.dependsOn) mapped.dependsOn = f.dependsOn;
       if (f.lookup) mapped.lookup = true;
       if (f.popup) mapped.popup = true;
+      if (f.lookupDrawer) mapped.lookupDrawer = f.lookupDrawer;
+      if (f.lookupTitle) mapped.lookupTitle = f.lookupTitle;
+      if (Array.isArray(f.onSelectMappings) && f.onSelectMappings.length > 0) mapped.onSelectMappings = f.onSelectMappings;
+      if (f.displayFromCatalog) mapped.displayFromCatalog = f.displayFromCatalog;
+      if (Array.isArray(f.forceCalloutFields) && f.forceCalloutFields.length > 0) mapped.forceCalloutFields = f.forceCalloutFields;
 
       // UI hints
-      if (f.defaultValue) mapped.defaultValue = f.defaultValue;
+      if (f.defaultValue !== undefined) mapped.defaultValue = f.defaultValue;
       if (f.isIdentifier) mapped.isIdentifier = true;
       if (f.help) mapped.help = f.help;
       if (f.fieldGroup) mapped.fieldGroup = f.fieldGroup;
@@ -169,6 +196,10 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.statusBar) mapped.statusBar = true;
       if (f.badge) mapped.badge = true;
       if (f.badgeLabels) mapped.badgeLabels = f.badgeLabels;
+      if (f.badgeColors) mapped.badgeColors = f.badgeColors;
+      if (f.badgeVariants) mapped.badgeVariants = f.badgeVariants;
+      if (f.enumVariants) mapped.enumVariants = f.enumVariants;
+      if (f.labels) mapped.labels = f.labels;
       if (f.summable) mapped.summable = true;
       if (f.display) mapped.display = f.display;
       if (f.cellType) mapped.cellType = f.cellType;
@@ -269,7 +300,14 @@ export function generateFrontendContract(schema, rules = []) {
     win.templateConfig = schema.window.templateConfig ?? null;
   }
 
-  return { window: win, entities };
+  // Lines tab layout. "classic" preserves the side-panel edit flow; "inlineEditable"
+  // uses InlineLinesPanel for in-place row editing. Omitted from the contract when
+  // the window doesn't opt in — generate-frontend.js and DetailView both default to
+  // "classic" at runtime, so leaving the key out keeps contracts clean of the
+  // implicit default.
+  if (schema.window.linesLayout) win.linesLayout = schema.window.linesLayout;
+
+  return { window: reorderKeys(win, WINDOW_KEY_ORDER), entities };
 }
 
 /**
@@ -349,7 +387,7 @@ export function generateBackendContract(schema, rules = [], processes = []) {
     };
   });
 
-  return { window: schema.window, entities, endpoints, processEndpoints };
+  return { window: reorderKeys(schema.window, WINDOW_KEY_ORDER), entities, endpoints, processEndpoints };
 }
 
 /**
@@ -357,8 +395,7 @@ export function generateBackendContract(schema, rules = [], processes = []) {
  */
 export function generateTestManifest(frontendContract, backendContract, rules = [], processes = []) {
   const tests = [];
-  let idCounter = 0;
-  const nextId = () => `t-${++idCounter}`;
+  const makeId = createIdMaker();
 
   // Derive system fields from backend minus frontend
   for (const [entityName, entityData] of Object.entries(frontendContract.entities)) {
@@ -367,7 +404,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     // field-presence: one per visible field
     for (const field of visibleFields) {
       tests.push({
-        id: nextId(),
+        id: makeId('field-presence', entityName, field.name),
         category: 'field-presence',
         entity: entityName,
         field: field.name,
@@ -379,7 +416,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     // field-type: one per visible field
     for (const field of visibleFields) {
       tests.push({
-        id: nextId(),
+        id: makeId('field-type', entityName, field.name),
         category: 'field-type',
         entity: entityName,
         field: field.name,
@@ -391,7 +428,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     // searchable-filters: one per searchable field
     for (const fieldName of entityData.searchableFields) {
       tests.push({
-        id: nextId(),
+        id: makeId('searchable-filters', entityName, fieldName),
         category: 'searchable-filters',
         entity: entityName,
         field: fieldName,
@@ -402,7 +439,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
 
     // visibility: one per entity
     tests.push({
-      id: nextId(),
+      id: makeId('visibility', entityName),
       category: 'visibility',
       entity: entityName,
       runner: 'node',
@@ -413,7 +450,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     for (const field of visibleFields) {
       if (field.displayLogic) {
         tests.push({
-          id: nextId(),
+          id: makeId('displaylogic-valid', entityName, field.name),
           category: 'displaylogic-valid',
           entity: entityName,
           field: field.name,
@@ -427,7 +464,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     for (const field of visibleFields) {
       if (field.readOnlyLogic) {
         tests.push({
-          id: nextId(),
+          id: makeId('readonlylogic-valid', entityName, field.name),
           category: 'readonlylogic-valid',
           entity: entityName,
           field: field.name,
@@ -441,7 +478,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     for (const field of visibleFields) {
       if (field.displayLogic) {
         tests.push({
-          id: nextId(),
+          id: makeId('displaylogic-evaluable', entityName, field.name),
           category: 'displaylogic-evaluable',
           entity: entityName,
           field: field.name,
@@ -455,7 +492,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     for (const field of visibleFields) {
       if (field.readOnlyLogic) {
         tests.push({
-          id: nextId(),
+          id: makeId('readonlylogic-evaluable', entityName, field.name),
           category: 'readonlylogic-evaluable',
           entity: entityName,
           field: field.name,
@@ -469,7 +506,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     for (const field of visibleFields) {
       if (field.defaultValue !== undefined) {
         tests.push({
-          id: nextId(),
+          id: makeId('default-value-type', entityName, field.name),
           category: 'default-value-type',
           entity: entityName,
           field: field.name,
@@ -488,7 +525,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     for (const field of beEntity.fields) {
       if (!feFieldNames.has(field.name)) {
         tests.push({
-          id: nextId(),
+          id: makeId('system-field', entityName, field.name),
           category: 'system-field',
           entity: entityName,
           field: field.name,
@@ -502,7 +539,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
   // rule-declared: one per kept rule
   for (const rule of rules) {
     tests.push({
-      id: nextId(),
+      id: makeId('rule-declared', rule.name),
       category: 'rule-declared',
       rule: rule.name,
       runner: 'node',
@@ -514,7 +551,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
   for (const proc of processes) {
     // process-happy
     tests.push({
-      id: nextId(),
+      id: makeId('process-happy', proc.name),
       category: 'process-happy',
       process: proc.name,
       entity: proc.entity,
@@ -524,7 +561,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
 
     // process-failure
     tests.push({
-      id: nextId(),
+      id: makeId('process-failure', proc.name),
       category: 'process-failure',
       process: proc.name,
       entity: proc.entity,
@@ -536,7 +573,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     if (proc.edgeCases) {
       for (const edge of proc.edgeCases) {
         tests.push({
-          id: nextId(),
+          id: makeId('process-edge', proc.name, edge.name),
           category: 'process-edge',
           process: proc.name,
           entity: proc.entity,
@@ -550,7 +587,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
     // process-rollback: only if transactional
     if (proc.transactional) {
       tests.push({
-        id: nextId(),
+        id: makeId('process-rollback', proc.name),
         category: 'process-rollback',
         process: proc.name,
         entity: proc.entity,
@@ -559,6 +596,9 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
       });
     }
   }
+
+  // Sort by id for deterministic ordering across regens
+  tests.sort((a, b) => a.id.localeCompare(b.id));
 
   // Build summary
   const byCategory = {};
@@ -575,6 +615,7 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
       byCategory,
       byRunner,
     },
+    _makeId: makeId,
   };
 }
 
@@ -665,7 +706,7 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
     actions: dedupedActions,
     queryParams: {
       pagination: { startRow: '_startRow', endRow: '_endRow', default: '0-100' },
-      sorting: { param: '_sortBy', example: `_sortBy=${specName}Date` },
+      sorting: { param: '_sortBy', example: '_sortBy=creationDate desc' },
       filtering: 'Use field name as query param: ?fieldName=value',
       parentFilter: 'parentId={id} for child entities',
     },
@@ -685,18 +726,63 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
 }
 
 /**
+ * Lock field order per entity to the previous contract so UI generation stays stable
+ * across re-extractions. Uses the previous backend contract as canonical order (superset
+ * including system/discarded fields). New fields land at the end (alpha-sorted); removed
+ * fields drop out naturally. Duplicate field names are matched sequentially.
+ */
+function lockFieldOrderToPreviousContract(schema, previousContract) {
+  const prevBE = previousContract?.backendContract?.entities;
+  if (!prevBE) return;
+  for (const entity of schema.entities ?? []) {
+    const prevFields = prevBE[entity.name]?.fields;
+    if (!Array.isArray(entity.fields) || !Array.isArray(prevFields) || prevFields.length === 0) continue;
+    entity.fields = reorderFieldsByPrev(entity.fields, prevFields);
+  }
+}
+
+function reorderFieldsByPrev(currentFields, prevFields) {
+  const positionsByName = new Map();
+  prevFields.forEach((f, i) => {
+    if (!positionsByName.has(f.name)) positionsByName.set(f.name, []);
+    positionsByName.get(f.name).push(i);
+  });
+  const consumed = new Map();
+  const rank = new WeakMap();
+  for (const f of currentFields) {
+    const positions = positionsByName.get(f.name);
+    const used = consumed.get(f.name) ?? 0;
+    if (positions && used < positions.length) {
+      rank.set(f, positions[used]);
+      consumed.set(f.name, used + 1);
+    } else {
+      rank.set(f, Infinity);
+    }
+  }
+  return currentFields.slice().sort((a, b) => {
+    const ia = rank.get(a);
+    const ib = rank.get(b);
+    if (ia !== ib) return ia - ib;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+}
+
+/**
  * Main orchestrator: generates the full contract object.
  */
-export function generateContract(schema, rules = [], processes = [], previousVersion = null) {
+export function generateContract(schema, rules = [], processes = [], previousVersion = null, previousContract = null) {
+  lockFieldOrderToPreviousContract(schema, previousContract);
+
   const frontendContract = generateFrontendContract(schema, rules);
   const backendContract = generateBackendContract(schema, rules, processes);
   const testManifest = generateTestManifest(frontendContract, backendContract, rules, processes);
   const apiPrediction = generateApiPrediction(schema, frontendContract, backendContract);
 
-  // Append apiPrediction-based tests to testManifest
+  // Append apiPrediction-based tests to testManifest using stable IDs
+  const makeId = testManifest._makeId;
   for (const [entityName, crud] of Object.entries(apiPrediction.crud)) {
     testManifest.tests.push({
-      id: `t-${testManifest.tests.length + 1}`,
+      id: makeId('crud-flags', entityName),
       category: 'crud-flags',
       entity: entityName,
       runner: 'node',
@@ -706,7 +792,7 @@ export function generateContract(schema, rules = [], processes = [], previousVer
 
   for (const sel of apiPrediction.selectors) {
     testManifest.tests.push({
-      id: `t-${testManifest.tests.length + 1}`,
+      id: makeId('selector-endpoint', sel.entity, sel.field),
       category: 'selector-endpoint',
       entity: sel.entity,
       field: sel.field,
@@ -717,7 +803,7 @@ export function generateContract(schema, rules = [], processes = [], previousVer
 
   for (const action of apiPrediction.actions) {
     testManifest.tests.push({
-      id: `t-${testManifest.tests.length + 1}`,
+      id: makeId('action-endpoint', action.entity, action.field),
       category: 'action-endpoint',
       entity: action.entity,
       field: action.field,
@@ -725,6 +811,10 @@ export function generateContract(schema, rules = [], processes = [], previousVer
       description: `Action endpoint for '${action.field}' in ${action.entity} should exist`,
     });
   }
+  delete testManifest._makeId;
+
+  // Re-sort after appending apiPrediction tests
+  testManifest.tests.sort((a, b) => a.id.localeCompare(b.id));
 
   // Update summary counts after adding apiPrediction tests
   const updatedByCategory = {};
@@ -745,12 +835,21 @@ export function generateContract(schema, rules = [], processes = [], previousVer
     .digest('hex')
     .slice(0, 16);
 
-  return {
+  const now = new Date().toISOString();
+  const generatedAt = previousContract?.generatedAt ?? now;
+  const checksumChanged = previousContract && previousContract.checksum !== checksum;
+  const result = {
     version: previousVersion ?? schema.version ?? '0.1.0',
-    generatedAt: new Date().toISOString(),
-    checksum,
-    ...contractData,
+    generatedAt,
   };
+  if (checksumChanged) {
+    result.updatedAt = now;
+  } else if (previousContract?.updatedAt) {
+    result.updatedAt = previousContract.updatedAt;
+  }
+  result.checksum = checksum;
+  Object.assign(result, contractData);
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -789,7 +888,7 @@ export function mapProcessReference(referenceId) {
  * @param {object} processRaw - The process-raw.json structure
  * @returns {object} Process contract
  */
-export function generateProcessContract(processRaw) {
+export function generateProcessContract(processRaw, previousContract = null) {
   const { process: proc, parameters: rawParams } = processRaw;
   const specName = toSpecName(proc.name);
 
@@ -816,14 +915,13 @@ export function generateProcessContract(processRaw) {
     execute: `POST /sws/neo/${specName}`,
   };
 
-  // Build test manifest
+  // Build test manifest with deterministic IDs
   const tests = [];
-  let idCounter = 0;
-  const nextId = () => `t-${++idCounter}`;
+  const makeId = createIdMaker();
 
   for (const param of parameters) {
     tests.push({
-      id: nextId(),
+      id: makeId('param-presence', param.name),
       category: 'param-presence',
       param: param.name,
       runner: 'node',
@@ -833,7 +931,7 @@ export function generateProcessContract(processRaw) {
 
   for (const param of parameters) {
     tests.push({
-      id: nextId(),
+      id: makeId('param-type', param.name),
       category: 'param-type',
       param: param.name,
       expectedType: param.tsType,
@@ -843,18 +941,20 @@ export function generateProcessContract(processRaw) {
   }
 
   tests.push({
-    id: nextId(),
+    id: makeId('execution-happy'),
     category: 'execution-happy',
     runner: 'junit',
     description: `Process '${proc.name}' should execute successfully with valid parameters`,
   });
 
   tests.push({
-    id: nextId(),
+    id: makeId('execution-failure'),
     category: 'execution-failure',
     runner: 'junit',
     description: `Process '${proc.name}' should fail with invalid parameters`,
   });
+
+  tests.sort((a, b) => a.id.localeCompare(b.id));
 
   const byCategory = {};
   const byRunner = { node: 0, junit: 0 };
@@ -888,10 +988,19 @@ export function generateProcessContract(processRaw) {
     .digest('hex')
     .slice(0, 16);
 
-  return {
+  const now = new Date().toISOString();
+  const generatedAt = previousContract?.generatedAt ?? now;
+  const checksumChanged = previousContract && previousContract.checksum !== checksum;
+  const result = {
     version: '0.1.0',
-    generatedAt: new Date().toISOString(),
-    checksum,
-    ...contractData,
+    generatedAt,
   };
+  if (checksumChanged) {
+    result.updatedAt = now;
+  } else if (previousContract?.updatedAt) {
+    result.updatedAt = previousContract.updatedAt;
+  }
+  result.checksum = checksum;
+  Object.assign(result, contractData);
+  return result;
 }

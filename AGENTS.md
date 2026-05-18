@@ -37,23 +37,16 @@ When relevant, preserve this order and do not skip quality gates.
 ## Orientation Before Coding
 
 Before making changes:
-
-1. Confirm branch and repository context (`git branch --show-current`, `pwd`).
-2. Read existing files before editing.
-3. If DB access is needed, verify connectivity from Etendo `gradle.properties`.
-4. Check existing artifacts and known issues (`artifacts/`, `feedback.md`, `docs/feedback.md` if present).
-
-## Commit and Branch Conventions (Git Police)
-
-- Feature commit: `Feature ETP-1234: Description` (first line <= 80 chars)
-- Epic commit: `Epic ETP-1234: Description`
-- Hotfix commit: `Issue #N: Description` plus second message with Jira key
-- Do not include `Co-Authored-By`
-- Branch naming: `feature/ETP-1234`, `hotfix/#N-ETP-1234`, `epic/ETP-1234`
+1. If the task touches a window, first find its functional guide via `docs/generated-custom-windows/INDEX.md` and open `docs/generated-custom-windows/<window>.md` before editing code or artifacts.
+2. Confirm branch and repository context (`git branch --show-current`, `pwd`).
+3. Read existing files before editing.
+4. If DB access is needed, verify connectivity from Etendo `gradle.properties`.
+5. Check existing artifacts and known issues (`artifacts/`, `feedback.md`, `docs/feedback.md` if present).
 
 ## Documentation Freshness
 
 Behavior-changing code updates must include corresponding documentation updates in the same change.
+Window-specific changes must also update the matching `docs/generated-custom-windows/<window>.md` guide.
 
 ## Testing Baseline
 

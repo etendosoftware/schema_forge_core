@@ -1,11 +1,13 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { sentryVitePlugin } from '@sentry/vite-plugin';
 import { resolve } from 'path';
 import { readFileSync } from 'fs';
 import schemaApiPlugin from './vite-plugins/schema-api.js';
 import reportApiPlugin from './vite-plugins/report-api.js';
 import mcpRetryProxy from './vite-plugins/mcp-proxy.js';
+import appsSpikePlugin from './vite-plugins/apps-spike.js';
 
 // Read ETENDO_URL from .env.local for proxy config only (not exposed to client)
 function readEnvFile() {
@@ -152,6 +154,10 @@ export default defineConfig(({ mode }) => {
     reportApiPlugin(),
     mcpWellKnownPlugin(),
     mcpRetryProxy(ETENDO_URL),
+    appsSpikePlugin({
+      privateKeyPath: resolve(__dirname, '../../etendo_core/modules/com.etendoerp.go/config/apps-spike/private-key.pem'),
+      publicKeyPath: resolve(__dirname, '../../etendo_core/modules/com.etendoerp.go/config/apps-spike/public-key.pem'),
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
@@ -160,6 +166,12 @@ export default defineConfig(({ mode }) => {
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        navigateFallbackDenylist: [
+          /^\/etendo\//,
+          /^\/mcp(?:\/|$)/,
+          /^\/\.well-known\//,
+        ],
       },
       manifest: {
         name: 'Etendo',
@@ -178,7 +190,17 @@ export default defineConfig(({ mode }) => {
         ],
       },
     }),
+    sentryVitePlugin({
+      org: 'etendo-22',
+      project: 'schema_forge',
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      telemetry: false,
+      silent: !process.env.SENTRY_AUTH_TOKEN,
+    }),
   ],
+  build: {
+    sourcemap: 'hidden',
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),

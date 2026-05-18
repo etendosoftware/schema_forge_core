@@ -65,12 +65,14 @@ export default function OrderConfirmModal({
     return () => { cancelled = true; };
   }, [orderId, orderUrl, apiBaseUrl, headers]);
 
-  const d = freshData || data || {};
-  const documentNo = d.documentNo || '';
-  const bpName     = d['businessPartner$_identifier'] || '';
-  const grandTotal = d.grandTotalAmount ?? d.grandTotal ?? '';
-  const totalLines = d.summedLineAmount ?? d.totalLines ?? grandTotal;
-  const currency   = d['currency$_identifier'] || '';
+  const d              = freshData || data || {};
+  const documentNo     = d.documentNo || '';
+  const bpName         = d['businessPartner$_identifier'] || '';
+  const discountPct    = Number(d.etgoTotalDiscount ?? 0);
+  const discountFactor = discountPct > 0 ? (1 - discountPct / 100) : 1;
+  const grandTotal     = (Number(d.grandTotalAmount ?? d.grandTotal ?? 0) || 0) * discountFactor;
+  const totalLines     = (Number(d.summedLineAmount ?? d.totalLines ?? d.grandTotalAmount ?? 0) || 0) * discountFactor;
+  const currency       = d['currency$_identifier'] || '';
 
   const handleConfirm = async () => {
     if (loading) return;
@@ -271,7 +273,7 @@ export default function OrderConfirmModal({
             &times;
           </button>
           <div style={{ fontSize: 10, color: '#9CA3AF', letterSpacing: '0.04em', marginBottom: 8 }}>
-            Sales Order #{documentNo}
+            {ui('salesOrderRef')}{documentNo}
           </div>
           <div style={{
             background: '#E6F1FB', border: '0.5px solid #B5D4F4', borderRadius: 10,

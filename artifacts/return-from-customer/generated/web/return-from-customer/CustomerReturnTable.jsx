@@ -1,22 +1,39 @@
-import { DataTable } from '@/components/contract-ui';
+import { forwardRef } from 'react';
+import { DataTable, InlineLinesPanel } from '@/components/contract-ui';
 
 // @sf-generated-start columns:customerReturn
 const columns = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'orderDate', column: 'DateOrdered', type: 'date' },
-  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
-  { key: 'documentStatus', column: 'DocStatus', type: 'status', display: 'dot' },
-  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount' },
+  { key: 'documentNo', column: 'DocumentNo', type: 'string', label: 'Document No.', required: true },
+  { key: 'orderDate', column: 'DateOrdered', type: 'date', label: 'Order Date', required: true },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner', required: true },
+  { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status', enumLabels: { 'AE': 'Automatic Evaluation', 'CO': 'Booked', 'CL': 'Closed', 'ETGO_CI': 'Closed - Invoice Created', 'CA': 'Closed - Order Created', 'CJ': 'Closed - Rejected', 'DR': 'Draft', 'ME': 'Manual Evaluation', 'NA': 'Not Accepted', 'NC': 'Not Confirmed', 'WP': 'Not Paid', 'RE': 'Re-Opened', 'TMP': 'Temporal', 'UE': 'Under Evaluation', 'IP': 'Under Way', '??': 'Unknown', 'VO': 'Voided' }, required: true },
+  { key: 'grandTotalAmount', column: 'GrandTotal', type: 'amount', label: 'Total Gross Amount', required: true },
 ];
 // @sf-generated-end columns:customerReturn
 
 const filters = ['documentStatus', 'documentNo', 'orderDate', 'businessPartner'];
 
 // @sf-generated-start component:CustomerReturnTable
-export default function CustomerReturnTable(props) {
-  // @sf-custom-slot hooks:CustomerReturnTable
+const CustomerReturnTable = forwardRef(function CustomerReturnTable(props, ref) {
+  // Inline-editable layout always uses InlineLinesPanel for existing rows so column
+  // widths (flex layout) never shift when the add-row form opens. When addRow is
+  // active we render a header-hidden, data-hidden DataTable below for just the
+  // add-row form — it owns callouts, selectors, validation and the imperative flush
+  // ref. The ref is forwarded to InlineLinesPanel so DetailView can flush pending
+  // inline edits on global save.
+  if (props.linesLayout === 'inlineEditable') {
+    if (props.addRow?.active) {
+      return (
+        <>
+          <InlineLinesPanel ref={ref} columns={columns} {...props} addRow={undefined} />
+          <DataTable columns={columns} filters={filters} {...props} hideHeader hideDataRows />
+        </>
+      );
+    }
+    return <InlineLinesPanel ref={ref} columns={columns} {...props} />;
+  }
   return <DataTable columns={columns} filters={filters} {...props} />;
-}
-// @sf-generated-end component:CustomerReturnTable
+});
 
-// @sf-custom-slot section:CustomerReturnTable-custom
+export default CustomerReturnTable;
+// @sf-generated-end component:CustomerReturnTable

@@ -14,7 +14,7 @@ import { ChatView } from './copilot/ChatView.jsx';
 
 const LEFT_SIDE_ROUTES = ['/quick-sales-order', '/quick-purchase-order'];
 
-export function CopilotWidget() {
+export function CopilotWidget({ hideTrigger = false }) {
   const { isOpen: open, close: closePanel, toggle, state, actions } = useCopilot();
   const { current: currentWindow } = useCurrentWindowContext();
   const location = useLocation();
@@ -227,7 +227,7 @@ export function CopilotWidget() {
           'fixed z-50 transition-all duration-300 ease-out',
           maximized
             ? 'inset-4'
-            : 'bottom-20 left-6 w-full max-w-md h-[min(36rem,calc(100vh-6rem))] translate-x-[var(--copilot-shift)]',
+            : 'bottom-6 left-6 w-full max-w-md h-[min(36rem,calc(100vh-6rem))] translate-x-[var(--copilot-shift)]',
           open
             ? 'translate-y-0 opacity-100 pointer-events-auto'
             : 'translate-y-4 opacity-0 pointer-events-none'
@@ -302,7 +302,7 @@ export function CopilotWidget() {
       </div>
 
       {/* FAB button */}
-      <Button
+      {!hideTrigger && <Button
         onClick={toggle}
         size="icon"
         className={cn(
@@ -320,7 +320,7 @@ export function CopilotWidget() {
             <Sparkles className="absolute -top-1 -right-1 h-3 w-3 text-yellow-300 animate-spin [animation-duration:3s]" />
           </span>
         )}
-      </Button>
+      </Button>}
     </>
   );
 }

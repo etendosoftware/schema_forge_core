@@ -1,4 +1,5 @@
 import menuConfig from '../menu.json' with { type: 'json' };
+import { APP_CATALOG } from '../apps-registry.js';
 
 /**
  * Known window loaders -- maps slug to dynamic import.
@@ -11,7 +12,7 @@ import menuConfig from '../menu.json' with { type: 'json' };
 const windowLoaders = {
   'sales-order': () => import('@generated/sales-order/generated/web/sales-order/index.jsx'),
   'business-partner': () => import('@generated/business-partner/generated/web/business-partner/index.jsx'),
-  'contacts': () => import('@generated/contacts/generated/web/contacts/index.jsx'),
+  'contacts': () => import('@/windows/custom/contacts/index.jsx'),
   'warehouse': () => import('@generated/warehouse/generated/web/warehouse/index.jsx'),
   'price-list': () => import('@generated/price-list/generated/web/price-list/index.jsx'),
   'payment-term': () => import('@generated/payment-term/generated/web/payment-term/index.jsx'),
@@ -51,24 +52,77 @@ const windowLoaders = {
 };
 
 /**
- * Return the 2-level menu groups from menu.json.
- * Groups or items with hidden: true are excluded.
+ * Return the 2-level menu groups, merging installed SDK apps into the
+ * group declared by each menu entry. Groups or items with hidden: true
+ * are excluded by default; the `Marketplace` group is force-shown when
+ * the easter-egg flag `appStoreUnlocked` is true.
+ *
+ * @param {string[]} [installedAppIds] — appIds present in the installed-apps
+ *   store. External apps only appear in the menu when their id is here.
+ * @param {{ appStoreUnlocked?: boolean }} [options]
  */
-export function buildMenuGroups() {
+export function buildMenuGroups(installedAppIds = [], options = {}) {
+  const { appStoreUnlocked = false } = options;
+  const installedSet = new Set(installedAppIds);
+  const extraByGroup = new Map();
+  for (const app of APP_CATALOG) {
+    if (!installedSet.has(app.appId)) continue;
+    for (const entry of app.menuEntries) {
+      // Each entry may override the app's default menuGroup so one app
+      // can add a sales item under Sales and a purchase item under
+      // Purchases without needing a single shared group.
+      const targetGroup = entry.menuGroup || app.menuGroup;
+      if (!extraByGroup.has(targetGroup)) extraByGroup.set(targetGroup, []);
+      extraByGroup.get(targetGroup).push({ ...entry });
+    }
+  }
+
   return menuConfig.menu
-    .filter(group => !group.hidden)
-    .map(group => ({
-      ...group,
-      items: group.items.filter(item => !item.hidden),
-    }));
+    .filter(group => {
+      if (group.hidden && group.group === 'Marketplace' && appStoreUnlocked) return true;
+      return !group.hidden;
+    })
+    .map(group => {
+      const extras = extraByGroup.get(group.group) || [];
+      return {
+        ...group,
+        items: [
+          ...group.items.filter(item => !item.hidden),
+          ...extras,
+        ],
+      };
+    });
 }
 
 /**
- * Flat list of all window slugs from menu.json.
+ * Flat list of all window slugs from menu.json plus every potential menu
+ * entry from the app catalog (so route resolution never fails for an app
+ * that happens to be installed).
  */
 export function getAllWindowNames() {
-  return menuConfig.menu.flatMap(g => g.items.map(i => i.name));
+  const names = menuConfig.menu.flatMap(g => g.items.map(i => i.name));
+  for (const app of APP_CATALOG) {
+    for (const entry of app.menuEntries) {
+      if (!names.includes(entry.name)) names.push(entry.name);
+    }
+  }
+  return names;
 }
+
+/**
+ * API-only sub-windows: have a contract.json and NEO spec but are never loaded
+ * as standalone UI windows. They are consumed directly via fetch by other custom
+ * components (e.g. FiscalConfigPage fetches sii-config / tbai-config / verifactu-config).
+ * Listed here so pipeline F3 validation knows they are intentionally registry-free.
+ */
+export const apiOnlyWindows = new Set([
+  'sii-config',
+  'tbai-config',
+  'verifactu-config',
+  'sii-monitor',
+  'monitor-verifactu',
+  'tbai-facturas-enviadas',
+]);
 
 /**
  * Hand-written custom window loaders.
@@ -78,33 +132,51 @@ export function getAllWindowNames() {
  */
 const customLoaders = {
   // Auto-registered by pipeline when layoutType: "custom"
+  'fiscal-config': () => import('./custom/fiscal-config/index.jsx'),
+  'fiscal-monitor': () => import('./custom/fiscal-monitor/index.jsx'),
   'sales-order': () => import('./custom/sales-order/index.jsx'),
   'price-list': () => import('./custom/price-list/index.jsx'),
   'purchase-invoice': () => import('./custom/purchase-invoice/index.jsx'),
   'purchase-order': () => import('./custom/purchase-order/index.jsx'),
   'goods-receipt': () => import('./custom/goods-receipt/index.jsx'),
+  'physical-inventory': () => import('./custom/physical-inventory/index.jsx'),
+  'goods-movements': () => import('./custom/goods-movements/index.jsx'),
   'payment-out': () => import('./custom/payment-out/index.jsx'),
   'sales-order': () => import('./custom/sales-order/index.jsx'),
   'sales-invoice': () => import('./custom/sales-invoice/index.jsx'),
+  'sales-quotation': () => import('./custom/sales-quotation/index.jsx'),
   'warehouse': () => import('./custom/warehouse/index.jsx'),
+  'spike-hello-app': () => import('./spike-apps-host/index.jsx'),
+  'quick-order-sales': () => import('./quick-order/index.jsx'),
+  'quick-order-purchase': () => import('./quick-order/index.jsx'),
 };
 
 /**
- * Build window map with loaders for all windows in menu.json.
+ * Build window map with loaders for all windows in menu.json plus every
+ * SDK-app menu entry from the catalog (so installing an app from the
+ * App Store never hits PlaceholderWindow on first render).
+ *
  * Resolution order: customLoaders > windowLoaders > PlaceholderWindow
  */
 export function buildWindowMap() {
   const map = {};
+  const register = (item) => {
+    map[item.name] = {
+      name: item.name,
+      label: item.label,
+      contract: null,
+      loader: customLoaders[item.name]
+        || windowLoaders[item.name]
+        || (() => import('./PlaceholderWindow.jsx')),
+    };
+  };
+
   for (const group of menuConfig.menu) {
-    for (const item of group.items) {
-      map[item.name] = {
-        name: item.name,
-        label: item.label,
-        contract: null,
-        loader: customLoaders[item.name]
-          || windowLoaders[item.name]
-          || (() => import('./PlaceholderWindow.jsx')),
-      };
+    for (const item of group.items) register(item);
+  }
+  for (const app of APP_CATALOG) {
+    for (const entry of app.menuEntries) {
+      if (!map[entry.name]) register(entry);
     }
   }
   return map;

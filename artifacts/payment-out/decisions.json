@@ -4,7 +4,12 @@
     "category": "finance",
     "name": "Payment Out",
     "relatedDocuments": true,
-    "notesField": "description"
+    "notesField": "description",
+    "dateFilterKey": "paymentDate",
+    "linesLayout": "inlineEditable",
+    "customComponents": {
+      "bottomSection": "PaymentOutBottomPanel"
+    }
   },
   "entities": {
     "header": {

@@ -2,12 +2,13 @@
   "$schema": "decisions-v2",
   "version": 2,
   "window": {
-    "category": "configuracion",
+    "category": "settings",
     "name": "Payment Method",
     "detailEntity": null,
     "breadcrumb": "Settings / Payment Method",
     "hidePrint": true,
     "hideMoreMenu": true,
+    "customTabsAfterBottom": true,
     "customComponents": {
       "bottomSection": "PaymentGroupsSection"
     },

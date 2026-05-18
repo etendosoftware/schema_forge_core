@@ -6,18 +6,42 @@
     "notesField": "description",
     "relatedDocuments": true,
     "hideDeleteWhenComplete": true,
+    "menuActions": [
+      {
+        "key": "reactivate",
+        "label": "Reactivate",
+        "labelKey": "reactivate",
+        "visibleWhenStatus": "CO",
+        "visibleWhenFieldFalse": "hasLinkedDocuments",
+        "documentAction": "RE",
+        "successKey": "reactivated"
+      }
+    ],
+    "draftMode": {
+      "enabled": true,
+      "processField": "documentAction",
+      "processValue": "CO",
+      "label": "poConfirmBtn"
+    },
     "customComponents": {
       "topbarRight": "PurchaseOrderActions",
-      "topbarExtra": "PurchaseOrderDraftChips"
+      "topbarExtra": "PurchaseOrderDraftChips",
+      "bulkActions": "PurchaseOrderReactivateBulkAction",
+      "bottomSection": "PurchaseOrderBottomPanel"
     },
+    "linesLayout": "inlineEditable",
     "labelOverrides": {
       "es_ES": {
         "C_BPartner_ID": "Contacto",
-        "DatePromised": "Fecha de entrega esperada"
+        "DatePromised": "Fecha de entrega esperada",
+        "DeliveryStatusPurchase": "Estado de entrega",
+        "InvoiceStatus": "Estado de facturación"
       },
       "en_US": {
         "C_BPartner_ID": "Contact",
-        "DatePromised": "Expected Delivery Date"
+        "DatePromised": "Expected Delivery Date",
+        "DeliveryStatusPurchase": "Delivery Status",
+        "InvoiceStatus": "Invoicing Status"
       }
     },
     "secondaryTabs": {},
@@ -27,7 +51,8 @@
       "CO",
       "CL",
       "VO"
-    ]
+    ],
+    "dateFilterKey": "orderDate"
   },
   "entities": {
     "header": {
@@ -35,7 +60,7 @@
       "fields": {
         "transactionDocument": {
           "visibility": "editable",
-          "grid": true,
+          "grid": false,
           "form": false,
           "reference": "DocumentType",
           "section": "other",
@@ -44,6 +69,7 @@
         "documentNo": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 2,
           "searchable": true,
           "form": true,
           "section": "principal",
@@ -63,6 +89,7 @@
         },
         "orderDate": {
           "grid": true,
+          "gridOrder": 1,
           "searchable": true,
           "section": "principal",
           "form": true,
@@ -70,6 +97,7 @@
         },
         "businessPartner": {
           "grid": true,
+          "gridOrder": 3,
           "searchable": true,
           "reference": "BusinessPartner",
           "section": "principal",
@@ -91,9 +119,8 @@
           }
         },
         "warehouse": {
-          "grid": true,
-          "form": true,
-          "section": "collapsed"
+          "grid": false,
+          "form": false
         },
         "scheduledDeliveryDate": {
           "section": "principal",
@@ -103,15 +130,15 @@
         "paymentMethod": {
           "reference": "PaymentMethod",
           "form": true,
-          "section": "collapsed"
+          "section": "principal"
         },
         "paymentTerms": {
-          "form": false,
-          "section": "collapsed"
+          "form": true,
+          "section": "principal"
         },
         "priceList": {
-          "grid": true,
-          "section": "collapsed",
+          "grid": false,
+          "section": "principal",
           "form": true
         },
         "invoiceAddress": {
@@ -133,17 +160,21 @@
           "form": false
         },
         "orderReference": {
+          "visibility": "editable",
+          "grid": false,
+          "form": false,
           "searchable": true,
-          "form": false
+          "readOnlyLogic": null
         },
         "grandTotalAmount": {
+          "visibility": "readOnly",
           "grid": true,
-          "form": false,
-          "section": "other"
+          "gridOrder": 5,
+          "section": "summary"
         },
         "summedLineAmount": {
-          "form": false,
-          "section": "other"
+          "visibility": "readOnly",
+          "section": "summary"
         },
         "priceIncludesTax": {
           "visibility": "readOnly",
@@ -215,7 +246,7 @@
         },
         "priority": {
           "visibility": "editable",
-          "grid": true,
+          "grid": false,
           "form": false,
           "section": "other"
         },
@@ -238,11 +269,13 @@
         },
         "deliveryStatusPurchase": {
           "grid": true,
+          "gridOrder": 7,
           "form": false,
           "section": "other"
         },
         "invoiceStatus": {
           "grid": true,
+          "gridOrder": 6,
           "form": false,
           "section": "other"
         },
@@ -266,6 +299,17 @@
         "organization": {
           "visibility": "system",
           "form": false
+        },
+        "shippingCompany": {
+          "visibility": "readOnly",
+          "form": false,
+          "grid": false,
+          "reference": "Shipper",
+          "inputMode": null
+        },
+        "etgoTotalDiscount": {
+          "visibility": "editable",
+          "form": false
         }
       }
     },
@@ -278,8 +322,19 @@
         "product": {
           "grid": true,
           "form": true,
+          "lookup": true,
           "section": "principal",
-          "readOnlyLogic": null
+          "order": 1,
+          "gridOrder": 1,
+          "readOnlyLogic": null,
+          "forceCalloutFields": [
+            "listPrice",
+            "unitPrice",
+            "tax",
+            "uOM",
+            "grossUnitPrice",
+            "discount"
+          ]
         },
         "operativeQuantity": {
           "form": false,
@@ -296,6 +351,8 @@
           "grid": true,
           "form": true,
           "section": "principal",
+          "order": 3,
+          "gridOrder": 3,
           "readOnlyLogic": null
         },
         "uOM": {
@@ -305,9 +362,8 @@
           "readOnlyLogic": null
         },
         "unitPrice": {
-          "grid": true,
-          "form": true,
-          "section": "principal",
+          "grid": false,
+          "form": false,
           "readOnlyLogic": null
         },
         "grossUnitPrice": {
@@ -316,27 +372,40 @@
           "displayLogic": null
         },
         "lineNetAmount": {
-          "grid": true,
-          "form": true,
-          "section": "principal",
+          "grid": false,
+          "form": false,
           "readOnlyLogic": null
         },
         "lineGrossAmount": {
-          "form": false,
-          "displayLogic": null
+          "grid": true,
+          "form": true,
+          "section": "principal",
+          "order": 7,
+          "gridOrder": 7
         },
         "tax": {
           "grid": true,
           "form": true,
           "section": "principal",
+          "order": 6,
+          "gridOrder": 6,
           "inputMode": "selector",
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "forceCalloutFields": [
+            "lineGrossAmount",
+            "grossUnitPrice",
+            "lineNetAmount"
+          ]
         },
         "listPrice": {
-          "visibility": "readOnly",
-          "form": false,
+          "grid": true,
+          "form": true,
+          "section": "principal",
+          "order": 4,
+          "gridOrder": 4,
           "readOnlyLogic": null,
-          "displayLogic": null
+          "displayLogic": null,
+          "columnType": "amount"
         },
         "grossListPrice": {
           "form": false,
@@ -346,6 +415,8 @@
           "grid": true,
           "form": true,
           "section": "principal",
+          "order": 5,
+          "gridOrder": 5,
           "readOnlyLogic": null
         },
         "taxableAmount": {
@@ -396,11 +467,7 @@
           "inputMode": null
         },
         "businessPartner": {
-          "visibility": "readOnly",
-          "form": false,
-          "reference": "BusinessPartner",
-          "inputMode": null,
-          "readOnlyLogic": null
+          "visibility": "discarded"
         },
         "partnerAddress": {
           "visibility": "readOnly",
@@ -448,8 +515,11 @@
           "displayLogic": null
         },
         "description": {
-          "form": false,
-          "displayLogic": null
+          "grid": true,
+          "form": true,
+          "section": "principal",
+          "order": 2,
+          "gridOrder": 2
         },
         "managePrereservation": {
           "visibility": "discarded",

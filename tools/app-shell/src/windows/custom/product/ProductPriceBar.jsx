@@ -3,6 +3,8 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { useUI } from '@/i18n';
+import { useCurrency } from '@/hooks/useCurrency';
+import { formatCurrency } from '@/lib/formatCurrency';
 import {
   Dialog,
   DialogContent,
@@ -10,11 +12,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-
-function formatPrice(v) {
-  if (v === null || v === undefined) return '—';
-  return Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
 
 function parseBoolean(value) {
   if (typeof value === 'boolean') return value;
@@ -137,6 +134,7 @@ function resolveOptionId(options, candidate) {
 
 function PriceTable({ title, rows, variant = 'neutral' }) {
   const ui = useUI();
+  const orgCurrency = useCurrency() ?? 'USD';
   const isEmpty = !rows || rows.length === 0;
   const tone = variant === 'sales'
     ? {
@@ -192,13 +190,12 @@ function PriceTable({ title, rows, variant = 'neutral' }) {
               {rows.map((row, idx) => {
                 const unitPrice = Number(row.standardPrice) || 0;
                 const listPrice = Number(row.listPrice) || 0;
-                const currency = row.currencySymbol ?? '€';
                 const name = row['priceListVersion$_identifier'] || row['priceList$_identifier'] || 'Unknown';
                 return (
                   <tr key={row.id} className={`${idx > 0 ? 'border-t border-gray-100' : ''}`}>
                     <td className="px-4 py-3 text-sm font-medium text-gray-800 truncate">{name}</td>
-                    <td className="w-36 px-4 py-3 text-sm text-gray-500 text-right">{formatPrice(unitPrice)} {currency}</td>
-                    <td className={`w-36 px-4 py-3 text-sm font-bold text-right ${tone.listPrice}`}>{formatPrice(listPrice)} {currency}</td>
+                    <td className="w-36 px-4 py-3 text-sm text-gray-500 text-right">{formatCurrency(orgCurrency, unitPrice)}</td>
+                    <td className={`w-36 px-4 py-3 text-sm font-bold text-right ${tone.listPrice}`}>{formatCurrency(orgCurrency, listPrice)}</td>
                   </tr>
                 );
               })}
@@ -487,9 +484,9 @@ function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSav
               </colgroup>
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="w-full text-left px-3 py-2 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Name</th>
-                  <th className="whitespace-nowrap text-right px-3 py-2 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Unit Price</th>
-                  <th className="whitespace-nowrap text-right px-3 py-2 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">List Price</th>
+                  <th className="w-full text-left px-3 py-2 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">{ui('priceColName')}</th>
+                  <th className="whitespace-nowrap text-right px-3 py-2 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">{ui('priceColUnitPrice')}</th>
+                  <th className="whitespace-nowrap text-right px-3 py-2 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">{ui('priceColListPrice')}</th>
                   <th className="w-14" />
                 </tr>
               </thead>
@@ -526,7 +523,7 @@ function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSav
                         <button
                           type="button"
                           onClick={() => handleDeleteRow(row.id)}
-                          title="Remove"
+                          title={ui('priceRemove')}
                           className="w-6 h-6 flex items-center justify-center rounded border border-gray-200 bg-white text-gray-400 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors disabled:opacity-40"
                         >
                           <span className="text-[11px] leading-none">✕</span>
@@ -545,7 +542,7 @@ function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSav
                         className={`w-full text-sm border border-gray-200 rounded-md px-2 py-1 bg-white focus:outline-none focus:ring-1 ${tone.focus}`}
                         autoFocus
                       >
-                        <option value="">Select version…</option>
+                        <option value="">{ui('priceSelectVersion')}</option>
                         {options.map(opt => {
                           const id = extractReferenceId(opt.id);
                           return (
@@ -562,7 +559,7 @@ function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSav
                         step="0.01"
                         value={pending.stdPrice}
                         onChange={e => setPending(p => ({ ...p, stdPrice: e.target.value }))}
-                        placeholder="0.00"
+                        placeholder={ui('priceZeroPlaceholder')}
                         className={`w-28 text-right text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-1 ${tone.focus}`}
                       />
                     </td>
@@ -572,7 +569,7 @@ function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSav
                         step="0.01"
                         value={pending.listPrice}
                         onChange={e => setPending(p => ({ ...p, listPrice: e.target.value }))}
-                        placeholder="0.00"
+                        placeholder={ui('priceZeroPlaceholder')}
                         className={`w-28 text-right text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-1 ${tone.focus}`}
                       />
                     </td>
@@ -581,7 +578,7 @@ function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSav
                         <button
                           type="button"
                           onClick={() => setPending(null)}
-                          title="Cancel"
+                          title={ui('cancel')}
                           className="w-6 h-6 flex items-center justify-center rounded border border-gray-200 bg-white text-gray-500 hover:bg-gray-100 transition-colors text-xs"
                         >
                           ✕
@@ -590,7 +587,7 @@ function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSav
                           type="button"
                           onClick={() => handleAddRow(pending, setPending, options, variant)}
                           disabled={!pending.plvId}
-                          title="Add"
+                          title={ui('add')}
                           className="w-6 h-6 flex items-center justify-center rounded border border-transparent bg-gray-900 text-white hover:bg-gray-700 transition-colors disabled:opacity-40 text-xs"
                         >
                           ✓
@@ -1037,29 +1034,29 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
       ) : creating && !hasRows ? (
         <div className="flex gap-3">
           <div className="flex-1 rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-sm font-semibold text-gray-800 mb-1">Sales price</div>
-            <p className="text-xs text-gray-400 mb-3">Initial price used for sales lists.</p>
+            <div className="text-sm font-semibold text-gray-800 mb-1">{ui('priceSalesPrice')}</div>
+            <p className="text-xs text-gray-400 mb-3">{ui('priceSalesDescription')}</p>
             <input
               type="number"
               step="0.01"
               value={saleDraft}
               onChange={e => setSaleDraft(e.target.value)}
               onKeyDown={handleCreateKeyDown}
-              placeholder="0.00"
+              placeholder={ui('priceZeroPlaceholder')}
               className="w-full text-2xl font-bold text-gray-900 bg-transparent border-0 outline-none focus:ring-0 p-0"
               autoFocus
             />
           </div>
           <div className="flex-1 rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-sm font-semibold text-gray-800 mb-1">Purchase price</div>
-            <p className="text-xs text-gray-400 mb-3">Initial price used for purchase lists.</p>
+            <div className="text-sm font-semibold text-gray-800 mb-1">{ui('pricePurchasePrice')}</div>
+            <p className="text-xs text-gray-400 mb-3">{ui('pricePurchaseDescription')}</p>
             <input
               type="number"
               step="0.01"
               value={purchaseDraft}
               onChange={e => setPurchaseDraft(e.target.value)}
               onKeyDown={handleCreateKeyDown}
-              placeholder="0.00"
+              placeholder={ui('priceZeroPlaceholder')}
               className="w-full text-2xl font-bold text-gray-900 bg-transparent border-0 outline-none focus:ring-0 p-0"
             />
           </div>

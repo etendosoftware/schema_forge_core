@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { DataTable } from '@/components/contract-ui';
+import { AddLineButton } from '@/components/ui/add-line-button';
+import { useUI, useMenuLabel } from '@/i18n';
 import { Trash2, X } from 'lucide-react';
 
 function ConfirmDeleteModal({ onConfirm, onCancel }) {
@@ -54,6 +56,8 @@ function toNumber(value) {
 }
 
 export default function PriceListProductPrices({ recordId, data, token, apiBaseUrl, editing }) {
+  const ui = useUI();
+  const tMenu = useMenuLabel();
   const [versionId, setVersionId] = useState(null);
   const [lines, setLines] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,19 +77,22 @@ export default function PriceListProductPrices({ recordId, data, token, apiBaseU
   const parentId = data?.id || (recordId !== 'new' ? recordId : null);
   const selectorContext = useMemo(() => (versionId ? { parentId: versionId } : {}), [versionId]);
 
+  // The price list GET response carries the single version id under `priceListVersion`
+  // (injected by PriceListHeaderHandler.afterHandle). One list = one version, enforced
+  // by PriceListVersionEventHandler — no need to fetch and pick versions[0].
+  const versionFromRecord = data?.priceListVersion || null;
+
   const loadProductPrices = useCallback(async () => {
     if (!parentId || !token || !apiBaseUrl) {
       setVersionId(null); setLines([]); setLoading(false); return;
     }
+    if (!versionFromRecord) {
+      setVersionId(null); setLines([]); setLoading(false); return;
+    }
     setLoading(true); setError(null);
     try {
-      const versionRes = await fetch(`${apiBaseUrl}/priceListVersion?parentId=${parentId}&_startRow=0&_endRow=10`, { headers });
-      if (!versionRes.ok) throw new Error(await readErrorMessage(versionRes));
-      const versions = rowsFrom(await versionRes.json());
-      const version = versions[0] ?? null;
-      if (!version?.id) { setVersionId(null); setLines([]); setLoading(false); return; }
-      setVersionId(version.id);
-      const lineRes = await fetch(`${apiBaseUrl}/productPrice?parentId=${version.id}&_startRow=0&_endRow=200`, { headers });
+      setVersionId(versionFromRecord);
+      const lineRes = await fetch(`${apiBaseUrl}/productPrice?parentId=${versionFromRecord}&_startRow=0&_endRow=200`, { headers });
       if (!lineRes.ok) throw new Error(await readErrorMessage(lineRes));
       setLines(rowsFrom(await lineRes.json()));
       setLoading(false);
@@ -93,7 +100,7 @@ export default function PriceListProductPrices({ recordId, data, token, apiBaseU
       setError(err?.message || 'Failed to load product prices');
       setVersionId(null); setLines([]); setLoading(false);
     }
-  }, [apiBaseUrl, headers, parentId, token]);
+  }, [apiBaseUrl, headers, parentId, token, versionFromRecord]);
 
   useEffect(() => { void loadProductPrices(); }, [loadProductPrices]);
 
@@ -210,12 +217,12 @@ export default function PriceListProductPrices({ recordId, data, token, apiBaseU
           )}
 
           {canAddProducts && !adding && (
-            <button
-              onClick={() => { setAdding(true); closeSidePanel(); }}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium px-1 py-1 transition-colors"
-            >
-              + Add Product
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, borderTop: '0.5px solid var(--color-border-tertiary, #e5e7eb)', padding: '10px 16px' }}>
+              <AddLineButton
+                onClick={() => { setAdding(true); closeSidePanel(); }}
+                label={ui('addEntity', { label: tMenu('Product') })}
+              />
+            </div>
           )}
         </div>
 

@@ -57,6 +57,42 @@ describe('detectDuplicatedBlocks', () => {
 
     assert.deepEqual(detectDuplicatedBlocks(diff), []);
   });
+
+  it('ignores duplicated blocks in artifact files', () => {
+    const block = [
+      '+"key": "cancel",',
+      '+"label": "Cancel",',
+      '+"labelKey": "cancel",',
+      '+"destructive": true,',
+      '+"visibleWhenStatus": "CO",',
+      '+"documentAction": "CL"',
+    ].join('\n');
+
+    const diff = [
+      makeDiff('artifacts/sales-invoice/decisions.json', block),
+      makeDiff('artifacts/sales-invoice/contract.json', block),
+    ].join('\n');
+
+    assert.deepEqual(detectDuplicatedBlocks(diff), []);
+  });
+
+  it('ignores duplicated blocks in generated dependency lockfiles', () => {
+    const block = [
+      '+      "version": "4.59.0",',
+      '+      "resolved": "https://registry.npmjs.org/pkg/-/pkg-4.59.0.tgz",',
+      '+      "integrity": "sha512-test",',
+      '+      "cpu": [',
+      '+        "x64"',
+      '+      ]',
+    ].join('\n');
+
+    const diff = [
+      makeDiff('package-lock.json', block),
+      makeDiff('tools/app-shell/package-lock.json', block),
+    ].join('\n');
+
+    assert.deepEqual(detectDuplicatedBlocks(diff), []);
+  });
 });
 
 describe('analyzeChangedFiles', () => {
@@ -86,6 +122,40 @@ describe('analyzeChangedFiles', () => {
     assert.ok(findings.some((finding) => finding.code === 'ENV_FILE_COMMITTED' && finding.severity === 'blocker'));
     assert.ok(findings.some((finding) => finding.code === 'WRONG_DIRECTORY' && finding.severity === 'blocker'));
     assert.ok(findings.some((finding) => finding.code === 'NEW_DEPENDENCY' && finding.severity === 'warning'));
+  });
+
+  it('does not flag comments that merely mention ESM re-exports', () => {
+    const findings = analyzeChangedFiles({
+      changedFiles: ['packages/apps-sdk/src/index.js'],
+      newSourceFiles: [],
+      newTestFiles: [],
+      fileContents: {
+        'packages/apps-sdk/src/index.js': '// Public API re-exports.\nexport { createShellClient } from "./shellClient.js";\n',
+      },
+      packageJsonChanges: [],
+      addedLineContents: {
+        'packages/apps-sdk/src/index.js': ['// Public API re-exports.'],
+      },
+    });
+
+    assert.ok(!findings.some((finding) => finding.code === 'COMMONJS_USAGE'));
+  });
+
+  it('does not flag block comments that mention CommonJS exports', () => {
+    const findings = analyzeChangedFiles({
+      changedFiles: ['packages/apps-sdk/src/index.js'],
+      newSourceFiles: [],
+      newTestFiles: [],
+      fileContents: {
+        'packages/apps-sdk/src/index.js': '/* module.exports is mentioned only in docs */\nexport { createShellClient } from "./shellClient.js";\n',
+      },
+      packageJsonChanges: [],
+      addedLineContents: {
+        'packages/apps-sdk/src/index.js': ['/* module.exports is mentioned only in docs */'],
+      },
+    });
+
+    assert.ok(!findings.some((finding) => finding.code === 'COMMONJS_USAGE'));
   });
 });
 

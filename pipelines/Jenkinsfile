@@ -1,0 +1,513 @@
+pipeline {
+    environment { // MARK: - Environment Variables
+        // --- Database (used by ./gradlew install) ---
+        CONTEXT_NAME        = 'etendo'
+        BBDD_SID            = 'etendo'
+        BBDD_PORT           = '5432'
+        BBDD_SYSTEMUSER     = 'postgres'
+        BBDD_SYSTEMPASS     = 'syspass'
+        BBDD_USER           = 'tad'
+        BBDD_PASSWORD       = 'tad'
+
+        // --- Credentials ---
+        NEXUS_USER          = credentials('nexus-admin-user')
+        NEXUS_PASSWORD      = credentials('nexus-admin-passwd')
+        GITHUB_USER         = 'etendobot'
+        GITHUB_TOKEN        = credentials('github-read-package-token')
+        ACCESS_TOKEN        = credentials('access_token_github')
+        EMAIL_ADDRESS       = credentials('email_builds')
+
+        // --- Repositories ---
+        REPOSITORY_NAME     = 'etendo_schema_forge'
+        URL_REPO            = 'https://github.com/etendosoftware/etendo_schema_forge'
+        SCHEMA_FORGE_SSH    = 'git@github.com:etendosoftware/etendo_schema_forge.git'
+        CORE_URL_REPO       = 'https://github.com/etendosoftware/etendo_core'
+        GO_MODULE_SSH       = 'git@github.com:etendosoftware/com.etendoerp.go.git'
+        GO_MODULE_NAME      = 'com.etendoerp.go'
+        // Newline-separated list of extra module SSH URLs cloned into
+        // ${CORE_DIR}/modules/ and aligned with the same branch strategy.
+        // Used when a published module version is missing recent changes.
+        EXTRA_MODULES_FILE  = 'pipelines/extra-modules.txt'
+
+        // --- Layout ---
+        CORE_DIR            = 'etendo_core'                                   // ${WORKSPACE}/etendo_core
+        SCHEMA_FORGE_DIR    = "${CORE_DIR}/etendo_schema_forge"               // sibling of modules/
+        GO_MODULE_DIR       = "${CORE_DIR}/modules/${GO_MODULE_NAME}"
+
+        // --- Build env ---
+        JAVA_HOME           = '/usr/lib/jvm/java-17-openjdk-amd64'
+        NODE_VERSION        = '22'
+
+        // --- GitHub commit status ---
+        CONTEXT_BUILD            = 'Etendo GO Regeneration check'
+        COMMIT_INPROGRESS_STATUS = 'pending'
+        COMMIT_SUCCESS_STATUS    = 'success'
+        COMMIT_FAILED_STATUS     = 'failure'
+
+        // --- Result constants ---
+        SUCCESS  = 'SUCCESS'
+        FAILED   = 'FAILED'
+        UNSTABLE = 'UNSTABLE'
+        TRUE     = 'true'
+        FALSE    = 'false'
+
+        DEVELOP_BRANCH = 'develop'
+        MAIN_BRANCH    = 'main'
+
+        // --- Jira (used to resolve the parent epic of a feature branch) ---
+        JIRA_ACCESS_TOKEN = credentials('jira-access-token')
+        JIRA_BASE_URL     = credentials('jira-url')
+
+        // --- Commit metadata for emails ---
+        COMMIT_AUTHOR_NAME  = sh(returnStdout: true, script: "git log -1 --pretty=format:'%an'").trim()
+        COMMIT_AUTHOR_EMAIL = sh(returnStdout: true, script: "git log -1 --pretty=format:'%ae'").trim()
+    }
+
+    agent { // MARK: - Agent
+        kubernetes {
+            inheritFrom 'default'
+            defaultContainer 'jnlp'
+            yamlFile 'pipelines/Agent.yaml'
+        }
+    }
+
+    options { // MARK: - Options
+        timeout(time: 90, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+    }
+
+    stages { // MARK: - Stages
+        stage('Preflight') { // MARK: - Stage 0 (sanity check tooling)
+            steps {
+                container('compiler') {
+                    script {
+                        // Verifies the compiler image has every CLI we depend on.
+                        // Fails loudly so the operator updates the image instead of
+                        // hitting cryptic errors mid-pipeline (e.g. silent Jira fallback
+                        // when `jq` is missing).
+                        def required = ['rsync', 'curl', 'make', 'jq', 'git']
+                        def missing  = []
+                        for (tool in required) {
+                            def rc = sh(script: "command -v ${tool} >/dev/null 2>&1", returnStatus: true)
+                            if (rc != 0) {
+                                missing << tool
+                            }
+                        }
+                        if (missing) {
+                            echo "---------------------- 🚨 Missing tools in compiler image: ${missing.join(', ')} ----------------------"
+                            // Try to install the missing pieces on Debian-based images.
+                            // If apt-get is also missing, we fail with a clear message.
+                            def aptOk = sh(script: 'command -v apt-get >/dev/null 2>&1', returnStatus: true)
+                            if (aptOk == 0) {
+                                sh "apt-get update && apt-get install -y ${missing.join(' ')}"
+                            } else {
+                                error("Compiler image lacks required tools (${missing.join(', ')}) and apt-get is not available. Update the image.")
+                            }
+                        } else {
+                            echo '✅ All required tools present (rsync, curl, make, jq, git)'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Checkout & Align Branches') { // MARK: - Stage 1
+            steps {
+                container('compiler') {
+                    script {
+                        try {
+                            sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_INPROGRESS_STATUS} \"Checkout & Align Branches\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
+
+                            env.REPOS_INFO = ''
+
+                            // -------- Branch resolution strategy (mirrors RX pipeline) --------
+                            // 1. If GIT_BRANCH is feature/ETP-XXXX (optionally with a -YNN suffix), ask
+                            //    Jira for the parent epic key and build an `epic/ETP-PARENT[-YNN]` branch.
+                            // 2. Per-repo checkout order:
+                            //      feature/*  → epic/PARENT || develop      (then GIT_BRANCH wins if it exists)
+                            //      hotfix/*   → main                        (no develop fallback)
+                            //      other      → develop                     (then GIT_BRANCH wins if it exists)
+                            //    The final `git checkout ${GIT_BRANCH}` step always runs and overrides
+                            //    when the exact branch exists in that repo.
+                            def isFeatureBranch = env.GIT_BRANCH?.startsWith('feature/')
+                            def isHotfixBranch  = env.GIT_BRANCH?.startsWith('hotfix/')
+                            env.EPIC_BRANCH = ''
+                            if (isFeatureBranch) {
+                                def taskName = env.GIT_BRANCH.replaceAll('feature/', '').replaceAll('-Y\\d+', '')
+                                echo "---------------------- Resolving parent epic via Jira (task=${taskName}) ----------------------"
+                                def epicKey = sh(
+                                    script: "bash ./pipelines/utils/jira/jira-utils.sh ${taskName} ${JIRA_BASE_URL} ${JIRA_ACCESS_TOKEN}",
+                                    returnStdout: true
+                                ).trim()
+                                if (epicKey) {
+                                    if (env.GIT_BRANCH.contains('-Y')) {
+                                        env.EPIC_BRANCH = "epic/${epicKey}-Y${env.GIT_BRANCH.split('-Y')[1]}"
+                                    } else {
+                                        env.EPIC_BRANCH = "epic/${epicKey}"
+                                    }
+                                    echo "Epic Branch resolved: ${env.EPIC_BRANCH}"
+                                } else {
+                                    // TODO: Jira should always resolve the parent epic for a feature branch.
+                                    // If we hit this, the Jira ticket is missing the Epic Link — fix it there.
+                                    // Meanwhile, fall back to the current working epic so the build keeps
+                                    // matching what etendo_core hardcodes below.
+                                    env.EPIC_BRANCH = 'epic/ETP-3504'
+                                    echo "⚠️ No parent epic returned by Jira for ${taskName} — defaulting EPIC_BRANCH to ${env.EPIC_BRANCH}. Fix the Jira ticket's Epic Link."
+                                }
+                            }
+
+                            // Builds the per-repo `git checkout` chain.
+                            def checkoutChain = { ->
+                                def steps = []
+                                if (isHotfixBranch) {
+                                    steps << "git checkout ${MAIN_BRANCH}"
+                                } else if (isFeatureBranch && env.EPIC_BRANCH) {
+                                    steps << "git checkout ${env.EPIC_BRANCH} || git checkout ${DEVELOP_BRANCH}"
+                                } else {
+                                    steps << "git checkout ${DEVELOP_BRANCH}"
+                                }
+                                // Always try the exact branch last — wins if it exists in the target repo.
+                                steps << "git checkout ${env.GIT_BRANCH} || echo 'Branch ${env.GIT_BRANCH} not found, keeping previous checkout'"
+                                return steps.join('\n')
+                            }
+                            def coreCheckout = checkoutChain()
+                            def goCheckout   = checkoutChain()
+                            def sfCheckout   = checkoutChain()
+
+                            // TODO: Remove this block to restore normal branch resolution for etendo_core
+                            if (!isHotfixBranch && !(isFeatureBranch && env.EPIC_BRANCH)) {
+                                coreCheckout = "git checkout epic/ETP-3504"
+                                echo "Hardcoding etendo_core checkout to epic/ETP-3504"
+                            }
+                            echo "Checkout chain for etendo_core / com.etendoerp.go / schema_forge:\n${coreCheckout}"
+
+                            withCredentials([sshUserPrivateKey(credentialsId: 'my-credentials', keyFileVariable: 'keyfile')]) {
+                                def sshCmd = "ssh -i ${keyfile} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+
+                                echo '---------------------- Cloning etendo_core ----------------------'
+                                sh """
+                                    GIT_SSH_COMMAND='${sshCmd}' git clone ${CORE_URL_REPO} ${CORE_DIR}
+                                    cd ${CORE_DIR}
+                                    ${coreCheckout}
+                                """
+
+                                echo '---------------------- Cloning com.etendoerp.go ----------------------'
+                                sh """
+                                    mkdir -p ${CORE_DIR}/modules
+                                    cd ${CORE_DIR}/modules
+                                    GIT_SSH_COMMAND='${sshCmd}' git clone ${GO_MODULE_SSH}
+                                    cd ${GO_MODULE_NAME}
+                                    ${goCheckout}
+                                """
+
+                                // Extra modules: cloned BEFORE schema_forge so they sit under modules/
+                                // and follow the same branch resolution chain as core / go.
+                                env.EXTRA_MODULE_NAMES = ''
+                                if (fileExists(env.EXTRA_MODULES_FILE)) {
+                                    def extraCheckout = checkoutChain()
+                                    def extraModules = readFile(env.EXTRA_MODULES_FILE)
+                                        .split('\n')
+                                        .collect { it.replaceAll(/#.*$/, '').trim() }
+                                        .findAll { it }
+                                    def names = []
+                                    def hardcodedBranchModules = [
+                                        'com.etendoerp.sif.general',
+                                        'com.smf.ticketbai',
+                                        'com.etendoerp.verifactu',
+                                        'org.openbravo.module.aeat347apr.es',
+                                        'org.openbravo.module.aeat390.es',
+                                        'org.openbravo.module.intrastat',
+                                        'org.openbravo.module.sii',
+                                        'org.openbravo.module.taxreportlauncher'
+                                    ]
+
+                                    extraModules.each { repoUrl ->
+                                        def moduleName = repoUrl.tokenize('/').last().replaceAll(/\.git$/, '')
+                                        names << moduleName
+                                        echo "---------------------- Cloning extra module ${moduleName} ----------------------"
+
+                                        // TODO: Remove this block to restore normal branch resolution
+                                        def currentExtraCheckout = extraCheckout
+                                        if (hardcodedBranchModules.contains(moduleName)) {
+                                            currentExtraCheckout = "git checkout epic/ETP-3504"
+                                            echo "Hardcoding branch epic/ETP-3504 for module ${moduleName}"
+                                        }
+
+                                        sh """
+                                            cd ${CORE_DIR}/modules
+                                            GIT_SSH_COMMAND='${sshCmd}' git clone ${repoUrl}
+                                            cd ${moduleName}
+                                            ${currentExtraCheckout}
+                                        """
+                                    }
+                                    env.EXTRA_MODULE_NAMES = names.join(',')
+                                } else {
+                                    echo "No extra modules file at ${env.EXTRA_MODULES_FILE} — skipping."
+                                }
+
+                                echo '---------------------- Cloning etendo_schema_forge as sibling of modules/ ----------------------'
+                                // db.js auto-discovers gradle.properties relative to cli/src/db.js,
+                                // which only works if schema_forge sits at {etendo_root}/etendo_schema_forge/.
+                                sh """
+                                    GIT_SSH_COMMAND='${sshCmd}' git clone ${SCHEMA_FORGE_SSH} ${SCHEMA_FORGE_DIR}
+                                    cd ${SCHEMA_FORGE_DIR}
+                                    ${sfCheckout}
+                                """
+                            }
+
+                            // Allow Jenkins agent (different UID than the compiler container) to create
+                            // the `<dir>@tmp` siblings required by the `dir()` step in later stages.
+                            sh "chmod -R a+rwX ${CORE_DIR}"
+
+                            // Record the resolved branches for the failure email.
+                            def coreBranch = sh(script: "cd ${CORE_DIR} && git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                            def goBranch   = sh(script: "cd ${GO_MODULE_DIR} && git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                            def sfBranch   = sh(script: "cd ${SCHEMA_FORGE_DIR} && git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                            def extraInfo = ''
+                            if (env.EXTRA_MODULE_NAMES?.trim()) {
+                                env.EXTRA_MODULE_NAMES.split(',').each { name ->
+                                    def br = sh(script: "cd ${CORE_DIR}/modules/${name} && git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                                    extraInfo += "<li>${name}: ${br}</li>"
+                                }
+                            }
+                            env.REPOS_INFO = "<em>🧲 Branches in use:</em><br><ul>" +
+                                "<li>schema_forge: ${sfBranch}</li>" +
+                                "<li>etendo_core: ${coreBranch}</li>" +
+                                "<li>${GO_MODULE_NAME}: ${goBranch}</li>" +
+                                extraInfo +
+                                "</ul>"
+                            echo "${env.REPOS_INFO}"
+
+                            currentBuild.result = SUCCESS
+                        } catch (Exception e) {
+                            env.ERROR_MESSAGE = 'Checkout & Align Branches Failed'
+                            echo "---------------------- ${env.ERROR_MESSAGE} ----------------------"
+                            echo 'Exception occurred: ' + e.toString()
+                            currentBuild.result = FAILED
+                            error(env.ERROR_MESSAGE)
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Install Etendo (DB)') { // MARK: - Stage 2
+            when { expression { currentBuild.result == SUCCESS } }
+            steps {
+                container('compiler') {
+                    script {
+                        try {
+                            sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_INPROGRESS_STATUS} \"Install Etendo (DB)\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
+
+                            echo '---------------------- Writing gradle.properties ----------------------'
+                            dir(CORE_DIR) {
+                                sh """
+                                cat > gradle.properties <<EOF
+context.name=${CONTEXT_NAME}
+bbdd.sid=${BBDD_SID}
+bbdd.port=${BBDD_PORT}
+bbdd.systemUser=${BBDD_SYSTEMUSER}
+bbdd.systemPassword=${BBDD_SYSTEMPASS}
+bbdd.user=${BBDD_USER}
+bbdd.password=${BBDD_PASSWORD}
+nexusUser=${NEXUS_USER}
+nexusPassword=${NEXUS_PASSWORD}
+githubUser=${GITHUB_USER}
+githubToken=${GITHUB_TOKEN}
+allow.root=true
+org.gradle.jvmargs=-Dfile.encoding=UTF-8
+org.gradle.daemon=false
+EOF
+                                """
+                                echo '---------------------- ./gradlew install ----------------------'
+                                sh './gradlew prepareConfig --info --stacktrace'
+                                sh './gradlew setup --info --stacktrace'
+                                sh './gradlew expandModules --info --stacktrace'
+                                sh './gradlew install -PignoreConsistency=true --info --stacktrace'
+                            }
+                            currentBuild.result = SUCCESS
+                        } catch (Exception e) {
+                            env.ERROR_MESSAGE = 'Install Etendo (DB) Failed'
+                            echo "---------------------- ${env.ERROR_MESSAGE} ----------------------"
+                            echo 'Exception occurred: ' + e.toString()
+                            currentBuild.result = FAILED
+                            error(env.ERROR_MESSAGE)
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Schema Forge Regen') { // MARK: - Stage 3
+            when { expression { currentBuild.result == SUCCESS } }
+            steps {
+                container('compiler') {
+                    script {
+                        try {
+                            sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_INPROGRESS_STATUS} \"Schema Forge Regen\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
+
+                            echo '---------------------- Installing Node.js ----------------------'
+                            sh """
+                                if ! command -v node >/dev/null 2>&1 || [ "\$(node -p 'process.versions.node.split(\".\")[0]')" -lt ${NODE_VERSION} ]; then
+                                    curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash -
+                                    apt-get install -y nodejs
+                                fi
+                                node --version
+                                npm --version
+                            """
+
+                            dir(SCHEMA_FORGE_DIR) {
+                                echo '---------------------- npm install ----------------------'
+                                sh 'npm ci || npm install'
+
+                                echo '---------------------- make regen PUSH_TO_NEO=1 ----------------------'
+                                // ONLY is intentionally omitted → regenerates ALL active windows.
+                                sh 'make regen PUSH_TO_NEO=1'
+                            }
+                            currentBuild.result = SUCCESS
+                        } catch (Exception e) {
+                            env.ERROR_MESSAGE = 'Schema Forge Regen Failed'
+                            echo "---------------------- ${env.ERROR_MESSAGE} ----------------------"
+                            echo 'Exception occurred: ' + e.toString()
+                            currentBuild.result = FAILED
+                            error(env.ERROR_MESSAGE)
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Export Database') { // MARK: - Stage 4
+            when { expression { currentBuild.result == SUCCESS } }
+            steps {
+                container('compiler') {
+                    script {
+                        try {
+                            sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_INPROGRESS_STATUS} \"Export Database\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
+
+                            dir(CORE_DIR) {
+                                echo '---------------------- ./gradlew export.database ----------------------'
+                                // -Dallow.root: Etendo's build.xml refuses ant tasks under root unless this is set as a system prop.
+                                sh './gradlew export.database -Dallow.root=true --info --stacktrace'
+                            }
+                            currentBuild.result = SUCCESS
+                        } catch (Exception e) {
+                            env.ERROR_MESSAGE = 'Export Database Failed'
+                            echo "---------------------- ${env.ERROR_MESSAGE} ----------------------"
+                            echo 'Exception occurred: ' + e.toString()
+                            currentBuild.result = FAILED
+                            error(env.ERROR_MESSAGE)
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Verify No Local Changes') { // MARK: - Stage 5
+            when { expression { currentBuild.result == SUCCESS } }
+            steps {
+                container('compiler') {
+                    script {
+                        try {
+                            sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_INPROGRESS_STATUS} \"Verify No Local Changes\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
+
+                            def sfDirty = sh(script: "cd ${SCHEMA_FORGE_DIR} && git status --porcelain", returnStdout: true).trim()
+                            def goDirty = sh(script: "cd ${GO_MODULE_DIR} && git status --porcelain", returnStdout: true).trim()
+                            def extraDirty = false
+                            if (env.EXTRA_MODULE_NAMES?.trim()) {
+                                env.EXTRA_MODULE_NAMES.split(',').each { name ->
+                                    def d = sh(script: "cd ${CORE_DIR}/modules/${name} && git status --porcelain", returnStdout: true).trim()
+                                    if (d) {
+                                        echo "---------------------- 🚨 Uncommitted changes in ${name} ----------------------"
+                                        sh "cd ${CORE_DIR}/modules/${name} && git status && git --no-pager diff"
+                                        extraDirty = true
+                                    } else {
+                                        echo "✅ ${name} clean"
+                                    }
+                                }
+                            }
+
+                            if (sfDirty) {
+                                echo '---------------------- 🚨 Uncommitted changes in schema_forge ----------------------'
+                                sh "cd ${SCHEMA_FORGE_DIR} && git status && git --no-pager diff"
+                            } else {
+                                echo '✅ schema_forge clean'
+                            }
+
+                            if (goDirty) {
+                                echo "---------------------- 🚨 Uncommitted changes in ${GO_MODULE_NAME} ----------------------"
+                                sh "cd ${GO_MODULE_DIR} && git status && git --no-pager diff"
+                            } else {
+                                echo "✅ ${GO_MODULE_NAME} clean"
+                            }
+
+                            if (sfDirty || goDirty || extraDirty) {
+                                env.ERROR_MESSAGE = 'Pipeline produced uncommitted changes — regenerated artifacts are out of sync with the repo'
+                                error(env.ERROR_MESSAGE)
+                            }
+                            currentBuild.result = SUCCESS
+                        } catch (Exception e) {
+                            if (!env.ERROR_MESSAGE) {
+                                env.ERROR_MESSAGE = 'Verify No Local Changes Failed'
+                            }
+                            echo "---------------------- ${env.ERROR_MESSAGE} ----------------------"
+                            echo 'Exception occurred: ' + e.toString()
+                            currentBuild.result = FAILED
+                            error(env.ERROR_MESSAGE)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post { // MARK: - Post Actions
+        failure {
+            script {
+                env.EMAIL_SUBJECT = env.ERROR_MESSAGE ?: 'Build Failed'
+                sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_FAILED_STATUS} \"${env.EMAIL_SUBJECT}\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
+                echo "---------------------- ${env.EMAIL_SUBJECT} ----------------------"
+            }
+            mail to: EMAIL_ADDRESS,
+                subject: "⛔ ${env.EMAIL_SUBJECT} - ${currentBuild.fullDisplayName}",
+                mimeType: 'text/html',
+                body: """
+                <html>
+                    <head>
+                        <style>
+                            body { font-family: 'Arial', sans-serif; }
+                            .header { font-size: 16px; font-weight: bold; color: #FF0000; }
+                        </style>
+                    </head>
+                    <body>
+                        <p><em>${new Date()}</em></p>
+                        <p>__________________________________________________________</p>
+
+                        <h2 class="header">🚫 ${env.EMAIL_SUBJECT} 🚫</h2>
+
+                        <p><strong>Reason ⇢ <em>${env.ERROR_MESSAGE}</em></strong></p>
+
+                        <p>
+                            <strong>• Commit:</strong> <a href="${URL_REPO}/commits/${env.GIT_COMMIT}">${URL_REPO}/commits/${env.GIT_COMMIT}</a><br />
+                            <strong>• Author:</strong> ${COMMIT_AUTHOR_NAME} (${COMMIT_AUTHOR_EMAIL})
+                        </p>
+
+                        ${env.REPOS_INFO ?: ''}
+
+                        <p>
+                            The Schema Forge pipeline has failed.<br />
+                            💡 This build provisions a full Etendo Core + com.etendoerp.go environment, runs <code>make regen PUSH_TO_NEO=1</code>, and then <code>./gradlew export.database</code>.<br />
+                            For more information visit:<br />
+                            <a href="${env.BUILD_URL}">${env.BUILD_URL}</a>
+                        </p>
+                __________________________________________________________
+                """
+        }
+        success {
+            script {
+                sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_SUCCESS_STATUS} \"Pipeline Finalized Successfully\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
+                echo '---------------------- DONE ----------------------'
+            }
+        }
+    }
+}

@@ -1,103 +1,244 @@
 {
-  "version": "0.1.0",
-  "generatedAt": "2026-03-06T17:20:29.162Z",
-  "checksum": "342fcd959903067f",
+  "version": "0.4.0",
+  "generatedAt": "2026-04-27T19:18:32.198Z",
+  "updatedAt": "2026-05-12T19:44:34.781Z",
+  "checksum": "aa192c547dd1acc6",
   "frontendContract": {
     "window": {
       "id": "137",
       "name": "Tax Rate",
       "primaryEntity": "tax",
-      "category": "configuracion"
+      "category": "settings",
+      "hidePrint": true,
+      "hideMoreMenu": true,
+      "breadcrumb": "Settings / Tax",
+      "detailEntity": null,
+      "labelOverrides": {
+        "es_ES": {
+          "Name": "Nombre",
+          "Rate": "Índice",
+          "SOPOType": "Tipo venta/compra",
+          "ValidFrom": "Válido desde",
+          "IsActive": "Activo",
+          "Description": "Descripción"
+        },
+        "en_US": {
+          "Name": "Name",
+          "Rate": "Rate",
+          "SOPOType": "Sales/Purchase Type",
+          "ValidFrom": "Valid From",
+          "IsActive": "Active",
+          "Description": "Description"
+        }
+      },
+      "layoutType": "default"
     },
     "entities": {
       "tax": {
+        "tableName": "C_Tax",
+        "tabId": "174",
+        "tabName": "Tax",
+        "uiPattern": "STD",
         "fields": [
           {
             "name": "name",
+            "apiKey": "name",
             "column": "Name",
+            "label": "Name",
             "type": "string",
             "tsType": "string",
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
+            "form": true,
+            "sourceRequired": true,
+            "section": "principal",
+            "seq": 1
+          },
+          {
+            "name": "validFromDate",
+            "apiKey": "validFromDate",
+            "column": "ValidFrom",
+            "label": "Valid From Date",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "section": "principal",
+            "seq": 4
           },
           {
             "name": "rate",
+            "apiKey": "rate",
             "column": "Rate",
-            "type": "number",
+            "label": "Rate",
+            "type": "decimal",
             "tsType": "number",
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": true
-          },
-          {
-            "name": "applicableTo",
-            "column": "SOPOType",
-            "type": "string",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": true,
             "form": true,
-            "enumValues": ["B", "S", "P"]
+            "sourceRequired": true,
+            "section": "principal",
+            "seq": 2,
+            "cellType": "taxRate",
+            "validationRule": {
+              "code": "AD_Client.AD_Client_ID in (@#User_Client@)",
+              "contextParams": [
+                "User_Client"
+              ],
+              "cascadeParams": []
+            },
+            "displayLogic": {
+              "raw": "@IsSummary@='N'",
+              "evaluable": true
+            }
           },
           {
-            "name": "validFrom",
-            "column": "ValidFrom",
-            "type": "date",
+            "name": "salesPurchaseType",
+            "apiKey": "salesPurchaseType",
+            "column": "SOPOType",
+            "label": "Sales/Purchase Type",
+            "type": "enum",
             "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": true
-          },
-          {
-            "name": "isActive",
-            "column": "IsActive",
-            "type": "boolean",
-            "tsType": "boolean",
             "visibility": "editable",
             "required": true,
             "grid": true,
-            "form": false
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "B"
+            },
+            "enumValues": [
+              {
+                "value": "B",
+                "name": "Both"
+              },
+              {
+                "value": "P",
+                "name": "Purchase Tax"
+              },
+              {
+                "value": "S",
+                "name": "Sales Tax"
+              }
+            ],
+            "defaultValue": "B",
+            "section": "principal",
+            "seq": 3,
+            "cellType": "taxScope"
           },
           {
             "name": "docTaxAmount",
+            "apiKey": "docTaxAmount",
             "column": "DocTaxAmount",
-            "type": "string",
+            "label": "Document Tax Amount Calculation",
+            "type": "enum",
             "tsType": "string",
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "D"
+            },
+            "enumValues": [
+              {
+                "value": "D",
+                "name": "Document based amount by rate"
+              },
+              {
+                "value": "L",
+                "name": "Line based amount by rate"
+              }
+            ],
+            "defaultValue": "D",
+            "section": "principal",
+            "seq": 5,
+            "displayLogic": {
+              "raw": "@IsSummary@='N'",
+              "evaluable": true
+            }
           },
           {
             "name": "baseAmount",
+            "apiKey": "baseAmount",
             "column": "BaseAmount",
-            "type": "string",
+            "label": "Base Amount",
+            "type": "enum",
             "tsType": "string",
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true
-          },
-          {
-            "name": "description",
-            "column": "Description",
-            "type": "string",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": false,
-            "grid": false,
-            "form": false
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "LNA"
+            },
+            "enumValues": [
+              {
+                "value": "TBA",
+                "name": "Alternate Tax Base Amount"
+              },
+              {
+                "value": "TBATAX",
+                "name": "Alternate Tax Base Amount + Tax Amount"
+              },
+              {
+                "value": "LNA",
+                "name": "Line Net Amount"
+              },
+              {
+                "value": "LNATAX",
+                "name": "Line Net Amount + Tax Amount"
+              },
+              {
+                "value": "TAX",
+                "name": "Tax Amount"
+              }
+            ],
+            "defaultValue": "LNA",
+            "section": "principal",
+            "seq": 6,
+            "displayLogic": {
+              "raw": "@IsSummary@='N'",
+              "evaluable": true
+            }
           }
         ],
         "searchableFields": [
           "name"
         ],
-        "computedFields": []
+        "computedFields": [
+          {
+            "name": "salesPurchaseType",
+            "derivation": {
+              "type": "computed",
+              "source": "B"
+            }
+          },
+          {
+            "name": "docTaxAmount",
+            "derivation": {
+              "type": "computed",
+              "source": "D"
+            }
+          },
+          {
+            "name": "baseAmount",
+            "derivation": {
+              "type": "computed",
+              "source": "LNA"
+            }
+          }
+        ]
       }
     }
   },
@@ -106,94 +247,505 @@
       "id": "137",
       "name": "Tax Rate",
       "primaryEntity": "tax",
-      "category": "configuracion"
+      "category": "settings",
+      "hidePrint": true,
+      "hideMoreMenu": true,
+      "breadcrumb": "Settings / Tax",
+      "detailEntity": null,
+      "labelOverrides": {
+        "es_ES": {
+          "Name": "Nombre",
+          "Rate": "Índice",
+          "SOPOType": "Tipo venta/compra",
+          "ValidFrom": "Válido desde",
+          "IsActive": "Activo",
+          "Description": "Descripción"
+        },
+        "en_US": {
+          "Name": "Name",
+          "Rate": "Rate",
+          "SOPOType": "Sales/Purchase Type",
+          "ValidFrom": "Valid From",
+          "IsActive": "Active",
+          "Description": "Description"
+        }
+      }
     },
     "entities": {
       "tax": {
+        "tableName": "C_Tax",
+        "tabId": "174",
         "tabName": "Tax",
-        "tableName": "FinancialMgmtTaxRate",
         "fields": [
           {
+            "name": "organization",
+            "apiKey": "organization",
+            "column": "AD_Org_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
             "name": "name",
+            "apiKey": "name",
             "column": "Name",
             "type": "string",
             "visibility": "editable",
             "required": true
           },
           {
-            "name": "rate",
-            "column": "Rate",
-            "type": "number",
+            "name": "validFromDate",
+            "apiKey": "validFromDate",
+            "column": "ValidFrom",
+            "type": "date",
             "visibility": "editable",
             "required": true
           },
           {
-            "name": "applicableTo",
-            "column": "SOPOType",
-            "type": "string",
-            "visibility": "editable",
-            "required": false
+            "name": "taxCategory",
+            "apiKey": "taxCategory",
+            "column": "C_TaxCategory_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": true
           },
           {
-            "name": "description",
-            "column": "Description",
-            "type": "string",
-            "visibility": "editable",
-            "required": false
-          },
-          {
-            "name": "validFrom",
-            "column": "ValidFrom",
-            "type": "date",
-            "visibility": "editable",
-            "required": false
-          },
-          {
-            "name": "isActive",
-            "column": "IsActive",
+            "name": "summaryLevel",
+            "apiKey": "summaryLevel",
+            "column": "IsSummary",
             "type": "boolean",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "rate",
+            "apiKey": "rate",
+            "column": "Rate",
+            "type": "decimal",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "salesPurchaseType",
+            "apiKey": "salesPurchaseType",
+            "column": "SOPOType",
+            "type": "enum",
             "visibility": "editable",
             "required": true
           },
           {
             "name": "docTaxAmount",
+            "apiKey": "docTaxAmount",
             "column": "DocTaxAmount",
-            "type": "string",
+            "type": "enum",
             "visibility": "editable",
             "required": true
+          },
+          {
+            "name": "country",
+            "apiKey": "country",
+            "column": "C_Country_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "destinationCountry",
+            "apiKey": "destinationCountry",
+            "column": "To_Country_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
           },
           {
             "name": "baseAmount",
+            "apiKey": "baseAmount",
             "column": "BaseAmount",
-            "type": "string",
+            "type": "enum",
             "visibility": "editable",
             "required": true
           },
           {
-            "name": "adClientId",
-            "column": "AD_Client_ID",
-            "type": "id",
+            "name": "taxBase",
+            "apiKey": "taxBase",
+            "column": "C_TaxBase_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "region",
+            "apiKey": "region",
+            "column": "C_Region_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "destinationRegion",
+            "apiKey": "destinationRegion",
+            "column": "To_Region_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "aeatsiiIsprorate",
+            "apiKey": "aeatsiiIsprorate",
+            "column": "EM_Aeatsii_Isprorate",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "lineNo",
+            "apiKey": "lineNo",
+            "column": "Line",
+            "type": "integer",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "oBSPTITaxBookType",
+            "apiKey": "oBSPTITaxBookType",
+            "column": "EM_OBSPTI_Declaration",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "description",
+            "apiKey": "description",
+            "column": "Description",
+            "type": "string",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "parentTaxRate",
+            "apiKey": "parentTaxRate",
+            "column": "Parent_Tax_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "oBSPTIReverseCharge",
+            "apiKey": "oBSPTIReverseCharge",
+            "column": "EM_Obspti_Isreversecharge",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "oBSPTIEquivalentCharge",
+            "apiKey": "oBSPTIEquivalentCharge",
+            "column": "EM_OBSPTI_IsEquivalentCharge",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "businessPartnerTaxCategory",
+            "apiKey": "businessPartnerTaxCategory",
+            "column": "C_BP_TaxCategory_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "active",
+            "apiKey": "active",
+            "column": "IsActive",
+            "type": "boolean",
             "visibility": "system",
             "required": true
           },
           {
-            "name": "adOrgId",
-            "column": "AD_Org_ID",
-            "type": "id",
-            "visibility": "system",
+            "name": "default",
+            "apiKey": "default",
+            "column": "IsDefault",
+            "type": "boolean",
+            "visibility": "discarded",
             "required": true
           },
           {
-            "name": "created",
+            "name": "cascade",
+            "apiKey": "cascade",
+            "column": "Cascade",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "withholdingTax",
+            "apiKey": "withholdingTax",
+            "column": "IsWithholdingTax",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "notTaxable",
+            "apiKey": "notTaxable",
+            "column": "IsNoTaxable",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "notTaxdeductable",
+            "apiKey": "notTaxdeductable",
+            "column": "IsTaxUndeductable",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "istaxdeductable",
+            "apiKey": "istaxdeductable",
+            "column": "IsTaxDeductable",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "obsptiReagyp",
+            "apiKey": "obsptiReagyp",
+            "column": "EM_Obspti_Reagyp",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "oBSPTIIsintracommunity",
+            "apiKey": "oBSPTIIsintracommunity",
+            "column": "EM_Obspti_Isintracommunity",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "deductableRate",
+            "apiKey": "deductableRate",
+            "column": "Deducpercent",
+            "type": "decimal",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "isCashVAT",
+            "apiKey": "isCashVAT",
+            "column": "IsCashVAT",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "originalRate",
+            "apiKey": "originalRate",
+            "column": "Originalrate",
+            "type": "decimal",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "obsptiIslease",
+            "apiKey": "obsptiIslease",
+            "column": "EM_Obspti_Islease",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "obsptiIsrealestate",
+            "apiKey": "obsptiIsrealestate",
+            "column": "EM_Obspti_Isrealestate",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "taxExempt",
+            "apiKey": "taxExempt",
+            "column": "IsTaxExempt",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "obsptiIsrebu",
+            "apiKey": "obsptiIsrebu",
+            "column": "EM_Obspti_Isrebu",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "obsptiIsexport",
+            "apiKey": "obsptiIsexport",
+            "column": "EM_Obspti_Isexport",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "obsptiIsimplicitcharge",
+            "apiKey": "obsptiIsimplicitcharge",
+            "column": "EM_Obspti_Isimplicitcharge",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "obsptiReceiveOss",
+            "apiKey": "obsptiReceiveOss",
+            "column": "EM_Obspti_Receive_Oss",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "tbaiClaveregimeniva",
+            "apiKey": "tbaiClaveregimeniva",
+            "column": "EM_Tbai_Claveregimeniva",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "aeatsiiIsproratexml",
+            "apiKey": "aeatsiiIsproratexml",
+            "column": "EM_Aeatsii_Isproratexml",
+            "type": "boolean",
+            "visibility": "discarded",
+            "required": true
+          },
+          {
+            "name": "etvfacIGICRegime",
+            "apiKey": "etvfacIGICRegime",
+            "column": "em_etvfac_igic_regime",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "tbaiNonsubjectcause",
+            "apiKey": "tbaiNonsubjectcause",
+            "column": "EM_Tbai_Nonsubjectcause",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "etvfacVatRegime",
+            "apiKey": "etvfacVatRegime",
+            "column": "EM_Etvfac_Vat_Regime",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "etvfacExemptionCause",
+            "apiKey": "etvfacExemptionCause",
+            "column": "EM_Etvfac_Exemption_Cause",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "etvfacCauseNotTaxable",
+            "apiKey": "etvfacCauseNotTaxable",
+            "column": "em_etvfac_cause_not_taxable",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "aeatsiiCauseExemption",
+            "apiKey": "aeatsiiCauseExemption",
+            "column": "EM_Aeatsii_Cause_Exemption_ID",
+            "type": "foreignKey",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "tBAICausaDeExencion",
+            "apiKey": "tBAICausaDeExencion",
+            "column": "EM_Tbai_Exemptioncause",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "etvfacIPSIRegime",
+            "apiKey": "etvfacIPSIRegime",
+            "column": "EM_Etvfac_Ipsi_Regime",
+            "type": "enum",
+            "visibility": "discarded",
+            "required": false
+          },
+          {
+            "name": "creationDate",
+            "apiKey": "creationDate",
             "column": "Created",
-            "type": "datetime",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "client",
+            "apiKey": "client",
+            "column": "AD_Client_ID",
+            "type": "foreignKey",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "taxSearchKey",
+            "apiKey": "taxSearchKey",
+            "column": "TaxIndicator",
+            "type": "string",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "id",
+            "apiKey": "id",
+            "column": "C_Tax_ID",
+            "type": "id",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "noVAT",
+            "apiKey": "noVAT",
+            "column": "IsNoVAT",
+            "type": "boolean",
+            "visibility": "system",
+            "required": false
+          },
+          {
+            "name": "createdBy",
+            "apiKey": "createdBy",
+            "column": "CreatedBy",
+            "type": "foreignKey",
             "visibility": "system",
             "required": true
           },
           {
             "name": "updated",
+            "apiKey": "updated",
             "column": "Updated",
-            "type": "datetime",
+            "type": "dateTime",
+            "visibility": "system",
+            "required": true
+          },
+          {
+            "name": "updatedBy",
+            "apiKey": "updatedBy",
+            "column": "UpdatedBy",
+            "type": "foreignKey",
             "visibility": "system",
             "required": true
           }
@@ -236,10 +788,160 @@
     ],
     "processEndpoints": []
   },
+  "apiPrediction": {
+    "specName": "tax-rate",
+    "baseUrl": "/sws/neo/tax-rate",
+    "crud": {
+      "tax": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/tax-rate/tax",
+        "detailUrl": "/sws/neo/tax-rate/tax/{id}",
+        "supportedFilters": [
+          "name"
+        ]
+      }
+    },
+    "selectors": [],
+    "actions": [],
+    "queryParams": {
+      "pagination": {
+        "startRow": "_startRow",
+        "endRow": "_endRow",
+        "default": "0-100"
+      },
+      "sorting": {
+        "param": "_sortBy",
+        "example": "_sortBy=creationDate desc"
+      },
+      "filtering": "Use field name as query param: ?fieldName=value",
+      "parentFilter": "parentId={id} for child entities"
+    },
+    "window": {
+      "category": "settings"
+    },
+    "labelOverrides": {
+      "es_ES": {
+        "Name": "Nombre",
+        "Rate": "Índice",
+        "SOPOType": "Tipo venta/compra",
+        "ValidFrom": "Válido desde",
+        "IsActive": "Activo",
+        "Description": "Descripción"
+      },
+      "en_US": {
+        "Name": "Name",
+        "Rate": "Rate",
+        "SOPOType": "Sales/Purchase Type",
+        "ValidFrom": "Valid From",
+        "IsActive": "Active",
+        "Description": "Description"
+      }
+    }
+  },
   "testManifest": {
     "tests": [
       {
-        "id": "t-1",
+        "id": "t-crud-flags-tax",
+        "category": "crud-flags",
+        "entity": "tax",
+        "runner": "node",
+        "description": "CRUD flags for 'tax' should all be booleans"
+      },
+      {
+        "id": "t-default-value-type-tax-baseAmount",
+        "category": "default-value-type",
+        "entity": "tax",
+        "field": "baseAmount",
+        "runner": "node",
+        "description": "Default value for 'baseAmount' in tax should be a string"
+      },
+      {
+        "id": "t-default-value-type-tax-docTaxAmount",
+        "category": "default-value-type",
+        "entity": "tax",
+        "field": "docTaxAmount",
+        "runner": "node",
+        "description": "Default value for 'docTaxAmount' in tax should be a string"
+      },
+      {
+        "id": "t-default-value-type-tax-salesPurchaseType",
+        "category": "default-value-type",
+        "entity": "tax",
+        "field": "salesPurchaseType",
+        "runner": "node",
+        "description": "Default value for 'salesPurchaseType' in tax should be a string"
+      },
+      {
+        "id": "t-displaylogic-evaluable-tax-baseAmount",
+        "category": "displaylogic-evaluable",
+        "entity": "tax",
+        "field": "baseAmount",
+        "runner": "node",
+        "description": "Display logic for 'baseAmount' in tax should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-evaluable-tax-docTaxAmount",
+        "category": "displaylogic-evaluable",
+        "entity": "tax",
+        "field": "docTaxAmount",
+        "runner": "node",
+        "description": "Display logic for 'docTaxAmount' in tax should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-evaluable-tax-rate",
+        "category": "displaylogic-evaluable",
+        "entity": "tax",
+        "field": "rate",
+        "runner": "node",
+        "description": "Display logic for 'rate' in tax should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-valid-tax-baseAmount",
+        "category": "displaylogic-valid",
+        "entity": "tax",
+        "field": "baseAmount",
+        "runner": "node",
+        "description": "Display logic for 'baseAmount' in tax should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-tax-docTaxAmount",
+        "category": "displaylogic-valid",
+        "entity": "tax",
+        "field": "docTaxAmount",
+        "runner": "node",
+        "description": "Display logic for 'docTaxAmount' in tax should be valid JS"
+      },
+      {
+        "id": "t-displaylogic-valid-tax-rate",
+        "category": "displaylogic-valid",
+        "entity": "tax",
+        "field": "rate",
+        "runner": "node",
+        "description": "Display logic for 'rate' in tax should be valid JS"
+      },
+      {
+        "id": "t-field-presence-tax-baseAmount",
+        "category": "field-presence",
+        "entity": "tax",
+        "field": "baseAmount",
+        "runner": "node",
+        "description": "Field 'baseAmount' should be present in tax"
+      },
+      {
+        "id": "t-field-presence-tax-docTaxAmount",
+        "category": "field-presence",
+        "entity": "tax",
+        "field": "docTaxAmount",
+        "runner": "node",
+        "description": "Field 'docTaxAmount' should be present in tax"
+      },
+      {
+        "id": "t-field-presence-tax-name",
         "category": "field-presence",
         "entity": "tax",
         "field": "name",
@@ -247,7 +949,7 @@
         "description": "Field 'name' should be present in tax"
       },
       {
-        "id": "t-2",
+        "id": "t-field-presence-tax-rate",
         "category": "field-presence",
         "entity": "tax",
         "field": "rate",
@@ -255,31 +957,39 @@
         "description": "Field 'rate' should be present in tax"
       },
       {
-        "id": "t-3",
+        "id": "t-field-presence-tax-salesPurchaseType",
         "category": "field-presence",
         "entity": "tax",
-        "field": "applicableTo",
+        "field": "salesPurchaseType",
         "runner": "node",
-        "description": "Field 'applicableTo' should be present in tax"
+        "description": "Field 'salesPurchaseType' should be present in tax"
       },
       {
-        "id": "t-4",
+        "id": "t-field-presence-tax-validFromDate",
         "category": "field-presence",
         "entity": "tax",
-        "field": "validFrom",
+        "field": "validFromDate",
         "runner": "node",
-        "description": "Field 'validFrom' should be present in tax"
+        "description": "Field 'validFromDate' should be present in tax"
       },
       {
-        "id": "t-5",
-        "category": "field-presence",
+        "id": "t-field-type-tax-baseAmount",
+        "category": "field-type",
         "entity": "tax",
-        "field": "isActive",
+        "field": "baseAmount",
         "runner": "node",
-        "description": "Field 'isActive' should be present in tax"
+        "description": "Field 'baseAmount' should have type 'string' in tax"
       },
       {
-        "id": "t-6",
+        "id": "t-field-type-tax-docTaxAmount",
+        "category": "field-type",
+        "entity": "tax",
+        "field": "docTaxAmount",
+        "runner": "node",
+        "description": "Field 'docTaxAmount' should have type 'string' in tax"
+      },
+      {
+        "id": "t-field-type-tax-name",
         "category": "field-type",
         "entity": "tax",
         "field": "name",
@@ -287,7 +997,7 @@
         "description": "Field 'name' should have type 'string' in tax"
       },
       {
-        "id": "t-7",
+        "id": "t-field-type-tax-rate",
         "category": "field-type",
         "entity": "tax",
         "field": "rate",
@@ -295,31 +1005,106 @@
         "description": "Field 'rate' should have type 'number' in tax"
       },
       {
-        "id": "t-8",
+        "id": "t-field-type-tax-salesPurchaseType",
         "category": "field-type",
         "entity": "tax",
-        "field": "applicableTo",
+        "field": "salesPurchaseType",
         "runner": "node",
-        "description": "Field 'applicableTo' should have type 'string' in tax"
+        "description": "Field 'salesPurchaseType' should have type 'string' in tax"
       },
       {
-        "id": "t-9",
+        "id": "t-field-type-tax-validFromDate",
         "category": "field-type",
         "entity": "tax",
-        "field": "validFrom",
+        "field": "validFromDate",
         "runner": "node",
-        "description": "Field 'validFrom' should have type 'string' in tax"
+        "description": "Field 'validFromDate' should have type 'string' in tax"
       },
       {
-        "id": "t-10",
-        "category": "field-type",
-        "entity": "tax",
-        "field": "isActive",
+        "id": "t-rule-declared",
+        "category": "rule-declared",
         "runner": "node",
-        "description": "Field 'isActive' should have type 'boolean' in tax"
+        "description": "Rule 'undefined' (displayLogic) should be declared"
       },
       {
-        "id": "t-11",
+        "id": "t-rule-declared-AD-Client-Security-validation",
+        "category": "rule-declared",
+        "rule": "AD_Client Security validation",
+        "runner": "node",
+        "description": "Rule 'AD_Client Security validation' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-AD-Org-Security-validation",
+        "category": "rule-declared",
+        "rule": "AD_Org Security validation",
+        "runner": "node",
+        "description": "Rule 'AD_Org Security validation' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Region-of-a-Country-From",
+        "category": "rule-declared",
+        "rule": "C_Region of a Country From",
+        "runner": "node",
+        "description": "Rule 'C_Region of a Country From' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Region-of-Country",
+        "category": "rule-declared",
+        "rule": "C_Region of Country",
+        "runner": "node",
+        "description": "Rule 'C_Region of Country' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Region-of-Country-To",
+        "category": "rule-declared",
+        "rule": "C_Region of Country To",
+        "runner": "node",
+        "description": "Rule 'C_Region of Country To' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Region-of-To-Country",
+        "category": "rule-declared",
+        "rule": "C_Region of To_Country",
+        "runner": "node",
+        "description": "Rule 'C_Region of To_Country' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Tax-Base-taxes",
+        "category": "rule-declared",
+        "rule": "C_Tax - Base taxes",
+        "runner": "node",
+        "description": "Rule 'C_Tax - Base taxes' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SE-Taxes-Active-IsActive",
+        "category": "rule-declared",
+        "rule": "SE_Taxes_Active_IsActive",
+        "runner": "node",
+        "description": "Rule 'SE_Taxes_Active_IsActive' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SE-TaxRate-Withholding-IsWithholdingTax",
+        "category": "rule-declared",
+        "rule": "SE_TaxRate_Withholding_IsWithholdingTax",
+        "runner": "node",
+        "description": "Rule 'SE_TaxRate_Withholding_IsWithholdingTax' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-SL-TaxCategory-Org-AD-Org-ID",
+        "category": "rule-declared",
+        "rule": "SL_TaxCategory_Org_AD_Org_ID",
+        "runner": "node",
+        "description": "Rule 'SL_TaxCategory_Org_AD_Org_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Tax-not-included",
+        "category": "rule-declared",
+        "rule": "Tax not included",
+        "runner": "node",
+        "description": "Rule 'Tax not included' (validation) should be declared"
+      },
+      {
+        "id": "t-searchable-filters-tax-name",
         "category": "searchable-filters",
         "entity": "tax",
         "field": "name",
@@ -327,72 +1112,453 @@
         "description": "Field 'name' should be a supported filter for tax"
       },
       {
-        "id": "t-12",
-        "category": "visibility",
+        "id": "t-system-field-tax-active",
+        "category": "system-field",
         "entity": "tax",
+        "field": "active",
         "runner": "node",
-        "description": "Entity 'tax' should only expose visible fields in frontend"
+        "description": "System field 'active' should exist in backend but not frontend for tax"
       },
       {
-        "id": "t-13",
-        "category": "visibility",
+        "id": "t-system-field-tax-aeatsiiCauseExemption",
+        "category": "system-field",
         "entity": "tax",
-        "field": "isActive",
+        "field": "aeatsiiCauseExemption",
         "runner": "node",
-        "description": "Field 'isActive' should be editable (not readOnly) in tax"
+        "description": "System field 'aeatsiiCauseExemption' should exist in backend but not frontend for tax"
       },
       {
-        "id": "t-14",
-        "category": "visibility",
+        "id": "t-system-field-tax-aeatsiiIsprorate",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "aeatsiiIsprorate",
+        "runner": "node",
+        "description": "System field 'aeatsiiIsprorate' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-aeatsiiIsproratexml",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "aeatsiiIsproratexml",
+        "runner": "node",
+        "description": "System field 'aeatsiiIsproratexml' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-businessPartnerTaxCategory",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "businessPartnerTaxCategory",
+        "runner": "node",
+        "description": "System field 'businessPartnerTaxCategory' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-cascade",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "cascade",
+        "runner": "node",
+        "description": "System field 'cascade' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-client",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-country",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "country",
+        "runner": "node",
+        "description": "System field 'country' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-createdBy",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-creationDate",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-deductableRate",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "deductableRate",
+        "runner": "node",
+        "description": "System field 'deductableRate' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-default",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "default",
+        "runner": "node",
+        "description": "System field 'default' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-description",
+        "category": "system-field",
         "entity": "tax",
         "field": "description",
         "runner": "node",
-        "description": "Field 'description' should not appear in grid or form in tax"
+        "description": "System field 'description' should exist in backend but not frontend for tax"
       },
       {
-        "id": "t-15",
+        "id": "t-system-field-tax-destinationCountry",
         "category": "system-field",
         "entity": "tax",
-        "field": "adClientId",
+        "field": "destinationCountry",
         "runner": "node",
-        "description": "System field 'adClientId' should exist in backend but not frontend for tax"
+        "description": "System field 'destinationCountry' should exist in backend but not frontend for tax"
       },
       {
-        "id": "t-16",
+        "id": "t-system-field-tax-destinationRegion",
         "category": "system-field",
         "entity": "tax",
-        "field": "adOrgId",
+        "field": "destinationRegion",
         "runner": "node",
-        "description": "System field 'adOrgId' should exist in backend but not frontend for tax"
+        "description": "System field 'destinationRegion' should exist in backend but not frontend for tax"
       },
       {
-        "id": "t-17",
+        "id": "t-system-field-tax-etvfacCauseNotTaxable",
         "category": "system-field",
         "entity": "tax",
-        "field": "created",
+        "field": "etvfacCauseNotTaxable",
         "runner": "node",
-        "description": "System field 'created' should exist in backend but not frontend for tax"
+        "description": "System field 'etvfacCauseNotTaxable' should exist in backend but not frontend for tax"
       },
       {
-        "id": "t-18",
+        "id": "t-system-field-tax-etvfacExemptionCause",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "etvfacExemptionCause",
+        "runner": "node",
+        "description": "System field 'etvfacExemptionCause' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-etvfacIGICRegime",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "etvfacIGICRegime",
+        "runner": "node",
+        "description": "System field 'etvfacIGICRegime' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-etvfacIPSIRegime",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "etvfacIPSIRegime",
+        "runner": "node",
+        "description": "System field 'etvfacIPSIRegime' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-etvfacVatRegime",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "etvfacVatRegime",
+        "runner": "node",
+        "description": "System field 'etvfacVatRegime' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-id",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "id",
+        "runner": "node",
+        "description": "System field 'id' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-isCashVAT",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "isCashVAT",
+        "runner": "node",
+        "description": "System field 'isCashVAT' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-istaxdeductable",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "istaxdeductable",
+        "runner": "node",
+        "description": "System field 'istaxdeductable' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-lineNo",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "lineNo",
+        "runner": "node",
+        "description": "System field 'lineNo' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-notTaxable",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "notTaxable",
+        "runner": "node",
+        "description": "System field 'notTaxable' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-notTaxdeductable",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "notTaxdeductable",
+        "runner": "node",
+        "description": "System field 'notTaxdeductable' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-noVAT",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "noVAT",
+        "runner": "node",
+        "description": "System field 'noVAT' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-oBSPTIEquivalentCharge",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "oBSPTIEquivalentCharge",
+        "runner": "node",
+        "description": "System field 'oBSPTIEquivalentCharge' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-obsptiIsexport",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "obsptiIsexport",
+        "runner": "node",
+        "description": "System field 'obsptiIsexport' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-obsptiIsimplicitcharge",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "obsptiIsimplicitcharge",
+        "runner": "node",
+        "description": "System field 'obsptiIsimplicitcharge' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-oBSPTIIsintracommunity",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "oBSPTIIsintracommunity",
+        "runner": "node",
+        "description": "System field 'oBSPTIIsintracommunity' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-obsptiIslease",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "obsptiIslease",
+        "runner": "node",
+        "description": "System field 'obsptiIslease' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-obsptiIsrealestate",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "obsptiIsrealestate",
+        "runner": "node",
+        "description": "System field 'obsptiIsrealestate' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-obsptiIsrebu",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "obsptiIsrebu",
+        "runner": "node",
+        "description": "System field 'obsptiIsrebu' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-obsptiReagyp",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "obsptiReagyp",
+        "runner": "node",
+        "description": "System field 'obsptiReagyp' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-obsptiReceiveOss",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "obsptiReceiveOss",
+        "runner": "node",
+        "description": "System field 'obsptiReceiveOss' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-oBSPTIReverseCharge",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "oBSPTIReverseCharge",
+        "runner": "node",
+        "description": "System field 'oBSPTIReverseCharge' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-oBSPTITaxBookType",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "oBSPTITaxBookType",
+        "runner": "node",
+        "description": "System field 'oBSPTITaxBookType' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-organization",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-originalRate",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "originalRate",
+        "runner": "node",
+        "description": "System field 'originalRate' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-parentTaxRate",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "parentTaxRate",
+        "runner": "node",
+        "description": "System field 'parentTaxRate' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-region",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "region",
+        "runner": "node",
+        "description": "System field 'region' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-summaryLevel",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "summaryLevel",
+        "runner": "node",
+        "description": "System field 'summaryLevel' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-taxBase",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "taxBase",
+        "runner": "node",
+        "description": "System field 'taxBase' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-taxCategory",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "taxCategory",
+        "runner": "node",
+        "description": "System field 'taxCategory' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-taxExempt",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "taxExempt",
+        "runner": "node",
+        "description": "System field 'taxExempt' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-taxSearchKey",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "taxSearchKey",
+        "runner": "node",
+        "description": "System field 'taxSearchKey' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-tBAICausaDeExencion",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "tBAICausaDeExencion",
+        "runner": "node",
+        "description": "System field 'tBAICausaDeExencion' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-tbaiClaveregimeniva",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "tbaiClaveregimeniva",
+        "runner": "node",
+        "description": "System field 'tbaiClaveregimeniva' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-tbaiNonsubjectcause",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "tbaiNonsubjectcause",
+        "runner": "node",
+        "description": "System field 'tbaiNonsubjectcause' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-updated",
         "category": "system-field",
         "entity": "tax",
         "field": "updated",
         "runner": "node",
         "description": "System field 'updated' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-updatedBy",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-system-field-tax-withholdingTax",
+        "category": "system-field",
+        "entity": "tax",
+        "field": "withholdingTax",
+        "runner": "node",
+        "description": "System field 'withholdingTax' should exist in backend but not frontend for tax"
+      },
+      {
+        "id": "t-visibility-tax",
+        "category": "visibility",
+        "entity": "tax",
+        "runner": "node",
+        "description": "Entity 'tax' should only expose visible fields in frontend"
       }
     ],
     "summary": {
-      "total": 18,
+      "total": 89,
       "byCategory": {
-        "field-presence": 5,
-        "field-type": 5,
+        "crud-flags": 1,
+        "default-value-type": 3,
+        "displaylogic-evaluable": 3,
+        "displaylogic-valid": 3,
+        "field-presence": 6,
+        "field-type": 6,
+        "rule-declared": 12,
         "searchable-filters": 1,
-        "visibility": 3,
-        "system-field": 4
+        "system-field": 53,
+        "visibility": 1
       },
       "byRunner": {
-        "node": 18,
+        "node": 89,
         "junit": 0
       }
     }

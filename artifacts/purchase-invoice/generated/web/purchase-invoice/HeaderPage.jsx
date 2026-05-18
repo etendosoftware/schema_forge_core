@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
-import HeaderTable from './HeaderTable';
+import { toast } from 'sonner';
+import { INVOICE_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
+import HeaderTable from '../../../custom/InvoiceHeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
 import LinesForm from './LinesForm';
@@ -12,15 +14,34 @@ import AccountingTable from './AccountingTable';
 import AccountingForm from './AccountingForm';
 import ReversedInvoicesTable from './ReversedInvoicesTable';
 import ReversedInvoicesForm from './ReversedInvoicesForm';
+import RelatedDocuments from '@/windows/custom/purchase-invoice/RelatedDocuments';
+import { AttachmentsTab } from '@/components/attachments';
+import SifTab from '@/windows/custom/shared/SifTab.jsx';
+import PurchaseInvoiceBottomPanel from '../../../custom/PurchaseInvoiceBottomPanel';
 import catalogs from './mockCatalogs';
 
 
 const breadcrumb = 'Purchases / Purchase Invoice';
 
+const labelOverrides = {
+  "es_ES": {
+    "POReference": "Nº documento",
+    "OutstandingAmt": "Pendiente de pago",
+    "EM_Etgo_Due_Date": "Vencimiento",
+    "em_etgo_delivery_status": "Estado de entrega"
+  },
+  "en_US": {
+    "POReference": "Document No.",
+    "OutstandingAmt": "Pending Payment",
+    "EM_Etgo_Due_Date": "Due Date",
+    "em_etgo_delivery_status": "Delivery Status"
+  }
+};
+
 
 // @sf-generated-start summary:header
 const summary = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+
 ];
 
 const statusField = 'documentStatus';
@@ -31,37 +52,44 @@ const extraBadges = [];
 // @sf-generated-end extraBadges:header
 
 // @sf-generated-start processes:header
-const processes = [];
+const processes = [
+
+];
 // @sf-generated-end processes:header
 
 // @sf-generated-start draftMode:header
 const draftMode = {
-  enabled: true,
-  processField: 'documentAction',
-  processValue: 'CO',
-  label: 'Confirm',
+  "enabled": true,
+  "processField": "documentAction",
+  "processValue": "CO",
+  "label": "Confirm"
 };
 // @sf-generated-end draftMode:header
+
+// @sf-generated-start requiredHeaderFields:header
+const requiredHeaderFields = ['invoiceDate', 'businessPartner', 'partnerAddress', 'priceList', 'paymentTerms', 'paymentMethod'];
+// @sf-generated-end requiredHeaderFields:header
 
 // @sf-generated-start addLineFields:lines
 const addLineFields = {
   entry: [
-    { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
-    { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity', defaultValue: 1 },
-    { key: 'unitPrice', column: 'PriceActual', type: 'number', required: true, label: 'Net Unit Price' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["listPrice","unitPrice","tax","uOM","grossUnitPrice"] },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
-    { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector' },
+    { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity', defaultValue: 1 },
+    { key: 'listPrice', column: 'PriceList', type: 'number', required: true, label: 'List Price' },
+    { key: 'etgoDiscount', column: 'EM_Etgo_Discount', type: 'number', label: 'Discount %', defaultValue: 0 },
+    { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineNetAmount"] },
   ],
   derived: [
 
   ],
   hidden: [
-
+    { key: 'grossUnitPrice', value: '0' },
   ],
 };
 // @sf-generated-end addLineFields:lines
 
-const api = {
+export const api = {
   "specName": "purchase-invoice",
   "baseUrl": "/sws/neo/purchase-invoice",
   "crud": {
@@ -79,7 +107,8 @@ const api = {
         "invoiceDate",
         "businessPartner",
         "orderReference",
-        "documentStatus"
+        "documentStatus",
+        "eTGODueDate"
       ]
     },
     "lines": {
@@ -219,7 +248,7 @@ const api = {
       "column": "C_BPartner_ID",
       "reference": "BusinessPartner",
       "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/header/selectors/C_BPartner_ID?isVendor=Y"
+      "url": "/sws/neo/purchase-invoice/header/selectors/businessPartner"
     },
     {
       "entity": "header",
@@ -235,7 +264,7 @@ const api = {
       "column": "M_PriceList_ID",
       "reference": "PriceList",
       "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/header/selectors/M_PriceList_ID?isSOTrx=N"
+      "url": "/sws/neo/purchase-invoice/header/selectors/priceList"
     },
     {
       "entity": "header",
@@ -302,6 +331,22 @@ const api = {
       "url": "/sws/neo/purchase-invoice/header/selectors/project"
     },
     {
+      "entity": "header",
+      "field": "aeatsiiPurDescription",
+      "column": "EM_Aeatsii_Pur_Description_ID",
+      "reference": "aeatsii_description",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/header/selectors/aeatsiiPurDescription"
+    },
+    {
+      "entity": "header",
+      "field": "aeatsiiCauseExemption",
+      "column": "EM_Aeatsii_Cause_Exemption_ID",
+      "reference": "aeatsii_cause_exemption",
+      "inputMode": "selector",
+      "url": "/sws/neo/purchase-invoice/header/selectors/aeatsiiCauseExemption"
+    },
+    {
       "entity": "lines",
       "field": "product",
       "column": "M_Product_ID",
@@ -311,19 +356,19 @@ const api = {
     },
     {
       "entity": "lines",
-      "field": "account",
-      "column": "Account_ID",
-      "reference": "GLAccount",
-      "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/lines/selectors/account"
-    },
-    {
-      "entity": "lines",
       "field": "tax",
       "column": "C_Tax_ID",
       "reference": "Tax",
       "inputMode": "selector",
       "url": "/sws/neo/purchase-invoice/lines/selectors/tax"
+    },
+    {
+      "entity": "lines",
+      "field": "account",
+      "column": "Account_ID",
+      "reference": "GLAccount",
+      "inputMode": "search",
+      "url": "/sws/neo/purchase-invoice/lines/selectors/account"
     },
     {
       "entity": "lines",
@@ -669,14 +714,6 @@ const api = {
     },
     {
       "entity": "header",
-      "field": "eTBLKCBulkcompletion",
-      "column": "EM_Etblkc_Bulkcompletion",
-      "url": "/sws/neo/purchase-invoice/header/{id}/action/eTBLKCBulkcompletion",
-      "processId": "272C8D38EF3245BF882E623CE92AB4E7",
-      "processType": "obuiapp"
-    },
-    {
-      "entity": "header",
       "field": "tbaiXmlgenerator",
       "column": "EM_Tbai_Xmlgenerator",
       "url": "/sws/neo/purchase-invoice/header/{id}/action/tbaiXmlgenerator",
@@ -786,16 +823,32 @@ const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=purchase-invoiceDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
+  },
+  "window": {
+    "category": "purchases"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "POReference": "Nº documento",
+      "OutstandingAmt": "Pendiente de pago",
+      "EM_Etgo_Due_Date": "Vencimiento",
+      "em_etgo_delivery_status": "Estado de entrega"
+    },
+    "en_US": {
+      "POReference": "Document No.",
+      "OutstandingAmt": "Pending Payment",
+      "EM_Etgo_Due_Date": "Due Date",
+      "em_etgo_delivery_status": "Delivery Status"
+    }
   }
 };
 
 // @sf-generated-start component:HeaderPage
 export default function HeaderPage({ windowName, recordId, ...props }) {
-  
   if (recordId) {
     return (
       <DetailView
@@ -808,7 +861,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         statusField={statusField}
         extraBadges={extraBadges}
         processes={processes}
-        draftMode={draftMode}
         addLineFields={addLineFields}
         catalogs={catalogs}
         entityLabel="Header"
@@ -823,6 +875,19 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'accounting', label: 'Accounting', Table: AccountingTable, Form: AccountingForm },
           { key: 'reversedInvoices', label: 'Reversed Invoices', Table: ReversedInvoicesTable, Form: ReversedInvoicesForm },
         ]}
+        noHeaderBorder
+        notesField="description"
+        customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Invoice", config: {} } }, { key: 'sif', labelKey: 'sifDataTabs.sectionTitle', Component: SifTab, placement: 'tab' }]}
+        bottomSection={PurchaseInvoiceBottomPanel}
+        menuActions={({ status }) => [
+          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO', labelKey: 'reactivate', successKey: 'reactivated', documentAction: 'RE',  }
+        ]}
+        draftMode={draftMode}
+        requiredHeaderFields={requiredHeaderFields}
+        labelOverrides={labelOverrides}
+        lineConfig={INVOICE_LINE_CONFIG}
+        linesLayout="inlineEditable"
+        sendDocument={{"enabled":true,"allowEmail":false}}
         {...props}
       />
     );
@@ -836,6 +901,10 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      dateFilterKey="invoiceDate"
+      labelOverrides={labelOverrides}
+      rowQuickActions={{}}
+      sendDocument={{"enabled":true,"allowEmail":false}}
       {...props}
     />
   );
