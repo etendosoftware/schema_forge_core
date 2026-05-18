@@ -7,7 +7,7 @@ function formatCell(val, colType) {
   return colType === 'percent' ? formatPercent(val) : formatAmount(val);
 }
 
-export default function FmBoxes303({ boxes, year, period, sectionIds, identification }) {
+export default function FmBoxes303({ boxes, year, period, sectionIds, identification, onIdentChange }) {
   const ui = useUI();
   const t = ui;
   const layout = getLayout303(year, period);
@@ -50,7 +50,7 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
                       className={`fm-aeat-ident-cb__check${f.readOnly ? ' fm-aeat-ident-cb__check--readonly' : ''}`}
                       checked={identification?.[f.id] ?? false}
                       disabled={f.readOnly}
-                      onChange={() => {}}
+                      onChange={f.readOnly ? undefined : e => onIdentChange?.(f.id, e.target.checked)}
                     />
                   </div>
                 ))}

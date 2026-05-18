@@ -223,6 +223,8 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
   const [showConfig, setShowConfig] = useState(false);
   const [showCompare, setShowCompare] = useState(false);
   const [orgIdent, setOrgIdent] = useState({ nif: '', nombre: '' });
+  const [identChecks, setIdentChecks] = useState(decl.identification ?? {});
+  const handleIdentChange = (id, value) => setIdentChecks(prev => ({ ...prev, [id]: value }));
 
   useEffect(() => {
     if (!token || !apiBaseUrl) return;
@@ -442,7 +444,8 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
                 year={decl.year}
                 period={decl.period}
                 sectionIds={page.sections}
-                identification={{ ...orgIdent, ...(decl.identification ?? {}) }}
+                identification={{ ...orgIdent, ...identChecks }}
+                onIdentChange={handleIdentChange}
               />
             </SectionCard>
           );
