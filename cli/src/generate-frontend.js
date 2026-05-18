@@ -153,6 +153,10 @@ function mapFormFieldType(field) {
   return 'text';
 }
 
+function optProp(name, val) {
+  return val !== undefined ? `, ${name}: ${val}` : '';
+}
+
 /**
  * Generate a data table component for an entity.
  * Produces a thin declarative component that imports DataTable from contract-ui.
@@ -201,7 +205,7 @@ export function generateTableComponent(entityName, contract) {
     const requiredPart = f.required ? ', required: true' : '';
     const lookupPart = f.lookup ? ', lookup: true' : '';
     const popupPart = f.popup ? ', popup: true' : '';
-    const minColPart = f.min !== undefined ? `, min: ${f.min}` : '';
+    const minColPart = optProp('min', f.min);
     return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${popupPart}${minColPart} },`;
   }).join('\n');
 
@@ -674,7 +678,7 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       ? `, onSelectMappings: ${JSON.stringify(f.onSelectMappings)}`
       : '';
     const displayFromCatalogPart = f.displayFromCatalog ? `, displayFromCatalog: true` : '';
-    const minEntryPart = f.min !== undefined ? `, min: ${f.min}` : '';
+    const minEntryPart = optProp('min', f.min);
     return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart} },`;
   }).join('\n');
 

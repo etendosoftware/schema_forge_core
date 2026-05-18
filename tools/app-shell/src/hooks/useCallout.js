@@ -77,9 +77,7 @@ export function useCallout(entity, { token, apiBaseUrl }) {
 
         // Show callout messages via toast
         for (const msg of messages) {
-          const raw = msg.text || msg.message || '';
-          if (!raw) continue;
-          const text = sanitizeCalloutMessage(raw);
+          const text = sanitizeCalloutMessage(msg.text || msg.message || '');
           if (!text) continue;
           const type = (msg.type || '').toUpperCase();
           if (type === 'ERROR') toast.error(text);

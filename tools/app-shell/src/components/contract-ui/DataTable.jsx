@@ -434,6 +434,19 @@ function EmptyState({ hasFilter, totalCount }) {
 
 const NUMERIC_FIELD_TYPES = new Set(['number', 'integer', 'decimal', 'quantity', 'amount']);
 
+function isMissingRequired(f, valuesRef) {
+  if (!f.required) return false;
+  const v = valuesRef.current[f.key];
+  return v == null || v === '' || (typeof v === 'string' && v.trim() === '');
+}
+
+function isBelowMin(f, valuesRef) {
+  if (f.min === undefined) return false;
+  const v = valuesRef.current[f.key];
+  if (v == null || v === '') return false;
+  return !isNaN(Number(v)) && Number(v) < f.min;
+}
+
 /**
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
@@ -513,11 +526,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     // Validate required fields BEFORE entering the in-flight state — a missing
     // value should leave the row open for the user to complete. Reads from the
     // valuesRef so an in-flight callout cannot mask a still-empty user field.
-    const missing = fields.filter(f => {
-      if (!f.required) return false;
-      const v = valuesRef.current[f.key];
-      return v == null || v === '' || (typeof v === 'string' && v.trim() === '');
-    });
+    const missing = fields.filter(f => isMissingRequired(f, valuesRef));
     if (missing.length > 0) {
       setInvalidFields(new Set(missing.map(f => f.key)));
       toast.error(ui('requiredFieldsMissing'));
@@ -526,12 +535,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
       inputEl?.focus?.({ preventScroll: true });
       return Promise.resolve(false);
     }
-    const belowMin = fields.filter(f => {
-      if (f.min === undefined) return false;
-      const v = valuesRef.current[f.key];
-      if (v == null || v === '') return false;
-      return !isNaN(Number(v)) && Number(v) < f.min;
-    });
+    const belowMin = fields.filter(f => isBelowMin(f, valuesRef));
     if (belowMin.length > 0) {
       setInvalidFields(new Set(belowMin.map(f => f.key)));
       toast.error(ui('fieldMinValueError'));
@@ -647,7 +651,12 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
   // Wrap handleChange to also notify parent (for callout triggering)
   const handleFieldChange = useCallback((key, val, selectedItem) => {
     touchedFieldsRef.current.add(key);
-    setInvalidFields(prev => { if (!prev.has(key)) return prev; const n = new Set(prev); n.delete(key); return n; });
+    setInvalidFields(prev => {
+      if (!prev.has(key)) return prev;
+      const n = new Set(prev);
+      n.delete(key);
+      return n;
+    });
     // Build a snapshot of current + new values for the callout formState
     const snapshot = { ...values, [key]: val };
     handleChange(key, val);
