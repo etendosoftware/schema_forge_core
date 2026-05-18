@@ -16,7 +16,7 @@ import { useLabel, useLocaleSwitch, useUI } from '@/i18n';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { resolveColumnLabel } from '@/lib/resolveColumnLabel.js';
-import { SelectorInput } from './SelectorInput.jsx';
+import { InlineSearchCombo } from './InlineSearchCombo.jsx';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import { columnFlex } from '@/lib/linesColumnWidth.js';
 
@@ -166,9 +166,10 @@ function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus
 
   if (!isCellEditable(col)) return null;
 
-  // Selector / search: reuse the shared dropdown for short catalogs and the full
-  // ProductSearchDrawer modal for fields flagged as lookup/popup (e.g., product). The
-  // selector URL is derived from the entity + DB column, mirroring DataTable's pattern.
+  // Selector / search: use SelectorInput for pure-dropdown FK fields; use
+  // InlineSearchCombo for search-type FK fields so the user can type to filter.
+  // ProductSearchDrawer modal is used for fields flagged as lookup/popup (e.g., product).
+  // The selector URL is derived from the entity + DB column, mirroring DataTable's pattern.
   if (col.type === 'selector' || col.type === 'search') {
     const selectorUrl = apiBaseUrl && col.column
       ? `${apiBaseUrl}/${entity}/selectors/${col.column}`
@@ -189,21 +190,18 @@ function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus
       );
     }
     return (
-      <div className="w-full" data-testid={`field-${col.key}`}>
-        <SelectorInput
-          entityName={entity}
-          field={col}
-          value={value ?? ''}
-          displayValue={displayLabel || ''}
-          onChange={(id, label) => onCommit(id, { identifier: label || '' })}
-          catalogs={null}
-          resolvedLabel={col.label}
-          selectorUrl={selectorUrl}
-          selectorContext={selectorContext}
-          token={token}
-          compact
-        />
-      </div>
+      <InlineSearchCombo
+        field={col}
+        value={value ?? ''}
+        displayLabel={displayLabel || ''}
+        options={[]}
+        onChange={(id, label) => onCommit(id, { identifier: label || '' })}
+        placeholder={col.label}
+        selectorUrl={selectorUrl}
+        selectorContext={selectorContext}
+        token={token}
+        clearOnType={false}
+      />
     );
   }
 
