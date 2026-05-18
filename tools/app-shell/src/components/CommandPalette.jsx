@@ -60,20 +60,25 @@ export function CommandPalette() {
       <CommandInput placeholder={ui('searchPages')} />
       <CommandList>
         <CommandEmpty>{ui('noResultsFound')}</CommandEmpty>
-        {menuConfig.menu.map((group) => {
+        {menuConfig.menu.filter(g => !g.hidden).map((group) => {
           const Icon = ICON_MAP[group.icon] || Package;
+          const visibleItems = group.items.filter(i => !i.hidden);
+          if (visibleItems.length === 0) return null;
           return (
             <CommandGroup key={group.group} heading={tMenu(group.group)}>
-              {group.items.map((item) => (
-                <CommandItem
-                  key={item.name}
-                  value={`${group.group} ${item.label} ${item.name}`}
-                  onSelect={() => handleSelect(item.name)}
-                >
-                  <Icon className="mr-2 h-4 w-4" />
-                  <span>{tMenu(item.label)}</span>
-                </CommandItem>
-              ))}
+              {visibleItems.map((item) => {
+                const translatedLabel = tMenu(item.label);
+                return (
+                  <CommandItem
+                    key={item.name}
+                    value={`${translatedLabel} ${item.label} ${item.name}`}
+                    onSelect={() => handleSelect(item.name)}
+                  >
+                    <Icon className="mr-2 h-4 w-4" />
+                    <span>{translatedLabel}</span>
+                  </CommandItem>
+                );
+              })}
             </CommandGroup>
           );
         })}
