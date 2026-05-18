@@ -142,8 +142,8 @@ function ReadCell({ row, col, locale, t, ui }) {
     return renderDateCell(row[col.key], locale);
   }
   const display = resolveIdentifier(row, col.key);
-  if (typeof display === 'string' && display.length > 60) {
-    return <span className="block max-w-[260px] truncate" title={display}>{display}</span>;
+  if (typeof display === 'string') {
+    return <span className="block truncate" title={display || undefined}>{display}</span>;
   }
   return <span>{display ?? ''}</span>;
 }
@@ -539,6 +539,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
               flex: columnFlex(col, idx),
               justifyContent: 'flex-start',
               textAlign: 'left',
+              minWidth: 0,
             }}
           >
             {resolveColumnLabel(col, locale, t)}
@@ -616,6 +617,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
                 flex: columnFlex(col, idx),
                 justifyContent: isNumeric ? 'flex-end' : 'flex-start',
                 textAlign: isNumeric ? 'right' : 'left',
+                minWidth: 0,
               };
 
               return (
