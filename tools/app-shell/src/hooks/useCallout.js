@@ -1,6 +1,14 @@
 import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 
+function sanitizeCalloutMessage(raw) {
+  return raw
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/^(Note|Warning|Error):\s*/i, '')
+    .trim();
+}
+
 /**
  * Hook that calls the NEO Headless callout endpoint when FK fields change.
  *
@@ -69,7 +77,9 @@ export function useCallout(entity, { token, apiBaseUrl }) {
 
         // Show callout messages via toast
         for (const msg of messages) {
-          const text = msg.text || msg.message || '';
+          const raw = msg.text || msg.message || '';
+          if (!raw) continue;
+          const text = sanitizeCalloutMessage(raw);
           if (!text) continue;
           const type = (msg.type || '').toUpperCase();
           if (type === 'ERROR') toast.error(text);
