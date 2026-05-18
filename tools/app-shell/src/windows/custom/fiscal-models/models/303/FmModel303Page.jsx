@@ -21,8 +21,26 @@ const STEPPER_INDEX = {
 
 // ── Tab content components ────────────────────────────────────────
 
+function buildBoxIncidentMap(incidents) {
+  const map = {};
+  for (const inc of incidents) {
+    const m = inc.origin?.match(/Casilla\s+(\d+)/i);
+    if (!m) continue;
+    const key = String(parseInt(m[1], 10)).padStart(2, '0');
+    if (!map[key]) map[key] = [];
+    map[key].push(inc);
+  }
+  return map;
+}
+
 function SourcesTab({ decl, t }) {
   const sources = decl.sources ?? [];
+  const boxIncidentMap = buildBoxIncidentMap(decl.incidents?.items ?? []);
+
+  function rowIncidents(source) {
+    return (source.boxes ?? '').split(',').flatMap(b => boxIncidentMap[b.trim()] ?? []);
+  }
+
   return (
     <SectionCard
       title={t('fm.sources.title')}
@@ -52,19 +70,38 @@ function SourcesTab({ decl, t }) {
               </tr>
             </thead>
             <tbody>
-              {sources.map((r, i) => (
-                <tr key={i}>
-                  <td className="strong">{r.date}</td>
-                  <td className="mono">{r.ref}</td>
-                  <td>{r.type}</td>
-                  <td>{r.party}</td>
-                  <td style={{ color: '#6b7280' }}>{r.regime || '—'}</td>
-                  <td className="num strong">{formatAmount(r.base)}</td>
-                  <td className="num">{r.vat != null ? formatAmount(r.vat) : '—'}</td>
-                  <td className="num strong">{formatAmount(r.total)}</td>
-                  <td className="mono" style={{ color: '#9ca3af', fontSize: 11 }}>{r.boxes || '—'}</td>
-                </tr>
-              ))}
+              {sources.map((r, i) => {
+                const incs = rowIncidents(r);
+                const hasBlock = incs.some(inc => inc.severity === 'block');
+                const hasWarn  = incs.length > 0 && !hasBlock;
+                const tooltip  = incs.map(inc => inc.message).join(' · ');
+                return (
+                  <tr key={i} className={hasBlock ? 'fm-dtable__row--block' : hasWarn ? 'fm-dtable__row--warn' : ''}>
+                    <td className="strong">{r.date}</td>
+                    <td className="mono">{r.ref}</td>
+                    <td>{r.type}</td>
+                    <td>{r.party}</td>
+                    <td style={{ color: '#6b7280' }}>{r.regime || '—'}</td>
+                    <td className="num strong">{formatAmount(r.base)}</td>
+                    <td className="num">{r.vat != null ? formatAmount(r.vat) : '—'}</td>
+                    <td className="num strong">{formatAmount(r.total)}</td>
+                    <td className="mono" style={{ color: '#9ca3af', fontSize: 11 }}>
+                      {r.boxes || '—'}
+                      {incs.length > 0 && (
+                        <span
+                          className={`fm-sources__inc-flag fm-sources__inc-flag--${hasBlock ? 'block' : 'warn'}`}
+                          title={tooltip}
+                        >
+                          {hasBlock
+                            ? <OctagonAlert size={12} strokeWidth={2} />
+                            : <TriangleAlert size={12} strokeWidth={2} />
+                          }
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -141,7 +178,7 @@ function HistoryTab({ decl, t }) {
   );
 }
 
-function IncidentsTab({ decl, blocking, warning, t }) {
+function IncidentsTab({ decl, blocking, warning, t, onGoToSources }) {
   const incidents = decl.incidents?.items ?? [];
 
   if (blocking === 0 && warning === 0) {
@@ -192,7 +229,11 @@ function IncidentsTab({ decl, blocking, warning, t }) {
                   <td className="strong">{inc.message}</td>
                   <td style={{ color: '#6b7280' }}>{inc.suggestion ?? '—'}</td>
                   <td style={{ textAlign: 'right' }}>
-                    <button className="fm-btn">{t('fm.action.go_to')} <ChevronRight size={13} strokeWidth={2} style={{ display:'inline',verticalAlign:'middle' }} /></button>
+                    {inc.origin?.match(/Casilla\s+\d+/i) && onGoToSources && (
+                      <button className="fm-btn" onClick={() => onGoToSources()}>
+                        {t('fm.sources.title')} <ChevronRight size={13} strokeWidth={2} style={{ display:'inline',verticalAlign:'middle' }} />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -454,7 +495,8 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
           <SourcesTab decl={decl} t={t} />
         )}
         {activeTab === 'incidents' && (
-          <IncidentsTab decl={decl} blocking={blocking} warning={warning} t={t} />
+          <IncidentsTab decl={decl} blocking={blocking} warning={warning} t={t}
+            onGoToSources={() => setActiveTab('sources')} />
         )}
         {activeTab === 'files' && (
           <FilesTab

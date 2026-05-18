@@ -18909,6 +18909,7 @@
     "fm.sources.col.vat": "Cuota",
     "fm.sources.col.total": "Total",
     "fm.sources.col.boxes": "Casillas",
+    "fm.sources.filter.incidents": "Con incidencias",
     "fm.files.title": "Ficheros",
     "fm.files.empty": "Sin fichero generado",
     "fm.files.empty_sub": "Genera el fichero de declaración para subir a la Sede AEAT",
