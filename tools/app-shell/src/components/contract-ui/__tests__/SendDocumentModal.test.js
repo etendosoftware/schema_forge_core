@@ -43,8 +43,8 @@ describe('SendDocumentModal', () => {
     assert.match(src, /\$\{documentType\}.*#\$\{documentNo\}/);
   });
 
-  it('disables Send button when email is empty or sending', () => {
-    assert.match(src, /!to\.trim\(\)\s*\|\|\s*sending/);
+  it('disables Send button when email is invalid or sending', () => {
+    assert.match(src, /!isValidEmail\(to\)\s*\|\|\s*sending/);
   });
 
   it('uses toast for send confirmation', () => {
