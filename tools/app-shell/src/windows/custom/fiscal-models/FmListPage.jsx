@@ -193,9 +193,13 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
   const years = ['all', ...Array.from(new Set(decls.map(d => String(d.year)))).sort((a,b) => b - a)];
   const statuses = ['all', ...Array.from(new Set(decls.map(d => d.status)))];
 
-  const filtered = decls.filter(d => {
-    if (modelFilter !== 'all'  && d.model  !== modelFilter)  return false;
-    if (yearFilter  !== 'all'  && String(d.year) !== yearFilter) return false;
+  const modelYearFiltered = decls.filter(d => {
+    if (modelFilter !== 'all' && d.model !== modelFilter) return false;
+    if (yearFilter  !== 'all' && String(d.year) !== yearFilter) return false;
+    return true;
+  });
+
+  const filtered = modelYearFiltered.filter(d => {
     if (statusFilter !== 'all' && d.status !== statusFilter) return false;
     return true;
   });
@@ -259,7 +263,7 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
       {/* ── Body: sidebar + main ─────────────────────────────────── */}
       <div className="fm-list-body">
 
-        <UpcomingDeadlines decls={decls} onSelect={onSelect} t={t} />
+        <UpcomingDeadlines decls={modelYearFiltered} onSelect={onSelect} t={t} />
 
         <div className="fm-list-main">
           {/* ── Section header ─────────────────────────────────── */}
