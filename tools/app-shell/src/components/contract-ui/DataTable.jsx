@@ -519,8 +519,8 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
       return v == null || v === '' || (typeof v === 'string' && v.trim() === '');
     });
     if (missing.length > 0) {
-      const labels = missing.map(f => f.label || f.key).join(', ');
-      toast.error(`${ui('requiredFieldsMissing')}: ${labels}`);
+      setInvalidFields(new Set(missing.map(f => f.key)));
+      toast.error(ui('requiredFieldsMissing'));
       const firstMissing = missing[0];
       const inputEl = document.querySelector(`[data-testid="field-${firstMissing.key}"]`);
       inputEl?.focus?.({ preventScroll: true });
@@ -775,6 +775,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
                 selectorContext={selectorContext}
                 token={token}
                 inputRef={isFirst ? firstInputRef : undefined}
+                isInvalid={invalidFields.has(field.key)}
                 onSelect={(item) => {
                   touchedFieldsRef.current.add(field.key);
                   handleChange(field.key + '$_identifier', item.label || item.name || item._identifier);
@@ -963,7 +964,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
 /**
  * Inline field that shows selected value and opens modal on click/focus.
  */
-function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContext, token, onSelect, onKeyDown, inputRef, title, drawerKey = 'default' }) {
+function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContext, token, onSelect, onKeyDown, inputRef, title, drawerKey = 'default', isInvalid }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef(null);
   const Drawer = LOOKUP_DRAWERS[drawerKey] || LOOKUP_DRAWERS.default;
@@ -991,7 +992,7 @@ function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContex
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(true); }
           else if (onKeyDown) onKeyDown(e);
         }}
-        className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 text-left flex items-center gap-2 hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
+        className={`w-full h-8 text-sm rounded-md border bg-white px-2 text-left flex items-center gap-2 focus:ring-2 focus:outline-none transition-colors${isInvalid ? ' border-red-500 focus:ring-red-500' : ' border-input hover:border-primary/50 focus:ring-primary'}`}
       >
         <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         {value ? (

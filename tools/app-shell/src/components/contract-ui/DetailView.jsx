@@ -2138,7 +2138,6 @@ export function DetailView({
                               localUpdate[fieldKey + '$_identifier'] = opts.identifier;
                             }
                             hook.handleUpdateChild?.(row.id, localUpdate);
-                            toast.success(ui('recordSaved'));
                           } else {
                             const msg = await extractErrorMessage(res);
                             toast.error(msg || ui('networkError'));
