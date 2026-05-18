@@ -5,7 +5,12 @@ import { useUI } from '@/i18n';
 
 const isValidEmail = (v) => {
   const s = v.trim();
-  return s.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+  if (s.length > 254) return false;
+  const at = s.indexOf('@');
+  if (at < 1 || s.indexOf('@', at + 1) !== -1) return false;
+  const domain = s.slice(at + 1);
+  const dot = domain.lastIndexOf('.');
+  return dot > 0 && dot < domain.length - 1;
 };
 
 function getContactLabel(c) {
