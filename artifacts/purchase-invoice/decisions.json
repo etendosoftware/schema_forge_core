@@ -92,7 +92,7 @@
           "searchable": true,
           "section": "principal",
           "reference": "BusinessPartner",
-          "readOnlyLogic": null,
+          "readOnlyLogic": "@Processed@='Y'",
           "displayLogic": null,
           "seq": 10
         },
@@ -104,7 +104,7 @@
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
           },
-          "readOnlyLogic": null,
+          "readOnlyLogic": "@Processed@='Y'",
           "seq": 40
         },
         "currency": {
@@ -161,7 +161,7 @@
           "form": false,
           "reference": "User",
           "inputMode": "search",
-          "readOnlyLogic": null
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "salesRepresentative": {
           "visibility": "editable",
