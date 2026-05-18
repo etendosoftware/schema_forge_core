@@ -165,10 +165,10 @@ describe('InvoicePaymentModal', () => {
     assert.match(src, /e\.stopPropagation/);
   });
 
-  // ── i18n invalidAmount (ETP-4003) ──────────────────────────────────────────
+  // ── i18n paymentAmountInvalid (ETP-4005) ──────────────────────────────────
 
-  it('uses ui(invalidAmount) for the invalid amount error message', () => {
-    assert.match(src, /ui\('invalidAmount'\)/);
+  it('uses ui(paymentAmountInvalid) for the invalid amount error message', () => {
+    assert.match(src, /ui\('paymentAmountInvalid'\)/);
   });
 
   it('does not contain the hardcoded English string "Enter a valid amount"', () => {
