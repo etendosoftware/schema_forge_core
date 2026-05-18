@@ -155,8 +155,11 @@ The following issues in the **Cuenta Bancaria** inline add-row form were resolve
 
 **Format dropdown uses Radix Select.** The "Formato cuenta bancaria" dropdown in the add-row form now uses the same styled Radix Select component as "País de Origen", with the chevron icon correctly contained inside the field border.
 
-**Validation messages translated to Spanish.** Four backend validation messages for the bank account entity are now shown in Spanish:
+**SWIFT Code column added.** The "SWIFT Code" column is now visible in the Cuenta Bancaria table and in the inline add-row form, enabling entry of the SWIFT code when "Use SWIFT + Generic Account No." format is selected.
+
+**Validation messages translated to Spanish.** Five backend validation messages for the bank account entity are now shown in Spanish:
 - IBAN field empty when IBAN format is selected.
 - Generic account number empty when Generic format is selected.
 - Country field empty when IBAN format is selected.
 - IBAN code invalid for the selected country.
+- SWIFT code or generic account number empty when SWIFT format is selected.

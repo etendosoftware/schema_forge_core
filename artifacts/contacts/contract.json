@@ -1,8 +1,8 @@
 {
-  "version": "0.8.1",
+  "version": "0.9.0",
   "generatedAt": "2026-05-06T15:52:09.982Z",
-  "updatedAt": "2026-05-12T18:38:10.922Z",
-  "checksum": "c151e452e1f559fe",
+  "updatedAt": "2026-05-18T13:09:47.693Z",
+  "checksum": "2272094c7d24bd42",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -46,7 +46,8 @@
             "country",
             "bankFormat",
             "accountNo",
-            "iBAN"
+            "iBAN",
+            "swiftCode"
           ],
           "requireSavedRecord": true
         },
@@ -2956,8 +2957,9 @@
             "tsType": "string",
             "visibility": "editable",
             "required": false,
-            "grid": false,
-            "form": true
+            "grid": true,
+            "form": true,
+            "section": "principal"
           },
           {
             "name": "displayedAccount",
@@ -3805,7 +3807,8 @@
             "country",
             "bankFormat",
             "accountNo",
-            "iBAN"
+            "iBAN",
+            "swiftCode"
           ],
           "requireSavedRecord": true
         },
