@@ -270,7 +270,7 @@ function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus
           onCancel?.();
         }
       }}
-      className={`h-7 px-2 text-sm${isNumeric ? ' text-right tabular-nums' : ''}${isInvalid ? ' border-red-500 focus-visible:ring-red-500' : ' border-input'}`}
+      className={`h-7 px-2 text-sm bg-white${isNumeric ? ' text-right tabular-nums' : ''}${isInvalid ? ' border-red-500 focus-visible:ring-red-500' : ' border-input'}`}
       {...numericProps}
     />
   );
