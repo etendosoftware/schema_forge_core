@@ -16743,6 +16743,7 @@
     "sendModalSend": "Send",
     "sendModalSending": "Sending...",
     "sendModalSentSuccess": "{documentType} sent",
+    "invalidAmount": "Enter a valid amount",
     "sendModalDownloading": "Downloading...",
     "sendModalLoadingPreview": "Loading preview...",
     "sendModalPdfPreview": "PDF preview",

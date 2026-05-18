@@ -16988,6 +16988,7 @@
     "sendModalSend": "Enviar",
     "sendModalSending": "Enviando...",
     "sendModalSentSuccess": "{documentType} enviado",
+    "invalidAmount": "Ingresá un importe válido",
     "sendModalDownloading": "Descargando...",
     "sendModalLoadingPreview": "Cargando vista previa...",
     "sendModalPdfPreview": "Vista previa PDF",
