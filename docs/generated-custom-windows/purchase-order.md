@@ -98,17 +98,7 @@ The current evidence shows a purchase-order-specific experience rather than a ge
 
 Fields with a `min: 0` constraint — `orderedQuantity` and `discount` — now show a red border when the user types a negative value during inline edit. The row remains open and the save/confirm path for that row is blocked until the value is corrected or the edit is cancelled. The constraint is enforced client-side by `InlineLinesPanel` using the `min` metadata from the contract field definition.
 
-### Required field validation on new inline line
-
-When a new inline line is submitted with a required field left empty (for example, `product`), the empty field is highlighted with a red border and a toast notification is shown. The add-row remains open so the user can correct the missing value without losing the rest of the entered data.
-
-### Single toast on document confirmation
-
-Previously, completing a document produced two successive toasts — "Registro guardado" followed by "Registro procesado". After ETP-4005 only the "Registro procesado" toast fires on a successful confirmation. The intermediate save toast was removed to reduce noise in the confirmation flow.
-
-### Callout message sanitization
-
-Backend callout messages are sanitized before display: HTML tags (such as `<br/>`) are stripped and common redundant prefixes ("Note:", "Warning:") are removed from the message string. Users see plain-text callout feedback without raw markup.
+See [Shared validation & UX changes — ETP-4005](app-shell-functional-flows.md#shared-validation--ux-changes--etp-4005) for behaviors common to all document windows (required field validation, single confirmation toast, callout message sanitization).
 
 ## Automated evidence
 

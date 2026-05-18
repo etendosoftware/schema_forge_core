@@ -272,3 +272,25 @@ All windows that declare `notesField: "description"` in their `decisions.json` p
 - `useEntity` child-row refresh behavior and 401 logout behavior are code-backed but not directly covered by a dedicated UI test.
 - A fresh direct run of `tools/app-shell/src/auth/__tests__/api.test.js` currently fails because `tools/app-shell/src/auth/api.js` reads `window` during module import; treat that file as a pending test harness fix, not as a green automated proof point.
 - OAuth2 and PWA coverage is strong at source/build level, but still not browser-level E2E.
+
+## Shared validation & UX changes — ETP-4005
+
+These behaviors apply to **all document windows** (sales-order, sales-invoice, purchase-order, purchase-invoice, sales-quotation) and are implemented in shared components.
+
+### Required field validation on new inline line
+
+When a new inline line is submitted with a required field left empty (for example, `product`), the empty field is highlighted with a red border and a toast notification is shown. The add-row remains open so the user can correct the missing value without losing the rest of the entered data.
+
+### Single toast on document confirmation
+
+Previously, completing a document produced two successive toasts — "Registro guardado" followed by "Registro procesado". After ETP-4005 only the "Registro procesado" toast fires on a successful confirmation. The intermediate save toast was removed to reduce noise in the confirmation flow.
+
+### Callout message sanitization
+
+Backend callout messages are sanitized before display: HTML tags (such as `<br/>`) are stripped and common redundant prefixes ("Note:", "Warning:") are removed from the message string. Users see plain-text callout feedback without raw markup.
+
+**Source files**
+- `tools/app-shell/src/components/contract-ui/DataTable.jsx` — `isMissingRequired`, `isBelowMin` helpers; `invalidFields` state in `InlineAddRow`
+- `tools/app-shell/src/components/contract-ui/InlineLinesPanel.jsx` — `isValueBelowMin` helper; `invalidCell` state; `hasValidationErrorRef` keeps edit mode open on validation failure
+- `tools/app-shell/src/hooks/useEntity.js` — `handleSaveAndProcess` passes `{ silent: true }` to `handleSave` to suppress the intermediate save toast
+- `tools/app-shell/src/hooks/useCallout.js` — `sanitizeCalloutMessage` strips HTML and redundant prefixes before passing text to Sonner
