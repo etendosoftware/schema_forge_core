@@ -3,7 +3,10 @@ import { toast } from 'sonner';
 import { Mail, Search } from 'lucide-react';
 import { useUI } from '@/i18n';
 
-const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+const isValidEmail = (v) => {
+  const s = v.trim();
+  return s.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+};
 
 function getContactLabel(c) {
   const full = [c.etgoFirstname, c.etgoLastname].filter(Boolean).join(' ') || c.name || '';
