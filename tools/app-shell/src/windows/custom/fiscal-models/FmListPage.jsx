@@ -76,7 +76,7 @@ const MOCK_DECLARATIONS = [
     summary:{ accrued:1309.98, deductible:36789.06, result:-35479.08 },
     updatedAt:'18/05/2026' },
   { id:'349-2026-T1', model:'349', year:2026, period:'T1', type:'ord', status:'pendiente',   result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null, updatedAt:'—' },
-  { id:'303-2026-T1', model:'303', year:2026, period:'T1', type:'ord', status:'borrador',         result:{kind:'compensar',amount:2816.31}, incidents:{blocking:2,warning:3,items:[
+  { id:'303-2026-T1', model:'303', year:2026, period:'T1', type:'ord', status:'presentadoAcuse',         result:{kind:'compensar',amount:2816.31}, incidents:{blocking:2,warning:3,items:[
     { severity:'block', origin:'Casilla 28', message:'El total de cuota devengada no coincide con la suma de las cuotas parciales', suggestion:'Revisa las cuotas de los tipos 21%, 10% y 4%' },
     { severity:'block', origin:'Casilla 69', message:'El resultado de la liquidación está pendiente de confirmar', suggestion:'Verifica que el resultado neto sea correcto antes de generar el fichero' },
     { severity:'warn',  origin:'Casilla 48', message:'No se han detectado facturas de compra para este período', suggestion:'Comprueba si hay facturas de compra no registradas' },
