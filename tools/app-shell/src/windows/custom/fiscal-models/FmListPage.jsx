@@ -67,14 +67,14 @@ const MOCK_DECLARATIONS = [
   { id:'349-2025-05', model:'349', year:2025, period:'05', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_05.349',  updatedAt:'18/06/2025' },
   { id:'349-2025-04', model:'349', year:2025, period:'04', type:'ord', status:'omitido',          result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null,           updatedAt:'10/05/2025' },
   { id:'349-2025-03', model:'349', year:2025, period:'03', type:'ord', status:'presentadoAcuse',  result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:'2025_03.349',  updatedAt:'19/04/2025' },
-  { id:'303-2026-T1', model:'303', year:2026, period:'T1', type:'ord', nif:'A78901234', nombre:'Blanquiceleste SL', status:'borrador',         result:{kind:'compensar',amount:2816.31}, incidents:{blocking:2,warning:3,items:[
+  { id:'303-2026-T1', model:'303', year:2026, period:'T1', type:'ord', status:'borrador',         result:{kind:'compensar',amount:2816.31}, incidents:{blocking:2,warning:3,items:[
     { severity:'block', origin:'Casilla 28', message:'El total de cuota devengada no coincide con la suma de las cuotas parciales', suggestion:'Revisa las cuotas de los tipos 21%, 10% y 4%' },
     { severity:'block', origin:'Casilla 69', message:'El resultado de la liquidación está pendiente de confirmar', suggestion:'Verifica que el resultado neto sea correcto antes de generar el fichero' },
     { severity:'warn',  origin:'Casilla 48', message:'No se han detectado facturas de compra para este período', suggestion:'Comprueba si hay facturas de compra no registradas' },
     { severity:'warn',  origin:'Casilla 64', message:'El total deducible es inferior al período anterior en más de un 30%', suggestion:'Verifica si es coherente con la actividad del trimestre' },
     { severity:'warn',  origin:'NIF declarante', message:'El NIF del declarante no está verificado en la AEAT', suggestion:'Confirma el NIF en la configuración del declarante' },
   ]}, file:null, boxes:{ 7:3248, 9:682.08, 27:682.08, 28:16659, 29:3498.39, 45:3498.39, 46:-2816.31 }, summary:{ accrued:682.08, deductible:3498.39, result:-2816.31 }, updatedAt:'14/05/2026', current:true },
-  { id:'303-2025-T4', model:'303', year:2025, period:'T4', type:'ord', nif:'A78901234', nombre:'Blanquiceleste SL', status:'presentadoAcuse',  result:{kind:'compensar',amount:2100}, incidents:{blocking:0,warning:0}, file:'2025_T4.303', updatedAt:'28/01/2026' },
+  { id:'303-2025-T4', model:'303', year:2025, period:'T4', type:'ord', status:'presentadoAcuse',  result:{kind:'compensar',amount:2100}, incidents:{blocking:0,warning:0}, file:'2025_T4.303', updatedAt:'28/01/2026' },
 ];
 
 const DEFAULT_ACTIVE = { '303': true, '349': true };

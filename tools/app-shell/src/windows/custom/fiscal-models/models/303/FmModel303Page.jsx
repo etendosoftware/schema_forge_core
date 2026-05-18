@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUI } from '@/i18n';
 import {
   ArrowLeft, Settings2, Download, FileText, Lock, Play,
@@ -10,6 +10,7 @@ import {
 } from '../../FmCommon.jsx';
 import FmBoxes303 from './FmBoxes303.jsx';
 import { PresentModal, FileGenModal, ConfigDrawer, CompareDrawer } from '../../FmOverlays.jsx';
+import { neoBase } from '@/components/related-documents/helpers.js';
 import { fmtDecl, formatAmount, formatPeriod } from '../../fiscalModelsUtils.js';
 
 const STEPPER_INDEX = {
@@ -221,6 +222,21 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
   const [showFilegen, setShowFilegen] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
   const [showCompare, setShowCompare] = useState(false);
+  const [orgIdent, setOrgIdent] = useState({ nif: '', nombre: '' });
+
+  useEffect(() => {
+    if (!token || !apiBaseUrl) return;
+    fetch(`${neoBase(apiBaseUrl)}/session`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        const org = data?.organization;
+        if (!org) return;
+        setOrgIdent({ nif: org.taxId ?? '', nombre: org.name ?? '' });
+      })
+      .catch(() => {});
+  }, [token, apiBaseUrl]);
 
   const stepperSteps = [
     t('fm.stepper.pending'),
@@ -426,7 +442,7 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
                 year={decl.year}
                 period={decl.period}
                 sectionIds={page.sections}
-                identification={{ nif: decl.nif ?? '', nombre: decl.nombre ?? '', ...(decl.identification ?? {}) }}
+                identification={{ ...orgIdent, ...(decl.identification ?? {}) }}
               />
             </SectionCard>
           );
