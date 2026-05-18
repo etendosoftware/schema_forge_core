@@ -59,4 +59,26 @@ describe('SendDocumentModal', () => {
   it('generates download filename from windowName and documentNo', () => {
     assert.match(src, /\$\{windowName\}-\$\{documentNo\}\.pdf/);
   });
+
+  // ── ETP-4003: isValidEmail uses indexOf, not regex ─────────────────────────
+
+  it('isValidEmail does NOT use a regex for email validation', () => {
+    // The function must use indexOf-based logic, never a regex literal like /^.*@.*$/
+    assert.doesNotMatch(src, /\/\^.*@.*\$\//);
+  });
+
+  it('isValidEmail uses indexOf to find the @ character', () => {
+    assert.match(src, /indexOf\s*\(\s*'@'\s*\)/);
+  });
+
+  // ── ETP-4003: EmailFormPanel is module-level ───────────────────────────────
+
+  it('EmailFormPanel is defined as a function at module level (before the default export)', () => {
+    // The function declaration must appear before "export default function SendDocumentModal"
+    const emailPanelPos = src.indexOf('function EmailFormPanel');
+    const defaultExportPos = src.indexOf('export default function SendDocumentModal');
+    assert.ok(emailPanelPos > -1, 'EmailFormPanel function not found');
+    assert.ok(defaultExportPos > -1, 'SendDocumentModal default export not found');
+    assert.ok(emailPanelPos < defaultExportPos, 'EmailFormPanel must be defined before SendDocumentModal');
+  });
 });
