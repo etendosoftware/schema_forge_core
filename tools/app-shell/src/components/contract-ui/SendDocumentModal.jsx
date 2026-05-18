@@ -39,6 +39,65 @@ async function renderPdfIntoIframe(node, reportId, documentId, token, setPdfLoad
   setPdfLoading(false);
 }
 
+function EmailFormPanel({ to, setTo, emailLoading, contacts, filteredContacts, showDropdown, setShowDropdown, toPristine, setToPristine, subject, setSubject, message, setMessage, ui }) {
+  return (
+    <div style={{ width: '40%', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
+      <div style={{ position: 'relative' }}>
+        <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalTo')}</label>
+        <div style={{ position: 'relative' }}>
+          <input
+            type="text"
+            value={to}
+            onChange={e => { setTo(e.target.value); setShowDropdown(true); setToPristine(false); }}
+            onFocus={() => { contacts.length > 0 && setShowDropdown(true); setToPristine(false); }}
+            onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+            placeholder={emailLoading ? '' : 'email@company.com'}
+            style={{ width: '100%', fontSize: 13, padding: '8px 32px 8px 10px', border: `0.5px solid ${!isValidEmail(to) && !emailLoading && !toPristine && !showDropdown ? '#ef4444' : '#d1d5db'}`, borderRadius: 6, outline: 'none', color: '#111827', boxSizing: 'border-box' }}
+          />
+          <Search size={13} strokeWidth={1.5} color="#9ca3af" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+        </div>
+        {showDropdown && filteredContacts.length > 0 && (
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, background: '#fff', border: '0.5px solid #d1d5db', borderRadius: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: 160, overflowY: 'auto', marginTop: 2 }}>
+            {filteredContacts.map(c => (
+              <button
+                key={c.id}
+                type="button"
+                onMouseDown={() => { setTo(c.etgoEmail); setShowDropdown(false); }}
+                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 10px', fontSize: 12, color: '#111827', background: 'none', border: 'none', borderBottom: '0.5px solid #f3f4f6', cursor: 'pointer' }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#F3F4F6'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
+              >
+                {getContactLabel(c)}
+              </button>
+            ))}
+          </div>
+        )}
+        {!isValidEmail(to) && !emailLoading && !toPristine && !showDropdown && (
+          <span style={{ fontSize: 11, color: '#ef4444', marginTop: 3, display: 'block' }}>{ui('sendModalNoEmail')}</span>
+        )}
+      </div>
+      <div>
+        <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalSubject')}</label>
+        <input
+          type="text"
+          value={subject}
+          onChange={e => setSubject(e.target.value)}
+          style={{ width: '100%', fontSize: 13, padding: '8px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#111827', boxSizing: 'border-box' }}
+        />
+      </div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalMessage')}</label>
+        <textarea
+          value={message}
+          onChange={e => setMessage(e.target.value)}
+          placeholder={ui('sendModalMessagePlaceholder')}
+          style={{ width: '100%', flex: 1, minHeight: 80, fontSize: 13, padding: '8px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#111827', resize: 'none', boxSizing: 'border-box' }}
+        />
+      </div>
+    </div>
+  );
+}
+
 async function fetchAndDownloadPdf(reportId, documentId, windowName, documentNo, token) {
   const res = await fetch(`/api/reports/${reportId}/render`, {
     method: 'POST',
@@ -231,60 +290,16 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
           </div>
 
           {allowEmail && (
-          <div style={{ width: '40%', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
-            <div style={{ position: 'relative' }}>
-              <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalTo')}</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="text"
-                  value={to}
-                  onChange={e => { setTo(e.target.value); setShowDropdown(true); setToPristine(false); }}
-                  onFocus={() => { contacts.length > 0 && setShowDropdown(true); setToPristine(false); }}
-                  onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
-                  placeholder={emailLoading ? '' : 'email@company.com'}
-                  style={{ width: '100%', fontSize: 13, padding: '8px 32px 8px 10px', border: `0.5px solid ${!isValidEmail(to) && !emailLoading && !toPristine && !showDropdown ? '#ef4444' : '#d1d5db'}`, borderRadius: 6, outline: 'none', color: '#111827', boxSizing: 'border-box' }}
-                />
-                <Search size={13} strokeWidth={1.5} color="#9ca3af" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-              </div>
-              {showDropdown && filteredContacts.length > 0 && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, background: '#fff', border: '0.5px solid #d1d5db', borderRadius: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: 160, overflowY: 'auto', marginTop: 2 }}>
-                  {filteredContacts.map(c => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onMouseDown={() => { setTo(c.etgoEmail); setShowDropdown(false); }}
-                      style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 10px', fontSize: 12, color: '#111827', background: 'none', border: 'none', borderBottom: '0.5px solid #f3f4f6', cursor: 'pointer' }}
-                      onMouseEnter={e => { e.currentTarget.style.background = '#F3F4F6'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
-                    >
-                      {getContactLabel(c)}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {!isValidEmail(to) && !emailLoading && !toPristine && !showDropdown && (
-                <span style={{ fontSize: 11, color: '#ef4444', marginTop: 3, display: 'block' }}>{ui('sendModalNoEmail')}</span>
-              )}
-            </div>
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalSubject')}</label>
-              <input
-                type="text"
-                value={subject}
-                onChange={e => setSubject(e.target.value)}
-                style={{ width: '100%', fontSize: 13, padding: '8px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#111827', boxSizing: 'border-box' }}
-              />
-            </div>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <label style={{ fontSize: 12, fontWeight: 500, color: '#6B7280', display: 'block', marginBottom: 4 }}>{ui('sendModalMessage')}</label>
-              <textarea
-                value={message}
-                onChange={e => setMessage(e.target.value)}
-                placeholder={ui('sendModalMessagePlaceholder')}
-                style={{ width: '100%', flex: 1, minHeight: 80, fontSize: 13, padding: '8px 10px', border: '0.5px solid #d1d5db', borderRadius: 6, outline: 'none', color: '#111827', resize: 'none', boxSizing: 'border-box' }}
-              />
-            </div>
-          </div>
+            <EmailFormPanel
+              to={to} setTo={setTo}
+              emailLoading={emailLoading}
+              contacts={contacts} filteredContacts={filteredContacts}
+              showDropdown={showDropdown} setShowDropdown={setShowDropdown}
+              toPristine={toPristine} setToPristine={setToPristine}
+              subject={subject} setSubject={setSubject}
+              message={message} setMessage={setMessage}
+              ui={ui}
+            />
           )}
         </div>
 
