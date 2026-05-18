@@ -189,8 +189,9 @@ test.describe('Purchase Invoice — readOnlyLogic when processed (mocked)', () =
     const fieldRoot = page.getByTestId('field-orderReference');
     await expect(fieldRoot).toBeVisible({ timeout: 8_000 });
 
-    const input = fieldRoot.locator('input').first();
-    await expect(input).toBeEnabled({ timeout: 5_000 });
+    // The testid is placed directly on the <input> element for text-type fields,
+    // so fieldRoot itself is the control to assert against.
+    await expect(fieldRoot).toBeEnabled({ timeout: 5_000 });
   });
 
   test('draft invoice has editable businessPartner (contrast check)', async ({ page }) => {
@@ -203,7 +204,8 @@ test.describe('Purchase Invoice — readOnlyLogic when processed (mocked)', () =
     const fieldRoot = page.getByTestId('field-businessPartner');
     await expect(fieldRoot).toBeVisible({ timeout: 8_000 });
 
-    const control = fieldRoot.locator('input, button').first();
-    await expect(control).toBeEnabled({ timeout: 5_000 });
+    // In editable mode, SearchInput places the testid directly on the <input> element,
+    // so fieldRoot itself is the control to assert against.
+    await expect(fieldRoot).toBeEnabled({ timeout: 5_000 });
   });
 });
