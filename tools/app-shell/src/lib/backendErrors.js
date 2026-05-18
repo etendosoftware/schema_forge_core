@@ -5,7 +5,10 @@ const BACKEND_ERROR_MAP = {
 };
 
 export function translateBackendError(msg, t) {
-  if (!msg) return msg;
+  if (!msg || typeof t !== 'function') return msg;
   const key = BACKEND_ERROR_MAP[msg.trim()];
-  return (key && t(key)) || msg;
+  if (!key) return msg;
+  const translated = t(key);
+  // Guard: if t() returns the key itself the translation is missing — keep original
+  return (translated && translated !== key) ? translated : msg;
 }
