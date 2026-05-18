@@ -56,7 +56,7 @@ export function DashboardGreeting({ username = '', onAskCopilot }) {
       <div className="flex items-center gap-2 shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-10 gap-1.5 text-sm bg-white hover:bg-[#F5F7F9]">
+            <Button data-testid="dashboard-range-trigger" variant="outline" size="sm" className="h-10 gap-1.5 text-sm bg-white hover:bg-[#F5F7F9]">
               <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
               <span>{currentRangeLabel}</span>
               <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -66,6 +66,7 @@ export function DashboardGreeting({ username = '', onAskCopilot }) {
             {RANGE_KEYS.map((r) => (
               <DropdownMenuItem
                 key={r.value}
+                data-testid={`dashboard-range-option-${r.value}`}
                 onSelect={() => setRange(r.value)}
                 className={range === r.value ? 'font-semibold' : ''}
               >

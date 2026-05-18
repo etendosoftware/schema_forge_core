@@ -23,7 +23,9 @@ export default function GoodsShipmentWindow(props) {
   useBulkActionToast();
   const [searchParams] = useSearchParams();
   const docStatus = searchParams.get('DocStatus');
-  const initialColumnFilters = docStatus ? { documentStatus: docStatus } : undefined;
+  const initialColumnFilters = docStatus
+    ? { documentStatus: { mode: 'enumLabel', value: [docStatus] } }
+    : undefined;
 
   return (
     <GoodsShipmentPage
