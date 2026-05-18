@@ -32,7 +32,7 @@ describe('FmModel303Page — stepper', () => {
 
 describe('FmModel303Page — i18n completeness', () => {
   it('uses fm.tab.boxes for tab label', () => assert.match(src, /fm\.tab\.boxes/));
-  it('uses fm.tab.summary for tab label', () => assert.match(src, /fm\.tab\.summary/));
+  it('uses fm.tab.sources for tab label', () => assert.match(src, /fm\.tab\.sources/));
   it('uses fm.tab.incidents for tab label', () => assert.match(src, /fm\.tab\.incidents/));
   it('has no hardcoded Casillas/Resumen/Incidencias tab labels', () => {
     assert.doesNotMatch(src, /label: 'Casillas'/);
