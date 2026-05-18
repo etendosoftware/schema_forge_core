@@ -577,7 +577,7 @@ export function useEntity(entity, childEntity, {
     }
   }, []);
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(async ({ silent = false } = {}) => {
     if (!editing) return;
     setIsSaving(true);
     setSaveError(null);
@@ -707,7 +707,7 @@ export function useEntity(entity, childEntity, {
         }
         setSaveError(null);
         setFieldErrors({});
-        toast.success(isNew ? ui('recordCreated') : ui('recordSaved'));
+        if (!silent) toast.success(isNew ? ui('recordCreated') : ui('recordSaved'));
         return saved;
       } else {
         // ETP-3894: parse a structured MISSING_REQUIRED_FIELDS 400 from the backend so
@@ -832,7 +832,7 @@ export function useEntity(entity, childEntity, {
   }, [selected, refreshHeaderTotals]);
 
   const handleSaveAndProcess = useCallback(async (draftModeConfig) => {
-    const saved = await handleSave();
+    const saved = await handleSave({ silent: true });
     if (!saved?.id) return null;
 
     const { processField, processValue } = draftModeConfig;
