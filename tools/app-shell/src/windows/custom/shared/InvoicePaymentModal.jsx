@@ -75,6 +75,7 @@ export function PaymentRegisterForm({
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [invalidField, setInvalidField] = useState(null);
   const ui = useUI();
 
   useEffect(() => {
@@ -104,9 +105,11 @@ export function PaymentRegisterForm({
   const amountExceeded = amount > outstanding;
 
   const handleSubmit = async () => {
-    if (!amount || amount <= 0) { setError('Enter a valid amount'); return; }
+    if (!date) { setInvalidField('date'); setError(ui('paymentDateRequired')); return; }
+    if (!amount || amount <= 0) { setInvalidField('amount'); setError(ui('paymentAmountInvalid')); return; }
     if (amountExceeded) return;
-    if (!accountId) { setError('Select an account'); return; }
+    if (!accountId) { setInvalidField('account'); setError(ui('paymentAccountRequired')); return; }
+    setInvalidField(null);
     setError(null);
     setSaving(true);
     try {
@@ -123,9 +126,9 @@ export function PaymentRegisterForm({
         },
       );
       const resJson = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(resJson?.response?.message || resJson?.message || `Failed (${res.status})`);
+      if (!res.ok) throw new Error(resJson?.response?.message || resJson?.message || ui('paymentRequestFailed'));
       if (resJson?.response?.error || resJson?.response?.status === -1) {
-        throw new Error(resJson?.response?.error?.message || resJson?.response?.message?.text || 'Payment failed');
+        throw new Error(resJson?.response?.error?.message || resJson?.response?.message?.text || ui('paymentRequestFailed'));
       }
       const paymentData = resJson?.response?.data || {};
       const selectedAccount = accounts.find(a => a.id === accountId);
@@ -138,8 +141,14 @@ export function PaymentRegisterForm({
     <div style={{ marginTop: 4, marginBottom: 4, border: '0.5px solid #E5E7EB', borderRadius: 8, padding: 12, background: '#FAFBFC' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         <div>
-          <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>{ui('paymentDate')}</label>
-          <DateField value={date} onChange={setDate} />
+          <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>
+            {ui('paymentDate')} <span style={{ color: '#dc2626' }}>*</span>
+          </label>
+          <DateField
+            value={date}
+            onChange={(v) => { setDate(v); if (invalidField === 'date') setInvalidField(null); }}
+            className={invalidField === 'date' ? 'border-red-500 focus-within:ring-red-500' : ''}
+          />
         </div>
         <div>
           <label style={{ fontSize: 11, color: '#6B7280', display: 'block', marginBottom: 3 }}>{ui('paymentAmount')} ({currency})</label>
@@ -173,8 +182,8 @@ export function PaymentRegisterForm({
           style={{ fontSize: 12, fontWeight: 500, padding: '5px 12px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>
           {ui('cancel')}
         </button>
-        <button type="button" onClick={handleSubmit} disabled={saving || amountExceeded}
-          style={{ fontSize: 12, fontWeight: 500, padding: '5px 12px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: (saving || amountExceeded) ? 'not-allowed' : 'pointer', opacity: (saving || amountExceeded) ? 0.4 : 1 }}>
+        <button type="button" onClick={handleSubmit} disabled={saving || amountExceeded || !date}
+          style={{ fontSize: 12, fontWeight: 500, padding: '5px 12px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: (saving || amountExceeded || !date) ? 'not-allowed' : 'pointer', opacity: (saving || amountExceeded || !date) ? 0.4 : 1 }}>
           {saving ? ui('processing') : ui('confirmPayment')}
         </button>
       </div>
