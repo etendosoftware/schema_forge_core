@@ -59,6 +59,10 @@ export default function SendToEvaluationModal({
 
   const handleConfirm = async () => {
     if (loading) return;
+    if (lineCount === 0) {
+      setError(ui('sqNoLinesError'));
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -67,8 +71,9 @@ export default function SendToEvaluationModal({
         { method: 'POST', headers, body: JSON.stringify({ fieldValues: {} }) },
       );
       if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.response?.message || err?.message || `Error (${res.status})`);
+        const errJson = await res.json().catch(() => null);
+        const rawMsg = errJson?.response?.message || errJson?.message || `Error (${res.status})`;
+        throw new Error(rawMsg.includes('@OrderWithoutLines@') ? ui('sqNoLinesError') : rawMsg);
       }
       onClose();
       window.location.reload();
@@ -133,10 +138,10 @@ export default function SendToEvaluationModal({
             style={{ ...btnSecondary, opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
             {ui('cancel')}
           </button>
-          <button type="button" onClick={handleConfirm} disabled={loading}
+          <button type="button" onClick={handleConfirm} disabled={loading || lineCount === 0}
             style={{
               ...btnPrimary,
-              opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading || lineCount === 0 ? 0.5 : 1, cursor: loading || lineCount === 0 ? 'not-allowed' : 'pointer',
               display: 'inline-flex', alignItems: 'center', gap: 6,
             }}>
             {loading && (

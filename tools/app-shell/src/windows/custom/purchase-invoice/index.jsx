@@ -123,11 +123,14 @@ export default function PurchaseInvoiceWindow(props) {
     }
   }, [location, navigate]);
 
+  const draftModeOverride = { enabled: true, processField: 'documentAction', processValue: 'CO', label: 'Confirm', disableWhenEmpty: true };
+
   if (recordId) {
     return (
       <CreateContactContext.Provider value={createContactCtxValue}>
         <HeaderPage
           {...props}
+          draftMode={draftModeOverride}
           secondaryTabs={[]}
           summary={summary}
           extraBadges={[]}
