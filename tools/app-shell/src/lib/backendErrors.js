@@ -2,6 +2,7 @@ const BACKEND_ERROR_MAP = {
   'Country needed in an IBAN account.': 'backendError.countryIban',
   'Using IBAN for generating the Displayed Account requires to introduce the IBAN': 'backendError.ibanRequired',
   'Using the Generic Account No. for generating the Displayed Account requires to introduce a Generic Account Number': 'backendError.genericAccountRequired',
+  'IBAN code entered is not correct. Please review the IBAN code and the country defined for the bank': 'backendError.ibanInvalid',
 };
 
 export function translateBackendError(msg, t) {

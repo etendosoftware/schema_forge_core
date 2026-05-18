@@ -17812,6 +17812,7 @@
     "backendError.ibanRequired": "Using IBAN for generating the Displayed Account requires to introduce the IBAN",
     "backendError.genericAccountRequired": "Using the Generic Account No. for generating the Displayed Account requires to introduce a Generic Account Number",
     "backendError.countryIban": "Country needed in an IBAN account.",
+    "backendError.ibanInvalid": "IBAN code entered is not correct. Please review the IBAN code and the country defined for the bank",
     "uomTypeArea": "Area",
     "uomTypeLength": "Length",
     "uomTypeTime": "Time",
