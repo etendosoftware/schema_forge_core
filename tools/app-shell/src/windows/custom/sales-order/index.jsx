@@ -1,9 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useUI } from '@/i18n';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import { useRowDelete } from '@/hooks/useRowDelete';
+import { buildPendingDeliveryFilter } from '../shared/pendingDeliveryFilter.js';
+import OrderPreview from '../shared/OrderPreview.jsx';
 import GeneratedApp from '@generated/sales-order/generated/web/sales-order/index.jsx';
 import HeaderTable from '@generated/sales-order/generated/web/sales-order/HeaderTable';
 import OrderReactivateBulkAction from '@generated/sales-order/custom/OrderReactivateBulkAction';
@@ -73,6 +75,28 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
     onSuccess: () => setRefreshKey(k => k + 1),
   });
 
+  const location = useLocation();
+  const [savedRecord, setSavedRecord] = useState(null);
+  const effectiveRecord = savedRecord ?? location.state?.savedRecord ?? null;
+  const clearSavedRecord = useCallback(() => {
+    setSavedRecord(null);
+    if (location.state?.savedRecord) {
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
+
+  const renderPreview = useCallback(({ row, onClose, onEdit }) => (
+    <OrderPreview
+      order={row}
+      token={token}
+      apiBaseUrl={apiBaseUrl}
+      windowName={windowName}
+      specName="sales-order"
+      onClose={onClose}
+      onEdit={onEdit}
+    />
+  ), [token, apiBaseUrl, windowName]);
+
   const rowQuickActions = useMemo(() => ({
     enabled: true,
     editMode: 'navigate',
@@ -82,6 +106,7 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
       duplicate: { show: true },
       delete: { show: true },
     },
+    documentPreview: true,
     onEdit: (row) => navigate(`/${windowName}/${row.id}`),
     onClone: (row) => setCloneTargets([row]),
     onDelete: requestDelete,
@@ -163,6 +188,9 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
     );
   }
 
+  const { initialColumnFilters, isPendingDelivery, initialAdvancedFilter } =
+    buildPendingDeliveryFilter(searchParams, 'deliveryStatus');
+
   return (
     <>
       <ListView
@@ -183,8 +211,14 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
             <OrderReactivateBulkAction {...ctx} />
           </>
         )}
+        initialColumnFilters={initialColumnFilters}
+        initialAdvancedFilter={initialAdvancedFilter}
+        initialColumns={isPendingDelivery ? LIST_COLUMNS : null}
         dateFilterKey="orderDate"
         refreshTrigger={refreshKey}
+        renderPreview={renderPreview}
+        externalPreviewRow={effectiveRecord}
+        onExternalPreviewClose={clearSavedRecord}
         {...rest}
       />
       {deleteDialog}

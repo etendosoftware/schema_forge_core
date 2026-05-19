@@ -59,7 +59,13 @@
       "CL",
       "VO",
       "CJ"
-    ]
+    ],
+    "preview": {
+      "enabled": true,
+      "specName": "sales-quotation",
+      "hasPdf": true,
+      "cacheOnComplete": true
+    }
   },
   "entities": {
     "header": {

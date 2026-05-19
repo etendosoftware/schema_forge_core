@@ -103,6 +103,7 @@ body { font-family: var(--font-sans); font-size: 13px; line-height: 18px; color:
 .inv-totals-inner { width:300px; display:flex; flex-direction:column; gap:8px; }
 .inv-totals .row { display:flex; justify-content:space-between; font-size:13px; color:var(--fg-2); font-variant-numeric:tabular-nums; }
 .inv-totals .row.grand { margin-top:8px; padding-top:10px; border-top:1px solid var(--border-1); font-size:15px; font-weight:700; color:var(--fg-1); }
+.inv-totals .row.discount { color:var(--fg-3); font-size:12px; }
 
 /* Observations */
 .inv-observ { border:1px solid var(--border-1); border-radius:var(--radius-lg); padding:14px 18px; display:grid; grid-template-columns:120px 1fr; gap:16px; margin-top:8px; }
@@ -196,6 +197,13 @@ export const DOCUMENT_TEMPLATE = `<!DOCTYPE html>
   <!-- Totals -->
   <div class="inv-totals">
     <div class="inv-totals-inner">
+      {{#if grossAmount}}
+      <div class="row"><span>{{labels.subtotalWithoutDiscount}}</span><span>{{fmt grossAmount}}</span></div>
+      <div class="row discount"><span>{{labels.discountPerProduct}}</span><span>−{{fmt discountPerProduct}}</span></div>
+      {{/if}}
+      {{#if totalDiscountAmt}}
+      <div class="row discount"><span>{{labels.totalDiscount}} ({{etgoTotalDiscount}}%)</span><span>−{{fmt totalDiscountAmt}}</span></div>
+      {{/if}}
       <div class="row"><span>{{labels.subtotal}}</span><span>{{fmt netAmount}}</span></div>
       <div class="row"><span>{{labels.tax}}</span><span>{{fmt taxAmount}}</span></div>
       <div class="row grand"><span>{{labels.grandTotal}}</span><span>{{fmt grandTotal}}</span></div>

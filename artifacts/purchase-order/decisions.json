@@ -41,7 +41,14 @@
       "CL",
       "VO"
     ],
-    "dateFilterKey": "orderDate"
+    "dateFilterKey": "orderDate",
+    "preview": {
+      "enabled": true,
+      "specName": "purchase-order",
+      "hasPdf": false,
+      "cacheOnComplete": true,
+      "dropZone": true
+    }
   },
   "entities": {
     "header": {

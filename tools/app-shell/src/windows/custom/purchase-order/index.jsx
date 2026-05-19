@@ -1,17 +1,19 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useUI } from '@/i18n';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import { useRowDelete } from '@/hooks/useRowDelete';
+import { buildPendingDeliveryFilter } from '../shared/pendingDeliveryFilter.js';
+import OrderPreview from '../shared/OrderPreview.jsx';
 import { ListView } from '@/components/contract-ui';
-import BulkDocumentAction, { buildInOutActions } from '@/components/contract-ui/BulkDocumentAction';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 import HeaderTable from '@generated/purchase-order/generated/web/purchase-order/HeaderTable';
 import GeneratedApp from '@generated/purchase-order/generated/web/purchase-order/index.jsx';
+import PurchaseOrderReactivateBulkAction from '@generated/purchase-order/custom/PurchaseOrderReactivateBulkAction';
 import BulkPurchaseOrderMoreMenu from '@generated/purchase-order/custom/BulkPurchaseOrderMoreMenu';
 import { ConfirmModal as PoConfirmModal, PoConfirmResultModal, ManageDocsLauncher as PoManageDocsLauncher } from '@generated/purchase-order/custom/PurchaseOrderActions';
 import LinesEmptyState from '@/components/contract-ui/LinesEmptyState.jsx';
@@ -76,6 +78,28 @@ export default function PurchaseOrderWindow(props) {
     onSuccess: () => setRefreshKey(k => k + 1),
   });
 
+  const location = useLocation();
+  const [savedRecord, setSavedRecord] = useState(null);
+  const effectiveRecord = savedRecord ?? location.state?.savedRecord ?? null;
+  const clearSavedRecord = useCallback(() => {
+    setSavedRecord(null);
+    if (location.state?.savedRecord) {
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
+
+  const renderPreview = useCallback(({ row, onClose, onEdit }) => (
+    <OrderPreview
+      order={row}
+      token={token}
+      apiBaseUrl={apiBaseUrl}
+      windowName={windowName}
+      specName="purchase-order"
+      onClose={onClose}
+      onEdit={onEdit}
+    />
+  ), [token, apiBaseUrl, windowName]);
+
   const rowQuickActions = useMemo(() => ({
     enabled: true,
     editMode: 'navigate',
@@ -85,9 +109,14 @@ export default function PurchaseOrderWindow(props) {
       duplicate: { show: true },
       delete: { show: true },
     },
+    documentPreview: true,
     onEdit: (row) => navigate(`/${windowName}/${row.id}`),
     onClone: (row) => setCloneTargets([row]),
     onDelete: requestDelete,
+    // Row kebab mirrors the detail page: Confirm for drafts (opens the same
+    // ConfirmModal once the detail mounts via state.autoOpenConfirm), and
+    // Reactivate for completed orders without linked documents — same gate as
+    // the detail's menuActions.
     menuActions: ({ row, status }) => {
       // For completed orders, only surface "Gestionar..." when there is still
       // pending receipt or invoice — same criterion used by
@@ -113,6 +142,14 @@ export default function PurchaseOrderWindow(props) {
           label: manageLabelKey ? ui(manageLabelKey) : '',
           visible: !!manageLabelKey,
           onClick: ({ row: r }) => setManageRow(r),
+        },
+        {
+          key: 'reactivate',
+          label: ui('reactivate'),
+          labelKey: 'reactivate',
+          successKey: 'reactivated',
+          documentAction: 'RE',
+          visible: status === 'CO' && !row?.hasLinkedDocuments,
         },
       ];
     },
@@ -150,6 +187,9 @@ export default function PurchaseOrderWindow(props) {
     );
   }
 
+  const { initialColumnFilters, isPendingDelivery, initialAdvancedFilter } =
+    buildPendingDeliveryFilter(searchParams, 'deliveryStatusPurchase');
+
   return (
     <>
       <ListView
@@ -164,11 +204,17 @@ export default function PurchaseOrderWindow(props) {
         bulkActions={(ctx) => (
           <>
             <BulkPurchaseOrderMoreMenu {...ctx} />
-            <BulkDocumentAction {...ctx} buildActions={buildInOutActions} />
+            <PurchaseOrderReactivateBulkAction {...ctx} />
           </>
         )}
+        initialColumnFilters={initialColumnFilters}
+        initialAdvancedFilter={initialAdvancedFilter}
+        initialColumns={isPendingDelivery ? LIST_COLUMNS : null}
         dateFilterKey="orderDate"
         refreshTrigger={refreshKey}
+        renderPreview={renderPreview}
+        externalPreviewRow={effectiveRecord}
+        onExternalPreviewClose={clearSavedRecord}
         {...props}
       />
       {deleteDialog}
