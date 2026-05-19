@@ -27,6 +27,7 @@
   "entities": {
     "header": {
       "name": "goodsShipment",
+      "javaQualifier": "goodsShipmentHeaderHandler",
       "draftMode": {
         "enabled": false
       },
@@ -36,7 +37,8 @@
           "grid": true,
           "searchable": true,
           "inputMode": "text",
-          "section": "principal"
+          "section": "principal",
+          "seq": 20
         },
         "businessPartner": {
           "grid": true,
@@ -44,19 +46,22 @@
           "reference": "BusinessPartner",
           "inputMode": "search",
           "readOnlyLogic": "@Processed@='Y'",
-          "section": "principal"
+          "section": "principal",
+          "seq": 10
         },
         "movementDate": {
           "grid": true,
           "searchable": true,
           "inputMode": "date",
-          "section": "principal"
+          "section": "principal",
+          "seq": 30
         },
         "warehouse": {
           "grid": true,
           "searchable": true,
           "inputMode": "search",
-          "section": "principal"
+          "section": "principal",
+          "seq": 40
         },
         "documentStatus": {
           "visibility": "readOnly",
@@ -72,7 +77,8 @@
             "filterKey": "C_BPartner_ID"
           },
           "grid": true,
-          "section": "principal"
+          "section": "principal",
+          "seq": 50
         },
         "accountingDate": {
           "visibility": "system"
@@ -185,6 +191,7 @@
         "completelyInvoiced": {
           "visibility": "readOnly",
           "grid": true,
+          "form": false,
           "name": "invoiced",
           "badge": true,
           "badgeLabels": {
@@ -202,6 +209,7 @@
     },
     "lines": {
       "name": "goodsShipmentLine",
+      "javaQualifier": "goodsShipmentLineHandler",
       "fields": {
         "lineNo": {
           "visibility": "system"

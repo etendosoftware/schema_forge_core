@@ -18,7 +18,6 @@ const breadcrumb = 'Sales / Goods Shipment';
 // @sf-generated-start summary:goodsShipment
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'invoiced', column: 'Iscompletelyinvoiced', type: 'boolean' },
 ];
 
 const statusField = 'documentStatus';
@@ -30,7 +29,8 @@ const extraBadges = [];
 
 // @sf-generated-start processes:goodsShipment
 const processes = [
-
+  { name: 'Process Shipment', label: 'Complete', style: 'positive', columnName: 'documentAction',
+    displayLogicRaw: "@documentStatus@='DR'" },
 ];
 // @sf-generated-end processes:goodsShipment
 
@@ -39,7 +39,7 @@ const draftMode = null;
 // @sf-generated-end draftMode:goodsShipment
 
 // @sf-generated-start requiredHeaderFields:goodsShipment
-const requiredHeaderFields = ['documentNo', 'warehouse', 'businessPartner', 'partnerAddress', 'movementDate', 'invoiced'];
+const requiredHeaderFields = ['documentNo', 'warehouse', 'businessPartner', 'partnerAddress', 'movementDate'];
 // @sf-generated-end requiredHeaderFields:goodsShipment
 
 // @sf-generated-start addLineFields:goodsShipmentLine

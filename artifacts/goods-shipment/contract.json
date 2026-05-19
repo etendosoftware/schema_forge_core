@@ -1,8 +1,8 @@
 {
-  "version": "0.6.0",
+  "version": "0.9.0",
   "generatedAt": "2026-04-29T19:04:55.657Z",
-  "updatedAt": "2026-05-11T16:22:43.826Z",
-  "checksum": "86cc41085f28c4e2",
+  "updatedAt": "2026-05-19T14:04:54.067Z",
+  "checksum": "4d02101d8e7af5c9",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -55,6 +55,7 @@
               "source": "documentType.sequence"
             },
             "section": "principal",
+            "seq": 20,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -76,6 +77,7 @@
             "reference": "Warehouse",
             "inputMode": "search",
             "section": "principal",
+            "seq": 40,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_InOut_Warehouse"
             },
@@ -100,6 +102,7 @@
             "reference": "BusinessPartner",
             "inputMode": "search",
             "section": "principal",
+            "seq": 10,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_BPartner"
             },
@@ -128,6 +131,7 @@
               "filterKey": "C_BPartner_ID"
             },
             "section": "principal",
+            "seq": 50,
             "validationRule": {
               "code": "C_BPartner_Location.C_BPartner_ID=@C_BPartner_ID@ AND C_BPartner_Location.IsShipTo='Y' AND C_BPartner_Location.IsActive='Y'",
               "contextParams": [],
@@ -172,6 +176,7 @@
             },
             "defaultValue": "@#Date@",
             "section": "principal",
+            "seq": 30,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_AccountingDate"
             },
@@ -251,7 +256,7 @@
             "visibility": "readOnly",
             "required": true,
             "grid": true,
-            "form": true,
+            "form": false,
             "sourceRequired": true,
             "derivation": {
               "type": "computed",
@@ -325,7 +330,8 @@
               "source": "false"
             }
           }
-        ]
+        ],
+        "javaQualifier": "goodsShipmentHeaderHandler"
       },
       "goodsShipmentLine": {
         "tableName": "M_InOutLine",
@@ -430,7 +436,8 @@
               "source": "0"
             }
           }
-        ]
+        ],
+        "javaQualifier": "goodsShipmentLineHandler"
       }
     }
   },
@@ -1011,7 +1018,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "goodsShipmentHeaderHandler"
       },
       "goodsShipmentLine": {
         "tableName": "M_InOutLine",
@@ -1298,7 +1306,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "goodsShipmentLineHandler"
       }
     },
     "endpoints": [
@@ -1371,7 +1380,18 @@
         "supportedFilters": []
       }
     ],
-    "processEndpoints": []
+    "processEndpoints": [
+      {
+        "name": "Process Shipment",
+        "method": "POST",
+        "path": "/goodsShipment/:id/action/documentAction",
+        "entity": "goodsShipment",
+        "columnName": "documentAction",
+        "params": [],
+        "preconditions": [],
+        "steps": 0
+      }
+    ]
   },
   "apiPrediction": {
     "specName": "goods-shipment",
@@ -1920,6 +1940,22 @@
         "field": "product",
         "runner": "node",
         "description": "Field 'product' should have type 'string' in goodsShipmentLine"
+      },
+      {
+        "id": "t-process-failure-Process-Shipment",
+        "category": "process-failure",
+        "process": "Process Shipment",
+        "entity": "goodsShipment",
+        "runner": "junit",
+        "description": "Process 'Process Shipment' should fail when preconditions are not met"
+      },
+      {
+        "id": "t-process-happy-Process-Shipment",
+        "category": "process-happy",
+        "process": "Process Shipment",
+        "entity": "goodsShipment",
+        "runner": "junit",
+        "description": "Process 'Process Shipment' should complete successfully with valid preconditions"
       },
       {
         "id": "t-readonlylogic-evaluable-goodsShipment-businessPartner",
@@ -2886,7 +2922,7 @@
       }
     ],
     "summary": {
-      "total": 167,
+      "total": 169,
       "byCategory": {
         "action-endpoint": 12,
         "crud-flags": 2,
@@ -2895,6 +2931,8 @@
         "displaylogic-valid": 1,
         "field-presence": 13,
         "field-type": 13,
+        "process-failure": 1,
+        "process-happy": 1,
         "readonlylogic-evaluable": 8,
         "readonlylogic-valid": 8,
         "rule-declared": 3,
@@ -2905,7 +2943,7 @@
       },
       "byRunner": {
         "node": 167,
-        "junit": 0
+        "junit": 2
       }
     }
   }

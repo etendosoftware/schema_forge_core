@@ -1,18 +1,24 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useUI, useMenuLabel } from '@/i18n';
 import ReturnWizard from './ReturnWizard';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
+import GoodsShipmentConfirmModal from './GoodsShipmentConfirmModal';
+import { ConfirmResultModal } from '@generated/sales-order/custom/OrderCreateInvoice';
 
 export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl, api }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
+  const navigate = useNavigate();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [showInvoicePreview, setShowInvoicePreview] = useState(false);
   const [creatingInvoice, setCreatingInvoice] = useState(false);
   const [returnLines, setReturnLines] = useState([]);
   const [showSend, setShowSend] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmedDocs, setConfirmedDocs] = useState(null);
 
   const isCompleted = data?.documentStatus === 'CO';
   const ci = data?.completelyInvoiced;
@@ -23,6 +29,12 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
     Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',
   }), [token]);
+
+  useEffect(() => {
+    const handler = () => setShowConfirmModal(true);
+    window.addEventListener('goods-shipment:open-confirm-modal', handler);
+    return () => window.removeEventListener('goods-shipment:open-confirm-modal', handler);
+  }, []);
 
   useEffect(() => {
     if (!wizardOpen || !recordId || !base) return;
@@ -123,6 +135,28 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
           </svg>
           {ui('createReturn')}
         </button>
+      )}
+
+      {!isCompleted && showConfirmModal && (
+        <GoodsShipmentConfirmModal
+          base={base}
+          headers={headers}
+          recordId={recordId}
+          onConfirmed={(docs) => { setShowConfirmModal(false); setConfirmedDocs(docs); }}
+          onClose={() => setShowConfirmModal(false)}
+        />
+      )}
+
+      {confirmedDocs && createPortal(
+        <ConfirmResultModal
+          docs={confirmedDocs}
+          ui={ui}
+          navigate={navigate}
+          currency={data?.['currency$_identifier'] || ''}
+          title={ui('shipmentConfirmedTitle')}
+          onClose={() => setConfirmedDocs(null)}
+        />,
+        document.body,
       )}
 
       {showInvoicePreview && createPortal(
