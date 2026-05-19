@@ -72,7 +72,7 @@ const MOCK_DECLARATIONS = [
       { severity:'warn', origin:'Casilla 4', message:'El tipo aplicado (7%) difiere del tipo registrado para el período anterior (10%)', suggestion:'Verifica si se trata de una operación a tipo reducido correcta' },
     ]},
     file:null,
-    boxes:{ 1:44, 3:1.76, 4:201, 6:14.07, 7:6162.60, 9:1294.15, 27:1309.98, 28:175186, 29:36789.06, 45:36789.06, 46:-35479.08 },
+    boxes:{ 1:44, 3:1.76, 4:201, 6:14.07, 7:6162.60, 9:1294.15, 27:1309.98, 28:175186, 29:36789.06, 45:36789.06, 46:-35479.08, 59:23, 60:36 },
     summary:{ accrued:1309.98, deductible:36789.06, result:-35479.08 },
     sources: [
       { date:'12/04/2026', ref:'10000015', type:'Venta',  party:'Laura Morat',          regime:'IVA Normal (21%)',  base:4060.00,    vat:852.60,  total:4912.60,   boxes:'07, 09' },
@@ -106,8 +106,10 @@ const MOCK_DECLARATIONS = [
       { date:'08/05/2026', ref:'10000017', type:'Compra', party:'Tercero España',        regime:'IVA Normal (21%)',  base:33.00,      vat:6.93,    total:39.93,     boxes:'28, 29' },
       { date:'08/05/2026', ref:'10000018', type:'Compra', party:'Tercero España',        regime:'IVA Normal (21%)',  base:11.00,      vat:2.31,    total:13.31,     boxes:'28, 29' },
       { date:'11/05/2026', ref:'10000019', type:'Compra', party:'Tercero España',        regime:'IVA Normal (21%)',  base:33.00,      vat:6.93,    total:39.93,     boxes:'28, 29' },
+      { date:'19/05/2026', ref:'10000038', type:'Venta',  party:'Italia',                regime:'Entrega intracom. (%N→0%)', base:23.00, vat:0,       total:23.00,     boxes:'59' },
+      { date:'19/05/2026', ref:'10000039', type:'Venta',  party:'Juan Perez',            regime:'Exportación (%N→0%)',       base:36.00, vat:0,       total:36.00,     boxes:'60' },
     ],
-    updatedAt:'18/05/2026' },
+    updatedAt:'19/05/2026' },
   { id:'349-2026-T1', model:'349', year:2026, period:'T1', type:'ord', status:'pendiente',   result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null, updatedAt:'—' },
   { id:'303-2026-T1', model:'303', year:2026, period:'T1', type:'ord', status:'presentadoAcuse',         result:{kind:'compensar',amount:2816.31}, incidents:{blocking:2,warning:3,items:[
     { severity:'block', origin:'Casilla 28', message:'El total de cuota devengada no coincide con la suma de las cuotas parciales', suggestion:'Revisa las cuotas de los tipos 21%, 10% y 4%' },
