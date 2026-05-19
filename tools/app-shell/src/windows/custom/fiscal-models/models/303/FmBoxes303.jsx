@@ -88,11 +88,12 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
                   }
                   const isFixed = row.fixedValues != null && Object.prototype.hasOwnProperty.call(row.fixedValues, boxNum);
                   const val = isFixed ? row.fixedValues[boxNum] : (valueMap[boxNum] ?? null);
+                  const colType = row.cellTypes?.[ci] ?? section.colTypes?.[ci] ?? 'amount';
                   return (
                     <div key={ci} className={`fm-aeat-cell${isFixed ? ' fm-aeat-cell--fixed' : ''}`}>
                       <span className="fm-aeat-cell__num">{String(boxNum).padStart(2, '0')}</span>
                       <span className="fm-aeat-cell__value">
-                        {val != null ? formatCell(val, section.colTypes?.[ci] ?? 'amount') : '—'}
+                        {val != null ? formatCell(val, colType) : '—'}
                       </span>
                     </div>
                   );

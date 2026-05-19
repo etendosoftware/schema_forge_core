@@ -119,7 +119,7 @@ const BASE = {
       rows: [
         { id: 'reg_cuotas_art80',        labelKey: 'fm.box.row.reg_cuotas_art80',        cells: [76] },
         { id: 'suma_resultados',         labelKey: 'fm.box.row.suma_resultados',          cells: [64] },
-        { id: 'atribuible_estado',       labelKey: 'fm.box.row.atribuible_estado',        cells: [65, 66] },
+        { id: 'atribuible_estado',       labelKey: 'fm.box.row.atribuible_estado',        cells: [65, 66], fixedValues: { 65: 100 }, cellTypes: ['percent', 'amount'] },
         { id: 'iva_importacion',         labelKey: 'fm.box.row.iva_importacion',          cells: [77] },
         { id: 'cuotas_compensar',        labelKey: 'fm.box.row.cuotas_compensar',         cells: [110] },
         { id: 'cuotas_compensar_aplic',  labelKey: 'fm.box.row.cuotas_compensar_aplic',  cells: [78] },
