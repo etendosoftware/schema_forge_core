@@ -10,7 +10,8 @@ export function getInvoiceDraftMode(ui) {
   };
 }
 
-export function buildInvoiceRowQuickActions(navigate, windowName, setCloneTargets, setEmailRow, requestDelete) {
+export function buildInvoiceRowQuickActions(navigate, windowName, setCloneTargets, setEmailRow, requestDelete, options = {}) {
+  const { showEmail = true } = options;
   return {
     enabled: true,
     editMode: 'navigate',
@@ -18,12 +19,12 @@ export function buildInvoiceRowQuickActions(navigate, windowName, setCloneTarget
     actions: {
       edit: { show: true },
       duplicate: { show: true },
-      email: { show: true },
+      email: { show: showEmail },
       delete: { show: true },
     },
     onEdit: (row) => navigate(`/${windowName}/${row.id}`),
     onClone: (row) => setCloneTargets([row]),
-    onEmail: (row) => setEmailRow(row),
+    onEmail: showEmail ? (row) => setEmailRow(row) : undefined,
     onDelete: requestDelete,
   };
 }

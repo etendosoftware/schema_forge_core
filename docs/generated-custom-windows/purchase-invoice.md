@@ -61,6 +61,7 @@ Use this window to register supplier invoices, keep the payable document aligned
 ## Manual verification
 
 1. Open `/purchase-invoice` and confirm the list shows: Invoice Date (no dot), Document No. (the `POReference` value relabeled through `labelOverrides`), Due Date (green dot for `outstandingAmount ≤ 0` regardless of date, red dot + red date text for past-due rows that still have outstanding balance, yellow dot for rows due within the next 7 days with outstanding balance, gray dot for everything else, "—" when no due date exists), Business Partner, Document Status, Total Gross Amount, and Pending Payment in that exact column order. Pay particular attention to invoices that are past their due date but already paid — they must render with the green dot, not the red one. Also confirm date-only values keep their original calendar day when rendered.
+15. Open a completed purchase invoice and verify that **Contacto** (`businessPartner`), **Dirección** (`partnerAddress`), **Método de pago** (`paymentMethod`), **Condiciones de pago** (`paymentTerms`), and **Tarifa** (`priceList`) fields are all disabled (read-only). Confirm that **Nº documento** (`orderReference`) remains editable.
 2. Click a list row and confirm the preview modal opens instead of immediate navigation.
 3. In the preview modal, verify the General tab shows total, due/payable state, and payment history, while Messages and History remain placeholder states.
 4. Open `/purchase-invoice?filter=overdue` and confirm the quick filter keeps invoices with an outstanding amount.
@@ -155,3 +156,48 @@ Two new line-import flows are now available on draft purchase invoices when a bu
 - `cli/test/generate-frontend-extra-tabs.test.js` (18 source-reading tests) covers `decisions.json` declarations, generated import and `customTabs` entries, generator source patterns, and wrapper integrity for both purchase-invoice and sales-invoice.
 - `e2e/tests/flows/sif-tab.mocked.spec.js` — mocked Playwright spec verifying the SIF tab button appears in the detail tab strip for both invoice windows.
 - **ETP-3995 — Related Documents tab i18n**: The generated `HeaderPage.jsx` now uses `labelKey: 'relatedDocuments'` instead of the hardcoded `label: 'Related Documents'` string.
+- `e2e/tests/flows/purchase-invoice-readonly-processed.mocked.spec.js` — mocked Playwright spec verifying that all principal header fields (`businessPartner`, `partnerAddress`, `paymentMethod`, `paymentTerms`, `priceList`) are disabled when `processed: true`; also verifies `orderReference` remains editable as a regression guard.
+
+## Read-only enforcement on completed invoices — ETP-4012
+
+### Problem
+
+Three header fields — `businessPartner` (UI label "Contacto"), `partnerAddress` (UI label "Dirección"), and `userContact` — were remaining editable after an invoice was completed (i.e., after `processed` became `true`). All three had been given `"readOnlyLogic": null` in `decisions.json`, which silenced the original AD `readOnlyLogic` value and caused the generator to emit no `readOnlyLogic` function at all, leaving the fields permanently editable in the frontend.
+
+### Root cause in detail
+
+The original AD `readOnlyLogic` for `businessPartner` was:
+
+```
+@Processed@='Y' | @HAS_C_INVOICELINES@='Y'
+```
+
+When this was first restored in `decisions.json`, the generator parsed the expression and encountered `@HAS_C_INVOICELINES@`, which is a session variable rather than a regular record field. Because the generator could not map it to a record property, it marked the expression `evaluable: false` and emitted `readOnlySource: 'server'` with no JS function. Since the `evaluate-display` endpoint was not returning a value for this field, the frontend received no instruction to lock the field and it remained editable.
+
+### Final fix
+
+The expression was simplified to `"@Processed@='Y'"` for all three affected fields. This expression references only `processed`, a standard record field that the generator maps directly. The generator now emits:
+
+```js
+readOnlyLogic: (record) => record['processed'] === true
+```
+
+in `HeaderForm.jsx` for `businessPartner`, `partnerAddress`, and `userContact` — consistent with the pattern used by all other principal fields on this document (e.g. `paymentMethod`, `paymentTerms`, `priceList`). The `@HAS_C_INVOICELINES@` clause was intentionally dropped: its purpose (preventing partner changes once lines exist) is already enforced by the custom `index.jsx` component, which blocks line creation until a business partner is selected and disallows partner changes once lines are present.
+
+### Fields fixed
+
+| Field key | UI label | Old `readOnlyLogic` in `decisions.json` | New value |
+|---|---|---|---|
+| `businessPartner` | Contacto | `null` | `"@Processed@='Y'"` |
+| `partnerAddress` | Dirección | `null` | `"@Processed@='Y'"` |
+| `userContact` | Contacto (usuario) | `null` | `"@Processed@='Y'"` |
+
+### `orderReference` — intentionally editable after completion
+
+The `orderReference` field (DB column `POReference`, displayed as "Nº documento") does not carry a `readOnlyLogic` value in `decisions.json` and none is emitted in `HeaderForm.jsx`. This is intentional: the original AD metadata defines no read-only rule for this field, and the business requirement is that users can correct the supplier's document reference on a completed invoice without needing to reactivate it. Any future attempt to add a `readOnlyLogic` to `orderReference` must be treated as a regression.
+
+### Regression test
+
+`e2e/tests/flows/purchase-invoice-readonly-processed.mocked.spec.js` — mocked Playwright spec that opens a completed invoice (`processed: true`) and asserts:
+- `businessPartner`, `partnerAddress`, `paymentMethod`, `paymentTerms`, and `priceList` inputs have the `disabled` attribute.
+- `orderReference` input does **not** have the `disabled` attribute.

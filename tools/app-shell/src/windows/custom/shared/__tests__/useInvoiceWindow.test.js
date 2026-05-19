@@ -74,6 +74,12 @@ describe('useInvoiceWindow', () => {
       const result = buildInvoiceRowQuickActions(() => {}, 'x', () => {}, () => {}, requestDelete);
       assert.equal(result.onDelete, requestDelete);
     });
+
+    it('hides the email action when options.showEmail is false', () => {
+      const result = buildInvoiceRowQuickActions(() => {}, 'x', () => {}, () => {}, () => {}, { showEmail: false });
+      assert.equal(result.actions.email.show, false);
+      assert.equal(result.onEmail, undefined);
+    });
   });
 
   describe('useClearSavedRecord (source shape)', () => {
