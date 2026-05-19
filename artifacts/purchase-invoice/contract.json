@@ -1,8 +1,8 @@
 {
   "version": "0.29.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-18T18:56:15.642Z",
-  "checksum": "b9d33d8f97572db2",
+  "updatedAt": "2026-05-19T11:53:54.417Z",
+  "checksum": "3b9727265a80f9c7",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -177,10 +177,9 @@
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Invoice_BPartner"
             },
             "readOnlyLogic": {
-              "raw": "@Processed@='Y' | @HAS_C_INVOICELINES@='Y'",
-              "evaluable": false,
-              "reason": "session-variable",
-              "js": null
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
             }
           },
           {

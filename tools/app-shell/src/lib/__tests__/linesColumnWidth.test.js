@@ -34,14 +34,16 @@ describe('linesColumnWidth', () => {
       assert.equal(columnFlex({ type: 'percent' }, 1), '0 0 152px');
     });
 
-    it('first column (idx=0) gets 1 1 244px regardless of type', () => {
-      assert.equal(columnFlex({ type: 'string' }, 0), '1 1 244px');
-      assert.equal(columnFlex({ type: 'selector' }, 0), '1 1 244px');
+    it('string/text columns always return 1 1 224px regardless of index (no idx=0 special case)', () => {
+      assert.equal(columnFlex({ type: 'string' }, 0), '1 1 224px');
+      assert.equal(columnFlex({ type: 'string' }, 1), '1 1 224px');
+      assert.equal(columnFlex({ type: 'text' }, 0), '1 1 224px');
+      assert.equal(columnFlex({ type: 'text' }, 2), '1 1 224px');
     });
 
-    it('string/text at non-zero idx → 1 1 224px', () => {
-      assert.equal(columnFlex({ type: 'string' }, 1), '1 1 224px');
-      assert.equal(columnFlex({ type: 'text' }, 2), '1 1 224px');
+    it('selector/foreignKey at idx=0 returns 0 0 192px (no special case override)', () => {
+      assert.equal(columnFlex({ type: 'selector' }, 0), '0 0 192px');
+      assert.equal(columnFlex({ type: 'foreignKey' }, 0), '0 0 192px');
     });
 
     it('selector/search/foreignKey columns → 0 0 192px (fixed)', () => {
@@ -86,9 +88,11 @@ describe('linesColumnWidth', () => {
         [{ type: 'enum' },        1, 224],
         [{ type: 'select' },      1, 224],
         [{ type: 'date' },        1, 130],
-        [{ type: 'string' },      0, 244],  // first col
+        [{ type: 'string' },      0, 224],  // idx=0 no longer special — same as idx=1+
         [{ type: 'string' },      1, 224],
+        [{ type: 'text' },        0, 224],  // text at idx=0 also 224
         [{ type: 'text' },        1, 224],
+        [{ type: 'selector' },    0, 192],  // selector at idx=0 unchanged (192)
         [{ type: 'custom' },      1, 120],
       ];
       for (const [col, idx, expected] of CASES) {

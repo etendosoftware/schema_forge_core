@@ -70,7 +70,6 @@ describe('menuActions policy — reactivate is preserved where expected', () => 
   const WITH_REACTIVATE = [
     'sales-order',
     'sales-invoice',
-    'purchase-order',
     'purchase-invoice',
   ];
 
@@ -83,4 +82,14 @@ describe('menuActions policy — reactivate is preserved where expected', () => 
       );
     });
   }
+});
+
+describe('menuActions policy — reactivate must not appear in purchase-order', () => {
+  it('purchase-order: no "reactivate" in menuActions', () => {
+    const actions = loadMenuActions('purchase-order');
+    assert.ok(
+      !keys(actions).includes('reactivate'),
+      '"reactivate" must not be in purchase-order menuActions — Reactivate does not apply in the Purchases module',
+    );
+  });
 });

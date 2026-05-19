@@ -21,20 +21,9 @@
       "customComponents": {
         "topbarRight": "PurchaseOrderActions",
         "topbarExtra": "PurchaseOrderDraftChips",
-        "bulkActions": "PurchaseOrderReactivateBulkAction",
         "bottomSection": "PurchaseOrderBottomPanel"
       },
-      "menuActions": [
-        {
-          "key": "reactivate",
-          "label": "Reactivate",
-          "labelKey": "reactivate",
-          "visibleWhenStatus": "CO",
-          "visibleWhenFieldFalse": "hasLinkedDocuments",
-          "documentAction": "RE",
-          "successKey": "reactivated"
-        }
-      ],
+      "menuActions": [],
       "secondaryTabs": {},
       "labelOverrides": {
         "es_ES": {
@@ -2293,20 +2282,9 @@
       "customComponents": {
         "topbarRight": "PurchaseOrderActions",
         "topbarExtra": "PurchaseOrderDraftChips",
-        "bulkActions": "PurchaseOrderReactivateBulkAction",
         "bottomSection": "PurchaseOrderBottomPanel"
       },
-      "menuActions": [
-        {
-          "key": "reactivate",
-          "label": "Reactivate",
-          "labelKey": "reactivate",
-          "visibleWhenStatus": "CO",
-          "visibleWhenFieldFalse": "hasLinkedDocuments",
-          "documentAction": "RE",
-          "successKey": "reactivated"
-        }
-      ],
+      "menuActions": [],
       "secondaryTabs": {},
       "labelOverrides": {
         "es_ES": {
