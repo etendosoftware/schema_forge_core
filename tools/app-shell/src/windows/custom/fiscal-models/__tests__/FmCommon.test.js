@@ -1,3 +1,4 @@
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -32,4 +33,4 @@ describe('Stepper — structure', () => {
   it('accepts steps and current props', () => assert.match(src, /steps.*current|current.*steps/));
   it('marks done steps', () => assert.match(src, /fm-stepper__step--done/));
   it('marks active step', () => assert.match(src, /fm-stepper__step--active/));
-||||||| parent of 71796981 (Feature ETP-3778: add FmCommon with StatusPillMenu, KpiCard, Tabs, SectionCard)
+});
