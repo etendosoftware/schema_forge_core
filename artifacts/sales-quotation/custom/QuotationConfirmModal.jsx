@@ -62,10 +62,13 @@ export default function QuotationConfirmModal({
   const d              = freshData || data || {};
   const documentNo     = d.documentNo || '';
   const bpName         = d['businessPartner$_identifier'] || '';
-  const discountPct    = Number(d.etgoTotalDiscount ?? 0);
-  const discountFactor = discountPct > 0 ? (1 - discountPct / 100) : 1;
-  const grandTotal     = (Number(d.grandTotalAmount ?? d.grandTotal ?? 0) || 0) * discountFactor;
-  const totalLines     = (Number(d.summedLineAmount ?? d.totalLines ?? d.grandTotalAmount ?? 0) || 0) * discountFactor;
+  // Trust the server totals: once the quotation reached UE, TotalDiscountService
+  // materialized the ETGO_DTO discount line and grandTotalAmount / summedLineAmount
+  // already reflect etgoTotalDiscount. The earlier client-side discountFactor
+  // multiplication double-applied the discount on top of the already-discounted
+  // server values (visible once the ETGO_DTO product was installed).
+  const grandTotal     = Number(d.grandTotalAmount ?? d.grandTotal ?? 0) || 0;
+  const totalLines     = Number(d.summedLineAmount ?? d.totalLines ?? d.grandTotalAmount ?? 0) || 0;
   const currency       = d['currency$_identifier'] || '';
 
   const handleConfirm = async () => {
