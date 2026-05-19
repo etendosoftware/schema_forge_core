@@ -75,6 +75,34 @@ The line quantity invoiced is `orderedQuantity − invoicedQuantity` per line.
 Lines whose pending is zero are skipped; if every line is fully invoiced, the
 handler returns HTTP 400 with "No hay líneas a facturar en este pedido".
 
+ETP-4006 (IV-11) extends the same handler to carry the discount surface
+to the new invoice. `NeoCommercialDocumentFactory.createInvoiceFromOrderHeader`
+copies `etgoTotalDiscount` from the quotation header to the invoice header.
+`CreateDraftInvoiceHandler.copyLineDiscountsFromOrder` copies the standard
+`OrderLine.discount` per line into the invoice line's `EM_Etgo_Discount`
+field (the UI reads that column to display the discount percentage and
+to render the totals breakdown). When the header carries a total discount,
+`applyTotalDiscountIfPresent` delegates to `TotalDiscountService.recalculate`
+to materialize the `ETGO_DTO` discount line on the invoice (one per tax
+group) and then updates the existing `InvoiceTax` rows in place plus the
+header `summedLineAmount` / `grandTotalAmount` from a JDBC aggregate of
+the current lines — updates are in place rather than delete-and-recreate
+to bypass the standard `CInvoiceTaxEventHandler` and avoid Hibernate
+cascade-re-save errors. Source `ETGO_DTO` lines on the quotation are
+filtered out of the line list sent to `CreateInvoiceLinesFromProcess`
+because the matching invoice discount line is rebuilt fresh from the
+header percentage. The materialization is skipped with a warning when
+the `ETGO_DTO` product is missing (environments where the discount
+product migration has not been applied).
+
+`QuotationConfirmModal` renders the quotation's `grandTotalAmount` and
+`summedLineAmount` as-is — it never multiplies by `(1 − etgoTotalDiscount/100)`
+the way the order/purchase-order confirm modals do in DR, because by the
+time the user reaches this modal the quotation is already in `UE` (after
+the DR→UE transition driven by `SendToEvaluationModal` ran
+`TotalDiscountService.recalculate`), so the server totals already reflect
+the discount. The earlier client-side factor double-applied it.
+
 ## Gap assessment
 
 - The kebab (⋮) menu now exposes only the `Reject` action (visible when `documentStatus === 'UE'`). Both the previous `Duplicate` entry (redundant with the topbar `Clonar` button) and the previous `Cancel` placeholder (wired to an empty `onClick` and never functional) were removed.
