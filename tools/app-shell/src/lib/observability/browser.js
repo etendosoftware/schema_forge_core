@@ -1,4 +1,5 @@
 import { initObservability } from '../observability.js';
+import { createMixpanelProvider } from './providers/mixpanel.js';
 import { createRumProvider } from '../rum.js';
 import { createSentryProvider } from '../sentry.js';
 
@@ -31,6 +32,13 @@ export function buildBrowserObservabilityConfig({
       createRumProvider({
         env,
         hostname,
+        logger,
+      }),
+      createMixpanelProvider({
+        enabled: env.VITE_MIXPANEL_ENABLED,
+        token: env.VITE_MIXPANEL_TOKEN,
+        debug: env.VITE_MIXPANEL_DEBUG,
+        apiHost: env.VITE_MIXPANEL_API_HOST,
         logger,
       }),
     ],

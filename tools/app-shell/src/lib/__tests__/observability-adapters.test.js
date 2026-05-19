@@ -169,7 +169,7 @@ describe('browser observability config', () => {
       hostname: 'go.staging.etendo.cloud',
       mockMode: false,
     });
-    assert.deepEqual(config.providers.map(provider => provider.name), ['sentry', 'aws-rum']);
-    assert.deepEqual(config.providers.map(provider => provider.enabled), [true, true]);
+    assert.deepEqual(config.providers.map(provider => provider.name), ['sentry', 'aws-rum', 'mixpanel']);
+    assert.deepEqual(config.providers.map(provider => provider.enabled), [true, true, false]);
   });
 });
