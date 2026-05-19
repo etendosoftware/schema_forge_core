@@ -289,6 +289,7 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
   const handleIdentChange = (id, value) => setIdentChecks(prev => ({ ...prev, [id]: value }));
   const [liveBoxes,   setLiveBoxes]   = useState(null);
   const [liveSummary, setLiveSummary] = useState(null);
+  const [liveSources, setLiveSources] = useState(null);
   const [computing,   setComputing]   = useState(false);
 
   async function handleCompute() {
@@ -298,6 +299,7 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
       if (res) {
         setLiveBoxes(res.boxes);
         setLiveSummary(res.summary);
+        if (res.sources) setLiveSources(res.sources);
       }
     } finally {
       setComputing(false);
@@ -541,7 +543,7 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
           );
         })()}
         {activeTab === 'sources' && (
-          <SourcesTab decl={decl} t={t} />
+          <SourcesTab decl={{ ...decl, sources: liveSources ?? decl.sources }} t={t} />
         )}
         {activeTab === 'incidents' && (
           <IncidentsTab decl={decl} blocking={blocking} warning={warning} t={t}
