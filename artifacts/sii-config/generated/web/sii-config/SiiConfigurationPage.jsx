@@ -37,6 +37,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:siiConfiguration
 
+// @sf-generated-start requiredHeaderFields:siiConfiguration
+const requiredHeaderFields = ['acogidaAlSII', 'plazoLmiteDeEnvoASII', 'cadenciaEnvoFacturasVentaASII', 'cadenciaEnvoFacturasCompraASII', 'entornoDeProduccin', 'adjuntarArchivosXML', 'recc', 'redeme', 'postedInvoices', 'validHash', 'sinceJanuary2017'];
+// @sf-generated-end requiredHeaderFields:siiConfiguration
+
 // @sf-generated-start addLineFields:logHash
 const addLineFields = {
   entry: [
@@ -121,7 +125,7 @@ export const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=sii-configDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
@@ -153,6 +157,7 @@ export default function SiiConfigurationPage({ windowName, recordId, ...props })
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        requiredHeaderFields={requiredHeaderFields}
         {...props}
       />
     );
@@ -166,6 +171,7 @@ export default function SiiConfigurationPage({ windowName, recordId, ...props })
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      rowQuickActions={{}}
       {...props}
     />
   );
