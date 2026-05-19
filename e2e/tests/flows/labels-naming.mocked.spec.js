@@ -208,9 +208,13 @@ test.describe('IV-08 — sales-quotation order-date label', () => {
     await page.goto(`/sales-quotation/${QUOTATION_ROW.id}`);
     await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
 
+    // The testid is on the <input>, which has no text content (only `value`).
+    // The visible label is rendered as a sibling <label for="orderDate"> — query it directly.
     const dateField = page.getByTestId('field-orderDate');
     await expect(dateField).toBeVisible();
-    await expect(dateField).toContainText('Fecha de presupuesto');
-    await expect(dateField).not.toContainText('Fecha cotización');
+
+    const dateLabel = page.locator('label[for="orderDate"]');
+    await expect(dateLabel).toContainText('Fecha de presupuesto');
+    await expect(dateLabel).not.toContainText('Fecha cotización');
   });
 });
