@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   STATUSES, STATUS_COLOR, STATUS_ORDER,
   formatPeriod, formatAmount, fmtDecl, formatPercent, computeUpcomingDeadlines,
+  computeBoxes303,
 } from '../fiscalModelsUtils.js';
 
 describe('STATUSES — enum completeness', () => {
@@ -139,5 +140,24 @@ describe('computeUpcomingDeadlines', () => {
     const [item] = computeUpcomingDeadlines([D('303', 2026, 'T1', 'borrador')]);
     assert.ok(item.decl);
     assert.ok(item.deadline instanceof Date);
+  });
+});
+
+describe('computeBoxes303 — mock fallback (no token)', () => {
+  it('returns T2 2026 boxes', async () => {
+    const result = await computeBoxes303({ year: 2026, period: 'T2' });
+    assert.ok(result !== null);
+    assert.equal(result.boxes[27], 1309.98);
+    assert.equal(result.summary.result, -35479.08);
+  });
+  it('returns T1 2026 boxes', async () => {
+    const result = await computeBoxes303({ year: 2026, period: 'T1' });
+    assert.ok(result !== null);
+    assert.equal(result.boxes[27], 682.08);
+    assert.equal(result.summary.accrued, 682.08);
+  });
+  it('returns null for unsupported period', async () => {
+    const result = await computeBoxes303({ year: 2025, period: 'T3' });
+    assert.equal(result, null);
   });
 });

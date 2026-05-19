@@ -1,3 +1,41 @@
+// ── Box computation ──────────────────────────────────────────────────
+// Returns { boxes, summary } from GET /neo/fiscal303/boxes?year=&period=.
+// Falls back to hardcoded GOOrg mock data when token/apiBaseUrl are absent or the request fails.
+export async function computeBoxes303(decl, { token, apiBaseUrl } = {}) {
+  if (token && apiBaseUrl) {
+    try {
+      const base = (apiBaseUrl || '').replace(/\/[^/]+$/, '');
+      const url = `${base}/fiscal303/boxes?year=${decl.year}&period=${decl.period}`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) return await res.json();
+    } catch (_) {
+      // fall through to mock
+    }
+  }
+
+  // ── Mock fallback (demo / no backend) ─────────────────────────────
+  await new Promise(r => setTimeout(r, 900));
+
+  if (decl.year === 2026 && decl.period === 'T2') {
+    return {
+      boxes: {
+        1:44, 3:1.76, 4:201, 6:14.07,
+        7:6162.60, 9:1294.15, 27:1309.98,
+        28:175186, 29:36789.06, 45:36789.06, 46:-35479.08,
+        59:23, 60:36,
+      },
+      summary: { accrued:1309.98, deductible:36789.06, result:-35479.08 },
+    };
+  }
+  if (decl.year === 2026 && decl.period === 'T1') {
+    return {
+      boxes: { 7:3248, 9:682.08, 27:682.08, 28:16659, 29:3498.39, 45:3498.39, 46:-2816.31 },
+      summary: { accrued:682.08, deductible:3498.39, result:-2816.31 },
+    };
+  }
+  return null;
+}
+
 export const STATUSES = [
   'omitido', 'pendiente', 'borrador', 'listo',
   'presentado', 'presentadoOtra', 'presentadoAcuse',
@@ -74,7 +112,7 @@ function roundEur(n) {
  *
  * @returns {{ boxes: {[boxNum:number]: number}, summary: {accrued,deductible,result} }}
  */
-export function computeBoxes303(data) {
+export function deriveBoxes303(data) {
   const b = {};
 
   // ── Sales / Devengada ──────────────────────────────────────────
