@@ -229,4 +229,6 @@ export function NumberedStepper({ steps, current }) {
           </React.Fragment>
         );
       })}
-||||||| parent of 71796981 (Feature ETP-3778: add FmCommon with StatusPillMenu, KpiCard, Tabs, SectionCard)
+    </div>
+  );
+}
