@@ -32,21 +32,25 @@ const fetchLines = async ({ base, headers, docId, sharedContext }) => {
   const invoiceLines = (await invoiceLinesRes.json())?.response?.data || [];
 
   const deliveredByOrderLine = {};
+  const orderLineByProduct = {};
   if (orderLinesRes?.ok) {
     const orderLines = (await orderLinesRes.json())?.response?.data || [];
     orderLines.forEach(ol => {
       deliveredByOrderLine[ol.id] = Number(ol.deliveredQuantity) || 0;
+      if (ol.product) orderLineByProduct[ol.product] = ol.id;
     });
   }
 
   return invoiceLines.map(l => {
     const qty = Number(l.invoicedQuantity) || 0;
-    // goodsShipmentLine is M_InOutLine_ID — set when invoice was created FROM a shipment
     const alreadyLinked = !!l.goodsShipmentLine;
-    const delivered = l.salesOrderLine ? (deliveredByOrderLine[l.salesOrderLine] ?? 0) : 0;
+    // Use direct FK first, fall back to matching by product within the linked order
+    const orderLineId = l.salesOrderLine || orderLineByProduct[l.product];
+    const delivered = orderLineId ? (deliveredByOrderLine[orderLineId] ?? 0) : 0;
     const pending = alreadyLinked ? 0 : Math.max(0, qty - delivered);
     return {
       ...l,
+      _orderLineId: orderLineId,
       _productName: l['product$_identifier'] || l.id,
       _maxQty: pending,
       _unitPrice: 0,
@@ -63,7 +67,8 @@ const buildLineBody = async ({ line, qty, invoiceId: shipmentId, lineNo }) => ({
   product: line.product,
   movementQuantity: qty,
   uOM: line.uOM || null,
-  ...(line.salesOrderLine ? { salesOrderLine: line.salesOrderLine } : {}),
+  // salesOrderLine sets C_OrderLine_ID → Java handler fills orderQuantity via JOIN
+  ...(line._orderLineId ? { salesOrderLine: line._orderLineId } : {}),
   lineNo,
 });
 
