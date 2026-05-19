@@ -5,13 +5,13 @@ import { useUI } from '@/i18n';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import { useRowDelete } from '@/hooks/useRowDelete';
 import { ListView } from '@/components/contract-ui';
+import BulkDocumentAction, { buildInOutActions } from '@/components/contract-ui/BulkDocumentAction';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 import HeaderTable from '@generated/purchase-order/generated/web/purchase-order/HeaderTable';
 import GeneratedApp from '@generated/purchase-order/generated/web/purchase-order/index.jsx';
-import PurchaseOrderReactivateBulkAction from '@generated/purchase-order/custom/PurchaseOrderReactivateBulkAction';
 import BulkPurchaseOrderMoreMenu from '@generated/purchase-order/custom/BulkPurchaseOrderMoreMenu';
 import { ConfirmModal as PoConfirmModal, PoConfirmResultModal, ManageDocsLauncher as PoManageDocsLauncher } from '@generated/purchase-order/custom/PurchaseOrderActions';
 import LinesEmptyState from '@/components/contract-ui/LinesEmptyState.jsx';
@@ -89,10 +89,6 @@ export default function PurchaseOrderWindow(props) {
     onEdit: (row) => navigate(`/${windowName}/${row.id}`),
     onClone: (row) => setCloneTargets([row]),
     onDelete: requestDelete,
-    // Row kebab mirrors the detail page: Confirm for drafts (opens the same
-    // ConfirmModal once the detail mounts via state.autoOpenConfirm), and
-    // Reactivate for completed orders without linked documents — same gate as
-    // the detail's menuActions.
     menuActions: ({ row, status }) => {
       // For completed orders, only surface "Gestionar..." when there is still
       // pending receipt or invoice — same criterion used by
@@ -118,14 +114,6 @@ export default function PurchaseOrderWindow(props) {
           label: manageLabelKey ? ui(manageLabelKey) : '',
           visible: !!manageLabelKey,
           onClick: ({ row: r }) => setManageRow(r),
-        },
-        {
-          key: 'reactivate',
-          label: ui('reactivate'),
-          labelKey: 'reactivate',
-          successKey: 'reactivated',
-          documentAction: 'RE',
-          visible: status === 'CO' && !row?.hasLinkedDocuments,
         },
       ];
     },
@@ -177,7 +165,7 @@ export default function PurchaseOrderWindow(props) {
         bulkActions={(ctx) => (
           <>
             <BulkPurchaseOrderMoreMenu {...ctx} />
-            <PurchaseOrderReactivateBulkAction {...ctx} />
+            <BulkDocumentAction {...ctx} buildActions={buildInOutActions} />
           </>
         )}
         dateFilterKey="orderDate"

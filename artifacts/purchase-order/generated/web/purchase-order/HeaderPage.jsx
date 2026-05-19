@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
-import { toast } from 'sonner';
 import HeaderTable from './HeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
@@ -10,7 +9,6 @@ import { AttachmentsTab } from '@/components/attachments';
 import PurchaseOrderBottomPanel from '../../../custom/PurchaseOrderBottomPanel';
 import PurchaseOrderActions from '../../../custom/PurchaseOrderActions';
 import PurchaseOrderDraftChips from '../../../custom/PurchaseOrderDraftChips';
-import PurchaseOrderReactivateBulkAction from '../../../custom/PurchaseOrderReactivateBulkAction';
 import catalogs from './mockCatalogs';
 
 
@@ -671,9 +669,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         bottomSection={PurchaseOrderBottomPanel}
         topbarRight={PurchaseOrderActions}
         topbarExtra={PurchaseOrderDraftChips}
-        menuActions={({ data, status }) => [
-          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO' && !data?.hasLinkedDocuments, labelKey: 'reactivate', successKey: 'reactivated', documentAction: 'RE',  }
-        ]}
         draftMode={draftMode}
         requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}
@@ -693,7 +688,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="orderDate"
-      bulkActions={(ctx) => <PurchaseOrderReactivateBulkAction {...ctx} />}
       hidePrint
       labelOverrides={labelOverrides}
       rowQuickActions={{}}
