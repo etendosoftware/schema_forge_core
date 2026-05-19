@@ -1,8 +1,8 @@
 {
   "version": "0.9.0",
   "generatedAt": "2026-05-06T15:52:09.982Z",
-  "updatedAt": "2026-05-18T13:09:47.693Z",
-  "checksum": "2272094c7d24bd42",
+  "updatedAt": "2026-05-19T12:09:13.865Z",
+  "checksum": "d3f313a41e60c6ec",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -13990,12 +13990,6 @@
         "description": "Field 'vendorBlocking' should have type 'boolean' in vendorCreditor"
       },
       {
-        "id": "t-rule-declared",
-        "category": "rule-declared",
-        "runner": "node",
-        "description": "Rule 'undefined' (displayLogic) should be declared"
-      },
-      {
         "id": "t-rule-declared-AD-Client-of-Role",
         "category": "rule-declared",
         "rule": "AD_Client of Role",
@@ -14078,6 +14072,531 @@
         "rule": "C_BPartner Location",
         "runner": "node",
         "description": "Rule 'C_BPartner Location' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Business-Partner-ActualLifeTimeValue-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Business Partner-ActualLifeTimeValue-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Business Partner-ActualLifeTimeValue-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Business-Partner-BP-Currency-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Business Partner-BP_Currency_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Business Partner-BP_Currency_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Business-Partner-EM-Aeatsii-Rep-Taxid-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Business Partner-EM_Aeatsii_Rep_Taxid-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Business Partner-EM_Aeatsii_Rep_Taxid-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Business-Partner-EM-Etgo-Firstname-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Business Partner-EM_Etgo_Firstname-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Business Partner-EM_Etgo_Firstname-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Business-Partner-EM-Etgo-Lastname-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Business Partner-EM_Etgo_Lastname-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Business Partner-EM_Etgo_Lastname-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Business-Partner-FirstSale-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Business Partner-FirstSale-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Business Partner-FirstSale-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Business-Partner-IsCustomer-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Business Partner-IsCustomer-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Business Partner-IsCustomer-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Business-Partner-IsEmployee-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Business Partner-IsEmployee-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Business Partner-IsEmployee-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Business-Partner-IsVendor-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Business Partner-IsVendor-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Business Partner-IsVendor-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Business-Partner-NumberEmployees-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Business Partner-NumberEmployees-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Business Partner-NumberEmployees-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Business-Partner-PotentialLifeTimeValue-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Business Partner-PotentialLifeTimeValue-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Business Partner-PotentialLifeTimeValue-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Business-Partner-SalesVolume-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Business Partner-SalesVolume-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Business Partner-SalesVolume-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Business-Partner-ShareOfCustomer-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Business Partner-ShareOfCustomer-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Business Partner-ShareOfCustomer-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Business-Partner-SO-CreditLimit-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Business Partner-SO_CreditLimit-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Business Partner-SO_CreditLimit-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Business-Partner-SO-CreditUsed-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Business Partner-SO_CreditUsed-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Business Partner-SO_CreditUsed-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Contact-Grant-Portal-Access-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Contact-Grant_Portal_Access-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Contact-Grant_Portal_Access-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Contact-Viaemail-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Contact-Viaemail-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Contact-Viaemail-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Contact-Viasms-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Contact-Viasms-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Contact-Viasms-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-C-InvoiceSchedule-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-C_InvoiceSchedule_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-C_InvoiceSchedule_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-C-PaymentTerm-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-C_PaymentTerm_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-C_PaymentTerm_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-Customer-Blocking-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-Customer_Blocking-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-Customer_Blocking-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-DeliveryRule-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-DeliveryRule-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-DeliveryRule-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-DeliveryViaRule-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-DeliveryViaRule-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-DeliveryViaRule-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-DocumentCopies-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-DocumentCopies-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-DocumentCopies-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-EM-Aeatsii-Siikeylist-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-EM_Aeatsii_Siikeylist-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-EM_Aeatsii_Siikeylist-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-FIN-Financial-Account-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-FIN_Financial_Account_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-FIN_Financial_Account_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-FIN-Paymentmethod-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-FIN_Paymentmethod_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-FIN_Paymentmethod_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-FixMonthDay-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-FixMonthDay-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-FixMonthDay-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-FixMonthDay2-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-FixMonthDay2-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-FixMonthDay2-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-Fixmonthday3-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-Fixmonthday3-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-Fixmonthday3-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-Invoicegrouping-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-Invoicegrouping-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-Invoicegrouping-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-InvoiceRule-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-InvoiceRule-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-InvoiceRule-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-IsDiscountPrinted-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-IsDiscountPrinted-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-IsDiscountPrinted-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-IsTaxExempt-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-IsTaxExempt-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-IsTaxExempt-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-M-PriceList-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-M_PriceList_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-M_PriceList_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-PaymentRule-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-PaymentRule-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-PaymentRule-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-PO-C-Incoterms-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-PO_C_Incoterms_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-PO_C_Incoterms_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-POReference-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-POReference-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-POReference-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-SalesRep-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-SalesRep_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-SalesRep_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-SO-Bankaccount-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-SO_Bankaccount_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-SO_Bankaccount_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-SO-Bp-Taxcategory-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-SO_Bp_Taxcategory_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-SO_Bp_Taxcategory_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-SO-C-Incoterms-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-SO_C_Incoterms_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-SO_C_Incoterms_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-SO-CreditLimit-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-SO_CreditLimit-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-SO_CreditLimit-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-SO-CreditUsed-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-SO_CreditUsed-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-SO_CreditUsed-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-SO-Description-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-SO_Description-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-SO_Description-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-SO-Goods-Blocking-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-SO_Goods_Blocking-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-SO_Goods_Blocking-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-SO-Invoice-Blocking-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-SO_Invoice_Blocking-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-SO_Invoice_Blocking-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-SO-Order-Blocking-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-SO_Order_Blocking-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-SO_Order_Blocking-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Customer-SO-Payment-Blocking-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Customer-SO_Payment_Blocking-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Customer-SO_Payment_Blocking-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Employee-C-Salary-Category-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Employee-C_Salary_Category_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Employee-C_Salary_Category_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Employee-Isworker-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Employee-Isworker-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Employee-Isworker-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Intrastat-Adquisitions-PO-Port-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Intrastat Adquisitions-PO_Port-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Intrastat Adquisitions-PO_Port-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Intrastat-Adquisitions-SO-Port-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Intrastat Adquisitions-SO_Port-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Intrastat Adquisitions-SO_Port-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Intrastat-Shipments-SO-Port-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Intrastat Shipments-SO_Port-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Intrastat Shipments-SO_Port-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Vendor-Creditor-Iscashvat-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Vendor/Creditor-Iscashvat-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Vendor/Creditor-Iscashvat-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Vendor-Creditor-PaymentRulePO-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Vendor/Creditor-PaymentRulePO-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Vendor/Creditor-PaymentRulePO-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Vendor-Creditor-PO-Bankaccount-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Vendor/Creditor-PO_Bankaccount_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Vendor/Creditor-PO_Bankaccount_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Vendor-Creditor-PO-BP-TaxCategory-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Vendor/Creditor-PO_BP_TaxCategory_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Vendor/Creditor-PO_BP_TaxCategory_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Vendor-Creditor-PO-C-Incoterms-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Vendor/Creditor-PO_C_Incoterms_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Vendor/Creditor-PO_C_Incoterms_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Vendor-Creditor-PO-Financial-Account-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Vendor/Creditor-PO_Financial_Account_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Vendor/Creditor-PO_Financial_Account_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Vendor-Creditor-PO-Fixmonthday-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Vendor/Creditor-PO_Fixmonthday-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Vendor/Creditor-PO_Fixmonthday-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Vendor-Creditor-PO-Fixmonthday2-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Vendor/Creditor-PO_Fixmonthday2-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Vendor/Creditor-PO_Fixmonthday2-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Vendor-Creditor-PO-Fixmonthday3-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Vendor/Creditor-PO_Fixmonthday3-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Vendor/Creditor-PO_Fixmonthday3-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Vendor-Creditor-PO-Goods-Blocking-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Vendor/Creditor-PO_Goods_Blocking-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Vendor/Creditor-PO_Goods_Blocking-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Vendor-Creditor-PO-Invoice-Blocking-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Vendor/Creditor-PO_Invoice_Blocking-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Vendor/Creditor-PO_Invoice_Blocking-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Vendor-Creditor-PO-Order-Blocking-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Vendor/Creditor-PO_Order_Blocking-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Vendor/Creditor-PO_Order_Blocking-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Vendor-Creditor-PO-Payment-Blocking-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Vendor/Creditor-PO_Payment_Blocking-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Vendor/Creditor-PO_Payment_Blocking-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Vendor-Creditor-PO-Paymentmethod-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Vendor/Creditor-PO_Paymentmethod_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Vendor/Creditor-PO_Paymentmethod_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Vendor-Creditor-PO-PaymentTerm-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Vendor/Creditor-PO_PaymentTerm_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Vendor/Creditor-PO_PaymentTerm_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Vendor-Creditor-PO-PriceList-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Vendor/Creditor-PO_PriceList_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Vendor/Creditor-PO_PriceList_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Vendor-Creditor-SO-C-Incoterms-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Vendor/Creditor-SO_C_Incoterms_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Vendor/Creditor-SO_C_Incoterms_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Vendor-Creditor-Vendor-Blocking-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Vendor/Creditor-Vendor_Blocking-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Vendor/Creditor-Vendor_Blocking-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Withholding-C-Tax-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Withholding-C_Tax_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Withholding-C_Tax_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Withholding-ExemptReason-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Withholding-ExemptReason-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Withholding-ExemptReason-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-contacts-Withholding-WH-Percent-displayLogic",
+        "category": "rule-declared",
+        "rule": "contacts-Withholding-WH_Percent-displayLogic",
+        "runner": "node",
+        "description": "Rule 'contacts-Withholding-WH_Percent-displayLogic' (displayLogic) should be declared"
       },
       {
         "id": "t-rule-declared-Create-Invoice-Volume-Discount",
@@ -18770,7 +19289,7 @@
       }
     ],
     "summary": {
-      "total": 1068,
+      "total": 1142,
       "byCategory": {
         "action-endpoint": 6,
         "crud-flags": 15,
@@ -18779,14 +19298,14 @@
         "displaylogic-valid": 57,
         "field-presence": 142,
         "field-type": 142,
-        "rule-declared": 29,
+        "rule-declared": 103,
         "searchable-filters": 4,
         "selector-endpoint": 41,
         "system-field": 514,
         "visibility": 15
       },
       "byRunner": {
-        "node": 1068,
+        "node": 1142,
         "junit": 0
       }
     }

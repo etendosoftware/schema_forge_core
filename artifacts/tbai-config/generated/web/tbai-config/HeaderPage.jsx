@@ -30,6 +30,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:header
 
+// @sf-generated-start requiredHeaderFields:header
+const requiredHeaderFields = ['tbaisystemdate', 'productionEnv', 'invoiceDescription', 'uSEAsproductDesc', 'autoSendInvoices', 'validatePreviousInvoice'];
+// @sf-generated-end requiredHeaderFields:header
+
 
 
 export const api = {
@@ -58,7 +62,7 @@ export const api = {
     },
     "sorting": {
       "param": "_sortBy",
-      "example": "_sortBy=tbai-configDate"
+      "example": "_sortBy=creationDate desc"
     },
     "filtering": "Use field name as query param: ?fieldName=value",
     "parentFilter": "parentId={id} for child entities"
@@ -85,6 +89,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        requiredHeaderFields={requiredHeaderFields}
         {...props}
       />
     );
@@ -98,6 +103,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      rowQuickActions={{}}
       {...props}
     />
   );
