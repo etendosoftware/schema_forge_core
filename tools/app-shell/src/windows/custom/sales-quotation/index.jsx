@@ -2,7 +2,7 @@ import { useMemo, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { XCircle } from 'lucide-react';
 import { useUI, useLocale } from '@/i18n';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useRowDelete } from '@/hooks/useRowDelete';
 import GeneratedApp from '@generated/sales-quotation/generated/web/sales-quotation/index.jsx';
 import QuotationTable from '@generated/sales-quotation/generated/web/sales-quotation/QuotationTable';
@@ -12,6 +12,7 @@ import { CreateContactContext } from '@/components/contract-ui/CreateContactCont
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 import LinesEmptyState from '@/components/contract-ui/LinesEmptyState.jsx';
 import QuotationPreview from '../shared/QuotationPreview.jsx';
+import { useSavedPreviewRecord } from '../shared/useSavedPreviewRecord.js';
 
 // labelOverrides feed useLabel(labelOverrides) inside the generated table to
 // rename per-window AD columns (locale-keyed map, not user-visible strings).
@@ -90,9 +91,8 @@ function CustomQuotationTable(props) {
 export default function SalesQuotationWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
   const [cloneTargets, setCloneTargets] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [savedRecord, setSavedRecord] = useState(null);
   const navigate = useNavigate();
-  const location = useLocation();
+  const { effectiveRecord, clearSavedRecord } = useSavedPreviewRecord();
 
   const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
     useCreateContactModal({ apiBaseUrl, token });
@@ -103,14 +103,6 @@ export default function SalesQuotationWindow({ windowName, recordId, token, apiB
     token,
     onSuccess: () => setRefreshKey(k => k + 1),
   });
-
-  const effectiveRecord = savedRecord ?? location.state?.savedRecord ?? null;
-  const clearSavedRecord = useCallback(() => {
-    setSavedRecord(null);
-    if (location.state?.savedRecord) {
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-  }, [location, navigate]);
 
   const renderPreview = useCallback(({ row, onClose, onEdit }) => (
     <QuotationPreview

@@ -1,7 +1,7 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Edit2, FileText, Loader2, AlertCircle, Mail, Download, Wallet, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
-import { useMenuLabel, useUI, useLocaleSwitch } from '@/i18n';
+import { useMenuLabel, useUI } from '@/i18n';
 import { getLatestInstallmentDueDate } from '@/lib/invoiceDueDate';
 import InvoicePaymentModal from './InvoicePaymentModal.jsx';
 import PdfViewer from './PdfViewer.jsx';
@@ -15,7 +15,6 @@ import SummaryCard, { InfoRow } from './preview-cards/SummaryCard.jsx';
 import PaymentsCard from './preview-cards/PaymentsCard.jsx';
 import EmailsCard from './preview-cards/EmailsCard.jsx';
 import CategorizationCard from './preview-cards/CategorizationCard.jsx';
-import { useState, useEffect } from 'react';
 
 /**
  * InvoicePreview — wires useInvoicePreview data into GenericPreviewModal.
@@ -99,7 +98,6 @@ function InvoiceActionButtons({ triggerEdit, onEmail, canSendToSif, onOpenSif, c
 
 function InvoiceGeneralTab({ invoice, partnerName, badgeProps, statusLabel, installments, payments, loadingPayments, totalOutstanding, canAddPayment, isFullyPaid, specName, apiBaseUrl, token, orgId, profile, onAddPayment, onSend }) {
   const ui = useUI();
-  const { locale } = useLocaleSwitch();
   const fiscalTargets = getInvoiceFiscalTargets(specName, profile);
   const { sii: siiStatus, tbai: tbaiStatus, verifactu: vfStatus, loading: fiscalLoading } = useFiscalStatus(
     invoice?.id, specName, profile, apiBaseUrl, token, orgId,

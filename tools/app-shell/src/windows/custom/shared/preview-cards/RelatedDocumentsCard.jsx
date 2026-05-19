@@ -141,19 +141,19 @@ export default function RelatedDocumentsCard({ documentId, token, apiBaseUrl, sp
       onRefresh={handleRefresh}
       isRefreshing={isRefreshing || loading}
     >
-      {loading ? (
+      {loading && (
         <>
           <SkeletonRow />
           <SkeletonRow />
           <SkeletonRow />
         </>
-      ) : items.length === 0 ? (
-        <p className="text-xs text-muted-foreground/50 py-2">{ui('noRelatedDocuments')}</p>
-      ) : (
-        items.map(({ type, doc }) => (
-          <DocRow key={`${type}-${doc.id}`} type={type} doc={doc} ui={ui} navigate={navigate} />
-        ))
       )}
+      {!loading && items.length === 0 && (
+        <p className="text-xs text-muted-foreground/50 py-2">{ui('noRelatedDocuments')}</p>
+      )}
+      {!loading && items.length > 0 && items.map(({ type, doc }) => (
+        <DocRow key={`${type}-${doc.id}`} type={type} doc={doc} ui={ui} navigate={navigate} />
+      ))}
     </SectionCard>
   );
 }

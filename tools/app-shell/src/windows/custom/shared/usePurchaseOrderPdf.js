@@ -1,4 +1,3 @@
-import { useState, useEffect, useRef } from 'react';
 import { useUI } from '@/i18n';
 import { buildLocationAddressLines } from '@/lib/locationAddress.js';
 import {
@@ -7,7 +6,7 @@ import {
   fetchOptionalJson,
   fetchLocationAddress,
   fetchImageDataUrl,
-  renderDocumentPdf,
+  useDocumentPdf,
 } from './documentPdf.js';
 
 // ---------------------------------------------------------------------------
@@ -90,86 +89,34 @@ async function buildPurchaseOrderData(orderId, base, token) {
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
-/**
- * usePurchaseOrderPdf — fetches purchase order data and renders it as a PDF.
- *
- * @param {string|null} orderId    — the order record ID (null → no-op)
- * @param {string}      apiBaseUrl — e.g. "https://host/sws/neo/purchase-order"
- * @param {string}      token      — Bearer token
- * @returns {{ pdfUrl: string|null, pdfBlob: Blob|null, loading: boolean, error: string|null }}
- */
 export function usePurchaseOrderPdf(orderId, apiBaseUrl, token) {
   const ui = useUI();
-  const [pdfUrl, setPdfUrl] = useState(null);
-  const [pdfBlob, setPdfBlob] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const prevUrlRef = useRef(null);
-
-  useEffect(() => {
-    if (!orderId || !apiBaseUrl || !token) return;
-
-    const labels = {
-      title:           ui('purchaseOrderPdfTitle'),
-      documentNo:      ui('purchaseOrderPdfDocumentNo'),
-      taxId:           ui('invoicePdfTaxId'),
-      page:            ui('invoicePdfPage'),
-      customerSection: ui('invoicePdfCustomerSection'),
-      documentSection: ui('purchaseOrderPdfSection'),
-      customer:        ui('invoicePdfCustomer'),
-      address:         ui('invoicePdfAddress'),
-      date:            ui('orderPdfDate'),
-      paymentTerms:    ui('invoicePdfPaymentTerms'),
-      paymentMethod:   ui('invoicePdfPaymentMethod'),
-      colCode:         ui('invoicePdfColCode'),
-      colDescription:  ui('invoicePdfColDescription'),
-      colQty:          ui('orderPdfColQty'),
-      colUnitPrice:    ui('invoicePdfColUnitPrice'),
-      colDiscount:     ui('invoicePdfColDiscount'),
-      colTax:          ui('invoicePdfColTax'),
-      colTotal:        ui('invoicePdfColTotal'),
-      subtotal:                ui('invoicePdfSubtotal'),
-      tax:                     ui('invoicePdfTax'),
-      grandTotal:              ui('invoicePdfGrandTotal'),
-      notes:                   ui('invoicePdfNotes'),
-      subtotalWithoutDiscount: ui('subtotalWithoutDiscount'),
-      discountPerProduct:      ui('discountPerProduct'),
-      totalDiscount:           ui('totalDiscount'),
-    };
-
-    const base = apiBaseUrl.replace(/\/[^/]+$/, '');
-
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    setPdfUrl(null);
-    setPdfBlob(null);
-
-    (async () => {
-      try {
-        const data = await buildPurchaseOrderData(orderId, base, token);
-        const blob = await renderDocumentPdf({ ...data, labels });
-        if (cancelled) return;
-        const url = URL.createObjectURL(blob);
-        prevUrlRef.current = url;
-        setPdfUrl(url);
-        setPdfBlob(blob);
-      } catch (err) {
-        if (!cancelled) setError(err.message);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      setPdfBlob(null);
-      if (prevUrlRef.current) {
-        URL.revokeObjectURL(prevUrlRef.current);
-        prevUrlRef.current = null;
-      }
-    };
-  }, [orderId, apiBaseUrl, token]);
-
-  return { pdfUrl, pdfBlob, loading, error };
+  const labels = {
+    title:           ui('purchaseOrderPdfTitle'),
+    documentNo:      ui('purchaseOrderPdfDocumentNo'),
+    taxId:           ui('invoicePdfTaxId'),
+    page:            ui('invoicePdfPage'),
+    customerSection: ui('invoicePdfCustomerSection'),
+    documentSection: ui('purchaseOrderPdfSection'),
+    customer:        ui('invoicePdfCustomer'),
+    address:         ui('invoicePdfAddress'),
+    date:            ui('orderPdfDate'),
+    paymentTerms:    ui('invoicePdfPaymentTerms'),
+    paymentMethod:   ui('invoicePdfPaymentMethod'),
+    colCode:         ui('invoicePdfColCode'),
+    colDescription:  ui('invoicePdfColDescription'),
+    colQty:          ui('orderPdfColQty'),
+    colUnitPrice:    ui('invoicePdfColUnitPrice'),
+    colDiscount:     ui('invoicePdfColDiscount'),
+    colTax:          ui('invoicePdfColTax'),
+    colTotal:        ui('invoicePdfColTotal'),
+    subtotal:                ui('invoicePdfSubtotal'),
+    tax:                     ui('invoicePdfTax'),
+    grandTotal:              ui('invoicePdfGrandTotal'),
+    notes:                   ui('invoicePdfNotes'),
+    subtotalWithoutDiscount: ui('subtotalWithoutDiscount'),
+    discountPerProduct:      ui('discountPerProduct'),
+    totalDiscount:           ui('totalDiscount'),
+  };
+  return useDocumentPdf(orderId, apiBaseUrl, token, buildPurchaseOrderData, labels);
 }

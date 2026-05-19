@@ -201,11 +201,12 @@ test.describe('Purchase Invoice — readOnlyLogic when processed (mocked)', () =
     await page.goto(`/purchase-invoice/${INV_DR_ID}`);
     await page.waitForLoadState('domcontentloaded');
 
-    const fieldRoot = page.getByTestId('field-businessPartner');
-    await expect(fieldRoot).toBeVisible({ timeout: 8_000 });
-
-    // In editable mode, SearchInput places the testid directly on the <input> element,
-    // so fieldRoot itself is the control to assert against.
-    await expect(fieldRoot).toBeEnabled({ timeout: 5_000 });
+    // When a value is already selected, CreatableSearchSelect renders a chip
+    // (showChip = hasSelection && !isDisabled). The chip testid is
+    // field-{key}-chip. Its presence proves the field is in editable mode —
+    // in disabled/readonly mode showChip is false and a plain disabled input
+    // is rendered instead.
+    const chip = page.getByTestId('field-businessPartner-chip');
+    await expect(chip).toBeVisible({ timeout: 8_000 });
   });
 });

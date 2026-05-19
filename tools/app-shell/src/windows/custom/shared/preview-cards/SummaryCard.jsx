@@ -38,8 +38,14 @@ export function InfoRow({ label, value, underline, children }) {
 
 function PercentBar({ value }) {
   const pct = isNaN(Number(value)) ? 0 : Math.min(Number(value), 100);
-  const trackColor = pct >= 100 ? 'bg-emerald-500' : pct > 0 ? 'bg-amber-400' : 'bg-slate-200';
-  const textColor  = pct >= 100 ? 'text-emerald-700' : pct > 0 ? 'text-amber-700' : 'text-slate-400';
+  let trackColor;
+  if (pct >= 100) trackColor = 'bg-emerald-500';
+  else if (pct > 0) trackColor = 'bg-amber-400';
+  else trackColor = 'bg-slate-200';
+  let textColor;
+  if (pct >= 100) textColor = 'text-emerald-700';
+  else if (pct > 0) textColor = 'text-amber-700';
+  else textColor = 'text-slate-400';
   return (
     <div className="flex items-center gap-2">
       <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">

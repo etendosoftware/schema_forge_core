@@ -1,10 +1,11 @@
 import { useState, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useUI } from '@/i18n';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import { useRowDelete } from '@/hooks/useRowDelete';
 import { buildPendingDeliveryFilter } from '../shared/pendingDeliveryFilter.js';
+import { useSavedPreviewRecord } from '../shared/useSavedPreviewRecord.js';
 import OrderPreview from '../shared/OrderPreview.jsx';
 import { ListView } from '@/components/contract-ui';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
@@ -13,7 +14,6 @@ import { CreateContactContext } from '@/components/contract-ui/CreateContactCont
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
 import HeaderTable from '@generated/purchase-order/generated/web/purchase-order/HeaderTable';
 import GeneratedApp from '@generated/purchase-order/generated/web/purchase-order/index.jsx';
-import PurchaseOrderReactivateBulkAction from '@generated/purchase-order/custom/PurchaseOrderReactivateBulkAction';
 import BulkPurchaseOrderMoreMenu from '@generated/purchase-order/custom/BulkPurchaseOrderMoreMenu';
 import { ConfirmModal as PoConfirmModal, PoConfirmResultModal, ManageDocsLauncher as PoManageDocsLauncher } from '@generated/purchase-order/custom/PurchaseOrderActions';
 import LinesEmptyState from '@/components/contract-ui/LinesEmptyState.jsx';
@@ -78,15 +78,7 @@ export default function PurchaseOrderWindow(props) {
     onSuccess: () => setRefreshKey(k => k + 1),
   });
 
-  const location = useLocation();
-  const [savedRecord, setSavedRecord] = useState(null);
-  const effectiveRecord = savedRecord ?? location.state?.savedRecord ?? null;
-  const clearSavedRecord = useCallback(() => {
-    setSavedRecord(null);
-    if (location.state?.savedRecord) {
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-  }, [location, navigate]);
+  const { effectiveRecord, clearSavedRecord } = useSavedPreviewRecord();
 
   const renderPreview = useCallback(({ row, onClose, onEdit }) => (
     <OrderPreview
@@ -204,7 +196,6 @@ export default function PurchaseOrderWindow(props) {
         bulkActions={(ctx) => (
           <>
             <BulkPurchaseOrderMoreMenu {...ctx} />
-            <PurchaseOrderReactivateBulkAction {...ctx} />
           </>
         )}
         initialColumnFilters={initialColumnFilters}

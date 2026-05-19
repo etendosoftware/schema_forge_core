@@ -1,4 +1,3 @@
-import { useState, useEffect, useRef } from 'react';
 import { useUI } from '@/i18n';
 import { buildLocationAddressLines } from '@/lib/locationAddress.js';
 import {
@@ -7,14 +6,13 @@ import {
   fetchOptionalJson,
   fetchLocationAddress,
   fetchImageDataUrl,
-  renderDocumentPdf,
+  useDocumentPdf,
 } from './documentPdf.js';
 
 // ---------------------------------------------------------------------------
 // Build invoice data for the template
 // ---------------------------------------------------------------------------
 async function buildInvoiceData(invoiceId, base, token) {
-  // Fetch header and lines in parallel
   const [header, linesRaw, session] = await Promise.all([
     fetchJson(`${base}/sales-invoice/header/${invoiceId}`, token),
     fetchAll(`${base}/sales-invoice/lines?parentId=${invoiceId}`, token),
@@ -25,7 +23,6 @@ async function buildInvoiceData(invoiceId, base, token) {
     fetchLocationAddress(header.partnerAddress, base, token),
   ]);
 
-  // Sort by ERP lineNo so the rows always appear in the order the user created them
   const linesSorted = [...linesRaw].sort(
     (a, b) => (Number(a.lineNo) || 0) - (Number(b.lineNo) || 0)
   );
@@ -34,7 +31,7 @@ async function buildInvoiceData(invoiceId, base, token) {
     productName: l.product$_identifier || l.description || '—',
     quantity: l.invoicedQuantity ?? l.qtyInvoiced ?? 0,
     unitPrice: l.unitPrice ?? l.priceActual ?? 0,
-    discount: l.discount ? Number(l.discount) : null,
+    discount: l.etgoDiscount ? Number(l.etgoDiscount) : null,
     taxName: l.tax$_identifier || l.taxRate || '',
     lineTotal: l.lineNetAmount ?? l.lineAmount ?? 0,
   }));
@@ -48,7 +45,7 @@ async function buildInvoiceData(invoiceId, base, token) {
     if (qty === 0) return 0;
     if (l.listPrice != null) return qty * Number(l.listPrice);
     const lineNet = Number(l.lineNetAmount ?? l.lineAmount ?? 0);
-    const disc = Number(l.discount ?? 0);
+    const disc = Number(l.etgoDiscount ?? 0);
     return disc > 0 ? lineNet / (1 - disc / 100) : lineNet;
   };
   const grossAmount = linesRaw.reduce((sum, l) => sum + getGrossLine(l), 0);
@@ -56,6 +53,9 @@ async function buildInvoiceData(invoiceId, base, token) {
   const discountPerProduct = Math.max(0, grossAmount - productNetAmount);
   const etgoTotalDiscount = Number(header.etgoTotalDiscount ?? 0);
   const totalDiscountAmt = etgoTotalDiscount > 0 ? productNetAmount * etgoTotalDiscount / 100 : 0;
+  const hasLineDiscount = linesRaw.some(l => Number(l.etgoDiscount ?? 0) > 0);
+  const hasAnyDiscount = hasLineDiscount || etgoTotalDiscount > 0;
+  const hasTotalDiscount = etgoTotalDiscount > 0;
 
   const org = session?.organization ?? {};
   const customerAddressLines = buildLocationAddressLines(
@@ -83,97 +83,47 @@ async function buildInvoiceData(invoiceId, base, token) {
     taxAmount,
     grandTotal,
     grossAmount:        discountPerProduct > 0 ? grossAmount : null,
+    grossSubtotal:      discountPerProduct > 0 ? grossAmount : null,
     discountPerProduct: discountPerProduct > 0 ? discountPerProduct : null,
     etgoTotalDiscount:  etgoTotalDiscount > 0 ? etgoTotalDiscount : null,
+    totalDiscountPct:   etgoTotalDiscount > 0 ? etgoTotalDiscount : null,
     totalDiscountAmt:   totalDiscountAmt > 0 ? totalDiscountAmt : null,
+    hasAnyDiscount,
+    hasTotalDiscount,
   };
 }
 
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
-/**
- * useInvoicePdf — fetches sales invoice data and renders it as a PDF via jsreport.
- *
- * @param {string|null} invoiceId  — the invoice record ID
- * @param {string}      apiBaseUrl — e.g. "https://host/sws/neo/sales-invoice"
- * @param {string}      token      — Bearer token
- * @returns {{ pdfUrl: string|null, pdfBlob: Blob|null, loading: boolean, error: string|null }}
- */
 export function useInvoicePdf(invoiceId, apiBaseUrl, token) {
   const ui = useUI();
-  const [pdfUrl, setPdfUrl] = useState(null);
-  const [pdfBlob, setPdfBlob] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const prevUrlRef = useRef(null);
-
-  useEffect(() => {
-    if (!invoiceId || !apiBaseUrl || !token) return;
-
-    // Build labels from i18n for the current locale
-    const labels = {
-      title:           ui('invoicePdfTitle'),
-      documentNo:      ui('invoicePdfDocumentNo'),
-      taxId:           ui('invoicePdfTaxId'),
-      page:            ui('invoicePdfPage'),
-      customerSection: ui('invoicePdfCustomerSection'),
-      documentSection: ui('invoicePdfInvoiceSection'),
-      customer:        ui('invoicePdfCustomer'),
-      address:         ui('invoicePdfAddress'),
-      date:            ui('invoicePdfDate'),
-      paymentTerms:    ui('invoicePdfPaymentTerms'),
-      paymentMethod:   ui('invoicePdfPaymentMethod'),
-      colCode:         ui('invoicePdfColCode'),
-      colDescription:  ui('invoicePdfColDescription'),
-      colQty:          ui('invoicePdfColQty'),
-      colUnitPrice:    ui('invoicePdfColUnitPrice'),
-      colDiscount:     ui('invoicePdfColDiscount'),
-      colTax:          ui('invoicePdfColTax'),
-      colTotal:        ui('invoicePdfColTotal'),
-      subtotal:                ui('invoicePdfSubtotal'),
-      tax:                     ui('invoicePdfTax'),
-      grandTotal:              ui('invoicePdfGrandTotal'),
-      notes:                   ui('invoicePdfNotes'),
-      subtotalWithoutDiscount: ui('subtotalWithoutDiscount'),
-      discountPerProduct:      ui('discountPerProduct'),
-      totalDiscount:           ui('totalDiscount'),
-    };
-
-    // Compute base URL (strip spec name: .../sws/neo/sales-invoice → .../sws/neo)
-    const base = apiBaseUrl.replace(/\/[^/]+$/, '');
-
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    setPdfUrl(null);
-    setPdfBlob(null);
-
-    (async () => {
-      try {
-        const data = await buildInvoiceData(invoiceId, base, token);
-        const blob = await renderDocumentPdf({ ...data, labels });
-        if (cancelled) return;
-        const url = URL.createObjectURL(blob);
-        prevUrlRef.current = url;
-        setPdfUrl(url);
-        setPdfBlob(blob);
-      } catch (err) {
-        if (!cancelled) setError(err.message);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      setPdfBlob(null);
-      if (prevUrlRef.current) {
-        URL.revokeObjectURL(prevUrlRef.current);
-        prevUrlRef.current = null;
-      }
-    };
-  }, [invoiceId, apiBaseUrl, token]);
-
-  return { pdfUrl, pdfBlob, loading, error };
+  const labels = {
+    title:           ui('invoicePdfTitle'),
+    documentNo:      ui('invoicePdfDocumentNo'),
+    taxId:           ui('invoicePdfTaxId'),
+    page:            ui('invoicePdfPage'),
+    customerSection: ui('invoicePdfCustomerSection'),
+    documentSection: ui('invoicePdfInvoiceSection'),
+    customer:        ui('invoicePdfCustomer'),
+    address:         ui('invoicePdfAddress'),
+    date:            ui('invoicePdfDate'),
+    paymentTerms:    ui('invoicePdfPaymentTerms'),
+    paymentMethod:   ui('invoicePdfPaymentMethod'),
+    colCode:         ui('invoicePdfColCode'),
+    colDescription:  ui('invoicePdfColDescription'),
+    colQty:          ui('invoicePdfColQty'),
+    colUnitPrice:    ui('invoicePdfColUnitPrice'),
+    colDiscount:     ui('invoicePdfColDiscount'),
+    colTax:          ui('invoicePdfColTax'),
+    colTotal:        ui('invoicePdfColTotal'),
+    subtotal:                ui('invoicePdfSubtotal'),
+    tax:                     ui('invoicePdfTax'),
+    grandTotal:              ui('invoicePdfGrandTotal'),
+    notes:                   ui('invoicePdfNotes'),
+    subtotalWithoutDiscount: ui('subtotalWithoutDiscount'),
+    discountPerProduct:      ui('discountPerProduct'),
+    totalDiscount:           ui('totalDiscount'),
+  };
+  return useDocumentPdf(invoiceId, apiBaseUrl, token, buildInvoiceData, labels);
 }

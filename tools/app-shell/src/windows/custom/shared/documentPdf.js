@@ -1,3 +1,5 @@
+import { useState, useEffect, useRef } from 'react';
+
 // ---------------------------------------------------------------------------
 // Handlebars helpers (CommonJS for jsreport context)
 // ---------------------------------------------------------------------------
@@ -321,5 +323,56 @@ export async function renderDocumentPdf(data) {
   }
 
   return res.blob();
+}
+
+// ---------------------------------------------------------------------------
+// Generic PDF hook — shared by all document-type hooks
+// labels are kept in a ref so they never re-trigger the effect on locale change
+// ---------------------------------------------------------------------------
+export function useDocumentPdf(recordId, apiBaseUrl, token, buildDataFn, labels) {
+  const [pdfUrl, setPdfUrl] = useState(null);
+  const [pdfBlob, setPdfBlob] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const prevUrlRef = useRef(null);
+  const labelsRef = useRef(labels);
+  labelsRef.current = labels;
+
+  useEffect(() => {
+    if (!recordId || !apiBaseUrl || !token) return;
+    const base = apiBaseUrl.replace(/\/[^/]+$/, '');
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    setPdfUrl(null);
+    setPdfBlob(null);
+
+    (async () => {
+      try {
+        const data = await buildDataFn(recordId, base, token);
+        const blob = await renderDocumentPdf({ ...data, labels: labelsRef.current });
+        if (cancelled) return;
+        const url = URL.createObjectURL(blob);
+        prevUrlRef.current = url;
+        setPdfUrl(url);
+        setPdfBlob(blob);
+      } catch (err) {
+        if (!cancelled) setError(err.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      setPdfBlob(null);
+      if (prevUrlRef.current) {
+        URL.revokeObjectURL(prevUrlRef.current);
+        prevUrlRef.current = null;
+      }
+    };
+  }, [recordId, apiBaseUrl, token, buildDataFn]);
+
+  return { pdfUrl, pdfBlob, loading, error };
 }
 

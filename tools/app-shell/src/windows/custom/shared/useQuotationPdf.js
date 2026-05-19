@@ -1,4 +1,3 @@
-import { useState, useEffect, useRef } from 'react';
 import { useUI } from '@/i18n';
 import { buildLocationAddressLines } from '@/lib/locationAddress.js';
 import {
@@ -7,7 +6,7 @@ import {
   fetchOptionalJson,
   fetchLocationAddress,
   fetchImageDataUrl,
-  renderDocumentPdf,
+  useDocumentPdf,
 } from './documentPdf.js';
 
 // ---------------------------------------------------------------------------
@@ -91,87 +90,35 @@ async function buildQuotationData(quotationId, base, token) {
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
-/**
- * useQuotationPdf — fetches sales quotation data and renders it as a PDF via jsreport.
- *
- * @param {string|null} quotationId — the quotation record ID
- * @param {string}      apiBaseUrl  — e.g. "https://host/sws/neo/sales-quotation"
- * @param {string}      token       — Bearer token
- * @returns {{ pdfUrl: string|null, pdfBlob: Blob|null, loading: boolean, error: string|null }}
- */
 export function useQuotationPdf(quotationId, apiBaseUrl, token) {
   const ui = useUI();
-  const [pdfUrl, setPdfUrl] = useState(null);
-  const [pdfBlob, setPdfBlob] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const prevUrlRef = useRef(null);
-
-  useEffect(() => {
-    if (!quotationId || !apiBaseUrl || !token) return;
-
-    const labels = {
-      title:           ui('quotationPdfTitle'),
-      documentNo:      ui('quotationPdfDocumentNo'),
-      taxId:           ui('invoicePdfTaxId'),
-      page:            ui('invoicePdfPage'),
-      customerSection: ui('invoicePdfCustomerSection'),
-      documentSection: ui('quotationPdfSection'),
-      customer:        ui('invoicePdfCustomer'),
-      address:         ui('invoicePdfAddress'),
-      date:            ui('quotationPdfDate'),
-      validUntil:      ui('quotationPdfValidUntil'),
-      paymentTerms:    ui('invoicePdfPaymentTerms'),
-      paymentMethod:   ui('invoicePdfPaymentMethod'),
-      colCode:         ui('invoicePdfColCode'),
-      colDescription:  ui('invoicePdfColDescription'),
-      colQty:          ui('quotationPdfColQty'),
-      colUnitPrice:    ui('invoicePdfColUnitPrice'),
-      colDiscount:     ui('invoicePdfColDiscount'),
-      colTax:          ui('invoicePdfColTax'),
-      colTotal:        ui('invoicePdfColTotal'),
-      subtotal:                ui('invoicePdfSubtotal'),
-      tax:                     ui('invoicePdfTax'),
-      grandTotal:              ui('invoicePdfGrandTotal'),
-      notes:                   ui('invoicePdfNotes'),
-      subtotalWithoutDiscount: ui('subtotalWithoutDiscount'),
-      discountPerProduct:      ui('discountPerProduct'),
-      totalDiscount:           ui('totalDiscount'),
-    };
-
-    const base = apiBaseUrl.replace(/\/[^/]+$/, '');
-
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    setPdfUrl(null);
-    setPdfBlob(null);
-
-    (async () => {
-      try {
-        const data = await buildQuotationData(quotationId, base, token);
-        const blob = await renderDocumentPdf({ ...data, labels });
-        if (cancelled) return;
-        const url = URL.createObjectURL(blob);
-        prevUrlRef.current = url;
-        setPdfUrl(url);
-        setPdfBlob(blob);
-      } catch (err) {
-        if (!cancelled) setError(err.message);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      setPdfBlob(null);
-      if (prevUrlRef.current) {
-        URL.revokeObjectURL(prevUrlRef.current);
-        prevUrlRef.current = null;
-      }
-    };
-  }, [quotationId, apiBaseUrl, token]);
-
-  return { pdfUrl, pdfBlob, loading, error };
+  const labels = {
+    title:           ui('quotationPdfTitle'),
+    documentNo:      ui('quotationPdfDocumentNo'),
+    taxId:           ui('invoicePdfTaxId'),
+    page:            ui('invoicePdfPage'),
+    customerSection: ui('invoicePdfCustomerSection'),
+    documentSection: ui('quotationPdfSection'),
+    customer:        ui('invoicePdfCustomer'),
+    address:         ui('invoicePdfAddress'),
+    date:            ui('quotationPdfDate'),
+    validUntil:      ui('quotationPdfValidUntil'),
+    paymentTerms:    ui('invoicePdfPaymentTerms'),
+    paymentMethod:   ui('invoicePdfPaymentMethod'),
+    colCode:         ui('invoicePdfColCode'),
+    colDescription:  ui('invoicePdfColDescription'),
+    colQty:          ui('quotationPdfColQty'),
+    colUnitPrice:    ui('invoicePdfColUnitPrice'),
+    colDiscount:     ui('invoicePdfColDiscount'),
+    colTax:          ui('invoicePdfColTax'),
+    colTotal:        ui('invoicePdfColTotal'),
+    subtotal:                ui('invoicePdfSubtotal'),
+    tax:                     ui('invoicePdfTax'),
+    grandTotal:              ui('invoicePdfGrandTotal'),
+    notes:                   ui('invoicePdfNotes'),
+    subtotalWithoutDiscount: ui('subtotalWithoutDiscount'),
+    discountPerProduct:      ui('discountPerProduct'),
+    totalDiscount:           ui('totalDiscount'),
+  };
+  return useDocumentPdf(quotationId, apiBaseUrl, token, buildQuotationData, labels);
 }

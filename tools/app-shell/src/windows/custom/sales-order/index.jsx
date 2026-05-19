@@ -1,10 +1,11 @@
 import { useState, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useUI } from '@/i18n';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import { useRowDelete } from '@/hooks/useRowDelete';
 import { buildPendingDeliveryFilter } from '../shared/pendingDeliveryFilter.js';
+import { useSavedPreviewRecord } from '../shared/useSavedPreviewRecord.js';
 import OrderPreview from '../shared/OrderPreview.jsx';
 import GeneratedApp from '@generated/sales-order/generated/web/sales-order/index.jsx';
 import HeaderTable from '@generated/sales-order/generated/web/sales-order/HeaderTable';
@@ -75,15 +76,7 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
     onSuccess: () => setRefreshKey(k => k + 1),
   });
 
-  const location = useLocation();
-  const [savedRecord, setSavedRecord] = useState(null);
-  const effectiveRecord = savedRecord ?? location.state?.savedRecord ?? null;
-  const clearSavedRecord = useCallback(() => {
-    setSavedRecord(null);
-    if (location.state?.savedRecord) {
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-  }, [location, navigate]);
+  const { effectiveRecord, clearSavedRecord } = useSavedPreviewRecord();
 
   const renderPreview = useCallback(({ row, onClose, onEdit }) => (
     <OrderPreview

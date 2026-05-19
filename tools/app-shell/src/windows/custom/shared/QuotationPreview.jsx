@@ -1,12 +1,12 @@
 import { useRef, useState } from 'react';
-import { Edit2, Loader2, AlertCircle, Mail, Download } from 'lucide-react';
-import { Button } from '@/components/ui/button.jsx';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { useMenuLabel, useUI } from '@/i18n';
 import { statusLabel as resolveStatusLabel } from '@/lib/statusBadge.js';
 import PdfViewer from './PdfViewer.jsx';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 import GenericPreviewModal from './GenericPreviewModal.jsx';
 import { useQuotationPdf } from './useQuotationPdf.js';
+import PreviewActionButtons, { PreviewEmptyPanel } from './PreviewActionButtons.jsx';
 import SummaryCard from './preview-cards/SummaryCard.jsx';
 import EmailsCard from './preview-cards/EmailsCard.jsx';
 import CategorizationCard from './preview-cards/CategorizationCard.jsx';
@@ -20,43 +20,6 @@ const QUOTATION_SPECS = [
 ];
 
 // Statuses that mean the quotation is no longer editable
-
-function QuotationActionButtons({ triggerEdit, onEmail, onDownloadPdf, hasPdf }) {
-  const ui = useUI();
-  return (
-    <>
-      <Button
-        size="sm"
-        className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-[#121217] hover:bg-[#2a2a30] text-white [&_svg]:size-5"
-        onClick={onEmail}
-      >
-        <Mail />
-        {ui('quotationPreviewSend')}
-      </Button>
-
-      <Button
-        size="sm"
-        variant="outline"
-        className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] disabled:opacity-40 disabled:cursor-not-allowed [&_svg]:size-5"
-        disabled={!hasPdf}
-        onClick={hasPdf ? onDownloadPdf : undefined}
-      >
-        <Download className="text-[#828FA3]" />
-        {ui('quotationPreviewDownloadPdf')}
-      </Button>
-
-      <Button
-        size="sm"
-        variant="outline"
-        className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] [&_svg]:size-5"
-        onClick={triggerEdit}
-      >
-        <Edit2 className="text-[#828FA3]" />
-        {ui('quotationPreviewEdit')}
-      </Button>
-    </>
-  );
-}
 
 // ── General tab content ───────────────────────────────────────────────────────
 
@@ -87,15 +50,6 @@ function QuotationGeneralTab({ quotation, onSend, token, apiBaseUrl }) {
         apiBaseUrl={apiBaseUrl}
         specs={QUOTATION_SPECS}
       />
-    </div>
-  );
-}
-
-function EmptyPanel({ icon, text }) {
-  return (
-    <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-400 py-20">
-      <span className="text-3xl">{icon}</span>
-      <p className="text-sm">{text}</p>
     </div>
   );
 }
@@ -188,12 +142,12 @@ export default function QuotationPreview({ quotation, token, apiBaseUrl, windowN
     {
       key: 'messages',
       label: ui('quotationPreviewMessages'),
-      content: <EmptyPanel icon="💬" text={ui('quotationPreviewMessages')} />,
+      content: <PreviewEmptyPanel icon="💬" text={ui('quotationPreviewMessages')} />,
     },
     {
       key: 'history',
       label: ui('quotationPreviewHistory'),
-      content: <EmptyPanel icon="🕐" text={ui('quotationPreviewHistory')} />,
+      content: <PreviewEmptyPanel icon="🕐" text={ui('quotationPreviewHistory')} />,
     },
   ];
 
@@ -203,11 +157,14 @@ export default function QuotationPreview({ quotation, token, apiBaseUrl, windowN
   const partnerName = quotation.businessPartner$_identifier;
 
   const actionButtons = (
-    <QuotationActionButtons
+    <PreviewActionButtons
       triggerEdit={() => modalRef.current?.triggerEdit?.()}
       onEmail={openEmailModal}
       onDownloadPdf={handleDownloadPdf}
       hasPdf={!!pdfUrl}
+      sendLabel={ui('quotationPreviewSend')}
+      downloadLabel={ui('quotationPreviewDownloadPdf')}
+      editLabel={ui('quotationPreviewEdit')}
     />
   );
 
