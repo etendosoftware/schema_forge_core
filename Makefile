@@ -1,4 +1,4 @@
-.PHONY: test test-all-coverage test-ci test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-with-shell dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate sonar sonar-pr sonar-coverage menu-cache uuid test-xml-regeneration-check test-python xml-regeneration-check dump-delta regen-check regen-check-help regen-check-clean regen-help
+.PHONY: test test-all-coverage test-ci test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-with-shell dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate sonar sonar-pr sonar-go sonar-go-pr sonar-coverage menu-cache uuid test-xml-regeneration-check test-python xml-regeneration-check dump-delta regen-check regen-check-help regen-check-clean regen-help
 
 # --- Testing ---
 
@@ -302,6 +302,9 @@ report-preview: ## Preview Business Partner listing report
 #   make sonar PR=547                → PR analysis (auto-resolves BASE via gh)
 #   make sonar PR=547 BASE=epic/x    → PR analysis with explicit base
 #   make sonar-pr                    → PR analysis, auto-detects PR for current branch
+#   make sonar-go                    → Run against com.etendoerp.go (accepts PR/BRANCH)
+#   make sonar-go-pr                 → Run sonar-go with PR auto-detection
+#   make sonar MODULE=go PR=120      → Explicit form (same as sonar-go PR=120)
 # Auth: needs SONAR_TOKEN + SONAR_HOST_URL. The script validates and prints
 # setup instructions if they are missing or rejected.
 
@@ -310,6 +313,12 @@ sonar: ## Run SonarQube analysis (overall by default; PR=<n> or BRANCH=<name> fo
 
 sonar-pr: ## Run SonarQube PR analysis (auto-detects PR from current branch)
 	@AUTO_PR=1 ./cli/sonar-scan.sh
+
+sonar-go: ## Run SonarQube against com.etendoerp.go module (accepts PR=<n> or BRANCH=<name>)
+	@MODULE=go ./cli/sonar-scan.sh
+
+sonar-go-pr: ## Run SonarQube PR analysis on com.etendoerp.go (auto-detects PR)
+	@MODULE=go AUTO_PR=1 ./cli/sonar-scan.sh
 
 sonar-coverage: ## Run all tests with coverage then SonarQube (accepts PR/BRANCH vars too)
 	@mkdir -p coverage

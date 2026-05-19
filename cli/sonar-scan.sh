@@ -2,18 +2,23 @@
 # sonar-scan.sh — Run SonarQube whole-project analysis with overall / branch / PR modes.
 #
 # Modes (selected via env vars or auto-detection):
-#   make sonar                        → overall (current branch, or main if checked out)
+#   make sonar                        → overall on schema_forge (default project)
 #   make sonar BRANCH=feature/x       → branch analysis on the given branch
 #   make sonar PR=547                 → PR analysis (auto-resolves base + branch via gh)
 #   make sonar PR=547 BASE=epic/x     → PR analysis with explicit base
+#   make sonar MODULE=go              → run against com.etendoerp.go module
+#   make sonar MODULE=go PR=120       → PR analysis on the etendo-go GitHub repo
+#   make sonar PROJECT_DIR=/abs/path  → run against an arbitrary directory
 #   make sonar-pr                     → forces PR auto-detect from current branch
 #
 # Env vars consumed:
-#   PR        Pull request number. If set, runs in PR mode.
-#   BRANCH    Source branch name. Defaults to current git branch.
-#   BASE      Target branch for PR mode. Auto-resolved via `gh pr view` if absent.
-#   AUTO_PR   If "1", try to auto-detect PR from the current branch (used by `make sonar-pr`).
-#   COVERAGE  If "1", coverage reports must already be in coverage/ (caller's responsibility).
+#   PR           Pull request number. If set, runs in PR mode.
+#   BRANCH       Source branch name. Defaults to current git branch (of the target dir).
+#   BASE         Target branch for PR mode. Auto-resolved via `gh pr view` if absent.
+#   AUTO_PR      If "1", try to auto-detect PR from the current branch (used by `make sonar-pr`).
+#   MODULE       Shortcut: "go" → ../modules/com.etendoerp.go (relative to schema_forge).
+#   PROJECT_DIR  Absolute path to the project to scan. Overrides MODULE.
+#   COVERAGE     If "1", coverage reports must already be in coverage/ (caller's responsibility).
 #
 # Auth: SONAR_TOKEN + SONAR_HOST_URL. See docs/sonarqube-access.md for setup.
 
@@ -24,7 +29,34 @@ PATH="$(echo "$PATH" | tr ':' '\n' | grep -v 'rtk' | tr '\n' ':')"
 export PATH="${PATH%:}"
 
 # ── Locate repo root ──────────────────────────────────────────────────────────
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCHEMA_FORGE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# ── Resolve target project directory ─────────────────────────────────────────
+MODULE="${MODULE:-}"
+PROJECT_DIR="${PROJECT_DIR:-}"
+
+if [[ -z "$PROJECT_DIR" ]]; then
+  case "$MODULE" in
+    "")          PROJECT_DIR="$SCHEMA_FORGE_ROOT" ;;
+    go|etendo-go|com.etendoerp.go)
+                 PROJECT_DIR="$SCHEMA_FORGE_ROOT/../modules/com.etendoerp.go" ;;
+    *)
+      echo "✗ Unknown MODULE='$MODULE'. Known: go. Or pass PROJECT_DIR=<absolute path>." >&2
+      exit 1
+      ;;
+  esac
+fi
+
+if [[ ! -d "$PROJECT_DIR" ]]; then
+  echo "✗ PROJECT_DIR does not exist: $PROJECT_DIR" >&2
+  exit 1
+fi
+if [[ ! -f "$PROJECT_DIR/sonar-project.properties" ]]; then
+  echo "✗ Missing sonar-project.properties in $PROJECT_DIR" >&2
+  exit 1
+fi
+
+ROOT="$(cd "$PROJECT_DIR" && pwd)"
 cd "$ROOT"
 
 # ── Detect shell rc file for setup hints ─────────────────────────────────────
@@ -151,6 +183,7 @@ validate_token
 
 # ── Banner ───────────────────────────────────────────────────────────────────
 echo "=== SonarQube Analysis ($MODE) ==="
+echo "  Project: $ROOT"
 echo "  Host:    $SONAR_HOST_URL"
 case "$MODE" in
   overall) echo "  Scope:   Overall code (default project view)" ;;
