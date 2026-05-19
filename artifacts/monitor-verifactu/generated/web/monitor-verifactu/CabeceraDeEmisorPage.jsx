@@ -32,6 +32,10 @@ const processes = [
 const draftMode = null;
 // @sf-generated-end draftMode:cabeceraDeEmisor
 
+// @sf-generated-start requiredHeaderFields:cabeceraDeEmisor
+const requiredHeaderFields = ['active', 'tAXType', 'nextSendWaitTime'];
+// @sf-generated-end requiredHeaderFields:cabeceraDeEmisor
+
 // @sf-generated-start addLineFields:facturasRechazadas
 const addLineFields = {
   entry: [
@@ -80,15 +84,15 @@ export const api = {
       "detailUrl": "/sws/neo/monitor-verifactu/facturasRechazadas/{id}",
       "supportedFilters": []
     },
-    "partiallyAcceptedInvoices": {
+    "facturasParcialmenteAceptadas": {
       "get": true,
       "getById": true,
       "post": true,
       "put": true,
       "patch": true,
       "delete": true,
-      "listUrl": "/sws/neo/monitor-verifactu/partiallyAcceptedInvoices",
-      "detailUrl": "/sws/neo/monitor-verifactu/partiallyAcceptedInvoices/{id}",
+      "listUrl": "/sws/neo/monitor-verifactu/facturasParcialmenteAceptadas",
+      "detailUrl": "/sws/neo/monitor-verifactu/facturasParcialmenteAceptadas/{id}",
       "supportedFilters": []
     },
     "facturasAceptadas": {
@@ -124,12 +128,12 @@ export const api = {
       "url": "/sws/neo/monitor-verifactu/facturasRechazadas/selectors/invoice"
     },
     {
-      "entity": "partiallyAcceptedInvoices",
+      "entity": "facturasParcialmenteAceptadas",
       "field": "invoice",
       "column": "C_Invoice_ID",
       "reference": "Invoice",
       "inputMode": "selector",
-      "url": "/sws/neo/monitor-verifactu/partiallyAcceptedInvoices/selectors/invoice"
+      "url": "/sws/neo/monitor-verifactu/facturasParcialmenteAceptadas/selectors/invoice"
     },
     {
       "entity": "facturasAceptadas",
@@ -174,10 +178,10 @@ export const api = {
       "processType": "obuiapp"
     },
     {
-      "entity": "partiallyAcceptedInvoices",
+      "entity": "facturasParcialmenteAceptadas",
       "field": "correctInvoice",
       "column": "Correct_Invoice",
-      "url": "/sws/neo/monitor-verifactu/partiallyAcceptedInvoices/{id}/action/correctInvoice",
+      "url": "/sws/neo/monitor-verifactu/facturasParcialmenteAceptadas/{id}/action/correctInvoice",
       "processId": "F353F2A7307B464CA2C6515CBEFB0D93",
       "processType": "obuiapp"
     },
@@ -238,6 +242,7 @@ export default function CabeceraDeEmisorPage({ windowName, recordId, ...props })
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        requiredHeaderFields={requiredHeaderFields}
         {...props}
       />
     );
@@ -251,6 +256,7 @@ export default function CabeceraDeEmisorPage({ windowName, recordId, ...props })
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      rowQuickActions={{}}
       {...props}
     />
   );

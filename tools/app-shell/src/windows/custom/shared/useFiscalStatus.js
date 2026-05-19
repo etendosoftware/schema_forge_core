@@ -47,7 +47,7 @@ async function fetchTbaiStatus(apiFetch, orgId, invoiceId) {
 async function fetchVerifactuStatus(apiFetch, orgId, invoiceId) {
   const entities = [
     'facturasAceptadas',
-    'partiallyAcceptedInvoices',
+    'facturasParcialmenteAceptadas',
     'facturasRechazadas',
     'facturasInválidas',
   ];

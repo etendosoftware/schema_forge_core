@@ -1,8 +1,8 @@
 {
   "version": "0.4.0",
   "generatedAt": "2026-04-29T18:12:23.942Z",
-  "updatedAt": "2026-05-13T15:59:19.480Z",
-  "checksum": "6fd7dae34dbc066e",
+  "updatedAt": "2026-05-15T16:00:21.600Z",
+  "checksum": "fcf96190e130197f",
   "frontendContract": {
     "window": {
       "id": "3CAAC7D54593489384452416ACF356DD",
@@ -876,12 +876,6 @@
         "description": "Field 'payoutAllow' should have type 'boolean' in paymentMethod"
       },
       {
-        "id": "t-rule-declared",
-        "category": "rule-declared",
-        "runner": "node",
-        "description": "Rule 'undefined' (displayLogic) should be declared"
-      },
-      {
         "id": "t-rule-declared-AD-Client-Security-validation",
         "category": "rule-declared",
         "rule": "AD_Client Security validation",
@@ -915,6 +909,244 @@
         "rule": "Payment IN Accounts",
         "runner": "node",
         "description": "Rule 'Payment IN Accounts' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Financial-Account-Automatic-Deposit-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Financial Account-Automatic_Deposit-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Financial Account-Automatic_Deposit-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Financial-Account-Automatic-Payment-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Financial Account-Automatic_Payment-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Financial Account-Automatic_Payment-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Financial-Account-Automatic-Receipt-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Financial Account-Automatic_Receipt-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Financial Account-Automatic_Receipt-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Financial-Account-Automatic-Withdrawn-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Financial Account-Automatic_Withdrawn-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Financial Account-Automatic_Withdrawn-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Financial-Account-Inuponclearinguse-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Financial Account-Inuponclearinguse-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Financial Account-Inuponclearinguse-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Financial-Account-Outuponclearinguse-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Financial Account-Outuponclearinguse-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Financial Account-Outuponclearinguse-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Financial-Account-Payin-Deferred-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Financial Account-Payin_Deferred-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Financial Account-Payin_Deferred-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Financial-Account-Payin-Execution-Process-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Financial Account-Payin_Execution_Process_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Financial Account-Payin_Execution_Process_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Financial-Account-Payin-Execution-Type-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Financial Account-Payin_Execution_Type-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Financial Account-Payin_Execution_Type-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Financial-Account-Payout-Deferred-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Financial Account-Payout_Deferred-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Financial Account-Payout_Deferred-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Financial-Account-Payout-Execution-Process-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Financial Account-Payout_Execution_Process_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Financial Account-Payout_Execution_Process_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Financial-Account-Payout-Execution-Type-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Financial Account-Payout_Execution_Type-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Financial Account-Payout_Execution_Type-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Financial-Account-Upondeposituse-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Financial Account-Upondeposituse-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Financial Account-Upondeposituse-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Financial-Account-Uponpaymentuse-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Financial Account-Uponpaymentuse-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Financial Account-Uponpaymentuse-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Financial-Account-Uponreceiptuse-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Financial Account-Uponreceiptuse-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Financial Account-Uponreceiptuse-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Financial-Account-Uponwithdrawaluse-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Financial Account-Uponwithdrawaluse-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Financial Account-Uponwithdrawaluse-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Payment-Method-Automatic-Deposit-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Payment Method-Automatic_Deposit-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Payment Method-Automatic_Deposit-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Payment-Method-Automatic-Payment-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Payment Method-Automatic_Payment-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Payment Method-Automatic_Payment-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Payment-Method-Automatic-Receipt-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Payment Method-Automatic_Receipt-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Payment Method-Automatic_Receipt-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Payment-Method-Automatic-Withdrawn-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Payment Method-Automatic_Withdrawn-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Payment Method-Automatic_Withdrawn-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Payment-Method-Inuponclearinguse-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Payment Method-Inuponclearinguse-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Payment Method-Inuponclearinguse-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Payment-Method-Outuponclearinguse-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Payment Method-Outuponclearinguse-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Payment Method-Outuponclearinguse-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Payment-Method-Payin-Deferred-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Payment Method-Payin_Deferred-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Payment Method-Payin_Deferred-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Payment-Method-Payin-Execution-Process-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Payment Method-Payin_Execution_Process_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Payment Method-Payin_Execution_Process_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Payment-Method-Payin-Execution-Type-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Payment Method-Payin_Execution_Type-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Payment Method-Payin_Execution_Type-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Payment-Method-Payin-IsMulticurrency-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Payment Method-Payin_IsMulticurrency-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Payment Method-Payin_IsMulticurrency-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Payment-Method-Payout-Deferred-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Payment Method-Payout_Deferred-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Payment Method-Payout_Deferred-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Payment-Method-Payout-Execution-Process-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Payment Method-Payout_Execution_Process_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Payment Method-Payout_Execution_Process_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Payment-Method-Payout-Execution-Type-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Payment Method-Payout_Execution_Type-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Payment Method-Payout_Execution_Type-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Payment-Method-Payout-IsMulticurrency-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Payment Method-Payout_IsMulticurrency-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Payment Method-Payout_IsMulticurrency-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Payment-Method-Upondeposituse-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Payment Method-Upondeposituse-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Payment Method-Upondeposituse-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Payment-Method-Uponpaymentuse-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Payment Method-Uponpaymentuse-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Payment Method-Uponpaymentuse-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Payment-Method-Uponreceiptuse-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Payment Method-Uponreceiptuse-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Payment Method-Uponreceiptuse-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-method-Payment-Method-Uponwithdrawaluse-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-method-Payment Method-Uponwithdrawaluse-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-method-Payment Method-Uponwithdrawaluse-displayLogic' (displayLogic) should be declared"
       },
       {
         "id": "t-rule-declared-Payment-OUT-Accounts",
@@ -1131,7 +1363,7 @@
       }
     ],
     "summary": {
-      "total": 64,
+      "total": 97,
       "byCategory": {
         "crud-flags": 1,
         "default-value-type": 6,
@@ -1139,13 +1371,13 @@
         "displaylogic-valid": 4,
         "field-presence": 8,
         "field-type": 8,
-        "rule-declared": 8,
+        "rule-declared": 41,
         "searchable-filters": 1,
         "system-field": 23,
         "visibility": 1
       },
       "byRunner": {
-        "node": 64,
+        "node": 97,
         "junit": 0
       }
     }

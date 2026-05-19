@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T18:11:26.703Z",
-  "updatedAt": "2026-05-12T19:44:04.462Z",
-  "checksum": "74f6fa4c44a9e396",
+  "updatedAt": "2026-05-15T16:00:24.957Z",
+  "checksum": "25678f671a86073d",
   "frontendContract": {
     "window": {
       "id": "144",
@@ -1774,12 +1774,6 @@
         "description": "Field 'summaryLevel' should have type 'boolean' in productCategory"
       },
       {
-        "id": "t-rule-declared",
-        "category": "rule-declared",
-        "runner": "node",
-        "description": "Rule 'undefined' (readOnlyLogic) should be declared"
-      },
-      {
         "id": "t-rule-declared-Copy-Accounts",
         "category": "rule-declared",
         "rule": "Copy Accounts",
@@ -1801,6 +1795,20 @@
         "description": "Rule 'Create Variants' (process) should be declared"
       },
       {
+        "id": "t-rule-declared-M-Product-IsBOM-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "M_Product-IsBOM-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'M_Product-IsBOM-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-M-Product-IsStocked-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "M_Product-IsStocked-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'M_Product-IsStocked-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
         "id": "t-rule-declared-M-ProductCategory-Only-Leaf",
         "category": "rule-declared",
         "rule": "M_ProductCategory(Only Leaf)",
@@ -1813,6 +1821,20 @@
         "rule": "Manage Variants",
         "runner": "node",
         "description": "Rule 'Manage Variants' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-category-Assigned-Products-S-ExpenseType-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-category-Assigned Products-S_ExpenseType_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-category-Assigned Products-S_ExpenseType_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-product-category-Assigned-Products-S-Resource-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "product-category-Assigned Products-S_Resource_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'product-category-Assigned Products-S_Resource_ID-displayLogic' (displayLogic) should be declared"
       },
       {
         "id": "t-rule-declared-Relate-Product-Cat-to-a-Service-Product",
@@ -2951,20 +2973,20 @@
       }
     ],
     "summary": {
-      "total": 179,
+      "total": 182,
       "byCategory": {
         "action-endpoint": 8,
         "crud-flags": 2,
         "default-value-type": 2,
         "field-presence": 9,
         "field-type": 9,
-        "rule-declared": 13,
+        "rule-declared": 16,
         "searchable-filters": 5,
         "system-field": 129,
         "visibility": 2
       },
       "byRunner": {
-        "node": 179,
+        "node": 182,
         "junit": 0
       }
     }

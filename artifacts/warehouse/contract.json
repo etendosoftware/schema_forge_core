@@ -1,8 +1,8 @@
 {
   "version": "0.5.0",
   "generatedAt": "2026-04-29T18:11:37.816Z",
-  "updatedAt": "2026-05-12T19:44:08.766Z",
-  "checksum": "11eba872155a1db2",
+  "updatedAt": "2026-05-15T16:00:56.667Z",
+  "checksum": "26ade87ee9e371da",
   "frontendContract": {
     "window": {
       "id": "139",
@@ -2483,12 +2483,6 @@
         "description": "Field 'warehouseRule' should have type 'string' in warehouse"
       },
       {
-        "id": "t-rule-declared",
-        "category": "rule-declared",
-        "runner": "node",
-        "description": "Rule 'undefined' (displayLogic) should be declared"
-      },
-      {
         "id": "t-rule-declared-AD-Client-Security-validation",
         "category": "rule-declared",
         "rule": "AD_Client Security validation",
@@ -2515,6 +2509,55 @@
         "rule": "SE_Locator_Activate_IsActive",
         "runner": "node",
         "description": "Rule 'SE_Locator_Activate_IsActive' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-warehouse-Bin-Contents-M-AttributeSetInstance-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "warehouse-Bin Contents-M_AttributeSetInstance_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'warehouse-Bin Contents-M_AttributeSetInstance_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-warehouse-Product-Transactions-M-AttributeSetInstance-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "warehouse-Product Transactions-M_AttributeSetInstance_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'warehouse-Product Transactions-M_AttributeSetInstance_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-warehouse-Storage-Bin-Change-Status-displayLogic",
+        "category": "rule-declared",
+        "rule": "warehouse-Storage Bin-Change_Status-displayLogic",
+        "runner": "node",
+        "description": "Rule 'warehouse-Storage Bin-Change_Status-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-warehouse-Warehouse-FromDocumentNo-displayLogic",
+        "category": "rule-declared",
+        "rule": "warehouse-Warehouse-FromDocumentNo-displayLogic",
+        "runner": "node",
+        "description": "Rule 'warehouse-Warehouse-FromDocumentNo-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-warehouse-Warehouse-Isallocated-displayLogic",
+        "category": "rule-declared",
+        "rule": "warehouse-Warehouse-Isallocated-displayLogic",
+        "runner": "node",
+        "description": "Rule 'warehouse-Warehouse-Isallocated-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-warehouse-Warehouse-Shippercode-displayLogic",
+        "category": "rule-declared",
+        "rule": "warehouse-Warehouse-Shippercode-displayLogic",
+        "runner": "node",
+        "description": "Rule 'warehouse-Warehouse-Shippercode-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-warehouse-Warehouse-ToDocumentNo-displayLogic",
+        "category": "rule-declared",
+        "rule": "warehouse-Warehouse-ToDocumentNo-displayLogic",
+        "runner": "node",
+        "description": "Rule 'warehouse-Warehouse-ToDocumentNo-displayLogic' (displayLogic) should be declared"
       },
       {
         "id": "t-searchable-filters-warehouse-name",
@@ -3162,7 +3205,7 @@
       }
     ],
     "summary": {
-      "total": 174,
+      "total": 180,
       "byCategory": {
         "action-endpoint": 2,
         "crud-flags": 4,
@@ -3171,14 +3214,14 @@
         "displaylogic-valid": 4,
         "field-presence": 35,
         "field-type": 35,
-        "rule-declared": 5,
+        "rule-declared": 11,
         "searchable-filters": 2,
         "selector-endpoint": 13,
         "system-field": 62,
         "visibility": 4
       },
       "byRunner": {
-        "node": 174,
+        "node": 180,
         "junit": 0
       }
     }

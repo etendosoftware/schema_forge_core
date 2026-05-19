@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 
 /**
- * regen-all.js — Re-run the full pipeline for all active windows.
+ * regen-all.js — Re-run the full pipeline for all registered windows.
  *
- * "Active" = visible in menu.json AND has a decisions.json in artifacts/.
+ * "Registered" = listed in cli/config/regen-windows.json AND has a decisions.json in artifacts/.
+ * The registry decouples the regen pipeline from menu.json (which is a UI concern)
+ * and lets us regenerate windows that live outside the standard menu (e.g. localization
+ * modules like SII / TBAI / Verifactu).
  *
  * Usage:
  *   node cli/src/regen-all.js                  # extract + resolve + contract + frontend
@@ -20,43 +23,48 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const ROOT = join(__dirname, '..', '..');
 
-const MENU_PATH = join(ROOT, 'tools/app-shell/src/menu.json');
+const REGISTRY_PATH = join(ROOT, 'cli/config/regen-windows.json');
 const ARTIFACTS = join(ROOT, 'artifacts');
 
 function parseArgs(argv) {
   const args = argv.slice(2);
-  const result = { pushToNeo: false, dryRun: false, only: null, skipExtract: false };
+  const result = {
+    pushToNeo: false,
+    dryRun: false,
+    only: null,
+    skipExtract: false,
+    writeCache: false,
+    fromCache: false,
+  };
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--push-to-neo') result.pushToNeo = true;
     else if (args[i] === '--dry-run') result.dryRun = true;
     else if (args[i] === '--skip-extract') result.skipExtract = true;
+    else if (args[i] === '--write-cache') result.writeCache = true;
+    else if (args[i] === '--from-cache') result.fromCache = true;
     else if (args[i] === '--only' && args[i + 1]) result.only = args[++i].split(',').map(s => s.trim());
   }
   return result;
 }
 
 /**
- * Collect active pipeline windows from menu.json.
- * A window is active if it has a windowId (items without windowId are not AD windows).
- * Hidden items and hidden groups are skipped.
+ * Collect pipeline windows from the canonical registry.
+ * A window is processed if it appears in cli/config/regen-windows.json AND has a
+ * decisions.json in artifacts/. Entries without decisions.json are reported and skipped.
  * Returns array of { name, windowId }.
  */
 async function getActiveWindows() {
-  const menu = JSON.parse(await readFile(MENU_PATH, 'utf8'));
+  const registry = JSON.parse(await readFile(REGISTRY_PATH, 'utf8'));
   const windows = [];
   const skipped = [];
-  for (const group of menu.menu) {
-    if (group.hidden) continue;
-    for (const item of group.items || []) {
-      if (item.hidden) continue;
-      if (!item.windowId) continue;
-      const decisionsPath = join(ARTIFACTS, item.name, 'decisions.json');
-      try {
-        await access(decisionsPath);
-        windows.push({ name: item.name, windowId: item.windowId });
-      } catch {
-        skipped.push(item.name);
-      }
+  for (const entry of registry.windows || []) {
+    if (!entry.windowId || !entry.name) continue;
+    const decisionsPath = join(ARTIFACTS, entry.name, 'decisions.json');
+    try {
+      await access(decisionsPath);
+      windows.push({ name: entry.name, windowId: entry.windowId });
+    } catch {
+      skipped.push(entry.name);
     }
   }
   if (skipped.length > 0) {
@@ -188,12 +196,19 @@ async function runPipeline(name, windowId, { pushToNeo, skipExtract }) {
   console.log(`    ${count} components generated`);
 }
 
-async function main() {
-  const opts = parseArgs(process.argv);
+async function configureCacheMode(opts) {
+  if (opts.writeCache && opts.fromCache) {
+    console.error('Error: --write-cache and --from-cache are mutually exclusive');
+    process.exit(1);
+  }
+  if (opts.writeCache || opts.fromCache) {
+    const { setCacheMode } = await import('./db.js');
+    setCacheMode({ mode: opts.writeCache ? 'write' : 'read' });
+  }
+}
 
+async function selectWindows(opts) {
   let windows = await getActiveWindows();
-
-  // Apply --only filter
   if (opts.only) {
     const available = new Set(windows.map(w => w.name));
     const invalid = opts.only.filter(n => !available.has(n));
@@ -202,27 +217,23 @@ async function main() {
     }
     windows = windows.filter(w => opts.only.includes(w.name));
   }
+  return windows;
+}
 
-  if (windows.length === 0) {
-    console.log('No active windows to process.');
-    return;
-  }
-
+function logRunHeader(opts, windows) {
   console.log(`\n=== Schema Forge: Regenerate All ===`);
   console.log(`Windows (${windows.length}): ${windows.map(w => w.name).join(', ')}`);
   console.log(`Push to NEO: ${opts.pushToNeo ? 'YES' : 'no'}`);
   console.log(`Skip extract: ${opts.skipExtract ? 'YES' : 'no'}`);
+  if (opts.writeCache) console.log(`Cache mode: WRITE (will refresh cli/cache/ad-snapshot.json)`);
+  if (opts.fromCache) console.log(`Cache mode: READ (no DB connection — serving from cli/cache/ad-snapshot.json)`);
   console.log();
+}
 
-  if (opts.dryRun) {
-    console.log('Dry run — nothing executed.');
-    return;
-  }
-
+async function runAllPipelines(windows, opts) {
   let passed = 0;
   let failed = 0;
   const errors = [];
-
   for (const { name, windowId } of windows) {
     console.log(`\n[${passed + failed + 1}/${windows.length}] ${name}`);
     try {
@@ -234,6 +245,33 @@ async function main() {
       errors.push({ name, error: err.message });
       console.error(`  ✗ FAILED: ${err.message}`);
     }
+  }
+  return { passed, failed, errors };
+}
+
+async function main() {
+  const opts = parseArgs(process.argv);
+  await configureCacheMode(opts);
+
+  const windows = await selectWindows(opts);
+  if (windows.length === 0) {
+    console.log('No active windows to process.');
+    return;
+  }
+
+  logRunHeader(opts, windows);
+
+  if (opts.dryRun) {
+    console.log('Dry run — nothing executed.');
+    return;
+  }
+
+  const { passed, failed, errors } = await runAllPipelines(windows, opts);
+
+  if (opts.writeCache) {
+    const { flushCacheWrites } = await import('./db.js');
+    const { written, path } = flushCacheWrites();
+    console.log(`\nCache: wrote ${written} entries to ${path}`);
   }
 
   console.log(`\n=== Summary ===`);

@@ -7,7 +7,24 @@ on:
     branches: [main]
 
 jobs:
+  xml-regeneration-check:
+    name: XML Regeneration Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm install
+
+      - name: Run XML regeneration checker tests
+        run: make test-xml-regeneration-check
+
   test:
+    name: Test Suite
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

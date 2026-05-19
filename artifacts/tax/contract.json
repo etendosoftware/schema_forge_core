@@ -1021,12 +1021,6 @@
         "description": "Field 'validFrom' should have type 'string' in tax"
       },
       {
-        "id": "t-rule-declared",
-        "category": "rule-declared",
-        "runner": "node",
-        "description": "Rule 'undefined' (displayLogic) should be declared"
-      },
-      {
         "id": "t-rule-declared-AD-Client-Security-validation",
         "category": "rule-declared",
         "rule": "AD_Client Security validation",
@@ -1097,11 +1091,151 @@
         "description": "Rule 'SL_TaxCategory_Org_AD_Org_ID' (callout) should be declared"
       },
       {
+        "id": "t-rule-declared-tax-Accounting-T-Credit-Trans-Acct-displayLogic",
+        "category": "rule-declared",
+        "rule": "tax-Accounting-T_Credit_Trans_Acct-displayLogic",
+        "runner": "node",
+        "description": "Rule 'tax-Accounting-T_Credit_Trans_Acct-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-tax-Accounting-T-Due-Trans-Acct-displayLogic",
+        "category": "rule-declared",
+        "rule": "tax-Accounting-T_Due_Trans_Acct-displayLogic",
+        "runner": "node",
+        "description": "Rule 'tax-Accounting-T_Due_Trans_Acct-displayLogic' (displayLogic) should be declared"
+      },
+      {
         "id": "t-rule-declared-Tax-not-included",
         "category": "rule-declared",
         "rule": "Tax not included",
         "runner": "node",
         "description": "Rule 'Tax not included' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-tax-Tax-BaseAmount-displayLogic",
+        "category": "rule-declared",
+        "rule": "tax-Tax-BaseAmount-displayLogic",
+        "runner": "node",
+        "description": "Rule 'tax-Tax-BaseAmount-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-tax-Tax-C-TaxBase-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "tax-Tax-C_TaxBase_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'tax-Tax-C_TaxBase_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-tax-Tax-Cascade-displayLogic",
+        "category": "rule-declared",
+        "rule": "tax-Tax-Cascade-displayLogic",
+        "runner": "node",
+        "description": "Rule 'tax-Tax-Cascade-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-tax-Tax-DocTaxAmount-displayLogic",
+        "category": "rule-declared",
+        "rule": "tax-Tax-DocTaxAmount-displayLogic",
+        "runner": "node",
+        "description": "Rule 'tax-Tax-DocTaxAmount-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-tax-Tax-EM-Aeatsii-Cause-Exemption-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "tax-Tax-EM_Aeatsii_Cause_Exemption_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'tax-Tax-EM_Aeatsii_Cause_Exemption_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-tax-Tax-EM-Aeatsii-Isproratexml-displayLogic",
+        "category": "rule-declared",
+        "rule": "tax-Tax-EM_Aeatsii_Isproratexml-displayLogic",
+        "runner": "node",
+        "description": "Rule 'tax-Tax-EM_Aeatsii_Isproratexml-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-tax-Tax-em-etvfac-cause-not-taxable-displayLogic",
+        "category": "rule-declared",
+        "rule": "tax-Tax-em_etvfac_cause_not_taxable-displayLogic",
+        "runner": "node",
+        "description": "Rule 'tax-Tax-em_etvfac_cause_not_taxable-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-tax-Tax-EM-Etvfac-Exemption-Cause-displayLogic",
+        "category": "rule-declared",
+        "rule": "tax-Tax-EM_Etvfac_Exemption_Cause-displayLogic",
+        "runner": "node",
+        "description": "Rule 'tax-Tax-EM_Etvfac_Exemption_Cause-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-tax-Tax-em-etvfac-igic-regime-displayLogic",
+        "category": "rule-declared",
+        "rule": "tax-Tax-em_etvfac_igic_regime-displayLogic",
+        "runner": "node",
+        "description": "Rule 'tax-Tax-em_etvfac_igic_regime-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-tax-Tax-EM-Etvfac-Ipsi-Regime-displayLogic",
+        "category": "rule-declared",
+        "rule": "tax-Tax-EM_Etvfac_Ipsi_Regime-displayLogic",
+        "runner": "node",
+        "description": "Rule 'tax-Tax-EM_Etvfac_Ipsi_Regime-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-tax-Tax-EM-Etvfac-Vat-Regime-displayLogic",
+        "category": "rule-declared",
+        "rule": "tax-Tax-EM_Etvfac_Vat_Regime-displayLogic",
+        "runner": "node",
+        "description": "Rule 'tax-Tax-EM_Etvfac_Vat_Regime-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-tax-Tax-EM-OBSPTI-IsEquivalentCharge-displayLogic",
+        "category": "rule-declared",
+        "rule": "tax-Tax-EM_OBSPTI_IsEquivalentCharge-displayLogic",
+        "runner": "node",
+        "description": "Rule 'tax-Tax-EM_OBSPTI_IsEquivalentCharge-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-tax-Tax-EM-Tbai-Claveregimeniva-displayLogic",
+        "category": "rule-declared",
+        "rule": "tax-Tax-EM_Tbai_Claveregimeniva-displayLogic",
+        "runner": "node",
+        "description": "Rule 'tax-Tax-EM_Tbai_Claveregimeniva-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-tax-Tax-EM-Tbai-Exemptioncause-displayLogic",
+        "category": "rule-declared",
+        "rule": "tax-Tax-EM_Tbai_Exemptioncause-displayLogic",
+        "runner": "node",
+        "description": "Rule 'tax-Tax-EM_Tbai_Exemptioncause-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-tax-Tax-EM-Tbai-Nonsubjectcause-displayLogic",
+        "category": "rule-declared",
+        "rule": "tax-Tax-EM_Tbai_Nonsubjectcause-displayLogic",
+        "runner": "node",
+        "description": "Rule 'tax-Tax-EM_Tbai_Nonsubjectcause-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-tax-Tax-IsCashVAT-displayLogic",
+        "category": "rule-declared",
+        "rule": "tax-Tax-IsCashVAT-displayLogic",
+        "runner": "node",
+        "description": "Rule 'tax-Tax-IsCashVAT-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-tax-Tax-Originalrate-displayLogic",
+        "category": "rule-declared",
+        "rule": "tax-Tax-Originalrate-displayLogic",
+        "runner": "node",
+        "description": "Rule 'tax-Tax-Originalrate-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-tax-Tax-Rate-displayLogic",
+        "category": "rule-declared",
+        "rule": "tax-Tax-Rate-displayLogic",
+        "runner": "node",
+        "description": "Rule 'tax-Tax-Rate-displayLogic' (displayLogic) should be declared"
       },
       {
         "id": "t-searchable-filters-tax-name",
@@ -1544,7 +1678,7 @@
       }
     ],
     "summary": {
-      "total": 89,
+      "total": 108,
       "byCategory": {
         "crud-flags": 1,
         "default-value-type": 3,
@@ -1552,13 +1686,13 @@
         "displaylogic-valid": 3,
         "field-presence": 6,
         "field-type": 6,
-        "rule-declared": 12,
+        "rule-declared": 31,
         "searchable-filters": 1,
         "system-field": 53,
         "visibility": 1
       },
       "byRunner": {
-        "node": 89,
+        "node": 108,
         "junit": 0
       }
     }
