@@ -217,14 +217,19 @@
         "product": {
           "grid": true,
           "searchable": true,
+          "lookup": true,
+          "required": true,
           "inputMode": "search",
-          "section": "principal"
+          "section": "principal",
+          "seq": 10
         },
         "movementQuantity": {
           "grid": true,
+          "required": true,
           "inputMode": "number",
           "section": "principal",
-          "defaultValue": "1"
+          "defaultValue": "1",
+          "seq": 20
         },
         "uOM": {
           "visibility": "system"
@@ -232,7 +237,8 @@
         "orderQuantity": {
           "visibility": "readOnly",
           "grid": true,
-          "section": "principal"
+          "section": "principal",
+          "seq": 30
         },
         "storageBin": {
           "visibility": "discarded"

@@ -1,8 +1,8 @@
 {
-  "version": "0.9.0",
+  "version": "0.10.0",
   "generatedAt": "2026-04-29T19:04:55.657Z",
-  "updatedAt": "2026-05-19T14:04:54.067Z",
-  "checksum": "4d02101d8e7af5c9",
+  "updatedAt": "2026-05-19T14:34:20.748Z",
+  "checksum": "c5f6c8c7feea4647",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -347,12 +347,14 @@
             "type": "foreignKey",
             "tsType": "string",
             "visibility": "editable",
-            "required": false,
+            "required": true,
             "grid": true,
             "form": true,
             "reference": "Product",
             "inputMode": "search",
+            "lookup": true,
             "section": "principal",
+            "seq": 10,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOutLine_Product"
             },
@@ -380,6 +382,7 @@
             },
             "defaultValue": "0",
             "section": "principal",
+            "seq": 20,
             "readOnlyLogic": {
               "raw": "@Processed@='Y' | @UomManagement@='Y'",
               "evaluable": true,
@@ -411,6 +414,7 @@
             "grid": true,
             "form": true,
             "section": "principal",
+            "seq": 30,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_Conversion"
             },
@@ -1040,7 +1044,7 @@
             "column": "M_Product_ID",
             "type": "foreignKey",
             "visibility": "editable",
-            "required": false
+            "required": true
           },
           {
             "name": "attributeSetValue",
