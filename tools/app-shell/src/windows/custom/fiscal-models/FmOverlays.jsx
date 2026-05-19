@@ -342,50 +342,79 @@ export function ConfigDrawer({ model, onClose, token, apiBaseUrl }) {
   );
 }
 
-export function CompareDrawer({ decl, onClose }) {
+// T1/2026 reference — used as prev when current decl is T2/2026
+const T1_2026_BOXES = { 7:3248, 27:682.08, 45:3498.39, 46:-2816.31 };
+
+export function CompareDrawer({ decl, prevDecl, onClose }) {
   const ui = useUI();
   const t = ui;
-  const rows = [
-    { label: t('fm.compare.row.base'), prev: 48350.00, curr: 56920.00 },
-    { label: t('fm.compare.row.iva_dev'), prev: 10153.50, curr: 11953.20 },
-    { label: t('fm.compare.row.iva_ded'), prev: 8340.00, curr: 7820.00 },
-    { label: t('fm.compare.row.result'), prev: 1813.50, curr: 4133.20 },
-  ];
   const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
+
+  const boxes    = decl.boxes    ?? {};
+  const summary  = decl.summary  ?? {};
+  const pb       = prevDecl?.boxes ?? T1_2026_BOXES;
+  const prevLabel = prevDecl ? `${prevDecl.period} ${prevDecl.year}` : 'T1 2026';
+  const currLabel = `${decl.period} ${decl.year}`;
+
+  const currBase = (boxes[1] ?? 0) + (boxes[4] ?? 0) + (boxes[7] ?? 0);
+  const prevBase = (pb[1] ?? 0) + (pb[4] ?? 0) + (pb[7] ?? 0);
+
+  const rows = [
+    { label: t('fm.compare.row.base'),     prev: prevBase,         curr: currBase,                              separator: false },
+    { label: t('fm.compare.row.iva_dev'),  prev: pb[27] ?? 0,      curr: boxes[27] ?? summary.accrued   ?? 0,  separator: false },
+    { label: t('fm.compare.row.iva_ded'),  prev: pb[45] ?? 0,      curr: boxes[45] ?? summary.deductible ?? 0, separator: false },
+    { label: t('fm.compare.row.result'),   prev: pb[46] ?? 0,      curr: boxes[46] ?? summary.result    ?? 0,  separator: true  },
+    { label: t('fm.compare.row.intracom'), prev: pb[59] ?? 0,      curr: boxes[59] ?? 0,                       separator: false },
+    { label: t('fm.compare.row.exports'),  prev: pb[60] ?? 0,      curr: boxes[60] ?? 0,                       separator: false },
+  ];
+
+  const resultRow = rows.find(r => r.label === t('fm.compare.row.result'));
+  const resultImproved = resultRow && Math.abs(resultRow.curr) > Math.abs(resultRow.prev);
+  const devImproved    = (boxes[27] ?? 0) > (pb[27] ?? 0);
+
   return (
     <div style={{ position: 'fixed', top: 0, right: 0, height: '100%', width: 400, background: '#fff', borderLeft: '1px solid #e5e7eb', boxShadow: '-4px 0 16px rgba(0,0,0,.10)', zIndex: 55, display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '12px 16px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <span style={{ fontWeight: 600, fontSize: 13, color: '#111827' }}>{t('fm.compare.title')}</span>
-          <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{t('fm.compare.sub')}</div>
+          <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{prevLabel} → {currLabel}</div>
         </div>
         <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#6b7280' }} onClick={onClose} aria-label={t('fm.action.close')}>✕</button>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 8, padding: '6px 0', fontSize: 11, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #e5e7eb' }}>
           <span />
-          <span style={{ textAlign: 'right' }}>{t('fm.compare.prev')}</span>
-          <span style={{ textAlign: 'right' }}>{t('fm.compare.curr')}</span>
+          <span style={{ textAlign: 'right' }}>{prevLabel}</span>
+          <span style={{ textAlign: 'right' }}>{currLabel}</span>
           <span style={{ textAlign: 'right' }}>{t('fm.compare.delta')}</span>
         </div>
         {rows.map((r, i) => {
-          const d = r.curr - r.prev;
-          const pct = r.prev !== 0 ? ((d / r.prev) * 100).toFixed(1) : '—';
-          const up = d >= 0;
+          const d   = r.curr - r.prev;
+          const pct = r.prev !== 0 ? ((d / Math.abs(r.prev)) * 100).toFixed(1) : '—';
+          const up  = d >= 0;
           return (
-            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 8, padding: '8px 0', borderBottom: '1px solid #f3f4f6', fontSize: 12, alignItems: 'center' }}>
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 8, padding: '8px 0', borderBottom: r.separator ? '2px solid #e5e7eb' : '1px solid #f3f4f6', fontSize: 12, alignItems: 'center' }}>
               <span style={{ color: '#374151' }}>{r.label}</span>
               <span style={{ textAlign: 'right', color: '#6b7280', fontVariantNumeric: 'tabular-nums' }}>{fmt(r.prev)}</span>
               <span style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmt(r.curr)}</span>
-              <span style={{ textAlign: 'right', color: up ? '#059669' : '#dc2626', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                {up ? '↑' : '↓'} {pct}%
+              <span style={{ textAlign: 'right', color: pct === '—' ? '#9ca3af' : up ? '#059669' : '#dc2626', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                {pct === '—' ? '—' : `${up ? '↑' : '↓'} ${Math.abs(pct)}%`}
               </span>
             </div>
           );
         })}
         <div style={{ marginTop: 16, padding: '12px 14px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, fontSize: 12, color: '#1e40af', display: 'flex', gap: 8 }}>
           <span style={{ flexShrink: 0 }}>ℹ</span>
-          <span>{t('fm.compare.insight')}</span>
+          <span>
+            {devImproved
+              ? `La base imponible y el IVA devengado han aumentado respecto a ${prevLabel}.`
+              : `El IVA devengado ha disminuido respecto a ${prevLabel}.`
+            }
+            {resultImproved
+              ? ` El importe a compensar es mayor en ${currLabel}, lo que supone un mayor crédito fiscal.`
+              : ` El resultado es más favorable en ${currLabel}.`
+            }
+          </span>
         </div>
       </div>
     </div>

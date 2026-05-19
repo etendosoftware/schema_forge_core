@@ -27,9 +27,9 @@ describe('ConfigDrawer — structure', () => {
 
 describe('CompareDrawer — structure', () => {
   it('has compare title key', () => assert.match(src, /fm\.compare\.title/));
-  it('has prev/curr/delta columns', () => assert.match(src, /fm\.compare\.prev/));
+  it('uses period-based column labels (prevLabel/currLabel)', () => assert.match(src, /prevLabel/));
   it('has delta column header', () => assert.match(src, /fm\.compare\.delta/));
-  it('has insight note', () => assert.match(src, /fm\.compare\.insight/));
+  it('has dynamic insight note', () => assert.match(src, /devImproved|resultImproved/));
 });
 
 describe('FmOverlays — no removed components', () => {
