@@ -20,8 +20,8 @@ const fetchLines = async ({ base, headers, docId }) => {
   const lines = (await res.json())?.response?.data || [];
   return lines.map(l => {
     const qty = Number(l.invoicedQuantity) || 0;
-    // mInoutlineId is set when this invoice line is already linked to a confirmed shipment line
-    const alreadyShipped = !!l.mInoutlineId;
+    // goodsShipmentLine is the M_InOutLine_ID FK — set when already linked to a shipment line
+    const alreadyShipped = !!l.goodsShipmentLine;
     const pending = alreadyShipped ? 0 : qty;
     return {
       ...l,
@@ -41,7 +41,7 @@ const buildLineBody = async ({ line, qty, invoiceId: shipmentId, lineNo }) => ({
   product: line.product,
   movementQuantity: qty,
   uOM: line.uOM || null,
-  ...(line.cOrderlineId ? { salesOrderLine: line.cOrderlineId } : {}),
+  ...(line.salesOrderLine ? { salesOrderLine: line.salesOrderLine } : {}),
   lineNo,
 });
 
