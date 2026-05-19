@@ -36,3 +36,4 @@ e2e/auth.json
 tmp/
 .scannerwork/
 coverage/
+sonar-results.md

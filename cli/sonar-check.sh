@@ -322,43 +322,52 @@ case "$MODE" in
     ;;
 esac
 
-curl -sf -u "$SONAR_TOKEN:" \
-  "$ISSUES_URL" 2>/dev/null \
-  | python3 -c "
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+REPORT_FILE="$REPO_ROOT/sonar-results.md"
+
+ISSUES_JSON="$(mktemp)"
+if ! curl -sf -u "$SONAR_TOKEN:" "$ISSUES_URL" -o "$ISSUES_JSON" 2>/dev/null; then
+  echo "✗ Could not fetch issues from $SONAR_HOST_URL." >&2
+  rm -f "$ISSUES_JSON"
+  exit 1
+fi
+
+python3 -c "
 import sys, json
+from datetime import datetime
 
-try:
-    data = json.load(sys.stdin)
-except:
-    print('  Error: Could not parse SonarQube response')
-    sys.exit(1)
+dash_url, mode, json_path = sys.argv[1], sys.argv[2], sys.argv[3]
+with open(json_path) as f: data = json.load(f)
 
-total = data.get('total', 0)
-
-if total == 0:
-    print('  No issues found. All clean!')
-    print()
-    print(f'Dashboard: {sys.argv[1]}')
-    sys.exit(0)
-
-print(f'  {total} issue(s) found:')
+print(f'# SonarQube report — {mode.upper()} mode')
+print()
+print(f\"_Generated: {datetime.now().isoformat(timespec='seconds')}_\")
+print()
+print(f'Dashboard: <{dash_url}>')
 print()
 
-severity_order = {'BLOCKER': 0, 'CRITICAL': 1, 'HIGH': 2, 'MEDIUM': 3, 'LOW': 4, 'INFO': 5}
-issues = sorted(data.get('issues', []),
-    key=lambda i: severity_order.get(i.get('impacts', [{}])[0].get('severity', 'INFO'), 99))
+total = data.get('total', 0)
+if total == 0:
+    print('✓ No issues found. All clean!')
+    sys.exit(0)
 
+print(f'{total} issue(s) found:\n')
+severity_order = {'BLOCKER': 0, 'CRITICAL': 1, 'HIGH': 2, 'MAJOR': 2, 'MEDIUM': 3, 'MINOR': 4, 'LOW': 4, 'INFO': 5}
+issues = sorted(data.get('issues', []),
+    key=lambda i: severity_order.get((i.get('impacts') or [{}])[0].get('severity', i.get('severity', 'INFO')), 99))
 for i in issues:
-    sev = i.get('impacts', [{}])[0].get('severity', '?')
+    sev = (i.get('impacts') or [{}])[0].get('severity') or i.get('severity', '?')
     component = i.get('component', '').split(':')[-1]
     line = i.get('line', '?')
-    msg = i.get('message', '')
-    rule = i.get('rule', '')
     print(f'  [{sev}] {component}:{line}')
-    print(f'    {msg}')
-    print(f'    Rule: {rule}')
+    print(f\"    {i.get('message', '')}\")
+    print(f\"    Rule: {i.get('rule', '')}\")
     print()
-
-print(f'Dashboard: {sys.argv[1]}')
 sys.exit(1 if total > 0 else 0)
-" "$DASH_URL"
+" "$DASH_URL" "$MODE" "$ISSUES_JSON" | tee "$REPORT_FILE"
+py_exit=${PIPESTATUS[0]}
+rm -f "$ISSUES_JSON"
+
+echo ""
+echo "Report saved to: $REPORT_FILE"
+exit "$py_exit"

@@ -219,25 +219,38 @@ case "$MODE" in
     ;;
 esac
 
-# ── Fetch + format results ───────────────────────────────────────────────────
+# ── Fetch issues JSON to a temp file (avoids stdin/heredoc collision) ────────
+ISSUES_JSON="$(mktemp)"
+trap "rm -f '$SCANNER_OUTPUT' '$ISSUES_JSON'" EXIT
+if ! curl -sf -u "$SONAR_TOKEN:" "$ISSUES_URL" -o "$ISSUES_JSON" 2>/dev/null; then
+  echo "✗ Could not fetch issues from $SONAR_HOST_URL." >&2
+  exit 1
+fi
+
+# ── Format results: print to stdout AND write to ./sonar-results.md ──────────
+REPORT_FILE="$ROOT/sonar-results.md"
 echo ""
 echo "=== Results ==="
-curl -sf -u "$SONAR_TOKEN:" "$ISSUES_URL" 2>/dev/null | python3 - "$DASH_URL" "$MODE" <<'PY'
+python3 - "$DASH_URL" "$MODE" "$ISSUES_JSON" "$REPORT_FILE" <<'PY' | tee "$REPORT_FILE"
 import sys, json
+from datetime import datetime
+
+dash_url, mode, json_path, report_path = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+
 try:
-    data = json.load(sys.stdin)
-except Exception:
-    print("  Error: could not parse SonarQube response")
+    with open(json_path) as f:
+        data = json.load(f)
+except Exception as e:
+    print(f"  Error: could not parse SonarQube response ({e})")
     sys.exit(2)
 
-dash_url, mode = sys.argv[1], sys.argv[2]
 total = data.get('total', 0)
+label = {"pr": "in this PR", "branch": "on this branch"}.get(mode, "overall")
+header = f"# SonarQube report — {mode.upper()} mode\n\n_Generated: {datetime.now().isoformat(timespec='seconds')}_\n\nDashboard: <{dash_url}>\n"
 
+print(header)
 if total == 0:
-    label = "in this PR" if mode == "pr" else ("on this branch" if mode == "branch" else "overall")
-    print(f"  ✓ No issues found {label}.")
-    print()
-    print(f"Dashboard: {dash_url}")
+    print(f"✓ No issues found {label}.")
     sys.exit(0)
 
 severity_order = {'BLOCKER': 0, 'CRITICAL': 1, 'HIGH': 2, 'MAJOR': 2, 'MEDIUM': 3, 'MINOR': 4, 'LOW': 4, 'INFO': 5}
@@ -249,10 +262,7 @@ issues = sorted(
     )
 )
 
-label = "in this PR" if mode == "pr" else ("on this branch" if mode == "branch" else "overall")
-print(f"  {total} issue(s) found {label}:")
-print()
-
+print(f"{total} issue(s) found {label}:\n")
 for i in issues:
     impacts = i.get('impacts') or [{}]
     sev = impacts[0].get('severity') or i.get('severity', '?')
@@ -265,7 +275,11 @@ for i in issues:
     print(f"    Rule: {rule}")
     print()
 
-print(f"Dashboard: {dash_url}")
 # Non-zero exit only blocks if PR/branch mode → preserves "Clean as You Code"
 sys.exit(1 if mode in ("pr", "branch") and total > 0 else 0)
 PY
+py_exit=${PIPESTATUS[0]}
+
+echo ""
+echo "Report saved to: $REPORT_FILE"
+exit "$py_exit"
