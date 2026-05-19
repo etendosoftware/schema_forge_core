@@ -35,7 +35,7 @@ export default function GoodsShipmentWindow(props) {
       bulkActions={(ctx) => (
         <>
           <BulkInvoiceFromShipment {...ctx} />
-          <BulkDocumentAction {...ctx} entity="goodsShipment" buildActions={buildInOutActions} />
+          <BulkDocumentAction {...ctx} entity="goodsShipment" buildActions={buildInOutActions} labelKey="confirmBulk" />
         </>
       )}
     />
