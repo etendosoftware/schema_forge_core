@@ -205,7 +205,11 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
   const ui = useUI();
   const t  = ui;
 
-  const [decls, setDecls]               = useState(propDecls ?? MOCK_DECLARATIONS);
+  const [dataMode, setDataMode]          = useState('demo');
+  const [demoDecls, setDemoDecls]        = useState(propDecls ?? MOCK_DECLARATIONS);
+  const [realDecls, setRealDecls]        = useState([]);
+  const decls    = dataMode === 'demo' ? demoDecls : realDecls;
+  const setDecls = dataMode === 'demo' ? setDemoDecls : setRealDecls;
   const [modelFilter, setModelFilter]   = useState('all');
   const [yearFilter,  setYearFilter]    = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -216,14 +220,15 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
   const [selected,     setSelected]     = useState(new Set());
 
   const handleStatusChange = useCallback((id, newStatus) => {
-    setDecls(ds => ds.map(d => d.id === id ? { ...d, status: newStatus } : d));
+    (dataMode === 'demo' ? setDemoDecls : setRealDecls)(ds => ds.map(d => d.id === id ? { ...d, status: newStatus } : d));
     onStatusChange?.(id, newStatus);
-  }, [onStatusChange]);
+  }, [dataMode, onStatusChange]);
 
   const handleNewDecl = useCallback(({ model, year, period, status }) => {
     const id = `${model}-${year}-${period}`;
-    setDecls(ds => [{ id, model, year, period, type:'ord', status, result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null, updatedAt: new Date().toLocaleDateString('es-ES') }, ...ds]);
-  }, []);
+    const newDecl = { id, model, year, period, type:'ord', status, result:{kind:'informativa',amount:0}, incidents:{blocking:0,warning:0}, file:null, updatedAt: new Date().toLocaleDateString('es-ES') };
+    (dataMode === 'demo' ? setDemoDecls : setRealDecls)(ds => [newDecl, ...ds]);
+  }, [dataMode]);
 
   const years = ['all', ...Array.from(new Set(decls.map(d => String(d.year)))).sort((a,b) => b - a)];
   const statuses = ['all', ...Array.from(new Set(decls.map(d => d.status)))];
@@ -274,6 +279,15 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
         />
 
         <div className="fm-toolbar__space" />
+
+        {/* Data mode toggle */}
+        <button
+          className={`fm-toolbar__pill${dataMode === 'real' ? ' fm-toolbar__pill--active-dark' : ''}`}
+          onClick={() => setDataMode(m => m === 'demo' ? 'real' : 'demo')}
+          title={dataMode === 'demo' ? 'Cambiar a datos reales' : 'Cambiar a datos de demostración'}
+        >
+          {dataMode === 'demo' ? 'Demo' : 'Real'}
+        </button>
 
         {/* Catalog */}
         <button className="fm-toolbar__btn" onClick={() => setShowCatalog(true)}>

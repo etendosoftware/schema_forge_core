@@ -18817,7 +18817,9 @@
     "fm.box.row.total_operaciones": "Total transaction volume (Art. 121 VAT Law)",
     "fm.ident.dep_aduanero": "Taxable person entitled to deduct advance payments on fuel deliveries after customs non-duty suspension regime",
     "fm.compare.row.intracom": "Intra-EU supplies",
-    "fm.compare.row.exports": "Exports"
+    "fm.compare.row.exports": "Exports",
+    "fm.action.compute": "Calculate",
+    "fm.action.computing": "Calculating…"
   },
   "menus": {
     "Currency": {

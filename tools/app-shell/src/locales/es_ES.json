@@ -19086,7 +19086,9 @@
     "fm.ident.vol_operac": "Sujeto pasivo con volumen anual de operaciones distinto de cero (art. 121 LIVA)",
     "fm.ident.dep_aduanero": "Sujeto pasivo con derecho a deducir pago a cuenta de entregas de gasolinas, gasóleos y biocarburantes posteriores a la ultimación del régimen de depósito distinto del aduanero",
     "fm.compare.row.intracom": "Entregas intracomunitarias",
-    "fm.compare.row.exports": "Exportaciones"
+    "fm.compare.row.exports": "Exportaciones",
+    "fm.action.compute": "Calcular",
+    "fm.action.computing": "Calculando…"
   },
   "menus": {
     "Goods Movement": {

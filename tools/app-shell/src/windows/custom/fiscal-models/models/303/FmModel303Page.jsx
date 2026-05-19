@@ -3,6 +3,7 @@ import { useUI } from '@/i18n';
 import {
   ArrowLeft, Settings2, Download, FileText, Lock, Play,
   OctagonAlert, TriangleAlert, CircleCheck, ChevronRight, GitCompare, FolderOpen,
+  Calculator, Loader2,
 } from 'lucide-react';
 import {
   StatusPillMenu, ResultPill, SummaryCard, Tabs, Banner, SectionCard, EmptyState,
@@ -11,7 +12,7 @@ import {
 import FmBoxes303 from './FmBoxes303.jsx';
 import { PresentModal, FileGenModal, ConfigDrawer, CompareDrawer } from '../../FmOverlays.jsx';
 import { neoBase } from '@/components/related-documents/helpers.js';
-import { fmtDecl, formatAmount, formatPeriod } from '../../fiscalModelsUtils.js';
+import { fmtDecl, formatAmount, formatPeriod, computeBoxes303 } from '../../fiscalModelsUtils.js';
 
 const STEPPER_INDEX = {
   pendiente: 0, borrador: 1, listo: 2,
@@ -286,6 +287,22 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
   const [orgIdent, setOrgIdent] = useState({ nif: '', nombre: '' });
   const [identChecks, setIdentChecks] = useState(decl.identification ?? {});
   const handleIdentChange = (id, value) => setIdentChecks(prev => ({ ...prev, [id]: value }));
+  const [liveBoxes,   setLiveBoxes]   = useState(null);
+  const [liveSummary, setLiveSummary] = useState(null);
+  const [computing,   setComputing]   = useState(false);
+
+  async function handleCompute() {
+    setComputing(true);
+    try {
+      const res = await computeBoxes303(decl, { token, apiBaseUrl });
+      if (res) {
+        setLiveBoxes(res.boxes);
+        setLiveSummary(res.summary);
+      }
+    } finally {
+      setComputing(false);
+    }
+  }
 
   useEffect(() => {
     if (!token || !apiBaseUrl) return;
@@ -322,7 +339,7 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
   const incidentCount = blocking + warning;
   const isSubmitted = ['presentado', 'presentadoOtra', 'presentadoAcuse'].includes(status);
   const fileBlocked = blocking > 0;
-  const summary = decl.summary ?? {};
+  const summary = liveSummary ?? decl.summary ?? {};
   const resultKind = decl.result?.kind ?? null;
   const prev = summary.prev ?? null;
 
@@ -372,6 +389,18 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
             </div>
           </div>
           <div className="fm-349-header__actions">
+            <button
+              className="fm-349-header__btn"
+              onClick={handleCompute}
+              disabled={computing}
+              title={t('fm.action.compute') ?? 'Calcular desde contabilidad'}
+            >
+              {computing
+                ? <Loader2 size={14} strokeWidth={1.75} style={{ animation: 'spin 1s linear infinite' }} />
+                : <Calculator size={14} strokeWidth={1.75} />
+              }
+              {computing ? (t('fm.action.computing') ?? 'Calculando…') : (t('fm.action.compute') ?? 'Calcular')}
+            </button>
             <button className="fm-349-header__btn" onClick={() => setShowCompare(true)}>
               <GitCompare size={14} strokeWidth={1.75} /> {t('fm.action.compare')}
             </button>
@@ -501,7 +530,7 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
                 </span>
               </div>
               <FmBoxes303
-                boxes={decl.boxes ?? null}
+                boxes={liveBoxes ?? decl.boxes ?? null}
                 year={decl.year}
                 period={decl.period}
                 sectionIds={page.sections}
