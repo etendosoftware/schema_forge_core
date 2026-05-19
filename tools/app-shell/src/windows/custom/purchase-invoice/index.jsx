@@ -89,7 +89,7 @@ export default function PurchaseInvoiceWindow(props) {
   });
 
   const rowQuickActions = useMemo(
-    () => buildInvoiceRowQuickActions(navigate, windowName, setCloneTargets, setEmailRow, requestDelete, { showEmail: false }),
+    () => buildInvoiceRowQuickActions(navigate, windowName, setCloneTargets, null, requestDelete, { showEmail: false }),
     [navigate, windowName, requestDelete],
   );
 

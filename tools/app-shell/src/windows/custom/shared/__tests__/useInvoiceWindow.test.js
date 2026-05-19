@@ -80,6 +80,11 @@ describe('useInvoiceWindow', () => {
       assert.equal(result.actions.email.show, false);
       assert.equal(result.onEmail, undefined);
     });
+
+    it('accepts null as setEmailRow when showEmail is false (no ReferenceError)', () => {
+      const result = buildInvoiceRowQuickActions(() => {}, 'x', () => {}, null, () => {}, { showEmail: false });
+      assert.equal(result.onEmail, undefined);
+    });
   });
 
   describe('useClearSavedRecord (source shape)', () => {
