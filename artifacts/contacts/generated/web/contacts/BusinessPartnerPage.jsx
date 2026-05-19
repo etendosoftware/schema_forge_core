@@ -689,6 +689,7 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
           { key: 'bankFormat', column: 'BankFormat', type: 'select', required: true, label: 'Bank Account Format', defaultValue: 'GENERIC', options: [{ value: 'GENERIC', label: 'Use Generic Account No.' }, { value: 'IBAN', label: 'Use IBAN' }, { value: 'SWIFT', label: 'Use SWIFT + Generic Account No.' }, { value: 'SPANISH', label: 'Use Spanish' }] },
           { key: 'accountNo', column: 'AccountNo', type: 'text', label: 'Generic Account No.' },
           { key: 'iBAN', column: 'Iban', type: 'text', label: 'IBAN' },
+          { key: 'swiftCode', column: 'SwiftCode', type: 'text', label: 'SWIFT Code' },
           ], derived: [], hidden: [] }, requireSavedRecord: true },
           { key: 'locationAddress', label: 'Location', Table: LocationAddressTable, customAddModal: LocationEditorModal, requireSavedRecord: true },
         ]}

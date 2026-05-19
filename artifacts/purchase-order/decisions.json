@@ -6,17 +6,7 @@
     "notesField": "description",
     "relatedDocuments": true,
     "hideDeleteWhenComplete": true,
-    "menuActions": [
-      {
-        "key": "reactivate",
-        "label": "Reactivate",
-        "labelKey": "reactivate",
-        "visibleWhenStatus": "CO",
-        "visibleWhenFieldFalse": "hasLinkedDocuments",
-        "documentAction": "RE",
-        "successKey": "reactivated"
-      }
-    ],
+    "menuActions": [],
     "draftMode": {
       "enabled": true,
       "processField": "documentAction",
@@ -26,8 +16,7 @@
     "customComponents": {
       "topbarRight": "PurchaseOrderActions",
       "topbarExtra": "PurchaseOrderDraftChips",
-      "bulkActions": "PurchaseOrderReactivateBulkAction",
-      "bottomSection": "PurchaseOrderBottomPanel"
+"bottomSection": "PurchaseOrderBottomPanel"
     },
     "linesLayout": "inlineEditable",
     "labelOverrides": {

@@ -93,7 +93,8 @@
           "country",
           "bankFormat",
           "accountNo",
-          "iBAN"
+          "iBAN",
+          "swiftCode"
         ],
         "requireSavedRecord": true
       },
@@ -513,6 +514,11 @@
           "section": "principal"
         },
         "iBAN": {
+          "visibility": "editable",
+          "grid": true,
+          "section": "principal"
+        },
+        "swiftCode": {
           "visibility": "editable",
           "grid": true,
           "section": "principal"
