@@ -47,12 +47,14 @@
           "cellType": "taxRate"
         },
         "salesPurchaseType": {
+          "name": "applicableTo",
           "grid": true,
           "section": "principal",
           "seq": 3,
           "cellType": "taxScope"
         },
         "validFromDate": {
+          "name": "validFrom",
           "grid": false,
           "form": true,
           "section": "principal",

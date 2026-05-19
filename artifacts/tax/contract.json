@@ -1,8 +1,8 @@
 {
-  "version": "0.4.0",
+  "version": "0.6.0",
   "generatedAt": "2026-04-27T19:18:32.198Z",
-  "updatedAt": "2026-05-12T19:44:34.781Z",
-  "checksum": "aa192c547dd1acc6",
+  "updatedAt": "2026-05-19T14:31:12.482Z",
+  "checksum": "3a905724f8f66c17",
   "frontendContract": {
     "window": {
       "id": "137",
@@ -56,21 +56,6 @@
             "seq": 1
           },
           {
-            "name": "validFromDate",
-            "apiKey": "validFromDate",
-            "column": "ValidFrom",
-            "label": "Valid From Date",
-            "type": "date",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": true,
-            "grid": false,
-            "form": true,
-            "sourceRequired": true,
-            "section": "principal",
-            "seq": 4
-          },
-          {
             "name": "rate",
             "apiKey": "rate",
             "column": "Rate",
@@ -96,41 +81,6 @@
               "raw": "@IsSummary@='N'",
               "evaluable": true
             }
-          },
-          {
-            "name": "salesPurchaseType",
-            "apiKey": "salesPurchaseType",
-            "column": "SOPOType",
-            "label": "Sales/Purchase Type",
-            "type": "enum",
-            "tsType": "string",
-            "visibility": "editable",
-            "required": true,
-            "grid": true,
-            "form": true,
-            "sourceRequired": true,
-            "derivation": {
-              "type": "computed",
-              "source": "B"
-            },
-            "enumValues": [
-              {
-                "value": "B",
-                "name": "Both"
-              },
-              {
-                "value": "P",
-                "name": "Purchase Tax"
-              },
-              {
-                "value": "S",
-                "name": "Sales Tax"
-              }
-            ],
-            "defaultValue": "B",
-            "section": "principal",
-            "seq": 3,
-            "cellType": "taxScope"
           },
           {
             "name": "docTaxAmount",
@@ -211,19 +161,62 @@
               "raw": "@IsSummary@='N'",
               "evaluable": true
             }
+          },
+          {
+            "name": "applicableTo",
+            "apiKey": "applicableTo",
+            "column": "SOPOType",
+            "label": "Sales/Purchase Type",
+            "type": "enum",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": true,
+            "form": true,
+            "sourceRequired": true,
+            "derivation": {
+              "type": "computed",
+              "source": "B"
+            },
+            "enumValues": [
+              {
+                "value": "B",
+                "name": "Both"
+              },
+              {
+                "value": "P",
+                "name": "Purchase Tax"
+              },
+              {
+                "value": "S",
+                "name": "Sales Tax"
+              }
+            ],
+            "defaultValue": "B",
+            "section": "principal",
+            "seq": 3,
+            "cellType": "taxScope"
+          },
+          {
+            "name": "validFrom",
+            "apiKey": "validFrom",
+            "column": "ValidFrom",
+            "label": "Valid From Date",
+            "type": "date",
+            "tsType": "string",
+            "visibility": "editable",
+            "required": true,
+            "grid": false,
+            "form": true,
+            "sourceRequired": true,
+            "section": "principal",
+            "seq": 4
           }
         ],
         "searchableFields": [
           "name"
         ],
         "computedFields": [
-          {
-            "name": "salesPurchaseType",
-            "derivation": {
-              "type": "computed",
-              "source": "B"
-            }
-          },
           {
             "name": "docTaxAmount",
             "derivation": {
@@ -236,6 +229,13 @@
             "derivation": {
               "type": "computed",
               "source": "LNA"
+            }
+          },
+          {
+            "name": "applicableTo",
+            "derivation": {
+              "type": "computed",
+              "source": "B"
             }
           }
         ]
@@ -294,14 +294,6 @@
             "required": true
           },
           {
-            "name": "validFromDate",
-            "apiKey": "validFromDate",
-            "column": "ValidFrom",
-            "type": "date",
-            "visibility": "editable",
-            "required": true
-          },
-          {
             "name": "taxCategory",
             "apiKey": "taxCategory",
             "column": "C_TaxCategory_ID",
@@ -322,14 +314,6 @@
             "apiKey": "rate",
             "column": "Rate",
             "type": "decimal",
-            "visibility": "editable",
-            "required": true
-          },
-          {
-            "name": "salesPurchaseType",
-            "apiKey": "salesPurchaseType",
-            "column": "SOPOType",
-            "type": "enum",
             "visibility": "editable",
             "required": true
           },
@@ -748,6 +732,22 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "applicableTo",
+            "apiKey": "applicableTo",
+            "column": "SOPOType",
+            "type": "enum",
+            "visibility": "editable",
+            "required": true
+          },
+          {
+            "name": "validFrom",
+            "apiKey": "validFrom",
+            "column": "ValidFrom",
+            "type": "date",
+            "visibility": "editable",
+            "required": true
           }
         ]
       }
@@ -853,6 +853,14 @@
         "description": "CRUD flags for 'tax' should all be booleans"
       },
       {
+        "id": "t-default-value-type-tax-applicableTo",
+        "category": "default-value-type",
+        "entity": "tax",
+        "field": "applicableTo",
+        "runner": "node",
+        "description": "Default value for 'applicableTo' in tax should be a string"
+      },
+      {
         "id": "t-default-value-type-tax-baseAmount",
         "category": "default-value-type",
         "entity": "tax",
@@ -867,14 +875,6 @@
         "field": "docTaxAmount",
         "runner": "node",
         "description": "Default value for 'docTaxAmount' in tax should be a string"
-      },
-      {
-        "id": "t-default-value-type-tax-salesPurchaseType",
-        "category": "default-value-type",
-        "entity": "tax",
-        "field": "salesPurchaseType",
-        "runner": "node",
-        "description": "Default value for 'salesPurchaseType' in tax should be a string"
       },
       {
         "id": "t-displaylogic-evaluable-tax-baseAmount",
@@ -925,6 +925,14 @@
         "description": "Display logic for 'rate' in tax should be valid JS"
       },
       {
+        "id": "t-field-presence-tax-applicableTo",
+        "category": "field-presence",
+        "entity": "tax",
+        "field": "applicableTo",
+        "runner": "node",
+        "description": "Field 'applicableTo' should be present in tax"
+      },
+      {
         "id": "t-field-presence-tax-baseAmount",
         "category": "field-presence",
         "entity": "tax",
@@ -957,20 +965,20 @@
         "description": "Field 'rate' should be present in tax"
       },
       {
-        "id": "t-field-presence-tax-salesPurchaseType",
+        "id": "t-field-presence-tax-validFrom",
         "category": "field-presence",
         "entity": "tax",
-        "field": "salesPurchaseType",
+        "field": "validFrom",
         "runner": "node",
-        "description": "Field 'salesPurchaseType' should be present in tax"
+        "description": "Field 'validFrom' should be present in tax"
       },
       {
-        "id": "t-field-presence-tax-validFromDate",
-        "category": "field-presence",
+        "id": "t-field-type-tax-applicableTo",
+        "category": "field-type",
         "entity": "tax",
-        "field": "validFromDate",
+        "field": "applicableTo",
         "runner": "node",
-        "description": "Field 'validFromDate' should be present in tax"
+        "description": "Field 'applicableTo' should have type 'string' in tax"
       },
       {
         "id": "t-field-type-tax-baseAmount",
@@ -1005,20 +1013,12 @@
         "description": "Field 'rate' should have type 'number' in tax"
       },
       {
-        "id": "t-field-type-tax-salesPurchaseType",
+        "id": "t-field-type-tax-validFrom",
         "category": "field-type",
         "entity": "tax",
-        "field": "salesPurchaseType",
+        "field": "validFrom",
         "runner": "node",
-        "description": "Field 'salesPurchaseType' should have type 'string' in tax"
-      },
-      {
-        "id": "t-field-type-tax-validFromDate",
-        "category": "field-type",
-        "entity": "tax",
-        "field": "validFromDate",
-        "runner": "node",
-        "description": "Field 'validFromDate' should have type 'string' in tax"
+        "description": "Field 'validFrom' should have type 'string' in tax"
       },
       {
         "id": "t-rule-declared",

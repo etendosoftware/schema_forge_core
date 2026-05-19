@@ -564,14 +564,12 @@ async function upsertSingleField(client, f, ctx, entityMaps) {
     return { column: f.column, entityName: f.entityName, success: true, skipped: true };
   }
   const vis = mapVisibility(f.visibility);
-  const dalPropName = f.column.charAt(0).toLowerCase() + f.column.slice(1);
   const fieldParams = {
     entityId,
     fieldId: colLookup.rows[0].etgo_sf_field_id,
     moduleId: ctx.moduleId,
     isIncluded: vis.isIncluded,
     isReadOnly: vis.isReadOnly,
-    javaQualifier: dalPropName !== f.fieldName ? f.fieldName : null,
     audit: ctx.auditOpts,
   };
   const defaultExprKey = `${f.entityName}.${f.fieldName}`;
