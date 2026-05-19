@@ -726,6 +726,17 @@ Target scripts:
 - `tests/test-contextual-selectors-purchase-order.sh`
 - optional shared Node script if bash becomes too brittle.
 
+### Integration Gates Added 2026-05-19
+
+The non-MCP cut risk is covered by two integration gates:
+
+- `cli/test/etendogo-agentic-risk-integration.test.js` runs in the normal Node test suite. It checks the real generated contracts against the app-shell selector-context builder for sales/purchase orders, sales/purchase invoices, goods receipt, and goods shipment. This keeps BP address, price list, tax, and transaction document context metadata aligned without requiring a live backend.
+- `e2e/tests/flows/etendogo-contextual-selectors.integration.spec.js` is an opt-in live Etendo GO smoke. Run it with `cd e2e && ETENDO_URL=http://localhost:8080/etendo npm run test:etendogo-contextual-selectors`.
+
+Known bug detected by the live smoke:
+
+- [ETP-4058](https://etendoproject.atlassian.net/browse/ETP-4058): generated selector URLs use logical field names such as `partnerAddress` and `priceList`, while the local runtime rejects them with `404 Field not found or not included`; some column-name variants, such as `M_PriceList_ID`, are accepted.
+
 ### E2E Tests
 
 Existing:
