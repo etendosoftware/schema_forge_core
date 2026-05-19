@@ -3,7 +3,10 @@ import { resolve, dirname } from 'node:path';
 
 function toJsIdentifier(name) {
   if (!name) return '';
-  return name.replace(/[^a-zA-Z0-9_$]/g, '');
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9_$]/g, '');
 }
 
 // --- Data pools ---

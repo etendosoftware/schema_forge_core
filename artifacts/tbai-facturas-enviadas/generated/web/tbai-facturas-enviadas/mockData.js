@@ -1,6 +1,6 @@
 // Auto-generated mock data - do not edit manually
 
-export const sincronización = [
+export const sincronizacion = [
   {
     "id": "mock-sincronización-001",
     "active": "Sample active",
@@ -87,7 +87,7 @@ export const sincronización = [
   }
 ];
 
-export const resultadoValidación = [
+export const resultadoValidacion = [
   {
     "id": "mock-resultadoValidación-001",
     "active": "Sample active",

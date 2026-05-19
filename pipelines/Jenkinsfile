@@ -54,6 +54,19 @@ pipeline {
         DEVELOP_BRANCH = 'develop'
         MAIN_BRANCH    = 'main'
 
+        // --- Offline regen check rollout flags ---
+        // Toggle these as we gain confidence in the offline pipeline.
+        //   OFFLINE_ONLY=false + OFFLINE_BLOCKING=false  → shadow mode (default).
+        //       Runs offline check after Checkout, logs drift, never fails the build.
+        //       The old DB-backed pipeline (Install / Regen / Export / Verify) runs
+        //       right after and is what actually gates the build today.
+        //   OFFLINE_ONLY=false + OFFLINE_BLOCKING=true   → both pipelines run; offline gates too.
+        //   OFFLINE_ONLY=true  + OFFLINE_BLOCKING=true   → only the offline check runs.
+        //       All four legacy stages are skipped via their `when {}` guards.
+        // When we trust OFFLINE_ONLY=true permanently, delete the legacy stages and these flags.
+        OFFLINE_ONLY     = 'false'
+        OFFLINE_BLOCKING = 'false'
+
         // --- Jira (used to resolve the parent epic of a feature branch) ---
         JIRA_ACCESS_TOKEN = credentials('jira-access-token')
         JIRA_BASE_URL     = credentials('jira-url')
@@ -291,8 +304,122 @@ pipeline {
             }
         }
 
-        stage('Install Etendo (DB)') { // MARK: - Stage 2
+        stage('Offline Regeneration Check') { // MARK: - Stage 1.5 (rollout in progress)
+            // Runs `make regen-check FROM_CACHE=1` against the committed
+            // ETGO_SF_*.xml in the already-cloned com.etendoerp.go. No DB, no gradle.
+            //
+            // Two flags control its severity (see env section):
+            //   OFFLINE_BLOCKING=false → shadow mode: logs drift, never fails the build.
+            //                            Use this while we validate the new path vs. the old one.
+            //   OFFLINE_BLOCKING=true  → drift fails the build like any other stage.
+            //
+            // The legacy DB stages below (`Install Etendo (DB)`, `Schema Forge Regen`,
+            // `Export Database`, `Verify No Local Changes`) are skipped when OFFLINE_ONLY=true.
             when { expression { currentBuild.result == SUCCESS } }
+            steps {
+                container('compiler') {
+                    script {
+                        try {
+                            sh "./pipelines/utils/build-update.sh ${REPOSITORY_NAME} ${COMMIT_INPROGRESS_STATUS} \"Offline Regeneration Check\" ${ACCESS_TOKEN} ${GIT_COMMIT} ${BUILD_URL} \"${CONTEXT_BUILD}\""
+
+                            echo '---------------------- Installing Node.js (offline check) ----------------------'
+                            sh """
+                                if ! command -v node >/dev/null 2>&1 || [ "\$(node -p 'process.versions.node.split(\".\")[0]')" -lt ${NODE_VERSION} ]; then
+                                    curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash -
+                                    apt-get install -y nodejs
+                                fi
+                                node --version
+                                npm --version
+                            """
+
+                            dir(SCHEMA_FORGE_DIR) {
+                                echo '---------------------- npm install (offline check) ----------------------'
+                                sh 'npm ci || npm install'
+
+                                echo '---------------------- make regen-check FROM_CACHE=1 ----------------------'
+                                // SCHEMA_FORGE_DIR sits at ${CORE_DIR}/etendo_schema_forge.
+                                // com.etendoerp.go sits at ${CORE_DIR}/modules/${GO_MODULE_NAME}.
+                                // Relative path from schema_forge → modules/com.etendoerp.go/src-db/database/sourcedata:
+                                def prevXmlDir = "../modules/${GO_MODULE_NAME}/src-db/database/sourcedata"
+                                // ONLY is omitted → checks every AD-backed window with artifacts.
+                                // Side effect: also regenerates contract.json + artifacts/*/generated/*
+                                // in schema_forge, which lets us catch UI drift in the next step.
+                                sh "make regen-check FROM_CACHE=1 REGEN_CHECK_PREV_XML_DIR=${prevXmlDir}"
+
+                                echo '---------------------- git status check (schema_forge UI drift) ----------------------'
+                                // schema_forge MUST stay clean after regen-check: contract.json,
+                                // artifacts/*/generated/*.jsx, mockData.js, etc. are committed and
+                                // should match what the offline pipeline produces from decisions.json
+                                // + ad-snapshot.json. Any local change means committed UI/contract
+                                // files are stale.
+                                def sfDirty = sh(script: 'git status --porcelain', returnStdout: true).trim()
+                                if (sfDirty) {
+                                    echo '---------------------- 🚨 Uncommitted changes in schema_forge after offline regen ----------------------'
+                                    sh 'git status && git --no-pager diff'
+                                    error('UI drift: committed contract.json / generated files do not match what the offline pipeline produces')
+                                } else {
+                                    echo '✅ schema_forge clean — no UI / contract drift'
+                                }
+                            }
+                            echo '✅ Offline regeneration check passed — no XML or UI drift detected'
+                        } catch (Exception e) {
+                            def msg = 'Offline Regeneration Check detected drift — committed ETGO_SF_*.xml or schema_forge UI/contract is out of sync with what the offline pipeline produces'
+                            // Dumps a unified diff between committed XML (prev/) and offline-predicted XML
+                            // (predicted/) for every spec that produced output, so the Jenkins log explains
+                            // *why* drift was detected — not just which files differ. Also re-prints the
+                            // schema_forge git diff in case the failure happened on the XML side before
+                            // the in-stage git diff ran.
+                            def dumpDriftDiff = """
+                                cd ${SCHEMA_FORGE_DIR}
+                                if [ -d tmp/regen-check ]; then
+                                    echo '---------------------- tmp/regen-check tree ----------------------'
+                                    ls -la tmp/regen-check/ || true
+                                    for spec_dir in tmp/regen-check/*/; do
+                                        [ -d "\$spec_dir" ] || continue
+                                        spec=\$(basename "\$spec_dir")
+                                        prev="\$spec_dir/prev"
+                                        pred="\$spec_dir/predicted"
+                                        if [ -d "\$prev/sourcedata" ] && [ -d "\$pred/sourcedata" ]; then
+                                            echo "---------------------- XML drift for \$spec (prev → predicted) ----------------------"
+                                            # Use the checker's structured per-row, per-field report instead of
+                                            # `diff -ru`. The raw XMLs from `export.database` carry per-row
+                                            # `<!--PK-->` comment prefixes and blank-line separators that the
+                                            # offline serializer does not emit, so a textual diff is mostly
+                                            # noise. The checker parses both sides and prints only the rows /
+                                            # fields that actually changed.
+                                            node cli/src/xml-regeneration-check.js "\$prev" "\$pred" --include-dir sourcedata || true
+                                        else
+                                            echo "---------------------- \$spec: prev/ or predicted/ missing, nothing to diff ----------------------"
+                                        fi
+                                    done
+                                else
+                                    echo 'No tmp/regen-check output produced — failure likely happened before regen-check ran.'
+                                fi
+                                echo '---------------------- schema_forge git diff (UI / contract drift) ----------------------'
+                                git status || true
+                                git --no-pager diff || true
+                            """
+                            if (env.OFFLINE_BLOCKING?.toBoolean()) {
+                                env.ERROR_MESSAGE = msg
+                                echo "---------------------- 🚨 ${msg} (BLOCKING) ----------------------"
+                                echo 'Exception occurred: ' + e.toString()
+                                sh dumpDriftDiff
+                                currentBuild.result = FAILED
+                                error(msg)
+                            } else {
+                                echo "---------------------- ⚠️ ${msg} (SHADOW MODE — not failing the build) ----------------------"
+                                echo 'Exception occurred: ' + e.toString()
+                                sh dumpDriftDiff
+                                // Do NOT mutate currentBuild.result — the legacy pipeline still gates.
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Install Etendo (DB)') { // MARK: - Stage 2 (legacy — skipped when OFFLINE_ONLY=true)
+            when { expression { !env.OFFLINE_ONLY.toBoolean() && currentBuild.result == SUCCESS } }
             steps {
                 container('compiler') {
                     script {
@@ -338,8 +465,8 @@ EOF
             }
         }
 
-        stage('Schema Forge Regen') { // MARK: - Stage 3
-            when { expression { currentBuild.result == SUCCESS } }
+        stage('Schema Forge Regen') { // MARK: - Stage 3 (legacy — skipped when OFFLINE_ONLY=true)
+            when { expression { !env.OFFLINE_ONLY.toBoolean() && currentBuild.result == SUCCESS } }
             steps {
                 container('compiler') {
                     script {
@@ -377,8 +504,8 @@ EOF
             }
         }
 
-        stage('Export Database') { // MARK: - Stage 4
-            when { expression { currentBuild.result == SUCCESS } }
+        stage('Export Database') { // MARK: - Stage 4 (legacy — skipped when OFFLINE_ONLY=true)
+            when { expression { !env.OFFLINE_ONLY.toBoolean() && currentBuild.result == SUCCESS } }
             steps {
                 container('compiler') {
                     script {
@@ -403,8 +530,8 @@ EOF
             }
         }
 
-        stage('Verify No Local Changes') { // MARK: - Stage 5
-            when { expression { currentBuild.result == SUCCESS } }
+        stage('Verify No Local Changes') { // MARK: - Stage 5 (legacy — skipped when OFFLINE_ONLY=true)
+            when { expression { !env.OFFLINE_ONLY.toBoolean() && currentBuild.result == SUCCESS } }
             steps {
                 container('compiler') {
                     script {

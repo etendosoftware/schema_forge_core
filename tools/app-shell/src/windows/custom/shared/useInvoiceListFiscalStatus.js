@@ -72,7 +72,7 @@ export function useInvoiceListFiscalStatus(ids, specName, profile, apiBaseUrl, o
       if (targets.showVerifactu) {
         const maps = await Promise.all([
           fetchInSetStatus(apiFetch, VF_SPEC, 'facturasAceptadas',           { organization: orgId }, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList),
-          fetchInSetStatus(apiFetch, VF_SPEC, 'partiallyAcceptedInvoices',   { organization: orgId }, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList),
+          fetchInSetStatus(apiFetch, VF_SPEC, 'facturasParcialmenteAceptadas', { organization: orgId }, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList),
           fetchInSetStatus(apiFetch, VF_SPEC, 'facturasRechazadas',          { organization: orgId }, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList),
           fetchInSetStatus(apiFetch, VF_SPEC, 'facturasInválidas',           { organization: orgId }, { fkField: 'invoice', statusField: 'verifactuSendingStatus' }, idList),
         ]);
