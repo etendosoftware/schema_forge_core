@@ -3,6 +3,7 @@ import { Search, X, Loader2, Check } from 'lucide-react';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { formatCurrency } from '@/lib/formatCurrency.js';
 import { useCurrency } from '@/hooks/useCurrency.jsx';
+import { useUI } from '@/i18n';
 
 const PAGE_SIZE = 30;
 
@@ -68,7 +69,7 @@ export default function ProductSearchDrawer({
   onDeselect,
   selectorUrl,
   token,
-  title = 'Search Product',
+  title = null,
   imageEntityUrl,
   keepOpenOnSelect = false,
   selectedIds = [],
@@ -88,8 +89,10 @@ export default function ProductSearchDrawer({
   const activeItemRef = useRef(null);
   const fetchTimer = useRef(null);
   const abortRef = useRef(null);
+  const ui = useUI();
   const sessionCurrency = useCurrency();
   const currency = selectorContext?.currency ?? sessionCurrency;
+  const resolvedTitle = title ?? ui('product');
   const selectorContextRef = useRef(selectorContext);
   // Tracks the raw server-side offset (total rows consumed), independent of dedup count.
   const rawOffsetRef = useRef(0);
@@ -291,7 +294,7 @@ export default function ProductSearchDrawer({
               type="text"
               value={query}
               onChange={(e) => { setQuery(e.target.value); doFetch(e.target.value, 0); }}
-              placeholder={`${title}...`}
+              placeholder={`${ui('searchLabelPrefix')} ${resolvedTitle}...`}
               className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             />
             {(loading || loadingMore) && <Loader2 className="h-4 w-4 text-muted-foreground animate-spin shrink-0" />}
@@ -310,7 +313,7 @@ export default function ProductSearchDrawer({
 
             {!loading && results.length === 0 && query.trim() && (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                <p className="text-sm">No results for "{query}"</p>
+                <p className="text-sm">{ui('productSearchNoResults', { query })}</p>
               </div>
             )}
 
@@ -363,11 +366,11 @@ export default function ProductSearchDrawer({
           {/* Footer */}
           {results.length > 0 && (
             <div className="px-4 py-1.5 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-              <span>{results.length} product{results.length !== 1 ? 's' : ''}</span>
+              <span>{ui('productSearchCount', { count: results.length })}</span>
               <span className="flex items-center gap-2">
-                <kbd className="px-1 py-0.5 rounded bg-muted border border-border text-[10px]">↑↓</kbd> navigate
-                <kbd className="px-1 py-0.5 rounded bg-muted border border-border text-[10px]">↵</kbd> select
-                <kbd className="px-1 py-0.5 rounded bg-muted border border-border text-[10px]">esc</kbd> close
+                <kbd className="px-1 py-0.5 rounded bg-muted border border-border text-[10px]">↑↓</kbd> {ui('productSearchNavigate')}
+                <kbd className="px-1 py-0.5 rounded bg-muted border border-border text-[10px]">↵</kbd> {ui('productSearchSelect')}
+                <kbd className="px-1 py-0.5 rounded bg-muted border border-border text-[10px]">esc</kbd> {ui('productSearchClose')}
               </span>
             </div>
           )}

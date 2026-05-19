@@ -54,6 +54,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { useLineGrossAmount, ORDER_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import { useDocumentAction } from '@/hooks/useDocumentAction';
 import { useMenuLabel, useUI } from '@/i18n';
+import { translateBackendError } from '@/lib/backendErrors.js';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
 import { SummaryBar } from './SummaryBar.jsx';
@@ -711,20 +712,23 @@ export function DetailView({
   const [secondaryDeleteConfirm, setSecondaryDeleteConfirm] = useState(null);
 
   const extractErrorMessage = useCallback(async (res) => {
+    let raw;
     try {
       const data = await res.json();
       // NEO Headless top-level format: { error: { message, status } }
-      if (data?.error?.message) return data.error.message;
-      // Etendo JsonDataService format: { response: { error: { message } | string } }
-      const err = data?.response?.error;
-      if (err?.message) return err.message;
-      if (typeof err === 'string') return err;
-      if (data?.message) return data.message;
+      if (data?.error?.message) raw = data.error.message;
+      else {
+        // Etendo JsonDataService format: { response: { error: { message } | string } }
+        const err = data?.response?.error;
+        if (err?.message) raw = err.message;
+        else if (typeof err === 'string') raw = err;
+        else if (data?.message) raw = data.message;
+      }
     } catch {
       // Ignore non-JSON error bodies.
     }
-    return `Error ${res.status}`;
-  }, []);
+    return translateBackendError(raw ?? `Error ${res.status}`, ui);
+  }, [ui]);
 
   const closeSecondaryLine = useCallback(() => {
     setIsClosingSecondaryLine(true);
@@ -1258,6 +1262,29 @@ export function DetailView({
       toast.error(err?.message || ui('networkError'));
     }
   }, [data?.id, recordId, isNew, apiBaseUrl, entity, token, hook, ui, extractErrorMessage]);
+
+  const handleNotesSave = useCallback(async (value) => {
+    const currentId = data?.id || recordId;
+    if (!currentId || isNew || !notesField) return;
+    try {
+      const res = await fetch(`${apiBaseUrl}/${entity}/${currentId}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ [notesField]: value }),
+      });
+      if (!res.ok) {
+        toast.error(await extractErrorMessage(res));
+        return;
+      }
+      hook.handleChange?.(notesField, value);
+      toast.success(ui('noteSaved'));
+    } catch (err) {
+      toast.error(err?.message || ui('networkError'));
+    }
+  }, [data?.id, recordId, isNew, notesField, apiBaseUrl, entity, token, hook, ui, extractErrorMessage]);
 
   // Guard that controls whether "+ Add Lines" is shown.
   // 1. Explicit `addLineGuard` from the window wins (business-specific rules).
@@ -2915,6 +2942,7 @@ export function DetailView({
                   lineConfig={lineConfig}
                   totalDiscountPct={Number(data?.etgoTotalDiscount ?? 0)}
                   onTotalDiscountChange={handleTotalDiscountChange}
+                  onNotesSave={handleNotesSave}
                 />
               );
             })() : (
@@ -2974,12 +3002,12 @@ export function DetailView({
                     {notesField && (
                       <div className={`flex items-start gap-3 px-4 py-2.5${embedded ? ' pointer-events-none' : ''}`}>
                         <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-1.5 shrink-0 w-24">{ui('notes')}</span>
-                        <div className={`flex-1 flex flex-col border border-border/40 rounded bg-white transition-all py-1.5`} style={{ borderWidth: '0.5px' }}>
+                        <div data-testid="notes-textarea" className={`flex-1 flex flex-col border border-border/40 rounded bg-white transition-all py-1.5`} style={{ borderWidth: '0.5px' }}>
                           {notesFocused ? (
                             <textarea
                               value={data[notesField] || ''}
                               onChange={(e) => handleChangeWithCallout(notesField, e.target.value)}
-                              onBlur={() => setNotesFocused(false)}
+                              onBlur={() => { handleNotesSave(data[notesField]); setNotesFocused(false); }}
                               placeholder={ui('description')}
                               rows={3}
                               autoFocus

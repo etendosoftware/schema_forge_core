@@ -17,6 +17,7 @@ import { resolveColumnLabel } from '@/lib/resolveColumnLabel.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { applyCalloutUpdates } from '@/lib/applyCalloutUpdates.js';
 import { columnMinWidthPx, columnFlex } from '@/lib/linesColumnWidth.js';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Extracts grow flag and basis (px) from a columnFlex() shorthand string.
 function flexSpec(col, idx) {
@@ -438,7 +439,7 @@ const NUMERIC_FIELD_TYPES = new Set(['number', 'integer', 'decimal', 'quantity',
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
-const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, hasQuickActionsColumn, token, apiBaseUrl, entity, selectorContext }, ref) {
+const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, hasQuickActionsColumn, token, apiBaseUrl, entity, selectorContext, ilpHasNoAmountCol = false, ilpTrailing = false }, ref) {
   const t = useLabel();
   const ui = useUI();
   const fieldMap = useMemo(() => {
@@ -458,7 +459,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     for (const f of fields) {
       if (f.key === 'lineNo') {
         empty[f.key] = defaultLineNo;
-      } else if (f.defaultValue !== undefined) {
+      } else if (f.defaultValue !== undefined && !/^@[^@]+@$/.test(String(f.defaultValue))) {
         empty[f.key] = f.defaultValue;
       } else {
         empty[f.key] = '';
@@ -805,19 +806,26 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         if (field.type === 'select' && field.options?.length) {
           return (
             <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
-              <select
-                data-testid={`inline-add-field-${field.key}`}
-                ref={isFirst ? firstInputRef : undefined}
-                value={values[field.key] ?? ''}
-                onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+              <Select
+                value={values[field.key] || undefined}
+                onValueChange={(val) => handleFieldChange(field.key, val === '__empty__' ? '' : val)}
+                required={field.required}
               >
-                <option value="" disabled hidden>{field.label ?? field.key}</option>
-                {field.options.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+                <SelectTrigger
+                  ref={isFirst ? firstInputRef : undefined}
+                  data-testid={`inline-add-field-${field.key}`}
+                  onKeyDown={(e) => { if (e.key === 'Escape') handleKeyDown(e); }}
+                  className="w-full h-8 text-sm bg-white focus:ring-2 focus:ring-primary"
+                >
+                  <SelectValue placeholder={field.label ?? field.key} />
+                </SelectTrigger>
+                <SelectContent>
+                  {!field.required && <SelectItem value="__empty__">&nbsp;</SelectItem>}
+                  {field.options.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </TableCell>
           );
         }
@@ -856,27 +864,36 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           }
           return (
             <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
-              <select
-                data-testid={`inline-add-field-${field.key}`}
-                ref={isFirst ? firstInputRef : undefined}
-                value={values[field.key] ?? ''}
-                onChange={(e) => {
-                  const selectedId = e.target.value;
-                  const opt = options.find(o => o.id === selectedId);
-                  touchedFieldsRef.current.add(field.key);
+              <Select
+                value={values[field.key] || undefined}
+                onValueChange={(val) => {
+                  if (val === '__empty__') {
+                    handleChange(field.key + '$_identifier', '');
+                    handleFieldChange(field.key, '', null);
+                    return;
+                  }
+                  const opt = options.find(o => o.id === val);
                   if (opt) {
                     handleChange(field.key + '$_identifier', opt.name || opt.label || opt._identifier || '');
                   }
-                  handleFieldChange(field.key, selectedId, opt);
+                  handleFieldChange(field.key, val, opt);
                 }}
-                onKeyDown={handleKeyDown}
-                className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
               >
-                <option value="" disabled hidden>{fieldLabel}</option>
-                {options.map(opt => (
-                  <option key={opt.id} value={opt.id}>{opt.name || opt.label || opt._identifier || opt.id}</option>
-                ))}
-              </select>
+                <SelectTrigger
+                  ref={isFirst ? firstInputRef : undefined}
+                  data-testid={`inline-add-field-${field.key}`}
+                  onKeyDown={(e) => { if (e.key === 'Escape') handleKeyDown(e); }}
+                  className="w-full h-8 text-sm bg-white focus:ring-2 focus:ring-primary"
+                >
+                  <SelectValue placeholder={fieldLabel} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__empty__">&nbsp;</SelectItem>
+                  {options.map(opt => (
+                    <SelectItem key={opt.id} value={opt.id}>{opt.name || opt.label || opt._identifier || opt.id}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </TableCell>
           );
         }
@@ -928,7 +945,9 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           </TableCell>
         );
       })}
-      {hoverRowActions ? (
+      {/* Skip action cells in inlineEditable add-row mode — actions belong to
+          InlineLinesPanel's 160px slot, not to separate columns here. */}
+      {!ilpTrailing && (hoverRowActions ? (
         <>
           <TableCell className="w-10" />
           {hoverRowHasDelete && <TableCell className="w-10" />}
@@ -938,8 +957,10 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           {hasDeleteColumn && <TableCell className="w-10" />}
           {hasCloneColumn && <TableCell className="w-10" />}
         </>
-      )}
-      {hasQuickActionsColumn && <TableCell className="w-10" />}
+      ))}
+      {!ilpTrailing && hasQuickActionsColumn && <TableCell className="w-10" />}
+      {ilpHasNoAmountCol && <TableCell aria-hidden="true" />}
+      {ilpTrailing && <TableCell aria-hidden="true" />}
     </TableRow>
   );
 });
@@ -997,7 +1018,7 @@ function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContex
         selectorUrl={selectorUrl}
         selectorContext={selectorContext}
         token={token}
-        title={title ? `Search ${title}` : undefined}
+        title={title || undefined}
       />
     </>
   );
@@ -1014,7 +1035,7 @@ function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) 
         type="button"
         onClick={() => setOpen(true)}
         className="h-8 w-8 flex items-center justify-center rounded border border-input hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors shrink-0"
-        title={`Search ${title || ''}`}
+        title={title || ''}
       >
         <Search className="h-3.5 w-3.5" />
       </button>
@@ -1025,7 +1046,7 @@ function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) 
         selectorUrl={selectorUrl}
         selectorContext={selectorContext}
         token={token}
-        title={title ? `Search ${title}` : undefined}
+        title={title || undefined}
       />
     </>
   );
@@ -1464,6 +1485,14 @@ export function DataTable({
   const colSpan = visibleColumns.length + (selectable ? 1 : 0) + actionCols + quickActionsCol;
   const selectedRowBg = hoverRowActions ? 'bg-[#F5F7F9]' : 'bg-primary/5';
 
+  // In inlineEditable add-row mode (hideHeader=true), the DataTable only renders
+  // the new-line form while InlineLinesPanel owns the existing rows. InlineLinesPanel
+  // always appends a 48px right spacer, plus a 160px action slot when no amount column
+  // exists. Mirror those here so flexible columns grow to the same width in both.
+  const ilpHasNoAmountCol = hideHeader && linesLayout === 'inlineEditable'
+    && !visibleColumns.some(c => c.type === 'amount');
+  const ilpTrailing = hideHeader && linesLayout === 'inlineEditable';
+
   return (
     <div className="space-y-0">
       <div className={linesLayout === 'inlineEditable' ? '[&>div]:!overflow-visible' : 'overflow-x-auto overflow-y-visible'}>
@@ -1483,11 +1512,16 @@ export function DataTable({
                   ? <col key={col.key} style={{ width: basis }} />
                   : <col key={col.key} />;
               })}
-              {hoverRowActions && <col style={{ width: 40 }} />}
-              {hoverRowActions && onDeleteRow && <col style={{ width: 40 }} />}
-              {!hoverRowActions && legacyDeleteEnabled && <col style={{ width: 40 }} />}
-              {!hoverRowActions && onCloneRow && !quickActionsEnabled && <col style={{ width: 40 }} />}
-              {quickActionsEnabled && <col style={{ width: 40 }} />}
+              {/* In inlineEditable add-row mode (ilpTrailing), all row actions
+                  live inside InlineLinesPanel's 160px action slot — never add
+                  separate action cols here or the flex columns shrink by 40px. */}
+              {!ilpTrailing && hoverRowActions && <col style={{ width: 40 }} />}
+              {!ilpTrailing && hoverRowActions && onDeleteRow && <col style={{ width: 40 }} />}
+              {!ilpTrailing && !hoverRowActions && legacyDeleteEnabled && <col style={{ width: 40 }} />}
+              {!ilpTrailing && !hoverRowActions && onCloneRow && !quickActionsEnabled && <col style={{ width: 40 }} />}
+              {!ilpTrailing && quickActionsEnabled && <col style={{ width: 40 }} />}
+              {ilpHasNoAmountCol && <col style={{ width: 160 }} />}
+              {ilpTrailing && <col style={{ width: 48 }} />}
             </colgroup>
           )}
           <TableHeader
@@ -1782,6 +1816,8 @@ export function DataTable({
                   apiBaseUrl={apiBaseUrl}
                   entity={entity}
                   selectorContext={selectorContext}
+                  ilpHasNoAmountCol={ilpHasNoAmountCol}
+                  ilpTrailing={ilpTrailing}
                 />
               )}
           </TableBody>

@@ -106,6 +106,7 @@ body { font-family: var(--font-sans); font-size: 13px; line-height: 18px; color:
 .inv-totals { display:flex; justify-content:flex-end; padding-top:12px; border-top:1px solid var(--border-1); }
 .inv-totals-inner { width:300px; display:flex; flex-direction:column; gap:8px; }
 .inv-totals .row { display:flex; justify-content:space-between; font-size:13px; color:var(--fg-2); font-variant-numeric:tabular-nums; }
+.inv-totals .row.discount { color:var(--fg-3); font-size:12px; }
 .inv-totals .row.grand { margin-top:8px; padding-top:10px; border-top:1px solid var(--border-1); font-size:15px; font-weight:700; color:var(--fg-1); }
 
 /* Observations */
@@ -197,6 +198,15 @@ const TEMPLATE = `<!DOCTYPE html>
   <!-- Totals -->
   <div class="inv-totals">
     <div class="inv-totals-inner">
+      {{#if hasAnyDiscount}}
+      <div class="row"><span>{{labels.subtotalNoDiscount}}</span><span>{{fmt grossSubtotal}}</span></div>
+      {{#if hasProductDiscount}}
+      <div class="row discount"><span>{{labels.productDiscount}}</span><span>−{{fmt productDiscountAmt}}</span></div>
+      {{/if}}
+      {{#if hasTotalDiscount}}
+      <div class="row discount"><span>{{labels.totalDiscount}} {{totalDiscountPct}}%</span><span>−{{fmt totalDiscountAmt}}</span></div>
+      {{/if}}
+      {{/if}}
       <div class="row"><span>{{labels.subtotal}}</span><span>{{fmt netAmount}}</span></div>
       <div class="row"><span>{{labels.tax}}</span><span>{{fmt taxAmount}}</span></div>
       <div class="row grand"><span>{{labels.grandTotal}}</span><span>{{fmt grandTotal}}</span></div>
@@ -302,15 +312,24 @@ async function buildInvoiceData(invoiceId, base, token) {
     lineNo: l.lineNo || (idx + 1),
     productName: l.product$_identifier || l.description || '—',
     quantity: l.invoicedQuantity ?? l.qtyInvoiced ?? 0,
-    unitPrice: l.unitPrice ?? l.priceActual ?? 0,
-    discount: l.discount ? Number(l.discount) : null,
+    unitPrice: l.listPrice ?? l.unitPrice ?? l.priceActual ?? 0,
+    listPrice: l.listPrice ?? null,
+    discount: l.etgoDiscount ? Number(l.etgoDiscount) : null,
     taxName: l.tax$_identifier || l.taxRate || '',
-    lineTotal: l.lineNetAmount ?? l.lineAmount ?? 0,
+    lineTotal: l.grossAmount ?? l.lineNetAmount ?? l.lineAmount ?? 0,
   }));
 
-  const grandTotal = Number(header.grandTotalAmount ?? 0);
-  const netAmount  = Number(header.summedLineAmount ?? header.totalLines ?? 0);
-  const taxAmount  = grandTotal - netAmount;
+  const netLines         = Number(header.summedLineAmount ?? header.totalLines ?? 0);
+  const adjustedGrand    = Number(header.grandTotalAmount ?? 0);
+  const totalDiscountPct = Number(header.etgoTotalDiscount ?? 0);
+  const factor           = 1 - totalDiscountPct / 100;
+
+  const grossSubtotal      = lines.reduce((s, l) => s + l.quantity * (l.listPrice ?? l.unitPrice), 0);
+  const productDiscountAmt = Math.max(0, grossSubtotal - netLines);
+  const totalDiscountAmt   = netLines * totalDiscountPct / 100;
+  const netAmount          = netLines * factor;
+  const taxAmount          = adjustedGrand - netAmount;
+  const grandTotal         = adjustedGrand;
 
   const org = session?.organization ?? {};
   const customerAddressLines = buildLocationAddressLines(
@@ -341,6 +360,13 @@ async function buildInvoiceData(invoiceId, base, token) {
     // Lines
     lines,
     // Totals
+    grossSubtotal,
+    productDiscountAmt,
+    totalDiscountPct,
+    totalDiscountAmt,
+    hasProductDiscount: productDiscountAmt > 0.005,
+    hasTotalDiscount:   totalDiscountPct > 0,
+    hasAnyDiscount:     productDiscountAmt > 0.005 || totalDiscountPct > 0,
     netAmount,
     taxAmount,
     grandTotal,
@@ -426,10 +452,13 @@ export function useInvoicePdf(invoiceId, apiBaseUrl, token) {
       colDiscount:     ui('invoicePdfColDiscount'),
       colTax:          ui('invoicePdfColTax'),
       colTotal:        ui('invoicePdfColTotal'),
-      subtotal:        ui('invoicePdfSubtotal'),
-      tax:             ui('invoicePdfTax'),
-      grandTotal:      ui('invoicePdfGrandTotal'),
-      notes:           ui('invoicePdfNotes'),
+      subtotal:           ui('invoicePdfSubtotal'),
+      tax:                ui('invoicePdfTax'),
+      grandTotal:         ui('invoicePdfGrandTotal'),
+      notes:              ui('invoicePdfNotes'),
+      subtotalNoDiscount: ui('invoicePdfSubtotalNoDiscount'),
+      productDiscount:    ui('invoicePdfProductDiscount'),
+      totalDiscount:      ui('invoicePdfTotalDiscount'),
     };
 
     // Compute base URL (strip spec name: .../sws/neo/sales-invoice → .../sws/neo)

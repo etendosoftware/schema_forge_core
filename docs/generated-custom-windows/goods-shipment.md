@@ -17,7 +17,7 @@ Use this window to register and complete outbound customer shipments. The functi
 
 ## Interaction model
 
-- Route: `/goods-shipment` and `/goods-shipment/:recordId`; the custom window wrapper also supports `?DocStatus=...`, currently used to prefilter the list to a status such as completed shipments. The list `COLUMNS` definition has `dot: false` on `movementDate` (no red/green date dot) and `type: 'status'` on `documentStatus` (proper status badge, not a dot-prefixed display).
+- Route: `/goods-shipment` and `/goods-shipment/:recordId`. The custom window wrapper reads `?DocStatus=<value>` from the URL and pre-applies it as a column filter (`documentStatus`) using the parsed `enumLabel` descriptor format required by `buildBackendFilter`. The dashboard card "Envíos pendientes" navigates here with `?DocStatus=DR` so the list starts filtered to draft shipments awaiting processing. The list `COLUMNS` definition has `dot: false` on `movementDate` (no red/green date dot) and `type: 'status'` on `documentStatus` (proper status badge, not a dot-prefixed display).
 - Visibility: visible in the Sales menu and not marked hidden in `tools/app-shell/src/menu.json`.
 - Implementation type: custom route entry in `tools/app-shell/src/windows/registry.js` that loads a generated `GoodsShipmentPage` plus shipment-specific custom actions (`GoodsShipmentActions`, `BulkInvoiceFromShipment`, `RelatedDocuments`).
 - Window shape: master-child window. The header entity is `goodsShipment` and the child entity is `goodsShipmentLine`.
@@ -48,7 +48,7 @@ Use this window to register and complete outbound customer shipments. The functi
 ## Manual verification
 
 1. Open `/goods-shipment` and confirm the list shows shipment records with document number, movement date, status, and invoicing state.
-2. Open `/goods-shipment?DocStatus=CO` and confirm the list starts filtered to completed shipments.
+2. Open `/goods-shipment?DocStatus=DR` and confirm the list starts filtered to draft shipments (the same state the dashboard "Envíos pendientes" card navigates to).
 3. Open a shipment detail and verify it behaves as a master-child page with editable header fields in draft status and child shipment lines underneath.
 4. Change the business partner on a draft shipment and confirm the partner-address selector reacts as a dependent field.
 5. Open a completed shipment and confirm the top bar exposes `Create Invoice`, `Create Return`, and shipment sending controls.
