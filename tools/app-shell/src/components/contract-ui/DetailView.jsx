@@ -54,6 +54,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { useLineGrossAmount, ORDER_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import { useDocumentAction } from '@/hooks/useDocumentAction';
 import { useMenuLabel, useUI } from '@/i18n';
+import { translateBackendError } from '@/lib/backendErrors.js';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
 import { SummaryBar } from './SummaryBar.jsx';
@@ -711,20 +712,23 @@ export function DetailView({
   const [secondaryDeleteConfirm, setSecondaryDeleteConfirm] = useState(null);
 
   const extractErrorMessage = useCallback(async (res) => {
+    let raw;
     try {
       const data = await res.json();
       // NEO Headless top-level format: { error: { message, status } }
-      if (data?.error?.message) return data.error.message;
-      // Etendo JsonDataService format: { response: { error: { message } | string } }
-      const err = data?.response?.error;
-      if (err?.message) return err.message;
-      if (typeof err === 'string') return err;
-      if (data?.message) return data.message;
+      if (data?.error?.message) raw = data.error.message;
+      else {
+        // Etendo JsonDataService format: { response: { error: { message } | string } }
+        const err = data?.response?.error;
+        if (err?.message) raw = err.message;
+        else if (typeof err === 'string') raw = err;
+        else if (data?.message) raw = data.message;
+      }
     } catch {
       // Ignore non-JSON error bodies.
     }
-    return `Error ${res.status}`;
-  }, []);
+    return translateBackendError(raw ?? `Error ${res.status}`, ui);
+  }, [ui]);
 
   const closeSecondaryLine = useCallback(() => {
     setIsClosingSecondaryLine(true);

@@ -8,6 +8,7 @@ const columns = [
   { key: 'bankFormat', column: 'BankFormat', type: 'enum', label: 'Bank Account Format', enumLabels: { 'GENERIC': 'Use Generic Account No.', 'IBAN': 'Use IBAN', 'SWIFT': 'Use SWIFT + Generic Account No.', 'SPANISH': 'Use Spanish' }, required: true },
   { key: 'accountNo', column: 'AccountNo', type: 'string', label: 'Generic Account No.' },
   { key: 'iBAN', column: 'Iban', type: 'string', label: 'IBAN' },
+  { key: 'swiftCode', column: 'SwiftCode', type: 'string', label: 'SWIFT Code' },
 ];
 // @sf-generated-end columns:bankAccount
 

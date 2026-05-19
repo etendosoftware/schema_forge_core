@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { resolveBackendSort, buildBackendFilter } from '@/lib/gridQuery.js';
+import { translateBackendError } from '@/lib/backendErrors.js';
 import { toast } from 'sonner';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI } from '@/i18n';
@@ -102,7 +103,8 @@ export async function extractErrorMessage(res, ui) {
         return translate('validationDuplicateRecord', 'A record with the same value already exists.');
       }
 
-      return decoded.replace(/\s+/g, ' ').trim();
+      const raw = decoded.replace(/\s+/g, ' ').trim();
+      return translateBackendError(raw, ui) || raw;
     };
 
     const pickMessage = (node) => {

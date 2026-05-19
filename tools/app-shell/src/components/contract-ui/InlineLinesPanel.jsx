@@ -17,6 +17,7 @@ import { formatAmount } from '@/lib/formatAmount.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { resolveColumnLabel } from '@/lib/resolveColumnLabel.js';
 import { SelectorInput } from './SelectorInput.jsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import { columnFlex } from '@/lib/linesColumnWidth.js';
 
@@ -141,8 +142,8 @@ function ReadCell({ row, col, locale, t, ui }) {
     return renderDateCell(row[col.key], locale);
   }
   const display = resolveIdentifier(row, col.key);
-  if (typeof display === 'string' && display.length > 60) {
-    return <span className="block max-w-[260px] truncate" title={display}>{display}</span>;
+  if (typeof display === 'string') {
+    return <span className="block truncate" title={display || undefined}>{display}</span>;
   }
   return <span>{display ?? ''}</span>;
 }
@@ -214,24 +215,28 @@ function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus
     const labels = col.enumLabels || {};
     const options = Object.entries(labels);
     return (
-      <select
-        ref={inputRef}
-        data-testid={`field-${col.key}`}
-        defaultValue={value ?? ''}
-        onChange={(e) => onCommit(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') {
-            e.preventDefault();
-            onCancel?.();
-          }
-        }}
-        className="w-full h-7 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+      <Select
+        value={value || undefined}
+        onValueChange={(val) => onCommit(val === '__empty__' ? '' : val)}
+        required={col.required}
       >
-        {!col.required && <option value="">—</option>}
-        {options.map(([v, label]) => (
-          <option key={v} value={v}>{label}</option>
-        ))}
-      </select>
+        <SelectTrigger
+          ref={inputRef}
+          data-testid={`field-${col.key}`}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') { e.preventDefault(); onCancel?.(); }
+          }}
+          className="w-full h-7 text-sm bg-white focus:ring-2 focus:ring-primary"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {!col.required && <SelectItem value="__empty__">&nbsp;</SelectItem>}
+          {options.map(([v, label]) => (
+            <SelectItem key={v} value={v}>{label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     );
   }
 
@@ -515,7 +520,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
         className="flex items-stretch border-b sticky top-0 z-10 bg-white"
         style={{ borderColor: TOKENS.separator, height: TOKENS.rowHeight, ...headerStyle }}
       >
-        <div className="flex items-center justify-center px-2" style={{ width: 40 }}>
+        <div className="flex items-center justify-center px-2" style={{ width: 40, flexShrink: 0 }}>
           <Checkbox
             aria-label={ui('selectAll')}
             checked={allSelected}
@@ -534,6 +539,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
               flex: columnFlex(col, idx),
               justifyContent: 'flex-start',
               textAlign: 'left',
+              minWidth: 0,
             }}
           >
             {resolveColumnLabel(col, locale, t)}
@@ -583,7 +589,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
             } : undefined}
           >
             {/* Selection checkbox */}
-            <div className="flex items-center justify-center px-2" style={{ width: 40 }}>
+            <div className="flex items-center justify-center px-2" style={{ width: 40, flexShrink: 0 }}>
               <Checkbox
                 aria-label={ui('selectRow') ?? 'Select row'}
                 checked={isSelected}
@@ -611,6 +617,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
                 flex: columnFlex(col, idx),
                 justifyContent: isNumeric ? 'flex-end' : 'flex-start',
                 textAlign: isNumeric ? 'right' : 'left',
+                minWidth: 0,
               };
 
               return (

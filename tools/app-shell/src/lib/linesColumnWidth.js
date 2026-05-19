@@ -15,7 +15,6 @@ export function columnFlex(col, idx) {
   if (col.type === 'price') return '0 0 152px';
   if (col.type === 'quantity' || col.type === 'integer') return '0 0 152px';
   if (col.type === 'decimal' || col.type === 'percent') return '0 0 152px';
-  if (idx === 0) return '1 1 244px';
   if (col.type === 'string' || col.type === 'text') return '1 1 224px';
   if (col.type === 'selector' || col.type === 'search' || col.type === 'foreignKey') return '0 0 192px';
   // Enum/select columns share the string baseline (224px). Their values
@@ -39,7 +38,6 @@ export function columnMinWidthPx(col, idx) {
   if (col.type === 'price') return 152;
   if (col.type === 'quantity' || col.type === 'integer') return 152;
   if (col.type === 'decimal' || col.type === 'percent') return 152;
-  if (idx === 0) return 244;
   if (col.type === 'string' || col.type === 'text') return 224;
   if (col.type === 'selector' || col.type === 'search' || col.type === 'foreignKey') return 192;
   if (col.type === 'enum' || col.type === 'select') return 224;
