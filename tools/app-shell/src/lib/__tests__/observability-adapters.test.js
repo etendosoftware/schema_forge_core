@@ -166,6 +166,8 @@ describe('browser observability config', () => {
     assert.deepEqual(config.context, {
       app: 'app-shell',
       environment: 'go.staging.etendo.cloud',
+      hostname: 'go.staging.etendo.cloud',
+      mockMode: false,
     });
     assert.deepEqual(config.providers.map(provider => provider.name), ['sentry', 'aws-rum']);
     assert.deepEqual(config.providers.map(provider => provider.enabled), [true, true]);

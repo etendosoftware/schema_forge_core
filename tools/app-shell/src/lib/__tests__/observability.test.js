@@ -79,7 +79,11 @@ describe('observability core', () => {
         'second:flush',
       ]
     );
-    assert.deepEqual(calls[2][4].context, { app: 'app-shell' });
+    assert.equal(calls[2][2], 'app_started');
+    assert.equal(typeof calls[2][3].timestamp, 'string');
+    assert.equal(calls[2][3].app, 'app-shell');
+    assert.equal(calls[4][2], '/dashboard');
+    assert.equal(calls[4][3].routePattern, '/dashboard');
   });
 
   it('merges context and notifies providers when context changes', async () => {
@@ -103,6 +107,8 @@ describe('observability core', () => {
       environment: 'staging',
       locale: 'en_US',
     });
+    assert.equal(calls[2][3].environment, 'staging');
+    assert.equal(calls[2][3].locale, 'en_US');
   });
 
   it('continues dispatching when one provider throws', async () => {

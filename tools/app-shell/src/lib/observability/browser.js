@@ -14,6 +14,14 @@ export function buildBrowserObservabilityConfig({
     context: {
       app: 'app-shell',
       environment: hostname,
+      hostname,
+      mockMode: env.VITE_MOCK === 'true',
+    },
+    metadata: {
+      app: 'app-shell',
+      environment: hostname,
+      hostname,
+      mockMode: env.VITE_MOCK === 'true',
     },
     providers: [
       createSentryProvider({

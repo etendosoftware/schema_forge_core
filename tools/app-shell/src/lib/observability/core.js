@@ -1,3 +1,5 @@
+import { buildEventPayload } from './payload.js';
+
 function isProviderEnabled(provider) {
   return provider && provider.enabled !== false;
 }
@@ -16,6 +18,7 @@ export function createObservability(options = {}) {
   let logger = options.logger ?? console;
   let providers = [];
   let context = {};
+  let metadata = {};
   let initialized = false;
 
   async function callProvider(provider, methodName, args) {
@@ -43,6 +46,7 @@ export function createObservability(options = {}) {
       logger = config.logger ?? logger;
       providers = (config.providers ?? []).filter(isProviderEnabled);
       context = { ...(config.context ?? {}) };
+      metadata = { ...(config.metadata ?? {}) };
       initialized = true;
 
       await Promise.all(
@@ -52,20 +56,22 @@ export function createObservability(options = {}) {
 
     async track(eventName, properties = {}) {
       if (!initialized || !eventName) return;
+      const payload = buildEventPayload({ properties, context, metadata });
 
       await Promise.all(
         providers.map(provider =>
-          callProvider(provider, 'track', [eventName, { ...properties }, { context: getContext() }])
+          callProvider(provider, 'track', [eventName, payload, { context: getContext() }])
         )
       );
     },
 
     async page(path, properties = {}) {
       if (!initialized || !path) return;
+      const payload = buildEventPayload({ properties, context, metadata, route: path });
 
       await Promise.all(
         providers.map(provider =>
-          callProvider(provider, 'page', [path, { ...properties }, { context: getContext() }])
+          callProvider(provider, 'page', [payload.route, payload, { context: getContext() }])
         )
       );
     },
