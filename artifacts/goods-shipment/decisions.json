@@ -274,7 +274,7 @@
           "visibility": "discarded"
         },
         "orderLine": {
-          "visibility": "system"
+          "visibility": "discarded"
         },
         "locatorTo": {
           "visibility": "discarded"

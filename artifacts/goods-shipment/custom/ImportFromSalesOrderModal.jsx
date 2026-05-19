@@ -9,7 +9,7 @@ const fetchDocuments = async ({ base, headers, bpId, invoiceId: shipmentId }) =>
   const alreadyAddedOrderLines = new Set();
   if (shipmentLinesRes.ok) {
     const existing = (await shipmentLinesRes.json())?.response?.data || [];
-    existing.forEach(l => { if (l.orderLine) alreadyAddedOrderLines.add(l.orderLine); });
+    existing.forEach(l => { if (l.salesOrderLine) alreadyAddedOrderLines.add(l.salesOrderLine); });
   }
 
   let documents = [];
@@ -50,7 +50,7 @@ const buildLineBody = async ({ line, qty, invoiceId: shipmentId, lineNo }) => ({
   product: line.product,
   movementQuantity: qty,
   uOM: line.uOM || null,
-  orderLine: line.id,
+  salesOrderLine: line.id,
   lineNo,
 });
 
