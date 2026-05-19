@@ -25,6 +25,7 @@ import { useInstalledApps } from './hooks/useInstalledApps.js';
 import { useAppStoreUnlock, attachKeySequenceWatcher } from './hooks/useAppStoreUnlock.js';
 import { CurrencyProvider } from './hooks/useCurrency.jsx';
 import { buildOnboardingReturnTo } from './lib/oauthReturnTo.js';
+import { ObservabilityRouteTracker } from './lib/observability/RouteTracker.jsx';
 
 import ArtifactViewerPage from './pages/ArtifactViewerPage.jsx';
 
@@ -253,6 +254,7 @@ export default function App() {
 
   return (
     <BrowserRouter basename={routerBase}>
+      <ObservabilityRouteTracker />
       <ServiceWorkerManager />
       <AppStoreKeyWatcher />
       <LocaleProvider locale={locale} setLocale={setLocale}>

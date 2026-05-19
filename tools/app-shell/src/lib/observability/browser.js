@@ -1,4 +1,4 @@
-import { initObservability } from '../observability.js';
+import { initObservability, track } from '../observability.js';
 import { createMixpanelProvider } from './providers/mixpanel.js';
 import { createRumProvider } from '../rum.js';
 import { createSentryProvider } from '../sentry.js';
@@ -45,6 +45,10 @@ export function buildBrowserObservabilityConfig({
   };
 }
 
-export function initBrowserObservability(options = {}) {
-  return initObservability(buildBrowserObservabilityConfig(options));
+export async function initBrowserObservability(
+  options = {},
+  client = { initObservability, track }
+) {
+  await client.initObservability(buildBrowserObservabilityConfig(options));
+  await client.track('app_started');
 }
