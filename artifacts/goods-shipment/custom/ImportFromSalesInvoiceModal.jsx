@@ -1,21 +1,53 @@
 import ImportLinesModal from '@/components/contract-ui/ImportLinesModal';
 
-const fetchDocuments = async ({ base, headers, bpId }) => {
+async function fetchDraftQtyByOrderLine({ base, headers, bpId, currentShipmentId }) {
   const res = await fetch(
-    `${base}/sales-invoice/header?_startRow=0&_endRow=500&_sortBy=creationDate desc`,
+    `${base}/goods-shipment/header?_startRow=0&_endRow=100&_sortBy=movementDate desc`,
     { headers },
   );
+  if (!res.ok) return {};
+
+  const all = (await res.json())?.response?.data || [];
+  const otherDrafts = all.filter(s =>
+    s.documentStatus === 'DR' && s.businessPartner === bpId && s.id !== currentShipmentId,
+  );
+  if (otherDrafts.length === 0) return {};
+
+  const lineResults = await Promise.all(
+    otherDrafts.map(s =>
+      fetch(`${base}/goods-shipment/goodsShipmentLine?parentId=${s.id}&_startRow=0&_endRow=200`, { headers }),
+    ),
+  );
+
+  const draftQty = {};
+  for (const r of lineResults) {
+    if (!r.ok) continue;
+    const lines = (await r.json())?.response?.data || [];
+    lines.forEach(l => {
+      if (l.salesOrderLine) {
+        draftQty[l.salesOrderLine] = (draftQty[l.salesOrderLine] || 0) + (Number(l.movementQuantity) || 0);
+      }
+    });
+  }
+  return draftQty;
+}
+
+const fetchDocuments = async ({ base, headers, bpId, invoiceId: shipmentId }) => {
+  const [invoicesRes, draftQtyByOrderLine] = await Promise.all([
+    fetch(`${base}/sales-invoice/header?_startRow=0&_endRow=500&_sortBy=creationDate desc`, { headers }),
+    fetchDraftQtyByOrderLine({ base, headers, bpId, currentShipmentId: shipmentId }),
+  ]);
 
   let documents = [];
   const ordersByInvoiceId = {};
-  if (res.ok) {
-    const all = (await res.json())?.response?.data || [];
+  if (invoicesRes.ok) {
+    const all = (await invoicesRes.json())?.response?.data || [];
     documents = all.filter(o => o.documentStatus === 'CO' && o.businessPartner === bpId);
     documents.forEach(doc => {
       if (doc.salesOrder) ordersByInvoiceId[doc.id] = doc.salesOrder;
     });
   }
-  return { documents, sharedContext: { ordersByInvoiceId } };
+  return { documents, sharedContext: { ordersByInvoiceId, draftQtyByOrderLine } };
 };
 
 const fetchLines = async ({ base, headers, docId, sharedContext }) => {
@@ -44,10 +76,10 @@ const fetchLines = async ({ base, headers, docId, sharedContext }) => {
   return invoiceLines.map(l => {
     const qty = Number(l.invoicedQuantity) || 0;
     const alreadyLinked = !!l.goodsShipmentLine;
-    // Use direct FK first, fall back to matching by product within the linked order
     const orderLineId = l.salesOrderLine || orderLineByProduct[l.product];
     const delivered = orderLineId ? (deliveredByOrderLine[orderLineId] ?? 0) : 0;
-    const pending = alreadyLinked ? 0 : Math.max(0, qty - delivered);
+    const inOtherDrafts = orderLineId ? (sharedContext.draftQtyByOrderLine?.[orderLineId] || 0) : 0;
+    const pending = alreadyLinked ? 0 : Math.max(0, qty - delivered - inOtherDrafts);
     return {
       ...l,
       _orderLineId: orderLineId,
@@ -67,7 +99,6 @@ const buildLineBody = async ({ line, qty, invoiceId: shipmentId, lineNo }) => ({
   product: line.product,
   movementQuantity: qty,
   uOM: line.uOM || null,
-  // salesOrderLine sets C_OrderLine_ID → Java handler fills orderQuantity via JOIN
   ...(line._orderLineId ? { salesOrderLine: line._orderLineId } : {}),
   lineNo,
 });
