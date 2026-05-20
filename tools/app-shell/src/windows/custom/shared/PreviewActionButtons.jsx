@@ -55,6 +55,7 @@ export function PreviewEmptyPanel({ icon, text }) {
   );
 }
 
+/** Shared PDF left-panel for document preview modals: spinner → error → iframe. */
 export function PreviewPdfPanel({ pdfLoading, pdfError, pdfUrl, generatingText, errorText }) {
   return (
     <div className="flex flex-col h-full min-h-0 w-full overflow-hidden">

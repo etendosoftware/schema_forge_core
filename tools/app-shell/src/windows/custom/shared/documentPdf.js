@@ -237,6 +237,8 @@ export const DOCUMENT_TEMPLATE = `<!DOCTYPE html>
 // ---------------------------------------------------------------------------
 // Shared document data helpers — used by all document PDF data builders
 // ---------------------------------------------------------------------------
+
+/** Fetches the company logo (as data URL) and the customer's location address in parallel. */
 export async function fetchDocumentAssets(session, header, base, token) {
   const [companyLogoDataUrl, partnerLocation] = await Promise.all([
     fetchImageDataUrl(session?.yourCompanyDocumentImageId, base, token),
@@ -245,10 +247,16 @@ export async function fetchDocumentAssets(session, header, base, token) {
   return { companyLogoDataUrl, partnerLocation };
 }
 
+/** Returns a shallow copy of linesRaw sorted ascending by lineNo. */
 export function sortDocumentLines(linesRaw) {
   return [...linesRaw].sort((a, b) => (Number(a.lineNo) || 0) - (Number(b.lineNo) || 0));
 }
 
+/**
+ * Builds the company identity block for PDF templates.
+ * Falls back to header org fields when the session organization is unavailable.
+ * bpAddressFallback is used when header.partnerAddress$_identifier is absent (e.g. purchase-order).
+ */
 export function buildCompanyFields(session, header, companyLogoDataUrl, partnerLocation, bpAddressFallback = null) {
   const org = session?.organization ?? {};
   const customerAddressLines = buildLocationAddressLines(
