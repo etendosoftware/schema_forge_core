@@ -54,7 +54,7 @@ function buildChartData(transactions, currentStock, maxMonths = 12) {
   let months;
   if (maxMonths >= 999) {
     // "All time": use actual transaction date range, extended to current month
-    const allKeys = Object.keys(byMonth).sort();
+    const allKeys = Object.keys(byMonth).sort((a, b) => a.localeCompare(b));
     if (allKeys.length === 0) return null;
     months = allKeys;
     const now = new Date();

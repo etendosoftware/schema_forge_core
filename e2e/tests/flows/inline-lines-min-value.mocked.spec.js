@@ -1,0 +1,153 @@
+import { test, expect } from '@playwright/test';
+import { login } from '../helpers/auth.js';
+
+/**
+ * Inline lines min-value validation (mocked).
+ *
+ * Verifies the inline-edit min-value guard introduced in ETP-4005: typing a
+ * value below `col.min` adds a red border to the input via editInputClassName,
+ * blocks the PATCH autosave through hasValidationErrorRef, and clears the
+ * border once the user enters a valid value.
+ *
+ * The helpers `isValueBelowMin` and `editInputClassName` are covered by
+ * source-shape tests in InlineLinesPanel.helpers.test.js. This E2E spec
+ * exercises the behavior in a real browser context.
+ *
+ * Runs in mock mode — no Etendo backend required.
+ */
+
+const QUOT_ID = 'ilm-mock-quot-001';
+const LINE_ID = 'ilm-line-001';
+const BP_UUID = 'A94756453D1011D39A840050044F4CCE';
+
+const DRAFT_QUOTATION = {
+  id: QUOT_ID,
+  documentNo: 'CQ-ILM',
+  documentStatus: 'DR',
+  'documentStatus$_identifier': 'Borrador',
+  grandTotalAmount: 100,
+  summedLineAmount: 100,
+  businessPartner: BP_UUID,
+  'businessPartner$_identifier': 'Test BP',
+  'currency$_identifier': 'EUR',
+};
+
+const QUOTATION_LINE = {
+  id: LINE_ID,
+  lineNo: 10,
+  product: 'prod-1',
+  'product$_identifier': 'Test Product',
+  orderedQuantity: 2,
+  listPrice: 50,
+  discount: 0,
+  lineGrossAmount: 100,
+  tax: 'tax-1',
+  'tax$_identifier': 'IVA 21%',
+  'currency$_identifier': 'EUR',
+};
+
+async function installQuotationMocks(page, { onPatch } = {}) {
+  await page.route('**/sws/neo/sales-quotation/quotation?**', async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ response: { data: [DRAFT_QUOTATION], totalRows: 1 } }),
+    });
+  });
+  await page.route(`**/sws/neo/sales-quotation/quotation/${QUOT_ID}`, async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ response: { data: [DRAFT_QUOTATION] } }),
+    });
+  });
+  await page.route(`**/sws/neo/sales-quotation/header/${QUOT_ID}`, async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ response: { data: [DRAFT_QUOTATION] } }),
+    });
+  });
+  await page.route('**/sws/neo/sales-quotation/quotationLine**', async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ response: { data: [QUOTATION_LINE], totalRows: 1 } }),
+    });
+  });
+  await page.route('**/sws/neo/sales-quotation/quotationLine/**', async (route) => {
+    if (route.request().method() !== 'PATCH') return route.continue();
+    const body = JSON.parse(route.request().postData() || '{}');
+    onPatch?.({ url: route.request().url(), body });
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ response: { data: [{ ...QUOTATION_LINE, ...body }] } }),
+    });
+  });
+}
+
+test.describe('Inline lines min-value validation (mocked)', () => {
+  let patchCalls;
+
+  test.beforeEach(async ({ page }) => {
+    patchCalls = [];
+    await login(page);
+    await installQuotationMocks(page, { onPatch: (info) => patchCalls.push(info) });
+    await page.goto(`/sales-quotation/${QUOT_ID}`);
+    await page.waitForSelector('[data-testid="inline-lines-panel"]', { timeout: 8_000 });
+  });
+
+  test('entering a negative orderedQuantity adds border-red-500 to the input', async ({ page }) => {
+    const row = page.locator(`[data-testid="line-row-${LINE_ID}"]`);
+    await row.dispatchEvent('mouseover');
+    await row.locator('[data-testid="line-actions"] button').first().dispatchEvent('click');
+
+    const qtyField = row.locator('[data-testid="field-orderedQuantity"]');
+    await expect(qtyField).toBeVisible({ timeout: 3_000 });
+    await qtyField.fill('-1');
+    await qtyField.blur();
+
+    // commitField detects value < min=0 and sets invalidCell → editInputClassName
+    // adds border-red-500 to the Input's className.
+    await expect(qtyField).toHaveClass(/border-red-500/, { timeout: 3_000 });
+  });
+
+  test('entering a negative orderedQuantity blocks the PATCH request', async ({ page }) => {
+    const row = page.locator(`[data-testid="line-row-${LINE_ID}"]`);
+    await row.dispatchEvent('mouseover');
+    await row.locator('[data-testid="line-actions"] button').first().dispatchEvent('click');
+
+    const qtyField = row.locator('[data-testid="field-orderedQuantity"]');
+    await expect(qtyField).toBeVisible({ timeout: 3_000 });
+    await qtyField.fill('-1');
+    await qtyField.blur();
+
+    // Give the autosave path a chance to fire if commitField did not short-circuit.
+    await page.waitForTimeout(500);
+
+    // commitField returned early on min violation → no PATCH for orderedQuantity.
+    const quantityPatches = patchCalls.filter((c) => c.body.orderedQuantity !== undefined);
+    expect(quantityPatches).toHaveLength(0);
+  });
+
+  test('correcting the invalid value clears the red border and fires the PATCH', async ({ page }) => {
+    const row = page.locator(`[data-testid="line-row-${LINE_ID}"]`);
+    await row.dispatchEvent('mouseover');
+    await row.locator('[data-testid="line-actions"] button').first().dispatchEvent('click');
+
+    const qtyField = row.locator('[data-testid="field-orderedQuantity"]');
+    await expect(qtyField).toBeVisible({ timeout: 3_000 });
+
+    // Invalid value → red border.
+    await qtyField.fill('-1');
+    await qtyField.blur();
+    await expect(qtyField).toHaveClass(/border-red-500/, { timeout: 3_000 });
+
+    // The row stays in edit mode (hasValidationErrorRef prevents close-on-outside-click).
+    // Entering a valid value directly commits and clears invalidCell.
+    await qtyField.fill('3');
+    await qtyField.blur();
+
+    await expect(qtyField).not.toHaveClass(/border-red-500/, { timeout: 3_000 });
+  });
+});

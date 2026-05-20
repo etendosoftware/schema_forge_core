@@ -21,7 +21,7 @@ const labelOverrides = {
   "en_US": {
     "Name": "Legal Name",
     "FIN_Financial_Account_ID": "Account",
-    "PO_Financial_Account_ID": "Account",
+    "PO_Financial_Account_ID": "Expense Account",
     "EM_Etgo_Web": "Website",
     "EM_Etgo_Firstname": "First Name",
     "EM_Etgo_Lastname": "Last Name"
@@ -30,7 +30,7 @@ const labelOverrides = {
     "Name": "Razón Social",
     "EM_Etgo_Identifier": "Identificador",
     "FIN_Financial_Account_ID": "Cuenta",
-    "PO_Financial_Account_ID": "Cuenta",
+    "PO_Financial_Account_ID": "Cuenta contable de gastos",
     "EM_Etgo_Web": "Página web",
     "EM_Etgo_Firstname": "Nombre",
     "EM_Etgo_Lastname": "Apellidos"
@@ -641,7 +641,7 @@ export const api = {
     "en_US": {
       "Name": "Legal Name",
       "FIN_Financial_Account_ID": "Account",
-      "PO_Financial_Account_ID": "Account",
+      "PO_Financial_Account_ID": "Expense Account",
       "EM_Etgo_Web": "Website",
       "EM_Etgo_Firstname": "First Name",
       "EM_Etgo_Lastname": "Last Name"
@@ -650,7 +650,7 @@ export const api = {
       "Name": "Razón Social",
       "EM_Etgo_Identifier": "Identificador",
       "FIN_Financial_Account_ID": "Cuenta",
-      "PO_Financial_Account_ID": "Cuenta",
+      "PO_Financial_Account_ID": "Cuenta contable de gastos",
       "EM_Etgo_Web": "Página web",
       "EM_Etgo_Firstname": "Nombre",
       "EM_Etgo_Lastname": "Apellidos"
@@ -689,6 +689,7 @@ export default function BusinessPartnerPage({ windowName, recordId, ...props }) 
           { key: 'bankFormat', column: 'BankFormat', type: 'select', required: true, label: 'Bank Account Format', defaultValue: 'GENERIC', options: [{ value: 'GENERIC', label: 'Use Generic Account No.' }, { value: 'IBAN', label: 'Use IBAN' }, { value: 'SWIFT', label: 'Use SWIFT + Generic Account No.' }, { value: 'SPANISH', label: 'Use Spanish' }] },
           { key: 'accountNo', column: 'AccountNo', type: 'text', label: 'Generic Account No.' },
           { key: 'iBAN', column: 'Iban', type: 'text', label: 'IBAN' },
+          { key: 'swiftCode', column: 'SwiftCode', type: 'text', label: 'SWIFT Code' },
           ], derived: [], hidden: [] }, requireSavedRecord: true },
           { key: 'locationAddress', label: 'Location', Table: LocationAddressTable, customAddModal: LocationEditorModal, requireSavedRecord: true },
         ]}

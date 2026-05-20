@@ -219,6 +219,52 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
 - Sales-order, purchase-order, sales-quotation: directly inside `DetailView` at the bottom-right of the detail layout (uses `lineConfig` built from the summary + line fields).
 - Sales-invoice, purchase-invoice: inside the custom `InvoiceBottomPanel` / `PurchaseInvoiceBottomPanel` which hosts the right column of the docs/notes/totals footer.
 
+## Notes field — auto-save on blur
+
+Windows that declare `notesField` in `decisions.json` render a free-text `Notas` textarea in the bottom section of the detail view (via `LinesBottomSection.jsx`). The field behaves differently from the rest of the header form: it does not require the user to click the main Save button. Instead, it saves automatically when the textarea loses focus.
+
+**Trigger and mechanism**
+
+`DetailView.jsx` exposes a `handleNotesSave(value)` function that fires on the textarea's `onBlur` event. When the user clicks outside the field (or tabs away), `handleNotesSave` fires a `PATCH` request containing only the notes field (`{ [notesFieldKey]: value }`) to the header endpoint. This is a best-effort, non-blocking save: no page reload occurs after the PATCH completes.
+
+`LinesBottomSection.jsx` receives `onNotesSave` as a prop and wires it to the textarea's `onBlur` handler. No button press is required.
+
+**Feedback**
+
+On a successful PATCH, a `sonner` toast notification appears with the i18n key `noteSaved` ("Nota guardada" in Spanish, "Note saved" in English). On failure the toast shows the PATCH error without blocking further interaction.
+
+**Behavior on completed documents**
+
+The auto-save mechanism works regardless of the document's completion status. On completed documents the standard Save and Save Draft buttons are hidden (`hideSaveStatuses` in `HeaderPage`), so the notes field is the only editable surface that persists data without forcing a reactivation cycle. This is by design: operators frequently need to annotate a completed document (e.g. delivery notes, payment reminders) without reopening it.
+
+**Relationship to the total-discount onBlur pattern**
+
+This pattern mirrors the `etgoTotalDiscount` blur save already documented in the `DocumentTotalsPanel` section: both use `handleXSave` functions in `DetailView` that fire a single-field `PATCH` on blur, return a toast, and do not reload the page. The two patterns are intentionally symmetric so that any completed document can be annotated or discounted without needing a full edit cycle.
+
+**Affected windows**
+
+All windows that declare `notesField: "description"` in their `decisions.json` pick up this behavior automatically from the shared `DetailView.jsx` and `LinesBottomSection.jsx` components. At the time of writing, those windows are:
+
+- sales-order
+- sales-invoice
+- purchase-order
+- sales-quotation
+- payment-in
+- payment-out
+- purchase-invoice
+- goods-shipment
+- return-to-vendor
+- return-to-vendor-shipment
+- return-from-customer
+- return-material-receipt
+
+**i18n keys** (both `en_US.json` and `es_ES.json`):
+- `noteSaved` — "Nota guardada" / "Note saved"
+
+**Source files**
+- `tools/app-shell/src/components/contract-ui/DetailView.jsx` — `handleNotesSave` function
+- `tools/app-shell/src/components/contract-ui/LinesBottomSection.jsx` — `onNotesSave` prop wired to the textarea `onBlur`
+
 ## Current coverage gaps worth knowing
 
 - There is no end-to-end browser test that walks from `/onboarding` through `/dashboard` into a generated window.
@@ -226,3 +272,34 @@ Any authenticated route can also be opened with `?embedded=1`; in that mode the 
 - `useEntity` child-row refresh behavior and 401 logout behavior are code-backed but not directly covered by a dedicated UI test.
 - A fresh direct run of `tools/app-shell/src/auth/__tests__/api.test.js` currently fails because `tools/app-shell/src/auth/api.js` reads `window` during module import; treat that file as a pending test harness fix, not as a green automated proof point.
 - OAuth2 and PWA coverage is strong at source/build level, but still not browser-level E2E.
+
+## Shared validation & UX changes — ETP-4005
+
+These behaviors apply to **all document windows** (sales-order, sales-invoice, purchase-order, purchase-invoice, sales-quotation) and are implemented in shared components.
+
+### Required field validation on new inline line
+
+When a new inline line is submitted with a required field left empty (for example, `product`), the empty field is highlighted with a red border and a toast notification is shown. The add-row remains open so the user can correct the missing value without losing the rest of the entered data.
+
+### Single toast on document confirmation
+
+Previously, completing a document produced two successive toasts — "Registro guardado" followed by "Registro procesado". After ETP-4005 only the "Registro procesado" toast fires on a successful confirmation. The intermediate save toast was removed to reduce noise in the confirmation flow.
+
+### Callout message sanitization
+
+Backend callout messages are sanitized before display: HTML tags (such as `<br/>`) are stripped and common redundant prefixes ("Note:", "Warning:") are removed from the message string. Users see plain-text callout feedback without raw markup.
+
+### Inline line min-value validation
+
+Fields with a `min: 0` constraint — `invoicedQuantity`, `listPrice`, and `etgoDiscount` — now show a red border when the user types a negative value during inline edit. The row remains open and the save/confirm path for that row is blocked until the value is corrected or the edit is cancelled. The constraint is enforced client-side by `InlineLinesPanel` using the `min` metadata from the contract field definition.
+
+### Payment modal date validation
+
+The `date` field in `AddPaymentModal` / `InvoicePaymentModal` now carries a red asterisk (*) indicating it is required. The "Confirm payment" button is disabled while the date field is empty, preventing submission without a date. When the user attempts submission with no date or when the backend returns a 400 response, a descriptive translated error message is shown instead of the raw "Failed (400)" string. The error message is resolved via the i18n key `paymentDateRequired` in both `en_US.json` and `es_ES.json`.
+
+**Source files**
+- `tools/app-shell/src/components/contract-ui/DataTable.jsx` — `isMissingRequired`, `isBelowMin` helpers; `invalidFields` state in `InlineAddRow`
+- `tools/app-shell/src/components/contract-ui/InlineLinesPanel.jsx` — `isValueBelowMin` helper; `invalidCell` state; `hasValidationErrorRef` keeps edit mode open on validation failure
+- `tools/app-shell/src/hooks/useEntity.js` — `handleSaveAndProcess` passes `{ silent: true }` to `handleSave` to suppress the intermediate save toast
+- `tools/app-shell/src/hooks/useCallout.js` — `sanitizeCalloutMessage` strips HTML and redundant prefixes before passing text to Sonner
+- `tools/app-shell/src/windows/custom/shared/InvoicePaymentModal.jsx` — `invalidField` state, date/amount/account validation, disabled confirm button

@@ -4,7 +4,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useUI } from '@/i18n';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import { useRowDelete } from '@/hooks/useRowDelete';
-import { buildPendingDeliveryFilter } from '../shared/pendingDeliveryFilter.js';
 import GeneratedApp from '@generated/sales-order/generated/web/sales-order/index.jsx';
 import HeaderTable from '@generated/sales-order/generated/web/sales-order/HeaderTable';
 import OrderReactivateBulkAction from '@generated/sales-order/custom/OrderReactivateBulkAction';
@@ -53,6 +52,7 @@ const draftModeWithModal = {
   processField: 'documentAction',
   processValue: 'CO',
   label: 'soConfirmBtn',
+  disableWhenEmpty: true,
   onConfirm: () => window.dispatchEvent(new CustomEvent('sales-order:open-confirm-modal')),
 };
 
@@ -164,9 +164,6 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
     );
   }
 
-  const { initialColumnFilters, isPendingDelivery, initialAdvancedFilter } =
-    buildPendingDeliveryFilter(searchParams, 'deliveryStatus');
-
   return (
     <>
       <ListView
@@ -187,9 +184,6 @@ export default function SalesOrderWindow({ windowName, recordId, token, apiBaseU
             <OrderReactivateBulkAction {...ctx} />
           </>
         )}
-        initialColumnFilters={initialColumnFilters}
-        initialAdvancedFilter={initialAdvancedFilter}
-        initialColumns={isPendingDelivery ? LIST_COLUMNS : null}
         dateFilterKey="orderDate"
         refreshTrigger={refreshKey}
         {...rest}

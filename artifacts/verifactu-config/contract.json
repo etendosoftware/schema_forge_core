@@ -1,13 +1,15 @@
 {
   "version": "0.1.0",
   "generatedAt": "2026-04-28T16:08:39.756Z",
-  "checksum": "8bfab17c16360e93",
+  "updatedAt": "2026-05-15T16:00:56.382Z",
+  "checksum": "a066722139e468a9",
   "frontendContract": {
     "window": {
       "id": "27A453FA86974745977672F1A8DCCEFF",
       "name": "Verifactu Config",
       "primaryEntity": "cabeceraDeConfiguraciónVerifactu",
       "category": "configuration",
+      "attachments": false,
       "layoutType": "default"
     },
     "entities": {
@@ -175,7 +177,8 @@
       "id": "27A453FA86974745977672F1A8DCCEFF",
       "name": "Verifactu Config",
       "primaryEntity": "cabeceraDeConfiguraciónVerifactu",
-      "category": "configuration"
+      "category": "configuration",
+      "attachments": false
     },
     "entities": {
       "cabeceraDeConfiguraciónVerifactu": {
@@ -415,7 +418,7 @@
       },
       "sorting": {
         "param": "_sortBy",
-        "example": "_sortBy=verifactu-configDate"
+        "example": "_sortBy=creationDate desc"
       },
       "filtering": "Use field name as query param: ?fieldName=value",
       "parentFilter": "parentId={id} for child entities"
@@ -427,312 +430,7 @@
   "testManifest": {
     "tests": [
       {
-        "id": "t-1",
-        "category": "field-presence",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "tAXType",
-        "runner": "node",
-        "description": "Field 'tAXType' should be present in cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-2",
-        "category": "field-presence",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "defaultQR",
-        "runner": "node",
-        "description": "Field 'defaultQR' should be present in cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-3",
-        "category": "field-presence",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "issuerNIF",
-        "runner": "node",
-        "description": "Field 'issuerNIF' should be present in cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-4",
-        "category": "field-presence",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "systemStartat",
-        "runner": "node",
-        "description": "Field 'systemStartat' should be present in cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-5",
-        "category": "field-presence",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "systemStopat",
-        "runner": "node",
-        "description": "Field 'systemStopat' should be present in cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-6",
-        "category": "field-presence",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "incidentReport",
-        "runner": "node",
-        "description": "Field 'incidentReport' should be present in cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-7",
-        "category": "field-presence",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "isReady",
-        "runner": "node",
-        "description": "Field 'isReady' should be present in cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-8",
-        "category": "field-presence",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "inVfactuSystem",
-        "runner": "node",
-        "description": "Field 'inVfactuSystem' should be present in cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-9",
-        "category": "field-type",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "tAXType",
-        "runner": "node",
-        "description": "Field 'tAXType' should have type 'string' in cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-10",
-        "category": "field-type",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "defaultQR",
-        "runner": "node",
-        "description": "Field 'defaultQR' should have type 'boolean' in cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-11",
-        "category": "field-type",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "issuerNIF",
-        "runner": "node",
-        "description": "Field 'issuerNIF' should have type 'string' in cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-12",
-        "category": "field-type",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "systemStartat",
-        "runner": "node",
-        "description": "Field 'systemStartat' should have type 'string' in cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-13",
-        "category": "field-type",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "systemStopat",
-        "runner": "node",
-        "description": "Field 'systemStopat' should have type 'string' in cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-14",
-        "category": "field-type",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "incidentReport",
-        "runner": "node",
-        "description": "Field 'incidentReport' should have type 'string' in cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-15",
-        "category": "field-type",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "isReady",
-        "runner": "node",
-        "description": "Field 'isReady' should have type 'string' in cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-16",
-        "category": "field-type",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "inVfactuSystem",
-        "runner": "node",
-        "description": "Field 'inVfactuSystem' should have type 'string' in cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-17",
-        "category": "visibility",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "runner": "node",
-        "description": "Entity 'cabeceraDeConfiguraciónVerifactu' should only expose visible fields in frontend"
-      },
-      {
-        "id": "t-18",
-        "category": "displaylogic-valid",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "isReady",
-        "runner": "node",
-        "description": "Display logic for 'isReady' in cabeceraDeConfiguraciónVerifactu should be valid JS"
-      },
-      {
-        "id": "t-19",
-        "category": "readonlylogic-valid",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "tAXType",
-        "runner": "node",
-        "description": "Read-only logic for 'tAXType' in cabeceraDeConfiguraciónVerifactu should be valid JS"
-      },
-      {
-        "id": "t-20",
-        "category": "displaylogic-evaluable",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "isReady",
-        "runner": "node",
-        "description": "Display logic for 'isReady' in cabeceraDeConfiguraciónVerifactu should have evaluable flag"
-      },
-      {
-        "id": "t-21",
-        "category": "readonlylogic-evaluable",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "tAXType",
-        "runner": "node",
-        "description": "Read-only logic for 'tAXType' in cabeceraDeConfiguraciónVerifactu should have evaluable flag"
-      },
-      {
-        "id": "t-22",
-        "category": "default-value-type",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "defaultQR",
-        "runner": "node",
-        "description": "Default value for 'defaultQR' in cabeceraDeConfiguraciónVerifactu should be a string"
-      },
-      {
-        "id": "t-23",
-        "category": "default-value-type",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "isReady",
-        "runner": "node",
-        "description": "Default value for 'isReady' in cabeceraDeConfiguraciónVerifactu should be a string"
-      },
-      {
-        "id": "t-24",
-        "category": "system-field",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "organization",
-        "runner": "node",
-        "description": "System field 'organization' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-25",
-        "category": "system-field",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "active",
-        "runner": "node",
-        "description": "System field 'active' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-26",
-        "category": "system-field",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "client",
-        "runner": "node",
-        "description": "System field 'client' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-27",
-        "category": "system-field",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "verifactuConfig",
-        "runner": "node",
-        "description": "System field 'verifactuConfig' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-28",
-        "category": "system-field",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "creationDate",
-        "runner": "node",
-        "description": "System field 'creationDate' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-29",
-        "category": "system-field",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "createdBy",
-        "runner": "node",
-        "description": "System field 'createdBy' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-30",
-        "category": "system-field",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "isDevEnv",
-        "runner": "node",
-        "description": "System field 'isDevEnv' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-31",
-        "category": "system-field",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "nextSendWaitTime",
-        "runner": "node",
-        "description": "System field 'nextSendWaitTime' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-32",
-        "category": "system-field",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "refreshData",
-        "runner": "node",
-        "description": "System field 'refreshData' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-33",
-        "category": "system-field",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "updated",
-        "runner": "node",
-        "description": "System field 'updated' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-34",
-        "category": "system-field",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "field": "updatedBy",
-        "runner": "node",
-        "description": "System field 'updatedBy' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
-      },
-      {
-        "id": "t-35",
-        "category": "rule-declared",
-        "rule": "AddNIFToVFactuConfig_AD_Org_ID",
-        "runner": "node",
-        "description": "Rule 'AddNIFToVFactuConfig_AD_Org_ID' (callout) should be declared"
-      },
-      {
-        "id": "t-36",
-        "category": "rule-declared",
-        "runner": "node",
-        "description": "Rule 'undefined' (readOnlyLogic) should be declared"
-      },
-      {
-        "id": "t-37",
-        "category": "rule-declared",
-        "rule": "Marcar Como Listo",
-        "runner": "node",
-        "description": "Rule 'Marcar Como Listo' (process) should be declared"
-      },
-      {
-        "id": "t-38",
-        "category": "rule-declared",
-        "rule": "Refrescar monitor Verifactu",
-        "runner": "node",
-        "description": "Rule 'Refrescar monitor Verifactu' (process) should be declared"
-      },
-      {
-        "id": "t-39",
-        "category": "crud-flags",
-        "entity": "cabeceraDeConfiguraciónVerifactu",
-        "runner": "node",
-        "description": "CRUD flags for 'cabeceraDeConfiguraciónVerifactu' should all be booleans"
-      },
-      {
-        "id": "t-40",
+        "id": "t-action-endpoint-cabeceraDeConfiguraci-nVerifactu-isReady",
         "category": "action-endpoint",
         "entity": "cabeceraDeConfiguraciónVerifactu",
         "field": "isReady",
@@ -740,32 +438,345 @@
         "description": "Action endpoint for 'isReady' in cabeceraDeConfiguraciónVerifactu should exist"
       },
       {
-        "id": "t-41",
+        "id": "t-action-endpoint-cabeceraDeConfiguraci-nVerifactu-refreshData",
         "category": "action-endpoint",
         "entity": "cabeceraDeConfiguraciónVerifactu",
         "field": "refreshData",
         "runner": "node",
         "description": "Action endpoint for 'refreshData' in cabeceraDeConfiguraciónVerifactu should exist"
+      },
+      {
+        "id": "t-crud-flags-cabeceraDeConfiguraci-nVerifactu",
+        "category": "crud-flags",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "runner": "node",
+        "description": "CRUD flags for 'cabeceraDeConfiguraciónVerifactu' should all be booleans"
+      },
+      {
+        "id": "t-default-value-type-cabeceraDeConfiguraci-nVerifactu-defaultQR",
+        "category": "default-value-type",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "defaultQR",
+        "runner": "node",
+        "description": "Default value for 'defaultQR' in cabeceraDeConfiguraciónVerifactu should be a string"
+      },
+      {
+        "id": "t-default-value-type-cabeceraDeConfiguraci-nVerifactu-isReady",
+        "category": "default-value-type",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "isReady",
+        "runner": "node",
+        "description": "Default value for 'isReady' in cabeceraDeConfiguraciónVerifactu should be a string"
+      },
+      {
+        "id": "t-displaylogic-evaluable-cabeceraDeConfiguraci-nVerifactu-isReady",
+        "category": "displaylogic-evaluable",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "isReady",
+        "runner": "node",
+        "description": "Display logic for 'isReady' in cabeceraDeConfiguraciónVerifactu should have evaluable flag"
+      },
+      {
+        "id": "t-displaylogic-valid-cabeceraDeConfiguraci-nVerifactu-isReady",
+        "category": "displaylogic-valid",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "isReady",
+        "runner": "node",
+        "description": "Display logic for 'isReady' in cabeceraDeConfiguraciónVerifactu should be valid JS"
+      },
+      {
+        "id": "t-field-presence-cabeceraDeConfiguraci-nVerifactu-defaultQR",
+        "category": "field-presence",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "defaultQR",
+        "runner": "node",
+        "description": "Field 'defaultQR' should be present in cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-field-presence-cabeceraDeConfiguraci-nVerifactu-incidentReport",
+        "category": "field-presence",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "incidentReport",
+        "runner": "node",
+        "description": "Field 'incidentReport' should be present in cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-field-presence-cabeceraDeConfiguraci-nVerifactu-inVfactuSystem",
+        "category": "field-presence",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "inVfactuSystem",
+        "runner": "node",
+        "description": "Field 'inVfactuSystem' should be present in cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-field-presence-cabeceraDeConfiguraci-nVerifactu-isReady",
+        "category": "field-presence",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "isReady",
+        "runner": "node",
+        "description": "Field 'isReady' should be present in cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-field-presence-cabeceraDeConfiguraci-nVerifactu-issuerNIF",
+        "category": "field-presence",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "issuerNIF",
+        "runner": "node",
+        "description": "Field 'issuerNIF' should be present in cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-field-presence-cabeceraDeConfiguraci-nVerifactu-systemStartat",
+        "category": "field-presence",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "systemStartat",
+        "runner": "node",
+        "description": "Field 'systemStartat' should be present in cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-field-presence-cabeceraDeConfiguraci-nVerifactu-systemStopat",
+        "category": "field-presence",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "systemStopat",
+        "runner": "node",
+        "description": "Field 'systemStopat' should be present in cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-field-presence-cabeceraDeConfiguraci-nVerifactu-tAXType",
+        "category": "field-presence",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "tAXType",
+        "runner": "node",
+        "description": "Field 'tAXType' should be present in cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-field-type-cabeceraDeConfiguraci-nVerifactu-defaultQR",
+        "category": "field-type",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "defaultQR",
+        "runner": "node",
+        "description": "Field 'defaultQR' should have type 'boolean' in cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-field-type-cabeceraDeConfiguraci-nVerifactu-incidentReport",
+        "category": "field-type",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "incidentReport",
+        "runner": "node",
+        "description": "Field 'incidentReport' should have type 'string' in cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-field-type-cabeceraDeConfiguraci-nVerifactu-inVfactuSystem",
+        "category": "field-type",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "inVfactuSystem",
+        "runner": "node",
+        "description": "Field 'inVfactuSystem' should have type 'string' in cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-field-type-cabeceraDeConfiguraci-nVerifactu-isReady",
+        "category": "field-type",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "isReady",
+        "runner": "node",
+        "description": "Field 'isReady' should have type 'string' in cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-field-type-cabeceraDeConfiguraci-nVerifactu-issuerNIF",
+        "category": "field-type",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "issuerNIF",
+        "runner": "node",
+        "description": "Field 'issuerNIF' should have type 'string' in cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-field-type-cabeceraDeConfiguraci-nVerifactu-systemStartat",
+        "category": "field-type",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "systemStartat",
+        "runner": "node",
+        "description": "Field 'systemStartat' should have type 'string' in cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-field-type-cabeceraDeConfiguraci-nVerifactu-systemStopat",
+        "category": "field-type",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "systemStopat",
+        "runner": "node",
+        "description": "Field 'systemStopat' should have type 'string' in cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-field-type-cabeceraDeConfiguraci-nVerifactu-tAXType",
+        "category": "field-type",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "tAXType",
+        "runner": "node",
+        "description": "Field 'tAXType' should have type 'string' in cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-readonlylogic-evaluable-cabeceraDeConfiguraci-nVerifactu-tAXType",
+        "category": "readonlylogic-evaluable",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "tAXType",
+        "runner": "node",
+        "description": "Read-only logic for 'tAXType' in cabeceraDeConfiguraciónVerifactu should have evaluable flag"
+      },
+      {
+        "id": "t-readonlylogic-valid-cabeceraDeConfiguraci-nVerifactu-tAXType",
+        "category": "readonlylogic-valid",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "tAXType",
+        "runner": "node",
+        "description": "Read-only logic for 'tAXType' in cabeceraDeConfiguraciónVerifactu should be valid JS"
+      },
+      {
+        "id": "t-rule-declared-AddNIFToVFactuConfig-AD-Org-ID",
+        "category": "rule-declared",
+        "rule": "AddNIFToVFactuConfig_AD_Org_ID",
+        "runner": "node",
+        "description": "Rule 'AddNIFToVFactuConfig_AD_Org_ID' (callout) should be declared"
+      },
+      {
+        "id": "t-rule-declared-etvfac-verifactu-config-TAX-Type-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "etvfac_verifactu_config-TAX_Type-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'etvfac_verifactu_config-TAX_Type-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Marcar-Como-Listo",
+        "category": "rule-declared",
+        "rule": "Marcar Como Listo",
+        "runner": "node",
+        "description": "Rule 'Marcar Como Listo' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-Refrescar-monitor-Verifactu",
+        "category": "rule-declared",
+        "rule": "Refrescar monitor Verifactu",
+        "runner": "node",
+        "description": "Rule 'Refrescar monitor Verifactu' (process) should be declared"
+      },
+      {
+        "id": "t-rule-declared-verifactu-config-Cabecera-de-Configuraci-n-Verifactu-IS-Ready-displayLogic",
+        "category": "rule-declared",
+        "rule": "verifactu-config-Cabecera de Configuración Verifactu-IS_Ready-displayLogic",
+        "runner": "node",
+        "description": "Rule 'verifactu-config-Cabecera de Configuración Verifactu-IS_Ready-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-system-field-cabeceraDeConfiguraci-nVerifactu-active",
+        "category": "system-field",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "active",
+        "runner": "node",
+        "description": "System field 'active' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-system-field-cabeceraDeConfiguraci-nVerifactu-client",
+        "category": "system-field",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "client",
+        "runner": "node",
+        "description": "System field 'client' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-system-field-cabeceraDeConfiguraci-nVerifactu-createdBy",
+        "category": "system-field",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "createdBy",
+        "runner": "node",
+        "description": "System field 'createdBy' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-system-field-cabeceraDeConfiguraci-nVerifactu-creationDate",
+        "category": "system-field",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "creationDate",
+        "runner": "node",
+        "description": "System field 'creationDate' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-system-field-cabeceraDeConfiguraci-nVerifactu-isDevEnv",
+        "category": "system-field",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "isDevEnv",
+        "runner": "node",
+        "description": "System field 'isDevEnv' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-system-field-cabeceraDeConfiguraci-nVerifactu-nextSendWaitTime",
+        "category": "system-field",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "nextSendWaitTime",
+        "runner": "node",
+        "description": "System field 'nextSendWaitTime' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-system-field-cabeceraDeConfiguraci-nVerifactu-organization",
+        "category": "system-field",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "organization",
+        "runner": "node",
+        "description": "System field 'organization' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-system-field-cabeceraDeConfiguraci-nVerifactu-refreshData",
+        "category": "system-field",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "refreshData",
+        "runner": "node",
+        "description": "System field 'refreshData' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-system-field-cabeceraDeConfiguraci-nVerifactu-updated",
+        "category": "system-field",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "updated",
+        "runner": "node",
+        "description": "System field 'updated' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-system-field-cabeceraDeConfiguraci-nVerifactu-updatedBy",
+        "category": "system-field",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "updatedBy",
+        "runner": "node",
+        "description": "System field 'updatedBy' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-system-field-cabeceraDeConfiguraci-nVerifactu-verifactuConfig",
+        "category": "system-field",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "field": "verifactuConfig",
+        "runner": "node",
+        "description": "System field 'verifactuConfig' should exist in backend but not frontend for cabeceraDeConfiguraciónVerifactu"
+      },
+      {
+        "id": "t-visibility-cabeceraDeConfiguraci-nVerifactu",
+        "category": "visibility",
+        "entity": "cabeceraDeConfiguraciónVerifactu",
+        "runner": "node",
+        "description": "Entity 'cabeceraDeConfiguraciónVerifactu' should only expose visible fields in frontend"
       }
     ],
     "summary": {
-      "total": 41,
+      "total": 42,
       "byCategory": {
+        "action-endpoint": 2,
+        "crud-flags": 1,
+        "default-value-type": 2,
+        "displaylogic-evaluable": 1,
+        "displaylogic-valid": 1,
         "field-presence": 8,
         "field-type": 8,
-        "visibility": 1,
-        "displaylogic-valid": 1,
-        "readonlylogic-valid": 1,
-        "displaylogic-evaluable": 1,
         "readonlylogic-evaluable": 1,
-        "default-value-type": 2,
+        "readonlylogic-valid": 1,
+        "rule-declared": 5,
         "system-field": 11,
-        "rule-declared": 4,
-        "crud-flags": 1,
-        "action-endpoint": 2
+        "visibility": 1
       },
       "byRunner": {
-        "node": 41,
+        "node": 42,
         "junit": 0
       }
     }

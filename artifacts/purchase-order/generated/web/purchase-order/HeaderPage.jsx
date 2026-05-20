@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { ListView, DetailView } from '@/components/contract-ui';
-import { toast } from 'sonner';
 import HeaderTable from './HeaderTable';
 import HeaderForm from './HeaderForm';
 import LinesTable from './LinesTable';
@@ -10,7 +9,6 @@ import { AttachmentsTab } from '@/components/attachments';
 import PurchaseOrderBottomPanel from '../../../custom/PurchaseOrderBottomPanel';
 import PurchaseOrderActions from '../../../custom/PurchaseOrderActions';
 import PurchaseOrderDraftChips from '../../../custom/PurchaseOrderDraftChips';
-import PurchaseOrderReactivateBulkAction from '../../../custom/PurchaseOrderReactivateBulkAction';
 import catalogs from './mockCatalogs';
 
 
@@ -70,9 +68,9 @@ const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["listPrice","unitPrice","tax","uOM","grossUnitPrice","discount"] },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
-    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity', defaultValue: 1 },
-    { key: 'listPrice', column: 'PriceList', type: 'number', required: true, label: 'Net List Price' },
-    { key: 'discount', column: 'Discount', type: 'number', label: 'Discount %', defaultValue: 0 },
+    { key: 'orderedQuantity', column: 'QtyOrdered', type: 'number', required: true, label: 'Ordered Quantity', defaultValue: 1, min: 0 },
+    { key: 'listPrice', column: 'PriceList', type: 'number', required: true, label: 'Net List Price', min: 0 },
+    { key: 'discount', column: 'Discount', type: 'number', label: 'Discount %', defaultValue: 0, min: 0 },
     { key: 'tax', column: 'C_Tax_ID', type: 'selector', required: true, label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineGrossAmount","grossUnitPrice","lineNetAmount"] },
   ],
   derived: [
@@ -671,9 +669,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
         bottomSection={PurchaseOrderBottomPanel}
         topbarRight={PurchaseOrderActions}
         topbarExtra={PurchaseOrderDraftChips}
-        menuActions={({ data, status }) => [
-          { key: 'reactivate', label: 'Reactivate', visible: status === 'CO' && !data?.hasLinkedDocuments, labelKey: 'reactivate', successKey: 'reactivated', documentAction: 'RE',  }
-        ]}
         draftMode={draftMode}
         requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}
@@ -693,7 +688,6 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="orderDate"
-      bulkActions={(ctx) => <PurchaseOrderReactivateBulkAction {...ctx} />}
       hidePrint
       labelOverrides={labelOverrides}
       rowQuickActions={{}}

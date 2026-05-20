@@ -45,7 +45,7 @@ const FIELDS = {
     // same display text so the row locator works across all four windows.
     extra: { 'businessPartner$_identifier': 'Test BP', grandTotalAmount: 100, invoiceDate: '2026-01-15' },
     docNoField: 'orderReference',
-    expects: { clone: true, email: true, more: false },
+    expects: { clone: true, email: false, more: false },
   },
 };
 

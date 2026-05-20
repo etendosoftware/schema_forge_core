@@ -251,4 +251,125 @@ describe('useCallout', () => {
     expect(result.current.calloutResult).toBeNull();
     vi.useFakeTimers();
   });
+
+  // ── Message sanitization (ETP-4005) ────────────────────────────────────────
+  //
+  // sanitizeCalloutMessage is internal to useCallout.js but its behaviour is
+  // fully observable through the toast calls that executeCallout fires after a
+  // successful callout response.
+  //
+  // Each test switches to real timers to await the async fetch and then switches
+  // back, because the outer beforeEach enables fake timers. The toast mock is
+  // imported at module level via vi.mock('sonner') so we reference it through
+  // the module import — clearAllMocks() resets call counts between tests.
+
+  describe('message sanitization', () => {
+    // Import the mocked toast module so we can assert on its methods.
+    let toastMock;
+
+    beforeAll(async () => {
+      const sonner = await import('sonner');
+      toastMock = sonner.toast;
+    });
+
+    beforeEach(() => {
+      // Switch to real timers so we can await the async fetch chain.
+      vi.useRealTimers();
+      globalThis.fetch = vi.fn();
+      vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+      vi.useFakeTimers();
+    });
+
+    function mockCalloutResponse(messages) {
+      globalThis.fetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ updates: {}, combos: {}, messages }),
+      });
+    }
+
+    // Triggers the callout and waits for the debounce + fetch to complete.
+    // With real timers, waitFor polls until the assertion passes (up to 1s),
+    // which is enough time for the 300ms debounce to fire.
+    async function triggerAndWait(result, assertFn) {
+      act(() => {
+        result.current.executeCallout('businessPartner', 'BP001', { id: '1' });
+      });
+      await waitFor(assertFn, { timeout: 2000 });
+    }
+
+    it('strips <br/> tags from the message text before calling toast', async () => {
+      mockCalloutResponse([{ type: 'INFO', text: 'Line one<br/>Line two' }]);
+      const { result } = renderHook(() => useCallout('header', opts));
+      await triggerAndWait(result, () => {
+        expect(toastMock.info).toHaveBeenCalledWith('Line one Line two');
+      });
+    });
+
+    it('strips other HTML tags from the message text', async () => {
+      mockCalloutResponse([{ type: 'INFO', text: '<b>Bold text</b> normal text' }]);
+      const { result } = renderHook(() => useCallout('header', opts));
+      await triggerAndWait(result, () => {
+        expect(toastMock.info).toHaveBeenCalledWith('Bold text normal text');
+      });
+    });
+
+    it('removes the "Note: " prefix before calling toast', async () => {
+      mockCalloutResponse([{ type: 'INFO', text: 'Note: This is a note' }]);
+      const { result } = renderHook(() => useCallout('header', opts));
+      await triggerAndWait(result, () => {
+        expect(toastMock.info).toHaveBeenCalledWith('This is a note');
+      });
+    });
+
+    it('removes the "Warning: " prefix and calls toast.warning', async () => {
+      mockCalloutResponse([{ type: 'WARNING', text: 'Warning: Check this field' }]);
+      const { result } = renderHook(() => useCallout('header', opts));
+      await triggerAndWait(result, () => {
+        expect(toastMock.warning).toHaveBeenCalledWith('Check this field');
+      });
+    });
+
+    it('removes the "Error: " prefix and calls toast.error', async () => {
+      mockCalloutResponse([{ type: 'ERROR', text: 'Error: Something went wrong' }]);
+      const { result } = renderHook(() => useCallout('header', opts));
+      await triggerAndWait(result, () => {
+        expect(toastMock.error).toHaveBeenCalledWith('Something went wrong');
+      });
+    });
+
+    it('skips the toast entirely when the message is empty after stripping', async () => {
+      // A message composed only of HTML → empty string after sanitize → no toast.
+      // Wait for fetch to be called (proves debounce fired + async chain ran),
+      // then assert no toast was emitted.
+      mockCalloutResponse([{ type: 'INFO', text: '<br/><br/>' }]);
+      const { result } = renderHook(() => useCallout('header', opts));
+      act(() => {
+        result.current.executeCallout('businessPartner', 'BP001', { id: '1' });
+      });
+      // Poll until the fetch mock has been called (debounce has fired).
+      await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(1), { timeout: 2000 });
+      // Let the microtask queue drain so the async chain inside the timeout fires.
+      await new Promise(r => setTimeout(r, 0));
+      expect(toastMock.info).not.toHaveBeenCalled();
+      expect(toastMock.warning).not.toHaveBeenCalled();
+      expect(toastMock.error).not.toHaveBeenCalled();
+    });
+
+    it('fires one toast per message when the backend returns multiple messages', async () => {
+      mockCalloutResponse([
+        { type: 'INFO', text: 'First message' },
+        { type: 'WARNING', text: 'Second message' },
+        { type: 'ERROR', text: 'Third message' },
+      ]);
+      const { result } = renderHook(() => useCallout('header', opts));
+      await triggerAndWait(result, () => {
+        expect(toastMock.error).toHaveBeenCalledWith('Third message');
+      });
+      expect(toastMock.info).toHaveBeenCalledWith('First message');
+      expect(toastMock.warning).toHaveBeenCalledWith('Second message');
+    });
+  });
 });

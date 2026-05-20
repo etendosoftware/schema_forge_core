@@ -1,9 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { useUI } from '@/i18n';
-import { buildLocationAddressLines } from '@/lib/locationAddress.js';
+import {
+  COMMON_HANDLEBARS_HELPERS,
+  fetchJson,
+  fetchAll,
+  fetchOptionalJson,
+  fetchLocationAddress,
+  fetchImageDataUrl,
+  buildLocationAddressLines,
+  renderPdf,
+} from './pdfUtils.js';
 
 // ---------------------------------------------------------------------------
-// Handlebars helpers (CommonJS for jsreport context)
+// Handlebars helpers — fmt formats as 2 decimal places (monetary amounts)
 // ---------------------------------------------------------------------------
 const HELPERS = `
 function fmt(v) {
@@ -12,15 +21,8 @@ function fmt(v) {
   if (isNaN(n)) return String(v);
   return new Intl.NumberFormat('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 }
-function fmtDate(v) {
-  if (!v) return '';
-  var d = new Date(v);
-  if (isNaN(d.getTime())) return String(v);
-  return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear();
-}
-function ifEq(a, b, opts) { return a === b ? opts.fn(this) : opts.inverse(this); }
 function add(a, b) { return (Number(a)||0) + (Number(b)||0); }
-`;
+` + COMMON_HANDLEBARS_HELPERS;
 
 // ---------------------------------------------------------------------------
 // CSS
@@ -106,6 +108,7 @@ body { font-family: var(--font-sans); font-size: 13px; line-height: 18px; color:
 .inv-totals { display:flex; justify-content:flex-end; padding-top:12px; border-top:1px solid var(--border-1); }
 .inv-totals-inner { width:300px; display:flex; flex-direction:column; gap:8px; }
 .inv-totals .row { display:flex; justify-content:space-between; font-size:13px; color:var(--fg-2); font-variant-numeric:tabular-nums; }
+.inv-totals .row.discount { color:var(--fg-3); font-size:12px; }
 .inv-totals .row.grand { margin-top:8px; padding-top:10px; border-top:1px solid var(--border-1); font-size:15px; font-weight:700; color:var(--fg-1); }
 
 /* Observations */
@@ -197,6 +200,15 @@ const TEMPLATE = `<!DOCTYPE html>
   <!-- Totals -->
   <div class="inv-totals">
     <div class="inv-totals-inner">
+      {{#if hasAnyDiscount}}
+      <div class="row"><span>{{labels.subtotalNoDiscount}}</span><span>{{fmt grossSubtotal}}</span></div>
+      {{#if hasProductDiscount}}
+      <div class="row discount"><span>{{labels.productDiscount}}</span><span>−{{fmt productDiscountAmt}}</span></div>
+      {{/if}}
+      {{#if hasTotalDiscount}}
+      <div class="row discount"><span>{{labels.totalDiscount}} {{totalDiscountPct}}%</span><span>−{{fmt totalDiscountAmt}}</span></div>
+      {{/if}}
+      {{/if}}
       <div class="row"><span>{{labels.subtotal}}</span><span>{{fmt netAmount}}</span></div>
       <div class="row"><span>{{labels.tax}}</span><span>{{fmt taxAmount}}</span></div>
       <div class="row grand"><span>{{labels.grandTotal}}</span><span>{{fmt grandTotal}}</span></div>
@@ -219,71 +231,9 @@ const TEMPLATE = `<!DOCTYPE html>
 </body></html>`;
 
 // ---------------------------------------------------------------------------
-// Data fetching helpers
-// ---------------------------------------------------------------------------
-async function fetchJson(url, token) {
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-  });
-  if (!res.ok) throw new Error(`API ${res.status}: ${url}`);
-  const d = await res.json();
-  return d?.response?.data?.[0] ?? d?.response?.data ?? d;
-}
-
-async function fetchAll(url, token) {
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-  });
-  if (!res.ok) return [];
-  const d = await res.json();
-  return d?.response?.data ?? (Array.isArray(d) ? d : []);
-}
-
-async function fetchOptionalJson(url, token) {
-  try {
-    return await fetchJson(url, token);
-  } catch {
-    return null;
-  }
-}
-
-async function fetchLocationAddress(locationId, base, token) {
-  if (!locationId) return null;
-  try {
-    return await fetchJson(`${base}/contacts/locationAddress/${locationId}`, token);
-  } catch {
-    return null;
-  }
-}
-
-function blobToDataUrl(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error('Failed to read company logo'));
-    reader.readAsDataURL(blob);
-  });
-}
-
-async function fetchImageDataUrl(imageId, base, token) {
-  if (!imageId) return null;
-  try {
-    const res = await fetch(`${base}/image/${imageId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return null;
-    const blob = await res.blob();
-    return await blobToDataUrl(blob);
-  } catch {
-    return null;
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Build invoice data for the template
 // ---------------------------------------------------------------------------
 async function buildInvoiceData(invoiceId, base, token) {
-  // Fetch header and lines in parallel
   const [header, linesRaw, session] = await Promise.all([
     fetchJson(`${base}/sales-invoice/header/${invoiceId}`, token),
     fetchAll(`${base}/sales-invoice/lines?parentId=${invoiceId}`, token),
@@ -294,7 +244,6 @@ async function buildInvoiceData(invoiceId, base, token) {
     fetchLocationAddress(header.partnerAddress, base, token),
   ]);
 
-  // Sort by ERP lineNo so the rows always appear in the order the user created them
   const linesSorted = [...linesRaw].sort(
     (a, b) => (Number(a.lineNo) || 0) - (Number(b.lineNo) || 0)
   );
@@ -302,15 +251,24 @@ async function buildInvoiceData(invoiceId, base, token) {
     lineNo: l.lineNo || (idx + 1),
     productName: l.product$_identifier || l.description || '—',
     quantity: l.invoicedQuantity ?? l.qtyInvoiced ?? 0,
-    unitPrice: l.unitPrice ?? l.priceActual ?? 0,
-    discount: l.discount ? Number(l.discount) : null,
+    unitPrice: l.listPrice ?? l.unitPrice ?? l.priceActual ?? 0,
+    listPrice: l.listPrice ?? null,
+    discount: l.etgoDiscount ? Number(l.etgoDiscount) : null,
     taxName: l.tax$_identifier || l.taxRate || '',
-    lineTotal: l.lineNetAmount ?? l.lineAmount ?? 0,
+    lineTotal: l.grossAmount ?? l.lineNetAmount ?? l.lineAmount ?? 0,
   }));
 
-  const grandTotal = Number(header.grandTotalAmount ?? 0);
-  const netAmount  = Number(header.summedLineAmount ?? header.totalLines ?? 0);
-  const taxAmount  = grandTotal - netAmount;
+  const netLines         = Number(header.summedLineAmount ?? header.totalLines ?? 0);
+  const adjustedGrand    = Number(header.grandTotalAmount ?? 0);
+  const totalDiscountPct = Number(header.etgoTotalDiscount ?? 0);
+  const factor           = 1 - totalDiscountPct / 100;
+
+  const grossSubtotal      = lines.reduce((s, l) => s + l.quantity * (l.listPrice ?? l.unitPrice), 0);
+  const productDiscountAmt = Math.max(0, grossSubtotal - netLines);
+  const totalDiscountAmt   = netLines * totalDiscountPct / 100;
+  const netAmount          = netLines * factor;
+  const taxAmount          = adjustedGrand - netAmount;
+  const grandTotal         = adjustedGrand;
 
   const org = session?.organization ?? {};
   const customerAddressLines = buildLocationAddressLines(
@@ -319,69 +277,32 @@ async function buildInvoiceData(invoiceId, base, token) {
   );
 
   return {
-    // Company (issuer) — from session.organization with header fallback
     companyName:     org.name        || header.organization$_identifier || header.organization || 'Empresa',
     companyAddress1: org.address1    || null,
     companyAddress2: org.address2    || null,
     companyCityLine: org.cityLine    || null,
     companyTaxId:    org.taxId       || null,
     companyLogoDataUrl,
-    // Invoice
     documentNo: header.documentNo || '',
     invoiceDate: header.invoiceDate || header.dateInvoiced || '',
-    // Customer
     customerName: header.businessPartner$_identifier || header.businessPartner || '—',
     hasCustomerAddress: customerAddressLines.length > 0,
     customerAddressLines,
-    // Payment
     paymentMethod: header.paymentMethod$_identifier || null,
     paymentTerms: header.paymentTerms$_identifier || null,
-    // Notes
     notes: header.description || null,
-    // Lines
     lines,
-    // Totals
+    grossSubtotal,
+    productDiscountAmt,
+    totalDiscountPct,
+    totalDiscountAmt,
+    hasProductDiscount: productDiscountAmt > 0.005,
+    hasTotalDiscount:   totalDiscountPct > 0,
+    hasAnyDiscount:     productDiscountAmt > 0.005 || totalDiscountPct > 0,
     netAmount,
     taxAmount,
     grandTotal,
   };
-}
-
-// ---------------------------------------------------------------------------
-// Render via jsreport
-// ---------------------------------------------------------------------------
-async function renderInvoicePdf(data) {
-  const payload = {
-    template: {
-      content: TEMPLATE,
-      engine: 'handlebars',
-      recipe: 'chrome-pdf',
-      helpers: HELPERS,
-      chrome: {
-        format: 'A4',
-        landscape: false,
-        marginTop: '0mm',
-        marginBottom: '0mm',
-        marginLeft: '0mm',
-        marginRight: '0mm',
-        printBackground: true,
-      },
-    },
-    data: { css: CSS, ...data },
-  };
-
-  const res = await fetch('/jsreport/api/report', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`jsreport ${res.status}: ${text.slice(0, 300)}`);
-  }
-
-  return res.blob();
 }
 
 // ---------------------------------------------------------------------------
@@ -406,7 +327,6 @@ export function useInvoicePdf(invoiceId, apiBaseUrl, token) {
   useEffect(() => {
     if (!invoiceId || !apiBaseUrl || !token) return;
 
-    // Build labels from i18n for the current locale
     const labels = {
       title:           ui('invoicePdfTitle'),
       documentNo:      ui('invoicePdfDocumentNo'),
@@ -426,13 +346,15 @@ export function useInvoicePdf(invoiceId, apiBaseUrl, token) {
       colDiscount:     ui('invoicePdfColDiscount'),
       colTax:          ui('invoicePdfColTax'),
       colTotal:        ui('invoicePdfColTotal'),
-      subtotal:        ui('invoicePdfSubtotal'),
-      tax:             ui('invoicePdfTax'),
-      grandTotal:      ui('invoicePdfGrandTotal'),
-      notes:           ui('invoicePdfNotes'),
+      subtotal:           ui('invoicePdfSubtotal'),
+      tax:                ui('invoicePdfTax'),
+      grandTotal:         ui('invoicePdfGrandTotal'),
+      notes:              ui('invoicePdfNotes'),
+      subtotalNoDiscount: ui('invoicePdfSubtotalNoDiscount'),
+      productDiscount:    ui('invoicePdfProductDiscount'),
+      totalDiscount:      ui('invoicePdfTotalDiscount'),
     };
 
-    // Compute base URL (strip spec name: .../sws/neo/sales-invoice → .../sws/neo)
     const base = apiBaseUrl.replace(/\/[^/]+$/, '');
 
     let cancelled = false;
@@ -444,7 +366,7 @@ export function useInvoicePdf(invoiceId, apiBaseUrl, token) {
     (async () => {
       try {
         const data = await buildInvoiceData(invoiceId, base, token);
-        const blob = await renderInvoicePdf({ ...data, labels });
+        const blob = await renderPdf(TEMPLATE, CSS, HELPERS, { ...data, labels });
         if (cancelled) return;
         const url = URL.createObjectURL(blob);
         prevUrlRef.current = url;

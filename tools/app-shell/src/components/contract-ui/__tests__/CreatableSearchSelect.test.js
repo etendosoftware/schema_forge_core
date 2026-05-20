@@ -104,7 +104,10 @@ describe('CreatableSearchSelect', () => {
   it('shows a clear (X) button when a value is selected', () => {
     assert.match(src, /hasSelection/);
     assert.match(src, /handleClear/);
-    assert.match(src, /<X /);
+    // ETP-4000: the X is rendered by the shared SelectorChip component
+    // (extracted from this file and SearchInput to satisfy Sonar duplication).
+    assert.match(src, /import \{ SelectorChip \} from '\.\/SelectorChip\.jsx'/);
+    assert.match(src, /<SelectorChip[\s\S]*?onClear=\{handleClear\}/);
   });
 
   it('shows a no-results message when the filter matches nothing', () => {

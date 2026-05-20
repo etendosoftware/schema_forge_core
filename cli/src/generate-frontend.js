@@ -52,7 +52,10 @@ export function capitalize(s) {
 export function toJsIdentifier(s) {
   if (!s) return '';
   const capped = s.charAt(0).toUpperCase() + s.slice(1);
-  return capped.replace(/[^a-zA-Z0-9_$]/g, '');
+  return capped
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9_$]/g, '');
 }
 
 /**
@@ -153,6 +156,10 @@ function mapFormFieldType(field) {
   return 'text';
 }
 
+function optProp(name, val) {
+  return val !== undefined ? `, ${name}: ${val}` : '';
+}
+
 /**
  * Generate a data table component for an entity.
  * Produces a thin declarative component that imports DataTable from contract-ui.
@@ -201,7 +208,8 @@ export function generateTableComponent(entityName, contract) {
     const requiredPart = f.required ? ', required: true' : '';
     const lookupPart = f.lookup ? ', lookup: true' : '';
     const popupPart = f.popup ? ', popup: true' : '';
-    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${popupPart} },`;
+    const minColPart = optProp('min', f.min);
+    return `  { key: '${f.name}', column: '${f.column}', type: '${type}'${labelsPart}${labelPart}${enumLabelsPart}${enumVariantsPart}${selectionPart}${togglePart}${badgePart}${badgeLabelsPart}${badgeColorsPart}${badgeVariantsPart}${summablePart}${displayPart}${renderPart}${requiredPart}${lookupPart}${popupPart}${minColPart} },`;
   }).join('\n');
 
   const filtersArray = searchableFields.map(f => `'${f}'`).join(', ');
@@ -673,7 +681,8 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
       ? `, onSelectMappings: ${JSON.stringify(f.onSelectMappings)}`
       : '';
     const displayFromCatalogPart = f.displayFromCatalog ? `, displayFromCatalog: true` : '';
-    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart} },`;
+    const minEntryPart = optProp('min', f.min);
+    return `    { key: '${f.name}', column: '${f.column}', type: '${type}'${requiredPart}${lookupPart}${labelPart}${referencePart}${inputModePart}${dependsOnPart}${defaultValuePart}${forceCalloutFieldsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart}${minEntryPart} },`;
   }).join('\n');
 
   const derivedArray = derivedFields.map(f => {
@@ -1434,7 +1443,7 @@ export function generateAll(contract) {
   }
 
   // Generate Page component (handles both header-detail and header-only layouts)
-  files[`${capitalize(primaryEntity)}Page.jsx`] = generatePageComponent(primaryEntity, detailEntity, contract);
+  files[`${toJsIdentifier(primaryEntity)}Page.jsx`] = generatePageComponent(primaryEntity, detailEntity, contract);
 
   // Generate mock catalogs
   files['mockCatalogs.js'] = generateMockCatalogs(contract);

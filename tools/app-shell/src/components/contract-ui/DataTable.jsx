@@ -17,6 +17,7 @@ import { resolveColumnLabel } from '@/lib/resolveColumnLabel.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { applyCalloutUpdates } from '@/lib/applyCalloutUpdates.js';
 import { columnMinWidthPx, columnFlex } from '@/lib/linesColumnWidth.js';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Extracts grow flag and basis (px) from a columnFlex() shorthand string.
 function flexSpec(col, idx) {
@@ -434,11 +435,24 @@ function EmptyState({ hasFilter, totalCount }) {
 
 const NUMERIC_FIELD_TYPES = new Set(['number', 'integer', 'decimal', 'quantity', 'amount']);
 
+function isMissingRequired(f, valuesRef) {
+  if (!f.required) return false;
+  const v = valuesRef.current[f.key];
+  return v == null || v === '' || (typeof v === 'string' && v.trim() === '');
+}
+
+function isBelowMin(f, valuesRef) {
+  if (f.min === undefined) return false;
+  const v = valuesRef.current[f.key];
+  if (v == null || v === '') return false;
+  return !isNaN(Number(v)) && Number(v) < f.min;
+}
+
 /**
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
  */
-const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, hasQuickActionsColumn, token, apiBaseUrl, entity, selectorContext }, ref) {
+const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, onCancel, data, catalogs, onFieldChange, onValuesChange, selectable, hasDeleteColumn, hasCloneColumn, hoverRowActions, hoverRowHasDelete, hasQuickActionsColumn, token, apiBaseUrl, entity, selectorContext, ilpHasNoAmountCol = false, ilpTrailing = false }, ref) {
   const t = useLabel();
   const ui = useUI();
   const fieldMap = useMemo(() => {
@@ -458,7 +472,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     for (const f of fields) {
       if (f.key === 'lineNo') {
         empty[f.key] = defaultLineNo;
-      } else if (f.defaultValue !== undefined) {
+      } else if (f.defaultValue !== undefined && !/^@[^@]+@$/.test(String(f.defaultValue))) {
         empty[f.key] = f.defaultValue;
       } else {
         empty[f.key] = '';
@@ -469,6 +483,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
 
   const [values, setValues] = useState(buildEmpty);
   const [isSaving, setIsSaving] = useState(false);
+  const [invalidFields, setInvalidFields] = useState(new Set());
   const firstInputRef = useRef(null);
   const rowRef = useRef(null);
   const touchedFieldsRef = useRef(new Set());
@@ -512,16 +527,21 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     // Validate required fields BEFORE entering the in-flight state — a missing
     // value should leave the row open for the user to complete. Reads from the
     // valuesRef so an in-flight callout cannot mask a still-empty user field.
-    const missing = fields.filter(f => {
-      if (!f.required) return false;
-      const v = valuesRef.current[f.key];
-      return v == null || v === '' || (typeof v === 'string' && v.trim() === '');
-    });
+    const missing = fields.filter(f => isMissingRequired(f, valuesRef));
     if (missing.length > 0) {
-      const labels = missing.map(f => f.label || f.key).join(', ');
-      toast.error(`${ui('requiredFieldsMissing')}: ${labels}`);
+      setInvalidFields(new Set(missing.map(f => f.key)));
+      toast.error(ui('requiredFieldsMissing'));
       const firstMissing = missing[0];
       const inputEl = document.querySelector(`[data-testid="field-${firstMissing.key}"]`);
+      inputEl?.focus?.({ preventScroll: true });
+      return Promise.resolve(false);
+    }
+    const belowMin = fields.filter(f => isBelowMin(f, valuesRef));
+    if (belowMin.length > 0) {
+      setInvalidFields(new Set(belowMin.map(f => f.key)));
+      toast.error(ui('fieldMinValueError'));
+      const firstInvalid = belowMin[0];
+      const inputEl = document.querySelector(`[data-testid="field-${firstInvalid.key}"]`);
       inputEl?.focus?.({ preventScroll: true });
       return Promise.resolve(false);
     }
@@ -632,6 +652,12 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
   // Wrap handleChange to also notify parent (for callout triggering)
   const handleFieldChange = useCallback((key, val, selectedItem) => {
     touchedFieldsRef.current.add(key);
+    setInvalidFields(prev => {
+      if (!prev.has(key)) return prev;
+      const n = new Set(prev);
+      n.delete(key);
+      return n;
+    });
     // Build a snapshot of current + new values for the callout formState
     const snapshot = { ...values, [key]: val };
     handleChange(key, val);
@@ -759,6 +785,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
                 selectorContext={selectorContext}
                 token={token}
                 inputRef={isFirst ? firstInputRef : undefined}
+                isInvalid={invalidFields.has(field.key)}
                 onSelect={(item) => {
                   touchedFieldsRef.current.add(field.key);
                   handleChange(field.key + '$_identifier', item.label || item.name || item._identifier);
@@ -805,19 +832,26 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
         if (field.type === 'select' && field.options?.length) {
           return (
             <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
-              <select
-                data-testid={`inline-add-field-${field.key}`}
-                ref={isFirst ? firstInputRef : undefined}
-                value={values[field.key] ?? ''}
-                onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+              <Select
+                value={values[field.key] || undefined}
+                onValueChange={(val) => handleFieldChange(field.key, val === '__empty__' ? '' : val)}
+                required={field.required}
               >
-                <option value="" disabled hidden>{field.label ?? field.key}</option>
-                {field.options.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+                <SelectTrigger
+                  ref={isFirst ? firstInputRef : undefined}
+                  data-testid={`inline-add-field-${field.key}`}
+                  onKeyDown={(e) => { if (e.key === 'Escape') handleKeyDown(e); }}
+                  className="w-full h-8 text-sm bg-white focus:ring-2 focus:ring-primary"
+                >
+                  <SelectValue placeholder={field.label ?? field.key} />
+                </SelectTrigger>
+                <SelectContent>
+                  {!field.required && <SelectItem value="__empty__">&nbsp;</SelectItem>}
+                  {field.options.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </TableCell>
           );
         }
@@ -856,27 +890,36 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           }
           return (
             <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
-              <select
-                data-testid={`inline-add-field-${field.key}`}
-                ref={isFirst ? firstInputRef : undefined}
-                value={values[field.key] ?? ''}
-                onChange={(e) => {
-                  const selectedId = e.target.value;
-                  const opt = options.find(o => o.id === selectedId);
-                  touchedFieldsRef.current.add(field.key);
+              <Select
+                value={values[field.key] || undefined}
+                onValueChange={(val) => {
+                  if (val === '__empty__') {
+                    handleChange(field.key + '$_identifier', '');
+                    handleFieldChange(field.key, '', null);
+                    return;
+                  }
+                  const opt = options.find(o => o.id === val);
                   if (opt) {
                     handleChange(field.key + '$_identifier', opt.name || opt.label || opt._identifier || '');
                   }
-                  handleFieldChange(field.key, selectedId, opt);
+                  handleFieldChange(field.key, val, opt);
                 }}
-                onKeyDown={handleKeyDown}
-                className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
               >
-                <option value="" disabled hidden>{fieldLabel}</option>
-                {options.map(opt => (
-                  <option key={opt.id} value={opt.id}>{opt.name || opt.label || opt._identifier || opt.id}</option>
-                ))}
-              </select>
+                <SelectTrigger
+                  ref={isFirst ? firstInputRef : undefined}
+                  data-testid={`inline-add-field-${field.key}`}
+                  onKeyDown={(e) => { if (e.key === 'Escape') handleKeyDown(e); }}
+                  className="w-full h-8 text-sm bg-white focus:ring-2 focus:ring-primary"
+                >
+                  <SelectValue placeholder={fieldLabel} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__empty__">&nbsp;</SelectItem>
+                  {options.map(opt => (
+                    <SelectItem key={opt.id} value={opt.id}>{opt.name || opt.label || opt._identifier || opt.id}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </TableCell>
           );
         }
@@ -923,12 +966,14 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
               onKeyDown={handleKeyDown}
               placeholder={fieldLabel}
               required={field.required}
-              className={`w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none${isNumeric ? ' text-right tabular-nums' : ''}`}
+              className={`w-full h-8 text-sm rounded-md border bg-white px-2 focus:ring-2 focus:outline-none${isNumeric ? ' text-right tabular-nums' : ''}${invalidFields.has(field.key) ? ' border-red-500 focus:ring-red-500' : ' border-input focus:ring-primary'}`}
             />
           </TableCell>
         );
       })}
-      {hoverRowActions ? (
+      {/* Skip action cells in inlineEditable add-row mode — actions belong to
+          InlineLinesPanel's 160px slot, not to separate columns here. */}
+      {!ilpTrailing && (hoverRowActions ? (
         <>
           <TableCell className="w-10" />
           {hoverRowHasDelete && <TableCell className="w-10" />}
@@ -938,8 +983,10 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
           {hasDeleteColumn && <TableCell className="w-10" />}
           {hasCloneColumn && <TableCell className="w-10" />}
         </>
-      )}
-      {hasQuickActionsColumn && <TableCell className="w-10" />}
+      ))}
+      {!ilpTrailing && hasQuickActionsColumn && <TableCell className="w-10" />}
+      {ilpHasNoAmountCol && <TableCell aria-hidden="true" />}
+      {ilpTrailing && <TableCell aria-hidden="true" />}
     </TableRow>
   );
 });
@@ -947,7 +994,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
 /**
  * Inline field that shows selected value and opens modal on click/focus.
  */
-function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContext, token, onSelect, onKeyDown, inputRef, title, drawerKey = 'default' }) {
+function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContext, token, onSelect, onKeyDown, inputRef, title, drawerKey = 'default', isInvalid }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef(null);
   const Drawer = LOOKUP_DRAWERS[drawerKey] || LOOKUP_DRAWERS.default;
@@ -975,7 +1022,7 @@ function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContex
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(true); }
           else if (onKeyDown) onKeyDown(e);
         }}
-        className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 text-left flex items-center gap-2 hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
+        className={`w-full h-8 text-sm rounded-md border bg-white px-2 text-left flex items-center gap-2 focus:ring-2 focus:outline-none transition-colors${isInvalid ? ' border-red-500 focus:ring-red-500' : ' border-input hover:border-primary/50 focus:ring-primary'}`}
       >
         <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         {value ? (
@@ -997,7 +1044,7 @@ function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContex
         selectorUrl={selectorUrl}
         selectorContext={selectorContext}
         token={token}
-        title={title ? `Search ${title}` : undefined}
+        title={title || undefined}
       />
     </>
   );
@@ -1014,7 +1061,7 @@ function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) 
         type="button"
         onClick={() => setOpen(true)}
         className="h-8 w-8 flex items-center justify-center rounded border border-input hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors shrink-0"
-        title={`Search ${title || ''}`}
+        title={title || ''}
       >
         <Search className="h-3.5 w-3.5" />
       </button>
@@ -1025,7 +1072,7 @@ function LookupButton({ selectorUrl, selectorContext, token, onSelect, title }) 
         selectorUrl={selectorUrl}
         selectorContext={selectorContext}
         token={token}
-        title={title ? `Search ${title}` : undefined}
+        title={title || undefined}
       />
     </>
   );
@@ -1464,6 +1511,14 @@ export function DataTable({
   const colSpan = visibleColumns.length + (selectable ? 1 : 0) + actionCols + quickActionsCol;
   const selectedRowBg = hoverRowActions ? 'bg-[#F5F7F9]' : 'bg-primary/5';
 
+  // In inlineEditable add-row mode (hideHeader=true), the DataTable only renders
+  // the new-line form while InlineLinesPanel owns the existing rows. InlineLinesPanel
+  // always appends a 48px right spacer, plus a 160px action slot when no amount column
+  // exists. Mirror those here so flexible columns grow to the same width in both.
+  const ilpHasNoAmountCol = hideHeader && linesLayout === 'inlineEditable'
+    && !visibleColumns.some(c => c.type === 'amount');
+  const ilpTrailing = hideHeader && linesLayout === 'inlineEditable';
+
   return (
     <div className="space-y-0">
       <div className={linesLayout === 'inlineEditable' ? '[&>div]:!overflow-visible' : 'overflow-x-auto overflow-y-visible'}>
@@ -1483,11 +1538,16 @@ export function DataTable({
                   ? <col key={col.key} style={{ width: basis }} />
                   : <col key={col.key} />;
               })}
-              {hoverRowActions && <col style={{ width: 40 }} />}
-              {hoverRowActions && onDeleteRow && <col style={{ width: 40 }} />}
-              {!hoverRowActions && legacyDeleteEnabled && <col style={{ width: 40 }} />}
-              {!hoverRowActions && onCloneRow && !quickActionsEnabled && <col style={{ width: 40 }} />}
-              {quickActionsEnabled && <col style={{ width: 40 }} />}
+              {/* In inlineEditable add-row mode (ilpTrailing), all row actions
+                  live inside InlineLinesPanel's 160px action slot — never add
+                  separate action cols here or the flex columns shrink by 40px. */}
+              {!ilpTrailing && hoverRowActions && <col style={{ width: 40 }} />}
+              {!ilpTrailing && hoverRowActions && onDeleteRow && <col style={{ width: 40 }} />}
+              {!ilpTrailing && !hoverRowActions && legacyDeleteEnabled && <col style={{ width: 40 }} />}
+              {!ilpTrailing && !hoverRowActions && onCloneRow && !quickActionsEnabled && <col style={{ width: 40 }} />}
+              {!ilpTrailing && quickActionsEnabled && <col style={{ width: 40 }} />}
+              {ilpHasNoAmountCol && <col style={{ width: 160 }} />}
+              {ilpTrailing && <col style={{ width: 48 }} />}
             </colgroup>
           )}
           <TableHeader
@@ -1782,6 +1842,8 @@ export function DataTable({
                   apiBaseUrl={apiBaseUrl}
                   entity={entity}
                   selectorContext={selectorContext}
+                  ilpHasNoAmountCol={ilpHasNoAmountCol}
+                  ilpTrailing={ilpTrailing}
                 />
               )}
           </TableBody>

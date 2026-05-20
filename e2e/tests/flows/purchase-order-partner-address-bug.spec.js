@@ -25,26 +25,79 @@ test.describe('Purchase Order - Partner Address Bug', () => {
     await page.getByTestId('action-new').click();
     await expect(page.getByTestId('detail-view')).toBeVisible();
 
-    // Partner Address should be disabled before BP selection
-    const partnerAddress = page.getByTestId('field-partnerAddress');
-    await expect(partnerAddress).toBeDisabled();
+    // Partner Address should be disabled before BP selection.
+    // The chip overlay (`-chip`) is gated on !isDisabled, so the input is the
+    // only rendering in this state — locating it is enough.
+    const partnerAddressInput = page.getByTestId('field-partnerAddress');
+    const partnerAddressChip  = page.getByTestId('field-partnerAddress-chip');
+    await expect(partnerAddressInput).toBeDisabled();
 
     // Select the first real backend suggestion without depending on localized labels.
     const bpField = page.getByTestId('field-businessPartner');
     await bpField.click();
     await clickFirstStableOption(page, 'option-businessPartner-');
 
-    // Partner Address should now be enabled
-    await expect(partnerAddress).toBeEnabled({ timeout: 5_000 });
+    // After BP selection, CreatableSearchSelect either:
+    //   a) auto-selects the first BP location (FIC parity), which swaps the
+    //      input for a Figma chip carrying the address label, or
+    //   b) leaves the input enabled — the user opens the dropdown manually.
+    // Both paths prove the bug ("empty dropdown") is fixed: in (a) an option
+    // was picked, in (b) options are listable. Wait for either state.
+    await waitForPartnerAddressMode(partnerAddressInput, partnerAddressChip);
+    await page.waitForTimeout(300);
 
-    // BUG: The dropdown should have options, not be empty
-    // Open the dropdown and check for options
-    await partnerAddress.click();
-
-    // There should be at least one selectable option (a BP location)
-    await expect(page.locator('[data-testid^="option-partnerAddress-"]').first()).toBeVisible({ timeout: 5_000 });
+    if (await partnerAddressChip.isVisible().catch(() => false)) {
+      // Auto-selected an address → the chip label is the proof that options loaded.
+      await expect(partnerAddressChip).toHaveText(/\S/);
+    } else {
+      // Manual mode → open the dropdown and assert at least one option.
+      try {
+        await openSelectorOptions(page, 'partnerAddress');
+      } catch (error) {
+        if (await partnerAddressChip.isVisible().catch(() => false)) {
+          await expect(partnerAddressChip).toHaveText(/\S/);
+          return;
+        }
+        throw error;
+      }
+      await expect(page.locator('[data-testid^="option-partnerAddress-"]').first()).toBeVisible({ timeout: 5_000 });
+    }
   });
 });
+
+async function waitForPartnerAddressMode(input, chip) {
+  let lastMode = 'pending';
+
+  await expect.poll(async () => {
+    if (await chip.isVisible().catch(() => false)) {
+      lastMode = 'chip';
+      return lastMode;
+    }
+    if (await input.isVisible().catch(() => false) && await input.isEnabled().catch(() => false)) {
+      lastMode = 'input';
+      return lastMode;
+    }
+    return 'pending';
+  }, { timeout: 10_000 }).not.toBe('pending');
+
+  return lastMode;
+}
+
+async function openSelectorOptions(page, fieldKey) {
+  const options = page.locator(`[data-testid^="option-${fieldKey}-"]`);
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const input = page.getByTestId(`field-${fieldKey}`);
+    try {
+      await input.click({ timeout: 3_000 });
+      await expect(options.first()).toBeVisible({ timeout: 3_000 });
+      return;
+    } catch (error) {
+      if (attempt === 4) throw error;
+      await page.waitForTimeout(250);
+    }
+  }
+}
 
 async function clickFirstStableOption(page, testIdPrefix) {
   const options = page.locator(`[data-testid^="${testIdPrefix}"]`);
