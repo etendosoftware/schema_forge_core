@@ -132,27 +132,29 @@ function resolveOptionId(options, candidate) {
   return null;
 }
 
+const PRICE_TABLE_TONES = {
+  sales: {
+    shell: 'border-blue-200 bg-blue-50/70',
+    badge: 'bg-blue-100 text-blue-700',
+    listPrice: 'text-blue-700',
+  },
+  purchase: {
+    shell: 'border-emerald-200 bg-emerald-50/70',
+    badge: 'bg-emerald-100 text-emerald-700',
+    listPrice: 'text-emerald-700',
+  },
+  neutral: {
+    shell: 'border-gray-200 bg-gray-50',
+    badge: 'bg-gray-100 text-gray-700',
+    listPrice: 'text-gray-900',
+  },
+};
+
 function PriceTable({ title, rows, variant = 'neutral' }) {
   const ui = useUI();
   const orgCurrency = useCurrency() ?? 'USD';
   const isEmpty = !rows || rows.length === 0;
-  const tone = variant === 'sales'
-    ? {
-      shell: 'border-blue-200 bg-blue-50/70',
-      badge: 'bg-blue-100 text-blue-700',
-      listPrice: 'text-blue-700',
-    }
-    : variant === 'purchase'
-      ? {
-        shell: 'border-emerald-200 bg-emerald-50/70',
-        badge: 'bg-emerald-100 text-emerald-700',
-        listPrice: 'text-emerald-700',
-      }
-      : {
-        shell: 'border-gray-200 bg-gray-50',
-        badge: 'bg-gray-100 text-gray-700',
-        listPrice: 'text-gray-900',
-      };
+  const tone = PRICE_TABLE_TONES[variant] ?? PRICE_TABLE_TONES.neutral;
 
   return (
     <div className={`rounded-2xl border p-3 ${tone.shell}`}>
