@@ -1,8 +1,8 @@
 {
   "version": "0.12.0",
   "generatedAt": "2026-04-29T19:04:55.657Z",
-  "updatedAt": "2026-05-20T13:19:58.357Z",
-  "checksum": "6c865698fc174944",
+  "updatedAt": "2026-05-20T13:50:25.589Z",
+  "checksum": "6f103a983ea28f61",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -1391,18 +1391,7 @@
         "supportedFilters": []
       }
     ],
-    "processEndpoints": [
-      {
-        "name": "Process Shipment",
-        "method": "POST",
-        "path": "/goodsShipment/:id/action/documentAction",
-        "entity": "goodsShipment",
-        "columnName": "documentAction",
-        "params": [],
-        "preconditions": [],
-        "steps": 0
-      }
-    ]
+    "processEndpoints": []
   },
   "apiPrediction": {
     "specName": "goods-shipment",
@@ -1967,22 +1956,6 @@
         "field": "product",
         "runner": "node",
         "description": "Field 'product' should have type 'string' in goodsShipmentLine"
-      },
-      {
-        "id": "t-process-failure-Process-Shipment",
-        "category": "process-failure",
-        "process": "Process Shipment",
-        "entity": "goodsShipment",
-        "runner": "junit",
-        "description": "Process 'Process Shipment' should fail when preconditions are not met"
-      },
-      {
-        "id": "t-process-happy-Process-Shipment",
-        "category": "process-happy",
-        "process": "Process Shipment",
-        "entity": "goodsShipment",
-        "runner": "junit",
-        "description": "Process 'Process Shipment' should complete successfully with valid preconditions"
       },
       {
         "id": "t-readonlylogic-evaluable-goodsShipment-businessPartner",
@@ -2941,7 +2914,7 @@
       }
     ],
     "summary": {
-      "total": 170,
+      "total": 168,
       "byCategory": {
         "action-endpoint": 12,
         "crud-flags": 2,
@@ -2950,8 +2923,6 @@
         "displaylogic-valid": 1,
         "field-presence": 14,
         "field-type": 14,
-        "process-failure": 1,
-        "process-happy": 1,
         "readonlylogic-evaluable": 8,
         "readonlylogic-valid": 8,
         "rule-declared": 3,
@@ -2962,7 +2933,7 @@
       },
       "byRunner": {
         "node": 168,
-        "junit": 2
+        "junit": 0
       }
     }
   }
