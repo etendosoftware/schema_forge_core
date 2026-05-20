@@ -79,6 +79,19 @@ describe('PurchaseOrderActions', () => {
     assert.match(src, /poManageInvoice/);
   });
 
+  describe('ConfirmModal total-discount preview (ETP-4006)', () => {
+    it('applies the total-discount factor only while the purchase order is still in DR', () => {
+      assert.match(src, /const discountPct\s*=\s*Number\(d\.etgoTotalDiscount \?\? 0\)/);
+      assert.match(src, /const isPreCompletion\s*=\s*d\.documentStatus === 'DR'/);
+      assert.match(src, /const discountFactor\s*=\s*\(isPreCompletion && discountPct > 0\) \? \(1 - discountPct \/ 100\) : 1/);
+    });
+
+    it('multiplies both total and subtotal by the gated discountFactor', () => {
+      assert.match(src, /const grandTotal\s*=\s*\(Number\(d\.grandTotalAmount \?\? d\.grandTotal \?\? 0\) \|\| 0\) \* discountFactor/);
+      assert.match(src, /const totalLines\s*=\s*\(Number\(d\.summedLineAmount \?\? d\.totalLines \?\? d\.grandTotalAmount \?\? 0\) \|\| 0\) \* discountFactor/);
+    });
+  });
+
   it('navigates to receipt and purchase-invoice detail after creation', () => {
     assert.match(src, /\/goods-receipt\//);
     assert.match(src, /\/purchase-invoice\//);
