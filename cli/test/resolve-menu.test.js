@@ -31,6 +31,23 @@ describe('toKebabCase', () => {
   it('removes parentheses and special chars', () => {
     assert.equal(toKebabCase('Name with (parens)'), 'name-with-parens');
   });
+
+  // Regression: regex grouping `(^-)|(-$)` must trim both leading and trailing dashes
+  it('trims leading and trailing dashes (edge-dash inputs)', () => {
+    assert.equal(toKebabCase('-Sales Order-'), 'sales-order');
+  });
+
+  it('strips outer dashes from doubly-dashed input', () => {
+    assert.equal(toKebabCase('--Foo--Bar--'), 'foo-bar');
+  });
+
+  it('preserves already-kebab input unchanged', () => {
+    assert.equal(toKebabCase('Already-Kebab'), 'already-kebab');
+  });
+
+  it('handles single word with no dashes', () => {
+    assert.equal(toKebabCase('Single'), 'single');
+  });
 });
 
 describe('MENU_QUERY', () => {
