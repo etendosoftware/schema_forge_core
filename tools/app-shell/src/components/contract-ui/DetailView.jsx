@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
@@ -68,13 +68,23 @@ import {
 } from '@/lib/lineFieldChange.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { formatAmount } from '@/lib/formatAmount.js';
+import { useRegisterWindowContext } from '@/components/CurrentWindowContext';
+import { matchOcrDocType } from '@/components/copilot/ocr/ocrDocTypes';
 import { isDeleteVisibleForRecord } from '@/utils/recordActions.js';
 import DocumentStatusPill from './DocumentStatusPill.jsx';
+
+const LazyOcrInlineUploader = lazy(() => import('@/components/copilot/ocr/OcrInlineUploader.jsx'));
 
 /**
  * Evaluate a simple Etendo display-logic expression (@Field@='Value') against record data.
  * Returns true (visible) if the expression cannot be parsed or if the field is missing from data.
  */
+function sidePanelWrapperCls(hasSidePanel, linesLayout) {
+  if (hasSidePanel) return 'flex items-start gap-0';
+  if (linesLayout === 'inlineEditable') return 'flex flex-col';
+  return '';
+}
+
 function evalDisplayLogicRaw(expr, data) {
   if (!expr) return true;
   const clauses = [...expr.matchAll(/@(\w+)@\s*(!?=)\s*'([^']*)'/g)];
@@ -204,6 +214,7 @@ export function DetailView({
   formFooter = null,
   draftMode = null,
   headerContent = null,
+  headerExtra = null,
   customTabs = [],
   documentPreview,
   notesField,
@@ -440,6 +451,23 @@ export function DetailView({
 
   // Document-level read-only: when processed===true, the entire record (including lines) is read-only.
   const _headerData = hook.selected ?? hook.editing;
+
+  // Register this detail view with the current-window context so the Copilot
+  // widget can auto-attach the current record when opened. Memoized so the
+  // hook's JSON.stringify signature work stays stable across renders.
+  const _detailTabTitle = tMenu(entityLabel) || entityLabel || entity;
+  const _isFormEditing = Boolean(hook.editing);
+  const _windowContextInfo = useMemo(() => (
+    _headerData ? {
+      spec: windowName,
+      tabTitle: _detailTabTitle,
+      selectedRecords: [_headerData],
+      formValues: hook.editing || null,
+      isFormEditing: _isFormEditing,
+    } : null
+  ), [_headerData, windowName, _detailTabTitle, hook.editing, _isFormEditing]);
+  useRegisterWindowContext(_windowContextInfo);
+  const isDocumentReadOnly = lockWhenProcessed && (_headerData?.processed === true || _headerData?.processed === 'Y');
   const isProcessed = _headerData?.processed === true || _headerData?.processed === 'Y';
   // When draftMode declares an explicit completedStatuses array, only those documentStatus
   // values hide the Save/Confirm pair. This lets windows like sales-quotation keep the
@@ -452,7 +480,6 @@ export function DetailView({
         : (isProcessed || _headerData?.documentStatus === 'CO')
     )
   );
-  const isDocumentReadOnly = lockWhenProcessed && isProcessed;
   const sqBtnSize = toolbarButtonSize === 'default' ? 'h-10 w-10' : 'h-9 w-9';
   const saveBtnCls = toolbarButtonSize === 'default' ? 'h-10 gap-2' : 'gap-1.5';
   const [showPrint, setShowPrint] = useState(false);
@@ -1834,8 +1861,52 @@ export function DetailView({
         })() : null}
         <div className={`flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'content')}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
-          <div className={`${sidePanel ? 'flex items-start gap-0' : ''} ${linesLayout === 'inlineEditable' ? 'flex flex-col' : ''}`}>
+          {(() => {
+            const slotProps = {
+              data,
+              isNew,
+              entity,
+              recordId: data?.id || recordId,
+              token,
+              apiBaseUrl,
+              api,
+              detailEntity,
+              onFieldChange: handleChangeWithCallout,
+              onSave: async () => {
+                if (!(await flushPendingLines())) return null;
+                const saved = await hook.handleSave(data);
+                if (saved?.id && isNew) {
+                  hook.primeSaved?.(saved);
+                }
+                return saved;
+              },
+              onAddChild: hook.handleAddChild,
+              onRefresh: (parentId = data?.id || recordId) => {
+                if (!parentId) return;
+                hook.fetchChildren?.(parentId);
+                hook.fetchById?.(parentId);
+              },
+              onRefreshChildren: () => hook.fetchChildren?.(data?.id || recordId),
+            };
+            const ocrDocType = matchOcrDocType(location.pathname);
+            return (
+              <>
+                {headerExtra && (
+                  typeof headerExtra === 'function'
+                    ? headerExtra(slotProps)
+                    : headerExtra
+                )}
+                {!headerExtra && !sidePanel && ocrDocType && (
+                  <Suspense fallback={null}>
+                    <LazyOcrInlineUploader {...slotProps} docTypeId={ocrDocType.id} />
+                  </Suspense>
+                )}
+              </>
+            );
+          })()}
+          <div className={sidePanelWrapperCls(!!sidePanel, linesLayout)}>
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} ${linesLayout === 'inlineEditable' ? 'flex flex-col' : 'space-y-2'}`}>
+
             {/* Principal + collapsed fields wrapped in a card */}
             <div className={`${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${embedded ? ' pointer-events-none' : ''}`}>
               <div className={linesLayout === 'inlineEditable' ? 'p-2' : 'p-6'}>
@@ -3061,11 +3132,11 @@ export function DetailView({
           </div>
           {sidePanel && (
             <div
-              className="w-[280px] shrink-0 self-stretch pl-0 pr-3"
+              className="w-[280px] shrink-0 self-stretch border-l border-gray-200 pl-3 pr-3"
               style={sidePanelStyle}
             >
               {typeof sidePanel === 'function'
-                ? React.createElement(sidePanel, { recordId: data?.id || recordId, data, token, apiBaseUrl, api })
+                ? React.createElement(sidePanel, { recordId: data?.id || recordId, data, token, apiBaseUrl, api, isNew })
                 : sidePanel}
             </div>
           )}
