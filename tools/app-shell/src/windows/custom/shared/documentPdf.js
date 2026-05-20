@@ -2,16 +2,17 @@ import { useState, useEffect, useRef } from 'react';
 import { buildLocationAddressLines } from '@/lib/locationAddress.js';
 import { computeDocumentTotals } from '@/lib/documentTotals';
 import { ORDER_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
-import { renderPdf } from './pdfUtils.js';
-
-export {
+import {
   fetchJson,
   fetchAll,
   fetchOptionalJson,
   fetchLocationAddress,
   blobToDataUrl,
   fetchImageDataUrl,
+  renderPdf,
 } from './pdfUtils.js';
+
+export { fetchJson, fetchAll, fetchOptionalJson, fetchLocationAddress, blobToDataUrl, fetchImageDataUrl } from './pdfUtils.js';
 
 // ---------------------------------------------------------------------------
 // Handlebars helpers (CommonJS for jsreport context)
