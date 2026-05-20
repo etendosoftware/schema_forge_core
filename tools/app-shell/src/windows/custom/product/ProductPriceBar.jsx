@@ -1002,63 +1002,17 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
     if (e.key === 'Enter') saveCreate();
   };
 
-  if (!recordId) {
-    return (
-      <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm p-5 mb-2">
-        <div className="text-sm font-semibold text-gray-800">{ui('pricing')}</div>
-        <div className="text-sm text-gray-500 mt-1">
-          {ui('saveProductFirstPricing')}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm pt-2 pb-5 px-5">
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <div className="text-base font-semibold text-gray-800">{ui('pricing')}</div>
-          <div className="text-sm text-gray-400 mt-0.5">
-            {ui('configureMainSaleAndPurchasePrice')}
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0 ml-4">
-          {creating ? (
-            <>
-              <button
-                onClick={cancelCreate}
-                disabled={saving}
-                className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 transition-colors"
-              >
-                {ui('cancel')}
-              </button>
-              <button
-                onClick={saveCreate}
-                disabled={saving}
-                className="text-xs px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:bg-gray-700 transition-colors flex items-center gap-1.5"
-              >
-                {saving && <Loader2 size={11} className="animate-spin" />}
-                {ui('savePricing')}
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={handleOpenDialog}
-              disabled={loading}
-              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-100 transition-colors font-medium"
-            >
-              {hasRows ? ui('editPricing') : ui('setPricing')}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {loading ? (
+  const renderPricingBody = () => {
+    if (loading) {
+      return (
         <div className="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-500 flex items-center gap-2">
           <Loader2 size={14} className="animate-spin" />
           {ui('loadingPricing')}
         </div>
-      ) : creating && !hasRows ? (
+      );
+    }
+    if (creating && !hasRows) {
+      return (
         <div className="flex gap-3">
           <div className="flex-1 rounded-xl border border-blue-200 bg-blue-50/40 p-4">
             <div className="text-sm font-semibold text-gray-800 mb-1">{ui('priceSalesPrice')}</div>
@@ -1122,16 +1076,75 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
             </div>
           </div>
         </div>
-      ) : !hasRows ? (
+      );
+    }
+    if (!hasRows) {
+      return (
         <div className="rounded-lg border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-400">
           {ui('noPricingConfigured')}
         </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2 items-start">
-          <PriceTable title={ui('priceSalesLists')} rows={displaySaleRows} variant="sales" />
-          <PriceTable title={ui('pricePurchaseLists')} rows={displayPurchaseRows} variant="purchase" />
+      );
+    }
+    return (
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-2 items-start">
+        <PriceTable title={ui('priceSalesLists')} rows={displaySaleRows} variant="sales" />
+        <PriceTable title={ui('pricePurchaseLists')} rows={displayPurchaseRows} variant="purchase" />
+      </div>
+    );
+  };
+
+  if (!recordId) {
+    return (
+      <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm p-5 mb-2">
+        <div className="text-sm font-semibold text-gray-800">{ui('pricing')}</div>
+        <div className="text-sm text-gray-500 mt-1">
+          {ui('saveProductFirstPricing')}
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm pt-2 pb-5 px-5">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <div className="text-base font-semibold text-gray-800">{ui('pricing')}</div>
+          <div className="text-sm text-gray-400 mt-0.5">
+            {ui('configureMainSaleAndPurchasePrice')}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0 ml-4">
+          {creating ? (
+            <>
+              <button
+                onClick={cancelCreate}
+                disabled={saving}
+                className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                {ui('cancel')}
+              </button>
+              <button
+                onClick={saveCreate}
+                disabled={saving}
+                className="text-xs px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:bg-gray-700 transition-colors flex items-center gap-1.5"
+              >
+                {saving && <Loader2 size={11} className="animate-spin" />}
+                {ui('savePricing')}
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={handleOpenDialog}
+              disabled={loading}
+              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-100 transition-colors font-medium"
+            >
+              {hasRows ? ui('editPricing') : ui('setPricing')}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {renderPricingBody()}
 
       <PricingDialog
         open={dialogOpen}
