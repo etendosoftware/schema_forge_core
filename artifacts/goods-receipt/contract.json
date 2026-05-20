@@ -1,8 +1,8 @@
 {
-  "version": "0.9.0",
+  "version": "0.9.1",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-05-20T17:08:26.373Z",
-  "checksum": "8ef22190d439d4a2",
+  "updatedAt": "2026-05-20T17:11:55.773Z",
+  "checksum": "d9d373db705147ba",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -470,7 +470,7 @@
             "tsType": "number",
             "visibility": "editable",
             "required": true,
-            "grid": true,
+            "grid": false,
             "form": false,
             "sourceRequired": true,
             "derivation": {
@@ -826,7 +826,7 @@
             "tsType": "number",
             "visibility": "readOnly",
             "required": true,
-            "grid": true,
+            "grid": false,
             "form": false,
             "sourceRequired": true,
             "derivation": {

@@ -174,7 +174,7 @@
           "form": false
         },
         "lineNo": {
-          "grid": true,
+          "grid": false,
           "form": false,
           "readOnlyLogic": null
         },
@@ -193,7 +193,7 @@
           "form": false
         },
         "invoiceQuantity": {
-          "grid": true,
+          "grid": false,
           "form": false,
           "displayLogic": null
         },

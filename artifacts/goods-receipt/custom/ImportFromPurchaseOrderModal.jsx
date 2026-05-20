@@ -49,6 +49,7 @@ const buildLineBody = async ({ line, qty, invoiceId: receiptId, lineNo }) => ({
   parentId: receiptId,
   product: line.product,
   movementQuantity: qty,
+  orderQuantity: Number(line.orderedQuantity) || qty,
   uOM: line.uOM || null,
   salesOrderLine: line.id,
   lineNo,
