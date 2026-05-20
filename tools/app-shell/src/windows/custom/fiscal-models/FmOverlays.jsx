@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
+import { Star, Play, ArrowUpRight, Info } from 'lucide-react';
 import './fiscal-models.css';
 
 function parseCityLine(cityLine) {
@@ -51,7 +52,7 @@ export function PresentModal({ decl, onConfirm, onClose }) {
             className={`fm-present-modal__path${path === 'presentadoAcuse' ? ' fm-present-modal__path--selected' : ''}`}
             onClick={() => setPath('presentadoAcuse')}
           >
-            <div className="fm-present-modal__path-title">★ {t('fm.present.path.acuse')}</div>
+            <div className="fm-present-modal__path-title"><Star size={12} /> {t('fm.present.path.acuse')}</div>
             <div className="fm-present-modal__path-desc">{t('fm.present.path.acuse_desc')}</div>
             {path === 'presentadoAcuse' && (
               <div className="fm-present-modal__upload">
@@ -77,7 +78,7 @@ export function PresentModal({ decl, onConfirm, onClose }) {
             className={`fm-present-modal__path${path === 'presentado' ? ' fm-present-modal__path--selected' : ''}`}
             onClick={() => setPath('presentado')}
           >
-            <div className="fm-present-modal__path-title">▶ {t('fm.present.path.sin_acuse')}</div>
+            <div className="fm-present-modal__path-title"><Play size={12} /> {t('fm.present.path.sin_acuse')}</div>
             <div className="fm-present-modal__path-desc">{t('fm.present.path.sin_acuse_desc')}</div>
           </div>
 
@@ -85,7 +86,7 @@ export function PresentModal({ decl, onConfirm, onClose }) {
             className={`fm-present-modal__path${path === 'presentadoOtra' ? ' fm-present-modal__path--selected' : ''}`}
             onClick={() => setPath('presentadoOtra')}
           >
-            <div className="fm-present-modal__path-title">↗ {t('fm.present.path.otra')}</div>
+            <div className="fm-present-modal__path-title"><ArrowUpRight size={12} /> {t('fm.present.path.otra')}</div>
             <div className="fm-present-modal__path-desc">{t('fm.present.path.otra_desc')}</div>
           </div>
         </div>
@@ -421,15 +422,16 @@ export function CompareDrawer({ decl, prevDecl, onClose }) {
           );
         })}
         <div style={{ marginTop: 16, padding: '12px 14px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, fontSize: 12, color: '#1e40af', display: 'flex', gap: 8 }}>
-          <span style={{ flexShrink: 0 }}>ℹ</span>
+          <Info size={14} style={{ flexShrink: 0, marginTop: 1 }} />
           <span>
             {devImproved
-              ? `La base imponible y el IVA devengado han aumentado respecto a ${prevLabel}.`
-              : `El IVA devengado ha disminuido respecto a ${prevLabel}.`
+              ? t('fm.compare.insight.dev_improved', { prev: prevLabel })
+              : t('fm.compare.insight.dev_fell', { prev: prevLabel })
             }
+            {' '}
             {resultImproved
-              ? ` El importe a compensar es mayor en ${currLabel}, lo que supone un mayor crédito fiscal.`
-              : ` El resultado es más favorable en ${currLabel}.`
+              ? t('fm.compare.insight.result_higher', { curr: currLabel })
+              : t('fm.compare.insight.result_lower', { curr: currLabel })
             }
           </span>
         </div>

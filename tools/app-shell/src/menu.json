@@ -286,8 +286,8 @@
         },
         {
           "name": "fiscal-models",
-          "label": "Modelos Fiscales",
-          "favname": "Modelos Fiscales"
+          "label": "Fiscal Models",
+          "favname": "Fiscal Models"
         },
         {
           "name": "report-viewer-finance",

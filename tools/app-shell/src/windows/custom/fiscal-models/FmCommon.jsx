@@ -114,6 +114,7 @@ export function Tabs({ tabs, active, onSelect }) {
 }
 
 export function Banner({ type, tone, message, icon, title, sub, actions, onClose }) {
+  const ui = useUI();
   if (title !== undefined) {
     const t = tone || type || 'info';
     return (
@@ -124,7 +125,7 @@ export function Banner({ type, tone, message, icon, title, sub, actions, onClose
           {sub && <div className="fm-banner__sub">{sub}</div>}
         </div>
         {actions && <div className="fm-banner__actions">{actions}</div>}
-        {onClose && <button className="fm-banner__close" onClick={onClose} aria-label="Close">×</button>}
+        {onClose && <button className="fm-banner__close" onClick={onClose} aria-label={ui('fm.action.close')}>×</button>}
       </div>
     );
   }
@@ -168,6 +169,7 @@ export function EmptyState({ message, icon, title, sub, cta }) {
 }
 
 export function SidePanel({ title, sub, onClose, footer, children, wide }) {
+  const ui = useUI();
   return (
     <>
       <div className="fm-side-scrim" onClick={onClose} />
@@ -177,7 +179,7 @@ export function SidePanel({ title, sub, onClose, footer, children, wide }) {
             <div className="fm-side-panel__title">{title}</div>
             {sub && <div className="fm-side-panel__sub">{sub}</div>}
           </div>
-          <button className="fm-side-panel__close" onClick={onClose} aria-label="Close">×</button>
+          <button className="fm-side-panel__close" onClick={onClose} aria-label={ui('fm.action.close')}>×</button>
         </div>
         <div className="fm-side-panel__body">{children}</div>
         {footer && <div className="fm-side-panel__foot">{footer}</div>}

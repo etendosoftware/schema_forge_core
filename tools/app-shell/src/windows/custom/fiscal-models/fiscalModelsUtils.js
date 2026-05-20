@@ -184,8 +184,8 @@ export function deriveBoxes303(data) {
 
   fillECBoxes(b, data.ecByRate ?? {});
 
-  // Total devengada (box 27) = sum of all output tax cuotas
-  const accruedBoxes = [3, 6, 9, 11, 13, 15, 18, 21, 24, 152, 158, 167];
+  // Total devengada (box 27) = 152+167+03+155+06+09+11+13+15+158+170+18+21+24+26
+  const accruedBoxes = [3, 6, 9, 11, 13, 15, 18, 21, 24, 26, 152, 155, 158, 167, 170];
   b[27] = roundEur(accruedBoxes.reduce((s, box) => s + (b[box] ?? 0), 0));
 
   fillPurchBoxes(b, data);
