@@ -6,6 +6,8 @@ import {
   fetchOptionalJson,
   fetchLocationAddress,
   fetchImageDataUrl,
+  buildDocumentPdfLabels,
+  computeDiscountBreakdown,
   useDocumentPdf,
 } from './documentPdf.js';
 
@@ -48,11 +50,9 @@ async function buildQuotationData(quotationId, base, token) {
     const disc = Number(l.discount ?? 0);
     return disc > 0 ? lineNet / (1 - disc / 100) : lineNet;
   };
-  const grossAmount = linesRaw.reduce((sum, l) => sum + getGrossLine(l), 0);
-  const productNetAmount = linesRaw.reduce((sum, l) => sum + Number(l.lineNetAmount ?? 0), 0);
-  const discountPerProduct = Math.max(0, grossAmount - productNetAmount);
   const etgoTotalDiscount = Number(header.etgoTotalDiscount ?? 0);
-  const totalDiscountAmt = etgoTotalDiscount > 0 ? productNetAmount * etgoTotalDiscount / 100 : 0;
+  const { grossAmount, discountPerProduct, totalDiscountAmt } =
+    computeDiscountBreakdown(linesRaw, etgoTotalDiscount, getGrossLine);
 
   const org = session?.organization ?? {};
   const customerAddressLines = buildLocationAddressLines(
@@ -92,33 +92,13 @@ async function buildQuotationData(quotationId, base, token) {
 // ---------------------------------------------------------------------------
 export function useQuotationPdf(quotationId, apiBaseUrl, token) {
   const ui = useUI();
-  const labels = {
+  const labels = buildDocumentPdfLabels(ui, {
     title:           ui('quotationPdfTitle'),
     documentNo:      ui('quotationPdfDocumentNo'),
-    taxId:           ui('invoicePdfTaxId'),
-    page:            ui('invoicePdfPage'),
-    customerSection: ui('invoicePdfCustomerSection'),
     documentSection: ui('quotationPdfSection'),
-    customer:        ui('invoicePdfCustomer'),
-    address:         ui('invoicePdfAddress'),
     date:            ui('quotationPdfDate'),
     validUntil:      ui('quotationPdfValidUntil'),
-    paymentTerms:    ui('invoicePdfPaymentTerms'),
-    paymentMethod:   ui('invoicePdfPaymentMethod'),
-    colCode:         ui('invoicePdfColCode'),
-    colDescription:  ui('invoicePdfColDescription'),
     colQty:          ui('quotationPdfColQty'),
-    colUnitPrice:    ui('invoicePdfColUnitPrice'),
-    colDiscount:     ui('invoicePdfColDiscount'),
-    colTax:          ui('invoicePdfColTax'),
-    colTotal:        ui('invoicePdfColTotal'),
-    subtotal:                ui('invoicePdfSubtotal'),
-    tax:                     ui('invoicePdfTax'),
-    grandTotal:              ui('invoicePdfGrandTotal'),
-    notes:                   ui('invoicePdfNotes'),
-    subtotalWithoutDiscount: ui('subtotalWithoutDiscount'),
-    discountPerProduct:      ui('discountPerProduct'),
-    totalDiscount:           ui('totalDiscount'),
-  };
+  });
   return useDocumentPdf(quotationId, apiBaseUrl, token, buildQuotationData, labels);
 }

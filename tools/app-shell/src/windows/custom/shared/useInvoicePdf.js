@@ -6,6 +6,8 @@ import {
   fetchOptionalJson,
   fetchLocationAddress,
   fetchImageDataUrl,
+  buildDocumentPdfLabels,
+  computeDiscountBreakdown,
   useDocumentPdf,
 } from './documentPdf.js';
 
@@ -48,11 +50,10 @@ async function buildInvoiceData(invoiceId, base, token) {
     const disc = Number(l.etgoDiscount ?? 0);
     return disc > 0 ? lineNet / (1 - disc / 100) : lineNet;
   };
-  const grossAmount = linesRaw.reduce((sum, l) => sum + getGrossLine(l), 0);
-  const productNetAmount = linesRaw.reduce((sum, l) => sum + Number(l.lineNetAmount ?? 0), 0);
-  const discountPerProduct = Math.max(0, grossAmount - productNetAmount);
   const etgoTotalDiscount = Number(header.etgoTotalDiscount ?? 0);
-  const totalDiscountAmt = etgoTotalDiscount > 0 ? productNetAmount * etgoTotalDiscount / 100 : 0;
+  const { grossAmount, discountPerProduct, totalDiscountAmt } =
+    computeDiscountBreakdown(linesRaw, etgoTotalDiscount, getGrossLine);
+
   const hasLineDiscount = linesRaw.some(l => Number(l.etgoDiscount ?? 0) > 0);
   const hasAnyDiscount = hasLineDiscount || etgoTotalDiscount > 0;
   const hasTotalDiscount = etgoTotalDiscount > 0;
@@ -98,32 +99,12 @@ async function buildInvoiceData(invoiceId, base, token) {
 // ---------------------------------------------------------------------------
 export function useInvoicePdf(invoiceId, apiBaseUrl, token) {
   const ui = useUI();
-  const labels = {
+  const labels = buildDocumentPdfLabels(ui, {
     title:           ui('invoicePdfTitle'),
     documentNo:      ui('invoicePdfDocumentNo'),
-    taxId:           ui('invoicePdfTaxId'),
-    page:            ui('invoicePdfPage'),
-    customerSection: ui('invoicePdfCustomerSection'),
     documentSection: ui('invoicePdfInvoiceSection'),
-    customer:        ui('invoicePdfCustomer'),
-    address:         ui('invoicePdfAddress'),
     date:            ui('invoicePdfDate'),
-    paymentTerms:    ui('invoicePdfPaymentTerms'),
-    paymentMethod:   ui('invoicePdfPaymentMethod'),
-    colCode:         ui('invoicePdfColCode'),
-    colDescription:  ui('invoicePdfColDescription'),
     colQty:          ui('invoicePdfColQty'),
-    colUnitPrice:    ui('invoicePdfColUnitPrice'),
-    colDiscount:     ui('invoicePdfColDiscount'),
-    colTax:          ui('invoicePdfColTax'),
-    colTotal:        ui('invoicePdfColTotal'),
-    subtotal:                ui('invoicePdfSubtotal'),
-    tax:                     ui('invoicePdfTax'),
-    grandTotal:              ui('invoicePdfGrandTotal'),
-    notes:                   ui('invoicePdfNotes'),
-    subtotalWithoutDiscount: ui('subtotalWithoutDiscount'),
-    discountPerProduct:      ui('discountPerProduct'),
-    totalDiscount:           ui('totalDiscount'),
-  };
+  });
   return useDocumentPdf(invoiceId, apiBaseUrl, token, buildInvoiceData, labels);
 }

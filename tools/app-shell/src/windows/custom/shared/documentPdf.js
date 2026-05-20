@@ -401,6 +401,49 @@ export async function renderDocumentPdf(data) {
 }
 
 // ---------------------------------------------------------------------------
+// Shared label builder — 20 common keys shared by all document PDF hooks.
+// Each hook passes only its 4-5 document-specific overrides.
+// ---------------------------------------------------------------------------
+export function buildDocumentPdfLabels(ui, overrides) {
+  return {
+    taxId:           ui('invoicePdfTaxId'),
+    page:            ui('invoicePdfPage'),
+    customerSection: ui('invoicePdfCustomerSection'),
+    customer:        ui('invoicePdfCustomer'),
+    address:         ui('invoicePdfAddress'),
+    paymentTerms:    ui('invoicePdfPaymentTerms'),
+    paymentMethod:   ui('invoicePdfPaymentMethod'),
+    colCode:         ui('invoicePdfColCode'),
+    colDescription:  ui('invoicePdfColDescription'),
+    colUnitPrice:    ui('invoicePdfColUnitPrice'),
+    colDiscount:     ui('invoicePdfColDiscount'),
+    colTax:          ui('invoicePdfColTax'),
+    colTotal:        ui('invoicePdfColTotal'),
+    subtotal:                ui('invoicePdfSubtotal'),
+    tax:                     ui('invoicePdfTax'),
+    grandTotal:              ui('invoicePdfGrandTotal'),
+    notes:                   ui('invoicePdfNotes'),
+    subtotalWithoutDiscount: ui('subtotalWithoutDiscount'),
+    discountPerProduct:      ui('discountPerProduct'),
+    totalDiscount:           ui('totalDiscount'),
+    ...overrides,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Shared discount breakdown — identical reduce+math used by invoice and
+// quotation data builders. getGrossLine is document-specific (different qty
+// and discount field names) so it is passed as a parameter.
+// ---------------------------------------------------------------------------
+export function computeDiscountBreakdown(linesRaw, etgoTotalDiscount, getGrossLine) {
+  const grossAmount = linesRaw.reduce((sum, l) => sum + getGrossLine(l), 0);
+  const productNetAmount = linesRaw.reduce((sum, l) => sum + Number(l.lineNetAmount ?? 0), 0);
+  const discountPerProduct = Math.max(0, grossAmount - productNetAmount);
+  const totalDiscountAmt = etgoTotalDiscount > 0 ? productNetAmount * etgoTotalDiscount / 100 : 0;
+  return { grossAmount, productNetAmount, discountPerProduct, totalDiscountAmt };
+}
+
+// ---------------------------------------------------------------------------
 // Generic PDF hook — shared by all document-type hooks
 // labels are kept in a ref so they never re-trigger the effect on locale change
 // ---------------------------------------------------------------------------

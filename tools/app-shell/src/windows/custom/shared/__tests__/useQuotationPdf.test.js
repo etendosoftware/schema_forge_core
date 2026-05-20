@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(__dirname, '..', 'useQuotationPdf.js'), 'utf8');
+const sharedSrc = readFileSync(join(__dirname, '..', 'documentPdf.js'), 'utf8');
 
 describe('useQuotationPdf', () => {
 
@@ -121,7 +122,7 @@ describe('useQuotationPdf', () => {
   describe('discount breakdown', () => {
     it('computes grossAmount from raw lines using getGrossLine helper', () => {
       assert.match(src, /getGrossLine/);
-      assert.match(src, /linesRaw\.reduce/);
+      assert.match(src, /computeDiscountBreakdown/, 'delegates reduce logic to computeDiscountBreakdown');
     });
 
     it('uses listPrice when available to compute the gross line amount', () => {
@@ -133,7 +134,8 @@ describe('useQuotationPdf', () => {
     });
 
     it('computes discountPerProduct as Math.max(0, grossAmount - productNetAmount)', () => {
-      assert.match(src, /Math\.max\(0, grossAmount - productNetAmount\)/);
+      assert.match(src, /computeDiscountBreakdown/, 'delegates to computeDiscountBreakdown');
+      assert.match(sharedSrc, /Math\.max\(0, grossAmount - productNetAmount\)/);
     });
 
     it('reads etgoTotalDiscount from header', () => {
@@ -141,7 +143,8 @@ describe('useQuotationPdf', () => {
     });
 
     it('computes totalDiscountAmt only when etgoTotalDiscount > 0', () => {
-      assert.match(src, /etgoTotalDiscount > 0 \? productNetAmount \* etgoTotalDiscount/);
+      assert.match(src, /computeDiscountBreakdown/, 'delegates to computeDiscountBreakdown');
+      assert.match(sharedSrc, /etgoTotalDiscount > 0 \? productNetAmount \* etgoTotalDiscount/);
     });
 
     it('passes null for grossAmount when discountPerProduct is 0', () => {
@@ -153,15 +156,18 @@ describe('useQuotationPdf', () => {
     });
 
     it('includes subtotalWithoutDiscount label key in labels object', () => {
-      assert.match(src, /subtotalWithoutDiscount/);
+      assert.match(src, /buildDocumentPdfLabels/, 'hook delegates base labels to buildDocumentPdfLabels');
+      assert.match(sharedSrc, /subtotalWithoutDiscount/);
     });
 
     it('includes discountPerProduct label key in labels object', () => {
-      assert.match(src, /discountPerProduct/);
+      assert.match(src, /buildDocumentPdfLabels/, 'hook delegates base labels to buildDocumentPdfLabels');
+      assert.match(sharedSrc, /discountPerProduct/);
     });
 
     it('includes totalDiscount label key in labels object', () => {
-      assert.match(src, /totalDiscount/);
+      assert.match(src, /buildDocumentPdfLabels/, 'hook delegates base labels to buildDocumentPdfLabels');
+      assert.match(sharedSrc, /totalDiscount/);
     });
   });
 });
