@@ -120,6 +120,7 @@ export default function GoodsReceiptActions({ data, recordId, token, apiBaseUrl 
           cardTitleKey="goodsReceipt.confirmModal.createInvoiceTitle"
           cardSubtitleKey="goodsReceipt.confirmModal.createInvoiceDesc"
           confirmBtnKey="goodsReceipt.confirmModal.confirmBtn"
+          docInfo={{ bpName: data?.['businessPartner$_identifier'], documentNo: data?.documentNo }}
           onConfirmed={(docs) => { setShowConfirm(false); setConfirmedDocs(docs); }}
           onClose={() => setShowConfirm(false)}
         />

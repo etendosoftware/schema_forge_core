@@ -102,6 +102,7 @@ export const closeBtnStyle = {
 //   cardTitleKey              — i18n key for checkbox card title
 //   cardSubtitleKey           — i18n key for checkbox card subtitle
 //   confirmBtnKey             — i18n key for the confirm button label
+//   docInfo                   — optional { bpName, documentNo } shown above the description
 //   onConfirmed({ invoice })  — called on success; invoice is { id, documentNo } or null
 //   onClose                   — called to dismiss without confirming
 
@@ -118,6 +119,7 @@ export default function ConfirmDocumentModal({
   cardTitleKey,
   cardSubtitleKey,
   confirmBtnKey,
+  docInfo,
   onConfirmed,
   onClose,
 }) {
@@ -171,8 +173,22 @@ export default function ConfirmDocumentModal({
           <button type="button" onClick={onClose} style={closeBtnStyle}>&times;</button>
         </div>
 
+        {docInfo && (docInfo.bpName || docInfo.documentNo) && (
+          <div style={{ padding: '12px 20px 0', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            {docInfo.documentNo && (
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{docInfo.documentNo}</span>
+            )}
+            {docInfo.documentNo && docInfo.bpName && (
+              <span style={{ fontSize: 12, color: '#D1D5DB' }}>·</span>
+            )}
+            {docInfo.bpName && (
+              <span style={{ fontSize: 12, color: '#6B7280' }}>{docInfo.bpName}</span>
+            )}
+          </div>
+        )}
+
         {subtitleKey && (
-          <div style={{ padding: '16px 20px 8px' }}>
+          <div style={{ padding: '12px 20px 8px' }}>
             <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.5, margin: 0 }}>
               {ui(subtitleKey)}
             </p>
