@@ -8,7 +8,6 @@ import {
   fetchAll,
   fetchOptionalJson,
   fetchLocationAddress,
-  blobToDataUrl,
   fetchImageDataUrl,
   renderPdf,
 } from './pdfUtils.js';
