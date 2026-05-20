@@ -216,6 +216,7 @@ function applyFieldDecisionProps(field, fieldDecision) {
   if (fieldDecision.badge) field.badge = true;
   if (fieldDecision.summable) field.summable = true;
   if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
+  if (fieldDecision.min !== undefined) field.min = fieldDecision.min;
   copyTruthyDecisionProps(field, fieldDecision, FIELD_DECISION_COPY_PROPS);
 }
 
