@@ -18394,7 +18394,7 @@
     "fiscal.territory.canarias.example": "Empresas con IGIC en lugar de IVA",
     "fiscal.territory.ceuta.example": "Empresas con IPSI en lugar de IVA",
     "fiscal.territory.system.sii": "SII",
-    "fiscal.territory.system.tbai": "TBAI / SII+TBAI",
+    "fiscal.territory.system.tbai": "TBAI / SII + TBAI",
     "fiscal.territory.system.siiver": "SII / VERIFACTU",
     "fiscal.territory.group.sii.label": "SII",
     "fiscal.territory.group.sii.desc": "Hacienda Foral de Navarra",

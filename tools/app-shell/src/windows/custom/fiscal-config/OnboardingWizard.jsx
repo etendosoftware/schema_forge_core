@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUI, useLocaleSwitch } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
@@ -73,6 +73,14 @@ const REGIME_BADGE = {
   tbai:      { bg: '#FFF2EE', text: '#B82E00' },
   siiver:    { bg: '#FEECFB', text: '#A5088C' },
 };
+
+const SYSTEM_BADGE = {
+  SII:        { bg: '#F0FAFF', text: '#0075AD' },
+  TBAI:       { bg: '#FFF2EE', text: '#B82E00' },
+  'SII+TBAI': { bg: '#FFF2EE', text: '#B82E00' },
+  VERIFACTU:  { bg: '#FEECFB', text: '#A5088C' },
+};
+const SYSTEM_BADGE_LABEL = { SII: 'SII', TBAI: 'TBAI', 'SII+TBAI': 'SII + TBAI', VERIFACTU: 'Verifactu' };
 
 const ORG_COLORS = ['bg-red-500', 'bg-blue-500', 'bg-green-600', 'bg-orange-500', 'bg-purple-500', 'bg-teal-500'];
 function orgAvatarColor(name) {
@@ -230,9 +238,14 @@ function TerrCard({ territory, selected, onPick }) {
     <button
       type="button"
       onClick={() => onPick(territory.id)}
-      className={`relative flex flex-col text-left transition-colors cursor-pointer rounded-xl border
-        ${selected ? 'border-[#121217]' : 'border-[#E8EAEF] hover:bg-muted/40'}`}
-      style={{ minHeight: 80, padding: 16, gap: 12, boxShadow: '0 1px 2px rgba(18,18,23,0.05)' }}
+      className={`relative flex flex-col text-left transition-all cursor-pointer rounded-xl
+        ${selected ? 'border-2 border-[#121217]' : 'border border-[#E8EAEF] hover:bg-muted/40'}`}
+      style={{
+        minHeight: 80, padding: 16, gap: 12,
+        boxShadow: selected
+          ? '0 4px 16px rgba(18,18,23,0.14), 0 1px 3px rgba(18,18,23,0.08)'
+          : '0 1px 2px rgba(18,18,23,0.05)',
+      }}
     >
       {/* Radio circle — ring + inner dot style (◉) when selected */}
       <span
@@ -575,6 +588,51 @@ function ConfirmScreen({ resolvedSystem, selectedTerritory, alsoNational, volume
   );
 }
 
+function ManualTerrCard({ territory, selected, onPick }) {
+  const badgeColors = REGIME_BADGE[territory.regime];
+  const badgeStyle = badgeColors
+    ? { backgroundColor: badgeColors.bg, color: badgeColors.text }
+    : { backgroundColor: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))' };
+
+  return (
+    <button
+      type="button"
+      onClick={() => onPick(territory.id)}
+      className={`relative flex flex-col text-left transition-all cursor-pointer rounded-xl
+        ${selected ? 'border-2 border-[#121217]' : 'border border-[#E8EAEF] hover:bg-muted/40'}`}
+      style={{
+        minHeight: 80, padding: 16, gap: 12,
+        boxShadow: selected
+          ? '0 4px 16px rgba(18,18,23,0.14), 0 1px 3px rgba(18,18,23,0.08)'
+          : '0 1px 2px rgba(18,18,23,0.05)',
+      }}
+    >
+      <span
+        className="absolute flex-shrink-0"
+        style={{
+          width: 15, height: 15, right: 8, top: 9, borderRadius: '50%',
+          border: selected ? '1.5px solid #121217' : '1.5px solid #D1D4DB',
+          background: selected
+            ? 'radial-gradient(circle at center, #121217 40%, #FFFFFF 40%)'
+            : '#FFFFFF',
+          boxShadow: '0 1px 2px rgba(18,18,23,0.05)',
+        }}
+      />
+      <div className="flex items-center min-w-0" style={{ gap: 4, paddingRight: 20 }}>
+        <span className="text-sm font-medium truncate" style={{ color: '#121217' }}>{territory.name}</span>
+        {territory.system && (
+          <span style={badgeStyle} className="text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 leading-none">
+            {territory.system}
+          </span>
+        )}
+      </div>
+      {territory.example && (
+        <div className="text-sm leading-6" style={{ color: '#555B6D' }}>{territory.example}</div>
+      )}
+    </button>
+  );
+}
+
 function ManualScreen({ selectedTerritory, manualSystem, orgName, selectedOrg, orgList, onSelectOrg, ui, TERRITORIES, SYSTEMS, goTo, onSelectTerritory, onSetManualSystem }) {
   const manualAllowedSystems = getAllowedSystemsForTerritory(selectedTerritory);
 
@@ -583,30 +641,34 @@ function ManualScreen({ selectedTerritory, manualSystem, orgName, selectedOrg, o
       toolbar={<PageHead selectedOrg={selectedOrg} orgList={orgList} onSelectOrg={onSelectOrg} ui={ui} />}
       actions={
         <>
-          <Button variant="outline" onClick={() => goTo('territory')}>{ui('fiscal.onboarding.back')}</Button>
+          <Button variant="outline" onClick={() => goTo('territory')} className="flex items-center gap-1.5">
+            <ArrowLeft size={15} />{ui('fiscal.onboarding.back').replace('←', '').trim()}
+          </Button>
           <span className="flex-1" />
-          <Button onClick={() => goTo('confirm')} disabled={!selectedTerritory || !manualSystem}>
-            {ui('fiscal.onboarding.continue')}
+          <Button
+            onClick={() => goTo('confirm')}
+            disabled={!selectedTerritory || !manualSystem}
+            className="flex items-center gap-1.5"
+          >
+            {ui('fiscal.onboarding.continue').replace('›', '').trim()} <ArrowRight size={15} />
           </Button>
         </>
       }
     >
-      <Breadcrumb items={[
-        { label: ui('fiscal.onboarding.breadcrumb.territory'), onClick: () => goTo('territory') },
-        { label: ui('fiscal.onboarding.breadcrumb.manual') },
-      ]} />
-
-      <h2 className="text-xl font-bold tracking-tight mb-1">{ui('fiscal.onboarding.manual.title')}</h2>
-      <p className="text-sm text-muted-foreground mb-6">
+      <h2 className="font-semibold leading-8 mb-1" style={{ color: '#121217', fontSize: 18 }}>{ui('fiscal.onboarding.manual.title')}</h2>
+      <p className="leading-4 mb-6" style={{ color: '#282833', fontSize: 12 }}>
         {ui('fiscal.onboarding.manual.subtitle')}
       </p>
 
-      <div className="space-y-6">
-        <div>
-          <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-2.5">{ui('fiscal.onboarding.manual.territory.header')}</div>
-          <div className="grid gap-2.5 grid-cols-3">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {/* Territorio */}
+        <div className="grid" style={{ gridTemplateColumns: '148px 1fr', gap: 20 }}>
+          <div className="text-sm font-semibold pt-1" style={{ color: '#121217' }}>
+            {ui('fiscal.onboarding.manual.territory.header')}
+          </div>
+          <div className="grid grid-cols-3" style={{ gap: 20 }}>
             {Object.values(TERRITORIES).map(territory => (
-              <TerrCard
+              <ManualTerrCard
                 key={territory.id}
                 territory={territory}
                 selected={selectedTerritory === territory.id}
@@ -616,33 +678,56 @@ function ManualScreen({ selectedTerritory, manualSystem, orgName, selectedOrg, o
           </div>
         </div>
 
-        <div>
-          <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-2.5">{ui('fiscal.onboarding.manual.system.header')}</div>
-          {!selectedTerritory ? (
-            <div className="rounded-[10px] border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
-              {ui('fiscal.onboarding.manual.system.placeholder')}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {manualAllowedSystems.map(systemId => {
-                const sys = SYSTEMS[systemId];
-                return (
-                  <button
-                    key={sys.id}
-                    type="button"
-                    onClick={() => onSetManualSystem(sys.id)}
-                    className={`p-5 rounded-xl border text-left cursor-pointer transition-all
-                      ${manualSystem === sys.id
-                        ? 'border-foreground shadow-[inset_0_0_0_1px_hsl(var(--foreground))]'
-                        : 'border-border hover:bg-muted/40 hover:border-border/80'}`}
-                  >
-                    <div className="font-bold text-sm mb-1">{sys.name}</div>
-                    <div className="text-xs text-muted-foreground">{sys.long}</div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+        <div style={{ height: 1, background: '#E8EAEF' }} />
+
+        {/* Sistema fiscal */}
+        <div className="grid" style={{ gridTemplateColumns: '148px 1fr', gap: 20 }}>
+          <div className="text-sm font-semibold pt-1" style={{ color: '#121217' }}>
+            {ui('fiscal.onboarding.manual.system.header')}
+          </div>
+          <div>
+            {!selectedTerritory ? (
+              <div className="rounded-xl border border-border bg-muted/20 p-4 text-sm" style={{ color: '#555B6D' }}>
+                {ui('fiscal.onboarding.manual.system.placeholder')}
+              </div>
+            ) : (
+              <div className="grid grid-cols-3" style={{ gap: 20 }}>
+                {manualAllowedSystems.map(systemId => {
+                  const sys = SYSTEMS[systemId];
+                  const isSelected = manualSystem === sys.id;
+                  return (
+                    <button
+                      key={sys.id}
+                      type="button"
+                      onClick={() => onSetManualSystem(sys.id)}
+                      className={`relative flex flex-col text-left transition-all cursor-pointer rounded-xl
+                        ${isSelected ? 'border-2 border-[#121217]' : 'border border-[#E8EAEF] hover:bg-muted/40'}`}
+                      style={{
+                        minHeight: 80, padding: 16, gap: 12,
+                        boxShadow: isSelected
+                          ? '0 4px 16px rgba(18,18,23,0.14), 0 1px 3px rgba(18,18,23,0.08)'
+                          : '0 1px 2px rgba(18,18,23,0.05)',
+                      }}
+                    >
+                      <span
+                        className="absolute flex-shrink-0"
+                        style={{
+                          width: 15, height: 15, right: 8, top: 9, borderRadius: '50%',
+                          border: isSelected ? '1.5px solid #121217' : '1.5px solid #D1D4DB',
+                          background: isSelected
+                            ? 'radial-gradient(circle at center, #121217 40%, #FFFFFF 40%)'
+                            : '#FFFFFF',
+                          boxShadow: '0 1px 2px rgba(18,18,23,0.05)',
+                        }}
+                      />
+                      <span className="text-sm font-medium truncate pr-5" style={{ color: '#121217' }}>{sys.name}</span>
+                      <span className="text-sm leading-6" style={{ color: '#555B6D' }}>{sys.long}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </ScreenLayout>
