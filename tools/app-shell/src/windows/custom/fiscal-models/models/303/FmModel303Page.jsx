@@ -519,7 +519,7 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
           return (
             <SectionCard title={t(page.titleKey)}>
               <div style={{ display: 'flex', gap: 4, marginBottom: 16, borderBottom: '1px solid #e5e7eb', paddingBottom: 12 }}>
-                {BOX_PAGES.map((p) => (
+                {BOX_PAGES.map((p, idx) => (
                   <button
                     key={p.titleKey}
                     onClick={() => setBoxPage(idx)}
