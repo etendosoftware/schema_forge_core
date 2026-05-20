@@ -1,9 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { useUI } from '@/i18n';
-import { buildLocationAddressLines } from '@/lib/locationAddress.js';
+import {
+  COMMON_HANDLEBARS_HELPERS,
+  fetchJson,
+  fetchAll,
+  fetchOptionalJson,
+  fetchLocationAddress,
+  fetchImageDataUrl,
+  buildLocationAddressLines,
+  renderPdf,
+} from '../shared/pdfUtils.js';
 
 // ---------------------------------------------------------------------------
-// Handlebars helpers (CommonJS for jsreport context)
+// Handlebars helpers — fmt formats as 0–3 decimal places (quantities, no prices)
 // ---------------------------------------------------------------------------
 const HELPERS = `
 function fmt(v) {
@@ -12,14 +21,7 @@ function fmt(v) {
   if (isNaN(n)) return String(v);
   return new Intl.NumberFormat('es', { minimumFractionDigits: 0, maximumFractionDigits: 3 }).format(n);
 }
-function fmtDate(v) {
-  if (!v) return '';
-  var d = new Date(v);
-  if (isNaN(d.getTime())) return String(v);
-  return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear();
-}
-function ifEq(a, b, opts) { return a === b ? opts.fn(this) : opts.inverse(this); }
-`;
+` + COMMON_HANDLEBARS_HELPERS;
 
 // ---------------------------------------------------------------------------
 // CSS
@@ -192,58 +194,6 @@ const TEMPLATE = `<!DOCTYPE html>
 </body></html>`;
 
 // ---------------------------------------------------------------------------
-// Data fetching helpers
-// ---------------------------------------------------------------------------
-async function fetchJson(url, token) {
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-  });
-  if (!res.ok) throw new Error(`API ${res.status}: ${url}`);
-  const d = await res.json();
-  return d?.response?.data?.[0] ?? d?.response?.data ?? d;
-}
-
-async function fetchAll(url, token) {
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-  });
-  if (!res.ok) return [];
-  const d = await res.json();
-  return d?.response?.data ?? (Array.isArray(d) ? d : []);
-}
-
-async function fetchOptionalJson(url, token) {
-  try { return await fetchJson(url, token); } catch { return null; }
-}
-
-async function fetchLocationAddress(locationId, base, token) {
-  if (!locationId) return null;
-  try {
-    return await fetchJson(`${base}/contacts/locationAddress/${locationId}`, token);
-  } catch { return null; }
-}
-
-function blobToDataUrl(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error('Failed to read company logo'));
-    reader.readAsDataURL(blob);
-  });
-}
-
-async function fetchImageDataUrl(imageId, base, token) {
-  if (!imageId) return null;
-  try {
-    const res = await fetch(`${base}/image/${imageId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return null;
-    return await blobToDataUrl(await res.blob());
-  } catch { return null; }
-}
-
-// ---------------------------------------------------------------------------
 // Build shipment data for the template
 // ---------------------------------------------------------------------------
 async function buildShipmentData(shipmentId, base, token) {
@@ -274,8 +224,6 @@ async function buildShipmentData(shipmentId, base, token) {
     header['partnerAddress$_identifier'] || null,
   );
 
-  const statusClassMap = { CO: 'status-co', DR: 'status-dr' };
-
   return {
     companyName: org.name || header['organization$_identifier'] || 'Empresa',
     companyAddress1: org.address1 || null,
@@ -285,7 +233,7 @@ async function buildShipmentData(shipmentId, base, token) {
     companyLogoDataUrl,
     documentNo: header.documentNo || '',
     documentStatusLabel: header['documentStatus$_identifier'] || header.documentStatus || '',
-    documentStatusClass: statusClassMap[header.documentStatus] || 'status-default',
+    documentStatusClass: ({ CO: 'status-co', DR: 'status-dr' })[header.documentStatus] || 'status-default',
     movementDate: header.movementDate || '',
     customerName: header['businessPartner$_identifier'] || '—',
     customerAddressLines,
@@ -294,43 +242,6 @@ async function buildShipmentData(shipmentId, base, token) {
     notes: header.description || null,
     lines,
   };
-}
-
-// ---------------------------------------------------------------------------
-// Render via jsreport
-// ---------------------------------------------------------------------------
-async function renderShipmentPdf(data) {
-  const payload = {
-    template: {
-      content: TEMPLATE,
-      engine: 'handlebars',
-      recipe: 'chrome-pdf',
-      helpers: HELPERS,
-      chrome: {
-        format: 'A4',
-        landscape: false,
-        marginTop: '0mm',
-        marginBottom: '0mm',
-        marginLeft: '0mm',
-        marginRight: '0mm',
-        printBackground: true,
-      },
-    },
-    data: { css: CSS, ...data },
-  };
-
-  const res = await fetch('/jsreport/api/report', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`jsreport ${res.status}: ${text.slice(0, 300)}`);
-  }
-
-  return res.blob();
 }
 
 // ---------------------------------------------------------------------------
@@ -357,7 +268,6 @@ export function useShipmentPdf(shipmentId, apiBaseUrl, token) {
     if (!shipmentId || !apiBaseUrl || !token) return;
 
     const labels = getShipmentPdfLabels(ui);
-
     const base = apiBaseUrl.replace(/\/[^/]+$/, '');
 
     let cancelled = false;
@@ -369,7 +279,7 @@ export function useShipmentPdf(shipmentId, apiBaseUrl, token) {
     (async () => {
       try {
         const data = await buildShipmentData(shipmentId, base, token);
-        const blob = await renderShipmentPdf({ ...data, labels });
+        const blob = await renderPdf(TEMPLATE, CSS, HELPERS, { ...data, labels });
         if (cancelled) return;
         const url = URL.createObjectURL(blob);
         prevUrlRef.current = url;
@@ -418,5 +328,5 @@ export function getShipmentPdfLabels(ui) {
 export async function generateShipmentPdf(shipmentId, apiBaseUrl, token, labels) {
   const base = apiBaseUrl.replace(/\/[^/]+$/, '');
   const data = await buildShipmentData(shipmentId, base, token);
-  return renderShipmentPdf({ ...data, labels });
+  return renderPdf(TEMPLATE, CSS, HELPERS, { ...data, labels });
 }
