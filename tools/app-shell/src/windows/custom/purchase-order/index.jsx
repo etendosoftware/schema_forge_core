@@ -57,7 +57,7 @@ function PurchaseOrderBulkActions(props) {
   return (
     <>
       <BulkPurchaseOrderMoreMenu {...props} />
-      <BulkDocumentAction {...props} buildActions={buildInOutActions} labelKey="completeBulk" />
+      <BulkDocumentAction {...props} buildActions={buildInOutActions} labelKey="confirmBulk" />
     </>
   );
 }
