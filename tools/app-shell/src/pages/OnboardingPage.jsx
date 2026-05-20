@@ -384,7 +384,7 @@ function SetupProgressCard({ progress, title, description, leading, statusLabel,
           }}
         >
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-2xl">
-            {typeof leading === 'string' ? leading : leading}
+            {leading}
           </div>
         </div>
 

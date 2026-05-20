@@ -155,12 +155,12 @@ REGEN_CHECK_OUT_ROOT     ?= tmp/regen-check
 regen-check: ## Predict and compare ETGO_SF_*.xml against committed XML (no DB, no gradle). Defaults to all AD-backed windows.
 	@SPECS="$(ONLY)"; \
 	if [ -z "$$SPECS" ]; then \
-	  SPECS=$$(ls artifacts/ | while read d; do \
-	    [ -f "artifacts/$$d/decisions.json" ] \
-	      && [ -f "artifacts/$$d/contract.json" ] \
-	      && echo "$$d"; \
-	  done | paste -sd, -); \
-	  echo "No ONLY= given — running for all AD-backed windows ($$SPECS)"; \
+	  SPECS=$$(node -e "const r=require('./cli/config/regen-windows.json');\
+process.stdout.write(r.windows.filter(w=>{\
+  try{return require('fs').existsSync('artifacts/'+w.name+'/decisions.json')\
+    && require('fs').existsSync('artifacts/'+w.name+'/contract.json')}catch(e){return false}\
+}).map(w=>w.name).join(','))"); \
+	  echo "No ONLY= given — running registry windows with decisions+contract ($$SPECS)"; \
 	fi; \
 	REGEN_ARGS="--only $$SPECS --skip-extract"; \
 	if [ "$(CACHE_DB)" = "1" ]; then REGEN_ARGS="--only $$SPECS --write-cache"; fi; \
