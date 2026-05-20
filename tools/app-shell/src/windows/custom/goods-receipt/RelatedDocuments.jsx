@@ -35,10 +35,9 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
         key="purchase-order"
         {...docChipProps({
           type: 'order',
-          doc: { id: orderId },
+          doc: { id: orderId, documentNo: orderLabel },
           ui,
           navigate,
-          title: orderLabel || ui('orderDoc', { number: orderId }),
         })}
       />
     );
