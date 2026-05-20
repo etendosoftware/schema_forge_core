@@ -21,7 +21,7 @@ const COLUMNS = [
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
   { key: 'documentStatus', column: 'DocStatus', type: 'status' },
   { key: 'warehouse', column: 'M_Warehouse_ID', type: 'string' },
-  { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'percent', noHoverHide: true },
+  { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'percent' },
 ];
 
 function CustomGoodsShipmentTable(props) {

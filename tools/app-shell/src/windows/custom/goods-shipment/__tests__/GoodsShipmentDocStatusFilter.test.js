@@ -55,11 +55,6 @@ describe('GoodsShipmentWindow — COLUMNS definition (ETP-4031)', () => {
       "invoiceStatus column must have type: 'percent'");
   });
 
-  it('sets noHoverHide: true on the invoiceStatus column so the progress bar stays visible on row hover', () => {
-    assert.match(src, /invoiceStatus[^}]*noHoverHide:\s*true/s,
-      'invoiceStatus column must have noHoverHide: true to prevent the bar from disappearing on hover');
-  });
-
   it('defines movementDate column', () => {
     assert.match(src, /key:\s*['"]movementDate['"]/);
   });
