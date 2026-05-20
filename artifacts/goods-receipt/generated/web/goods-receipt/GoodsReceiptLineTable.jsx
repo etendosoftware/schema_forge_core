@@ -6,8 +6,7 @@ const columns = [
   { key: 'lineNo', column: 'Line', type: 'number', label: 'Line No.', required: true },
   { key: 'product', column: 'M_Product_ID', type: 'selector', label: 'Product' },
   { key: 'movementQuantity', column: 'MovementQty', type: 'number', label: 'Movement Quantity', required: true },
-  { key: 'uOM', column: 'C_UOM_ID', type: 'selector', label: 'UOM', required: true },
-  { key: 'storageBin', column: 'M_Locator_ID', type: 'selector', label: 'Storage Bin' },
+  { key: 'orderQuantity', column: 'QuantityOrder', type: 'number', label: 'Order Quantity' },
   { key: 'invoiceQuantity', column: 'Qtyinvoiced', type: 'number', label: 'Invoiced Quantity', required: true },
 ];
 // @sf-generated-end columns:goodsReceiptLine

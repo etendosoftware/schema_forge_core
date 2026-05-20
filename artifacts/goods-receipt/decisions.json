@@ -142,34 +142,36 @@
           "seq": 10,
           "readOnlyLogic": null
         },
-        "attributeSetValue": {
+        "movementQuantity": {
+          "grid": true,
           "section": "principal",
           "seq": 20,
           "readOnlyLogic": null,
-          "displayLogic": null
+          "defaultValue": "1"
         },
-        "uOM": {
+        "orderQuantity": {
           "grid": true,
+          "form": true,
+          "visibility": "readOnly",
           "section": "principal",
           "seq": 30,
           "readOnlyLogic": null
         },
-        "movementQuantity": {
-          "grid": true,
-          "section": "principal",
-          "seq": 40,
+        "attributeSetValue": {
+          "form": false,
           "readOnlyLogic": null,
-          "defaultValue": "1"
+          "displayLogic": null
+        },
+        "uOM": {
+          "form": false,
+          "readOnlyLogic": null
         },
         "storageBin": {
-          "grid": true,
-          "section": "principal",
-          "seq": 50,
+          "form": false,
           "readOnlyLogic": null
         },
         "description": {
-          "section": "principal",
-          "seq": 60
+          "form": false
         },
         "lineNo": {
           "grid": true,

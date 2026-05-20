@@ -1,8 +1,8 @@
 {
-  "version": "0.7.0",
+  "version": "0.8.0",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-05-20T17:00:22.813Z",
-  "checksum": "6c3d1d9e010cca61",
+  "updatedAt": "2026-05-20T17:04:00.189Z",
+  "checksum": "af0cd52f5991bfb7",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -38,14 +38,12 @@
             "visibility": "readOnly",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "sourceRequired": true,
             "derivation": {
               "type": "sequence",
               "source": "documentType.sequence"
             },
-            "section": "principal",
-            "seq": 60,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -67,7 +65,7 @@
             "reference": "Warehouse",
             "inputMode": "selector",
             "section": "principal",
-            "seq": 50,
+            "seq": 40,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_InOut_Warehouse"
             },
@@ -112,7 +110,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": true,
+            "form": false,
             "sourceRequired": true,
             "reference": "BusinessPartnerLocation",
             "inputMode": "dependent",
@@ -120,8 +118,6 @@
               "field": "businessPartner",
               "filterKey": "C_BPartner_ID"
             },
-            "section": "principal",
-            "seq": 20,
             "validationRule": {
               "code": "C_BPartner_Location.C_BPartner_ID=@C_BPartner_ID@ AND C_BPartner_Location.IsShipTo='Y' AND C_BPartner_Location.IsActive='Y'",
               "contextParams": [],
@@ -153,7 +149,7 @@
             },
             "defaultValue": "@#Date@",
             "section": "principal",
-            "seq": 40,
+            "seq": 30,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_AccountingDate"
             },
@@ -212,7 +208,7 @@
             "grid": true,
             "form": true,
             "section": "principal",
-            "seq": 30,
+            "seq": 20,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,

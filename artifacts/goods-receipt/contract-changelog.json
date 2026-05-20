@@ -710,5 +710,31 @@
     ],
     "author": "pipeline",
     "date": "2026-05-20"
+  },
+  {
+    "from": "0.8.0",
+    "to": "0.9.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"orderQuantity\" added to entity \"goodsReceiptLine\" in frontend",
+      "Field \"attributeSetValue\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"attributeSetValue\" property \"section\" changed from \"principal\" to \"undefined\" in frontend (additive)",
+      "Field \"attributeSetValue\" property \"seq\" changed from \"20\" to \"undefined\" in frontend (additive)",
+      "Field \"movementQuantity\" property \"seq\" changed from \"40\" to \"20\" in frontend (additive)",
+      "Field \"uOM\" property \"grid\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"uOM\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"uOM\" property \"section\" changed from \"principal\" to \"undefined\" in frontend (additive)",
+      "Field \"uOM\" property \"seq\" changed from \"30\" to \"undefined\" in frontend (additive)",
+      "Field \"storageBin\" property \"grid\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"storageBin\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"storageBin\" property \"section\" changed from \"principal\" to \"undefined\" in frontend (additive)",
+      "Field \"storageBin\" property \"seq\" changed from \"50\" to \"undefined\" in frontend (additive)",
+      "Field \"description\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"description\" property \"section\" changed from \"principal\" to \"undefined\" in frontend (additive)",
+      "Field \"description\" property \"seq\" changed from \"60\" to \"undefined\" in frontend (additive)",
+      "Field \"orderQuantity\" property \"visibility\" changed from \"system\" to \"readOnly\" in backend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-20"
   }
 ]
