@@ -2,7 +2,7 @@ import { createReadStream } from 'node:fs';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { createDbPool, closePool } from './db.js';
+import { createDbPool, closePool, setCacheMode, flushCacheWrites } from './db.js';
 import { toCamelCase, toPropertyName, computeChecksum, generateVersion } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -706,16 +706,34 @@ export async function main(windowId, windowName) {
 
 // CLI entry point
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const windowId = process.argv[2];
-  const windowName = process.argv[3];
+  const flags = process.argv.slice(2).filter((a) => a.startsWith('--'));
+  const positional = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+  const writeCache = flags.includes('--write-cache');
+  const fromCache = flags.includes('--from-cache');
+  if (writeCache && fromCache) {
+    console.error('Error: --write-cache and --from-cache are mutually exclusive');
+    process.exit(1);
+  }
+  if (writeCache) setCacheMode({ mode: 'write' });
+  else if (fromCache) setCacheMode({ mode: 'read' });
+
+  const windowId = positional[0];
+  const windowName = positional[1];
 
   if (!windowId) {
-    console.error('Usage: node extract-fields.js <windowId> [windowName]');
+    console.error('Usage: node extract-fields.js [--write-cache|--from-cache] <windowId> [windowName]');
     process.exit(1);
   }
 
-  main(windowId, windowName).catch((err) => {
-    console.error('Extraction failed:', err.message);
-    process.exit(1);
-  });
+  main(windowId, windowName)
+    .then(() => {
+      if (writeCache) {
+        const { written, path } = flushCacheWrites();
+        console.log(`Cache: wrote ${written} entries to ${path}`);
+      }
+    })
+    .catch((err) => {
+      console.error('Extraction failed:', err.message);
+      process.exit(1);
+    });
 }

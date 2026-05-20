@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T18:11:46.137Z",
-  "updatedAt": "2026-05-11T16:22:46.850Z",
-  "checksum": "111d074327b02ffe",
+  "updatedAt": "2026-05-15T16:00:22.048Z",
+  "checksum": "ff7b62628600d3be",
   "frontendContract": {
     "window": {
       "id": "6F8F913FA60F4CBD93DC1D3AA696E76E",
@@ -5890,12 +5890,6 @@
         "description": "Read-only logic for 'orderNo' in lines should be valid JS"
       },
       {
-        "id": "t-rule-declared",
-        "category": "rule-declared",
-        "runner": "node",
-        "description": "Rule 'undefined' (displayLogic) should be declared"
-      },
-      {
         "id": "t-rule-declared-Accounting-Schema-currency",
         "category": "rule-declared",
         "rule": "Accounting Schema currency",
@@ -5938,11 +5932,102 @@
         "description": "Rule 'Add Payment' (process) should be declared"
       },
       {
+        "id": "t-rule-declared-C-Conversion-Rate-Document-AD-Client-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Conversion_Rate_Document-AD_Client_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Conversion_Rate_Document-AD_Client_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Conversion-Rate-Document-AD-Org-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Conversion_Rate_Document-AD_Org_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Conversion_Rate_Document-AD_Org_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Conversion-Rate-Document-aprm-finacc-transaction-v-id-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Conversion_Rate_Document-aprm_finacc_transaction_v_id-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Conversion_Rate_Document-aprm_finacc_transaction_v_id-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Conversion-Rate-Document-C-Conversion-Rate-Document-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Conversion_Rate_Document-C_Conversion_Rate_Document_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Conversion_Rate_Document-C_Conversion_Rate_Document_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Conversion-Rate-Document-C-Currency-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Conversion_Rate_Document-C_Currency_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Conversion_Rate_Document-C_Currency_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Conversion-Rate-Document-C-Currency-Id-To-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Conversion_Rate_Document-C_Currency_Id_To-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Conversion_Rate_Document-C_Currency_Id_To-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Conversion-Rate-Document-C-Invoice-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Conversion_Rate_Document-C_Invoice_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Conversion_Rate_Document-C_Invoice_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Conversion-Rate-Document-FIN-Payment-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Conversion_Rate_Document-FIN_Payment_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Conversion_Rate_Document-FIN_Payment_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Conversion-Rate-Document-Foreign-Amount-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Conversion_Rate_Document-Foreign_Amount-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Conversion_Rate_Document-Foreign_Amount-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Conversion-Rate-Document-Isactive-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Conversion_Rate_Document-Isactive-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Conversion_Rate_Document-Isactive-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Conversion-Rate-Document-Rate-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Conversion_Rate_Document-Rate-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Conversion_Rate_Document-Rate-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
         "id": "t-rule-declared-C-DocType-Receive-Make-Payment",
         "category": "rule-declared",
         "rule": "C_DocType - Receive/Make Payment",
         "runner": "node",
         "description": "Rule 'C_DocType - Receive/Make Payment' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Invoice-DocumentNo-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Invoice-DocumentNo-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Invoice-DocumentNo-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-C-Order-DocumentNo-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "C_Order-DocumentNo-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'C_Order-DocumentNo-readOnlyLogic' (readOnlyLogic) should be declared"
       },
       {
         "id": "t-rule-declared-Currency-of-Financial-Account",
@@ -5980,6 +6065,118 @@
         "description": "Rule 'Fin_FinancialAccountofPaymentMethod' (validation) should be declared"
       },
       {
+        "id": "t-rule-declared-FIN-Payment-AD-Client-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "FIN_Payment-AD_Client_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'FIN_Payment-AD_Client_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-FIN-Payment-AD-Org-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "FIN_Payment-AD_Org_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'FIN_Payment-AD_Org_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-FIN-Payment-Amount-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "FIN_Payment-Amount-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'FIN_Payment-Amount-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-FIN-Payment-C-Activity-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "FIN_Payment-C_Activity_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'FIN_Payment-C_Activity_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-FIN-Payment-C-Bpartner-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "FIN_Payment-C_Bpartner_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'FIN_Payment-C_Bpartner_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-FIN-Payment-C-Campaign-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "FIN_Payment-C_Campaign_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'FIN_Payment-C_Campaign_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-FIN-Payment-C-Costcenter-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "FIN_Payment-C_Costcenter_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'FIN_Payment-C_Costcenter_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-FIN-Payment-C-Currency-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "FIN_Payment-C_Currency_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'FIN_Payment-C_Currency_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-FIN-Payment-C-Project-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "FIN_Payment-C_Project_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'FIN_Payment-C_Project_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-FIN-Payment-DocumentNo-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "FIN_Payment-DocumentNo-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'FIN_Payment-DocumentNo-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-FIN-Payment-Fin-Financial-Account-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "FIN_Payment-Fin_Financial_Account_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'FIN_Payment-Fin_Financial_Account_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-FIN-Payment-Fin-Paymentmethod-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "FIN_Payment-Fin_Paymentmethod_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'FIN_Payment-Fin_Paymentmethod_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-FIN-Payment-Finacc-Txn-Amount-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "FIN_Payment-Finacc_Txn_Amount-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'FIN_Payment-Finacc_Txn_Amount-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-FIN-Payment-Finacc-Txn-Convert-Rate-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "FIN_Payment-Finacc_Txn_Convert_Rate-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'FIN_Payment-Finacc_Txn_Convert_Rate-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-FIN-Payment-Generated-Credit-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "FIN_Payment-Generated_Credit-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'FIN_Payment-Generated_Credit-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-FIN-Payment-Paymentdate-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "FIN_Payment-Paymentdate-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'FIN_Payment-Paymentdate-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
         "id": "t-rule-declared-FIN-Payment-Status-validation",
         "category": "rule-declared",
         "rule": "FIN_Payment Status validation",
@@ -5987,11 +6184,263 @@
         "description": "Rule 'FIN_Payment Status validation' (validation) should be declared"
       },
       {
+        "id": "t-rule-declared-FIN-Payment-User1-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "FIN_Payment-User1_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'FIN_Payment-User1_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-FIN-Payment-User2-ID-readOnlyLogic",
+        "category": "rule-declared",
+        "rule": "FIN_Payment-User2_ID-readOnlyLogic",
+        "runner": "node",
+        "description": "Rule 'FIN_Payment-User2_ID-readOnlyLogic' (readOnlyLogic) should be declared"
+      },
+      {
         "id": "t-rule-declared-FIN-PaymentMethodsWithAccountIsReceiptControl",
         "category": "rule-declared",
         "rule": "FIN_PaymentMethodsWithAccountIsReceiptControl",
         "runner": "node",
         "description": "Rule 'FIN_PaymentMethodsWithAccountIsReceiptControl' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Header-AD-Org-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Header-AD_Org_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Header-AD_Org_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Header-C-Activity-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Header-C_Activity_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Header-C_Activity_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Header-C-Bpartner-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Header-C_Bpartner_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Header-C_Bpartner_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Header-C-Campaign-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Header-C_Campaign_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Header-C_Campaign_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Header-C-Costcenter-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Header-C_Costcenter_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Header-C_Costcenter_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Header-C-Project-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Header-C_Project_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Header-C_Project_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Header-EM-Aprm-Add-Scheduledpayments-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Header-EM_Aprm_Add_Scheduledpayments-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Header-EM_Aprm_Add_Scheduledpayments-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Header-EM-Aprm-Executepayment-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Header-EM_Aprm_Executepayment-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Header-EM_Aprm_Executepayment-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Header-EM-APRM-Process-Payment-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Header-EM_APRM_Process_Payment-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Header-EM_APRM_Process_Payment-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Header-EM-APRM-Reconcile-Payment-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Header-EM_APRM_Reconcile_Payment-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Header-EM_APRM_Reconcile_Payment-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Header-EM-APRM-ReversePayment-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Header-EM_APRM_ReversePayment-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Header-EM_APRM_ReversePayment-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Header-FIN-Rev-Payment-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Header-FIN_Rev_Payment_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Header-FIN_Rev_Payment_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Header-Finacc-Txn-Amount-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Header-Finacc_Txn_Amount-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Header-Finacc_Txn_Amount-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Header-Finacc-Txn-Convert-Rate-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Header-Finacc_Txn_Convert_Rate-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Header-Finacc_Txn_Convert_Rate-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Header-Posted-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Header-Posted-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Header-Posted-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Header-User1-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Header-User1_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Header-User1_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Header-User2-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Header-User2_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Header-User2_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Lines-C-Activity-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Lines-C_Activity_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Lines-C_Activity_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Lines-C-Bpartner-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Lines-C_Bpartner_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Lines-C_Bpartner_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Lines-C-Campaign-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Lines-C_Campaign_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Lines-C_Campaign_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Lines-C-Costcenter-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Lines-C_Costcenter_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Lines-C_Costcenter_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Lines-C-Project-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Lines-C_Project_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Lines-C_Project_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Lines-C-Salesregion-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Lines-C_Salesregion_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Lines-C_Salesregion_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Lines-FIN-Payment-Schedule-Invoice-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Lines-FIN_Payment_Schedule_Invoice-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Lines-FIN_Payment_Schedule_Invoice-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Lines-FIN-Payment-Schedule-Order-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Lines-FIN_Payment_Schedule_Order-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Lines-FIN_Payment_Schedule_Order-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Lines-M-Product-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Lines-M_Product_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Lines-M_Product_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Lines-Old-C-Activity-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Lines (Old)-C_Activity_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Lines (Old)-C_Activity_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Lines-Old-C-Bpartner-Id-Dim-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Lines (Old)-C_Bpartner_Id_Dim-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Lines (Old)-C_Bpartner_Id_Dim-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Lines-Old-C-Campaign-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Lines (Old)-C_Campaign_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Lines (Old)-C_Campaign_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Lines-Old-C-Project-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Lines (Old)-C_Project_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Lines (Old)-C_Project_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Lines-Old-C-Salesregion-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Lines (Old)-C_Salesregion_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Lines (Old)-C_Salesregion_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Lines-Old-M-Product-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Lines (Old)-M_Product_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Lines (Old)-M_Product_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Lines-User1-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Lines-User1_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Lines-User1_ID-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-payment-out-Lines-User2-ID-displayLogic",
+        "category": "rule-declared",
+        "rule": "payment-out-Lines-User2_ID-displayLogic",
+        "runner": "node",
+        "description": "Rule 'payment-out-Lines-User2_ID-displayLogic' (displayLogic) should be declared"
       },
       {
         "id": "t-rule-declared-Payment-Process",
@@ -7316,7 +7765,7 @@
       }
     ],
     "summary": {
-      "total": 442,
+      "total": 506,
       "byCategory": {
         "action-endpoint": 7,
         "crud-flags": 6,
@@ -7327,14 +7776,14 @@
         "field-type": 73,
         "readonlylogic-evaluable": 21,
         "readonlylogic-valid": 21,
-        "rule-declared": 32,
+        "rule-declared": 96,
         "searchable-filters": 5,
         "selector-endpoint": 38,
         "system-field": 102,
         "visibility": 6
       },
       "byRunner": {
-        "node": 442,
+        "node": 506,
         "junit": 0
       }
     }
