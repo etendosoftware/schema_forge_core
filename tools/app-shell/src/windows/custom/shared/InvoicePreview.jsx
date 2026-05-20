@@ -29,14 +29,16 @@ function InvoiceActionButtons({ triggerEdit, onEmail, canSendToSif, onOpenSif, c
   const ui = useUI();
   return (
     <>
-      <Button
-        size="sm"
-        className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-[#121217] hover:bg-[#2a2a30] text-white [&_svg]:size-5"
-        onClick={onEmail}
-      >
-        <Mail />
-        {ui('invoicePreviewSend')}
-      </Button>
+      {onEmail && (
+        <Button
+          size="sm"
+          className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-[#121217] hover:bg-[#2a2a30] text-white [&_svg]:size-5"
+          onClick={onEmail}
+        >
+          <Mail />
+          {ui('invoicePreviewSend')}
+        </Button>
+      )}
 
       {canSendToSif && (
         <Button
@@ -160,7 +162,7 @@ function InvoiceGeneralTab({ invoice, partnerName, badgeProps, statusLabel, inst
         onAddPayment={onAddPayment}
       />
 
-      <EmailsCard onSend={onSend} />
+      {specName !== 'purchase-invoice' && <EmailsCard onSend={onSend} />}
 
       <CategorizationCard
         rows={[{ label: ui('invoicePreviewAccountingAccount'), value: accountingAccount }]}
@@ -277,7 +279,7 @@ export default function InvoicePreview({ invoice, token, apiBaseUrl, windowName,
   const actionButtons = (
     <InvoiceActionButtons
       triggerEdit={() => modalRef.current?.triggerEdit?.()}
-      onEmail={p.openEmailModal}
+      onEmail={specName !== 'purchase-invoice' ? p.openEmailModal : undefined}
       canSendToSif={p.canSendToSif}
       onOpenSif={() => p.setShowSifModal(true)}
       canAddPayment={p.canAddPayment}
