@@ -19,6 +19,14 @@ vi.mock('@/auth/useApiFetch.js', () => ({
   useApiFetch: () => vi.fn(() => Promise.resolve({ json: () => Promise.resolve({}) })),
 }));
 
+vi.mock('@/auth/AuthContext.jsx', () => ({
+  useAuth: () => ({
+    selectedOrg: { id: 'org-1', name: 'Test Organization' },
+    selectedRole: { orgList: [{ id: 'org-1', name: 'Test Organization' }] },
+    selectOrg: vi.fn(),
+  }),
+}));
+
 vi.mock('@/components/related-documents/helpers.js', () => ({
   fetchById: vi.fn(() => Promise.resolve(null)),
   neoBase: (url) => url?.replace(/\/[^/]+$/, '') ?? '',
@@ -50,9 +58,6 @@ import OnboardingWizard from '../OnboardingWizard.jsx';
 
 function renderWizard(overrides = {}) {
   const defaults = {
-    orgId: 'org-1',
-    orgName: 'Test Organization',
-    token: 'tok',
     apiBaseUrl: '/api/fiscal-config',
     onComplete: vi.fn(),
     onGoHome: vi.fn(),
@@ -102,23 +107,23 @@ describe('OnboardingWizard', () => {
 
   it('shows skip option', () => {
     renderWizard();
-    expect(screen.getByText('fiscal.skip')).toBeInTheDocument();
+    expect(screen.getByText('fiscal.onboarding.skip')).toBeInTheDocument();
   });
 
   it('navigates to skipped state when skip is clicked', () => {
     renderWizard();
-    fireEvent.click(screen.getByText('fiscal.skip'));
+    fireEvent.click(screen.getByText('fiscal.onboarding.skip'));
     expect(screen.getByText('fiscal.onboarding.skipped.title')).toBeInTheDocument();
   });
 
-  it('shows manual config link', () => {
+  it('shows manual config link in header', () => {
     renderWizard();
-    expect(screen.getByText('fiscal.onboarding.manual.btn')).toBeInTheDocument();
+    expect(screen.getByText('fiscal.onboarding.territory.prefer.manual.link')).toBeInTheDocument();
   });
 
-  it('navigates to manual step when manual config is clicked', () => {
+  it('navigates to manual step when manual config link is clicked', () => {
     renderWizard();
-    fireEvent.click(screen.getByText('fiscal.onboarding.manual.btn'));
+    fireEvent.click(screen.getByText('fiscal.onboarding.territory.prefer.manual.link'));
     expect(screen.getByText('fiscal.onboarding.manual.title')).toBeInTheDocument();
   });
 });
