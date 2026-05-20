@@ -1,13 +1,11 @@
 import { useState, useRef } from 'react';
-import { Loader2, AlertCircle } from 'lucide-react';
 import { useMenuLabel, useUI } from '@/i18n';
 import { statusLabel as resolveStatusLabel } from '@/lib/statusBadge.js';
-import PdfViewer from './PdfViewer.jsx';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 import GenericPreviewModal from './GenericPreviewModal.jsx';
 import { useOrderPdf } from './useOrderPdf.js';
 import { usePurchaseOrderPdf } from './usePurchaseOrderPdf.js';
-import PreviewActionButtons, { PreviewEmptyPanel } from './PreviewActionButtons.jsx';
+import PreviewActionButtons, { PreviewEmptyPanel, PreviewPdfPanel } from './PreviewActionButtons.jsx';
 import SummaryCard from './preview-cards/SummaryCard.jsx';
 import EmailsCard from './preview-cards/EmailsCard.jsx';
 import CategorizationCard from './preview-cards/CategorizationCard.jsx';
@@ -109,22 +107,13 @@ export default function OrderPreview({ order, token, apiBaseUrl, windowName, spe
   // ── Left panel ──────────────────────────────────────────────────────────────
 
   const leftPanel = (
-    <div className="flex flex-col h-full min-h-0 w-full overflow-hidden">
-      {pdfLoading && (
-        <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <span className="text-sm">{ui(pdfGeneratingKey)}</span>
-        </div>
-      )}
-      {pdfError && !pdfLoading && (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-          <AlertCircle className="h-8 w-8 text-amber-400" />
-          <p className="text-sm text-muted-foreground">{ui(pdfErrorKey)}</p>
-          <p className="text-xs text-muted-foreground/60">{pdfError}</p>
-        </div>
-      )}
-      {pdfUrl && !pdfLoading && <PdfViewer url={pdfUrl} />}
-    </div>
+    <PreviewPdfPanel
+      pdfLoading={pdfLoading}
+      pdfError={pdfError}
+      pdfUrl={pdfUrl}
+      generatingText={ui(pdfGeneratingKey)}
+      errorText={ui(pdfErrorKey)}
+    />
   );
 
   // ── Attachment config ───────────────────────────────────────────────────────

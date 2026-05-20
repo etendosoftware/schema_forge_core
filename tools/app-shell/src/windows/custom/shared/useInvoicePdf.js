@@ -1,11 +1,11 @@
 import { useUI } from '@/i18n';
-import { buildLocationAddressLines } from '@/lib/locationAddress.js';
 import {
   fetchJson,
   fetchAll,
   fetchOptionalJson,
-  fetchLocationAddress,
-  fetchImageDataUrl,
+  fetchDocumentAssets,
+  sortDocumentLines,
+  buildCompanyFields,
   buildDocumentPdfLabels,
   computeDiscountBreakdown,
   useDocumentPdf,
@@ -20,14 +20,9 @@ async function buildInvoiceData(invoiceId, base, token) {
     fetchAll(`${base}/sales-invoice/lines?parentId=${invoiceId}`, token),
     fetchOptionalJson(`${base}/session`, token),
   ]);
-  const [companyLogoDataUrl, partnerLocation] = await Promise.all([
-    fetchImageDataUrl(session?.yourCompanyDocumentImageId, base, token),
-    fetchLocationAddress(header.partnerAddress, base, token),
-  ]);
+  const { companyLogoDataUrl, partnerLocation } = await fetchDocumentAssets(session, header, base, token);
 
-  const linesSorted = [...linesRaw].sort(
-    (a, b) => (Number(a.lineNo) || 0) - (Number(b.lineNo) || 0)
-  );
+  const linesSorted = sortDocumentLines(linesRaw);
   const lines = linesSorted.map((l, idx) => ({
     lineNo: l.lineNo || (idx + 1),
     productName: l.product$_identifier || l.description || '—',
@@ -58,24 +53,11 @@ async function buildInvoiceData(invoiceId, base, token) {
   const hasAnyDiscount = hasLineDiscount || etgoTotalDiscount > 0;
   const hasTotalDiscount = etgoTotalDiscount > 0;
 
-  const org = session?.organization ?? {};
-  const customerAddressLines = buildLocationAddressLines(
-    partnerLocation,
-    header.partnerAddress$_identifier || header.bpAddress || null,
-  );
-
   return {
-    companyName:     org.name        || header.organization$_identifier || header.organization || 'Empresa',
-    companyAddress1: org.address1    || null,
-    companyAddress2: org.address2    || null,
-    companyCityLine: org.cityLine    || null,
-    companyTaxId:    org.taxId       || null,
-    companyLogoDataUrl,
+    ...buildCompanyFields(session, header, companyLogoDataUrl, partnerLocation, header.bpAddress),
     documentNo: header.documentNo || '',
     invoiceDate: header.invoiceDate || header.dateInvoiced || '',
     customerName: header.businessPartner$_identifier || header.businessPartner || '—',
-    hasCustomerAddress: customerAddressLines.length > 0,
-    customerAddressLines,
     paymentMethod: header.paymentMethod$_identifier || null,
     paymentTerms: header.paymentTerms$_identifier || null,
     notes: header.description || null,

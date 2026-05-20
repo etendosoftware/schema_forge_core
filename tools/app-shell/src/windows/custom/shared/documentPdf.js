@@ -3,6 +3,7 @@ import { buildLocationAddressLines } from '@/lib/locationAddress.js';
 import { computeDocumentTotals } from '@/lib/documentTotals';
 import { ORDER_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 import {
+  COMMON_HANDLEBARS_HELPERS,
   fetchJson,
   fetchAll,
   fetchOptionalJson,
@@ -24,15 +25,8 @@ function fmt(v) {
   if (isNaN(n)) return String(v);
   return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 }
-function fmtDate(v) {
-  if (!v) return '';
-  var d = new Date(v);
-  if (isNaN(d.getTime())) return String(v);
-  return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear();
-}
-function ifEq(a, b, opts) { return a === b ? opts.fn(this) : opts.inverse(this); }
 function add(a, b) { return (Number(a)||0) + (Number(b)||0); }
-`;
+` + COMMON_HANDLEBARS_HELPERS;
 
 // ---------------------------------------------------------------------------
 // CSS
@@ -242,6 +236,39 @@ export const DOCUMENT_TEMPLATE = `<!DOCTYPE html>
 </body></html>`;
 
 // ---------------------------------------------------------------------------
+// Shared document data helpers — used by all document PDF data builders
+// ---------------------------------------------------------------------------
+export async function fetchDocumentAssets(session, header, base, token) {
+  const [companyLogoDataUrl, partnerLocation] = await Promise.all([
+    fetchImageDataUrl(session?.yourCompanyDocumentImageId, base, token),
+    fetchLocationAddress(header.partnerAddress, base, token),
+  ]);
+  return { companyLogoDataUrl, partnerLocation };
+}
+
+export function sortDocumentLines(linesRaw) {
+  return [...linesRaw].sort((a, b) => (Number(a.lineNo) || 0) - (Number(b.lineNo) || 0));
+}
+
+export function buildCompanyFields(session, header, companyLogoDataUrl, partnerLocation, bpAddressFallback = null) {
+  const org = session?.organization ?? {};
+  const customerAddressLines = buildLocationAddressLines(
+    partnerLocation,
+    header.partnerAddress$_identifier || bpAddressFallback || null,
+  );
+  return {
+    companyName:     org.name        || header.organization$_identifier || header.organization || 'Empresa',
+    companyAddress1: org.address1    || null,
+    companyAddress2: org.address2    || null,
+    companyCityLine: org.cityLine    || null,
+    companyTaxId:    org.taxId       || null,
+    companyLogoDataUrl,
+    hasCustomerAddress: customerAddressLines.length > 0,
+    customerAddressLines,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Shared order data builder — used by both sales-order and purchase-order
 // ---------------------------------------------------------------------------
 export async function buildOrderData(spec, orderId, base, token) {
@@ -250,14 +277,9 @@ export async function buildOrderData(spec, orderId, base, token) {
     fetchAll(`${base}/${spec}/lines?parentId=${orderId}`, token),
     fetchOptionalJson(`${base}/session`, token),
   ]);
-  const [companyLogoDataUrl, partnerLocation] = await Promise.all([
-    fetchImageDataUrl(session?.yourCompanyDocumentImageId, base, token),
-    fetchLocationAddress(header.partnerAddress, base, token),
-  ]);
+  const { companyLogoDataUrl, partnerLocation } = await fetchDocumentAssets(session, header, base, token);
 
-  const linesSorted = [...linesRaw].sort(
-    (a, b) => (Number(a.lineNo) || 0) - (Number(b.lineNo) || 0)
-  );
+  const linesSorted = sortDocumentLines(linesRaw);
   const lines = linesSorted.map((l, idx) => ({
     lineNo: l.lineNo || (idx + 1),
     productName: l.product$_identifier || l.description || '—',
@@ -281,24 +303,11 @@ export async function buildOrderData(spec, orderId, base, token) {
   const netAmount = (netSubtotal ?? 0) - (totalDiscountAmt ?? 0);
   const taxAmount = taxAmt ?? 0;
 
-  const org = session?.organization ?? {};
-  const customerAddressLines = buildLocationAddressLines(
-    partnerLocation,
-    header.partnerAddress$_identifier || header.bpAddress || null,
-  );
-
   return {
-    companyName:     org.name        || header.organization$_identifier || header.organization || 'Empresa',
-    companyAddress1: org.address1    || null,
-    companyAddress2: org.address2    || null,
-    companyCityLine: org.cityLine    || null,
-    companyTaxId:    org.taxId       || null,
-    companyLogoDataUrl,
+    ...buildCompanyFields(session, header, companyLogoDataUrl, partnerLocation, header.bpAddress),
     documentNo: header.documentNo || '',
     invoiceDate: header.orderDate || '',
     customerName: header.businessPartner$_identifier || header.businessPartner || '—',
-    hasCustomerAddress: customerAddressLines.length > 0,
-    customerAddressLines,
     paymentMethod: header.paymentMethod$_identifier || null,
     paymentTerms: header.paymentTerms$_identifier || null,
     notes: header.description || null,

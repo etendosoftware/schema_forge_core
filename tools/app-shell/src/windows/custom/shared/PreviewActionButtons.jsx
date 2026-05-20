@@ -1,5 +1,6 @@
-import { Edit2, Mail, Download } from 'lucide-react';
+import { Edit2, Mail, Download, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
+import PdfViewer from './PdfViewer.jsx';
 
 export default function PreviewActionButtons({
   triggerEdit,
@@ -50,6 +51,27 @@ export function PreviewEmptyPanel({ icon, text }) {
     <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-400 py-20">
       <span className="text-3xl">{icon}</span>
       <p className="text-sm">{text}</p>
+    </div>
+  );
+}
+
+export function PreviewPdfPanel({ pdfLoading, pdfError, pdfUrl, generatingText, errorText }) {
+  return (
+    <div className="flex flex-col h-full min-h-0 w-full overflow-hidden">
+      {pdfLoading && (
+        <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="text-sm">{generatingText}</span>
+        </div>
+      )}
+      {pdfError && !pdfLoading && (
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+          <AlertCircle className="h-8 w-8 text-amber-400" />
+          <p className="text-sm text-muted-foreground">{errorText}</p>
+          <p className="text-xs text-muted-foreground/60">{pdfError}</p>
+        </div>
+      )}
+      {pdfUrl && !pdfLoading && <PdfViewer url={pdfUrl} />}
     </div>
   );
 }

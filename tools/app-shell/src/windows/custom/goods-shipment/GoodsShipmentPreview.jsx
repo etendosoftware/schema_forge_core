@@ -1,11 +1,11 @@
 import { useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download, Edit2, Loader2, AlertCircle, Mail } from 'lucide-react';
+import { Download, Edit2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { useUI, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { formatCalendarDate } from '@/lib/dateOnly';
 import GenericPreviewModal from '../shared/GenericPreviewModal.jsx';
-import PdfViewer from '../shared/PdfViewer.jsx';
+import { PreviewPdfPanel } from '../shared/PreviewActionButtons.jsx';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 import { useShipmentPdf } from './useShipmentPdf.js';
 import RelatedDocuments from '@generated/goods-shipment/custom/RelatedDocuments';
@@ -95,22 +95,13 @@ export default function GoodsShipmentPreview({ shipment, token, apiBaseUrl, wind
   // ── Left panel ──────────────────────────────────────────────────────────────
 
   const leftPanel = (
-    <div className="flex flex-col h-full min-h-0 w-full overflow-hidden">
-      {pdfLoading && (
-        <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <span className="text-sm">{ui('shipmentPdfGenerating')}</span>
-        </div>
-      )}
-      {pdfError && !pdfLoading && (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-          <AlertCircle className="h-8 w-8 text-amber-400" />
-          <p className="text-sm text-muted-foreground">{ui('shipmentPdfError')}</p>
-          <p className="text-xs text-muted-foreground/60">{pdfError}</p>
-        </div>
-      )}
-      {pdfUrl && !pdfLoading && <PdfViewer url={pdfUrl} />}
-    </div>
+    <PreviewPdfPanel
+      pdfLoading={pdfLoading}
+      pdfError={pdfError}
+      pdfUrl={pdfUrl}
+      generatingText={ui('shipmentPdfGenerating')}
+      errorText={ui('shipmentPdfError')}
+    />
   );
 
   // ── Derived values ──────────────────────────────────────────────────────────
