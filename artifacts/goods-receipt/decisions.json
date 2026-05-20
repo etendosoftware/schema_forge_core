@@ -14,6 +14,7 @@
       "processValue": "CO",
       "label": "Confirmar"
     },
+    "noHeaderBorder": true,
     "linesLayout": "inlineEditable",
     "customComponents": {
       "topbarRight": "GoodsReceiptTopbar",

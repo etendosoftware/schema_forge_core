@@ -1,8 +1,8 @@
 {
   "version": "0.9.1",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-05-20T17:11:55.773Z",
-  "checksum": "d9d373db705147ba",
+  "updatedAt": "2026-05-20T17:12:58.575Z",
+  "checksum": "8a111bfdebcefdcd",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -15,6 +15,7 @@
         "bottomSection": "GoodsReceiptBottomPanel"
       },
       "dateFilterKey": "movementDate",
+      "noHeaderBorder": true,
       "sendDocument": {
         "allowEmail": false
       },
@@ -882,6 +883,7 @@
         "bottomSection": "GoodsReceiptBottomPanel"
       },
       "dateFilterKey": "movementDate",
+      "noHeaderBorder": true,
       "sendDocument": {
         "allowEmail": false
       },
