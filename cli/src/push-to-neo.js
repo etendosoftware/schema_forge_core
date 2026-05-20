@@ -41,7 +41,7 @@ export function toSpecName(windowName) {
     .trim()
     .replace(/([a-z])([A-Z])/g, '$1 $2')   // split camelCase
     .replace(/[^a-zA-Z0-9]+/g, '-')          // non-alphanum -> dash
-    .replace(/^-|-$/g, '')                    // trim leading/trailing dashes
+    .replace(/(^-)|(-$)/g, '')                // trim leading/trailing dashes
     .toLowerCase();
 }
 

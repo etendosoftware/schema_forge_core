@@ -132,7 +132,7 @@ export function ListView({
     }
     if (quickFilters && activeFilterIndices.size > 0) {
       const qfParts = [...activeFilterIndices]
-        .sort()
+        .sort((a, b) => a - b)
         .map(i => quickFilters[i]?.filter)
         .filter(Boolean);
       parts.push(...qfParts);
