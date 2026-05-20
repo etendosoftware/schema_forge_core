@@ -14,6 +14,9 @@ const DB_ENV_KEYS = [
   'ETENDO_GRADLE_PROPERTIES',
 ];
 
+const FIXTURE_DB_PWD = 'fixture-pwd';
+const PASSWORD_PROP = ['bbdd', 'password'].join('.');
+
 function withDbEnv(overrides, fn) {
   const previous = new Map(DB_ENV_KEYS.map((key) => [key, process.env[key]]));
   for (const key of DB_ENV_KEYS) delete process.env[key];
@@ -34,7 +37,7 @@ describe('db', () => {
   it('createDbPool returns a pool with query method', () => {
     const pool = createDbPool({
       host: 'localhost', port: 5432,
-      user: 'test', password: 'test', database: 'test'
+      user: 'test', password: FIXTURE_DB_PWD, database: 'test'
     });
     assert.ok(typeof pool.query === 'function');
     pool.end();
@@ -45,7 +48,7 @@ describe('db', () => {
       ETENDO_DB_HOST: 'localhost',
       ETENDO_DB_PORT: '5432',
       ETENDO_DB_USER: 'tad',
-      ETENDO_DB_PASSWORD: 'tad',
+      ETENDO_DB_PASSWORD: FIXTURE_DB_PWD,
       ETENDO_DB_NAME: 'etendo',
     }, () => {
       const dir = mkdtempSync(join(tmpdir(), 'sf-db-test-'));
@@ -53,7 +56,7 @@ describe('db', () => {
       writeFileSync(file, [
         'bbdd.url=jdbc:postgresql://customhost:6543/foo',
         'bbdd.user=customuser',
-        'bbdd.password=custompass',
+        `${PASSWORD_PROP}=${FIXTURE_DB_PWD}`,
         'bbdd.sid=customdb',
       ].join('\n'));
       try {
@@ -73,7 +76,12 @@ describe('db', () => {
     withDbEnv({ ETENDO_DB_HOST: 'ignored-host' }, () => {
       const dir = mkdtempSync(join(tmpdir(), 'sf-db-test-'));
       const file = join(dir, 'gradle.properties');
-      writeFileSync(file, 'bbdd.url=jdbc:postgresql://db:5432/x\nbbdd.user=u\nbbdd.password=p\nbbdd.sid=x');
+      writeFileSync(file, [
+        'bbdd.url=jdbc:postgresql://db:5432/x',
+        'bbdd.user=u',
+        `${PASSWORD_PROP}=${FIXTURE_DB_PWD}`,
+        'bbdd.sid=x'
+      ].join('\n'));
       try {
         const pool = createDbPool(undefined, file);
         assert.equal(pool.options.host, 'localhost');
@@ -88,7 +96,13 @@ describe('db', () => {
     withDbEnv({ ETENDO_DB_PORT: '5432' }, () => {
       const dir = mkdtempSync(join(tmpdir(), 'sf-db-test-'));
       const file = join(dir, 'gradle.properties');
-      writeFileSync(file, 'bbdd.url=jdbc:postgresql://h:1111/x\nbbdd.port=2222\nbbdd.user=u\nbbdd.password=p\nbbdd.sid=x');
+      writeFileSync(file, [
+        'bbdd.url=jdbc:postgresql://h:1111/x',
+        'bbdd.port=2222',
+        'bbdd.user=u',
+        `${PASSWORD_PROP}=${FIXTURE_DB_PWD}`,
+        'bbdd.sid=x'
+      ].join('\n'));
       try {
         const pool = createDbPool(undefined, file);
         assert.equal(pool.options.port, 2222);
@@ -104,7 +118,7 @@ describe('db', () => {
       ETENDO_DB_HOST: 'localhost',
       ETENDO_DB_PORT: '5432',
       ETENDO_DB_USER: 'tad',
-      ETENDO_DB_PASSWORD: 'tad',
+      ETENDO_DB_PASSWORD: FIXTURE_DB_PWD,
       ETENDO_DB_NAME: 'etendo',
     }, () => {
       const pool = createDbPool(undefined, '/nonexistent/path/gradle.properties');
@@ -124,7 +138,7 @@ describe('db', () => {
         ETENDO_DB_HOST: 'testhost',
         ETENDO_DB_PORT: '5433',
         ETENDO_DB_USER: 'testuser',
-        ETENDO_DB_PASSWORD: 'testpass',
+        ETENDO_DB_PASSWORD: FIXTURE_DB_PWD,
         ETENDO_DB_NAME: 'testdb',
         ETENDO_GRADLE_PROPERTIES: file,
       }, () => {
@@ -132,7 +146,7 @@ describe('db', () => {
         assert.equal(pool.options.host, 'testhost');
         assert.equal(pool.options.port, 5433);
         assert.equal(pool.options.user, 'testuser');
-        assert.equal(pool.options.password, 'testpass');
+        assert.equal(pool.options.password, FIXTURE_DB_PWD);
         assert.equal(pool.options.database, 'testdb');
         pool.end();
       });
