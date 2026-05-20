@@ -19,6 +19,15 @@ function CustomGoodsShipmentTable(props) {
   return <GoodsShipmentTable columns={COLUMNS} {...props} />;
 }
 
+function GoodsShipmentBulkActions(props) {
+  return (
+    <>
+      <BulkInvoiceFromShipment {...props} />
+      <BulkDocumentAction {...props} entity="goodsShipment" buildActions={buildInOutActions} labelKey="confirmBulk" />
+    </>
+  );
+}
+
 export default function GoodsShipmentWindow(props) {
   useBulkActionToast();
   const [searchParams] = useSearchParams();
@@ -32,12 +41,7 @@ export default function GoodsShipmentWindow(props) {
       {...props}
       Table={CustomGoodsShipmentTable}
       initialColumnFilters={initialColumnFilters}
-      bulkActions={(ctx) => (
-        <>
-          <BulkInvoiceFromShipment {...ctx} />
-          <BulkDocumentAction {...ctx} entity="goodsShipment" buildActions={buildInOutActions} labelKey="confirmBulk" />
-        </>
-      )}
+      bulkActions={GoodsShipmentBulkActions}
     />
   );
 }
