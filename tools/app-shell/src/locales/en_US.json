@@ -16370,6 +16370,7 @@
     "cannotReactivateLinkedDocs": "Cannot reactivate: order has linked documents",
     "bulkCompletion": "Bulk Completion",
     "confirmBulk": "Confirm",
+    "completeBulk": "Complete",
     "documentAction": "Document Action",
     "book": "Book",
     "processExecuted": "PROCESS EXECUTED: {ok} registers successfully processed and {failed} registers failed.",
