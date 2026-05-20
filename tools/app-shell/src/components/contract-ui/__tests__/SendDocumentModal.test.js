@@ -43,8 +43,13 @@ describe('SendDocumentModal', () => {
     assert.match(src, /\$\{documentType\}.*#\$\{documentNo\}/);
   });
 
-  it('disables Send button when email is invalid or sending', () => {
-    assert.match(src, /!isValidEmail\(to\)\s*\|\|\s*sending/);
+  it('disables Send button when documentId is missing or sending', () => {
+    assert.match(src, /!documentId\s*\|\|\s*sending/);
+  });
+
+  it('sends document email through the email contracts endpoint', () => {
+    assert.match(src, /email-contracts\/\$\{contractName\}\/send/);
+    assert.match(src, /buildEmailContractCommand/);
   });
 
   it('uses toast for send confirmation', () => {

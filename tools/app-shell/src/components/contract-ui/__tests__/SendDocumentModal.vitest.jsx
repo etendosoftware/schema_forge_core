@@ -15,6 +15,7 @@ vi.mock('lucide-react', () => ({
 
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { toast } from 'sonner';
 import SendDocumentModal from '../SendDocumentModal.jsx';
 
 const BASE = {
@@ -53,10 +54,10 @@ describe('SendDocumentModal', () => {
     expect(document.querySelector('[style]')).toBeTruthy();
   });
 
-  it('Send button is disabled when bpEmail is empty', () => {
+  it('Send button stays enabled when bpEmail is empty because backend resolves recipients', () => {
     render(<SendDocumentModal {...BASE} bpEmail="" />);
     const btn = getSendButton();
-    expect(btn).toBeDisabled();
+    expect(btn).not.toBeDisabled();
   });
 
   it('Send button is enabled when bpEmail is a valid email', () => {
@@ -65,20 +66,26 @@ describe('SendDocumentModal', () => {
     expect(btn).not.toBeDisabled();
   });
 
-  it('Send button is disabled for email without domain dot', () => {
+  it('Send button is not gated by local email without domain dot', () => {
     render(<SendDocumentModal {...BASE} bpEmail="user@nodot" />);
     const btn = getSendButton();
-    expect(btn).toBeDisabled();
+    expect(btn).not.toBeDisabled();
   });
 
-  it('Send button is disabled for email without local part', () => {
+  it('Send button is not gated by local email without local part', () => {
     render(<SendDocumentModal {...BASE} bpEmail="@domain.com" />);
     const btn = getSendButton();
-    expect(btn).toBeDisabled();
+    expect(btn).not.toBeDisabled();
   });
 
-  it('Send button is disabled for email with multiple @', () => {
+  it('Send button is not gated by local email with multiple @', () => {
     render(<SendDocumentModal {...BASE} bpEmail="a@b@c.com" />);
+    const btn = getSendButton();
+    expect(btn).not.toBeDisabled();
+  });
+
+  it('Send button is disabled when documentId is missing', () => {
+    render(<SendDocumentModal {...BASE} documentId="" bpEmail="user@domain.com" />);
     const btn = getSendButton();
     expect(btn).toBeDisabled();
   });
@@ -164,5 +171,142 @@ describe('SendDocumentModal', () => {
     await waitFor(() => {
       expect(screen.getByText('John Doe <john@acme.com>')).toBeInTheDocument();
     });
+  });
+
+  it('sends a contract command without provider payload fields', async () => {
+    const user = userEvent.setup();
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ response: { data: { status: 'SENT' } } }),
+    });
+
+    render(
+      <SendDocumentModal
+        {...BASE}
+        bpEmail="user@domain.com"
+        apiBaseUrl="http://localhost:8080/etendo/neo/sales-invoice"
+      />,
+    );
+
+    await user.click(getSendButton());
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://localhost:8080/etendo/neo/email-contracts/sales-invoice-send/send',
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body).toEqual({
+      version: 'v1',
+      recordId: 'doc-1',
+      intent: 'send-document',
+      idempotencyKey: 'sales-invoice-send:doc-1:send:v1',
+    });
+    expect(body.to).toBeUndefined();
+    expect(body.template).toBeUndefined();
+    expect(body.data).toBeUndefined();
+    expect(body.subject).toBeUndefined();
+    expect(toast.success).toHaveBeenCalledWith('sendModalSentSuccess:{"documentType":"Invoice"}');
+  });
+
+  it('shows throttled state from the email contract executor', async () => {
+    const user = userEvent.setup();
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({
+        response: { data: { status: 'THROTTLED', retryAfterSeconds: 30 } },
+      }),
+    });
+
+    render(
+      <SendDocumentModal
+        {...BASE}
+        bpEmail="user@domain.com"
+        apiBaseUrl="http://localhost:8080/etendo/neo/sales-invoice"
+      />,
+    );
+
+    await user.click(getSendButton());
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('sendModalThrottled:{"seconds":30}');
+    });
+    expect(screen.getByRole('status')).toHaveTextContent('sendModalThrottled');
+  });
+
+  it('shows duplicate state as a successful idempotent send', async () => {
+    const user = userEvent.setup();
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        response: { data: { status: 'DUPLICATE' } },
+      }),
+    });
+
+    render(
+      <SendDocumentModal
+        {...BASE}
+        bpEmail="user@domain.com"
+        apiBaseUrl="http://localhost:8080/etendo/neo/sales-invoice"
+      />,
+    );
+
+    await user.click(getSendButton());
+
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith('sendModalDuplicate:{"documentType":"Invoice"}');
+    });
+    expect(BASE.onClose).toHaveBeenCalled();
+  });
+
+  it('shows unauthorized state from the email contract executor', async () => {
+    const user = userEvent.setup();
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({
+        response: { data: { status: 'UNAUTHORIZED' } },
+      }),
+    });
+
+    render(
+      <SendDocumentModal
+        {...BASE}
+        bpEmail="user@domain.com"
+        apiBaseUrl="http://localhost:8080/etendo/neo/sales-invoice"
+      />,
+    );
+
+    await user.click(getSendButton());
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('sendModalUnauthorized');
+    });
+    expect(screen.getByRole('status')).toHaveTextContent('sendModalUnauthorized');
+  });
+
+  it('shows provider failure state from the email contract executor', async () => {
+    const user = userEvent.setup();
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({
+        response: { data: { status: 'PROVIDER_FAILED' } },
+      }),
+    });
+
+    render(
+      <SendDocumentModal
+        {...BASE}
+        bpEmail="user@domain.com"
+        apiBaseUrl="http://localhost:8080/etendo/neo/sales-invoice"
+      />,
+    );
+
+    await user.click(getSendButton());
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('sendModalProviderFailed');
+    });
+    expect(screen.getByRole('status')).toHaveTextContent('sendModalProviderFailed');
   });
 });

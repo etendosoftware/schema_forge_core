@@ -25,6 +25,60 @@ function contactMatchesQuery(c, q) {
     || (c.name || '').toLowerCase().includes(q);
 }
 
+function resolveNeoBaseUrl(apiBaseUrl) {
+  return apiBaseUrl ? apiBaseUrl.replace(/\/[^/]+$/, '') : '/sws/neo';
+}
+
+function resolveDocumentEmailContract(windowName) {
+  return windowName === 'sales-invoice' ? 'sales-invoice-send' : `${windowName}-send`;
+}
+
+function buildEmailContractCommand(contractName, documentId) {
+  return {
+    version: 'v1',
+    recordId: documentId,
+    intent: 'send-document',
+    idempotencyKey: `${contractName}:${documentId}:send:v1`,
+  };
+}
+
+async function readEmailContractResponse(res) {
+  try {
+    const payload = await res.json();
+    return payload?.response?.data ?? payload?.data ?? {};
+  } catch {
+    return {};
+  }
+}
+
+function resolveEmailSendErrorMessage(ui, data, documentType) {
+  if (data?.status === 'THROTTLED') {
+    return ui('sendModalThrottled', { seconds: data.retryAfterSeconds ?? '' });
+  }
+  if (data?.status === 'DUPLICATE') {
+    return ui('sendModalDuplicate', { documentType });
+  }
+  if (data?.status === 'UNAUTHORIZED') {
+    return ui('sendModalUnauthorized');
+  }
+  if (data?.status === 'VALIDATION_FAILED') {
+    return data.message || ui('sendModalValidationFailed');
+  }
+  if (data?.status === 'NO_RECIPIENT') {
+    return ui('sendModalNoRecipient', { documentType });
+  }
+  if (data?.status === 'SUPPRESSED') {
+    return ui('sendModalSuppressed');
+  }
+  if (data?.status === 'KILL_SWITCHED') {
+    return ui('sendModalUnavailable');
+  }
+  if (data?.status === 'PROVIDER_FAILED') {
+    return ui('sendModalProviderFailed');
+  }
+  return data?.message || ui('sendModalSendFailed', { documentType });
+}
+
 async function renderPdfIntoIframe(node, reportId, documentId, token, setPdfLoading, setPdfError) {
   setPdfLoading(true);
   setPdfError(null);
@@ -185,6 +239,7 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
   const [subject, setSubject] = useState(`${documentType} #${documentNo} — ${bpName}`);
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [sendFeedback, setSendFeedback] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(!pdfBlobUrl);
   // True while the parent is still generating the blob via useInvoicePdf — suppress
   // the fallback report-render fetch and show a spinner instead of the error card.
@@ -240,14 +295,44 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
     setDownloading(false);
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
+    if (sending || !documentId) return;
     setSending(true);
-    setTimeout(() => {
-      toast.success(ui('sendModalSentSuccess', { documentType }));
+    setSendFeedback(null);
+    const contractName = resolveDocumentEmailContract(windowName);
+    const endpoint = `${resolveNeoBaseUrl(apiBaseUrl)}/email-contracts/${contractName}/send`;
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(buildEmailContractCommand(contractName, documentId)),
+      });
+      const data = await readEmailContractResponse(res);
+      if (res.ok && (data.status === 'SENT' || data.status === 'DUPLICATE')) {
+        const successMessage = data.status === 'DUPLICATE'
+          ? ui('sendModalDuplicate', { documentType })
+          : ui('sendModalSentSuccess', { documentType });
+        toast.success(successMessage);
+        setSendFeedback({ type: 'success', message: successMessage });
+        onClose();
+        return;
+      }
+      const errorMessage = resolveEmailSendErrorMessage(ui, data, documentType);
+      setSendFeedback({ type: 'error', message: errorMessage });
+      toast.error(errorMessage);
+    } catch (err) {
+      const errorMessage = err?.message || ui('sendModalSendFailed', { documentType });
+      setSendFeedback({ type: 'error', message: errorMessage });
+      toast.error(errorMessage);
+    } finally {
       setSending(false);
-      onClose();
-    }, 800);
+    }
   };
+
+  const sendDisabled = !documentId || sending;
 
   return (
     <>
@@ -313,12 +398,17 @@ export default function SendDocumentModal({ documentType = 'Document', documentN
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: allowEmail ? 'space-between' : 'flex-end', background: '#F5F5F5', borderTop: '1px solid #E5E5E5', padding: '10px 16px', flexShrink: 0 }}>
           <button type="button" onClick={onClose} style={{ fontSize: 13, padding: '6px 14px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'transparent', color: '#6B7280', cursor: 'pointer' }}>{allowEmail ? ui('cancel') : ui('close')}</button>
+          {sendFeedback && (
+            <span role="status" style={{ flex: 1, marginLeft: 12, marginRight: 12, fontSize: 12, color: sendFeedback.type === 'error' ? '#dc2626' : '#15803d', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {sendFeedback.message}
+            </span>
+          )}
           {allowEmail && (
           <button
             type="button"
             onClick={handleSend}
-            disabled={!isValidEmail(to) || sending}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, padding: '6px 16px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: (!isValidEmail(to) || sending) ? 'not-allowed' : 'pointer', opacity: (!isValidEmail(to) || sending) ? 0.4 : 1 }}
+            disabled={sendDisabled}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, padding: '6px 16px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: sendDisabled ? 'not-allowed' : 'pointer', opacity: sendDisabled ? 0.4 : 1 }}
           >
             {sending ? ui('sendModalSending') : (
               <>

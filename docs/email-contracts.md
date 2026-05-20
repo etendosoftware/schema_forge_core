@@ -43,11 +43,13 @@ Content-Type: application/json
   "version": "v1",
   "recordId": "E2F7A13B...",
   "intent": "send-document",
-  "idempotencyKey": "sales-invoice:E2F7A13B:send:v1"
+  "idempotencyKey": "sales-invoice-send:E2F7A13B:send:v1"
 }
 ```
 
 The browser must not send provider API keys, sender addresses, raw templates, or arbitrary provider payloads.
+
+For the app-shell document send flow, `SendDocumentModal` posts only the contract command to `/sws/neo/email-contracts/sales-invoice-send/send`. The UI must not include `to`, `template`, `data`, `subject`, `body`, sender, Reply-To, or provider metadata in that request; those values are resolved by the server-side contract.
 
 ## Response Contract
 
