@@ -12,7 +12,7 @@ import {
 import FmBoxes303 from './FmBoxes303.jsx';
 import { PresentModal, FileGenModal, ConfigDrawer, CompareDrawer } from '../../FmOverlays.jsx';
 import { neoBase } from '@/components/related-documents/helpers.js';
-import { fmtDecl, formatAmount, formatPeriod, computeBoxes303 } from '../../fiscalModelsUtils.js';
+import { formatAmount, formatPeriod, computeBoxes303 } from '../../fiscalModelsUtils.js';
 
 const STEPPER_INDEX = {
   pendiente: 0, borrador: 1, listo: 2,
@@ -91,13 +91,14 @@ function SourcesTab({ decl, t }) {
               {visible.length === 0 && (
                 <tr><td colSpan={9} style={{ textAlign:'center', color:'#9ca3af', padding:'24px 0', fontSize:13 }}>{t('fm.incidents.empty') ?? 'Sin incidencias'}</td></tr>
               )}
-              {visible.map((r, i) => {
+              {visible.map((r) => {
                 const incs = rowIncidents(r);
                 const hasBlock = incs.some(inc => inc.severity === 'block');
                 const hasWarn  = incs.length > 0 && !hasBlock;
                 const tooltip  = incs.map(inc => inc.message).join(' · ');
+                const rowClass = hasBlock ? 'fm-dtable__row--block' : hasWarn ? 'fm-dtable__row--warn' : '';
                 return (
-                  <tr key={i} className={hasBlock ? 'fm-dtable__row--block' : hasWarn ? 'fm-dtable__row--warn' : ''}>
+                  <tr key={r.ref} className={rowClass}>
                     <td className="strong">{r.date}</td>
                     <td className="mono">{r.ref}</td>
                     <td>{r.type}</td>
@@ -184,8 +185,8 @@ function HistoryTab({ decl, t }) {
         <EmptyState icon="🕐" title={t('fm.list.empty')} />
       ) : (
         <div className="fm-timeline">
-          {history.map((e, i) => (
-            <div key={i} className="fm-timeline__event">
+          {history.map((e) => (
+            <div key={`${e.at}-${e.text}`} className="fm-timeline__event">
               <div className="fm-timeline__dot">{e.icon ?? '○'}</div>
               <div className="fm-timeline__body">
                 <div className="fm-timeline__text">{e.text}</div>
@@ -238,8 +239,8 @@ function IncidentsTab({ decl, blocking, warning, t, onGoToSources }) {
               </tr>
             </thead>
             <tbody>
-              {sorted.map((inc, i) => (
-                <tr key={i}>
+              {sorted.map((inc) => (
+                <tr key={`${inc.origin ?? ''}-${inc.message}`}>
                   <td>
                     {inc.severity === 'block'
                       ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#dc2626', background: '#fee2e2', borderRadius: 4, padding: '2px 6px' }}><OctagonAlert size={11} strokeWidth={2} /> {t('fm.incidents.severity.block')}</span>
@@ -351,12 +352,16 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
     return { dir: pct >= 0 ? 'up' : 'down', text: `${Math.abs(pct).toFixed(1)}%` };
   }
 
+  let incidentBadgeTone = null;
+  if (blocking > 0) incidentBadgeTone = 'danger';
+  else if (warning > 0) incidentBadgeTone = 'warn';
+
   const tabs = [
     { id: 'boxes',     label: t('fm.tab.boxes') },
     { id: 'sources',   label: t('fm.tab.sources') },
     { id: 'incidents', label: t('fm.tab.incidents'),
       badge: incidentCount > 0 ? incidentCount : null,
-      badgeTone: blocking > 0 ? 'danger' : warning > 0 ? 'warn' : null,
+      badgeTone: incidentBadgeTone,
     },
     { id: 'files',     label: t('fm.tab.files'),
       badge: decl.file ? 1 : null,
@@ -512,9 +517,9 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
           return (
             <SectionCard title={t(page.titleKey)}>
               <div style={{ display: 'flex', gap: 4, marginBottom: 16, borderBottom: '1px solid #e5e7eb', paddingBottom: 12 }}>
-                {BOX_PAGES.map((p, idx) => (
+                {BOX_PAGES.map((p) => (
                   <button
-                    key={idx}
+                    key={p.titleKey}
                     onClick={() => setBoxPage(idx)}
                     style={{
                       fontSize: 12, padding: '4px 14px', borderRadius: 6, border: '1px solid',

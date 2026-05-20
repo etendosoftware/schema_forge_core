@@ -183,9 +183,9 @@ export function IncidentTray({ incidents, onClose }) {
           ✕
         </button>
       </div>
-      {incidents.map((inc, i) => (
+      {incidents.map((inc) => (
         <div
-          key={i}
+          key={inc.message}
           className={`fm-incident-tray__item fm-incident-tray__item--${inc.blocking ? 'blocking' : 'warning'}`}
         >
           {inc.blocking ? '🚫' : '⚠️'} {inc.message}
@@ -388,17 +388,20 @@ export function CompareDrawer({ decl, prevDecl, onClose }) {
           <span style={{ textAlign: 'right' }}>{currLabel}</span>
           <span style={{ textAlign: 'right' }}>{t('fm.compare.delta')}</span>
         </div>
-        {rows.map((r, i) => {
-          const d   = r.curr - r.prev;
-          const pct = r.prev !== 0 ? ((d / Math.abs(r.prev)) * 100).toFixed(1) : '—';
-          const up  = d >= 0;
+        {rows.map((r) => {
+          const d      = r.curr - r.prev;
+          const up     = d >= 0;
+          const pctNum = r.prev !== 0 ? (d / Math.abs(r.prev)) * 100 : null;
+          const deltaColor = pctNum == null ? '#9ca3af' : (up ? '#059669' : '#dc2626');
+          const arrow      = up ? '↑' : '↓';
+          const deltaText  = pctNum == null ? '—' : `${arrow} ${Math.abs(pctNum).toFixed(1)}%`;
           return (
-            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 8, padding: '8px 0', borderBottom: r.separator ? '2px solid #e5e7eb' : '1px solid #f3f4f6', fontSize: 12, alignItems: 'center' }}>
+            <div key={r.label} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 8, padding: '8px 0', borderBottom: r.separator ? '2px solid #e5e7eb' : '1px solid #f3f4f6', fontSize: 12, alignItems: 'center' }}>
               <span style={{ color: '#374151' }}>{r.label}</span>
               <span style={{ textAlign: 'right', color: '#6b7280', fontVariantNumeric: 'tabular-nums' }}>{fmt(r.prev)}</span>
               <span style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmt(r.curr)}</span>
-              <span style={{ textAlign: 'right', color: pct === '—' ? '#9ca3af' : up ? '#059669' : '#dc2626', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                {pct === '—' ? '—' : `${up ? '↑' : '↓'} ${Math.abs(pct)}%`}
+              <span style={{ textAlign: 'right', color: deltaColor, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                {deltaText}
               </span>
             </div>
           );

@@ -193,6 +193,52 @@ const PATCHES = {
 
 // ── Patch engine ──────────────────────────────────────────────────
 
+function opDeleteRow(sections, op) {
+  if (sections[op.section]) {
+    sections[op.section].rows = sections[op.section].rows.filter(r => r.id !== op.row);
+  }
+}
+
+function opInsertRow(sections, op) {
+  if (!sections[op.section]) return;
+  const rows = sections[op.section].rows;
+  let idx = rows.length;
+  if (op.after  != null) idx = rows.findIndex(r => r.id === op.after)  + 1;
+  if (op.before != null) idx = rows.findIndex(r => r.id === op.before);
+  if (idx < 0) idx = rows.length;
+  rows.splice(idx, 0, op.row);
+}
+
+function opPatchRow(sections, op) {
+  if (!sections[op.section]) return;
+  const row = sections[op.section].rows.find(r => r.id === op.row);
+  if (row) Object.assign(row, op.patch);
+}
+
+function opReorderRows(sections, op) {
+  if (!sections[op.section]) return;
+  const byId = Object.fromEntries(sections[op.section].rows.map(r => [r.id, r]));
+  sections[op.section].rows = op.order.map(id => byId[id]).filter(Boolean);
+}
+
+function opDeleteSection(sectionOrder, op) {
+  sectionOrder.splice(sectionOrder.indexOf(op.section), 1);
+}
+
+function opInsertSection(sectionOrder, sections, op) {
+  let idx = sectionOrder.length;
+  if (op.after  != null) idx = sectionOrder.indexOf(op.after)  + 1;
+  if (op.before != null) idx = sectionOrder.indexOf(op.before);
+  sectionOrder.splice(Math.max(0, idx), 0, op.section);
+  sections[op.section] = op.section_def;
+}
+
+function opPatchSection(sections, op) {
+  if (!sections[op.section]) return;
+  const { rows: _, ...rest } = op.patch;
+  Object.assign(sections[op.section], rest);
+}
+
 function applyPatch(ops) {
   const sectionOrder = [...BASE.sectionOrder];
   const sections = {};
@@ -202,57 +248,13 @@ function applyPatch(ops) {
 
   for (const op of ops) {
     switch (op.op) {
-
-      case 'deleteRow':
-        if (sections[op.section]) {
-          sections[op.section].rows = sections[op.section].rows.filter(r => r.id !== op.row);
-        }
-        break;
-
-      case 'insertRow': {
-        if (!sections[op.section]) break;
-        const rows = sections[op.section].rows;
-        let idx = rows.length;
-        if (op.after  != null) idx = rows.findIndex(r => r.id === op.after)  + 1;
-        if (op.before != null) idx = rows.findIndex(r => r.id === op.before);
-        if (idx < 0) idx = rows.length;
-        rows.splice(idx, 0, op.row);
-        break;
-      }
-
-      case 'patchRow': {
-        if (!sections[op.section]) break;
-        const row = sections[op.section].rows.find(r => r.id === op.row);
-        if (row) Object.assign(row, op.patch);
-        break;
-      }
-
-      case 'reorderRows': {
-        if (!sections[op.section]) break;
-        const byId = Object.fromEntries(sections[op.section].rows.map(r => [r.id, r]));
-        sections[op.section].rows = op.order.map(id => byId[id]).filter(Boolean);
-        break;
-      }
-
-      case 'deleteSection':
-        sectionOrder.splice(sectionOrder.indexOf(op.section), 1);
-        break;
-
-      case 'insertSection': {
-        let idx = sectionOrder.length;
-        if (op.after  != null) idx = sectionOrder.indexOf(op.after)  + 1;
-        if (op.before != null) idx = sectionOrder.indexOf(op.before);
-        sectionOrder.splice(Math.max(0, idx), 0, op.section);
-        sections[op.section] = op.section_def;
-        break;
-      }
-
-      case 'patchSection': {
-        if (!sections[op.section]) break;
-        const { rows: _rows, ...rest } = op.patch;
-        Object.assign(sections[op.section], rest);
-        break;
-      }
+      case 'deleteRow':     opDeleteRow(sections, op);                    break;
+      case 'insertRow':     opInsertRow(sections, op);                    break;
+      case 'patchRow':      opPatchRow(sections, op);                     break;
+      case 'reorderRows':   opReorderRows(sections, op);                  break;
+      case 'deleteSection': opDeleteSection(sectionOrder, op);            break;
+      case 'insertSection': opInsertSection(sectionOrder, sections, op);  break;
+      case 'patchSection':  opPatchSection(sections, op);                 break;
     }
   }
 

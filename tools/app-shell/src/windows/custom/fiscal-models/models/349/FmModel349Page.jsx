@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useUI } from '@/i18n';
-import { ArrowLeft, Download, FileDown, Play, TriangleAlert, OctagonAlert, CircleCheck, Search, RefreshCw, Globe, Eye, UserPlus, Lock } from 'lucide-react';
+import { ArrowLeft, Download, FileDown, Play, OctagonAlert, CircleCheck, Search, RefreshCw, Globe, Eye, Lock } from 'lucide-react';
 import { StatusPillMenu } from '../../FmCommon.jsx';
 import { PresentModal, FileGenModal } from '../../FmOverlays.jsx';
 import { formatAmount } from '../../fiscalModelsUtils.js';

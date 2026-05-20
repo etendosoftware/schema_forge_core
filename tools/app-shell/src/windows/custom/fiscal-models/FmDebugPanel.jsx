@@ -122,6 +122,43 @@ const btnBase = {
 
 const divider = { borderTop: '1px solid #2d2d4a', margin: '8px 0' };
 
+// ── Module-level helpers ──────────────────────────────────────────
+
+function buildBlockingView(v, n) {
+  if (!v.decl) return v;
+  const items = [
+    ...MOCK_INCIDENTS.blocking.slice(0, n),
+    ...(v.decl.incidents?.items ?? []).filter(i => i.severity !== 'block'),
+  ];
+  return { ...v, decl: { ...v.decl, incidents: { ...v.decl.incidents, blocking: n, items } } };
+}
+
+function buildWarningView(v, n) {
+  if (!v.decl) return v;
+  const items = [
+    ...(v.decl.incidents?.items ?? []).filter(i => i.severity === 'block'),
+    ...MOCK_INCIDENTS.warning.slice(0, n),
+  ];
+  return { ...v, decl: { ...v.decl, incidents: { ...v.decl.incidents, warning: n, items } } };
+}
+
+const PRESET_DEFS = {
+  'clean': () => ({ blocking: 0, warning: 0, items: [] }),
+  '0-1':   () => ({ blocking: 0, warning: 1, items: [MOCK_INCIDENTS.warning[0]] }),
+  '2-0':   () => ({ blocking: 2, warning: 0, items: [...MOCK_INCIDENTS.blocking] }),
+  '2-3':   () => ({ blocking: 2, warning: 3, items: [...MOCK_INCIDENTS.blocking, ...MOCK_INCIDENTS.warning] }),
+};
+
+function applyPreset(key, patchDecl) {
+  const factory = PRESET_DEFS[key];
+  if (factory) patchDecl({ incidents: factory() });
+}
+
+function navTo(type, mockDecl, setView, setTab) {
+  setView({ type, decl: { ...mockDecl } });
+  setTab('status');
+}
+
 // ── QuickNum ──────────────────────────────────────────────────────
 
 function QuickNum({ value, onChange }) {
@@ -158,42 +195,8 @@ export default function FmDebugPanel({ view, setView }) {
 
   const setStatus = useCallback((s) => patchDecl({ status: s }), [patchDecl]);
 
-  const setBlocking = useCallback((n) => {
-    setView(v => {
-      if (!v.decl) return v;
-      const items = [
-        ...MOCK_INCIDENTS.blocking.slice(0, n),
-        ...(v.decl.incidents?.items ?? []).filter(i => i.severity !== 'block'),
-      ];
-      return { ...v, decl: { ...v.decl, incidents: { ...v.decl.incidents, blocking: n, items } } };
-    });
-  }, [setView]);
-
-  const setWarning = useCallback((n) => {
-    setView(v => {
-      if (!v.decl) return v;
-      const items = [
-        ...(v.decl.incidents?.items ?? []).filter(i => i.severity === 'block'),
-        ...MOCK_INCIDENTS.warning.slice(0, n),
-      ];
-      return { ...v, decl: { ...v.decl, incidents: { ...v.decl.incidents, warning: n, items } } };
-    });
-  }, [setView]);
-
-  function applyPreset(key) {
-    const presets = {
-      'clean': { blocking: 0, warning: 0, items: [] },
-      '0-1':   { blocking: 0, warning: 1, items: [MOCK_INCIDENTS.warning[0]] },
-      '2-0':   { blocking: 2, warning: 0, items: [...MOCK_INCIDENTS.blocking] },
-      '2-3':   { blocking: 2, warning: 3, items: [...MOCK_INCIDENTS.blocking, ...MOCK_INCIDENTS.warning] },
-    };
-    if (presets[key]) patchDecl({ incidents: presets[key] });
-  }
-
-  function navTo(type, mockDecl) {
-    setView({ type, decl: { ...mockDecl } });
-    setTab('status');
-  }
+  const setBlocking = useCallback((n) => setView(v => buildBlockingView(v, n)), [setView]);
+  const setWarning  = useCallback((n) => setView(v => buildWarningView(v, n)),  [setView]);
 
   const blocking = decl?.incidents?.blocking ?? 0;
   const warning  = decl?.incidents?.warning  ?? 0;
@@ -209,13 +212,12 @@ export default function FmDebugPanel({ view, setView }) {
     fontSize: 10,
   });
 
-  const chipStyle = (active, color) => ({
-    ...btnBase,
-    background: active ? (color ? color + '33' : '#2d2d4a') : '#2d2d4a',
-    borderColor: active ? (color ?? '#8860ff') : '#3d3d5c',
-    color: active ? (color ?? '#e0e0ff') : '#c0c0ff',
-    marginBottom: 3,
-  });
+  const chipStyle = (active, color) => {
+    const bg = active ? (color ? `${color}33` : '#2d2d4a') : '#2d2d4a';
+    const borderColor = active ? (color ?? '#8860ff') : '#3d3d5c';
+    const textColor = active ? (color ?? '#e0e0ff') : '#c0c0ff';
+    return { ...btnBase, background: bg, borderColor, color: textColor, marginBottom: 3 };
+  };
 
   return (
     <div ref={panelRef} style={{ ...panelStyle, ...posStyle }}>
@@ -240,14 +242,21 @@ export default function FmDebugPanel({ view, setView }) {
         <>
           {/* State bar */}
           <div style={{ fontSize: 10, color: '#a0a0cc', marginBottom: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
-            <span style={{
-              background: viewType === '303' ? '#172554' : viewType === '349' ? '#1e1b4b' : '#2d2d4a',
-              color:      viewType === '303' ? '#60a5fa' : viewType === '349' ? '#a78bfa' : '#e0e0ff',
-              border:     `1px solid ${viewType === '303' ? '#1d4ed8' : viewType === '349' ? '#4f46e5' : '#3d3d5c'}`,
-              borderRadius: 4, padding: '1px 6px', fontSize: 10, fontWeight: 700,
-            }}>
-              {viewType === 'list' ? 'LIST' : viewType}
-            </span>
+            {(() => {
+              const typeColorMap = {
+                '303': { bg: '#172554', fg: '#60a5fa', bd: '#1d4ed8' },
+                '349': { bg: '#1e1b4b', fg: '#a78bfa', bd: '#4f46e5' },
+              };
+              const tc = typeColorMap[viewType] ?? { bg: '#2d2d4a', fg: '#e0e0ff', bd: '#3d3d5c' };
+              return (
+                <span style={{
+                  background: tc.bg, color: tc.fg, border: `1px solid ${tc.bd}`,
+                  borderRadius: 4, padding: '1px 6px', fontSize: 10, fontWeight: 700,
+                }}>
+                  {viewType === 'list' ? 'LIST' : viewType}
+                </span>
+              );
+            })()}
             {decl ? (
               <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#7070aa' }}>
                 {decl.id}
@@ -314,7 +323,7 @@ export default function FmDebugPanel({ view, setView }) {
                   <button
                     key={key}
                     disabled={!decl}
-                    onClick={() => applyPreset(key)}
+                    onClick={() => applyPreset(key, patchDecl)}
                     style={{ ...btnBase, background: '#2d2d4a', borderColor: '#3d3d5c', color: '#c0c0ff' }}
                   >
                     {label}
@@ -405,7 +414,7 @@ export default function FmDebugPanel({ view, setView }) {
               ].map(({ label, patch }) => (
                 <button
                   key={label}
-                  onClick={() => navTo('303', { ...MOCK_303, ...patch })}
+                  onClick={() => navTo('303', { ...MOCK_303, ...patch }, setView, setTab)}
                   style={{ ...btnBase, width: '100%', textAlign: 'left', background: '#0f1a3a', borderColor: '#1d3a7a', color: '#90b8ff', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}
                 >
                   <span style={{ background: '#172554', color: '#60a5fa', borderRadius: 3, padding: '1px 4px', fontSize: 9, fontWeight: 700 }}>303</span>
@@ -421,7 +430,7 @@ export default function FmDebugPanel({ view, setView }) {
               ].map(({ label, patch }) => (
                 <button
                   key={label}
-                  onClick={() => navTo('349', { ...MOCK_349, ...patch })}
+                  onClick={() => navTo('349', { ...MOCK_349, ...patch }, setView, setTab)}
                   style={{ ...btnBase, width: '100%', textAlign: 'left', background: '#0f0f2e', borderColor: '#3d2a7a', color: '#c0a0ff', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}
                 >
                   <span style={{ background: '#1e1b4b', color: '#a78bfa', borderRadius: 3, padding: '1px 4px', fontSize: 9, fontWeight: 700 }}>349</span>

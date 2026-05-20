@@ -4,7 +4,7 @@ import { LayoutGrid, Settings2, ListFilter, ArrowUpDown } from 'lucide-react';
 import { StatusPillMenu, ResultPill, EmptyState } from './FmCommon.jsx';
 import { ConfigDrawer, NewDeclModal } from './FmOverlays.jsx';
 import FmCatalogPage from './FmCatalogPage.jsx';
-import { formatAmount, STATUS_COLOR, STATUS_ORDER, computeUpcomingDeadlines } from './fiscalModelsUtils.js';
+import { formatAmount, STATUS_COLOR, computeUpcomingDeadlines } from './fiscalModelsUtils.js';
 
 function StatusSelect({ value, options, onChange }) {
   const t = useUI();
@@ -208,8 +208,7 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
   const [dataMode, setDataMode]          = useState('demo');
   const [demoDecls, setDemoDecls]        = useState(propDecls ?? MOCK_DECLARATIONS);
   const [realDecls, setRealDecls]        = useState([]);
-  const decls    = dataMode === 'demo' ? demoDecls : realDecls;
-  const setDecls = dataMode === 'demo' ? setDemoDecls : setRealDecls;
+  const decls = dataMode === 'demo' ? demoDecls : realDecls;
   const [modelFilter, setModelFilter]   = useState('all');
   const [yearFilter,  setYearFilter]    = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -233,16 +232,14 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
   const years = ['all', ...Array.from(new Set(decls.map(d => String(d.year)))).sort((a,b) => b - a)];
   const statuses = ['all', ...Array.from(new Set(decls.map(d => d.status)))];
 
-  const modelYearFiltered = decls.filter(d => {
-    if (modelFilter !== 'all' && d.model !== modelFilter) return false;
-    if (yearFilter  !== 'all' && String(d.year) !== yearFilter) return false;
-    return true;
-  });
+  const modelYearFiltered = decls.filter(d =>
+    (modelFilter === 'all' || d.model === modelFilter) &&
+    (yearFilter  === 'all' || String(d.year) === yearFilter)
+  );
 
-  const filtered = modelYearFiltered.filter(d => {
-    if (statusFilter !== 'all' && d.status !== statusFilter) return false;
-    return true;
-  });
+  const filtered = modelYearFiltered.filter(d =>
+    statusFilter === 'all' || d.status === statusFilter
+  );
 
   const activeCount = Object.values(activeModels).filter(Boolean).length;
 

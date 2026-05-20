@@ -4,7 +4,7 @@
 export async function computeBoxes303(decl, { token, apiBaseUrl } = {}) {
   if (token && apiBaseUrl) {
     try {
-      const base = (apiBaseUrl || '').replace(/\/[^/]+$/, '');
+      const base = apiBaseUrl.replace(/\/[^/]+$/, '');
       const url = `${base}/fiscal303/boxes?year=${decl.year}&period=${decl.period}`;
       const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) return await res.json();
@@ -88,6 +88,61 @@ function roundEur(n) {
   return Math.round(n * 100) / 100;
 }
 
+// ── Box mapping helpers ───────────────────────────────────────────
+// 21% → boxes [7, -, 9]; 10%+7%+8% (merged) → [4, -, 6]; 4%+5% → [1, -, 3]
+// 0% → [150, -, 152]; 2% (2026 new) → [165, -, 167]
+const SALES_MERGE = [
+  { rates: ['21'],           boxes: [7, 9] },
+  { rates: ['10', '7', '8'], boxes: [4, 6] },
+  { rates: ['4', '5'],       boxes: [1, 3] },
+  { rates: ['0'],            boxes: [150, 152] },
+  { rates: ['2'],            boxes: [165, 167] },
+];
+
+// 1.75% recargo 2023+ → 156/158; others unchanged
+const EC_RATE_MAP = { '1.4': [19, 21], '5.2': [22, 24], '0.5': [16, 18], '1.75': [156, 158] };
+
+const PURCH_MAP = [
+  ['purchNormal',    28, 29],
+  ['purchInvGoods',  30, 31],
+  ['purchImport',    32, 33],
+  ['purchImportInv', 34, 35],
+  ['purchIntraCorr', 36, 37],
+  ['purchIntraInv',  38, 39],
+  ['purchRectif',    40, 41],
+];
+
+function fillSalesBoxes(b, byRate) {
+  for (const { rates, boxes: [baseBox, taxBox] } of SALES_MERGE) {
+    let base = 0, tax = 0;
+    for (const r of rates) {
+      base += byRate[r]?.base ?? 0;
+      tax  += byRate[r]?.tax  ?? 0;
+    }
+    if (base) b[baseBox] = roundEur(base);
+    if (tax)  b[taxBox]  = roundEur(tax);
+  }
+}
+
+function fillECBoxes(b, ecByRate) {
+  for (const [rate, [baseBox, taxBox]] of Object.entries(EC_RATE_MAP)) {
+    const d = ecByRate[rate] ?? {};
+    if (d.base) b[baseBox] = roundEur(d.base);
+    if (d.tax)  b[taxBox]  = roundEur(d.tax);
+  }
+}
+
+function fillPurchBoxes(b, data) {
+  for (const [key, baseBox, taxBox] of PURCH_MAP) {
+    const d = data[key];
+    if (d?.base) b[baseBox] = roundEur(d.base);
+    if (d?.tax)  b[taxBox]  = roundEur(d.tax);
+  }
+  if (data.specialComp  != null) b[42] = roundEur(data.specialComp);
+  if (data.invAdjust    != null) b[43] = roundEur(data.invAdjust);
+  if (data.proRataFinal != null) b[44] = roundEur(data.proRataFinal);
+}
+
 /**
  * Maps aggregated invoice data to 303 box numbers, mirroring AEAT303Report2014 logic.
  *
@@ -115,26 +170,7 @@ function roundEur(n) {
 export function deriveBoxes303(data) {
   const b = {};
 
-  // ── Sales / Devengada ──────────────────────────────────────────
-  // 21% → boxes [7, -, 9]; 10%+7%+8% (merged) → [4, -, 6]; 4%+5% → [1, -, 3]
-  // 0% → [150, -, 152]; 2% (2026 new) → [165, -, 167]
-  const salesMerge = [
-    { rates: ['21'],         boxes: [7, 9] },
-    { rates: ['10', '7', '8'], boxes: [4, 6] },
-    { rates: ['4', '5'],     boxes: [1, 3] },
-    { rates: ['0'],          boxes: [150, 152] },
-    { rates: ['2'],          boxes: [165, 167] },
-  ];
-  const byRate = data.salesByRate ?? {};
-  for (const { rates, boxes: [baseBox, taxBox] } of salesMerge) {
-    let base = 0, tax = 0;
-    for (const r of rates) {
-      base += byRate[r]?.base ?? 0;
-      tax  += byRate[r]?.tax  ?? 0;
-    }
-    if (base) b[baseBox] = roundEur(base);
-    if (tax)  b[taxBox]  = roundEur(tax);
-  }
+  fillSalesBoxes(b, data.salesByRate ?? {});
 
   // EU acquisitions → boxes 10, 11
   const euPurch = data.euPurch ?? {};
@@ -146,44 +182,17 @@ export function deriveBoxes303(data) {
   if (ispPurch.base) b[12] = roundEur(ispPurch.base);
   if (ispPurch.tax)  b[13] = roundEur(ispPurch.tax);
 
-  // Recargo equivalencia by rate → [1.4%: 19/21], [5.2%: 22/24], [0.5%: 16/18]
-  // (1.75% recargo 2023+ → 156/158; 0.62%/0.5% → 16/18)
-  const ecRateMap = { '1.4': [19, 21], '5.2': [22, 24], '0.5': [16, 18], '1.75': [156, 158] };
-  const ecByRate = data.ecByRate ?? {};
-  for (const [rate, [baseBox, taxBox]] of Object.entries(ecRateMap)) {
-    const d = ecByRate[rate] ?? {};
-    if (d.base) b[baseBox] = roundEur(d.base);
-    if (d.tax)  b[taxBox]  = roundEur(d.tax);
-  }
+  fillECBoxes(b, data.ecByRate ?? {});
 
   // Total devengada (box 27) = sum of all output tax cuotas
   const accruedBoxes = [3, 6, 9, 11, 13, 15, 18, 21, 24, 152, 158, 167];
-  const accrued = accruedBoxes.reduce((s, box) => s + (b[box] ?? 0), 0);
-  b[27] = roundEur(accrued);
+  b[27] = roundEur(accruedBoxes.reduce((s, box) => s + (b[box] ?? 0), 0));
 
-  // ── Purchases / Deducible ──────────────────────────────────────
-  const purch = [
-    [data.purchNormal,    28, 29],
-    [data.purchInvGoods,  30, 31],
-    [data.purchImport,    32, 33],
-    [data.purchImportInv, 34, 35],
-    [data.purchIntraCorr, 36, 37],
-    [data.purchIntraInv,  38, 39],
-    [data.purchRectif,    40, 41],
-  ];
-  for (const [d, baseBox, taxBox] of purch) {
-    if (d?.base) b[baseBox] = roundEur(d.base);
-    if (d?.tax)  b[taxBox]  = roundEur(d.tax);
-  }
-
-  if (data.specialComp  != null) b[42] = roundEur(data.specialComp);
-  if (data.invAdjust    != null) b[43] = roundEur(data.invAdjust);
-  if (data.proRataFinal != null) b[44] = roundEur(data.proRataFinal);
+  fillPurchBoxes(b, data);
 
   // Total deducible (box 45) = (29+31+33+35+37+39+41+42+43+44)
   const deductBoxes = [29, 31, 33, 35, 37, 39, 41, 42, 43, 44];
-  const deductible = deductBoxes.reduce((s, box) => s + (b[box] ?? 0), 0);
-  b[45] = roundEur(deductible);
+  b[45] = roundEur(deductBoxes.reduce((s, box) => s + (b[box] ?? 0), 0));
 
   // Resultado (box 46) = 27 − 45
   b[46] = roundEur((b[27] ?? 0) - (b[45] ?? 0));

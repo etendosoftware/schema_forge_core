@@ -26,12 +26,12 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
 
   return (
     <div className="fm-aeat-table">
-      {sections.map((section, si) => {
+      {sections.map((section) => {
         if (section.sectionType === 'identificacion') {
           const textFields = section.fields.filter(f => f.type === 'text');
           const checkboxFields = section.fields.filter(f => f.type === 'checkbox');
           return (
-            <div key={si} className="fm-aeat-section">
+            <div key={section.id} className="fm-aeat-section">
               <div className="fm-aeat-section__title">{t(section.titleKey)}</div>
               <div className="fm-aeat-ident">
                 <div className="fm-aeat-ident-fields">
@@ -61,20 +61,20 @@ export default function FmBoxes303({ boxes, year, period, sectionIds, identifica
 
         const cols = section.colHeaderKeys?.length || 1;
         return (
-          <div key={si} className="fm-aeat-section">
+          <div key={section.id} className="fm-aeat-section">
             <div className="fm-aeat-section__title">{t(section.titleKey)}</div>
 
             {cols > 0 && section.colHeaderKeys?.length > 0 && (
               <div className="fm-aeat-col-headers">
                 <span className="fm-aeat-col-headers__label" />
-                {section.colHeaderKeys.map((k, ci) => (
-                  <span key={ci} className="fm-aeat-col-headers__cell">{t(k)}</span>
+                {section.colHeaderKeys.map((k) => (
+                  <span key={k} className="fm-aeat-col-headers__cell">{t(k)}</span>
                 ))}
               </div>
             )}
 
-            {section.rows.map((row, ri) => (
-              <div key={ri} className={`fm-aeat-row${row.total ? ' fm-aeat-row--total' : ''}`}>
+            {section.rows.map((row) => (
+              <div key={row.cells?.[0] ?? row.labelKey} className={`fm-aeat-row${row.total ? ' fm-aeat-row--total' : ''}`}>
                 <span className="fm-aeat-row__label">
                   {row.labelKey ? t(row.labelKey) : ''}
                   {row.formula && (

@@ -26,11 +26,14 @@ export default function FmCatalogPage({ onBack, onSave, activeModels, token, api
   const lockedIds = new Set(CATALOG.filter(m => m.locked).map(m => m.id));
   const activeCount = Object.entries(active).filter(([id, v]) => v && !lockedIds.has(id)).length;
 
-  const sortedCatalog = [...CATALOG].sort((a, b) => {
-    const keyA = (active[a.id] && !a.locked) ? 0 : a.locked ? 2 : 1;
-    const keyB = (active[b.id] && !b.locked) ? 0 : b.locked ? 2 : 1;
-    return keyA - keyB || parseInt(a.id, 10) - parseInt(b.id, 10);
-  });
+  const modelSortKey = (m) => {
+    if (active[m.id] && !m.locked) return 0;
+    if (m.locked) return 2;
+    return 1;
+  };
+  const sortedCatalog = [...CATALOG].sort((a, b) =>
+    modelSortKey(a) - modelSortKey(b) || parseInt(a.id, 10) - parseInt(b.id, 10)
+  );
 
   return (
     <div className="fm-page">
@@ -65,10 +68,12 @@ export default function FmCatalogPage({ onBack, onSave, activeModels, token, api
             const isActive = active[model.id];
             const isLocked = model.locked;
             const cat = model.cat;
+            const activeModifier = cat === 'ret' ? ' fm-catalog-card--active-ret' : ' fm-catalog-card--active';
+            const cardModifier = isLocked ? ' fm-catalog-card--locked' : isActive ? activeModifier : '';
             return (
               <div
                 key={model.id}
-                className={`fm-catalog-card${isLocked ? ' fm-catalog-card--locked' : isActive ? (cat === 'ret' ? ' fm-catalog-card--active-ret' : ' fm-catalog-card--active') : ''}`}
+                className={`fm-catalog-card${cardModifier}`}
               >
                 <span className={`fm-catalog-card__badge fm-catalog-card__badge--${cat}`}>
                   {model.id}
