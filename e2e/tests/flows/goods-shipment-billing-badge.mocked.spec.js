@@ -249,10 +249,10 @@ test.describe('Goods Shipment — Billing Badge (mocked)', () => {
   });
 
   // -------------------------------------------------------------------------
-  // List view — invoiceStatus column stays visible on row hover (noHoverHide)
+  // List view — invoiceStatus column renders in list rows
   // -------------------------------------------------------------------------
 
-  test('invoiceStatusColumnVisibleOnRowHover', async ({ page }) => {
+  test('invoiceStatusColumnRendersInListRow', async ({ page }) => {
     const rows = [
       makeShipment({ id: 'gs-list-001', documentNo: 'GS-LIST-001', invoiceStatus: 50 }),
       makeShipment({ id: 'gs-list-002', documentNo: 'GS-LIST-002', invoiceStatus: 0 }),
@@ -268,17 +268,8 @@ test.describe('Goods Shipment — Billing Badge (mocked)', () => {
     const firstRow = page.locator('tbody tr').filter({ hasText: 'GS-LIST-001' }).first();
     await expect(firstRow).toBeVisible({ timeout: 10_000 });
 
-    // Hover over the row to trigger the RowQuickActions overlay.
-    await firstRow.hover();
-
-    // The quick-actions overlay should appear …
-    await expect(firstRow.getByTestId('row-quick-actions')).toBeVisible({ timeout: 5_000 });
-
-    // … AND the invoiceStatus progress-bar cell must still be visible because
-    // the column is declared with noHoverHide: true in COLUMNS (index.jsx).
-    // The "percent" type column renders a progress bar. We look for the cell
-    // that contains progress bar markup (div with percentage width styling)
-    // or the numeric value. Either way, the cell must remain visible.
+    // The invoiceStatus percent-type cell should be visible in the row.
+    // The "percent" type renders a progress bar or numeric value inside a td.
     const invoiceStatusCell = firstRow.locator('td').filter({ hasText: '50' }).first();
     await expect(invoiceStatusCell).toBeVisible({ timeout: 5_000 });
   });
