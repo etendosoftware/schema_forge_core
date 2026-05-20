@@ -17,10 +17,7 @@
     "linesLayout": "inlineEditable",
     "menuActions": [],
     "processOverrides": {
-      "documentAction": {
-        "label": "Complete",
-        "displayLogicRaw": "@documentStatus@='DR'"
-      }
+      "documentAction": { "exclude": true }
     },
     "noHeaderBorder": true,
     "dateFilterKey": "movementDate"

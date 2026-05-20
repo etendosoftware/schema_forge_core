@@ -356,24 +356,7 @@ export function useShipmentPdf(shipmentId, apiBaseUrl, token) {
   useEffect(() => {
     if (!shipmentId || !apiBaseUrl || !token) return;
 
-    const labels = {
-      title:             ui('shipmentPdfTitle'),
-      documentNo:        ui('shipmentPdfDocumentNo'),
-      taxId:             ui('invoicePdfTaxId'),
-      page:              ui('invoicePdfPage'),
-      issuerSection:     ui('shipmentPdfIssuerSection'),
-      deliverySection:   ui('shipmentPdfDeliverySection'),
-      salesOrder:        ui('shipmentPdfSalesOrder'),
-      date:              ui('shipmentPdfDate'),
-      warehouse:         ui('shipmentPdfWarehouse'),
-      colCode:           ui('invoicePdfColCode'),
-      colDescription:    ui('invoicePdfColDescription'),
-      colOrdered:        ui('shipmentPdfColOrdered'),
-      colDelivered:      ui('shipmentPdfColDelivered'),
-      notes:             ui('invoicePdfNotes'),
-      signatureReceiver: ui('shipmentPdfSignatureReceiver'),
-      signatureDate:     ui('shipmentPdfSignatureDate'),
-    };
+    const labels = getShipmentPdfLabels(ui);
 
     const base = apiBaseUrl.replace(/\/[^/]+$/, '');
 

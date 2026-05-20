@@ -30,8 +30,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:goodsShipment
 const processes = [
-  { name: 'Process Shipment', label: 'Complete', style: 'positive', columnName: 'documentAction',
-    displayLogicRaw: "@documentStatus@='DR'" },
+
 ];
 // @sf-generated-end processes:goodsShipment
 

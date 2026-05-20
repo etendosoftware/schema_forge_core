@@ -1,8 +1,8 @@
 {
   "version": "0.12.0",
   "generatedAt": "2026-04-29T19:04:55.657Z",
-  "updatedAt": "2026-05-20T11:44:24.841Z",
-  "checksum": "fe826f75fdc9bb60",
+  "updatedAt": "2026-05-20T13:19:58.357Z",
+  "checksum": "6c865698fc174944",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -22,8 +22,7 @@
       "menuActions": [],
       "processOverrides": {
         "documentAction": {
-          "label": "Complete",
-          "displayLogicRaw": "@documentStatus@='DR'"
+          "exclude": true
         }
       },
       "salesTheme": true,
@@ -472,8 +471,7 @@
       "menuActions": [],
       "processOverrides": {
         "documentAction": {
-          "label": "Complete",
-          "displayLogicRaw": "@documentStatus@='DR'"
+          "exclude": true
         }
       },
       "salesTheme": true,

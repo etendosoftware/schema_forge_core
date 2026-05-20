@@ -68,11 +68,9 @@ function ShipmentStatsPanel({ shipment, partnerName, movementDate, ui, onOrderCl
   const statusBadgeClass = STATUS_BADGE[docStatus] || 'bg-gray-50 text-gray-600 border-gray-200';
   const salesOrderNo = shipment['salesOrder$_identifier']?.split(' ')[0] || null;
 
-  const barColor = invoiceStatusPct >= 100
-    ? '#10b981'
-    : invoiceStatusPct > 0
-      ? '#f59e0b'
-      : '#d1d5db';
+  let barColor = '#d1d5db';
+  if (invoiceStatusPct >= 100) barColor = '#10b981';
+  else if (invoiceStatusPct > 0) barColor = '#f59e0b';
 
   return (
     <div className="pb-4">
