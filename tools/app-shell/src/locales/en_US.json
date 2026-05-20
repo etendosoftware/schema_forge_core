@@ -16474,6 +16474,7 @@
     "loadingShipmentLines": "Loading shipment lines...",
     "noLinesInSelectedShipments": "No lines found in selected shipments.",
     "noLinesInThisShipment": "No lines found in this shipment.",
+    "noLinesInThisReceipt": "No lines found in this receipt.",
     "draftInvoiceExistsForShipments": "Draft invoice already exists for these shipments",
     "thisShipmentHasDraftInvoice": "This shipment already has a Draft invoice",
     "viewExistingInvoice": "View existing invoice →",

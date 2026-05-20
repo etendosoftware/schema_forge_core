@@ -16719,6 +16719,7 @@
     "loadingShipmentLines": "Cargando líneas del envío...",
     "noLinesInSelectedShipments": "No se encontraron líneas en los envíos seleccionados.",
     "noLinesInThisShipment": "No se encontraron líneas en este envío.",
+    "noLinesInThisReceipt": "No se encontraron líneas en este albarán.",
     "draftInvoiceExistsForShipments": "Ya existe una factura borrador para estos envíos",
     "thisShipmentHasDraftInvoice": "Este envío ya tiene una factura en Borrador",
     "viewExistingInvoice": "Ver factura existente →",
