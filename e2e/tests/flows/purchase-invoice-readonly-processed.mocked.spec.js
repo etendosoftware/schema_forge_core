@@ -201,11 +201,17 @@ test.describe('Purchase Invoice — readOnlyLogic when processed (mocked)', () =
     await page.goto(`/purchase-invoice/${INV_DR_ID}`);
     await page.waitForLoadState('domcontentloaded');
 
-    const fieldRoot = page.getByTestId('field-businessPartner');
-    await expect(fieldRoot).toBeVisible({ timeout: 8_000 });
+    // With a pre-existing businessPartner value, the editable SearchInput
+    // renders the SelectorChip variant (`field-{key}-chip`). The read-only
+    // path renders a disabled <Input> wrapped by `field-{key}` instead, so
+    // chip visibility alone is the contrast against the completed cases.
+    const chip = page.getByTestId('field-businessPartner-chip');
+    await expect(chip).toBeVisible({ timeout: 8_000 });
 
-    // In editable mode, SearchInput places the testid directly on the <input> element,
-    // so fieldRoot itself is the control to assert against.
-    await expect(fieldRoot).toBeEnabled({ timeout: 5_000 });
+    // Clicking the chip flips editingIntent and reveals the editable <input>.
+    await chip.click();
+    const input = page.getByTestId('field-businessPartner');
+    await expect(input).toBeVisible({ timeout: 5_000 });
+    await expect(input).toBeEnabled({ timeout: 5_000 });
   });
 });
