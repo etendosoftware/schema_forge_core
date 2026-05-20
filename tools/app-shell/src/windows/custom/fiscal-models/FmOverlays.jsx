@@ -6,7 +6,7 @@ import './fiscal-models.css';
 function parseCityLine(cityLine) {
   if (!cityLine) return { postal: '', city: '', province: '' };
   // Format: "28001 - Madrid (Madrid)" — postal optional, region in parens optional
-  const m = /^(\S+)\s*-\s*(.+?)(?:\s*\((.+)\))?$/.exec(cityLine.trim());
+  const m = /^(\S+)\s*-\s*([^(]+?)(?:\s*\(([^)]*)\))?$/.exec(cityLine.trim());
   if (!m) return { postal: '', city: cityLine.trim(), province: '' };
   return { postal: m[1] ?? '', city: m[2]?.trim() ?? '', province: m[3]?.trim() ?? '' };
 }
