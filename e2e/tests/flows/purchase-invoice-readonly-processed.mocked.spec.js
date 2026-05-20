@@ -201,11 +201,38 @@ test.describe('Purchase Invoice — readOnlyLogic when processed (mocked)', () =
     await page.goto(`/purchase-invoice/${INV_DR_ID}`);
     await page.waitForLoadState('domcontentloaded');
 
-    const fieldRoot = page.getByTestId('field-businessPartner');
-    await expect(fieldRoot).toBeVisible({ timeout: 8_000 });
+    const input = page.getByTestId('field-businessPartner');
+    const chip = page.getByTestId('field-businessPartner-chip');
 
-    // In editable mode, SearchInput places the testid directly on the <input> element,
-    // so fieldRoot itself is the control to assert against.
-    await expect(fieldRoot).toBeEnabled({ timeout: 5_000 });
+    // Editable selector fields can render in two valid shapes:
+    // 1. raw input (no current selection), or
+    // 2. chip mode (current selection already loaded and still editable).
+    // Chip mode only renders when the field is NOT disabled, so either branch
+    // proves the contrast against the completed invoice.
+    const mode = await waitForEditableSelectorMode(input, chip);
+
+    if (mode === 'chip') {
+      await expect(chip).toHaveText(/\S/, { timeout: 5_000 });
+    } else {
+      await expect(input).toBeEnabled({ timeout: 5_000 });
+    }
   });
 });
+
+async function waitForEditableSelectorMode(input, chip) {
+  let lastMode = 'pending';
+
+  await expect.poll(async () => {
+    if (await chip.isVisible().catch(() => false)) {
+      lastMode = 'chip';
+      return lastMode;
+    }
+    if (await input.isVisible().catch(() => false)) {
+      lastMode = 'input';
+      return lastMode;
+    }
+    return 'pending';
+  }, { timeout: 8_000 }).not.toBe('pending');
+
+  return lastMode;
+}
