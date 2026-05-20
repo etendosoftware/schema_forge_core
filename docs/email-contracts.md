@@ -279,3 +279,4 @@ Before merging a contract change:
 - UI maps all executor statuses used by the contract.
 - Provider secret values are not present in code, docs, tests, fixtures, screenshots, or frontend bundles.
 - Operations runbook and metrics are updated when behavior changes.
+- Observability tests or verification scripts prove the contract emits redacted events for success, validation failure, throttle, duplicate, suppression/kill switch, and provider failure outcomes.

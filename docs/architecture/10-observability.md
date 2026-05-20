@@ -237,6 +237,13 @@ Email contract logs must be structured and redacted. Include `requestId`, `audit
 
 Do not log provider API keys, reset tokens, raw custom HTML, full message bodies, or secrets derived from provider configuration. See [../ops/transactional-email-security.md](../ops/transactional-email-security.md).
 
+The Etendo Go email executor emits one terminal observability event for each
+contract attempt. The default implementation writes redacted structured logs;
+future sinks can forward the same event to Prometheus, OpenTelemetry, or another
+metrics backend. Events include `recipientDomain` and `recipientHash` instead of
+the raw destination address, plus optional `providerDurationMs`,
+`throttleScope`, `killSwitchScope`, and `errorClass`.
+
 ---
 
 ## 5. Layer 3: Metrics
@@ -263,6 +270,22 @@ Do not log provider API keys, reset tokens, raw custom HTML, full message bodies
 | `sf_email_suppression_total` | Counter | contract, tenant, reason | Bounce, complaint, and manual suppression impact |
 | `sf_email_kill_switch_total` | Counter | scope, contract, tenant | Kill switch activations |
 | `sf_email_provider_error_total` | Counter | provider, contract, error_class | Provider failure analysis |
+
+Implementation notes:
+
+- `sf_email_send_total` is emitted for every terminal executor outcome,
+  including validation failures before provider submission.
+- `sf_email_provider_duration_seconds` is emitted only when a provider call is
+  attempted.
+- `sf_email_provider_error_total` distinguishes provider rejection,
+  unconfigured provider, and transport/serialization failures through
+  `error_class`.
+- `sf_email_throttle_total`, `sf_email_duplicate_total`,
+  `sf_email_suppression_total`, and `sf_email_kill_switch_total` are derived
+  from the same terminal event, so dashboards can correlate controls without
+  joining separate logs.
+- Keep recipient-level analysis in logs with `recipientHash`; do not create
+  high-cardinality metrics labels for raw recipients.
 
 ### 5.3 Infrastructure Metrics
 

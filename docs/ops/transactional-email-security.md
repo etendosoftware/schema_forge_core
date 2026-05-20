@@ -147,6 +147,27 @@ Do not log:
 - raw HTML from custom sends
 - complete recipient lists for bulk-like support operations
 
+The runtime emits one redacted terminal event per executor outcome through the
+email observability sink. The default sink writes structured logs with these
+fields:
+
+| Field | Purpose | Redaction rule |
+|-------|---------|----------------|
+| `metrics` | Comma-separated metric names that can be derived from the event | No secret values |
+| `status` | Executor outcome such as `SENT`, `THROTTLED`, `DUPLICATE`, `SUPPRESSED`, `PROVIDER_FAILED`, or `VALIDATION_FAILED` | Safe enum |
+| `contract`, `version` | Contract identity and command version | Safe metadata |
+| `tenantId`, `userId`, `recordId` | Abuse and support correlation | Do not add business payload fields |
+| `template` | Provider template resolved by the contract | Safe identifier |
+| `recipientDomain` | Destination domain | Domain only |
+| `recipientHash` | Stable SHA-256 hash of the destination address | Never log the raw address in metric labels |
+| `providerStatus`, `providerDurationMs` | Provider outcome and latency | No provider body |
+| `throttleScope`, `killSwitchScope` | Anti-abuse control that stopped the send | Scope only |
+| `errorClass` | Generic provider/configuration failure class | No stack trace in metric labels |
+| `durationMs` | End-to-end executor duration | Numeric |
+
+Provider response bodies, reset tokens, custom HTML, API keys, and sender
+credentials must not be placed in observability fields.
+
 ## Metrics and Alerts
 
 Required metrics:
@@ -161,6 +182,23 @@ Required metrics:
 | `sf_email_kill_switch_total` | Counter | scope, contract, tenant |
 | `sf_email_provider_error_total` | Counter | provider, contract, error_class |
 
+Runtime events map to metrics as follows:
+
+| Outcome | Required metric signals |
+|---------|-------------------------|
+| Any terminal outcome | `sf_email_send_total` |
+| Provider call attempted | `sf_email_provider_duration_seconds` |
+| `PROVIDER_FAILED` | `sf_email_provider_error_total` |
+| `THROTTLED` | `sf_email_throttle_total` |
+| `DUPLICATE` | `sf_email_duplicate_total` |
+| `SUPPRESSED` | `sf_email_suppression_total` |
+| Kill switch suppression | `sf_email_kill_switch_total` and `sf_email_suppression_total` |
+
+Use low-cardinality labels for metrics: `contract`, `version`, `tenant`,
+`template`, `status`, `throttle_scope`, `kill_switch_scope`, and
+`error_class`. Use `recipientHash` only in logs or investigation queries, not
+as a high-cardinality Prometheus label.
+
 Recommended alerts:
 
 - provider failure rate above threshold for 5 minutes
@@ -169,6 +207,26 @@ Recommended alerts:
 - suppression or complaint rate spikes
 - kill switch activated
 - custom support contract used outside expected support hours or volume
+
+## Operational Queries
+
+Adapt these examples to Loki, Elasticsearch, CloudWatch Logs, or the active log
+backend. They assume the default email observability log shape.
+
+| Question | Query shape |
+|----------|-------------|
+| Provider failures by contract | `event=email_contract status=PROVIDER_FAILED | stats count by contract,errorClass,providerStatus` |
+| Throttle spike by tenant | `event=email_contract status=THROTTLED | stats count by tenantId,contract,throttleScope` |
+| Duplicate/idempotent sends | `event=email_contract status=DUPLICATE | stats count by tenantId,contract,recordId` |
+| Suppressed recipients by domain | `event=email_contract status=SUPPRESSED | stats count by tenantId,contract,recipientDomain,killSwitchScope` |
+| Abuse toward one recipient | `event=email_contract recipientHash=<hash> | stats count by contract,status,tenantId` |
+| Provider latency | `event=email_contract providerDurationMs=* | percentile(providerDurationMs, 95) by contract,status` |
+| Kill switch activation | `event=email_contract killSwitchScope=* | stats count by killSwitchScope,tenantId,contract` |
+
+During an incident, start with `status`, `contract`, `tenantId`, `template`,
+`recipientDomain`, and `recipientHash`. Do not request provider bodies or raw
+email addresses unless support policy explicitly requires it and the storage
+location is approved for PII.
 
 ## Production Smoke Test
 
