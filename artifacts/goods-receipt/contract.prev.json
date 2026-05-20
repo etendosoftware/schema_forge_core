@@ -1,8 +1,8 @@
 {
-  "version": "0.9.1",
+  "version": "0.10.0",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-05-20T17:12:58.575Z",
-  "checksum": "8a111bfdebcefdcd",
+  "updatedAt": "2026-05-20T17:15:42.056Z",
+  "checksum": "54cded55c1c4bcac",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -493,7 +493,7 @@
             "type": "foreignKey",
             "tsType": "string",
             "visibility": "editable",
-            "required": false,
+            "required": true,
             "grid": true,
             "form": true,
             "reference": "Product",
@@ -1460,7 +1460,7 @@
             "column": "M_Product_ID",
             "type": "foreignKey",
             "visibility": "editable",
-            "required": false
+            "required": true
           },
           {
             "name": "mConditionGoodsID",

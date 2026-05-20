@@ -7,7 +7,7 @@ import GoodsReceiptLineForm from './GoodsReceiptLineForm';
 import RelatedDocuments from '@/windows/custom/goods-receipt/RelatedDocuments';
 import { AttachmentsTab } from '@/components/attachments';
 import GoodsReceiptBottomPanel from '../../../custom/GoodsReceiptBottomPanel';
-import GoodsReceiptTopbar from '../../../custom/GoodsReceiptTopbar';
+import GoodsReceiptActions from '../../../custom/GoodsReceiptActions';
 import catalogs from './mockCatalogs';
 
 
@@ -393,7 +393,7 @@ export default function GoodsReceiptPage({ windowName, recordId, ...props }) {
         noHeaderBorder
         customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_InOut", config: {} } }]}
         bottomSection={GoodsReceiptBottomPanel}
-        topbarRight={GoodsReceiptTopbar}
+        topbarRight={GoodsReceiptActions}
         draftMode={draftMode}
         requiredHeaderFields={requiredHeaderFields}
         linesLayout="inlineEditable"

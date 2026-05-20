@@ -42,6 +42,14 @@ function CustomHeaderTable(props) {
   return <GoodsReceiptTable columns={HEADER_COLUMNS} {...props} />;
 }
 
+const draftModeWithModal = {
+  enabled: true,
+  processField: 'documentAction',
+  processValue: 'CO',
+  label: 'confirm',
+  onConfirm: () => window.dispatchEvent(new CustomEvent('goods-receipt:open-confirm-modal')),
+};
+
 export default function GoodsReceiptWindow(props) {
   useBulkActionToast();
   const ui = useUI();
@@ -60,6 +68,7 @@ export default function GoodsReceiptWindow(props) {
       initialColumnFilters={docStatus ? { documentStatus: { mode: 'enumLabel', value: [docStatus] } } : undefined}
       secondaryTabs={[]}
       notesField="description"
+      draftMode={draftModeWithModal}
       bottomSection={GoodsReceiptBottomPanel}
       customTabs={customTabs}
       bulkActions={(ctx) => (

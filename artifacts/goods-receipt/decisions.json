@@ -17,7 +17,7 @@
     "noHeaderBorder": true,
     "linesLayout": "inlineEditable",
     "customComponents": {
-      "topbarRight": "GoodsReceiptTopbar",
+      "topbarRight": "GoodsReceiptActions",
       "bottomSection": "GoodsReceiptBottomPanel"
     }
   },
