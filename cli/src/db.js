@@ -164,22 +164,30 @@ function parseGradleProperties(filePath) {
 /**
  * Resolve DB config from (in priority order):
  * 1. Explicit config object passed as argument
- * 2. Environment variables (ETENDO_DB_HOST, etc.)
+ * 2. Explicit gradle.properties path passed as argument
  * 3. gradle.properties file (auto-discovered or via ETENDO_GRADLE_PROPERTIES env var)
+ * 4. Environment variables (ETENDO_DB_HOST, etc.)
  *
  * @param {object} [config] - Explicit DB config (host, port, user, password, database)
- * @param {string} [gradlePropertiesPath] - Path to gradle.properties (overrides auto-discovery)
+ * @param {string} [gradlePropertiesPath] - Path to gradle.properties. When provided,
+ * it is used ahead of env vars and a missing file falls back to defaults.
  */
 function loadGradleConfig(gradlePropertiesPath) {
-  const gradlePath = gradlePropertiesPath
-    || process.env.ETENDO_GRADLE_PROPERTIES
-    || findGradleProperties();
-  if (!gradlePath) return null;
+  if (gradlePropertiesPath) {
+    try {
+      return { gradle: parseGradleProperties(gradlePropertiesPath), explicit: true };
+    } catch {
+      return { gradle: null, explicit: true };
+    }
+  }
+
+  const gradlePath = process.env.ETENDO_GRADLE_PROPERTIES || findGradleProperties();
+  if (!gradlePath) return { gradle: null, explicit: false };
   try {
-    return parseGradleProperties(gradlePath);
+    return { gradle: parseGradleProperties(gradlePath), explicit: false };
   } catch {
     // File not found or unreadable — caller falls through to env vars / defaults
-    return null;
+    return { gradle: null, explicit: false };
   }
 }
 
@@ -212,15 +220,20 @@ export function createDbPool(config, gradlePropertiesPath) {
     return cacheMode === 'write' ? wrapPoolWithCache(pool) : pool;
   }
 
-  const gradle = loadGradleConfig(gradlePropertiesPath);
+  const { gradle, explicit } = loadGradleConfig(gradlePropertiesPath);
   const { host: gradleHost, port: gradlePort } = extractGradleHostPort(gradle);
+  const envHost = explicit ? null : process.env.ETENDO_DB_HOST;
+  const envPort = explicit ? null : parseInt(process.env.ETENDO_DB_PORT, 10);
+  const envUser = explicit ? null : process.env.ETENDO_DB_USER;
+  const envPassword = explicit ? null : process.env.ETENDO_DB_PASSWORD;
+  const envDatabase = explicit ? null : process.env.ETENDO_DB_NAME;
 
   const pool = new pg.Pool({
-    host: process.env.ETENDO_DB_HOST || (gradleHost === 'db' ? 'localhost' : gradleHost) || 'localhost',
-    port: parseInt(process.env.ETENDO_DB_PORT, 10) || gradlePort || 5432,
-    user: process.env.ETENDO_DB_USER || gradle?.['bbdd.user'] || 'etendo',
-    password: process.env.ETENDO_DB_PASSWORD || gradle?.['bbdd.password'] || '',
-    database: process.env.ETENDO_DB_NAME || gradle?.['bbdd.sid'] || 'etendo_dev',
+    host: (gradleHost === 'db' ? 'localhost' : gradleHost) || envHost || 'localhost',
+    port: gradlePort || envPort || 5432,
+    user: gradle?.['bbdd.user'] || envUser || 'etendo',
+    password: gradle?.['bbdd.password'] || envPassword || '',
+    database: gradle?.['bbdd.sid'] || envDatabase || 'etendo_dev',
     max: 5,
   });
   return cacheMode === 'write' ? wrapPoolWithCache(pool) : pool;
