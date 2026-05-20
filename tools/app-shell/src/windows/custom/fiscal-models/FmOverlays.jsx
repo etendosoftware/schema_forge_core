@@ -392,7 +392,8 @@ export function CompareDrawer({ decl, prevDecl, onClose }) {
           const d      = r.curr - r.prev;
           const up     = d >= 0;
           const pctNum = r.prev !== 0 ? (d / Math.abs(r.prev)) * 100 : null;
-          const deltaColor = pctNum == null ? '#9ca3af' : (up ? '#059669' : '#dc2626');
+          let deltaColor = '#9ca3af';
+          if (pctNum != null) deltaColor = up ? '#059669' : '#dc2626';
           const arrow      = up ? '↑' : '↓';
           const deltaText  = pctNum == null ? '—' : `${arrow} ${Math.abs(pctNum).toFixed(1)}%`;
           return (

@@ -213,7 +213,7 @@ export default function FmDebugPanel({ view, setView }) {
   });
 
   const chipStyle = (active, color) => {
-    const bg = active ? (color ? `${color}33` : '#2d2d4a') : '#2d2d4a';
+    const bg = active && color ? `${color}33` : '#2d2d4a';
     const borderColor = active ? (color ?? '#8860ff') : '#3d3d5c';
     const textColor = active ? (color ?? '#e0e0ff') : '#c0c0ff';
     return { ...btnBase, background: bg, borderColor, color: textColor, marginBottom: 3 };

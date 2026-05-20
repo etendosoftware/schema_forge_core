@@ -96,7 +96,9 @@ function SourcesTab({ decl, t }) {
                 const hasBlock = incs.some(inc => inc.severity === 'block');
                 const hasWarn  = incs.length > 0 && !hasBlock;
                 const tooltip  = incs.map(inc => inc.message).join(' · ');
-                const rowClass = hasBlock ? 'fm-dtable__row--block' : hasWarn ? 'fm-dtable__row--warn' : '';
+                let rowClass = '';
+                if (hasBlock)     rowClass = 'fm-dtable__row--block';
+                else if (hasWarn) rowClass = 'fm-dtable__row--warn';
                 return (
                   <tr key={r.ref} className={rowClass}>
                     <td className="strong">{r.date}</td>

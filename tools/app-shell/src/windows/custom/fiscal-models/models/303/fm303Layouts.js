@@ -235,8 +235,9 @@ function opInsertSection(sectionOrder, sections, op) {
 
 function opPatchSection(sections, op) {
   if (!sections[op.section]) return;
-  const { rows: _, ...rest } = op.patch;
-  Object.assign(sections[op.section], rest);
+  const patch = { ...op.patch };
+  delete patch.rows;
+  Object.assign(sections[op.section], patch);
 }
 
 function applyPatch(ops) {

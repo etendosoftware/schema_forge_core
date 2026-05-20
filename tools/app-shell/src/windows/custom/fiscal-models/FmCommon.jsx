@@ -103,7 +103,7 @@ export function Tabs({ tabs, active, onSelect }) {
         >
           {t.label}
           {t.badge != null && (
-            <span className={`fm-tabs__badge${t.badgeTone ? ` fm-tabs__badge--${t.badgeTone}` : ''}`}>
+            <span className={['fm-tabs__badge', t.badgeTone && `fm-tabs__badge--${t.badgeTone}`].filter(Boolean).join(' ')}>
               {t.badge}
             </span>
           )}

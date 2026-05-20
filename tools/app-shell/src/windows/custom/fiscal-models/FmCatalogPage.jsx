@@ -69,7 +69,9 @@ export default function FmCatalogPage({ onBack, onSave, activeModels, token, api
             const isLocked = model.locked;
             const cat = model.cat;
             const activeModifier = cat === 'ret' ? ' fm-catalog-card--active-ret' : ' fm-catalog-card--active';
-            const cardModifier = isLocked ? ' fm-catalog-card--locked' : isActive ? activeModifier : '';
+            let cardModifier = '';
+            if (isLocked)      cardModifier = ' fm-catalog-card--locked';
+            else if (isActive) cardModifier = activeModifier;
             return (
               <div
                 key={model.id}
