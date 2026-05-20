@@ -747,5 +747,16 @@
     ],
     "author": "pipeline",
     "date": "2026-05-20"
+  },
+  {
+    "from": "0.9.1",
+    "to": "0.10.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"product\" property \"required\" changed from \"false\" to \"true\" in frontend (additive)",
+      "Field \"product\" property \"required\" changed from \"false\" to \"true\" in backend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-20"
   }
 ]

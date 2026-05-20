@@ -139,6 +139,7 @@
       "fields": {
         "product": {
           "grid": true,
+          "required": true,
           "section": "principal",
           "seq": 10,
           "readOnlyLogic": null
