@@ -342,7 +342,8 @@
           "section": "principal",
           "order": 3,
           "gridOrder": 3,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "min": 0
         },
         "uOM": {
           "grid": false,
@@ -394,7 +395,8 @@
           "gridOrder": 4,
           "readOnlyLogic": null,
           "displayLogic": null,
-          "columnType": "amount"
+          "columnType": "amount",
+          "min": 0
         },
         "grossListPrice": {
           "form": false,
@@ -406,7 +408,8 @@
           "section": "principal",
           "order": 5,
           "gridOrder": 5,
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "min": 0
         },
         "taxableAmount": {
           "form": false,

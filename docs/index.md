@@ -24,6 +24,7 @@
 | File | Description |
 |------|-------------|
 | [sonarqube-access.md](sonarqube-access.md) | **SonarQube quick access**: bypass RTK with `rtk proxy`, project keys, useful endpoints, local scanner fallback |
+| [xml-regeneration-check.md](xml-regeneration-check.md) | **XML regeneration check**: compare original module XML vs export.database output without DB access |
 
 ## Field & Pipeline Reference
 
@@ -70,6 +71,7 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 | Path | Description |
 |------|-------------|
 | [generated-custom-windows/INDEX.md](generated-custom-windows/INDEX.md) | Functional docs for generated/custom windows, including the app-shell flows guide |
+| [fiscal-models-303-layout.md](fiscal-models-303-layout.md) | **Modelo 303 box layout system**: BASE structure, patch ops reference, how to add a new year, i18n keys, visual verification via debug panel |
 
 | [generated-custom-windows/2026-04-23-epic-etp-3504-merge-changelog.md](generated-custom-windows/2026-04-23-epic-etp-3504-merge-changelog.md) | Change log for the `epic/ETP-3504` -> `develop` window-level merge deltas documented in generated/custom windows |
 ## Guides

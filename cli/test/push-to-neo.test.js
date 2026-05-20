@@ -97,6 +97,23 @@ describe('toSpecName', () => {
   it('handles special characters', () => {
     assert.equal(toSpecName('Price List (Sales)'), 'price-list-sales');
   });
+
+  // Regression: regex grouping `(^-)|(-$)` must trim both leading and trailing dashes
+  it('trims leading and trailing dashes (edge-dash inputs)', () => {
+    assert.equal(toSpecName('-Sales Order-'), 'sales-order');
+  });
+
+  it('strips outer dashes from doubly-dashed input', () => {
+    assert.equal(toSpecName('--Foo--Bar--'), 'foo-bar');
+  });
+
+  it('preserves already-kebab input unchanged', () => {
+    assert.equal(toSpecName('Already-Kebab'), 'already-kebab');
+  });
+
+  it('handles single word with no dashes', () => {
+    assert.equal(toSpecName('Single'), 'single');
+  });
 });
 
 // ---------------------------------------------------------------------------

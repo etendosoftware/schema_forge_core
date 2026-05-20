@@ -1,8 +1,8 @@
 {
-  "version": "0.6.0",
+  "version": "0.8.0",
   "generatedAt": "2026-04-30T15:42:46.907Z",
-  "updatedAt": "2026-05-18T23:19:54.880Z",
-  "checksum": "1810bb2635ffbd1f",
+  "updatedAt": "2026-05-20T18:19:51.481Z",
+  "checksum": "5cc0cb35581ce4c8",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -297,7 +297,7 @@
             "label": "Reject Reason",
             "type": "foreignKey",
             "tsType": "string",
-            "visibility": "editable",
+            "visibility": "readOnly",
             "required": false,
             "grid": false,
             "form": true,
@@ -643,6 +643,7 @@
             },
             "defaultValue": "1",
             "gridOrder": 3,
+            "min": 0,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -667,6 +668,7 @@
             "sourceRequired": true,
             "columnType": "amount",
             "gridOrder": 4,
+            "min": 0,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -697,6 +699,7 @@
             },
             "defaultValue": "0",
             "gridOrder": 5,
+            "min": 0,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -1047,7 +1050,7 @@
             "apiKey": "rejectReason",
             "column": "C_Reject_Reason_ID",
             "type": "foreignKey",
-            "visibility": "editable",
+            "visibility": "readOnly",
             "required": false
           },
           {

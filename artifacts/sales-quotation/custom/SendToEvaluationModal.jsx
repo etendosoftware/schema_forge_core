@@ -59,6 +59,10 @@ export default function SendToEvaluationModal({
 
   const handleConfirm = async () => {
     if (loading) return;
+    if (lineCount === 0) {
+      setError(ui('sqNoLinesError'));
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -67,8 +71,9 @@ export default function SendToEvaluationModal({
         { method: 'POST', headers, body: JSON.stringify({ fieldValues: {} }) },
       );
       if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.response?.message || err?.message || `Error (${res.status})`);
+        const errJson = await res.json().catch(() => null);
+        const rawMsg = errJson?.response?.message || errJson?.message || `Error (${res.status})`;
+        throw new Error(rawMsg.includes('@OrderWithoutLines@') ? ui('sqNoLinesError') : rawMsg);
       }
       onClose();
       window.location.reload();
@@ -104,11 +109,11 @@ export default function SendToEvaluationModal({
             <div style={{ fontSize: 11, color: '#185FA5' }}>
               {bpName}
             </div>
-            <div style={{ fontSize: 28, fontWeight: 500, color: '#042C53', lineHeight: 1, marginTop: 4, marginBottom: 6 }}>
+            <div data-testid="confirm-summary-total" style={{ fontSize: 28, fontWeight: 500, color: '#042C53', lineHeight: 1, marginTop: 4, marginBottom: 6 }}>
               {fmtNum(grandTotal)} {currency}
             </div>
             <div style={{ fontSize: 11, color: '#185FA5' }}>
-              {lineCount != null ? ui('soLines', { count: lineCount }) : '...'} <span style={{ color: '#85B7EB' }}>·</span> {ui('soSubtotal')} <span style={{ fontWeight: 500, color: '#042C53' }}>{fmtNum(totalLines)} {currency}</span>
+              {lineCount != null ? ui('soLines', { count: lineCount }) : '...'} <span style={{ color: '#85B7EB' }}>·</span> {ui('soSubtotal')} <span data-testid="confirm-summary-subtotal" style={{ fontWeight: 500, color: '#042C53' }}>{fmtNum(totalLines)} {currency}</span>
             </div>
           </div>
         </div>
@@ -133,10 +138,10 @@ export default function SendToEvaluationModal({
             style={{ ...btnSecondary, opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
             {ui('cancel')}
           </button>
-          <button type="button" onClick={handleConfirm} disabled={loading}
+          <button type="button" data-testid="action-confirm-modal" onClick={handleConfirm} disabled={loading || lineCount === 0}
             style={{
               ...btnPrimary,
-              opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading || lineCount === 0 ? 0.5 : 1, cursor: loading || lineCount === 0 ? 'not-allowed' : 'pointer',
               display: 'inline-flex', alignItems: 'center', gap: 6,
             }}>
             {loading && (

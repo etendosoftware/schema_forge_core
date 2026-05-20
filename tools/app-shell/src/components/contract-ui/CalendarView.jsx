@@ -66,7 +66,7 @@ function buildCalendarGrid(year, month) {
  * Index events by date key for O(1) lookup.
  * Multi-day events (date..endDate) are duplicated across every day they span.
  */
-function indexEvents(events) {
+export function indexEvents(events) {
   const map = {};
   for (const evt of events) {
     const start = new Date(evt.date);

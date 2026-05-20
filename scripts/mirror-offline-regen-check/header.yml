@@ -1,0 +1,89 @@
+# AUTO-GENERATED from etendosoftware/etendo_schema_forge
+#   .github/workflows/offline-regen-check.yml
+# Do not edit by hand — re-run `make sync-regen-check-workflow` in schema_forge
+# and commit the result. Manual edits here will be overwritten on next sync.
+
+name: Offline Regeneration Check (mirror)
+
+# Mirror of the schema_forge "Offline Regeneration Check": runs whenever the
+# committed ETGO_SF_*.xml baseline changes in com.etendoerp.go, so drift
+# introduced from this side (manual XML edit, export.database run) is detected
+# even when schema_forge itself has no new commit.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "src-db/database/sourcedata/ETGO_SF_*.xml"
+  push:
+    branches: [main, develop, "epic/**", "feature/ETP-3993"]
+    paths:
+      - "src-db/database/sourcedata/ETGO_SF_*.xml"
+  workflow_dispatch:
+
+jobs:
+  offline-regen-check:
+    name: Offline Regen Check
+    runs-on: ubuntu-latest
+    env:
+      GO_MODULE_NAME: com.etendoerp.go
+      DEVELOP_BRANCH: develop
+      MAIN_BRANCH: main
+    steps:
+      - name: Checkout com.etendoerp.go (into etendo_core/modules/com.etendoerp.go)
+        uses: actions/checkout@v4
+        with:
+          path: etendo_core/modules/com.etendoerp.go
+          fetch-depth: 0
+
+      - name: Resolve target branch for schema_forge
+        id: resolve-branch
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            GIT_BRANCH="${{ github.head_ref }}"
+          else
+            GIT_BRANCH="${GITHUB_REF#refs/heads/}"
+          fi
+          echo "GIT_BRANCH=$GIT_BRANCH" >> "$GITHUB_OUTPUT"
+
+          case "$GIT_BRANCH" in
+            hotfix/*)  FALLBACK="$MAIN_BRANCH" ;;
+            feature/*) FALLBACK="epic/ETP-3504" ;;
+            *)         FALLBACK="$DEVELOP_BRANCH" ;;
+          esac
+          echo "FALLBACK=$FALLBACK" >> "$GITHUB_OUTPUT"
+          echo "Resolved GIT_BRANCH=$GIT_BRANCH fallback=$FALLBACK"
+
+      - name: Wait for sibling repo push to settle
+        # Both repos commit in lockstep. If com.etendoerp.go is pushed slightly
+        # before schema_forge (or vice versa), the workflow could checkout an
+        # outdated sibling. Sleeping a minute gives the human (or CI) time to
+        # push the matching commit in the other repo before we clone it.
+        run: sleep 60
+
+      - name: Checkout schema_forge (matching branch or fallback)
+        uses: actions/checkout@v4
+        with:
+          repository: etendosoftware/etendo_schema_forge
+          path: etendo_core/etendo_schema_forge
+          fetch-depth: 0
+
+      - name: Align schema_forge branch
+        working-directory: etendo_core/etendo_schema_forge
+        run: |
+          set -e
+          BR="${{ steps.resolve-branch.outputs.GIT_BRANCH }}"
+          FB="${{ steps.resolve-branch.outputs.FALLBACK }}"
+          if git rev-parse --verify "origin/$BR" >/dev/null 2>&1; then
+            git checkout "$BR"
+            echo "✅ schema_forge on $BR"
+          elif git rev-parse --verify "origin/$FB" >/dev/null 2>&1; then
+            git checkout "$FB"
+            echo "⚠️ $BR not found in schema_forge — using $FB"
+          else
+            echo "🚨 Neither $BR nor $FB exist in schema_forge" >&2
+            exit 1
+          fi
+          git rev-parse --abbrev-ref HEAD
+          git log -1 --oneline
+

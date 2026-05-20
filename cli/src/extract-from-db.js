@@ -3,7 +3,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { createDbPool, closePool } from './db.js';
+import { createDbPool, closePool, setCacheMode, flushCacheWrites } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -132,6 +132,28 @@ FROM AD_AuxiliarInput ai
 JOIN AD_Tab t ON ai.AD_Tab_ID = t.AD_Tab_ID
 WHERE t.AD_Window_ID = $1
 ORDER BY t.SeqNo, t.Name, t.AD_Tab_ID, ai.Name, ai.AD_AuxiliarInput_ID`,
+
+  // Active tabs of a window, in the SAME order populateSpec uses
+  // (cli/src/neo-writer.js → populateWindowSpec). Cached here so that
+  // push-to-neo --dump-delta can compute the populate delta offline.
+  'ad-tabs-for-window': `
+SELECT ad_tab_id, name, ad_table_id, seqno
+FROM ad_tab
+WHERE ad_window_id = $1 AND isactive = 'Y'
+ORDER BY seqno, name, ad_tab_id`,
+
+  // Active columns of every table referenced by the window's active tabs,
+  // in the SAME order populateSpec uses (sorted by position + tiebreakers).
+  // Joins through AD_Tab to keep the cache key window-scoped ($1 = window_id),
+  // matching the rest of the QUERIES surface.
+  'ad-columns-for-window': `
+SELECT DISTINCT c.ad_table_id, c.ad_column_id, c.columnname, c.position
+FROM ad_column c
+JOIN ad_tab t ON t.ad_table_id = c.ad_table_id
+WHERE t.ad_window_id = $1
+  AND t.isactive = 'Y'
+  AND c.isactive = 'Y'
+ORDER BY c.ad_table_id, c.position, c.columnname, c.ad_column_id`,
 };
 
 function rowsToCsv(rows) {
@@ -186,17 +208,36 @@ const isCLI =
   import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'));
 
 if (isCLI) {
-  const windowId = process.argv[2];
-  const windowSlug = process.argv[3];
+  // Extract --write-cache / --from-cache from argv before reading positionals.
+  const flags = process.argv.slice(2).filter((a) => a.startsWith('--'));
+  const positional = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+  const writeCache = flags.includes('--write-cache');
+  const fromCache = flags.includes('--from-cache');
+  if (writeCache && fromCache) {
+    console.error('Error: --write-cache and --from-cache are mutually exclusive');
+    process.exit(1);
+  }
+  if (writeCache) setCacheMode({ mode: 'write' });
+  else if (fromCache) setCacheMode({ mode: 'read' });
+
+  const windowId = positional[0];
+  const windowSlug = positional[1];
 
   if (!windowId || !windowSlug) {
-    console.error('Usage: node extract-from-db.js <windowId> <windowSlug>');
+    console.error('Usage: node extract-from-db.js [--write-cache|--from-cache] <windowId> <windowSlug>');
     console.error('Example: node extract-from-db.js 143 sales-order');
     process.exit(1);
   }
 
-  main(windowId, windowSlug).catch((err) => {
-    console.error('Extraction failed:', err.message);
-    process.exit(1);
-  });
+  main(windowId, windowSlug)
+    .then(() => {
+      if (writeCache) {
+        const { written, path } = flushCacheWrites();
+        console.log(`Cache: wrote ${written} entries to ${path}`);
+      }
+    })
+    .catch((err) => {
+      console.error('Extraction failed:', err.message);
+      process.exit(1);
+    });
 }

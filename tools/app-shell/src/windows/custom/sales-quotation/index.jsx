@@ -20,6 +20,7 @@ const draftModeWithModal = {
   // still expose the Confirm button (which dispatches the convert-to-order/invoice
   // modal via onConfirm).
   completedStatuses: ['CA', 'ETGO_CI', 'CL', 'VO', 'CJ'],
+  disableWhenEmpty: true,
   onConfirm: () => window.dispatchEvent(new CustomEvent('sales-quotation:open-confirm-modal')),
 };
 
