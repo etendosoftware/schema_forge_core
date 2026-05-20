@@ -9,7 +9,7 @@ import { getLatestInstallmentDueDate } from '@/lib/invoiceDueDate';
 import InvoicePaymentModal from './InvoicePaymentModal.jsx';
 import PdfViewer from './PdfViewer.jsx';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
-import GenericPreviewModal from './GenericPreviewModal.jsx';
+import GenericPreviewModal, { EmptyPanel } from './GenericPreviewModal.jsx';
 import { useInvoicePreview } from './useInvoicePreview.js';
 import { useFiscalStatus } from './useFiscalStatus.js';
 import { StatusPill } from '@/windows/custom/fiscal-monitor/FmPrimitives.jsx';
@@ -484,11 +484,3 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, install
   );
 }
 
-function EmptyPanel({ icon, text }) {
-  return (
-    <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-400 py-20">
-      <span className="text-3xl">{icon}</span>
-      <p className="text-sm">{text}</p>
-    </div>
-  );
-}

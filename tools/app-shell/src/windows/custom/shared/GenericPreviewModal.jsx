@@ -226,7 +226,9 @@ const GenericPreviewModal = forwardRef(function GenericPreviewModal({
 
   useImperativeHandle(ref, () => ({ triggerEdit }), [triggerEdit]);
 
-  const resolvedActionButtons = actionButtons ?? null;
+  const resolvedActionButtons = typeof actionButtons === 'function'
+    ? actionButtons({ triggerClose, triggerEdit })
+    : (actionButtons ?? null);
 
   const activeContent = tabs.find((t) => t.key === activeTab)?.content ?? null;
 
@@ -320,3 +322,12 @@ const GenericPreviewModal = forwardRef(function GenericPreviewModal({
 });
 
 export default GenericPreviewModal;
+
+export function EmptyPanel({ icon, text }) {
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-400 py-20">
+      <span className="text-3xl">{icon}</span>
+      <p className="text-sm">{text}</p>
+    </div>
+  );
+}

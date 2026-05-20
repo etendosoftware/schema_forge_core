@@ -652,5 +652,45 @@
     ],
     "author": "pipeline",
     "date": "2026-04-29"
+  },
+  {
+    "from": "0.4.0",
+    "to": "0.5.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"documentNo\" property \"grid\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"warehouse\" property \"seq\" changed from \"40\" to \"70\" in frontend (additive)",
+      "Field \"businessPartner\" property \"grid\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"movementDate\" property \"seq\" changed from \"50\" to \"40\" in frontend (additive)",
+      "Field \"orderReference\" property \"seq\" changed from \"60\" to \"50\" in frontend (additive)",
+      "Field \"invoiceStatus\" property \"grid\" changed from \"false\" to \"true\" in frontend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-20"
+  },
+  {
+    "from": "0.5.0",
+    "to": "0.6.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"businessPartner\" property \"grid\" changed from \"false\" to \"true\" in frontend (patch)",
+      "Field \"businessPartner\" property \"seq\" changed from \"20\" to \"60\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-20"
+  },
+  {
+    "from": "0.6.0",
+    "to": "0.7.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"documentNo\" property \"seq\" changed from \"10\" to \"60\" in frontend (additive)",
+      "Field \"warehouse\" property \"seq\" changed from \"70\" to \"50\" in frontend (additive)",
+      "Field \"businessPartner\" property \"seq\" changed from \"60\" to \"10\" in frontend (additive)",
+      "Field \"partnerAddress\" property \"seq\" changed from \"30\" to \"20\" in frontend (additive)",
+      "Field \"orderReference\" property \"seq\" changed from \"50\" to \"30\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-20"
   }
 ]

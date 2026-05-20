@@ -1,8 +1,8 @@
 {
-  "version": "0.4.0",
+  "version": "0.6.0",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-05-12T19:44:00.759Z",
-  "checksum": "e9f9e44061d83f00",
+  "updatedAt": "2026-05-20T16:27:20.453Z",
+  "checksum": "fa9444d21fecd459",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -36,7 +36,7 @@
             "tsType": "string",
             "visibility": "readOnly",
             "required": true,
-            "grid": true,
+            "grid": false,
             "form": true,
             "sourceRequired": true,
             "derivation": {
@@ -66,7 +66,7 @@
             "reference": "Warehouse",
             "inputMode": "selector",
             "section": "principal",
-            "seq": 40,
+            "seq": 70,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_InOut_Warehouse"
             },
@@ -91,7 +91,7 @@
             "reference": "BusinessPartner",
             "inputMode": "search",
             "section": "principal",
-            "seq": 20,
+            "seq": 60,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_BPartner"
             },
@@ -152,7 +152,7 @@
             },
             "defaultValue": "@#Date@",
             "section": "principal",
-            "seq": 50,
+            "seq": 40,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_AccountingDate"
             },
@@ -211,7 +211,7 @@
             "grid": true,
             "form": true,
             "section": "principal",
-            "seq": 60,
+            "seq": 50,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -410,7 +410,7 @@
             "tsType": "number",
             "visibility": "readOnly",
             "required": false,
-            "grid": false,
+            "grid": true,
             "form": false
           }
         ],

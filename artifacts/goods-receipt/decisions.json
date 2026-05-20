@@ -16,6 +16,7 @@
     },
     "linesLayout": "inlineEditable",
     "customComponents": {
+      "topbarRight": "GoodsReceiptTopbar",
       "bottomSection": "GoodsReceiptBottomPanel"
     }
   },
@@ -25,10 +26,10 @@
       "fields": {
         "documentNo": {
           "visibility": "readOnly",
-          "grid": true,
+          "grid": false,
           "searchable": true,
           "section": "principal",
-          "seq": 10,
+          "seq": 60,
           "readOnlyLogic": null
         },
         "businessPartner": {
@@ -36,7 +37,7 @@
           "searchable": true,
           "reference": "BusinessPartner",
           "section": "principal",
-          "seq": 20,
+          "seq": 10,
           "readOnlyLogic": "@Processed@='Y'"
         },
         "partnerAddress": {
@@ -47,27 +48,28 @@
             "filterKey": "C_BPartner_ID"
           },
           "section": "principal",
-          "seq": 30,
-          "readOnlyLogic": "@Processed@='Y'"
-        },
-        "warehouse": {
-          "grid": true,
-          "section": "principal",
-          "seq": 40,
+          "seq": 20,
           "readOnlyLogic": "@Processed@='Y'"
         },
         "movementDate": {
           "grid": true,
           "searchable": true,
           "section": "principal",
-          "seq": 50,
+          "seq": 40,
+          "defaultValue": "@Today@",
           "readOnlyLogic": "@Processed@='Y'"
         },
         "orderReference": {
           "grid": true,
           "searchable": true,
           "section": "principal",
-          "seq": 60,
+          "seq": 30,
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        "warehouse": {
+          "grid": true,
+          "section": "principal",
+          "seq": 50,
           "readOnlyLogic": "@Processed@='Y'"
         },
         "description": {
@@ -116,6 +118,7 @@
           "displayLogic": null
         },
         "invoiceStatus": {
+          "grid": true,
           "form": false
         },
         "createLinesFrom": {

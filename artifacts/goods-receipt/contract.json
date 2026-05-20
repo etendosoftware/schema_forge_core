@@ -1,8 +1,8 @@
 {
-  "version": "0.4.0",
+  "version": "0.7.0",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-05-12T19:44:00.759Z",
-  "checksum": "e9f9e44061d83f00",
+  "updatedAt": "2026-05-20T17:00:22.813Z",
+  "checksum": "6c3d1d9e010cca61",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -11,6 +11,7 @@
       "category": "purchases",
       "relatedDocuments": true,
       "customComponents": {
+        "topbarRight": "GoodsReceiptTopbar",
         "bottomSection": "GoodsReceiptBottomPanel"
       },
       "dateFilterKey": "movementDate",
@@ -36,7 +37,7 @@
             "tsType": "string",
             "visibility": "readOnly",
             "required": true,
-            "grid": true,
+            "grid": false,
             "form": true,
             "sourceRequired": true,
             "derivation": {
@@ -44,7 +45,7 @@
               "source": "documentType.sequence"
             },
             "section": "principal",
-            "seq": 10,
+            "seq": 60,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -66,7 +67,7 @@
             "reference": "Warehouse",
             "inputMode": "selector",
             "section": "principal",
-            "seq": 40,
+            "seq": 50,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_InOut_Warehouse"
             },
@@ -91,7 +92,7 @@
             "reference": "BusinessPartner",
             "inputMode": "search",
             "section": "principal",
-            "seq": 20,
+            "seq": 10,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_BPartner"
             },
@@ -120,7 +121,7 @@
               "filterKey": "C_BPartner_ID"
             },
             "section": "principal",
-            "seq": 30,
+            "seq": 20,
             "validationRule": {
               "code": "C_BPartner_Location.C_BPartner_ID=@C_BPartner_ID@ AND C_BPartner_Location.IsShipTo='Y' AND C_BPartner_Location.IsActive='Y'",
               "contextParams": [],
@@ -152,7 +153,7 @@
             },
             "defaultValue": "@#Date@",
             "section": "principal",
-            "seq": 50,
+            "seq": 40,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_AccountingDate"
             },
@@ -211,7 +212,7 @@
             "grid": true,
             "form": true,
             "section": "principal",
-            "seq": 60,
+            "seq": 30,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -410,7 +411,7 @@
             "tsType": "number",
             "visibility": "readOnly",
             "required": false,
-            "grid": false,
+            "grid": true,
             "form": false
           }
         ],
@@ -863,6 +864,7 @@
       "category": "purchases",
       "relatedDocuments": true,
       "customComponents": {
+        "topbarRight": "GoodsReceiptTopbar",
         "bottomSection": "GoodsReceiptBottomPanel"
       },
       "dateFilterKey": "movementDate",
