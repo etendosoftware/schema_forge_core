@@ -18606,6 +18606,7 @@
     "goodsReceipt.confirmModal.createInvoiceTitle": "Crear Factura de Compra",
     "goodsReceipt.confirmModal.createInvoiceDesc": "Genera una factura en Borrador prellenada con el proveedor, los productos recibidos y las cantidades del albarán.",
     "goodsReceipt.confirmModal.confirmBtn": "Confirmar albarán",
+    "goodsReceipt.confirmModal.confirmedTitle": "Albarán de compra confirmado",
     "quotationStatus.AE": "Evaluación automática",
     "quotationStatus.CO": "Reservado",
     "quotationStatus.CL": "Cerrado",

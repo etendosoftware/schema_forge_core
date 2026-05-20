@@ -1,8 +1,8 @@
 {
   "version": "0.10.0",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-05-20T17:15:42.056Z",
-  "checksum": "54cded55c1c4bcac",
+  "updatedAt": "2026-05-20T17:29:44.944Z",
+  "checksum": "e5c5b60811636564",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -11,7 +11,7 @@
       "category": "purchases",
       "relatedDocuments": true,
       "customComponents": {
-        "topbarRight": "GoodsReceiptTopbar",
+        "topbarRight": "GoodsReceiptActions",
         "bottomSection": "GoodsReceiptBottomPanel"
       },
       "dateFilterKey": "movementDate",
@@ -879,7 +879,7 @@
       "category": "purchases",
       "relatedDocuments": true,
       "customComponents": {
-        "topbarRight": "GoodsReceiptTopbar",
+        "topbarRight": "GoodsReceiptActions",
         "bottomSection": "GoodsReceiptBottomPanel"
       },
       "dateFilterKey": "movementDate",

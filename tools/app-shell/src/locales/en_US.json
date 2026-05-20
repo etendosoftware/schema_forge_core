@@ -18353,6 +18353,7 @@
     "goodsReceipt.confirmModal.createInvoiceTitle": "Create Purchase Invoice",
     "goodsReceipt.confirmModal.createInvoiceDesc": "Generates a Draft invoice pre-filled with the supplier, received products and quantities.",
     "goodsReceipt.confirmModal.confirmBtn": "Confirm Receipt",
+    "goodsReceipt.confirmModal.confirmedTitle": "Goods receipt confirmed",
     "quotationStatus.AE": "Automatic Evaluation",
     "quotationStatus.CO": "Booked",
     "quotationStatus.CL": "Closed",
