@@ -24,7 +24,6 @@ jobs:
         run: make test-xml-regeneration-check
 
   test:
-    name: Test Suite
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
