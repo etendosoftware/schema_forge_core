@@ -137,7 +137,7 @@ function visibilityDefaults(visibility) {
 // Category inference
 // ---------------------------------------------------------------------------
 
-function inferCategory(windowName) {
+function inferCategory(windowName = '') {
   const name = windowName || '';
   if (/Sales/i.test(name)) return 'sales';
   if (/Purchase/i.test(name)) return 'purchases';
@@ -178,7 +178,7 @@ function resolveFieldVisibility(rawField, fieldDecision, discardPatterns) {
 }
 
 function decisionOrDefault(fieldDecision, key, defaults) {
-  return fieldDecision[key] !== undefined ? fieldDecision[key] : defaults[key];
+  return fieldDecision[key] === undefined ? defaults[key] : fieldDecision[key];
 }
 
 function buildBaseField(rawField, fieldDecision, visibility) {
@@ -189,7 +189,7 @@ function buildBaseField(rawField, fieldDecision, visibility) {
     label: fieldDecision.label || rawField.label,
     type: fieldDecision.type || (rawField.type === 'id' ? 'id' : rawField.type),
     visibility,
-    required: fieldDecision.required !== undefined ? fieldDecision.required : (rawField.mandatory || false),
+    required: fieldDecision.required === undefined ? (rawField.mandatory || false) : fieldDecision.required,
     grid: decisionOrDefault(fieldDecision, 'grid', defaults),
     form: decisionOrDefault(fieldDecision, 'form', defaults),
     searchable: decisionOrDefault(fieldDecision, 'searchable', defaults),
@@ -248,9 +248,9 @@ function applyForeignKeyProps(field, rawField, fieldDecision) {
 }
 
 function applyVisibleFieldProps(field, rawField, fieldDecision) {
-  const readOnlyLogic = fieldDecision.readOnlyLogic !== undefined
-    ? (fieldDecision.readOnlyLogic || rawField.readOnlyLogic || null)
-    : (rawField.readOnlyLogic || null);
+  const readOnlyLogic = fieldDecision.readOnlyLogic === undefined
+    ? (rawField.readOnlyLogic || null)
+    : (fieldDecision.readOnlyLogic || rawField.readOnlyLogic || null);
   if (readOnlyLogic) field.readOnlyLogic = readOnlyLogic;
 
   if (fieldDecision.displayLogic !== null) {
@@ -349,7 +349,7 @@ function resolveRules(rulesRaw, decisions) {
 
     const classified = classifyRule(rawRule);
     const decision = classified.tier === 'auto'
-      ? (classified.autoDecision === 'keep' ? 'Keep' : 'Omit')
+      ? determineAutoDecision(classified)
       : 'pending';
 
     result.push({
@@ -360,6 +360,10 @@ function resolveRules(rulesRaw, decisions) {
   }
 
   return result;
+}
+
+function determineAutoDecision(classified) {
+  return classified.autoDecision === 'keep' ? 'Keep' : 'Omit';
 }
 
 // ---------------------------------------------------------------------------
@@ -581,7 +585,7 @@ export function reorderKeys(obj, canonicalOrder) {
   const result = {};
   const seen = new Set();
   for (const key of canonicalOrder) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+    if (Object.hasOwn(obj, key)) {
       result[key] = obj[key];
       seen.add(key);
     }
@@ -786,6 +790,17 @@ async function runCli() {
     return;
   }
 
+  printSchemaAndRules(dump, schema, rules);
+}
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  runCli().catch(err => {
+    console.error('Error:', err.message);
+    process.exit(1);
+  });
+}
+
+function printSchemaAndRules(dump, schema, rules) {
   if (dump) {
     console.log('--- schema ---');
     console.log(JSON.stringify(schema, null, 2));
@@ -799,11 +814,4 @@ async function runCli() {
     }
     console.log(`Rules: ${rules.length}`);
   }
-}
-
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  runCli().catch(err => {
-    console.error('Error:', err.message);
-    process.exit(1);
-  });
 }

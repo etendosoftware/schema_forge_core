@@ -452,13 +452,11 @@ function buildRowCriteria(col, row) {
   // For identifier columns: textual ops filter against the $_identifier (user
   // typed free text → match BP display name). Discrete ops (equals/notEqual/
   // inSet, picked from the checkbox popover) filter against the ID directly.
-  const fieldName = col.backendFilterKey
-    ?? (mode === 'identifier'
-        ? (TEXTUAL_IDENTIFIER_OPS.has(op) ? `${col.key}$_identifier` : col.key)
-        : col.key);
+  const fieldName = getFilteredKey(col, mode, op);
 
-  if (op === 'isNull') return [{ fieldName, operator: 'isNull' }];
-  if (op === 'isNotNull') return [{ fieldName, operator: 'notNull' }];
+    if (op === 'isNull' || op === 'isNotNull') {
+    return createNullCriteria(fieldName, op);
+  }
 
   const val = row.value;
 
@@ -477,29 +475,19 @@ function buildRowCriteria(col, row) {
   }
 
   if (op === 'inSet') {
-    const items = Array.isArray(val)
-      ? val.filter((v) => v !== '' && v != null).map(String)
-      : String(val).split(',').map((s) => s.trim()).filter(Boolean);
-    if (items.length === 0) return null;
-    if (items.length === 1) return [{ fieldName, operator: 'equals', value: items[0] }];
-    return [{ fieldName, operator: 'inSet', value: items.join(',') }];
-  }
+    return generateInSetCriteria(val, fieldName);
 
+  }
+  
   // Multi-value via a checkbox picker: OR-compose the same operator across items.
   if (Array.isArray(val)) {
-    const items = val.filter((v) => v !== '' && v != null).map(String);
-    if (items.length === 0) return null;
-    if (items.length === 1) return [{ fieldName, operator: op, value: items[0] }];
-    const clauses = items.map((v) => ({ fieldName, operator: op, value: v }));
-    return [{ _constructor: 'AdvancedCriteria', operator: 'or', criteria: clauses }];
+    return buildOrCriteria(val, fieldName, op);
   }
 
   if (val === null || val === undefined || val === '') return null;
 
   if (mode === 'numeric') {
-    const num = coerceNumeric(val);
-    if (num === null) return null;
-    return [{ fieldName, operator: op, value: num }];
+    return buildNumericCriteria(val, fieldName, op);
   }
 
   if (mode === 'booleanLabel') {
@@ -508,6 +496,72 @@ function buildRowCriteria(col, row) {
   }
 
   return [{ fieldName, operator: op, value: val }];
+}
+
+function createNullCriteria(fieldName, op) {
+  return [{ fieldName, operator: op === 'isNull' ? 'isNull' : 'notNull' }];
+}
+
+function generateInSetCriteria(val, fieldName) {
+  const items = processInput(val);
+  let result;
+  if (items.length === 0) {
+    result = null;
+
+  } else {
+    if (items.length === 1) {
+      result = [{ fieldName, operator: 'equals', value: items[0] }];
+    } else {
+
+      result = [{ fieldName, operator: 'inSet', value: items.join(',') }];
+    }
+
+  }
+  return result;
+}
+
+function buildOrCriteria(val, fieldName, op) {
+  let result;
+  const items = filterAndMapToString(val);
+  if (items.length === 0) {
+    result = null;
+
+  } else {
+    if (items.length === 1) {
+      result = [{ fieldName, operator: op, value: items[0] }];
+    } else {
+      const clauses = items.map((v) => ({ fieldName, operator: op, value: v }));
+      result = [{ _constructor: 'AdvancedCriteria', operator: 'or', criteria: clauses }];
+    }
+  }
+  return result;
+}
+
+function processInput(val) {
+  return Array.isArray(val)
+    ? filterAndMapToString(val)
+    : splitAndTrimString(val).filter(Boolean);
+}
+
+function getFilteredKey(col, mode, op) {
+  return col.backendFilterKey
+    ?? (mode === 'identifier'
+      ? (TEXTUAL_IDENTIFIER_OPS.has(op) ? `${col.key}$_identifier` : col.key)
+      : col.key);
+}
+
+function splitAndTrimString(val) {
+  return String(val).split(',').map((s) => s.trim());
+}
+
+function filterAndMapToString(val) {
+  return val.filter((v) => v !== '' && v != null).map(String);
+}
+
+function buildNumericCriteria(val, fieldName, op) {
+  const num = coerceNumeric(val);
+
+  return (num === null) ? null : [{ fieldName, operator: op, value: num }];
 }
 
 function coerceNumeric(val) {
@@ -521,8 +575,8 @@ function inferSortMode(type, col) {
   if (col?.badgeLabels) return 'booleanLabel';
   switch (type) {
     case 'selector': return 'identifier';
-    case 'status':   return 'enumLabel';
-    case 'boolean':  return 'booleanLabel';
-    default:         return 'raw';
+    case 'status': return 'enumLabel';
+    case 'boolean': return 'booleanLabel';
+    default: return 'raw';
   }
 }
