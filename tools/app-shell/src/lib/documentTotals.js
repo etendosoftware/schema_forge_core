@@ -16,6 +16,11 @@ function applyEditingLine(lines, editingLine) {
   return lines.map(l => l.id === editingLine.id ? { ...l, ...editingLine } : l);
 }
 
+// Bank-style rounding to 2 decimal places for monetary amounts.
+// Used to keep the grand total equal to the sum of the displayed (rounded)
+// subtotal and tax — see comment near grandTotal below.
+const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+
 export function computeDocumentTotals(
   lines,
   pendingLine,
@@ -81,13 +86,20 @@ export function computeDocumentTotals(
   // When a total discount is active, scale both grandTotal and taxAmt proportionally.
   // Tax stays proportional to the reduced base: taxAmt_new = taxAmt_base × (1 − pct/100).
   const factor = 1 - pct / 100;
-  const grandTotal = baseGrandTotal != null
-    ? baseGrandTotal * factor
-    : null;
 
   const taxAmt = baseGrandTotal != null && netSubtotal != null
     ? (baseGrandTotal - netSubtotal) * factor
     : null;
+
+  // grandTotal is the sum of the rounded (displayed) subtotal and tax — NOT
+  // round(exact_subtotal + exact_tax). This matches the accounting/legal
+  // convention used by Etendo Classic and AEAT-compliant invoices: the printed
+  // total must equal the visible "subtotal" plus "tax" lines, with no 1-cent
+  // double-rounding drift (e.g. 37.224 + 3.7224 → displayed 37.22 + 3.72 = 40.94,
+  // not round(40.9464) = 40.95).
+  const grandTotal = baseGrandTotal != null && netSubtotal != null
+    ? round2(netSubtotal * factor) + round2(taxAmt)
+    : (baseGrandTotal != null ? round2(baseGrandTotal * factor) : null);
 
   return { grossSubtotal, netSubtotal, grandTotal, discountAmt, taxAmt, totalDiscountAmt };
 }
