@@ -26,7 +26,7 @@ describe('indexEvents', () => {
       endDate: new Date(2026, 4, 22),
     };
     const map = indexEvents([evt]);
-    const keys = Object.keys(map).sort();
+    const keys = Object.keys(map).sort((a, b) => a.localeCompare(b));
     expect(keys).toEqual([
       key(2026, 5, 20),
       key(2026, 5, 21),
