@@ -10,6 +10,7 @@ import PurchaseInvoiceHeaderTable from './PurchaseInvoiceHeaderTable.jsx';
 import HeaderPage from '@generated/purchase-invoice/generated/web/purchase-invoice/HeaderPage';
 import InvoicePreview from '../shared/InvoicePreview.jsx';
 import PurchaseInvoiceTopbar from './PurchaseInvoiceTopbar.jsx';
+import OcrSidePanel from '../shared/OcrSidePanel.jsx';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
@@ -129,6 +130,8 @@ export default function PurchaseInvoiceWindow(props) {
           summary={summary}
           extraBadges={[]}
           topbarRight={PurchaseInvoiceTopbar}
+          sidePanel={OcrSidePanel}
+          sidePanelStyle={{ width: 360 }}
           notesField="description"
           breadcrumb={breadcrumb}
           onAfterSave={true}

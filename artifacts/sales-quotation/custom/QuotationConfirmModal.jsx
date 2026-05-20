@@ -62,10 +62,13 @@ export default function QuotationConfirmModal({
   const d              = freshData || data || {};
   const documentNo     = d.documentNo || '';
   const bpName         = d['businessPartner$_identifier'] || '';
-  const discountPct    = Number(d.etgoTotalDiscount ?? 0);
-  const discountFactor = discountPct > 0 ? (1 - discountPct / 100) : 1;
-  const grandTotal     = (Number(d.grandTotalAmount ?? d.grandTotal ?? 0) || 0) * discountFactor;
-  const totalLines     = (Number(d.summedLineAmount ?? d.totalLines ?? d.grandTotalAmount ?? 0) || 0) * discountFactor;
+  // Trust the server totals: once the quotation reached UE, TotalDiscountService
+  // materialized the ETGO_DTO discount line and grandTotalAmount / summedLineAmount
+  // already reflect etgoTotalDiscount. The earlier client-side discountFactor
+  // multiplication double-applied the discount on top of the already-discounted
+  // server values (visible once the ETGO_DTO product was installed).
+  const grandTotal     = Number(d.grandTotalAmount ?? d.grandTotal ?? 0) || 0;
+  const totalLines     = Number(d.summedLineAmount ?? d.totalLines ?? d.grandTotalAmount ?? 0) || 0;
   const currency       = d['currency$_identifier'] || '';
 
   const handleConfirm = async () => {
@@ -255,11 +258,11 @@ export default function QuotationConfirmModal({
             <div style={{ fontSize: 11, color: '#185FA5' }}>
               {bpName}
             </div>
-            <div style={{ fontSize: 28, fontWeight: 500, color: '#042C53', lineHeight: 1, marginTop: 4, marginBottom: 6 }}>
+            <div data-testid="confirm-summary-total" style={{ fontSize: 28, fontWeight: 500, color: '#042C53', lineHeight: 1, marginTop: 4, marginBottom: 6 }}>
               {fmtNum(grandTotal)} {currency}
             </div>
             <div style={{ fontSize: 11, color: '#185FA5' }}>
-              {lineCount != null ? ui('soLines', { count: lineCount }) : '...'} <span style={{ color: '#85B7EB' }}>·</span> {ui('soSubtotal')} <span style={{ fontWeight: 500, color: '#042C53' }}>{fmtNum(totalLines)} {currency}</span>
+              {lineCount != null ? ui('soLines', { count: lineCount }) : '...'} <span style={{ color: '#85B7EB' }}>·</span> {ui('soSubtotal')} <span data-testid="confirm-summary-subtotal" style={{ fontWeight: 500, color: '#042C53' }}>{fmtNum(totalLines)} {currency}</span>
             </div>
           </div>
         </div>
@@ -270,6 +273,7 @@ export default function QuotationConfirmModal({
             {ui('sqWhatToDo')}
           </div>
           <OptionCard
+            testId="confirm-option-order"
             selected={selected === 'order'}
             onClick={() => setSelected('order')}
             icon={<ClipboardList size={16} />}
@@ -278,6 +282,7 @@ export default function QuotationConfirmModal({
             subtitle={ui('sqCreateOrderDesc')}
           />
           <OptionCard
+            testId="confirm-option-invoice"
             selected={selected === 'invoice'}
             onClick={() => setSelected('invoice')}
             icon={<FileText size={16} />}
@@ -299,7 +304,7 @@ export default function QuotationConfirmModal({
             style={{ ...btnSecondary, opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
             {ui('cancel')}
           </button>
-          <button type="button" onClick={handleConfirm} disabled={loading}
+          <button type="button" data-testid="action-confirm-modal" onClick={handleConfirm} disabled={loading}
             style={{
               ...btnPrimary,
               opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer',
@@ -322,9 +327,10 @@ export default function QuotationConfirmModal({
 
 /* ── Option card ───────────────────────────────────────────────── */
 
-function OptionCard({ selected, onClick, icon, title, badge, subtitle, disabled }) {
+function OptionCard({ selected, onClick, icon, title, badge, subtitle, disabled, testId }) {
   return (
     <div
+      data-testid={testId}
       onClick={disabled ? undefined : onClick}
       style={{
         display: 'flex', alignItems: 'flex-start', gap: 10,
