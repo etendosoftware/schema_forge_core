@@ -318,7 +318,8 @@
           "grid": true,
           "section": "principal",
           "order": 3,
-          "gridOrder": 3
+          "gridOrder": 3,
+          "min": 0
         },
         "operativeQuantity": {
           "visibility": "discarded"
@@ -365,13 +366,15 @@
           "section": "principal",
           "order": 4,
           "gridOrder": 4,
-          "columnType": "amount"
+          "columnType": "amount",
+          "min": 0
         },
         "discount": {
           "grid": true,
           "section": "principal",
           "order": 5,
-          "gridOrder": 5
+          "gridOrder": 5,
+          "min": 0
         },
         "warehouseRule": {
           "visibility": "discarded"

@@ -291,7 +291,8 @@ export function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onCo
         );
         if (!processRes.ok) {
           const e = await processRes.json().catch(() => null);
-          throw new Error(e?.response?.message || e?.message || `Error (${processRes.status})`);
+          const rawMsg = e?.response?.message || e?.message || `Error (${processRes.status})`;
+          throw new Error(rawMsg.includes('@OrderWithoutLines@') ? ui('soNoLinesError') : rawMsg);
         }
         setOrderConfirmed(true);
         window.dispatchEvent(new CustomEvent('purchase-order:document-created'));

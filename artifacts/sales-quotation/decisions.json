@@ -311,7 +311,8 @@
           "grid": true,
           "inputMode": "number",
           "order": 3,
-          "gridOrder": 3
+          "gridOrder": 3,
+          "min": 0
         },
         "uOM": {
           "visibility": "system"
@@ -324,7 +325,8 @@
           "grid": true,
           "inputMode": "number",
           "order": 5,
-          "gridOrder": 5
+          "gridOrder": 5,
+          "min": 0
         },
         "lineNetAmount": {
           "grid": false,
@@ -434,7 +436,8 @@
           "inputMode": "number",
           "order": 4,
           "gridOrder": 4,
-          "columnType": "amount"
+          "columnType": "amount",
+          "min": 0
         },
         "grossListPrice": {
           "visibility": "discarded"

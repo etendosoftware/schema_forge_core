@@ -6,7 +6,7 @@ import { getStatusBadgeProps } from '@/lib/statusBadge.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function CardShell({ children }) {
+export function CardShell({ children }) {
   return (
     <div className="mx-4 mt-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
       {children}
@@ -36,7 +36,7 @@ export function InfoRow({ label, value, underline, children }) {
   );
 }
 
-function PercentBar({ value }) {
+export function PercentBar({ value }) {
   const pct = isNaN(Number(value)) ? 0 : Math.min(Number(value), 100);
   let trackColor;
   if (pct >= 100) trackColor = 'bg-emerald-500';

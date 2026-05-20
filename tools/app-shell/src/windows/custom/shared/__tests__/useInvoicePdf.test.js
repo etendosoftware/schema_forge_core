@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(__dirname, '..', 'useInvoicePdf.js'), 'utf8');
 const sharedSrc = readFileSync(join(__dirname, '..', 'documentPdf.js'), 'utf8');
+const pdfUtilsSrc = readFileSync(join(__dirname, '..', 'pdfUtils.js'), 'utf8');
 
 describe('useInvoicePdf', () => {
 
@@ -48,21 +49,23 @@ describe('useInvoicePdf', () => {
   });
 
   it('sends Bearer token in all API requests', () => {
-    assert.match(sharedSrc, /Authorization.*Bearer.*token/);
+    // fetch helpers live in pdfUtils.js (shared), re-exported via documentPdf.js
+    assert.match(pdfUtilsSrc, /Authorization.*Bearer.*token/);
   });
 
   // ── PDF rendering ─────────────────────────────────────────────────────────
 
   it('renders the PDF via jsreport at /jsreport/api/report', () => {
-    assert.match(sharedSrc, /\/jsreport\/api\/report/);
+    // renderPdf lives in pdfUtils.js (shared), called via documentPdf.renderDocumentPdf
+    assert.match(pdfUtilsSrc, /\/jsreport\/api\/report/);
   });
 
   it('uses the handlebars engine', () => {
-    assert.match(sharedSrc, /engine.*handlebars|handlebars.*engine/);
+    assert.match(pdfUtilsSrc, /engine.*handlebars|handlebars.*engine/);
   });
 
   it('uses the chrome-pdf recipe for PDF generation', () => {
-    assert.match(sharedSrc, /chrome-pdf/);
+    assert.match(pdfUtilsSrc, /chrome-pdf/);
   });
 
   it('creates a blob URL from the jsreport response', () => {
@@ -85,7 +88,8 @@ describe('useInvoicePdf', () => {
   });
 
   it('fetches the full partner location from the contacts locationAddress endpoint', () => {
-    assert.match(sharedSrc, /contacts\/locationAddress\/\$\{locationId\}/);
+    // fetchLocationAddress lives in pdfUtils.js (shared), re-exported via documentPdf.js
+    assert.match(pdfUtilsSrc, /contacts\/locationAddress\/\$\{locationId\}/);
   });
 
   it('builds multi-line customer address output for the PDF', () => {

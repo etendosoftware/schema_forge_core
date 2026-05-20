@@ -2,6 +2,16 @@ import { useState, useEffect, useRef } from 'react';
 import { buildLocationAddressLines } from '@/lib/locationAddress.js';
 import { computeDocumentTotals } from '@/lib/documentTotals';
 import { ORDER_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
+import { renderPdf } from './pdfUtils.js';
+
+export {
+  fetchJson,
+  fetchAll,
+  fetchOptionalJson,
+  fetchLocationAddress,
+  blobToDataUrl,
+  fetchImageDataUrl,
+} from './pdfUtils.js';
 
 // ---------------------------------------------------------------------------
 // Handlebars helpers (CommonJS for jsreport context)
@@ -303,101 +313,10 @@ export async function buildOrderData(spec, orderId, base, token) {
 }
 
 // ---------------------------------------------------------------------------
-// Data fetching helpers
-// ---------------------------------------------------------------------------
-export async function fetchJson(url, token) {
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-  });
-  if (!res.ok) throw new Error(`API ${res.status}: ${url}`);
-  const d = await res.json();
-  return d?.response?.data?.[0] ?? d?.response?.data ?? d;
-}
-
-export async function fetchAll(url, token) {
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-  });
-  if (!res.ok) return [];
-  const d = await res.json();
-  return d?.response?.data ?? (Array.isArray(d) ? d : []);
-}
-
-export async function fetchOptionalJson(url, token) {
-  try {
-    return await fetchJson(url, token);
-  } catch {
-    return null;
-  }
-}
-
-export async function fetchLocationAddress(locationId, base, token) {
-  if (!locationId) return null;
-  try {
-    return await fetchJson(`${base}/contacts/locationAddress/${locationId}`, token);
-  } catch {
-    return null;
-  }
-}
-
-export function blobToDataUrl(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error('Failed to read company logo'));
-    reader.readAsDataURL(blob);
-  });
-}
-
-export async function fetchImageDataUrl(imageId, base, token) {
-  if (!imageId) return null;
-  try {
-    const res = await fetch(`${base}/image/${imageId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return null;
-    const blob = await res.blob();
-    return await blobToDataUrl(blob);
-  } catch {
-    return null;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Render via jsreport
+// Render via jsreport (delegates to shared renderPdf in pdfUtils.js)
 // ---------------------------------------------------------------------------
 export async function renderDocumentPdf(data) {
-  const payload = {
-    template: {
-      content: DOCUMENT_TEMPLATE,
-      engine: 'handlebars',
-      recipe: 'chrome-pdf',
-      helpers: DOCUMENT_HELPERS,
-      chrome: {
-        format: 'A4',
-        landscape: false,
-        marginTop: '0mm',
-        marginBottom: '0mm',
-        marginLeft: '0mm',
-        marginRight: '0mm',
-        printBackground: true,
-      },
-    },
-    data: { css: DOCUMENT_CSS, ...data },
-  };
-
-  const res = await fetch('/jsreport/api/report', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`jsreport ${res.status}: ${text.slice(0, 300)}`);
-  }
-
-  return res.blob();
+  return renderPdf(DOCUMENT_TEMPLATE, DOCUMENT_CSS, DOCUMENT_HELPERS, data);
 }
 
 // ---------------------------------------------------------------------------

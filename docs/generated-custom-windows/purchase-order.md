@@ -91,6 +91,14 @@ The current evidence shows a purchase-order-specific experience rather than a ge
 18. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 19. On `/purchase-order`, hover over any row and confirm a quick-action overlay appears at the right of the row with Edit, Duplicate, Send Email, Delete, and a kebab. Trigger Edit and verify it navigates to the detail view; trigger Duplicate and Send Email and verify they reuse the same flows as the detail topbar. On a completed order with pending receipt or invoice work, open the row kebab and confirm `Gestionar recepción / factura` is listed; trigger it and verify it opens the same create-docs modal used from the detail page. On a fully fulfilled order, trigger the same kebab item and confirm the launcher closes silently without opening a modal.
 
+## Validation & Error Handling — ETP-4005
+
+### Inline line validation (min: 0 constraint)
+
+Fields with a `min: 0` constraint — `orderedQuantity` and `discount` — now show a red border when the user types a negative value during inline edit. The row remains open and the save/confirm path for that row is blocked until the value is corrected or the edit is cancelled. The constraint is enforced client-side by `InlineLinesPanel` using the `min` metadata from the contract field definition.
+
+See [Shared validation & UX changes — ETP-4005](app-shell-functional-flows.md#shared-validation--ux-changes--etp-4005) for behaviors common to all document windows (required field validation, single confirmation toast, callout message sanitization).
+
 ## Automated evidence
 
 - `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the generic bulk action component. It is rendered directly in the purchase-order list view via `bulkActions={(ctx) => <BulkDocumentAction {...ctx} buildActions={buildInOutActions} />}`. The `buildInOutActions` helper (exported by `BulkDocumentAction.jsx`) limits available actions to `CO` only — `RE` (Reactivate) is intentionally excluded from Purchase Orders. `PurchaseOrderReactivateBulkAction.jsx` was removed as part of ETP-4011.

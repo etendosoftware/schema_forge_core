@@ -44,6 +44,7 @@ const draftModeWithModal = {
   processField: 'documentAction',
   processValue: 'CO',
   label: 'soConfirmBtn',
+  disableWhenEmpty: true,
   onConfirm: () => window.dispatchEvent(new CustomEvent('sales-order:open-confirm-modal')),
 };
 
