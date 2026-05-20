@@ -46,6 +46,18 @@ describe('SendToEvaluationModal', () => {
     assert.match(src, /useEffect/);
   });
 
+  describe('draft total-discount preview (ETP-4006)', () => {
+    it('derives a discountFactor from etgoTotalDiscount on draft quotations', () => {
+      assert.match(src, /const discountPct\s*=\s*Number\(d\.etgoTotalDiscount \?\? 0\)/);
+      assert.match(src, /const discountFactor\s*=\s*discountPct > 0 \? \(1 - discountPct \/ 100\) : 1/);
+    });
+
+    it('multiplies both total and subtotal by the discountFactor', () => {
+      assert.match(src, /const grandTotal\s*=\s*\(Number\(d\.grandTotalAmount \?\? d\.grandTotal \?\? 0\) \|\| 0\) \* discountFactor/);
+      assert.match(src, /const totalLines\s*=\s*\(Number\(d\.summedLineAmount \?\? d\.totalLines \?\? d\.grandTotalAmount \?\? 0\) \|\| 0\) \* discountFactor/);
+    });
+  });
+
   it('shows loading spinner while processing', () => {
     assert.match(src, /soProcessing/);
     assert.match(src, /loading/);

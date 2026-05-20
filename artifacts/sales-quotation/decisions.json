@@ -148,12 +148,11 @@
           "visibility": "discarded"
         },
         "rejectReason": {
-          "visibility": "editable",
+          "visibility": "readOnly",
           "form": true,
           "grid": false,
           "section": "principal",
-          "displayLogic": "record.documentStatus === 'CJ'",
-          "readOnlyLogic": "@DocStatus@='CJ'|@DocStatus@='CA'"
+          "displayLogic": "record.documentStatus === 'CJ'"
         },
         "summedLineAmount": {
           "visibility": "readOnly",

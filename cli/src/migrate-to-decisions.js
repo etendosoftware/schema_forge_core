@@ -189,7 +189,7 @@ function getAutoDecision(rawRule) {
  * Scan curated fields across all entities and detect common discard patterns.
  * Returns an array of patterns (e.g. ["EM_*", "CopyFrom*"]).
  */
-function detectDiscardPatterns(curatedEntities) {
+export function detectDiscardPatterns(curatedEntities) {
   const patterns = new Set();
 
   for (const entity of curatedEntities) {
@@ -204,7 +204,7 @@ function detectDiscardPatterns(curatedEntities) {
     }
   }
 
-  return [...patterns].sort();
+  return [...patterns].sort((a, b) => a.localeCompare(b));
 }
 
 // ---------------------------------------------------------------------------

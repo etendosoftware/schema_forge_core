@@ -178,6 +178,7 @@ export default function CloneOrderModal({
               {clonedRecords.map((rec) => (
                 <div
                   key={rec.id}
+                  data-testid={`clone-result-${rec.id}`}
                   onClick={() => handleRowClick(rec.id)}
                   onMouseEnter={() => setHoveredId(rec.id)}
                   onMouseLeave={() => setHoveredId(null)}
@@ -245,6 +246,7 @@ export default function CloneOrderModal({
               {/* Clone button */}
               <button
                 type="button"
+                data-testid="action-clone-record"
                 onClick={handleClone}
                 disabled={phase === 'cloning'}
                 style={{ ...btnPrimary, width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 8, opacity: phase === 'cloning' ? 0.6 : 1, cursor: phase === 'cloning' ? 'not-allowed' : 'pointer' }}
