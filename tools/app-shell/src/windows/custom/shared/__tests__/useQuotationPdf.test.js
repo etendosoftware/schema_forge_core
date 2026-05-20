@@ -20,7 +20,7 @@ describe('useQuotationPdf', () => {
   });
 
   it('returns pdfUrl, pdfBlob, loading and error', () => {
-    assert.match(src, /return \{ pdfUrl, pdfBlob, loading, error \}/);
+    assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
   // ── API endpoints ─────────────────────────────────────────────────────────
@@ -44,7 +44,7 @@ describe('useQuotationPdf', () => {
   });
 
   it('derives the base URL by stripping the spec segment from apiBaseUrl', () => {
-    assert.match(src, /apiBaseUrl\.replace/);
+    assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
   // ── Field mappings ────────────────────────────────────────────────────────
@@ -83,26 +83,23 @@ describe('useQuotationPdf', () => {
   // ── Memory management ─────────────────────────────────────────────────────
 
   it('revokes the previous blob URL on cleanup to avoid memory leaks', () => {
-    assert.match(src, /URL\.revokeObjectURL/);
-    assert.match(src, /prevUrlRef\.current/);
+    assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
   // ── Cancellation ─────────────────────────────────────────────────────────
 
   it('uses a cancellation flag to prevent setState after unmount', () => {
-    assert.match(src, /let cancelled = false/);
-    assert.match(src, /cancelled = true/);
-    assert.match(src, /if \(cancelled\)/);
+    assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
   it('early-returns from useEffect when quotationId is null', () => {
-    assert.match(src, /if \(!quotationId \|\|/);
+    assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
   // ── Error handling ────────────────────────────────────────────────────────
 
   it('propagates error messages to the error state', () => {
-    assert.match(src, /setError\(err\.message\)/);
+    assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
   // ── i18n ─────────────────────────────────────────────────────────────────

@@ -100,7 +100,7 @@ function InvoiceGeneralTab({ invoice, partnerName, badgeProps, statusLabel, inst
   const ui = useUI();
   const fiscalTargets = getInvoiceFiscalTargets(specName, profile);
   const { sii: siiStatus, tbai: tbaiStatus, verifactu: vfStatus, loading: fiscalLoading } = useFiscalStatus(
-    invoice?.id, specName, profile, apiBaseUrl, token, orgId,
+    invoice?.id, specName, profile, apiBaseUrl, orgId,
   );
   const [accountingAccount, setAccountingAccount] = useState(null);
 

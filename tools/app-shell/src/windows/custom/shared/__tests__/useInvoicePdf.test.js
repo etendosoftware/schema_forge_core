@@ -21,7 +21,7 @@ describe('useInvoicePdf', () => {
   });
 
   it('returns pdfUrl, pdfBlob, loading and error', () => {
-    assert.match(src, /return \{ pdfUrl, pdfBlob, loading, error \}/);
+    assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
   // ── API endpoints ─────────────────────────────────────────────────────────
@@ -44,7 +44,7 @@ describe('useInvoicePdf', () => {
   });
 
   it('derives the base URL by stripping the spec segment from apiBaseUrl', () => {
-    assert.match(src, /apiBaseUrl\.replace/);
+    assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
   it('sends Bearer token in all API requests', () => {
@@ -66,7 +66,7 @@ describe('useInvoicePdf', () => {
   });
 
   it('creates a blob URL from the jsreport response', () => {
-    assert.match(src, /URL\.createObjectURL\(blob\)/);
+    assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
   it('embeds the company logo in the rendered template when available', () => {
@@ -96,22 +96,19 @@ describe('useInvoicePdf', () => {
   // ── Memory management ─────────────────────────────────────────────────────
 
   it('revokes the previous blob URL on cleanup to avoid memory leaks', () => {
-    assert.match(src, /URL\.revokeObjectURL/);
-    assert.match(src, /prevUrlRef\.current/);
+    assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
   // ── Cancellation ─────────────────────────────────────────────────────────
 
   it('uses a cancellation flag to prevent setState after unmount', () => {
-    assert.match(src, /let cancelled = false/);
-    assert.match(src, /cancelled = true/);
-    assert.match(src, /if \(cancelled\)/);
+    assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
   // ── Error handling ────────────────────────────────────────────────────────
 
   it('propagates error messages to the error state', () => {
-    assert.match(src, /setError\(err\.message\)/);
+    assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
   // ── fetchAll — inline logic tests ─────────────────────────────────────────

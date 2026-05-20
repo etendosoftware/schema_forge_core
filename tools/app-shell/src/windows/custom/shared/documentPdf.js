@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
+import { buildLocationAddressLines } from '@/lib/locationAddress.js';
+import { computeDocumentTotals } from '@/lib/documentTotals';
+import { ORDER_LINE_CONFIG } from '@/hooks/useLineGrossAmount';
 
 // ---------------------------------------------------------------------------
 // Handlebars helpers (CommonJS for jsreport context)
@@ -8,7 +11,7 @@ function fmt(v) {
   if (v == null || v === '') return '0.00';
   var n = Number(v);
   if (isNaN(n)) return String(v);
-  return new Intl.NumberFormat('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+  return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 }
 function fmtDate(v) {
   if (!v) return '';
@@ -226,6 +229,78 @@ export const DOCUMENT_TEMPLATE = `<!DOCTYPE html>
 
 </div>
 </body></html>`;
+
+// ---------------------------------------------------------------------------
+// Shared order data builder — used by both sales-order and purchase-order
+// ---------------------------------------------------------------------------
+export async function buildOrderData(spec, orderId, base, token) {
+  const [header, linesRaw, session] = await Promise.all([
+    fetchJson(`${base}/${spec}/header/${orderId}`, token),
+    fetchAll(`${base}/${spec}/lines?parentId=${orderId}`, token),
+    fetchOptionalJson(`${base}/session`, token),
+  ]);
+  const [companyLogoDataUrl, partnerLocation] = await Promise.all([
+    fetchImageDataUrl(session?.yourCompanyDocumentImageId, base, token),
+    fetchLocationAddress(header.partnerAddress, base, token),
+  ]);
+
+  const linesSorted = [...linesRaw].sort(
+    (a, b) => (Number(a.lineNo) || 0) - (Number(b.lineNo) || 0)
+  );
+  const lines = linesSorted.map((l, idx) => ({
+    lineNo: l.lineNo || (idx + 1),
+    productName: l.product$_identifier || l.description || '—',
+    quantity: l.orderedQuantity ?? l.qtyOrdered ?? 0,
+    unitPrice: l.listPrice ?? l.unitPrice ?? l.priceActual ?? 0,
+    discount: l.discount ? Number(l.discount) : null,
+    taxName: l.tax$_identifier || l.taxRate || '',
+    lineTotal: l.lineGrossAmount ?? l.grossAmount ?? l.lineNetAmount ?? l.lineAmount ?? 0,
+  }));
+
+  const etgoTotalDiscount = Number(header.etgoTotalDiscount ?? 0);
+  const {
+    grossSubtotal,
+    netSubtotal,
+    grandTotal,
+    discountAmt,
+    taxAmt,
+    totalDiscountAmt,
+  } = computeDocumentTotals(linesRaw, null, null, ORDER_LINE_CONFIG, etgoTotalDiscount);
+
+  const netAmount = (netSubtotal ?? 0) - (totalDiscountAmt ?? 0);
+  const taxAmount = taxAmt ?? 0;
+
+  const org = session?.organization ?? {};
+  const customerAddressLines = buildLocationAddressLines(
+    partnerLocation,
+    header.partnerAddress$_identifier || header.bpAddress || null,
+  );
+
+  return {
+    companyName:     org.name        || header.organization$_identifier || header.organization || 'Empresa',
+    companyAddress1: org.address1    || null,
+    companyAddress2: org.address2    || null,
+    companyCityLine: org.cityLine    || null,
+    companyTaxId:    org.taxId       || null,
+    companyLogoDataUrl,
+    documentNo: header.documentNo || '',
+    invoiceDate: header.orderDate || '',
+    customerName: header.businessPartner$_identifier || header.businessPartner || '—',
+    hasCustomerAddress: customerAddressLines.length > 0,
+    customerAddressLines,
+    paymentMethod: header.paymentMethod$_identifier || null,
+    paymentTerms: header.paymentTerms$_identifier || null,
+    notes: header.description || null,
+    lines,
+    netAmount,
+    taxAmount,
+    grandTotal,
+    grossAmount:        discountAmt > 0 ? grossSubtotal : null,
+    discountPerProduct: discountAmt > 0 ? discountAmt : null,
+    etgoTotalDiscount:  etgoTotalDiscount > 0 ? etgoTotalDiscount : null,
+    totalDiscountAmt:   totalDiscountAmt > 0 ? totalDiscountAmt : null,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Data fetching helpers

@@ -6,10 +6,9 @@ import { useNavigate } from 'react-router-dom';
 import { useRowDelete } from '@/hooks/useRowDelete';
 import GeneratedApp from '@generated/sales-quotation/generated/web/sales-quotation/index.jsx';
 import QuotationTable from '@generated/sales-quotation/generated/web/sales-quotation/QuotationTable';
-import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
-import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
+import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.jsx';
 import LinesEmptyState from '@/components/contract-ui/LinesEmptyState.jsx';
 import QuotationPreview from '../shared/QuotationPreview.jsx';
 import { useSavedPreviewRecord } from '../shared/useSavedPreviewRecord.js';
@@ -94,8 +93,8 @@ export default function SalesQuotationWindow({ windowName, recordId, token, apiB
   const navigate = useNavigate();
   const { effectiveRecord, clearSavedRecord } = useSavedPreviewRecord();
 
-  const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
-    useCreateContactModal({ apiBaseUrl, token });
+  const { headers, createContactCtxValue, contactPortal } =
+    useCreateContactModal({ apiBaseUrl, token, documentType: 'sale' });
 
   const { requestDelete, deleteDialog } = useRowDelete({
     apiBaseUrl,
@@ -144,20 +143,7 @@ export default function SalesQuotationWindow({ windowName, recordId, token, apiB
           linesEmptyState={LinesEmptyState}
           {...rest}
         />
-        {createContactState && createPortal(
-          <CreateContactModal
-            bpApiBaseUrl={bpApiBaseUrl}
-            headers={headers}
-            initialQuery={createContactState.query}
-            documentType="sale"
-            onClose={() => setCreateContactState(null)}
-            onCreated={(newBP) => {
-              createContactState.onSelect({ id: newBP.id, name: newBP.name });
-              setCreateContactState(null);
-            }}
-          />,
-          document.body,
-        )}
+        {contactPortal}
       </CreateContactContext.Provider>
     );
   }
