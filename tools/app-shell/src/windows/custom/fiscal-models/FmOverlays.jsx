@@ -6,9 +6,22 @@ import './fiscal-models.css';
 function parseCityLine(cityLine) {
   if (!cityLine) return { postal: '', city: '', province: '' };
   // Format: "28001 - Madrid (Madrid)" — postal optional, region in parens optional
-  const m = /^(\S+)\s*-\s*([^(]+?)(?:\s*\(([^)]*)\))?$/.exec(cityLine.trim());
-  if (!m) return { postal: '', city: cityLine.trim(), province: '' };
-  return { postal: m[1] ?? '', city: m[2]?.trim() ?? '', province: m[3]?.trim() ?? '' };
+  // Parsed with string methods instead of regex to guarantee linear runtime (no backtracking).
+  const s = cityLine.trim();
+  const dashIdx = s.indexOf(' - ');
+  if (dashIdx === -1) return { postal: '', city: s, province: '' };
+  const postal = s.slice(0, dashIdx);
+  const rest = s.slice(dashIdx + 3).trim();
+  const parenOpen = rest.lastIndexOf('(');
+  const parenClose = rest.lastIndexOf(')');
+  if (parenOpen !== -1 && parenClose > parenOpen) {
+    return {
+      postal,
+      city:     rest.slice(0, parenOpen).trim(),
+      province: rest.slice(parenOpen + 1, parenClose).trim(),
+    };
+  }
+  return { postal, city: rest, province: '' };
 }
 
 // PresentModal — 3-path submission:
