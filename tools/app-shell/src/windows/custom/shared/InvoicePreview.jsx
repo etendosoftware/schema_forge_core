@@ -28,14 +28,16 @@ function InvoiceActionButtons({ triggerEdit, onEmail, canSendToSif, onOpenSif, c
   const ui = useUI();
   return (
     <>
-      <Button
-        size="sm"
-        className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-[#121217] hover:bg-[#2a2a30] text-white [&_svg]:size-5"
-        onClick={onEmail}
-      >
-        <Mail />
-        {ui('invoicePreviewSend')}
-      </Button>
+      {onEmail && (
+        <Button
+          size="sm"
+          className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-[#121217] hover:bg-[#2a2a30] text-white [&_svg]:size-5"
+          onClick={onEmail}
+        >
+          <Mail />
+          {ui('invoicePreviewSend')}
+        </Button>
+      )}
 
       {canSendToSif && (
         <Button
@@ -193,7 +195,7 @@ export default function InvoicePreview({ invoice, token, apiBaseUrl, windowName,
   const actionButtons = (
     <InvoiceActionButtons
       triggerEdit={() => modalRef.current?.triggerEdit?.()}
-      onEmail={p.openEmailModal}
+      onEmail={specName !== 'purchase-invoice' ? p.openEmailModal : undefined}
       canSendToSif={p.canSendToSif}
       onOpenSif={() => p.setShowSifModal(true)}
       canAddPayment={p.canAddPayment}
@@ -462,16 +464,18 @@ function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, install
         {paymentsContent}
       </SectionCard>
 
-      <SectionCard
-        title={ui('invoicePreviewEmails')}
-        titleRight={
-          <button onClick={onSend} className="text-xs font-medium text-gray-900 underline decoration-gray-600 hover:decoration-gray-900 transition-colors">
-            {ui('invoicePreviewSendEmail')}
-          </button>
-        }
-      >
-        <p className="text-xs text-gray-400 py-2 text-center">{ui('invoicePreviewNoEmailHistory')}</p>
-      </SectionCard>
+      {specName !== 'purchase-invoice' && (
+        <SectionCard
+          title={ui('invoicePreviewEmails')}
+          titleRight={
+            <button onClick={onSend} className="text-xs font-medium text-gray-900 underline decoration-gray-600 hover:decoration-gray-900 transition-colors">
+              {ui('invoicePreviewSendEmail')}
+            </button>
+          }
+        >
+          <p className="text-xs text-gray-400 py-2 text-center">{ui('invoicePreviewNoEmailHistory')}</p>
+        </SectionCard>
+      )}
 
       <SectionCard title={ui('invoicePreviewCategorization')}>
         <InfoRow label={ui('invoicePreviewAccountingAccount')} value={accountingAccount} />

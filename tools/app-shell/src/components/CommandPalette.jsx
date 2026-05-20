@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUI } from '@/i18n';
+import { useUI, useMenuLabel } from '@/i18n';
 import {
   CommandDialog,
   CommandEmpty,
@@ -37,6 +37,7 @@ export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const ui = useUI();
+  const tMenu = useMenuLabel();
 
   useEffect(() => {
     const down = (e) => {
@@ -59,20 +60,25 @@ export function CommandPalette() {
       <CommandInput placeholder={ui('searchPages')} />
       <CommandList>
         <CommandEmpty>{ui('noResultsFound')}</CommandEmpty>
-        {menuConfig.menu.map((group) => {
+        {menuConfig.menu.filter(g => !g.hidden).map((group) => {
           const Icon = ICON_MAP[group.icon] || Package;
+          const visibleItems = group.items.filter(i => !i.hidden);
+          if (visibleItems.length === 0) return null;
           return (
-            <CommandGroup key={group.group} heading={group.group}>
-              {group.items.map((item) => (
-                <CommandItem
-                  key={item.name}
-                  value={`${group.group} ${item.label} ${item.name}`}
-                  onSelect={() => handleSelect(item.name)}
-                >
-                  <Icon className="mr-2 h-4 w-4" />
-                  <span>{item.label}</span>
-                </CommandItem>
-              ))}
+            <CommandGroup key={group.group} heading={tMenu(group.group)}>
+              {visibleItems.map((item) => {
+                const translatedLabel = tMenu(item.label);
+                return (
+                  <CommandItem
+                    key={item.name}
+                    value={`${translatedLabel} ${item.label} ${item.name}`}
+                    onSelect={() => handleSelect(item.name)}
+                  >
+                    <Icon className="mr-2 h-4 w-4" />
+                    <span>{translatedLabel}</span>
+                  </CommandItem>
+                );
+              })}
             </CommandGroup>
           );
         })}

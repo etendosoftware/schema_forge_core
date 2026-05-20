@@ -142,3 +142,24 @@ Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functio
 
 - `linesLayout: "classic"` is now written explicitly to `contract.json`; previously the classic layout was the implicit default.
 - `requiredHeaderFields` is now emitted in the page component; this window has no required header fields so the array is empty and there is no behavioral change.
+
+## Bank Account inline-add fixes — ETP-4009
+
+The following issues in the **Cuenta Bancaria** inline add-row form were resolved:
+
+**Column alignment.** The add-row form inputs now align pixel-perfectly with the existing table rows and column headers. Previously, the flex-based `InlineLinesPanel` and the `table-layout:fixed` `DataTable` drifted apart because the 40 px action column (legacy delete), a checkbox without `flexShrink:0`, and the first string column having a different flex-basis were not accounted for. All three mismatches are corrected.
+
+**IBAN overflow truncation.** Long IBAN values no longer push adjacent columns out of alignment. Flex cells in `InlineLinesPanel` now carry `minWidth:0`, so long non-breaking strings are truncated with an ellipsis instead of overflowing their cell.
+
+**Country default stripped at form init.** When creating a "Cuenta genérica" (Use Generic Account No.) row, the country field previously sent the literal string `@COUNTRYDEF@` to the backend, causing a "Country not present in import set" validation error. The add-row form now strips Etendo AD variable placeholders (`@…@`) from field defaults at initialization, so the country field starts empty and the record can be saved without error.
+
+**Format dropdown uses Radix Select.** The "Formato cuenta bancaria" dropdown in the add-row form now uses the same styled Radix Select component as "País de Origen", with the chevron icon correctly contained inside the field border.
+
+**SWIFT Code column added.** The "SWIFT Code" column is now visible in the Cuenta Bancaria table and in the inline add-row form, enabling entry of the SWIFT code when "Use SWIFT + Generic Account No." format is selected.
+
+**Validation messages translated to Spanish.** Five backend validation messages for the bank account entity are now shown in Spanish:
+- IBAN field empty when IBAN format is selected.
+- Generic account number empty when Generic format is selected.
+- Country field empty when IBAN format is selected.
+- IBAN code invalid for the selected country.
+- SWIFT code or generic account number empty when SWIFT format is selected.

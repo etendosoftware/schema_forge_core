@@ -164,4 +164,14 @@ describe('InvoicePaymentModal', () => {
     assert.match(src, /onClick={onClose}/);
     assert.match(src, /e\.stopPropagation/);
   });
+
+  // ── i18n invalidAmount (ETP-4003) ──────────────────────────────────────────
+
+  it('uses ui(invalidAmount) for the invalid amount error message', () => {
+    assert.match(src, /ui\('invalidAmount'\)/);
+  });
+
+  it('does not contain the hardcoded English string "Enter a valid amount"', () => {
+    assert.doesNotMatch(src, /Enter a valid amount/);
+  });
 });
