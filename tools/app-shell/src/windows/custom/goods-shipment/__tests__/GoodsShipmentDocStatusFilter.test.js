@@ -46,3 +46,42 @@ describe('GoodsShipmentWindow — DocStatus URL filter (ETP-4004)', () => {
       'must export GoodsShipmentWindow as the default export');
   });
 });
+
+describe('GoodsShipmentWindow — COLUMNS definition (ETP-4031)', () => {
+  it('defines the invoiceStatus column with type percent', () => {
+    assert.match(src, /key:\s*['"]invoiceStatus['"]/,
+      'COLUMNS must include an invoiceStatus entry');
+    assert.match(src, /invoiceStatus[^}]*type:\s*['"]percent['"]/s,
+      "invoiceStatus column must have type: 'percent'");
+  });
+
+  it('sets noHoverHide: true on the invoiceStatus column so the progress bar stays visible on row hover', () => {
+    assert.match(src, /invoiceStatus[^}]*noHoverHide:\s*true/s,
+      'invoiceStatus column must have noHoverHide: true to prevent the bar from disappearing on hover');
+  });
+
+  it('defines movementDate column', () => {
+    assert.match(src, /key:\s*['"]movementDate['"]/);
+  });
+
+  it('defines documentNo column', () => {
+    assert.match(src, /key:\s*['"]documentNo['"]/);
+  });
+
+  it('defines businessPartner column', () => {
+    assert.match(src, /key:\s*['"]businessPartner['"]/);
+  });
+
+  it('defines documentStatus column', () => {
+    assert.match(src, /key:\s*['"]documentStatus['"]/);
+  });
+
+  it('defines warehouse column', () => {
+    assert.match(src, /key:\s*['"]warehouse['"]/);
+  });
+
+  it('passes the COLUMNS array to GoodsShipmentTable via the columns prop', () => {
+    assert.match(src, /GoodsShipmentTable\s+columns=\{COLUMNS\}/s,
+      'CustomGoodsShipmentTable must spread COLUMNS into GoodsShipmentTable as columns prop');
+  });
+});

@@ -411,3 +411,29 @@ export function useShipmentPdf(shipmentId, apiBaseUrl, token) {
 
   return { pdfUrl, pdfBlob, loading, error };
 }
+
+export function getShipmentPdfLabels(ui) {
+  return {
+    title:             ui('shipmentPdfTitle'),
+    taxId:             ui('invoicePdfTaxId'),
+    page:              ui('invoicePdfPage'),
+    issuerSection:     ui('shipmentPdfIssuerSection'),
+    deliverySection:   ui('shipmentPdfDeliverySection'),
+    salesOrder:        ui('shipmentPdfSalesOrder'),
+    date:              ui('shipmentPdfDate'),
+    warehouse:         ui('shipmentPdfWarehouse'),
+    colCode:           ui('invoicePdfColCode'),
+    colDescription:    ui('invoicePdfColDescription'),
+    colOrdered:        ui('shipmentPdfColOrdered'),
+    colDelivered:      ui('shipmentPdfColDelivered'),
+    notes:             ui('invoicePdfNotes'),
+    signatureReceiver: ui('shipmentPdfSignatureReceiver'),
+    signatureDate:     ui('shipmentPdfSignatureDate'),
+  };
+}
+
+export async function generateShipmentPdf(shipmentId, apiBaseUrl, token, labels) {
+  const base = apiBaseUrl.replace(/\/[^/]+$/, '');
+  const data = await buildShipmentData(shipmentId, base, token);
+  return renderShipmentPdf({ ...data, labels });
+}

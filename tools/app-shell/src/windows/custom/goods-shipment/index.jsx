@@ -21,7 +21,7 @@ const COLUMNS = [
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'string' },
   { key: 'documentStatus', column: 'DocStatus', type: 'status' },
   { key: 'warehouse', column: 'M_Warehouse_ID', type: 'string' },
-  { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'percent' },
+  { key: 'invoiceStatus', column: 'InvoiceStatus', type: 'percent', noHoverHide: true },
 ];
 
 function CustomGoodsShipmentTable(props) {
@@ -75,6 +75,7 @@ export default function GoodsShipmentWindow({ windowName, recordId, apiBaseUrl, 
         Table={CustomGoodsShipmentTable}
         processes={[]}
         draftMode={{ enabled: true, label: 'Confirm', style: 'positive', onConfirm: () => window.dispatchEvent(new CustomEvent('goods-shipment:open-confirm-modal')) }}
+        hideMoreMenu={true}
         {...rest}
       />
     );
@@ -89,6 +90,7 @@ export default function GoodsShipmentWindow({ windowName, recordId, apiBaseUrl, 
         Table={CustomGoodsShipmentTable}
         initialColumnFilters={initialColumnFilters}
         rowQuickActions={rowQuickActions}
+        onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
         refreshTrigger={refreshKey}
         labelOverrides={LABEL_OVERRIDES}
         bulkActions={(ctx) => (
@@ -115,6 +117,7 @@ export default function GoodsShipmentWindow({ windowName, recordId, apiBaseUrl, 
           records={cloneTargets}
           apiBaseUrl={apiBaseUrl}
           headers={headers}
+          headerEntity="goodsShipment"
           routePrefix="/goods-shipment/"
           onClose={() => setCloneTargets(null)}
           onCloned={() => setRefreshKey(k => k + 1)}

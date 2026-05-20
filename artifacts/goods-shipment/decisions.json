@@ -10,6 +10,7 @@
     "hidePrint": true,
     "customComponents": {
       "topbarRight": "GoodsShipmentActions",
+      "topbarExtra": "GoodsShipmentBillingBadge",
       "bulkActions": "BulkInvoiceFromShipment",
       "bottomSection": "GoodsShipmentBottomPanel"
     },
@@ -171,7 +172,9 @@
           "visibility": "discarded"
         },
         "invoiceStatus": {
-          "visibility": "discarded"
+          "visibility": "readOnly",
+          "grid": false,
+          "form": false
         },
         "salesOrder": {
           "visibility": "system"
@@ -190,14 +193,9 @@
         },
         "completelyInvoiced": {
           "visibility": "readOnly",
-          "grid": true,
+          "grid": false,
           "form": false,
-          "name": "invoiced",
-          "badge": true,
-          "badgeLabels": {
-            "true": "Invoiced",
-            "false": "Pending"
-          }
+          "name": "invoiced"
         },
         "invoicefromshipment": {
           "visibility": "discarded"

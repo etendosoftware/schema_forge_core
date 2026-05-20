@@ -1,8 +1,8 @@
 {
-  "version": "0.10.0",
+  "version": "0.12.0",
   "generatedAt": "2026-04-29T19:04:55.657Z",
-  "updatedAt": "2026-05-19T14:34:20.748Z",
-  "checksum": "c5f6c8c7feea4647",
+  "updatedAt": "2026-05-20T11:44:24.841Z",
+  "checksum": "fe826f75fdc9bb60",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -15,6 +15,7 @@
       "hidePrint": true,
       "customComponents": {
         "topbarRight": "GoodsShipmentActions",
+        "topbarExtra": "GoodsShipmentBillingBadge",
         "bulkActions": "BulkInvoiceFromShipment",
         "bottomSection": "GoodsShipmentBottomPanel"
       },
@@ -247,6 +248,18 @@
             "defaultValue": "DR"
           },
           {
+            "name": "invoiceStatus",
+            "apiKey": "invoiceStatus",
+            "column": "InvoiceStatus",
+            "label": "Invoice Status",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": false
+          },
+          {
             "name": "invoiced",
             "apiKey": "invoiced",
             "column": "Iscompletelyinvoiced",
@@ -255,19 +268,14 @@
             "tsType": "boolean",
             "visibility": "readOnly",
             "required": true,
-            "grid": true,
+            "grid": false,
             "form": false,
             "sourceRequired": true,
             "derivation": {
               "type": "computed",
               "source": "N"
             },
-            "defaultValue": "N",
-            "badge": true,
-            "badgeLabels": {
-              "true": "Invoiced",
-              "false": "Pending"
-            }
+            "defaultValue": "N"
           },
           {
             "name": "processed",
@@ -457,6 +465,7 @@
       "hidePrint": true,
       "customComponents": {
         "topbarRight": "GoodsShipmentActions",
+        "topbarExtra": "GoodsShipmentBillingBadge",
         "bulkActions": "BulkInvoiceFromShipment",
         "bottomSection": "GoodsShipmentBottomPanel"
       },
@@ -819,7 +828,7 @@
             "apiKey": "invoiceStatus",
             "column": "InvoiceStatus",
             "type": "integer",
-            "visibility": "discarded",
+            "visibility": "readOnly",
             "required": false
           },
           {
@@ -1778,6 +1787,14 @@
         "description": "Field 'invoiced' should be present in goodsShipment"
       },
       {
+        "id": "t-field-presence-goodsShipment-invoiceStatus",
+        "category": "field-presence",
+        "entity": "goodsShipment",
+        "field": "invoiceStatus",
+        "runner": "node",
+        "description": "Field 'invoiceStatus' should be present in goodsShipment"
+      },
+      {
         "id": "t-field-presence-goodsShipment-movementDate",
         "category": "field-presence",
         "entity": "goodsShipment",
@@ -1880,6 +1897,14 @@
         "field": "invoiced",
         "runner": "node",
         "description": "Field 'invoiced' should have type 'boolean' in goodsShipment"
+      },
+      {
+        "id": "t-field-type-goodsShipment-invoiceStatus",
+        "category": "field-type",
+        "entity": "goodsShipment",
+        "field": "invoiceStatus",
+        "runner": "node",
+        "description": "Field 'invoiceStatus' should have type 'number' in goodsShipment"
       },
       {
         "id": "t-field-type-goodsShipment-movementDate",
@@ -2407,14 +2432,6 @@
         "description": "System field 'invoicefromshipment' should exist in backend but not frontend for goodsShipment"
       },
       {
-        "id": "t-system-field-goodsShipment-invoiceStatus",
-        "category": "system-field",
-        "entity": "goodsShipment",
-        "field": "invoiceStatus",
-        "runner": "node",
-        "description": "System field 'invoiceStatus' should exist in backend but not frontend for goodsShipment"
-      },
-      {
         "id": "t-system-field-goodsShipment-isnettingshipment",
         "category": "system-field",
         "entity": "goodsShipment",
@@ -2926,15 +2943,15 @@
       }
     ],
     "summary": {
-      "total": 169,
+      "total": 170,
       "byCategory": {
         "action-endpoint": 12,
         "crud-flags": 2,
         "default-value-type": 4,
         "displaylogic-evaluable": 1,
         "displaylogic-valid": 1,
-        "field-presence": 13,
-        "field-type": 13,
+        "field-presence": 14,
+        "field-type": 14,
         "process-failure": 1,
         "process-happy": 1,
         "readonlylogic-evaluable": 8,
@@ -2942,11 +2959,11 @@
         "rule-declared": 3,
         "searchable-filters": 6,
         "selector-endpoint": 4,
-        "system-field": 90,
+        "system-field": 89,
         "visibility": 2
       },
       "byRunner": {
-        "node": 167,
+        "node": 168,
         "junit": 2
       }
     }

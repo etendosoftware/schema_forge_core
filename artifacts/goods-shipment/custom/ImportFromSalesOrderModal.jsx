@@ -1,6 +1,6 @@
 import ImportLinesModal from '@/components/contract-ui/ImportLinesModal';
 
-async function fetchDraftQtyByOrderLine({ base, headers, bpId, currentShipmentId }) {
+async function fetchDraftInfoByOrderLine({ base, headers, bpId, currentShipmentId }) {
   const res = await fetch(
     `${base}/goods-shipment/header?_startRow=0&_endRow=100&_sortBy=movementDate desc`,
     { headers },
@@ -15,28 +15,30 @@ async function fetchDraftQtyByOrderLine({ base, headers, bpId, currentShipmentId
 
   const lineResults = await Promise.all(
     otherDrafts.map(s =>
-      fetch(`${base}/goods-shipment/goodsShipmentLine?parentId=${s.id}&_startRow=0&_endRow=200`, { headers }),
+      fetch(`${base}/goods-shipment/goodsShipmentLine?parentId=${s.id}&_startRow=0&_endRow=200`, { headers })
+        .then(r => r.ok ? r.json().then(d => ({ docNo: s.documentNo, lines: d?.response?.data || [] })) : null),
     ),
   );
 
-  const draftQty = {};
-  for (const r of lineResults) {
-    if (!r.ok) continue;
-    const lines = (await r.json())?.response?.data || [];
-    lines.forEach(l => {
-      if (l.salesOrderLine) {
-        draftQty[l.salesOrderLine] = (draftQty[l.salesOrderLine] || 0) + (Number(l.movementQuantity) || 0);
-      }
+  // { orderLineId: { qty, docNos: Set } }
+  const draftInfo = {};
+  for (const result of lineResults) {
+    if (!result) continue;
+    result.lines.forEach(l => {
+      if (!l.salesOrderLine) return;
+      if (!draftInfo[l.salesOrderLine]) draftInfo[l.salesOrderLine] = { qty: 0, docNos: new Set() };
+      draftInfo[l.salesOrderLine].qty += Number(l.movementQuantity) || 0;
+      draftInfo[l.salesOrderLine].docNos.add(result.docNo);
     });
   }
-  return draftQty;
+  return draftInfo;
 }
 
 const fetchDocuments = async ({ base, headers, bpId, invoiceId: shipmentId }) => {
-  const [ordersRes, shipmentLinesRes, draftQtyByOrderLine] = await Promise.all([
+  const [ordersRes, shipmentLinesRes, draftInfo] = await Promise.all([
     fetch(`${base}/sales-order/header?_startRow=0&_endRow=500&_sortBy=creationDate desc`, { headers }),
     fetch(`${base}/goods-shipment/goodsShipmentLine?parentId=${shipmentId}&_startRow=0&_endRow=200`, { headers }),
-    fetchDraftQtyByOrderLine({ base, headers, bpId, currentShipmentId: shipmentId }),
+    fetchDraftInfoByOrderLine({ base, headers, bpId, currentShipmentId: shipmentId }),
   ]);
 
   const alreadyAddedOrderLines = new Set();
@@ -54,7 +56,7 @@ const fetchDocuments = async ({ base, headers, bpId, invoiceId: shipmentId }) =>
       && Number(o.deliveryStatus ?? 100) < 100,
     );
   }
-  return { documents, sharedContext: { alreadyAddedOrderLines, draftQtyByOrderLine } };
+  return { documents, sharedContext: { alreadyAddedOrderLines, draftInfo } };
 };
 
 const fetchLines = async ({ base, headers, docId, sharedContext }) => {
@@ -64,7 +66,8 @@ const fetchLines = async ({ base, headers, docId, sharedContext }) => {
   return lines.map(l => {
     const ordered = Number(l.orderedQuantity) || 0;
     const delivered = Number(l.deliveredQuantity) || 0;
-    const inOtherDrafts = sharedContext.draftQtyByOrderLine?.[l.id] || 0;
+    const draftEntry = sharedContext.draftInfo?.[l.id];
+    const inOtherDrafts = draftEntry?.qty || 0;
     const pending = Math.max(0, ordered - delivered - inOtherDrafts);
     return {
       ...l,
@@ -73,6 +76,7 @@ const fetchLines = async ({ base, headers, docId, sharedContext }) => {
       _unitPrice: 0,
       _lineNetAmount: 0,
       _alreadyImported: sharedContext.alreadyAddedOrderLines?.has(l.id) || pending === 0,
+      _inDraftShipments: draftEntry?.docNos?.size ? [...draftEntry.docNos] : undefined,
     };
   });
 };
