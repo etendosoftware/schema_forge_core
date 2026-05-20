@@ -8,6 +8,7 @@ import RelatedDocuments from '../../../custom/RelatedDocuments';
 import { AttachmentsTab } from '@/components/attachments';
 import GoodsShipmentBottomPanel from '../../../custom/GoodsShipmentBottomPanel';
 import GoodsShipmentActions from '../../../custom/GoodsShipmentActions';
+import GoodsShipmentBillingBadge from '../../../custom/GoodsShipmentBillingBadge';
 import BulkInvoiceFromShipment from '../../../custom/BulkInvoiceFromShipment';
 import catalogs from './mockCatalogs';
 
@@ -18,7 +19,6 @@ const breadcrumb = 'Sales / Goods Shipment';
 // @sf-generated-start summary:goodsShipment
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'invoiced', column: 'Iscompletelyinvoiced', type: 'boolean' },
 ];
 
 const statusField = 'documentStatus';
@@ -39,13 +39,13 @@ const draftMode = null;
 // @sf-generated-end draftMode:goodsShipment
 
 // @sf-generated-start requiredHeaderFields:goodsShipment
-const requiredHeaderFields = ['documentNo', 'warehouse', 'businessPartner', 'partnerAddress', 'movementDate', 'invoiced'];
+const requiredHeaderFields = ['documentNo', 'warehouse', 'businessPartner', 'partnerAddress', 'movementDate'];
 // @sf-generated-end requiredHeaderFields:goodsShipment
 
 // @sf-generated-start addLineFields:goodsShipmentLine
 const addLineFields = {
   entry: [
-    { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
+    { key: 'product', column: 'M_Product_ID', type: 'search', required: true, lookup: true, label: 'Product', reference: 'Product', inputMode: 'search' },
     { key: 'movementQuantity', column: 'MovementQty', type: 'number', required: true, label: 'Movement Quantity', defaultValue: 0 },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
   ],
@@ -268,6 +268,7 @@ export default function GoodsShipmentPage({ windowName, recordId, ...props }) {
         customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_InOut", config: {} } }]}
         bottomSection={GoodsShipmentBottomPanel}
         topbarRight={GoodsShipmentActions}
+        topbarExtra={GoodsShipmentBillingBadge}
         requiredHeaderFields={requiredHeaderFields}
         salesTheme
         linesLayout="inlineEditable"

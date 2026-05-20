@@ -43,22 +43,61 @@ test.describe('Purchase Order - Partner Address Bug', () => {
     //   b) leaves the input enabled — the user opens the dropdown manually.
     // Both paths prove the bug ("empty dropdown") is fixed: in (a) an option
     // was picked, in (b) options are listable. Wait for either state.
-    await Promise.race([
-      partnerAddressChip.waitFor({ state: 'visible', timeout: 10_000 }),
-      partnerAddressInput.waitFor({ state: 'visible', timeout: 10_000 })
-        .then(() => expect(partnerAddressInput).toBeEnabled({ timeout: 5_000 })),
-    ]);
+    await waitForPartnerAddressMode(partnerAddressInput, partnerAddressChip);
+    await page.waitForTimeout(300);
 
-    if (await partnerAddressChip.isVisible()) {
+    if (await partnerAddressChip.isVisible().catch(() => false)) {
       // Auto-selected an address → the chip label is the proof that options loaded.
       await expect(partnerAddressChip).toHaveText(/\S/);
     } else {
       // Manual mode → open the dropdown and assert at least one option.
-      await partnerAddressInput.click();
+      try {
+        await openSelectorOptions(page, 'partnerAddress');
+      } catch (error) {
+        if (await partnerAddressChip.isVisible().catch(() => false)) {
+          await expect(partnerAddressChip).toHaveText(/\S/);
+          return;
+        }
+        throw error;
+      }
       await expect(page.locator('[data-testid^="option-partnerAddress-"]').first()).toBeVisible({ timeout: 5_000 });
     }
   });
 });
+
+async function waitForPartnerAddressMode(input, chip) {
+  let lastMode = 'pending';
+
+  await expect.poll(async () => {
+    if (await chip.isVisible().catch(() => false)) {
+      lastMode = 'chip';
+      return lastMode;
+    }
+    if (await input.isVisible().catch(() => false) && await input.isEnabled().catch(() => false)) {
+      lastMode = 'input';
+      return lastMode;
+    }
+    return 'pending';
+  }, { timeout: 10_000 }).not.toBe('pending');
+
+  return lastMode;
+}
+
+async function openSelectorOptions(page, fieldKey) {
+  const options = page.locator(`[data-testid^="option-${fieldKey}-"]`);
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const input = page.getByTestId(`field-${fieldKey}`);
+    try {
+      await input.click({ timeout: 3_000 });
+      await expect(options.first()).toBeVisible({ timeout: 3_000 });
+      return;
+    } catch (error) {
+      if (attempt === 4) throw error;
+      await page.waitForTimeout(250);
+    }
+  }
+}
 
 async function clickFirstStableOption(page, testIdPrefix) {
   const options = page.locator(`[data-testid^="${testIdPrefix}"]`);

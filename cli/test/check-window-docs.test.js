@@ -20,6 +20,14 @@ describe('check-window-docs path mapping', () => {
     assert.equal(windowFromChangedPath('tools/app-shell/src/windows/custom/product/ProductGallery.jsx'), 'product');
   });
 
+  // Regression: regex grouping `(^-)|(-$)` must trim both leading and trailing dashes
+  it('toKebabCase trims leading and trailing dashes (edge-dash inputs)', () => {
+    assert.equal(toKebabCase('-Sales Order-'), 'sales-order');
+    assert.equal(toKebabCase('--Foo--Bar--'), 'foo-bar');
+    assert.equal(toKebabCase('Already-Kebab'), 'already-kebab');
+    assert.equal(toKebabCase('Single'), 'single');
+  });
+
   it('detects artifact windows and ignores shared custom helpers', () => {
     assert.equal(windowFromChangedPath('artifacts/sales-order/decisions.json'), 'sales-order');
     assert.equal(windowFromChangedPath('tools/app-shell/src/windows/custom/shared/useInvoicePdf.js'), null);

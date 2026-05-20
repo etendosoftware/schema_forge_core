@@ -389,7 +389,8 @@
           "grid": true,
           "order": 3,
           "gridOrder": 3,
-          "section": "principal"
+          "section": "principal",
+          "min": 0
         },
         "uOM": {
           "visibility": "system"
@@ -402,7 +403,8 @@
           "order": 4,
           "gridOrder": 4,
           "section": "principal",
-          "columnType": "amount"
+          "columnType": "amount",
+          "min": 0
         },
         "etgoDiscount": {
           "visibility": "editable",
@@ -413,7 +415,8 @@
           "gridOrder": 5,
           "section": "principal",
           "derivation": null,
-          "readOnlyLogic": "@Processed@='Y'"
+          "readOnlyLogic": "@Processed@='Y'",
+          "min": 0
         },
         "unitPrice": {
           "grid": false,

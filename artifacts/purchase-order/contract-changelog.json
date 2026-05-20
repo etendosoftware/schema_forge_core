@@ -1295,5 +1295,29 @@
     ],
     "author": "pipeline",
     "date": "2026-05-07"
+  },
+  {
+    "from": "0.19.0",
+    "to": "0.20.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"orderedQuantity\" property \"min\" changed from \"undefined\" to \"0\" in frontend (additive)",
+      "Field \"listPrice\" property \"min\" changed from \"undefined\" to \"0\" in frontend (additive)",
+      "Field \"discount\" property \"min\" changed from \"undefined\" to \"0\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-18"
+  },
+  {
+    "from": "0.19.0",
+    "to": "0.20.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"orderedQuantity\" property \"min\" changed from \"undefined\" to \"0\" in frontend (additive)",
+      "Field \"listPrice\" property \"min\" changed from \"undefined\" to \"0\" in frontend (additive)",
+      "Field \"discount\" property \"min\" changed from \"undefined\" to \"0\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-19"
   }
 ]
