@@ -41,7 +41,8 @@ describe('useQuotationPdf', () => {
 
   it('optionally fetches session to resolve the company document image', () => {
     assert.match(src, /\/session/);
-    assert.match(src, /yourCompanyDocumentImageId/);
+    assert.match(src, /fetchDocumentAssets/, 'delegates logo and address fetch to shared fetchDocumentAssets');
+    assert.match(sharedSrc, /yourCompanyDocumentImageId/);
   });
 
   it('derives the base URL by stripping the spec segment from apiBaseUrl', () => {
@@ -64,13 +65,14 @@ describe('useQuotationPdf', () => {
   });
 
   it('renders company identity block with name, address and tax ID', () => {
-    assert.match(src, /companyName/);
-    assert.match(src, /companyAddress1/);
-    assert.match(src, /companyTaxId/);
+    assert.match(src, /buildCompanyFields/, 'delegates company fields to shared buildCompanyFields');
+    assert.match(sharedSrc, /companyName/);
+    assert.match(sharedSrc, /companyAddress1/);
+    assert.match(sharedSrc, /companyTaxId/);
   });
 
   it('pulls the issuer organization from the session endpoint', () => {
-    assert.match(src, /session\?\.organization/);
+    assert.match(sharedSrc, /session\?\.organization/);
   });
 
   it('sorts lines by lineNo before mapping', () => {
