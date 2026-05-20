@@ -692,5 +692,23 @@
     ],
     "author": "pipeline",
     "date": "2026-05-20"
+  },
+  {
+    "from": "0.7.0",
+    "to": "0.8.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"documentNo\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"documentNo\" property \"section\" changed from \"principal\" to \"undefined\" in frontend (additive)",
+      "Field \"documentNo\" property \"seq\" changed from \"60\" to \"undefined\" in frontend (additive)",
+      "Field \"warehouse\" property \"seq\" changed from \"50\" to \"40\" in frontend (additive)",
+      "Field \"partnerAddress\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"partnerAddress\" property \"section\" changed from \"principal\" to \"undefined\" in frontend (additive)",
+      "Field \"partnerAddress\" property \"seq\" changed from \"20\" to \"undefined\" in frontend (additive)",
+      "Field \"movementDate\" property \"seq\" changed from \"40\" to \"30\" in frontend (additive)",
+      "Field \"orderReference\" property \"seq\" changed from \"30\" to \"20\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-20"
   }
 ]

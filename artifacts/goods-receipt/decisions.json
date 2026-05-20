@@ -27,9 +27,8 @@
         "documentNo": {
           "visibility": "readOnly",
           "grid": false,
+          "form": false,
           "searchable": true,
-          "section": "principal",
-          "seq": 60,
           "readOnlyLogic": null
         },
         "businessPartner": {
@@ -47,15 +46,14 @@
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
           },
-          "section": "principal",
-          "seq": 20,
+          "form": false,
           "readOnlyLogic": "@Processed@='Y'"
         },
         "movementDate": {
           "grid": true,
           "searchable": true,
           "section": "principal",
-          "seq": 40,
+          "seq": 30,
           "defaultValue": "@Today@",
           "readOnlyLogic": "@Processed@='Y'"
         },
@@ -63,13 +61,13 @@
           "grid": true,
           "searchable": true,
           "section": "principal",
-          "seq": 30,
+          "seq": 20,
           "readOnlyLogic": "@Processed@='Y'"
         },
         "warehouse": {
           "grid": true,
           "section": "principal",
-          "seq": 50,
+          "seq": 40,
           "readOnlyLogic": "@Processed@='Y'"
         },
         "description": {

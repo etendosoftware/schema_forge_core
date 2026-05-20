@@ -16,7 +16,7 @@ const breadcrumb = 'Purchases / Goods Receipt';
 
 // @sf-generated-start summary:goodsReceipt
 const summary = [
-  { key: 'documentNo', column: 'DocumentNo', type: 'string' },
+
 ];
 
 const statusField = 'documentStatus';
@@ -42,7 +42,7 @@ const draftMode = {
 // @sf-generated-end draftMode:goodsReceipt
 
 // @sf-generated-start requiredHeaderFields:goodsReceipt
-const requiredHeaderFields = ['documentNo', 'warehouse', 'businessPartner', 'partnerAddress', 'movementDate'];
+const requiredHeaderFields = ['warehouse', 'businessPartner', 'movementDate'];
 // @sf-generated-end requiredHeaderFields:goodsReceipt
 
 // @sf-generated-start addLineFields:goodsReceiptLine
