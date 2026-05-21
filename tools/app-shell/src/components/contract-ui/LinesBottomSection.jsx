@@ -153,7 +153,19 @@ export default function LinesBottomSection({
                 formatAmount={fmt}
                 currency={currency}
                 readOnly={isReadOnly}
-                totalDiscountPct={data?.processed ? 0 : Number(data?.[totalsField] ?? totalDiscountPct ?? 0)}
+                totalDiscountPct={
+                  // Do not re-apply the total-discount factor when:
+                  //  a) the invoice/order is already processed (CO) — the discount
+                  //     is reflected in the DB totals, or
+                  //  b) the lines already contain the ETGO_DTO materialised discount
+                  //     line — applying the factor again would double-count it.
+                  (data?.processed ||
+                    (lines ?? []).some(
+                      l => l.product === 'E4BC94E71D664E73A066DAF78BF39DB3',
+                    ))
+                    ? 0
+                    : Number(data?.[totalsField] ?? totalDiscountPct ?? 0)
+                }
                 onTotalDiscountChange={onTotalDiscountChange}
               />
             </div>
