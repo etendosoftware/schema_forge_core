@@ -1,9 +1,7 @@
 import { createRoot } from 'react-dom/client';
-import { initSentry } from './lib/sentry.js';
-import { initRum } from './lib/rum.js';
+import { initBrowserObservability } from './lib/observability/browser.js';
 
-initSentry();
-initRum();
+initBrowserObservability();
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from 'sonner';
 import App from './App.jsx';
