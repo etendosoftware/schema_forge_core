@@ -59,6 +59,7 @@ import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
 import { SummaryBar } from './SummaryBar.jsx';
 import DocumentTotalsPanel from './DocumentTotalsPanel.jsx';
+import { resolveTotalDiscountPct } from '@/lib/documentTotals';
 import LinesSelectionBar from './LinesSelectionBar.jsx';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import {
@@ -3032,18 +3033,7 @@ export function DetailView({
                       formatAmount={formatAmount}
                       currency={currency}
                       readOnly={isDocumentReadOnly}
-                      totalDiscountPct={
-                        // Skip the factor only when the ETGO_DTO discount line is
-                        // already materialised in the line set. Don't gate on
-                        // data.processed: documents that moved to UE/CO without
-                        // the discount sync would otherwise lose the visible
-                        // discount entirely.
-                        (hook.children ?? []).some(
-                          l => l.product === 'E4BC94E71D664E73A066DAF78BF39DB3',
-                        )
-                          ? 0
-                          : Number(data?.etgoTotalDiscount ?? 0)
-                      }
+                      totalDiscountPct={resolveTotalDiscountPct(data, hook.children)}
                       onTotalDiscountChange={handleTotalDiscountChange}
                     />
                   );

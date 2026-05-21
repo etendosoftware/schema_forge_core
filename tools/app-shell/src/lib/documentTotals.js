@@ -11,6 +11,40 @@
  * @param totalDiscountPct - optional document-level discount percentage (0–100)
  */
 
+// Product id of the ETGO_DTO total-discount line (com.etendoerp.go). When
+// this product appears in the line list, the discount is already materialised
+// in the lines and the panel must NOT re-apply the etgoTotalDiscount factor
+// (otherwise we double-count the discount; see ETP-4015).
+export const ETGO_DTO_PRODUCT_ID = 'E4BC94E71D664E73A066DAF78BF39DB3';
+
+/**
+ * Decides which total-discount percentage the panel should apply client-side.
+ *
+ * <p>If the document already carries an ETGO_DTO line in its line list, the
+ * server already materialised the discount inside the lines, so the panel
+ * must pass `0` to {@link computeDocumentTotals} — applying the factor on
+ * top would double-count the discount (ETP-4015 regression).
+ *
+ * <p>Otherwise the header's {@code etgoTotalDiscount} (or the optional
+ * fallback) is returned so the panel applies the factor in real time as the
+ * user edits the lines.
+ *
+ * @param data    - the header record (may be null/undefined)
+ * @param lines   - the current line list (may be null/undefined)
+ * @param fallback - optional explicit value passed by the parent component;
+ *                  used when {@code data[totalsField]} is missing
+ * @param totalsField - the header field that carries the discount pct
+ *                      (defaults to "etgoTotalDiscount")
+ */
+export function resolveTotalDiscountPct(data, lines, fallback = 0, totalsField = 'etgoTotalDiscount') {
+  const hasMaterialisedDiscountLine = (lines ?? []).some(
+    (l) => l && l.product === ETGO_DTO_PRODUCT_ID,
+  );
+  if (hasMaterialisedDiscountLine) return 0;
+  const fromHeader = data?.[totalsField];
+  return Number(fromHeader ?? fallback ?? 0);
+}
+
 // Bank-style rounding to 2 decimal places for monetary amounts.
 // Used to keep the grand total equal to the sum of the displayed (rounded)
 // subtotal and tax — see computeDisplayGrandTotal below.
