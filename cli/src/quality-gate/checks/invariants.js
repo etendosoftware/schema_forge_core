@@ -93,35 +93,16 @@ export async function runInvariantsCheck(windowName, { rootDir, windowDir, confi
   }
 
   const violations = [];
+
   const entities = contract.frontendContract.entities ?? {};
   const primaryEntity = contract.frontendContract.window?.primaryEntity ?? Object.keys(entities)[0] ?? null;
   const headerEntity = primaryEntity ? entities[primaryEntity] : null;
   const anyDraftMode = Object.values(entities).some((entity) => entity?.draftMode?.enabled === true);
   const draftModeReadOnlyLogicAllowlist = config?.invariants?.draftModeReadOnlyLogicAllowlist ?? [];
 
-  if (config?.invariants?.draftModeReadOnlyLogic && anyDraftMode && headerEntity?.fields) {
-    for (const field of headerEntity.fields) {
-      if (!field.form || NON_EDITABLE_VISIBILITIES.has(field.visibility)) {
-        continue;
-      }
-      if (isDraftModeReadOnlyLogicAllowed(windowName, primaryEntity, field.name, draftModeReadOnlyLogicAllowlist)) {
-        continue;
-      }
-      if (!field.readOnlyLogic) {
-        violations.push(`${primaryEntity}.${field.name} missing readOnlyLogic while draftMode is enabled.`);
-      }
-    }
-  }
+  validateDraftModeReadOnlyLogic(config, anyDraftMode, headerEntity, windowName, primaryEntity, draftModeReadOnlyLogicAllowlist, violations);
 
-  if (config?.invariants?.notNullRequiresRequired) {
-    for (const [entityName, entity] of Object.entries(entities)) {
-      for (const field of entity.fields ?? []) {
-        if (field.sourceRequired === true && field.required !== true && !hasServerDefault(field)) {
-          violations.push(`${entityName}.${field.name} must remain required because the source column is NOT NULL.`);
-        }
-      }
-    }
-  }
+  validateNotNullRequirements(config, entities, violations);
 
   const detailEntityName = findDetailEntityName(entities, primaryEntity);
   const detailEntity = detailEntityName ? entities[detailEntityName] : null;
@@ -139,37 +120,13 @@ export async function runInvariantsCheck(windowName, { rootDir, windowDir, confi
       violations.push('lines.addLineFields.product must declare lookup: true.');
     }
 
-    if (config.invariants.addLineFields.quantityDefaultOne) {
-      const quantityEntrySource = findQuantityEntrySource(addLineFieldsSource);
-      if (quantityEntrySource && !/defaultValue:\s*1/.test(quantityEntrySource)) {
-        violations.push('lines.addLineFields quantity field must declare defaultValue: 1.');
-      }
-    }
+    validateAddLineFieldsDefaults(config, addLineFieldsSource, violations);
 
-    if (config.invariants.addLineFields.hiddenContainsGrossUnitPriceAndPriceList) {
-      if (detailFieldNames.has('grossUnitPrice') && !hasHiddenKey(addLineFieldsSource, 'grossUnitPrice')) {
-        violations.push("lines.addLineFields.hidden must include 'grossUnitPrice'.");
-      }
-      if (detailFieldNames.has('priceList') && !hasHiddenKey(addLineFieldsSource, 'priceList')) {
-        violations.push("lines.addLineFields.hidden must include 'priceList'.");
-      }
-    }
+    validateHiddenFields(config, detailFieldNames, addLineFieldsSource, violations);
   }
 
   const customFormPathRoot = config?.invariants?.customFormPathRoot ?? null;
-  for (const declaration of findCustomFormDeclarations(contract.frontendContract.window)) {
-    if (
-      customFormPathRoot
-      && (declaration.component.includes('/') || declaration.component.startsWith('@/'))
-      && !declaration.component.startsWith(customFormPathRoot)
-    ) {
-      violations.push(`${declaration.location} must stay under '${customFormPathRoot}'.`);
-      continue;
-    }
-    if (!customFormExists(rootDir, windowName, declaration.component)) {
-      violations.push(`${declaration.location} references '${declaration.component}', but no local custom form exists for ${windowName}.`);
-    }
-  }
+  validateCustomFormDeclarations(contract, customFormPathRoot, violations, rootDir, windowName);
 
   if (violations.length > 0) {
     return {
@@ -180,3 +137,65 @@ export async function runInvariantsCheck(windowName, { rootDir, windowDir, confi
 
   return { status: 'pass', detail: 'All invariants satisfied.' };
 }
+function validateCustomFormDeclarations(contract, customFormPathRoot, violations, rootDir, windowName) {
+  for (const declaration of findCustomFormDeclarations(contract.frontendContract.window)) {
+    if (customFormPathRoot
+      && (declaration.component.includes('/') || declaration.component.startsWith('@/'))
+      && !declaration.component.startsWith(customFormPathRoot)) {
+      violations.push(`${declaration.location} must stay under '${customFormPathRoot}'.`);
+      continue;
+    }
+    if (!customFormExists(rootDir, windowName, declaration.component)) {
+      violations.push(`${declaration.location} references '${declaration.component}', but no local custom form exists for ${windowName}.`);
+    }
+  }
+}
+
+function validateAddLineFieldsDefaults(config, addLineFieldsSource, violations) {
+  if (config.invariants.addLineFields.quantityDefaultOne) {
+    const quantityEntrySource = findQuantityEntrySource(addLineFieldsSource);
+    if (quantityEntrySource && !/defaultValue:\s*1/.test(quantityEntrySource)) {
+      violations.push('lines.addLineFields quantity field must declare defaultValue: 1.');
+    }
+  }
+}
+
+function validateHiddenFields(config, detailFieldNames, addLineFieldsSource, violations) {
+  if (config.invariants.addLineFields.hiddenContainsGrossUnitPriceAndPriceList) {
+    if (detailFieldNames.has('grossUnitPrice') && !hasHiddenKey(addLineFieldsSource, 'grossUnitPrice')) {
+      violations.push("lines.addLineFields.hidden must include 'grossUnitPrice'.");
+    }
+    if (detailFieldNames.has('priceList') && !hasHiddenKey(addLineFieldsSource, 'priceList')) {
+      violations.push("lines.addLineFields.hidden must include 'priceList'.");
+    }
+  }
+}
+
+function validateNotNullRequirements(config, entities, violations) {
+  if (config?.invariants?.notNullRequiresRequired) {
+    for (const [entityName, entity] of Object.entries(entities)) {
+      for (const field of entity.fields ?? []) {
+        if (field.sourceRequired === true && field.required !== true && !hasServerDefault(field)) {
+          violations.push(`${entityName}.${field.name} must remain required because the source column is NOT NULL.`);
+        }
+      }
+    }
+  }
+}
+
+function validateDraftModeReadOnlyLogic(config, anyDraftMode, headerEntity, windowName, primaryEntity, draftModeReadOnlyLogicAllowlist, violations) {
+  if (config?.invariants?.draftModeReadOnlyLogic && anyDraftMode && headerEntity?.fields) {
+    for (const field of headerEntity.fields) {
+      if (!field.form || NON_EDITABLE_VISIBILITIES.has(field.visibility)) {
+        continue;
+      }
+      if (isDraftModeReadOnlyLogicAllowed(windowName, primaryEntity, field.name, draftModeReadOnlyLogicAllowlist)) {
+        continue;
+      }
+      if (!field.readOnlyLogic) {
+        violations.push(`${primaryEntity}.${field.name} missing readOnlyLogic while draftMode is enabled.`);
+      }
+    }
+  }
+}
+

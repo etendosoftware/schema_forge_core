@@ -13,13 +13,6 @@ import LinesEmptyState from '@/components/contract-ui/LinesEmptyState.jsx';
 import QuotationPreview from '../shared/QuotationPreview.jsx';
 import { useSavedPreviewRecord } from '../shared/useSavedPreviewRecord.js';
 
-// labelOverrides feed useLabel(labelOverrides) inside the generated table to
-// rename per-window AD columns (locale-keyed map, not user-visible strings).
-const LABEL_OVERRIDES = {
-  es_ES: { C_BPartner_ID: 'Contacto', DateOrdered: 'Fecha cotización' },
-  en_US: { C_BPartner_ID: 'Contact',  DateOrdered: 'Quotation Date'   },
-};
-
 const draftModeWithModal = {
   enabled: true,
   processField: 'documentAction',
@@ -157,7 +150,6 @@ export default function SalesQuotationWindow({ windowName, recordId, token, apiB
         token={token}
         apiBaseUrl={apiBaseUrl}
         Table={CustomQuotationTable}
-        labelOverrides={LABEL_OVERRIDES}
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
         refreshTrigger={refreshKey}
         rowQuickActions={rowQuickActions}

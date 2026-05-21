@@ -56,6 +56,15 @@ const PO_MANAGE_LABELS = {
   invoice: 'poManageInvoice',
 };
 
+function PurchaseOrderBulkActions(props) {
+  return (
+    <>
+      <BulkPurchaseOrderMoreMenu {...props} />
+      <BulkDocumentAction {...props} buildActions={buildInOutActions} labelKey="confirmBulk" />
+    </>
+  );
+}
+
 function CustomHeaderTable(props) {
   return <HeaderTable columns={LIST_COLUMNS} {...props} />;
 }
@@ -109,12 +118,7 @@ export default function PurchaseOrderWindow(props) {
         labelOverrides={LABEL_OVERRIDES}
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
         rowQuickActions={rowQuickActions}
-        bulkActions={(ctx) => (
-          <>
-            <BulkPurchaseOrderMoreMenu {...ctx} />
-            <BulkDocumentAction {...ctx} buildActions={buildInOutActions} />
-          </>
-        )}
+        bulkActions={PurchaseOrderBulkActions}
         dateFilterKey="orderDate"
         refreshTrigger={refreshKey}
         renderPreview={renderPreview}

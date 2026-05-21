@@ -55,6 +55,10 @@ const LABEL_OVERRIDES = {
   },
 };
 
+function PurchaseInvoiceBulkAction(props) {
+  return <BulkDocumentAction {...props} labelKey="confirmBulk" />;
+}
+
 function PurchaseInvoiceTable(props) {
   return <PurchaseInvoiceHeaderTable {...props} />;
 }
@@ -168,7 +172,7 @@ export default function PurchaseInvoiceWindow(props) {
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
         rowQuickActions={rowQuickActions}
         sendDocument={{ enabled: false, allowEmail: false }}
-        bulkActions={(ctx) => <BulkDocumentAction {...ctx} />}
+        bulkActions={PurchaseInvoiceBulkAction}
         refreshTrigger={refreshKey}
         renderPreview={({ row, onClose, onEdit }) => (
           <InvoicePreview

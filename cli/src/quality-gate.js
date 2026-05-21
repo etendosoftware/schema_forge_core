@@ -98,7 +98,7 @@ export function parseQualityGateArgs(argv) {
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
-    if (arg === '--window' && argv[index + 1]) {
+    if (isWindowFlagWithArgument(arg, argv, index)) {
       options.mode = 'window';
       options.windowName = argv[index + 1];
       index += 1;
@@ -106,19 +106,19 @@ export function parseQualityGateArgs(argv) {
       options.mode = 'all';
     } else if (arg === '--pr-affected') {
       options.mode = 'pr-affected';
-    } else if (arg === '--baseline-ref' && argv[index + 1]) {
+    } else if (isBaselineRefFlag(arg, argv, index)) {
       options.baselineRef = argv[index + 1];
       index += 1;
-    } else if (arg === '--head-ref' && argv[index + 1]) {
+    } else if (isHeadRefFlag(arg, argv, index)) {
       options.headRef = argv[index + 1];
       index += 1;
-    } else if (arg === '--format' && argv[index + 1]) {
+    } else if (isFormatFlagWithArgument(arg, argv, index)) {
       options.format = argv[index + 1];
       index += 1;
-    } else if (arg === '--output' && argv[index + 1]) {
+    } else if (isOutputFlagWithArgument(arg, argv, index)) {
       options.outputPath = argv[index + 1];
       index += 1;
-    } else if (arg === '--json' && argv[index + 1]) {
+    } else if (isJsonFlagWithArgument(arg, argv, index)) {
       options.jsonPath = argv[index + 1];
       index += 1;
     } else if (arg === '--analysis-dir' && argv[index + 1]) {
@@ -134,14 +134,40 @@ export function parseQualityGateArgs(argv) {
   return options;
 }
 
+function isJsonFlagWithArgument(arg, argv, index) {
+  return arg === '--json' && argv[index + 1];
+}
+
+function isOutputFlagWithArgument(arg, argv, index) {
+  return arg === '--output' && argv[index + 1];
+}
+
+function isFormatFlagWithArgument(arg, argv, index) {
+  return arg === '--format' && argv[index + 1];
+}
+
+function isHeadRefFlag(arg, argv, index) {
+  return arg === '--head-ref' && argv[index + 1];
+}
+
+function isBaselineRefFlag(arg, argv, index) {
+  return arg === '--baseline-ref' && argv[index + 1];
+}
+
+function isWindowFlagWithArgument(arg, argv, index) {
+  return arg === '--window' && argv[index + 1];
+}
+
 export async function runQualityGateCli({ args = process.argv.slice(2), rootDir = ROOT, deps = {} } = {}) {
   const options = parseQualityGateArgs(args);
+
   const loadConfig = deps.loadConfig ?? loadQualityGateConfig;
   const collectWindows = deps.collectDecisionWindows ?? collectDecisionWindows;
   const detectWindows = deps.detectAffectedWindows ?? detectAffectedWindows;
   const detectWindowsDetailed = deps.detectAffectedWindowsDetailed ?? detectAffectedWindowsDetailed;
   const changedFilesForPr = deps.getChangedFiles ?? getChangedFiles;
   const qualityRunner = deps.runQualityGate ?? ((params) => runQualityGate({ ...params, checkers: QUALITY_GATE_CHECKS }));
+
   const config = await loadConfig(rootDir);
   const baselineRef = options.baselineRef ?? config.gate?.baselineRef ?? 'origin/main';
 
@@ -153,25 +179,9 @@ export async function runQualityGateCli({ args = process.argv.slice(2), rootDir 
     ? await changedFilesForPr({ rootDir, baselineRef, headRef: options.headRef })
     : [];
 
-  const affectedWindowMetadata = options.mode === 'window'
-    ? [{ window: options.windowName, source: 'direct' }]
-    : options.mode === 'all'
-      ? availableWindows.map((window) => ({ window, source: 'direct' }))
-      : detectWindowsDetailed({
-          changedFiles,
-          blastRadius: config.blastRadius ?? [],
-          availableWindows,
-        });
+  const affectedWindowMetadata = getAffectedWindows(options, availableWindows, detectWindowsDetailed, changedFiles, config);
 
-  const windowNames = options.mode === 'window'
-    ? [options.windowName]
-    : options.mode === 'all'
-      ? availableWindows
-      : detectWindows({
-          changedFiles,
-          blastRadius: config.blastRadius ?? [],
-          availableWindows,
-        });
+  const windowNames = getWindowNames(options, availableWindows, detectWindows, changedFiles, config);
 
   if (windowNames.length === 0) {
     const stdout = '<!-- sfqg-report -->\nNo windows affected; gate skipped\n';
@@ -264,3 +274,31 @@ if (isMain) {
     process.exit(1);
   }
 }
+export function getWindowNames(options, availableWindows, detectWindows, changedFiles, config) {
+  if (options.mode === 'window') {
+    return [options.windowName];
+  }
+  if (options.mode === 'all') {
+    return availableWindows;
+  }
+  return detectWindows({
+    changedFiles,
+    blastRadius: config.blastRadius ?? [],
+    availableWindows,
+  });
+}
+
+export function getAffectedWindows(options, availableWindows, detectWindowsDetailed, changedFiles, config) {
+  if (options.mode === 'window') {
+    return [{ window: options.windowName, source: 'direct' }];
+  }
+  if (options.mode === 'all') {
+    return availableWindows.map((window) => ({ window, source: 'direct' }));
+  }
+  return detectWindowsDetailed({
+    changedFiles,
+    blastRadius: config.blastRadius ?? [],
+    availableWindows,
+  });
+}
+
