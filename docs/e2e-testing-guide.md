@@ -484,7 +484,9 @@ Shared UI components (`EntityForm`, `DetailView`, `ListView`, `DataTable`) emit 
 | `tab-{key}` | `tab-lines`, `tab-custom:attachments` | DetailView tab strip buttons (main strip and customTabsAfterBottom strip) |
 | `row-{id}` | `row-ABC123` | DataTable rows |
 | `option-{id}` | `option-ABC123` | SearchInput suggestions |
-| `option-{field}-{id}` | `option-warehouse-ABC123` | SelectorInput / DependentSelect items |
+| `option-{field}-{id}` | `option-warehouse-ABC123` | DependentSelect items |
+| `inline-add-field-{field}` | `inline-add-field-tax` | InlineSearchCombo text input (inline add/edit rows) |
+| `inline-add-option-{field}-{id}` | `inline-add-option-tax-tax-1` | InlineSearchCombo portal dropdown items |
 | `attachments-tab-panel` | — | AttachmentsTab root container |
 | `attachments-dropzone` | — | UploadDropzone drag-and-drop area |
 | `attachments-file-input` | — | Hidden `<input type="file">` — use `setInputFiles()` |

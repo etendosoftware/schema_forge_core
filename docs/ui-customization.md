@@ -473,7 +473,7 @@ I want row quick actions on my window
 Default: `"classic"`. Validator F12 enforces the enum (`"classic"` | `"inlineEditable"`).
 
 **MVP scope (current iteration):**
-- Inline edit covers all column types: `string`, `number`, `amount`, `percent`, `date`, `selector` and `search`. Selector/search columns reuse the shared `SelectorInput` Radix dropdown — the same component the add-row flow uses — so the inline experience matches the form-mode UX.
+- Inline edit covers all column types: `string`, `number`, `amount`, `percent`, `date`, `selector` and `search`. Selector/search columns use `InlineSearchCombo` — a compact text input with server-side search (`?q=term`) and portal dropdown — so FK fields with many options (e.g., tax rates) are filterable by typing. Lookup/popup columns (e.g., product) continue to open `ProductSearchDrawer`.
 - Pencil and trash carry full logic. No other action icons are rendered in this iteration.
 - Desktop only (>= 1280 px). Tablet/mobile responsive support is out of scope for this iteration.
 - **Add-line flow** keeps using the existing `DataTable` inline-add row (callouts, focus management, defaults from header context). The generated `<Window>LineTable.jsx` falls back to `<DataTable>` while `addRow.active` is true and returns to `<InlineLinesPanel>` once the new line is saved or cancelled. This avoids duplicating the heavyweight add-row machinery and keeps a single source of truth for line creation.
