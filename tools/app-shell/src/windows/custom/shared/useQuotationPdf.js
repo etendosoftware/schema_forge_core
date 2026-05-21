@@ -12,12 +12,12 @@ import {
 } from './documentPdf.js';
 
 // ---------------------------------------------------------------------------
-// Build invoice data for the template
+// Build quotation data for the template
 // ---------------------------------------------------------------------------
-async function buildInvoiceData(invoiceId, base, token) {
+async function buildQuotationData(quotationId, base, token) {
   const [header, linesRaw, session] = await Promise.all([
-    fetchJson(`${base}/sales-invoice/header/${invoiceId}`, token),
-    fetchAll(`${base}/sales-invoice/lines?parentId=${invoiceId}`, token),
+    fetchJson(`${base}/sales-quotation/quotation/${quotationId}`, token),
+    fetchAll(`${base}/sales-quotation/quotationLine?parentId=${quotationId}`, token),
     fetchOptionalJson(`${base}/session`, token),
   ]);
   const { companyLogoDataUrl, partnerLocation } = await fetchDocumentAssets(session, header, base, token);
@@ -26,37 +26,34 @@ async function buildInvoiceData(invoiceId, base, token) {
   const lines = linesSorted.map((l, idx) => ({
     lineNo: l.lineNo || (idx + 1),
     productName: l.product$_identifier || l.description || '—',
-    quantity: l.invoicedQuantity ?? l.qtyInvoiced ?? 0,
-    unitPrice: l.unitPrice ?? l.priceActual ?? 0,
-    discount: l.etgoDiscount ? Number(l.etgoDiscount) : null,
-    taxName: l.tax$_identifier || l.taxRate || '',
-    lineTotal: l.lineNetAmount ?? l.lineAmount ?? 0,
+    quantity: l.orderedQuantity ?? 0,
+    unitPrice: l.unitPrice ?? 0,
+    discount: l.discount ? Number(l.discount) : null,
+    taxName: l.tax$_identifier || '',
+    lineTotal: l.lineNetAmount ?? 0,
   }));
 
   const grandTotal = Number(header.grandTotalAmount ?? 0);
-  const netAmount  = Number(header.summedLineAmount ?? header.totalLines ?? 0);
+  const netAmount  = Number(header.summedLineAmount ?? 0);
   const taxAmount  = grandTotal - netAmount;
 
   const getGrossLine = (l) => {
-    const qty = Number(l.invoicedQuantity ?? l.qtyInvoiced ?? 0);
+    const qty = Number(l.orderedQuantity ?? 0);
     if (qty === 0) return 0;
     if (l.listPrice != null) return qty * Number(l.listPrice);
-    const lineNet = Number(l.lineNetAmount ?? l.lineAmount ?? 0);
-    const disc = Number(l.etgoDiscount ?? 0);
+    const lineNet = Number(l.lineNetAmount ?? 0);
+    const disc = Number(l.discount ?? 0);
     return disc > 0 ? lineNet / (1 - disc / 100) : lineNet;
   };
   const etgoTotalDiscount = Number(header.etgoTotalDiscount ?? 0);
   const { grossAmount, discountPerProduct, totalDiscountAmt } =
     computeDiscountBreakdown(linesRaw, etgoTotalDiscount, getGrossLine);
 
-  const hasLineDiscount = linesRaw.some(l => Number(l.etgoDiscount ?? 0) > 0);
-  const hasAnyDiscount = hasLineDiscount || etgoTotalDiscount > 0;
-  const hasTotalDiscount = etgoTotalDiscount > 0;
-
   return {
-    ...buildCompanyFields(session, header, companyLogoDataUrl, partnerLocation, header.bpAddress),
+    ...buildCompanyFields(session, header, companyLogoDataUrl, partnerLocation),
     documentNo: header.documentNo || '',
-    invoiceDate: header.invoiceDate || header.dateInvoiced || '',
+    invoiceDate: header.orderDate || '',
+    validUntil: header.validUntil || null,
     customerName: header.businessPartner$_identifier || header.businessPartner || '—',
     paymentMethod: header.paymentMethod$_identifier || null,
     paymentTerms: header.paymentTerms$_identifier || null,
@@ -66,27 +63,24 @@ async function buildInvoiceData(invoiceId, base, token) {
     taxAmount,
     grandTotal,
     grossAmount:        discountPerProduct > 0 ? grossAmount : null,
-    grossSubtotal:      discountPerProduct > 0 ? grossAmount : null,
     discountPerProduct: discountPerProduct > 0 ? discountPerProduct : null,
     etgoTotalDiscount:  etgoTotalDiscount > 0 ? etgoTotalDiscount : null,
-    totalDiscountPct:   etgoTotalDiscount > 0 ? etgoTotalDiscount : null,
     totalDiscountAmt:   totalDiscountAmt > 0 ? totalDiscountAmt : null,
-    hasAnyDiscount,
-    hasTotalDiscount,
   };
 }
 
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
-export function useInvoicePdf(invoiceId, apiBaseUrl, token) {
+export function useQuotationPdf(quotationId, apiBaseUrl, token) {
   const ui = useUI();
   const labels = buildDocumentPdfLabels(ui, {
-    title:           ui('invoicePdfTitle'),
-    documentNo:      ui('invoicePdfDocumentNo'),
-    documentSection: ui('invoicePdfInvoiceSection'),
-    date:            ui('invoicePdfDate'),
-    colQty:          ui('invoicePdfColQty'),
+    title:           ui('quotationPdfTitle'),
+    documentNo:      ui('quotationPdfDocumentNo'),
+    documentSection: ui('quotationPdfSection'),
+    date:            ui('quotationPdfDate'),
+    validUntil:      ui('quotationPdfValidUntil'),
+    colQty:          ui('quotationPdfColQty'),
   });
-  return useDocumentPdf(invoiceId, apiBaseUrl, token, buildInvoiceData, labels);
+  return useDocumentPdf(quotationId, apiBaseUrl, token, buildQuotationData, labels);
 }

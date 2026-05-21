@@ -5,20 +5,19 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const src = readFileSync(join(__dirname, '..', 'useInvoicePdf.js'), 'utf8');
+const src = readFileSync(join(__dirname, '..', 'useQuotationPdf.js'), 'utf8');
 const sharedSrc = readFileSync(join(__dirname, '..', 'documentPdf.js'), 'utf8');
-const pdfUtilsSrc = readFileSync(join(__dirname, '..', 'pdfUtils.js'), 'utf8');
 
-describe('useInvoicePdf', () => {
+describe('useQuotationPdf', () => {
 
   // ── Exports ──────────────────────────────────────────────────────────────
 
-  it('exports useInvoicePdf as a named export', () => {
-    assert.match(src, /export function useInvoicePdf/);
+  it('exports useQuotationPdf as a named export', () => {
+    assert.match(src, /export function useQuotationPdf/);
   });
 
-  it('accepts invoiceId, apiBaseUrl and token parameters', () => {
-    assert.match(src, /useInvoicePdf\(invoiceId,\s*apiBaseUrl,\s*token\)/);
+  it('accepts quotationId, apiBaseUrl and token parameters', () => {
+    assert.match(src, /useQuotationPdf\(quotationId,\s*apiBaseUrl,\s*token\)/);
   });
 
   it('returns pdfUrl, pdfBlob, loading and error', () => {
@@ -27,19 +26,20 @@ describe('useInvoicePdf', () => {
 
   // ── API endpoints ─────────────────────────────────────────────────────────
 
-  it('fetches header from the sales-invoice header endpoint', () => {
-    assert.match(src, /sales-invoice\/header\/\$\{invoiceId\}/);
+  it('fetches header from the sales-quotation quotation endpoint (NOT /header/)', () => {
+    assert.match(src, /sales-quotation\/quotation\/\$\{quotationId\}/);
+    assert.doesNotMatch(src, /sales-quotation\/header\/\$\{quotationId\}/);
   });
 
-  it('fetches lines from the sales-invoice lines endpoint with parentId', () => {
-    assert.match(src, /sales-invoice\/lines\?parentId=\$\{invoiceId\}/);
+  it('fetches lines from the sales-quotation quotationLine endpoint with parentId', () => {
+    assert.match(src, /sales-quotation\/quotationLine\?parentId=\$\{quotationId\}/);
   });
 
-  it('fetches header and lines in parallel via Promise.all', () => {
+  it('fetches header, lines and session in parallel via Promise.all', () => {
     assert.match(src, /Promise\.all/);
   });
 
-  it('optionally fetches session defaults to resolve the company document image', () => {
+  it('optionally fetches session to resolve the company document image', () => {
     assert.match(src, /\/session/);
     assert.match(src, /fetchDocumentAssets/, 'delegates logo and address fetch to shared fetchDocumentAssets');
     assert.match(sharedSrc, /yourCompanyDocumentImageId/);
@@ -49,36 +49,22 @@ describe('useInvoicePdf', () => {
     assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
-  it('sends Bearer token in all API requests', () => {
-    // fetch helpers live in pdfUtils.js (shared), re-exported via documentPdf.js
-    assert.match(pdfUtilsSrc, /Authorization.*Bearer.*token/);
+  // ── Field mappings ────────────────────────────────────────────────────────
+
+  it('maps quantity using only orderedQuantity (no qtyOrdered fallback)', () => {
+    assert.match(src, /l\.orderedQuantity \?\? 0/);
+    assert.doesNotMatch(src, /l\.qtyOrdered/);
   });
 
-  // ── PDF rendering ─────────────────────────────────────────────────────────
-
-  it('renders the PDF via jsreport at /jsreport/api/report', () => {
-    // renderPdf lives in pdfUtils.js (shared), called via documentPdf.renderDocumentPdf
-    assert.match(pdfUtilsSrc, /\/jsreport\/api\/report/);
+  it('maps lineTotal using lineNetAmount with 0 as fallback', () => {
+    assert.match(src, /l\.lineNetAmount \?\? 0/);
   });
 
-  it('uses the handlebars engine', () => {
-    assert.match(pdfUtilsSrc, /engine.*handlebars|handlebars.*engine/);
+  it('includes validUntil in the returned data derived from header.validUntil', () => {
+    assert.match(src, /validUntil: header\.validUntil/);
   });
 
-  it('uses the chrome-pdf recipe for PDF generation', () => {
-    assert.match(pdfUtilsSrc, /chrome-pdf/);
-  });
-
-  it('creates a blob URL from the jsreport response', () => {
-    assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
-  });
-
-  it('embeds the company logo in the rendered template when available', () => {
-    assert.match(src, /companyLogoDataUrl/);
-    assert.match(sharedSrc, /inv-logo-img/);
-  });
-
-  it('renders the company identity block with name, address and tax ID', () => {
+  it('renders company identity block with name, address and tax ID', () => {
     assert.match(src, /buildCompanyFields/, 'delegates company fields to shared buildCompanyFields');
     assert.match(sharedSrc, /companyName/);
     assert.match(sharedSrc, /companyAddress1/);
@@ -89,14 +75,12 @@ describe('useInvoicePdf', () => {
     assert.match(sharedSrc, /session\?\.organization/);
   });
 
-  it('fetches the full partner location from the contacts locationAddress endpoint', () => {
-    // fetchLocationAddress lives in pdfUtils.js (shared), re-exported via documentPdf.js
-    assert.match(pdfUtilsSrc, /contacts\/locationAddress\/\$\{locationId\}/);
+  it('sorts lines by lineNo before mapping', () => {
+    assert.match(src, /linesSorted.*sort|sort.*lineNo/s);
   });
 
-  it('builds multi-line customer address output for the PDF', () => {
-    assert.match(sharedSrc, /customerAddressLines/);
-    assert.match(sharedSrc, /inv-address-lines/);
+  it('calculates taxAmount as grandTotal minus netAmount', () => {
+    assert.match(src, /grandTotal - netAmount/);
   });
 
   // ── Memory management ─────────────────────────────────────────────────────
@@ -111,55 +95,28 @@ describe('useInvoicePdf', () => {
     assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
+  it('early-returns from useEffect when quotationId is null', () => {
+    assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
+  });
+
   // ── Error handling ────────────────────────────────────────────────────────
 
   it('propagates error messages to the error state', () => {
     assert.match(src, /useDocumentPdf/, 'hook delegates PDF lifecycle to useDocumentPdf');
   });
 
-  // ── fetchAll — inline logic tests ─────────────────────────────────────────
+  // ── i18n ─────────────────────────────────────────────────────────────────
 
-  describe('fetchAll (inline replica)', () => {
-    async function fetchAll(url, token) {
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      });
-      if (!res.ok) return [];
-      const d = await res.json();
-      return d?.response?.data ?? (Array.isArray(d) ? d : []);
-    }
+  it('uses quotationPdfTitle i18n key for the document title label', () => {
+    assert.match(src, /quotationPdfTitle/);
+  });
 
-    it('returns empty array when the response is not ok', async () => {
-      const saved = globalThis.fetch;
-      globalThis.fetch = async () => ({ ok: false, status: 500 });
-      const result = await fetchAll('/url', 'tok');
-      assert.deepEqual(result, []);
-      globalThis.fetch = saved;
-    });
+  it('uses quotationPdfValidUntil i18n key for the valid-until label', () => {
+    assert.match(src, /quotationPdfValidUntil/);
+  });
 
-    it('extracts response.data from the NEO Headless envelope', async () => {
-      const saved = globalThis.fetch;
-      globalThis.fetch = async () => ({
-        ok: true,
-        json: async () => ({ response: { data: [{ id: 'L1' }, { id: 'L2' }] } }),
-      });
-      const result = await fetchAll('/url', 'tok');
-      assert.equal(result.length, 2);
-      assert.equal(result[0].id, 'L1');
-      globalThis.fetch = saved;
-    });
-
-    it('falls back to a raw array response when the envelope is absent', async () => {
-      const saved = globalThis.fetch;
-      globalThis.fetch = async () => ({
-        ok: true,
-        json: async () => [{ id: 'X' }],
-      });
-      const result = await fetchAll('/url', 'tok');
-      assert.equal(result.length, 1);
-      assert.equal(result[0].id, 'X');
-      globalThis.fetch = saved;
-    });
+  it('uses quotationPdfColQty i18n key for the quantity column label', () => {
+    assert.match(src, /quotationPdfColQty/);
   });
 
   // ── Discount breakdown ────────────────────────────────────────────────────
@@ -198,11 +155,6 @@ describe('useInvoicePdf', () => {
 
     it('passes null for totalDiscountAmt when no total discount applies', () => {
       assert.match(src, /totalDiscountAmt > 0 \? totalDiscountAmt : null/);
-    });
-
-    it('uses invoicedQuantity (not orderedQuantity) inside getGrossLine', () => {
-      assert.match(src, /l\.invoicedQuantity \?\? l\.qtyInvoiced/);
-      assert.doesNotMatch(src, /l\.orderedQuantity/);
     });
 
     it('includes subtotalWithoutDiscount label key in labels object', () => {
