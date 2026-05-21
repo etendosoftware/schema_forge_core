@@ -244,7 +244,7 @@ const GenericPreviewModal = forwardRef(function GenericPreviewModal({
       <div
         data-testid="generic-preview-modal"
         className={`absolute bg-white shadow-2xl overflow-hidden flex flex-col ${getCardClass(animState)}`}
-        style={{ top: 8, right: 8, bottom: 8, width: 'min(calc(100vw - 308px), 1400px)', borderRadius: 12 }}
+        style={{ top: 8, right: 8, bottom: 8, width: resolvedLeftPanel != null ? 'min(calc(100vw - 308px), 1400px)' : 380, borderRadius: 12 }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-1 min-h-0">

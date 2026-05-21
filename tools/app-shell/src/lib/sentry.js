@@ -1,21 +1,53 @@
 import * as Sentry from '@sentry/react';
 
-const ENV_MAP = {
+export const SENTRY_ENV_MAP = {
   'go.staging.etendo.cloud': 'staging',
   'go.experimental.etendo.cloud': 'experimental',
   'go.etendo.cloud': 'production',
 };
 
-export function initSentry() {
-  const dsn = import.meta.env.VITE_SENTRY_DSN;
-  if (!dsn) return;
+export function resolveSentryEnvironment(hostname) {
+  return SENTRY_ENV_MAP[hostname] ?? 'development';
+}
 
-  Sentry.init({
-    dsn,
-    environment: ENV_MAP[window.location.hostname] ?? 'development',
-    integrations: [Sentry.browserTracingIntegration()],
-    tracesSampleRate: 0.1,
-    tracePropagationTargets: [/core\..+\.etendo\.cloud/, 'core.etendo.cloud'],
-    sendDefaultPii: true,
-  });
+export function createSentryProvider({
+  dsn,
+  hostname = globalThis.window?.location?.hostname,
+  enabled = Boolean(dsn),
+  sentry = Sentry,
+} = {}) {
+  return {
+    name: 'sentry',
+    enabled,
+
+    init() {
+      if (!dsn) return;
+
+      sentry.init({
+        dsn,
+        environment: resolveSentryEnvironment(hostname),
+        integrations: [sentry.browserTracingIntegration()],
+        tracesSampleRate: 0.1,
+        tracePropagationTargets: [/core\..+\.etendo\.cloud/, 'core.etendo.cloud'],
+        sendDefaultPii: true,
+      });
+    },
+
+    captureException(error, details = {}) {
+      if (typeof sentry.captureException === 'function') {
+        sentry.captureException(error, { extra: details });
+      }
+    },
+
+    setContext(context = {}) {
+      if (typeof sentry.setContext === 'function') {
+        sentry.setContext('app', context);
+      }
+    },
+  };
+}
+
+export function initSentry(options = {}) {
+  const dsn = options.dsn ?? import.meta.env.VITE_SENTRY_DSN;
+  return createSentryProvider({ ...options, dsn }).init();
 }
