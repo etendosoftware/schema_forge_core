@@ -153,7 +153,7 @@ export default function LinesBottomSection({
                 formatAmount={fmt}
                 currency={currency}
                 readOnly={isReadOnly}
-                totalDiscountPct={Number(data?.[totalsField] ?? totalDiscountPct ?? 0)}
+                totalDiscountPct={data?.processed ? 0 : Number(data?.[totalsField] ?? totalDiscountPct ?? 0)}
                 onTotalDiscountChange={onTotalDiscountChange}
               />
             </div>

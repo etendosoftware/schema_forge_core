@@ -103,6 +103,7 @@ const INVOICE_HEADER_CO = {
   ...INVOICE_HEADER_DR,
   documentStatus: 'CO',
   'documentStatus$_identifier': 'Completado',
+  processed: true,
   // Whatever the backend returns on completion — keep totals stable.
   grandTotalAmount: 45.98,
   summedLineAmount: 41.80,
