@@ -78,18 +78,7 @@ function generateMockData(contract) {
 
   // Group kpi-single sections into a combined 'kpis' object keyed by their `key` field
   const kpiSingleSections = sectionsList.filter(s => s.type === 'kpi-single');
-  if (kpiSingleSections.length > 0) {
-    const kpisObj = {};
-    for (const s of kpiSingleSections) {
-      if (s.key && mockData[s.id] !== undefined) {
-        kpisObj[s.key] = mockData[s.id];
-      }
-    }
-    if (Object.keys(kpisObj).length > 0) {
-      lines.push(`export const kpis = ${JSON.stringify(kpisObj, null, 2)};`);
-      lines.push('');
-    }
-  }
+  aggregateKpiSingleSections(kpiSingleSections, mockData, lines);
 
   for (const section of sectionsList) {
     if (section.type === 'quick-actions') continue;
@@ -142,6 +131,21 @@ if (isDirectRun) {
     console.error('Usage: node cli/src/generate-aggregate.js <aggregate-contract.json>');
     console.error('       node cli/src/generate-aggregate.js --all');
     process.exit(1);
+  }
+}
+
+function aggregateKpiSingleSections(kpiSingleSections, mockData, lines) {
+  if (kpiSingleSections.length > 0) {
+    const kpisObj = {};
+    for (const s of kpiSingleSections) {
+      if (s.key && mockData[s.id] !== undefined) {
+        kpisObj[s.key] = mockData[s.id];
+      }
+    }
+    if (Object.keys(kpisObj).length > 0) {
+      lines.push(`export const kpis = ${JSON.stringify(kpisObj, null, 2)};`);
+      lines.push('');
+    }
   }
 }
 

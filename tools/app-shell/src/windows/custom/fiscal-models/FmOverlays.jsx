@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
-import { Star, Play, ArrowUpRight, Info } from 'lucide-react';
+import { Star, Play, ArrowUpRight, Info, OctagonAlert, TriangleAlert, X } from 'lucide-react';
 import './fiscal-models.css';
 
 function parseCityLine(cityLine) {
@@ -193,8 +193,9 @@ export function IncidentTray({ incidents, onClose }) {
         <button
           style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#6b7280' }}
           onClick={onClose}
+          aria-label={t('fm.action.close')}
         >
-          ✕
+          <X size={14} />
         </button>
       </div>
       {incidents.map((inc) => (
@@ -202,7 +203,7 @@ export function IncidentTray({ incidents, onClose }) {
           key={inc.message}
           className={`fm-incident-tray__item fm-incident-tray__item--${inc.blocking ? 'blocking' : 'warning'}`}
         >
-          {inc.blocking ? '🚫' : '⚠️'} {inc.message}
+          {inc.blocking ? <OctagonAlert size={14} /> : <TriangleAlert size={14} />} {inc.message}
         </div>
       ))}
     </div>
@@ -301,8 +302,10 @@ export function ConfigDrawer({ model, onClose, token, apiBaseUrl }) {
 
   useEffect(() => {
     if (!token || !apiBaseUrl) return;
+    const controller = new AbortController();
     fetch(`${neoBase(apiBaseUrl)}/session`, {
       headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal,
     })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
@@ -318,6 +321,7 @@ export function ConfigDrawer({ model, onClose, token, apiBaseUrl }) {
         }));
       })
       .catch(() => {});
+    return () => controller.abort();
   }, [token, apiBaseUrl]);
 
   const set = (key) => (e) => setForm(prev => ({ ...prev, [key]: e.target.value }));

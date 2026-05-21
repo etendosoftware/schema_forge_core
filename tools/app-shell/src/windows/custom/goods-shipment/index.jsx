@@ -28,6 +28,15 @@ function CustomGoodsShipmentTable(props) {
   return <GoodsShipmentTable columns={COLUMNS} {...props} />;
 }
 
+function GoodsShipmentBulkActions(props) {
+  return (
+    <>
+      <BulkInvoiceFromShipment {...props} />
+      <BulkDocumentAction {...props} entity="goodsShipment" buildActions={buildInOutActions} labelKey="confirmBulk" />
+    </>
+  );
+}
+
 export default function GoodsShipmentWindow({ windowName, recordId, apiBaseUrl, token, ...rest }) {
   useBulkActionToast();
   const navigate = useNavigate();
@@ -42,7 +51,7 @@ export default function GoodsShipmentWindow({ windowName, recordId, apiBaseUrl, 
 
   const { requestDelete, deleteDialog } = useRowDelete({
     apiBaseUrl,
-    entity: 'header',
+    entity: 'goodsShipment',
     token,
     onSuccess: () => setRefreshKey(k => k + 1),
   });
@@ -93,12 +102,7 @@ export default function GoodsShipmentWindow({ windowName, recordId, apiBaseUrl, 
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
         refreshTrigger={refreshKey}
         labelOverrides={LABEL_OVERRIDES}
-        bulkActions={(ctx) => (
-          <>
-            <BulkInvoiceFromShipment {...ctx} />
-            <BulkDocumentAction {...ctx} entity="goodsShipment" buildActions={buildInOutActions} />
-          </>
-        )}
+        bulkActions={GoodsShipmentBulkActions}
         renderPreview={({ row, onClose, onEdit }) => (
           <GoodsShipmentPreview
             shipment={row}
