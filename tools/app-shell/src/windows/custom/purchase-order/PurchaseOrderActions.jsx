@@ -26,12 +26,6 @@ export default function PurchaseOrderActions({
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [processing, setProcessing] = useState(false);
 
-  if (!data) return null;
-
-  const docStatus = data.documentStatus;
-  const isDraft = docStatus === 'DR';
-  const isConfirmed = docStatus === 'CO';
-
   const base = useMemo(
     () => (apiBaseUrl || '').replace(/\/[^/]+$/, ''),
     [apiBaseUrl],
@@ -43,6 +37,12 @@ export default function PurchaseOrderActions({
     }),
     [token],
   );
+
+  if (!data) return null;
+
+  const docStatus = data.documentStatus;
+  const isDraft = docStatus === 'DR';
+  const isConfirmed = docStatus === 'CO';
 
   // ─── Receive goods handler ───────────────────────────────────────────────────
 

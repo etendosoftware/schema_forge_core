@@ -263,7 +263,7 @@ export default function ImportLinesModal({
                                   className="mr-2 shrink-0"
                                 />
                                 <span style={{ fontSize: 13, color: imported ? '#9ca3af' : '#111827', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: lineSelected ? 500 : 400 }}>
-                                  {line._productName}{imported && <span style={{ fontSize: 11, marginLeft: 6, color: '#9ca3af' }}>{ui('alreadyImported')}</span>}
+                                  {line._productName}{imported && <span style={{ fontSize: 11, marginLeft: 6, color: '#9ca3af' }}>{line._inDraftShipments?.length ? `${ui('inDraftShipment')}: ${line._inDraftShipments.join(', ')}` : ui('alreadyImported')}</span>}
                                 </span>
                                 <span style={{ width: 70, flexShrink: 0, textAlign: 'right' }}>
                                   <input

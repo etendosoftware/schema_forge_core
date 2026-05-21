@@ -121,7 +121,7 @@ export default function PdfViewer({ url }) {
               </div>
             )}
           >
-            {effectiveWidth && Array.from({ length: numPages }, (_, i) => (
+            {Boolean(effectiveWidth) && Array.from({ length: numPages }, (_, i) => (
               <Page
                 key={`page-${i + 1}`}
                 pageNumber={i + 1}

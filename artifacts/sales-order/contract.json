@@ -1,8 +1,8 @@
 {
-  "version": "0.3.0",
+  "version": "0.2.0",
   "generatedAt": "2026-05-12T16:47:39.614Z",
-  "updatedAt": "2026-05-18T18:56:14.400Z",
-  "checksum": "6eee1b41fd22ef78",
+  "updatedAt": "2026-05-18T15:52:02.292Z",
+  "checksum": "18e2049618d99bd1",
   "frontendContract": {
     "window": {
       "id": "143",
@@ -615,6 +615,7 @@
             "defaultValue": "1",
             "section": "principal",
             "gridOrder": 3,
+            "min": 0,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -640,6 +641,7 @@
             "columnType": "amount",
             "section": "principal",
             "gridOrder": 4,
+            "min": 0,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -671,6 +673,7 @@
             "defaultValue": "0",
             "section": "principal",
             "gridOrder": 5,
+            "min": 0,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
