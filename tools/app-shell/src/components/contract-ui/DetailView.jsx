@@ -3032,7 +3032,14 @@ export function DetailView({
                       formatAmount={formatAmount}
                       currency={currency}
                       readOnly={isDocumentReadOnly}
-                      totalDiscountPct={Number(data?.etgoTotalDiscount ?? 0)}
+                      totalDiscountPct={
+                        (data?.processed ||
+                          (hook.children ?? []).some(
+                            l => l.product === 'E4BC94E71D664E73A066DAF78BF39DB3',
+                          ))
+                          ? 0
+                          : Number(data?.etgoTotalDiscount ?? 0)
+                      }
                       onTotalDiscountChange={handleTotalDiscountChange}
                     />
                   );

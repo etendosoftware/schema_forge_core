@@ -304,15 +304,20 @@ function parseAmount(text) {
 async function openInvoicePage(page, completedRef = { value: false }) {
   await installOrderToInvoiceMocks(page, completedRef);
   await page.goto(`/sales-invoice/${INVOICE_ID}`);
-  // Wait for the panel to be visible, then wait for a non-zero total which
-  // indicates the lines have been fetched and the panel recomputed.
-  const totalEl = page.getByTestId('totals-row-total-value');
-  await expect(totalEl).toBeVisible({ timeout: 10_000 });
-  await expect(totalEl).not.toHaveText('0', { timeout: 5_000 });
-  await expect(totalEl).not.toHaveText('0.00', { timeout: 3_000 });
-  const subtotalEl = page.getByTestId('totals-row-subtotal-value');
-  await expect(subtotalEl).not.toHaveText('0', { timeout: 3_000 });
-  await expect(subtotalEl).not.toHaveText('0.00', { timeout: 3_000 });
+  await expect(page.getByTestId('totals-row-total-value')).toBeVisible({ timeout: 10_000 });
+  // Poll until both rows show non-zero absolute values. The panel renders with
+  // "0.00 EUR" while the lines request is in-flight. We use page.evaluate to
+  // run parseAmount in the test context (not the page context).
+  const readRow = async (testId) => {
+    const el = page.getByTestId(testId);
+    const text = (await el.textContent()) || '';
+    const n = parseAmount(text);
+    return isNaN(n) ? 0 : Math.abs(n);
+  };
+  await expect.poll(() => readRow('totals-row-total-value'),
+    { timeout: 10_000, intervals: [200, 300, 500, 1000] }).toBeGreaterThan(0);
+  await expect.poll(() => readRow('totals-row-subtotal-value'),
+    { timeout: 8_000, intervals: [200, 300, 500, 1000] }).toBeGreaterThan(0);
 }
 
 /**
