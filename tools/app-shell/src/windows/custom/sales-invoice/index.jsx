@@ -56,6 +56,10 @@ const OVERDUE_INITIAL_COLUMNS = [
   { key: 'eTGODueDate', column: 'em_etgo_due_date', type: 'date' },
 ];
 
+function SalesInvoiceBulkAction(props) {
+  return <BulkDocumentAction {...props} labelKey="confirmBulk" />;
+}
+
 function SalesInvoiceTable(props) {
   return <InvoiceHeaderTable {...props} />;
 }
@@ -178,7 +182,7 @@ export default function SalesInvoiceWindow(props) {
         dateFilterKey="invoiceDate"
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
         rowQuickActions={rowQuickActions}
-        bulkActions={(ctx) => <BulkDocumentAction {...ctx} />}
+        bulkActions={SalesInvoiceBulkAction}
         refreshTrigger={refreshKey}
         renderPreview={({ row, onClose, onEdit }) => (
           <InvoicePreview
