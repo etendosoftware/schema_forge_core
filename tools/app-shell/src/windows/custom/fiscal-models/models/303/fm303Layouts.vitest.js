@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getLayout303 } from './fm303Layouts.js';
+import { getLayout303, applyPatch } from './fm303Layouts.js';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -156,8 +156,185 @@ describe('getLayout303 — unknown year uses BASE', () => {
 
 describe('getLayout303 — deleteRow with non-existent row is a no-op', () => {
   it('2024 layout is well-formed even though 165/168 patches target rows BASE has', () => {
-    // Indirectly verifies opDeleteRow filter does not throw when row is absent
     expect(() => getLayout303(2024, 1)).not.toThrow();
     expect(() => getLayout303(2023, 1)).not.toThrow();
+  });
+});
+
+// ── applyPatch — opInsertRow ──────────────────────────────────────────────────
+
+describe('applyPatch — opInsertRow', () => {
+  it('inserts after an existing row', () => {
+    const result = applyPatch([
+      { op: 'insertRow', section: 'resultado', after: 'diferencia', row: { id: 'new', cells: [99] } },
+    ]);
+    const ids = result.sections.find(s => s.id === 'resultado').rows.map(r => r.id);
+    expect(ids).toEqual(['diferencia', 'new']);
+  });
+
+  it('appends at end when `after` target does not exist (defensive branch)', () => {
+    const result = applyPatch([
+      { op: 'insertRow', section: 'resultado', after: 'nonexistent', row: { id: 'appended', cells: [99] } },
+    ]);
+    const ids = result.sections.find(s => s.id === 'resultado').rows.map(r => r.id);
+    expect(ids.at(-1)).toBe('appended');
+  });
+
+  it('inserts before an existing row', () => {
+    const result = applyPatch([
+      { op: 'insertRow', section: 'resultado', before: 'diferencia', row: { id: 'pre', cells: [0] } },
+    ]);
+    const ids = result.sections.find(s => s.id === 'resultado').rows.map(r => r.id);
+    expect(ids).toEqual(['pre', 'diferencia']);
+  });
+
+  it('appends at end when `before` target does not exist (defensive branch)', () => {
+    const result = applyPatch([
+      { op: 'insertRow', section: 'resultado', before: 'ghost', row: { id: 'fallback', cells: [0] } },
+    ]);
+    const ids = result.sections.find(s => s.id === 'resultado').rows.map(r => r.id);
+    expect(ids.at(-1)).toBe('fallback');
+  });
+
+  it('appends at end when neither after nor before is specified', () => {
+    const result = applyPatch([
+      { op: 'insertRow', section: 'resultado', row: { id: 'tail', cells: [0] } },
+    ]);
+    const ids = result.sections.find(s => s.id === 'resultado').rows.map(r => r.id);
+    expect(ids.at(-1)).toBe('tail');
+  });
+
+  it('is a no-op when the section does not exist', () => {
+    const result = applyPatch([
+      { op: 'insertRow', section: 'phantom', row: { id: 'x', cells: [] } },
+    ]);
+    expect(result.sections.find(s => s.id === 'phantom')).toBeUndefined();
+  });
+});
+
+// ── applyPatch — opPatchRow ───────────────────────────────────────────────────
+
+describe('applyPatch — opPatchRow', () => {
+  it('merges patch fields onto an existing row', () => {
+    const result = applyPatch([
+      { op: 'patchRow', section: 'resultado', row: 'diferencia', patch: { total: false } },
+    ]);
+    const row = result.sections.find(s => s.id === 'resultado').rows.find(r => r.id === 'diferencia');
+    expect(row.total).toBe(false);
+    expect(row.cells).toEqual([46]);
+  });
+
+  it('is a no-op when the row does not exist', () => {
+    expect(() => applyPatch([
+      { op: 'patchRow', section: 'resultado', row: 'ghost', patch: { total: true } },
+    ])).not.toThrow();
+  });
+
+  it('is a no-op when the section does not exist', () => {
+    expect(() => applyPatch([
+      { op: 'patchRow', section: 'phantom', row: 'diferencia', patch: {} },
+    ])).not.toThrow();
+  });
+});
+
+// ── applyPatch — opReorderRows ────────────────────────────────────────────────
+
+describe('applyPatch — opReorderRows', () => {
+  it('reorders rows to the specified sequence', () => {
+    const result = applyPatch([
+      {
+        op: 'reorderRows',
+        section: 'iva_deducible',
+        order: ['total_deducir', 'op_int_corrientes'],
+      },
+    ]);
+    const ids = result.sections.find(s => s.id === 'iva_deducible').rows.map(r => r.id);
+    expect(ids[0]).toBe('total_deducir');
+    expect(ids[1]).toBe('op_int_corrientes');
+  });
+
+  it('drops rows not listed in order', () => {
+    const result = applyPatch([
+      { op: 'reorderRows', section: 'resultado', order: ['diferencia'] },
+    ]);
+    const ids = result.sections.find(s => s.id === 'resultado').rows.map(r => r.id);
+    expect(ids).toEqual(['diferencia']);
+  });
+
+  it('is a no-op when section does not exist', () => {
+    expect(() => applyPatch([
+      { op: 'reorderRows', section: 'phantom', order: [] },
+    ])).not.toThrow();
+  });
+});
+
+// ── applyPatch — opDeleteSection ──────────────────────────────────────────────
+
+describe('applyPatch — opDeleteSection', () => {
+  it('removes the specified section from the output', () => {
+    const result = applyPatch([
+      { op: 'deleteSection', section: 'info_adicional' },
+    ]);
+    expect(result.sections.find(s => s.id === 'info_adicional')).toBeUndefined();
+  });
+
+  it('is a no-op when section does not exist (defensive idx !== -1 guard)', () => {
+    expect(() => applyPatch([
+      { op: 'deleteSection', section: 'phantom' },
+    ])).not.toThrow();
+  });
+});
+
+// ── applyPatch — opInsertSection ──────────────────────────────────────────────
+
+describe('applyPatch — opInsertSection', () => {
+  const newSec = {
+    titleKey: 'fm.test.section',
+    colHeaderKeys: [],
+    rows: [{ id: 'r1', cells: [200] }],
+  };
+
+  it('inserts a new section after an existing one', () => {
+    const result = applyPatch([
+      { op: 'insertSection', after: 'resultado', section: 'extra', section_def: newSec },
+    ]);
+    const ids = sectionIds(result);
+    const resultIdx = ids.indexOf('resultado');
+    expect(ids[resultIdx + 1]).toBe('extra');
+  });
+
+  it('inserts a new section before an existing one', () => {
+    const result = applyPatch([
+      { op: 'insertSection', before: 'resultado', section: 'extra', section_def: newSec },
+    ]);
+    const ids = sectionIds(result);
+    const extraIdx = ids.indexOf('extra');
+    expect(ids[extraIdx + 1]).toBe('resultado');
+  });
+
+  it('appends section at end when neither after nor before is given', () => {
+    const result = applyPatch([
+      { op: 'insertSection', section: 'tail_section', section_def: newSec },
+    ]);
+    expect(sectionIds(result).at(-1)).toBe('tail_section');
+  });
+});
+
+// ── applyPatch — opPatchSection ───────────────────────────────────────────────
+
+describe('applyPatch — opPatchSection', () => {
+  it('merges patch fields onto an existing section (excluding rows)', () => {
+    const result = applyPatch([
+      { op: 'patchSection', section: 'resultado', patch: { titleKey: 'fm.test.override', rows: ['ignored'] } },
+    ]);
+    const sec = result.sections.find(s => s.id === 'resultado');
+    expect(sec.titleKey).toBe('fm.test.override');
+    expect(sec.rows.map(r => r.id)).toContain('diferencia');
+  });
+
+  it('is a no-op when section does not exist', () => {
+    expect(() => applyPatch([
+      { op: 'patchSection', section: 'phantom', patch: { titleKey: 'x' } },
+    ])).not.toThrow();
   });
 });

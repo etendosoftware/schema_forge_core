@@ -246,7 +246,7 @@ function opPatchSection(sections, op) {
   Object.assign(sections[op.section], patch);
 }
 
-function applyPatch(ops) {
+export function applyPatch(ops) {
   const sectionOrder = [...BASE.sectionOrder];
   const sections = {};
   for (const [id, sec] of Object.entries(BASE.sections)) {
