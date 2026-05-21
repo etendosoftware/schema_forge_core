@@ -95,6 +95,12 @@ export function migrate(decisions, context = {}) {
   }
 
   // Remap entity keys
+  remapEntityKeys(decisions, keyMap, allRemap);
+
+  return decisions;
+}
+
+function remapEntityKeys(decisions, keyMap, allRemap) {
   const newEntities = {};
   for (const [oldKey, value] of Object.entries(decisions.entities)) {
     const newKey = keyMap[oldKey] || oldKey;
@@ -116,6 +122,4 @@ export function migrate(decisions, context = {}) {
       decisions.window.secondaryTabs = newTabs;
     }
   }
-
-  return decisions;
 }
