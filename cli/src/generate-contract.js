@@ -204,6 +204,7 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.display) mapped.display = f.display;
       if (f.cellType) mapped.cellType = f.cellType;
       if (f.gridOrder != null) mapped.gridOrder = f.gridOrder;
+      if (f.min !== undefined) mapped.min = f.min;
 
       // Behavioral metadata: validationRule (e.g. M_PriceList.issopricelist = @isSOTrx@)
       if (f.validationRule) mapped.validationRule = f.validationRule;

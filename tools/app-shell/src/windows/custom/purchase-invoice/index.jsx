@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
@@ -10,10 +10,12 @@ import PurchaseInvoiceHeaderTable from './PurchaseInvoiceHeaderTable.jsx';
 import HeaderPage from '@generated/purchase-invoice/generated/web/purchase-invoice/HeaderPage';
 import InvoicePreview from '../shared/InvoicePreview.jsx';
 import PurchaseInvoiceTopbar from './PurchaseInvoiceTopbar.jsx';
+import OcrSidePanel from '../shared/OcrSidePanel.jsx';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
 import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
+import { getInvoiceDraftMode, buildInvoiceRowQuickActions, useClearSavedRecord } from '../shared/useInvoiceWindow.js';
 
 /* eslint-disable react/prop-types */
 
@@ -91,20 +93,10 @@ export default function PurchaseInvoiceWindow(props) {
     onSuccess: () => setRefreshKey(k => k + 1),
   });
 
-  const rowQuickActions = useMemo(() => ({
-    enabled: true,
-    editMode: 'navigate',
-    documentPreview: true,
-    actions: {
-      edit: { show: true },
-      duplicate: { show: true },
-      email: { show: false },
-      delete: { show: true },
-    },
-    onEdit: (row) => navigate(`/${windowName}/${row.id}`),
-    onClone: (row) => setCloneTargets([row]),
-    onDelete: requestDelete,
-  }), [navigate, windowName, requestDelete]);
+  const rowQuickActions = useMemo(
+    () => buildInvoiceRowQuickActions(navigate, windowName, setCloneTargets, null, requestDelete, { showEmail: false }),
+    [navigate, windowName, requestDelete],
+  );
 
   const summary = [
     { key: 'summedLineAmount', column: 'TotalLines', type: 'amount', label: ui('totalNetAmount') },
@@ -116,23 +108,21 @@ export default function PurchaseInvoiceWindow(props) {
   // Pick up the saved record from navigation state when arriving at the list view
   const effectiveRecord = savedRecord ?? location.state?.savedRecord ?? null;
 
-  const clearSavedRecord = useCallback(() => {
-    setSavedRecord(null);
-    // Clear navigation state so the modal doesn't reappear on browser back/forward
-    if (location.state?.savedRecord) {
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-  }, [location, navigate]);
+  const clearSavedRecord = useClearSavedRecord(setSavedRecord, location, navigate);
+  const draftModeOverride = getInvoiceDraftMode(ui);
 
   if (recordId) {
     return (
       <CreateContactContext.Provider value={createContactCtxValue}>
         <HeaderPage
           {...props}
+          draftMode={draftModeOverride}
           secondaryTabs={[]}
           summary={summary}
           extraBadges={[]}
           topbarRight={PurchaseInvoiceTopbar}
+          sidePanel={OcrSidePanel}
+          sidePanelStyle={{ width: 360 }}
           notesField="description"
           breadcrumb={breadcrumb}
           onAfterSave={true}

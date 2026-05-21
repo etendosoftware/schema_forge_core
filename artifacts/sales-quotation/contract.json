@@ -1,8 +1,8 @@
 {
-  "version": "0.6.1",
+  "version": "0.8.0",
   "generatedAt": "2026-04-30T15:42:46.907Z",
-  "updatedAt": "2026-05-19T14:19:07.140Z",
-  "checksum": "f6b7870b6cdfb52a",
+  "updatedAt": "2026-05-20T18:19:51.481Z",
+  "checksum": "5cc0cb35581ce4c8",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -56,11 +56,13 @@
       "labelOverrides": {
         "es_ES": {
           "C_BPartner_ID": "Contacto",
-          "C_Reject_Reason_ID": "Razón de rechazo"
+          "C_Reject_Reason_ID": "Razón de rechazo",
+          "DateOrdered": "Fecha de presupuesto"
         },
         "en_US": {
           "C_BPartner_ID": "Contact",
-          "C_Reject_Reason_ID": "Reject Reason"
+          "C_Reject_Reason_ID": "Reject Reason",
+          "DateOrdered": "Quotation Date"
         }
       },
       "dateFilterKey": "orderDate",
@@ -641,6 +643,7 @@
             },
             "defaultValue": "1",
             "gridOrder": 3,
+            "min": 0,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -665,6 +668,7 @@
             "sourceRequired": true,
             "columnType": "amount",
             "gridOrder": 4,
+            "min": 0,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -695,6 +699,7 @@
             },
             "defaultValue": "0",
             "gridOrder": 5,
+            "min": 0,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -893,11 +898,13 @@
       "labelOverrides": {
         "es_ES": {
           "C_BPartner_ID": "Contacto",
-          "C_Reject_Reason_ID": "Razón de rechazo"
+          "C_Reject_Reason_ID": "Razón de rechazo",
+          "DateOrdered": "Fecha de presupuesto"
         },
         "en_US": {
           "C_BPartner_ID": "Contact",
-          "C_Reject_Reason_ID": "Reject Reason"
+          "C_Reject_Reason_ID": "Reject Reason",
+          "DateOrdered": "Quotation Date"
         }
       },
       "dateFilterKey": "orderDate",
@@ -2690,11 +2697,13 @@
     "labelOverrides": {
       "es_ES": {
         "C_BPartner_ID": "Contacto",
-        "C_Reject_Reason_ID": "Razón de rechazo"
+        "C_Reject_Reason_ID": "Razón de rechazo",
+        "DateOrdered": "Fecha de presupuesto"
       },
       "en_US": {
         "C_BPartner_ID": "Contact",
-        "C_Reject_Reason_ID": "Reject Reason"
+        "C_Reject_Reason_ID": "Reject Reason",
+        "DateOrdered": "Quotation Date"
       }
     }
   },

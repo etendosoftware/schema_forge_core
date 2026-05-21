@@ -1,8 +1,8 @@
 {
-  "version": "0.6.0",
+  "version": "0.12.0",
   "generatedAt": "2026-04-29T19:04:55.657Z",
-  "updatedAt": "2026-05-19T19:03:45.278Z",
-  "checksum": "86cc41085f28c4e2",
+  "updatedAt": "2026-05-20T13:50:25.589Z",
+  "checksum": "6f103a983ea28f61",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -15,14 +15,14 @@
       "hidePrint": true,
       "customComponents": {
         "topbarRight": "GoodsShipmentActions",
+        "topbarExtra": "GoodsShipmentBillingBadge",
         "bulkActions": "BulkInvoiceFromShipment",
         "bottomSection": "GoodsShipmentBottomPanel"
       },
       "menuActions": [],
       "processOverrides": {
         "documentAction": {
-          "label": "Complete",
-          "displayLogicRaw": "@documentStatus@='DR'"
+          "exclude": true
         }
       },
       "salesTheme": true,
@@ -55,6 +55,7 @@
               "source": "documentType.sequence"
             },
             "section": "principal",
+            "seq": 20,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -76,6 +77,7 @@
             "reference": "Warehouse",
             "inputMode": "search",
             "section": "principal",
+            "seq": 40,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_InOut_Warehouse"
             },
@@ -100,6 +102,7 @@
             "reference": "BusinessPartner",
             "inputMode": "search",
             "section": "principal",
+            "seq": 10,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_BPartner"
             },
@@ -128,6 +131,7 @@
               "filterKey": "C_BPartner_ID"
             },
             "section": "principal",
+            "seq": 50,
             "validationRule": {
               "code": "C_BPartner_Location.C_BPartner_ID=@C_BPartner_ID@ AND C_BPartner_Location.IsShipTo='Y' AND C_BPartner_Location.IsActive='Y'",
               "contextParams": [],
@@ -172,6 +176,7 @@
             },
             "defaultValue": "@#Date@",
             "section": "principal",
+            "seq": 30,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_AccountingDate"
             },
@@ -242,6 +247,18 @@
             "defaultValue": "DR"
           },
           {
+            "name": "invoiceStatus",
+            "apiKey": "invoiceStatus",
+            "column": "InvoiceStatus",
+            "label": "Invoice Status",
+            "type": "integer",
+            "tsType": "number",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": false,
+            "form": false
+          },
+          {
             "name": "invoiced",
             "apiKey": "invoiced",
             "column": "Iscompletelyinvoiced",
@@ -250,19 +267,14 @@
             "tsType": "boolean",
             "visibility": "readOnly",
             "required": true,
-            "grid": true,
-            "form": true,
+            "grid": false,
+            "form": false,
             "sourceRequired": true,
             "derivation": {
               "type": "computed",
               "source": "N"
             },
-            "defaultValue": "N",
-            "badge": true,
-            "badgeLabels": {
-              "true": "Invoiced",
-              "false": "Pending"
-            }
+            "defaultValue": "N"
           },
           {
             "name": "processed",
@@ -325,7 +337,8 @@
               "source": "false"
             }
           }
-        ]
+        ],
+        "javaQualifier": "goodsShipmentHeaderHandler"
       },
       "goodsShipmentLine": {
         "tableName": "M_InOutLine",
@@ -341,12 +354,14 @@
             "type": "foreignKey",
             "tsType": "string",
             "visibility": "editable",
-            "required": false,
+            "required": true,
             "grid": true,
             "form": true,
             "reference": "Product",
             "inputMode": "search",
+            "lookup": true,
             "section": "principal",
+            "seq": 10,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOutLine_Product"
             },
@@ -374,6 +389,7 @@
             },
             "defaultValue": "0",
             "section": "principal",
+            "seq": 20,
             "readOnlyLogic": {
               "raw": "@Processed@='Y' | @UomManagement@='Y'",
               "evaluable": true,
@@ -405,6 +421,7 @@
             "grid": true,
             "form": true,
             "section": "principal",
+            "seq": 30,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_Conversion"
             },
@@ -430,7 +447,8 @@
               "source": "0"
             }
           }
-        ]
+        ],
+        "javaQualifier": "goodsShipmentLineHandler"
       }
     }
   },
@@ -446,14 +464,14 @@
       "hidePrint": true,
       "customComponents": {
         "topbarRight": "GoodsShipmentActions",
+        "topbarExtra": "GoodsShipmentBillingBadge",
         "bulkActions": "BulkInvoiceFromShipment",
         "bottomSection": "GoodsShipmentBottomPanel"
       },
       "menuActions": [],
       "processOverrides": {
         "documentAction": {
-          "label": "Complete",
-          "displayLogicRaw": "@documentStatus@='DR'"
+          "exclude": true
         }
       },
       "salesTheme": true,
@@ -808,7 +826,7 @@
             "apiKey": "invoiceStatus",
             "column": "InvoiceStatus",
             "type": "integer",
-            "visibility": "discarded",
+            "visibility": "readOnly",
             "required": false
           },
           {
@@ -1011,7 +1029,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "goodsShipmentHeaderHandler"
       },
       "goodsShipmentLine": {
         "tableName": "M_InOutLine",
@@ -1032,7 +1051,7 @@
             "column": "M_Product_ID",
             "type": "foreignKey",
             "visibility": "editable",
-            "required": false
+            "required": true
           },
           {
             "name": "attributeSetValue",
@@ -1298,7 +1317,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "goodsShipmentLineHandler"
       }
     },
     "endpoints": [
@@ -1754,6 +1774,14 @@
         "description": "Field 'invoiced' should be present in goodsShipment"
       },
       {
+        "id": "t-field-presence-goodsShipment-invoiceStatus",
+        "category": "field-presence",
+        "entity": "goodsShipment",
+        "field": "invoiceStatus",
+        "runner": "node",
+        "description": "Field 'invoiceStatus' should be present in goodsShipment"
+      },
+      {
         "id": "t-field-presence-goodsShipment-movementDate",
         "category": "field-presence",
         "entity": "goodsShipment",
@@ -1856,6 +1884,14 @@
         "field": "invoiced",
         "runner": "node",
         "description": "Field 'invoiced' should have type 'boolean' in goodsShipment"
+      },
+      {
+        "id": "t-field-type-goodsShipment-invoiceStatus",
+        "category": "field-type",
+        "entity": "goodsShipment",
+        "field": "invoiceStatus",
+        "runner": "node",
+        "description": "Field 'invoiceStatus' should have type 'number' in goodsShipment"
       },
       {
         "id": "t-field-type-goodsShipment-movementDate",
@@ -2365,14 +2401,6 @@
         "field": "invoicefromshipment",
         "runner": "node",
         "description": "System field 'invoicefromshipment' should exist in backend but not frontend for goodsShipment"
-      },
-      {
-        "id": "t-system-field-goodsShipment-invoiceStatus",
-        "category": "system-field",
-        "entity": "goodsShipment",
-        "field": "invoiceStatus",
-        "runner": "node",
-        "description": "System field 'invoiceStatus' should exist in backend but not frontend for goodsShipment"
       },
       {
         "id": "t-system-field-goodsShipment-isnettingshipment",
@@ -2886,25 +2914,25 @@
       }
     ],
     "summary": {
-      "total": 167,
+      "total": 168,
       "byCategory": {
         "action-endpoint": 12,
         "crud-flags": 2,
         "default-value-type": 4,
         "displaylogic-evaluable": 1,
         "displaylogic-valid": 1,
-        "field-presence": 13,
-        "field-type": 13,
+        "field-presence": 14,
+        "field-type": 14,
         "readonlylogic-evaluable": 8,
         "readonlylogic-valid": 8,
         "rule-declared": 3,
         "searchable-filters": 6,
         "selector-endpoint": 4,
-        "system-field": 90,
+        "system-field": 89,
         "visibility": 2
       },
       "byRunner": {
-        "node": 167,
+        "node": 168,
         "junit": 0
       }
     }
