@@ -88,6 +88,11 @@ jobs:
           # Sentry — DSN as variable (public, baked into JS bundle), token as secret
           VITE_SENTRY_DSN: ${{ vars.VITE_SENTRY_DSN }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          # Mixpanel — token as secret, API host as variable
+          VITE_MIXPANEL_ENABLED: "true"
+          VITE_MIXPANEL_TOKEN: ${{ secrets.VITE_MIXPANEL_TOKEN }}
+          VITE_MIXPANEL_DEBUG: "false"
+          VITE_MIXPANEL_API_HOST: ${{ vars.VITE_MIXPANEL_API_HOST }}
         # .env.production (committed) provides VITE_MOCK=false and VITE_API_BASE=/etendo
 
       - name: Generate reports manifest
