@@ -543,11 +543,12 @@ function processInput(val) {
     : splitAndTrimString(val).filter(Boolean);
 }
 
-function getFilteredKey(col, mode, op) {
-  return col.backendFilterKey
-    ?? (mode === 'identifier'
-      ? (TEXTUAL_IDENTIFIER_OPS.has(op) ? `${col.key}$_identifier` : col.key)
-      : col.key);
+export function getFilteredKey(col, mode, op) {
+  if (col.backendFilterKey != null) return col.backendFilterKey;
+  if (mode === 'identifier' && TEXTUAL_IDENTIFIER_OPS.has(op)) {
+    return `${col.key}$_identifier`;
+  }
+  return col.key;
 }
 
 function splitAndTrimString(val) {

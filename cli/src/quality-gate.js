@@ -274,27 +274,31 @@ if (isMain) {
     process.exit(1);
   }
 }
-function getWindowNames(options, availableWindows, detectWindows, changedFiles, config) {
-  return options.mode === 'window'
-    ? [options.windowName]
-    : options.mode === 'all'
-      ? availableWindows
-      : detectWindows({
-        changedFiles,
-        blastRadius: config.blastRadius ?? [],
-        availableWindows,
-      });
+export function getWindowNames(options, availableWindows, detectWindows, changedFiles, config) {
+  if (options.mode === 'window') {
+    return [options.windowName];
+  }
+  if (options.mode === 'all') {
+    return availableWindows;
+  }
+  return detectWindows({
+    changedFiles,
+    blastRadius: config.blastRadius ?? [],
+    availableWindows,
+  });
 }
 
-function getAffectedWindows(options, availableWindows, detectWindowsDetailed, changedFiles, config) {
-  return options.mode === 'window'
-    ? [{ window: options.windowName, source: 'direct' }]
-    : options.mode === 'all'
-      ? availableWindows.map((window) => ({ window, source: 'direct' }))
-      : detectWindowsDetailed({
-        changedFiles,
-        blastRadius: config.blastRadius ?? [],
-        availableWindows,
-      });
+export function getAffectedWindows(options, availableWindows, detectWindowsDetailed, changedFiles, config) {
+  if (options.mode === 'window') {
+    return [{ window: options.windowName, source: 'direct' }];
+  }
+  if (options.mode === 'all') {
+    return availableWindows.map((window) => ({ window, source: 'direct' }));
+  }
+  return detectWindowsDetailed({
+    changedFiles,
+    blastRadius: config.blastRadius ?? [],
+    availableWindows,
+  });
 }
 
