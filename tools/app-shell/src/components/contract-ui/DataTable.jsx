@@ -435,6 +435,19 @@ function EmptyState({ hasFilter, totalCount }) {
 
 const NUMERIC_FIELD_TYPES = new Set(['number', 'integer', 'decimal', 'quantity', 'amount']);
 
+function isMissingRequired(f, valuesRef) {
+  if (!f.required) return false;
+  const v = valuesRef.current[f.key];
+  return v == null || v === '' || (typeof v === 'string' && v.trim() === '');
+}
+
+function isBelowMin(f, valuesRef) {
+  if (f.min === undefined) return false;
+  const v = valuesRef.current[f.key];
+  if (v == null || v === '') return false;
+  return !isNaN(Number(v)) && Number(v) < f.min;
+}
+
 /**
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
@@ -470,6 +483,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
 
   const [values, setValues] = useState(buildEmpty);
   const [isSaving, setIsSaving] = useState(false);
+  const [invalidFields, setInvalidFields] = useState(new Set());
   const firstInputRef = useRef(null);
   const rowRef = useRef(null);
   const touchedFieldsRef = useRef(new Set());
@@ -513,16 +527,21 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     // Validate required fields BEFORE entering the in-flight state — a missing
     // value should leave the row open for the user to complete. Reads from the
     // valuesRef so an in-flight callout cannot mask a still-empty user field.
-    const missing = fields.filter(f => {
-      if (!f.required) return false;
-      const v = valuesRef.current[f.key];
-      return v == null || v === '' || (typeof v === 'string' && v.trim() === '');
-    });
+    const missing = fields.filter(f => isMissingRequired(f, valuesRef));
     if (missing.length > 0) {
-      const labels = missing.map(f => f.label || f.key).join(', ');
-      toast.error(`${ui('requiredFieldsMissing')}: ${labels}`);
+      setInvalidFields(new Set(missing.map(f => f.key)));
+      toast.error(ui('requiredFieldsMissing'));
       const firstMissing = missing[0];
       const inputEl = document.querySelector(`[data-testid="field-${firstMissing.key}"]`);
+      inputEl?.focus?.({ preventScroll: true });
+      return Promise.resolve(false);
+    }
+    const belowMin = fields.filter(f => isBelowMin(f, valuesRef));
+    if (belowMin.length > 0) {
+      setInvalidFields(new Set(belowMin.map(f => f.key)));
+      toast.error(ui('fieldMinValueError'));
+      const firstInvalid = belowMin[0];
+      const inputEl = document.querySelector(`[data-testid="field-${firstInvalid.key}"]`);
       inputEl?.focus?.({ preventScroll: true });
       return Promise.resolve(false);
     }
@@ -633,6 +652,12 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
   // Wrap handleChange to also notify parent (for callout triggering)
   const handleFieldChange = useCallback((key, val, selectedItem) => {
     touchedFieldsRef.current.add(key);
+    setInvalidFields(prev => {
+      if (!prev.has(key)) return prev;
+      const n = new Set(prev);
+      n.delete(key);
+      return n;
+    });
     // Build a snapshot of current + new values for the callout formState
     const snapshot = { ...values, [key]: val };
     handleChange(key, val);
@@ -760,6 +785,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
                 selectorContext={selectorContext}
                 token={token}
                 inputRef={isFirst ? firstInputRef : undefined}
+                isInvalid={invalidFields.has(field.key)}
                 onSelect={(item) => {
                   touchedFieldsRef.current.add(field.key);
                   handleChange(field.key + '$_identifier', item.label || item.name || item._identifier);
@@ -940,7 +966,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
               onKeyDown={handleKeyDown}
               placeholder={fieldLabel}
               required={field.required}
-              className={`w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none${isNumeric ? ' text-right tabular-nums' : ''}`}
+              className={`w-full h-8 text-sm rounded-md border bg-white px-2 focus:ring-2 focus:outline-none${isNumeric ? ' text-right tabular-nums' : ''}${invalidFields.has(field.key) ? ' border-red-500 focus:ring-red-500' : ' border-input focus:ring-primary'}`}
             />
           </TableCell>
         );
@@ -968,7 +994,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
 /**
  * Inline field that shows selected value and opens modal on click/focus.
  */
-function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContext, token, onSelect, onKeyDown, inputRef, title, drawerKey = 'default' }) {
+function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContext, token, onSelect, onKeyDown, inputRef, title, drawerKey = 'default', isInvalid }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef(null);
   const Drawer = LOOKUP_DRAWERS[drawerKey] || LOOKUP_DRAWERS.default;
@@ -996,7 +1022,7 @@ function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContex
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(true); }
           else if (onKeyDown) onKeyDown(e);
         }}
-        className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 text-left flex items-center gap-2 hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
+        className={`w-full h-8 text-sm rounded-md border bg-white px-2 text-left flex items-center gap-2 focus:ring-2 focus:outline-none transition-colors${isInvalid ? ' border-red-500 focus:ring-red-500' : ' border-input hover:border-primary/50 focus:ring-primary'}`}
       >
         <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         {value ? (

@@ -93,7 +93,8 @@ export default function OrderConfirmModal({
         );
         if (!processRes.ok) {
           const err = await processRes.json().catch(() => null);
-          throw new Error(err?.response?.message || err?.message || `Process failed (${processRes.status})`);
+          const rawMsg = err?.response?.message || err?.message || `Process failed (${processRes.status})`;
+          throw new Error(rawMsg.includes('@OrderWithoutLines@') ? ui('soNoLinesError') : rawMsg);
         }
         setOrderProcessed(true);
         setNeedsReload(true);

@@ -92,6 +92,14 @@ This window should let a user create, review, confirm, and manage sales orders f
 17. Open an existing draft order without touching any field and confirm the "Save" and "Save Draft" buttons are **disabled**. Change any header field and confirm they become enabled. Save and confirm they disable again. Revert the changed field to its original value without saving and confirm the buttons disable once more. Add a line: once the add-row is submitted, the buttons should disable again if no header changes remain pending. Confirm the "Confirm" button stays enabled throughout all these states.
 18. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
+## Validation & Error Handling — ETP-4005
+
+### Inline line validation (min: 0 constraint)
+
+Fields with a `min: 0` constraint — `orderedQuantity` and `discount` — now show a red border when the user types a negative value during inline edit. The row remains open and the save/confirm path for that row is blocked until the value is corrected or the edit is cancelled. The constraint is enforced client-side by `InlineLinesPanel` using the `min` metadata from the contract field definition.
+
+See [Shared validation & UX changes — ETP-4005](app-shell-functional-flows.md#shared-validation--ux-changes--etp-4005) for behaviors common to all document windows (required field validation, single confirmation toast, callout message sanitization).
+
 ## Automated evidence
 
 - `tools/app-shell/src/windows/custom/sales-order/index.jsx` proves the custom list/detail wrapper, clone modal, inline contact creation wiring, and `pendingDelivery` quick filter.
