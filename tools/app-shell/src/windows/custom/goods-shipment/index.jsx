@@ -51,7 +51,7 @@ export default function GoodsShipmentWindow({ windowName, recordId, apiBaseUrl, 
 
   const { requestDelete, deleteDialog } = useRowDelete({
     apiBaseUrl,
-    entity: 'header',
+    entity: 'goodsShipment',
     token,
     onSuccess: () => setRefreshKey(k => k + 1),
   });
