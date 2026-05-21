@@ -180,7 +180,7 @@ describe('InvoicePreviewModal', () => {
 
   it('shows the total section', () => {
     renderPreview();
-    expect(screen.getByText('invoicePreviewTotal')).toBeInTheDocument();
+    expect(screen.getByText('previewCardTotal')).toBeInTheDocument();
   });
 
   it('does NOT render send button for purchase-invoice', () => {

@@ -19,6 +19,7 @@ export default function BulkDocumentAction({
   entity = 'header',
   buildActions,
   rowFilter,
+  labelKey = 'bulkCompletion',
 }) {
   const ui = useUI();
   const { execute } = useDocumentAction({ apiBaseUrl, entity, token });
@@ -88,13 +89,13 @@ export default function BulkDocumentAction({
     <>
       <Button variant="outline" size="sm" className="gap-1.5" onClick={handleOpen} disabled={running}>
         <ListChecks className="h-3.5 w-3.5" />
-        {ui('bulkCompletion')} ({selectedRows.length})
+        {ui(labelKey)} ({selectedRows.length})
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{ui('bulkCompletion')}</DialogTitle>
+            <DialogTitle>{ui(labelKey)}</DialogTitle>
           </DialogHeader>
           <div className="py-4 space-y-2">
             <Label>{ui('documentAction')}</Label>

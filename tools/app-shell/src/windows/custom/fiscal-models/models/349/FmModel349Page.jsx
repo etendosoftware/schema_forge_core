@@ -7,22 +7,13 @@ import { formatAmount } from '../../fiscalModelsUtils.js';
 import '../../fiscal-models.css';
 
 // ── Constants ────────────────────────────────────────────────────
-const MESES_ES = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-
 const STEPPER_INDEX = {
   pendiente:0, borrador:1, listo:2,
   presentado:3, presentadoOtra:3, presentadoAcuse:3,
   omitido:-1,
 };
 
-const STEP_LABELS = ['Pendiente','Borrador','Listo','Presentado'];
-
-const KEYS = [
-  { id:'E', label:'Entregas' },
-  { id:'S', label:'Servicios prestados' },
-  { id:'A', label:'Adquisiciones' },
-  { id:'I', label:'Servicios recibidos' },
-];
+const KEY_IDS = ['E', 'S', 'A', 'I'];
 
 const MOCK_OPERATORS = [
   { id:1, nif:'IT12345678901', name:'Bramini Vino S.r.l.',        key:'A', base:12450.00, vies:'valid',   origin:'4 facturas compra' },
@@ -39,9 +30,10 @@ function KeyBadge({ k }) {
 }
 
 function ViesBadge({ status }) {
-  const map = { valid: ['✓','valid','Válido'], pending: ['○','pending','Pendiente'], invalid: ['×','invalid','Inválido'] };
-  const [icon, cls, label] = map[status] ?? map.pending;
-  return <span className={`fm-vies fm-vies--${cls}`}>{icon} {label}</span>;
+  const t = useUI();
+  const map = { valid: ['✓', 'valid'], pending: ['○', 'pending'], invalid: ['×', 'invalid'] };
+  const [icon, cls] = map[status] ?? map.pending;
+  return <span className={`fm-vies fm-vies--${cls}`}>{icon} {t(`fm.m349.vies.${status ?? 'pending'}`)}</span>;
 }
 
 function NumberedStepper({ steps, current }) {
@@ -83,24 +75,27 @@ function Banner349({ type, icon, title, sub, actions }) {
 }
 
 function TotalsCard({ operators }) {
+  const t = useUI();
   const totals = {};
-  KEYS.forEach(k => { totals[k.id] = operators.filter(o => o.key === k.id).reduce((s,o) => s + o.base, 0); });
+  KEY_IDS.forEach(k => { totals[k] = operators.filter(o => o.key === k).reduce((s,o) => s + o.base, 0); });
   return (
     <div className="fm-349-totals">
       <div className="fm-349-totals__header">
-        <div className="fm-349-totals__title">Totales por clave <span style={{ fontSize: 11, fontWeight: 400, color: '#6b7280' }}>(solo lectura)</span></div>
-        <div className="fm-349-totals__sub">Calculados a partir de los operadores. No editables — modifica los operadores para ajustar los totales.</div>
+        <div className="fm-349-totals__title">
+          {t('fm.m349.totals.title')} <span style={{ fontSize: 11, fontWeight: 400, color: '#6b7280' }}>({t('fm.m349.totals.readonly')})</span>
+        </div>
+        <div className="fm-349-totals__sub">{t('fm.m349.totals.sub')}</div>
       </div>
       <div className="fm-349-totals__grid">
-        {KEYS.map(k => (
-          <div key={k.id} className="fm-349-total-cell">
+        {KEY_IDS.map(k => (
+          <div key={k} className="fm-349-total-cell">
             <div className="fm-349-total-cell__head">
-              <KeyBadge k={k.id} />
+              <KeyBadge k={k} />
               <Lock size={10} strokeWidth={2} style={{ color: '#9ca3af' }} />
             </div>
-            <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4 }}>{k.label}</div>
-            <div className={`fm-349-total-cell__amount${totals[k.id] === 0 ? ' fm-349-total-cell__amount--zero' : ''}`}>
-              {formatAmount(totals[k.id])}
+            <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4 }}>{t(`fm.m349.key.${k}`)}</div>
+            <div className={`fm-349-total-cell__amount${totals[k] === 0 ? ' fm-349-total-cell__amount--zero' : ''}`}>
+              {formatAmount(totals[k])}
             </div>
           </div>
         ))}
@@ -124,30 +119,37 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
   const operators = decl.operators ?? MOCK_OPERATORS;
   const stepIdx   = STEPPER_INDEX[status] ?? 0;
 
-  const monthNum = /^\d{2}$/.test(decl.period) ? parseInt(decl.period, 10) : null;
-  const periodLabel = monthNum ? `${decl.year} / ${MESES_ES[monthNum]}` : `${decl.year} ${decl.period}`;
+  const monthNum  = /^\d{2}$/.test(decl.period) ? parseInt(decl.period, 10) : null;
+  const monthName = monthNum
+    ? new Intl.DateTimeFormat(undefined, { month: 'long' }).format(new Date(2000, monthNum - 1, 1))
+    : null;
+  const periodLabel = monthName ? `${decl.year} / ${monthName}` : `${decl.year} ${decl.period}`;
 
-  const blocking = decl.incidents?.blocking ?? 2;
-  const viesPending = operators.filter(o => o.vies === 'pending').length;
-  const totalBase = operators.reduce((s,o) => s + o.base, 0);
+  const blocking     = decl.incidents?.blocking ?? 0;
+  const viesPending  = operators.filter(o => o.vies === 'pending').length;
+  const totalBase    = operators.reduce((s,o) => s + o.base, 0);
   const rectifications = decl.rectifications ?? 1;
+
+  const stepLabels = ['pendiente', 'borrador', 'listo', 'presentado'].map(id => t(`fm.status.${id}`));
 
   function handleStatusChange(newStatus) {
     setStatus(newStatus);
     onStatusChange?.(decl.id, newStatus);
   }
 
-  const filteredOps = keyFilter === 'all' ? operators : operators.filter(o => o.key === keyFilter);
+  const filteredOps  = keyFilter === 'all' ? operators : operators.filter(o => o.key === keyFilter);
   const toggleSelect = id => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  const allSelected = filteredOps.length > 0 && filteredOps.every(o => selected.has(o.id));
+  const allSelected  = filteredOps.length > 0 && filteredOps.every(o => selected.has(o.id));
+
+  const declNif = decl.nif ?? '';
 
   const TABS = [
-    { id:'operators',    label:'Operadores',     count: operators.length },
-    { id:'rectif',       label:'Rectificaciones',count: rectifications },
-    { id:'invoices',     label:'Facturas origen', count: null },
-    { id:'incidents',    label:'Incidencias',     count: blocking },
-    { id:'files',        label:'Ficheros',        count: 1 },
-    { id:'history',      label:'Historial',       count: null },
+    { id:'operators', label: t('fm.m349.tab.operators'), count: operators.length },
+    { id:'rectif',    label: t('fm.m349.tab.rectif'),    count: rectifications },
+    { id:'invoices',  label: t('fm.m349.tab.invoices'),  count: null },
+    { id:'incidents', label: t('fm.m349.tab.incidents'), count: blocking },
+    { id:'files',     label: t('fm.m349.tab.files'),     count: 1 },
+    { id:'history',   label: t('fm.m349.tab.history'),   count: null },
   ];
 
   return (
@@ -170,7 +172,8 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
               </div>
             </div>
             <div className="fm-349-header__subtitle">
-              Declaración recapitulativa op. intracomunitarias · {decl.type === 'ord' ? 'Ordinaria' : 'Complementaria'} · NIF: A78901234 · Periodicidad: Mensual
+              {t('fm.m349.subtitle')} · {decl.type === 'ord' ? t('fm.m349.type.ord') : t('fm.m349.type.com')}
+              {declNif && ` · NIF: ${declNif}`} · {t('fm.m349.periodicity')}: {t('fm.m349.monthly')}
             </div>
           </div>
           <div className="fm-349-header__actions">
@@ -186,7 +189,7 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
       </div>
 
       {/* ── Numbered Stepper ─────────────────────────────────────── */}
-      <NumberedStepper steps={STEP_LABELS} current={stepIdx} />
+      <NumberedStepper steps={stepLabels} current={stepIdx} />
 
       {/* ── Body ─────────────────────────────────────────────────── */}
       <div className="fm-page__body">
@@ -196,30 +199,30 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
           <Banner349
             type="error"
             icon={<OctagonAlert size={18} strokeWidth={1.75} />}
-            title={`${blocking} incidencias bloqueantes impiden generar el fichero`}
-            sub="Resuelve las incidencias bloqueantes para poder generar el fichero AEAT."
-            actions={<button className="fm-349-banner__btn fm-349-banner__btn--outline">Resolver</button>}
+            title={t('fm.m349.banner.blocking_title', { count: blocking })}
+            sub={t('fm.m349.banner.blocking_sub')}
+            actions={<button className="fm-349-banner__btn fm-349-banner__btn--outline">{t('fm.m349.banner.blocking_action')}</button>}
           />
         )}
         {viesPending > 0 && (
           <Banner349
             type="info"
             icon={<Globe size={18} strokeWidth={1.75} />}
-            title={`${viesPending} NIF-IVA con validación VIES pendiente`}
-            sub="Validación VIES asíncrona — informativa, no bloqueante"
-            actions={<button className="fm-349-banner__btn fm-349-banner__btn--outline"><RefreshCw size={13} strokeWidth={1.75} style={{ display:'inline',verticalAlign:'middle',marginRight:4 }} />Validar VIES</button>}
+            title={t('fm.m349.banner.vies_title', { count: viesPending })}
+            sub={t('fm.m349.banner.vies_sub')}
+            actions={<button className="fm-349-banner__btn fm-349-banner__btn--outline"><RefreshCw size={13} strokeWidth={1.75} style={{ display:'inline',verticalAlign:'middle',marginRight:4 }} />{t('fm.m349.banner.vies_action')}</button>}
           />
         )}
         {status === 'listo' && (
           <Banner349
             type="success"
             icon={<CircleCheck size={18} strokeWidth={1.75} />}
-            title="Fichero 349 generado correctamente"
-            sub={`349_A78901234_${decl.year}_${decl.period}.349 · ${operators.length} operadores · totales por clave reconciliables fila a fila`}
+            title={t('fm.m349.banner.ready_title')}
+            sub={`349_${declNif}_${decl.year}_${decl.period}.349 · ${t('fm.m349.banner.ready_sub', { ops: operators.length })}`}
             actions={
               <>
-                <button className="fm-349-banner__btn fm-349-banner__btn--outline"><Download size={13} strokeWidth={1.75} style={{ display:'inline',verticalAlign:'middle',marginRight:4 }} />Descargar</button>
-                <button className="fm-349-banner__btn fm-349-banner__btn--primary"><Play size={12} strokeWidth={1.75} fill="currentColor" style={{ display:'inline',verticalAlign:'middle',marginRight:4 }} />Presentar</button>
+                <button className="fm-349-banner__btn fm-349-banner__btn--outline"><Download size={13} strokeWidth={1.75} style={{ display:'inline',verticalAlign:'middle',marginRight:4 }} />{t('fm.m349.banner.download')}</button>
+                <button className="fm-349-banner__btn fm-349-banner__btn--primary"><Play size={12} strokeWidth={1.75} fill="currentColor" style={{ display:'inline',verticalAlign:'middle',marginRight:4 }} />{t('fm.m349.banner.present')}</button>
               </>
             }
           />
@@ -228,24 +231,24 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
         {/* KPI cards */}
         <div className="fm-349-kpis">
           <div className="fm-349-kpi">
-            <div className="fm-349-kpi__label">Operadores</div>
+            <div className="fm-349-kpi__label">{t('fm.m349.kpi.operators')}</div>
             <div className="fm-349-kpi__value">{operators.length}</div>
-            <div className="fm-349-kpi__desc">con operaciones en el periodo</div>
+            <div className="fm-349-kpi__desc">{t('fm.m349.kpi.operators_desc')}</div>
           </div>
           <div className="fm-349-kpi">
-            <div className="fm-349-kpi__label">Total operaciones</div>
+            <div className="fm-349-kpi__label">{t('fm.m349.kpi.total_ops')}</div>
             <div className="fm-349-kpi__value fm-349-kpi__value--mono">{formatAmount(totalBase)}</div>
-            <div className="fm-349-kpi__desc">base imponible declarada</div>
+            <div className="fm-349-kpi__desc">{t('fm.m349.kpi.total_ops_desc')}</div>
           </div>
           <div className="fm-349-kpi">
-            <div className="fm-349-kpi__label">Rectificaciones</div>
+            <div className="fm-349-kpi__label">{t('fm.m349.kpi.rectif')}</div>
             <div className="fm-349-kpi__value">{rectifications}</div>
-            <div className="fm-349-kpi__desc">periodos anteriores</div>
+            <div className="fm-349-kpi__desc">{t('fm.m349.kpi.rectif_desc')}</div>
           </div>
           <div className="fm-349-kpi">
-            <div className="fm-349-kpi__label">Pendientes VIES</div>
+            <div className="fm-349-kpi__label">{t('fm.m349.kpi.vies_pending')}</div>
             <div className={`fm-349-kpi__value${viesPending > 0 ? ' fm-349-kpi__value--orange' : ''}`}>{viesPending}</div>
-            <div className="fm-349-kpi__desc">NIF-IVA por validar</div>
+            <div className="fm-349-kpi__desc">{t('fm.m349.kpi.vies_pending_desc')}</div>
           </div>
         </div>
 
@@ -269,21 +272,21 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
               <div className="fm-key-pills">
                 <button className={`fm-key-pill${keyFilter === 'all' ? ' fm-key-pill--active' : ''}`} onClick={() => setKeyFilter('all')}>
-                  Todas las claves
+                  {t('fm.m349.filter.all_keys')}
                 </button>
-                {KEYS.map(k => (
-                  <button key={k.id} className={`fm-key-pill${keyFilter === k.id ? ' fm-key-pill--active' : ''}`} onClick={() => setKeyFilter(k.id)}>
-                    <KeyBadge k={k.id} />{k.label}
+                {KEY_IDS.map(k => (
+                  <button key={k} className={`fm-key-pill${keyFilter === k ? ' fm-key-pill--active' : ''}`} onClick={() => setKeyFilter(k)}>
+                    <KeyBadge k={k} />{t(`fm.m349.key.${k}`)}
                   </button>
                 ))}
               </div>
               <div style={{ flex: 1 }} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 12, color: '#6b7280', background: '#fff' }}>
-                  <Search size={13} strokeWidth={1.75} style={{ flexShrink: 0 }} /> <span>Buscar operador o NIF-IVA</span>
+                  <Search size={13} strokeWidth={1.75} style={{ flexShrink: 0 }} /> <span>{t('fm.m349.search_placeholder')}</span>
                 </div>
                 <button className="fm-toolbar__btn fm-toolbar__btn--primary" style={{ fontSize: 12, padding: '5px 12px' }}>
-                  + Añadir operador
+                  + {t('fm.m349.add_operator')}
                 </button>
               </div>
             </div>
@@ -293,9 +296,9 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
 
             {/* Operators table */}
             <div style={{ marginBottom: 8 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', marginBottom: 2 }}>{operators.length} operadores</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', marginBottom: 2 }}>{t('fm.m349.operators_count', { count: operators.length })}</div>
               <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 10 }}>
-                Fuente de verdad del fichero .349 — cada fila será un registro reconciliable en el fichero generado.
+                {t('fm.m349.operators_sub')}
               </div>
             </div>
 
@@ -306,13 +309,13 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
                     <th style={{ width: 32 }}>
                       <input type="checkbox" className="fm-table__cb" checked={allSelected} onChange={() => setSelected(allSelected ? new Set() : new Set(filteredOps.map(o => o.id)))} />
                     </th>
-                    <th>NIF-IVA</th>
-                    <th>Operador</th>
-                    <th>Clave</th>
-                    <th style={{ textAlign: 'right' }}>Base imponible</th>
-                    <th>VIES</th>
-                    <th>Origen</th>
-                    <th>Acción</th>
+                    <th>{t('fm.m349.col.nif_iva')}</th>
+                    <th>{t('fm.m349.col.operator')}</th>
+                    <th>{t('fm.m349.col.key')}</th>
+                    <th style={{ textAlign: 'right' }}>{t('fm.m349.col.taxable_base')}</th>
+                    <th>{t('fm.m349.col.vies')}</th>
+                    <th>{t('fm.m349.col.origin')}</th>
+                    <th>{t('fm.m349.col.action')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -323,10 +326,10 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
                       </td>
                       <td><span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#374151' }}>{op.nif}</span></td>
                       <td style={{ fontWeight: 600, color: '#0f172a' }}>{op.name}</td>
-                      <td><KeyBadge k={op.key} /><span style={{ marginLeft: 5, fontSize: 11, color: '#6b7280' }}>{KEYS.find(k => k.id === op.key)?.label}</span></td>
+                      <td><KeyBadge k={op.key} /><span style={{ marginLeft: 5, fontSize: 11, color: '#6b7280' }}>{t(`fm.m349.key.${op.key}`)}</span></td>
                       <td style={{ textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>{formatAmount(op.base)}</td>
                       <td><ViesBadge status={op.vies} /></td>
-                      <td><a className="fm-origin-link">{op.origin}</a></td>
+                      <td><span className="fm-origin-link">{op.origin}</span></td>
                       <td><button className="fm-table-action"><Eye size={12} strokeWidth={1.75} style={{ display:'inline',verticalAlign:'middle',marginRight:4 }} />{t('fm.action.open')}</button></td>
                     </tr>
                   ))}
@@ -338,7 +341,7 @@ export default function FmModel349Page({ decl, onBack, onStatusChange }) {
 
         {activeTab !== 'operators' && (
           <div style={{ padding: '32px 0', textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>
-            {TABS.find(t => t.id === activeTab)?.label} — contenido disponible próximamente.
+            {t('fm.m349.coming_soon', { tab: TABS.find(tab => tab.id === activeTab)?.label ?? '' })}
           </div>
         )}
       </div>

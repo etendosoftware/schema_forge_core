@@ -37,6 +37,10 @@ test.describe('Purchase Order - Partner Address Bug', () => {
     await bpField.click();
     await clickFirstStableOption(page, 'option-businessPartner-');
 
+    // Confirm the BP was actually registered — if the chip never appears the
+    // callout was never triggered and the rest of the test is meaningless.
+    await expect(page.getByTestId('field-businessPartner-chip')).toBeVisible({ timeout: 8_000 });
+
     // After BP selection, CreatableSearchSelect either:
     //   a) auto-selects the first BP location (FIC parity), which swaps the
     //      input for a Figma chip carrying the address label, or
@@ -44,22 +48,14 @@ test.describe('Purchase Order - Partner Address Bug', () => {
     // Both paths prove the bug ("empty dropdown") is fixed: in (a) an option
     // was picked, in (b) options are listable. Wait for either state.
     await waitForPartnerAddressMode(partnerAddressInput, partnerAddressChip);
-    await page.waitForTimeout(300);
 
-    if (await partnerAddressChip.isVisible().catch(() => false)) {
+    if (await partnerAddressChip.isVisible()) {
       // Auto-selected an address → the chip label is the proof that options loaded.
       await expect(partnerAddressChip).toHaveText(/\S/);
     } else {
       // Manual mode → open the dropdown and assert at least one option.
-      try {
-        await openSelectorOptions(page, 'partnerAddress');
-      } catch (error) {
-        if (await partnerAddressChip.isVisible().catch(() => false)) {
-          await expect(partnerAddressChip).toHaveText(/\S/);
-          return;
-        }
-        throw error;
-      }
+      await expect(partnerAddressInput).toBeEnabled();
+      await partnerAddressInput.click();
       await expect(page.locator('[data-testid^="option-partnerAddress-"]').first()).toBeVisible({ timeout: 5_000 });
     }
   });
@@ -68,6 +64,10 @@ test.describe('Purchase Order - Partner Address Bug', () => {
 async function waitForPartnerAddressMode(input, chip) {
   let lastMode = 'pending';
 
+  // Use short intervals early (callout usually resolves in <1s) and back off
+  // gradually. 15s total covers slow environments. The 'pending' state is
+  // normal while the callout is in-flight — the field may be invisible/disabled
+  // during that window, which must not be counted as a failure.
   await expect.poll(async () => {
     if (await chip.isVisible().catch(() => false)) {
       lastMode = 'chip';
@@ -78,7 +78,7 @@ async function waitForPartnerAddressMode(input, chip) {
       return lastMode;
     }
     return 'pending';
-  }, { timeout: 10_000 }).not.toBe('pending');
+  }, { timeout: 15_000, intervals: [200, 200, 500, 1_000] }).not.toBe('pending');
 
   return lastMode;
 }

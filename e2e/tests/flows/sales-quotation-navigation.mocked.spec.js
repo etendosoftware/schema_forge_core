@@ -162,7 +162,10 @@ test.describe('Sales Quotation — navigation without refresh (ETP-4000)', () =>
     const firstRow = page.locator('tbody tr').filter({ hasText: 'QUOT-001' }).first();
     await expect(firstRow).toBeVisible({ timeout: 10_000 });
 
-    await firstRow.click();
+    // Row click opens the preview panel (documentPreview: true). Navigate to
+    // the detail via the Edit button in the row quick-action overlay instead.
+    await firstRow.hover();
+    await firstRow.getByTestId('row-quick-action-edit').click();
 
     // URL must transition AND detail must render — no reload allowed.
     await page.waitForURL(/\/sales-quotation\/quot-001/, { timeout: 10_000 });
@@ -196,8 +199,10 @@ test.describe('Sales Quotation — navigation without refresh (ETP-4000)', () =>
     const firstRow = page.locator('tbody tr').filter({ hasText: 'QUOT-001' }).first();
     await expect(firstRow).toBeVisible({ timeout: 10_000 });
 
-    // 2. Click into the first detail.
-    await firstRow.click();
+    // 2. Navigate to the first detail via the Edit button in the quick-action
+    //    overlay (row click opens the preview panel when documentPreview: true).
+    await firstRow.hover();
+    await firstRow.getByTestId('row-quick-action-edit').click();
     await page.waitForURL(/\/sales-quotation\/quot-001/, { timeout: 10_000 });
     await expect(page.getByTestId('field-documentNo')).toBeVisible({ timeout: 10_000 });
 
@@ -207,10 +212,11 @@ test.describe('Sales Quotation — navigation without refresh (ETP-4000)', () =>
     const secondRow = page.locator('tbody tr').filter({ hasText: 'QUOT-002' }).first();
     await expect(secondRow).toBeVisible({ timeout: 10_000 });
 
-    // 4. Click a DIFFERENT row — this is the exact case that broke before the
-    //    fix (list → detail transition after another navigation, without a
+    // 4. Navigate to a DIFFERENT row — this is the exact case that broke before
+    //    the fix (list → detail transition after another navigation, without a
     //    hard reload).
-    await secondRow.click();
+    await secondRow.hover();
+    await secondRow.getByTestId('row-quick-action-edit').click();
 
     await page.waitForURL(/\/sales-quotation\/quot-002/, { timeout: 10_000 });
     await expect(page).toHaveURL(/\/sales-quotation\/quot-002/);

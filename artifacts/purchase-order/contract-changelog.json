@@ -1301,6 +1301,7 @@
     "to": "0.20.0",
     "level": "additive",
     "reasons": [
+      "Field \"tax\" property \"inputMode\" changed from \"selector\" to \"search\" in frontend (additive)",
       "Field \"orderedQuantity\" property \"min\" changed from \"undefined\" to \"0\" in frontend (additive)",
       "Field \"listPrice\" property \"min\" changed from \"undefined\" to \"0\" in frontend (additive)",
       "Field \"discount\" property \"min\" changed from \"undefined\" to \"0\" in frontend (additive)"
@@ -1313,6 +1314,7 @@
     "to": "0.20.0",
     "level": "additive",
     "reasons": [
+      "Field \"tax\" property \"inputMode\" changed from \"search\" to \"selector\" in frontend (additive)",
       "Field \"orderedQuantity\" property \"min\" changed from \"undefined\" to \"0\" in frontend (additive)",
       "Field \"listPrice\" property \"min\" changed from \"undefined\" to \"0\" in frontend (additive)",
       "Field \"discount\" property \"min\" changed from \"undefined\" to \"0\" in frontend (additive)"
