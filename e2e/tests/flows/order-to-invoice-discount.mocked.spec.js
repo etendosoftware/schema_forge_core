@@ -297,6 +297,17 @@ function parseAmount(text) {
 }
 
 /**
+ * Read a totals-panel row value as a number. Returns 0 when the element is
+ * missing or has no parseable text, so expect.poll can keep retrying.
+ */
+async function readRow(page, testId) {
+  const el = page.getByTestId(testId);
+  const text = (await el.textContent().catch(() => '')) || '';
+  const n = parseAmount(text);
+  return isNaN(n) ? 0 : n;
+}
+
+/**
  * Navigate directly to the mock invoice detail page so the totals panel renders.
  * Simpler and more stable than the full order→confirm→invoice journey.
  * Waits until the totals panel has loaded the lines data (total > 0 or negative).
@@ -374,43 +385,33 @@ async function runOrderToInvoiceJourney(page) {
 
 test.describe('Sales Order → Sales Invoice — total discount (ETP-4015)', () => {
   test('invoice panel shows Total = 45.98 EUR (no double tax, no lost discount)', async ({ page }) => {
-    // Navigate directly to the mock invoice page so the test is fast and stable.
-    // The full order→confirm→invoice journey is intentionally not exercised here
-    // because the panel computation is what we want to lock, not the navigation.
     await login(page);
     await openInvoicePage(page);
 
-    const total = parseAmount(
-      (await page.getByTestId('totals-row-total-value').textContent()) || '',
-    );
-    expect(total).toBeCloseTo(45.98, 2);
-    // Forbid the two regression values explicitly.
+    // Poll the assertions so transient React re-renders don't cause false failures.
+    await expect.poll(() => readRow(page, 'totals-row-total-value'),
+      { timeout: 6_000 }).toBeCloseTo(45.98, 2);
+    await expect.poll(() => readRow(page, 'totals-row-subtotal-value'),
+      { timeout: 6_000 }).toBeCloseTo(41.80, 2);
+    await expect.poll(() => readRow(page, 'totals-row-tax-value'),
+      { timeout: 6_000 }).toBeCloseTo(4.18, 2);
+
+    // Forbid the two regression values.
+    const total = await readRow(page, 'totals-row-total-value');
     expect(total).not.toBeCloseTo(48.40, 2); // discount lost
     expect(total).not.toBeCloseTo(50.16, 2); // original double-tax bug
-
-    const subtotal = parseAmount(
-      (await page.getByTestId('totals-row-subtotal-value').textContent()) || '',
-    );
-    const tax = parseAmount(
-      (await page.getByTestId('totals-row-tax-value').textContent()) || '',
-    );
-    expect(subtotal).toBeCloseTo(41.80, 2);
-    expect(tax).toBeCloseTo(4.18, 2);
   });
 
   test('DOM invariant: displayed subtotal + tax === displayed total on the new invoice', async ({ page }) => {
     await login(page);
     await openInvoicePage(page);
 
-    const subtotal = parseAmount(
-      (await page.getByTestId('totals-row-subtotal-value').textContent()) || '',
-    );
-    const tax = parseAmount(
-      (await page.getByTestId('totals-row-tax-value').textContent()) || '',
-    );
-    const total = parseAmount(
-      (await page.getByTestId('totals-row-total-value').textContent()) || '',
-    );
+    // Wait for stable values, then verify the invariant in a single snapshot.
+    await expect.poll(() => readRow(page, 'totals-row-total-value'),
+      { timeout: 6_000 }).toBeGreaterThan(0);
+    const subtotal = await readRow(page, 'totals-row-subtotal-value');
+    const tax      = await readRow(page, 'totals-row-tax-value');
+    const total    = await readRow(page, 'totals-row-total-value');
 
     const sum = Math.round((subtotal + tax) * 100) / 100;
     const rounded = Math.round(total * 100) / 100;
@@ -429,27 +430,21 @@ test.describe('Sales Order → Sales Invoice — total discount (ETP-4015)', () 
     // (processed: true) immediately on first GET.
     await openInvoicePage(page, { value: true });
 
-    await page.goto(`/sales-invoice/${INVOICE_ID}`);
-    await expect(page.getByTestId('totals-row-total-value')).toBeVisible({ timeout: 10_000 });
+    // Poll — same strategy as other tests: wait for the values to stabilise.
+    await expect.poll(() => readRow(page, 'totals-row-total-value'),
+      { timeout: 6_000 }).toBeCloseTo(45.98, 2);
+    await expect.poll(() => readRow(page, 'totals-row-subtotal-value'),
+      { timeout: 6_000 }).toBeCloseTo(41.80, 2);
+    await expect.poll(() => readRow(page, 'totals-row-tax-value'),
+      { timeout: 6_000 }).toBeCloseTo(4.18, 2);
 
-    const subtotal = parseAmount(
-      (await page.getByTestId('totals-row-subtotal-value').textContent()) || '',
-    );
-    const tax = parseAmount(
-      (await page.getByTestId('totals-row-tax-value').textContent()) || '',
-    );
-    const total = parseAmount(
-      (await page.getByTestId('totals-row-total-value').textContent()) || '',
-    );
-
-    // Regression guards — must NOT be the double-discount value (39.71)
-    // nor the no-discount value (48.40). Must be the correct AEAT total.
+    // Regression guards — must NOT be the double-discount value (39.71).
+    const subtotal = await readRow(page, 'totals-row-subtotal-value');
+    const tax      = await readRow(page, 'totals-row-tax-value');
+    const total    = await readRow(page, 'totals-row-total-value');
     expect(subtotal).not.toBeCloseTo(39.71, 2);
     expect(total).not.toBeCloseTo(39.71 + 3.97, 2);  // 43.68 (double-discount result)
     expect(total).not.toBeCloseTo(48.40, 2);          // 48.40 (discount lost)
-    expect(subtotal).toBeCloseTo(41.80, 2);
-    expect(tax).toBeCloseTo(4.18, 2);
-    expect(total).toBeCloseTo(45.98, 2);
 
     // AEAT invariant: Subtotal + Tax === Total
     const sum = Math.round((subtotal + tax) * 100) / 100;
