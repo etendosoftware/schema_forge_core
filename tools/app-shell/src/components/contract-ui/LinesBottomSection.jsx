@@ -154,15 +154,15 @@ export default function LinesBottomSection({
                 currency={currency}
                 readOnly={isReadOnly}
                 totalDiscountPct={
-                  // Do not re-apply the total-discount factor when:
-                  //  a) the invoice/order is already processed (CO) — the discount
-                  //     is reflected in the DB totals, or
-                  //  b) the lines already contain the ETGO_DTO materialised discount
-                  //     line — applying the factor again would double-count it.
-                  (data?.processed ||
-                    (lines ?? []).some(
-                      l => l.product === 'E4BC94E71D664E73A066DAF78BF39DB3',
-                    ))
+                  // Skip the client-side factor only when the ETGO_DTO discount
+                  // line is already in the line set — otherwise we'd double-count
+                  // the discount. We do NOT key off `data.processed` because a
+                  // processed document without the materialised line (e.g. a
+                  // quotation that moved to UE before the discount sync ran)
+                  // would otherwise lose the visible discount entirely.
+                  (lines ?? []).some(
+                    l => l.product === 'E4BC94E71D664E73A066DAF78BF39DB3',
+                  )
                     ? 0
                     : Number(data?.[totalsField] ?? totalDiscountPct ?? 0)
                 }
