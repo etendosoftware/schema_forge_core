@@ -43,8 +43,13 @@ describe('SendDocumentModal', () => {
     assert.match(src, /\$\{documentType\}.*#\$\{documentNo\}/);
   });
 
-  it('disables Send button when email is invalid or sending', () => {
-    assert.match(src, /!isValidEmail\(to\)\s*\|\|\s*sending/);
+  it('disables Send button when documentId is missing or sending', () => {
+    assert.match(src, /!documentId\s*\|\|\s*sending/);
+  });
+
+  it('sends document email through the email contracts endpoint', () => {
+    assert.match(src, /email-contracts\/\$\{contractName\}\/send/);
+    assert.match(src, /buildEmailContractCommand/);
   });
 
   it('uses toast for send confirmation', () => {
@@ -60,15 +65,28 @@ describe('SendDocumentModal', () => {
     assert.match(src, /\$\{windowName\}-\$\{documentNo\}\.pdf/);
   });
 
-  // ── ETP-4003: isValidEmail uses indexOf, not regex ─────────────────────────
+  // ── ETP-4089: recipient handling is contract-driven ───────────────────────
 
-  it('isValidEmail does NOT use a regex for email validation', () => {
-    // The function must use indexOf-based logic, never a regex literal like /^.*@.*$/
-    assert.doesNotMatch(src, /\/\^.*@.*\$\//);
+  it('does not keep local email validation for contract sends', () => {
+    assert.doesNotMatch(src, /function\s+isValidEmail/);
+    assert.doesNotMatch(src, /sendModalNoEmail/);
   });
 
-  it('isValidEmail uses indexOf to find the @ character', () => {
-    assert.match(src, /indexOf\s*\(\s*'@'\s*\)/);
+  it('renders email preview fields as read-only', () => {
+    const emailPanelStart = src.indexOf('function EmailFormPanel');
+    const emailPanelEnd = src.indexOf('async function fetchAndDownloadPdf');
+    const emailPanelSrc = src.slice(emailPanelStart, emailPanelEnd);
+    assert.match(emailPanelSrc, /readOnly/);
+    assert.doesNotMatch(emailPanelSrc, /onChange=/);
+  });
+
+  it('does not send caller-provided provider payload fields', () => {
+    const commandStart = src.indexOf('function buildEmailContractCommand');
+    const commandEnd = src.indexOf('async function readEmailContractResponse');
+    const commandSrc = src.slice(commandStart, commandEnd);
+    assert.doesNotMatch(commandSrc, /\bto\b/);
+    assert.doesNotMatch(commandSrc, /\btemplate\b/);
+    assert.doesNotMatch(commandSrc, /\bdata\b/);
   });
 
   // ── ETP-4003: EmailFormPanel is module-level ───────────────────────────────
