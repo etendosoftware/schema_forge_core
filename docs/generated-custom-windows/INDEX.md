@@ -76,6 +76,14 @@ This folder is the entry point for documentation that describes how generated an
 | [time-tracking.md](time-tracking.md) | Hidden route-only time-entry window |
 | [document.md](document.md) | Hidden route-only document metadata window |
 
+## Reports
+
+| File | Description |
+|------|-------------|
+| [balance-sheet.md](balance-sheet.md) | Contract-driven financial report — point-in-time assets, liabilities, and owner equity by accounting schema and year |
+| [report-journal-entries.md](report-journal-entries.md) | Contract-driven journal book — entries grouped with debit/credit lines for a date range with dimension filters |
+| [report-trial-balance.md](report-trial-balance.md) | Contract-driven trial balance — opening/period/closing balances per account with General Ledger drill-down |
+
 ## Settings
 
 | File | Description |

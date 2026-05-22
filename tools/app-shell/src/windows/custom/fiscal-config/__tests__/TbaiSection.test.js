@@ -62,8 +62,9 @@ describe('TbaiSection — PUT request', () => {
     assert.match(src, /TBAI_ENTITY/);
   });
 
-  it('passes Authorization Bearer token', () => {
-    assert.match(src, /Authorization.*Bearer/);
+  it('uses useApiFetch for authenticated requests', () => {
+    assert.match(src, /useApiFetch/);
+    assert.match(src, /apiFetch/);
   });
 
   it('serializes boolean fields before sending', () => {

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 import CertSection from './CertSection.jsx';
 import {
   buildVerifactuUpdatePayload,
@@ -20,17 +21,9 @@ import {
 // Confirmed from artifacts/verifactu-config/contract.json → backendContract.window.primaryEntity
 const VERIFACTU_ENTITY = 'cabeceraDeConfiguraciónVerifactu';
 
-async function putVerifactu(base, id, body, token) {
-  const res = await fetch(`${base}/verifactu-config/${VERIFACTU_ENTITY}/${id}`, {
-    method: 'PUT',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(await res.text().catch(() => res.statusText));
-}
-
-const VerifactuSection = forwardRef(function VerifactuSection({ record, token, apiBaseUrl, orgId, onSave, hideSave }, ref) {
+const VerifactuSection = forwardRef(function VerifactuSection({ record, apiBaseUrl, orgId, onSave, hideSave }, ref) {
   const ui = useUI();
+  const apiFetch = useApiFetch(neoBase(apiBaseUrl));
   const isLocked = isEtendoTrue(record?.isReady);
 
   const [form, setForm] = useState({
@@ -60,7 +53,12 @@ const VerifactuSection = forwardRef(function VerifactuSection({ record, token, a
     setSaving(true);
     setError(null);
     try {
-      await putVerifactu(neoBase(apiBaseUrl), recordId, buildVerifactuUpdatePayload(form), token);
+      const res = await apiFetch(`/verifactu-config/${VERIFACTU_ENTITY}/${recordId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildVerifactuUpdatePayload(form)),
+      });
+      if (!res.ok) throw new Error(await res.text().catch(() => res.statusText));
       onSave();
     } catch (err) {
       setError(err.message);
@@ -131,7 +129,7 @@ const VerifactuSection = forwardRef(function VerifactuSection({ record, token, a
         <Input value={record?.inVfactuSystem ?? ''} disabled />
       </div>
 
-      <CertSection context="verifactu" orgId={orgId} token={token} apiBaseUrl={apiBaseUrl} />
+      <CertSection context="verifactu" orgId={orgId} apiBaseUrl={apiBaseUrl} />
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 

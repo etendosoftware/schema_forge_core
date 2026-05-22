@@ -10,16 +10,14 @@
     "hidePrint": true,
     "customComponents": {
       "topbarRight": "GoodsShipmentActions",
+      "topbarExtra": "GoodsShipmentBillingBadge",
       "bulkActions": "BulkInvoiceFromShipment",
       "bottomSection": "GoodsShipmentBottomPanel"
     },
     "linesLayout": "inlineEditable",
     "menuActions": [],
     "processOverrides": {
-      "documentAction": {
-        "label": "Complete",
-        "displayLogicRaw": "@documentStatus@='DR'"
-      }
+      "documentAction": { "exclude": true }
     },
     "noHeaderBorder": true,
     "dateFilterKey": "movementDate"
@@ -27,6 +25,7 @@
   "entities": {
     "header": {
       "name": "goodsShipment",
+      "javaQualifier": "goodsShipmentHeaderHandler",
       "draftMode": {
         "enabled": false
       },
@@ -36,7 +35,8 @@
           "grid": true,
           "searchable": true,
           "inputMode": "text",
-          "section": "principal"
+          "section": "principal",
+          "seq": 20
         },
         "businessPartner": {
           "grid": true,
@@ -44,19 +44,22 @@
           "reference": "BusinessPartner",
           "inputMode": "search",
           "readOnlyLogic": "@Processed@='Y'",
-          "section": "principal"
+          "section": "principal",
+          "seq": 10
         },
         "movementDate": {
           "grid": true,
           "searchable": true,
           "inputMode": "date",
-          "section": "principal"
+          "section": "principal",
+          "seq": 30
         },
         "warehouse": {
           "grid": true,
           "searchable": true,
           "inputMode": "search",
-          "section": "principal"
+          "section": "principal",
+          "seq": 40
         },
         "documentStatus": {
           "visibility": "readOnly",
@@ -72,7 +75,8 @@
             "filterKey": "C_BPartner_ID"
           },
           "grid": true,
-          "section": "principal"
+          "section": "principal",
+          "seq": 50
         },
         "accountingDate": {
           "visibility": "system"
@@ -165,7 +169,9 @@
           "visibility": "discarded"
         },
         "invoiceStatus": {
-          "visibility": "discarded"
+          "visibility": "readOnly",
+          "grid": false,
+          "form": false
         },
         "salesOrder": {
           "visibility": "system"
@@ -184,13 +190,9 @@
         },
         "completelyInvoiced": {
           "visibility": "readOnly",
-          "grid": true,
-          "name": "invoiced",
-          "badge": true,
-          "badgeLabels": {
-            "true": "Invoiced",
-            "false": "Pending"
-          }
+          "grid": false,
+          "form": false,
+          "name": "invoiced"
         },
         "invoicefromshipment": {
           "visibility": "discarded"
@@ -202,6 +204,7 @@
     },
     "lines": {
       "name": "goodsShipmentLine",
+      "javaQualifier": "goodsShipmentLineHandler",
       "fields": {
         "lineNo": {
           "visibility": "system"
@@ -209,14 +212,19 @@
         "product": {
           "grid": true,
           "searchable": true,
+          "lookup": true,
+          "required": true,
           "inputMode": "search",
-          "section": "principal"
+          "section": "principal",
+          "seq": 10
         },
         "movementQuantity": {
           "grid": true,
+          "required": true,
           "inputMode": "number",
           "section": "principal",
-          "defaultValue": "1"
+          "defaultValue": "1",
+          "seq": 20
         },
         "uOM": {
           "visibility": "system"
@@ -224,7 +232,8 @@
         "orderQuantity": {
           "visibility": "readOnly",
           "grid": true,
-          "section": "principal"
+          "section": "principal",
+          "seq": 30
         },
         "storageBin": {
           "visibility": "discarded"

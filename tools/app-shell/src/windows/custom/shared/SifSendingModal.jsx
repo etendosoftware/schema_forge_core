@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useUI } from '@/i18n';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 
-async function callProcess(base, specName, recordId, headers, columnName) {
-  const res = await fetch(
-    `${base}/${specName}/header/${recordId}/action/${columnName}`,
-    { method: 'POST', headers, body: '{}' },
+async function callProcess(apiFetch, specName, recordId, columnName) {
+  const res = await apiFetch(
+    `/${specName}/header/${recordId}/action/${columnName}`,
+    { method: 'POST', body: '{}' },
   );
   if (!res.ok) {
     const json = await res.json().catch(() => null);
@@ -18,13 +19,13 @@ export default function SifSendingModal({
   base,
   specName,
   recordId,
-  headers,
   onClose,
   onAfterSend,
   zIndex = 50,
   titleId = 'send-to-sif-title',
 }) {
   const ui = useUI();
+  const apiFetch = useApiFetch(base);
   const [phase, setPhase] = useState('confirm');
   const [results, setResults] = useState({});
   const [progress, setProgress] = useState(0);
@@ -51,7 +52,7 @@ export default function SifSendingModal({
 
     if (pendingTargets.sendSii) {
       try {
-        await callProcess(base, specName, recordId, headers, 'Em_aeatsii_send');
+        await callProcess(apiFetch, specName, recordId, 'Em_aeatsii_send');
         next.sii = { ok: true };
       } catch (err) {
         next.sii = { ok: false, error: err.message };
@@ -60,7 +61,7 @@ export default function SifSendingModal({
 
     if (pendingTargets.sendTbai) {
       try {
-        await callProcess(base, specName, recordId, headers, 'Em_Tbai_Xmlgenerator');
+        await callProcess(apiFetch, specName, recordId, 'Em_Tbai_Xmlgenerator');
         next.tbai = { ok: true };
       } catch (err) {
         next.tbai = { ok: false, error: err.message };

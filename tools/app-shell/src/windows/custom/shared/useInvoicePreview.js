@@ -3,6 +3,7 @@ import { useUI } from '@/i18n';
 import { useInvoicePdf } from './useInvoicePdf.js';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
 import { useAuth } from '@/auth/AuthContext.jsx';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 import { getPendingSifTargets, getSifBodyKey } from './sifSending.js';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 
@@ -15,17 +16,19 @@ import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
  * Drop zone state has been removed — GenericPreviewModal manages file persistence
  * via the attachmentConfig prop and usePreviewAttachment internally.
  */
-export function useInvoicePreview({ invoice, token, apiBaseUrl, specName = 'purchase-invoice', onInvoiceUpdated = null }) {
+export function useInvoicePreview({ invoice, apiBaseUrl, specName = 'purchase-invoice', onInvoiceUpdated = null }) {
   const ui = useUI();
   const [invoiceData, setInvoiceData] = useState(invoice);
   const [showSifModal, setShowSifModal] = useState(false);
   const [sifPhase, setSifPhase] = useState('confirm');
   const [sifResults, setSifResults] = useState({});
-  const { selectedOrg } = useAuth();
+  const { token, selectedOrg } = useAuth();
   const orgId = selectedOrg?.id ?? null;
-  const { profile } = useFiscalConfig(orgId, token, apiBaseUrl);
-  const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
-  const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
+  const { profile } = useFiscalConfig(orgId, apiBaseUrl);
+  const neoBaseUrl = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
+  const apiFetch = useApiFetch(apiBaseUrl);
+  const baseApiFetch = useApiFetch(neoBaseUrl);
+  const jsonHeaders = useMemo(() => ({ 'Content-Type': 'application/json' }), []);
   const updateEventName = `${specName}:invoice-updated`;
 
   const isSalesInvoice = specName === 'sales-invoice';
@@ -45,9 +48,9 @@ export function useInvoicePreview({ invoice, token, apiBaseUrl, specName = 'purc
   useEffect(() => { setInvoiceData(invoice); }, [invoice]);
 
   const refetchInvoice = useCallback(async () => {
-    if (!invoice?.id || !apiBaseUrl || !token) return null;
+    if (!invoice?.id || !apiBaseUrl || !apiFetch) return null;
     try {
-      const res = await fetch(`${apiBaseUrl}/header/${invoice.id}`, { headers });
+      const res = await apiFetch(`/header/${invoice.id}`);
       if (!res.ok) return null;
       const json = await res.json();
       const candidate = json?.response?.data?.[0] ?? json?.data?.[0] ?? null;
@@ -63,7 +66,7 @@ export function useInvoicePreview({ invoice, token, apiBaseUrl, specName = 'purc
     } catch {
       return null;
     }
-  }, [apiBaseUrl, headers, invoice?.id, onInvoiceUpdated, token, updateEventName]);
+  }, [apiBaseUrl, apiFetch, invoice?.id, onInvoiceUpdated, updateEventName]);
 
   const openEmailModal = useCallback(() => setShowSendModal(true), []);
 
@@ -76,15 +79,15 @@ export function useInvoicePreview({ invoice, token, apiBaseUrl, specName = 'purc
   }, []);
 
   const fetchPayments = useCallback(() => {
-    if (!invoiceData?.id || !token) return;
+    if (!invoiceData?.id || !apiFetch) return;
     setLoadingPayments(true);
     Promise.all([
-      fetch(`${apiBaseUrl}/paymentPlan?parentId=${invoiceData.id}`, { headers })
+      apiFetch(`/paymentPlan?parentId=${invoiceData.id}`)
         .then((r) => (r.ok ? r.json() : {}))
         .then((d) => d?.response?.data ?? d?.data ?? [])
         .catch(() => []),
-      fetch(`${apiBaseUrl}/header/${invoiceData.id}/action/invoicePayments`, {
-        method: 'POST', headers, body: '{}',
+      apiFetch(`/header/${invoiceData.id}/action/invoicePayments`, {
+        method: 'POST', headers: jsonHeaders, body: '{}',
       })
         .then((r) => (r.ok ? r.json() : {}))
         .then((d) => d?.response?.data ?? [])
@@ -93,7 +96,7 @@ export function useInvoicePreview({ invoice, token, apiBaseUrl, specName = 'purc
       .then(([sched, pays]) => { setInstallments(sched); setPayments(pays); })
       .catch(() => { setInstallments([]); setPayments([]); })
       .finally(() => setLoadingPayments(false));
-  }, [invoiceData?.id, apiBaseUrl, headers, token]);
+  }, [invoiceData?.id, apiFetch, jsonHeaders]);
 
   useEffect(() => { fetchPayments(); }, [fetchPayments]);
 
@@ -103,16 +106,16 @@ export function useInvoicePreview({ invoice, token, apiBaseUrl, specName = 'purc
   const sifBodyKey = getSifBodyKey(pendingTargets);
 
   const callSifProcess = useCallback(async (columnName) => {
-    const res = await fetch(
-      `${base}/${specName}/header/${invoiceData?.id}/action/${columnName}`,
-      { method: 'POST', headers, body: '{}' },
+    const res = await baseApiFetch(
+      `/${specName}/header/${invoiceData?.id}/action/${columnName}`,
+      { method: 'POST', headers: jsonHeaders, body: '{}' },
     );
     if (!res.ok) {
       const json = await res.json().catch(() => null);
       throw new Error(json?.response?.message || json?.message || `HTTP ${res.status}`);
     }
     return res.json().catch(() => null);
-  }, [base, invoiceData?.id, headers, specName]);
+  }, [baseApiFetch, invoiceData?.id, jsonHeaders, specName]);
 
   const closeSifModal = useCallback(() => {
     setShowSifModal(false);

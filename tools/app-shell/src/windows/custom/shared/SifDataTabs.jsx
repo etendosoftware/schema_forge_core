@@ -77,7 +77,7 @@ function VerifactuBadge({ status, sent, ui }) {
   );
 }
 
-export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
+export default function SifDataTabs({ data, recordId, apiBaseUrl }) {
   const {
     ui,
     siiTypeField,
@@ -94,7 +94,7 @@ export default function SifDataTabs({ data, recordId, token, apiBaseUrl }) {
     setVal,
     handleBlur,
     handleCheckboxChange,
-  } = useSifFieldPatcher({ data, recordId, token, apiBaseUrl });
+  } = useSifFieldPatcher({ data, recordId, apiBaseUrl });
 
   const [activeTab, setActiveTab] = useState('sii');
 

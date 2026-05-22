@@ -13,7 +13,7 @@ Use this window to register supplier invoices, keep the payable document aligned
 - Understand the payable relationship to the originating purchase order, related goods receipts, and downstream payment-out records.
 - Open payment detail flows when the invoice is completed and still has an amount pending.
 - Reactivate a completed invoice back to draft from the detail view kebab menu when the invoice status is `CO`.
-- Complete multiple draft invoices or reactivate multiple completed invoices at once from the list selection bar using the bulk action.
+- Complete multiple draft invoices or reactivate multiple completed invoices at once from the list selection bar using the bulk action, labeled "Confirmar" (i18n key `confirmBulk`) for draft selections.
 
 ## Interaction model
 
@@ -21,7 +21,7 @@ Use this window to register supplier invoices, keep the payable document aligned
 - Visibility: visible from the Purchases menu.
 - Implementation type: custom window override registered in `tools/app-shell/src/windows/registry.js`, combining generated header/detail scaffolding with custom list preview, topbar, line table, bottom panel, and related-documents behavior.
 - Window shape: master-child. The master record is the invoice header and the main child dataset is invoice lines; the detail page also surfaces a custom related-documents tab instead of relying on the generated payment secondary tabs.
-- Lines tab layout: this window uses `window.linesLayout = "inlineEditable"`. Rows render at 40 px with pencil and trash hover-action icons on the right; clicking pencil flips the row into inline edit; trash removes the row after confirmation. The add-line button, related-documents panel, notes panel, and totals panel are unchanged from the classic layout. See `docs/ui-customization.md` section 13 for the full reference.
+- Lines tab layout: this window uses `window.linesLayout = "inlineEditable"`. Rows render at 40 px with pencil and trash hover-action icons on the right; clicking pencil flips the row into inline edit; trash removes the row after confirmation. FK fields in line rows (product, tax, account, project, cost center, asset, and dimension fields) use `InlineSearchCombo`: a text input with server-side search that lets the user filter by typing — for example, typing "IVA" filters all matching tax rates. The add-line button, related-documents panel, notes panel, and totals panel are unchanged from the classic layout. See `docs/ui-customization.md` section 13 for the full reference.
 - List interaction: the list uses a custom `PurchaseInvoiceHeaderTable` component (`tools/app-shell/src/windows/custom/purchase-invoice/PurchaseInvoiceHeaderTable.jsx`). The visible columns, in order, are: Invoice Date (no dot indicator), Document No. (`POReference`, relabeled through `window.labelOverrides`), Due Date (4-state dot computed from the row's `outstandingAmount` and shown as "—" when no due date exists on the row). The four states use the Etendo Figma tokens: **paid** (`outstandingAmount ≤ 0`, dot `green-600 #26A95F`) wins over any date-based state, **overdue** (dueDate before today and outstanding still pending, dot `red-500 #F53D6B` with the date text reinforced in `red-700 #D50B3E`), **soon** (dueDate within the next 7 days with outstanding pending, dot `yellow-600 #FAAF00`), and **ok** (anything further out, dot `gray-400 #8A8AA3`). Date-only invoice and due-date values are normalized as local calendar dates before rendering so same-day invoices do not shift backward because of timezone conversion, and the final rendered date follows the active app locale just like `Invoice Date`. Business Partner, Document Status, Total Gross Amount, **Pending Payment** (the AD `OutstandingAmt` column relabeled via `window.labelOverrides` from "Total Outstanding" to "Pending Payment" / "Pendiente de pago" so the grid reads in payment terms rather than ledger terms), and **Delivery Status** (a percent progress bar driven by the virtual AD column `em_etgo_delivery_status` on `c_invoice` — calculated server-side from `m_matchinv` + `m_matchsi` quantity-weighted against `qtyinvoiced`; 0% when no matching exists yet, 100% when fully matched, intermediate when partial) complete the list. Selecting a row opens a preview modal instead of navigating directly to the detail route.
 - Detail interaction: the record page uses the generated header page with a custom lines table, a custom topbar, summary amounts, notes editing, footer totals, and related-document chips. The principal header section shows `POReference` as `Document No.` / `Nº documento`, placed right after `Business Partner`, while the internal AD `documentNo` field stays hidden in this custom workflow. `POReference` remains editable after completion here, matching the current Classic metadata for this field.
 - An **Attachments** tab is available in the detail tab strip, allowing files to be attached to the current record.
@@ -61,6 +61,7 @@ Use this window to register supplier invoices, keep the payable document aligned
 ## Manual verification
 
 1. Open `/purchase-invoice` and confirm the list shows: Invoice Date (no dot), Document No. (the `POReference` value relabeled through `labelOverrides`), Due Date (green dot for `outstandingAmount ≤ 0` regardless of date, red dot + red date text for past-due rows that still have outstanding balance, yellow dot for rows due within the next 7 days with outstanding balance, gray dot for everything else, "—" when no due date exists), Business Partner, Document Status, Total Gross Amount, and Pending Payment in that exact column order. Pay particular attention to invoices that are past their due date but already paid — they must render with the green dot, not the red one. Also confirm date-only values keep their original calendar day when rendered.
+15. Open a completed purchase invoice and verify that **Contacto** (`businessPartner`), **Dirección** (`partnerAddress`), **Método de pago** (`paymentMethod`), **Condiciones de pago** (`paymentTerms`), and **Tarifa** (`priceList`) fields are all disabled (read-only). Confirm that **Nº documento** (`orderReference`) remains editable.
 2. Click a list row and confirm the preview modal opens instead of immediate navigation.
 3. In the preview modal, verify the General tab shows total, due/payable state, and payment history, while Messages and History remain placeholder states.
 4. Open `/purchase-invoice?filter=overdue` and confirm the quick filter keeps invoices with an outstanding amount.
@@ -70,14 +71,14 @@ Use this window to register supplier invoices, keep the payable document aligned
 8. Under an org configured for `sii`, `sii-navarra`, `tbai`, or `sii+tbai`, open a completed purchase invoice and confirm `Enviar a SIF` appears in both the detail topbar and the preview modal only for the purchase-side target defined by the fiscal matrix: SII for `sii` / `sii-navarra`, TicketBAI for `tbai`, and SII only for `sii+tbai`. Trigger it and verify the confirmation text matches the pending target and successful sends refresh the invoice state.
 9. From the detail footer or related-documents tab, confirm links are available to the source purchase order, related goods receipts, and downstream payment-out records when those relationships exist. The purchase order chip must show the formatted label (`Order #<documentNo>`), the grand total with currency symbol, and the document status pill — not the raw `_identifier` string (`documentNo - date - amount`).
 10. Open a completed purchase invoice detail and confirm the kebab menu exposes only the `Reactivate` action (no `Cancel` — cancellation is handled by the dedicated header button). Trigger `Reactivate` and verify the document returns to draft status and a `sonner` toast notification appears with the message `Document reactivated` / `Documento reactivado` (i18n key `reactivated`).
-11. From the list, select multiple draft invoices and confirm the bulk-complete action is available; then select multiple completed invoices and confirm the bulk-reactivate action is available. Verify each produces the expected status transition and a result toast.
+11. From the list, select multiple draft invoices and confirm the bulk action bar shows a `Confirmar (N)` button; then select multiple completed invoices and confirm the bulk-reactivate action is available. Verify each produces the expected status transition and a result toast.
 12. Open an existing draft invoice without touching any field and confirm the "Save Draft" button is **disabled**. Change any header field and confirm it becomes enabled. Save and confirm it disables again. Revert the changed field to its original value without saving and confirm the button disables once more. Add a line: once the add-row is submitted, the button should disable again if no header changes remain pending. Confirm the "Confirm" button stays enabled throughout all these states.
 13. Open a purchase invoice detail and confirm the bottom panel shows a `SIF` section below Documents and Notes whenever the fiscal profile enables a purchase-side fiscal target. Verify the visible tabs follow the fiscal matrix: SII for `sii` / `sii-navarra`, TicketBAI for `tbai`, SII only for `sii+tbai`, and Verifactu only for `verifactu`. Confirm the SII badge reflects `aeatsiiEstado`, the TBAI badge reflects `tbaiIssent`, the Verifactu badge reflects `etvfacInvoiceStatus`, and SII inline edits persist through `PATCH /sws/neo/purchase-invoice/header/{id}`.
 14. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 
-- `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the bulk-action component mounted in the purchase-invoice list selection bar, supporting both CO and RE based on selected row statuses. The `Reactivate` kebab menu action in the detail view is the only kebab action declared in `artifacts/purchase-invoice/decisions.json` (`visibleWhenStatus: "CO"`, `documentAction: "RE"`). The `Cancel` action was removed from the kebab because it is already surfaced as a standalone button in the document header.
+- `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the bulk-action component mounted in the purchase-invoice list selection bar, supporting both CO and RE based on selected row statuses; mounted with `labelKey="confirmBulk"` so the button renders as "Confirmar" / "Confirm". The `Reactivate` kebab menu action in the detail view is the only kebab action declared in `artifacts/purchase-invoice/decisions.json` (`visibleWhenStatus: "CO"`, `documentAction: "RE"`). The `Cancel` action was removed from the kebab because it is already surfaced as a standalone button in the document header.
 - `tools/app-shell/src/lib/__tests__/dateOnly.test.js`, `tools/app-shell/src/lib/__tests__/invoiceDueDate.test.js`, and `tools/app-shell/src/windows/custom/purchase-invoice/__tests__/PurchaseInvoiceHeaderTable.test.js` provide source-level and helper-level regression coverage for due-date calendar normalization, locale formatting, max-installment selection, and the paid/overdue/soon/ok state derivation that drives the dot color and the red-text reinforcement on overdue rows in the purchase-invoice list.
 - Shared shell and entity-loading behavior is documented in `docs/generated-custom-windows/app-shell-functional-flows.md`.
 - Contract and UI evidence reviewed for this rewrite:
@@ -98,6 +99,10 @@ Use this window to register supplier invoices, keep the payable document aligned
 - The generated `HeaderPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `C_Invoice` AD table.
 - `e2e/tests/flows/invoice-preview-modal.spec.js` — 5 Playwright tests for `GenericPreviewModal` lifecycle in mock mode: row click opens the modal, X button dismisses it, backdrop click dismisses it, tabs are rendered and switching works, Edit navigates to the detail URL.
 - `e2e/tests/flows/invoice-preview-persistence.spec.js` — 7 Playwright tests for file persistence in mock mode: drop zone visible when no file is cached, GET fires with correct `specName=purchase-invoice` and `recordId`, file upload triggers POST with correct body params, file view is shown when a cached file exists, delete button sends DELETE and restores the drop zone, completed sales invoice fires GET with `specName=sales-invoice`, draft sales invoice does NOT fire GET (storeCondition=false).
+
+## Validation & Error Handling — ETP-4005
+
+See [Shared validation & UX changes — ETP-4005](app-shell-functional-flows.md#shared-validation--ux-changes--etp-4005) for the full list: inline line min-value enforcement, payment modal date validation, single confirmation toast, and callout message sanitization.
 
 ## Pipeline regeneration — ETP-3908
 
@@ -151,3 +156,62 @@ Two new line-import flows are now available on draft purchase invoices when a bu
 - `cli/test/generate-frontend-extra-tabs.test.js` (18 source-reading tests) covers `decisions.json` declarations, generated import and `customTabs` entries, generator source patterns, and wrapper integrity for both purchase-invoice and sales-invoice.
 - `e2e/tests/flows/sif-tab.mocked.spec.js` — mocked Playwright spec verifying the SIF tab button appears in the detail tab strip for both invoice windows.
 - **ETP-3995 — Related Documents tab i18n**: The generated `HeaderPage.jsx` now uses `labelKey: 'relatedDocuments'` instead of the hardcoded `label: 'Related Documents'` string.
+- `e2e/tests/flows/purchase-invoice-readonly-processed.mocked.spec.js` — mocked Playwright spec verifying that all principal header fields (`businessPartner`, `partnerAddress`, `paymentMethod`, `paymentTerms`, `priceList`) are disabled when `processed: true`; also verifies `orderReference` remains editable as a regression guard.
+
+## Read-only enforcement on completed invoices — ETP-4012
+
+### Problem
+
+Three header fields — `businessPartner` (UI label "Contacto"), `partnerAddress` (UI label "Dirección"), and `userContact` — were remaining editable after an invoice was completed (i.e., after `processed` became `true`). All three had been given `"readOnlyLogic": null` in `decisions.json`, which silenced the original AD `readOnlyLogic` value and caused the generator to emit no `readOnlyLogic` function at all, leaving the fields permanently editable in the frontend.
+
+### Root cause in detail
+
+The original AD `readOnlyLogic` for `businessPartner` was:
+
+```
+@Processed@='Y' | @HAS_C_INVOICELINES@='Y'
+```
+
+When this was first restored in `decisions.json`, the generator parsed the expression and encountered `@HAS_C_INVOICELINES@`, which is a session variable rather than a regular record field. Because the generator could not map it to a record property, it marked the expression `evaluable: false` and emitted `readOnlySource: 'server'` with no JS function. Since the `evaluate-display` endpoint was not returning a value for this field, the frontend received no instruction to lock the field and it remained editable.
+
+### Final fix
+
+The expression was simplified to `"@Processed@='Y'"` for all three affected fields. This expression references only `processed`, a standard record field that the generator maps directly. The generator now emits:
+
+```js
+readOnlyLogic: (record) => record['processed'] === true
+```
+
+in `HeaderForm.jsx` for `businessPartner`, `partnerAddress`, and `userContact` — consistent with the pattern used by all other principal fields on this document (e.g. `paymentMethod`, `paymentTerms`, `priceList`). The `@HAS_C_INVOICELINES@` clause was intentionally dropped: its purpose (preventing partner changes once lines exist) is already enforced by the custom `index.jsx` component, which blocks line creation until a business partner is selected and disallows partner changes once lines are present.
+
+### Fields fixed
+
+| Field key | UI label | Old `readOnlyLogic` in `decisions.json` | New value |
+|---|---|---|---|
+| `businessPartner` | Contacto | `null` | `"@Processed@='Y'"` |
+| `partnerAddress` | Dirección | `null` | `"@Processed@='Y'"` |
+| `userContact` | Contacto (usuario) | `null` | `"@Processed@='Y'"` |
+
+### `orderReference` — intentionally editable after completion
+
+The `orderReference` field (DB column `POReference`, displayed as "Nº documento") does not carry a `readOnlyLogic` value in `decisions.json` and none is emitted in `HeaderForm.jsx`. This is intentional: the original AD metadata defines no read-only rule for this field, and the business requirement is that users can correct the supplier's document reference on a completed invoice without needing to reactivate it. Any future attempt to add a `readOnlyLogic` to `orderReference` must be treated as a regression.
+
+### Regression test
+
+`e2e/tests/flows/purchase-invoice-readonly-processed.mocked.spec.js` — mocked Playwright spec that opens a completed invoice (`processed: true`) and asserts:
+- `businessPartner`, `partnerAddress`, `paymentMethod`, `paymentTerms`, and `priceList` inputs have the `disabled` attribute.
+- `orderReference` input does **not** have the `disabled` attribute.
+
+## Hidden delete button on completed invoices — ETP-4012
+
+### Problem
+
+The Delete button (trash icon) remained visible in the detail toolbar when a Purchase Invoice was in Completed (`CO`) status. Although the action failed with an error, the button should not be visible at all on a completed document — consistent with Sales Invoice, Purchase Order, Goods Shipment, and other document windows.
+
+### Fix
+
+Added `"hideDeleteWhenComplete": true` to `artifacts/purchase-invoice/decisions.json → window`. The generator emits this as the `hideDeleteWhenComplete` prop on `DetailView`, which uses `isDeleteVisibleForRecord` to hide the trash button whenever `documentStatus` is not in `['DR', 'RPAP']`.
+
+### Manual verification
+
+Open a completed purchase invoice (`✓ Completado` badge). Confirm the trash icon is **not** visible in the detail toolbar. Open a draft invoice and confirm the trash icon **is** visible.

@@ -56,7 +56,6 @@ export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUr
           <SendToSifButton
             data={data}
             recordId={recordId}
-            token={token}
             apiBaseUrl={apiBaseUrl}
             status={data?.documentStatus}
           />

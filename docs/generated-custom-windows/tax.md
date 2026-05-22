@@ -62,6 +62,15 @@ No dependent selector behavior, automatic defaulting between these fields, statu
 - `origin/develop:artifacts/tax/generated/web/tax/TaxForm.jsx` defines the six visible form fields and the selector options for applicability, document-tax amount, and base amount.
 - `origin/develop:artifacts/tax/generated/web/tax/index.jsx` confirms the route, standalone generated layout, breadcrumb, and the hidden print/More controls.
 - The generated `TaxPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `C_Tax` AD table.
+## Field name overrides — ETP-4016
+
+Two fields use a `name` override in `decisions.json` because their AD display name diverges from the DAL property name that NEO Headless returns in GET responses:
+
+- `salesPurchaseType` (raw name from "Sales/Purchase Type") → overridden to `applicableTo` (the actual DAL property NEO returns for `SOPOType` column).
+- `validFromDate` (raw name from "Valid From Date") → overridden to `validFrom` (the actual DAL property NEO returns for `ValidFrom` column).
+
+Without these overrides the fields render empty on load because the frontend reads `data['salesPurchaseType']` / `data['validFromDate']` while the API response contains `applicableTo` / `validFrom`.
+
 ## Pipeline regeneration — ETP-3908
 
 Regenerated on 2026-05-12 as part of the feature/ETP-3908 epic merge. No functional changes to this window.

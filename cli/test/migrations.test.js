@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { migrateDecisions, needsMigration, getVersion, CURRENT_VERSION } from '../src/migrations/index.js';
 import { migrate as v1ToV2 } from '../src/migrations/v1-to-v2.js';
+import { detectDiscardPatterns } from '../src/migrate-to-decisions.js';
 
 describe('migrations/index.js', () => {
   it('CURRENT_VERSION is 2', () => {
@@ -190,5 +191,65 @@ describe('v1-to-v2 migration', () => {
     const result = v1ToV2(decisions, { schemaRaw });
     // No valid mappings possible, entities unchanged
     assert.deepEqual(Object.keys(result.entities), ['cOrder']);
+  });
+});
+
+describe('detectDiscardPatterns', () => {
+  it('returns empty array when no discarded fields are present', () => {
+    const entities = [
+      { fields: [{ visibility: 'editable', column: 'DocumentNo' }] },
+    ];
+    assert.deepEqual(detectDiscardPatterns(entities), []);
+  });
+
+  it('detects EM_* pattern from discarded EM_ columns', () => {
+    const entities = [
+      { fields: [
+        { visibility: 'discarded', column: 'EM_CustomField' },
+        { visibility: 'editable', column: 'DocumentNo' },
+      ] },
+    ];
+    assert.deepEqual(detectDiscardPatterns(entities), ['EM_*']);
+  });
+
+  it('detects CopyFrom* pattern from discarded CopyFrom columns', () => {
+    const entities = [
+      { fields: [{ visibility: 'discarded', column: 'CopyFromInvoice' }] },
+    ];
+    assert.deepEqual(detectDiscardPatterns(entities), ['CopyFrom*']);
+  });
+
+  // Regression: sort with explicit compare fn must yield alphabetical order
+  it('returns patterns sorted alphabetically (CopyFrom* before EM_*)', () => {
+    const entities = [
+      { fields: [
+        { visibility: 'discarded', column: 'EM_Extension1' },
+        { visibility: 'discarded', column: 'CopyFromOrder' },
+        { visibility: 'discarded', column: 'EM_Extension2' },
+      ] },
+    ];
+    assert.deepEqual(detectDiscardPatterns(entities), ['CopyFrom*', 'EM_*']);
+  });
+
+  it('deduplicates patterns across multiple entities', () => {
+    const entities = [
+      { fields: [{ visibility: 'discarded', column: 'EM_A' }] },
+      { fields: [{ visibility: 'discarded', column: 'EM_B' }] },
+    ];
+    assert.deepEqual(detectDiscardPatterns(entities), ['EM_*']);
+  });
+
+  it('handles entities without fields array gracefully', () => {
+    assert.deepEqual(detectDiscardPatterns([{}, { fields: undefined }]), []);
+  });
+
+  it('ignores non-discarded EM_/CopyFrom columns', () => {
+    const entities = [
+      { fields: [
+        { visibility: 'editable', column: 'EM_Visible' },
+        { visibility: 'readOnly', column: 'CopyFromVisible' },
+      ] },
+    ];
+    assert.deepEqual(detectDiscardPatterns(entities), []);
   });
 });

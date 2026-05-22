@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { neoBase } from '@/components/related-documents/helpers.js';
 import { detectProfile } from '../fiscal-config/fiscalConfig.utils.js';
 import { computeKpis } from './fiscalMonitor.utils.js';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 
 // ── Config entity names (for profile detection) ───────────────────────────────
 const SII_CFG_SPEC         = 'sii-config';
@@ -21,7 +22,7 @@ const SII_RECIBIDAS_ANT_ENTITY   = 'receivedInvoices(previousPeriod)';
 // ── Monitor Verifactu entity names ────────────────────────────────────────────
 const VF_SPEC              = 'monitor-verifactu';
 const VF_ACEPTADAS_ENTITY  = 'facturasAceptadas';
-const VF_PARCIAL_ENTITY    = 'partiallyAcceptedInvoices';
+const VF_PARCIAL_ENTITY    = 'facturasParcialmenteAceptadas';
 const VF_RECHAZADAS_ENTITY = 'facturasRechazadas';
 const VF_INVALIDAS_ENTITY  = 'facturasInválidas';
 
@@ -30,44 +31,44 @@ const TBAI_SPEC   = 'tbai-facturas-enviadas';
 const TBAI_ENTITY = 'sincronización';
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function get(base, spec, entity, params, token) {
-  const url = `${base}/${spec}/${encodeURIComponent(entity)}?${new URLSearchParams(params)}`;
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+async function get(apiFetch, spec, entity, params) {
+  const url = `/${spec}/${encodeURIComponent(entity)}?${new URLSearchParams(params)}`;
+  const res = await apiFetch(url, {
+    headers: { 'Content-Type': 'application/json' },
   });
   if (!res.ok) throw new Error(`${spec}/${entity} HTTP ${res.status}`);
   return (await res.json())?.response ?? {};
 }
 
-async function fetchConfigRecord(base, spec, entity, orgId, token) {
-  const resp = await get(base, spec, entity, { organization: orgId, _limit: '1' }, token);
+async function fetchConfigRecord(apiFetch, spec, entity, orgId) {
+  const resp = await get(apiFetch, spec, entity, { organization: orgId, _limit: '1' });
   return resp.data?.[0] ?? null;
 }
 
-async function fetchCount(base, spec, entity, params, token) {
-  const resp = await get(base, spec, entity, { ...params, _limit: '1' }, token);
+async function fetchCount(apiFetch, spec, entity, params) {
+  const resp = await get(apiFetch, spec, entity, { ...params, _limit: '1' });
   return { totalCount: resp.totalRows ?? 0 };
 }
 
-async function fetchSiiParentId(base, orgId, token) {
+async function fetchSiiParentId(apiFetch, orgId) {
   // The sii-monitor spec's child entities (issuedInvoices, receivedInvoices, etc.) are
   // child tabs of the "organizations" (aeatsii_config) entity. NEO Headless requires
   // a parentId (the aeatsii_config record PK) to correctly resolve the tab HQL tokens.
-  const resp = await get(base, SII_SPEC, 'organizations', { organization: orgId, _limit: '1' }, token);
+  const resp = await get(apiFetch, SII_SPEC, 'organizations', { organization: orgId, _limit: '1' });
   return resp.data?.[0]?.id ?? null;
 }
 
-async function fetchSiiMonitorData(base, orgId, token) {
-  const parentId = await fetchSiiParentId(base, orgId, token);
+async function fetchSiiMonitorData(apiFetch, orgId) {
+  const parentId = await fetchSiiParentId(apiFetch, orgId);
   if (!parentId) {
     return { counts: { issued: { totalCount: 0 }, received: { totalCount: 0 }, issuedPrevious: { totalCount: 0 }, receivedPrevious: { totalCount: 0 } }, parentId: null };
   }
   const siiParams = { parentId };
   const [issued, received, issuedPrev, receivedPrev] = await Promise.all([
-    fetchCount(base, SII_SPEC, SII_EMITIDAS_ENTITY,      siiParams, token),
-    fetchCount(base, SII_SPEC, SII_RECIBIDAS_ENTITY,     siiParams, token),
-    fetchCount(base, SII_SPEC, SII_EMITIDAS_ANT_ENTITY,  siiParams, token),
-    fetchCount(base, SII_SPEC, SII_RECIBIDAS_ANT_ENTITY, siiParams, token),
+    fetchCount(apiFetch, SII_SPEC, SII_EMITIDAS_ENTITY,      siiParams),
+    fetchCount(apiFetch, SII_SPEC, SII_RECIBIDAS_ENTITY,     siiParams),
+    fetchCount(apiFetch, SII_SPEC, SII_EMITIDAS_ANT_ENTITY,  siiParams),
+    fetchCount(apiFetch, SII_SPEC, SII_RECIBIDAS_ANT_ENTITY, siiParams),
   ]);
   return {
     counts: { issued, received, issuedPrevious: issuedPrev, receivedPrevious: receivedPrev },
@@ -75,40 +76,41 @@ async function fetchSiiMonitorData(base, orgId, token) {
   };
 }
 
-async function fetchVerifactuMonitorData(base, orgId, token) {
+async function fetchVerifactuMonitorData(apiFetch, orgId) {
   const orgParams = { organization: orgId };
   const [accepted, partial, rejected, invalid] = await Promise.all([
-    fetchCount(base, VF_SPEC, VF_ACEPTADAS_ENTITY,  orgParams, token),
-    fetchCount(base, VF_SPEC, VF_PARCIAL_ENTITY,    orgParams, token),
-    fetchCount(base, VF_SPEC, VF_RECHAZADAS_ENTITY, orgParams, token),
-    fetchCount(base, VF_SPEC, VF_INVALIDAS_ENTITY,  orgParams, token),
+    fetchCount(apiFetch, VF_SPEC, VF_ACEPTADAS_ENTITY,  orgParams),
+    fetchCount(apiFetch, VF_SPEC, VF_PARCIAL_ENTITY,    orgParams),
+    fetchCount(apiFetch, VF_SPEC, VF_RECHAZADAS_ENTITY, orgParams),
+    fetchCount(apiFetch, VF_SPEC, VF_INVALIDAS_ENTITY,  orgParams),
   ]);
   return { accepted, partiallyAccepted: partial, rejected, invalid };
 }
 
-async function fetchCountByCriteria(base, spec, entity, orgId, field, value, token) {
+async function fetchCountByCriteria(apiFetch, spec, entity, orgId, field, value) {
   const params = {
     organization: orgId,
     _limit: '1',
     criteria: JSON.stringify([{ fieldName: field, operator: 'equals', value }]),
   };
-  const resp = await get(base, spec, entity, params, token);
+  const resp = await get(apiFetch, spec, entity, params);
   return resp.totalRows ?? 0;
 }
 
-async function fetchTbaiData(base, orgId, token) {
+async function fetchTbaiData(apiFetch, orgId) {
   const [total, received, rejected, error, pending] = await Promise.all([
-    get(base, TBAI_SPEC, TBAI_ENTITY, { organization: orgId, _limit: '1' }, token)
+    get(apiFetch, TBAI_SPEC, TBAI_ENTITY, { organization: orgId, _limit: '1' })
       .then(r => r.totalRows ?? 0),
-    fetchCountByCriteria(base, TBAI_SPEC, TBAI_ENTITY, orgId, 'estado', 'Recibido', token),
-    fetchCountByCriteria(base, TBAI_SPEC, TBAI_ENTITY, orgId, 'estado', 'Rechazado', token),
-    fetchCountByCriteria(base, TBAI_SPEC, TBAI_ENTITY, orgId, 'estado', 'Error', token),
-    fetchCountByCriteria(base, TBAI_SPEC, TBAI_ENTITY, orgId, 'estado', 'Pendiente', token),
+    fetchCountByCriteria(apiFetch, TBAI_SPEC, TBAI_ENTITY, orgId, 'estado', 'Recibido'),
+    fetchCountByCriteria(apiFetch, TBAI_SPEC, TBAI_ENTITY, orgId, 'estado', 'Rechazado'),
+    fetchCountByCriteria(apiFetch, TBAI_SPEC, TBAI_ENTITY, orgId, 'estado', 'Error'),
+    fetchCountByCriteria(apiFetch, TBAI_SPEC, TBAI_ENTITY, orgId, 'estado', 'Pendiente'),
   ]);
   return { totalCount: total, receivedCount: received, rejectedCount: rejected, errorCount: error, pendingCount: pending };
 }
 
-export function useFiscalMonitor(orgId, token, apiBaseUrl) {
+export function useFiscalMonitor(orgId, apiBaseUrl) {
+  const apiFetch = useApiFetch(neoBase(apiBaseUrl));
   const [state, setState] = useState({
     loading: true,
     error: null,
@@ -125,26 +127,25 @@ export function useFiscalMonitor(orgId, token, apiBaseUrl) {
     }
     setState(s => ({ ...s, loading: true, error: null }));
     try {
-      const base = neoBase(apiBaseUrl);
       const [siiCfg, tbaiCfg, vfCfg] = await Promise.all([
-        fetchConfigRecord(base, SII_CFG_SPEC,  SII_CFG_ENTITY,  orgId, token),
-        fetchConfigRecord(base, TBAI_CFG_SPEC, TBAI_CFG_ENTITY, orgId, token),
-        fetchConfigRecord(base, VF_CFG_SPEC,   VF_CFG_ENTITY,   orgId, token),
+        fetchConfigRecord(apiFetch, SII_CFG_SPEC,  SII_CFG_ENTITY,  orgId),
+        fetchConfigRecord(apiFetch, TBAI_CFG_SPEC, TBAI_CFG_ENTITY, orgId),
+        fetchConfigRecord(apiFetch, VF_CFG_SPEC,   VF_CFG_ENTITY,   orgId),
       ]);
       const profile = detectProfile(siiCfg, tbaiCfg, vfCfg);
 
       let monitorData = {};
       let siiParentId = null;
       if (profile === 'sii' || profile === 'sii-navarra' || profile === 'sii+tbai') {
-        const siiResult = await fetchSiiMonitorData(base, orgId, token);
+        const siiResult = await fetchSiiMonitorData(apiFetch, orgId);
         monitorData.sii = siiResult.counts;
         siiParentId = siiResult.parentId;
       }
       if (profile === 'tbai' || profile === 'sii+tbai') {
-        monitorData.tbai = await fetchTbaiData(base, orgId, token);
+        monitorData.tbai = await fetchTbaiData(apiFetch, orgId);
       }
       if (profile === 'verifactu') {
-        monitorData.verifactu = await fetchVerifactuMonitorData(base, orgId, token);
+        monitorData.verifactu = await fetchVerifactuMonitorData(apiFetch, orgId);
       }
 
       setState({
@@ -158,7 +159,7 @@ export function useFiscalMonitor(orgId, token, apiBaseUrl) {
     } catch (err) {
       setState(s => ({ ...s, loading: false, error: err.message }));
     }
-  }, [orgId, token, apiBaseUrl]);
+  }, [orgId, apiFetch]);
 
   useEffect(() => { load(); }, [load]);
 

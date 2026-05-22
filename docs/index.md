@@ -24,6 +24,7 @@
 | File | Description |
 |------|-------------|
 | [sonarqube-access.md](sonarqube-access.md) | **SonarQube quick access**: bypass RTK with `rtk proxy`, project keys, useful endpoints, local scanner fallback |
+| [xml-regeneration-check.md](xml-regeneration-check.md) | **XML regeneration check**: compare original module XML vs export.database output without DB access |
 
 ## Field & Pipeline Reference
 
@@ -70,6 +71,7 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 | Path | Description |
 |------|-------------|
 | [generated-custom-windows/INDEX.md](generated-custom-windows/INDEX.md) | Functional docs for generated/custom windows, including the app-shell flows guide |
+| [fiscal-models-303-layout.md](fiscal-models-303-layout.md) | **Modelo 303 box layout system**: BASE structure, patch ops reference, how to add a new year, i18n keys, visual verification via debug panel |
 
 | [generated-custom-windows/2026-04-23-epic-etp-3504-merge-changelog.md](generated-custom-windows/2026-04-23-epic-etp-3504-merge-changelog.md) | Change log for the `epic/ETP-3504` -> `develop` window-level merge deltas documented in generated/custom windows |
 ## Guides
@@ -79,7 +81,7 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 | [developer-tools.md](developer-tools.md) | CLI tools used by the team: RTK (token optimization) and GWS (Google Workspace CLI) |
 | [claude-md-best-practices.md](claude-md-best-practices.md) | Best practices for writing effective CLAUDE.md files (research compilation) |
 | [self-documentation-policy.md](self-documentation-policy.md) | Self-documentation policy: triggers, checklists, and phase responsibilities for keeping docs in sync with code |
-| [feedback.md](feedback.md) | Known bug patterns and root-cause lessons: double-discount on line PATCH, callout price suppression for invoices, add-line row field key alignment |
+| [feedback.md](feedback.md) | Known bug patterns and root-cause lessons: double-discount on line PATCH, callout price suppression for invoices, add-line row field key alignment, ETP-4007 discount display fixes (etgoDiscount field name, listPrice vs unitPrice, grossAmount vs lineNetAmount, taxAmount formula, missing PDF discount breakdown rows) |
 
 ## Operations
 
@@ -89,6 +91,7 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 | [ops/copilot-pr-review.md](ops/copilot-pr-review.md) | Copilot-aligned PR review gate: review instructions, deterministic findings, PR comments, and request-changes behavior |
 | [ops/window-doc-freshness.md](ops/window-doc-freshness.md) | Window-specific doc freshness warning: diff-based CI review for `docs/generated-custom-windows/<window>.md` |
 | [ops/epic-rollup-report.md](ops/epic-rollup-report.md) | Develop-targeted epic rollout report: included feature PRs, prior review findings, and aggregated release-risk summary |
+| [ops/app-shell-observability.md](ops/app-shell-observability.md) | App Shell observability: providers, env vars, v1 events, privacy rules, and extension guide |
 
 ## Proposals
 

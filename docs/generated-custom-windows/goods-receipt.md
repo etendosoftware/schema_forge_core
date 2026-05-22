@@ -17,11 +17,11 @@ A user should be able to:
 - review received-line essentials such as product, received quantity, UOM, storage bin, and invoiced quantity
 - confirm the receipt from draft so the document moves out of intake mode
 - open linked purchasing documents to understand where the receipt came from and whether invoices already exist for the same order
-- complete multiple draft receipts at once from the list selection bar using the bulk action, which processes each receipt through the standard `documentAction=CO` endpoint
+- complete multiple draft receipts at once from the list selection bar using the bulk action (labeled "Confirmar" / i18n key `confirmBulk`), which processes each receipt through the standard `documentAction=CO` endpoint
 
 ## Interaction model
 
-- Route: `/goods-receipt`, `/goods-receipt/:recordId`
+- Route: `/goods-receipt`, `/goods-receipt/:recordId`. The custom window wrapper reads `?DocStatus=<value>` from the URL and pre-applies it as a column filter (`documentStatus`) using the parsed `enumLabel` descriptor format required by `buildBackendFilter`. The dashboard card "Recepciones pendientes" navigates here with `?DocStatus=DR` so the list starts filtered to draft receipts awaiting processing.
 - Visibility: visible from the Purchases menu under Operations
 - Implementation type: custom window override registered in `tools/app-shell/src/windows/registry.js`, built on top of the generated goods-receipt window
 - Window shape: master-child window with a header record (`goodsReceipt`) and child received lines (`goodsReceiptLine`).
@@ -71,12 +71,12 @@ No current evidence shows:
 7. With lines already present, confirm the line-area extra action still exposes **Import from Purchase Order** while the receipt remains in draft.
 8. Confirm the receipt and verify the document leaves draft status and the draft-only import affordances disappear.
 9. Open **Related Documents** and confirm the purchase-order chip routes to `/purchase-order/:id` and invoice chips route to `/purchase-invoice/:id`.
-10. Select two or more draft goods receipts from the list and confirm the bulk-complete action is available. Trigger it and verify all selected receipts move to completed status and a result toast appears.
+10. Select two or more draft goods receipts from the list and confirm the bulk action bar shows a `Confirmar (N)` button. Trigger it and verify all selected receipts move to completed status and a result toast appears.
 11. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
 ## Automated evidence
 
-- `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the bulk-complete component (CO only, via `buildInOutActions`) mounted in the list selection bar for goods receipts.
+- `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the bulk-complete component (CO only, via `buildInOutActions`) mounted in the list selection bar for goods receipts with `labelKey="confirmBulk"` so the button renders as "Confirmar" / "Confirm".
 - No dedicated goods-receipt UI test was found in `tools/app-shell`.
 - Shared route loading, authenticated shell behavior, and generic entity behavior are documented in `docs/generated-custom-windows/app-shell-functional-flows.md`.
 - Source evidence for this document:

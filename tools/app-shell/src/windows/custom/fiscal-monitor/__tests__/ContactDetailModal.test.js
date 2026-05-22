@@ -57,7 +57,10 @@ describe('ContactDetailModal — structure', () => {
   it('accepts open prop', () => assert.match(src, /\bopen\b/));
   it('accepts onClose prop', () => assert.match(src, /\bonClose\b/));
   it('accepts bpId prop', () => assert.match(src, /\bbpId\b/));
-  it('accepts token prop', () => assert.match(src, /\btoken\b/));
+  it('uses useApiFetch instead of token prop', () => {
+    assert.match(src, /useApiFetch/);
+    assert.doesNotMatch(src, /const\s*\{[^}]*\btoken\b[^}]*\}\s*=\s*useAuth/);
+  });
   it('accepts contactsApiBase prop', () => assert.match(src, /\bcontactsApiBase\b/));
 
   it('returns null when open is falsy', () => {

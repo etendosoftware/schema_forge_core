@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { resolveBackendSort, buildBackendFilter } from '@/lib/gridQuery.js';
+import { translateBackendError } from '@/lib/backendErrors.js';
 import { toast } from 'sonner';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI } from '@/i18n';
@@ -102,7 +103,8 @@ export async function extractErrorMessage(res, ui) {
         return translate('validationDuplicateRecord', 'A record with the same value already exists.');
       }
 
-      return decoded.replace(/\s+/g, ' ').trim();
+      const raw = decoded.replace(/\s+/g, ' ').trim();
+      return translateBackendError(raw, ui) || raw;
     };
 
     const pickMessage = (node) => {
@@ -577,7 +579,7 @@ export function useEntity(entity, childEntity, {
     }
   }, []);
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(async ({ silent = false } = {}) => {
     if (!editing) return;
     setIsSaving(true);
     setSaveError(null);
@@ -707,7 +709,7 @@ export function useEntity(entity, childEntity, {
         }
         setSaveError(null);
         setFieldErrors({});
-        toast.success(isNew ? ui('recordCreated') : ui('recordSaved'));
+        if (!silent) toast.success(isNew ? ui('recordCreated') : ui('recordSaved'));
         return saved;
       } else {
         // ETP-3894: parse a structured MISSING_REQUIRED_FIELDS 400 from the backend so
@@ -832,7 +834,7 @@ export function useEntity(entity, childEntity, {
   }, [selected, refreshHeaderTotals]);
 
   const handleSaveAndProcess = useCallback(async (draftModeConfig) => {
-    const saved = await handleSave();
+    const saved = await handleSave({ silent: true });
     if (!saved?.id) return null;
 
     const { processField, processValue } = draftModeConfig;

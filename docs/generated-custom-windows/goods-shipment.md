@@ -13,11 +13,11 @@ Use this window to register and complete outbound customer shipments. The functi
 - Start a return flow from a completed shipment so the user can select shipped lines and quantities to send back through the return process.
 - Open related downstream or upstream documents from the shipment, especially the linked sales order and the invoices created from that order.
 - Send the shipment document from the detail view.
-- Complete multiple draft shipments at once from the list selection bar using the bulk action, which processes each shipment through the standard `documentAction=CO` endpoint.
+- Complete multiple draft shipments at once from the list selection bar using the bulk action (labeled "Confirmar" / i18n key `confirmBulk`), which processes each shipment through the standard `documentAction=CO` endpoint.
 
 ## Interaction model
 
-- Route: `/goods-shipment` and `/goods-shipment/:recordId`; the custom window wrapper also supports `?DocStatus=...`, currently used to prefilter the list to a status such as completed shipments. The list `COLUMNS` definition has `dot: false` on `movementDate` (no red/green date dot) and `type: 'status'` on `documentStatus` (proper status badge, not a dot-prefixed display).
+- Route: `/goods-shipment` and `/goods-shipment/:recordId`. The custom window wrapper reads `?DocStatus=<value>` from the URL and pre-applies it as a column filter (`documentStatus`) using the parsed `enumLabel` descriptor format required by `buildBackendFilter`. The dashboard card "Envíos pendientes" navigates here with `?DocStatus=DR` so the list starts filtered to draft shipments awaiting processing. The list `COLUMNS` definition has `dot: false` on `movementDate` (no red/green date dot) and `type: 'status'` on `documentStatus` (proper status badge, not a dot-prefixed display).
 - Visibility: visible in the Sales menu and not marked hidden in `tools/app-shell/src/menu.json`.
 - Implementation type: custom route entry in `tools/app-shell/src/windows/registry.js` that loads a generated `GoodsShipmentPage` plus shipment-specific custom actions (`GoodsShipmentActions`, `BulkInvoiceFromShipment`, `RelatedDocuments`).
 - Window shape: master-child window. The header entity is `goodsShipment` and the child entity is `goodsShipmentLine`.
@@ -48,7 +48,7 @@ Use this window to register and complete outbound customer shipments. The functi
 ## Manual verification
 
 1. Open `/goods-shipment` and confirm the list shows shipment records with document number, movement date, status, and invoicing state.
-2. Open `/goods-shipment?DocStatus=CO` and confirm the list starts filtered to completed shipments.
+2. Open `/goods-shipment?DocStatus=DR` and confirm the list starts filtered to draft shipments (the same state the dashboard "Envíos pendientes" card navigates to).
 3. Open a shipment detail and verify it behaves as a master-child page with editable header fields in draft status and child shipment lines underneath.
 4. Change the business partner on a draft shipment and confirm the partner-address selector reacts as a dependent field.
 5. Open a completed shipment and confirm the top bar exposes `Create Invoice`, `Create Return`, and shipment sending controls.
@@ -57,7 +57,7 @@ Use this window to register and complete outbound customer shipments. The functi
 8. In the batch invoice modal, deselect some lines or reduce quantities and confirm the preview total changes before creation.
 9. Open `Related Documents` on a shipment that came from a sales order and confirm the order chip and any invoice chips navigate to the expected records.
 10. Attempt the return flow on a completed shipment and verify whether the backend actually completes the return creation; if it fails, record it as the current functional gap.
-11. Select two or more draft shipments from the list and confirm the bulk-complete action is available. Trigger it and verify all selected shipments move to completed status and a result toast appears.
+11. Select two or more draft shipments from the list and confirm the bulk action bar shows a `Confirmar (N)` button. Trigger it and verify all selected shipments move to completed status and a result toast appears.
 12. Open the Send Email modal from the topbar and confirm: the `Para` field is pre-filled with the business partner's email when one is registered in `EM_Etgo_Email`; the field is empty (showing the "no email found" hint) when none is registered; and the modal title reads the translated document name in the active UI language.
 13. Open a saved record and confirm the **Attachments** tab is visible in the tab strip. Upload a file and verify it appears in the table. Download it and delete it. When multiple files exist, confirm 'Download all (ZIP)' and 'Delete all' appear in the table header and that 'Delete all' shows a confirmation dialog before removing all files.
 
@@ -69,7 +69,7 @@ Use this window to register and complete outbound customer shipments. The functi
 - `artifacts/goods-shipment/custom/RelatedDocuments.jsx` shows that related-document navigation currently resolves the linked sales order and sales invoices, with return receipts left pending backend support.
 - `artifacts/goods-shipment/custom/ReturnWizard.jsx` explicitly documents the pending backend dependency for `createReturn`.
 - `artifacts/goods-shipment/custom/__tests__/BulkInvoiceFromShipment.test.js` provides source-shape coverage for the bulk invoice component, including invoiceable filtering, same-customer enforcement, line fetching, sales-order price enrichment, draft-invoice checking, and draft-invoice creation endpoint usage.
-- `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the bulk-complete component (CO only, via `buildInOutActions`) mounted in the list selection bar for goods shipments.
+- `tools/app-shell/src/components/contract-ui/BulkDocumentAction.jsx` provides the bulk-complete component (CO only, via `buildInOutActions`) mounted in the list selection bar for goods shipments with `labelKey="confirmBulk"` so the button renders as "Confirmar" / "Confirm".
 - There is no dedicated browser E2E or interaction test in the current worktree proving the full shipment execution, invoicing, or return flow end to end.
 - `artifacts/goods-shipment/custom/GoodsShipmentActions.jsx` proves the Send Email modal is wired with `bPartnerId` and `apiBaseUrl` so the recipient email is resolved from the contacts spec at open time, and `documentType` is translated via `useMenuLabel()`.
 - The generated `GoodsShipmentPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `M_InOut` AD table.- **ETP-3995 — Related Documents tab i18n**: The generated page file now uses `labelKey: 'relatedDocuments'` in the `customTabs` prop instead of a hardcoded `label: 'Related Documents'` string, so the tab title renders via the active UI language (e.g. "Documentos relacionados" in Spanish) regardless of the browser locale.

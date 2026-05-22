@@ -6,6 +6,7 @@
     "sendDocument": {
       "allowEmail": false
     },
+    "hideDeleteWhenComplete": true,
     "relatedDocuments": true,
     "notesField": "description",
     "noHeaderBorder": true,
@@ -92,7 +93,7 @@
           "searchable": true,
           "section": "principal",
           "reference": "BusinessPartner",
-          "readOnlyLogic": null,
+          "readOnlyLogic": "@Processed@='Y'",
           "displayLogic": null,
           "seq": 10
         },
@@ -104,7 +105,7 @@
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
           },
-          "readOnlyLogic": null,
+          "readOnlyLogic": "@Processed@='Y'",
           "seq": 40
         },
         "currency": {
@@ -161,7 +162,7 @@
           "form": false,
           "reference": "User",
           "inputMode": "search",
-          "readOnlyLogic": null
+          "readOnlyLogic": "@Processed@='Y'"
         },
         "salesRepresentative": {
           "visibility": "editable",
@@ -485,7 +486,8 @@
           "order": 3,
           "gridOrder": 3,
           "section": "principal",
-          "readOnlyLogic": null
+          "readOnlyLogic": null,
+          "min": 0
         },
         "uOM": {
           "visibility": "system"
@@ -502,7 +504,8 @@
           "order": 4,
           "gridOrder": 4,
           "section": "principal",
-          "columnType": "amount"
+          "columnType": "amount",
+          "min": 0
         },
         "etgoDiscount": {
           "visibility": "editable",
@@ -513,7 +516,8 @@
           "gridOrder": 5,
           "section": "principal",
           "derivation": null,
-          "readOnlyLogic": "@Processed@='Y'"
+          "readOnlyLogic": "@Processed@='Y'",
+          "min": 0
         },
         "lineNetAmount": {
           "visibility": "system",

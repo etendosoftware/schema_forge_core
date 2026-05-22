@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { DateField } from '@/components/ui/date-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Check, ChevronsUpDown, Loader2, Search, X } from 'lucide-react';
+import { ChevronDown, Loader2, Search } from 'lucide-react';
 import { useLabel, useLocaleSwitch, useMenuLabel, useUI } from '@/i18n';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
@@ -13,6 +13,7 @@ import { ImageField } from './ImageField.jsx';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import { CreateContactContext } from './CreateContactContext.js';
 import { PartnerAddressPicker } from './PartnerAddressPicker.jsx';
+import { SelectorChip } from './SelectorChip.jsx';
 import { SelectorInput } from './SelectorInput.jsx';
 
 function buildSelectPlaceholder(ui, label) {
@@ -41,6 +42,18 @@ function evalDisplayLogic(field, data) {
 
 function buildSearchPlaceholder(ui, label) {
   return `${ui('searchLabelPrefix')} ${label}...`;
+}
+
+/**
+ * Resolve the grid utility classes for an EntityForm container.
+ * Extracted from a nested ternary to satisfy Sonar S3358 — the three branches
+ * (override via `cols`, horizontal header form, vertical line form) have
+ * distinct visual contracts and should read as independent statements.
+ */
+function resolveGridClass(cols, layout) {
+  if (cols) return 'grid';
+  if (layout === 'horizontal') return 'grid grid-cols-2 gap-x-5 gap-y-5 md:grid-cols-4';
+  return 'grid grid-cols-2 gap-3 md:grid-cols-3';
 }
 
 /**
@@ -88,9 +101,14 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
   const [query, setQuery] = useState(displayValue || value || '');
   const [serverResults, setServerResults] = useState(null);
   const [fetching, setFetching] = useState(false);
+  // When a value is selected, the field renders as a chip (Figma spec).
+  // editingIntent flips to true when the user clicks the chip to switch back to
+  // typing mode, and resets after a fresh selection / clear.
+  const [editingIntent, setEditingIntent] = useState(false);
   // Tracks whether the user is actively typing so the sync effect doesn't fight keystrokes.
   const isEditingRef = useRef(false);
   const debounceRef = useRef(null);
+  const inputRef = useRef(null);
 
   // Optional "Create contact" capability injected by custom windows via context.
   const createCtx = React.useContext(CreateContactContext);
@@ -173,9 +191,10 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
 
   const handleSelect = (opt) => {
     isEditingRef.current = false; // Finished editing
+    setEditingIntent(false);
     setQuery(opt.name);
     setOpen(false);
-    
+
     // Pass full record as 3rd arg so auxiliary fields (like M_PriceList_ID) can be mapped
     // by the parent Form (if the schema defines mapped column suffixes).
     onChange(opt.id, opt.name, opt);
@@ -183,6 +202,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
 
   const handleClear = () => {
     isEditingRef.current = false;
+    setEditingIntent(false);
     setQuery('');
     setServerResults(null);
     setOpen(false);
@@ -191,6 +211,16 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
 
   // If field is mandatory but value is empty, or if we have a value, don't show clear unless value exists
   const hasSelection = value != null && value !== '';
+  // Chip mode: a selected value renders as the Figma tag/chip; clicking the chip
+  // body flips editingIntent so the user can type to search again.
+  const showChip = hasSelection && !editingIntent;
+  const handleChipClick = () => {
+    setEditingIntent(true);
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    });
+  };
 
   const createBtn = canCreate ? (
     <button
@@ -205,10 +235,25 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
   ) : null;
 
   return (
-    <div className="relative">
-      <div className="relative">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-        <Input
+    /*
+      Single wrapper that doubles as the visual "field" element (border + shadow
+      + bg live here, like SelectTrigger) AND as the popup anchor (relative for
+      the absolute-positioned dropdowns below). The inner <input> is borderless
+      and transparent so DevTools highlights this same wrapper as the field box
+      — matching the SelectorInput inspector experience.
+    */
+    <div className="relative flex h-10 w-full items-center rounded-lg border border-[#D1D4DB] bg-transparent shadow-[0px_1px_2px_rgba(18,18,23,0.05)] pl-2 pr-2 gap-1 focus-within:ring-2 focus-within:ring-primary">
+      {showChip ? (
+        <SelectorChip
+          label={displayValue || query}
+          onClick={handleChipClick}
+          onClear={handleClear}
+          clearAriaLabel={ui('clear')}
+          testId={`field-${field.key}-chip`}
+        />
+      ) : (
+        <input
+          ref={inputRef}
           id={field.key}
           name={field.key}
           data-testid={`field-${field.key}`}
@@ -220,7 +265,7 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
             const newQuery = e.target.value;
             setQuery(newQuery);
             if (!open) setOpen(true);
-            
+
             if (debounceRef.current) clearTimeout(debounceRef.current);
             debounceRef.current = setTimeout(() => {
               triggerServerSearch(newQuery);
@@ -236,27 +281,23 @@ function SearchInput({ entityName, field, value, displayValue, onChange, catalog
           onBlur={() => {
             // Delay closing so click events on dropdown items can fire first
             isEditingRef.current = false;
-            setTimeout(() => setOpen(false), 200);
+            setTimeout(() => {
+              setOpen(false);
+              // If the user clicked away without picking a new option, revert to chip mode
+              // so the previously-selected value stays visible (no destructive cancel).
+              if (hasSelection) setEditingIntent(false);
+            }, 200);
           }}
-          className="pl-8 pr-8 focus:ring-2 focus:ring-primary focus:outline-none"
+          className="flex-1 min-w-0 h-full bg-transparent border-0 outline-none py-2 text-sm placeholder:text-[#6C6C89]"
           required={field.required}
           autoComplete="off"
         />
-        {fetching && (
-          <Loader2 className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground animate-spin pointer-events-none" />
-        )}
-        {!fetching && hasSelection && (
-          <button
-            type="button"
-            onMouseDown={(e) => { e.preventDefault(); handleClear(); }}
-            className="absolute right-2 top-2 h-5 w-5 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-            tabIndex={-1}
-            aria-label={ui('clear')}
-          >
-            <X className="h-3 w-3" />
-          </button>
-        )}
-      </div>
+      )}
+      {fetching ? (
+        <Loader2 className="h-4 w-4 text-[#828FA3] animate-spin shrink-0 ml-auto" />
+      ) : (
+        <ChevronDown className="h-4 w-4 text-[#828FA3] pointer-events-none shrink-0 ml-auto" />
+      )}
       {open && (canCreate || filtered.length > 0) && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-auto">
           {createBtn}
@@ -494,11 +535,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
 
   if (displayFields.length === 0) return null;
 
-  const gridClass = cols
-    ? 'grid'
-    : (layout === 'horizontal'
-      ? 'grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-3'
-      : 'grid grid-cols-2 gap-3 md:grid-cols-3');
+  const gridClass = resolveGridClass(cols, layout);
   const gridStyle = cols ? { gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 } : undefined;
 
   // If there's an image field, pin it to the right — rest of fields render in a 3-col grid on the left
@@ -522,7 +559,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
     // Shared read-only rendering for FK-style fields (dependent, selector, search).
     const renderReadOnlyFk = () => (
       <div key={f.key} data-testid={`field-${f.key}`} className="space-y-1.5">
-        <Label htmlFor={f.key} className="text-sm text-muted-foreground font-medium">
+        <Label htmlFor={f.key} className="text-sm text-foreground font-medium">
           {label}
         </Label>
         <Input
@@ -530,7 +567,6 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
           name={f.key}
           value={resolveIdentifier(data, f.key) || data?.[f.key] || ''}
           disabled
-          className="bg-muted/50"
         />
       </div>
     );

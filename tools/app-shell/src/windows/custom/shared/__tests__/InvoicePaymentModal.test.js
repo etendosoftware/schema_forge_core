@@ -164,4 +164,73 @@ describe('InvoicePaymentModal', () => {
     assert.match(src, /onClick={onClose}/);
     assert.match(src, /e\.stopPropagation/);
   });
+
+  // ── i18n paymentAmountInvalid (ETP-4005) ──────────────────────────────────
+
+  it('uses ui(paymentAmountInvalid) for the invalid amount error message', () => {
+    assert.match(src, /ui\('paymentAmountInvalid'\)/);
+  });
+
+  it('does not contain the hardcoded English string "Enter a valid amount"', () => {
+    assert.doesNotMatch(src, /Enter a valid amount/);
+  });
+
+  // ── ETP-4005: payment validation branches ─────────────────────────────────
+
+  describe('ETP-4005 — PaymentRegisterForm submit validation', () => {
+    it('declares an invalidField state initialized to null', () => {
+      assert.match(src, /\[invalidField, setInvalidField\] = useState\(null\)/);
+    });
+
+    it('marks the date field invalid and shows paymentDateRequired when date is empty', () => {
+      // The first guard in handleSubmit: if (!date) ...
+      assert.match(src, /if \(!date\) \{[^}]*setInvalidField\('date'\)[^}]*setError\(ui\('paymentDateRequired'\)\)[^}]*return;\s*\}/);
+    });
+
+    it('marks the amount field invalid and shows paymentAmountInvalid when amount is missing or non-positive', () => {
+      assert.match(src, /if \(!amount \|\| amount <= 0\) \{[^}]*setInvalidField\('amount'\)[^}]*setError\(ui\('paymentAmountInvalid'\)\)[^}]*return;\s*\}/);
+    });
+
+    it('returns silently when amount exceeds outstanding (UI shows amountExceedsOutstanding warning already)', () => {
+      // After the amount validity check: `if (amountExceeded) return;` with no
+      // setError — the warning is already rendered separately.
+      assert.match(src, /if \(amountExceeded\)\s*return;/);
+    });
+
+    it('marks the account field invalid and shows paymentAccountRequired when accountId is empty', () => {
+      assert.match(src, /if \(!accountId\) \{[^}]*setInvalidField\('account'\)[^}]*setError\(ui\('paymentAccountRequired'\)\)[^}]*return;\s*\}/);
+    });
+
+    it('clears invalidField and error when all checks pass before posting the payment', () => {
+      // After the four guards, the form resets the visual error state before
+      // entering the network call.
+      assert.match(src, /setInvalidField\(null\);\s*\n\s*setError\(null\);\s*\n\s*setSaving\(true\);/);
+    });
+
+    it('applies border-red-500 to the DateField wrapper when invalidField === "date"', () => {
+      assert.match(src, /className=\{invalidField === 'date' \? 'border-red-500 focus-within:ring-red-500' : ''\}/);
+    });
+
+    it('clears the date-invalid marker as soon as the user picks a new date', () => {
+      assert.match(src, /onChange=\{\(v\) => \{ setDate\(v\); if \(invalidField === 'date'\) setInvalidField\(null\); \}\}/);
+    });
+
+    it('shows the red asterisk after the paymentDate label (required indicator)', () => {
+      assert.match(src, /ui\('paymentDate'\)\}\s*<span style=\{\{ color: '#dc2626' \}\}>\*<\/span>/);
+    });
+
+    it('disables the Confirm button when saving, amount exceeds outstanding, or date is empty', () => {
+      assert.match(src, /disabled=\{saving \|\| amountExceeded \|\| !date\}/);
+    });
+
+    it('falls back to ui(paymentRequestFailed) when the response is not ok and the body has no error.message', () => {
+      assert.match(src, /ui\('paymentRequestFailed'\)/);
+    });
+
+    it('does not contain hardcoded English fallbacks for the new ETP-4005 keys', () => {
+      assert.doesNotMatch(src, /['"`]Payment date is required['"`]/);
+      assert.doesNotMatch(src, /['"`]Select an account['"`]/);
+      assert.doesNotMatch(src, /['"`]The payment could not be processed['"`]/);
+    });
+  });
 });

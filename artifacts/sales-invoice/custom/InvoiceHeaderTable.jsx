@@ -57,12 +57,12 @@ export default function InvoiceHeaderTable(props) {
 
   const { selectedOrg } = useAuth();
   const orgId = selectedOrg?.id ?? null;
-  const { profile } = useFiscalConfig(orgId, token, apiBaseUrl);
+  const { profile } = useFiscalConfig(orgId, apiBaseUrl);
 
   const targets = useMemo(() => getInvoiceFiscalTargets('sales-invoice', profile), [profile]);
 
   const ids = useMemo(() => (data || []).map(r => r.id).filter(Boolean), [data]);
-  const { statusMap, loading: fiscalLoading } = useInvoiceListFiscalStatus(ids, 'sales-invoice', profile, apiBaseUrl, token, orgId);
+  const { statusMap, loading: fiscalLoading } = useInvoiceListFiscalStatus(ids, 'sales-invoice', profile, apiBaseUrl, orgId);
 
   // Derive stable label strings from gl (avoids putting the unstable ui() fn in useMemo deps)
   const siiColLabel  = gl['invoiceList.col.siiStatus']       || 'SII Status';

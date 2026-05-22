@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 import { useFiscalMonitor } from './useFiscalMonitor.js';
 import { WipBadge } from './FmPrimitives.jsx';
 import InvoicePreviewModal from '../shared/InvoicePreviewModal.jsx';
@@ -97,12 +98,12 @@ const FmEmpty = ({ ui }) => {
   );
 };
 
-function useDebugState(orgId, token, apiBaseUrl) {
+function useDebugState(orgId, apiBaseUrl) {
   const debugMode = useDebugMode();
   const [debugProfile, setDebugProfile] = useState(null);
   const [mockData,     setMockData]     = useState(false);
 
-  const { loading, error, profile: realProfile, kpis: realKpis, siiParentId, refetch } = useFiscalMonitor(orgId, token, apiBaseUrl);
+  const { loading, error, profile: realProfile, kpis: realKpis, siiParentId, refetch } = useFiscalMonitor(orgId, apiBaseUrl);
 
   const profile = (debugMode && debugProfile) ? debugProfile : realProfile;
 
@@ -144,6 +145,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
   const [previewSpec,       setPreviewSpec]       = useState('sales-invoice');
   const [bpPopup,           setBpPopup]           = useState(null);
   const contactsApiBase = `${neoBase(apiBaseUrl)}/contacts`;
+  const apiFetch = useApiFetch(neoBase(apiBaseUrl));
 
   const {
     loading, error, profile, kpis, siiParentId,
@@ -151,9 +153,9 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
     siiMockRows, tbaiMockRows, vfMockRows,
     debugMode, debugProfile, setDebugProfile,
     mockData, setMockData, debugOverrideActive,
-  } = useDebugState(orgId, token, apiBaseUrl);
+  } = useDebugState(orgId, apiBaseUrl);
 
-  const { daysLeft: certDaysLeft } = useCertExpiry(orgId, token, apiBaseUrl, { mockDaysLeft: mockCertDays });
+  const { daysLeft: certDaysLeft } = useCertExpiry(apiBaseUrl, { mockDaysLeft: mockCertDays });
 
   function handleRefresh() {
     refetch();
@@ -162,14 +164,12 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
 
   async function handleInvoiceOpen(invoiceId, specHint = 'sales-invoice') {
     if (!invoiceId) return;
-    const base = neoBase(apiBaseUrl);
-    const headers = { Authorization: `Bearer ${token}` };
     const specs = specHint === 'sales-invoice'
       ? ['sales-invoice', 'purchase-invoice']
       : ['purchase-invoice', 'sales-invoice'];
     for (const spec of specs) {
       try {
-        const res = await fetch(`${base}/${spec}/header/${invoiceId}`, { headers });
+        const res = await apiFetch(`/${spec}/header/${invoiceId}`);
         if (!res.ok) continue;
         const json = await res.json();
         const inv = json?.response?.data?.[0] ?? null;
@@ -278,7 +278,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
             onPick={(tab) => setSiiInitialTab(tab)}
           />
           <SiiMonitorSection
-            orgId={orgId} token={token} apiBaseUrl={apiBaseUrl}
+            orgId={orgId} apiBaseUrl={apiBaseUrl}
             parentId={siiParentId}
             initialTab={siiInitialTab}
             mockRows={siiMockRows}
@@ -305,7 +305,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
             onPick={(k) => setTbaiInitialFilter(k)}
           />
           <TbaiMonitorSection
-            orgId={orgId} token={token} apiBaseUrl={apiBaseUrl}
+            orgId={orgId} apiBaseUrl={apiBaseUrl}
             initialFilter={tbaiInitialFilter}
             mockRows={tbaiMockRows}
             onFilterChange={setTbaiInitialFilter}
@@ -325,7 +325,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
             onPick={(k) => setVeriInitialTab(k)}
           />
           <VerifactuMonitorSection
-            orgId={orgId} token={token} apiBaseUrl={apiBaseUrl}
+            orgId={orgId} apiBaseUrl={apiBaseUrl}
             initialTab={veriInitialTab}
             mockRows={vfMockRows}
             onTabChange={setVeriInitialTab}
@@ -350,7 +350,6 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
         open={!!bpPopup}
         onClose={() => setBpPopup(null)}
         bpId={bpPopup}
-        token={token}
         contactsApiBase={contactsApiBase}
       />
     )}

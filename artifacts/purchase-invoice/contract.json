@@ -1,8 +1,8 @@
 {
-  "version": "0.27.0",
+  "version": "0.29.0",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-14T13:06:26.128Z",
-  "checksum": "b9d33d8f97572db2",
+  "updatedAt": "2026-05-22T12:41:09.116Z",
+  "checksum": "7e11e9f50f5cd67c",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -11,6 +11,7 @@
       "category": "purchases",
       "notesField": "description",
       "relatedDocuments": true,
+      "hideDeleteWhenComplete": true,
       "customComponents": {
         "headerTable": "InvoiceHeaderTable",
         "bottomSection": "PurchaseInvoiceBottomPanel"
@@ -177,10 +178,9 @@
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Invoice_BPartner"
             },
             "readOnlyLogic": {
-              "raw": "@Processed@='Y' | @HAS_C_INVOICELINES@='Y'",
-              "evaluable": false,
-              "reason": "session-variable",
-              "js": null
+              "raw": "@Processed@='Y'",
+              "evaluable": true,
+              "js": "record['processed'] === true"
             }
           },
           {
@@ -1412,6 +1412,7 @@
             "defaultValue": "1",
             "section": "principal",
             "gridOrder": 3,
+            "min": 0,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Invoice_Amt"
             },
@@ -1436,6 +1437,7 @@
             "columnType": "amount",
             "section": "principal",
             "gridOrder": 4,
+            "min": 0,
             "displayLogic": {
               "raw": "@GROSSPRICE@='N'",
               "evaluable": true
@@ -1464,6 +1466,7 @@
             "defaultValue": "0",
             "section": "principal",
             "gridOrder": 5,
+            "min": 0,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -3718,6 +3721,7 @@
       "category": "purchases",
       "notesField": "description",
       "relatedDocuments": true,
+      "hideDeleteWhenComplete": true,
       "customComponents": {
         "headerTable": "InvoiceHeaderTable",
         "bottomSection": "PurchaseInvoiceBottomPanel"

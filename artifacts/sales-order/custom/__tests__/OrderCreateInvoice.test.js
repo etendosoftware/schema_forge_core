@@ -79,6 +79,25 @@ describe('OrderCreateInvoice', () => {
     assert.match(src, /soManageInvoice/);
   });
 
+  describe('ConfirmModal total-discount preview (ETP-4006)', () => {
+    it('applies the total-discount factor only while the order is still in DR', () => {
+      assert.match(src, /const discountPct\s*=\s*Number\(d\.etgoTotalDiscount \?\? 0\)/);
+      assert.match(src, /const isPreCompletion\s*=\s*d\.documentStatus === 'DR'/);
+      assert.match(src, /const discountFactor\s*=\s*\(isPreCompletion && discountPct > 0\) \? \(1 - discountPct \/ 100\) : 1/);
+    });
+
+    it('computes grandTotal as round(net × factor) + round(tax × factor), not round(gross × factor) (ETP-4017)', () => {
+      // Anti-double-rounding rule: see DocumentTotalsPanel / documentTotals.js.
+      // The displayed total must equal sum of displayed components so it agrees
+      // with the order's right panel and with AEAT-compliant printed invoices.
+      assert.match(src, /const round2\s*=\s*\(n\) => Math\.round\(\(n \+ Number\.EPSILON\) \* 100\) \/ 100/);
+      assert.match(src, /const grossBase\s*=\s*Number\(d\.grandTotalAmount\) \|\| 0/);
+      assert.match(src, /const netBase\s*=\s*Number\(d\.summedLineAmount \?\? d\.totalLines \?\? grossBase\) \|\| 0/);
+      assert.match(src, /const totalLines\s*=\s*round2\(netBase \* discountFactor\)/);
+      assert.match(src, /const grandTotal\s*=\s*totalLines \+ round2\(\(grossBase - netBase\) \* discountFactor\)/);
+    });
+  });
+
   it('dispatches document-created event after creating a doc', () => {
     assert.match(src, /sales-order:document-created/);
     assert.match(src, /dispatchEvent/);
