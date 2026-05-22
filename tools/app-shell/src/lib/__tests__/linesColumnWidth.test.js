@@ -41,12 +41,12 @@ describe('linesColumnWidth', () => {
       assert.equal(columnFlex({ type: 'text' }, 2), '1 1 224px');
     });
 
-    it('selector/foreignKey at idx=0 returns 0 0 192px (no special case override)', () => {
-      assert.equal(columnFlex({ type: 'selector' }, 0), '0 0 192px');
-      assert.equal(columnFlex({ type: 'foreignKey' }, 0), '0 0 192px');
+    it('selector/foreignKey at idx=0 returns 1 1 192px (elastic so product column takes remaining space)', () => {
+      assert.equal(columnFlex({ type: 'selector' }, 0), '1 1 192px');
+      assert.equal(columnFlex({ type: 'foreignKey' }, 0), '1 1 192px');
     });
 
-    it('selector/search/foreignKey columns → 0 0 192px (fixed)', () => {
+    it('selector/search/foreignKey columns at idx>0 → 0 0 192px (fixed)', () => {
       assert.equal(columnFlex({ type: 'selector' }, 1), '0 0 192px');
       assert.equal(columnFlex({ type: 'search' }, 1), '0 0 192px');
       assert.equal(columnFlex({ type: 'foreignKey' }, 1), '0 0 192px');

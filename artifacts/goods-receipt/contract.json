@@ -1,8 +1,8 @@
 {
-  "version": "0.10.0",
+  "version": "0.10.4",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-05-20T17:29:44.944Z",
-  "checksum": "e5c5b60811636564",
+  "updatedAt": "2026-05-21T17:07:38.515Z",
+  "checksum": "442ba7080165eed9",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -10,14 +10,17 @@
       "primaryEntity": "goodsReceipt",
       "category": "purchases",
       "relatedDocuments": true,
+      "hideDeleteWhenComplete": true,
+      "hidePrint": true,
       "customComponents": {
         "topbarRight": "GoodsReceiptActions",
-        "bottomSection": "GoodsReceiptBottomPanel"
+        "bottomSection": "GoodsReceiptBottomPanel",
+        "topbarExtra": "GoodsReceiptDraftChips"
       },
       "dateFilterKey": "movementDate",
       "noHeaderBorder": true,
       "sendDocument": {
-        "allowEmail": false
+        "allowEmail": true
       },
       "layoutType": "default",
       "linesLayout": "inlineEditable"
@@ -190,7 +193,7 @@
             "label": "Purchase Order",
             "type": "foreignKey",
             "tsType": "string",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": false,
             "grid": false,
             "form": false,
@@ -449,6 +452,7 @@
             }
           }
         ],
+        "javaQualifier": "goodsReceiptHeaderHandler",
         "draftMode": {
           "enabled": true,
           "processField": "documentAction",
@@ -671,7 +675,7 @@
             "label": "Purchase Order Line",
             "type": "foreignKey",
             "tsType": "string",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": false,
             "grid": false,
             "form": false,
@@ -685,10 +689,10 @@
             "label": "Order Quantity",
             "type": "quantity",
             "tsType": "number",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": false,
             "grid": true,
-            "form": true,
+            "form": false,
             "section": "principal",
             "seq": 30,
             "callout": {
@@ -867,7 +871,8 @@
               "source": "0"
             }
           }
-        ]
+        ],
+        "javaQualifier": "goodsReceiptLineHandler"
       }
     }
   },
@@ -878,14 +883,17 @@
       "primaryEntity": "goodsReceipt",
       "category": "purchases",
       "relatedDocuments": true,
+      "hideDeleteWhenComplete": true,
+      "hidePrint": true,
       "customComponents": {
         "topbarRight": "GoodsReceiptActions",
-        "bottomSection": "GoodsReceiptBottomPanel"
+        "bottomSection": "GoodsReceiptBottomPanel",
+        "topbarExtra": "GoodsReceiptDraftChips"
       },
       "dateFilterKey": "movementDate",
       "noHeaderBorder": true,
       "sendDocument": {
-        "allowEmail": false
+        "allowEmail": true
       },
       "linesLayout": "inlineEditable"
     },
@@ -972,7 +980,7 @@
             "apiKey": "salesOrder",
             "column": "C_Order_ID",
             "type": "foreignKey",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": false
           },
           {
@@ -1316,7 +1324,7 @@
             "apiKey": "processed",
             "column": "Processed",
             "type": "boolean",
-            "visibility": "discarded",
+            "visibility": "system",
             "required": true
           },
           {
@@ -1439,7 +1447,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "goodsReceiptHeaderHandler"
       },
       "goodsReceiptLine": {
         "tableName": "M_InOutLine",
@@ -1531,7 +1540,7 @@
             "apiKey": "salesOrderLine",
             "column": "C_OrderLine_ID",
             "type": "foreignKey",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": false
           },
           {
@@ -1547,7 +1556,7 @@
             "apiKey": "orderQuantity",
             "column": "QuantityOrder",
             "type": "quantity",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": false
           },
           {
@@ -1726,7 +1735,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "goodsReceiptLineHandler"
       }
     },
     "endpoints": [

@@ -6,7 +6,7 @@ import { useUI, useMenuLabel } from '@/i18n';
 import ReturnWizard from './ReturnWizard';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
 import GoodsShipmentConfirmModal from './GoodsShipmentConfirmModal';
-import { ConfirmResultModal } from '@generated/sales-order/custom/OrderCreateInvoice';
+import { ConfirmResultModal } from '@/components/contract-ui';
 import { generateShipmentPdf, getShipmentPdfLabels } from '@/windows/custom/goods-shipment/useShipmentPdf';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 
@@ -252,11 +252,14 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
 
       {confirmedDocs && createPortal(
         <ConfirmResultModal
-          docs={confirmedDocs}
-          ui={ui}
-          navigate={navigate}
-          currency={data?.['currency$_identifier'] || ''}
           title={ui('shipmentConfirmedTitle')}
+          cards={[
+            confirmedDocs?.shipment?.id && { icon: '🚚', label: ui('shipmentDoc', { number: confirmedDocs.shipment.documentNo }), color: 'blue', route: `/goods-shipment/${confirmedDocs.shipment.id}`, amount: confirmedDocs.shipment.amount },
+            confirmedDocs?.invoice?.id && { icon: '🧾', label: ui('invoiceDoc', { number: confirmedDocs.invoice.documentNo }), color: 'green', route: `/sales-invoice/${confirmedDocs.invoice.id}`, amount: confirmedDocs.invoice.amount },
+          ].filter(Boolean)}
+          currency={data?.['currency$_identifier'] || ''}
+          navigate={navigate}
+          ui={ui}
           onClose={() => setConfirmedDocs(null)}
         />,
         document.body,

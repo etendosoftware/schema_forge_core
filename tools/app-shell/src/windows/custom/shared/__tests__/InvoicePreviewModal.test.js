@@ -10,7 +10,7 @@ const src = readFileSync(join(__dirname, '..', 'InvoicePreview.jsx'), 'utf8');
 describe('InvoicePreviewModal source', () => {
   it('calls useFiscalStatus without a token argument — signature is (id, spec, profile, apiBaseUrl, orgId)', () => {
     assert.match(src, /useFiscalStatus\(\s*invoice\?\.id,\s*specName,\s*profile,\s*apiBaseUrl,\s*orgId,?\s*\)/);
-    assert.doesNotMatch(src, /useFiscalStatus\([\s\S]*?token[\s\S]*?orgId/);
+    assert.doesNotMatch(src, /useFiscalStatus\([^)]*token[^)]*orgId/);
   });
 
   it('opens InvoicePaymentModal without passing a token prop', () => {

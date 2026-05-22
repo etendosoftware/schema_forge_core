@@ -4,7 +4,7 @@
     "category": "purchases",
     "name": "Goods Receipt",
     "sendDocument": {
-      "allowEmail": false
+      "allowEmail": true
     },
     "relatedDocuments": true,
     "dateFilterKey": "movementDate",
@@ -18,13 +18,20 @@
     "linesLayout": "inlineEditable",
     "customComponents": {
       "topbarRight": "GoodsReceiptActions",
-      "bottomSection": "GoodsReceiptBottomPanel"
-    }
+      "bottomSection": "GoodsReceiptBottomPanel",
+      "topbarExtra": "GoodsReceiptDraftChips"
+    },
+    "hideDeleteWhenComplete": true,
+    "hidePrint": true
   },
   "entities": {
     "header": {
       "name": "goodsReceipt",
+      "javaQualifier": "goodsReceiptHeaderHandler",
       "fields": {
+        "processed": {
+          "visibility": "system"
+        },
         "documentNo": {
           "visibility": "readOnly",
           "grid": false,
@@ -81,7 +88,9 @@
           "readOnlyLogic": null
         },
         "salesOrder": {
-          "form": false
+          "visibility": "editable",
+          "form": false,
+          "grid": false
         },
         "documentStatus": {
           "grid": true,
@@ -136,6 +145,7 @@
     },
     "lines": {
       "name": "goodsReceiptLine",
+      "javaQualifier": "goodsReceiptLineHandler",
       "fields": {
         "product": {
           "grid": true,
@@ -153,8 +163,8 @@
         },
         "orderQuantity": {
           "grid": true,
-          "form": true,
-          "visibility": "readOnly",
+          "form": false,
+          "visibility": "editable",
           "section": "principal",
           "seq": 30,
           "readOnlyLogic": null
@@ -192,7 +202,9 @@
           "displayLogic": null
         },
         "salesOrderLine": {
-          "form": false
+          "visibility": "editable",
+          "form": false,
+          "grid": false
         },
         "invoiceQuantity": {
           "grid": false,

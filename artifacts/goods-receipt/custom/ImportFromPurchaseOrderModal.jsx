@@ -55,6 +55,16 @@ const buildLineBody = async ({ line, qty, invoiceId: receiptId, lineNo }) => ({
   lineNo,
 });
 
+const afterImport = async ({ importedDocIds, base, headers, invoiceId }) => {
+  if (importedDocIds.size !== 1) return;
+  const [orderId] = importedDocIds;
+  await fetch(`${base}/goods-receipt/goodsReceipt/${invoiceId}`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ salesOrder: orderId }),
+  });
+};
+
 export default function ImportFromPurchaseOrderModal(props) {
   return (
     <ImportLinesModal
@@ -70,6 +80,7 @@ export default function ImportFromPurchaseOrderModal(props) {
       fetchLines={fetchLines}
       getDocDisplay={getDocDisplay}
       buildLineBody={buildLineBody}
+      afterImport={afterImport}
     />
   );
 }

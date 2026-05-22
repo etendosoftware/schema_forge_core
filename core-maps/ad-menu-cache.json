@@ -1,6 +1,6 @@
 {
-  "refreshedAt": "2026-04-24T12:16:09.586Z",
-  "count": 468,
+  "refreshedAt": "2026-05-20T16:17:48.330Z",
+  "count": 462,
   "entries": [
     {
       "id": "120",
@@ -122,27 +122,6 @@
       "processId": null
     },
     {
-      "id": "800075",
-      "name": "Analysis Tools",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "280",
-      "name": "Analysis Tools",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800141",
-      "name": "Analysis Tools",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
       "id": "F11FC6C518B149AFAB4DAED58751119C",
       "name": "Analysis Tools",
       "type": "folder",
@@ -150,7 +129,14 @@
       "processId": null
     },
     {
-      "id": "800081",
+      "id": "800076",
+      "name": "Analysis Tools",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800077",
       "name": "Analysis Tools",
       "type": "folder",
       "windowId": null,
@@ -171,14 +157,28 @@
       "processId": null
     },
     {
-      "id": "800077",
+      "id": "800141",
       "name": "Analysis Tools",
       "type": "folder",
       "windowId": null,
       "processId": null
     },
     {
-      "id": "800076",
+      "id": "280",
+      "name": "Analysis Tools",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800081",
+      "name": "Analysis Tools",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800075",
       "name": "Analysis Tools",
       "type": "folder",
       "windowId": null,
@@ -227,13 +227,6 @@
       "processId": "462033447A1548F09BBFB0683FA976CC"
     },
     {
-      "id": "345",
-      "name": "Assets",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
       "id": "800114",
       "name": "Assets",
       "type": "window",
@@ -241,10 +234,10 @@
       "processId": null
     },
     {
-      "id": "0629FC5BA38C46EA834DD791621DB6A6",
-      "name": "Async Process Log",
-      "type": "window",
-      "windowId": "37DDB0FC24D34C3D91EF29F1E6F3C0BB",
+      "id": "345",
+      "name": "Assets",
+      "type": "folder",
+      "windowId": null,
       "processId": null
     },
     {
@@ -252,6 +245,13 @@
       "name": "Async Process Log",
       "type": "window",
       "windowId": "4F02F39384C64915AC3BCB7003178A75",
+      "processId": null
+    },
+    {
+      "id": "0629FC5BA38C46EA834DD791621DB6A6",
+      "name": "Async Process Log",
+      "type": "window",
+      "windowId": "37DDB0FC24D34C3D91EF29F1E6F3C0BB",
       "processId": null
     },
     {
@@ -448,6 +448,13 @@
       "name": "Callout",
       "type": "window",
       "windowId": "800070",
+      "processId": null
+    },
+    {
+      "id": "A9E0F1B2C3D4E5F6A7B8C9D0E1F2A3B4",
+      "name": "Canales y Endpoints SIF",
+      "type": "window",
+      "windowId": "B31D9E43422C4C18961D06CF42CE9852",
       "processId": null
     },
     {
@@ -743,20 +750,6 @@
       "type": "process",
       "windowId": null,
       "processId": "800169"
-    },
-    {
-      "id": "5B13FC397F814D188EF8A2479511FED3",
-      "name": "CRM Connector",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "140E9C8338C64B84B659B5D2FB49F8B5",
-      "name": "CRM Connector Configuration",
-      "type": "window",
-      "windowId": "B282F5FA893E4339A548F2E224B15162",
-      "processId": null
     },
     {
       "id": "102",
@@ -1235,13 +1228,6 @@
       "processId": null
     },
     {
-      "id": "477C324F87854A4A88D65D913DF052F7",
-      "name": "HQL Query Tool",
-      "type": "form",
-      "windowId": null,
-      "processId": null
-    },
-    {
       "id": "ECED4249C522408C8F8086B3E097408F",
       "name": "IAE Activity Type",
       "type": "window",
@@ -1310,13 +1296,6 @@
       "type": "process",
       "windowId": null,
       "processId": "800130"
-    },
-    {
-      "id": "AA912A0ED1EB4967B6A220291C7C118A",
-      "name": "Instance Activation",
-      "type": "form",
-      "windowId": null,
-      "processId": null
     },
     {
       "id": "1E65CE83C985466C89E25C24352DABA4",
@@ -1865,18 +1844,18 @@
       "processId": null
     },
     {
-      "id": "C662C29A164243C18C71BE164899A71B",
-      "name": "Payment Report",
-      "type": "report",
-      "windowId": null,
-      "processId": "6AD04479EC134BD4826077F36B709876"
-    },
-    {
       "id": "800029",
       "name": "Payment Report",
       "type": "report",
       "windowId": null,
       "processId": "800026"
+    },
+    {
+      "id": "C662C29A164243C18C71BE164899A71B",
+      "name": "Payment Report",
+      "type": "report",
+      "windowId": null,
+      "processId": "6AD04479EC134BD4826077F36B709876"
     },
     {
       "id": "D0022AAFF0F44BBCA96AA7D007E65C7D",
@@ -2320,24 +2299,10 @@
       "processId": null
     },
     {
-      "id": "FF8080812E71F7C7012E72050E0A0048",
-      "name": "Remittance",
-      "type": "window",
-      "windowId": "FF8080812E71F7C7012E71FD0499001B",
-      "processId": null
-    },
-    {
       "id": "800097",
       "name": "Remittance Type",
       "type": "window",
       "windowId": "800018",
-      "processId": null
-    },
-    {
-      "id": "1976AC5F04094A9E8E020BA9BDD07B89",
-      "name": "Remittance Type",
-      "type": "window",
-      "windowId": "A0186E0FCF444BB889A458F469FF5DCF",
       "processId": null
     },
     {
@@ -2586,63 +2551,7 @@
       "processId": null
     },
     {
-      "id": "FF8080812E9B50A6012E9B958734001C",
-      "name": "Settle / Protest Remittances",
-      "type": "form",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800233",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800189",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "272",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
       "id": "800256",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800255",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "C3805F4FAB2E491B8B18D5F6CB4F1737",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800251",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800248",
       "name": "Setup",
       "type": "folder",
       "windowId": null,
@@ -2656,7 +2565,56 @@
       "processId": null
     },
     {
+      "id": "800248",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800189",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800233",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
       "id": "164",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800255",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800251",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "C3805F4FAB2E491B8B18D5F6CB4F1737",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "272",
       "name": "Setup",
       "type": "folder",
       "windowId": null,
@@ -2985,21 +2943,7 @@
       "processId": null
     },
     {
-      "id": "800247",
-      "name": "Transactions",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
       "id": "800254",
-      "name": "Transactions",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800242",
       "name": "Transactions",
       "type": "folder",
       "windowId": null,
@@ -3027,7 +2971,21 @@
       "processId": null
     },
     {
+      "id": "800247",
+      "name": "Transactions",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
       "id": "800244",
+      "name": "Transactions",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800242",
       "name": "Transactions",
       "type": "folder",
       "windowId": null,

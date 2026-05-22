@@ -3,6 +3,9 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useUI, useMenuLabel } from '@/i18n';
 import SendDocumentModal, { SendDocumentButton } from '@/components/contract-ui/SendDocumentModal';
+import { ConfirmResultModal } from '@/components/contract-ui';
+
+export { ConfirmResultModal as PoConfirmResultModal };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -97,13 +100,16 @@ export default function PurchaseOrderActions({ data, recordId, token, apiBaseUrl
 
   const confirmedPanel = confirmedDocs
     ? createPortal(
-        <PoConfirmResultModal
-          docs={confirmedDocs}
-          title={confirmedTitle}
-          onClose={() => { setConfirmedDocs(null); setConfirmedTitle(null); }}
+        <ConfirmResultModal
+          title={confirmedTitle || ui('poConfirmedTitle')}
+          cards={[
+            confirmedDocs?.receipt?.id && { icon: '📦', label: ui('poReceiptDoc', { number: confirmedDocs.receipt.documentNo }), color: 'blue', route: `/goods-receipt/${confirmedDocs.receipt.id}`, amount: confirmedDocs.receipt.amount },
+            confirmedDocs?.invoice?.id && { icon: '🧾', label: ui('poPurchaseInvoiceDoc', { number: confirmedDocs.invoice.documentNo }), color: 'green', route: `/purchase-invoice/${confirmedDocs.invoice.id}`, amount: confirmedDocs.invoice.amount },
+          ].filter(Boolean)}
+          currency={data?.['currency$_identifier'] || ''}
           navigate={navigate}
           ui={ui}
-          currency={data?.['currency$_identifier'] || ''}
+          onClose={() => { setConfirmedDocs(null); setConfirmedTitle(null); }}
         />,
         document.body,
       )
@@ -665,123 +671,6 @@ export function CreateDocsModal({ orderId, data, base, headers, currency, derive
           </button>
         </div>
       </div>
-    </div>
-  );
-}
-
-// ── PoConfirmResultModal ───────────────────────────────────────────────────────
-// Shown after confirm or create docs. Displays created docs as clickable cards.
-// Cases: no docs (only confirmed), receipt only, invoice only, or both.
-
-export function PoConfirmResultModal({ docs, onClose, navigate, ui, currency, title }) {
-  const { receipt, invoice } = docs;
-  const hasDocs = Boolean(receipt?.id || invoice?.id);
-
-  return (
-    <div style={overlayStyle}>
-      <div onClick={e => e.stopPropagation()} style={{ ...cardStyle, width: 400 }}>
-
-        {/* Check + title */}
-        <div style={{ padding: '28px 24px 20px', textAlign: 'center' }}>
-          <div style={{
-            width: 48, height: 48, borderRadius: '50%', margin: '0 auto 14px',
-            background: '#ECFDF5',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>
-            {title || ui('poConfirmedTitle')}
-          </div>
-          {hasDocs && (
-            <div style={{ fontSize: 12, color: '#6B7280', marginTop: 5, lineHeight: 1.4 }}>
-              {ui('soConfirmedSubtitle')}
-            </div>
-          )}
-        </div>
-
-        {/* Doc cards */}
-        {hasDocs && (
-          <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {receipt?.id && (
-              <PoResultDocCard
-                icon="📦"
-                label={ui('poReceiptDoc', { number: receipt.documentNo })}
-                amount={receipt.amount}
-                currency={currency}
-                color="blue"
-                ui={ui}
-                onClick={() => { onClose(); navigate(`/goods-receipt/${receipt.id}`); }}
-              />
-            )}
-            {invoice?.id && (
-              <PoResultDocCard
-                icon="🧾"
-                label={ui('poPurchaseInvoiceDoc', { number: invoice.documentNo })}
-                amount={invoice.amount}
-                currency={currency}
-                color="green"
-                ui={ui}
-                onClick={() => { onClose(); navigate(`/purchase-invoice/${invoice.id}`); }}
-              />
-            )}
-          </div>
-        )}
-
-        {/* Footer */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 16px', borderTop: '0.5px solid #E5E7EB' }}>
-          <button type="button" onClick={() => { onClose(); window.location.reload(); }} style={btnSecondary}>
-            {ui('soClose')}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PoResultDocCard({ icon, label, amount, currency, color, ui, onClick }) {
-  const [hovered, setHovered] = useState(false);
-  const isBlue  = color === 'blue';
-  const accent  = isBlue ? '#185FA5' : '#059669';
-  const bg      = isBlue ? '#EFF6FF' : '#ECFDF5';
-  const border  = isBlue ? '#BFDBFE' : '#A7F3D0';
-  const hoverBg = isBlue ? '#DBEAFE' : '#D1FAE5';
-
-  return (
-    <div
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
-        borderRadius: 10, cursor: 'pointer',
-        border: `1px solid ${border}`,
-        background: hovered ? hoverBg : bg,
-        transition: 'background 0.15s',
-      }}
-    >
-      <span style={{ fontSize: 18, flexShrink: 0 }}>{icon}</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: accent }}>{label}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
-          {amount != null && Number(amount) !== 0 && (
-            <span style={{ fontSize: 12, color: '#6B7280' }}>
-              {fmtNum(amount)}{currency ? ` ${currency}` : ''}
-            </span>
-          )}
-          <span style={{
-            fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 99,
-            background: '#FEF3C7', color: '#92400E',
-          }}>
-            {ui('statusDraft')}
-          </span>
-        </div>
-      </div>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2" style={{ flexShrink: 0 }}>
-        <path d="M9 18l6-6-6-6" />
-      </svg>
     </div>
   );
 }

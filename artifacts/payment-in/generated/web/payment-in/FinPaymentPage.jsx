@@ -28,6 +28,8 @@ const extraBadges = [];
 
 // @sf-generated-start processes:finPayment
 const processes = [
+  { name: 'Payment Process', label: 'Process Payment', style: 'positive', columnName: 'aPRMProcessPayment',
+    displayLogicRaw: "@status@='RPAP'" },
   { name: 'aPRMProcessPayment', label: 'Process Payment', style: 'positive', columnName: 'aPRMProcessPayment',
     displayLogicRaw: "@status@='RPAP'" },
 ];

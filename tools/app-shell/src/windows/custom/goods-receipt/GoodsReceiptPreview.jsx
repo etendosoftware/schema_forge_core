@@ -1,9 +1,12 @@
-import { Edit2 } from 'lucide-react';
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Edit2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { useUI, useLocaleSwitch, useMenuLabel } from '@/i18n';
 import { formatCalendarDate } from '@/lib/dateOnly';
 import { getStatusPillClass, statusLabel } from '@/lib/statusBadge.js';
 import GenericPreviewModal, { EmptyPanel } from '@/windows/custom/shared/GenericPreviewModal.jsx';
+import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 
 function SectionCard({ title, children }) {
   if (title) {
@@ -87,8 +90,11 @@ function GeneralTab({ receipt, ui }) {
 export default function GoodsReceiptPreview({ receipt, token, apiBaseUrl, onClose, onEdit }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
+  const [showSend, setShowSend] = useState(false);
 
   if (!receipt) return null;
+
+  const isCompleted = receipt.documentStatus === 'CO';
 
   const windowLabel = tMenu('Goods Receipt');
   const docRef = receipt.orderReference || receipt.documentNo || '—';
@@ -123,26 +129,54 @@ export default function GoodsReceiptPreview({ receipt, token, apiBaseUrl, onClos
   ];
 
   const actionButtons = ({ triggerEdit }) => (
-    <Button
-      size="sm"
-      variant="outline"
-      className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] [&_svg]:size-5"
-      onClick={triggerEdit}
-    >
-      <Edit2 className="text-[#828FA3]" />
-      {ui('invoicePreviewEdit')}
-    </Button>
+    <>
+      {isCompleted && (
+        <Button
+          size="sm"
+          className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-[#121217] hover:bg-[#2a2a30] text-white [&_svg]:size-5"
+          onClick={() => setShowSend(true)}
+        >
+          <Mail />
+          {ui('invoicePreviewSend')}
+        </Button>
+      )}
+      <Button
+        size="sm"
+        variant="outline"
+        className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] [&_svg]:size-5"
+        onClick={triggerEdit}
+      >
+        <Edit2 className="text-[#828FA3]" />
+        {ui('invoicePreviewEdit')}
+      </Button>
+    </>
   );
 
   return (
-    <GenericPreviewModal
-      title={title}
-      subtitle={subtitle}
-      attachmentConfig={attachmentConfig}
-      onClose={onClose}
-      onEdit={() => onEdit?.(receipt.id)}
-      tabs={tabs}
-      actionButtons={actionButtons}
-    />
+    <>
+      <GenericPreviewModal
+        title={title}
+        subtitle={subtitle}
+        attachmentConfig={attachmentConfig}
+        onClose={onClose}
+        onEdit={() => onEdit?.(receipt.id)}
+        tabs={tabs}
+        actionButtons={actionButtons}
+      />
+      {showSend && createPortal(
+        <SendDocumentModal
+          documentType={tMenu('Goods Receipt')}
+          documentNo={receipt.documentNo}
+          bpName={receipt['businessPartner$_identifier']}
+          bPartnerId={receipt.businessPartner}
+          apiBaseUrl={apiBaseUrl}
+          documentId={receipt.id}
+          windowName="goods-receipt"
+          token={token}
+          onClose={() => setShowSend(false)}
+        />,
+        document.body,
+      )}
+    </>
   );
 }
