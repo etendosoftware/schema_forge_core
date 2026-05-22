@@ -25,7 +25,7 @@ vi.mock('@/i18n', () => ({
   },
 }));
 
-import { AccountRow } from '../AccountsTable/AccountRow.jsx';
+import { AccountRow } from '../AccountRow.jsx';
 
 function renderRow(props) {
   return render(

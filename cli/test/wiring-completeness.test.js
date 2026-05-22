@@ -29,7 +29,7 @@ const SPECIAL_PAGES = new Set([
   'crm', 'hr', 'projects', 'reports', 'onboarding', 'smart-scan', 'preview',
   'report-viewer-purchases', 'report-viewer-finance', 'report-viewer-inventory', 'oauth2-clients',
   'authorize', 'quick-sales-order', 'quick-purchase-order',
-  'first-steps', 'analytics', 'app-store',
+  'first-steps', 'analytics', 'app-store', 'financial-accounts',
 ]);
 
 const entityWindows = allMenuItems.filter(name => !SPECIAL_PAGES.has(name));

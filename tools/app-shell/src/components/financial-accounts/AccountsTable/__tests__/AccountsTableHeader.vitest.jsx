@@ -13,7 +13,7 @@ vi.mock('@/i18n', () => ({
   },
 }));
 
-import { AccountsTableHeader } from '../../AccountsTable/AccountsTableHeader.jsx';
+import { AccountsTableHeader } from '../AccountsTableHeader.jsx';
 
 function renderHeader() {
   return render(
