@@ -1,8 +1,8 @@
 {
-  "version": "0.10.3",
+  "version": "0.10.4",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-05-21T14:49:00.079Z",
-  "checksum": "77102b8b53818709",
+  "updatedAt": "2026-05-21T17:07:38.515Z",
+  "checksum": "442ba7080165eed9",
   "frontendContract": {
     "window": {
       "id": "184",
@@ -193,7 +193,7 @@
             "label": "Purchase Order",
             "type": "foreignKey",
             "tsType": "string",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": false,
             "grid": false,
             "form": false,
@@ -980,7 +980,7 @@
             "apiKey": "salesOrder",
             "column": "C_Order_ID",
             "type": "foreignKey",
-            "visibility": "readOnly",
+            "visibility": "editable",
             "required": false
           },
           {

@@ -6,7 +6,7 @@ import { getLatestInstallmentDueDate } from '@/lib/invoiceDueDate';
 import InvoicePaymentModal from './InvoicePaymentModal.jsx';
 import PdfViewer from './PdfViewer.jsx';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
-import GenericPreviewModal, { EmptyPanel } from './GenericPreviewModal.jsx';
+import GenericPreviewModal from './GenericPreviewModal.jsx';
 import { useInvoicePreview } from './useInvoicePreview.js';
 import { useFiscalStatus } from './useFiscalStatus.js';
 import { StatusPill } from '@/windows/custom/fiscal-monitor/FmPrimitives.jsx';
@@ -16,6 +16,15 @@ import PaymentsCard from './preview-cards/PaymentsCard.jsx';
 import EmailsCard from './preview-cards/EmailsCard.jsx';
 import CategorizationCard from './preview-cards/CategorizationCard.jsx';
 
+/**
+ * InvoicePreview — wires useInvoicePreview data into GenericPreviewModal.
+ *
+ * File persistence (drop zone + PDF caching) is delegated to GenericPreviewModal
+ * via attachmentConfig. The left panel is:
+ *   - sales invoice, draft:     PDF viewer (regenerated on every open)
+ *   - sales invoice, completed: managed by GenericPreviewModal (cached via ETGO_PREVIEW_FILE)
+ *   - purchase invoice:         managed by GenericPreviewModal (drop zone → persisted)
+ */
 function InvoiceActionButtons({ triggerEdit, onEmail, canSendToSif, onOpenSif, canAddPayment, onAddPayment, isSalesInvoice, onDownloadPdf, hasPdf }) {
   const ui = useUI();
   return (
@@ -86,6 +95,8 @@ function InvoiceActionButtons({ triggerEdit, onEmail, canSendToSif, onOpenSif, c
     </>
   );
 }
+
+// ── General tab content ───────────────────────────────────────────────────────
 
 function InvoiceGeneralTab({ invoice, partnerName, badgeProps, statusLabel, installments, payments, loadingPayments, totalOutstanding, canAddPayment, isFullyPaid, specName, apiBaseUrl, token, orgId, profile, onAddPayment, onSend }) {
   const ui = useUI();
@@ -169,6 +180,8 @@ function EmptyPanel({ icon, text }) {
   );
 }
 
+// ── Main component ────────────────────────────────────────────────────────────
+
 export default function InvoicePreview({ invoice, token, apiBaseUrl, windowName, specName = 'purchase-invoice', onClose, onEdit, onInvoiceUpdated = null }) {
   const ui = useUI();
   const tMenu = useMenuLabel();
@@ -176,6 +189,8 @@ export default function InvoicePreview({ invoice, token, apiBaseUrl, windowName,
   const p = useInvoicePreview({ invoice, token, apiBaseUrl, specName, onInvoiceUpdated });
 
   if (!invoice) return null;
+
+  // ── Left panel ─────────────────────────────────────────────────────────────
 
   const leftPanel = p.isSalesInvoice ? (
     <div className="flex flex-col h-full min-h-0 w-full overflow-hidden">
@@ -193,36 +208,184 @@ export default function InvoicePreview({ invoice, token, apiBaseUrl, windowName,
         </div>
       )}
       {p.pdfUrl && !p.pdfLoading && <PdfViewer url={p.pdfUrl} />}
-    // ... 353 lines omitted
+    </div>
+  ) : null;
+
+  // ── Attachment config ──────────────────────────────────────────────────────
+
+  const isDraft = invoice?.documentStatus === 'DR';
+  const attachmentConfig = p.isSalesInvoice ? {
+    documentId: invoice.id,
+    specName,
+    storeCondition: !isDraft,
+    sourceBlob: !isDraft ? p.pdfBlob : null,
+    autoFetch: true,
+    token,
+    apiBaseUrl,
+  } : {
+    documentId: invoice.id,
+    specName,
+    storeCondition: true,
+    autoFetch: false,
+    token,
+    apiBaseUrl,
+  };
+
+  // ── Tabs ──────────────────────────────────────────────────────────────────
+
+  const tabs = [
     {
-    // ... 352 lines omitted
+      key: 'general',
+      label: ui('invoicePreviewGeneral'),
+      content: (
+        <InvoiceGeneralTab
+          invoice={p.displayInvoice}
+          partnerName={p.partnerName}
+          badgeProps={p.badgeProps}
+          statusLabel={p.statusLabel}
+          installments={p.installments}
+          payments={p.payments}
+          loadingPayments={p.loadingPayments}
+          totalOutstanding={p.totalOutstanding}
+          canAddPayment={p.canAddPayment}
+          isDraft={p.isDraft}
+          isFullyPaid={p.isFullyPaid}
+          specName={specName}
+          apiBaseUrl={apiBaseUrl}
+          token={token}
+          orgId={p.orgId}
+          profile={p.profile}
+          onAddPayment={() => p.setShowPaymentModal(true)}
+          onSend={p.openEmailModal}
+        />
+      ),
+    },
     {
-    // ... 351 lines omitted
+      key: 'messages',
+      label: ui('invoicePreviewMessages'),
+      content: <EmptyPanel icon="💬" text={ui('invoicePreviewNoMessagesYet')} />,
+    },
     {
-    // ... 350 lines omitted
+      key: 'history',
+      label: ui('invoicePreviewHistory'),
+      content: <EmptyPanel icon="🕐" text={ui('invoicePreviewNoActivityRecorded')} />,
+    },
+  ];
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+
+  const windowLabel = tMenu(specName === 'purchase-invoice' ? 'Purchase Invoice' : 'Sales Invoice');
+
+  const actionButtons = (
+    <InvoiceActionButtons
+      triggerEdit={() => modalRef.current?.triggerEdit?.()}
+      onEmail={specName !== 'purchase-invoice' ? p.openEmailModal : undefined}
+      canSendToSif={p.canSendToSif}
+      onOpenSif={() => p.setShowSifModal(true)}
+      canAddPayment={p.canAddPayment}
+      onAddPayment={() => p.setShowPaymentModal(true)}
+      isSalesInvoice={p.isSalesInvoice}
+      onDownloadPdf={p.handleDownloadPdf}
+      hasPdf={!!p.pdfUrl}
+    />
+  );
+
+  return (
+    <>
+      <GenericPreviewModal
+        ref={modalRef}
+        title={`${windowLabel} ${p.displayInvoice?.documentNo}`}
+        subtitle={p.partnerName !== '—' ? `${ui('invoicePreviewClient')} ${p.partnerName}` : undefined}
+        leftPanel={leftPanel}
+        attachmentConfig={attachmentConfig}
+        onClose={onClose}
+        onEdit={() => onEdit?.(p.displayInvoice?.id)}
+        tabs={tabs}
+        actionButtons={actionButtons}
+      />
+
+      {p.showPaymentModal && (
+        <InvoicePaymentModal
+          invoiceId={p.displayInvoice?.id}
+          invoiceData={p.displayInvoice}
+          specName={specName}
+          apiBaseUrl={apiBaseUrl}
+          onClose={() => {
+            p.setShowPaymentModal(false);
+            p.fetchPayments();
+          }}
+        />
+      )}
+
+      {p.showSifModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="sif-modal-title"
+          style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', minWidth: '320px', maxWidth: '480px', width: '100%' }}>
+            <h3 id="sif-modal-title" style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>
+              {ui('sendToSifTitle')}
+            </h3>
+            {p.sifPhase === 'confirm' && (
+              <>
+                <p style={{ fontSize: '14px', color: '#374151', marginBottom: '20px' }}>{ui(p.sifBodyKey)}</p>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                  <button type="button" onClick={p.closeSifModal} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', cursor: 'pointer', background: '#fff' }}>
+                    {ui('cancel')}
+                  </button>
+                  <button type="button" onClick={p.handleSendToSif} style={{ padding: '8px 16px', borderRadius: '8px', background: '#1d4ed8', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                    {ui('sendToSifConfirm')}
+                  </button>
+                </div>
+              </>
+            )}
+            {p.sifPhase === 'sending' && (
+              <p style={{ fontSize: '14px', color: '#6b7280' }}>{ui('sendToSifSending')}</p>
+            )}
+            {p.sifPhase === 'results' && (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+                  {p.sifResults.sii && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                      <span style={{ color: p.sifResults.sii.ok ? '#10b981' : '#ef4444', fontWeight: 600 }}>{p.sifResults.sii.ok ? '✓' : '✗'}</span>
+                      <span>{p.sifResults.sii.ok ? ui('sendToSifSuccessSii') : (p.sifResults.sii.error || ui('sendToSifErrorSii'))}</span>
+                    </div>
+                  )}
+                  {p.sifResults.tbai && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                      <span style={{ color: p.sifResults.tbai.ok ? '#10b981' : '#ef4444', fontWeight: 600 }}>{p.sifResults.tbai.ok ? '✓' : '✗'}</span>
+                      <span>{p.sifResults.tbai.ok ? ui('sendToSifSuccessTbai') : (p.sifResults.tbai.error || ui('sendToSifErrorTbai'))}</span>
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button type="button" onClick={p.closeSifModal} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', cursor: 'pointer', background: '#fff' }}>
+                    {ui('close')}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {p.showSendModal && (
+        <SendDocumentModal
+          documentType={windowLabel}
+          documentNo={p.displayInvoice?.documentNo}
+          bpName={p.partnerName}
+          bPartnerId={p.displayInvoice?.businessPartner}
+          apiBaseUrl={apiBaseUrl}
+          documentId={p.displayInvoice?.id}
+          windowName={specName}
+          token={token}
+          pdfBlobUrl={p.pdfUrl}
+          isClosing={p.sendModalClosing}
+          onClose={p.closeEmailModal}
+        />
+      )}
+    </>
+  );
 }
-    // ... 349 lines omitted
-  }
-    // ... 348 lines omitted
-}
-    // ... 347 lines omitted
-function InfoRow({ label, value, underline }) {
-    // ... 346 lines omitted
-}
-    // ... 345 lines omitted
-function fmtPayDate(raw) {
-    // ... 344 lines omitted
-}
-    // ... 343 lines omitted
-function StatsPanel({ invoice, partnerName, badgeProps, statusLabel: sl, installments, payments, loadingPayments, totalOutstanding, canAddPayment, isDraft, isFullyPaid, specName, apiBaseUrl, token, orgId, profile, onAddPayment, onSend }) {
-    // ... 342 lines omitted
-  }
-    // ... 341 lines omitted
-  }
-    // ... 340 lines omitted
-        }
-    // ... 339 lines omitted
-          }
-    // ... 338 lines omitted
-}
-// ... 337 more lines (total: 548)
