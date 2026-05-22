@@ -21,6 +21,7 @@ import {
 import { checkSalesInvoiceReadiness } from './onboarding/onboardingReadiness.js';
 import { useLocaleSwitch, useUI } from '../i18n/index.js';
 import { buildAppReturnToHref, getSafeReturnTo } from '../lib/oauthReturnTo.js';
+import { track } from '../lib/observability.js';
 import {
   applyProgressMessage,
   buildEnvironmentSessionStorage,
@@ -50,6 +51,11 @@ const LOCALE_CODES = ['es_ES', 'en_US'];
 const COUNTRY_CODES = ['ES'];
 const SECTOR_CODES = ['technology', 'services', 'commerce', 'manufacturing'];
 const BUSINESS_TYPE_VALUES = ['company', 'freelancer', 'advisory'];
+const ONBOARDING_EVENT_CONTEXT = {
+  component: 'OnboardingPage',
+  source: 'onboarding',
+  windowName: 'onboarding',
+};
 const DEFAULT_ONBOARDING_FORM = {
   fullName: '',
   businessType: 'company',
@@ -62,6 +68,13 @@ const DEFAULT_ONBOARDING_FORM = {
   address: '',
   sector: 'technology',
 };
+
+function trackOnboarding(eventName, properties = {}) {
+  void track(eventName, {
+    ...ONBOARDING_EVENT_CONTEXT,
+    ...properties,
+  });
+}
 
 function formatMs(ms) {
   if (ms == null) return null;
@@ -572,6 +585,10 @@ export default function OnboardingPage() {
   };
 
   const handleLogout = () => {
+    trackOnboarding('onboarding_auth_logout', {
+      action: 'logout',
+      status: 'success',
+    });
     localStorage.removeItem('sf_platform_token');
     setAccountName(null);
     setRegisterForm({ name: '', email: '', password: '' });
@@ -589,16 +606,32 @@ export default function OnboardingPage() {
   // Register
   const handleRegister = async (e) => {
     e.preventDefault();
+    trackOnboarding('onboarding_auth_submitted', {
+      action: 'register',
+      status: 'started',
+    });
     setRegisterError(null);
     setRegisterLoading(true);
     try {
       const data = await registerAccount(fetch, BASE_URL, registerForm);
       if (data.token) {
+        trackOnboarding('onboarding_auth_succeeded', {
+          action: 'register',
+          status: 'success',
+        });
         handleRegisterSuccess(data.token, data.account);
       } else {
+        trackOnboarding('onboarding_auth_failed', {
+          action: 'register',
+          status: 'failed',
+        });
         setRegisterError(ui('onboardingRegisterFailed'));
       }
     } catch (err) {
+      trackOnboarding('onboarding_auth_failed', {
+        action: 'register',
+        status: 'failed',
+      });
       setRegisterError(err.userMessage || ui(err.code || 'onboardingConnectionError'));
     } finally {
       setRegisterLoading(false);
@@ -608,16 +641,32 @@ export default function OnboardingPage() {
   // Login
   const handleLogin = async (e) => {
     e.preventDefault();
+    trackOnboarding('onboarding_auth_submitted', {
+      action: 'login',
+      status: 'started',
+    });
     setLoginError(null);
     setLoginLoading(true);
     try {
       const data = await loginAccount(fetch, BASE_URL, loginForm);
       if (data.token) {
+        trackOnboarding('onboarding_auth_succeeded', {
+          action: 'login',
+          status: 'success',
+        });
         handleAuthSuccess(data.token, data.account);
       } else {
+        trackOnboarding('onboarding_auth_failed', {
+          action: 'login',
+          status: 'failed',
+        });
         setLoginError(ui('onboardingInvalidCredentials'));
       }
     } catch (err) {
+      trackOnboarding('onboarding_auth_failed', {
+        action: 'login',
+        status: 'failed',
+      });
       setLoginError(err.userMessage || ui(err.code || 'onboardingConnectionError'));
     } finally {
       setLoginLoading(false);
@@ -626,6 +675,10 @@ export default function OnboardingPage() {
 
   const loginToEnvironment = async (env, { requireReadiness = false } = {}) => {
     const token = getPlatformToken();
+    trackOnboarding('onboarding_environment_enter_submitted', {
+      action: 'enter_environment',
+      status: 'started',
+    });
     setLoggingIn(env.clientId);
     try {
       const data = await loginEnvironment(fetch, BASE_URL, token, env);
@@ -646,6 +699,10 @@ export default function OnboardingPage() {
         if (requireReadiness) {
           const readiness = await checkSalesInvoiceReadiness(fetch, BASE_URL, data.token);
           if (!readiness.ready) {
+            trackOnboarding('onboarding_environment_enter_failed', {
+              action: 'enter_environment',
+              status: 'failed',
+            });
             setResult({
               status: 'failed',
               readinessFailures: readiness.failures,
@@ -654,14 +711,26 @@ export default function OnboardingPage() {
             return;
           }
         }
+        trackOnboarding('onboarding_environment_enter_succeeded', {
+          action: 'enter_environment',
+          status: 'success',
+        });
         window.location.href = buildAppReturnToHref(
           getSafeReturnTo(window.location.search),
           window.location.pathname
         );
         return;
       }
+      trackOnboarding('onboarding_environment_enter_failed', {
+        action: 'enter_environment',
+        status: 'failed',
+      });
       alert(ui('onboardingEnvironmentLoginFailed'));
     } catch (err) {
+      trackOnboarding('onboarding_environment_enter_failed', {
+        action: 'enter_environment',
+        status: 'failed',
+      });
       if (requireReadiness) {
         setResult({ status: 'failed', error: err.userMessage || ui(err.code || 'onboardingEnvironmentLoginFailed') });
       } else {
@@ -674,6 +743,10 @@ export default function OnboardingPage() {
 
   const runOnboarding = useCallback(async () => {
     const token = getPlatformToken();
+    trackOnboarding('onboarding_run_started', {
+      action: 'create_environment',
+      status: 'started',
+    });
     setRunning(true);
     setResult(null);
     setFormSubmitted(true);
@@ -688,12 +761,27 @@ export default function OnboardingPage() {
             error: msg.success ? null : msg.message,
           };
           setResult(resultObj);
-          if (msg.success) succeeded = true;
+          if (msg.success) {
+            trackOnboarding('onboarding_run_succeeded', {
+              action: 'create_environment',
+              status: 'success',
+            });
+            succeeded = true;
+          } else {
+            trackOnboarding('onboarding_run_failed', {
+              action: 'create_environment',
+              status: 'failed',
+            });
+          }
         } else if (msg.type === 'progress' && msg.step) {
           setSteps(prev => applyProgressMessage(prev, msg));
         }
       });
     } catch (err) {
+      trackOnboarding('onboarding_run_failed', {
+        action: 'create_environment',
+        status: 'failed',
+      });
       setResult({ status: 'failed', error: err.userMessage || ui(err.code || 'onboardingGenericError') });
     } finally {
       setRunning(false);
@@ -1187,7 +1275,14 @@ export default function OnboardingPage() {
           <div className="mt-8 flex justify-end">
             <Button
               type="button"
-              onClick={() => setCreateStep(2)}
+              onClick={() => {
+                trackOnboarding('onboarding_setup_step_completed', {
+                  action: 'continue',
+                  status: 'success',
+                  type: 'profile',
+                });
+                setCreateStep(2);
+              }}
               disabled={!isStepOneValid}
               className="h-12 rounded-2xl bg-gray-900 px-6 text-base font-medium text-white hover:bg-gray-800"
             >
@@ -1265,7 +1360,15 @@ export default function OnboardingPage() {
           <div className="mt-8 flex items-center justify-between gap-4">
             <button
               type="button"
-              onClick={() => !running && setCreateStep(1)}
+              onClick={() => {
+                if (running) return;
+                trackOnboarding('onboarding_setup_step_back', {
+                  action: 'back',
+                  status: 'success',
+                  type: 'company',
+                });
+                setCreateStep(1);
+              }}
               disabled={running}
               className="text-base font-medium tracking-[-0.02em] text-slate-900 transition hover:text-slate-600 disabled:opacity-50 sm:text-lg"
             >
