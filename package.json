@@ -19,8 +19,5 @@
     "esbuild": "^0.28.0",
     "handlebars": "^4.7.9",
     "shadcn": "^4.0.2"
-  },
-  "dependencies": {
-    "mixpanel-browser": "^2.79.0"
   }
 }
