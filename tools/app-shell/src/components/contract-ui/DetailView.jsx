@@ -59,6 +59,7 @@ import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
 import { SummaryBar } from './SummaryBar.jsx';
 import DocumentTotalsPanel from './DocumentTotalsPanel.jsx';
+import { resolveTotalDiscountPct } from '@/lib/documentTotals';
 import LinesSelectionBar from './LinesSelectionBar.jsx';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import {
@@ -3032,7 +3033,7 @@ export function DetailView({
                       formatAmount={formatAmount}
                       currency={currency}
                       readOnly={isDocumentReadOnly}
-                      totalDiscountPct={Number(data?.etgoTotalDiscount ?? 0)}
+                      totalDiscountPct={resolveTotalDiscountPct(data, hook.children)}
                       onTotalDiscountChange={handleTotalDiscountChange}
                     />
                   );

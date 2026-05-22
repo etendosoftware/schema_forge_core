@@ -1,4 +1,5 @@
 import { useUI } from '@/i18n';
+import { resolveTotalDiscountPct } from '@/lib/documentTotals';
 import DocumentTotalsPanel from './DocumentTotalsPanel.jsx';
 
 function fmt(val, curr) {
@@ -153,7 +154,7 @@ export default function LinesBottomSection({
                 formatAmount={fmt}
                 currency={currency}
                 readOnly={isReadOnly}
-                totalDiscountPct={Number(data?.[totalsField] ?? totalDiscountPct ?? 0)}
+                totalDiscountPct={resolveTotalDiscountPct(data, lines, totalDiscountPct, totalsField)}
                 onTotalDiscountChange={onTotalDiscountChange}
               />
             </div>
