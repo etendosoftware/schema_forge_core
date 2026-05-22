@@ -906,8 +906,7 @@ export function EntityForm({ entity, fields = [], data, onChange, catalogs, layo
           value={isReadOnly ? displayValue : (data?.[f.key] ?? '')}
           onChange={(e) => onChange?.(f.key, e.target.value, f.column)}
           onBlur={() => onFieldBlur?.(f.key)}
-          onKeyDown={f.type === 'number' ? (e) => { if (['e', 'E', '+'].includes(e.key)) e.preventDefault(); } : undefined}
-          className={isReadOnly ? 'bg-muted/50' : 'focus:ring-2 focus:ring-primary focus:outline-none'}
+className={isReadOnly ? 'bg-muted/50' : 'focus:ring-2 focus:ring-primary focus:outline-none'}
           required={f.required && !isReadOnly}
           disabled={isReadOnly || savingField === f.key}
         />
