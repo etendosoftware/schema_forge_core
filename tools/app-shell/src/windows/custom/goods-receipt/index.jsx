@@ -128,7 +128,7 @@ export default function GoodsReceiptWindow(props) {
           enabled: true,
           processField: 'documentAction',
           processValue: 'CO',
-          label: 'Confirmar',
+          label: ui('confirm'),
           onConfirm: () => window.dispatchEvent(new CustomEvent('goods-receipt:open-confirm-modal')),
         }}
         notesField="description"
