@@ -18,12 +18,24 @@ export function Spinner() {
   );
 }
 
-export function CheckboxCard({ checked, onChange, icon, title, subtitle, disabled }) {
-  const cardBorder = disabled ? '2px solid #10B981' : checked ? '2px solid #3B82F6' : '1px solid #E5E7EB';
-  const cardBg = disabled ? '#ECFDF5' : checked ? '#EFF6FF' : '#fff';
-  const titleColor = disabled ? '#059669' : checked ? '#2563EB' : '#111827';
-  const checkboxBg = disabled ? '#10B981' : checked ? '#3B82F6' : '#fff';
+function cardBorder(disabled, checked) {
+  if (disabled) return '2px solid #10B981';
+  return checked ? '2px solid #3B82F6' : '1px solid #E5E7EB';
+}
+function cardBg(disabled, checked) {
+  if (disabled) return '#ECFDF5';
+  return checked ? '#EFF6FF' : '#fff';
+}
+function titleColor(disabled, checked) {
+  if (disabled) return '#059669';
+  return checked ? '#2563EB' : '#111827';
+}
+function checkboxBg(disabled, checked) {
+  if (disabled) return '#10B981';
+  return checked ? '#3B82F6' : '#fff';
+}
 
+export function CheckboxCard({ checked, onChange, icon, title, subtitle, disabled }) {
   return (
     <div
       onClick={disabled ? undefined : onChange}
@@ -31,15 +43,15 @@ export function CheckboxCard({ checked, onChange, icon, title, subtitle, disable
         display: 'flex', alignItems: 'center', gap: 12,
         padding: checked ? '11px 13px' : '12px 14px', borderRadius: 8,
         cursor: disabled ? 'default' : 'pointer',
-        border: cardBorder,
-        background: cardBg,
+        border: cardBorder(disabled, checked),
+        background: cardBg(disabled, checked),
         opacity: disabled ? 0.85 : 1,
         transition: 'border-color 0.15s, background 0.15s',
       }}
     >
       <span style={{ fontSize: 15, lineHeight: 1, flexShrink: 0 }}>{icon}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 500, color: titleColor }}>
+        <div style={{ fontSize: 13, fontWeight: 500, color: titleColor(disabled, checked) }}>
           {title}
         </div>
         <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 3, lineHeight: 1.4 }}>
@@ -49,7 +61,7 @@ export function CheckboxCard({ checked, onChange, icon, title, subtitle, disable
       <div style={{
         width: 18, height: 18, borderRadius: 4, flexShrink: 0,
         border: (checked || disabled) ? 'none' : '1.5px solid #D1D5DB',
-        background: checkboxBg,
+        background: checkboxBg(disabled, checked),
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         transition: 'background 0.15s',
       }}>
