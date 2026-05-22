@@ -51,7 +51,7 @@ const draftMode = null;
 // @sf-generated-end draftMode:tax
 
 // @sf-generated-start requiredHeaderFields:tax
-const requiredHeaderFields = ['name', 'validFromDate', 'rate', 'salesPurchaseType', 'docTaxAmount', 'baseAmount'];
+const requiredHeaderFields = ['name', 'rate', 'docTaxAmount', 'baseAmount', 'applicableTo', 'validFrom'];
 // @sf-generated-end requiredHeaderFields:tax
 
 

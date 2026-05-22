@@ -49,20 +49,13 @@ test.describe('Purchase Order - Partner Address Bug', () => {
     // was picked, in (b) options are listable. Wait for either state.
     await waitForPartnerAddressMode(partnerAddressInput, partnerAddressChip);
 
-    if (await partnerAddressChip.isVisible().catch(() => false)) {
+    if (await partnerAddressChip.isVisible()) {
       // Auto-selected an address → the chip label is the proof that options loaded.
       await expect(partnerAddressChip).toHaveText(/\S/);
     } else {
       // Manual mode → open the dropdown and assert at least one option.
-      try {
-        await openSelectorOptions(page, 'partnerAddress');
-      } catch (error) {
-        if (await partnerAddressChip.isVisible().catch(() => false)) {
-          await expect(partnerAddressChip).toHaveText(/\S/);
-          return;
-        }
-        throw error;
-      }
+      await expect(partnerAddressInput).toBeEnabled();
+      await partnerAddressInput.click();
       await expect(page.locator('[data-testid^="option-partnerAddress-"]').first()).toBeVisible({ timeout: 5_000 });
     }
   });
