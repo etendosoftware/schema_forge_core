@@ -1,21 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { XCircle } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI, useLocale } from '@/i18n';
+import { useNavigate } from 'react-router-dom';
+import { useRowDelete } from '@/hooks/useRowDelete';
 import GeneratedApp from '@generated/sales-quotation/generated/web/sales-quotation/index.jsx';
 import QuotationTable from '@generated/sales-quotation/generated/web/sales-quotation/QuotationTable';
-import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
-import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
+import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.jsx';
 import LinesEmptyState from '@/components/contract-ui/LinesEmptyState.jsx';
-
-// labelOverrides feed useLabel(labelOverrides) inside the generated table to
-// rename per-window AD columns (locale-keyed map, not user-visible strings).
-const LABEL_OVERRIDES = {
-  es_ES: { C_BPartner_ID: 'Contacto', DateOrdered: 'Fecha cotización' },
-  en_US: { C_BPartner_ID: 'Contact',  DateOrdered: 'Quotation Date'   },
-};
+import QuotationPreview from '../shared/QuotationPreview.jsx';
+import { useSavedPreviewRecord } from '../shared/useSavedPreviewRecord.js';
 
 const draftModeWithModal = {
   enabled: true,
@@ -79,7 +75,8 @@ function buildQuotationColumns(ui) {
 
 function CustomQuotationTable(props) {
   const ui = useUI();
-  const quotationColumns = useMemo(() => buildQuotationColumns(ui), [ui]);
+  const dictionary = useLocale();
+  const quotationColumns = useMemo(() => buildQuotationColumns(ui), [dictionary]);
 
   return <QuotationTable columns={quotationColumns} {...props} />;
 }
@@ -87,9 +84,45 @@ function CustomQuotationTable(props) {
 export default function SalesQuotationWindow({ windowName, recordId, token, apiBaseUrl, ...rest }) {
   const [cloneTargets, setCloneTargets] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const navigate = useNavigate();
+  const { effectiveRecord, clearSavedRecord } = useSavedPreviewRecord();
 
-  const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
-    useCreateContactModal({ apiBaseUrl, token });
+  const { headers, createContactCtxValue, contactPortal } =
+    useCreateContactModal({ apiBaseUrl, token, documentType: 'sale' });
+
+  const { requestDelete, deleteDialog } = useRowDelete({
+    apiBaseUrl,
+    entity: 'quotation',
+    token,
+    onSuccess: () => setRefreshKey(k => k + 1),
+  });
+
+  const renderPreview = useCallback(({ row, onClose, onEdit }) => (
+    <QuotationPreview
+      quotation={row}
+      token={token}
+      apiBaseUrl={apiBaseUrl}
+      windowName={windowName}
+      onClose={onClose}
+      onEdit={onEdit}
+    />
+  ), [token, apiBaseUrl, windowName]);
+
+  const rowQuickActions = useMemo(() => ({
+    enabled: true,
+    editMode: 'navigate',
+    statusField: 'documentStatus',
+    actions: {
+      edit:      { show: true },
+      duplicate: { show: true },
+      delete:    { show: true },
+    },
+    documentPreview: true,
+    onEdit:   (row) => navigate(`/${windowName}/${row.id}`),
+    onClone:  (row) => setCloneTargets([row]),
+    onDelete: requestDelete,
+    menuActions: customMenuActions,
+  }), [navigate, windowName, requestDelete]);
 
   if (recordId) {
     return (
@@ -104,20 +137,7 @@ export default function SalesQuotationWindow({ windowName, recordId, token, apiB
           linesEmptyState={LinesEmptyState}
           {...rest}
         />
-        {createContactState && createPortal(
-          <CreateContactModal
-            bpApiBaseUrl={bpApiBaseUrl}
-            headers={headers}
-            initialQuery={createContactState.query}
-            documentType="sale"
-            onClose={() => setCreateContactState(null)}
-            onCreated={(newBP) => {
-              createContactState.onSelect({ id: newBP.id, name: newBP.name });
-              setCreateContactState(null);
-            }}
-          />,
-          document.body,
-        )}
+        {contactPortal}
       </CreateContactContext.Provider>
     );
   }
@@ -130,11 +150,15 @@ export default function SalesQuotationWindow({ windowName, recordId, token, apiB
         token={token}
         apiBaseUrl={apiBaseUrl}
         Table={CustomQuotationTable}
-        labelOverrides={LABEL_OVERRIDES}
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
         refreshTrigger={refreshKey}
+        rowQuickActions={rowQuickActions}
+        renderPreview={renderPreview}
+        externalPreviewRow={effectiveRecord}
+        onExternalPreviewClose={clearSavedRecord}
         {...rest}
       />
+      {deleteDialog}
       {cloneTargets && createPortal(
         <CloneOrderModal
           records={cloneTargets}

@@ -281,7 +281,7 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
         <button
           className={`fm-toolbar__pill${dataMode === 'real' ? ' fm-toolbar__pill--active-dark' : ''}`}
           onClick={() => setDataMode(m => m === 'demo' ? 'real' : 'demo')}
-          title={dataMode === 'demo' ? 'Cambiar a datos reales' : 'Cambiar a datos de demostración'}
+          title={dataMode === 'demo' ? t('fm.list.mode.to_real') : t('fm.list.mode.to_demo')}
         >
           {dataMode === 'demo' ? 'Demo' : 'Real'}
         </button>
@@ -317,8 +317,8 @@ export default function FmListPage({ declarations: propDecls, onSelect, onStatus
             <span className="fm-section-header__title">{t('fm.list.title')}</span>
             <span className="fm-section-header__count">{filtered.length} {t('fm.list.count')}</span>
             <div className="fm-section-header__actions">
-              <button className="fm-section-header__icon-btn" title="Filtrar" aria-label="Filtrar"><ListFilter size={14} strokeWidth={1.75} /></button>
-              <button className="fm-section-header__icon-btn" title="Ordenar" aria-label="Ordenar"><ArrowUpDown size={14} strokeWidth={1.75} /></button>
+              <button className="fm-section-header__icon-btn" title={t('fm.action.filter')} aria-label={t('fm.action.filter')}><ListFilter size={14} strokeWidth={1.75} /></button>
+              <button className="fm-section-header__icon-btn" title={t('fm.action.sort')} aria-label={t('fm.action.sort')}><ArrowUpDown size={14} strokeWidth={1.75} /></button>
             </div>
           </div>
 

@@ -23,24 +23,27 @@ describe('FmModel349Page — no removed features', () => {
 });
 
 describe('FmModel349Page — keys (no Triangulares, pairs grouped)', () => {
+  // KEY_IDS is defined as a plain string array: const KEY_IDS = ['E', 'S', 'A', 'I']
+  const keyIds = src.match(/const KEY_IDS\s*=\s*\[([^\]]+)\]/)?.[1] ?? '';
+
   it('does not include Triangulares key', () => assert.doesNotMatch(src, /Triangulares/));
-  it('has Entregas key (E)', () => assert.match(src, /id:'E'/));
-  it('has Servicios prestados key (S)', () => assert.match(src, /id:'S'/));
-  it('has Adquisiciones key (A)', () => assert.match(src, /id:'A'/));
-  it('has Servicios recibidos key (I)', () => assert.match(src, /id:'I'/));
+  it('has Entregas key (E)', () => assert.match(keyIds, /'E'/));
+  it('has Servicios prestados key (S)', () => assert.match(keyIds, /'S'/));
+  it('has Adquisiciones key (A)', () => assert.match(keyIds, /'A'/));
+  it('has Servicios recibidos key (I)', () => assert.match(keyIds, /'I'/));
   it('Entregas (E) appears before Servicios prestados (S) in KEYS', () => {
-    const eIdx = src.indexOf("id:'E'");
-    const sIdx = src.indexOf("id:'S'");
+    const eIdx = keyIds.indexOf("'E'");
+    const sIdx = keyIds.indexOf("'S'");
     assert.ok(eIdx !== -1 && sIdx !== -1 && eIdx < sIdx, 'E must come before S');
   });
   it('Servicios prestados (S) appears before Adquisiciones (A) in KEYS', () => {
-    const sIdx = src.indexOf("id:'S'");
-    const aIdx = src.indexOf("id:'A'");
+    const sIdx = keyIds.indexOf("'S'");
+    const aIdx = keyIds.indexOf("'A'");
     assert.ok(sIdx !== -1 && aIdx !== -1 && sIdx < aIdx, 'S must come before A');
   });
   it('Adquisiciones (A) appears before Servicios recibidos (I) in KEYS', () => {
-    const aIdx = src.indexOf("id:'A'");
-    const iIdx = src.indexOf("id:'I'");
+    const aIdx = keyIds.indexOf("'A'");
+    const iIdx = keyIds.indexOf("'I'");
     assert.ok(aIdx !== -1 && iIdx !== -1 && aIdx < iIdx, 'A must come before I');
   });
 });

@@ -203,9 +203,14 @@ function opInsertRow(sections, op) {
   if (!sections[op.section]) return;
   const rows = sections[op.section].rows;
   let idx = rows.length;
-  if (op.after  != null) idx = rows.findIndex(r => r.id === op.after)  + 1;
-  if (op.before != null) idx = rows.findIndex(r => r.id === op.before);
-  if (idx < 0) idx = rows.length;
+  if (op.after != null) {
+    const pos = rows.findIndex(r => r.id === op.after);
+    idx = pos === -1 ? rows.length : pos + 1;
+  }
+  if (op.before != null) {
+    const pos = rows.findIndex(r => r.id === op.before);
+    idx = pos === -1 ? rows.length : pos;
+  }
   rows.splice(idx, 0, op.row);
 }
 
@@ -222,7 +227,8 @@ function opReorderRows(sections, op) {
 }
 
 function opDeleteSection(sectionOrder, op) {
-  sectionOrder.splice(sectionOrder.indexOf(op.section), 1);
+  const idx = sectionOrder.indexOf(op.section);
+  if (idx !== -1) sectionOrder.splice(idx, 1);
 }
 
 function opInsertSection(sectionOrder, sections, op) {
@@ -240,7 +246,7 @@ function opPatchSection(sections, op) {
   Object.assign(sections[op.section], patch);
 }
 
-function applyPatch(ops) {
+export function applyPatch(ops) {
   const sectionOrder = [...BASE.sectionOrder];
   const sections = {};
   for (const [id, sec] of Object.entries(BASE.sections)) {

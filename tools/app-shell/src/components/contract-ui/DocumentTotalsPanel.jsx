@@ -163,9 +163,9 @@ export default function DocumentTotalsPanel({
 
           {/* Net subtotal — deducts totalDiscountAmt when active (0 when no discount, so always safe) */}
           {netSubtotal != null && (
-            <div className="flex justify-between py-2 px-2">
+            <div className="flex justify-between py-2 px-2" data-testid="totals-row-subtotal">
               <span className="text-muted-foreground">{ui('subtotal')}</span>
-              <span className="tabular-nums">{fmt(totalDiscountAmt != null ? netSubtotal - totalDiscountAmt : netSubtotal)}</span>
+              <span className="tabular-nums" data-testid="totals-row-subtotal-value">{fmt(totalDiscountAmt != null ? netSubtotal - totalDiscountAmt : netSubtotal)}</span>
             </div>
           )}
 
@@ -173,9 +173,9 @@ export default function DocumentTotalsPanel({
           {taxAmt != null && taxAmt !== 0 && (
             <>
               {divider}
-              <div className="flex justify-between py-2 px-2">
+              <div className="flex justify-between py-2 px-2" data-testid="totals-row-tax">
                 <span className="text-muted-foreground">{ui('tax')}</span>
-                <span className="tabular-nums">{fmt(taxAmt)}</span>
+                <span className="tabular-nums" data-testid="totals-row-tax-value">{fmt(taxAmt)}</span>
               </div>
             </>
           )}
@@ -184,9 +184,9 @@ export default function DocumentTotalsPanel({
           {grandTotal != null && (
             <>
               {divider}
-              <div className="flex justify-between py-2 px-2 font-semibold">
+              <div className="flex justify-between py-2 px-2 font-semibold" data-testid="totals-row-total">
                 <span>{ui('total')}</span>
-                <span className="tabular-nums">{fmt(grandTotal)}</span>
+                <span className="tabular-nums" data-testid="totals-row-total-value">{fmt(grandTotal)}</span>
               </div>
             </>
           )}

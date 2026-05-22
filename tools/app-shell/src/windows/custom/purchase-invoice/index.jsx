@@ -12,9 +12,8 @@ import InvoicePreview from '../shared/InvoicePreview.jsx';
 import PurchaseInvoiceTopbar from './PurchaseInvoiceTopbar.jsx';
 import OcrSidePanel from '../shared/OcrSidePanel.jsx';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
-import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
-import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
+import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.jsx';
 import { getInvoiceDraftMode, buildInvoiceRowQuickActions, useClearSavedRecord } from '../shared/useInvoiceWindow.js';
 
 /* eslint-disable react/prop-types */
@@ -56,6 +55,10 @@ const LABEL_OVERRIDES = {
   },
 };
 
+function PurchaseInvoiceBulkAction(props) {
+  return <BulkDocumentAction {...props} labelKey="confirmBulk" />;
+}
+
 function PurchaseInvoiceTable(props) {
   return <PurchaseInvoiceHeaderTable {...props} />;
 }
@@ -78,8 +81,8 @@ export default function PurchaseInvoiceWindow(props) {
   const [savedRecord, setSavedRecord] = useState(null);
   const [cloneTargets, setCloneTargets] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
-    useCreateContactModal({ apiBaseUrl, token });
+  const { headers, createContactCtxValue, contactPortal } =
+    useCreateContactModal({ apiBaseUrl, token, documentType: 'purchase' });
   const breadcrumb = 'Purchases / Purchase Invoice';
 
   const { requestDelete, deleteDialog } = useRowDelete({
@@ -124,20 +127,7 @@ export default function PurchaseInvoiceWindow(props) {
           onAfterSave={true}
           refetchAfterSave={true}
         />
-        {createContactState && createPortal(
-          <CreateContactModal
-            bpApiBaseUrl={bpApiBaseUrl}
-            headers={headers}
-            initialQuery={createContactState.query}
-            documentType="purchase"
-            onClose={() => setCreateContactState(null)}
-            onCreated={(newBP) => {
-              createContactState.onSelect({ id: newBP.id, name: newBP.name });
-              setCreateContactState(null);
-            }}
-          />,
-          document.body,
-        )}
+        {contactPortal}
       </CreateContactContext.Provider>
     );
   }
@@ -182,7 +172,7 @@ export default function PurchaseInvoiceWindow(props) {
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
         rowQuickActions={rowQuickActions}
         sendDocument={{ enabled: false, allowEmail: false }}
-        bulkActions={(ctx) => <BulkDocumentAction {...ctx} />}
+        bulkActions={PurchaseInvoiceBulkAction}
         refreshTrigger={refreshKey}
         renderPreview={({ row, onClose, onEdit }) => (
           <InvoicePreview

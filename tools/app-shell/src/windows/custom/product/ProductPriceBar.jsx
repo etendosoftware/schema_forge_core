@@ -132,27 +132,29 @@ function resolveOptionId(options, candidate) {
   return null;
 }
 
+const PRICE_TABLE_TONES = {
+  sales: {
+    shell: 'border-blue-200 bg-blue-50/70',
+    badge: 'bg-blue-100 text-blue-700',
+    listPrice: 'text-blue-700',
+  },
+  purchase: {
+    shell: 'border-emerald-200 bg-emerald-50/70',
+    badge: 'bg-emerald-100 text-emerald-700',
+    listPrice: 'text-emerald-700',
+  },
+  neutral: {
+    shell: 'border-gray-200 bg-gray-50',
+    badge: 'bg-gray-100 text-gray-700',
+    listPrice: 'text-gray-900',
+  },
+};
+
 function PriceTable({ title, rows, variant = 'neutral' }) {
   const ui = useUI();
   const orgCurrency = useCurrency() ?? 'USD';
   const isEmpty = !rows || rows.length === 0;
-  const tone = variant === 'sales'
-    ? {
-      shell: 'border-blue-200 bg-blue-50/70',
-      badge: 'bg-blue-100 text-blue-700',
-      listPrice: 'text-blue-700',
-    }
-    : variant === 'purchase'
-      ? {
-        shell: 'border-emerald-200 bg-emerald-50/70',
-        badge: 'bg-emerald-100 text-emerald-700',
-        listPrice: 'text-emerald-700',
-      }
-      : {
-        shell: 'border-gray-200 bg-gray-50',
-        badge: 'bg-gray-100 text-gray-700',
-        listPrice: 'text-gray-900',
-      };
+  const tone = PRICE_TABLE_TONES[variant] ?? PRICE_TABLE_TONES.neutral;
 
   return (
     <div className={`rounded-2xl border p-3 ${tone.shell}`}>
@@ -208,7 +210,17 @@ function PriceTable({ title, rows, variant = 'neutral' }) {
 }
 
 
-function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSaved, selectorOptions = [], productId }) {
+function PricingDialog({
+  open,
+  onOpenChange,
+  priceRows,
+  apiBaseUrl,
+  token,
+  onSaved,
+  selectorOptions = [],
+  selectorColumn = 'M_PriceList_Version_ID',
+  productId,
+}) {
   const ui = useUI();
   const [drafts, setDrafts] = useState({});
   const [saving, setSaving] = useState(false);
@@ -217,6 +229,8 @@ function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSav
   const [pendingPurchase, setPendingPurchase] = useState(null);
   const [stagedAdds, setStagedAdds] = useState([]);
   const [stagedDeletes, setStagedDeletes] = useState([]);
+  const [lazyOptions, setLazyOptions] = useState([]);
+  const [lazyLoading, setLazyLoading] = useState(false);
 
   useEffect(() => {
     if (open && Array.isArray(priceRows)) {
@@ -235,17 +249,55 @@ function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSav
     }
   }, [open, priceRows]);
 
+  // Catalogs are not eagerly loaded (see useCatalogs). Fetch price list version
+  // options lazily when the dialog opens so the add-row dropdown is populated.
+  useEffect(() => {
+    if (!open) return undefined;
+    if (Array.isArray(selectorOptions) && selectorOptions.length > 0) return undefined;
+    if (!apiBaseUrl || !token) return undefined;
+
+    let aborted = false;
+    setLazyLoading(true);
+    fetch(`${apiBaseUrl}/price/selectors/${selectorColumn}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(res => (res.ok ? res.json() : null))
+      .then(payload => {
+        if (aborted) return;
+        const options = (payload?.items ?? []).map(item => ({
+          id: item.id,
+          name: item.label || item.name || item.id,
+          ...item,
+        }));
+        setLazyOptions(options);
+      })
+      .catch(() => {
+        if (!aborted) setLazyOptions([]);
+      })
+      .finally(() => {
+        if (!aborted) setLazyLoading(false);
+      });
+
+    return () => {
+      aborted = true;
+    };
+  }, [open, selectorOptions, apiBaseUrl, token, selectorColumn]);
+
+  const effectiveSelectorOptions = useMemo(() => (
+    Array.isArray(selectorOptions) && selectorOptions.length > 0 ? selectorOptions : lazyOptions
+  ), [selectorOptions, lazyOptions]);
+
   const saleOptions = useMemo(() => {
-    if (!Array.isArray(selectorOptions) || selectorOptions.length === 0) return [];
-    const filtered = selectorOptions.filter(opt => getSalesFlagFromOption(opt) === true);
-    return filtered.length > 0 ? filtered : selectorOptions;
-  }, [selectorOptions]);
+    if (!Array.isArray(effectiveSelectorOptions) || effectiveSelectorOptions.length === 0) return [];
+    const filtered = effectiveSelectorOptions.filter(opt => getSalesFlagFromOption(opt) === true);
+    return filtered.length > 0 ? filtered : effectiveSelectorOptions;
+  }, [effectiveSelectorOptions]);
 
   const purchaseOptions = useMemo(() => {
-    if (!Array.isArray(selectorOptions) || selectorOptions.length === 0) return [];
-    const filtered = selectorOptions.filter(opt => getSalesFlagFromOption(opt) === false);
-    return filtered.length > 0 ? filtered : selectorOptions;
-  }, [selectorOptions]);
+    if (!Array.isArray(effectiveSelectorOptions) || effectiveSelectorOptions.length === 0) return [];
+    const filtered = effectiveSelectorOptions.filter(opt => getSalesFlagFromOption(opt) === false);
+    return filtered.length > 0 ? filtered : effectiveSelectorOptions;
+  }, [effectiveSelectorOptions]);
 
   const handleAddRow = (pending, clearPending, options, variant) => {
     if (!pending?.plvId) {
@@ -539,10 +591,15 @@ function PricingDialog({ open, onOpenChange, priceRows, apiBaseUrl, token, onSav
                       <select
                         value={pending.plvId}
                         onChange={e => setPending(p => ({ ...p, plvId: e.target.value }))}
-                        className={`w-full text-sm border border-gray-200 rounded-md px-2 py-1 bg-white focus:outline-none focus:ring-1 ${tone.focus}`}
+                        disabled={lazyLoading && options.length === 0}
+                        className={`w-full text-sm border border-gray-200 rounded-md px-2 py-1 bg-white focus:outline-none focus:ring-1 ${tone.focus} disabled:opacity-60`}
                         autoFocus
                       >
-                        <option value="">{ui('priceSelectVersion')}</option>
+                        <option value="">
+                          {lazyLoading && options.length === 0
+                            ? ui('loadingPricing')
+                            : ui('priceSelectVersion')}
+                        </option>
                         {options.map(opt => {
                           const id = extractReferenceId(opt.id);
                           return (
@@ -683,9 +740,12 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Create-flow drafts (used only when no rows exist yet)
-  const [saleDraft, setSaleDraft] = useState('');
-  const [purchaseDraft, setPurchaseDraft] = useState('');
+  // Create-flow drafts (used only when no rows exist yet). Each side maps
+  // to its own M_ProductPrice row (sales vs purchase price list version).
+  const [saleStandardDraft, setSaleStandardDraft] = useState('');
+  const [saleListDraft, setSaleListDraft] = useState('');
+  const [purchaseStandardDraft, setPurchaseStandardDraft] = useState('');
+  const [purchaseListDraft, setPurchaseListDraft] = useState('');
   const [creating, setCreating] = useState(false);
 
   const priceSelector = useMemo(() => (
@@ -726,16 +786,20 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
   const displayPurchaseRows = hasRows ? priceRows.filter(r => getSalesFlagFromRow(r) === false) : [];
 
   const resolveCreateDefaults = useCallback(async () => {
-    if (!token || !apiBaseUrl) {
-      return { priceListVersion: null, priceList: null };
-    }
+    const empty = {
+      salesPriceListVersion: null,
+      salesPriceList: null,
+      purchasePriceListVersion: null,
+      purchasePriceList: null,
+    };
+    if (!token || !apiBaseUrl) return empty;
 
     const defaultUrl = recordId
       ? `${apiBaseUrl}/price/defaults?parentId=${recordId}`
       : `${apiBaseUrl}/price/defaults`;
 
-    let priceListVersion = null;
-    let priceList = null;
+    let defaultPlv = null;
+    let defaultPl = null;
 
     try {
       const defaultsRes = await fetch(defaultUrl, {
@@ -744,12 +808,12 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
       if (defaultsRes.ok) {
         const defaultsPayload = await defaultsRes.json();
         const defaults = sanitizeDefaults(defaultsPayload?.defaults ?? {});
-        priceListVersion = extractReferenceId(
+        defaultPlv = extractReferenceId(
           defaults.priceListVersion
           ?? defaults.M_PriceList_Version_ID
           ?? defaults.priceListVersionId
         );
-        priceList = extractReferenceId(
+        defaultPl = extractReferenceId(
           defaults.priceList
           ?? defaults.M_PriceList_ID
           ?? defaults.priceListId
@@ -759,14 +823,33 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
       // Continue with selector fallback.
     }
 
-    priceListVersion = resolveOptionId(selectorOptions, priceListVersion);
+    const findInOptions = (options, isSales) => {
+      if (!Array.isArray(options) || options.length === 0) return null;
+      const match = options.find(opt => getSalesFlagFromOption(opt) === isSales);
+      return extractReferenceId(match?.id);
+    };
 
-    if (!priceListVersion && Array.isArray(selectorOptions) && selectorOptions.length > 0) {
-      const salesOption = selectorOptions.find(option => getSalesFlagFromOption(option) === true);
-      priceListVersion = extractReferenceId(salesOption?.id) ?? extractReferenceId(selectorOptions[0]?.id);
+    let salesPriceListVersion = findInOptions(selectorOptions, true);
+    let purchasePriceListVersion = findInOptions(selectorOptions, false);
+    let salesPriceList = null;
+    let purchasePriceList = null;
+
+    // If the /defaults endpoint returned a PLV, route it to the matching side.
+    if (defaultPlv) {
+      const normalized = resolveOptionId(selectorOptions, defaultPlv) ?? defaultPlv;
+      const matched = (selectorOptions ?? []).find(opt => extractReferenceId(opt.id) === normalized);
+      const flag = getSalesFlagFromOption(matched);
+      if (flag === true) {
+        salesPriceListVersion = salesPriceListVersion ?? normalized;
+        salesPriceList = defaultPl;
+      } else if (flag === false) {
+        purchasePriceListVersion = purchasePriceListVersion ?? normalized;
+        purchasePriceList = defaultPl;
+      }
     }
 
-    if (!priceListVersion) {
+    // Last-chance fallback: fetch the selector endpoint directly.
+    if (!salesPriceListVersion || !purchasePriceListVersion) {
       const selectorColumn = priceSelector?.column ?? 'M_PriceList_Version_ID';
       try {
         const selectorRes = await fetch(`${apiBaseUrl}/price/selectors/${selectorColumn}`, {
@@ -779,24 +862,30 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
             name: item.label || item.name || item.id,
             ...item,
           }));
-          const salesOption = options.find(option => getSalesFlagFromOption(option) === true);
-          priceListVersion = extractReferenceId(salesOption?.id) ?? extractReferenceId(options[0]?.id);
+          salesPriceListVersion = salesPriceListVersion ?? findInOptions(options, true);
+          purchasePriceListVersion = purchasePriceListVersion ?? findInOptions(options, false);
         }
       } catch {
-        // Keep null and validate before create.
+        // Keep nulls and let the create flow surface a clear error.
       }
     }
 
-    return { priceListVersion, priceList };
+    return {
+      salesPriceListVersion,
+      salesPriceList,
+      purchasePriceListVersion,
+      purchasePriceList,
+    };
   }, [recordId, token, apiBaseUrl, selectorOptions, priceSelector]);
 
   const handleOpenDialog = () => {
     if (hasRows) {
       setDialogOpen(true);
     } else {
-      // No rows: use create flow
-      setSaleDraft('');
-      setPurchaseDraft('');
+      setSaleStandardDraft('');
+      setSaleListDraft('');
+      setPurchaseStandardDraft('');
+      setPurchaseListDraft('');
       setCreating(true);
     }
   };
@@ -814,150 +903,90 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
       return;
     }
 
+    const saleStandard = toFiniteNumber(saleStandardDraft);
+    const saleList = toFiniteNumber(saleListDraft);
+    const purchaseStandard = toFiniteNumber(purchaseStandardDraft);
+    const purchaseList = toFiniteNumber(purchaseListDraft);
+
+    const hasSaleRow = saleStandard !== null || saleList !== null;
+    const hasPurchaseRow = purchaseStandard !== null || purchaseList !== null;
+
+    if (!hasSaleRow && !hasPurchaseRow) {
+      toast.info(ui('enterAtLeastOneValueCreatePricing'));
+      return;
+    }
+
     setSaving(true);
     let savedSuccessfully = false;
     try {
-      const saleNumber = toFiniteNumber(saleDraft);
-      const purchaseNumber = toFiniteNumber(purchaseDraft);
+      const {
+        salesPriceListVersion,
+        salesPriceList,
+        purchasePriceListVersion,
+        purchasePriceList,
+      } = await resolveCreateDefaults();
 
-      if (saleNumber === null && purchaseNumber === null) {
-        toast.info(ui('enterAtLeastOneValueCreatePricing'));
-        return;
+      if (hasSaleRow && !salesPriceListVersion) {
+        throw new Error(ui('unableToSavePricing'));
+      }
+      if (hasPurchaseRow && !purchasePriceListVersion) {
+        throw new Error(ui('unableToSavePricing'));
       }
 
-      const { priceListVersion, priceList } = await resolveCreateDefaults();
-      const resolvedSale = saleNumber ?? purchaseNumber;
-      const resolvedPurchase = purchaseNumber ?? saleNumber;
-      const normalizedSale = resolvedSale ?? 0;
-      const normalizedPurchase = resolvedPurchase ?? normalizedSale;
-
-      const createPayload = {
-        parentId: recordId,
-        product: recordId,
-        standardPrice: String(normalizedSale),
-        listPrice: String(normalizedPurchase),
-        priceLimit: String(normalizedPurchase),
-        cost: '0',
-        algorithm: 'S',
-        active: true,
-      };
       const organizationId = extractReferenceId(data?.organization);
-      if (organizationId) {
-        createPayload.organization = organizationId;
-      }
       const clientId = extractReferenceId(data?.client);
-      if (clientId) {
-        createPayload.client = clientId;
-      }
-      if (priceList) {
-        createPayload.priceList = priceList;
-      }
-      if (priceListVersion && priceListVersion !== recordId) {
-        createPayload.priceListVersion = priceListVersion;
-      }
 
-      const minimalPayload = {
-        parentId: recordId,
-        standardPrice: String(normalizedSale),
-        listPrice: String(normalizedPurchase),
-        priceLimit: String(normalizedPurchase),
-      };
-      if (createPayload.priceListVersion) {
-        minimalPayload.priceListVersion = createPayload.priceListVersion;
-      }
-      if (createPayload.priceList) {
-        minimalPayload.priceList = createPayload.priceList;
-      }
+      const postRow = async ({ priceListVersion, priceList, standard, list }) => {
+        // Within a single row, when only one column is provided, fall back
+        // to the other to keep standardPrice / listPrice / priceLimit consistent.
+        const standardValue = standard ?? list ?? 0;
+        const listValue = list ?? standard ?? 0;
+        const limitValue = listValue;
 
-      const fallbackPayload = {
-        parentId: recordId,
-        product: recordId,
-        standardPrice: String(normalizedSale),
-        listPrice: String(normalizedPurchase),
-      };
-      if (createPayload.priceListVersion) {
-        fallbackPayload.priceListVersion = createPayload.priceListVersion;
-      }
-      if (createPayload.priceList) {
-        fallbackPayload.priceList = createPayload.priceList;
-      }
+        const payload = {
+          parentId: recordId,
+          product: recordId,
+          priceListVersion,
+          standardPrice: String(standardValue),
+          listPrice: String(listValue),
+          priceLimit: String(limitValue),
+        };
+        if (priceList) payload.priceList = priceList;
+        if (organizationId) payload.organization = organizationId;
+        if (clientId) payload.client = clientId;
 
-      const noPriceListPayload = {
-        parentId: recordId,
-        product: recordId,
-        standardPrice: String(normalizedSale),
-        listPrice: String(normalizedPurchase),
-        priceLimit: String(normalizedPurchase),
-      };
-
-      const attemptPayloads = [];
-      const seenPayloads = new Set();
-      for (const candidate of [noPriceListPayload, createPayload, minimalPayload, fallbackPayload]) {
-        const signature = JSON.stringify(candidate);
-        if (seenPayloads.has(signature)) continue;
-        seenPayloads.add(signature);
-        attemptPayloads.push(candidate);
-      }
-
-      let createRes = null;
-      const failedAttempts = [];
-      for (const candidate of attemptPayloads) {
         const res = await fetch(`${apiBaseUrl}/price`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(candidate),
+          body: JSON.stringify(payload),
         });
-
-        if (res.ok) {
-          createRes = res;
-          break;
+        if (!res.ok) {
+          throw new Error(await extractErrorMessage(res));
         }
+      };
 
-        let errorPayload = null;
-        try {
-          errorPayload = await res.clone().json();
-        } catch {
-          try {
-            errorPayload = await res.clone().text();
-          } catch {
-            errorPayload = null;
-          }
-        }
-        failedAttempts.push({ payload: candidate, response: errorPayload, status: res.status });
-        createRes = res;
+      if (hasSaleRow) {
+        await postRow({
+          priceListVersion: salesPriceListVersion,
+          priceList: salesPriceList,
+          standard: saleStandard,
+          list: saleList,
+        });
       }
 
-      if (!createRes?.ok) {
-        const normalizedAttempts = [];
-        for (const attempt of failedAttempts) {
-          let parsedMessage = `HTTP ${attempt.status}`;
-          try {
-            const fakeResponse = {
-              json: async () => attempt.response,
-              status: attempt.status,
-            };
-            parsedMessage = await extractErrorMessage(fakeResponse);
-          } catch {
-            // Keep default parsed message.
-          }
-          normalizedAttempts.push({
-            status: attempt.status,
-            payload: attempt.payload,
-            parsedMessage,
-            response: attempt.response,
-          });
-        }
-        console.error('Product pricing create failed', {
-          failedAttempts: normalizedAttempts,
-          failedAttemptsJson: JSON.stringify(normalizedAttempts, null, 2),
+      if (hasPurchaseRow) {
+        await postRow({
+          priceListVersion: purchasePriceListVersion,
+          priceList: purchasePriceList,
+          standard: purchaseStandard,
+          list: purchaseList,
         });
-        throw new Error(await extractErrorMessage(createRes));
       }
 
-      toast.success('Pricing created using default values.');
+      toast.success(ui('pricingCreatedUsingDefaultValues'));
       await refreshPrices();
       savedSuccessfully = true;
     } catch (err) {
@@ -973,6 +1002,97 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
   const handleCreateKeyDown = (e) => {
     if (e.key === 'Escape') cancelCreate();
     if (e.key === 'Enter') saveCreate();
+  };
+
+  const renderPricingBody = () => {
+    if (loading) {
+      return (
+        <div className="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-500 flex items-center gap-2">
+          <Loader2 size={14} className="animate-spin" />
+          {ui('loadingPricing')}
+        </div>
+      );
+    }
+    if (creating && !hasRows) {
+      return (
+        <div className="flex gap-3">
+          <div className="flex-1 rounded-xl border border-blue-200 bg-blue-50/40 p-4">
+            <div className="text-sm font-semibold text-gray-800 mb-1">{ui('priceSalesPrice')}</div>
+            <p className="text-xs text-gray-400 mb-3">{ui('priceSalesDescription')}</p>
+            <div className="flex gap-3">
+              <label className="flex-1 text-xs text-gray-500">
+                <div className="mb-1 uppercase tracking-wide font-semibold">{ui('priceColUnitPrice')}</div>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={saleStandardDraft}
+                  onChange={e => setSaleStandardDraft(e.target.value)}
+                  onKeyDown={handleCreateKeyDown}
+                  placeholder={ui('priceZeroPlaceholder')}
+                  className="w-full text-xl font-bold text-gray-900 bg-white border border-gray-200 rounded-md px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500"
+                  autoFocus
+                />
+              </label>
+              <label className="flex-1 text-xs text-gray-500">
+                <div className="mb-1 uppercase tracking-wide font-semibold">{ui('priceColListPrice')}</div>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={saleListDraft}
+                  onChange={e => setSaleListDraft(e.target.value)}
+                  onKeyDown={handleCreateKeyDown}
+                  placeholder={ui('priceZeroPlaceholder')}
+                  className="w-full text-xl font-bold text-gray-900 bg-white border border-gray-200 rounded-md px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </label>
+            </div>
+          </div>
+          <div className="flex-1 rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
+            <div className="text-sm font-semibold text-gray-800 mb-1">{ui('pricePurchasePrice')}</div>
+            <p className="text-xs text-gray-400 mb-3">{ui('pricePurchaseDescription')}</p>
+            <div className="flex gap-3">
+              <label className="flex-1 text-xs text-gray-500">
+                <div className="mb-1 uppercase tracking-wide font-semibold">{ui('priceColUnitPrice')}</div>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={purchaseStandardDraft}
+                  onChange={e => setPurchaseStandardDraft(e.target.value)}
+                  onKeyDown={handleCreateKeyDown}
+                  placeholder={ui('priceZeroPlaceholder')}
+                  className="w-full text-xl font-bold text-gray-900 bg-white border border-gray-200 rounded-md px-2 py-1 outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </label>
+              <label className="flex-1 text-xs text-gray-500">
+                <div className="mb-1 uppercase tracking-wide font-semibold">{ui('priceColListPrice')}</div>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={purchaseListDraft}
+                  onChange={e => setPurchaseListDraft(e.target.value)}
+                  onKeyDown={handleCreateKeyDown}
+                  placeholder={ui('priceZeroPlaceholder')}
+                  className="w-full text-xl font-bold text-gray-900 bg-white border border-gray-200 rounded-md px-2 py-1 outline-none focus:ring-1 focus:ring-emerald-500"
+                />
+              </label>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (!hasRows) {
+      return (
+        <div className="rounded-lg border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-400">
+          {ui('noPricingConfigured')}
+        </div>
+      );
+    }
+    return (
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-2 items-start">
+        <PriceTable title={ui('priceSalesLists')} rows={displaySaleRows} variant="sales" />
+        <PriceTable title={ui('pricePurchaseLists')} rows={displayPurchaseRows} variant="purchase" />
+      </div>
+    );
   };
 
   if (!recordId) {
@@ -1026,51 +1146,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
         </div>
       </div>
 
-      {loading ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-500 flex items-center gap-2">
-          <Loader2 size={14} className="animate-spin" />
-          {ui('loadingPricing')}
-        </div>
-      ) : creating && !hasRows ? (
-        <div className="flex gap-3">
-          <div className="flex-1 rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-sm font-semibold text-gray-800 mb-1">{ui('priceSalesPrice')}</div>
-            <p className="text-xs text-gray-400 mb-3">{ui('priceSalesDescription')}</p>
-            <input
-              type="number"
-              step="0.01"
-              value={saleDraft}
-              onChange={e => setSaleDraft(e.target.value)}
-              onKeyDown={handleCreateKeyDown}
-              placeholder={ui('priceZeroPlaceholder')}
-              className="w-full text-2xl font-bold text-gray-900 bg-transparent border-0 outline-none focus:ring-0 p-0"
-              autoFocus
-            />
-          </div>
-          <div className="flex-1 rounded-xl border border-gray-200 bg-white p-4">
-            <div className="text-sm font-semibold text-gray-800 mb-1">{ui('pricePurchasePrice')}</div>
-            <p className="text-xs text-gray-400 mb-3">{ui('pricePurchaseDescription')}</p>
-            <input
-              type="number"
-              step="0.01"
-              value={purchaseDraft}
-              onChange={e => setPurchaseDraft(e.target.value)}
-              onKeyDown={handleCreateKeyDown}
-              placeholder={ui('priceZeroPlaceholder')}
-              className="w-full text-2xl font-bold text-gray-900 bg-transparent border-0 outline-none focus:ring-0 p-0"
-            />
-          </div>
-        </div>
-      ) : !hasRows ? (
-        <div className="rounded-lg border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-400">
-          {ui('noPricingConfigured')}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2 items-start">
-          <PriceTable title={ui('priceSalesLists')} rows={displaySaleRows} variant="sales" />
-          <PriceTable title={ui('pricePurchaseLists')} rows={displayPurchaseRows} variant="purchase" />
-        </div>
-      )}
+      {renderPricingBody()}
 
       <PricingDialog
         open={dialogOpen}
@@ -1080,6 +1156,7 @@ export default function ProductPriceBar({ data, token, apiBaseUrl, catalogs, api
         token={token}
         onSaved={handleDialogSaved}
         selectorOptions={selectorOptions}
+        selectorColumn={priceSelector?.column ?? 'M_PriceList_Version_ID'}
         productId={recordId}
       />
     </div>
