@@ -431,3 +431,107 @@ describe('OnboardingWizard — ManualScreen', () => {
     expect(screen.getByText('fiscal.onboarding.manual.title')).toBeInTheDocument();
   });
 });
+
+describe('OnboardingWizard — AppliedScreen', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  async function navigateToApplied(overrides = {}) {
+    const result = renderWizard(overrides);
+    // Use manual path so manualSystem='SII' bypasses the resolveSystem mock (which returns null)
+    fireEvent.click(screen.getByText('fiscal.onboarding.territory.prefer.manual.link'));
+    fireEvent.click(screen.getByText('fiscal.territory.navarra'));
+    fireEvent.click(screen.getByText('SII'));
+    fireEvent.click(screen.getByText('fiscal.onboarding.continue'));
+    fireEvent.click(screen.getByText('fiscal.onboarding.confirm.btn'));
+    await waitFor(() => {
+      expect(screen.getByText('fiscal.onboarding.detail.saveapply')).toBeInTheDocument();
+    });
+    // handleSaveDetail: system='SII', siiRef.current is null (SiiSection not rendered),
+    // optional-chaining returns undefined, onApplied() fires → step='applied'
+    fireEvent.click(screen.getByText('fiscal.onboarding.detail.saveapply'));
+    await waitFor(() => {
+      expect(screen.getByText('fiscal.onboarding.applied.title')).toBeInTheDocument();
+    });
+    return result;
+  }
+
+  it('shows applied title after saving details', async () => {
+    await navigateToApplied();
+    expect(screen.getByText('fiscal.onboarding.applied.title')).toBeInTheDocument();
+  });
+
+  it('shows applied subtitle', async () => {
+    await navigateToApplied();
+    expect(screen.getByText('fiscal.onboarding.applied.subtitle')).toBeInTheDocument();
+  });
+
+  it('shows goHome button in applied screen', async () => {
+    await navigateToApplied();
+    expect(screen.getByText('fiscal.onboarding.goHome')).toBeInTheDocument();
+  });
+
+  it('shows viewConfig button in applied screen', async () => {
+    await navigateToApplied();
+    expect(screen.getByText('fiscal.onboarding.viewConfig')).toBeInTheDocument();
+  });
+
+  it('calls onGoHome when goHome button is clicked in applied screen', async () => {
+    const { props } = await navigateToApplied();
+    fireEvent.click(screen.getByText('fiscal.onboarding.goHome'));
+    expect(props.onGoHome).toHaveBeenCalled();
+  });
+
+  it('calls onComplete when viewConfig button is clicked in applied screen', async () => {
+    const { props } = await navigateToApplied();
+    fireEvent.click(screen.getByText('fiscal.onboarding.viewConfig'));
+    expect(props.onComplete).toHaveBeenCalled();
+  });
+
+  it('shows applied territory row', async () => {
+    await navigateToApplied();
+    expect(screen.getByText('fiscal.onboarding.applied.row.territory')).toBeInTheDocument();
+  });
+
+  it('shows applied system row', async () => {
+    await navigateToApplied();
+    expect(screen.getByText('fiscal.onboarding.applied.row.system')).toBeInTheDocument();
+  });
+
+  it('shows nextsteps title', async () => {
+    await navigateToApplied();
+    expect(screen.getByText('fiscal.onboarding.nextsteps.title')).toBeInTheDocument();
+  });
+});
+
+describe('OnboardingWizard — Breadcrumb navigation', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('ConfirmScreen breadcrumb territory link navigates back to territory', () => {
+    renderWizard();
+    fireEvent.click(screen.getByText('fiscal.territory.navarra'));
+    fireEvent.click(screen.getByText('fiscal.onboarding.continue'));
+    expect(screen.getByText('fiscal.onboarding.confirm.title')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('fiscal.onboarding.breadcrumb.territory'));
+    expect(screen.getByText('fiscal.onboarding.territory.title')).toBeInTheDocument();
+  });
+
+  it('ConfirmScreen shows breadcrumb confirm label', () => {
+    renderWizard();
+    fireEvent.click(screen.getByText('fiscal.territory.navarra'));
+    fireEvent.click(screen.getByText('fiscal.onboarding.continue'));
+    expect(screen.getByText('fiscal.onboarding.breadcrumb.confirm')).toBeInTheDocument();
+  });
+
+  it('SubquestionScreen breadcrumb territory link navigates back to territory', () => {
+    renderWizard();
+    fireEvent.click(screen.getByText('fiscal.territory.alava'));
+    fireEvent.click(screen.getByText('fiscal.onboarding.continue'));
+    expect(screen.getByText('fiscal.onboarding.subq.also.title')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('fiscal.onboarding.breadcrumb.territory'));
+    expect(screen.getByText('fiscal.onboarding.territory.title')).toBeInTheDocument();
+  });
+});
