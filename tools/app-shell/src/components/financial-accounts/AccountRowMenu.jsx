@@ -1,10 +1,9 @@
 import {
   MoreVertical,
   ExternalLink,
-  Edit,
+  Link2,
   RefreshCw,
-  Unplug,
-  Archive,
+  Unlink2,
   Plug,
 } from 'lucide-react';
 import {
@@ -15,17 +14,26 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { useUI } from '@/i18n';
+import { ACCOUNT_TYPE } from './tokens';
 
 /**
- * Per-row kebab menu. In T1 only "Abrir cuenta" is active because the rest of
- * the actions depend on features arriving in subsequent stories:
- *   - Edit / Archive → ETP-4096 (T2)
- *   - Sync now / Disconnect / Connect PSD2 → ETP-4097 (T3)
+ * Per-row kebab menu. Shows every action available on a financial account so
+ * the surface matches the Figma `3012:25602` mock end-to-end, even before the
+ * downstream features ship. Items follow this order:
  *
- * Disabled items keep the visual placeholder but stay non-interactive.
+ *   1. Abrir cuenta             (interactive in T1, navigates to the detail)
+ *   2. Editar conexión PSD2     (disabled — wired by ETP-4097 / T3)
+ *   3. Sincronizar ahora        (disabled — wired by ETP-4097 / T3)
+ *   ───
+ *   4. Conectar PSD2            (disabled — wired by ETP-4097 / T3)
+ *   5. Desconectar PSD2         (disabled — wired by ETP-4097 / T3)
+ *
+ * Cash accounts (type=C) never expose the PSD2 group because the connection
+ * does not apply to manual cash drawers.
  */
 export function AccountRowMenu({ account, onOpen }) {
   const ui = useUI();
+  const isCash = account.type === ACCOUNT_TYPE.CASH;
 
   return (
     <DropdownMenu>
@@ -39,36 +47,46 @@ export function AccountRowMenu({ account, onOpen }) {
           <MoreVertical className="h-5 w-5" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52">
+      <DropdownMenuContent align="end" className="w-[235px]">
         <DropdownMenuItem
           onClick={() => onOpen?.(account)}
-          data-testid="account-row-menu-open"
+          data-testid={`account-row-menu-open-${account.id}`}
         >
-          <ExternalLink className="h-4 w-4" />
-          {ui('financeAccountsMenuOpen')}
+          <ExternalLink className="h-5 w-5 text-[#828FA3]" />
+          <span className="text-sm font-normal leading-6 text-[#121217]">
+            {ui('financeAccountsMenuOpen')}
+          </span>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem disabled>
-          <Edit className="h-4 w-4" />
-          {ui('financeAccountsMenuEdit')}
-        </DropdownMenuItem>
-        <DropdownMenuItem disabled>
-          <RefreshCw className="h-4 w-4" />
-          {ui('financeAccountsMenuSyncNow')}
-        </DropdownMenuItem>
-        <DropdownMenuItem disabled>
-          <Plug className="h-4 w-4" />
-          {ui('financeAccountsMenuConnect')}
-        </DropdownMenuItem>
-        <DropdownMenuItem disabled>
-          <Unplug className="h-4 w-4" />
-          {ui('financeAccountsMenuDisconnect')}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem disabled>
-          <Archive className="h-4 w-4" />
-          {ui('financeAccountsMenuArchive')}
-        </DropdownMenuItem>
+
+        {!isCash ? (
+          <>
+            <DropdownMenuItem disabled>
+              <Link2 className="h-5 w-5 text-[#828FA3]" />
+              <span className="text-sm font-normal leading-6 text-[#121217]">
+                {ui('financeAccountsMenuEditPsd2')}
+              </span>
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled>
+              <RefreshCw className="h-5 w-5 text-[#828FA3]" />
+              <span className="text-sm font-normal leading-6 text-[#121217]">
+                {ui('financeAccountsMenuSyncNow')}
+              </span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem disabled>
+              <Plug className="h-5 w-5 text-[#828FA3]" />
+              <span className="text-sm font-normal leading-6 text-[#121217]">
+                {ui('financeAccountsMenuConnect')}
+              </span>
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled>
+              <Unlink2 className="h-5 w-5 text-[#828FA3]" />
+              <span className="text-sm font-normal leading-6 text-[#121217]">
+                {ui('financeAccountsMenuDisconnect')}
+              </span>
+            </DropdownMenuItem>
+          </>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   );
