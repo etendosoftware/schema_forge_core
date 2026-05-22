@@ -1,8 +1,8 @@
 {
-  "version": "0.4.0",
+  "version": "0.6.0",
   "generatedAt": "2026-04-29T19:46:13.628Z",
-  "updatedAt": "2026-05-15T16:00:29.706Z",
-  "checksum": "b389392e22b66c11",
+  "updatedAt": "2026-05-20T13:04:38.349Z",
+  "checksum": "59b10aa02580d676",
   "frontendContract": {
     "window": {
       "id": "C50A8AEE6F044825B5EF54FAAE76826F",
@@ -111,10 +111,10 @@
             "tsType": "string",
             "visibility": "editable",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": true,
             "sourceRequired": true,
-            "reference": "BPartner",
+            "reference": "BusinessPartner",
             "inputMode": "search",
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_Order_BPartner"
@@ -137,8 +137,12 @@
             "grid": false,
             "form": true,
             "sourceRequired": true,
-            "reference": "BPartner_Location",
-            "inputMode": "selector",
+            "reference": "BusinessPartnerLocation",
+            "inputMode": "dependent",
+            "dependsOn": {
+              "field": "businessPartner",
+              "filterKey": "C_BPartner_ID"
+            },
             "validationRule": {
               "code": "C_BPartner_Location.C_BPartner_ID=@C_BPartner_ID@ AND C_BPartner_Location.IsShipTo='Y' AND C_BPartner_Location.IsActive='Y'",
               "contextParams": [],
@@ -168,6 +172,7 @@
             "form": true,
             "reference": "Return_Reason",
             "inputMode": "selector",
+            "section": "other",
             "validationRule": {
               "code": "(C_RETURN_REASON.ISRFC = @ISSOTRX@ OR C_RETURN_REASON.ISRTV=(case when @ISSOTRX@='N' then 'Y' else 'N' end))",
               "contextParams": [],
@@ -190,6 +195,7 @@
             "sourceRequired": true,
             "reference": "Warehouse",
             "inputMode": "selector",
+            "section": "other",
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -256,6 +262,7 @@
             "sourceRequired": true,
             "reference": "PriceList",
             "inputMode": "selector",
+            "section": "other",
             "validationRule": {
               "code": "M_PriceList.issopricelist = @isSOTrx@",
               "contextParams": [],
@@ -576,7 +583,9 @@
             }
           }
         ],
-        "searchableFields": [],
+        "searchableFields": [
+          "businessPartner"
+        ],
         "computedFields": [
           {
             "name": "documentAction",
@@ -921,11 +930,12 @@
             "tsType": "string",
             "visibility": "readOnly",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": true,
             "sourceRequired": true,
             "reference": "Tax",
-            "inputMode": "search",
+            "inputMode": "selector",
+            "section": "other",
             "validationRule": {
               "code": "C_TAX.VALIDFROM<=COALESCE(@DateInvoiced@,@DateOrdered@) AND (C_TAX.SOPOTYPE =(CASE WHEN @IsSOTrx@ = 'Y' THEN 'S' ELSE 'P' END) OR C_TAX.SOPOTYPE = 'B') AND C_TAX.AD_CLIENT_ID=@AD_CLIENT_ID@ AND C_TAX.C_TAX_ID=(CASE WHEN @IsSOTrx@ = 'Y' AND EXISTS(SELECT 1 FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) THEN (SELECT C_TAX_ID FROM AD_ORGINFO WHERE ISTAXUNDEDUCTABLE='Y' AND AD_ORG_ID=@AD_ORG_ID@) ELSE C_TAX.C_TAX_ID END)",
               "contextParams": [],
@@ -4018,7 +4028,9 @@
         "method": "GET",
         "path": "/header",
         "entity": "header",
-        "supportedFilters": []
+        "supportedFilters": [
+          "businessPartner"
+        ]
       },
       {
         "method": "GET",
@@ -4240,7 +4252,9 @@
         "delete": true,
         "listUrl": "/sws/neo/return-to-vendor/header",
         "detailUrl": "/sws/neo/return-to-vendor/header/{id}",
-        "supportedFilters": []
+        "supportedFilters": [
+          "businessPartner"
+        ]
       },
       "lines": {
         "get": true,
@@ -4314,7 +4328,7 @@
         "entity": "header",
         "field": "businessPartner",
         "column": "C_BPartner_ID",
-        "reference": "BPartner",
+        "reference": "BusinessPartner",
         "inputMode": "search",
         "url": "/sws/neo/return-to-vendor/header/selectors/businessPartner"
       },
@@ -4322,9 +4336,18 @@
         "entity": "header",
         "field": "partnerAddress",
         "column": "C_BPartner_Location_ID",
-        "reference": "BPartner_Location",
-        "inputMode": "selector",
-        "url": "/sws/neo/return-to-vendor/header/selectors/partnerAddress"
+        "reference": "BusinessPartnerLocation",
+        "inputMode": "dependent",
+        "url": "/sws/neo/return-to-vendor/header/selectors/partnerAddress",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -4348,7 +4371,15 @@
         "column": "FIN_Paymentmethod_ID",
         "reference": "Paymentmethod",
         "inputMode": "selector",
-        "url": "/sws/neo/return-to-vendor/header/selectors/paymentMethod"
+        "url": "/sws/neo/return-to-vendor/header/selectors/paymentMethod",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -4364,7 +4395,15 @@
         "column": "M_PriceList_ID",
         "reference": "PriceList",
         "inputMode": "selector",
-        "url": "/sws/neo/return-to-vendor/header/selectors/priceList"
+        "url": "/sws/neo/return-to-vendor/header/selectors/priceList",
+        "context": {
+          "required": [
+            {
+              "param": "isSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -4380,7 +4419,20 @@
         "column": "C_Project_ID",
         "reference": "Project",
         "inputMode": "search",
-        "url": "/sws/neo/return-to-vendor/header/selectors/project"
+        "url": "/sws/neo/return-to-vendor/header/selectors/project",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -4428,7 +4480,20 @@
         "column": "C_Aum",
         "reference": "UOM",
         "inputMode": "search",
-        "url": "/sws/neo/return-to-vendor/lines/selectors/operativeUOM"
+        "url": "/sws/neo/return-to-vendor/lines/selectors/operativeUOM",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "M_Product_ID",
+              "source": "field",
+              "field": "product"
+            }
+          ]
+        }
       },
       {
         "entity": "lines",
@@ -4451,8 +4516,22 @@
         "field": "tax",
         "column": "C_Tax_ID",
         "reference": "Tax",
-        "inputMode": "search",
-        "url": "/sws/neo/return-to-vendor/lines/selectors/tax"
+        "inputMode": "selector",
+        "url": "/sws/neo/return-to-vendor/lines/selectors/tax",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "DateInvoiced",
+              "source": "parentField",
+              "field": "orderDate",
+              "format": "DD-MM-YYYY"
+            }
+          ]
+        }
       },
       {
         "entity": "lines",
@@ -8320,6 +8399,14 @@
         "description": "Rule 'Update Payment Plan' (process) should be declared"
       },
       {
+        "id": "t-searchable-filters-header-businessPartner",
+        "category": "searchable-filters",
+        "entity": "header",
+        "field": "businessPartner",
+        "runner": "node",
+        "description": "Field 'businessPartner' should be a supported filter for header"
+      },
+      {
         "id": "t-selector-endpoint-basicDiscounts-discount",
         "category": "selector-endpoint",
         "entity": "basicDiscounts",
@@ -10194,7 +10281,7 @@
       }
     ],
     "summary": {
-      "total": 704,
+      "total": 705,
       "byCategory": {
         "action-endpoint": 22,
         "crud-flags": 7,
@@ -10206,12 +10293,13 @@
         "readonlylogic-evaluable": 30,
         "readonlylogic-valid": 30,
         "rule-declared": 172,
+        "searchable-filters": 1,
         "selector-endpoint": 30,
         "system-field": 198,
         "visibility": 7
       },
       "byRunner": {
-        "node": 704,
+        "node": 705,
         "junit": 0
       }
     }

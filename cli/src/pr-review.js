@@ -295,6 +295,11 @@ function analyzeLargeFiles(changedFiles) {
     if (/\/locales\/[^/]+\.json$/.test(path)) {
       continue;
     }
+    // Generated contract snapshots are intentionally verbose and are checked
+    // by schema/quality gates instead of the handwritten-source size gate.
+    if (/^artifacts\/[^/]+\/(?:contract|contract\.prev|contract\.mcp|report-contract|aggregate-contract)\.json$/.test(path)) {
+      continue;
+    }
     if (!existsSync(path)) {
       continue;
     }

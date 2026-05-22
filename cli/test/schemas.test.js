@@ -51,4 +51,16 @@ describe('JSON Schemas', () => {
     assert.equal(fieldProps.sourceRequired.type, 'boolean');
     assert.equal(fieldProps.derivation.type, 'object');
   });
+
+  it('contract schema accepts sparse agent form metadata', async () => {
+    const schema = await loadSchema('contract.schema.json');
+    const formFieldProps = schema.properties.formState.properties.entities.additionalProperties.properties.fields.additionalProperties.properties;
+    assert.equal(formFieldProps.visible.type, 'boolean');
+    assert.equal(formFieldProps.readOnly.type, 'boolean');
+    assert.equal(formFieldProps.required.type, 'boolean');
+    assert.equal(formFieldProps.displayLogic.type, 'string');
+    assert.equal(formFieldProps.readOnlyLogic.type, 'string');
+    assert.equal(formFieldProps.calloutTriggers.items.type, 'string');
+    assert.equal(schema.properties.agentProfile.type, 'object');
+  });
 });

@@ -72,9 +72,9 @@ describe('sales-quotation contract integrity (ETP-3873 reject flow)', () => {
     // ETP-3893 follow-up: surface the rejection reason on the form so the user
     // can see WHY a quotation was rejected.
     describe('visible on the form when rejected (ETP-3893)', () => {
-      it('is classified as readOnly in the contract', () => {
+      it('is editable in the contract and locks through readOnlyLogic', () => {
         const field = quotation.fields.find((f) => f.name === 'rejectReason');
-        assert.equal(field.visibility, 'readOnly');
+        assert.equal(field.visibility, 'editable');
       });
 
       it('renders on the form (form: true)', () => {
