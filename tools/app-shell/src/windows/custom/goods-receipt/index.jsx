@@ -31,7 +31,7 @@ const LABEL_OVERRIDES = {
     C_BPartner_ID: 'Contacto',
     DocStatus: 'Estado doc.',
     M_Warehouse_ID: 'Almacén',
-    InvoiceStatus: 'Facturado',
+    InvoiceStatus: 'Estado de facturación',
   },
   en_US: {
     MovementDate: 'Movement Date',
@@ -39,7 +39,7 @@ const LABEL_OVERRIDES = {
     C_BPartner_ID: 'Contact',
     DocStatus: 'Document Status',
     M_Warehouse_ID: 'Warehouse',
-    InvoiceStatus: 'Invoiced',
+    InvoiceStatus: 'Invoice Status',
   },
 };
 

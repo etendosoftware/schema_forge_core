@@ -163,8 +163,8 @@
         },
         "orderQuantity": {
           "grid": true,
-          "form": false,
-          "visibility": "editable",
+          "form": true,
+          "visibility": "readOnly",
           "section": "principal",
           "seq": 30,
           "readOnlyLogic": null

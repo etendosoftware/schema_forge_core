@@ -802,5 +802,47 @@
     ],
     "author": "pipeline",
     "date": "2026-05-21"
+  },
+  {
+    "from": "0.10.4",
+    "to": "0.10.5",
+    "level": "patch",
+    "reasons": [
+      "Field \"orderQuantity\" property \"form\" changed from \"false\" to \"true\" in frontend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-22"
+  },
+  {
+    "from": "0.10.5",
+    "to": "0.11.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"orderQuantity\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-22"
+  },
+  {
+    "from": "0.11.0",
+    "to": "0.12.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"orderQuantity\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-22"
+  },
+  {
+    "from": "0.12.0",
+    "to": "0.13.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"orderQuantity\" property \"visibility\" changed from \"editable\" to \"readOnly\" in frontend (patch)",
+      "Field \"orderQuantity\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"orderQuantity\" property \"visibility\" changed from \"editable\" to \"readOnly\" in backend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-22"
   }
 ]

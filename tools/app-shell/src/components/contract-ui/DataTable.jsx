@@ -753,6 +753,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
               onChange={(e) => {
                 const raw = e.target.value;
                 if (isNumeric && raw !== '' && raw !== '-') {
+                  if (!/^-?\d*\.?\d*$/.test(raw)) return;
                   const parsed = field.type === 'integer' ? Number.parseInt(raw, 10) : Number.parseFloat(raw);
                   handleFieldChange(field.key, Number.isNaN(parsed) ? raw : parsed);
                 } else {
