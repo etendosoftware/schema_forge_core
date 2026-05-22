@@ -201,3 +201,17 @@ The `orderReference` field (DB column `POReference`, displayed as "Nº documento
 `e2e/tests/flows/purchase-invoice-readonly-processed.mocked.spec.js` — mocked Playwright spec that opens a completed invoice (`processed: true`) and asserts:
 - `businessPartner`, `partnerAddress`, `paymentMethod`, `paymentTerms`, and `priceList` inputs have the `disabled` attribute.
 - `orderReference` input does **not** have the `disabled` attribute.
+
+## Hidden delete button on completed invoices — ETP-4012
+
+### Problem
+
+The Delete button (trash icon) remained visible in the detail toolbar when a Purchase Invoice was in Completed (`CO`) status. Although the action failed with an error, the button should not be visible at all on a completed document — consistent with Sales Invoice, Purchase Order, Goods Shipment, and other document windows.
+
+### Fix
+
+Added `"hideDeleteWhenComplete": true` to `artifacts/purchase-invoice/decisions.json → window`. The generator emits this as the `hideDeleteWhenComplete` prop on `DetailView`, which uses `isDeleteVisibleForRecord` to hide the trash button whenever `documentStatus` is not in `['DR', 'RPAP']`.
+
+### Manual verification
+
+Open a completed purchase invoice (`✓ Completado` badge). Confirm the trash icon is **not** visible in the detail toolbar. Open a draft invoice and confirm the trash icon **is** visible.
