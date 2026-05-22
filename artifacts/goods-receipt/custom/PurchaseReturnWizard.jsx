@@ -55,7 +55,7 @@ function StepIndicator({ current, total }) {
     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
       {Array.from({ length: total }, (_, i) => (
         <span
-          key={i}
+          key={`step-${i}`}
           className="w-2 h-2 rounded-full"
           style={{ backgroundColor: i + 1 === current ? '#f59e0b' : 'rgba(156,163,175,0.3)' }}
         />

@@ -94,9 +94,9 @@ export function ConfirmResultModal({ title, cards = [], navigate, ui, currency =
 
         {hasDocs && (
           <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {cards.map((card, i) => (
+            {cards.map((card) => (
               <ResultDocCard
-                key={i}
+                key={card.route}
                 icon={card.icon}
                 label={card.label}
                 amount={card.amount}
