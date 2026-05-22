@@ -4,13 +4,19 @@ import { useUI } from '@/i18n';
 import { AccountsTableHeader } from './AccountsTableHeader.jsx';
 import { AccountRow } from './AccountRow.jsx';
 
-const SKELETON_ROWS = 5;
+const SKELETON_ROW_KEYS = [
+  'skeleton-row-1',
+  'skeleton-row-2',
+  'skeleton-row-3',
+  'skeleton-row-4',
+  'skeleton-row-5',
+];
 
 function LoadingRows() {
   return (
     <>
-      {Array.from({ length: SKELETON_ROWS }).map((_, idx) => (
-        <TableRow key={idx} className="h-16">
+      {SKELETON_ROW_KEYS.map((key) => (
+        <TableRow key={key} className="h-16">
           <TableCell className="w-[336px] p-0">
             <div className="flex items-center">
               <div className="w-[44px]" />
@@ -80,31 +86,38 @@ export function AccountsTable({
   const ui = useUI();
   const rowCount = accounts?.length ?? 0;
 
+  const renderBody = () => {
+    if (loading) {
+      return <LoadingRows />;
+    }
+    if (error) {
+      return (
+        <ErrorState
+          message={ui('financeAccountsLoadError')}
+          onRetry={onRetry}
+          retryLabel={ui('financeAccountsRetry')}
+        />
+      );
+    }
+    if (rowCount === 0) {
+      return <EmptyState message={ui('financeAccountsEmpty')} />;
+    }
+    return accounts.map((account) => (
+      <AccountRow
+        key={account.id}
+        account={account}
+        onOpen={onOpen}
+        onReconcile={onReconcile}
+      />
+    ));
+  };
+
   return (
     <div className="flex h-full flex-col overflow-y-auto bg-white [&>div]:overflow-visible">
       <Table>
         <AccountsTableHeader />
         <TableBody className="[&_tr:last-child]:border-b [&_tr:last-child]:border-[#E8EAEF]">
-          {loading ? (
-            <LoadingRows />
-          ) : error ? (
-            <ErrorState
-              message={ui('financeAccountsLoadError')}
-              onRetry={onRetry}
-              retryLabel={ui('financeAccountsRetry')}
-            />
-          ) : rowCount === 0 ? (
-            <EmptyState message={ui('financeAccountsEmpty')} />
-          ) : (
-            accounts.map((account) => (
-              <AccountRow
-                key={account.id}
-                account={account}
-                onOpen={onOpen}
-                onReconcile={onReconcile}
-              />
-            ))
-          )}
+          {renderBody()}
         </TableBody>
       </Table>
     </div>
