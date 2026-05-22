@@ -16,15 +16,15 @@ vi.mock('@/components/ui/button', () => ({
 }));
 
 vi.mock('@/auth/useApiFetch.js', () => ({
-  useApiFetch: () => vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({}) })),
+  useApiFetch: vi.fn(() => vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({}) }))),
 }));
 
 vi.mock('@/auth/AuthContext.jsx', () => ({
-  useAuth: () => ({
+  useAuth: vi.fn(() => ({
     selectedOrg: { id: 'org-1', name: 'Test Organization' },
     selectedRole: { orgList: [{ id: 'org-1', name: 'Test Organization' }] },
     selectOrg: vi.fn(),
-  }),
+  })),
 }));
 
 vi.mock('@/components/related-documents/helpers.js', () => ({
@@ -33,11 +33,11 @@ vi.mock('@/components/related-documents/helpers.js', () => ({
 }));
 
 vi.mock('../fiscalConfig.utils.js', () => ({
-  buildOnboardingPayloads: () => ({}),
-  getFiscalRecordId: () => null,
-  getAllowedSystemsForTerritory: () => ['SII', 'TBAI', 'VERIFACTU'],
-  getCertificateContext: () => null,
-  resolveSystem: () => null,
+  buildOnboardingPayloads: vi.fn(() => ({})),
+  getFiscalRecordId: vi.fn(() => null),
+  getAllowedSystemsForTerritory: vi.fn(() => ['SII', 'TBAI', 'VERIFACTU']),
+  getCertificateContext: vi.fn(() => null),
+  resolveSystem: vi.fn(() => null),
 }));
 
 vi.mock('../SiiSection.jsx', () => ({ default: () => <div data-testid="sii-section" /> }));
@@ -53,6 +53,9 @@ vi.mock('sonner', () => ({
 // --- Import under test ----------------------------------------------------
 
 import OnboardingWizard from '../OnboardingWizard.jsx';
+import { useApiFetch } from '@/auth/useApiFetch.js';
+import { useAuth } from '@/auth/AuthContext.jsx';
+import { buildOnboardingPayloads } from '../fiscalConfig.utils.js';
 
 // --- Helpers --------------------------------------------------------------
 
@@ -533,5 +536,141 @@ describe('OnboardingWizard — Breadcrumb navigation', () => {
     expect(screen.getByText('fiscal.onboarding.subq.also.title')).toBeInTheDocument();
     fireEvent.click(screen.getByText('fiscal.onboarding.breadcrumb.territory'));
     expect(screen.getByText('fiscal.onboarding.territory.title')).toBeInTheDocument();
+  });
+});
+
+describe('OnboardingWizard — createRecords API calls', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('calls the API when buildOnboardingPayloads returns an sii payload', async () => {
+    const mockFetch = vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({}) }));
+    vi.mocked(useApiFetch).mockReturnValue(mockFetch);
+    vi.mocked(buildOnboardingPayloads).mockReturnValue({ sii: { orgField: 'x' } });
+
+    renderWizard();
+    fireEvent.click(screen.getByText('fiscal.territory.navarra'));
+    fireEvent.click(screen.getByText('fiscal.onboarding.continue'));
+    fireEvent.click(screen.getByText('fiscal.onboarding.confirm.btn'));
+
+    await waitFor(() => {
+      expect(screen.getByText('fiscal.onboarding.detail.saveapply')).toBeInTheDocument();
+    });
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('sii-config'),
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it('calls the API when buildOnboardingPayloads returns a tbai payload', async () => {
+    const mockFetch = vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({}) }));
+    vi.mocked(useApiFetch).mockReturnValue(mockFetch);
+    vi.mocked(buildOnboardingPayloads).mockReturnValue({ tbai: { orgField: 'x' } });
+
+    renderWizard();
+    fireEvent.click(screen.getByText('fiscal.territory.alava'));
+    fireEvent.click(screen.getByText('fiscal.onboarding.continue'));
+    fireEvent.click(screen.getByText('fiscal.onboarding.subq.tbai.label'));
+    fireEvent.click(screen.getByText('fiscal.onboarding.continue'));
+    fireEvent.click(screen.getByText('fiscal.onboarding.confirm.btn'));
+
+    await waitFor(() => {
+      expect(screen.getByText('fiscal.onboarding.detail.saveapply')).toBeInTheDocument();
+    });
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('tbai-config'),
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it('calls the API when buildOnboardingPayloads returns a verifactu payload', async () => {
+    const mockFetch = vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({}) }));
+    vi.mocked(useApiFetch).mockReturnValue(mockFetch);
+    vi.mocked(buildOnboardingPayloads).mockReturnValue({ verifactu: { orgField: 'x' } });
+
+    renderWizard();
+    fireEvent.click(screen.getByText('fiscal.territory.navarra'));
+    fireEvent.click(screen.getByText('fiscal.onboarding.continue'));
+    fireEvent.click(screen.getByText('fiscal.onboarding.confirm.btn'));
+
+    await waitFor(() => {
+      expect(screen.getByText('fiscal.onboarding.detail.saveapply')).toBeInTheDocument();
+    });
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('verifactu-config'),
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it('shows error message when API call fails during createRecords', async () => {
+    vi.mocked(buildOnboardingPayloads).mockReturnValue({ sii: { orgField: 'x' } });
+    vi.mocked(useApiFetch).mockReturnValue(
+      vi.fn(() => Promise.reject(new Error('Network error'))),
+    );
+
+    renderWizard();
+    fireEvent.click(screen.getByText('fiscal.territory.navarra'));
+    fireEvent.click(screen.getByText('fiscal.onboarding.continue'));
+    fireEvent.click(screen.getByText('fiscal.onboarding.confirm.btn'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Network error')).toBeInTheDocument();
+    });
+  });
+});
+
+describe('OnboardingWizard — OrgDropdown multi-org', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('opens dropdown showing other orgs when multiple orgs are available', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      selectedOrg: { id: 'org-1', name: 'Test Organization' },
+      selectedRole: {
+        orgList: [
+          { id: 'org-1', name: 'Test Organization' },
+          { id: 'org-2', name: 'Other Org' },
+        ],
+      },
+      selectOrg: vi.fn(),
+    });
+
+    renderWizard();
+    // Click the org button (the span holding the name is inside the button)
+    fireEvent.click(screen.getByText('Test Organization').closest('button'));
+    expect(screen.getByText('Other Org')).toBeInTheDocument();
+  });
+
+  it('calls selectOrg and onComplete when another org is selected from the dropdown', () => {
+    const mockSelectOrg = vi.fn();
+    vi.mocked(useAuth).mockReturnValue({
+      selectedOrg: { id: 'org-1', name: 'Test Organization' },
+      selectedRole: {
+        orgList: [
+          { id: 'org-1', name: 'Test Organization' },
+          { id: 'org-2', name: 'Other Org' },
+        ],
+      },
+      selectOrg: mockSelectOrg,
+    });
+
+    const { props } = renderWizard();
+    fireEvent.click(screen.getByText('Test Organization').closest('button'));
+    fireEvent.click(screen.getByText('Other Org'));
+    expect(mockSelectOrg).toHaveBeenCalledWith({ id: 'org-2', name: 'Other Org' });
+    expect(props.onComplete).toHaveBeenCalled();
+  });
+
+  it('does not open dropdown when only one org is available', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      selectedOrg: { id: 'org-1', name: 'Test Organization' },
+      selectedRole: { orgList: [{ id: 'org-1', name: 'Test Organization' }] },
+      selectOrg: vi.fn(),
+    });
+    renderWizard();
+    fireEvent.click(screen.getByText('Test Organization').closest('button'));
+    expect(screen.queryByText('Other Org')).not.toBeInTheDocument();
   });
 });
