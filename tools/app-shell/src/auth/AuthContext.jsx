@@ -37,6 +37,12 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(PLATFORM_TOKEN_KEY);
   }, []);
 
+  const selectOrg = useCallback((org) => {
+    setSelectedOrg(org);
+    if (org) localStorage.setItem(SELECTED_ORG_KEY, JSON.stringify(org));
+    else localStorage.removeItem(SELECTED_ORG_KEY);
+  }, []);
+
   const value = useMemo(() => ({
     token,
     username,
@@ -44,8 +50,9 @@ export function AuthProvider({ children }) {
     roleList,
     selectedRole,
     selectedOrg,
+    selectOrg,
     logout,
-  }), [token, username, roleList, selectedRole, selectedOrg, logout]);
+  }), [token, username, roleList, selectedRole, selectedOrg, selectOrg, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
