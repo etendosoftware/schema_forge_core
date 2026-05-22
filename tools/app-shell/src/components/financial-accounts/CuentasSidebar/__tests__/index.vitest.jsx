@@ -19,7 +19,7 @@ vi.mock('@/i18n', () => ({
   },
 }));
 
-import { CuentasSidebar } from '../CuentasSidebar/index.jsx';
+import { CuentasSidebar } from '../index.jsx';
 
 const baseSummary = {
   totalBalance: 1250.5,

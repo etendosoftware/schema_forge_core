@@ -31,7 +31,7 @@ vi.mock('@/i18n', () => ({
   },
 }));
 
-import { AccountsTable } from '../../AccountsTable/index.jsx';
+import { AccountsTable } from '../index.jsx';
 
 const accounts = [
   {
