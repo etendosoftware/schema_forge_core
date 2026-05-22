@@ -136,10 +136,10 @@ export const PAGE_SIZE = 20;
 
 export { fmtDate } from './fmtDateUtils.js';
 
-export const WipBadge = () => {
+export const WipBadge = ({ inline = false }) => {
   const ui = useUI();
   return (
-    <div className="absolute top-3 right-4 z-10">
+    <div className={inline ? '' : 'absolute top-3 right-4 z-10'}>
       <TooltipProvider delayDuration={600}>
         <Tooltip>
           <TooltipTrigger asChild>
