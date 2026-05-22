@@ -1,4 +1,30 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+
+const localStorageMock = (() => {
+  let store = {};
+  return {
+    clear: vi.fn(() => {
+      store = {};
+    }),
+    getItem: vi.fn((key) => store[key] ?? null),
+    removeItem: vi.fn((key) => {
+      delete store[key];
+    }),
+    setItem: vi.fn((key, value) => {
+      store[key] = String(value);
+    }),
+  };
+})();
+
+Object.defineProperty(globalThis, 'localStorage', {
+  configurable: true,
+  value: localStorageMock,
+});
+
+Object.defineProperty(globalThis, 'alert', {
+  configurable: true,
+  value: vi.fn(),
+});
 
 // Mock i18n
 vi.mock('@/i18n', () => ({
@@ -37,7 +63,8 @@ vi.mock('../onboarding/onboardingReadiness.js', () => ({
 
 // Mock onboarding state
 vi.mock('../onboarding/onboardingState.js', () => ({
-  applyProgressMessage: (prev) => prev,
+  applyProgressMessage: (prev, message) =>
+    prev.map((step) => (step.name === message.step ? { ...step, status: message.status } : step)),
   buildEnvironmentSessionStorage: () => ({}),
   initialSetupSteps: () => [
     { name: 'setup', status: 'pending' },
@@ -47,6 +74,10 @@ vi.mock('../onboarding/onboardingState.js', () => ({
   ],
   isCompanyStepValid: () => true,
   isProfileStepValid: () => true,
+}));
+
+vi.mock('../../lib/observability.js', () => ({
+  track: vi.fn(),
 }));
 
 // Mock UI components
@@ -61,11 +92,31 @@ vi.mock('@/components/ui/label', () => ({
 }));
 
 import OnboardingPage from '../OnboardingPage.jsx';
-import { fetchAccount } from '../onboarding/onboardingApi.js';
+import {
+  fetchAccount,
+  fetchEnvironments,
+  loginAccount,
+  loginEnvironment,
+  registerAccount,
+  runOnboardingStream,
+} from '../onboarding/onboardingApi.js';
+import { checkSalesInvoiceReadiness } from '../onboarding/onboardingReadiness.js';
+import { track } from '../../lib/observability.js';
 
 describe('OnboardingPage', () => {
   beforeEach(() => {
     localStorage.clear();
+    vi.clearAllMocks();
+    fetchAccount.mockReset();
+    fetchEnvironments.mockReset();
+    fetchEnvironments.mockResolvedValue([]);
+    loginAccount.mockReset();
+    loginEnvironment.mockReset();
+    registerAccount.mockReset();
+    runOnboardingStream.mockReset();
+    checkSalesInvoiceReadiness.mockReset();
+    checkSalesInvoiceReadiness.mockResolvedValue({ ready: true });
+    window.history.replaceState(null, '', '/onboarding');
   });
 
   afterEach(() => {
@@ -119,5 +170,469 @@ describe('OnboardingPage', () => {
     render(<OnboardingPage />);
     expect(screen.getByText('onboardingSwitchToLoginPrompt')).toBeInTheDocument();
     expect(screen.getByText('onboardingSwitchToLoginAction')).toBeInTheDocument();
+  });
+
+  it('tracks registration submission and success without user-entered values', async () => {
+    registerAccount.mockResolvedValue({
+      token: 'platform-token',
+      account: { name: 'Ada Lovelace', email: 'ada@example.com' },
+    });
+
+    localStorage.removeItem('sf_platform_token');
+    render(<OnboardingPage />);
+
+    fireEvent.submit(screen.getByTestId('action-register-submit').closest('form'));
+
+    await waitFor(() => {
+      expect(track).toHaveBeenCalledWith('onboarding_auth_submitted', {
+        action: 'register',
+        component: 'OnboardingPage',
+        source: 'onboarding',
+        status: 'started',
+        windowName: 'onboarding',
+      });
+      expect(track).toHaveBeenCalledWith('onboarding_auth_succeeded', {
+        action: 'register',
+        component: 'OnboardingPage',
+        source: 'onboarding',
+        status: 'success',
+        windowName: 'onboarding',
+      });
+    });
+
+    const serializedCalls = JSON.stringify(track.mock.calls);
+    expect(serializedCalls).not.toContain('Ada Lovelace');
+    expect(serializedCalls).not.toContain('ada@example.com');
+    expect(serializedCalls).not.toContain('platform-token');
+  });
+
+  it('tracks registration failures without user-entered values', async () => {
+    registerAccount.mockResolvedValue({});
+
+    localStorage.removeItem('sf_platform_token');
+    render(<OnboardingPage />);
+
+    fireEvent.change(screen.getByLabelText(/onboardingNameLabel/), {
+      target: { value: 'Secret Register Name' },
+    });
+    fireEvent.change(screen.getByLabelText(/onboardingEmailLabel/), {
+      target: { value: 'secret-register@example.com' },
+    });
+    fireEvent.submit(screen.getByTestId('action-register-submit').closest('form'));
+
+    await waitFor(() => {
+      expect(track).toHaveBeenCalledWith('onboarding_auth_failed', {
+        action: 'register',
+        component: 'OnboardingPage',
+        source: 'onboarding',
+        status: 'failed',
+        windowName: 'onboarding',
+      });
+    });
+
+    expect(screen.getByText('onboardingRegisterFailed')).toBeInTheDocument();
+    const serializedCalls = JSON.stringify(track.mock.calls);
+    expect(serializedCalls).not.toContain('Secret Register Name');
+    expect(serializedCalls).not.toContain('secret-register@example.com');
+  });
+
+  it('tracks registration exceptions', async () => {
+    registerAccount.mockRejectedValue({ code: 'onboardingConnectionError' });
+
+    localStorage.removeItem('sf_platform_token');
+    render(<OnboardingPage />);
+
+    fireEvent.submit(screen.getByTestId('action-register-submit').closest('form'));
+
+    await waitFor(() => {
+      expect(track).toHaveBeenCalledWith('onboarding_auth_failed', {
+        action: 'register',
+        component: 'OnboardingPage',
+        source: 'onboarding',
+        status: 'failed',
+        windowName: 'onboarding',
+      });
+    });
+    expect(screen.getByText('onboardingConnectionError')).toBeInTheDocument();
+  });
+
+  it('tracks onboarding setup step navigation', async () => {
+    localStorage.setItem('sf_platform_token', 'platform-token');
+    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+    fetchEnvironments.mockResolvedValue([]);
+
+    render(<OnboardingPage />);
+
+    const continueButton = await screen.findByText('onboardingContinueAction');
+    fireEvent.click(continueButton);
+
+    expect(track).toHaveBeenCalledWith('onboarding_setup_step_completed', {
+      action: 'continue',
+      component: 'OnboardingPage',
+      source: 'onboarding',
+      status: 'success',
+      type: 'profile',
+      windowName: 'onboarding',
+    });
+  });
+
+  it('tracks setup step back and keeps company-form edits out of tracking payloads', async () => {
+    localStorage.setItem('sf_platform_token', 'platform-token');
+    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+    fetchEnvironments.mockResolvedValue([]);
+
+    render(<OnboardingPage />);
+
+    fireEvent.change(await screen.findByLabelText(/onboardingFullNameLabel/), {
+      target: { value: 'Private Setup Name' },
+    });
+    fireEvent.change(screen.getByLabelText(/onboardingCountryLabel/), {
+      target: { value: 'ES' },
+    });
+    fireEvent.click(await screen.findByText('onboardingBusinessTypeFreelancer'));
+    fireEvent.click(screen.getByText('onboardingContinueAction'));
+    fireEvent.change(screen.getByLabelText(/onboardingAddressLabel/), {
+      target: { value: 'Secret Street 123' },
+    });
+    fireEvent.change(screen.getByLabelText(/onboardingSectorLabel/), {
+      target: { value: 'services' },
+    });
+    fireEvent.click(screen.getByText('back'));
+
+    expect(track).toHaveBeenCalledWith('onboarding_setup_step_back', {
+      action: 'back',
+      component: 'OnboardingPage',
+      source: 'onboarding',
+      status: 'success',
+      type: 'company',
+      windowName: 'onboarding',
+    });
+    expect(JSON.stringify(track.mock.calls)).not.toContain('Secret Street 123');
+    expect(JSON.stringify(track.mock.calls)).not.toContain('Private Setup Name');
+  });
+
+  it('tracks login failures without credentials', async () => {
+    loginAccount.mockResolvedValue({});
+
+    localStorage.removeItem('sf_platform_token');
+    render(<OnboardingPage />);
+
+    fireEvent.click(screen.getByTestId('action-switch-to-login'));
+    fireEvent.submit(screen.getByTestId('action-login-submit').closest('form'));
+
+    await waitFor(() => {
+      expect(track).toHaveBeenCalledWith('onboarding_auth_submitted', {
+        action: 'login',
+        component: 'OnboardingPage',
+        source: 'onboarding',
+        status: 'started',
+        windowName: 'onboarding',
+      });
+      expect(track).toHaveBeenCalledWith('onboarding_auth_failed', {
+        action: 'login',
+        component: 'OnboardingPage',
+        source: 'onboarding',
+        status: 'failed',
+        windowName: 'onboarding',
+      });
+    });
+
+    expect(JSON.stringify(track.mock.calls)).not.toContain('password');
+  });
+
+  it('tracks login success without credentials or platform token', async () => {
+    loginAccount.mockResolvedValue({
+      token: 'login-platform-token',
+      account: { name: 'Secret Login Name', email: 'secret-login@example.com' },
+    });
+
+    localStorage.removeItem('sf_platform_token');
+    render(<OnboardingPage />);
+
+    fireEvent.click(screen.getByTestId('action-switch-to-login'));
+    fireEvent.change(screen.getByLabelText(/onboardingEmailLabel/), {
+      target: { value: 'secret-login@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/onboardingPasswordLabel/), {
+      target: { value: 'top-secret-password' },
+    });
+    fireEvent.submit(screen.getByTestId('action-login-submit').closest('form'));
+
+    await waitFor(() => {
+      expect(track).toHaveBeenCalledWith('onboarding_auth_succeeded', {
+        action: 'login',
+        component: 'OnboardingPage',
+        source: 'onboarding',
+        status: 'success',
+        windowName: 'onboarding',
+      });
+    });
+
+    const serializedCalls = JSON.stringify(track.mock.calls);
+    expect(serializedCalls).not.toContain('secret-login@example.com');
+    expect(serializedCalls).not.toContain('top-secret-password');
+    expect(serializedCalls).not.toContain('login-platform-token');
+  });
+
+  it('tracks login exceptions', async () => {
+    loginAccount.mockRejectedValue({ userMessage: 'Readable login failure' });
+
+    localStorage.removeItem('sf_platform_token');
+    render(<OnboardingPage />);
+
+    fireEvent.click(screen.getByTestId('action-switch-to-login'));
+    fireEvent.submit(screen.getByTestId('action-login-submit').closest('form'));
+
+    await waitFor(() => {
+      expect(track).toHaveBeenCalledWith('onboarding_auth_failed', {
+        action: 'login',
+        component: 'OnboardingPage',
+        source: 'onboarding',
+        status: 'failed',
+        windowName: 'onboarding',
+      });
+    });
+    expect(screen.getByText('Readable login failure')).toBeInTheDocument();
+  });
+
+  it('tracks setup back navigation from company step', async () => {
+    localStorage.setItem('sf_platform_token', 'platform-token');
+    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+    fetchEnvironments.mockResolvedValue([]);
+
+    render(<OnboardingPage />);
+
+    fireEvent.click(await screen.findByText('onboardingContinueAction'));
+    fireEvent.click(await screen.findByText('back'));
+
+    expect(track).toHaveBeenCalledWith('onboarding_setup_step_back', {
+      action: 'back',
+      component: 'OnboardingPage',
+      source: 'onboarding',
+      status: 'success',
+      type: 'company',
+      windowName: 'onboarding',
+    });
+  });
+
+  it('tracks onboarding run success without company or fiscal values', async () => {
+    localStorage.setItem('sf_platform_token', 'platform-token');
+    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+    fetchEnvironments.mockResolvedValue([]);
+    runOnboardingStream.mockImplementation(async (_fetch, _baseUrl, _token, _form, onMessage) => {
+      onMessage({ type: 'result', success: true });
+    });
+
+    render(<OnboardingPage />);
+
+    fireEvent.click(await screen.findByText('onboardingContinueAction'));
+    fireEvent.change(screen.getByLabelText(/onboardingCompanyNameLabel/), {
+      target: { value: 'Secret Company' },
+    });
+    fireEvent.change(screen.getByLabelText(/onboardingFiscalIdLabel/), {
+      target: { value: 'B12345678' },
+    });
+    fireEvent.click(screen.getByText('onboardingStartAction'));
+
+    await waitFor(() => {
+      expect(track).toHaveBeenCalledWith('onboarding_run_started', {
+        action: 'create_environment',
+        component: 'OnboardingPage',
+        source: 'onboarding',
+        status: 'started',
+        windowName: 'onboarding',
+      });
+      expect(track).toHaveBeenCalledWith('onboarding_run_succeeded', {
+        action: 'create_environment',
+        component: 'OnboardingPage',
+        source: 'onboarding',
+        status: 'success',
+        windowName: 'onboarding',
+      });
+    });
+
+    const serializedCalls = JSON.stringify(track.mock.calls);
+    expect(serializedCalls).not.toContain('Secret Company');
+    expect(serializedCalls).not.toContain('B12345678');
+  });
+
+  it('renders onboarding progress messages while tracking run start', async () => {
+    localStorage.setItem('sf_platform_token', 'platform-token');
+    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+    fetchEnvironments.mockResolvedValue([]);
+    runOnboardingStream.mockImplementation(async (_fetch, _baseUrl, _token, _form, onMessage) => {
+      onMessage({ type: 'progress', step: 'client', status: 'running' });
+      return new Promise(() => {});
+    });
+
+    render(<OnboardingPage />);
+
+    fireEvent.click(await screen.findByText('onboardingContinueAction'));
+    fireEvent.click(screen.getByText('onboardingStartAction'));
+
+    await waitFor(() => {
+      expect(track).toHaveBeenCalledWith('onboarding_run_started', {
+        action: 'create_environment',
+        component: 'OnboardingPage',
+        source: 'onboarding',
+        status: 'started',
+        windowName: 'onboarding',
+      });
+    });
+    expect(screen.getByText('onboardingPreparingTitle')).toBeInTheDocument();
+  });
+
+  it('tracks onboarding run failures', async () => {
+    localStorage.setItem('sf_platform_token', 'platform-token');
+    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+    fetchEnvironments.mockResolvedValue([]);
+    runOnboardingStream.mockImplementation(async (_fetch, _baseUrl, _token, _form, onMessage) => {
+      onMessage({ type: 'result', success: false, message: 'failed' });
+    });
+
+    render(<OnboardingPage />);
+
+    fireEvent.click(await screen.findByText('onboardingContinueAction'));
+    fireEvent.click(screen.getByText('onboardingStartAction'));
+
+    await waitFor(() => {
+      expect(track).toHaveBeenCalledWith('onboarding_run_failed', {
+        action: 'create_environment',
+        component: 'OnboardingPage',
+        source: 'onboarding',
+        status: 'failed',
+        windowName: 'onboarding',
+      });
+    });
+  });
+
+  it('tracks onboarding run exceptions', async () => {
+    localStorage.setItem('sf_platform_token', 'platform-token');
+    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+    fetchEnvironments.mockResolvedValue([]);
+    runOnboardingStream.mockRejectedValue({ code: 'onboardingGenericError' });
+
+    render(<OnboardingPage />);
+
+    fireEvent.click(await screen.findByText('onboardingContinueAction'));
+    fireEvent.click(screen.getByText('onboardingStartAction'));
+
+    await waitFor(() => {
+      expect(track).toHaveBeenCalledWith('onboarding_run_failed', {
+        action: 'create_environment',
+        component: 'OnboardingPage',
+        source: 'onboarding',
+        status: 'failed',
+        windowName: 'onboarding',
+      });
+    });
+    expect(screen.getByText('onboardingGenericError')).toBeInTheDocument();
+  });
+
+  it('tracks environment entry success without environment identifiers', async () => {
+    localStorage.setItem('sf_platform_token', 'platform-token');
+    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+    fetchEnvironments.mockResolvedValue([
+      { clientId: 'client-secret', clientName: 'Secret Client', orgName: 'Org', adminUser: 'admin' },
+    ]);
+    loginEnvironment.mockResolvedValue({ token: 'environment-token' });
+
+    render(<OnboardingPage />);
+
+    await waitFor(() => {
+      expect(track).toHaveBeenCalledWith('onboarding_environment_enter_submitted', {
+        action: 'enter_environment',
+        component: 'OnboardingPage',
+        source: 'onboarding',
+        status: 'started',
+        windowName: 'onboarding',
+      });
+      expect(track).toHaveBeenCalledWith('onboarding_environment_enter_succeeded', {
+        action: 'enter_environment',
+        component: 'OnboardingPage',
+        source: 'onboarding',
+        status: 'success',
+        windowName: 'onboarding',
+      });
+    });
+
+    const serializedCalls = JSON.stringify(track.mock.calls);
+    expect(serializedCalls).not.toContain('client-secret');
+    expect(serializedCalls).not.toContain('Secret Client');
+    expect(serializedCalls).not.toContain('environment-token');
+  });
+
+  it('tracks environment entry failures when login returns no token', async () => {
+    localStorage.setItem('sf_platform_token', 'platform-token');
+    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+    fetchEnvironments.mockResolvedValue([
+      { clientId: 'client-secret', clientName: 'Secret Client', orgName: 'Org', adminUser: 'admin' },
+    ]);
+    loginEnvironment.mockResolvedValue({});
+
+    render(<OnboardingPage />);
+
+    await waitFor(() => {
+      expect(track).toHaveBeenCalledWith('onboarding_environment_enter_failed', {
+        action: 'enter_environment',
+        component: 'OnboardingPage',
+        source: 'onboarding',
+        status: 'failed',
+        windowName: 'onboarding',
+      });
+    });
+    expect(globalThis.alert).toHaveBeenCalledWith('onboardingEnvironmentLoginFailed');
+  });
+
+  it('tracks readiness failures after a successful onboarding run', async () => {
+    const realSetTimeout = globalThis.setTimeout;
+    vi.spyOn(globalThis, 'setTimeout').mockImplementation((callback, delay, ...args) => {
+      if (delay === 2000) {
+        queueMicrotask(callback);
+        return 1;
+      }
+      return realSetTimeout(callback, delay, ...args);
+    });
+    localStorage.setItem('sf_platform_token', 'platform-token');
+    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+    fetchEnvironments
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        { clientId: 'client-secret', clientName: 'Secret Client', orgName: 'Org', adminUser: 'admin' },
+      ]);
+    runOnboardingStream.mockImplementation(async (_fetch, _baseUrl, _token, _form, onMessage) => {
+      onMessage({ type: 'result', success: true });
+    });
+    loginEnvironment.mockResolvedValue({ token: 'environment-token' });
+    checkSalesInvoiceReadiness.mockResolvedValue({
+      ready: false,
+      failures: [{ key: 'readinessReason' }],
+    });
+
+    render(<OnboardingPage />);
+
+    fireEvent.click(await screen.findByText('onboardingContinueAction'));
+    fireEvent.click(screen.getByText('onboardingStartAction'));
+
+    await waitFor(() => {
+      expect(track).toHaveBeenCalledWith('onboarding_run_succeeded', {
+        action: 'create_environment',
+        component: 'OnboardingPage',
+        source: 'onboarding',
+        status: 'success',
+        windowName: 'onboarding',
+      });
+    });
+
+    await waitFor(() => {
+      expect(track).toHaveBeenCalledWith('onboarding_environment_enter_failed', {
+        action: 'enter_environment',
+        component: 'OnboardingPage',
+        source: 'onboarding',
+        status: 'failed',
+        windowName: 'onboarding',
+      });
+    });
+    expect(screen.getByText(/onboardingReadinessFailed/)).toBeInTheDocument();
   });
 });
