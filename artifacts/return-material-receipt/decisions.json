@@ -9,36 +9,41 @@
     "linesLayout": "inlineEditable",
     "customComponents": {
       "bottomSection": "ReturnMaterialReceiptBottomPanel"
+    },
+    "labelOverrides": {
+      "es_ES": {
+        "POReference": "Albarán origen"
+      },
+      "en_US": {
+        "POReference": "Source Shipment"
+      }
     }
   },
   "entities": {
     "header": {
       "name": "returnMaterialReceipt",
       "fields": {
+        "movementDate": {
+          "grid": true,
+          "gridOrder": 1,
+          "searchable": true,
+          "inputMode": "date",
+          "readOnlyLogic": null,
+          "section": "principal"
+        },
         "documentNo": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 2,
           "searchable": true,
           "inputMode": "text",
           "section": "principal"
         },
         "businessPartner": {
           "grid": true,
+          "gridOrder": 3,
           "searchable": true,
           "reference": "BusinessPartner",
-          "inputMode": "search",
-          "readOnlyLogic": null,
-          "section": "principal"
-        },
-        "movementDate": {
-          "grid": true,
-          "searchable": true,
-          "inputMode": "date",
-          "readOnlyLogic": null,
-          "section": "principal"
-        },
-        "warehouse": {
-          "grid": false,
           "inputMode": "search",
           "readOnlyLogic": null,
           "section": "principal"
@@ -46,8 +51,16 @@
         "documentStatus": {
           "visibility": "readOnly",
           "grid": true,
+          "gridOrder": 4,
           "searchable": true,
           "form": false
+        },
+        "warehouse": {
+          "grid": true,
+          "gridOrder": 5,
+          "inputMode": "search",
+          "readOnlyLogic": null,
+          "section": "principal"
         },
         "salesOrder": {
           "visibility": "readOnly",
@@ -78,7 +91,11 @@
           "visibility": "discarded"
         },
         "orderReference": {
-          "visibility": "discarded"
+          "visibility": "readOnly",
+          "grid": true,
+          "gridOrder": 6,
+          "inputMode": "text",
+          "section": "principal"
         },
         "orderDate": {
           "visibility": "discarded"

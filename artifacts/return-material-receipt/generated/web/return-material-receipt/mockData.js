@@ -11,6 +11,7 @@ export const returnMaterialReceipt = [
     "partnerAddress": "Acme Corp",
     "documentStatus": "DR",
     "salesOrder": "Sample salesOrder",
+    "orderReference": "Sample orderReference",
     "trackingNo": "RE-00001"
   },
   {
@@ -23,6 +24,7 @@ export const returnMaterialReceipt = [
     "partnerAddress": "TechFlow Inc",
     "documentStatus": "CO",
     "salesOrder": "Sample salesOrder",
+    "orderReference": "Sample orderReference",
     "trackingNo": "RE-00002"
   },
   {
@@ -35,6 +37,7 @@ export const returnMaterialReceipt = [
     "partnerAddress": "Global Trade Ltd",
     "documentStatus": "VO",
     "salesOrder": "Sample salesOrder",
+    "orderReference": "Sample orderReference",
     "trackingNo": "RE-00003"
   },
   {
@@ -47,6 +50,7 @@ export const returnMaterialReceipt = [
     "partnerAddress": "Summit Industries",
     "documentStatus": "IP",
     "salesOrder": "Sample salesOrder",
+    "orderReference": "Sample orderReference",
     "trackingNo": "RE-00004"
   },
   {
@@ -59,6 +63,7 @@ export const returnMaterialReceipt = [
     "partnerAddress": "Pacific Partners",
     "documentStatus": "DR",
     "salesOrder": "Sample salesOrder",
+    "orderReference": "Sample orderReference",
     "trackingNo": "RE-00005"
   },
   {
@@ -71,6 +76,7 @@ export const returnMaterialReceipt = [
     "partnerAddress": "Alpine Solutions",
     "documentStatus": "CO",
     "salesOrder": "Sample salesOrder",
+    "orderReference": "Sample orderReference",
     "trackingNo": "RE-00006"
   },
   {
@@ -83,6 +89,7 @@ export const returnMaterialReceipt = [
     "partnerAddress": "Meridian Group",
     "documentStatus": "VO",
     "salesOrder": "Sample salesOrder",
+    "orderReference": "Sample orderReference",
     "trackingNo": "RE-00007"
   },
   {
@@ -95,6 +102,7 @@ export const returnMaterialReceipt = [
     "partnerAddress": "Vertex Systems",
     "documentStatus": "IP",
     "salesOrder": "Sample salesOrder",
+    "orderReference": "Sample orderReference",
     "trackingNo": "RE-00008"
   },
   {
@@ -107,6 +115,7 @@ export const returnMaterialReceipt = [
     "partnerAddress": "Atlas Manufacturing",
     "documentStatus": "DR",
     "salesOrder": "Sample salesOrder",
+    "orderReference": "Sample orderReference",
     "trackingNo": "RE-00009"
   },
   {
@@ -119,6 +128,7 @@ export const returnMaterialReceipt = [
     "partnerAddress": "Nova Enterprises",
     "documentStatus": "CO",
     "salesOrder": "Sample salesOrder",
+    "orderReference": "Sample orderReference",
     "trackingNo": "RE-00010"
   },
   {
@@ -131,6 +141,7 @@ export const returnMaterialReceipt = [
     "partnerAddress": "Pinnacle Services",
     "documentStatus": "VO",
     "salesOrder": "Sample salesOrder",
+    "orderReference": "Sample orderReference",
     "trackingNo": "RE-00011"
   },
   {
@@ -143,6 +154,7 @@ export const returnMaterialReceipt = [
     "partnerAddress": "Horizon Labs",
     "documentStatus": "IP",
     "salesOrder": "Sample salesOrder",
+    "orderReference": "Sample orderReference",
     "trackingNo": "RE-00012"
   }
 ];

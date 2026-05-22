@@ -9,6 +9,7 @@ const fields = [
   { key: 'warehouse', column: 'M_Warehouse_ID', type: 'search', label: 'Warehouse', required: true, section: 'principal', reference: 'Warehouse', inputMode: 'search', readOnlyLogic: (record) => record['processed'] === true },
   { key: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'dependent', label: 'Partner Address', required: true, section: 'other', reference: 'BusinessPartnerLocation', inputMode: 'dependent', dependsOn: { field: 'businessPartner', filterKey: 'C_BPartner_ID' }, readOnlyLogic: (record) => record['processed'] === true },
   { key: 'salesOrder', column: 'C_Order_ID', type: 'search', label: 'RM order', readOnly: true, section: 'principal', reference: 'Order', inputMode: 'search' },
+  { key: 'orderReference', column: 'POReference', type: 'text', label: 'Order Reference', readOnly: true, section: 'principal' },
   { key: 'trackingNo', column: 'TrackingNo', type: 'text', label: 'Tracking No', section: 'other' },
 ];
 // @sf-generated-end fields:returnMaterialReceipt

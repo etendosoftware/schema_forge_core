@@ -1,8 +1,8 @@
 {
-  "version": "0.2.0",
+  "version": "0.3.0",
   "generatedAt": "2026-04-29T18:11:05.114Z",
-  "updatedAt": "2026-05-11T16:22:45.010Z",
-  "checksum": "963d5b3618f4484b",
+  "updatedAt": "2026-05-22T18:37:18.607Z",
+  "checksum": "3be54e34cabd71ea",
   "frontendContract": {
     "window": {
       "id": "123271B9AD60469BAE8A924841456B63",
@@ -13,6 +13,14 @@
       "relatedDocuments": true,
       "customComponents": {
         "bottomSection": "ReturnMaterialReceiptBottomPanel"
+      },
+      "labelOverrides": {
+        "es_ES": {
+          "POReference": "Albarán origen"
+        },
+        "en_US": {
+          "POReference": "Source Shipment"
+        }
       },
       "dateFilterKey": "movementDate",
       "layoutType": "default",
@@ -42,6 +50,7 @@
               "source": "documentType.sequence"
             },
             "section": "principal",
+            "gridOrder": 2,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -66,6 +75,7 @@
             },
             "defaultValue": "@#Date@",
             "section": "principal",
+            "gridOrder": 1,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_AccountingDate"
             },
@@ -90,6 +100,7 @@
             "reference": "BusinessPartner",
             "inputMode": "search",
             "section": "principal",
+            "gridOrder": 3,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_BPartner"
             },
@@ -122,12 +133,13 @@
             "tsType": "string",
             "visibility": "editable",
             "required": true,
-            "grid": false,
+            "grid": true,
             "form": true,
             "sourceRequired": true,
             "reference": "Warehouse",
             "inputMode": "search",
             "section": "principal",
+            "gridOrder": 5,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_InOut_Warehouse"
             },
@@ -227,7 +239,8 @@
                 "name": "Voided"
               }
             ],
-            "defaultValue": "DR"
+            "defaultValue": "DR",
+            "gridOrder": 4
           },
           {
             "name": "salesOrder",
@@ -243,6 +256,20 @@
             "reference": "Order",
             "inputMode": "search",
             "section": "principal"
+          },
+          {
+            "name": "orderReference",
+            "apiKey": "orderReference",
+            "column": "POReference",
+            "label": "Order Reference",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "required": false,
+            "grid": true,
+            "form": true,
+            "section": "principal",
+            "gridOrder": 6
           },
           {
             "name": "trackingNo",
@@ -477,6 +504,14 @@
       "customComponents": {
         "bottomSection": "ReturnMaterialReceiptBottomPanel"
       },
+      "labelOverrides": {
+        "es_ES": {
+          "POReference": "Albarán origen"
+        },
+        "en_US": {
+          "POReference": "Source Shipment"
+        }
+      },
       "dateFilterKey": "movementDate",
       "linesLayout": "inlineEditable"
     },
@@ -611,7 +646,7 @@
             "apiKey": "orderReference",
             "column": "POReference",
             "type": "string",
-            "visibility": "discarded",
+            "visibility": "readOnly",
             "required": false
           },
           {
@@ -1603,6 +1638,14 @@
     },
     "window": {
       "category": "sales"
+    },
+    "labelOverrides": {
+      "es_ES": {
+        "POReference": "Albarán origen"
+      },
+      "en_US": {
+        "POReference": "Source Shipment"
+      }
     }
   },
   "testManifest": {
@@ -1822,6 +1865,14 @@
         "description": "Field 'movementDate' should be present in returnMaterialReceipt"
       },
       {
+        "id": "t-field-presence-returnMaterialReceipt-orderReference",
+        "category": "field-presence",
+        "entity": "returnMaterialReceipt",
+        "field": "orderReference",
+        "runner": "node",
+        "description": "Field 'orderReference' should be present in returnMaterialReceipt"
+      },
+      {
         "id": "t-field-presence-returnMaterialReceipt-partnerAddress",
         "category": "field-presence",
         "entity": "returnMaterialReceipt",
@@ -1948,6 +1999,14 @@
         "field": "movementDate",
         "runner": "node",
         "description": "Field 'movementDate' should have type 'string' in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-type-returnMaterialReceipt-orderReference",
+        "category": "field-type",
+        "entity": "returnMaterialReceipt",
+        "field": "orderReference",
+        "runner": "node",
+        "description": "Field 'orderReference' should have type 'string' in returnMaterialReceipt"
       },
       {
         "id": "t-field-type-returnMaterialReceipt-partnerAddress",
@@ -2626,14 +2685,6 @@
         "description": "System field 'orderDate' should exist in backend but not frontend for returnMaterialReceipt"
       },
       {
-        "id": "t-system-field-returnMaterialReceipt-orderReference",
-        "category": "system-field",
-        "entity": "returnMaterialReceipt",
-        "field": "orderReference",
-        "runner": "node",
-        "description": "System field 'orderReference' should exist in backend but not frontend for returnMaterialReceipt"
-      },
-      {
         "id": "t-system-field-returnMaterialReceipt-organization",
         "category": "system-field",
         "entity": "returnMaterialReceipt",
@@ -3049,15 +3100,15 @@
       }
     ],
     "summary": {
-      "total": 181,
+      "total": 182,
       "byCategory": {
         "action-endpoint": 12,
         "crud-flags": 2,
         "default-value-type": 4,
         "displaylogic-evaluable": 2,
         "displaylogic-valid": 2,
-        "field-presence": 16,
-        "field-type": 16,
+        "field-presence": 17,
+        "field-type": 17,
         "process-failure": 1,
         "process-happy": 1,
         "readonlylogic-evaluable": 10,
@@ -3065,11 +3116,11 @@
         "rule-declared": 4,
         "searchable-filters": 5,
         "selector-endpoint": 7,
-        "system-field": 87,
+        "system-field": 86,
         "visibility": 2
       },
       "byRunner": {
-        "node": 179,
+        "node": 180,
         "junit": 2
       }
     }

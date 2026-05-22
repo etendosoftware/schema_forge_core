@@ -12,11 +12,21 @@ import catalogs from './mockCatalogs';
 
 const breadcrumb = 'Sales / Return Material Receipt';
 
+const labelOverrides = {
+  "es_ES": {
+    "POReference": "Albarán origen"
+  },
+  "en_US": {
+    "POReference": "Source Shipment"
+  }
+};
+
 
 // @sf-generated-start summary:returnMaterialReceipt
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
   { key: 'salesOrder', column: 'C_Order_ID', type: 'selector' },
+  { key: 'orderReference', column: 'POReference', type: 'string' },
 ];
 
 const statusField = 'documentStatus';
@@ -255,6 +265,14 @@ export const api = {
   },
   "window": {
     "category": "sales"
+  },
+  "labelOverrides": {
+    "es_ES": {
+      "POReference": "Albarán origen"
+    },
+    "en_US": {
+      "POReference": "Source Shipment"
+    }
   }
 };
 
@@ -284,6 +302,7 @@ export default function ReturnMaterialReceiptPage({ windowName, recordId, ...pro
         customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_InOut", config: {} } }]}
         bottomSection={ReturnMaterialReceiptBottomPanel}
         requiredHeaderFields={requiredHeaderFields}
+        labelOverrides={labelOverrides}
         linesLayout="inlineEditable"
         sendDocument
         {...props}
@@ -300,6 +319,7 @@ export default function ReturnMaterialReceiptPage({ windowName, recordId, ...pro
       breadcrumb={breadcrumb}
       api={api}
       dateFilterKey="movementDate"
+      labelOverrides={labelOverrides}
       rowQuickActions={{}}
       sendDocument
       {...props}
