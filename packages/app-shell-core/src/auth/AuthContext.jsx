@@ -1,58 +1,51 @@
 import { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import { createLocalAuthStorage, normalizeAuthSession } from './session.js';
 
 const AuthContext = createContext(null);
 
-const STORAGE_KEY = 'sf_auth_token';
-const USERNAME_KEY = 'sf_auth_user';
-const ROLELIST_KEY = 'sf_auth_rolelist';
-const SELECTED_ROLE_KEY = 'sf_auth_selected_role';
-const SELECTED_ORG_KEY = 'sf_auth_selected_org';
-const PLATFORM_TOKEN_KEY = 'sf_platform_token';
+export function AuthProvider({ children, storage, initialSession, onSessionChange }) {
+  const authStorage = useMemo(() => storage || createLocalAuthStorage(), [storage]);
+  const [session, setSessionState] = useState(() => normalizeAuthSession({
+    ...authStorage.read(),
+    ...initialSession,
+  }));
 
-function safeJsonParse(key) {
-  try {
-    const v = localStorage.getItem(key);
-    return v ? JSON.parse(v) : null;
-  } catch { return null; }
-}
-
-export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem(STORAGE_KEY));
-  const [username, setUsername] = useState(() => localStorage.getItem(USERNAME_KEY));
-  const [roleList, setRoleList] = useState(() => safeJsonParse(ROLELIST_KEY) || []);
-  const [selectedRole, setSelectedRole] = useState(() => safeJsonParse(SELECTED_ROLE_KEY));
-  const [selectedOrg, setSelectedOrg] = useState(() => safeJsonParse(SELECTED_ORG_KEY));
+  const persistSession = useCallback((nextSession) => {
+    const normalized = normalizeAuthSession(nextSession);
+    setSessionState(normalized);
+    authStorage.write(normalized);
+    onSessionChange?.(normalized);
+    return normalized;
+  }, [authStorage, onSessionChange]);
 
   const logout = useCallback(() => {
-    setToken(null);
-    setUsername(null);
-    setRoleList([]);
-    setSelectedRole(null);
-    setSelectedOrg(null);
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(USERNAME_KEY);
-    localStorage.removeItem(ROLELIST_KEY);
-    localStorage.removeItem(SELECTED_ROLE_KEY);
-    localStorage.removeItem(SELECTED_ORG_KEY);
-    localStorage.removeItem(PLATFORM_TOKEN_KEY);
-  }, []);
+    const clearedSession = normalizeAuthSession();
+    setSessionState(clearedSession);
+    authStorage.clear();
+    onSessionChange?.(clearedSession);
+  }, [authStorage, onSessionChange]);
 
   const selectOrg = useCallback((org) => {
-    setSelectedOrg(org);
-    if (org) localStorage.setItem(SELECTED_ORG_KEY, JSON.stringify(org));
-    else localStorage.removeItem(SELECTED_ORG_KEY);
-  }, []);
+    persistSession({ ...session, selectedOrg: org || null });
+  }, [persistSession, session]);
+
+  const selectRole = useCallback((role) => {
+    persistSession({ ...session, selectedRole: role || null });
+  }, [persistSession, session]);
+
+  const setSession = useCallback((nextSession) => {
+    persistSession({ ...session, ...nextSession });
+  }, [persistSession, session]);
 
   const value = useMemo(() => ({
-    token,
-    username,
-    isAuthenticated: !!token,
-    roleList,
-    selectedRole,
-    selectedOrg,
+    ...session,
+    isAuthenticated: !!session.token,
+    setSession,
+    login: setSession,
+    selectRole,
     selectOrg,
     logout,
-  }), [token, username, roleList, selectedRole, selectedOrg, selectOrg, logout]);
+  }), [session, setSession, selectRole, selectOrg, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

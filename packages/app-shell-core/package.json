@@ -12,6 +12,7 @@
     "./i18n": "./src/i18n/index.js",
     "./layout": "./src/layout/index.js",
     "./reports": "./src/reports/index.js",
+    "./runtime": "./src/runtime/index.js",
     "./hooks/useCurrency.jsx": "./src/hooks/useCurrency.jsx",
     "./hooks/use-mobile.jsx": "./src/hooks/use-mobile.jsx",
     "./styles.css": "./src/styles.css",
@@ -22,7 +23,7 @@
     "!src/**/__tests__/**"
   ],
   "scripts": {
-    "test": "node --test test/*.test.js src/auth/__tests__/*.test.js src/i18n/__tests__/*.test.js src/components/ui/__tests__/*.test.js"
+    "test": "node --test test/*.test.js src/auth/__tests__/*.test.js src/i18n/__tests__/*.test.js src/runtime/__tests__/*.test.js src/components/ui/__tests__/*.test.js"
   },
   "peerDependencies": {
     "@radix-ui/react-collapsible": "^1.1.12",

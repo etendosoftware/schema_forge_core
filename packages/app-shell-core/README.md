@@ -19,5 +19,57 @@ It intentionally does not include generated contracts, generated windows,
 
 ```jsx
 import '@schema-forge/app-shell-core/styles.css';
-import { AuthProvider, LocaleProvider, ShellLayout } from '@schema-forge/app-shell-core';
+import {
+  AppShellRuntime,
+  createAppShellConfig,
+  createMemoryAuthStorage,
+} from '@schema-forge/app-shell-core';
+
+const config = createAppShellConfig({
+  menuGroups: [
+    {
+      id: 'main',
+      title: 'Main',
+      items: [{ label: 'Dashboard', path: '/dashboard' }],
+    },
+  ],
+  routes: [
+    { path: '/dashboard', element: <Dashboard /> },
+    { path: '/login', public: true, element: <Login /> },
+  ],
+  reports: [
+    { id: 'sales-summary', title: 'Sales summary' },
+  ],
+});
+
+export function App() {
+  return (
+    <AppShellRuntime
+      config={config}
+      auth={{
+        loginPath: '/login',
+        storage: createMemoryAuthStorage(),
+      }}
+      currency={{ value: 'EUR' }}
+    />
+  );
+}
 ```
+
+## Public Runtime Contract
+
+External consumers should depend on the package entrypoints instead of internal
+paths:
+
+- `@schema-forge/app-shell-core` for the complete runtime surface.
+- `@schema-forge/app-shell-core/runtime` for `AppShellRuntime`,
+  `AppShellProviders`, `AuthGate`, and descriptor builders.
+- `@schema-forge/app-shell-core/auth` for session storage, auth context, and API
+  fetch helpers.
+- `@schema-forge/app-shell-core/layout` for shell layout primitives.
+- `@schema-forge/app-shell-core/reports` for report descriptors and viewer frame.
+- `@schema-forge/app-shell-core/styles.css` for the CSS/Tailwind token layer.
+
+The package still expects the host app to provide React, React Router, Radix UI,
+Lucide, and the CSS build pipeline listed as peer dependencies. Generated
+contracts and generated windows remain outside this package by design.
