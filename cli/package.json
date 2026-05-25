@@ -27,6 +27,7 @@
     "sf-report-serve": "./src/report-serve.js",
     "sf-report-preview": "./src/report-preview.js",
     "sf-quality-gate": "./src/quality-gate.js",
+    "sf-domain-boundary-check": "./src/domain-boundary-check.js",
     "sf-xml-regeneration-check": "./src/xml-regeneration-check.js"
   },
   "devDependencies": {
