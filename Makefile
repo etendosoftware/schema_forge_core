@@ -69,7 +69,7 @@ domain-boundary-check: ## Check changed files against monorepo intent/domain bou
 	ARGS="--base $(BASE) --head $$HEAD_REF"; \
 	if [ -n "$(LABELS)" ]; then ARGS="$$ARGS --labels $(LABELS)"; fi; \
 	if [ -n "$(PR_BODY_FILE)" ]; then ARGS="$$ARGS --pr-body-file $(PR_BODY_FILE)"; fi; \
-	node cli/src/domain-boundary-check.js $$ARGS
+	npx sf-domain-boundary-check $$ARGS
 # --- E2E Testing (Playwright) ---
 
 test-e2e: ## Run E2E tests with visible browser

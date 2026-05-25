@@ -22,6 +22,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+
+      - run: npm install
 
       - name: Resolve PR metadata
         id: metadata
@@ -46,7 +49,7 @@ jobs:
         id: boundary
         run: |
           set +e
-          node cli/src/domain-boundary-check.js \
+          npx sf-domain-boundary-check \
             --base "${{ steps.metadata.outputs.base }}" \
             --head "${{ steps.metadata.outputs.head }}" \
             --labels "${{ steps.metadata.outputs.labels }}" \
