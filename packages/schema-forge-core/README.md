@@ -26,3 +26,11 @@ The binary expects the target repository to expose Schema Forge-style paths such
 as `artifacts/<window>`, `tools/app-shell`, `docs/generated-custom-windows`, and
 `e2e/tests/flows`. Repositories with a different layout can call the exported
 functions directly with their own changed-file list and known windows.
+
+## Local Workspace Consumption
+
+Inside this monorepo, consumers should depend on `@schema-forge/core` by package
+name and matching version, for example `"@schema-forge/core": "0.1.0"`. npm then
+links the workspace package from `packages/schema-forge-core` in
+`package-lock.json`, avoiding relative imports while staying compatible with the
+npm version used by this repository.
