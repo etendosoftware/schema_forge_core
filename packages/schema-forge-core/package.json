@@ -13,7 +13,7 @@
     "./domain-boundary-check": "./src/domain-boundary-check.js"
   },
   "bin": {
-    "sf-domain-boundary-check": "./bin/sf-domain-boundary-check.js"
+    "sf-domain-boundary-check": "bin/sf-domain-boundary-check.js"
   },
   "files": [
     "bin",
