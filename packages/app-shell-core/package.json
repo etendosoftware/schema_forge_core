@@ -12,6 +12,8 @@
     "./i18n": "./src/i18n/index.js",
     "./layout": "./src/layout/index.js",
     "./reports": "./src/reports/index.js",
+    "./hooks/useCurrency.jsx": "./src/hooks/useCurrency.jsx",
+    "./hooks/use-mobile.jsx": "./src/hooks/use-mobile.jsx",
     "./styles.css": "./src/styles.css",
     "./components/ui/*": "./src/components/ui/*"
   },

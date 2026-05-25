@@ -101,6 +101,39 @@ describe('domain boundary classification', () => {
     assert.ok(report.blockers.some((blocker) => blocker.code === 'PLATFORM_WITH_WINDOW'));
   });
 
+  it('classifies app-shell-core as its own scope', () => {
+    assert.deepEqual(
+      classifyPath('packages/app-shell-core/src/i18n/useLabel.js', { knownWindows: WINDOWS }),
+      { kind: 'app-shell-core', scope: 'app-shell-core' },
+    );
+  });
+
+  it('blocks app-shell-core changes mixed with consumer wiring unless explicitly scoped', () => {
+    const report = analyzeBoundary({
+      knownWindows: WINDOWS,
+      changedFiles: [
+        'packages/app-shell-core/src/i18n/useLabel.js',
+        'tools/app-shell/src/i18n/useLabel.js',
+      ],
+    });
+
+    assert.equal(report.decision, 'fail');
+    assert.ok(report.blockers.some((blocker) => blocker.code === 'APP_SHELL_CORE_MIXED_SCOPE'));
+  });
+
+  it('allows app-shell-core wiring when platform scope is explicit', () => {
+    const report = analyzeBoundary({
+      knownWindows: WINDOWS,
+      labels: ['scope:platform-change'],
+      changedFiles: [
+        'packages/app-shell-core/src/i18n/useLabel.js',
+        'tools/app-shell/src/i18n/useLabel.js',
+      ],
+    });
+
+    assert.equal(report.decision, 'pass');
+  });
+
   it('allows registry registration with a single window slice', () => {
     const report = analyzeBoundary({
       knownWindows: WINDOWS,
@@ -162,6 +195,18 @@ describe('domain boundary classification', () => {
       changedFiles: [
         'package-lock.json',
         'cli/package.json',
+      ],
+    });
+
+    assert.equal(report.decision, 'pass');
+  });
+
+  it('allows a root lockfile with app-shell-core package metadata', () => {
+    const report = analyzeBoundary({
+      knownWindows: WINDOWS,
+      changedFiles: [
+        'package-lock.json',
+        'packages/app-shell-core/package.json',
       ],
     });
 
