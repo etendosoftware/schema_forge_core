@@ -8,6 +8,11 @@ test('public package exports the expected runtime entrypoints', async () => {
 
   assert.equal(pkg.name, '@schema-forge/app-shell-core');
   assert.equal(pkg.exports['.'], './src/index.js');
+  assert.equal(pkg.exports['./auth'], './src/auth/index.js');
+  assert.equal(pkg.exports['./i18n'], './src/i18n/index.js');
+  assert.equal(pkg.exports['./layout'], './src/layout/index.js');
+  assert.equal(pkg.exports['./reports'], './src/reports/index.js');
+  assert.equal(pkg.exports['./runtime'], './src/runtime/index.js');
   assert.equal(pkg.exports['./styles.css'], './src/styles.css');
   assert.equal(pkg.exports['./hooks/useCurrency.jsx'], './src/hooks/useCurrency.jsx');
   assert.equal(pkg.exports['./hooks/use-mobile.jsx'], './src/hooks/use-mobile.jsx');

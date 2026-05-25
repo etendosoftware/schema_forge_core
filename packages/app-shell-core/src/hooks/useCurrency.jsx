@@ -6,6 +6,7 @@ import { useAuth } from '../auth/index.js';
  * ----------------------------------------------------------------*/
 
 function getApiBase() {
+  if (typeof window === 'undefined') return '';
   const path = window.location.pathname;
   const idx = path.indexOf('/web/');
   if (idx === -1) return import.meta.env.VITE_API_BASE || '';
@@ -30,23 +31,28 @@ const CurrencyContext = createContext(null);
  *   </CurrencyProvider>
  * </AuthProvider>
  */
-export function CurrencyProvider({ children }) {
+export function CurrencyProvider({ children, value, apiBaseUrl, fetcher = globalThis.fetch }) {
   const { token, selectedOrg } = useAuth();
   const [currencyCode, setCurrencyCode] = useState(null);
 
   useEffect(() => {
+    if (value != null) {
+      setCurrencyCode(value);
+      return;
+    }
+
     if (!token) {
       setCurrencyCode(null);
       return;
     }
 
     let cancelled = false;
-    const base = `${getApiBase()}/sws/neo`;
+    const base = apiBaseUrl || `${getApiBase()}/sws/neo`;
     const headers = { Authorization: `Bearer ${token}` };
 
     async function resolve() {
       try {
-        const res = await fetch(`${base}/session`, { headers });
+        const res = await fetcher(`${base}/session`, { headers });
         if (res.ok) {
           const json = await res.json();
           const code = json?.currencyCode;
@@ -59,7 +65,7 @@ export function CurrencyProvider({ children }) {
 
     resolve();
     return () => { cancelled = true; };
-  }, [token, selectedOrg?.id]);
+  }, [apiBaseUrl, fetcher, token, selectedOrg?.id, value]);
 
   return (
     <CurrencyContext.Provider value={currencyCode}>
