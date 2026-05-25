@@ -152,6 +152,13 @@ describe('domain boundary classification', () => {
     );
   });
 
+  it('classifies npm registry config as repo infra', () => {
+    assert.deepEqual(
+      classifyPath('.npmrc', { knownWindows: WINDOWS }),
+      { kind: 'repo-infra', scope: 'repo-infra' },
+    );
+  });
+
   it('allows registry registration with a single window slice', () => {
     const report = analyzeBoundary({
       knownWindows: WINDOWS,

@@ -171,6 +171,7 @@ const REPO_INFRA_PATTERNS = [
   /^schema_forge\.properties$/,
   /^ETENDO_VERSION$/,
   /^\.env\.example$/,
+  /^\.npmrc$/,
   /^\.nvmrc$/,
   /^AGENTS\.md$/,
   /^CLAUDE\.md$/,
