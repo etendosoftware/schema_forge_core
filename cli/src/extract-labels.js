@@ -139,7 +139,7 @@ async function main() {
 
   if (!lang || !out) {
     console.error('Usage: node extract-labels.js --lang <language> --out <path>');
-    console.error('Example: node cli/src/extract-labels.js --lang en_US --out tools/app-shell/src/locales/en_US.json');
+    console.error('Example: node cli/src/extract-labels.js --lang en_US --out packages/app-shell-core/src/locales/en_US.json');
     process.exit(1);
   }
 

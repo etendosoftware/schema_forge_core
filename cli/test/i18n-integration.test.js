@@ -347,7 +347,7 @@ describe('getPrice — currency formatting', () => {
 // Locale newLabel consistency
 // ---------------------------------------------------------------------------
 
-const LOCALES_DIR = resolve(import.meta.dirname, '../../tools/app-shell/src/locales');
+const LOCALES_DIR = resolve(import.meta.dirname, '../../packages/app-shell-core/src/locales');
 
 describe('locale newLabel consistency', () => {
   const esRaw = readFileSync(join(LOCALES_DIR, 'es_ES.json'), 'utf8');
