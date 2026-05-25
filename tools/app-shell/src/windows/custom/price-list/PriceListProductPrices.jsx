@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { DataTable } from '@/components/contract-ui';
 import { AddLineButton } from '@/components/ui/add-line-button';
-import { useUI, useMenuLabel } from '@/i18n';
+import { useUI, useMenuLabel } from '@schema-forge/app-shell-core';
 import { Trash2, X } from 'lucide-react';
 
 function ConfirmDeleteModal({ onConfirm, onCancel }) {

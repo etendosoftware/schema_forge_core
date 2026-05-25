@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { Search, Truck, ChevronDown, X } from 'lucide-react';
 
 export default function SupplierSelector({ selected, onSelect, suppliers = [], inputRef }) {

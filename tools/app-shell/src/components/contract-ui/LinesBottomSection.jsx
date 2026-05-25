@@ -1,4 +1,4 @@
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { resolveTotalDiscountPct } from '@/lib/documentTotals';
 import DocumentTotalsPanel from './DocumentTotalsPanel.jsx';
 

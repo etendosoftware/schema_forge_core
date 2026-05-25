@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { neoBase } from '@/components/related-documents/helpers.js';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import CertModal from './CertModal.jsx';
 import { useDraggable } from '../fiscal-monitor/useDraggable.js';
 

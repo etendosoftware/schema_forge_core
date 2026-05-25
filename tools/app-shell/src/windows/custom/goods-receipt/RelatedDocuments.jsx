@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DocChip, RelatedDocumentsShell, docChipProps, fetchByCriteria } from '@/components/related-documents';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 
 export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) {
   const [invoices, setInvoices] = useState([]);

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { useContactsType } from './ContactsContext';
 
 /* eslint-disable react/prop-types */

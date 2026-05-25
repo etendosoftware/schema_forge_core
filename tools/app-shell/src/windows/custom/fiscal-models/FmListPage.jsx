@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { LayoutGrid, Settings2, ListFilter, ArrowUpDown } from 'lucide-react';
 import { StatusPillMenu, ResultPill, EmptyState } from './FmCommon.jsx';
 import { ConfigDrawer, NewDeclModal } from './FmOverlays.jsx';

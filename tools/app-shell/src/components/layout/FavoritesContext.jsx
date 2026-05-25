@@ -7,8 +7,8 @@ import {
   useRef,
   useState,
 } from 'react';
-import { useAuth } from '@/auth/AuthContext.jsx';
-import { buildHeaders, detectBaseUrl } from '@/auth/api.js';
+import { useAuth } from '@schema-forge/app-shell-core';
+import { buildHeaders, detectBaseUrl } from '@schema-forge/app-shell-core';
 
 const FavoritesContext = createContext(null);
 

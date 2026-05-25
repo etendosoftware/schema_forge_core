@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { neoBase } from '@/components/related-documents/helpers.js';
 import { detectProfile } from '../fiscal-config/fiscalConfig.utils.js';
 import { computeKpis } from './fiscalMonitor.utils.js';
-import { useApiFetch } from '@/auth/useApiFetch.js';
+import { useApiFetch } from '@schema-forge/app-shell-core';
 
 // ── Config entity names (for profile detection) ───────────────────────────────
 const SII_CFG_SPEC         = 'sii-config';

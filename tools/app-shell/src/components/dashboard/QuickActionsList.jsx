@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { TrendingUp } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 
 export function QuickActionsList({ actions = [] }) {
   const ui = useUI();

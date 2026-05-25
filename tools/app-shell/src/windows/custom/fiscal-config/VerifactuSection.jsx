@@ -4,9 +4,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { neoBase } from '@/components/related-documents/helpers.js';
-import { useApiFetch } from '@/auth/useApiFetch.js';
+import { useApiFetch } from '@schema-forge/app-shell-core';
 import CertSection from './CertSection.jsx';
 import {
   buildVerifactuUpdatePayload,

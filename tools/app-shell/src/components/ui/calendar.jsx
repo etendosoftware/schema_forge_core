@@ -1,6 +1,6 @@
 import { DayPicker } from 'react-day-picker';
 import { es, enUS } from 'date-fns/locale';
-import { useLocaleSwitch } from '@/i18n';
+import { useLocaleSwitch } from '@schema-forge/app-shell-core';
 import { cn } from '@/lib/utils';
 
 const LOCALES = { es_ES: es, en_US: enUS };

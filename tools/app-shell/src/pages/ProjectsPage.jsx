@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { KPIHeader, KanbanBoard, DataTable } from '@/components/contract-ui';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { FolderKanban, Clock, PieChart, FileText } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 
 import { sections } from '@generated/projects/generated/config';
 import * as mockData from '@generated/projects/generated/mockData';

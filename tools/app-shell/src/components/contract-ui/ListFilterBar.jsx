@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button.jsx';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.jsx';
 import { Calendar } from '@/components/ui/calendar.jsx';
 import { ChevronDown, ChevronLeft, ChevronRight, CalendarDays, Filter, Check, Loader2 } from 'lucide-react';
-import { useLocale, useLocaleSwitch, useUI } from '@/i18n';
+import { useLocale, useLocaleSwitch, useUI } from '@schema-forge/app-shell-core';
 import { cn } from '@/lib/utils';
 import { useDistinctValues } from '@/hooks/useDistinctValues.js';
 import { AdvancedFilterBuilder } from './AdvancedFilterBuilder.jsx';

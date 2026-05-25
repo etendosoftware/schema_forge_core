@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, FileText, Truck, DollarSign, CreditCard, ShoppingBag, Box, Circle } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { resolveDashboardNavigation } from '@/lib/dashboardNavigation.js';
 
 const CATEGORY_MAP = {

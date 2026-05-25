@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { useQuickPurchaseData, SEND_METHODS } from '../useQuickPurchaseData';
 
-vi.mock('@/auth/AuthContext.jsx', () => ({
+vi.mock('@schema-forge/app-shell-core', () => ({
   useAuth: () => ({ token: 'test-token' }),
 }));
 

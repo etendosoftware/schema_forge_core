@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import InvoiceTopbarExtra from '@generated/sales-invoice/custom/InvoiceTopbarExtra';
 import CloneButton from '../shared/CloneButton.jsx';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 
 /* eslint-disable react/prop-types */
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 
 const STORAGE_KEY = 'bulkActionResult';
 

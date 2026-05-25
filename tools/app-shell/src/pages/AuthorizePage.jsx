@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/auth/AuthContext.jsx';
-import { createApiFetch } from '@/auth/api.js';
+import { useAuth } from '@schema-forge/app-shell-core';
+import { createApiFetch } from '@schema-forge/app-shell-core';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shield, CheckCircle2, XCircle, Loader2, Plug } from 'lucide-react';
-import { useMenuLabel, useUI } from '@/i18n';
+import { useMenuLabel, useUI } from '@schema-forge/app-shell-core';
 
 function detectBaseUrl() {
   const path = window.location.pathname;

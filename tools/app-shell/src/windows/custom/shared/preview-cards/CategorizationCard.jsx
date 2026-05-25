@@ -1,4 +1,4 @@
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { InfoRow } from './SummaryCard.jsx';
 
 function SectionCard({ title, children }) {

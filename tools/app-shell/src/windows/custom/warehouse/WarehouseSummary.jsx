@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { LineChart, BarChart2, Maximize2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { niceScale, formatDashboardAxisTick } from '@/lib/dashboardNumberFormat';
 import { useWarehouseStock } from './useWarehouseStock';
 

@@ -1,4 +1,4 @@
-import { useLocaleSwitch } from '@/i18n/index.js';
+import { useLocaleSwitch } from '@schema-forge/app-shell-core';
 
 const LOCALES = [
   { code: 'en_US', flag: '🇺🇸', short: 'EN' },

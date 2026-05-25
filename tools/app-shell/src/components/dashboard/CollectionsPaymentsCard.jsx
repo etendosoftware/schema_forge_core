@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { useUI } from '@/i18n';
-import { useLocaleSwitch } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
+import { useLocaleSwitch } from '@schema-forge/app-shell-core';
 import { formatDashboardAmount, localeFromUi } from '@/lib/dashboardNumberFormat.js';
 import { createDashboardNavigation, resolveDashboardNavigation } from '@/lib/dashboardNavigation.js';
 import { DashboardCard, DashboardEmptyState } from './_shared';

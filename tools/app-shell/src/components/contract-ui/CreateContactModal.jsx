@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useUI } from '@/i18n';
-import { useLocaleState } from '@/i18n/useLocaleState';
+import { useUI } from '@schema-forge/app-shell-core';
+import { useLocaleState } from '@schema-forge/app-shell-core';
 import EntityCreationModal from './EntityCreationModal.jsx';
 import FinancialSection from './FinancialSection.jsx';
 import AddressSection from './AddressSection.jsx';

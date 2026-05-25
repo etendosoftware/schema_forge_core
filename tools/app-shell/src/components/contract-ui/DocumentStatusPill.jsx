@@ -1,5 +1,5 @@
 import { Clock, Check, X } from 'lucide-react';
-import { useLocale } from '@/i18n';
+import { useLocale } from '@schema-forge/app-shell-core';
 import { getStatusTone, statusLabel } from '@/lib/statusBadge.js';
 import { TONE_STYLES } from '@/components/ui/status-tag-tokens.js';
 

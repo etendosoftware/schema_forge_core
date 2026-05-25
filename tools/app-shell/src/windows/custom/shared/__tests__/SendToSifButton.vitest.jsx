@@ -10,7 +10,7 @@ vi.mock('@/windows/custom/fiscal-config/useFiscalConfig.js', () => ({
   useFiscalConfig: (...args) => useFiscalConfigMock(...args),
 }));
 
-vi.mock('@/auth/AuthContext', () => ({
+vi.mock('@schema-forge/app-shell-core', () => ({
   useAuth: () => ({ selectedOrg: { id: 'ORG_1' }, token: 'tok', logout: () => {} }),
 }));
 

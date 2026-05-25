@@ -8,7 +8,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { parseCalendarDate, formatCalendarDate } from '@/lib/dateOnly';
-import { useLocaleSwitch, useUI } from '@/i18n';
+import { useLocaleSwitch, useUI } from '@schema-forge/app-shell-core';
 import { cn } from '@/lib/utils';
 
 function toIsoDate(date) {

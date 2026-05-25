@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select.jsx';
 import { Label } from '@/components/ui/label.jsx';
 import { ListChecks } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { useDocumentAction } from '@/hooks/useDocumentAction';
 
 const STORAGE_KEY = 'bulkActionResult';

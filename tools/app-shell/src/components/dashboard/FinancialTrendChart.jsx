@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, BarChart2, Check, Plus } from 'lucide-react';
-import { useUI } from '@/i18n';
-import { useLocaleSwitch } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
+import { useLocaleSwitch } from '@schema-forge/app-shell-core';
 import {
   formatDashboardAmount,
   formatDashboardAxisTick,

@@ -5,7 +5,7 @@ vi.mock('@/i18n', () => ({
   useLabel: () => (key) => key,
 }));
 
-vi.mock('@/auth/AuthContext', () => ({
+vi.mock('@schema-forge/app-shell-core', () => ({
   useAuth: () => ({ selectedOrg: { id: 'org-001' } }),
 }));
 

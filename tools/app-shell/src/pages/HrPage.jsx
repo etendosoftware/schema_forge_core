@@ -4,7 +4,7 @@ import { KPIHeader, KanbanBoard, DataTable } from '@/components/contract-ui';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Users, Calendar, UserPlus, Clock, Bell, ArrowUp, ArrowDown } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 
 import { sections } from '@generated/hr/generated/config';
 import * as mockData from '@generated/hr/generated/mockData';

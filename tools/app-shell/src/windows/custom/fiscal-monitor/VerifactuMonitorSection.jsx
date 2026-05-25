@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useUI } from '@/i18n';
-import { useApiFetch } from '@/auth/useApiFetch.js';
+import { useUI } from '@schema-forge/app-shell-core';
+import { useApiFetch } from '@schema-forge/app-shell-core';
 import { neoBase } from '@/components/related-documents/helpers.js';
 import { StatusPill, NumFactura, Pager, RowActionBtn, isErrorStatus, fmtDate, PAGE_SIZE } from './FmPrimitives.jsx';
 import {

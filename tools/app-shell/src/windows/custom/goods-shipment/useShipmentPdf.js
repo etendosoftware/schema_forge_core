@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import {
   COMMON_HANDLEBARS_HELPERS,
   fetchJson,

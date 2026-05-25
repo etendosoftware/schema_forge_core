@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 
 const PAYMENT_STATUS = {
   E:      'Executed',

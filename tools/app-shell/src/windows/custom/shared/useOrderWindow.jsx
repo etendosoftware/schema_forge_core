@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
 import { useRowDelete } from '@/hooks/useRowDelete';
 import { useSavedPreviewRecord } from './useSavedPreviewRecord.js';

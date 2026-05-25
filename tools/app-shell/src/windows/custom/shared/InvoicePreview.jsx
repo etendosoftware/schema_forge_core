@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { Edit2, FileText, Loader2, AlertCircle, Mail, Download, Wallet, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
-import { useMenuLabel, useUI } from '@/i18n';
+import { useMenuLabel, useUI } from '@schema-forge/app-shell-core';
 import { getLatestInstallmentDueDate } from '@/lib/invoiceDueDate';
 import InvoicePaymentModal from './InvoicePaymentModal.jsx';
 import PdfViewer from './PdfViewer.jsx';

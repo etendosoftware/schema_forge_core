@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { niceScale, formatDashboardAxisTick, toBezierPath, toBezierFillPath } from '@/lib/dashboardNumberFormat';
 import { formatCurrency } from '@/lib/formatCurrency';
 

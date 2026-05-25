@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Loader2, MapPin, ChevronDown, Check } from 'lucide-react';
-import { useUI } from '@/i18n';
-import { useApiFetch } from '@/auth/useApiFetch.js';
+import { useUI } from '@schema-forge/app-shell-core';
+import { useApiFetch } from '@schema-forge/app-shell-core';
 import { toast } from 'sonner';
 import LocationEditorModal from '@/windows/custom/shared/LocationEditorModal.jsx';
 

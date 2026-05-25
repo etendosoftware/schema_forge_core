@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { LinesBottomSection, LinesEmptyState } from '@/components/contract-ui';
 import ImportFromPurchaseOrderModal from './ImportFromPurchaseOrderModal.jsx';
 import RelatedDocuments from './RelatedDocuments.jsx';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 
 /**
  * Goods Receipt bottom section. Delegates to the shared LinesBottomSection

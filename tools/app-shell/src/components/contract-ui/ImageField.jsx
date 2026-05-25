@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, X, ImageIcon, Loader2 } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 
 /**
  * ImageField — shows a product image and allows upload.

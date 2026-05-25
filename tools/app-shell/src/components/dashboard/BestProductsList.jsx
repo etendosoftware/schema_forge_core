@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TrendingUp, TrendingDown, Check, Minus, Sparkles, Plus } from 'lucide-react';
-import { useUI } from '@/i18n';
-import { useLocaleSwitch } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
+import { useLocaleSwitch } from '@schema-forge/app-shell-core';
 import { useCopilot } from '@/components/CopilotContext';
 import { formatDashboardAmount, formatDashboardNumber, localeFromUi } from '@/lib/dashboardNumberFormat.js';
 import { DashboardCard, DashboardEmptyState, DashboardRowChevron } from './_shared';

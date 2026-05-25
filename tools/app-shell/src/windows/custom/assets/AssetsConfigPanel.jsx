@@ -1,5 +1,5 @@
 import { EntityForm } from '@/components/contract-ui';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 
 function SectionCard({ title, description, children }) {
   return (

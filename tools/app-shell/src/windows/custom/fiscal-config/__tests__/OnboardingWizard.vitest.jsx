@@ -19,7 +19,7 @@ vi.mock('@/auth/useApiFetch.js', () => ({
   useApiFetch: vi.fn(() => vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({}) }))),
 }));
 
-vi.mock('@/auth/AuthContext.jsx', () => ({
+vi.mock('@schema-forge/app-shell-core', () => ({
   useAuth: vi.fn(() => ({
     selectedOrg: { id: 'org-1', name: 'Test Organization' },
     selectedRole: { orgList: [{ id: 'org-1', name: 'Test Organization' }] },
@@ -53,8 +53,8 @@ vi.mock('sonner', () => ({
 // --- Import under test ----------------------------------------------------
 
 import OnboardingWizard from '../OnboardingWizard.jsx';
-import { useApiFetch } from '@/auth/useApiFetch.js';
-import { useAuth } from '@/auth/AuthContext.jsx';
+import { useApiFetch } from '@schema-forge/app-shell-core';
+import { useAuth } from '@schema-forge/app-shell-core';
 import { buildOnboardingPayloads } from '../fiscalConfig.utils.js';
 
 // --- Helpers --------------------------------------------------------------

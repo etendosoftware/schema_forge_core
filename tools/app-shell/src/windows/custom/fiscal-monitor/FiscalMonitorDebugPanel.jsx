@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { useDraggable } from './useDraggable.js';
 
 const PROFILES = [

@@ -1,6 +1,6 @@
-import { useAuth } from '@/auth/AuthContext.jsx';
+import { useAuth } from '@schema-forge/app-shell-core';
 import { Building2, Shield } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 
 // TODO ETP-3690: switchContext removed — revisit if Settings UI is resurrected
 export default function SettingsPage() {

@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 
 /**
  * Format an ISO date string as a compact date (no time).

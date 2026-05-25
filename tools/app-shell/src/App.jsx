@@ -1,7 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
+import { AuthProvider, useAuth } from '@schema-forge/app-shell-core';
 import AppLayout from './layout/AppLayout.jsx';
 import WindowLoader from './windows/WindowLoader.jsx';
 import PreviewPage from './preview/PreviewPage.jsx';
@@ -18,12 +18,12 @@ import ProjectsPage from './pages/ProjectsPage.jsx';
 import ReportViewerPage from './pages/ReportViewerPage.jsx';
 import { buildMenuGroups, buildWindowMap } from './windows/registry.js';
 import { createMockFetch } from './lib/mockFetch.js';
-import { LocaleProvider } from './i18n/index.js';
-import { useLocaleState } from './i18n/useLocaleState.js';
+import { LocaleProvider } from '@schema-forge/app-shell-core';
+import { useLocaleState } from '@schema-forge/app-shell-core';
 import { useServiceWorker } from './hooks/useServiceWorker.js';
 import { useInstalledApps } from './hooks/useInstalledApps.js';
 import { useAppStoreUnlock, attachKeySequenceWatcher } from './hooks/useAppStoreUnlock.js';
-import { CurrencyProvider } from './hooks/useCurrency.jsx';
+import { CurrencyProvider } from '@schema-forge/app-shell-core';
 import { buildOnboardingReturnTo } from './lib/oauthReturnTo.js';
 import { ObservabilityRouteTracker } from './lib/observability/RouteTracker.jsx';
 

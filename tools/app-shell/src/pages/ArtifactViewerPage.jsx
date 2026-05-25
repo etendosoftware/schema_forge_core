@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FileJson, Search, History, Loader2, FolderOpen } from 'lucide-react';
 

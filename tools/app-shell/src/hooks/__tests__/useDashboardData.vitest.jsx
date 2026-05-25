@@ -10,7 +10,7 @@ vi.mock('@generated/dashboard/generated/config', () => ({
   actions: [{ id: 'a1', label: 'Action 1' }],
 }));
 
-vi.mock('@/auth/AuthContext', () => ({
+vi.mock('@schema-forge/app-shell-core', () => ({
   useAuth: () => ({ token: 'test-token' }),
 }));
 
