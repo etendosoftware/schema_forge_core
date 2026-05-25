@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
 import { Separator } from '@/components/ui/separator.jsx';
 import { cn } from '@/lib/utils';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { AttachmentChips } from './AttachmentChips.jsx';
 
 /**

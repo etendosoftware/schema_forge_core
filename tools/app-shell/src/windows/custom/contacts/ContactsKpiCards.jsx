@@ -1,5 +1,5 @@
 import { Users } from 'lucide-react';
-import { useLocale } from '@schema-forge/app-shell-core';
+import { useLocale } from '@/i18n';
 
 function KpiCard({ title, value, icon: Icon, loading }) {
   return (

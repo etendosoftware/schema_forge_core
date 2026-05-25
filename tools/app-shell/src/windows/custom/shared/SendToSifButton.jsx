@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
-import { useAuth } from '@schema-forge/app-shell-core';
+import { useAuth } from '@/auth/AuthContext.jsx';
 import { getPendingSifTargets, getSifBodyKey } from './sifSending.js';
 import SifSendingModal from './SifSendingModal.jsx';
 

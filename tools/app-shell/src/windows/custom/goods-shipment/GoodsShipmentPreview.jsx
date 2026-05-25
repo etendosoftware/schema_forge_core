@@ -2,7 +2,7 @@ import { useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Download, Edit2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
-import { useUI, useMenuLabel, useLocaleSwitch } from '@schema-forge/app-shell-core';
+import { useUI, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { formatCalendarDate } from '@/lib/dateOnly';
 import GenericPreviewModal from '../shared/GenericPreviewModal.jsx';
 import { PreviewPdfPanel } from '../shared/PreviewActionButtons.jsx';

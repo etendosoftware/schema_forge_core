@@ -66,7 +66,7 @@ vi.mock('@/windows/custom/fiscal-config/useFiscalConfig.js', () => ({
   useFiscalConfig: () => ({ profile: 'tbai' }),
 }));
 
-vi.mock('@schema-forge/app-shell-core', () => ({
+vi.mock('@/auth/AuthContext.jsx', () => ({
   useAuth: () => ({ selectedOrg: { id: 'ORG_1' } }),
 }));
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { computeDocumentTotals } from '@/lib/documentTotals';
 import { Checkbox } from '@/components/ui/checkbox';
 

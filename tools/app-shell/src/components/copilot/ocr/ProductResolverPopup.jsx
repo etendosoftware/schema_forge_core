@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { X, Loader2, Search, ChevronDown, Check, Plus } from 'lucide-react';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 
 /* eslint-disable react/prop-types */
 

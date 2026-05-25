@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import KindRenderer from './kinds/KindRenderer.jsx';
 
 /* eslint-disable react/prop-types */

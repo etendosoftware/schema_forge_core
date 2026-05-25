@@ -4,7 +4,7 @@ import './contacts.css';
 import BusinessPartnerPage from '@generated/contacts/generated/web/contacts/BusinessPartnerPage';
 import { ContactsProvider } from './ContactsContext';
 import ContactsBusinessPartnerForm from './ContactsBusinessPartnerForm';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { SortIcon, RefreshIcon } from '@/components/ui/custom-icons';
 import { Trash2, X } from 'lucide-react';
 import {

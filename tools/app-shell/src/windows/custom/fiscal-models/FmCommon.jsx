@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { STATUS_COLOR, STATUS_ICON, STATUS_ORDER } from './fiscalModelsUtils.js';
 import './fiscal-models.css';
 

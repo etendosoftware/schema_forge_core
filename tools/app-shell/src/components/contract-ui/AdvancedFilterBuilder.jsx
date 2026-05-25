@@ -24,7 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu.jsx';
 import { Trash2, Plus, Save, SlidersHorizontal, ChevronDown, Check, Bookmark, Loader2 } from 'lucide-react';
-import { useUI, useLabel, useLocale } from '@schema-forge/app-shell-core';
+import { useUI, useLabel, useLocale } from '@/i18n';
 import { resolveFilterMode, getDisplayText } from '@/lib/gridQuery';
 import { useDistinctValues } from '@/hooks/useDistinctValues.js';
 import { DistinctValuesList } from './DistinctValuesList.jsx';

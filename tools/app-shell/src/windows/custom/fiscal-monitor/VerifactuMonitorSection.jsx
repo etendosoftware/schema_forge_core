@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useUI } from '@schema-forge/app-shell-core';
-import { useApiFetch } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 import { neoBase } from '@/components/related-documents/helpers.js';
 import { Checkbox } from '@/components/ui/checkbox';
 import { StatusPill, NumFactura, ScrollSentinel, isErrorStatus, PAGE_SIZE, ExportIcon, useFmSelection } from './FmPrimitives.jsx';

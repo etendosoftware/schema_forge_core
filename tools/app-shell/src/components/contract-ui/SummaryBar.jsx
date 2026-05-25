@@ -1,4 +1,4 @@
-import { useLabel } from '@schema-forge/app-shell-core';
+import { useLabel } from '@/i18n';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 

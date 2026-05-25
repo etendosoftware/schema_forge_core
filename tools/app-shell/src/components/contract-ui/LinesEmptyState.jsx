@@ -1,4 +1,4 @@
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 
 export default function LinesEmptyState({
   data,

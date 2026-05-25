@@ -3,7 +3,7 @@ import { LoaderCircle, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { cn } from '@/lib/utils';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 
 /**
  * AssistantSelector — grid picker for copilot agents/assistants.

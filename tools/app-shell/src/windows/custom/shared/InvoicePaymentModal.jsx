@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DateField } from '@/components/ui/date-field';
-import { useApiFetch } from '@schema-forge/app-shell-core';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useApiFetch } from '@/auth/useApiFetch.js';
+import { useUI } from '@/i18n';
 import { formatCurrency } from '@/lib/formatCurrency';
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────

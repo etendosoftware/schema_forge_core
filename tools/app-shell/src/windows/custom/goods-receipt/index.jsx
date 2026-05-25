@@ -7,7 +7,7 @@ import RelatedDocuments from './RelatedDocuments.jsx';
 import { AttachmentsTab } from '@/components/attachments';
 import BulkDocumentAction, { buildInOutActions } from '@/components/contract-ui/BulkDocumentAction';
 import { useBulkActionToast } from '@/hooks/useBulkActionToast';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 
 const HEADER_COLUMNS = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useAuth } from '@schema-forge/app-shell-core';
+import { useAuth } from '@/auth/AuthContext.jsx';
 
 export default function WindowLoader({ windowMap, apiBaseUrl }) {
   const { windowName, recordId } = useParams();

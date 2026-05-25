@@ -7,7 +7,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 
 /**
  * Simple confirmation dialog used before destructive or overwrite actions.

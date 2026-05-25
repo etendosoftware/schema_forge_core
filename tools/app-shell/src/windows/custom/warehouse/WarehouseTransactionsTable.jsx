@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Loader2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { useWarehouseStock } from './useWarehouseStock';
 
 const TYPE_KEY_MAP = {

@@ -1,4 +1,4 @@
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { buildOrderData, buildDocumentPdfLabels, useDocumentPdf } from './documentPdf.js';
 
 const buildPurchaseOrderData = (orderId, base, token) => buildOrderData('purchase-order', orderId, base, token);

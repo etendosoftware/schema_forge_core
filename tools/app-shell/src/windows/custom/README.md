@@ -47,7 +47,7 @@ const customLoaders = {
 Custom window components receive the same props as any generated window:
 
 ```jsx
-import { useApiFetch } from '@schema-forge/app-shell-core';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 
 export default function MyWindowCustom({ apiBaseUrl, windowName, recordId, window }) {
   const apiFetch = useApiFetch(apiBaseUrl);

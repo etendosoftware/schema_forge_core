@@ -1,10 +1,10 @@
 import { useState, useRef } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@schema-forge/app-shell-core';
+import { useAuth } from '@/auth/AuthContext.jsx';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFiscalConfig } from './useFiscalConfig.js';
 import { detectProfile } from './fiscalConfig.utils.js';

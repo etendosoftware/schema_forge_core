@@ -1,5 +1,5 @@
 import { useState, useReducer, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useUI, useMenuLabel } from '@schema-forge/app-shell-core';
+import { useUI, useMenuLabel } from '@/i18n';
 import { toast } from 'sonner';
 import { ClipboardList, TrendingUp, Loader2, ScanBarcode } from 'lucide-react';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';

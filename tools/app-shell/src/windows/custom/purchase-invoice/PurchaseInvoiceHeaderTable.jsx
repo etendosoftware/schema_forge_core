@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { DataTable } from '@/components/contract-ui';
-import { useLocale, useLocaleSwitch } from '@schema-forge/app-shell-core';
-import { useAuth } from '@schema-forge/app-shell-core';
+import { useLocale, useLocaleSwitch } from '@/i18n';
+import { useAuth } from '@/auth/AuthContext.jsx';
 import { formatCalendarDate } from '@/lib/dateOnly';
 import {
   getDueDateState,

@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { resolveBackendSort, buildBackendFilter } from '@/lib/gridQuery.js';
 import { translateBackendError } from '@/lib/backendErrors.js';
 import { toast } from 'sonner';
-import { useAuth } from '@schema-forge/app-shell-core';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useAuth } from '@/auth/AuthContext.jsx';
+import { useUI } from '@/i18n';
 
 function buildHeaders(token) {
   return {

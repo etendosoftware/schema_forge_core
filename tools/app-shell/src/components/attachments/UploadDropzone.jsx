@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { UploadIcon } from '@/components/ui/custom-icons';
 

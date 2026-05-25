@@ -1,5 +1,5 @@
 import { Check, Ban } from 'lucide-react';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { formatCalendarDate } from '@/lib/dateOnly';
 import { formatAmount } from '@/lib/formatAmount.js';
 

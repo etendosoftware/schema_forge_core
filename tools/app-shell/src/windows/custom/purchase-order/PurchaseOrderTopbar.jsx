@@ -1,4 +1,4 @@
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 
 function PercentPill({ label, value }) {
   const n = typeof value === 'string' ? parseFloat(value) : (value ?? 0);

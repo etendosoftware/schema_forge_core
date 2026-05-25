@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { useUI, useApiFetch } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 import { neoBase } from '@/components/related-documents/helpers.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { FileUp, FileDown } from 'lucide-react';

@@ -19,7 +19,7 @@ vi.mock('sonner', () => ({
   toast: { error: vi.fn(), success: vi.fn() },
 }));
 
-vi.mock('@schema-forge/app-shell-core', () => ({
+vi.mock('@/auth/AuthContext.jsx', () => ({
   useAuth: () => ({ token: 'test-token', logout: () => {} }),
 }));
 

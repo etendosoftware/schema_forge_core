@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useUI } from '@schema-forge/app-shell-core';
-import { useCurrency } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
+import { useCurrency } from '@/hooks/useCurrency';
 import { formatCurrency } from '@/lib/formatCurrency';
 
 function MetricCard({ label, value, subtitle, tint = null }) {

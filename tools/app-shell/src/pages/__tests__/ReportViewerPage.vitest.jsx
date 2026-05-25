@@ -16,7 +16,7 @@ vi.mock('@/i18n', () => ({
 }));
 
 // Mock auth context
-vi.mock('@schema-forge/app-shell-core', () => ({
+vi.mock('@/auth/AuthContext.jsx', () => ({
   useAuth: () => ({
     token: 'test-token',
     selectedRole: { orgList: [] },

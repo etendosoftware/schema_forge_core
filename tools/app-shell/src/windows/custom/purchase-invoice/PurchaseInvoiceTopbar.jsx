@@ -5,7 +5,7 @@ import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import SendToSifButton from '../shared/SendToSifButton.jsx';
 import InvoicePaymentModal from '../shared/InvoicePaymentModal.jsx';
 import CloneButton from '../shared/CloneButton.jsx';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { formatCurrency } from '@/lib/formatCurrency';
 import { useInvoiceUpdatedListener } from '../shared/useInvoiceUpdatedListener.js';
 

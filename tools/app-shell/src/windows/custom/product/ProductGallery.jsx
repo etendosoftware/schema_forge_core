@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { PackageOpen } from 'lucide-react';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 
 function ProductCard({ row, onNavigate, token, apiBaseUrl }) {
   const [imgSrc, setImgSrc] = useState(null);

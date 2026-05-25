@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { ArrowUpRight, ChevronDown, Calendar } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { BPChartSVGContent } from './BPChartSVGContent';
-import { useUI, useLocaleSwitch } from '@schema-forge/app-shell-core';
-import { useCurrency } from '@schema-forge/app-shell-core';
+import { useUI, useLocaleSwitch } from '@/i18n';
+import { useCurrency } from '@/hooks/useCurrency';
 import { formatCurrency } from '@/lib/formatCurrency';
 
 /* eslint-disable react/prop-types */

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useAuth } from '@schema-forge/app-shell-core';
-import { createApiFetch } from '@schema-forge/app-shell-core';
+import { useAuth } from '@/auth/AuthContext.jsx';
+import { createApiFetch } from '@/auth/api.js';
 import { listClients, deleteClient, regenerateSecret, revokeTokens } from '@/lib/oauth2Api.js';
 import OAuth2ClientDialog, { SecretRevealDialog, ConfirmDialog } from '@/components/OAuth2ClientDialog.jsx';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Shield, Plus, RefreshCw, Trash2, Key, MoreHorizontal, Copy, Ban, Pencil } from 'lucide-react';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { toast } from 'sonner';
 
 function detectBaseUrl() {

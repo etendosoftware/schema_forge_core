@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Sparkles, Plus } from 'lucide-react';
-import { useUI } from '@schema-forge/app-shell-core';
-import { useLocaleSwitch } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
+import { useLocaleSwitch } from '@/i18n';
 import { useCopilot } from '@/components/CopilotContext';
 import { formatDashboardAmount, localeFromUi } from '@/lib/dashboardNumberFormat.js';
 import { resolveDashboardNavigation } from '@/lib/dashboardNavigation.js';

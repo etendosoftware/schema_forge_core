@@ -1,5 +1,5 @@
 import React from 'react';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { getLayout303 } from './fm303Layouts.js';
 import { formatAmount, formatPercent } from '../../fiscalModelsUtils.js';
 

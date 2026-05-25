@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import {
   DocChip, RelatedDocumentsShell, docChipProps,
   fetchByCriteria, fetchChild, fetchById,

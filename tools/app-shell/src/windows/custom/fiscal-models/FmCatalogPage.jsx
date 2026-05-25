@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { ArrowLeft, Settings2, Lock } from 'lucide-react';
 import { ConfigDrawer } from './FmOverlays.jsx';
 
