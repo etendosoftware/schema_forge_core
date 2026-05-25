@@ -134,6 +134,17 @@ describe('domain boundary classification', () => {
     assert.equal(report.decision, 'pass');
   });
 
+  it('classifies app-shell test harness files as platform', () => {
+    assert.deepEqual(
+      classifyPath('tools/app-shell/src/test/mockUseApiFetch.js', { knownWindows: WINDOWS }),
+      { kind: 'platform-change', scope: 'platform-change' },
+    );
+    assert.deepEqual(
+      classifyPath('tools/app-shell/test/PdfViewer.test.js', { knownWindows: WINDOWS }),
+      { kind: 'platform-change', scope: 'platform-change' },
+    );
+  });
+
   it('allows registry registration with a single window slice', () => {
     const report = analyzeBoundary({
       knownWindows: WINDOWS,

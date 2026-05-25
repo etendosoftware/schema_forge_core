@@ -121,6 +121,8 @@ const PLATFORM_PATTERNS = [
   /^tools\/app-shell\/src\/main\.jsx$/,
   /^tools\/app-shell\/src\/index\.css$/,
   /^tools\/app-shell\/src\/menu\.json$/,
+  /^tools\/app-shell\/src\/test\//,
+  /^tools\/app-shell\/test\//,
   /^tools\/app-shell\/src\/components\/[^/]+\.(?:js|jsx)$/,
   /^tools\/app-shell\/src\/components\/__tests__\//,
   /^tools\/app-shell\/src\/components\/attachments\//,

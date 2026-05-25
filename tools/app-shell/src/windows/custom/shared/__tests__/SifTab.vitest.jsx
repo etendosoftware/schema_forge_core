@@ -1,4 +1,5 @@
 // Mocks must be declared before any imports that pull in the mocked modules.
+import { createStableUseApiFetchMock } from '@/test/mockUseApiFetch.js';
 
 vi.mock('@/i18n', () => ({
   useUI: () => (key) => key,
@@ -10,15 +11,7 @@ vi.mock('@/auth/AuthContext', () => ({
 }));
 
 vi.mock('@/auth/useApiFetch.js', () => ({
-  useApiFetch: (() => {
-    const cache = new Map();
-    return (base = '') => {
-      if (!cache.has(base)) {
-        cache.set(base, (path, options = {}) => globalThis.fetch(`${base}${path}`, options));
-      }
-      return cache.get(base);
-    };
-  })(),
+  useApiFetch: createStableUseApiFetchMock(),
 }));
 
 vi.mock('sonner', () => ({
