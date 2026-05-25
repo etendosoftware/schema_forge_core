@@ -145,6 +145,13 @@ describe('domain boundary classification', () => {
     );
   });
 
+  it('classifies CLI tests with the generator boundary', () => {
+    assert.deepEqual(
+      classifyPath('cli/test/i18n-integration.test.js', { knownWindows: WINDOWS }),
+      { kind: 'generator-change', scope: 'generator-change' },
+    );
+  });
+
   it('allows registry registration with a single window slice', () => {
     const report = analyzeBoundary({
       knownWindows: WINDOWS,
