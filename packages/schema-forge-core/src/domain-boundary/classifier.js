@@ -108,6 +108,7 @@ const GENERATOR_PATTERNS = [
   /^cli\/src\/push-to-neo\.js$/,
   /^cli\/src\/validate-pipeline\.js$/,
   /^cli\/src\/quality-gate(?:\.js|\/)/,
+  /^cli\/test\//,
   /^schemas\//,
   /^templates\//,
   /^core-maps\//,
