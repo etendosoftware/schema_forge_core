@@ -29,8 +29,10 @@ functions directly with their own changed-file list and known windows.
 
 ## Local Workspace Consumption
 
-Inside this monorepo, consumers should depend on `@schema-forge/core` by package
+Inside this monorepo, root tooling depends on `@schema-forge/core` by package
 name and matching version, for example `"@schema-forge/core": "0.1.0"`. npm then
 links the workspace package from `packages/schema-forge-core` in
 `package-lock.json`, avoiding relative imports while staying compatible with the
-npm version used by this repository.
+npm version used by this repository. For command-line use inside this repo,
+prefer `npx sf-domain-boundary-check` so the dependency is resolved from the
+local workspace package instead of the public registry.

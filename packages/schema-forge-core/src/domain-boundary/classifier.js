@@ -141,8 +141,6 @@ const SDK_PATTERNS = [
 const REPO_INFRA_PATTERNS = [
   /^\.github\//,
   /^\.githooks\//,
-  /^cli\/src\/domain-boundary(?:-check\.js|\/)/,
-  /^cli\/test\/domain-boundary-check\.test\.js$/,
   /^pipelines\//,
   /^infra\//,
   /^scripts\//,
@@ -161,6 +159,10 @@ const ROOT_SENSITIVE_PATTERNS = [
   /^package\.json$/,
   /^package-lock\.json$/,
   /^cli\/cache\//,
+];
+
+const CORE_PACKAGE_PATTERNS = [
+  /^packages\/schema-forge-core\//,
 ];
 
 function matchesAny(path, patterns) {
@@ -282,6 +284,10 @@ export function classifyPath(path, { knownWindows = [] } = {}) {
 
   if (matchesAny(normalized, SDK_PATTERNS)) {
     return { kind: 'sdk-or-external-app', scope: 'sdk-or-external-app' };
+  }
+
+  if (matchesAny(normalized, CORE_PACKAGE_PATTERNS)) {
+    return { kind: 'schema-forge-core', scope: 'generator-change' };
   }
 
   if (/^docs\/plans\/[^/]+-cross-domain\.md$/.test(normalized)) {

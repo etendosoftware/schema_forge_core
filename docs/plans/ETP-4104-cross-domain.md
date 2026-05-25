@@ -15,7 +15,7 @@ reviewable and executable together inside this repo and from external projects.
 
 ## Review Order
 
-1. Review classifier policy and tests.
+1. Review classifier policy and package tests.
 2. Review workflow behavior, especially that it runs on every PR and merge group
    without `paths:` filters.
 3. Review CODEOWNERS and Makefile wiring.
@@ -23,7 +23,8 @@ reviewable and executable together inside this repo and from external projects.
 
 ## Tests
 
-- `node --test cli/test/domain-boundary-check.test.js`
+- `npm test --workspace=packages/schema-forge-core`
+- `npx sf-domain-boundary-check --changed-file artifacts/sales-order/contract.json`
 - Smoke pass case with one window slice.
 - Smoke fail case with unrelated windows.
 
