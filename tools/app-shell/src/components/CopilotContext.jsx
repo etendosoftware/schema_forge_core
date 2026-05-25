@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { useCopilotChat } from './copilot/useCopilotChat.js';
-import { useAuth } from '@/auth/AuthContext.jsx';
+import { useAuth } from '@schema-forge/app-shell-core';
 
 const CopilotContext = createContext(null);
 

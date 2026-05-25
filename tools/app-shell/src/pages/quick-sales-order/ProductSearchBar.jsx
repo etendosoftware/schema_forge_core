@@ -1,4 +1,4 @@
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { Search, X } from 'lucide-react';
 
 export default function ProductSearchBar({ query, onChange, inputRef, onEnter }) {

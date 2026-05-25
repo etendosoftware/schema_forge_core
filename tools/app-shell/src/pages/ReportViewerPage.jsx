@@ -4,8 +4,8 @@ import { FileText, Printer, FileDown, FileSpreadsheet, Eye, Loader2, X, ChevronD
 import { Button } from '@/components/ui/button';
 import { DateField } from '@/components/ui/date-field';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useAuth } from '@/auth/AuthContext.jsx';
-import { useUI, useMenuLabel, useLocaleSwitch } from '@/i18n';
+import { useAuth } from '@schema-forge/app-shell-core';
+import { useUI, useMenuLabel, useLocaleSwitch } from '@schema-forge/app-shell-core';
 import ProductSearchDrawer from '@/components/contract-ui/ProductSearchDrawer.jsx';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';

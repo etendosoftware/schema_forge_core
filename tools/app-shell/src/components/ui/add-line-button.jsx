@@ -1,5 +1,5 @@
 import { Plus, ChevronDown } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import {
   DropdownMenu,
   DropdownMenuTrigger,

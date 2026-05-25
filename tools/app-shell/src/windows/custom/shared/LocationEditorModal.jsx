@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Loader2, Search, ChevronDown, Check } from 'lucide-react';
-import { useUI, useLabel } from '@/i18n';
-import { useAuth } from '@/auth/AuthContext.jsx';
+import { useUI, useLabel } from '@schema-forge/app-shell-core';
+import { useAuth } from '@schema-forge/app-shell-core';
 import { toast } from 'sonner';
 
 const EMPTY_FORM = { address: '', address2: '', postalCode: '', city: '', country: '', countryLabel: '', region: '', regionLabel: '', shipToAddress: true, invoiceToAddress: true };

@@ -2,8 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
-import { useUI } from '@/i18n';
-import { useCurrency } from '@/hooks/useCurrency';
+import { useUI } from '@schema-forge/app-shell-core';
+import { useCurrency } from '@schema-forge/app-shell-core';
 import { formatCurrency } from '@/lib/formatCurrency';
 import {
   Dialog,

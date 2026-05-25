@@ -5,7 +5,7 @@ import { DateField } from '@/components/ui/date-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, Loader2, Search } from 'lucide-react';
-import { useLabel, useLocaleSwitch, useMenuLabel, useUI } from '@/i18n';
+import { useLabel, useLocaleSwitch, useMenuLabel, useUI } from '@schema-forge/app-shell-core';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';

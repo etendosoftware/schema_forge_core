@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
-import { useUI } from '@/i18n';
-import { useAuth } from '@/auth/AuthContext.jsx';
-import { useApiFetch } from '@/auth/useApiFetch.js';
+import { useUI } from '@schema-forge/app-shell-core';
+import { useAuth } from '@schema-forge/app-shell-core';
+import { useApiFetch } from '@schema-forge/app-shell-core';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
 import { normalizeDateInputValue } from '@/windows/custom/fiscal-config/fiscalConfig.utils.js';
 import { getInvoiceFiscalTargets } from '@/windows/custom/shared/fiscalTargets.js';

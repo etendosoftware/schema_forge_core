@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { ZoomIn, ZoomOut, Maximize2, Loader2, AlertCircle } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 

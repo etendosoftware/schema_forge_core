@@ -2,8 +2,8 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { TrendingUp, TrendingDown } from 'lucide-react';
-import { useMenuLabel } from '@/i18n';
-import { useLocaleSwitch } from '@/i18n';
+import { useMenuLabel } from '@schema-forge/app-shell-core';
+import { useLocaleSwitch } from '@schema-forge/app-shell-core';
 import { formatDashboardAmount, formatDashboardNumber, localeFromUi } from '@/lib/dashboardNumberFormat.js';
 
 /**

@@ -10,7 +10,7 @@ vi.mock('sonner', () => ({
   },
 }));
 
-vi.mock('@/auth/AuthContext.jsx', () => ({
+vi.mock('@schema-forge/app-shell-core', () => ({
   useAuth: () => ({ logout: vi.fn() }),
 }));
 

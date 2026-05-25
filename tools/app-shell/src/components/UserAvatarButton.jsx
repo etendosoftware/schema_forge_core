@@ -1,7 +1,7 @@
 import { ChevronRight, LogOut, User, Languages } from 'lucide-react';
-import { useAuth } from '@/auth/AuthContext.jsx';
-import { useUI } from '@/i18n';
-import { useLocaleSwitch } from '@/i18n/index.js';
+import { useAuth } from '@schema-forge/app-shell-core';
+import { useUI } from '@schema-forge/app-shell-core';
+import { useLocaleSwitch } from '@schema-forge/app-shell-core';
 import {
   DropdownMenu,
   DropdownMenuContent,

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { FileText, Check } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { formatCurrency } from '@/lib/formatCurrency';
 
 /* eslint-disable react/prop-types */

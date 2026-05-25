@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Mail, Search } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 
 function resolveNeoBaseUrl(apiBaseUrl) {
   return apiBaseUrl ? apiBaseUrl.replace(/\/[^/]+$/, '') : '/sws/neo';

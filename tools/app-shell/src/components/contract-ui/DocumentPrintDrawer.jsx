@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight, Loader2, Send, Download } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { useAnimatedOpen } from '@/lib/useAnimatedOpen.js';
 
 /**

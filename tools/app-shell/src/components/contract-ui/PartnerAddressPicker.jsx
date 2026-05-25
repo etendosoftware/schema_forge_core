@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { CreatableSearchSelect } from './CreatableSearchSelect.jsx';
 import LocationEditorModal from '../../windows/custom/shared/LocationEditorModal.jsx';
 

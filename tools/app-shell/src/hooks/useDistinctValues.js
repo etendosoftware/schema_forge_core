@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useAuth } from '@/auth/AuthContext.jsx';
-import { buildHeaders } from '@/auth/api.js';
+import { useAuth } from '@schema-forge/app-shell-core';
+import { buildHeaders } from '@schema-forge/app-shell-core';
 
 const DEFAULT_PAGE_SIZE = 50;
 const DEFAULT_DEBOUNCE_MS = 250;

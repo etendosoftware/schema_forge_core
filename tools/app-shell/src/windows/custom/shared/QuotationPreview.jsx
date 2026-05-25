@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { useMenuLabel, useUI } from '@/i18n';
+import { useMenuLabel, useUI } from '@schema-forge/app-shell-core';
 import { statusLabel as resolveStatusLabel } from '@/lib/statusBadge.js';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 import GenericPreviewModal from './GenericPreviewModal.jsx';

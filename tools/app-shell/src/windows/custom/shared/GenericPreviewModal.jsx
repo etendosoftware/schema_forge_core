@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
 import { X, Upload, Trash2, Loader2 } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { usePreviewAttachment, ACCEPTED_TYPES, ACCEPT_ATTR } from './usePreviewAttachment.js';
 import PdfViewer from './PdfViewer.jsx';
 

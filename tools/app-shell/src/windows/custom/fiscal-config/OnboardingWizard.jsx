@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ArrowRight, ArrowLeft, FileText, Check, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useUI, useLocaleSwitch } from '@/i18n';
+import { useUI, useLocaleSwitch } from '@schema-forge/app-shell-core';
 import { neoBase } from '@/components/related-documents/helpers.js';
-import { useApiFetch } from '@/auth/useApiFetch.js';
-import { useAuth } from '@/auth/AuthContext.jsx';
+import { useApiFetch } from '@schema-forge/app-shell-core';
+import { useAuth } from '@schema-forge/app-shell-core';
 import {
   buildOnboardingPayloads,
   getFiscalRecordId,

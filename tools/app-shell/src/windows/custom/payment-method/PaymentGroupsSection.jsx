@@ -1,4 +1,4 @@
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 
 function Checkbox({ checked, onChange, disabled }) {
   return (

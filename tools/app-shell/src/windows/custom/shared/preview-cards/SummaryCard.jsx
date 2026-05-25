@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge.jsx';
-import { useLocaleSwitch, useUI } from '@/i18n';
+import { useLocaleSwitch, useUI } from '@schema-forge/app-shell-core';
 import { formatCalendarDate } from '@/lib/dateOnly';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { getStatusBadgeProps } from '@/lib/statusBadge.js';

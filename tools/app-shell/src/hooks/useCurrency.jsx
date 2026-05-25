@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth } from '@/auth/AuthContext';
+import { useAuth } from '@schema-forge/app-shell-core';
 
 /* ------------------------------------------------------------------
  * Internal helpers

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Upload, Loader2, CheckCircle2, AlertCircle, X } from 'lucide-react';
 
 const LazyPdfViewer = lazy(() => import('@/windows/custom/shared/PdfViewer.jsx'));
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { useCopilot } from '@/components/CopilotContext';
 import { getOcrDocType } from './ocrDocTypes';
 import { attachFile } from './attachFile';

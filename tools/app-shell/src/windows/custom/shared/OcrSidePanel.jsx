@@ -1,6 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { MoreVertical, FileText, MessageSquare, History, Loader2 } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { matchOcrDocType, getOcrDocType } from '@/components/copilot/ocr/ocrDocTypes';
 import { listAttachments, fetchAttachmentBlobUrl } from '@/components/copilot/ocr/listAttachments';
 import { useLocation } from 'react-router-dom';

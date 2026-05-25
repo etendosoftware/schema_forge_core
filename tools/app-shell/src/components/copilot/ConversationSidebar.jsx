@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Separator } from '@/components/ui/separator.jsx';
 import { cn } from '@/lib/utils';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { ConversationItem } from './ConversationItem.jsx';
 
 /**

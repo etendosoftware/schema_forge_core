@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { ChevronDown, Loader2 } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { SelectorChip } from './SelectorChip.jsx';
 

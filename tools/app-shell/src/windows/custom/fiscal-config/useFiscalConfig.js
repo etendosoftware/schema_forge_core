@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { detectProfile } from './fiscalConfig.utils.js';
 import { neoBase } from '@/components/related-documents/helpers.js';
-import { useApiFetch } from '@/auth/useApiFetch.js';
+import { useApiFetch } from '@schema-forge/app-shell-core';
 
 // Confirmed from artifacts/*/contract.json → backendContract.window.primaryEntity
 const SII_ENTITY = 'siiConfiguration';

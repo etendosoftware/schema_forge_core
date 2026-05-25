@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { useWarehouseStock } from './useWarehouseStock';
 import MoveStockModal from './MoveStockModal';
 

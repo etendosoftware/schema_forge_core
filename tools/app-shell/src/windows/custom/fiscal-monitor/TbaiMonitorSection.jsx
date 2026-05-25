@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useUI } from '@/i18n';
+import { useUI, useApiFetch } from '@schema-forge/app-shell-core';
 import { neoBase } from '@/components/related-documents/helpers.js';
-import { useApiFetch } from '@/auth/useApiFetch.js';
 import { Checkbox } from '@/components/ui/checkbox';
 import { StatusPill, NumFactura, ScrollSentinel, isErrorStatus, isPendingStatus, fmtDate, PAGE_SIZE, ExportIcon, useFmSelection } from './FmPrimitives.jsx';
 import { TBAI_SPEC, TBAI_ENTITY } from './useFiscalMonitor.js';

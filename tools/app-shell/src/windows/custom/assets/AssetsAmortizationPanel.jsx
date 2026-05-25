@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { StatusTag } from '@/components/ui/status-tag';
-import { useCurrency } from '@/hooks/useCurrency';
+import { useCurrency } from '@schema-forge/app-shell-core';
 import { formatCurrency } from '@/lib/formatCurrency';
 
 function StatusBadge({ isProcessed, ui }) {

@@ -1,7 +1,7 @@
 import { forwardRef, useMemo } from 'react';
 import { DataTable, InlineLinesPanel } from '@/components/contract-ui';
-import { useCurrency } from '@/hooks/useCurrency';
-import { useLabel } from '@/i18n';
+import { useCurrency } from '@schema-forge/app-shell-core';
+import { useLabel } from '@schema-forge/app-shell-core';
 
 const EMPTY_FILTERS = [];
 

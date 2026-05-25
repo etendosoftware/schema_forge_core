@@ -1,7 +1,7 @@
 import { useMemo, useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { DataTable } from '@/components/contract-ui';
-import { useLocale, useUI } from '@/i18n';
+import { useLocale, useUI } from '@schema-forge/app-shell-core';
 import { Tag } from '@/components/ui/tag';
 import { Button } from '@/components/ui/button.jsx';
 import {

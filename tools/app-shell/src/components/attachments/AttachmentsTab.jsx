@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { useAttachments } from './useAttachments';
 import UploadDropzone from './UploadDropzone';
 import AttachmentsTable from './AttachmentsTable';

@@ -4,8 +4,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from '@/components/ui/dialog.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import { buildHeaders } from '@/auth/api';
-import { useUI } from '@/i18n';
+import { buildHeaders } from '@schema-forge/app-shell-core';
+import { useUI } from '@schema-forge/app-shell-core';
 import { extractErrorMessage } from '@/hooks/useEntity';
 
 /**

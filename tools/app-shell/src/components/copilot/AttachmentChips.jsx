@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { FileText, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge.jsx';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 
 /**
  * AttachmentChips — compact row of chips representing the records / list views

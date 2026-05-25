@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 
 async function fetchJson(url, token) {
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });

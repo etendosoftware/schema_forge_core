@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { EntityForm } from '@/components/contract-ui';
 import { ChevronDown, Tag } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 
 const PRE_SAVE_BILLING_PREF_FIELDS = [
   'priceList',

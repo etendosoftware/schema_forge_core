@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { useInvoicePdf } from './useInvoicePdf.js';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
-import { useAuth } from '@/auth/AuthContext.jsx';
-import { useApiFetch } from '@/auth/useApiFetch.js';
+import { useAuth } from '@schema-forge/app-shell-core';
+import { useApiFetch } from '@schema-forge/app-shell-core';
 import { getPendingSifTargets, getSifBodyKey } from './sifSending.js';
 import { getStatusBadgeProps, statusLabel } from '@/lib/statusBadge.js';
 

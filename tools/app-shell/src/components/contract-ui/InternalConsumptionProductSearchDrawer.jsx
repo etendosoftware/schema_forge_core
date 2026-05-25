@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Search, X, Loader2, Check, ChevronRight, ChevronDown, Warehouse } from 'lucide-react';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 
 const PAGE_SIZE = 30;
 

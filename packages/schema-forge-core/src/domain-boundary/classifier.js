@@ -116,6 +116,7 @@ const GENERATOR_PATTERNS = [
 ];
 
 const PLATFORM_PATTERNS = [
+  /^packages\/app-shell-core\//,
   /^tools\/app-shell\/package(?:-lock)?\.json$/,
   /^tools\/app-shell\/src\/components\/contract-ui\//,
   /^tools\/app-shell\/src\/components\/ui\//,

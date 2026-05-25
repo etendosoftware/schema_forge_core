@@ -8,13 +8,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(__dirname, '..', 'CommandPalette.jsx'), 'utf8');
 
 describe('CommandPalette', () => {
-  it('imports useMenuLabel from @/i18n', () => {
+  it('imports useMenuLabel from app shell core', () => {
     assert.match(src, /useMenuLabel/);
-    assert.match(src, /from '@\/i18n'/);
+    assert.match(src, /from '@schema-forge\/app-shell-core'/);
   });
 
-  it('destructures useMenuLabel together with useUI in the same i18n import', () => {
-    assert.match(src, /import\s*\{[^}]*useMenuLabel[^}]*\}\s*from\s*'@\/i18n'/);
+  it('destructures useMenuLabel together with useUI in the same core import', () => {
+    assert.match(src, /import\s*\{[^}]*useMenuLabel[^}]*\}\s*from\s*'@schema-forge\/app-shell-core'/);
   });
 
   it('filters groups with !g.hidden', () => {

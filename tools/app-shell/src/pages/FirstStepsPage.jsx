@@ -11,7 +11,7 @@ import {
   Users,
   Receipt,
 } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import TopBar from '@/components/layout/TopBar/TopBar.jsx';
 
 const STEPS = [

@@ -36,7 +36,7 @@ describe('DateField — exports and dependencies', () => {
   });
 
   it('reads the active locale from useLocaleSwitch and useUI', () => {
-    assert.match(src, /from\s+['"]@\/i18n['"]/);
+    assert.match(src, /from\s+['"]@schema-forge\/app-shell-core['"]/);
     assert.match(src, /useLocaleSwitch\(\)/);
     assert.match(src, /useUI\(\)/);
   });

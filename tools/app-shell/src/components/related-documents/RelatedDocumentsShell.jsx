@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 
 /**
  * Shared shell for RelatedDocuments components. Handles:

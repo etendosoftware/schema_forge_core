@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button.jsx';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.jsx';
 import { ChevronDown, CalendarDays, Filter, Loader2 } from 'lucide-react';
-import { useLocale, useUI } from '@/i18n';
+import { useLocale, useUI } from '@schema-forge/app-shell-core';
 import { useDistinctValues } from '@/hooks/useDistinctValues.js';
 import { AdvancedFilterBuilder } from './AdvancedFilterBuilder.jsx';
 import { DistinctValuesList } from './DistinctValuesList.jsx';

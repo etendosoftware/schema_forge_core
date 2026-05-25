@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { neoBase } from '@/components/related-documents/helpers.js';
 import { daysUntil } from './certExpiryUtils.js';
-import { useApiFetch } from '@/auth/useApiFetch.js';
+import { useApiFetch } from '@schema-forge/app-shell-core';
 
 export { daysUntil };
 

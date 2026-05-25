@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RotateCcw, Package } from 'lucide-react';

@@ -1,4 +1,4 @@
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { Button } from '@/components/ui/button';
 import { Banknote, CreditCard, ArrowRightLeft, ChevronUp } from 'lucide-react';
 

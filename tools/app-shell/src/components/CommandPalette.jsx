@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUI, useMenuLabel } from '@/i18n';
+import { useUI, useMenuLabel } from '@schema-forge/app-shell-core';
 import {
   CommandDialog,
   CommandEmpty,

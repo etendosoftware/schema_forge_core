@@ -12,7 +12,7 @@ import { QUICK_ACTIONS_PILL_CLASS } from './quickActionsStyle.js';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useLabel, useLocaleSwitch, useUI } from '@/i18n';
+import { useLabel, useLocaleSwitch, useUI } from '@schema-forge/app-shell-core';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { resolveColumnLabel } from '@/lib/resolveColumnLabel.js';

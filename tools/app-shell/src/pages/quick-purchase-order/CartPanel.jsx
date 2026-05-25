@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef } from 'react';
-import { useUI } from '@/i18n';
+import { useUI } from '@schema-forge/app-shell-core';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart, Trash2, Plus, Minus, ClipboardList, Pencil } from 'lucide-react';
 import PreviousOrdersTab from './PreviousOrdersTab.jsx';
