@@ -4,6 +4,7 @@
 
 test: ## Run all unit tests (CLI + app-shell + artifacts + vitest)
 	cd cli && node --test 'test/*.test.js'
+	npm test --workspace=packages/schema-forge-core
 	node --test 'tools/app-shell/src/**/__tests__/*.test.js'
 	node --test 'tools/app-shell/test/*.test.js'
 	node --test 'artifacts/**/__tests__/*.test.js'
@@ -31,6 +32,10 @@ test-ci: ## Run all unit tests and write JUnit XML reports (CI mode)
 	  --test-reporter=spec --test-reporter-destination=stdout \
 	  --test-reporter=junit --test-reporter-destination=test-results/cli.xml \
 	  'cli/test/*.test.js'
+	node --test \
+	  --test-reporter=spec --test-reporter-destination=stdout \
+	  --test-reporter=junit --test-reporter-destination=test-results/schema-forge-core.xml \
+	  'packages/schema-forge-core/test/*.test.js'
 	node --test \
 	  --test-reporter=spec --test-reporter-destination=stdout \
 	  --test-reporter=junit --test-reporter-destination=test-results/appshell-node.xml \

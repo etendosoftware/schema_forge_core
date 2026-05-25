@@ -38,6 +38,9 @@ jobs:
       - name: CLI tests
         run: node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-results.xml 'cli/test/*.test.js'
 
+      - name: Schema Forge core package tests
+        run: npm test --workspace=packages/schema-forge-core
+
       - name: App-shell Node tests
         run: node --test --test-reporter=spec --test-reporter-destination=stdout 'tools/app-shell/src/**/__tests__/*.test.js'
 

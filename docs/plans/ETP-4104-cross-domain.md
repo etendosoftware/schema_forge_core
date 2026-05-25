@@ -3,13 +3,15 @@
 ## Domains
 
 - `repo-infra`: GitHub Actions workflow, CODEOWNERS, Makefile target, and ops docs.
-- `generator-change`: CLI package metadata and the Node-based boundary check implementation.
+- `generator-change`: CLI package metadata and the Node-based boundary check wrapper.
+- `sdk-or-external-app`: publishable `@schema-forge/core` workspace package.
 
 ## Why This Cannot Be Split Cleanly
 
 The workflow must call the CLI in the same PR that introduces the CLI, otherwise
-the required check would point to a missing script. CODEOWNERS and documentation
-need to land with the gate so the policy is reviewable and executable together.
+the required check would point to a missing script. The reusable core module,
+CODEOWNERS, and documentation need to land with the gate so the policy is
+reviewable and executable together inside this repo and from external projects.
 
 ## Review Order
 
