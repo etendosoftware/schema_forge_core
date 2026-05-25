@@ -1,1 +1,1 @@
-export * from '@schema-forge/app-shell-core/hooks/useCurrency.jsx';
+export * from '@etendosoftware/app-shell-core/hooks/useCurrency.jsx';

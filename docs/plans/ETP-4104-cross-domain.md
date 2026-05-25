@@ -4,8 +4,8 @@
 
 - `repo-infra`: GitHub Actions workflow, CODEOWNERS, Makefile target, and ops docs.
 - `generator-change`: CLI package metadata and the Node-based boundary check wrapper.
-- `sdk-or-external-app`: publishable `@schema-forge/core` workspace package.
-- `platform-change`: reusable `@schema-forge/app-shell-core` package and the app-shell imports that consume it.
+- `sdk-or-external-app`: publishable `@etendosoftware/schema-forge-core` workspace package.
+- `platform-change`: reusable `@etendosoftware/app-shell-core` package and the app-shell imports that consume it.
 
 ## Why This Cannot Be Split Cleanly
 
@@ -25,7 +25,7 @@ PR classified as unknown and would force a false-positive exception.
 2. Review workflow behavior, especially that it runs on every PR and merge group
    without `paths:` filters.
 3. Review CODEOWNERS and Makefile wiring.
-4. Review `@schema-forge/app-shell-core` package API: auth, i18n, shell layout,
+4. Review `@etendosoftware/app-shell-core` package API: auth, i18n, shell layout,
    report frame, styles, and absence of `@generated` imports.
 5. Review this plan and the ops documentation.
 
@@ -46,5 +46,5 @@ revert the CLI, tests, docs, Makefile target, package bin entry, and CODEOWNERS
 updates together.
 
 For the app-shell extraction, revert app-shell imports to local auth/i18n/currency
-providers first, then remove the `@schema-forge/app-shell-core` workspace
+providers first, then remove the `@etendosoftware/app-shell-core` workspace
 dependency and package.

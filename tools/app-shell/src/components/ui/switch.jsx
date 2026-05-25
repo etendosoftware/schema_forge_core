@@ -1,1 +1,1 @@
-export * from '@schema-forge/app-shell-core/components/ui/switch.jsx';
+export * from '@etendosoftware/app-shell-core/components/ui/switch.jsx';

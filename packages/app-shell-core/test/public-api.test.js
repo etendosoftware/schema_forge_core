@@ -6,7 +6,7 @@ import { join } from 'node:path';
 test('public package exports the expected runtime entrypoints', async () => {
   const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 
-  assert.equal(pkg.name, '@schema-forge/app-shell-core');
+  assert.equal(pkg.name, '@etendosoftware/app-shell-core');
   assert.equal(pkg.exports['.'], './src/index.js');
   assert.equal(pkg.exports['./auth'], './src/auth/index.js');
   assert.equal(pkg.exports['./i18n'], './src/i18n/index.js');
