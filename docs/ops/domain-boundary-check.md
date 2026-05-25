@@ -17,18 +17,18 @@ make domain-boundary-check BASE=origin/epic/ETP-3504
 ```
 
 The implementation lives only in the publishable workspace package
-`@schema-forge/core`. This repository executes that package binary via `npx`;
+`@etendosoftware/schema-forge-core`. This repository executes that package binary via `npx`;
 other repositories can consume the same policy as a Node module or executable:
 
 ```bash
-npm install @schema-forge/core
+npm install @etendosoftware/schema-forge-core
 npx sf-domain-boundary-check --base origin/main
 ```
 
 Programmatic usage:
 
 ```js
-import { analyzeBoundary } from '@schema-forge/core/domain-boundary';
+import { analyzeBoundary } from '@etendosoftware/schema-forge-core/domain-boundary';
 
 const report = analyzeBoundary({
   changedFiles: ['artifacts/sales-order/contract.json'],

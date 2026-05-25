@@ -1,8 +1,12 @@
 {
-  "name": "@schema-forge/app-shell-core",
+  "name": "@etendosoftware/app-shell-core",
   "version": "0.1.0",
   "description": "Reusable Schema Forge app shell runtime without generated contracts or windows.",
   "type": "module",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  },
   "sideEffects": [
     "./src/styles.css"
   ],

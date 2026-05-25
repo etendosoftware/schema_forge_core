@@ -1,1 +1,1 @@
-export * from '@schema-forge/app-shell-core/components/ui/separator.jsx';
+export * from '@etendosoftware/app-shell-core/components/ui/separator.jsx';

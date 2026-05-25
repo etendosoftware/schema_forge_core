@@ -1,1 +1,1 @@
-export * from '@schema-forge/app-shell-core/hooks/use-mobile.jsx';
+export * from '@etendosoftware/app-shell-core/hooks/use-mobile.jsx';

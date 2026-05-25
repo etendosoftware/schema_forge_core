@@ -1,4 +1,4 @@
-# @schema-forge/core
+# @etendosoftware/schema-forge-core
 
 Reusable JavaScript core for Schema Forge automation.
 
@@ -7,14 +7,14 @@ Reusable JavaScript core for Schema Forge automation.
 Install in another repository and run the packaged binary:
 
 ```bash
-npm install @schema-forge/core
+npm install @etendosoftware/schema-forge-core
 npx sf-domain-boundary-check --base origin/main
 ```
 
 Use it from code:
 
 ```js
-import { analyzeBoundary } from '@schema-forge/core/domain-boundary';
+import { analyzeBoundary } from '@etendosoftware/schema-forge-core/domain-boundary';
 
 const report = analyzeBoundary({
   changedFiles: ['artifacts/sales-order/contract.json'],
@@ -29,8 +29,8 @@ functions directly with their own changed-file list and known windows.
 
 ## Local Workspace Consumption
 
-Inside this monorepo, root tooling depends on `@schema-forge/core` by package
-name and matching version, for example `"@schema-forge/core": "0.1.0"`. npm then
+Inside this monorepo, root tooling depends on `@etendosoftware/schema-forge-core` by package
+name and matching version, for example `"@etendosoftware/schema-forge-core": "0.1.0"`. npm then
 links the workspace package from `packages/schema-forge-core` in
 `package-lock.json`, avoiding relative imports while staying compatible with the
 npm version used by this repository. For command-line use inside this repo,

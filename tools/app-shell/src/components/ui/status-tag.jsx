@@ -1,1 +1,1 @@
-export * from '@schema-forge/app-shell-core/components/ui/status-tag.jsx';
+export * from '@etendosoftware/app-shell-core/components/ui/status-tag.jsx';

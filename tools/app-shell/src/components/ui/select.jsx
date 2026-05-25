@@ -1,1 +1,1 @@
-export * from '@schema-forge/app-shell-core/components/ui/select.jsx';
+export * from '@etendosoftware/app-shell-core/components/ui/select.jsx';

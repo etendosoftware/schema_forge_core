@@ -1,1 +1,1 @@
-export * from '@schema-forge/app-shell-core/i18n';
+export * from '@etendosoftware/app-shell-core/i18n';

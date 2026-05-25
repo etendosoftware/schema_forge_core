@@ -1,7 +1,11 @@
 {
-  "name": "@schema-forge/core",
+  "name": "@etendosoftware/schema-forge-core",
   "version": "0.1.0",
   "type": "module",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  },
   "main": "src/index.js",
   "exports": {
     ".": "./src/index.js",

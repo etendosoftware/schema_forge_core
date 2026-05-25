@@ -1,1 +1,1 @@
-export * from '@schema-forge/app-shell-core/components/ui/add-line-button-tokens.js';
+export * from '@etendosoftware/app-shell-core/components/ui/add-line-button-tokens.js';
