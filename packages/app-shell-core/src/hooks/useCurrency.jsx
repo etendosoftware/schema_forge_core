@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth } from '../auth/AuthContext.jsx';
+import { useAuth } from '../auth/index.js';
 
 /* ------------------------------------------------------------------
  * Internal helpers

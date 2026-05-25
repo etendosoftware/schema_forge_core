@@ -21,22 +21,22 @@ describe('DateField — exports and dependencies', () => {
   });
 
   it('imports Popover primitives', () => {
-    assert.match(src, /Popover,\s*PopoverContent,\s*PopoverTrigger[\s\S]*?from\s+['"]@\/components\/ui\/popover['"]/);
+    assert.match(src, /Popover,\s*PopoverContent,\s*PopoverTrigger[\s\S]*?from\s+['"]\.\/popover\.jsx['"]/);
   });
 
   it('reuses the existing Calendar component (single-month, simple date picker)', () => {
-    assert.match(src, /import\s*\{\s*Calendar\s*\}\s*from\s+['"]@\/components\/ui\/calendar['"]/);
+    assert.match(src, /import\s*\{\s*Calendar\s*\}\s*from\s+['"]\.\/calendar\.jsx['"]/);
     assert.match(src, /<Calendar[\s\S]*?mode="single"/);
   });
 
   it('uses dateOnly helpers (no UTC shift)', () => {
-    assert.match(src, /from\s+['"]@\/lib\/dateOnly['"]/);
+    assert.match(src, /from\s+['"]\.\.\/\.\.\/lib\/dateOnly\.js['"]/);
     assert.match(src, /parseCalendarDate/);
     assert.match(src, /formatCalendarDate/);
   });
 
   it('reads the active locale from useLocaleSwitch and useUI', () => {
-    assert.match(src, /from\s+['"]@schema-forge\/app-shell-core['"]/);
+    assert.match(src, /from\s+['"]\.\.\/\.\.\/i18n\/index\.js['"]/);
     assert.match(src, /useLocaleSwitch\(\)/);
     assert.match(src, /useUI\(\)/);
   });
