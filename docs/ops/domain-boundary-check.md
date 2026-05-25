@@ -16,6 +16,26 @@ Run it locally with:
 make domain-boundary-check BASE=origin/epic/ETP-3504
 ```
 
+The reusable implementation lives in the publishable workspace package
+`@schema-forge/core`. Other repositories can consume the same policy as a Node
+module or execute the packaged binary:
+
+```bash
+npm install @schema-forge/core
+npx sf-domain-boundary-check --base origin/main
+```
+
+Programmatic usage:
+
+```js
+import { analyzeBoundary } from '@schema-forge/core/domain-boundary';
+
+const report = analyzeBoundary({
+  changedFiles: ['artifacts/sales-order/contract.json'],
+  knownWindows: ['sales-order'],
+});
+```
+
 For exception testing:
 
 ```bash

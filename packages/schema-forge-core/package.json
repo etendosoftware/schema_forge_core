@@ -1,0 +1,24 @@
+{
+  "name": "@schema-forge/core",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./domain-boundary": "./src/domain-boundary/classifier.js",
+    "./domain-boundary-check": "./src/domain-boundary-check.js"
+  },
+  "bin": {
+    "sf-domain-boundary-check": "./bin/sf-domain-boundary-check.js"
+  },
+  "files": [
+    "bin",
+    "src"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

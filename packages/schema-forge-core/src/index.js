@@ -6,5 +6,6 @@ export {
   getChangedFiles,
   loadPrBody,
   renderBoundaryReport,
+  runDomainBoundaryCheckCli,
   verticalForWindows,
-} from '@schema-forge/core/domain-boundary';
+} from './domain-boundary-check.js';
