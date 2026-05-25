@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
+import { createStableUseApiFetchMock } from '@/test/mockUseApiFetch.js';
 
 // --- Mocks ----------------------------------------------------------------
 
@@ -71,15 +72,7 @@ vi.mock('@/auth/AuthContext.jsx', () => ({
 }));
 
 vi.mock('@/auth/useApiFetch.js', () => ({
-  useApiFetch: (() => {
-    const cache = new Map();
-    return (base = '') => {
-      if (!cache.has(base)) {
-        cache.set(base, (path, options = {}) => globalThis.fetch(`${base}${path}`, options));
-      }
-      return cache.get(base);
-    };
-  })(),
+  useApiFetch: createStableUseApiFetchMock(),
 }));
 
 vi.mock('@/components/ui/badge.jsx', () => ({
