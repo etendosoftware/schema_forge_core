@@ -116,16 +116,30 @@ const GENERATOR_PATTERNS = [
 ];
 
 const PLATFORM_PATTERNS = [
-  /^packages\/app-shell-core\//,
   /^tools\/app-shell\/package(?:-lock)?\.json$/,
+  /^tools\/app-shell\/src\/App\.jsx$/,
+  /^tools\/app-shell\/src\/main\.jsx$/,
+  /^tools\/app-shell\/src\/index\.css$/,
+  /^tools\/app-shell\/src\/menu\.json$/,
+  /^tools\/app-shell\/src\/components\/[^/]+\.(?:js|jsx)$/,
+  /^tools\/app-shell\/src\/components\/__tests__\//,
+  /^tools\/app-shell\/src\/components\/attachments\//,
+  /^tools\/app-shell\/src\/components\/copilot\//,
+  /^tools\/app-shell\/src\/components\/dashboard\//,
+  /^tools\/app-shell\/src\/components\/layout\//,
+  /^tools\/app-shell\/src\/components\/related-documents\//,
   /^tools\/app-shell\/src\/components\/contract-ui\//,
   /^tools\/app-shell\/src\/components\/ui\//,
+  /^tools\/app-shell\/src\/explorer\//,
   /^tools\/app-shell\/src\/hooks\//,
   /^tools\/app-shell\/src\/auth\//,
   /^tools\/app-shell\/src\/layout\//,
   /^tools\/app-shell\/src\/i18n\//,
   /^tools\/app-shell\/src\/locales\//,
   /^tools\/app-shell\/src\/pages\//,
+  /^tools\/app-shell\/src\/preview\//,
+  /^tools\/app-shell\/src\/windows\/__tests__\//,
+  /^tools\/app-shell\/src\/windows\/WindowLoader\.jsx$/,
   /^tools\/app-shell\/src\/lib\//,
   /^tools\/app-shell\/src\/utils\//,
   /^tools\/app-shell\/vite\.config\.js$/,
@@ -137,6 +151,10 @@ const SDK_PATTERNS = [
   /^packages\/apps-sdk(?:-|\/)/,
   /^tools\/quick-order-app\//,
   /^tools\/spike-hello-app\//,
+];
+
+const APP_SHELL_CORE_PATTERNS = [
+  /^packages\/app-shell-core\//,
 ];
 
 const REPO_INFRA_PATTERNS = [
@@ -279,12 +297,16 @@ export function classifyPath(path, { knownWindows = [] } = {}) {
     return { kind: 'generator-change', scope: 'generator-change' };
   }
 
-  if (matchesAny(normalized, PLATFORM_PATTERNS)) {
-    return { kind: 'platform-change', scope: 'platform-change' };
-  }
-
   if (matchesAny(normalized, SDK_PATTERNS)) {
     return { kind: 'sdk-or-external-app', scope: 'sdk-or-external-app' };
+  }
+
+  if (matchesAny(normalized, APP_SHELL_CORE_PATTERNS)) {
+    return { kind: 'app-shell-core', scope: 'app-shell-core' };
+  }
+
+  if (matchesAny(normalized, PLATFORM_PATTERNS)) {
+    return { kind: 'platform-change', scope: 'platform-change' };
   }
 
   if (matchesAny(normalized, CORE_PACKAGE_PATTERNS)) {
@@ -353,6 +375,9 @@ function isRootSensitiveAllowedWithSingleScope({ rootSensitiveFiles, nonRootScop
 
   const [scope] = nonRootScopes;
   if (rootSensitiveFiles.every((path) => path === 'package-lock.json')) {
+    if (scope === 'app-shell-core') {
+      return changedFiles.some((path) => path === 'packages/app-shell-core/package.json');
+    }
     if (scope === 'sdk-or-external-app') {
       return changedFiles.some((path) => /^packages\/apps-sdk[^/]*\/package\.json$/.test(path)
         || /^tools\/(?:quick-order-app|spike-hello-app)\/package\.json$/.test(path));
@@ -449,6 +474,15 @@ export function analyzeBoundary({
           message: 'Generator changes mixed with another platform/sdk scope require scope:generator-change or cross-domain-approved.',
         });
       }
+    }
+
+    const appShellCoreMixedScope = nonSupportScopes.includes('app-shell-core')
+      && nonSupportScopes.some((scope) => !['app-shell-core'].includes(scope));
+    if (appShellCoreMixedScope && !platformRequested) {
+      blockers.push({
+        code: 'APP_SHELL_CORE_MIXED_SCOPE',
+        message: 'App shell core package changes should stay isolated or declare scope:platform-change/cross-domain-approved for consumer wiring.',
+      });
     }
 
     const platformKinds = entries.filter((entry) => entry.scope === 'platform-change').map((entry) => entry.kind);

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 test('public package exports the expected runtime entrypoints', async () => {
@@ -9,20 +9,38 @@ test('public package exports the expected runtime entrypoints', async () => {
   assert.equal(pkg.name, '@schema-forge/app-shell-core');
   assert.equal(pkg.exports['.'], './src/index.js');
   assert.equal(pkg.exports['./styles.css'], './src/styles.css');
+  assert.equal(pkg.exports['./hooks/useCurrency.jsx'], './src/hooks/useCurrency.jsx');
+  assert.equal(pkg.exports['./hooks/use-mobile.jsx'], './src/hooks/use-mobile.jsx');
 });
 
-test('core package does not import generated artifacts', async () => {
+async function listSourceFiles(dir) {
+  const entries = await readdir(dir, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...await listSourceFiles(path));
+    } else if (/\.(?:js|jsx)$/.test(entry.name)) {
+      files.push(path);
+    }
+  }
+  return files;
+}
+
+test('core package source does not import app-shell implementation or generated artifacts', async () => {
   const root = new URL('../src/', import.meta.url);
-  const files = [
-    'index.js',
-    'auth/index.js',
-    'i18n/index.js',
-    'layout/index.js',
-    'reports/index.js',
+  const forbidden = [
+    /@generated/,
+    /(?:from|import\()\s*['"]@\//,
+    /(?:from|import\()\s*['"][^'"]*tools\/app-shell/,
+    /(?:from|import\()\s*['"][^'"]*artifacts\//,
+    /(?:from|import\()\s*['"]@schema-forge\/app-shell(?:['"/])/,
   ];
 
-  for (const file of files) {
-    const source = await readFile(join(root.pathname, file), 'utf8');
-    assert.equal(source.includes('@generated'), false, `${file} should not import generated artifacts`);
+  for (const file of await listSourceFiles(root.pathname)) {
+    const source = await readFile(file, 'utf8');
+    for (const pattern of forbidden) {
+      assert.equal(pattern.test(source), false, `${file} should not match ${pattern}`);
+    }
   }
 });

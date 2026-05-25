@@ -9,6 +9,18 @@ vi.mock('@/auth/AuthContext', () => ({
   useAuth: () => ({ selectedOrg: { id: 'org-001' } }),
 }));
 
+vi.mock('@/auth/useApiFetch.js', () => ({
+  useApiFetch: (() => {
+    const cache = new Map();
+    return (base = '') => {
+      if (!cache.has(base)) {
+        cache.set(base, (path, options = {}) => globalThis.fetch(`${base}${path}`, options));
+      }
+      return cache.get(base);
+    };
+  })(),
+}));
+
 vi.mock('sonner', () => ({
   toast: { error: vi.fn(), success: vi.fn() },
 }));

@@ -15,6 +15,7 @@
 
 # SDK and external app surfaces.
 /packages/ @sebastianbarrozo @valenvivaldi
+/packages/app-shell-core/ @sebastianbarrozo @valenvivaldi
 /tools/quick-order-app/ @sebastianbarrozo @valenvivaldi
 /tools/spike-hello-app/ @sebastianbarrozo @valenvivaldi
 
