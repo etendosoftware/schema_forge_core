@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button.jsx';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { useEntity } from '@/hooks/useEntity';
 import { useRowDelete } from '@/hooks/useRowDelete';
-import { useMenuLabel, useLabel, useUI } from '@schema-forge/app-shell-core';
+import { useMenuLabel, useLabel, useUI } from '@/i18n';
 import { ArrowUpDown, ChevronDown, Plus, Link2, Printer, LayoutGrid, LayoutList, RefreshCw, Eye, Copy } from 'lucide-react';
 import { useRegisterWindowContext } from '@/components/CurrentWindowContext';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';

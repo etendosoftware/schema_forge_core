@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { CHIP_ICONS, CHIP_COLORS, STATUS_KEYS } from '@/components/related-documents/constants.jsx';
 import { DOCUMENT_CHIP_TYPES } from '@/components/related-documents/docChipTypes.jsx';
 import { StatusTag } from '@/components/ui/status-tag';

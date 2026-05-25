@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useUI } from '@schema-forge/app-shell-core';
-import { useApiFetch } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 
 async function callProcess(apiFetch, specName, recordId, columnName) {
   const res = await apiFetch(

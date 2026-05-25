@@ -19,7 +19,7 @@ import {
   runOnboardingStream,
 } from './onboarding/onboardingApi.js';
 import { checkSalesInvoiceReadiness } from './onboarding/onboardingReadiness.js';
-import { useLocaleSwitch, useUI } from '@schema-forge/app-shell-core';
+import { useLocaleSwitch, useUI } from '../i18n/index.js';
 import { buildAppReturnToHref, getSafeReturnTo } from '../lib/oauthReturnTo.js';
 import {
   applyProgressMessage,

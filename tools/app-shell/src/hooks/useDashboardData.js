@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { kpisConfig, actions } from '@generated/dashboard/generated/config';
-import { useAuth } from '@schema-forge/app-shell-core';
+import { useAuth } from '@/auth/AuthContext';
 import { createDashboardNavigation } from '@/lib/dashboardNavigation.js';
 import { useDashboardDateRange } from '@/components/dashboard/DashboardDateRangeContext';
 

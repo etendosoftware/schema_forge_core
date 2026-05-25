@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { useNavigate } from 'react-router-dom';
 import { KPIHeader, KanbanBoard } from '@/components/contract-ui';
 import { Badge } from '@/components/ui/badge';

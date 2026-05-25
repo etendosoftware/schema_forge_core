@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { KPIHeader } from '@/components/contract-ui/KPIHeader';
 import { KanbanBoard } from '@/components/contract-ui/KanbanBoard';
 import { Chatter } from '@/components/contract-ui/Chatter';

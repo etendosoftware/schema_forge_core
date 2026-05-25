@@ -1,5 +1,5 @@
 // Shared UI primitives for the Fiscal Monitor.
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { TriangleAlert } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 

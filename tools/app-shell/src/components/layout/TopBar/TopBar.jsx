@@ -1,4 +1,4 @@
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { useCopilot } from '@/components/CopilotContext';
 import { cn } from '@/lib/utils.js';
 import {

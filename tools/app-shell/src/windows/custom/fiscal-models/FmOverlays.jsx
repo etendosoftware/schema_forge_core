@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
 import { Star, Play, ArrowUpRight, Info, OctagonAlert, TriangleAlert, X } from 'lucide-react';
 import './fiscal-models.css';

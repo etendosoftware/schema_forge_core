@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { Loader2, Plus, Search } from 'lucide-react';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import {
   deriveEntityEndpoint,
   useClickOutside,

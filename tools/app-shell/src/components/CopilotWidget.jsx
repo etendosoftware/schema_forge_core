@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.jsx';
 import { Separator } from '@/components/ui/separator.jsx';
 import { cn } from '@/lib/utils';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { AssistantSelector } from './copilot/AssistantSelector.jsx';
 import { ConversationSidebar } from './copilot/ConversationSidebar.jsx';
 import { ChatView } from './copilot/ChatView.jsx';

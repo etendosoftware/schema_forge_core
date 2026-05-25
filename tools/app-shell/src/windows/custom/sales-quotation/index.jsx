@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { XCircle } from 'lucide-react';
-import { useUI, useLocale } from '@schema-forge/app-shell-core';
+import { useUI, useLocale } from '@/i18n';
 import { useNavigate } from 'react-router-dom';
 import { useRowDelete } from '@/hooks/useRowDelete';
 import GeneratedApp from '@generated/sales-quotation/generated/web/sales-quotation/index.jsx';

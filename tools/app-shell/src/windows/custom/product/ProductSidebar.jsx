@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Boxes, Lock, PackageCheck } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { formatDashboardAxisTick } from '@/lib/dashboardNumberFormat';
 
 const DOT_COLORS = ['#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#14b8a6', '#f97316', '#6366f1'];

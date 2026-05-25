@@ -2,7 +2,7 @@ import React from 'react';
 import { KPIHeader, DataTable } from '@/components/contract-ui';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { FileText, Receipt, Landmark, Scale } from 'lucide-react';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 
 import { kpisConfig, sections } from '@generated/accounting/generated/config';
 import * as mockData from '@generated/accounting/generated/mockData';

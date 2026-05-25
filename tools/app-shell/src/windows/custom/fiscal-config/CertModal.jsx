@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { FileText, Upload, Eye, EyeOff, Lock, TriangleAlert, CircleCheck } from 'lucide-react';
 import { neoBase } from '@/components/related-documents/helpers.js';
-import { useApiFetch } from '@schema-forge/app-shell-core';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 
 function MiniStepper({ step, ui }) {
   const STEPS = [

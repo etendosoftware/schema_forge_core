@@ -2,8 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Search, X, Loader2, Check } from 'lucide-react';
 import { buildUrlWithParams } from '@/lib/buildUrlWithParams.js';
 import { formatCurrency } from '@/lib/formatCurrency.js';
-import { useCurrency } from '@schema-forge/app-shell-core';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useCurrency } from '@/hooks/useCurrency.jsx';
+import { useUI } from '@/i18n';
 
 const PAGE_SIZE = 30;
 

@@ -9,10 +9,10 @@ import {
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useCopilot } from '@/components/CopilotContext';
 import { useSetPageMeta } from '@/components/layout/PageMetaContext';
-import { useUI } from '@schema-forge/app-shell-core';
-import { useMenuLabel, useLocaleSwitch } from '@schema-forge/app-shell-core';
-import { useAuth } from '@schema-forge/app-shell-core';
-import { useCurrency } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
+import { useMenuLabel, useLocaleSwitch } from '@/i18n';
+import { useAuth } from '@/auth/AuthContext.jsx';
+import { useCurrency } from '@/hooks/useCurrency.jsx';
 import { resolveDashboardNavigation } from '@/lib/dashboardNavigation.js';
 import { localeFromUi } from '@/lib/dashboardNumberFormat.js';
 import { DashboardDateRangeProvider } from '@/components/dashboard/DashboardDateRangeContext';

@@ -1,5 +1,5 @@
 import { toast } from 'sonner';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import WarehousePage from '@generated/warehouse/generated/web/warehouse/WarehousePage';
 import WarehouseSummary from './WarehouseSummary';
 import WarehouseProductsTab from './WarehouseProductsTab';

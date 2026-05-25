@@ -1,5 +1,5 @@
 import { useMemo, useRef, useLayoutEffect } from 'react';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { Badge } from '@/components/ui/badge';
 import { Plus, TrendingUp, LayoutGrid, List } from 'lucide-react';
 

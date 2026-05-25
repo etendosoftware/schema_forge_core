@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Check, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input.jsx';
 import { cn } from '@/lib/utils';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 
 /**
  * ConversationItem — single conversation row with hover actions and inline rename.

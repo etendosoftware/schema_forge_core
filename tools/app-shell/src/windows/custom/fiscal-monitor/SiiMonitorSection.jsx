@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
-import { useApiFetch } from '@schema-forge/app-shell-core';
+import { useApiFetch } from '@/auth/useApiFetch.js';
 import { StatusPill, NumFactura, Pager, RowActionBtn, isErrorStatus, isPendingStatus, fmtDate, PAGE_SIZE } from './FmPrimitives.jsx';
 import {
   SII_SPEC,

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUI, useLocale } from '@schema-forge/app-shell-core';
+import { useUI, useLocale } from '@/i18n';
 import { statusLabel } from '@/lib/statusBadge.js';
 import { StatusTag } from '@/components/ui/status-tag';
 

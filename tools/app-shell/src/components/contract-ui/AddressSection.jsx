@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Search, ChevronDown, Check, X } from 'lucide-react';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { MODAL_STYLES } from './modal-styles.js';
 
 const INPUT_CLS =

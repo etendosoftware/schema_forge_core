@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { useUI } from '@schema-forge/app-shell-core';
-import { useCurrency } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
+import { useCurrency } from '@/hooks/useCurrency';
 import { formatCurrency } from '@/lib/formatCurrency';
 
 export default function ImportFromPurchaseOrderModal({ receiptId, bpId, base, headers, onClose, onSuccess }) {

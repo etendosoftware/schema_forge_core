@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { DateField } from '@/components/ui/date-field';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 
 const ACCOUNT_OPTIONS = [
   { value: 'TEST', labelKey: 'testAccount' },

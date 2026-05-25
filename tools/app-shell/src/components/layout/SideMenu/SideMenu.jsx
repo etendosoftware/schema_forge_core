@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { useAuth } from '@schema-forge/app-shell-core';
+import { useAuth } from '@/auth/AuthContext.jsx';
 import {
   Tooltip,
   TooltipContent,
@@ -60,7 +60,7 @@ import {
   Storefront,
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils.js';
-import { useMenuLabel, useUI, useLocaleSwitch } from '@schema-forge/app-shell-core';
+import { useMenuLabel, useUI, useLocaleSwitch } from '@/i18n';
 import { useFavorites } from '@/components/layout/FavoritesContext';
 import menuConfig from '@/menu.json';
 

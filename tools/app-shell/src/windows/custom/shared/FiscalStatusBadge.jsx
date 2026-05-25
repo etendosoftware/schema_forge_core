@@ -1,4 +1,4 @@
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 
 const CONFIG = {
   CO:                { color: '#15803d', bg: '#f0fdf4', key: 'fiscalMonitor.status.sii.CO' },

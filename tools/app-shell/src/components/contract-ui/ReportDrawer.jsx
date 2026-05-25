@@ -3,7 +3,7 @@ import { X, Printer, FileDown, FileSpreadsheet, FileText, Loader2, Eye } from 'l
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { statusLabel } from '@/lib/statusBadge.js';
 import { useAnimatedOpen } from '@/lib/useAnimatedOpen.js';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 
 // ---------------------------------------------------------------------------
 // jsreport recipe ↔ format mapping

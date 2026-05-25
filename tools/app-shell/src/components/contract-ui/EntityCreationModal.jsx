@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { useUI } from '@schema-forge/app-shell-core';
+import { useUI } from '@/i18n';
 import { MODAL_STYLES } from './modal-styles.js';
 
 const INPUT_BASE =
