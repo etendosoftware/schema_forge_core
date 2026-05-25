@@ -13,6 +13,7 @@ test('public package exports the expected runtime entrypoints', async () => {
   assert.equal(pkg.exports['./layout'], './src/layout/index.js');
   assert.equal(pkg.exports['./reports'], './src/reports/index.js');
   assert.equal(pkg.exports['./runtime'], './src/runtime/index.js');
+  assert.equal(pkg.exports['./tailwind-preset'], './src/tailwind-preset.js');
   assert.equal(pkg.exports['./styles.css'], './src/styles.css');
   assert.equal(pkg.exports['./hooks/useCurrency.jsx'], './src/hooks/useCurrency.jsx');
   assert.equal(pkg.exports['./hooks/use-mobile.jsx'], './src/hooks/use-mobile.jsx');

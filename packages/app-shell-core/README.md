@@ -69,7 +69,9 @@ paths:
 - `@schema-forge/app-shell-core/layout` for shell layout primitives.
 - `@schema-forge/app-shell-core/reports` for report descriptors and viewer frame.
 - `@schema-forge/app-shell-core/styles.css` for the CSS/Tailwind token layer.
+- `@schema-forge/app-shell-core/tailwind-preset` for the Tailwind theme tokens
+  required by the published CSS and UI primitives.
 
 The package still expects the host app to provide React, React Router, Radix UI,
-Lucide, and the CSS build pipeline listed as peer dependencies. Generated
-contracts and generated windows remain outside this package by design.
+Lucide, Tailwind/PostCSS, and the peer dependencies listed in `package.json`.
+Generated contracts and generated windows remain outside this package by design.
