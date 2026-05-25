@@ -23,7 +23,6 @@
     { "pattern": "tools/app-shell/src/components/contract-ui/**", "scope": "all-windows" },
     { "pattern": "tools/app-shell/src/i18n/*.js", "scope": "all-windows" },
     { "pattern": "tools/app-shell/src/i18n/*.jsx", "scope": "all-windows" },
-    { "pattern": "tools/app-shell/src/locales/*.json", "scope": "all-windows" },
     { "pattern": "packages/app-shell-core/src/i18n/*.js", "scope": "all-windows" },
     { "pattern": "packages/app-shell-core/src/i18n/*.jsx", "scope": "all-windows" },
     { "pattern": "packages/app-shell-core/src/locales/*.json", "scope": "all-windows" },
