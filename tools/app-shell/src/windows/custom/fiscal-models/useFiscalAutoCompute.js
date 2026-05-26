@@ -79,12 +79,16 @@ export default function useFiscalAutoCompute(decls, {
 
     const interval = setInterval(() => {
       decls.forEach(async (decl) => {
-        const { checkModifiedFn: checkFn, computeFn: fn, token: t, apiBaseUrl: api } = ctxRef.current;
-        if (!checkFn) return;
-        const sinceMs = computedAtRef.current[decl.id] ?? 0;
-        const modified = await checkFn(decl, sinceMs, { token: t, apiBaseUrl: api });
-        if (cancelled || !modified) return;
-        await computeOne(decl, { fn, token: t, apiBaseUrl: api, isCancelled: () => cancelled, computedAtRef, setComputedMap });
+        try {
+          const { checkModifiedFn: checkFn, computeFn: fn, token: t, apiBaseUrl: api } = ctxRef.current;
+          if (!checkFn) return;
+          const sinceMs = computedAtRef.current[decl.id] ?? 0;
+          const modified = await checkFn(decl, sinceMs, { token: t, apiBaseUrl: api });
+          if (cancelled || !modified) return;
+          await computeOne(decl, { fn, token: t, apiBaseUrl: api, isCancelled: () => cancelled, computedAtRef, setComputedMap });
+        } catch {
+          // poll errors are silent — computedAtRef stays at last success so next tick retries
+        }
       });
     }, pollIntervalMs);
 

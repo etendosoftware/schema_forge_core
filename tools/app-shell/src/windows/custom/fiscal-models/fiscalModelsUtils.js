@@ -5,7 +5,8 @@ export async function computeBoxes303(decl, { token, apiBaseUrl } = {}) {
   if (token && apiBaseUrl) {
     try {
       const base = apiBaseUrl.replace(/\/[^/]+$/, '');
-      const url = `${base}/fiscal303/boxes?year=${decl.year}&period=${decl.period}`;
+      const params = new URLSearchParams({ year: decl.year, period: decl.period });
+      const url = `${base}/fiscal303/boxes?${params}`;
       const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) return await res.json();
     } catch (_) {
@@ -65,12 +66,13 @@ export async function generate303File(decl, { token, apiBaseUrl } = {}) {
 }
 
 export const STATUSES = [
-  'omitido', 'borrador', 'listo',
+  'omitido', 'pendiente', 'borrador', 'listo',
   'presentado', 'presentadoOtra', 'presentadoAcuse',
 ];
 
 export const STATUS_COLOR = {
   omitido:         'grey',
+  pendiente:       'orange',
   borrador:        'blue',
   listo:           'green',
   presentado:      'teal',
@@ -80,6 +82,7 @@ export const STATUS_COLOR = {
 
 export const STATUS_ICON = {
   omitido:         '×',
+  pendiente:       '○',
   borrador:        '✎',
   listo:           '✓',
   presentado:      '✓',

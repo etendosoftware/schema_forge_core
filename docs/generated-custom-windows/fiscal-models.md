@@ -41,22 +41,27 @@ FmListPage
 
 - `computeFn` = `computeBoxes303(decl, { token, apiBaseUrl })` → `GET /fiscal303/boxes?year=&period=`
 - `checkModifiedFn` = `checkModified303(decl, sinceMs, { token, apiBaseUrl })` → `GET /fiscal303/modified?year=&period=&since=`
-- `computedAtRef` tracks the last successful (or errored) compute timestamp per declaration to bound the `since` query parameter.
+- `computedAtRef` tracks the last **successful** compute timestamp per declaration to bound the `since` query parameter. It is intentionally not updated on errors, so `sinceMs` stays at the last success and any subsequent invoice change still triggers a retry.
 - The hook is disabled (`enabled=false`) in demo mode.
 - Precomputed data (`decl._precomputed`) is seeded from `computedMap` when a row is opened, so the detail page loads instantly.
 
 ## Status lifecycle
 
 ```
+Modelo 303:
 (new) → borrador → listo → presentado
-                         ↘ presentadoOtra
-                         ↘ presentadoAcuse
-         ↓
-       omitido  (can be set from any non-submitted state)
+                          ↘ presentadoOtra
+                          ↘ presentadoAcuse
+          ↓
+        omitido  (can be set from any non-submitted state)
+
+Modelo 349:
+(new) → pendiente → borrador → listo → presentado
 ```
 
 | Status | Color | Meaning |
 |--------|-------|---------|
+| `pendiente` | orange | Pending — initial state for Modelo 349 before drafting begins |
 | `borrador` | blue | Draft — boxes may still be computing |
 | `listo` | green | Ready — review complete, file can be generated |
 | `presentado` | teal | Filed via the standard channel |
@@ -122,7 +127,7 @@ Uses a 4-step stepper including `pendiente` (index 0). The 349 page is structura
 | Method | Path | Used by |
 |--------|------|---------|
 | `GET` | `/fiscal303/declarations` | FmListPage — fetch all declarations |
-| `PATCH` | `/fiscal303/declarations?id=` | FmListPage — persist status change |
+| `PUT` | `/fiscal303/declarations?id=` | FmListPage — persist status change |
 | `GET` | `/fiscal303/boxes?year=&period=` | `computeBoxes303` |
 | `GET` | `/fiscal303/modified?year=&period=&since=` | `checkModified303` |
 | `GET` | `/fiscal303/generate?year=&period=&tipo=` | `generate303File` |

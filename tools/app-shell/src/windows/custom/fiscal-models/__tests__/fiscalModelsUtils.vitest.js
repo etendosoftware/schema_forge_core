@@ -16,14 +16,14 @@ import {
 // ── STATUSES ──────────────────────────────────────────────────────────────────
 
 describe('STATUSES', () => {
-  it('is an array with 6 entries', () => {
+  it('is an array with 7 entries', () => {
     expect(Array.isArray(STATUSES)).toBe(true);
-    expect(STATUSES).toHaveLength(6);
+    expect(STATUSES).toHaveLength(7);
   });
 
   it('contains all expected status values', () => {
     expect(STATUSES).toContain('omitido');
-    expect(STATUSES).not.toContain('pendiente');
+    expect(STATUSES).toContain('pendiente');
     expect(STATUSES).toContain('borrador');
     expect(STATUSES).toContain('listo');
     expect(STATUSES).toContain('presentado');
@@ -48,7 +48,7 @@ describe('STATUS_COLOR', () => {
 
   it('maps specific statuses to expected color names', () => {
     expect(STATUS_COLOR.omitido).toBe('grey');
-    expect(STATUS_COLOR.pendiente).toBeUndefined();
+    expect(STATUS_COLOR.pendiente).toBe('orange');
     expect(STATUS_COLOR.borrador).toBe('blue');
     expect(STATUS_COLOR.listo).toBe('green');
     expect(STATUS_COLOR.presentado).toBe('teal');
@@ -79,8 +79,8 @@ describe('STATUS_ORDER', () => {
     expect(Array.isArray(STATUS_ORDER)).toBe(true);
   });
 
-  it('contains all 6 statuses', () => {
-    expect(STATUS_ORDER).toHaveLength(6);
+  it('contains all 7 statuses', () => {
+    expect(STATUS_ORDER).toHaveLength(7);
     for (const s of STATUSES) {
       expect(STATUS_ORDER).toContain(s);
     }
@@ -986,7 +986,7 @@ describe('generate303File', () => {
   const TOKEN = 'test-token';
   const API_BASE = 'http://host/neo/fiscal-models';
 
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
   function mockFetchOk(blob = new Blob(['data'])) {
     const objectUrl = 'blob:mock';

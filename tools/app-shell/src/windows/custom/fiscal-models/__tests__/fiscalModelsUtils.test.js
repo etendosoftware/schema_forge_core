@@ -7,9 +7,9 @@ import {
 } from '../fiscalModelsUtils.js';
 
 describe('STATUSES — enum completeness', () => {
-  it('has exactly 6 statuses', () => assert.equal(STATUSES.length, 6));
+  it('has exactly 7 statuses', () => assert.equal(STATUSES.length, 7));
   it('includes omitido', () => assert.ok(STATUSES.includes('omitido')));
-  it('does not include pendiente', () => assert.ok(!STATUSES.includes('pendiente')));
+  it('includes pendiente', () => assert.ok(STATUSES.includes('pendiente')));
   it('includes borrador', () => assert.ok(STATUSES.includes('borrador')));
   it('includes listo', () => assert.ok(STATUSES.includes('listo')));
   it('includes presentado', () => assert.ok(STATUSES.includes('presentado')));
@@ -18,13 +18,13 @@ describe('STATUSES — enum completeness', () => {
 });
 
 describe('STATUS_COLOR — all statuses have colors', () => {
-  for (const s of ['omitido','borrador','listo','presentado','presentadoOtra','presentadoAcuse']) {
+  for (const s of ['omitido','pendiente','borrador','listo','presentado','presentadoOtra','presentadoAcuse']) {
     it(`${s} has a color`, () => assert.ok(typeof STATUS_COLOR[s] === 'string'));
   }
 });
 
 describe('STATUS_ORDER — free transitions', () => {
-  it('contains all 6 statuses', () => assert.equal(STATUS_ORDER.length, 6));
+  it('contains all 7 statuses', () => assert.equal(STATUS_ORDER.length, 7));
   it('is an array', () => assert.ok(Array.isArray(STATUS_ORDER)));
 });
 
