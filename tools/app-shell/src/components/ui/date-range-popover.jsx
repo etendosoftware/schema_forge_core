@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -6,28 +6,27 @@ import { useLocaleSwitch, useUI } from '@/i18n';
 import { cn } from '@/lib/utils';
 
 /**
- * Standalone date-range popover with preset list + dual-month custom calendar.
- *
- * Identical UX to the date filter used in the contract-ui grid views (sales-order
- * etc.). Extracted from ListFilterBar so other surfaces can reuse it.
- *
- * value:
- *   - null                                  → All time
+ * value shape used by both DateRangePopover and DateRangePopoverContent:
+ *   - null                                  → All time (no constraint)
  *   - { presetId: 'today'|'yesterday'|'last7'|'last30'|'last12m' }
  *   - { from: Date, to: Date }              → Custom range
- *
- * onChange(value): fires only when user clicks "Apply" or picks a preset.
- *
+ */
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Inner content: presets list + dual calendar + footer.
+// Does NOT manage its own popover state — the parent controls it via `onClose`.
+// Re-mounts each time the popover opens, so internal drafts start fresh.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
  * @param {{
  *   value: null | { presetId: string } | { from: Date, to: Date };
- *   onChange: (value: null | { presetId: string } | { from: Date, to: Date }) => void;
- *   placeholder?: string;
+ *   onChange: (v: null | { presetId: string } | { from: Date, to: Date }) => void;
+ *   onClose: () => void;
  * }} props
  */
-export function DateRangePopover({ value, onChange, placeholder }) {
+export function DateRangePopoverContent({ value, onChange, onClose }) {
   const ui = useUI();
-  const { locale: appLocale } = useLocaleSwitch();
-  const bcpLocale = (appLocale || 'es_ES').replace('_', '-');
 
   const datePresets = useMemo(() => ([
     { id: 'today',     label: ui('dateRangeToday') },
@@ -40,58 +39,22 @@ export function DateRangePopover({ value, onChange, placeholder }) {
 
   const activePresetId = value && 'presetId' in value ? value.presetId : null;
   const isCustom = !!value && 'from' in value && 'to' in value;
+  const hasActiveValue = !!value;
 
-  const fmtDay = (d) =>
-    d.toLocaleDateString(bcpLocale, { day: 'numeric', month: 'short', year: 'numeric' });
-
-  const triggerLabel = (() => {
-    if (activePresetId) {
-      return datePresets.find((p) => p.id === activePresetId)?.label ?? placeholder;
-    }
-    if (isCustom) return `${fmtDay(value.from)} – ${fmtDay(value.to)}`;
-    return placeholder ?? ui('dateRangeAnyTime');
-  })();
-
-  const [open, setOpen] = useState(false);
+  // Drafts seeded from `value` once at mount (content remounts when popover reopens)
   const [customMode, setCustomMode] = useState(isCustom);
   const [fromDate, setFromDate] = useState(isCustom ? value.from : null);
   const [toDate, setToDate] = useState(isCustom ? value.to : null);
-  const [leftMonth, setLeftMonth] = useState(() => {
-    const d = new Date();
-    d.setMonth(d.getMonth() - 1);
-    return d;
-  });
-  const [rightMonth, setRightMonth] = useState(() => new Date());
-
-  // Seed pickers each time the popover opens
-  useEffect(() => {
-    if (!open) return;
-    if (isCustom) {
-      setFromDate(value.from);
-      setToDate(value.to);
-      setCustomMode(true);
-      setLeftMonth(new Date(value.from));
-      setRightMonth(new Date(value.to));
-    } else {
-      setFromDate(null);
-      setToDate(null);
-      setCustomMode(false);
-      const right = new Date();
-      const left = new Date();
-      left.setMonth(left.getMonth() - 1);
-      setLeftMonth(left);
-      setRightMonth(right);
-    }
-  }, [open, isCustom, value]);
+  const [leftMonth, setLeftMonth] = useState(() =>
+    isCustom ? new Date(value.from) : (() => { const d = new Date(); d.setMonth(d.getMonth() - 1); return d; })(),
+  );
+  const [rightMonth, setRightMonth] = useState(() => (isCustom ? new Date(value.to) : new Date()));
 
   const handlePresetSelect = (presetId) => {
     setCustomMode(false);
-    setOpen(false);
-    if (presetId === 'allTime') {
-      onChange?.(null);
-      return;
-    }
-    onChange?.({ presetId });
+    if (presetId === 'allTime') onChange?.(null);
+    else onChange?.({ presetId });
+    onClose?.();
   };
 
   const canApplyCustom = !!(fromDate && toDate && fromDate.getTime() <= toDate.getTime());
@@ -99,7 +62,7 @@ export function DateRangePopover({ value, onChange, placeholder }) {
   const handleApplyCustom = () => {
     if (!canApplyCustom) return;
     onChange?.({ from: fromDate, to: toDate });
-    setOpen(false);
+    onClose?.();
   };
 
   const inRangeModifier = useMemo(() => {
@@ -112,6 +75,11 @@ export function DateRangePopover({ value, onChange, placeholder }) {
     };
   }, [fromDate, toDate]);
 
+  const { locale: appLocale } = useLocaleSwitch();
+  const bcpLocale = (appLocale || 'es_ES').replace('_', '-');
+  const fmtDay = (d) =>
+    d.toLocaleDateString(bcpLocale, { day: 'numeric', month: 'short', year: 'numeric' });
+
   const rangeSummary = (() => {
     if (fromDate && toDate) return `${fmtDay(fromDate)} – ${fmtDay(toDate)}`;
     if (fromDate) return fmtDay(fromDate);
@@ -119,7 +87,109 @@ export function DateRangePopover({ value, onChange, placeholder }) {
     return '';
   })();
 
-  const hasActiveValue = !!value;
+  return (
+    <div className="flex">
+      {/* Preset list */}
+      <div className="flex w-[193px] flex-col border-r border-[#E8EAEF] py-1">
+        {datePresets.map((preset) => {
+          const active =
+            preset.id === 'allTime'
+              ? (!hasActiveValue && !customMode)
+              : (activePresetId === preset.id && !customMode);
+          return (
+            <button
+              key={preset.id}
+              type="button"
+              onClick={() => handlePresetSelect(preset.id)}
+              className={cn(
+                'relative flex h-8 items-center px-2 text-left text-sm leading-6 text-[#121217] transition-colors',
+                active ? 'bg-[rgba(18,18,23,0.05)]' : 'hover:bg-[rgba(18,18,23,0.05)]',
+              )}
+            >
+              <span className="flex-1">{preset.label}</span>
+              {active ? <Check className="mr-3 h-4 w-4 shrink-0" /> : null}
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => setCustomMode(true)}
+          className={cn(
+            'relative flex h-8 items-center px-2 text-left text-sm leading-6 text-[#121217] transition-colors',
+            customMode ? 'bg-[rgba(18,18,23,0.05)]' : 'hover:bg-[rgba(18,18,23,0.05)]',
+          )}
+        >
+          <span className="flex-1">{ui('dateRangeCustom')}</span>
+          {customMode ? <Check className="mr-3 h-4 w-4 shrink-0" /> : null}
+        </button>
+      </div>
+
+      {/* Calendars + footer */}
+      <div className="flex flex-col">
+        <div className="flex border-b border-[#E8EAEF]">
+          <CalendarWithPicker
+            month={leftMonth}
+            onMonthChange={setLeftMonth}
+            selected={fromDate ?? undefined}
+            onSelect={(d) => { setFromDate(d || null); setCustomMode(true); }}
+            modifiers={inRangeModifier ? { inRange: inRangeModifier } : undefined}
+            modifiersClassNames={{ inRange: 'bg-[#F5F7F9] [&>button]:rounded-none' }}
+          />
+          <div className="border-l border-[#E8EAEF]" />
+          <CalendarWithPicker
+            month={rightMonth}
+            onMonthChange={setRightMonth}
+            selected={toDate ?? undefined}
+            onSelect={(d) => { setToDate(d || null); setCustomMode(true); }}
+            modifiers={inRangeModifier ? { inRange: inRangeModifier } : undefined}
+            modifiersClassNames={{ inRange: 'bg-[#F5F7F9] [&>button]:rounded-none' }}
+          />
+        </div>
+        <div className="flex h-16 items-center justify-between gap-2 px-5 py-3">
+          <span className="text-sm font-medium text-[#3F3F50]">{rangeSummary}</span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-10 items-center justify-center rounded-full border border-[#D1D4DB] bg-white px-3 text-sm font-medium text-[#121217] shadow-[0px_1px_2px_rgba(18,18,23,0.05)] transition-colors hover:bg-[rgba(18,18,23,0.05)]"
+            >
+              {ui('dateRangeCancel')}
+            </button>
+            <button
+              type="button"
+              onClick={handleApplyCustom}
+              disabled={!canApplyCustom}
+              className="inline-flex h-10 items-center justify-center rounded-full bg-[#121217] px-3 text-sm font-medium text-white transition-colors hover:bg-[#FFD500] hover:text-[#121217] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {ui('dateRangeApply')}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Public wrapper: Popover + default trigger + DateRangePopoverContent.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Standalone date-range popover with preset list + dual-month custom calendar.
+ *
+ * @param {{
+ *   value: null | { presetId: string } | { from: Date, to: Date };
+ *   onChange: (v: null | { presetId: string } | { from: Date, to: Date }) => void;
+ *   placeholder?: string;
+ * }} props
+ */
+export function DateRangePopover({ value, onChange, placeholder }) {
+  const ui = useUI();
+  const { locale: appLocale } = useLocaleSwitch();
+  const bcpLocale = (appLocale || 'es_ES').replace('_', '-');
+  const [open, setOpen] = useState(false);
+
+  const triggerLabel = computeTriggerLabel(value, placeholder, ui, bcpLocale);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -134,88 +204,34 @@ export function DateRangePopover({ value, onChange, placeholder }) {
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-auto p-0">
-        <div className="flex">
-          {/* Preset list */}
-          <div className="flex w-[193px] flex-col border-r border-[#E8EAEF] py-1">
-            {datePresets.map((preset) => {
-              const active =
-                preset.id === 'allTime'
-                  ? (!hasActiveValue && !customMode)
-                  : (activePresetId === preset.id && !customMode);
-              return (
-                <button
-                  key={preset.id}
-                  type="button"
-                  onClick={() => handlePresetSelect(preset.id)}
-                  className={cn(
-                    'relative flex h-8 items-center px-2 text-left text-sm leading-6 text-[#121217] transition-colors',
-                    active ? 'bg-[rgba(18,18,23,0.05)]' : 'hover:bg-[rgba(18,18,23,0.05)]',
-                  )}
-                >
-                  <span className="flex-1">{preset.label}</span>
-                  {active ? <Check className="mr-3 h-4 w-4 shrink-0" /> : null}
-                </button>
-              );
-            })}
-            <button
-              type="button"
-              onClick={() => setCustomMode(true)}
-              className={cn(
-                'relative flex h-8 items-center px-2 text-left text-sm leading-6 text-[#121217] transition-colors',
-                customMode ? 'bg-[rgba(18,18,23,0.05)]' : 'hover:bg-[rgba(18,18,23,0.05)]',
-              )}
-            >
-              <span className="flex-1">{ui('dateRangeCustom')}</span>
-              {customMode ? <Check className="mr-3 h-4 w-4 shrink-0" /> : null}
-            </button>
-          </div>
-
-          {/* Calendars + footer */}
-          <div className="flex flex-col">
-            <div className="flex border-b border-[#E8EAEF]">
-              <CalendarWithPicker
-                month={leftMonth}
-                onMonthChange={setLeftMonth}
-                selected={fromDate ?? undefined}
-                onSelect={(d) => { setFromDate(d || null); setCustomMode(true); }}
-                modifiers={inRangeModifier ? { inRange: inRangeModifier } : undefined}
-                modifiersClassNames={{ inRange: 'bg-[#F5F7F9] [&>button]:rounded-none' }}
-              />
-              <div className="border-l border-[#E8EAEF]" />
-              <CalendarWithPicker
-                month={rightMonth}
-                onMonthChange={setRightMonth}
-                selected={toDate ?? undefined}
-                onSelect={(d) => { setToDate(d || null); setCustomMode(true); }}
-                modifiers={inRangeModifier ? { inRange: inRangeModifier } : undefined}
-                modifiersClassNames={{ inRange: 'bg-[#F5F7F9] [&>button]:rounded-none' }}
-              />
-            </div>
-            <div className="flex h-16 items-center justify-between gap-2 px-5 py-3">
-              <span className="text-sm font-medium text-[#3F3F50]">{rangeSummary}</span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="inline-flex h-10 items-center justify-center rounded-full border border-[#D1D4DB] bg-white px-3 text-sm font-medium text-[#121217] shadow-[0px_1px_2px_rgba(18,18,23,0.05)] transition-colors hover:bg-[rgba(18,18,23,0.05)]"
-                >
-                  {ui('dateRangeCancel')}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleApplyCustom}
-                  disabled={!canApplyCustom}
-                  className="inline-flex h-10 items-center justify-center rounded-full bg-[#121217] px-3 text-sm font-medium text-white transition-colors hover:bg-[#FFD500] hover:text-[#121217] disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  {ui('dateRangeApply')}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <DateRangePopoverContent
+          value={value}
+          onChange={onChange}
+          onClose={() => setOpen(false)}
+        />
       </PopoverContent>
     </Popover>
   );
+}
+
+// Shared label resolver — exported so consumers with custom triggers can reuse it.
+export function computeTriggerLabel(value, placeholder, ui, bcpLocale) {
+  const fmtDay = (d) =>
+    d.toLocaleDateString(bcpLocale, { day: 'numeric', month: 'short', year: 'numeric' });
+  if (value && 'presetId' in value) {
+    const labels = {
+      today: ui('dateRangeToday'),
+      yesterday: ui('dateRangeYesterday'),
+      last7: ui('dateRangeLast7Days'),
+      last30: ui('dateRangeLast30Days'),
+      last12m: ui('dateRangeLast12Months'),
+    };
+    return labels[value.presetId] ?? placeholder ?? ui('dateRangeAnyTime');
+  }
+  if (value && 'from' in value && 'to' in value) {
+    return `${fmtDay(value.from)} – ${fmtDay(value.to)}`;
+  }
+  return placeholder ?? ui('dateRangeAnyTime');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
