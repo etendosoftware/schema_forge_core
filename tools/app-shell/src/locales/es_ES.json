@@ -17545,6 +17545,8 @@
     "financeAccountMovementsColDescription": "Descripción",
     "financeAccountMovementsColStatus": "Estado",
     "financeAccountMovementsColType": "Tipo",
+    "financeAccountMovementsTypeBPD": "Cobro",
+    "financeAccountMovementsTypeBPW": "Pago",
     "financeAccountMovementsColAmount": "Importe",
     "financeAccountMovementsColBalance": "Saldo",
     "financeAccountMovementsPosted": "Contabilizado",

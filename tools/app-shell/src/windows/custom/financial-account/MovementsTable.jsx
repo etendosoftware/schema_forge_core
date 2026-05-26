@@ -33,13 +33,14 @@ function formatDate(isoString) {
 
 const SKELETON_ROWS = [1, 2, 3, 4, 5];
 
-const TRX_TYPE_LABEL = {
-  BPD: 'Incoming Payment',
-  BPW: 'Outgoing Payment',
-};
-
-function getTrxTypeLabel(movement) {
-  return movement.typeLabel || TRX_TYPE_LABEL[movement.trxType] || movement.trxType || '—';
+function useTrxTypeLabel() {
+  const ui = useUI();
+  return (movement) =>
+    movement.typeLabel ||
+    (movement.trxType === 'BPD' ? ui('financeAccountMovementsTypeBPD') : null) ||
+    (movement.trxType === 'BPW' ? ui('financeAccountMovementsTypeBPW') : null) ||
+    movement.trxType ||
+    '—';
 }
 
 /**
@@ -54,6 +55,7 @@ function getTrxTypeLabel(movement) {
  */
 export function MovementsTable({ movements, loading, selectedIds, onSelectionChange }) {
   const ui = useUI();
+  const getTrxTypeLabel = useTrxTypeLabel();
   const allSelected = movements.length > 0 && selectedIds.size === movements.length;
   const someSelected = selectedIds.size > 0 && !allSelected;
 
@@ -172,7 +174,7 @@ export function MovementsTable({ movements, loading, selectedIds, onSelectionCha
                     value={movement.balance}
                     currency={movement.currencyIso}
                     tone="neutral"
-                    className="text-sm text-[#6c6c89]"
+                    className="text-sm font-semibold text-[#121217]"
                   />
                 </TableCell>
 

@@ -5,8 +5,14 @@ import { AccountLogoAvatar } from '@/components/financial-accounts/AccountLogoAv
 import { Skeleton } from '@/components/ui/skeleton';
 import { MoneyAmount } from '@/components/ui/money-amount';
 
+/** Formats a raw IBAN string into groups of 4 chars: "ES7012341234..." → "ES70 1234 1234 ..." */
+function formatIban(iban) {
+  if (!iban) return '—';
+  return iban.replace(/\s+/g, '').match(/.{1,4}/g)?.join(' ') ?? iban;
+}
+
 /**
- * Horizontal strip shown under the page header.
+ * Horizontal strip shown under the movements toolbar.
  * Displays IBAN with copy button + three KPI figures (balance, inflows, outflows).
  *
  * @param {{ account: object|null, totals: { balance: number, inflows: number, outflows: number, currency: string }, loading: boolean }} props
@@ -24,71 +30,86 @@ export function AccountSummaryStrip({ account, totals, loading }) {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-6 border-b border-[#E8EAEF] px-4 py-3">
-        <Skeleton className="h-10 w-10 rounded-full" />
-        <Skeleton className="h-5 w-48" />
-        <div className="ml-auto flex gap-8">
-          <Skeleton className="h-8 w-28" />
-          <Skeleton className="h-8 w-28" />
-          <Skeleton className="h-8 w-28" />
+      <div className="px-2 py-1">
+        <div className="flex items-center gap-5 rounded-lg border border-[#E8EAEF] px-3 py-2">
+          <Skeleton className="h-8 w-8 rounded-full" />
+          <Skeleton className="h-5 w-48" />
+          <div className="ml-auto flex gap-5">
+            <Skeleton className="h-6 w-28" />
+            <Skeleton className="h-6 w-28" />
+            <Skeleton className="h-6 w-28" />
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-4 border-b border-[#E8EAEF] px-4 py-3 md:flex-nowrap">
-      {/* Avatar + IBAN */}
-      <div className="flex items-center gap-3">
-        <AccountLogoAvatar account={account} className="h-10 w-10" />
-        <div className="flex flex-col gap-0.5">
-          <span className="text-xs text-[#6c6c89]">IBAN</span>
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-medium text-[#3f3f50]">
-              {account?.iban ?? '—'}
-            </span>
-            {account?.iban ? (
-              <button
-                type="button"
-                onClick={handleCopyIban}
-                className="inline-flex h-5 w-5 items-center justify-center rounded text-[#6c6c89] hover:bg-[#F5F7F9] hover:text-[#3f3f50]"
-                aria-label="Copy IBAN"
-              >
-                <Copy className="h-3.5 w-3.5" />
-              </button>
-            ) : null}
+    <div className="px-2 py-1">
+      <div className="flex items-center gap-5 rounded-lg border border-[#E8EAEF] px-3 py-2">
+
+        {/* Avatar + IBAN — fixed width, never grows or shrinks */}
+        <div className="flex w-[364px] shrink-0 items-center gap-2">
+          <AccountLogoAvatar account={account} className="h-8 w-8 shrink-0" />
+          <div className="flex min-w-0 flex-col">
+            <span className="text-xs leading-4 text-[#3F3F50]">IBAN</span>
+            <div className="flex items-center gap-0.5">
+              <span className="truncate text-xs leading-4 text-[#6C6C89]">
+                {formatIban(account?.iban)}
+              </span>
+              {account?.iban ? (
+                <button
+                  type="button"
+                  onClick={handleCopyIban}
+                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#828FA3] hover:bg-[#F5F7F9]"
+                  aria-label="Copy IBAN"
+                >
+                  <Copy className="h-4 w-4" />
+                </button>
+              ) : null}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Spacer */}
-      <div className="flex-1" />
-
-      {/* KPIs */}
-      <div className="flex items-center gap-8">
-        {/* Balance */}
-        <div className="flex flex-col items-end gap-0.5">
-          <span className="text-xs text-[#6c6c89]">{ui('financeAccountDetailKpiBalance')}</span>
-          <span className="text-xl font-semibold text-[#121217]">
-            <MoneyAmount value={totals.balance} currency={totals.currency} tone="neutral" />
+        {/* Saldo total */}
+        <div className="flex flex-1 flex-col gap-0.5">
+          <span className="text-xs leading-4 text-[#3F3F50]">
+            {ui('financeAccountDetailKpiBalance')}
           </span>
+          <MoneyAmount
+            value={totals.balance}
+            currency={totals.currency}
+            tone="neutral"
+            className="text-base font-medium leading-6"
+          />
         </div>
 
-        {/* Inflows */}
-        <div className="flex flex-col items-end gap-0.5">
-          <span className="text-xs text-[#26a95f]">{ui('financeAccountDetailKpiInflows')}</span>
-          <span className="text-xl font-semibold">
-            <MoneyAmount value={totals.inflows} currency={totals.currency} tone="positive" />
+        {/* Entradas (30D) */}
+        <div className="flex flex-1 flex-col gap-0.5">
+          <span className="text-xs leading-4 text-[#3F3F50]">
+            {ui('financeAccountDetailKpiInflows')}
           </span>
+          <MoneyAmount
+            value={totals.inflows}
+            currency={totals.currency}
+            tone="positive"
+            className="text-base font-medium leading-6"
+          />
         </div>
 
-        {/* Outflows */}
-        <div className="flex flex-col items-end gap-0.5">
-          <span className="text-xs text-[#d50b3e]">{ui('financeAccountDetailKpiOutflows')}</span>
-          <span className="text-xl font-semibold">
-            <MoneyAmount value={totals.outflows} currency={totals.currency} tone="negative" />
+        {/* Salidas (30D) */}
+        <div className="flex flex-1 flex-col gap-0.5">
+          <span className="text-xs leading-4 text-[#3F3F50]">
+            {ui('financeAccountDetailKpiOutflows')}
           </span>
+          <MoneyAmount
+            value={totals.outflows}
+            currency={totals.currency}
+            tone="negative"
+            className="text-base font-medium leading-6"
+          />
         </div>
+
       </div>
     </div>
   );

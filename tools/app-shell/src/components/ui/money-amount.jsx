@@ -27,7 +27,7 @@ export function MoneyAmount({ value, currency = 'EUR', tone = 'auto', compact = 
 
   const colorClass =
     resolvedTone === 'positive'
-      ? 'text-[#17663A]'
+      ? 'text-[#1E874C]'
       : resolvedTone === 'negative'
         ? 'text-[#d50b3e]'
         : 'text-[#121217]';

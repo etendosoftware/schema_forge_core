@@ -17295,6 +17295,8 @@
     "financeAccountMovementsColDescription": "Description",
     "financeAccountMovementsColStatus": "Status",
     "financeAccountMovementsColType": "Type",
+    "financeAccountMovementsTypeBPD": "Incoming Payment",
+    "financeAccountMovementsTypeBPW": "Outgoing Payment",
     "financeAccountMovementsColAmount": "Amount",
     "financeAccountMovementsColBalance": "Balance",
     "financeAccountMovementsPosted": "Posted",
