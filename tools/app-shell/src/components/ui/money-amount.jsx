@@ -16,21 +16,21 @@ import { cn } from '@/lib/utils';
  *   <MoneyAmount value={-200} currency="EUR" />    → "-200,00 €"
  */
 
+const TONE_CLASS = {
+  positive: 'text-[#1E874C]',
+  negative: 'text-[#d50b3e]',
+  neutral:  'text-[#121217]',
+};
+
+function resolveTone(tone, value) {
+  if (tone !== 'auto') return tone;
+  return value >= 0 ? 'positive' : 'negative';
+}
+
 /** @param {{ value: number; currency: string; tone?: 'auto'|'positive'|'negative'|'neutral'; compact?: boolean; className?: string }} props */
 export function MoneyAmount({ value, currency = 'EUR', tone = 'auto', compact = false, className }) {
-  const resolvedTone =
-    tone === 'auto'
-      ? value >= 0
-        ? 'positive'
-        : 'negative'
-      : tone;
-
-  const colorClass =
-    resolvedTone === 'positive'
-      ? 'text-[#1E874C]'
-      : resolvedTone === 'negative'
-        ? 'text-[#d50b3e]'
-        : 'text-[#121217]';
+  const resolvedTone = resolveTone(tone, value);
+  const colorClass = TONE_CLASS[resolvedTone] ?? TONE_CLASS.neutral;
 
   const absValue = Math.abs(value);
   const formatted = new Intl.NumberFormat('es-ES', {

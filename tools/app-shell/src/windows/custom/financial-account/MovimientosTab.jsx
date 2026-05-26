@@ -69,9 +69,10 @@ function matchesAmount(amount, filter) {
 
   // Manual range — signed comparison so min:0 means "only inflows (>= 0)"
   // and max:0 means "only outflows (<= 0)".
-  if (filter.min != null && amount < filter.min) return false;
-  if (filter.max != null && amount > filter.max) return false;
-  return true;
+  return (
+    (filter.min == null || amount >= filter.min)
+    && (filter.max == null || amount <= filter.max)
+  );
 }
 
 // ---------------------------------------------------------------------------

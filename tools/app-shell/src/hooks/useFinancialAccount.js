@@ -33,7 +33,7 @@ async function fetchAccountsPayload(apiBase, token, signal) {
  * Fetches the detail for a single financial account by id.
  *
  * T4 shortcut: uses list endpoint + client-side filter.
- * TODO: replace with dedicated /sws/neo/financial-account/{id} endpoint
+ * Follow-up: replace with dedicated /sws/neo/financial-account/{id} endpoint
  * once FIN_Financial_Account NEO spec is live.
  *
  * @param {string} accountId

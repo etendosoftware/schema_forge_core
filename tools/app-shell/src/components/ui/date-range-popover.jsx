@@ -126,10 +126,7 @@ export function DateRangePopover({ value, onChange, placeholder }) {
       <PopoverTrigger asChild>
         <button
           type="button"
-          className={cn(
-            'inline-flex h-10 items-center justify-between gap-1 rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm font-medium leading-6 shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9]',
-            hasActiveValue ? 'text-[#121217]' : 'text-[#121217]',
-          )}
+          className="inline-flex h-10 items-center justify-between gap-1 rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm font-medium leading-6 text-[#121217] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9]"
         >
           <CalendarDays className="h-4 w-4 shrink-0 text-[#828FA3]" />
           <span className="mx-1 truncate text-left">{triggerLabel}</span>

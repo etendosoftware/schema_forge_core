@@ -37,6 +37,41 @@ function formatDate(isoString, bcpLocale) {
 
 const SKELETON_ROWS = [1, 2, 3, 4, 5];
 
+// Stable cell keys for skeleton rows (same order/length as the real header columns).
+const SKELETON_COL_KEYS = [
+  'select', 'date', 'document', 'contact', 'description',
+  'status', 'type', 'amount', 'balance', 'kebab',
+];
+
+/**
+ * Decides what to render inside the table body: skeleton rows while loading,
+ * an empty-state message when there are no movements, or the actual rows.
+ * Extracted to avoid a nested ternary (Sonar S3358).
+ */
+function renderBody({ loading, movements, emptyLabel, renderRow }) {
+  if (loading) {
+    return SKELETON_ROWS.map((n) => (
+      <TableRow key={n}>
+        {SKELETON_COL_KEYS.map((colKey) => (
+          <TableCell key={colKey}>
+            <Skeleton className="h-4 w-full" />
+          </TableCell>
+        ))}
+      </TableRow>
+    ));
+  }
+  if (movements.length === 0) {
+    return (
+      <TableRow>
+        <TableCell colSpan={10} className="py-16 text-center text-sm text-[#6c6c89]">
+          {emptyLabel}
+        </TableCell>
+      </TableRow>
+    );
+  }
+  return movements.map(renderRow);
+}
+
 function useTrxTypeLabel() {
   const ui = useUI();
   return (movement) =>
@@ -99,25 +134,11 @@ export function MovementsTable({ movements, loading, selectedIds, onSelectionCha
           </TableRow>
         </TableHeader>
         <TableBody>
-          {loading ? (
-            SKELETON_ROWS.map((n) => (
-              <TableRow key={n}>
-                {[...Array(10)].map((_, i) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows have no meaningful key
-                  <TableCell key={i}>
-                    <Skeleton className="h-4 w-full" />
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
-          ) : movements.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={10} className="py-16 text-center text-sm text-[#6c6c89]">
-                {ui('financeAccountMovementsEmpty')}
-              </TableCell>
-            </TableRow>
-          ) : (
-            movements.map((movement) => (
+          {renderBody({
+            loading,
+            movements,
+            emptyLabel: ui('financeAccountMovementsEmpty'),
+            renderRow: (movement) => (
               <TableRow
                 key={movement.id}
                 className="group relative cursor-pointer bg-white transition-shadow hover:z-10 hover:bg-white hover:shadow-lg"
@@ -191,8 +212,8 @@ export function MovementsTable({ movements, loading, selectedIds, onSelectionCha
                   </div>
                 </TableCell>
               </TableRow>
-            ))
-          )}
+            ),
+          })}
         </TableBody>
       </Table>
     </TooltipProvider>

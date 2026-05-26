@@ -51,7 +51,7 @@ export const ACCOUNT_TYPE_ORDER = [ACCOUNT_TYPE.BANK, ACCOUNT_TYPE.CASH, ACCOUNT
 
 // Movement payment statuses from Etendo backend reference list.
 // Backend search_keys — do NOT rename these; they must match FIN_Payment.Status values.
-// TODO: fetch dynamically from /sws/neo/reference/payment-status once that endpoint is live.
+// Follow-up: once /sws/neo/reference/payment-status exists, these can be fetched dynamically.
 export const MOVEMENT_STATUS_FAMILY = {
   PENDING: 'pending',
   VOIDED: 'voided',

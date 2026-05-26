@@ -1,6 +1,6 @@
 // Payment status search_keys from Etendo backend reference list (FIN_Payment.Status).
 // These match the actual backend values — do NOT translate the keys.
-// TODO: fetch this config dynamically from the backend once the reference endpoint is available.
+// Follow-up: once a reference endpoint is exposed, this map can be fetched dynamically.
 
 import { MOVEMENT_STATUS_FAMILY } from '@/components/financial-accounts/tokens';
 

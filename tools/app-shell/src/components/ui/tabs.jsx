@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 
 /** @type {React.Context<{ value: string; onValueChange: (v: string) => void } | null>} */
@@ -17,8 +17,9 @@ const TabsContext = createContext(null);
  */
 
 export function Tabs({ value, onValueChange, children, className }) {
+  const ctx = useMemo(() => ({ value, onValueChange }), [value, onValueChange]);
   return (
-    <TabsContext.Provider value={{ value, onValueChange }}>
+    <TabsContext.Provider value={ctx}>
       <div className={cn('flex flex-col', className)}>
         {children}
       </div>
