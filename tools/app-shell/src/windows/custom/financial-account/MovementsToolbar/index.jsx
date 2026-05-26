@@ -1,4 +1,4 @@
-import { Upload } from 'lucide-react';
+import { ArrowLeft, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useUI } from '@/i18n';
@@ -22,6 +22,16 @@ export function MovementsToolbar({ filters, onFiltersChange }) {
 
   return (
     <div className="flex h-auto min-h-[52px] flex-wrap items-center gap-2 border-b border-[#E8EAEF] px-4 py-2">
+      {/* Back */}
+      <button
+        type="button"
+        aria-label={ui('financeAccountDetailBack')}
+        onClick={() => navigate(-1)}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#D1D4DB] bg-white text-[#6c6c89] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9] hover:text-[#121217]"
+      >
+        <ArrowLeft className="h-4 w-4" />
+      </button>
+
       {/* Filters */}
       <StatusFilter value={filters.status} onChange={onFiltersChange('status')} />
       <DateRangeFilter value={filters.dateRange} onChange={onFiltersChange('dateRange')} />
