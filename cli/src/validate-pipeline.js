@@ -35,6 +35,7 @@ const ROOT = join(__dirname, '..', '..');
 const CUSTOM_ONLY_ARTIFACTS = new Set([
   'fiscal-config',
   'fiscal-monitor',
+  'financial-account',
 ]);
 
 // ---------------------------------------------------------------------------
