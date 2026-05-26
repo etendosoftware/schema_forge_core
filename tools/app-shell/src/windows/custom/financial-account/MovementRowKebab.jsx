@@ -12,7 +12,6 @@ import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
-  TooltipProvider,
 } from '@/components/ui/tooltip';
 
 /**
@@ -25,8 +24,7 @@ export function MovementRowKebab({ movement }) {
   const ui = useUI();
 
   return (
-    <TooltipProvider>
-      <DropdownMenu>
+    <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
@@ -81,6 +79,5 @@ export function MovementRowKebab({ movement }) {
           </Tooltip>
         </DropdownMenuContent>
       </DropdownMenu>
-    </TooltipProvider>
   );
 }
