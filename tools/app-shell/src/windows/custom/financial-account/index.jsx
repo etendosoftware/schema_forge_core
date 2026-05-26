@@ -21,7 +21,7 @@ export default function FinancialAccountWindow({ recordId }) {
   const ui = useUI();
   const [activeTab, setActiveTab] = useState('movements');
   const { account } = useFinancialAccount(recordId);
-  const { movements, loading: movementsLoading } = useAccountMovements(recordId);
+  const { movements, totals, loading: movementsLoading } = useAccountMovements(recordId);
 
   return (
     <TooltipProvider>
@@ -51,7 +51,12 @@ export default function FinancialAccountWindow({ recordId }) {
         {/* Tab content */}
         <div className="flex flex-1 flex-col overflow-auto">
           {activeTab === 'movements' && (
-            <MovimientosTab movements={movements} loading={movementsLoading} />
+            <MovimientosTab
+              account={account}
+              totals={totals}
+              movements={movements}
+              loading={movementsLoading}
+            />
           )}
           {activeTab === 'reconciliation' && <ReconciliacionTab />}
           {activeTab === 'statements' && <ExtractosImportadosTab />}

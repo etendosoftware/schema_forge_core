@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { AccountSummaryStrip } from './AccountSummaryStrip';
 import { MovementsToolbar } from './MovementsToolbar/index';
 import { MovementsTable } from './MovementsTable';
 
@@ -12,7 +13,7 @@ import { MovementsTable } from './MovementsTable';
  *   loading: boolean
  * }} props
  */
-export function MovimientosTab({ movements, loading }) {
+export function MovimientosTab({ account, totals, movements, loading }) {
   const [filters, setFilters] = useState({
     status: null,
     dateRange: 'last30d',
@@ -46,6 +47,7 @@ export function MovimientosTab({ movements, loading }) {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <MovementsToolbar filters={filters} onFiltersChange={handleFilterChange} />
+      <AccountSummaryStrip account={account} totals={totals} loading={loading} />
       <div className="flex-1 overflow-auto">
         <MovementsTable
           movements={movements}
