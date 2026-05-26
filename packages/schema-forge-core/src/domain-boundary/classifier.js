@@ -188,6 +188,18 @@ const CORE_PACKAGE_PATTERNS = [
   /^packages\/schema-forge-core\//,
 ];
 
+const STACK_PACKAGE_PATTERNS = [
+  /^packages\/schema-forge-agent-context\//,
+  /^packages\/schema-forge-stack\//,
+];
+
+const BOUNDARY_GATE_PATTERNS = [
+  /^packages\/schema-forge-core\/bin\/sf-domain-boundary-check\.js$/,
+  /^packages\/schema-forge-core\/src\/domain-boundary(?:\/|$)/,
+  /^packages\/schema-forge-core\/src\/domain-boundary-check\.js$/,
+  /^packages\/schema-forge-core\/test\/domain-boundary-check\.test\.js$/,
+];
+
 function matchesAny(path, patterns) {
   return patterns.some((pattern) => pattern.test(path));
 }
@@ -313,6 +325,14 @@ export function classifyPath(path, { knownWindows = [] } = {}) {
     return { kind: 'platform-change', scope: 'platform-change' };
   }
 
+  if (matchesAny(normalized, STACK_PACKAGE_PATTERNS)) {
+    return { kind: 'schema-forge-stack-package', scope: 'repo-infra' };
+  }
+
+  if (matchesAny(normalized, BOUNDARY_GATE_PATTERNS)) {
+    return { kind: 'domain-boundary-gate', scope: 'repo-infra' };
+  }
+
   if (matchesAny(normalized, CORE_PACKAGE_PATTERNS)) {
     return { kind: 'schema-forge-core', scope: 'generator-change' };
   }
@@ -391,6 +411,9 @@ function isRootSensitiveAllowedWithSingleScope({ rootSensitiveFiles, nonRootScop
     }
     if (scope === 'generator-change') {
       return changedFiles.some((path) => path === 'cli/package.json');
+    }
+    if (scope === 'repo-infra') {
+      return changedFiles.some((path) => /^packages\/(?:schema-forge-agent-context|schema-forge-stack)\/package\.json$/.test(path));
     }
   }
 
