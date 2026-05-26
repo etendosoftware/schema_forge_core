@@ -5,8 +5,8 @@ import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useUI } from '@/i18n';
 import { useFinancialAccounts } from '@/hooks/useFinancialAccounts.js';
 import {
-  CuentasSidebar,
-  CuentasToolbar,
+  AccountsSidebar,
+  AccountsToolbar,
   AccountsTable,
 } from '@/components/financial-accounts';
 
@@ -51,7 +51,7 @@ export default function FinancialAccountsPage() {
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
       <div className="border-b border-[#E8EAEF] p-2">
-        <CuentasToolbar
+        <AccountsToolbar
           typeFilter={typeFilter}
           onTypeFilterChange={setTypeFilter}
           search={search}
@@ -63,7 +63,7 @@ export default function FinancialAccountsPage() {
         className="flex flex-1 overflow-hidden"
         data-testid="cuentas-card"
       >
-        <CuentasSidebar summary={summary} loading={loading} />
+        <AccountsSidebar summary={summary} loading={loading} />
 
         <div className="w-px self-stretch bg-[#E8EAEF]" aria-hidden="true" />
 

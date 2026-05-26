@@ -126,7 +126,7 @@ function applyFilters(movements, filters) {
  *   loading: boolean
  * }} props
  */
-export function MovimientosTab({ account, totals, movements, loading }) {
+export function MovementsTab({ account, totals, movements, loading }) {
   const [filters, setFilters] = useState({
     status: null,
     dateRange: { presetId: 'last30' },

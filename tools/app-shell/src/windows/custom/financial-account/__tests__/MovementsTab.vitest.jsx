@@ -58,7 +58,7 @@ vi.mock('../MovementsTable.jsx', () => ({
   ),
 }));
 
-import { MovimientosTab } from '../MovimientosTab.jsx';
+import { MovementsTab } from '../MovementsTab.jsx';
 
 // Date helper — choose dates relative to "today" so that the default last30
 // preset works regardless of when the test runs.
@@ -78,7 +78,7 @@ const M = [
 
 function renderTab(props = {}) {
   return render(
-    <MovimientosTab
+    <MovementsTab
       account={{ id: 'acc-1', currencyIso: 'EUR' }}
       totals={{ balance: 0, inflows: 0, outflows: 0, currency: 'EUR' }}
       movements={M}
@@ -92,7 +92,7 @@ function rowIds() {
   return screen.getByTestId('row-ids').textContent.split(',').filter(Boolean);
 }
 
-describe('MovimientosTab — default filters', () => {
+describe('MovementsTab — default filters', () => {
   it('mounts with last30 + no other filters, hiding rows older than 30 days', () => {
     renderTab();
     // The 40-days-old row "d" must NOT show; the other three within last30 must.
@@ -111,7 +111,7 @@ describe('MovimientosTab — default filters', () => {
   });
 });
 
-describe('MovimientosTab — applyFilters behavior', () => {
+describe('MovementsTab — applyFilters behavior', () => {
   it('filters by status (paymentStatus equality)', () => {
     renderTab();
     act(() => {
@@ -180,7 +180,7 @@ describe('MovimientosTab — applyFilters behavior', () => {
       { ...M[1], date: '2020-01-16T12:00:00.000Z' },
     ];
     render(
-      <MovimientosTab
+      <MovementsTab
         account={{ id: 'acc-1' }}
         totals={{ balance: 0, inflows: 0, outflows: 0, currency: 'EUR' }}
         movements={out}
@@ -196,7 +196,7 @@ describe('MovimientosTab — applyFilters behavior', () => {
   });
 });
 
-describe('MovimientosTab — pass-through props', () => {
+describe('MovementsTab — pass-through props', () => {
   it('passes loading=true to MovementsTable', () => {
     renderTab({ loading: true, movements: [] });
     expect(screen.getByTestId('table')).toBeInTheDocument();

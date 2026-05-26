@@ -12,7 +12,7 @@ import { AccountTypeFilter } from './AccountTypeFilter.jsx';
  *   - Right group: search (232 px), matching rules (188 px), new account (153 px),
  *     each 40 px tall.
  */
-export function CuentasToolbar({
+export function AccountsToolbar({
   typeFilter,
   onTypeFilterChange,
   search,

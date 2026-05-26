@@ -1,7 +1,7 @@
 import { FileText } from 'lucide-react';
 import { useUI } from '@/i18n';
 
-export function ExtractosImportadosTab() {
+export function ImportedStatementsTab() {
   const ui = useUI();
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 py-24 text-center">

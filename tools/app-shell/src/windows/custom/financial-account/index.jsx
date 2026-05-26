@@ -7,9 +7,9 @@ import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFinancialAccount } from '@/hooks/useFinancialAccount';
 import { useAccountMovements } from '@/hooks/useAccountMovements';
 import { DetailTabs } from './DetailTabs';
-import { MovimientosTab } from './MovimientosTab';
-import { ReconciliacionTab } from './ReconciliacionTab';
-import { ExtractosImportadosTab } from './ExtractosImportadosTab';
+import { MovementsTab } from './MovementsTab';
+import { ReconciliationTab } from './ReconciliationTab';
+import { ImportedStatementsTab } from './ImportedStatementsTab';
 
 /**
  * Financial Account detail view.
@@ -58,15 +58,15 @@ export default function FinancialAccountWindow({ recordId }) {
         {/* Tab content */}
         <div className="flex flex-1 flex-col overflow-auto">
           {activeTab === 'movements' && (
-            <MovimientosTab
+            <MovementsTab
               account={account}
               totals={totals}
               movements={movements}
               loading={movementsLoading}
             />
           )}
-          {activeTab === 'reconciliation' && <ReconciliacionTab />}
-          {activeTab === 'statements' && <ExtractosImportadosTab />}
+          {activeTab === 'reconciliation' && <ReconciliationTab />}
+          {activeTab === 'statements' && <ImportedStatementsTab />}
         </div>
       </div>
     </TooltipProvider>

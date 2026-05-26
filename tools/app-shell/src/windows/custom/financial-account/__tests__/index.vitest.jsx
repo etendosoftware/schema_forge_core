@@ -25,8 +25,8 @@ vi.mock('@/hooks/useAccountMovements', () => ({
 }));
 
 // Stub the three tabs so we can assert which one is mounted
-vi.mock('../MovimientosTab.jsx', () => ({
-  MovimientosTab: ({ movements, loading, account }) => (
+vi.mock('../MovementsTab.jsx', () => ({
+  MovementsTab: ({ movements, loading, account }) => (
     <div data-testid="tab-movements">
       <span data-testid="tab-movements-count">{movements.length}</span>
       <span data-testid="tab-movements-loading">{String(loading)}</span>
@@ -34,11 +34,11 @@ vi.mock('../MovimientosTab.jsx', () => ({
     </div>
   ),
 }));
-vi.mock('../ReconciliacionTab.jsx', () => ({
-  ReconciliacionTab: () => <div data-testid="tab-reconciliation" />,
+vi.mock('../ReconciliationTab.jsx', () => ({
+  ReconciliationTab: () => <div data-testid="tab-reconciliation" />,
 }));
-vi.mock('../ExtractosImportadosTab.jsx', () => ({
-  ExtractosImportadosTab: () => <div data-testid="tab-statements" />,
+vi.mock('../ImportedStatementsTab.jsx', () => ({
+  ImportedStatementsTab: () => <div data-testid="tab-statements" />,
 }));
 
 import FinancialAccountWindow from '../index.jsx';

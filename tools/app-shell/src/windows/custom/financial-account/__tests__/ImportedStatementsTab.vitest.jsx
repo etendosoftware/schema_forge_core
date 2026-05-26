@@ -1,18 +1,18 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { ExtractosImportadosTab } from '../ExtractosImportadosTab';
+import { ImportedStatementsTab } from '../ImportedStatementsTab';
 
 vi.mock('@/i18n', () => ({ useUI: () => (k) => k }));
 vi.mock('lucide-react', () => ({ FileText: () => <svg data-testid="file-icon" /> }));
 
-describe('ExtractosImportadosTab', () => {
+describe('ImportedStatementsTab', () => {
   it('renders the coming-soon placeholder label', () => {
-    render(<ExtractosImportadosTab />);
+    render(<ImportedStatementsTab />);
     expect(screen.getByText('financeAccountDetailTabStatementsComingSoon')).toBeDefined();
   });
 
   it('renders the FileText icon', () => {
-    render(<ExtractosImportadosTab />);
+    render(<ImportedStatementsTab />);
     expect(screen.getByTestId('file-icon')).toBeDefined();
   });
 });
