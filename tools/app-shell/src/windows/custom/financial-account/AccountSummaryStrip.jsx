@@ -54,13 +54,17 @@ export function AccountSummaryStrip({ account, totals, loading }) {
           <div className="flex min-w-0 flex-col">
             <span className="text-xs leading-4 text-[#3F3F50]">IBAN</span>
             <div className="flex items-center gap-0.5">
-              <span className="truncate text-xs leading-4 text-[#6C6C89]">
+              <span
+                data-testid="iban-text"
+                className="truncate text-xs leading-4 text-[#6C6C89]"
+              >
                 {formatIban(account?.iban)}
               </span>
               {account?.iban ? (
                 <button
                   type="button"
                   onClick={handleCopyIban}
+                  data-testid="iban-copy-button"
                   className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#828FA3] hover:bg-[#F5F7F9]"
                   aria-label="Copy IBAN"
                 >
@@ -72,7 +76,7 @@ export function AccountSummaryStrip({ account, totals, loading }) {
         </div>
 
         {/* Saldo total */}
-        <div className="flex flex-1 flex-col gap-0.5">
+        <div data-testid="kpi-balance" className="flex flex-1 flex-col gap-0.5">
           <span className="text-xs leading-4 text-[#3F3F50]">
             {ui('financeAccountDetailKpiBalance')}
           </span>
@@ -85,7 +89,7 @@ export function AccountSummaryStrip({ account, totals, loading }) {
         </div>
 
         {/* Entradas (30D) */}
-        <div className="flex flex-1 flex-col gap-0.5">
+        <div data-testid="kpi-inflows" className="flex flex-1 flex-col gap-0.5">
           <span className="text-xs leading-4 text-[#3F3F50]">
             {ui('financeAccountDetailKpiInflows')}
           </span>
@@ -98,7 +102,7 @@ export function AccountSummaryStrip({ account, totals, loading }) {
         </div>
 
         {/* Salidas (30D) */}
-        <div className="flex flex-1 flex-col gap-0.5">
+        <div data-testid="kpi-outflows" className="flex flex-1 flex-col gap-0.5">
           <span className="text-xs leading-4 text-[#3F3F50]">
             {ui('financeAccountDetailKpiOutflows')}
           </span>

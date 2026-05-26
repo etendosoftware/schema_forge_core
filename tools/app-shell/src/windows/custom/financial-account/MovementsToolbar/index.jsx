@@ -26,6 +26,7 @@ export function MovementsToolbar({ filters, onFiltersChange }) {
       <button
         type="button"
         aria-label={ui('financeAccountDetailBack')}
+        data-testid="movements-toolbar-back"
         onClick={() => navigate(-1)}
         className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#D1D4DB] bg-white text-[#6c6c89] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9] hover:text-[#121217]"
       >
@@ -46,6 +47,7 @@ export function MovementsToolbar({ filters, onFiltersChange }) {
           placeholder={ui('financeAccountMovementsSearch')}
           value={filters.search}
           onChange={(e) => onFiltersChange('search')(e.target.value)}
+          data-testid="movements-search-input"
           className="h-10 w-48 rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm text-[#121217] placeholder:text-[#8a8aa3] shadow-[0_1px_2px_rgba(18,18,23,0.05)] focus:outline-none focus:ring-2 focus:ring-[#121217] focus:ring-offset-1"
         />
       </div>

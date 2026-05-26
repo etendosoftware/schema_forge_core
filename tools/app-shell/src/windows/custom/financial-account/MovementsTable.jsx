@@ -141,6 +141,7 @@ export function MovementsTable({ movements, loading, selectedIds, onSelectionCha
             renderRow: (movement) => (
               <TableRow
                 key={movement.id}
+                data-testid={`movement-row-${movement.id}`}
                 className="group relative cursor-pointer bg-white transition-shadow hover:z-10 hover:bg-white hover:shadow-lg"
                 onClick={() => toast(ui('financeAccountMovementsRowViewDetailToast'))}
               >
