@@ -14176,7 +14176,8 @@
       "label": "Dimensiones"
     },
     "Amortization": {
-      "label": "Amortización"
+      "label": "Amortización",
+      "newLabel": "Nueva amortización"
     },
     "Assets": {
       "label": "Activos",
@@ -19382,7 +19383,22 @@
     "fm.m349.add_operator": "Añadir operador",
     "fm.m349.operators_count": "{count} operadores",
     "fm.m349.operators_sub": "Fuente de verdad del fichero .349 — cada fila será un registro reconciliable en el fichero generado.",
-    "fm.m349.coming_soon": "{tab} — contenido disponible próximamente."
+    "fm.m349.coming_soon": "{tab} — contenido disponible próximamente.",
+    "amortization": "Amortización",
+    "totalAmortization": "Amortización total",
+    "currency": "Moneda",
+    "amortizationSummary": "Resumen de amortización",
+    "amortizationTotalPlanned": "Importe total planificado",
+    "amortizationLineCount": "Líneas",
+    "amortizationLineCountSubtitle": "Activos amortizados",
+    "amortizationStatus": "Estado",
+    "statusProcessed": "Procesado",
+    "noLinkedAssets": "No hay activos vinculados",
+    "amortizationRef": "Amortización",
+    "amortizationLineCountLabel": "{count} línea(s)",
+    "amortizationConfirmWarning": "Una vez confirmada no podrás editar la amortización",
+    "amortizationConfirmAction": "Confirmar amortización",
+    "assetsAnnualDepreciationLabel": "% Amortización anual"
   },
   "menus": {
     "Goods Movement": {
@@ -20871,6 +20887,12 @@
     },
     "noProductsFound": {
       "label": "No se encontraron productos"
+    },
+    "N": {
+      "label": "Borrador"
+    },
+    "Y": {
+      "label": "Procesado"
     }
   }
 }

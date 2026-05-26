@@ -81,6 +81,7 @@ export function ListView({
   renderPreview = null,
   externalPreviewRow = null,
   onExternalPreviewClose = null,
+  hiddenColumns = [],
 }) {
   // Subset filters — radio-style, always one active, applied first.
   const [activeSubsetIndex, setActiveSubsetIndex] = useState(() => {
@@ -761,6 +762,7 @@ export function ListView({
                     hoverRowActions={hoverRowActions}
                     clearSelectionTrigger={clearSelectionCounter}
                     rowQuickActions={effectiveRowQuickActions}
+                    hiddenColumns={hiddenColumns}
                   />
                 )
               }

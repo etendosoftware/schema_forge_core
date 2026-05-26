@@ -274,6 +274,12 @@
           "windowId": "800027"
         },
         {
+          "name": "amortization",
+          "label": "Amortization",
+          "favname": "Amortization",
+          "windowId": "800026"
+        },
+        {
           "name": "recurring-invoice",
           "label": "Recurring Invoice",
           "favname": "Recurring Invoice",

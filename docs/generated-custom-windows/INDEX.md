@@ -66,6 +66,7 @@ This folder is the entry point for documentation that describes how generated an
 | [bank-reconciliation.md](bank-reconciliation.md) | Generated bank-reconciliation master/detail flow |
 | [chart-of-accounts.md](chart-of-accounts.md) | Generated chart-of-accounts maintenance window |
 | [assets.md](assets.md) | Generated assets flow with custom setup, sidebar, and amortization surfaces |
+| [amortization.md](amortization.md) | Generated amortization master/detail flow (MVP read+draft, sidebar metrics, linked assets) |
 | [recurring-invoice.md](recurring-invoice.md) | Hidden route-only recurring-invoice template window |
 
 ## Projects

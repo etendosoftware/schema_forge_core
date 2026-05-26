@@ -1727,6 +1727,8 @@ export function DetailView({
                           } else if (saved.id && isNew) {
                             hook.primeSaved?.(saved);
                             navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
+                          } else if (saved.id) {
+                            hook.fetchById?.(saved.id);
                           }
                         }
                       }}>

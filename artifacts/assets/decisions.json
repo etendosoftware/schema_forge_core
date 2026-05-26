@@ -8,7 +8,7 @@
     "hidePrint": true,
     "hideMoreMenu": true,
     "contentBg": "bg-slate-50",
-    "hideListFilters": true,
+    "hideListFilters": false,
     "hideLink": true,
     "hideEyeCount": true,
     "hideMoreDetails": true,
@@ -38,8 +38,7 @@
     ],
     "headerExtra": {
       "customForm": "AssetsAmortizationPanel"
-    },
-    "dateFilterKey": "purchaseDate"
+    }
   },
   "entities": {
     "assets": {
@@ -163,6 +162,12 @@
           "grid": true,
           "searchable": true,
           "cellType": "depreciationProgress",
+          "columnType": "status",
+          "enumValues": [
+            { "value": "true", "name": "assetsFullyDepreciated" },
+            { "value": "false", "name": "assetsStillInProgress" }
+          ],
+          "filterable": false,
           "form": false
         },
         "project": {
@@ -171,6 +176,7 @@
         },
         "currency": {
           "form": false,
+          "defaultExpr": "@C_Currency_ID@",
           "readOnlyLogicJs": "Number(record.depreciatedPlan || 0) > 0 || Number(record.depreciatedValue || 0) > 0"
         }
       }

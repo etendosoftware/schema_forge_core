@@ -204,6 +204,10 @@ export function generateFrontendContract(schema, rules = []) {
       if (f.display) mapped.display = f.display;
       if (f.cellType) mapped.cellType = f.cellType;
       if (f.gridOrder != null) mapped.gridOrder = f.gridOrder;
+      if (f.grow) mapped.grow = true;
+      if (f.noTrailing) mapped.noTrailing = true;
+      if (f.filterOnly) mapped.filterOnly = true;
+      if (f.filterable === false) mapped.filterable = false;
       if (f.min !== undefined) mapped.min = f.min;
 
       // Behavioral metadata: validationRule (e.g. M_PriceList.issopricelist = @isSOTrx@)

@@ -74,8 +74,11 @@ export function ListFilterBar({
     );
   }, [statusCol, dictionary]);
 
-  const labelForStatus = (code) =>
-    dictionary?.statuses?.[code]?.label || statusLabelMap[code] || code;
+  const labelForStatus = (code) => {
+    const enumLabel = statusCol?.enumLabels?.[code];
+    if (enumLabel !== undefined) return ui(enumLabel) || enumLabel;
+    return dictionary?.statuses?.[code]?.label || code;
+  };
 
   // In-memory distinct codes from the rows currently loaded — shown instantly
   // so the dropdown is never empty while the backend fetch is in-flight.
@@ -83,7 +86,9 @@ export function ListFilterBar({
     if (!statusCol) return [];
     const seen = new Set();
     for (const r of rows || []) {
-      const v = r?.[statusCol.key];
+      let v = r?.[statusCol.key];
+      if (v === true) v = 'true';
+      else if (v === false) v = 'false';
       if (v !== null && v !== undefined && v !== '') seen.add(v);
     }
     return Array.from(seen);
@@ -103,12 +108,17 @@ export function ListFilterBar({
   // (already sorted alphabetically server-side), in-memory extras are appended.
   // Local search also filters client-side so in-memory-only codes are hidden
   // when they don't match what the user typed.
+  const normalizeCode = (c) => {
+    if (c === true) return 'true';
+    if (c === false) return 'false';
+    return c;
+  };
   const mergedStatusCodes = useMemo(() => {
     if (!statusCol) return [];
     const seen = new Set();
     const out = [];
     for (const entry of statusDistinct.values) {
-      const c = entry?.id;
+      const c = normalizeCode(entry?.id);
       if (c == null || c === '') continue;
       if (!seen.has(c)) { seen.add(c); out.push(c); }
     }
