@@ -128,7 +128,6 @@ export default function PurchaseInvoiceWindow(props) {
       <CreateContactContext.Provider value={createContactCtxValue}>
         <HeaderPage
           {...props}
-          secondaryTabs={[]}
           summary={summary}
           extraBadges={[]}
           topbarRight={PurchaseInvoiceTopbar}

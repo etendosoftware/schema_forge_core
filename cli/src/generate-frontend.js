@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { MARKERS } from './custom-section-markers.js';
+import { convertLogicToJs } from './generate-contract.js';
 
 /**
  * Resolves the correct import path for a custom component.
@@ -797,6 +798,17 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const secondaryTabsDecl = windowConfig.secondaryTabs;
   let secondaryTabDefs;
 
+  // Column→property and boolean-field maps built from the header entity, used
+  // to compile tab-level readOnlyLogic expressions the same way field-level
+  // readOnlyLogic is compiled in generate-contract.js.
+  const headerEntityForLogic = contract.frontendContract.entities[headerEntity] ?? {};
+  const headerColumnMap = {};
+  const headerBooleanFields = [];
+  for (const hf of (headerEntityForLogic.fields ?? [])) {
+    if (hf.column && hf.name) headerColumnMap[hf.column] = hf.name;
+    if (hf.tsType === 'boolean' || hf.type === 'boolean') headerBooleanFields.push(hf.name);
+  }
+
   if (secondaryTabsDecl) {
     // Declarative config from decisions.json — sorted by tabOrder
     secondaryTabDefs = Object.entries(secondaryTabsDecl)
@@ -833,7 +845,13 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
           const displayFromCatalogPart = f.displayFromCatalog ? `, displayFromCatalog: true` : '';
           return `          { key: '${fk}', column: '${f.column}', type: '${type}'${requiredPart}${labelPart}${referencePart}${inputModePart}${defaultValuePart}${optionsPart}${lookupDrawerPart}${lookupTitlePart}${onSelectMappingsPart}${displayFromCatalogPart} }`;
         }).filter(Boolean);
-        return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName };
+        // Tab-level readOnlyLogic — when truthy at runtime the tab still
+        // renders existing rows but blocks add / edit / delete actions.
+        // Compiled using the same translator as field-level readOnlyLogic.
+        const readOnlyLogicJs = cfg.readOnlyLogic
+          ? convertLogicToJs(cfg.readOnlyLogic, headerColumnMap, headerBooleanFields)
+          : null;
+        return { key, label: cfg.label ?? toLabel(key), isFormTab, isPanelTab, isCustomForm: !!cfg.customForm, isCustomTable: !!cfg.customTable, PanelName, FormName, TableName, addLineEntries, requireSavedRecord, isCustomAddModal: !!customAddModalName, CustomAddModalName: customAddModalName, readOnlyLogicJs };
       });
   } else {
     // Fallback: hardcoded known list + entity inference (backward compat)
@@ -896,18 +914,21 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
 
   const secondaryTabsPropEntries = secondaryTabDefs.map(t => {
     const requireSavedPart = t.requireSavedRecord ? ', requireSavedRecord: true' : '';
+    const readOnlyLogicPart = t.readOnlyLogicJs
+      ? `, readOnlyLogic: (record) => ${t.readOnlyLogicJs}`
+      : '';
     if (t.isFormTab) {
-      return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName}${requireSavedPart} },`;
+      return `          { key: '${t.key}', label: '${t.label}', isFormTab: true, Form: ${t.FormName}${requireSavedPart}${readOnlyLogicPart} },`;
     }
     if (t.isPanelTab) {
-      return `          { key: '${t.key}', label: '${t.label}', Panel: ${t.PanelName}${requireSavedPart} },`;
+      return `          { key: '${t.key}', label: '${t.label}', Panel: ${t.PanelName}${requireSavedPart}${readOnlyLogicPart} },`;
     }
     const addLinePart = t.addLineEntries.length > 0
       ? `, addLineFields: { entry: [\n${t.addLineEntries.join(',\n')},\n          ], derived: [], hidden: [] }`
       : '';
     const customAddModalPart = t.CustomAddModalName ? `, customAddModal: ${t.CustomAddModalName}` : '';
     const formProp = (t.isCustomAddModal && !t.isCustomForm) ? '' : `, Form: ${t.FormName}`;
-    return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart} },`;
+    return `          { key: '${t.key}', label: '${t.label}', Table: ${t.TableName}${formProp}${addLinePart}${customAddModalPart}${requireSavedPart}${readOnlyLogicPart} },`;
   }).join('\n');
 
   const secondaryTabsProp = secondaryTabDefs.length > 0

@@ -1679,6 +1679,7 @@ export function DataTable({
                                 }}
                                 className="opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 h-8 w-8 flex items-center justify-center rounded-full text-[#D50B3E] hover:bg-[#FEF0F4] transition-all"
                                 aria-label={ui('deleteRowTooltip')}
+                                data-testid={`row-delete-${row.id}`}
                               >
                                 {deletingRows[row.id]
                                   ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
@@ -1711,6 +1712,7 @@ export function DataTable({
                               className="h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                               title={ui('deleteRowTooltip')}
                               aria-label={ui('deleteRowTooltip')}
+                              data-testid={`row-delete-${row.id}`}
                             >
                               {deletingRows[row.id] ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />}
                             </button>

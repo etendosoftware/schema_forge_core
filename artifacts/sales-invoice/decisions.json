@@ -35,7 +35,19 @@
         "successKey": "reactivated"
       }
     ],
-    "secondaryTabs": {},
+    "secondaryTabs": {
+      "exchangeRates": {
+        "label": "Exchange Rates",
+        "tabOrder": 50,
+        "addLineFields": [
+          "toCurrency",
+          "rate",
+          "foreignAmount"
+        ],
+        "requireSavedRecord": true,
+        "readOnlyLogic": "@DocumentStatus@!='DR'"
+      }
+    },
     "processOverrides": {},
     "draftMode": {
       "enabled": true,
@@ -612,11 +624,29 @@
     "reversedInvoices": {
       "exclude": true
     },
-    "exchangeRates": {
-      "exclude": true
-    },
     "accounting": {
       "exclude": true
+    },
+    "exchangeRates": {
+      "fields": {
+        "active": {
+          "visibility": "system"
+        },
+        "currency": {
+          "grid": true,
+          "form": false
+        },
+        "toCurrency": {
+          "grid": true
+        },
+        "rate": {
+          "grid": true
+        },
+        "foreignAmount": {
+          "grid": true
+        }
+      },
+      "javaQualifier": "invoiceExchangeRateHandler"
     }
   },
   "rules": {

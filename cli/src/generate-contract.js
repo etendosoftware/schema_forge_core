@@ -65,7 +65,7 @@ function findMatchingRule(rules, identifier, type) {
  * Uses a column→propertyName map built from the schema to resolve @Column@ references.
  * Falls back to camelCase of the column name when not found in the map.
  */
-function convertLogicToJs(rawExpr, columnMap, booleanFields) {
+export function convertLogicToJs(rawExpr, columnMap, booleanFields) {
   const boolSet = new Set(booleanFields || []);
   // Helper: for Y/N comparisons on boolean fields, use true/false instead of string
   function eqExpr(col, val) {

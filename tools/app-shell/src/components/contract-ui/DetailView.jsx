@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge.jsx';
 import { AddLineButton } from '@/components/ui/add-line-button.jsx';
 import { X, MoreVertical, Check, Save, List, Printer, Mail, Trash2, Loader2, Shield } from 'lucide-react';
 import { AttachmentIcon } from '@/components/attachments/AttachmentIcon';
+import { evalTabReadOnly } from './evalTabReadOnly.js';
 
 const TAB_ICONS = {
   'custom:attachments': AttachmentIcon,
@@ -162,6 +163,14 @@ function resolveSecondaryRowClickHandler(st, { openCustomModal, openSecondaryLin
 }
 
 /**
+ * Evaluate a secondary tab's readOnlyLogic against the header record.
+ * Returns true when the tab should block add/edit/delete actions.
+ * Existing rows still render — only mutation is suppressed.
+ */
+// evalTabReadOnly moved to ./evalTabReadOnly.js so Node's test runner can
+// import it without a JSX loader.
+
+/**
  * Full-page detail view for a single entity record.
  * Two-zone layout: gray top bar + white content card with rounded corner.
  *
@@ -245,7 +254,7 @@ export function DetailView({
   onAfterCreate,
   additionalDirtyState = false,
   labelOverrides,
-  enableSecondaryRowDelete = false,
+  enableSecondaryRowDelete = true,
   sidebarClassName = 'w-96 shrink-0 overflow-y-auto pt-0 pl-0 pr-4 pb-5',
   linesLayout = 'classic',
   autoSaveOnBlur = false,
@@ -1230,6 +1239,40 @@ export function DetailView({
       // Callout is best-effort
     }
   }, [token, apiBaseUrl, detailEntity, hook.editing, hook.selected, catalogs, api, addLineFields, computeLineGrossAmount, resolveTaxFactor]);
+
+  /**
+   * Field-change handler for secondary-tab inline add-row callouts. Mirrors
+   * handleLineFieldChange but targets `${apiBaseUrl}/${tabKey}/callout` so the
+   * AD callout registered on that tab's columns (e.g. SE_CalculateExchangeRate
+   * on C_Conversion_Rate_Document.Rate / Foreign_Amount) runs live as the user
+   * edits the form, instead of only on save.
+   */
+  const handleSecondaryFieldChange = useCallback((tabKey) => async (field, value, rowValues, applyUpdates) => {
+    if (!tabKey || !field || value == null || value === '' || !token || !apiBaseUrl) return;
+    if (field.includes('$_identifier') || /^[a-zA-Z]+_[A-Z]{2,4}$/.test(field)) return;
+    try {
+      const headerData = hook.editing || hook.selected || {};
+      const formState = buildCalloutFormState(rowValues, headerData);
+      const auxiliaryValues = extractAuxValues(formState);
+      const payload = {
+        field,
+        value,
+        formState,
+        ...(Object.keys(auxiliaryValues).length > 0 ? { auxiliaryValues } : {}),
+      };
+      const res = await fetch(`${apiBaseUrl}/${tabKey}/callout`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) return;
+      const calloutData = await res.json();
+      const result = normalizeCalloutResponse(calloutData, rowValues);
+      applyUpdates?.(result, new Set());
+    } catch {
+      // Best-effort — server-side hook still computes on save.
+    }
+  }, [token, apiBaseUrl, hook.editing, hook.selected]);
 
   const data = hook.editing || currentItem || {};
 
@@ -2560,7 +2603,13 @@ export function DetailView({
                 )}
 
                 {/* Tab content: secondary child entity tabs (or form-only tabs) */}
-                {secondaryTabs.map((st, stIdx) => tabs[activeTab]?.key === st.key && (
+                {secondaryTabs.map((st, stIdx) => {
+                  if (tabs[activeTab]?.key !== st.key) return null;
+                  // Tab-level readOnly gate — when the header record matches the
+                  // tab's readOnlyLogic, rows still display but add/edit/delete
+                  // are suppressed.
+                  const tabReadOnly = evalTabReadOnly(st, data);
+                  return (
                   <div key={st.key} className={`${secondaryTabContentPaddingT} flex flex-col gap-3${embedded ? ' pointer-events-none' : ''}`}>
                     {st.isFormTab ? (
                       <div className="flex-1 min-w-0">
@@ -2614,7 +2663,7 @@ export function DetailView({
                         onSelectionChange={linesLayout === 'inlineEditable'
                           ? (rows) => setSecondarySelectedRows(prev => ({ ...prev, [st.key]: rows }))
                           : undefined}
-                        onDeleteRow={enableSecondaryRowDelete && (api?.crud?.[st.key]?.delete ?? true) ? (row) => {
+                        onDeleteRow={!tabReadOnly && enableSecondaryRowDelete && (api?.crud?.[st.key]?.delete ?? true) ? (row) => {
                           setSecondaryDeleteConfirm({
                             tabKey: st.key,
                             tabIndex: stIdx,
@@ -2626,24 +2675,59 @@ export function DetailView({
                         // we update the local cache FIRST so the Radix Select
                         // (and read-mode label) reflect the new pick instantly,
                         // then PATCH the server and roll back if it rejects.
-                        onUpdateRow={!st.customAddModal && linesLayout === 'inlineEditable' ? async (row, fieldKey, value, opts) => {
+                        onUpdateRow={!tabReadOnly && !st.customAddModal && linesLayout === 'inlineEditable' ? async (row, fieldKey, value, opts) => {
                           const childUrl = api?.crud?.[st.key]?.detailUrl?.replace('{id}', row.id)
                             || `${apiBaseUrl}/${st.key}/${row.id}`;
                           const includesIdentifier = opts?.identifier !== undefined;
-                          const optimistic = includesIdentifier
-                            ? { [fieldKey]: value, [`${fieldKey}$_identifier`]: opts.identifier }
-                            : { [fieldKey]: value };
+                          const coerce = (v) => (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v) ? parseFloat(v) : v);
+                          const payloadValue = coerce(value);
+
+                          // Build the row snapshot the callout sees: existing row + the change.
+                          // Mirrors the primary-lines inline-edit flow so AD callouts registered
+                          // on this tab's columns (e.g. SE_CalculateExchangeRate on
+                          // C_Conversion_Rate_Document.Rate / Foreign_Amount) recompute the
+                          // dependent field as the user edits.
+                          const snapshot = { ...row, [fieldKey]: payloadValue };
+                          if (includesIdentifier) {
+                            snapshot[fieldKey + '$_identifier'] = opts.identifier;
+                          }
+                          let derivedUpdates = {};
+                          try {
+                            await handleSecondaryFieldChange(st.key)(fieldKey, payloadValue, snapshot, (updates) => {
+                              derivedUpdates = { ...updates };
+                            });
+                          } catch {
+                            // Callout is best-effort; PATCH continues with the user-typed value only.
+                          }
+
+                          // Optimistic local update folds in any derived callout output so the
+                          // row UI reflects the recomputed values before the PATCH round-trip.
+                          const optimistic = { ...derivedUpdates, [fieldKey]: payloadValue };
+                          if (includesIdentifier) {
+                            optimistic[fieldKey + '$_identifier'] = opts.identifier;
+                          }
                           // Snapshot the previous values so we can revert on failure.
-                          const previous = includesIdentifier
-                            ? { [fieldKey]: row[fieldKey], [`${fieldKey}$_identifier`]: row[`${fieldKey}$_identifier`] }
-                            : { [fieldKey]: row[fieldKey] };
+                          const previous = { [fieldKey]: row[fieldKey] };
+                          if (includesIdentifier) previous[`${fieldKey}$_identifier`] = row[`${fieldKey}$_identifier`];
+                          for (const k of Object.keys(derivedUpdates)) {
+                            if (k.endsWith('$_identifier')) continue;
+                            previous[k] = row[k];
+                          }
                           secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, optimistic);
+
+                          // PATCH body: changed field + derived callout fields, so the server
+                          // persists the same values the user just saw locally.
+                          const patchBody = { [fieldKey]: payloadValue };
+                          for (const [k, v] of Object.entries(derivedUpdates)) {
+                            if (k.endsWith('$_identifier')) continue;
+                            patchBody[k] = coerce(v);
+                          }
                           let res;
                           try {
                             res = await fetch(childUrl, {
                               method: 'PATCH',
                               headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ [fieldKey]: value }),
+                              body: JSON.stringify(patchBody),
                             });
                           } catch (err) {
                             secondaryHooks[stIdx]?.handleUpdateChild?.(row.id, previous);
@@ -2662,7 +2746,7 @@ export function DetailView({
                             throw new Error(msg || 'PATCH failed');
                           }
                         } : undefined}
-                        addRow={st.addLineFields?.entry?.length > 0 ? {
+                        addRow={!tabReadOnly && st.addLineFields?.entry?.length > 0 ? {
                           ref: getSecondaryAddRowRef(st.key),
                           active: addingSecondaryLine[st.key] ?? false,
                           fields: st.addLineFields.entry,
@@ -2678,6 +2762,7 @@ export function DetailView({
                           },
                           onCancel: () => setAddingSecondaryLine(prev => ({ ...prev, [st.key]: false })),
                           catalogs,
+                          onFieldChange: handleSecondaryFieldChange(st.key),
                         } : undefined}
                       />
                     </div>
@@ -2760,7 +2845,7 @@ export function DetailView({
                                 </button>
                               </>
                             )}
-                            {(api?.crud?.[st.key]?.delete ?? true) && selectedSecondaryLine?.id && (
+                            {!tabReadOnly && (api?.crud?.[st.key]?.delete ?? true) && selectedSecondaryLine?.id && (
                               <button
                                 disabled={savingSecondaryLine}
                                 onClick={() => setSecondaryDeleteConfirm({
@@ -2779,7 +2864,7 @@ export function DetailView({
                       </div>
                     )}
                     </div>
-                    {(st.addLineFields?.entry?.length > 0 || st.customAddModal) && hook.editing && (
+                    {!tabReadOnly && (st.addLineFields?.entry?.length > 0 || st.customAddModal) && hook.editing && (
                       // Wrapper measured by the secondary selection bar — its
                       // `position: fixed` portal overlays exactly this region.
                       <div ref={getSecondaryAddLineWrapperRef(st.key)} className="relative">
@@ -2796,7 +2881,7 @@ export function DetailView({
                             hideChevron={hideAddLineChevron}
                           />
                         </span>
-                        {linesLayout === 'inlineEditable' && (api?.crud?.[st.key]?.delete ?? true) && (
+                        {!tabReadOnly && linesLayout === 'inlineEditable' && (api?.crud?.[st.key]?.delete ?? true) && (
                           <LinesSelectionBar
                             visible={secondaryBarVisible[st.key] ?? false}
                             closing={secondaryBarClosing[st.key] ?? false}
@@ -2855,7 +2940,8 @@ export function DetailView({
                     </>
                     )}
                     </div>
-                ))}
+                  );
+                })}
 
                 {/* Tab content: Others (secondary header fields) */}
                 {tabs[activeTab]?.key === 'others' && (
