@@ -12,6 +12,7 @@ export const DEFAULT_CONTEXT_FILES = [
   '.github/copilot-review-instructions.md',
   'docs/agent-context-index.md',
   'docs/architecture-overview.md',
+  'docs/contract-generation-ownership.md',
 ];
 
 function resolveInside(baseDir, relativePath) {

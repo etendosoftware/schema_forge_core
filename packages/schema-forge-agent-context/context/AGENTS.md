@@ -15,6 +15,7 @@ Use this packaged context as the default orientation when working on a consumer 
 - Etendo Go serves runtime API behavior through NEO Headless.
 - External app-shell consumers receive the reusable shell runtime, shared styles, UI primitives, reporting frame, auth helpers, and menu/layout contracts.
 - Generated contracts and generated windows stay outside `@etendosoftware/app-shell-core`.
+- Schema Forge remains the producer of generated contracts and generated outputs unless a consumer repo explicitly owns its own artifact generation.
 
 ## Hard Rules
 
@@ -31,3 +32,4 @@ Use this packaged context as the default orientation when working on a consumer 
 - `.github/copilot-review-instructions.md`
 - `docs/agent-context-index.md`
 - `docs/architecture-overview.md`
+- `docs/contract-generation-ownership.md`

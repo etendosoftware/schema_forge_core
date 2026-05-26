@@ -14,6 +14,7 @@ describe('schema forge agent context', () => {
     assert.ok(files.includes('CLAUDE.md'));
     assert.ok(files.includes('.github/copilot-instructions.md'));
     assert.ok(files.includes('docs/agent-context-index.md'));
+    assert.ok(files.includes('docs/contract-generation-ownership.md'));
   });
 
   it('installs context without overwriting existing files by default', async () => {

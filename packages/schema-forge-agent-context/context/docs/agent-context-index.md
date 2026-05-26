@@ -9,6 +9,7 @@ This package installs a curated context set for downstream agent work.
 - `.github/copilot-instructions.md`: short coding guidance for consumer repos.
 - `.github/copilot-review-instructions.md`: review checklist for package-boundary regressions.
 - `docs/architecture-overview.md`: compact architecture summary.
+- `docs/contract-generation-ownership.md`: producer/consumer rules for contracts and generated outputs.
 
 ## Usage
 
