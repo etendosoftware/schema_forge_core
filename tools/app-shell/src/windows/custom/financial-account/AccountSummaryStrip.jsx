@@ -66,7 +66,7 @@ export function AccountSummaryStrip({ account, totals, loading }) {
                   onClick={handleCopyIban}
                   data-testid="iban-copy-button"
                   className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#828FA3] hover:bg-[#F5F7F9]"
-                  aria-label="Copy IBAN"
+                  aria-label={ui('financeAccountDetailIbanCopyAria')}
                 >
                   <Copy className="h-4 w-4" />
                 </button>

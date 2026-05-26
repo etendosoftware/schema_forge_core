@@ -17529,6 +17529,7 @@
     "financeAccountDetailKpiInflows": "Entradas (30D)",
     "financeAccountDetailKpiOutflows": "Salidas (30D)",
     "financeAccountDetailIbanCopied": "IBAN copiado",
+    "financeAccountDetailIbanCopyAria": "Copiar IBAN",
     "financeAccountMovementsEmpty": "No se encontraron movimientos",
     "financeAccountMovementsFilterAllStatuses": "Todos los estados",
     "financeAccountMovementsFilterLast30d": "Últimos 30 días",
