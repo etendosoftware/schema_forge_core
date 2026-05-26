@@ -470,9 +470,58 @@ function applyEntityDecisions(entity, entityDecision) {
   }
 }
 
+/**
+ * Append virtual fields declared in decisions.json to a curated field list.
+ *
+ * Virtual fields are fields that do NOT exist as columns in the AD schema (e.g. M_InOut)
+ * but are injected at runtime by a NeoHandler's afterHandle hook. They are the equivalent
+ * of Etendo computed columns when the AD version does not support iscomputed, or when the
+ * derivation logic lives in Java rather than SQL.
+ *
+ * Declaration in decisions.json (entities.header or entities.lines):
+ *   "virtualFields": [
+ *     {
+ *       "name": "sourceShipmentDocNo",   // field key used in API response + frontend
+ *       "column": "sourceShipmentDocNo", // must match what afterHandle puts in the JSON
+ *       "label": "Source Shipment",      // raw label; translated via labelOverrides
+ *       "type": "string",                // contract type: string | number | date | boolean
+ *       "visibility": "readOnly",        // always readOnly — handler fills the value
+ *       "form": true,                    // show in the detail form?
+ *       "grid": true,                    // show in the list grid?
+ *       "gridOrder": 6,                  // insertion position in the grid (1-based)
+ *       "section": "principal"           // form section: principal | other | collapsed
+ *     }
+ *   ]
+ *
+ * Rules:
+ * - Virtual fields are appended AFTER schema-derived fields; orderCuratedFields then
+ *   applies gridOrder sorting the same way as for regular fields.
+ * - The NeoHandler MUST inject the value in afterHandle. NEO will NOT derive it from
+ *   the DB automatically (no AD column → no OBDal property → no automatic value).
+ * - Keep "visibility": "readOnly" — there is no DB column to write to.
+ * - "column" value must exactly match the key the handler puts in the JSON object.
+ */
+function appendVirtualFields(curatedFields, entityDecision) {
+  for (const vf of (entityDecision.virtualFields || [])) {
+    curatedFields.push({
+      name: vf.name,
+      column: vf.column ?? vf.name,
+      label: vf.label ?? vf.name,
+      type: vf.type ?? 'string',
+      visibility: vf.visibility ?? 'readOnly',
+      form: vf.form !== false,
+      grid: vf.grid !== false,
+      gridOrder: vf.gridOrder,
+      section: vf.section ?? 'other',
+      virtual: true,
+    });
+  }
+}
+
 function buildCuratedEntity(rawEntity, entityDecision, discardPatterns) {
   const fieldsDecisions = entityDecision.fields || {};
   const curatedFields = buildCuratedFields(rawEntity, fieldsDecisions, discardPatterns);
+  appendVirtualFields(curatedFields, entityDecision);
   const entity = {
     name: entityDecision.name || autoSimplifyEntityName(rawEntity.name),
     tableName: rawEntity.tableName,

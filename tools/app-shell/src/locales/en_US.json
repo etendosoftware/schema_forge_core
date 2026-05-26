@@ -16708,6 +16708,7 @@
     "noPendingGoodsReceiptsForSupplier": "No pending goods receipts for this supplier.",
     "noGoodsReceiptsMatchYourSearch": "No goods receipts match your search.",
     "noCompletedPurchaseOrdersForThisSupplier": "No confirmed purchase orders for this supplier.",
+    "noCompletedShipmentsForThisCustomer": "No completed shipments found for this customer.",
     "noRelatedDocuments": "No related documents",
     "Complete": "Complete",
     "Confirm & Send": "Confirm & Send",

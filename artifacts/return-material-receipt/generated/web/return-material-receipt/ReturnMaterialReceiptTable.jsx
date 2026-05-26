@@ -8,7 +8,7 @@ const columns = [
   { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner', required: true },
   { key: 'documentStatus', column: 'DocStatus', type: 'status', label: 'Document Status', enumLabels: { 'CL': 'Closed', 'CO': 'Completed', 'DR': 'Draft', 'NA': 'Not Accepted', 'WP': 'Not Paid', 'RE': 'Re-Opened', 'TEMP': 'Temporal', 'IP': 'Under Way', '??': 'Unknown', 'VO': 'Voided' }, required: true },
   { key: 'warehouse', column: 'M_Warehouse_ID', type: 'selector', label: 'Warehouse', required: true },
-  { key: 'orderReference', column: 'POReference', type: 'string', label: 'Order Reference' },
+  { key: 'sourceShipmentDocNo', column: 'sourceShipmentDocNo', type: 'string', label: 'Source Shipment' },
 ];
 // @sf-generated-end columns:returnMaterialReceipt
 

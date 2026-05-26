@@ -1,8 +1,8 @@
 {
-  "version": "0.4.0",
+  "version": "0.6.0",
   "generatedAt": "2026-04-29T18:11:05.114Z",
-  "updatedAt": "2026-05-26T12:20:18.300Z",
-  "checksum": "25e84d3a8ef0a417",
+  "updatedAt": "2026-05-26T16:13:04.945Z",
+  "checksum": "0a7202704f7c0282",
   "frontendContract": {
     "window": {
       "id": "123271B9AD60469BAE8A924841456B63",
@@ -16,10 +16,14 @@
       },
       "labelOverrides": {
         "es_ES": {
-          "POReference": "Albarán origen"
+          "sourceShipmentDocNo": "Albarán origen",
+          "movementQuantity": "Cant. a devolver",
+          "orderQuantity": "Cant. entregada original"
         },
         "en_US": {
-          "POReference": "Source Shipment"
+          "sourceShipmentDocNo": "Source Shipment",
+          "movementQuantity": "Return Qty",
+          "orderQuantity": "Original Delivered Qty"
         }
       },
       "dateFilterKey": "movementDate",
@@ -243,20 +247,6 @@
             "gridOrder": 4
           },
           {
-            "name": "orderReference",
-            "apiKey": "orderReference",
-            "column": "POReference",
-            "label": "Order Reference",
-            "type": "string",
-            "tsType": "string",
-            "visibility": "readOnly",
-            "required": false,
-            "grid": true,
-            "form": true,
-            "section": "principal",
-            "gridOrder": 6
-          },
-          {
             "name": "trackingNo",
             "apiKey": "trackingNo",
             "column": "TrackingNo",
@@ -272,6 +262,19 @@
               "raw": "@DeliveryViaRule@='S'",
               "evaluable": true
             }
+          },
+          {
+            "name": "sourceShipmentDocNo",
+            "apiKey": "sourceShipmentDocNo",
+            "column": "sourceShipmentDocNo",
+            "label": "Source Shipment",
+            "type": "string",
+            "tsType": "string",
+            "visibility": "readOnly",
+            "grid": true,
+            "form": true,
+            "section": "principal",
+            "gridOrder": 6
           }
         ],
         "searchableFields": [
@@ -302,7 +305,8 @@
               "source": "DR"
             }
           }
-        ]
+        ],
+        "javaQualifier": "returnMaterialReceiptHeaderHandler"
       },
       "returnMaterialReceiptLine": {
         "tableName": "M_InOutLine",
@@ -319,7 +323,7 @@
             "tsType": "number",
             "visibility": "readOnly",
             "required": true,
-            "grid": true,
+            "grid": false,
             "form": true,
             "sourceRequired": true,
             "derivation": {
@@ -348,6 +352,7 @@
             "reference": "Product",
             "inputMode": "search",
             "section": "principal",
+            "gridOrder": 1,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOutLine_Product"
             },
@@ -375,6 +380,7 @@
             },
             "defaultValue": "0",
             "section": "principal",
+            "gridOrder": 2,
             "readOnlyLogic": {
               "raw": "@Processed@='Y' | @UomManagement@='Y'",
               "evaluable": true,
@@ -390,12 +396,12 @@
             "tsType": "string",
             "visibility": "readOnly",
             "required": true,
-            "grid": true,
+            "grid": false,
             "form": true,
             "sourceRequired": true,
             "reference": "UOM",
             "inputMode": "search",
-            "section": "principal",
+            "section": "other",
             "readOnlyLogic": {
               "raw": "@UomManagement@='Y'",
               "evaluable": true,
@@ -441,7 +447,8 @@
             "required": false,
             "grid": true,
             "form": true,
-            "section": "other",
+            "section": "principal",
+            "gridOrder": 3,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_Conversion"
             },
@@ -474,7 +481,8 @@
               "source": "0"
             }
           }
-        ]
+        ],
+        "javaQualifier": "returnMaterialReceiptLineHandler"
       }
     }
   },
@@ -491,10 +499,14 @@
       },
       "labelOverrides": {
         "es_ES": {
-          "POReference": "Albarán origen"
+          "sourceShipmentDocNo": "Albarán origen",
+          "movementQuantity": "Cant. a devolver",
+          "orderQuantity": "Cant. entregada original"
         },
         "en_US": {
-          "POReference": "Source Shipment"
+          "sourceShipmentDocNo": "Source Shipment",
+          "movementQuantity": "Return Qty",
+          "orderQuantity": "Original Delivered Qty"
         }
       },
       "dateFilterKey": "movementDate",
@@ -631,7 +643,7 @@
             "apiKey": "orderReference",
             "column": "POReference",
             "type": "string",
-            "visibility": "readOnly",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -1049,8 +1061,16 @@
             "type": "foreignKey",
             "visibility": "system",
             "required": true
+          },
+          {
+            "name": "sourceShipmentDocNo",
+            "apiKey": "sourceShipmentDocNo",
+            "column": "sourceShipmentDocNo",
+            "type": "string",
+            "visibility": "readOnly"
           }
-        ]
+        ],
+        "javaQualifier": "returnMaterialReceiptHeaderHandler"
       },
       "returnMaterialReceiptLine": {
         "tableName": "M_InOutLine",
@@ -1337,7 +1357,8 @@
             "visibility": "system",
             "required": true
           }
-        ]
+        ],
+        "javaQualifier": "returnMaterialReceiptLineHandler"
       }
     },
     "endpoints": [
@@ -1618,10 +1639,14 @@
     },
     "labelOverrides": {
       "es_ES": {
-        "POReference": "Albarán origen"
+        "sourceShipmentDocNo": "Albarán origen",
+        "movementQuantity": "Cant. a devolver",
+        "orderQuantity": "Cant. entregada original"
       },
       "en_US": {
-        "POReference": "Source Shipment"
+        "sourceShipmentDocNo": "Source Shipment",
+        "movementQuantity": "Return Qty",
+        "orderQuantity": "Original Delivered Qty"
       }
     }
   },
@@ -1842,20 +1867,20 @@
         "description": "Field 'movementDate' should be present in returnMaterialReceipt"
       },
       {
-        "id": "t-field-presence-returnMaterialReceipt-orderReference",
-        "category": "field-presence",
-        "entity": "returnMaterialReceipt",
-        "field": "orderReference",
-        "runner": "node",
-        "description": "Field 'orderReference' should be present in returnMaterialReceipt"
-      },
-      {
         "id": "t-field-presence-returnMaterialReceipt-partnerAddress",
         "category": "field-presence",
         "entity": "returnMaterialReceipt",
         "field": "partnerAddress",
         "runner": "node",
         "description": "Field 'partnerAddress' should be present in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-presence-returnMaterialReceipt-sourceShipmentDocNo",
+        "category": "field-presence",
+        "entity": "returnMaterialReceipt",
+        "field": "sourceShipmentDocNo",
+        "runner": "node",
+        "description": "Field 'sourceShipmentDocNo' should be present in returnMaterialReceipt"
       },
       {
         "id": "t-field-presence-returnMaterialReceipt-trackingNo",
@@ -1970,20 +1995,20 @@
         "description": "Field 'movementDate' should have type 'string' in returnMaterialReceipt"
       },
       {
-        "id": "t-field-type-returnMaterialReceipt-orderReference",
-        "category": "field-type",
-        "entity": "returnMaterialReceipt",
-        "field": "orderReference",
-        "runner": "node",
-        "description": "Field 'orderReference' should have type 'string' in returnMaterialReceipt"
-      },
-      {
         "id": "t-field-type-returnMaterialReceipt-partnerAddress",
         "category": "field-type",
         "entity": "returnMaterialReceipt",
         "field": "partnerAddress",
         "runner": "node",
         "description": "Field 'partnerAddress' should have type 'string' in returnMaterialReceipt"
+      },
+      {
+        "id": "t-field-type-returnMaterialReceipt-sourceShipmentDocNo",
+        "category": "field-type",
+        "entity": "returnMaterialReceipt",
+        "field": "sourceShipmentDocNo",
+        "runner": "node",
+        "description": "Field 'sourceShipmentDocNo' should have type 'string' in returnMaterialReceipt"
       },
       {
         "id": "t-field-type-returnMaterialReceipt-trackingNo",
@@ -2638,6 +2663,14 @@
         "description": "System field 'orderDate' should exist in backend but not frontend for returnMaterialReceipt"
       },
       {
+        "id": "t-system-field-returnMaterialReceipt-orderReference",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "orderReference",
+        "runner": "node",
+        "description": "System field 'orderReference' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
         "id": "t-system-field-returnMaterialReceipt-organization",
         "category": "system-field",
         "entity": "returnMaterialReceipt",
@@ -3061,7 +3094,7 @@
       }
     ],
     "summary": {
-      "total": 180,
+      "total": 181,
       "byCategory": {
         "action-endpoint": 12,
         "crud-flags": 2,
@@ -3077,11 +3110,11 @@
         "rule-declared": 4,
         "searchable-filters": 5,
         "selector-endpoint": 6,
-        "system-field": 87,
+        "system-field": 88,
         "visibility": 2
       },
       "byRunner": {
-        "node": 178,
+        "node": 179,
         "junit": 2
       }
     }

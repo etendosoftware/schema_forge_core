@@ -26,7 +26,7 @@ function ReturnReceiptStatsPanel({ receipt, partnerName, movementDate, ui }) {
   const docStatus = receipt.documentStatus;
   const statusLabel = ui(STATUS_KEYS[docStatus]) || receipt['documentStatus$_identifier'] || docStatus || '—';
   const statusBadgeClass = STATUS_BADGE[docStatus] || 'bg-gray-50 text-gray-600 border-gray-200';
-  const sourceShipmentRef = receipt.orderReference || null;
+  const sourceShipmentRef = receipt.sourceShipmentDocNo || null;
 
   return (
     <div className="pb-4">

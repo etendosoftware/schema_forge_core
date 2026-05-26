@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DocChip, RelatedDocumentsShell, docChipProps, fetchByCriteria, fetchById } from '@/components/related-documents';
+import { DocChip, RelatedDocumentsShell, docChipProps, fetchById } from '@/components/related-documents';
 import { useUI } from '@/i18n';
 
 export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) {
-  const [sourceShipment, setSourceShipment] = useState(null);
+  const [sourceShipments, setSourceShipments] = useState([]);
   const [salesOrder, setSalesOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -14,23 +14,32 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
   useEffect(() => {
     if (!recordId || !data) { setLoading(false); return; }
     setLoading(true);
-
     const fetches = [];
 
-    if (data.sourceShipmentDocNo) {
+    // sourceShipments is injected by ReturnMaterialReceiptHeaderHandler.afterHandle
+    // as [{id, documentNo}] — one entry per unique source shipment.
+    const shipmentsFromHandler = Array.isArray(data.sourceShipments) ? data.sourceShipments : [];
+
+    if (shipmentsFromHandler.length > 0) {
+      // Fetch full shipment records to get all fields needed by DocChip
+      const shipmentFetches = shipmentsFromHandler.map(({ id }) =>
+        fetchById('goods-shipment', 'goodsShipment', id, token, apiBaseUrl).catch(() => null)
+      );
       fetches.push(
-        fetchByCriteria('goods-shipment', 'goodsShipment', 'documentNo', data.sourceShipmentDocNo, token, apiBaseUrl)
-          .then(rows => setSourceShipment(rows[0] ?? null))
+        Promise.all(shipmentFetches).then((results) =>
+          setSourceShipments(results.filter(Boolean))
+        )
       );
     } else {
-      setSourceShipment(null);
+      setSourceShipments([]);
     }
 
     const orderId = data.salesOrder;
     if (orderId) {
       fetches.push(
         fetchById('sales-order', 'header', orderId, token, apiBaseUrl)
-          .then(o => setSalesOrder(o))
+          .then((o) => setSalesOrder(o))
+          .catch(() => setSalesOrder(null))
       );
     } else {
       setSalesOrder(null);
@@ -41,14 +50,14 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
 
   const chips = [];
 
-  if (sourceShipment) {
+  sourceShipments.forEach((shipment) => {
     chips.push(
       <DocChip
-        key="source-shipment"
-        {...docChipProps({ type: 'shipment', doc: sourceShipment, ui, navigate })}
+        key={`source-shipment-${shipment.id}`}
+        {...docChipProps({ type: 'shipment', doc: shipment, ui, navigate })}
       />
     );
-  }
+  });
 
   if (salesOrder) {
     chips.push(
@@ -60,7 +69,7 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
   }
 
   return (
-    <RelatedDocumentsShell loading={loading} onRefresh={() => setRefreshKey(k => k + 1)}>
+    <RelatedDocumentsShell loading={loading} onRefresh={() => setRefreshKey((k) => k + 1)}>
       {chips}
     </RelatedDocumentsShell>
   );

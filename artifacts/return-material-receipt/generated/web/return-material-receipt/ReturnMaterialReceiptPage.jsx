@@ -14,10 +14,14 @@ const breadcrumb = 'Sales / Return Material Receipt';
 
 const labelOverrides = {
   "es_ES": {
-    "POReference": "Albarán origen"
+    "sourceShipmentDocNo": "Albarán origen",
+    "movementQuantity": "Cant. a devolver",
+    "orderQuantity": "Cant. entregada original"
   },
   "en_US": {
-    "POReference": "Source Shipment"
+    "sourceShipmentDocNo": "Source Shipment",
+    "movementQuantity": "Return Qty",
+    "orderQuantity": "Original Delivered Qty"
   }
 };
 
@@ -25,7 +29,7 @@ const labelOverrides = {
 // @sf-generated-start summary:returnMaterialReceipt
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'orderReference', column: 'POReference', type: 'string' },
+  { key: 'sourceShipmentDocNo', column: 'sourceShipmentDocNo', type: 'string' },
 ];
 
 const statusField = 'documentStatus';
@@ -259,10 +263,14 @@ export const api = {
   },
   "labelOverrides": {
     "es_ES": {
-      "POReference": "Albarán origen"
+      "sourceShipmentDocNo": "Albarán origen",
+      "movementQuantity": "Cant. a devolver",
+      "orderQuantity": "Cant. entregada original"
     },
     "en_US": {
-      "POReference": "Source Shipment"
+      "sourceShipmentDocNo": "Source Shipment",
+      "movementQuantity": "Return Qty",
+      "orderQuantity": "Original Delivered Qty"
     }
   }
 };

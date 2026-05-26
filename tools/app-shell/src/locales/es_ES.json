@@ -16950,6 +16950,7 @@
     "noPendingGoodsReceiptsForSupplier": "No hay albaranes de recepción pendientes para este proveedor.",
     "noGoodsReceiptsMatchYourSearch": "Ningún albarán de recepción coincide con la búsqueda.",
     "noCompletedPurchaseOrdersForThisSupplier": "No hay pedidos de compra confirmados para este proveedor.",
+    "noCompletedShipmentsForThisCustomer": "No se encontraron albaranes completados para este cliente.",
     "noRelatedDocuments": "Sin documentos relacionados",
     "Complete": "Completar",
     "Confirm & Send": "Confirmar y enviar",

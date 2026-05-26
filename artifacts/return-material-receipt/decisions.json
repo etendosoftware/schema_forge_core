@@ -12,16 +12,34 @@
     },
     "labelOverrides": {
       "es_ES": {
-        "POReference": "Albarán origen"
+        "sourceShipmentDocNo": "Albarán origen",
+        "movementQuantity": "Cant. a devolver",
+        "orderQuantity": "Cant. entregada original"
       },
       "en_US": {
-        "POReference": "Source Shipment"
+        "sourceShipmentDocNo": "Source Shipment",
+        "movementQuantity": "Return Qty",
+        "orderQuantity": "Original Delivered Qty"
       }
     }
   },
   "entities": {
     "header": {
       "name": "returnMaterialReceipt",
+      "javaQualifier": "returnMaterialReceiptHeaderHandler",
+      "virtualFields": [
+        {
+          "name": "sourceShipmentDocNo",
+          "column": "sourceShipmentDocNo",
+          "label": "Source Shipment",
+          "type": "string",
+          "visibility": "readOnly",
+          "form": true,
+          "grid": true,
+          "gridOrder": 6,
+          "section": "principal"
+        }
+      ],
       "fields": {
         "movementDate": {
           "grid": true,
@@ -88,11 +106,7 @@
           "visibility": "discarded"
         },
         "orderReference": {
-          "visibility": "readOnly",
-          "grid": true,
-          "gridOrder": 6,
-          "inputMode": "text",
-          "section": "principal"
+          "visibility": "discarded"
         },
         "orderDate": {
           "visibility": "discarded"
@@ -269,14 +283,16 @@
     },
     "lines": {
       "name": "returnMaterialReceiptLine",
+      "javaQualifier": "returnMaterialReceiptLineHandler",
       "fields": {
         "lineNo": {
-          "grid": true,
+          "grid": false,
           "inputMode": "number",
           "section": "principal"
         },
         "product": {
           "grid": true,
+          "gridOrder": 1,
           "searchable": true,
           "inputMode": "search",
           "readOnlyLogic": null,
@@ -284,20 +300,22 @@
         },
         "movementQuantity": {
           "grid": true,
+          "gridOrder": 2,
           "inputMode": "number",
           "readOnlyLogic": null,
           "section": "principal"
         },
         "uOM": {
           "visibility": "readOnly",
-          "grid": true,
+          "grid": false,
           "inputMode": "search",
-          "section": "principal"
+          "section": "other"
         },
         "orderQuantity": {
           "visibility": "readOnly",
           "grid": true,
-          "section": "other"
+          "gridOrder": 3,
+          "section": "principal"
         },
         "salesOrderLine": {
           "visibility": "readOnly",
