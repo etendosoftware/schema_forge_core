@@ -1127,8 +1127,9 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const draftModeValue = draftModeStaticConfig?.enabled
     ? JSON.stringify(draftModeStaticConfig, null, 2)
     : 'null';
+  const draftModePropName = confirmModalName ? 'draftModeWithConfirm' : 'draftMode';
   const draftModeProp = draftModeStaticConfig?.enabled
-    ? `\n        draftMode={${confirmModalName ? 'draftModeWithConfirm' : 'draftMode'}}`
+    ? `\n        draftMode={${draftModePropName}}`
     : '';
   const requiredHeaderFieldsProp = requiredHeaderFieldNames.length > 0
     ? '\n        requiredHeaderFields={requiredHeaderFields}'
@@ -1311,8 +1312,8 @@ import ${detailName}Table from './${detailName}Table';
 import ${detailName}Form from './${detailName}Form';` : ''}
 ${secondaryTabDefs.length > 0 ? `${secondaryTabsImports}\n` : ''}${formFooterImport}${primaryTabsImports}${listKpiCardsImport}${relatedDocsImport}${attachmentsImport}${extraTabsImport}${customCompImportBlock}import catalogs from './mockCatalogs';
 ${isGallery ? `import ${headerName}Gallery from ${resolveCustomImport(specName || headerEntity, `${headerName}Gallery`)};` : ''}${isSidebar ? `
-import ${headerName}Sidebar from ${resolveCustomImport(specName || headerEntity, `${headerName}Sidebar`)};` : (isGallery ? `
-import ${headerName}DetailHeader from ${resolveCustomImport(specName || headerEntity, `${headerName}DetailHeader`)};` : '')}${statusBarImport}${confirmModalImport}
+import ${headerName}Sidebar from ${resolveCustomImport(specName || headerEntity, `${headerName}Sidebar`)};` : ''}${isGallery && !isSidebar ? `
+import ${headerName}DetailHeader from ${resolveCustomImport(specName || headerEntity, `${headerName}DetailHeader`)};` : ''}${statusBarImport}${confirmModalImport}
 
 const breadcrumb = '${windowBreadcrumbOverride !== undefined ? windowBreadcrumbOverride : `${windowCategory} / ${windowLabel}`}';
 ${labelOverridesBlock}${statusBarCode}
