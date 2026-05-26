@@ -47,10 +47,18 @@ jobs:
       - name: App shell core consumer smoke
         run: npm run test:consumer --workspace=packages/app-shell-core
 
+      - name: Schema Forge agent context tests
+        run: npm test --workspace=packages/schema-forge-agent-context
+
+      - name: Schema Forge stack tests
+        run: npm test --workspace=packages/schema-forge-stack
+
       - name: Pack packages
         run: |
           npm pack --workspace=packages/schema-forge-core --dry-run
           npm pack --workspace=packages/app-shell-core --dry-run
+          npm pack --workspace=packages/schema-forge-agent-context --dry-run
+          npm pack --workspace=packages/schema-forge-stack --dry-run
 
       - name: Publish schema forge core
         run: |
@@ -69,5 +77,25 @@ jobs:
             DRY_RUN_ARGS="--dry-run"
           fi
           npm publish --workspace=packages/app-shell-core --tag "${{ inputs.tag }}" $DRY_RUN_ARGS
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish schema forge agent context
+        run: |
+          DRY_RUN_ARGS=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            DRY_RUN_ARGS="--dry-run"
+          fi
+          npm publish --workspace=packages/schema-forge-agent-context --tag "${{ inputs.tag }}" $DRY_RUN_ARGS
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish schema forge stack
+        run: |
+          DRY_RUN_ARGS=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            DRY_RUN_ARGS="--dry-run"
+          fi
+          npm publish --workspace=packages/schema-forge-stack --tag "${{ inputs.tag }}" $DRY_RUN_ARGS
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

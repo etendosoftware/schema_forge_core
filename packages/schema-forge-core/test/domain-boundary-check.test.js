@@ -159,6 +159,28 @@ describe('domain boundary classification', () => {
     );
   });
 
+  it('classifies stack publishing packages as repo infra', () => {
+    assert.deepEqual(
+      classifyPath('packages/schema-forge-stack/src/index.js', { knownWindows: WINDOWS }),
+      { kind: 'schema-forge-stack-package', scope: 'repo-infra' },
+    );
+    assert.deepEqual(
+      classifyPath('packages/schema-forge-agent-context/src/index.js', { knownWindows: WINDOWS }),
+      { kind: 'schema-forge-stack-package', scope: 'repo-infra' },
+    );
+  });
+
+  it('classifies domain boundary gate implementation as repo infra', () => {
+    assert.deepEqual(
+      classifyPath('packages/schema-forge-core/src/domain-boundary/classifier.js', { knownWindows: WINDOWS }),
+      { kind: 'domain-boundary-gate', scope: 'repo-infra' },
+    );
+    assert.deepEqual(
+      classifyPath('packages/schema-forge-core/test/domain-boundary-check.test.js', { knownWindows: WINDOWS }),
+      { kind: 'domain-boundary-gate', scope: 'repo-infra' },
+    );
+  });
+
   it('allows registry registration with a single window slice', () => {
     const report = analyzeBoundary({
       knownWindows: WINDOWS,
@@ -232,6 +254,19 @@ describe('domain boundary classification', () => {
       changedFiles: [
         'package-lock.json',
         'packages/app-shell-core/package.json',
+      ],
+    });
+
+    assert.equal(report.decision, 'pass');
+  });
+
+  it('allows a root lockfile with stack package metadata', () => {
+    const report = analyzeBoundary({
+      knownWindows: WINDOWS,
+      changedFiles: [
+        'package-lock.json',
+        'packages/schema-forge-stack/package.json',
+        'packages/schema-forge-stack/src/index.js',
       ],
     });
 
