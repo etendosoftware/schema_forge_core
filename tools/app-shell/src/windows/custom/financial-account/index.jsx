@@ -3,9 +3,9 @@ import { Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useUI } from '@/i18n';
+import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFinancialAccount } from '@/hooks/useFinancialAccount';
 import { useAccountMovements } from '@/hooks/useAccountMovements';
-import { AccountDetailHeader } from './AccountDetailHeader';
 import { DetailTabs } from './DetailTabs';
 import { MovimientosTab } from './MovimientosTab';
 import { ReconciliacionTab } from './ReconciliacionTab';
@@ -23,11 +23,18 @@ export default function FinancialAccountWindow({ recordId }) {
   const { account } = useFinancialAccount(recordId);
   const { movements, totals, loading: movementsLoading } = useAccountMovements(recordId);
 
+  const accountName = account?.name ?? '';
+  useSetPageMeta(
+    {
+      title: accountName,
+      breadcrumb: `${ui('financeMenuLabel')} / ${ui('financeAccountsPageTitle')} / ${accountName}`,
+    },
+    [accountName],
+  );
+
   return (
     <TooltipProvider>
       <div className="flex h-full flex-col overflow-hidden">
-        {/* Page header */}
-        <AccountDetailHeader account={account} />
 
         {/* Tab strip + Export button */}
         <div className="flex items-center justify-between border-b border-[#E8EAEF] px-4">
