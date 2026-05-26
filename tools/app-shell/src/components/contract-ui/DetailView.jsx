@@ -152,7 +152,7 @@ function CollapsibleSection({ title, children }) {
  */
 function detailContentPadding(linesLayout, hasSidebar, variant) {
   const isInline = linesLayout === 'inlineEditable';
-  if (hasSidebar) return isInline ? 'pr-2' : 'pl-6 pr-2';
+  if (hasSidebar) return isInline ? 'p-2' : 'pl-6 pr-2';
   if (variant === 'panel') return isInline ? 'pr-6' : 'px-6';
   return isInline ? '' : 'px-6';
 }
@@ -259,7 +259,7 @@ export function DetailView({
   additionalDirtyState = false,
   labelOverrides,
   enableSecondaryRowDelete = false,
-  sidebarClassName = 'w-96 shrink-0 overflow-y-auto pt-0 pl-0 pr-4 pb-5',
+  sidebarClassName = 'w-96 shrink-0 overflow-y-auto pt-2 pl-0 pr-4 pb-5',
   linesLayout = 'classic',
   autoSaveOnBlur = false,
   toolbarPaddingX = 'px-6',
@@ -1561,8 +1561,8 @@ export function DetailView({
                   <Printer className="h-4 w-4" />
                 </button>
               )}
-              {/* Delete record — hidden when hideDeleteWhenComplete and status matches */}
-              {!isNew && recordId && isDeleteVisibleForRecord({ record: data, statusField, hideDeleteWhenComplete }) && (
+              {/* Delete record — hidden when hideDeleteWhenComplete and status matches or record is processed */}
+              {!isNew && recordId && isDeleteVisibleForRecord({ record: data, statusField, hideDeleteWhenComplete }) && !(hideDeleteWhenComplete && isProcessed) && (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   className={`${sqBtnSize} flex items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors`}
