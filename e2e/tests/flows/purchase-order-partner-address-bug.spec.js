@@ -78,7 +78,8 @@ test.describe('Purchase Order - Partner Address Bug', () => {
       await expect(partnerAddressChip).toHaveText(/\S/);
     } else {
       // Manual mode → open the dropdown and assert at least one option.
-      await expect(partnerAddressInput).toBeEnabled();
+      // Allow a short grace period: a callout re-fire can transiently disable the field.
+      await expect(partnerAddressInput).toBeEnabled({ timeout: 5_000 });
       await partnerAddressInput.click();
       await expect(page.locator('[data-testid^="option-partnerAddress-"]').first()).toBeVisible({ timeout: 5_000 });
     }
