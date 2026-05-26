@@ -24,7 +24,7 @@ export function columnFlex(col, idx) {
   // — settling for the narrower selector tier (192px) clipped the trailing
   // word inside the trigger. `1 1` keeps the column elastic on top.
   if (col.type === 'enum' || col.type === 'select') return '1 1 224px';
-  if (col.type === 'date') return `${g} 1 130px`;
+  if (col.type === 'date') return '1 1 130px';
   return `${g} 0 120px`;
 }
 
