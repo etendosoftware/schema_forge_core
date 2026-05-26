@@ -16,7 +16,9 @@ import { useLabel, useLocaleSwitch, useUI } from '@/i18n';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import { resolveColumnLabel } from '@/lib/resolveColumnLabel.js';
+import { InlineSearchCombo } from './InlineSearchCombo.jsx';
 import { SelectorInput } from './SelectorInput.jsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import { columnFlex } from '@/lib/linesColumnWidth.js';
 
@@ -141,16 +143,28 @@ function ReadCell({ row, col, locale, t, ui }) {
     return renderDateCell(row[col.key], locale);
   }
   const display = resolveIdentifier(row, col.key);
-  if (typeof display === 'string' && display.length > 60) {
-    return <span className="block max-w-[260px] truncate" title={display}>{display}</span>;
+  if (typeof display === 'string') {
+    return <span className="block truncate" title={display || undefined}>{display}</span>;
   }
   return <span>{display ?? ''}</span>;
+}
+
+function editInputClassName(isNumeric, isInvalid) {
+  const numericClass = isNumeric ? ' text-right tabular-nums' : '';
+  const borderClass = isInvalid ? 'border-red-500 focus-visible:ring-red-500' : 'border-input';
+  return `h-7 px-2 text-sm bg-white${numericClass} ${borderClass}`;
+}
+
+function isValueBelowMin(col, value) {
+  if (col.min === undefined || value === '' || value == null) return false;
+  const num = parseFloat(value);
+  return !isNaN(num) && num < col.min;
 }
 
 /**
  * Edit-mode cell. Returns null for non-editable types so the caller falls back to read mode.
  */
-function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus, entity, token, apiBaseUrl, selectorContext }) {
+function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus, entity, token, apiBaseUrl, selectorContext, isInvalid }) {
   const inputRef = useRef(null);
   useEffect(() => {
     // Only steal focus on initial mount when nothing else is focused. Cells re-mount
@@ -166,9 +180,10 @@ function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus
 
   if (!isCellEditable(col)) return null;
 
-  // Selector / search: reuse the shared dropdown for short catalogs and the full
-  // ProductSearchDrawer modal for fields flagged as lookup/popup (e.g., product). The
-  // selector URL is derived from the entity + DB column, mirroring DataTable's pattern.
+  // Selector / search: use SelectorInput for pure-dropdown FK fields; use
+  // InlineSearchCombo for search-type FK fields so the user can type to filter.
+  // ProductSearchDrawer modal is used for fields flagged as lookup/popup (e.g., product).
+  // The selector URL is derived from the entity + DB column, mirroring DataTable's pattern.
   if (col.type === 'selector' || col.type === 'search') {
     const selectorUrl = apiBaseUrl && col.column
       ? `${apiBaseUrl}/${entity}/selectors/${col.column}`
@@ -189,21 +204,18 @@ function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus
       );
     }
     return (
-      <div className="w-full" data-testid={`field-${col.key}`}>
-        <SelectorInput
-          entityName={entity}
-          field={col}
-          value={value ?? ''}
-          displayValue={displayLabel || ''}
-          onChange={(id, label) => onCommit(id, { identifier: label || '' })}
-          catalogs={null}
-          resolvedLabel={col.label}
-          selectorUrl={selectorUrl}
-          selectorContext={selectorContext}
-          token={token}
-          compact
-        />
-      </div>
+      <InlineSearchCombo
+        field={col}
+        value={value ?? ''}
+        displayLabel={displayLabel || ''}
+        options={[]}
+        onChange={(id, label) => onCommit(id, { identifier: label || '' })}
+        placeholder={col.label}
+        selectorUrl={selectorUrl}
+        selectorContext={selectorContext}
+        token={token}
+        clearOnType={false}
+      />
     );
   }
 
@@ -214,24 +226,28 @@ function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus
     const labels = col.enumLabels || {};
     const options = Object.entries(labels);
     return (
-      <select
-        ref={inputRef}
-        data-testid={`field-${col.key}`}
-        defaultValue={value ?? ''}
-        onChange={(e) => onCommit(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') {
-            e.preventDefault();
-            onCancel?.();
-          }
-        }}
-        className="w-full h-7 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none"
+      <Select
+        value={value || undefined}
+        onValueChange={(val) => onCommit(val === '__empty__' ? '' : val)}
+        required={col.required}
       >
-        {!col.required && <option value="">—</option>}
-        {options.map(([v, label]) => (
-          <option key={v} value={v}>{label}</option>
-        ))}
-      </select>
+        <SelectTrigger
+          ref={inputRef}
+          data-testid={`field-${col.key}`}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') { e.preventDefault(); onCancel?.(); }
+          }}
+          className="w-full h-7 text-sm bg-white focus:ring-2 focus:ring-primary"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {!col.required && <SelectItem value="__empty__">&nbsp;</SelectItem>}
+          {options.map(([v, label]) => (
+            <SelectItem key={v} value={v}>{label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     );
   }
 
@@ -270,7 +286,7 @@ function EditCell({ col, row, value, displayLabel, onCommit, onCancel, autoFocus
           onCancel?.();
         }
       }}
-      className={`h-7 px-2 text-sm border-input${isNumeric ? ' text-right tabular-nums' : ''}`}
+      className={editInputClassName(isNumeric, isInvalid)}
       {...numericProps}
     />
   );
@@ -321,6 +337,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
   const [editingRowId, setEditingRowId] = useState(null);
   const [hoveredRowId, setHoveredRowId] = useState(null);
   const panelRef = useRef(null);
+  const hasValidationErrorRef = useRef(false);
 
   // Close edit mode when the user clicks outside the editing row. Defers the state
   // update to the next tick so any focused input fires its onBlur first — that triggers
@@ -342,13 +359,17 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
       for (const sel of portalSelectors) {
         if (e.target.closest?.(sel)) return;
       }
-      setTimeout(() => setEditingRowId(null), 0);
+      setTimeout(() => {
+        if (hasValidationErrorRef.current) return;
+        setEditingRowId(null);
+      }, 0);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [editingRowId]);
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [pendingDelete, setPendingDelete] = useState(null);
+  const [invalidCell, setInvalidCell] = useState(null);
 
   // Active in-flight edit. Holds the latest pending field commit so a global "Save"
   // can flush it via the imperative ref before the document save runs.
@@ -423,9 +444,17 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
 
   const commitField = useCallback(async (row, col, value, extras = {}) => {
     if (isDocumentReadOnly) return;
+    hasValidationErrorRef.current = false;
+    setInvalidCell(null);
     const original = row[col.key];
     // Skip if unchanged (string compare for safety against type drift).
     if (String(original ?? '') === String(value ?? '')) return;
+    if (isValueBelowMin(col, value)) {
+      hasValidationErrorRef.current = true;
+      setInvalidCell({ rowId: row.id, colKey: col.key });
+      toast.error(ui('fieldMinValueError'));
+      return;
+    }
     pendingEditRef.current = { rowId: row.id, key: col.key };
     try {
       await onUpdateRow?.(row, col.key, value, {
@@ -515,7 +544,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
         className="flex items-stretch border-b sticky top-0 z-10 bg-white"
         style={{ borderColor: TOKENS.separator, height: TOKENS.rowHeight, ...headerStyle }}
       >
-        <div className="flex items-center justify-center px-2" style={{ width: 40 }}>
+        <div className="flex items-center justify-center px-2" style={{ width: 40, flexShrink: 0 }}>
           <Checkbox
             aria-label={ui('selectAll')}
             checked={allSelected}
@@ -534,6 +563,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
               flex: columnFlex(col, idx),
               justifyContent: 'flex-start',
               textAlign: 'left',
+              minWidth: 0,
             }}
           >
             {resolveColumnLabel(col, locale, t)}
@@ -583,7 +613,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
             } : undefined}
           >
             {/* Selection checkbox */}
-            <div className="flex items-center justify-center px-2" style={{ width: 40 }}>
+            <div className="flex items-center justify-center px-2" style={{ width: 40, flexShrink: 0 }}>
               <Checkbox
                 aria-label={ui('selectRow') ?? 'Select row'}
                 checked={isSelected}
@@ -611,6 +641,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
                 flex: columnFlex(col, idx),
                 justifyContent: isNumeric ? 'flex-end' : 'flex-start',
                 textAlign: isNumeric ? 'right' : 'left',
+                minWidth: 0,
               };
 
               return (
@@ -637,6 +668,7 @@ const InlineLinesPanel = forwardRef(function InlineLinesPanel({
                       token={token}
                       apiBaseUrl={apiBaseUrl}
                       selectorContext={selectorContext}
+                      isInvalid={invalidCell?.rowId === row.id && invalidCell?.colKey === col.key}
                       onCommit={(val, extras) => commitField(row, col, val, extras)}
                       onCancel={() => setEditingRowId(null)}
                     />

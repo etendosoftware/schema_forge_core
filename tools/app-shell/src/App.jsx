@@ -16,6 +16,7 @@ import CrmPage from './pages/CrmPage.jsx';
 import HrPage from './pages/HrPage.jsx';
 import ProjectsPage from './pages/ProjectsPage.jsx';
 import ReportViewerPage from './pages/ReportViewerPage.jsx';
+import FinancialAccountsPage from './pages/FinancialAccountsPage.jsx';
 import { buildMenuGroups, buildWindowMap } from './windows/registry.js';
 import { createMockFetch } from './lib/mockFetch.js';
 import { LocaleProvider } from './i18n/index.js';
@@ -25,6 +26,7 @@ import { useInstalledApps } from './hooks/useInstalledApps.js';
 import { useAppStoreUnlock, attachKeySequenceWatcher } from './hooks/useAppStoreUnlock.js';
 import { CurrencyProvider } from './hooks/useCurrency.jsx';
 import { buildOnboardingReturnTo } from './lib/oauthReturnTo.js';
+import { ObservabilityRouteTracker } from './lib/observability/RouteTracker.jsx';
 
 import ArtifactViewerPage from './pages/ArtifactViewerPage.jsx';
 
@@ -106,6 +108,7 @@ async function loadAllMockData() {
     import('@generated/unit-of-measure/generated/web/unit-of-measure/mockData.js'),
     import('@generated/fiscal-config/custom/mockData.js'),
     import('@generated/fiscal-monitor/custom/mockData.js'),
+    import('@generated/fiscal-models/custom/mockData.js'),
   ]);
 
   const merged = {};
@@ -165,6 +168,7 @@ function AppRoutes({ menuGroups, windowMap }) {
         <Route path="inventory" element={<InventoryPage />} />
         <Route path="purchases" element={<PurchasesPage />} />
         <Route path="accounting" element={<AccountingPage />} />
+        <Route path="finance/accounts" element={<FinancialAccountsPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="report-viewer" element={<ReportViewerPage />} />
         <Route path="crm" element={<CrmPage />} />
@@ -253,6 +257,7 @@ export default function App() {
 
   return (
     <BrowserRouter basename={routerBase}>
+      <ObservabilityRouteTracker />
       <ServiceWorkerManager />
       <AppStoreKeyWatcher />
       <LocaleProvider locale={locale} setLocale={setLocale}>

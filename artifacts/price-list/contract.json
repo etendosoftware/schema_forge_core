@@ -1,8 +1,8 @@
 {
   "version": "0.2.0",
   "generatedAt": "2026-04-29T18:12:11.134Z",
-  "updatedAt": "2026-05-12T19:44:24.001Z",
-  "checksum": "f660c4f25f448e0b",
+  "updatedAt": "2026-05-15T16:00:23.299Z",
+  "checksum": "b0c07294925ffebf",
   "frontendContract": {
     "window": {
       "id": "146",
@@ -1483,12 +1483,6 @@
         "description": "Field 'standardPrice' should have type 'number' in productPrice"
       },
       {
-        "id": "t-rule-declared",
-        "category": "rule-declared",
-        "runner": "node",
-        "description": "Rule 'undefined' (displayLogic) should be declared"
-      },
-      {
         "id": "t-rule-declared-AD-Client-Security-validation",
         "category": "rule-declared",
         "rule": "AD_Client Security validation",
@@ -1522,6 +1516,27 @@
         "rule": "M_PriceList Base",
         "runner": "node",
         "description": "Rule 'M_PriceList Base' (validation) should be declared"
+      },
+      {
+        "id": "t-rule-declared-price-list-Price-List-Costbased-displayLogic",
+        "category": "rule-declared",
+        "rule": "price-list-Price List-Costbased-displayLogic",
+        "runner": "node",
+        "description": "Rule 'price-list-Price List-Costbased-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-price-list-Product-Price-Algorithm-displayLogic",
+        "category": "rule-declared",
+        "rule": "price-list-Product Price-Algorithm-displayLogic",
+        "runner": "node",
+        "description": "Rule 'price-list-Product Price-Algorithm-displayLogic' (displayLogic) should be declared"
+      },
+      {
+        "id": "t-rule-declared-price-list-Product-Price-Cost-displayLogic",
+        "category": "rule-declared",
+        "rule": "price-list-Product Price-Cost-displayLogic",
+        "runner": "node",
+        "description": "Rule 'price-list-Product Price-Cost-displayLogic' (displayLogic) should be declared"
       },
       {
         "id": "t-rule-declared-Records-belonging-to-any-org-declared-in-the-role",
@@ -1847,7 +1862,7 @@
       }
     ],
     "summary": {
-      "total": 99,
+      "total": 101,
       "byCategory": {
         "action-endpoint": 2,
         "crud-flags": 3,
@@ -1856,14 +1871,14 @@
         "displaylogic-valid": 3,
         "field-presence": 18,
         "field-type": 18,
-        "rule-declared": 9,
+        "rule-declared": 11,
         "searchable-filters": 1,
         "selector-endpoint": 4,
         "system-field": 30,
         "visibility": 3
       },
       "byRunner": {
-        "node": 99,
+        "node": 101,
         "junit": 0
       }
     }

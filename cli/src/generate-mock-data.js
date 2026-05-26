@@ -3,7 +3,10 @@ import { resolve, dirname } from 'node:path';
 
 function toJsIdentifier(name) {
   if (!name) return '';
-  return name.replace(/[^a-zA-Z0-9_$]/g, '');
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9_$]/g, '');
 }
 
 // --- Data pools ---
@@ -105,44 +108,24 @@ export function generateMockValue(field, index, entityName) {
   }
 
   // documentNo or fields ending in No (but not lineNo which is handled above)
-  if (name === 'documentNo' || (name.endsWith('No') && name !== 'lineNo')) {
+  if (isDocumentOrNumberField(name)) {
     const prefix = entityPrefix(entityName);
     return `${prefix}-${padNumber(index + 1)}`;
   }
 
-  // Business partner / customer
-  if (nameLower.includes('partner') || nameLower.includes('customer')) {
-    return cyclePool(COMPANY_NAMES, index);
-  }
-
   // Doc status
-  if (name === 'docStatus' || nameLower.includes('status')) {
+  if (isDocumentStatus(name, nameLower)) {
     return cyclePool(DOC_STATUSES, index);
   }
 
-  // Currency
-  if (nameLower.includes('currency')) {
-    return cyclePool(CURRENCIES, index);
-  }
-
-  // Warehouse
-  if (nameLower.includes('warehouse')) {
-    return cyclePool(WAREHOUSE_NAMES, index);
-  }
-
-  // Product
-  if (nameLower.includes('product')) {
-    return cyclePool(PRODUCT_NAMES, index);
+  const dependentValue = resolveFieldDependentValue(nameLower, index);
+  if (dependentValue !== null) {
+    return dependentValue;
   }
 
   // Description
   if (name === 'description') {
     return cyclePool(DESCRIPTION_PHRASES, index);
-  }
-
-  // Tax
-  if (nameLower.includes('tax')) {
-    return cyclePool(TAX_NAMES, index);
   }
 
   // Discount
@@ -187,6 +170,33 @@ export function generateMockValue(field, index, entityName) {
 
   // Default string
   return `Sample ${name}`;
+}
+
+function resolveFieldDependentValue(nameLower, index) {
+  if (nameLower.includes('partner') || nameLower.includes('customer')) {
+    return cyclePool(COMPANY_NAMES, index);
+  }
+  if (nameLower.includes('currency')) {
+    return cyclePool(CURRENCIES, index);
+  }
+  if (nameLower.includes('warehouse')) {
+    return cyclePool(WAREHOUSE_NAMES, index);
+  }
+  if (nameLower.includes('product')) {
+    return cyclePool(PRODUCT_NAMES, index);
+  }
+  if (nameLower.includes('tax')) {
+    return cyclePool(TAX_NAMES, index);
+  }
+  return null;
+}
+
+function isDocumentStatus(name, nameLower) {
+  return name === 'docStatus' || nameLower.includes('status');
+}
+
+function isDocumentOrNumberField(name) {
+  return name === 'documentNo' || (name.endsWith('No') && name !== 'lineNo');
 }
 
 /**

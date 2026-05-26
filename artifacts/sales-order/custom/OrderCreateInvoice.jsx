@@ -277,10 +277,23 @@ export function ConfirmModal({ orderId, data, apiBaseUrl, headers, onClose, onCo
   const d              = freshData || data || {};
   const documentNo     = d.documentNo || '';
   const bpName         = d['businessPartner$_identifier'] || '';
+  // Apply etgoTotalDiscount client-side only while the order is still in DR — at
+  // that point TotalDiscountService has not yet materialized the ETGO_DTO line, so
+  // the server totals are pre-discount and we show the user what the totals WILL be
+  // once the order transitions to CO. After CO the totals already reflect the
+  // discount and any extra factor would double-apply it.
   const discountPct    = Number(d.etgoTotalDiscount ?? 0);
-  const discountFactor = discountPct > 0 ? (1 - discountPct / 100) : 1;
-  const grandTotal     = (Number(d.grandTotalAmount) || 0) * discountFactor;
-  const totalLines     = (Number(d.summedLineAmount ?? d.totalLines ?? d.grandTotalAmount ?? 0) || 0) * discountFactor;
+  const isPreCompletion = d.documentStatus === 'DR';
+  const discountFactor = (isPreCompletion && discountPct > 0) ? (1 - discountPct / 100) : 1;
+  // Same accounting rule as DocumentTotalsPanel: the displayed total must equal
+  // round(net × factor) + round(tax × factor), not round(gross × factor).
+  // Avoids the 1-cent double-rounding drift versus the order's right panel and
+  // the printed invoice (AEAT/Modelo 303 rule "base + IVA = total").
+  const round2        = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+  const grossBase     = Number(d.grandTotalAmount) || 0;
+  const netBase       = Number(d.summedLineAmount ?? d.totalLines ?? grossBase) || 0;
+  const totalLines    = round2(netBase * discountFactor);
+  const grandTotal    = totalLines + round2((grossBase - netBase) * discountFactor);
   const currency       = d['currency$_identifier'] || '';
 
   const handleConfirm = async () => {

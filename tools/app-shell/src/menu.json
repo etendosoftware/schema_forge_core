@@ -257,9 +257,16 @@
           "windowId": "6F8F913FA60F4CBD93DC1D3AA696E76E"
         },
         {
+          "name": "financial-accounts",
+          "label": "Accounts",
+          "favname": "Accounts",
+          "path": "finance/accounts"
+        },
+        {
           "name": "bank-reconciliation",
           "label": "Bank Reconciliation",
-          "favname": "Bank Reconciliation"
+          "favname": "Bank Reconciliation",
+          "hidden": true
         },
         {
           "name": "chart-of-accounts",
@@ -289,6 +296,11 @@
           "label": "Conversion Rates",
           "favname": "Conversion Rates",
           "windowId": "116"
+        },
+        {
+          "name": "fiscal-models",
+          "label": "Fiscal Models",
+          "favname": "Fiscal Models"
         },
         {
           "name": "report-viewer-finance",

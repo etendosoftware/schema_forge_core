@@ -92,13 +92,6 @@ test.describe('Fiscal Config — unconfigured (wizard)', () => {
     ).toBeVisible({ timeout: 8_000 });
   });
 
-  test('WIP badge is visible on the wizard screen', async ({ page }) => {
-    await loginWithOrg(page);
-    await installFiscalConfigMocks(page);
-    await navigateTo(page, 'fiscal-config');
-
-    await expect(page.getByText(t('fiscal.wip.badge'))).toBeVisible({ timeout: 8_000 });
-  });
 });
 
 test.describe('Fiscal Config — SII profile', () => {
@@ -108,7 +101,6 @@ test.describe('Fiscal Config — SII profile', () => {
     await navigateTo(page, 'fiscal-config');
 
     await expect(page.getByText(t('fiscal.sii.field.enrolled'))).toBeVisible({ timeout: 8_000 });
-    await expect(page.getByText(t('fiscal.wip.badge'))).toBeVisible();
   });
 
   test('shows the Navarra SII section when the SII record has navarra=Y', async ({ page }) => {

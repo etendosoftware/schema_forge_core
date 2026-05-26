@@ -180,12 +180,22 @@ describe('InvoicePreviewModal', () => {
 
   it('shows the total section', () => {
     renderPreview();
-    expect(screen.getByText('invoicePreviewTotal')).toBeInTheDocument();
+    expect(screen.getByText('previewCardTotal')).toBeInTheDocument();
   });
 
-  it('renders action buttons (send, payment, edit)', () => {
-    renderPreview();
+  it('does NOT render send button for purchase-invoice', () => {
+    // Purchase invoices are received from suppliers — sending them makes no sense.
+    renderPreview({ specName: 'purchase-invoice' });
+    expect(screen.queryByText('invoicePreviewSend')).not.toBeInTheDocument();
+  });
+
+  it('renders send button for sales-invoice', () => {
+    renderPreview({ specName: 'sales-invoice' });
     expect(screen.getAllByText('invoicePreviewSend').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders payment and edit action buttons', () => {
+    renderPreview();
     expect(screen.getAllByText('invoicePreviewAddPayment').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('invoicePreviewEdit')).toBeInTheDocument();
   });

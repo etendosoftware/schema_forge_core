@@ -1,6 +1,6 @@
 {
-  "refreshedAt": "2026-05-26T14:01:10.730Z",
-  "count": 476,
+  "refreshedAt": "2026-05-21T20:18:43.306Z",
+  "count": 462,
   "entries": [
     {
       "id": "120",
@@ -14,6 +14,13 @@
       "name": "Account Combination",
       "type": "window",
       "windowId": "153",
+      "processId": null
+    },
+    {
+      "id": "105",
+      "name": "Account Tree",
+      "type": "window",
+      "windowId": "118",
       "processId": null
     },
     {
@@ -42,13 +49,6 @@
       "name": "Accounting Transaction Details",
       "type": "window",
       "windowId": "162",
-      "processId": null
-    },
-    {
-      "id": "105",
-      "name": "Account Tree",
-      "type": "window",
-      "windowId": "118",
       "processId": null
     },
     {
@@ -122,21 +122,7 @@
       "processId": null
     },
     {
-      "id": "800076",
-      "name": "Analysis Tools",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "280",
-      "name": "Analysis Tools",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800075",
+      "id": "800078",
       "name": "Analysis Tools",
       "type": "folder",
       "windowId": null,
@@ -150,27 +136,6 @@
       "processId": null
     },
     {
-      "id": "800077",
-      "name": "Analysis Tools",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800078",
-      "name": "Analysis Tools",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800079",
-      "name": "Analysis Tools",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
       "id": "800081",
       "name": "Analysis Tools",
       "type": "folder",
@@ -178,7 +143,42 @@
       "processId": null
     },
     {
+      "id": "280",
+      "name": "Analysis Tools",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800077",
+      "name": "Analysis Tools",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800076",
+      "name": "Analysis Tools",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
       "id": "800141",
+      "name": "Analysis Tools",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800075",
+      "name": "Analysis Tools",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800079",
       "name": "Analysis Tools",
       "type": "folder",
       "windowId": null,
@@ -458,6 +458,20 @@
       "processId": null
     },
     {
+      "id": "241",
+      "name": "Cash Journal",
+      "type": "window",
+      "windowId": "198",
+      "processId": null
+    },
+    {
+      "id": "800011",
+      "name": "Cash Report",
+      "type": "report",
+      "windowId": null,
+      "processId": "800191"
+    },
+    {
       "id": "240",
       "name": "Cashbook",
       "type": "window",
@@ -479,20 +493,6 @@
       "processId": null
     },
     {
-      "id": "241",
-      "name": "Cash Journal",
-      "type": "window",
-      "windowId": "198",
-      "processId": null
-    },
-    {
-      "id": "800011",
-      "name": "Cash Report",
-      "type": "report",
-      "windowId": null,
-      "processId": "800191"
-    },
-    {
       "id": "D6B02292A6384E4DAD47878D6AFCE449",
       "name": "Cause exemption SII",
       "type": "window",
@@ -507,24 +507,10 @@
       "processId": null
     },
     {
-      "id": "3E6E62DC47464A799D0ABBD54ED39A5E",
-      "name": "Check and Register Printers",
-      "type": "other",
-      "windowId": null,
-      "processId": null
-    },
-    {
       "id": "60237A5A5B644457B8A9BDF80473A901",
       "name": "Check Printing",
       "type": "window",
       "windowId": "4DF4EB9416CA4C7E8013B39B3AC33236",
-      "processId": null
-    },
-    {
-      "id": "C55BA82658FE4E1EA310EAA3A6BDEBF6",
-      "name": "Clear Report Cache",
-      "type": "other",
-      "windowId": null,
       "processId": null
     },
     {
@@ -556,17 +542,17 @@
       "processId": null
     },
     {
-      "id": "DA0544E59BC84E129ACB64EF0D355E54",
-      "name": "Cluster Services",
-      "type": "window",
-      "windowId": "C09BDAD99A6F4276B022BF2ABBB386AC",
-      "processId": null
-    },
-    {
       "id": "E7F3F7CCB0C246B3903FFAB6AEFF126D",
       "name": "Cluster Service Settings",
       "type": "window",
       "windowId": "3F38D98AF2FA4F888E2DAEAC7BCF8724",
+      "processId": null
+    },
+    {
+      "id": "DA0544E59BC84E129ACB64EF0D355E54",
+      "name": "Cluster Services",
+      "type": "window",
+      "windowId": "C09BDAD99A6F4276B022BF2ABBB386AC",
       "processId": null
     },
     {
@@ -644,20 +630,6 @@
       "name": "Conversations",
       "type": "window",
       "windowId": "ED6F763A2C5F49189AD2760A2509F11D",
-      "processId": null
-    },
-    {
-      "id": "67AB359DD59344CE932FBB97D878B898",
-      "name": "Conversion Rate Downloader Log",
-      "type": "window",
-      "windowId": "6FEBA130CDE24CC09041FFA6117ADFA9",
-      "processId": null
-    },
-    {
-      "id": "26F293D1F1374C20BA4BEADE311E6856",
-      "name": "Conversion Rate Download Rule",
-      "type": "window",
-      "windowId": "E9F23872C757473EA7310DAD7FBAE782",
       "processId": null
     },
     {
@@ -787,13 +759,6 @@
       "processId": null
     },
     {
-      "id": "47074A705B6943DFA19572AD877AA16F",
-      "name": "Currency Converters",
-      "type": "window",
-      "windowId": "7FCA3B15B7B84B89B01A74D586C08096",
-      "processId": null
-    },
-    {
       "id": "800260",
       "name": "Customer Invoice Report",
       "type": "report",
@@ -806,13 +771,6 @@
       "type": "process",
       "windowId": null,
       "processId": "D234AE084F7040DCB66E281A4237FF99"
-    },
-    {
-      "id": "F990D3F85B7D453491A37D11CB46F2DA",
-      "name": "Dashboard Widget",
-      "type": "window",
-      "windowId": "8D7D9D0836B74A29A5B359986B67C6AC",
-      "processId": null
     },
     {
       "id": "157",
@@ -969,13 +927,6 @@
       "processId": null
     },
     {
-      "id": "045F3883A86A4A6A99B40191B3B110C3",
-      "name": "EAN128 Type",
-      "type": "window",
-      "windowId": "D203740C27C4471783C42AE9FC8D9EE6",
-      "processId": null
-    },
-    {
       "id": "138",
       "name": "Element",
       "type": "window",
@@ -1032,17 +983,17 @@
       "processId": null
     },
     {
-      "id": "3A3A70CD525F4618B95B50D96FFB2759",
-      "name": "Events",
-      "type": "window",
-      "windowId": "149178F60513452EA665034F72017A0C",
-      "processId": null
-    },
-    {
       "id": "5BB14FDDC28445DEA963052CAC087688",
       "name": "Event Type",
       "type": "window",
       "windowId": "A4B45ED5B51F465387FACC7A7BEC4EE1",
+      "processId": null
+    },
+    {
+      "id": "3A3A70CD525F4618B95B50D96FFB2759",
+      "name": "Events",
+      "type": "window",
+      "windowId": "149178F60513452EA665034F72017A0C",
       "processId": null
     },
     {
@@ -1417,25 +1368,11 @@
       "processId": null
     },
     {
-      "id": "327",
-      "name": "Invoiceable Expenses",
-      "type": "window",
-      "windowId": "242",
-      "processId": null
-    },
-    {
       "id": "800285",
       "name": "Invoice Detail",
       "type": "report",
       "windowId": null,
       "processId": "800201"
-    },
-    {
-      "id": "800069",
-      "name": "Invoiced Sales Order Report",
-      "type": "report",
-      "windowId": null,
-      "processId": "800190"
     },
     {
       "id": "ED8D9B496F224035A94D0BAD73C7BF7C",
@@ -1457,6 +1394,20 @@
       "type": "window",
       "windowId": "147",
       "processId": null
+    },
+    {
+      "id": "327",
+      "name": "Invoiceable Expenses",
+      "type": "window",
+      "windowId": "242",
+      "processId": null
+    },
+    {
+      "id": "800069",
+      "name": "Invoiced Sales Order Report",
+      "type": "report",
+      "windowId": null,
+      "processId": "800190"
     },
     {
       "id": "7F01FBD322B1422A820FAD25582614F7",
@@ -1893,18 +1844,18 @@
       "processId": null
     },
     {
-      "id": "800029",
-      "name": "Payment Report",
-      "type": "report",
-      "windowId": null,
-      "processId": "800026"
-    },
-    {
       "id": "C662C29A164243C18C71BE164899A71B",
       "name": "Payment Report",
       "type": "report",
       "windowId": null,
       "processId": "6AD04479EC134BD4826077F36B709876"
+    },
+    {
+      "id": "800029",
+      "name": "Payment Report",
+      "type": "report",
+      "windowId": null,
+      "processId": "800026"
     },
     {
       "id": "D0022AAFF0F44BBCA96AA7D007E65C7D",
@@ -2033,38 +1984,10 @@
       "processId": null
     },
     {
-      "id": "15CD2E1C94B745FD83696382065625D1",
-      "name": "Printers",
-      "type": "window",
-      "windowId": "842D9AB0F1434AFFAAAF5C7071CB785C",
-      "processId": null
-    },
-    {
       "id": "326",
       "name": "Printing Options",
       "type": "folder",
       "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "30FECE60758F4F35BC283020024814DC",
-      "name": "Print Provider Configuration",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "F07BB678136E4E0ABE4EF8A36A6470D0",
-      "name": "Print Providers",
-      "type": "window",
-      "windowId": "C74699BFC11D43279D849531573F0283",
-      "processId": null
-    },
-    {
-      "id": "63C62821515641B3AF004DF8A87D9B48",
-      "name": "Print Templates",
-      "type": "window",
-      "windowId": "59149A0FD2ED4527B0437D3B7C73BBDD",
       "processId": null
     },
     {
@@ -2152,6 +2075,27 @@
       "processId": null
     },
     {
+      "id": "183",
+      "name": "Product Management",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800052",
+      "name": "Product Movements Report",
+      "type": "report",
+      "windowId": null,
+      "processId": "800046"
+    },
+    {
+      "id": "800239",
+      "name": "Product Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
       "id": "800210",
       "name": "Production Cost Report",
       "type": "report",
@@ -2180,38 +2124,10 @@
       "processId": "800173"
     },
     {
-      "id": "183",
-      "name": "Product Management",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800052",
-      "name": "Product Movements Report",
-      "type": "report",
-      "windowId": null,
-      "processId": "800046"
-    },
-    {
-      "id": "800239",
-      "name": "Product Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
       "id": "160",
       "name": "Project and Service Management",
       "type": "folder",
       "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "AF62D2F3AC4C46529940D624F20C5D8B",
-      "name": "Projections and Mappings",
-      "type": "window",
-      "windowId": "1EF24B60ADE04916AC80BFAEEA80BCC7",
       "processId": null
     },
     {
@@ -2236,17 +2152,17 @@
       "processId": null
     },
     {
+      "id": "AF62D2F3AC4C46529940D624F20C5D8B",
+      "name": "Projections and Mappings",
+      "type": "window",
+      "windowId": "1EF24B60ADE04916AC80BFAEEA80BCC7",
+      "processId": null
+    },
+    {
       "id": "800181",
       "name": "Promissory Note Format",
       "type": "window",
       "windowId": "800069",
-      "processId": null
-    },
-    {
-      "id": "BA0F13943392442FBAF78A7DE1C5B236",
-      "name": "Provider Implementation",
-      "type": "window",
-      "windowId": "34C69B733AB24D39AC65DE1D7ECFA776",
       "processId": null
     },
     {
@@ -2635,35 +2551,14 @@
       "processId": null
     },
     {
+      "id": "800233",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
       "id": "167",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800256",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800255",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800251",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800248",
       "name": "Setup",
       "type": "folder",
       "windowId": null,
@@ -2677,7 +2572,35 @@
       "processId": null
     },
     {
+      "id": "800248",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
       "id": "C3805F4FAB2E491B8B18D5F6CB4F1737",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800251",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800255",
+      "name": "Setup",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800256",
       "name": "Setup",
       "type": "folder",
       "windowId": null,
@@ -2692,13 +2615,6 @@
     },
     {
       "id": "164",
-      "name": "Setup",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800233",
       "name": "Setup",
       "type": "folder",
       "windowId": null,
@@ -3006,13 +2922,6 @@
       "processId": null
     },
     {
-      "id": "07E5DE6F39144EDD95B95BE8807AFA90",
-      "name": "Toolbar",
-      "type": "window",
-      "windowId": "4FE0AD117B1646F29CCE014F06413228",
-      "processId": null
-    },
-    {
       "id": "800128",
       "name": "Toolset",
       "type": "window",
@@ -3034,35 +2943,14 @@
       "processId": null
     },
     {
+      "id": "800242",
+      "name": "Transactions",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
       "id": "800250",
-      "name": "Transactions",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800254",
-      "name": "Transactions",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800244",
-      "name": "Transactions",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800247",
-      "name": "Transactions",
-      "type": "folder",
-      "windowId": null,
-      "processId": null
-    },
-    {
-      "id": "800249",
       "name": "Transactions",
       "type": "folder",
       "windowId": null,
@@ -3076,6 +2964,20 @@
       "processId": null
     },
     {
+      "id": "800254",
+      "name": "Transactions",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800247",
+      "name": "Transactions",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
       "id": "800245",
       "name": "Transactions",
       "type": "folder",
@@ -3083,7 +2985,14 @@
       "processId": null
     },
     {
-      "id": "800242",
+      "id": "800244",
+      "name": "Transactions",
+      "type": "folder",
+      "windowId": null,
+      "processId": null
+    },
+    {
+      "id": "800249",
       "name": "Transactions",
       "type": "folder",
       "windowId": null,
@@ -3255,13 +3164,6 @@
       "name": "Widget",
       "type": "window",
       "windowId": "519E5DF804FD4BC4B0FBE6DD51F3EDA8",
-      "processId": null
-    },
-    {
-      "id": "F6E5D4C3B2A1F0E9D8C7B6A5F4E3D2C1",
-      "name": "Widget Class",
-      "type": "window",
-      "windowId": "A1B2C3D4E5F6A7B8C9D0E1F2A3B4C5D6",
       "processId": null
     },
     {

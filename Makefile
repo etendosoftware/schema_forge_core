@@ -1,4 +1,4 @@
-.PHONY: test test-all-coverage test-ci test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-with-shell dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate sonar sonar-coverage menu-cache uuid
+.PHONY: test test-all-coverage test-ci test-frontend test-e2e test-e2e-headless test-e2e-debug test-e2e-ui test-e2e-report test-e2e-record generate regen dev dev-with-shell dev-mock build install install-e2e deploy clean help report-serve report-serve-detach report-stop report-preview validate-pipeline quality-gate sonar sonar-coverage menu-cache uuid test-xml-regeneration-check test-python xml-regeneration-check dump-delta regen-check regen-check-help regen-check-clean regen-help
 
 # --- Testing ---
 
@@ -20,7 +20,7 @@ test-all-coverage: ## Run ALL unit tests (Node + Vitest) with coverage reports
 	@echo "=== Artifact custom tests ==="
 	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/artifacts-lcov.info 'artifacts/**/__tests__/*.test.js'
 	@echo "=== Vitest (React components) ==="
-	cd tools/app-shell && npx vitest run --coverage && cp coverage/vitest/lcov.info ../../coverage/vitest-lcov.info
+	cd tools/app-shell && npx vitest run --coverage && sed 's|^SF:src/|SF:tools/app-shell/src/|' coverage/vitest/lcov.info > ../../coverage/vitest-lcov.info
 	@echo ""
 	@echo "Coverage reports saved in coverage/"
 	@echo "  cli-lcov.info, appshell-lcov.info, appshell-test-lcov.info, artifacts-lcov.info, vitest-lcov.info"
@@ -83,6 +83,8 @@ generate: ## Generate frontend from Sales Order contract
 
 PUSH_TO_NEO ?= 0
 SKIP_EXTRACT ?= 0
+CACHE_DB ?= 0
+FROM_CACHE ?= 0
 ONLY ?=
 
 regen: ## Re-run full pipeline for all active windows (HELP=1 or `make regen-help` for options)
@@ -90,6 +92,8 @@ regen: ## Re-run full pipeline for all active windows (HELP=1 or `make regen-hel
 	REGEN_ARGS=""; \
 	if [ "$(PUSH_TO_NEO)" = "1" ]; then REGEN_ARGS="$$REGEN_ARGS --push-to-neo"; fi; \
 	if [ "$(SKIP_EXTRACT)" = "1" ]; then REGEN_ARGS="$$REGEN_ARGS --skip-extract"; fi; \
+	if [ "$(CACHE_DB)" = "1" ]; then REGEN_ARGS="$$REGEN_ARGS --write-cache"; fi; \
+	if [ "$(FROM_CACHE)" = "1" ]; then REGEN_ARGS="$$REGEN_ARGS --from-cache"; fi; \
 	if [ -n "$(ONLY)" ]; then REGEN_ARGS="$$REGEN_ARGS --only $(ONLY)"; fi; \
 	node cli/src/regen-all.js $$REGEN_ARGS
 
@@ -100,6 +104,8 @@ regen-help: ## Show usage and examples for `make regen`
 	@echo "  ONLY=<spec>[,<spec>...]   Run only the given window spec(s) (kebab-case, matches artifacts/<spec>/)"
 	@echo "  PUSH_TO_NEO=1             Push the resulting config to NEO Headless after regenerating"
 	@echo "  SKIP_EXTRACT=1            Skip the DB extraction step (reuse existing schema-raw.json)"
+	@echo "  CACHE_DB=1                Run against DB and refresh cli/cache/ad-snapshot.json (commit the diff)"
+	@echo "  FROM_CACHE=1              Run extractors offline using cli/cache/ad-snapshot.json (no DB needed)"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make regen                                # all active windows"
@@ -107,10 +113,117 @@ regen-help: ## Show usage and examples for `make regen`
 	@echo "  make regen ONLY=tax,product               # tax + product"
 	@echo "  make regen ONLY=tax SKIP_EXTRACT=1        # only tax, skip DB extraction"
 	@echo "  make regen ONLY=tax PUSH_TO_NEO=1         # only tax + push to NEO"
+	@echo "  make regen ONLY=tax CACHE_DB=1            # refresh cache for tax (hits DB, writes snapshot)"
+	@echo "  make regen ONLY=tax FROM_CACHE=1          # regen tax offline from cached snapshot"
 	@echo ""
 	@echo "Notes:"
 	@echo "  - Window specs are the directory names under artifacts/ (kebab-case)."
 	@echo "  - For a single window, you can also run: node cli/src/resolve-curated.js --window <spec> --write"
+	@echo "  - CACHE_DB and FROM_CACHE are mutually exclusive."
+
+# --- Push-to-NEO Delta Dump ---
+
+PREV_XML_DIR ?=
+
+dump-delta: ## Dump the writes push-to-neo WOULD make for ONLY=<spec> (no DB writes)
+	@if [ -z "$(ONLY)" ]; then \
+	  echo "Usage: make dump-delta ONLY=<spec> [PREV_XML_DIR=<dir>] [FROM_CACHE=1]"; \
+	  echo "Writes artifacts/<spec>/neo-delta.json with the upserts/deletes."; \
+	  exit 1; \
+	fi; \
+	DELTA_ARGS=""; \
+	if [ -n "$(PREV_XML_DIR)" ]; then DELTA_ARGS="$$DELTA_ARGS --prev-xml-dir $(PREV_XML_DIR)"; fi; \
+	CACHE_ENV=""; \
+	if [ "$(FROM_CACHE)" = "1" ]; then CACHE_ENV="SF_CACHE_MODE=read"; fi; \
+	if [ "$(CACHE_DB)" = "1" ]; then CACHE_ENV="SF_CACHE_MODE=write"; fi; \
+	env $$CACHE_ENV node cli/src/push-to-neo.js $(ONLY) --dump-delta artifacts/$(ONLY)/neo-delta.json $$DELTA_ARGS
+
+# --- Offline Regeneration Check (Slice 3) ---
+#
+# End-to-end no-DB-no-export.database loop:
+#   1) regen (extract → resolve → generate)        cache-aware via FROM_CACHE=1
+#   2) push-to-neo --dump-delta → neo-delta.json   no DB writes
+#   3) xml-apply-delta on top of committed XML     produces predicted XML
+#   4) xml-regeneration-check predicted vs prev    exit 0 if no drift
+#
+# Default prev-XML dir: ../modules/com.etendoerp.go/src-db/database/sourcedata
+# Output: tmp/regen-check/<spec>/{neo-delta.json,predicted/,prev/}
+
+REGEN_CHECK_PREV_XML_DIR ?= ../modules/com.etendoerp.go/src-db/database/sourcedata
+REGEN_CHECK_OUT_ROOT     ?= tmp/regen-check
+
+regen-check: ## Predict and compare ETGO_SF_*.xml against committed XML (no DB, no gradle). Defaults to all AD-backed windows.
+	@SPECS="$(ONLY)"; \
+	if [ -z "$$SPECS" ]; then \
+	  SPECS=$$(node -e "const r=require('./cli/config/regen-windows.json');\
+process.stdout.write(r.windows.filter(w=>{\
+  try{return require('fs').existsSync('artifacts/'+w.name+'/decisions.json')\
+    && require('fs').existsSync('artifacts/'+w.name+'/contract.json')}catch(e){return false}\
+}).map(w=>w.name).join(','))"); \
+	  echo "No ONLY= given — running registry windows with decisions+contract ($$SPECS)"; \
+	fi; \
+	REGEN_ARGS="--only $$SPECS --skip-extract"; \
+	if [ "$(CACHE_DB)" = "1" ]; then REGEN_ARGS="--only $$SPECS --write-cache"; fi; \
+	if [ "$(FROM_CACHE)" = "1" ]; then REGEN_ARGS="--only $$SPECS --from-cache"; fi; \
+	node cli/src/regen-all.js $$REGEN_ARGS || exit $$?; \
+	FAIL=0; TOTAL_OK=0; TOTAL_FAIL=0; \
+	for spec in $$(echo "$$SPECS" | tr ',' ' '); do \
+	  OUTDIR="$(REGEN_CHECK_OUT_ROOT)/$$spec"; \
+	  mkdir -p "$$OUTDIR/predicted" "$$OUTDIR/prev/sourcedata"; \
+	  echo ""; \
+	  echo "=== regen-check: $$spec ==="; \
+	  CACHE_ENV=""; \
+	  if [ "$(FROM_CACHE)" = "1" ]; then CACHE_ENV="SF_CACHE_MODE=read"; fi; \
+	  if [ "$(CACHE_DB)" = "1" ]; then CACHE_ENV="SF_CACHE_MODE=write"; fi; \
+	  env $$CACHE_ENV node cli/src/push-to-neo.js $$spec \
+	    --dump-delta "$$OUTDIR/neo-delta.json" \
+	    --prev-xml-dir "$(REGEN_CHECK_PREV_XML_DIR)" || { FAIL=1; TOTAL_FAIL=$$((TOTAL_FAIL+1)); continue; }; \
+	  node cli/src/xml-apply-delta.js \
+	    --prev-xml-dir "$(REGEN_CHECK_PREV_XML_DIR)" \
+	    --delta "$$OUTDIR/neo-delta.json" \
+	    --out-dir "$$OUTDIR/predicted/sourcedata" || { FAIL=1; TOTAL_FAIL=$$((TOTAL_FAIL+1)); continue; }; \
+	  cp "$(REGEN_CHECK_PREV_XML_DIR)/ETGO_SF_SPEC.xml"   "$$OUTDIR/prev/sourcedata/"; \
+	  cp "$(REGEN_CHECK_PREV_XML_DIR)/ETGO_SF_ENTITY.xml" "$$OUTDIR/prev/sourcedata/"; \
+	  cp "$(REGEN_CHECK_PREV_XML_DIR)/ETGO_SF_FIELD.xml"  "$$OUTDIR/prev/sourcedata/"; \
+	  if node cli/src/xml-regeneration-check.js "$$OUTDIR/prev" "$$OUTDIR/predicted" --include-dir sourcedata; then \
+	    echo "  result: OK"; TOTAL_OK=$$((TOTAL_OK+1)); \
+	  else \
+	    echo "  result: DRIFT (see $$OUTDIR/)"; FAIL=1; TOTAL_FAIL=$$((TOTAL_FAIL+1)); \
+	  fi; \
+	done; \
+	echo ""; \
+	echo "=== regen-check summary ==="; \
+	echo "  OK:   $$TOTAL_OK"; \
+	echo "  FAIL: $$TOTAL_FAIL"; \
+	exit $$FAIL
+
+regen-check-help: ## Show usage and examples for `make regen-check`
+	@echo "Usage: make regen-check ONLY=<spec>[,<spec>...] [VAR=value ...]"
+	@echo ""
+	@echo "Variables:"
+	@echo "  ONLY=<spec>[,<spec>...]      Comma-separated window specs (kebab-case)"
+	@echo "  FROM_CACHE=1                 Run the full check offline from cli/cache/ad-snapshot.json"
+	@echo "  CACHE_DB=1                   Refresh cache from DB during the regen step (writes snapshot)"
+	@echo "  REGEN_CHECK_PREV_XML_DIR     Path to committed ETGO_SF_*.xml directory"
+	@echo "                               (default: ../modules/com.etendoerp.go/src-db/database/sourcedata)"
+	@echo "  REGEN_CHECK_OUT_ROOT         Where predicted/prev XML go (default: tmp/regen-check)"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make regen-check ONLY=tax FROM_CACHE=1"
+	@echo "  make regen-check ONLY=tax,product FROM_CACHE=1"
+	@echo "  make regen-check ONLY=tax CACHE_DB=1     # refresh cache mid-check"
+	@echo ""
+	@echo "Notes:"
+	@echo "  - Windows only (specType=W). Process/report specs are NOT supported yet."
+	@echo "  - Exit code 0 = no drift, non-zero = drift or pipeline error."
+	@echo "  - Outputs are under tmp/regen-check/<spec>/ (gitignored)."
+	@echo "  - To refresh the AD cache when AD changes: make regen ONLY=<spec> CACHE_DB=1, then commit cli/cache/ad-snapshot.json."
+
+regen-check-clean: ## Remove tmp/regen-check/ outputs
+	rm -rf $(REGEN_CHECK_OUT_ROOT)
+
+sync-regen-check-workflow: ## Regenerate the mirror Offline Regen Check workflow in com.etendoerp.go
+	./scripts/sync-offline-regen-check.sh
 
 # --- Dev Server ---
 
@@ -192,8 +305,25 @@ sonar-coverage: ## Run all tests with coverage then SonarQube analysis
 	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/cli-lcov.info 'cli/test/*.test.js'
 	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-lcov.info 'tools/app-shell/src/**/__tests__/*.test.js'
 	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-test-lcov.info 'tools/app-shell/test/*.test.js'
-	cd tools/app-shell && npx vitest run --coverage && cp coverage/vitest/lcov.info ../../coverage/vitest-lcov.info
+	cd tools/app-shell && npx vitest run --coverage && sed 's|^SF:src/|SF:tools/app-shell/src/|' coverage/vitest/lcov.info > ../../coverage/vitest-lcov.info
 	sonar-scanner -Dproject.settings=sonar-project.properties
+
+# --- XML Regeneration Check ---
+
+test-xml-regeneration-check: ## Run XML regeneration check tests
+	node --test cli/test/xml-regeneration-check.test.js
+
+test-python: test-xml-regeneration-check ## Backward-compatible alias for the former Python tests
+
+ORIGINAL_DB_DIR ?=
+EXPORTED_DB_DIR ?=
+
+xml-regeneration-check: ## Compare original module XML vs export.database output (requires ORIGINAL_DB_DIR and EXPORTED_DB_DIR)
+	@if [ -z "$(ORIGINAL_DB_DIR)" ] || [ -z "$(EXPORTED_DB_DIR)" ]; then \
+		echo "Usage: make xml-regeneration-check ORIGINAL_DB_DIR=<path> EXPORTED_DB_DIR=<path>"; \
+		exit 1; \
+	fi
+	node cli/src/xml-regeneration-check.js "$(ORIGINAL_DB_DIR)" "$(EXPORTED_DB_DIR)"
 
 # --- Cleanup ---
 

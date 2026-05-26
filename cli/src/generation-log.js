@@ -116,7 +116,7 @@ export function compareGenerated(windowName, oldFiles, newFiles) {
     const newContent = newFiles[filename];
 
     // New file
-    if (!oldContent && newContent) {
+    if (hasFileBeenAdded(oldContent, newContent)) {
       changes.push({
         entity: extractEntityFromFilename(filename),
         field: null,
@@ -129,7 +129,7 @@ export function compareGenerated(windowName, oldFiles, newFiles) {
     }
 
     // Removed file
-    if (oldContent && !newContent) {
+    if (hasFileBeenRemoved(oldContent, newContent)) {
       changes.push({
         entity: extractEntityFromFilename(filename),
         field: null,
@@ -151,35 +151,12 @@ export function compareGenerated(windowName, oldFiles, newFiles) {
       const oldCols = parseFieldArray(oldContent, 'columns');
       const newCols = parseFieldArray(newContent, 'columns');
       const fieldChanges = diffFields(oldCols, newCols, filename, entity, 'column');
-      if (fieldChanges.length > 0) {
-        changes.push(...fieldChanges);
-      } else {
-        // Content changed but not columns — structural change
-        changes.push({
-          entity,
-          field: null,
-          file: filename,
-          change: 'component-changed',
-          before: null,
-          after: 'table structure changed',
-        });
-      }
+      handleFieldChanges(fieldChanges, changes, entity, filename);
     } else if (type === 'form') {
       const oldFields = parseFieldArray(oldContent, 'fields');
       const newFields = parseFieldArray(newContent, 'fields');
       const fieldChanges = diffFields(oldFields, newFields, filename, entity, 'form');
-      if (fieldChanges.length > 0) {
-        changes.push(...fieldChanges);
-      } else {
-        changes.push({
-          entity,
-          field: null,
-          file: filename,
-          change: 'component-changed',
-          before: null,
-          after: 'form structure changed',
-        });
-      }
+      handleFormFieldChanges(fieldChanges, changes, entity, filename);
     } else {
       // Page, index, other
       changes.push({
@@ -196,6 +173,45 @@ export function compareGenerated(windowName, oldFiles, newFiles) {
   return changes;
 }
 
+function handleFormFieldChanges(fieldChanges, changes, entity, filename) {
+  if (fieldChanges.length > 0) {
+    changes.push(...fieldChanges);
+  } else {
+    changes.push({
+      entity,
+      field: null,
+      file: filename,
+      change: 'component-changed',
+      before: null,
+      after: 'form structure changed',
+    });
+  }
+}
+
+function handleFieldChanges(fieldChanges, changes, entity, filename) {
+  if (fieldChanges.length > 0) {
+    changes.push(...fieldChanges);
+  } else {
+    // Content changed but not columns — structural change
+    changes.push({
+      entity,
+      field: null,
+      file: filename,
+      change: 'component-changed',
+      before: null,
+      after: 'table structure changed',
+    });
+  }
+}
+
+function hasFileBeenRemoved(oldContent, newContent) {
+  return oldContent && !newContent;
+}
+
+function hasFileBeenAdded(oldContent, newContent) {
+  return !oldContent && newContent;
+}
+
 /**
  * Create full log entries with run metadata.
  */
@@ -205,9 +221,9 @@ export function createLogEntries(windowName, trigger, oldFiles, newFiles, existi
   // Auto-increment runId
   const existingRunIds = existingLog
     .map(e => e.runId)
-    .filter(id => id && id.startsWith('run-'))
-    .map(id => parseInt(id.replace('run-', ''), 10))
-    .filter(n => !isNaN(n));
+    .filter(id => id?.startsWith('run-'))
+    .map(id => Number.parseInt(id.replace('run-', ''), 10))
+    .filter(n => !Number.isNaN(n));
   const nextRun = existingRunIds.length > 0 ? Math.max(...existingRunIds) + 1 : 1;
   const runId = `run-${String(nextRun).padStart(3, '0')}`;
   const run = new Date().toISOString();
@@ -286,12 +302,7 @@ export function generateWindowView(windowName, logPath, outPath) {
 
   for (const [runId, entries] of runs) {
     const first = entries[0];
-    lines.push(`## ${runId} (${first.run})`);
-    lines.push('');
-    lines.push(`**Trigger:** ${first.trigger}`);
-    lines.push('');
-    lines.push('| File | Field | Change | Before | After |');
-    lines.push('|------|-------|--------|--------|-------|');
+    lines.push(`## ${runId} (${first.run})`, '', `**Trigger:** ${first.trigger}`, '', '| File | Field | Change | Before | After |', '|------|-------|--------|--------|-------|');
     for (const e of entries) {
       const field = e.field ?? '-';
       const before = e.before ?? '-';
@@ -339,23 +350,14 @@ export function generateRunsView(logPath, outPath) {
       .map(([k, v]) => `${v} ${k}`)
       .join(', ');
 
-    lines.push(`## ${runId} - ${first.run}`);
-    lines.push('');
-    lines.push(`- **Trigger:** ${first.trigger}`);
-    lines.push(`- **Windows:** ${windows.join(', ')}`);
-    lines.push(`- **Changes:** ${summary}`);
-    lines.push('');
-    lines.push('| Window | File | Field | Change | Before | After |');
-    lines.push('|--------|------|-------|--------|--------|-------|');
+    lines.push(`## ${runId} - ${first.run}`, '', `- **Trigger:** ${first.trigger}`, `- **Windows:** ${windows.join(', ')}`, `- **Changes:** ${summary}`, '', '| Window | File | Field | Change | Before | After |', '|--------|------|-------|--------|--------|-------|');
     for (const e of entries) {
       const field = e.field ?? '-';
       const before = e.before ?? '-';
       const after = e.after ?? '-';
       lines.push(`| ${e.window} | ${e.file} | ${field} | ${e.change} | ${before} | ${after} |`);
     }
-    lines.push('');
-    lines.push('<!-- AI Summary: TODO -->');
-    lines.push('');
+    lines.push('', '<!-- AI Summary: TODO -->', '');
   }
 
   mkdirSync(dirname(outPath), { recursive: true });

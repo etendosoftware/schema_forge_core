@@ -1,5 +1,6 @@
 // Shared UI primitives for the Fiscal Monitor.
 import { useUI } from '@/i18n';
+import { TriangleAlert } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export const ERROR_STATUSES = new Set([
@@ -135,15 +136,15 @@ export const PAGE_SIZE = 20;
 
 export { fmtDate } from './fmtDateUtils.js';
 
-export const WipBadge = () => {
+export const WipBadge = ({ inline = false }) => {
   const ui = useUI();
   return (
-    <div className="absolute top-3 right-4 z-10">
+    <div className={inline ? '' : 'absolute top-3 right-4 z-10'}>
       <TooltipProvider delayDuration={600}>
         <Tooltip>
           <TooltipTrigger asChild>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300 cursor-default select-none">
-              ⚠ {ui('fiscal.wip.badge')}
+              <TriangleAlert size={12} strokeWidth={2} /> {ui('fiscal.wip.badge')}
             </span>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-[260px] text-center">
