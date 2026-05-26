@@ -48,3 +48,22 @@ export const ACCOUNT_TYPE = {
 };
 
 export const ACCOUNT_TYPE_ORDER = [ACCOUNT_TYPE.BANK, ACCOUNT_TYPE.CASH, ACCOUNT_TYPE.CARD];
+
+// Movement payment statuses from Etendo backend reference list.
+// Backend search_keys — do NOT rename these; they must match FIN_Payment.Status values.
+// Follow-up: once /sws/neo/reference/payment-status exists, these can be fetched dynamically.
+export const MOVEMENT_STATUS_FAMILY = {
+  PENDING: 'pending',
+  VOIDED: 'voided',
+  CLEARED: 'cleared',
+  IN_TRANSIT: 'inTransit',
+  EXECUTED: 'executed',
+};
+
+export const MOVEMENT_STATUS_TONE = {
+  pending:   { bg: '#FFF7E0', text: '#7A5A00', border: '#FAAF00' },
+  voided:    { bg: '#F5F7F9', text: '#6C6C89', border: '#D1D4DB' },
+  cleared:   { bg: '#EEFBF4', text: '#17663A', border: '#26A95F' },
+  inTransit: { bg: '#FFF1D6', text: '#8C5A00', border: '#E68A00' },
+  executed:  { bg: '#EFEAFE', text: '#3D2D8E', border: '#7047EB' },
+};
