@@ -1,0 +1,53 @@
+import { cn } from '@/lib/utils';
+
+/**
+ * Formats a monetary value with locale-aware number formatting.
+ *
+ * Props:
+ *   value    — number
+ *   currency — ISO currency code, e.g. 'EUR'
+ *   tone     — 'auto' | 'positive' | 'negative' | 'neutral'
+ *              'auto': positive if value >= 0, negative if value < 0
+ *   compact  — boolean, uses compact notation (e.g. 12,5K)
+ *   className — extra classes passed to the span
+ *
+ * Examples:
+ *   <MoneyAmount value={12450} currency="EUR" />   → "+12.450,00 €"
+ *   <MoneyAmount value={-200} currency="EUR" />    → "-200,00 €"
+ */
+
+/** @param {{ value: number; currency: string; tone?: 'auto'|'positive'|'negative'|'neutral'; compact?: boolean; className?: string }} props */
+export function MoneyAmount({ value, currency = 'EUR', tone = 'auto', compact = false, className }) {
+  const resolvedTone =
+    tone === 'auto'
+      ? value >= 0
+        ? 'positive'
+        : 'negative'
+      : tone;
+
+  const colorClass =
+    resolvedTone === 'positive'
+      ? 'text-[#17663A]'
+      : resolvedTone === 'negative'
+        ? 'text-[#d50b3e]'
+        : 'text-[#121217]';
+
+  const absValue = Math.abs(value);
+  const formatted = new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    notation: compact ? 'compact' : 'standard',
+  }).format(absValue);
+
+  let prefix = '';
+  if (resolvedTone === 'positive' && value > 0) prefix = '+';
+  else if (resolvedTone === 'negative' || value < 0) prefix = '-';
+
+  return (
+    <span className={cn(colorClass, className)}>
+      {prefix}{formatted}
+    </span>
+  );
+}
