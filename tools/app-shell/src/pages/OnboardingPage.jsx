@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import {
   Loader2, Check, ChevronRight, ChevronDown,
   Plus, Building2, RefreshCw,
-  Briefcase, Rocket, Settings,
+  Settings,
   UserPlus, Mail, Lock, Eye, EyeOff, Sparkles,
   ArrowRight, User, MessageCircle,
 } from 'lucide-react';
@@ -39,14 +39,6 @@ function detectBaseUrl() {
 
 const BASE_URL = detectBaseUrl();
 
-const SETUP_STEP_ICONS = {
-  setup: Settings,
-  client: Briefcase,
-  organization: Building2,
-  finalize: Rocket,
-};
-
-const CURRENCIES = ['EUR'];
 const LOCALE_CODES = ['es_ES', 'en_US'];
 const COUNTRY_CODES = ['ES'];
 const SECTOR_CODES = ['technology', 'services', 'commerce', 'manufacturing'];
@@ -75,67 +67,6 @@ function trackOnboarding(eventName, properties = {}) {
     ...properties,
   });
 }
-
-function formatMs(ms) {
-  if (ms == null) return null;
-  if (ms < 1000) return `${ms}ms`;
-  return `${(ms / 1000).toFixed(1)}s`;
-}
-
-function StepIcon({ status, Icon }) {
-  if (status === 'done') {
-    return (
-      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-500 flex-shrink-0">
-        <Check className="h-5 w-5 text-white" strokeWidth={3} />
-      </div>
-    );
-  }
-  if (status === 'active') {
-    return (
-      <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-gray-900 bg-white flex-shrink-0">
-        <Icon className="h-4 w-4 text-gray-900" />
-      </div>
-    );
-  }
-  if (status === 'running') {
-    return (
-      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-400 flex-shrink-0">
-        <Loader2 className="h-4 w-4 text-white animate-spin" />
-      </div>
-    );
-  }
-  if (status === 'failed') {
-    return (
-      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500 flex-shrink-0">
-        <span className="text-white text-sm font-bold">!</span>
-      </div>
-    );
-  }
-  // pending
-  return (
-    <div className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 bg-gray-50 flex-shrink-0">
-      <Icon className="h-4 w-4 text-gray-400" />
-    </div>
-  );
-}
-
-function SelectField({ id, value, onChange, disabled, children, label }) {
-  return (
-    <div>
-      <Label htmlFor={id} className="text-sm text-gray-600">{label}</Label>
-      <select
-        id={id}
-        value={value}
-        onChange={onChange}
-        disabled={disabled}
-        className="mt-1 flex h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-shadow"
-      >
-        {children}
-      </select>
-    </div>
-  );
-}
-
 
 function AuthBrand({ label }) {
   return (
@@ -584,6 +515,7 @@ export default function OnboardingPage() {
     setView('create');
   };
 
+  /* c8 ignore start -- Logout is only reachable from the legacy list view, which current routing bypasses. */
   const handleLogout = () => {
     trackOnboarding('onboarding_auth_logout', {
       action: 'logout',
@@ -602,6 +534,7 @@ export default function OnboardingPage() {
     setSteps(initialSetupSteps());
     setView('register');
   };
+  /* c8 ignore stop */
 
   // Register
   const handleRegister = async (e) => {

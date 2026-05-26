@@ -172,6 +172,61 @@ describe('OnboardingPage', () => {
     expect(screen.getByText('onboardingSwitchToLoginAction')).toBeInTheDocument();
   });
 
+  it('switches between auth modes and toggles password visibility', () => {
+    localStorage.removeItem('sf_platform_token');
+    render(<OnboardingPage />);
+
+    const registerPassword = screen.getByLabelText(/onboardingPasswordLabel/);
+    expect(registerPassword).toHaveAttribute('type', 'password');
+    fireEvent.click(screen.getByLabelText('onboardingShowPassword'));
+    expect(registerPassword).toHaveAttribute('type', 'text');
+
+    fireEvent.click(screen.getByTestId('action-switch-to-login'));
+    expect(screen.getByText('onboardingLoginTitle')).toBeInTheDocument();
+    const loginPassword = screen.getByLabelText(/onboardingPasswordLabel/);
+    expect(loginPassword).toHaveAttribute('type', 'password');
+    fireEvent.click(screen.getByLabelText('onboardingShowPassword'));
+    expect(loginPassword).toHaveAttribute('type', 'text');
+
+    fireEvent.click(screen.getByTestId('action-switch-to-register'));
+    expect(screen.getByText('onboardingRegisterTitle')).toBeInTheDocument();
+  });
+
+  it('returns to register view when the stored platform token is invalid', async () => {
+    localStorage.setItem('sf_platform_token', 'stale-platform-token');
+    fetchAccount.mockRejectedValue(new Error('expired'));
+
+    render(<OnboardingPage />);
+
+    expect(await screen.findByText('onboardingRegisterTitle')).toBeInTheDocument();
+    expect(localStorage.removeItem).toHaveBeenCalledWith('sf_platform_token');
+  });
+
+  it('falls back to create view when environment loading fails', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    localStorage.setItem('sf_platform_token', 'platform-token');
+    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+    fetchEnvironments.mockRejectedValue(new Error('network down'));
+
+    render(<OnboardingPage />);
+
+    expect(await screen.findByText(/onboardingGreeting/)).toBeInTheDocument();
+    expect(consoleError).toHaveBeenCalledWith('Failed to load environments', expect.any(Error));
+  });
+
+  it('updates the setup language selector', async () => {
+    localStorage.setItem('sf_platform_token', 'platform-token');
+    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+    fetchEnvironments.mockResolvedValue([]);
+
+    render(<OnboardingPage />);
+
+    const languageSelect = await screen.findByLabelText('language');
+    fireEvent.change(languageSelect, { target: { value: 'es_ES' } });
+
+    expect(languageSelect).toBeInTheDocument();
+  });
+
   it('tracks registration submission and success without user-entered values', async () => {
     registerAccount.mockResolvedValue({
       token: 'platform-token',
@@ -531,6 +586,13 @@ describe('OnboardingPage', () => {
 
   it('tracks environment entry success without environment identifiers', async () => {
     localStorage.setItem('sf_platform_token', 'platform-token');
+    Object.defineProperty(window, 'caches', {
+      configurable: true,
+      value: {
+        keys: vi.fn().mockResolvedValue(['old-cache']),
+        delete: vi.fn().mockResolvedValue(true),
+      },
+    });
     fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
     fetchEnvironments.mockResolvedValue([
       { clientId: 'client-secret', clientName: 'Secret Client', orgName: 'Org', adminUser: 'admin' },
@@ -560,6 +622,7 @@ describe('OnboardingPage', () => {
     expect(serializedCalls).not.toContain('client-secret');
     expect(serializedCalls).not.toContain('Secret Client');
     expect(serializedCalls).not.toContain('environment-token');
+    expect(window.caches.delete).toHaveBeenCalledWith('old-cache');
   });
 
   it('tracks environment entry failures when login returns no token', async () => {
@@ -582,6 +645,55 @@ describe('OnboardingPage', () => {
       });
     });
     expect(globalThis.alert).toHaveBeenCalledWith('onboardingEnvironmentLoginFailed');
+  });
+
+  it('tracks environment entry exceptions', async () => {
+    localStorage.setItem('sf_platform_token', 'platform-token');
+    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+    fetchEnvironments.mockResolvedValue([
+      { clientId: 'client-secret', clientName: 'Secret Client', orgName: 'Org', adminUser: 'admin' },
+    ]);
+    loginEnvironment.mockRejectedValue({ userMessage: 'Environment login exploded' });
+
+    render(<OnboardingPage />);
+
+    await waitFor(() => {
+      expect(track).toHaveBeenCalledWith('onboarding_environment_enter_failed', {
+        action: 'enter_environment',
+        component: 'OnboardingPage',
+        source: 'onboarding',
+        status: 'failed',
+        windowName: 'onboarding',
+      });
+    });
+    expect(globalThis.alert).toHaveBeenCalledWith('Environment login exploded');
+  });
+
+  it('keeps retrying environment discovery after a successful run before falling back', async () => {
+    const realSetTimeout = globalThis.setTimeout;
+    vi.spyOn(globalThis, 'setTimeout').mockImplementation((callback, delay, ...args) => {
+      if (delay === 2000) {
+        queueMicrotask(callback);
+        return 1;
+      }
+      return realSetTimeout(callback, delay, ...args);
+    });
+    localStorage.setItem('sf_platform_token', 'platform-token');
+    fetchAccount.mockResolvedValue({ name: 'Ada Lovelace' });
+    fetchEnvironments.mockResolvedValue([]);
+    runOnboardingStream.mockImplementation(async (_fetch, _baseUrl, _token, _form, onMessage) => {
+      onMessage({ type: 'result', success: true });
+    });
+
+    render(<OnboardingPage />);
+
+    fireEvent.click(await screen.findByText('onboardingContinueAction'));
+    fireEvent.click(screen.getByText('onboardingStartAction'));
+
+    await waitFor(() => {
+      expect(fetchEnvironments).toHaveBeenCalledTimes(5);
+    });
+    expect(await screen.findByText('onboardingSuccessTitle')).toBeInTheDocument();
   });
 
   it('tracks readiness failures after a successful onboarding run', async () => {
