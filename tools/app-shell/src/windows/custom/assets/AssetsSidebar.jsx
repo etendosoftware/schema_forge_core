@@ -102,9 +102,10 @@ export default function AssetsSidebar({ data, recordId, token, apiBaseUrl }) {
   const depreciationAmt = Number(data?.depreciationAmt ?? 0);
   // assetValue is the current book value (reaches 0 when fully depreciated) — not the denominator.
   const denominator = depreciatedPlan > 0 ? depreciatedPlan : depreciationAmt;
+  const fallbackPct = depreciatedValue > 0 ? 100 : 0;
   const pct = denominator > 0
     ? Math.min(100, Math.round((depreciatedValue / denominator) * 100))
-    : (depreciatedValue > 0 ? 100 : 0);
+    : fallbackPct;
   const isComplete = pct === 100;
 
   return (
