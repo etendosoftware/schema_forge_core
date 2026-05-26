@@ -174,8 +174,6 @@ export default function ReturnWizard({
   const bpName = shipmentData?.['businessPartner$_identifier'] || shipmentData?.businessPartner$_identifier || '';
 
   const handleConfirm = async () => {
-    // NOTE: The createReturn action endpoint is pending backend implementation.
-    // Once available, it should create a return receipt + credit note in a single transaction.
     setLoading(true);
     try {
       const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -318,18 +316,6 @@ export default function ReturnWizard({
                 <div>
                   <p className="text-sm font-medium text-foreground">{ui('returnReceipt')}</p>
                   <p className="text-xs text-muted-foreground">{ui('stockMovementToWarehouse')}</p>
-                </div>
-              </div>
-              <div
-                className="flex items-center gap-3"
-                style={{ border: '1px solid #E5E7EB', borderRadius: 8, padding: 12 }}
-              >
-                <span className="shrink-0 flex items-center justify-center" style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#F3E8FF' }}>
-                  <span className="text-purple-600">{ICONS.creditNote}</span>
-                </span>
-                <div>
-                  <p className="text-sm font-medium text-foreground">{ui('creditNote')}</p>
-                  <p className="text-xs text-muted-foreground">{ui('linkedToOriginalInvoice')}</p>
                 </div>
               </div>
             </div>
