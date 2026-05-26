@@ -13,10 +13,34 @@ import { login, navigateTo } from '../helpers/auth.js';
  * (or at least show available options).
  */
 
+/**
+ * Override the generic callout stub from auth.login() with one that simulates
+ * the C_BPartner callout populating partnerAddress. Registered AFTER login()
+ * so it takes priority (Playwright matches routes LIFO).
+ */
+async function installCalloutMock(page) {
+  await page.route('**/sws/neo/purchase-order/**/callout', (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        updates: {
+          partnerAddress: { value: 'mock-addr-id', classicValue: 'mock-addr-id' },
+        },
+        combos: {
+          partnerAddress: [{ id: 'mock-addr-id', _identifier: 'Main Address' }],
+        },
+        messages: [],
+      }),
+    });
+  });
+}
+
 test.describe('Purchase Order - Partner Address Bug', () => {
 
   test.beforeEach(async ({ page }) => {
     await login(page);
+    await installCalloutMock(page);
     await navigateTo(page, 'purchase-order');
   });
 
@@ -47,9 +71,9 @@ test.describe('Purchase Order - Partner Address Bug', () => {
     //   b) leaves the input enabled — the user opens the dropdown manually.
     // Both paths prove the bug ("empty dropdown") is fixed: in (a) an option
     // was picked, in (b) options are listable. Wait for either state.
-    await waitForPartnerAddressMode(partnerAddressInput, partnerAddressChip);
+    const mode = await waitForPartnerAddressMode(partnerAddressInput, partnerAddressChip);
 
-    if (await partnerAddressChip.isVisible()) {
+    if (mode === 'chip') {
       // Auto-selected an address → the chip label is the proof that options loaded.
       await expect(partnerAddressChip).toHaveText(/\S/);
     } else {
@@ -103,14 +127,15 @@ async function clickFirstStableOption(page, testIdPrefix) {
   const options = page.locator(`[data-testid^="${testIdPrefix}"]`);
   await expect(options.first()).toBeVisible({ timeout: 10_000 });
 
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    const option = options.first();
-    try {
-      await option.click({ timeout: 3_000 });
-      return;
-    } catch (error) {
-      if (attempt === 4) throw error;
-      await page.waitForTimeout(250);
-    }
-  }
+  // Wait for the list to stop growing before clicking — avoids hitting a
+  // moving target when the dropdown is still appending results from the server.
+  let prevCount = -1;
+  await expect.poll(async () => {
+    const count = await options.count();
+    if (count > 0 && count === prevCount) return true;
+    prevCount = count;
+    return false;
+  }, { timeout: 8_000, intervals: [150, 150, 300] }).toBe(true);
+
+  await options.first().click({ timeout: 10_000 });
 }

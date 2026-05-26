@@ -153,6 +153,20 @@ function parseAmount(text) {
   return Number(`${intPart}.${decPart}`);
 }
 
+/**
+ * Poll a totals-panel cell until it contains a non-zero digit, then return
+ * the parsed amount. Avoids the race where `toBeVisible()` passes but the
+ * React render cycle hasn't filled the text yet (returns "" or "0").
+ */
+async function pollAmount(page, testId, timeout = 10_000) {
+  const locator = page.getByTestId(testId);
+  await expect.poll(
+    async () => (await locator.textContent() || '').trim(),
+    { timeout },
+  ).toMatch(/[1-9]/);
+  return parseAmount((await locator.textContent()) || '');
+}
+
 // ─── Tests ──────────────────────────────────────────────────────────────────
 
 test.describe('Sales Order — totals rounding (ETP-4017)', () => {
@@ -161,14 +175,10 @@ test.describe('Sales Order — totals rounding (ETP-4017)', () => {
     await installSalesOrderMocks(page, { header: BUG_HEADER, line: BUG_LINE });
     await page.goto(`/sales-order/${ORDER_ID_BUG}`);
 
-    // Wait for totals panel to render.
-    const totalRow = page.getByTestId('totals-row-total-value');
-    await expect(totalRow).toBeVisible({ timeout: 10_000 });
+    // Wait for totals panel to render with a non-zero value.
+    const total = await pollAmount(page, 'totals-row-total-value');
 
     // The displayed Total MUST be 40.94 (not 40.95 — the pre-fix bug value).
-    // formatAmount() emits an en-US number with EUR suffix → "40.94 €".
-    const totalText = (await totalRow.textContent())?.trim() || '';
-    const total = parseAmount(totalText);
     expect(total).toBeCloseTo(40.94, 2);
     expect(total).not.toBeCloseTo(40.95, 2);
 
@@ -193,16 +203,12 @@ test.describe('Sales Order — totals rounding (ETP-4017)', () => {
     await installSalesOrderMocks(page, { header: BUG_HEADER, line: BUG_LINE });
     await page.goto(`/sales-order/${ORDER_ID_BUG}`);
 
-    await expect(page.getByTestId('totals-row-total-value')).toBeVisible({ timeout: 10_000 });
-
+    const total = await pollAmount(page, 'totals-row-total-value');
     const subtotal = parseAmount(
       (await page.getByTestId('totals-row-subtotal-value').textContent()) || '',
     );
     const tax = parseAmount(
       (await page.getByTestId('totals-row-tax-value').textContent()) || '',
-    );
-    const total = parseAmount(
-      (await page.getByTestId('totals-row-total-value').textContent()) || '',
     );
 
     // Tolerate at most 0.005 of float-arithmetic noise — strictly under 1 cent.
@@ -275,9 +281,8 @@ test.describe('Sales Order — totals rounding (ETP-4017)', () => {
     // sales-order:open-confirm-modal listener is attached. Also sanity-check
     // that the panel agrees with what the modal must show, so we know panel
     // and modal stay in lockstep on the DR path.
-    const panelTotal = page.getByTestId('totals-row-total-value');
-    await expect(panelTotal).toBeVisible({ timeout: 10_000 });
-    expect(parseAmount((await panelTotal.textContent()) || '')).toBeCloseTo(40.94, 2);
+    const panelTotalValue = await pollAmount(page, 'totals-row-total-value');
+    expect(panelTotalValue).toBeCloseTo(40.94, 2);
 
     await page.evaluate(() => {
       window.dispatchEvent(new CustomEvent('sales-order:open-confirm-modal'));
@@ -302,16 +307,12 @@ test.describe('Sales Order — totals rounding clean baseline', () => {
     await installSalesOrderMocks(page, { header: CLEAN_HEADER, line: CLEAN_LINE });
     await page.goto(`/sales-order/${ORDER_ID_CLEAN}`);
 
-    await expect(page.getByTestId('totals-row-total-value')).toBeVisible({ timeout: 10_000 });
-
+    const total = await pollAmount(page, 'totals-row-total-value');
     const subtotal = parseAmount(
       (await page.getByTestId('totals-row-subtotal-value').textContent()) || '',
     );
     const tax = parseAmount(
       (await page.getByTestId('totals-row-tax-value').textContent()) || '',
-    );
-    const total = parseAmount(
-      (await page.getByTestId('totals-row-total-value').textContent()) || '',
     );
 
     expect(subtotal).toBeCloseTo(200, 2);
