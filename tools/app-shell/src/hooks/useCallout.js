@@ -42,13 +42,8 @@ export function useCallout(entity, { token, apiBaseUrl }) {
       setCalloutLoading(true);
       try {
         // Extract auxiliary values from formState (keys like "businessPartner_LOC")
-        const auxiliaryValues = {};
         const state = formState ?? {};
-        for (const [key, val] of Object.entries(state)) {
-          if (/^[a-zA-Z]+_[A-Z]{2,4}$/.test(key) && val != null && val !== '') {
-            auxiliaryValues[key] = String(val);
-          }
-        }
+        const auxiliaryValues = extractAuxiliaryValues(state);
         const payload = {
           field,
           value,
@@ -105,3 +100,13 @@ export function useCallout(entity, { token, apiBaseUrl }) {
 
   return { calloutResult, calloutLoading, executeCallout };
 }
+function extractAuxiliaryValues(state) {
+  const auxiliaryValues = {};
+  for (const [key, val] of Object.entries(state)) {
+    if (/^[a-zA-Z]+_[A-Z]{2,4}$/.test(key) && val != null && val !== '') {
+      auxiliaryValues[key] = String(val);
+    }
+  }
+  return auxiliaryValues;
+}
+

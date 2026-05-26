@@ -73,13 +73,13 @@ describe('InlineLinesPanel', () => {
     );
   });
 
-  it('makes selector and search columns inline-editable via SelectorInput', () => {
+  it('makes selector and search columns inline-editable via InlineSearchCombo', () => {
     const editableTypesMatch = src.match(/EDITABLE_TYPES = new Set\(\[([\s\S]+?)\]\)/);
     assert.ok(editableTypesMatch, 'EDITABLE_TYPES set not found');
     assert.match(editableTypesMatch[1], /'selector'/);
     assert.match(editableTypesMatch[1], /'search'/);
-    // Imports the shared dropdown and builds the selector URL the same way DataTable does.
-    assert.match(src, /import \{ SelectorInput \} from '\.\/SelectorInput\.jsx'/);
+    // Imports the shared searchable combobox and builds the selector URL the same way DataTable does.
+    assert.match(src, /import \{ InlineSearchCombo \} from '\.\/InlineSearchCombo\.jsx'/);
     assert.match(src, /selectors\/\$\{col\.column\}/);
     // Selector commits include the FK identifier so the local row label can refresh.
     assert.match(src, /onChange=\{\(id, label\) => onCommit\(id, \{ identifier: label \|\| '' \}\)\}/);

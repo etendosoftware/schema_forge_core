@@ -40,7 +40,13 @@
       }
     },
     "noHeaderBorder": true,
-    "dateFilterKey": "orderDate"
+    "dateFilterKey": "orderDate",
+    "preview": {
+      "enabled": true,
+      "specName": "sales-order",
+      "hasPdf": true,
+      "cacheOnComplete": true
+    }
   },
   "entities": {
     "header": {

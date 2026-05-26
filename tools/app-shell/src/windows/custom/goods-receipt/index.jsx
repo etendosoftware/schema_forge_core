@@ -22,6 +22,10 @@ function CustomHeaderTable(props) {
   return <GoodsReceiptTable columns={HEADER_COLUMNS} {...props} />;
 }
 
+function GoodsReceiptBulkAction(props) {
+  return <BulkDocumentAction {...props} entity="goodsReceipt" buildActions={buildInOutActions} labelKey="confirmBulk" />;
+}
+
 export default function GoodsReceiptWindow(props) {
   useBulkActionToast();
   const ui = useUI();
@@ -40,9 +44,7 @@ export default function GoodsReceiptWindow(props) {
       notesField="description"
       bottomSection={GoodsReceiptBottomPanel}
       customTabs={customTabs}
-      bulkActions={(ctx) => (
-        <BulkDocumentAction {...ctx} entity="goodsReceipt" buildActions={buildInOutActions} />
-      )}
+      bulkActions={GoodsReceiptBulkAction}
     />
   );
 }

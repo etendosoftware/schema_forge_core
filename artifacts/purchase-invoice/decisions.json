@@ -6,6 +6,7 @@
     "sendDocument": {
       "allowEmail": false
     },
+    "hideDeleteWhenComplete": true,
     "relatedDocuments": true,
     "notesField": "description",
     "noHeaderBorder": true,
