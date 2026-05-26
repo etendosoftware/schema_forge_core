@@ -97,7 +97,7 @@ describe('AccountSummaryStrip', () => {
         loading={false}
       />,
     );
-    expect(screen.getByLabelText('Copy IBAN')).toBeInTheDocument();
+    expect(screen.getByTestId('iban-copy-button')).toBeInTheDocument();
   });
 
   it('copies the IBAN to the clipboard and toasts on success', async () => {
@@ -112,7 +112,7 @@ describe('AccountSummaryStrip', () => {
       />,
     );
 
-    fireEvent.click(screen.getByLabelText('Copy IBAN'));
+    fireEvent.click(screen.getByTestId('iban-copy-button'));
     expect(writeText).toHaveBeenCalledWith('ES7012341234123412341234');
 
     // Wait for the .then() microtask
