@@ -59,10 +59,10 @@ export function CuentasToolbar({
 
         <Button
           type="button"
-          className="h-10 w-[153px] gap-1 rounded-lg bg-[#121217] px-3 text-sm font-medium leading-6 text-white hover:bg-[#121217]/90 [&_svg]:size-5"
+          className="group h-10 w-[153px] gap-1 rounded-lg bg-[#121217] px-3 text-sm font-medium leading-6 text-white transition-colors hover:bg-[#FFD500] hover:text-[#121217] [&_svg]:size-5"
           data-testid="cuentas-new-account-button"
         >
-          <Plus className="text-white/90" />
+          <Plus className="text-white/90 group-hover:text-[#121217]" />
           {ui('financeAccountsNewAccount')}
         </Button>
       </div>

@@ -48,10 +48,10 @@ export default function FinancialAccountWindow({ recordId }) {
           <button
             type="button"
             onClick={() => toast(ui('financeAccountDetailExportToast'))}
-            className="inline-flex items-center gap-2 rounded-lg border border-[#D1D4DB] bg-white px-3 py-2 text-sm font-medium text-[#121217] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9]"
+            className="inline-flex h-10 items-center gap-1 rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm font-medium leading-6 text-[#121217] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9]"
           >
-            <Upload className="h-4 w-4" />
-            {ui('financeAccountDetailExport')}
+            <Upload className="h-6 w-6 text-[#828FA3]" />
+            <span className="px-1">{ui('financeAccountDetailExport')}</span>
           </button>
         </div>
 

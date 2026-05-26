@@ -21,7 +21,7 @@ export function MovementsToolbar({ filters, onFiltersChange }) {
   const navigate = useNavigate();
 
   return (
-    <div className="flex h-auto min-h-[52px] flex-wrap items-center gap-2 border-b border-[#E8EAEF] px-4 py-2">
+    <div className="flex h-auto min-h-[52px] flex-wrap items-center gap-2 px-4 py-2">
       {/* Back */}
       <button
         type="button"
@@ -54,7 +54,7 @@ export function MovementsToolbar({ filters, onFiltersChange }) {
       <button
         type="button"
         onClick={() => toast(ui('financeAccountMovementsNewToast'))}
-        className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#121217] px-3 text-sm font-medium text-white hover:bg-[#3f3f50]"
+        className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#121217] px-3 text-sm font-medium text-white transition-colors hover:bg-[#FFD500] hover:text-[#121217]"
       >
         {ui('financeAccountMovementsNew')}
       </button>

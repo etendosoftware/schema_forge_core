@@ -51,18 +51,20 @@ export function TabsTrigger({ value, children, icon: Icon, badge, className }) {
       aria-selected={isActive}
       onClick={() => ctx?.onValueChange(value)}
       className={cn(
-        'inline-flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors',
+        'inline-flex items-center gap-1 px-3 pt-2 pb-4 text-sm transition-colors',
         'border-b-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#121217] focus-visible:ring-offset-1',
         isActive
-          ? 'border-[#121217] text-[#121217]'
-          : 'border-transparent text-[#6c6c89] hover:text-[#3f3f50]',
+          ? 'border-[#121217] font-medium text-[#121217]'
+          : 'border-transparent font-normal text-[#555B6D] hover:text-[#3f3f50]',
         className,
       )}
     >
-      {Icon ? <Icon className="h-4 w-4 shrink-0" /> : null}
-      <span>{children}</span>
-      {badge != null && badge > 0 ? (
-        <span className="ml-1 text-xs text-[#6c6c89] font-normal">{badge}</span>
+      {Icon ? <Icon className="h-6 w-6 shrink-0" /> : null}
+      <span className="px-1">{children}</span>
+      {badge != null ? (
+        <span className="flex items-center rounded-full bg-[#F5F7F9] px-2 py-1 text-xs font-normal leading-4 text-[#3F3F50]">
+          {badge}
+        </span>
       ) : null}
     </button>
   );

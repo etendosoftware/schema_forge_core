@@ -12,7 +12,7 @@ export function PostingStatusDot({ paymentStatus, className }) {
   const isPosted = paymentStatus === 'RPPC';
 
   return (
-    <span className={cn('inline-flex items-center gap-1 text-xs text-[#6c6c89]', className)}>
+    <span className={cn('inline-flex items-center gap-1 text-xs leading-4 text-[#121217]', className)}>
       <span
         className={cn(
           'h-1.5 w-1.5 rounded-full',

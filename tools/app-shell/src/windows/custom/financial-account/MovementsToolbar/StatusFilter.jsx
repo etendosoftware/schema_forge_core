@@ -1,72 +1,82 @@
-import { ChevronDown, Check } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useUI } from '@/i18n';
-import { cn } from '@/lib/utils';
-import { MOVEMENT_STATUS_TONE } from '@/components/financial-accounts/tokens';
+import { DistinctValuesList } from '@/components/contract-ui/DistinctValuesList';
 import { MOVEMENT_STATUS_CONFIG, ALL_STATUSES } from '../movementStatusConfig';
 
 /**
- * Filter dropdown for movement payment status.
+ * Filter dropdown for movement payment status. Uses the same
+ * search + list UX as the contract-ui list grids.
  *
  * @param {{ value: string|null, onChange: (v: string|null) => void }} props
  */
 export function StatusFilter({ value, onChange }) {
   const ui = useUI();
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
 
-  const options = [
-    { value: null, label: ui('financeAccountMovementsFilterAllStatuses'), family: null },
-    ...ALL_STATUSES.map((key) => ({
-      value: key,
-      label: ui(MOVEMENT_STATUS_CONFIG[key].labelKey),
-      family: MOVEMENT_STATUS_CONFIG[key].family,
-    })),
-  ];
+  // Build a label map once and a labelFor() that uses it
+  const labelMap = useMemo(() => {
+    const map = {};
+    for (const key of ALL_STATUSES) {
+      map[key] = ui(MOVEMENT_STATUS_CONFIG[key].labelKey);
+    }
+    return map;
+  }, [ui]);
 
-  const active = options.find((o) => o.value === value) ?? options[0];
+  const labelFor = (code) => labelMap[code] ?? code;
+
+  // Filter codes in-memory by search query
+  const filteredCodes = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return ALL_STATUSES;
+    return ALL_STATUSES.filter(
+      (code) =>
+        labelFor(code).toLowerCase().includes(q) ||
+        code.toLowerCase().includes(q),
+    );
+  }, [search, labelMap]);
+
+  // In-memory "distinct" object matching DistinctValuesList's expected shape
+  const distinct = {
+    search,
+    setSearch,
+    loading: false,
+    loadingMore: false,
+    hasMore: false,
+    loadMore: () => {},
+    values: filteredCodes,
+  };
+
+  const triggerLabel = value
+    ? labelFor(value)
+    : ui('financeAccountMovementsFilterAllStatuses');
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
           className="inline-flex h-10 items-center justify-between gap-1 rounded-lg border border-[#D1D4DB] bg-white px-3 text-sm font-medium leading-6 text-[#121217] shadow-[0_1px_2px_rgba(18,18,23,0.05)] hover:bg-[#F5F7F9]"
         >
-          <span className="truncate text-left">{active.label}</span>
+          <span className="truncate text-left">{triggerLabel}</span>
           <ChevronDown className="h-5 w-5 shrink-0 text-[#828FA3]" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-1" align="start">
-        <div role="listbox">
-          {options.map((opt) => {
-            const selected = opt.value === value || (opt.value === null && value === null);
-            const tone = opt.family ? MOVEMENT_STATUS_TONE[opt.family] : null;
-            return (
-              <button
-                key={opt.value ?? '__all__'}
-                type="button"
-                role="option"
-                aria-selected={selected}
-                onClick={() => onChange?.(opt.value)}
-                className={cn(
-                  'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm',
-                  'hover:bg-[#f5f7f9]',
-                  selected ? 'font-semibold text-[#121217]' : 'text-[#3f3f50]',
-                )}
-              >
-                {tone ? (
-                  <span
-                    className="h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: tone.text }}
-                  />
-                ) : (
-                  <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#D1D4DB]" />
-                )}
-                <span className="flex-1 text-left">{opt.label}</span>
-                {selected ? <Check className="h-4 w-4 text-[#121217]" /> : null}
-              </button>
-            );
-          })}
-        </div>
+      <PopoverContent className="w-64 p-0" align="start">
+        <DistinctValuesList
+          activeCode={value}
+          allLabel={ui('financeAccountMovementsFilterAllStatuses')}
+          codes={filteredCodes}
+          labelFor={labelFor}
+          distinct={distinct}
+          onSelect={(code) => {
+            onChange?.(code);
+            setOpen(false);
+          }}
+          searchPlaceholder={ui('searchStatuses')}
+        />
       </PopoverContent>
     </Popover>
   );

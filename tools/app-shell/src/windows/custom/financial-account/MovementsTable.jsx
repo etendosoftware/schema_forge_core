@@ -1,5 +1,5 @@
 import { toast } from 'sonner';
-import { useUI } from '@/i18n';
+import { useUI, useLocaleSwitch } from '@/i18n';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -17,18 +17,22 @@ import { PostingStatusDot } from './PostingStatusDot';
 import { MovementRowKebab } from './MovementRowKebab';
 
 /**
- * Formats an ISO date string as dd/MM/yyyy.
+ * Formats an ISO date string using the user's locale.
+ * es_ES → "06/05/2026", en_US → "5/6/2026".
+ *
  * @param {string} isoString
+ * @param {string} bcpLocale - BCP-47 locale, e.g. "es-ES", "en-US"
  * @returns {string}
  */
-function formatDate(isoString) {
+function formatDate(isoString, bcpLocale) {
   if (!isoString) return '—';
   const d = new Date(isoString);
   if (Number.isNaN(d.getTime())) return '—';
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const yyyy = d.getFullYear();
-  return `${dd}/${mm}/${yyyy}`;
+  return new Intl.DateTimeFormat(bcpLocale, {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(d);
 }
 
 const SKELETON_ROWS = [1, 2, 3, 4, 5];
@@ -55,6 +59,8 @@ function useTrxTypeLabel() {
  */
 export function MovementsTable({ movements, loading, selectedIds, onSelectionChange }) {
   const ui = useUI();
+  const { locale: appLocale } = useLocaleSwitch();
+  const bcpLocale = (appLocale || 'es_ES').replace('_', '-');
   const getTrxTypeLabel = useTrxTypeLabel();
   const allSelected = movements.length > 0 && selectedIds.size === movements.length;
   const someSelected = selectedIds.size > 0 && !allSelected;
@@ -73,7 +79,7 @@ export function MovementsTable({ movements, loading, selectedIds, onSelectionCha
     <TooltipProvider>
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="h-10 [&_th]:text-xs [&_th]:font-semibold [&_th]:leading-4 [&_th]:text-[#121217]">
             <TableHead className="w-10">
               <Checkbox
                 checked={allSelected}
@@ -87,8 +93,8 @@ export function MovementsTable({ movements, loading, selectedIds, onSelectionCha
             <TableHead>{ui('financeAccountMovementsColDescription')}</TableHead>
             <TableHead>{ui('financeAccountMovementsColStatus')}</TableHead>
             <TableHead>{ui('financeAccountMovementsColType')}</TableHead>
-            <TableHead className="text-right">{ui('financeAccountMovementsColAmount')}</TableHead>
-            <TableHead className="text-right">{ui('financeAccountMovementsColBalance')}</TableHead>
+            <TableHead>{ui('financeAccountMovementsColAmount')}</TableHead>
+            <TableHead>{ui('financeAccountMovementsColBalance')}</TableHead>
             <TableHead className="w-10" />
           </TableRow>
         </TableHeader>
@@ -107,14 +113,14 @@ export function MovementsTable({ movements, loading, selectedIds, onSelectionCha
           ) : movements.length === 0 ? (
             <TableRow>
               <TableCell colSpan={10} className="py-16 text-center text-sm text-[#6c6c89]">
-                No movements found
+                {ui('financeAccountMovementsEmpty')}
               </TableCell>
             </TableRow>
           ) : (
             movements.map((movement) => (
               <TableRow
                 key={movement.id}
-                className="group cursor-pointer"
+                className="group relative cursor-pointer bg-white transition-shadow hover:z-10 hover:bg-white hover:shadow-lg"
                 onClick={() => toast(ui('financeAccountMovementsRowViewDetailToast'))}
               >
                 {/* Checkbox — stop propagation so row click doesn't also toggle */}
@@ -126,22 +132,22 @@ export function MovementsTable({ movements, loading, selectedIds, onSelectionCha
                 </TableCell>
 
                 {/* Date */}
-                <TableCell className="whitespace-nowrap text-sm text-[#3f3f50]">
-                  {formatDate(movement.date)}
+                <TableCell className="whitespace-nowrap text-sm leading-5 text-[#121217]">
+                  {formatDate(movement.date, bcpLocale)}
                 </TableCell>
 
                 {/* Document */}
-                <TableCell className="whitespace-nowrap text-sm font-medium text-[#121217]">
+                <TableCell className="whitespace-nowrap text-sm font-semibold leading-5 text-[#121217]">
                   {movement.documentNo}
                 </TableCell>
 
                 {/* Contact */}
-                <TableCell className="text-sm text-[#3f3f50]">
+                <TableCell className="text-sm leading-5 text-[#121217]">
                   {movement.contact}
                 </TableCell>
 
                 {/* Description */}
-                <TableCell className="max-w-[200px] truncate text-sm text-[#6c6c89]">
+                <TableCell className="max-w-[200px] truncate text-sm text-[#121217]">
                   {movement.description}
                 </TableCell>
 
@@ -153,7 +159,7 @@ export function MovementsTable({ movements, loading, selectedIds, onSelectionCha
                 {/* Type + posting dot */}
                 <TableCell>
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-sm text-[#3f3f50]">{getTrxTypeLabel(movement)}</span>
+                    <span className="text-sm leading-5 text-[#121217]">{getTrxTypeLabel(movement)}</span>
                     <PostingStatusDot paymentStatus={movement.paymentStatus} />
                   </div>
                 </TableCell>
@@ -164,7 +170,7 @@ export function MovementsTable({ movements, loading, selectedIds, onSelectionCha
                     value={movement.amount}
                     currency={movement.currencyIso}
                     tone="auto"
-                    className="text-sm font-medium"
+                    className="text-sm font-semibold leading-5"
                   />
                 </TableCell>
 
@@ -178,9 +184,11 @@ export function MovementsTable({ movements, loading, selectedIds, onSelectionCha
                   />
                 </TableCell>
 
-                {/* Kebab — stop propagation so row click doesn't fire */}
+                {/* Kebab — visible on row hover */}
                 <TableCell onClick={(e) => e.stopPropagation()}>
-                  <MovementRowKebab movement={movement} />
+                  <div className="opacity-0 transition-opacity group-hover:opacity-100">
+                    <MovementRowKebab movement={movement} />
+                  </div>
                 </TableCell>
               </TableRow>
             ))

@@ -23,7 +23,7 @@ export function AccountSummaryStrip({ account, totals, loading }) {
   const handleCopyIban = () => {
     if (account?.iban) {
       navigator.clipboard.writeText(account.iban).then(() => {
-        toast(account.iban);
+        toast.success(ui('financeAccountDetailIbanCopied'));
       });
     }
   };
