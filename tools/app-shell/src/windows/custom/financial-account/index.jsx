@@ -27,7 +27,7 @@ export default function FinancialAccountWindow({ recordId }) {
     <TooltipProvider>
       <div className="flex h-full flex-col overflow-hidden">
         {/* Page header */}
-        <AccountDetailHeader account={account} loading={accountLoading} />
+        <AccountDetailHeader account={account} />
 
         {/* Tab strip + Export button */}
         <div className="flex items-center justify-between border-b border-[#E8EAEF] px-4">
