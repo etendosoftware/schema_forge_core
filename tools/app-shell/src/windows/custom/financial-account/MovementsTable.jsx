@@ -33,6 +33,15 @@ function formatDate(isoString) {
 
 const SKELETON_ROWS = [1, 2, 3, 4, 5];
 
+const TRX_TYPE_LABEL = {
+  BPD: 'Incoming Payment',
+  BPW: 'Outgoing Payment',
+};
+
+function getTrxTypeLabel(movement) {
+  return movement.typeLabel || TRX_TYPE_LABEL[movement.trxType] || movement.trxType || '—';
+}
+
 /**
  * Table of account movements.
  *
@@ -142,7 +151,7 @@ export function MovementsTable({ movements, loading, selectedIds, onSelectionCha
                 {/* Type + posting dot */}
                 <TableCell>
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-sm text-[#3f3f50]">{movement.typeLabel}</span>
+                    <span className="text-sm text-[#3f3f50]">{getTrxTypeLabel(movement)}</span>
                     <PostingStatusDot paymentStatus={movement.paymentStatus} />
                   </div>
                 </TableCell>
