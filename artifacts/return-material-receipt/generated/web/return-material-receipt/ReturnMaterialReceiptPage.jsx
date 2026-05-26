@@ -25,7 +25,6 @@ const labelOverrides = {
 // @sf-generated-start summary:returnMaterialReceipt
 const summary = [
   { key: 'documentNo', column: 'DocumentNo', type: 'string' },
-  { key: 'salesOrder', column: 'C_Order_ID', type: 'selector' },
   { key: 'orderReference', column: 'POReference', type: 'string' },
 ];
 
@@ -122,14 +121,6 @@ export const api = {
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
       "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/selectors/partnerAddress"
-    },
-    {
-      "entity": "returnMaterialReceipt",
-      "field": "salesOrder",
-      "column": "C_Order_ID",
-      "reference": "Order",
-      "inputMode": "search",
-      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/selectors/salesOrder"
     },
     {
       "entity": "returnMaterialReceiptLine",

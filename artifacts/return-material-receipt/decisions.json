@@ -63,10 +63,7 @@
           "section": "principal"
         },
         "salesOrder": {
-          "visibility": "readOnly",
-          "grid": false,
-          "inputMode": "search",
-          "section": "principal"
+          "visibility": "discarded"
         },
         "partnerAddress": {
           "reference": "BusinessPartnerLocation",

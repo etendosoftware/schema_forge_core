@@ -10,7 +10,6 @@ export const returnMaterialReceipt = [
     "warehouse": "Main Warehouse",
     "partnerAddress": "Acme Corp",
     "documentStatus": "DR",
-    "salesOrder": "Sample salesOrder",
     "orderReference": "Sample orderReference",
     "trackingNo": "RE-00001"
   },
@@ -23,7 +22,6 @@ export const returnMaterialReceipt = [
     "warehouse": "East Distribution Center",
     "partnerAddress": "TechFlow Inc",
     "documentStatus": "CO",
-    "salesOrder": "Sample salesOrder",
     "orderReference": "Sample orderReference",
     "trackingNo": "RE-00002"
   },
@@ -36,7 +34,6 @@ export const returnMaterialReceipt = [
     "warehouse": "West Hub",
     "partnerAddress": "Global Trade Ltd",
     "documentStatus": "VO",
-    "salesOrder": "Sample salesOrder",
     "orderReference": "Sample orderReference",
     "trackingNo": "RE-00003"
   },
@@ -49,7 +46,6 @@ export const returnMaterialReceipt = [
     "warehouse": "North Storage",
     "partnerAddress": "Summit Industries",
     "documentStatus": "IP",
-    "salesOrder": "Sample salesOrder",
     "orderReference": "Sample orderReference",
     "trackingNo": "RE-00004"
   },
@@ -62,7 +58,6 @@ export const returnMaterialReceipt = [
     "warehouse": "South Logistics",
     "partnerAddress": "Pacific Partners",
     "documentStatus": "DR",
-    "salesOrder": "Sample salesOrder",
     "orderReference": "Sample orderReference",
     "trackingNo": "RE-00005"
   },
@@ -75,7 +70,6 @@ export const returnMaterialReceipt = [
     "warehouse": "Central Depot",
     "partnerAddress": "Alpine Solutions",
     "documentStatus": "CO",
-    "salesOrder": "Sample salesOrder",
     "orderReference": "Sample orderReference",
     "trackingNo": "RE-00006"
   },
@@ -88,7 +82,6 @@ export const returnMaterialReceipt = [
     "warehouse": "Regional Warehouse A",
     "partnerAddress": "Meridian Group",
     "documentStatus": "VO",
-    "salesOrder": "Sample salesOrder",
     "orderReference": "Sample orderReference",
     "trackingNo": "RE-00007"
   },
@@ -101,7 +94,6 @@ export const returnMaterialReceipt = [
     "warehouse": "Regional Warehouse B",
     "partnerAddress": "Vertex Systems",
     "documentStatus": "IP",
-    "salesOrder": "Sample salesOrder",
     "orderReference": "Sample orderReference",
     "trackingNo": "RE-00008"
   },
@@ -114,7 +106,6 @@ export const returnMaterialReceipt = [
     "warehouse": "Main Warehouse",
     "partnerAddress": "Atlas Manufacturing",
     "documentStatus": "DR",
-    "salesOrder": "Sample salesOrder",
     "orderReference": "Sample orderReference",
     "trackingNo": "RE-00009"
   },
@@ -127,7 +118,6 @@ export const returnMaterialReceipt = [
     "warehouse": "East Distribution Center",
     "partnerAddress": "Nova Enterprises",
     "documentStatus": "CO",
-    "salesOrder": "Sample salesOrder",
     "orderReference": "Sample orderReference",
     "trackingNo": "RE-00010"
   },
@@ -140,7 +130,6 @@ export const returnMaterialReceipt = [
     "warehouse": "West Hub",
     "partnerAddress": "Pinnacle Services",
     "documentStatus": "VO",
-    "salesOrder": "Sample salesOrder",
     "orderReference": "Sample orderReference",
     "trackingNo": "RE-00011"
   },
@@ -153,7 +142,6 @@ export const returnMaterialReceipt = [
     "warehouse": "North Storage",
     "partnerAddress": "Horizon Labs",
     "documentStatus": "IP",
-    "salesOrder": "Sample salesOrder",
     "orderReference": "Sample orderReference",
     "trackingNo": "RE-00012"
   }

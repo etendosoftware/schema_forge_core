@@ -1,8 +1,8 @@
 {
-  "version": "0.3.0",
+  "version": "0.4.0",
   "generatedAt": "2026-04-29T18:11:05.114Z",
-  "updatedAt": "2026-05-22T18:37:18.607Z",
-  "checksum": "3be54e34cabd71ea",
+  "updatedAt": "2026-05-26T12:20:18.300Z",
+  "checksum": "25e84d3a8ef0a417",
   "frontendContract": {
     "window": {
       "id": "123271B9AD60469BAE8A924841456B63",
@@ -241,21 +241,6 @@
             ],
             "defaultValue": "DR",
             "gridOrder": 4
-          },
-          {
-            "name": "salesOrder",
-            "apiKey": "salesOrder",
-            "column": "C_Order_ID",
-            "label": "RM order",
-            "type": "foreignKey",
-            "tsType": "string",
-            "visibility": "readOnly",
-            "required": false,
-            "grid": false,
-            "form": true,
-            "reference": "Order",
-            "inputMode": "search",
-            "section": "principal"
           },
           {
             "name": "orderReference",
@@ -638,7 +623,7 @@
             "apiKey": "salesOrder",
             "column": "C_Order_ID",
             "type": "foreignKey",
-            "visibility": "readOnly",
+            "visibility": "discarded",
             "required": false
           },
           {
@@ -1497,14 +1482,6 @@
         "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/selectors/partnerAddress"
       },
       {
-        "entity": "returnMaterialReceipt",
-        "field": "salesOrder",
-        "column": "C_Order_ID",
-        "reference": "Order",
-        "inputMode": "search",
-        "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/selectors/salesOrder"
-      },
-      {
         "entity": "returnMaterialReceiptLine",
         "field": "product",
         "column": "M_Product_ID",
@@ -1881,14 +1858,6 @@
         "description": "Field 'partnerAddress' should be present in returnMaterialReceipt"
       },
       {
-        "id": "t-field-presence-returnMaterialReceipt-salesOrder",
-        "category": "field-presence",
-        "entity": "returnMaterialReceipt",
-        "field": "salesOrder",
-        "runner": "node",
-        "description": "Field 'salesOrder' should be present in returnMaterialReceipt"
-      },
-      {
         "id": "t-field-presence-returnMaterialReceipt-trackingNo",
         "category": "field-presence",
         "entity": "returnMaterialReceipt",
@@ -2015,14 +1984,6 @@
         "field": "partnerAddress",
         "runner": "node",
         "description": "Field 'partnerAddress' should have type 'string' in returnMaterialReceipt"
-      },
-      {
-        "id": "t-field-type-returnMaterialReceipt-salesOrder",
-        "category": "field-type",
-        "entity": "returnMaterialReceipt",
-        "field": "salesOrder",
-        "runner": "node",
-        "description": "Field 'salesOrder' should have type 'string' in returnMaterialReceipt"
       },
       {
         "id": "t-field-type-returnMaterialReceipt-trackingNo",
@@ -2355,14 +2316,6 @@
         "field": "partnerAddress",
         "runner": "node",
         "description": "Selector endpoint for 'partnerAddress' in returnMaterialReceipt should exist"
-      },
-      {
-        "id": "t-selector-endpoint-returnMaterialReceipt-salesOrder",
-        "category": "selector-endpoint",
-        "entity": "returnMaterialReceipt",
-        "field": "salesOrder",
-        "runner": "node",
-        "description": "Selector endpoint for 'salesOrder' in returnMaterialReceipt should exist"
       },
       {
         "id": "t-selector-endpoint-returnMaterialReceipt-warehouse",
@@ -2773,6 +2726,14 @@
         "description": "System field 'salesCampaign' should exist in backend but not frontend for returnMaterialReceipt"
       },
       {
+        "id": "t-system-field-returnMaterialReceipt-salesOrder",
+        "category": "system-field",
+        "entity": "returnMaterialReceipt",
+        "field": "salesOrder",
+        "runner": "node",
+        "description": "System field 'salesOrder' should exist in backend but not frontend for returnMaterialReceipt"
+      },
+      {
         "id": "t-system-field-returnMaterialReceipt-salesRepresentative",
         "category": "system-field",
         "entity": "returnMaterialReceipt",
@@ -3100,27 +3061,27 @@
       }
     ],
     "summary": {
-      "total": 182,
+      "total": 180,
       "byCategory": {
         "action-endpoint": 12,
         "crud-flags": 2,
         "default-value-type": 4,
         "displaylogic-evaluable": 2,
         "displaylogic-valid": 2,
-        "field-presence": 17,
-        "field-type": 17,
+        "field-presence": 16,
+        "field-type": 16,
         "process-failure": 1,
         "process-happy": 1,
         "readonlylogic-evaluable": 10,
         "readonlylogic-valid": 10,
         "rule-declared": 4,
         "searchable-filters": 5,
-        "selector-endpoint": 7,
-        "system-field": 86,
+        "selector-endpoint": 6,
+        "system-field": 87,
         "visibility": 2
       },
       "byRunner": {
-        "node": 180,
+        "node": 178,
         "junit": 2
       }
     }
