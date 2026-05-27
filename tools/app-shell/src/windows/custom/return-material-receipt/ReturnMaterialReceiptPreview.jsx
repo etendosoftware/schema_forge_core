@@ -1,24 +1,13 @@
 import { useRef, useState, useCallback } from 'react';
-import { Download, Edit2, Mail } from 'lucide-react';
-import { Button } from '@/components/ui/button.jsx';
 import { useUI, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { formatCalendarDate } from '@/lib/dateOnly';
 import GenericPreviewModal from '../shared/GenericPreviewModal.jsx';
-import { PreviewPdfPanel } from '../shared/PreviewActionButtons.jsx';
+import PreviewActionButtons, { PreviewPdfPanel, PreviewEmptyPanel } from '../shared/PreviewActionButtons.jsx';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 import { useReturnReceiptPdf } from './useReturnReceiptPdf.js';
 import RelatedDocuments from '@generated/return-material-receipt/custom/RelatedDocuments';
 import { STATUS_BADGE, STATUS_KEYS } from '@/components/related-documents/constants.jsx';
 import { InfoRow, CardShell } from '../shared/preview-cards/SummaryCard.jsx';
-
-function EmptyPanel({ icon, text }) {
-  return (
-    <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-400 py-20">
-      <span className="text-3xl">{icon}</span>
-      <p className="text-sm">{text}</p>
-    </div>
-  );
-}
 
 function ReturnReceiptStatsPanel({ receipt, partnerName, movementDate, ui }) {
   const warehouseLabel = receipt['warehouse$_identifier'] || '—';
@@ -103,35 +92,15 @@ export default function ReturnMaterialReceiptPreview({ receipt, token, apiBaseUr
   };
 
   const actionButtons = (
-    <>
-      <Button
-        size="sm"
-        className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-[#121217] hover:bg-[#2a2a30] text-white [&_svg]:size-5"
-        onClick={openEmailModal}
-      >
-        <Mail />
-        {ui('invoicePreviewSend')}
-      </Button>
-      <Button
-        size="sm"
-        variant="outline"
-        className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] disabled:opacity-40 disabled:cursor-not-allowed [&_svg]:size-5"
-        disabled={!pdfBlob}
-        onClick={pdfBlob ? handleDownload : undefined}
-      >
-        <Download className="text-[#828FA3]" />
-        {ui('invoicePreviewDownloadPdf')}
-      </Button>
-      <Button
-        size="sm"
-        variant="outline"
-        className="gap-1 px-2 py-1 h-8 rounded-lg text-sm font-medium bg-white border-[#D1D4DB] shadow-sm text-[#121217] [&_svg]:size-5"
-        onClick={() => modalRef.current?.triggerEdit?.()}
-      >
-        <Edit2 className="text-[#828FA3]" />
-        {ui('invoicePreviewEdit')}
-      </Button>
-    </>
+    <PreviewActionButtons
+      onEmail={openEmailModal}
+      onDownloadPdf={handleDownload}
+      hasPdf={!!pdfBlob}
+      triggerEdit={() => modalRef.current?.triggerEdit?.()}
+      sendLabel={ui('invoicePreviewSend')}
+      downloadLabel={ui('invoicePreviewDownloadPdf')}
+      editLabel={ui('invoicePreviewEdit')}
+    />
   );
 
   const tabs = [
@@ -150,12 +119,12 @@ export default function ReturnMaterialReceiptPreview({ receipt, token, apiBaseUr
     {
       key: 'messages',
       label: ui('invoicePreviewMessages'),
-      content: <EmptyPanel icon="💬" text={ui('invoicePreviewNoMessagesYet')} />,
+      content: <PreviewEmptyPanel icon="💬" text={ui('invoicePreviewNoMessagesYet')} />,
     },
     {
       key: 'history',
       label: ui('invoicePreviewHistory'),
-      content: <EmptyPanel icon="🕐" text={ui('invoicePreviewNoActivityRecorded')} />,
+      content: <PreviewEmptyPanel icon="🕐" text={ui('invoicePreviewNoActivityRecorded')} />,
     },
     {
       key: 'documents',
