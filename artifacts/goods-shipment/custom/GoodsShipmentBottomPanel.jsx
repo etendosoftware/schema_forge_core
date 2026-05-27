@@ -6,7 +6,7 @@ import RelatedDocuments from './RelatedDocuments';
 import ImportFromSalesOrderModal from './ImportFromSalesOrderModal';
 import ImportFromSalesInvoiceModal from './ImportFromSalesInvoiceModal';
 
-function ShipmentLinesEmptyState({ data, recordId, apiBaseUrl, token, onAddLine, canAddLine, onRefresh }) {
+function ShipmentLinesEmptyState({ data, recordId, apiBaseUrl, token, onAddLine, canAddLine, onRefresh, onSave }) {
   const ui = useUI();
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -18,6 +18,22 @@ function ShipmentLinesEmptyState({ data, recordId, apiBaseUrl, token, onAddLine,
     () => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }),
     [token],
   );
+
+  const handleOpenOrderModal = async () => {
+    if (onSave) {
+      const ok = await onSave();
+      if (!ok) return;
+    }
+    setShowOrderModal(true);
+  };
+
+  const handleOpenInvoiceModal = async () => {
+    if (onSave) {
+      const ok = await onSave();
+      if (!ok) return;
+    }
+    setShowInvoiceModal(true);
+  };
 
   return (
     <div style={{ margin: '24px 16px', padding: '32px 24px', background: 'var(--color-background-secondary)', borderRadius: 'var(--border-radius-lg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
@@ -36,7 +52,7 @@ function ShipmentLinesEmptyState({ data, recordId, apiBaseUrl, token, onAddLine,
             + {ui('addLines')}
           </button>
           {bpId && (
-            <button type="button" onClick={() => setShowOrderModal(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
+            <button type="button" onClick={handleOpenOrderModal} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
@@ -46,7 +62,7 @@ function ShipmentLinesEmptyState({ data, recordId, apiBaseUrl, token, onAddLine,
             </button>
           )}
           {bpId && (
-            <button type="button" onClick={() => setShowInvoiceModal(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
+            <button type="button" onClick={handleOpenInvoiceModal} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />

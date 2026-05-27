@@ -64,12 +64,10 @@ const fetchLines = async ({ base, headers, docId, sharedContext }) => {
   if (!invoiceLinesRes.ok) return [];
   const invoiceLines = (await invoiceLinesRes.json())?.response?.data || [];
 
-  const deliveredByOrderLine = {};
   const orderLineByProduct = {};
   if (orderLinesRes?.ok) {
     const orderLines = (await orderLinesRes.json())?.response?.data || [];
     orderLines.forEach(ol => {
-      deliveredByOrderLine[ol.id] = Number(ol.deliveredQuantity) || 0;
       if (ol.product) orderLineByProduct[ol.product] = ol.id;
     });
   }
@@ -78,18 +76,16 @@ const fetchLines = async ({ base, headers, docId, sharedContext }) => {
     const qty = Number(l.invoicedQuantity) || 0;
     const alreadyLinked = !!l.goodsShipmentLine;
     const orderLineId = l.salesOrderLine || orderLineByProduct[l.product];
-    const delivered = orderLineId ? (deliveredByOrderLine[orderLineId] ?? 0) : 0;
     const draftEntry = orderLineId ? sharedContext.draftInfo?.[orderLineId] : undefined;
-    const inOtherDrafts = draftEntry?.qty || 0;
-    const pending = alreadyLinked ? 0 : Math.max(0, qty - delivered - inOtherDrafts);
+    const maxQty = alreadyLinked ? 0 : qty;
     return {
       ...l,
       _orderLineId: orderLineId,
       _productName: l['product$_identifier'] || l.id,
-      _maxQty: pending,
+      _maxQty: maxQty,
       _unitPrice: 0,
       _lineNetAmount: 0,
-      _alreadyImported: pending === 0,
+      _alreadyImported: maxQty === 0,
       _inDraftShipments: draftEntry?.docNos?.size ? [...draftEntry.docNos] : undefined,
     };
   });
@@ -102,7 +98,6 @@ const buildLineBody = async ({ line, qty, invoiceId: shipmentId, lineNo }) => ({
   product: line.product,
   movementQuantity: qty,
   uOM: line.uOM || null,
-  ...(line._orderLineId ? { salesOrderLine: line._orderLineId } : {}),
   lineNo,
 });
 

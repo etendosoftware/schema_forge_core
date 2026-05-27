@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useMemo, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { LinesBottomSection, LinesEmptyState } from '@/components/contract-ui';
 import { useUI } from '@/i18n';
@@ -16,18 +16,32 @@ export default function ReturnMaterialReceiptBottomPanel(props) {
 }
 ReturnMaterialReceiptBottomPanel.showLineTotals = false;
 
-function ReturnReceiptLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl, onRefresh }) {
+function ReturnReceiptLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl, onRefresh, onSave, forceOpen, onForceOpenHandled }) {
   const ui = useUI();
   const [showModal, setShowModal] = useState(false);
   const bpId = data?.businessPartner;
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
+  useEffect(() => {
+    if (!forceOpen || !bpId) return;
+    setShowModal(true);
+    onForceOpenHandled?.();
+  }, [forceOpen, bpId, onForceOpenHandled]);
+
+  const handleImportClick = async () => {
+    if (onSave) {
+      const shouldOpen = await onSave();
+      if (!shouldOpen) return;
+    }
+    setShowModal(true);
+  };
+
   const importButton = bpId ? (
     <button
       type="button"
       data-testid="action-import-shipment-empty-state"
-      onClick={() => setShowModal(true)}
+      onClick={handleImportClick}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}
     >
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -62,7 +76,7 @@ function ReturnReceiptLinesEmptyState({ data, onAddLine, recordId, token, apiBas
 }
 
 const ReturnReceiptLineActions = forwardRef(function ReturnReceiptLineActions(
-  { data, recordId, token, apiBaseUrl, onRefresh, hideTrigger = false },
+  { data, recordId, token, apiBaseUrl, onRefresh, hideTrigger = false, onSave, forceOpen, onForceOpenHandled },
   ref,
 ) {
   const ui = useUI();
@@ -72,7 +86,21 @@ const ReturnReceiptLineActions = forwardRef(function ReturnReceiptLineActions(
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
+  useEffect(() => {
+    if (!forceOpen || !isDraft || !bpId) return;
+    setShowModal(true);
+    onForceOpenHandled?.();
+  }, [forceOpen, isDraft, bpId, onForceOpenHandled]);
+
   useImperativeHandle(ref, () => ({ openImportModal: () => setShowModal(true) }), []);
+
+  const handleImportClick = async () => {
+    if (onSave) {
+      const shouldOpen = await onSave();
+      if (!shouldOpen) return;
+    }
+    setShowModal(true);
+  };
 
   if (!isDraft || !bpId) return null;
 
@@ -81,7 +109,7 @@ const ReturnReceiptLineActions = forwardRef(function ReturnReceiptLineActions(
       {!hideTrigger && (
         <button
           type="button"
-          onClick={() => setShowModal(true)}
+          onClick={handleImportClick}
           style={{ all: 'unset', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-secondary, #6b7280)', cursor: 'pointer' }}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
