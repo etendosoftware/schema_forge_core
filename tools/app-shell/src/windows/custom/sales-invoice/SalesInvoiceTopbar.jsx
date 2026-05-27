@@ -16,7 +16,7 @@ export default function SalesInvoiceTopbar({ data, recordId, token, apiBaseUrl, 
   useEffect(() => {
     const handleInvoiceUpdated = (event) => {
       if (String(event.detail?.invoiceId) !== String(recordId)) return;
-      window.location.reload();
+      onProcess?.();
     };
 
     window.addEventListener('sales-invoice:invoice-updated', handleInvoiceUpdated);
