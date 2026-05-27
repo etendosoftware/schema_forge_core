@@ -314,7 +314,16 @@ export const api = {
       "column": "PO_Financial_Account_ID",
       "reference": "FIN_Financial_Account",
       "inputMode": "selector",
-      "url": "/sws/neo/contacts/businessPartner/selectors/pOFinancialAccount"
+      "url": "/sws/neo/contacts/businessPartner/selectors/pOFinancialAccount",
+      "context": {
+        "required": [
+          {
+            "param": "PO_Paymentmethod_ID",
+            "source": "field",
+            "field": "pOPaymentMethod"
+          }
+        ]
+      }
     },
     {
       "entity": "businessPartner",
@@ -458,7 +467,16 @@ export const api = {
       "column": "PO_Financial_Account_ID",
       "reference": "Financial_Account",
       "inputMode": "search",
-      "url": "/sws/neo/contacts/vendorCreditor/selectors/pOFinancialAccount"
+      "url": "/sws/neo/contacts/vendorCreditor/selectors/pOFinancialAccount",
+      "context": {
+        "required": [
+          {
+            "param": "PO_Paymentmethod_ID",
+            "source": "parentField",
+            "field": "pOPaymentMethod"
+          }
+        ]
+      }
     },
     {
       "entity": "vendorCreditor",

@@ -12,11 +12,11 @@ import {
 import FmBoxes303 from './FmBoxes303.jsx';
 import { PresentModal, FileGenModal, ConfigDrawer, CompareDrawer } from '../../FmOverlays.jsx';
 import { neoBase } from '@/components/related-documents/helpers.js';
-import { formatAmount, formatPeriod, computeBoxes303 } from '../../fiscalModelsUtils.js';
+import { formatAmount, formatPeriod, computeBoxes303, generate303File } from '../../fiscalModelsUtils.js';
 
 const STEPPER_INDEX = {
-  pendiente: 0, borrador: 1, listo: 2,
-  presentado: 3, presentadoOtra: 3, presentadoAcuse: 3,
+  borrador: 0, listo: 1,
+  presentado: 2, presentadoOtra: 2, presentadoAcuse: 2,
   omitido: -1,
 };
 
@@ -290,10 +290,11 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
   const [orgIdent, setOrgIdent] = useState({ nif: '', nombre: '' });
   const [identChecks, setIdentChecks] = useState(decl.identification ?? {});
   const handleIdentChange = (id, value) => setIdentChecks(prev => ({ ...prev, [id]: value }));
-  const [liveBoxes,   setLiveBoxes]   = useState(null);
-  const [liveSummary, setLiveSummary] = useState(null);
-  const [liveSources, setLiveSources] = useState(null);
+  const [liveBoxes,   setLiveBoxes]   = useState(decl._precomputed?.boxes   ?? null);
+  const [liveSummary, setLiveSummary] = useState(decl._precomputed?.summary ?? null);
+  const [liveSources, setLiveSources] = useState(decl._precomputed?.sources ?? null);
   const [computing,   setComputing]   = useState(false);
+  const [generating,  setGenerating]  = useState(false);
 
   async function handleCompute() {
     setComputing(true);
@@ -306,6 +307,23 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
       }
     } finally {
       setComputing(false);
+    }
+  }
+
+  async function handleGenerate() {
+    setGenerating(true);
+    const result = liveSummary?.result ?? decl.summary?.result ?? 0;
+    let kind = decl.result?.kind;
+    if (!kind) {
+      if (result > 0) kind = 'ingresar';
+      else if (result < 0) kind = 'compensar';
+      else kind = 'informativa';
+    }
+    const declForGenerate = { ...decl, result: { ...decl.result, kind } };
+    const ok = await generate303File(declForGenerate, { token, apiBaseUrl });
+    setGenerating(false);
+    if (!ok) {
+      console.error('generate303File failed for', decl.year, decl.period);
     }
   }
 
@@ -324,7 +342,6 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
   }, [token, apiBaseUrl]);
 
   const stepperSteps = [
-    t('fm.stepper.pending'),
     t('fm.stepper.draft'),
     t('fm.stepper.ready'),
     t('fm.stepper.presented'),
@@ -420,6 +437,7 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
               <button
                 className={`fm-349-header__btn${fileBlocked ? ' fm-303-header__btn--locked' : ''}`}
                 onClick={() => setShowFilegen(true)}
+                disabled={generating}
                 title={fileBlocked ? t('fm.incidents.block_sub') : ''}
                 style={fileBlocked ? { color: '#dc2626', borderColor: '#fca5a5', background: '#fef2f2' } : {}}
               >
@@ -573,7 +591,7 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
         <PresentModal decl={decl} onConfirm={handlePresent} onClose={() => setShowPresent(false)} />
       )}
       {showFilegen && (
-        <FileGenModal decl={decl} onConfirm={() => {}} onClose={() => setShowFilegen(false)} />
+        <FileGenModal decl={decl} onConfirm={handleGenerate} onClose={() => setShowFilegen(false)} />
       )}
       {showConfig && <ConfigDrawer onClose={() => setShowConfig(false)} token={token} apiBaseUrl={apiBaseUrl} />}
       {showCompare && <CompareDrawer decl={decl} onClose={() => setShowCompare(false)} />}

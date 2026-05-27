@@ -14,7 +14,7 @@ export default function CertSection({ context, orgId, apiBaseUrl }) {
 
   useEffect(() => {
     if (!orgId || !apiBaseUrl) return;
-    apiFetch(`/certificate`)
+    apiFetch(`/certificate?${new URLSearchParams({ orgId })}`)
       .then(r => r.json())
       .then(data => {
         if (data?.exists) setCert({ name: ui('fiscal.cert.loaded'), validTo: data.validTo ?? '' });

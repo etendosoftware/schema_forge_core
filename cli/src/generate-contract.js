@@ -7,6 +7,15 @@ const slug = (s) => String(s ?? '')
   .replace(/[^A-Za-z0-9]+/g, '-')
   .replace(/(?:^-)|(?:-$)/g, '');
 
+const CONTRACT_ACTION_PROJECTION = [
+  ['entity', 'entity'],
+  ['field', 'name'],
+  ['column', 'column'],
+  ['url', 'url'],
+  ['processId', 'processId'],
+  ['processType', 'processType'],
+];
+
 // Factory for monotonically-disambiguating ID maker. Each call returns a fresh closure
 // so different generators don't share state.
 function createIdMaker() {
@@ -20,6 +29,21 @@ function createIdMaker() {
     seenIds.add(id);
     return id;
   };
+}
+
+function checksumFor(payload) {
+  return createHash('sha256')
+    .update(JSON.stringify(payload))
+    .digest('hex')
+    .slice(0, 16);
+}
+
+function projectDefined(source, projection) {
+  const result = {};
+  for (const [targetKey, sourceKey] of projection) {
+    if (source?.[sourceKey] !== undefined) result[targetKey] = source[sourceKey];
+  }
+  return result;
 }
 
 const TS_TYPE_MAP = {
@@ -625,6 +649,343 @@ export function generateTestManifest(frontendContract, backendContract, rules = 
 }
 
 
+function createSelectorContextIndex(schema, frontendContract, currentEntityName) {
+  const currentFields = frontendContract?.entities?.[currentEntityName]?.fields ?? [];
+  const currentSchemaEntity = (schema?.entities ?? []).find(entity => entity.name === currentEntityName);
+  const isHeaderEntity = currentSchemaEntity?.level === 'header' || currentEntityName === schema?.window?.primaryEntity;
+  const parentFields = [];
+  const otherFields = [];
+
+  for (const [entityName, entityData] of Object.entries(frontendContract?.entities ?? {})) {
+    if (entityName === currentEntityName) continue;
+    const schemaEntity = (schema?.entities ?? []).find(entity => entity.name === entityName);
+    const bucket = schemaEntity?.level === 'header' || entityName === schema?.window?.primaryEntity
+      ? parentFields
+      : otherFields;
+    bucket.push(...(entityData.fields ?? []));
+  }
+
+  const lookupField = (param) => {
+    const matches = (field) => field?.column === param || field?.name === param;
+    if (!isHeaderEntity) {
+      const parent = parentFields.find(matches);
+      if (parent) return { field: parent, source: 'parentField' };
+    }
+
+    const current = currentFields.find(matches);
+    if (current) return { field: current, source: 'field' };
+
+    const parent = parentFields.find(matches) ?? otherFields.find(matches);
+    if (parent) return { field: parent, source: 'parentField' };
+
+    return null;
+  };
+
+  return { lookupField };
+}
+
+function buildCascadeContextEntry(param, contextIndex) {
+  const match = contextIndex?.lookupField(param);
+  if (!match?.field?.name) return null;
+
+  const entry = {
+    param,
+    source: match.source,
+    field: match.field.name,
+  };
+  if (match.field.type === 'date' || match.field.type === 'datetime') {
+    entry.format = 'DD-MM-YYYY';
+  }
+  return entry;
+}
+
+function isDateContextEntry(entry, contextIndex) {
+  const match = contextIndex?.lookupField(entry?.param);
+  return match?.field?.type === 'date' || match?.field?.type === 'datetime';
+}
+
+/**
+ * Build selector context metadata from field dependsOn, validationRule params,
+ * and window category. Returns a context object with required/optional entries.
+ */
+function buildSelectorContext(field, windowCategory, contextIndex) {
+  const context = {};
+  const required = [];
+  const optional = [];
+
+  // dependsOn -> required param from parent field
+  if (field.dependsOn && field.dependsOn.field && field.dependsOn.filterKey) {
+    required.push({
+      param: field.dependsOn.filterKey,
+      source: 'field',
+      field: field.dependsOn.field,
+    });
+  }
+
+  // validationRule cascadeParams -> derive context requirements
+  if (field.validationRule && Array.isArray(field.validationRule.cascadeParams)) {
+    const cascadeParams = field.validationRule.cascadeParams;
+
+    // IsSOTrx / isSOTrx -> window category derived.
+    // Preserve the exact validation-rule parameter name because NEO selector
+    // context keys are consumed by classic validation SQL.
+    let trxParam = null;
+    if (cascadeParams.includes('isSOTrx')) {
+      trxParam = 'isSOTrx';
+    } else if (cascadeParams.includes('IsSOTrx')) {
+      trxParam = 'IsSOTrx';
+    }
+    if (trxParam) {
+      if (windowCategory === 'sales' || windowCategory === 'purchases') {
+        required.push({
+          param: trxParam,
+          source: 'windowCategory',
+        });
+      } else {
+        optional.push({
+          param: trxParam,
+          source: 'windowCategory',
+        });
+      }
+    }
+
+    const dateParams = cascadeParams.filter(param => /date/i.test(param));
+    for (const param of cascadeParams) {
+      if (param === 'isSOTrx' || param === 'IsSOTrx') continue;
+      if (/date/i.test(param)) continue;
+      if (required.some(r => r.param === param)) continue;
+      const entry = buildCascadeContextEntry(param, contextIndex);
+      if (entry) required.push(entry);
+    }
+
+    if (dateParams.length > 0) {
+      const dateEntry = dateParams
+        .map(param => buildCascadeContextEntry(param, contextIndex))
+        .find(entry => entry && isDateContextEntry(entry, contextIndex));
+      const canonicalParam = dateParams[0];
+      if (dateEntry && !required.some(r => r.param === canonicalParam)) {
+        required.push({
+          ...dateEntry,
+          param: canonicalParam,
+        });
+      }
+    }
+  }
+
+  if (required.length > 0) context.required = required;
+  if (optional.length > 0) context.optional = optional;
+
+  return Object.keys(context).length > 0 ? context : null;
+}
+
+// ─── Action classification helpers for ETP-3956 ──────────────────────────────
+
+/**
+ * Infer action type from field name, column, and window category.
+ */
+function inferActionType(field, windowCategory) {
+  const name = (field.name || '').toLowerCase();
+  const column = (field.column || '').toLowerCase();
+
+  if (name === 'documentaction' || column === 'docaction') return 'documentAction';
+  if (name === 'processnow') return 'documentAction';
+
+  const lifecyclePatterns = ['complete', 'void', 'reactivate', 'close', 'reverse', 'post', 'approve', 'reject'];
+  if (lifecyclePatterns.some(p => name.includes(p))) return 'documentAction';
+
+  if (name.includes('aprm') || name.includes('payment')) return 'paymentAction';
+
+  if (name.includes('create') || name.includes('generate') || name.includes('copyfrom') ||
+      name.includes('pickfrom') || name.includes('receive') || name.includes('send')) return 'createFrom';
+
+  return 'utilityAction';
+}
+
+/**
+ * Infer action parameters from action type and field metadata.
+ */
+function inferActionParameters(field, actionType, curated) {
+  if (curated?.parameters) return curated.parameters;
+
+  const params = [];
+  if (actionType === 'documentAction') {
+    params.push({
+      name: 'docAction',
+      type: 'string',
+      required: true,
+      description: 'Document action code (e.g. CO=Complete, VO=Void, RE=Reactivate)',
+    });
+  }
+  return params;
+}
+
+/**
+ * Infer preconditions from action type and field metadata.
+ */
+function inferActionPreconditions(field, actionType, curated) {
+  if (curated?.preconditions) return curated.preconditions;
+
+  if (actionType === 'documentAction') {
+    return [{
+      field: 'documentStatus',
+      operator: 'in',
+      values: ['DR', 'IP'],
+      description: 'Document must be in draft or in-progress state',
+    }];
+  }
+  return [];
+}
+
+/**
+ * Infer side effects from action type.
+ */
+function inferActionEffects(field, actionType) {
+  switch (actionType) {
+    case 'documentAction':
+      return ['Updates document status', 'May trigger workflow transitions'];
+    case 'paymentAction':
+      return ['Creates or processes payment records', 'May update invoice/order payment status'];
+    case 'createFrom':
+      return ['Creates child or related records', 'May copy data from source document'];
+    default:
+      return ['May update related records'];
+  }
+}
+
+/**
+ * Infer edge cases for an action.
+ */
+function inferEdgeCases(field, actionType) {
+  switch (actionType) {
+    case 'documentAction':
+      return [
+        'Document is already completed or closed',
+        'Document has pending lines or missing required fields',
+        'User lacks permission to execute the action',
+      ];
+    case 'paymentAction':
+      return [
+        'Payment amount exceeds remaining balance',
+        'Payment method is not configured for the business partner',
+        'Invoice is already fully paid',
+      ];
+    case 'createFrom':
+      return [
+        'Source document has no valid lines to copy',
+        'Target entity already has linked records',
+        'Required reference data is missing (price list, warehouse, etc.)',
+      ];
+    default:
+      return [
+        'Required context is missing',
+        'User lacks permission',
+        'Record is in an incompatible state',
+      ];
+  }
+}
+
+/**
+ * Classify an action field into a structured action model for agents.
+ *
+ * @param {object} field - Button field from schema entity
+ * @param {string} entityName - Entity name (header, lines, etc.)
+ * @param {string} specName - Spec name (kebab-case)
+ * @param {string} windowCategory - Window category (sales, purchases, etc.)
+ * @param {object} decisionsActions - Curated action overrides from decisions.json
+ * @returns {object} Enriched action entry
+ */
+function classifyAction(field, entityName, specName, windowCategory, decisionsActions) {
+  const curated = decisionsActions?.[field.name] ?? decisionsActions?.[field.column] ?? null;
+  const actionType = inferActionType(field, windowCategory);
+  const url = `/sws/neo/${specName}/${entityName}/{id}/action/${field.name}`;
+  const requiresRecord = true;
+  const parameters = inferActionParameters(field, actionType, curated);
+  const preconditions = inferActionPreconditions(field, actionType, curated);
+  const effects = curated?.effects ?? inferActionEffects(field, actionType);
+  const dryRunSupported = curated?.dryRunSupported ?? (actionType === 'documentAction');
+  const edgeCases = curated?.edgeCases ?? inferEdgeCases(field, actionType);
+
+  const action = {
+    name: field.name,
+    actionType,
+    entity: entityName,
+    column: field.column,
+    requiresRecord,
+    method: 'POST',
+    url,
+    parameters,
+    preconditions,
+    effects,
+    dryRunSupported,
+    edgeCases,
+  };
+
+  if (field.processId) action.processId = field.processId;
+  if (field.processType) action.processType = field.processType;
+  if (curated?.description) action.description = curated.description;
+  if (curated?.allowedValues) {
+    const paramName = curated.paramName || 'docAction';
+    action.parameters = action.parameters.map(p =>
+      p.name === paramName ? { ...p, allowedValues: curated.allowedValues } : p
+    );
+  }
+
+  return action;
+}
+
+// ─── End action classification helpers ───────────────────────────────────────
+
+function buildCrudPrediction(baseUrl, entityName, feEntity) {
+  return {
+    get: true,
+    getById: true,
+    post: true,
+    put: true,
+    patch: true,
+    delete: true,
+    listUrl: `${baseUrl}/${entityName}`,
+    detailUrl: `${baseUrl}/${entityName}/{id}`,
+    supportedFilters: feEntity ? feEntity.searchableFields : [],
+  };
+}
+
+function collectSelectorPredictions(feEntity, entityName, baseUrl, windowCategory, schema, frontendContract) {
+  if (!feEntity) return [];
+  const contextIndex = createSelectorContextIndex(schema, frontendContract, entityName);
+
+  return feEntity.fields
+    .filter(field => field.type === 'foreignKey')
+    .map(field => {
+      const selectorContext = buildSelectorContext(field, windowCategory, contextIndex);
+      const selector = {
+        entity: entityName,
+        field: field.name,
+        column: field.column,
+        reference: field.reference,
+        inputMode: field.inputMode,
+        url: `${baseUrl}/${entityName}/selectors/${field.name}`,
+      };
+      if (selectorContext) selector.context = selectorContext;
+      return selector;
+    });
+}
+
+function collectActionPredictions(entity, entityName, specName, windowCategory, decisionsActions) {
+  return (entity.fields ?? [])
+    .filter(field => field.type === 'button')
+    .map(field => classifyAction(field, entityName, specName, windowCategory, decisionsActions));
+}
+
+function dedupeBy(items, keyFn) {
+  const seen = new Set();
+  return items.filter(item => {
+    const key = keyFn(item);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 /**
  * Generate API prediction: predicts NEO Headless URLs, selectors, actions, and query params.
  */
@@ -635,73 +996,27 @@ export function generateApiPrediction(schema, frontendContract, backendContract)
   const crud = {};
   const selectors = [];
   const actions = [];
+  const windowCategory = schema.window.category ?? null;
 
   for (const entity of schema.entities) {
     const entityName = entity.name;
     const feEntity = frontendContract.entities[entityName];
 
     // CRUD — NEO Headless enables all methods by default via PopulateSpec
-    crud[entityName] = {
-      get: true,
-      getById: true,
-      post: true,
-      put: true,
-      patch: true,
-      delete: true,
-      listUrl: `${baseUrl}/${entityName}`,
-      detailUrl: `${baseUrl}/${entityName}/{id}`,
-      supportedFilters: feEntity ? feEntity.searchableFields : [],
-    };
+    crud[entityName] = buildCrudPrediction(baseUrl, entityName, feEntity);
 
     // Selectors — FK fields that are visible (editable or readOnly)
-    if (feEntity) {
-      for (const field of feEntity.fields) {
-        if (field.type === 'foreignKey') {
-          selectors.push({
-            entity: entityName,
-            field: field.name,
-            column: field.column,
-            reference: field.reference,
-            inputMode: field.inputMode,
-            url: `${baseUrl}/${entityName}/selectors/${field.name}`,
-          });
-        }
-      }
-    }
+    selectors.push(...collectSelectorPredictions(feEntity, entityName, baseUrl, windowCategory, schema, frontendContract));
 
     // Actions — fields with type "button" (AD_Reference_ID = 28)
-    for (const field of entity.fields) {
-      if (field.type === 'button') {
-        const action = {
-          entity: entityName,
-          field: field.name,
-          column: field.column,
-          url: `${baseUrl}/${entityName}/{id}/action/${field.name}`,
-        };
-        if (field.processId) action.processId = field.processId;
-        if (field.processType) action.processType = field.processType;
-        actions.push(action);
-      }
-    }
+    const decisionsActions = schema.window?.actions ?? {};
+    actions.push(...collectActionPredictions(entity, entityName, specName, windowCategory, decisionsActions));
   }
 
   // Deduplicate selectors and actions by entity+field (contract generator may iterate
   // the same entity multiple times if schema.entities contains duplicate entries)
-  const seenSelectors = new Set();
-  const dedupedSelectors = selectors.filter(s => {
-    const key = `${s.entity}:${s.field}`;
-    if (seenSelectors.has(key)) return false;
-    seenSelectors.add(key);
-    return true;
-  });
-
-  const seenActions = new Set();
-  const dedupedActions = actions.filter(a => {
-    const key = `${a.entity}:${a.field}`;
-    if (seenActions.has(key)) return false;
-    seenActions.add(key);
-    return true;
-  });
+  const dedupedSelectors = dedupeBy(selectors, selector => `${selector.entity}:${selector.field}`);
+  const dedupedActions = dedupeBy(actions, action => `${action.entity}:${action.name}`);
 
   const result = {
     specName,
@@ -772,6 +1087,369 @@ function reorderFieldsByPrev(currentFields, prevFields) {
   });
 }
 
+// ─── Form-state generation for ETP-3957 ──────────────────────────────────────
+
+/**
+ * Generate form-state metadata for an entity.
+ *
+ * Returns a structured object describing field visibility, read-only logic,
+ * requiredness, display logic, callout triggers, and default value provenance.
+ *
+ * @param {object} entity - Schema entity
+ * @param {object} rules - Business rules for the entity
+ * @returns {object} Form state for the entity
+ */
+function generateEntityFormState(entity, rules) {
+  const fields = {};
+  const allRules = Array.isArray(rules) ? rules : [];
+  const entityRules = allRules.filter(r => r.entity === entity.name);
+
+  for (const field of entity.fields ?? []) {
+    if (field.visibility === 'system' || field.visibility === 'discarded') continue;
+    fields[field.name] = buildFieldFormState(field, entityRules);
+  }
+
+  return fields;
+}
+
+function buildFieldFormState(field, entityRules) {
+  const fieldRules = entityRules.filter(r => r.fieldName === field.name || r.fieldName === field.column);
+  const calloutTriggers = fieldRules.filter(r => r.type === 'callout').map(r => r.className ?? r.name).filter(Boolean);
+  const displayLogicRule = fieldRules.find(r => r.type === 'displayLogic');
+  const readOnlyRule = fieldRules.find(r => r.type === 'readOnlyLogic');
+
+  const fieldState = {};
+  const visible = field.visibility === 'editable' || field.visibility === 'readOnly';
+  const readOnly = field.visibility === 'readOnly';
+  const required = field.required ?? false;
+  const displayLogic = displayLogicRule?.expression ?? null;
+  const readOnlyLogic = readOnlyRule?.expression ?? field.readOnlyLogic ?? null;
+
+  if (!visible) fieldState.visible = false;
+  if (readOnly) fieldState.readOnly = true;
+  if (required) fieldState.required = true;
+  if (displayLogic) fieldState.displayLogic = displayLogic;
+  if (readOnlyLogic) fieldState.readOnlyLogic = readOnlyLogic;
+  if (calloutTriggers.length > 0) fieldState.calloutTriggers = calloutTriggers;
+  if (field.defaultValue !== undefined && field.defaultValue !== null) {
+    fieldState.defaultValue = field.defaultValue;
+  }
+
+  return fieldState;
+}
+
+/**
+ * Extract required session variables from the schema.
+ *
+ * Scans fields for @#VAR@ patterns that indicate session-level context requirements.
+ *
+ * @param {object} schema - Full schema
+ * @returns {string[]} List of required session variable names
+ */
+function addSessionVariablesFromExpression(expression, sessionVars) {
+  if (typeof expression !== 'string') return;
+
+  const sessionPattern = /@#(\w+)@/g;
+  let match;
+  while ((match = sessionPattern.exec(expression)) !== null) {
+    sessionVars.add(`#${match[1]}`);
+  }
+}
+
+function extractRequiredSessionVariables(schema, rules = []) {
+  const sessionVars = new Set();
+
+  for (const entity of schema.entities ?? []) {
+    for (const field of entity.fields ?? []) {
+      const sources = [
+        field.displayLogic,
+        field.readOnlyLogic,
+        field.validationRule?.rawExpression,
+      ].filter(Boolean);
+
+      for (const src of sources) {
+        addSessionVariablesFromExpression(src, sessionVars);
+      }
+    }
+  }
+
+  const allRules = Array.isArray(rules) ? rules : [];
+  for (const rule of allRules) {
+    addSessionVariablesFromExpression(rule.expression, sessionVars);
+    addSessionVariablesFromExpression(rule.rawExpression, sessionVars);
+  }
+
+  return Array.from(sessionVars).sort();
+}
+
+/**
+ * Generate the full formState section for the contract.
+ *
+ * @param {object} schema - Full schema
+ * @param {object} rules - Business rules array
+ * @returns {object} formState contract section
+ */
+function generateFormState(schema, rules) {
+  const entities = {};
+
+  for (const entity of schema.entities ?? []) {
+    const entityFormState = generateEntityFormState(entity, rules);
+    if (Object.keys(entityFormState).length > 0) {
+      entities[entity.name] = { fields: entityFormState };
+    }
+  }
+
+  return {
+    entities,
+    requiredSessionVariables: extractRequiredSessionVariables(schema, rules),
+    evaluationMode: 'runtime',
+  };
+}
+
+// ─── End form-state generation ───────────────────────────────────────────────
+
+// ─── Agent Profile generation for ETP-3958 ───────────────────────────────────
+
+/**
+ * Generate an agentProfile for a spec.
+ *
+ * The profile provides a concise, agent-friendly summary of what the spec does,
+ * how to use it, and what to watch out for.
+ *
+ * @param {object} schema - Full schema
+ * @param {object} apiPrediction - Generated apiPrediction section
+ * @param {object} formState - Generated formState section
+ * @param {object} windowConfig - Window config from decisions.json
+ * @returns {object} agentProfile
+ */
+function generateAgentProfile(schema, apiPrediction, formState, windowConfig) {
+  const specName = apiPrediction.specName;
+  const category = schema.window.category ?? 'unknown';
+  const isTransactional = ['sales', 'purchases', 'inventory', 'finance'].includes(category);
+
+  // Derive purpose from category and window name
+  const windowName = schema.window.name ?? specName;
+  const purpose = derivePurpose(windowName, category);
+  const whenToUse = deriveWhenToUse(windowName, category);
+
+  // Derive minimum create fields from required editable fields
+  const minimumCreate = deriveMinimumCreate(schema, formState);
+
+  // Collect context-sensitive selectors from apiPrediction
+  const selectorContexts = deriveSelectorContexts(apiPrediction);
+
+  const profileActions = (apiPrediction.actions ?? [])
+    .filter(a => a.actionType === 'documentAction' || a.actionType === 'createFrom');
+  const actions = profileActions.map(a => a.name);
+
+  // Derive workflow
+  const workflow = deriveWorkflow(isTransactional, profileActions, minimumCreate);
+
+  // Edge cases from actions and form-state metadata
+  const edgeCases = deriveProfileEdgeCases(apiPrediction, formState, isTransactional);
+
+  // Examples and warnings
+  const examples = deriveProfileExamples(isTransactional, minimumCreate, actions);
+  const warnings = deriveProfileWarnings(schema, formState, isTransactional, actions);
+
+  // Dangerous operations
+  const dangerousOperations = (apiPrediction.actions ?? [])
+    .filter(a => ['void', 'reverse', 'reactivate', 'cancel'].some(p => (a.name ?? '').toLowerCase().includes(p)))
+    .map(a => a.name);
+
+  return {
+    purpose,
+    whenToUse,
+    minimumCreate,
+    selectorContexts,
+    actions,
+    workflow,
+    edgeCases,
+    examples,
+    warnings,
+    knownLimitations: [],
+    dangerousOperations,
+  };
+}
+
+function derivePurpose(windowName, category) {
+  const name = windowName.toLowerCase();
+  if (category === 'sales') return `Create and manage ${name} documents.`;
+  if (category === 'purchases') return `Create and manage ${name} documents.`;
+  if (category === 'inventory') return `Manage ${name} inventory operations.`;
+  if (category === 'finance') return `Manage ${name} financial records.`;
+  return `Manage ${name} records.`;
+}
+
+function deriveWhenToUse(windowName, category) {
+  const when = [];
+  if (category === 'sales') when.push(`Use for customer ${windowName.toLowerCase()} before receipt or invoice.`);
+  if (category === 'purchases') when.push(`Use for supplier ${windowName.toLowerCase()} before receipt or invoice.`);
+  if (category === 'inventory') when.push(`Use for stock and warehouse operations.`);
+  if (when.length === 0) when.push(`Use for ${windowName.toLowerCase()} management.`);
+  return when;
+}
+
+function deriveMinimumCreate(schema, formState) {
+  const headerFields = [];
+  const lineFields = [];
+
+  for (const entity of schema.entities ?? []) {
+    const entityState = formState?.entities?.[entity.name]?.fields ?? {};
+    const requiredFields = Object.entries(entityState)
+      .filter(([, f]) => f.required && isFormFieldVisible(f) && !isFormFieldReadOnly(f))
+      .map(([name]) => name);
+
+    if (entity.level === 'header' || entity.name === 'header' || entity.name === schema.window?.primaryEntity) {
+      headerFields.push(...requiredFields);
+    } else {
+      lineFields.push(...requiredFields);
+    }
+  }
+
+  const recommendedOrder = [];
+  if (headerFields.length > 0) recommendedOrder.push('createHeader');
+  if (lineFields.length > 0) recommendedOrder.push('createLines');
+
+  return {
+    headerFields: headerFields.length > 0 ? headerFields : undefined,
+    lineFields: lineFields.length > 0 ? lineFields : undefined,
+    recommendedOrder: recommendedOrder.length > 0 ? recommendedOrder : undefined,
+  };
+}
+
+function deriveSelectorContexts(apiPrediction) {
+  return (apiPrediction.selectors ?? [])
+    .filter(s => s.context)
+    .map(s => ({
+      entity: s.entity,
+      field: s.field,
+      context: s.context,
+    }));
+}
+
+function deriveWorkflow(isTransactional, actions, minimumCreate) {
+  if (!isTransactional) return [];
+
+  const steps = [];
+  if (minimumCreate.headerFields) steps.push('Create draft header with required fields');
+  if (minimumCreate.lineFields) steps.push('Add at least one valid line');
+  if (actions.some(isLifecycleAction)) {
+    steps.push('Validate form state');
+    steps.push('Complete the document');
+  }
+  return steps.length > 0 ? steps : ['Create a new record', 'Update as needed'];
+}
+
+function isLifecycleAction(action) {
+  const name = action?.name ?? '';
+  return action?.actionType === 'documentAction' || name === 'documentAction' || name.toLowerCase().includes('complete');
+}
+
+function deriveProfileEdgeCases(apiPrediction, formState, isTransactional) {
+  const edges = new Set();
+
+  for (const edge of collectActionEdgeCases(apiPrediction.actions)) {
+    edges.add(edge);
+  }
+
+  if (isTransactional) {
+    if (hasRequiredFieldWithoutDefault(formState)) {
+      edges.add('Required field without default value must be provided');
+    }
+
+    if ((apiPrediction.actions ?? []).length > 0) {
+      edges.add('Validate the current form state before running lifecycle actions');
+      edges.add('Do not run destructive lifecycle actions without explicit user confirmation');
+    }
+  }
+
+  return Array.from(edges).slice(0, 10);
+}
+
+function collectActionEdgeCases(actions = []) {
+  return actions.flatMap(action => action.edgeCases ?? []);
+}
+
+function hasRequiredFieldWithoutDefault(formState) {
+  return Object.values(formState?.entities ?? {}).some(entity =>
+    Object.values(entity.fields ?? {}).some(field => field.required && !field.defaultValue)
+  );
+}
+
+function isFormFieldVisible(field) {
+  return field.visible !== false;
+}
+
+function isFormFieldReadOnly(field) {
+  return field.readOnly === true;
+}
+
+function deriveProfileExamples(isTransactional, minimumCreate, actions) {
+  const examples = [];
+
+  if (minimumCreate.headerFields?.length) {
+    examples.push({
+      operation: 'createHeader',
+      description: 'Create a draft header with the minimum required editable fields.',
+      fields: minimumCreate.headerFields,
+    });
+  }
+
+  if (isTransactional && minimumCreate.lineFields?.length) {
+    examples.push({
+      operation: 'createLine',
+      description: 'Add a line after the header exists and parent context is available.',
+      fields: minimumCreate.lineFields,
+    });
+  }
+
+  if (isTransactional && actions.length > 0) {
+    examples.push({
+      operation: 'completeDocument',
+      description: 'Validate form state and run the document lifecycle action when the draft is complete.',
+      action: actions[0],
+    });
+  }
+
+  return examples;
+}
+
+function deriveProfileWarnings(schema, formState, isTransactional, actions) {
+  const warnings = new Set();
+  const entities = schema.entities ?? [];
+  const visibleFieldCount = Object.values(formState?.entities ?? {})
+    .reduce((count, entity) => count + Object.keys(entity.fields ?? {}).length, 0);
+
+  if (visibleFieldCount === 0) {
+    warnings.add('No editable or read-only form fields are exposed for this spec');
+  }
+
+  const editableFieldCount = Object.values(formState?.entities ?? {})
+    .reduce((count, entity) => {
+      return count + Object.values(entity.fields ?? {}).filter(field => isFormFieldVisible(field) && !isFormFieldReadOnly(field)).length;
+    }, 0);
+
+  if (editableFieldCount === 0 && visibleFieldCount > 0) {
+    warnings.add('This spec appears read-only from generated form metadata');
+  }
+
+  const hasSystemButtons = entities.some(entity =>
+    (entity.fields ?? []).some(field => field.type === 'button' && field.visibility === 'system')
+  );
+  if (hasSystemButtons && actions.length === 0) {
+    warnings.add('System lifecycle actions are present but are not exposed as editable agent actions');
+  }
+
+  if (isTransactional && actions.length === 0) {
+    warnings.add('Transactional spec has no generated lifecycle action metadata');
+  }
+
+  return Array.from(warnings);
+}
+
+// ─── End agent profile generation ────────────────────────────────────────────
+
 /**
  * Main orchestrator: generates the full contract object.
  */
@@ -782,6 +1460,8 @@ export function generateContract(schema, rules = [], processes = [], previousVer
   const backendContract = generateBackendContract(schema, rules, processes);
   const testManifest = generateTestManifest(frontendContract, backendContract, rules, processes);
   const apiPrediction = generateApiPrediction(schema, frontendContract, backendContract);
+  const formState = generateFormState(schema, rules);
+  const agentProfile = generateAgentProfile(schema, apiPrediction, formState, schema.window);
 
   // Append apiPrediction-based tests to testManifest using stable IDs
   const makeId = testManifest._makeId;
@@ -808,12 +1488,12 @@ export function generateContract(schema, rules = [], processes = [], previousVer
 
   for (const action of apiPrediction.actions) {
     testManifest.tests.push({
-      id: makeId('action-endpoint', action.entity, action.field),
+      id: makeId('action-endpoint', action.entity, action.name),
       category: 'action-endpoint',
       entity: action.entity,
-      field: action.field,
+      field: action.name,
       runner: 'node',
-      description: `Action endpoint for '${action.field}' in ${action.entity} should exist`,
+      description: `Action endpoint for '${action.name}' in ${action.entity} should exist`,
     });
   }
   delete testManifest._makeId;
@@ -834,11 +1514,8 @@ export function generateContract(schema, rules = [], processes = [], previousVer
     byRunner: updatedByRunner,
   };
 
-  const contractData = { frontendContract, backendContract, apiPrediction, testManifest };
-  const checksum = createHash('sha256')
-    .update(JSON.stringify(contractData))
-    .digest('hex')
-    .slice(0, 16);
+  const contractData = { frontendContract, backendContract, apiPrediction, formState, agentProfile, testManifest };
+  const checksum = checksumFor(contractData);
 
   const now = new Date().toISOString();
   const generatedAt = previousContract?.generatedAt ?? now;
@@ -855,6 +1532,82 @@ export function generateContract(schema, rules = [], processes = [], previousVer
   result.checksum = checksum;
   Object.assign(result, contractData);
   return result;
+}
+
+function projectApiPredictionForContract(apiPrediction) {
+  if (!apiPrediction) return apiPrediction;
+  return {
+    ...apiPrediction,
+    actions: (apiPrediction.actions ?? []).map(action => projectDefined(action, CONTRACT_ACTION_PROJECTION)),
+  };
+}
+
+/**
+ * Split the generated window contract into:
+ * - contract.json: compact generation/frontend contract
+ * - contract.mcp.json: agentic/MCP metadata that is useful for agents but noisy
+ *   for baseline UI diffs.
+ */
+function preserveArtifactTimestamps(artifact, previousArtifact) {
+  if (!previousArtifact) return artifact;
+  if (previousArtifact.checksum === artifact.checksum) {
+    artifact.generatedAt = previousArtifact.generatedAt ?? artifact.generatedAt;
+    if (previousArtifact.updatedAt) artifact.updatedAt = previousArtifact.updatedAt;
+    else delete artifact.updatedAt;
+  }
+  return artifact;
+}
+
+export function splitWindowContractArtifacts(contract, previousContract = null, previousMcpContract = null) {
+  const { apiPrediction, formState, agentProfile } = contract;
+  const compactApiPrediction = projectApiPredictionForContract(apiPrediction);
+  const compactContract = {
+    version: contract.version,
+    generatedAt: contract.generatedAt,
+    ...(contract.updatedAt ? { updatedAt: contract.updatedAt } : {}),
+    frontendContract: contract.frontendContract,
+    backendContract: contract.backendContract,
+    apiPrediction: compactApiPrediction,
+    testManifest: contract.testManifest,
+  };
+  compactContract.checksum = checksumFor({
+    frontendContract: compactContract.frontendContract,
+    backendContract: compactContract.backendContract,
+    apiPrediction: compactApiPrediction,
+    testManifest: compactContract.testManifest,
+  });
+  const compactChecksum = compactContract.checksum;
+  delete compactContract.checksum;
+  compactContract.checksum = compactChecksum;
+  const orderedCompactContract = {
+    version: compactContract.version,
+    generatedAt: compactContract.generatedAt,
+    ...(compactContract.updatedAt ? { updatedAt: compactContract.updatedAt } : {}),
+    checksum: compactContract.checksum,
+    frontendContract: compactContract.frontendContract,
+    backendContract: compactContract.backendContract,
+    apiPrediction: compactContract.apiPrediction,
+    testManifest: compactContract.testManifest,
+  };
+  preserveArtifactTimestamps(orderedCompactContract, previousContract);
+
+  const mcpContract = {
+    version: contract.version,
+    generatedAt: contract.generatedAt,
+    ...(contract.updatedAt ? { updatedAt: contract.updatedAt } : {}),
+    contractChecksum: orderedCompactContract.checksum,
+    apiPrediction,
+    formState,
+    agentProfile,
+  };
+  mcpContract.checksum = checksumFor({
+    apiPrediction,
+    formState,
+    agentProfile,
+  });
+  preserveArtifactTimestamps(mcpContract, previousMcpContract);
+
+  return { contract: orderedCompactContract, mcpContract };
 }
 
 // ---------------------------------------------------------------------------

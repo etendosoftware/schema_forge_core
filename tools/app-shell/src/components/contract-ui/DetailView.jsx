@@ -72,6 +72,7 @@ import { formatAmount } from '@/lib/formatAmount.js';
 import { useRegisterWindowContext } from '@/components/CurrentWindowContext';
 import { matchOcrDocType } from '@/components/copilot/ocr/ocrDocTypes';
 import { isDeleteVisibleForRecord } from '@/utils/recordActions.js';
+import { buildHeaderSelectorContext, buildLineSelectorContext } from '@/lib/selectorContext.js';
 import DocumentStatusPill from './DocumentStatusPill.jsx';
 
 const LazyOcrInlineUploader = lazy(() => import('@/components/copilot/ocr/OcrInlineUploader.jsx'));
@@ -332,51 +333,36 @@ export function DetailView({
   const secondaryTabKeysStr = secondaryTabs.map(t => t?.key ?? '').join('|');
 
   const selectorContextByEntity = useMemo(() => {
-    // Derive isSOTrx from window category so NEO's validation filter resolves
-    // @isSOTrx@ in M_PriceList.issopricelist = @isSOTrx@, showing only sales or
-    // purchase price lists depending on the document type.
     const category = api?.window?.category;
-    const isSOTrx = category === 'sales' ? 'Y' : category === 'purchases' ? 'N' : null;
-
-    // Derive isCustomer/isVendor from window category so the BusinessPartner selector
-    // shows only customers (sales) or vendors (purchases).
-    const isCustomer = category === 'sales' ? 'Y' : null;
-    const isVendor = category === 'purchases' ? 'Y' : null;
-
     const next = {};
-    // Primary entity (header): inject isSOTrx, isCustomer, isVendor
+
     if (entity) {
-      next[entity] = {
-        ...(isSOTrx ? { isSOTrx } : {}),
-        ...(isCustomer ? { isCustomer } : {}),
-        ...(isVendor ? { isVendor } : {}),
-      };
+      next[entity] = buildHeaderSelectorContext(category);
     }
+
     if (!parentRecordId) return next;
+
     if (detailEntity) {
-      // DateInvoiced is required by the C_Tax validationRule:
-      // VALIDFROM <= COALESCE(@DateInvoiced@, @DateOrdered@)
-      // Without it, COALESCE(null,null)=null → VALIDFROM<=null is always FALSE → no taxes returned.
-      // Etendo Classic's PL/pgSQL to_date() expects DD-MM-YYYY, so the ISO date from the
-      // header (YYYY-MM-DD) must be reformatted before being sent as a context param.
       const headerSnapshot = hook.selected ?? hook.editing;
-      const invoiceDate = headerSnapshot?.invoiceDate ?? headerSnapshot?.orderDate ?? null;
-      const isoMatch = typeof invoiceDate === 'string' ? invoiceDate.match(/^(\d{4})-(\d{2})-(\d{2})/) : null;
-      const dateInvoicedParam = isoMatch ? `${isoMatch[3]}-${isoMatch[2]}-${isoMatch[1]}` : invoiceDate;
       const currency = headerSnapshot?.['currency$_identifier'] ?? sessionCurrencyCode ?? null;
       next[detailEntity] = {
-        parentId: parentRecordId,
-        ...(isSOTrx ? { isSOTrx, IsSOTrx: isSOTrx } : {}),
-        ...(priceListId ? { priceList: priceListId } : {}),
-        ...(dateInvoicedParam ? { DateInvoiced: dateInvoicedParam } : {}),
+        ...buildLineSelectorContext({
+          windowCategory: category,
+          parentId: parentRecordId,
+          headerRecord: {
+            ...headerSnapshot,
+            priceList: priceListId,
+          },
+        }),
         ...(currency ? { currency } : {}),
       };
     }
+
     for (const key of secondaryTabKeysStr.split('|').filter(Boolean)) {
       next[key] = { parentId: parentRecordId };
     }
     return next;
-  }, [entity, detailEntity, parentRecordId, secondaryTabKeysStr, priceListId, api, hook.selected, hook.editing]);
+  }, [entity, detailEntity, parentRecordId, secondaryTabKeysStr, priceListId, api, hook.selected, hook.editing, sessionCurrencyCode]);
   const { catalogs, catalogsLoaded } = useCatalogs(api, token, apiBaseUrl, staticCatalogs);
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });

@@ -1,8 +1,8 @@
 {
   "version": "0.25.0",
   "generatedAt": "2026-04-30T15:42:46.582Z",
-  "updatedAt": "2026-05-18T15:52:02.469Z",
-  "checksum": "b07a1265fa55bb03",
+  "updatedAt": "2026-05-20T18:17:18.587Z",
+  "checksum": "00240d7863ea80c9",
   "frontendContract": {
     "window": {
       "id": "167",
@@ -3752,7 +3752,16 @@
         "column": "C_BPartner_Location_ID",
         "reference": "BusinessPartnerLocation",
         "inputMode": "dependent",
-        "url": "/sws/neo/sales-invoice/header/selectors/partnerAddress"
+        "url": "/sws/neo/sales-invoice/header/selectors/partnerAddress",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -3768,7 +3777,15 @@
         "column": "FIN_Paymentmethod_ID",
         "reference": "PaymentMethod",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-invoice/header/selectors/paymentMethod"
+        "url": "/sws/neo/sales-invoice/header/selectors/paymentMethod",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -3784,7 +3801,15 @@
         "column": "M_PriceList_ID",
         "reference": "PriceList",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-invoice/header/selectors/priceList"
+        "url": "/sws/neo/sales-invoice/header/selectors/priceList",
+        "context": {
+          "required": [
+            {
+              "param": "isSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -3816,7 +3841,21 @@
         "column": "C_Tax_ID",
         "reference": "Tax",
         "inputMode": "selector",
-        "url": "/sws/neo/sales-invoice/lines/selectors/tax"
+        "url": "/sws/neo/sales-invoice/lines/selectors/tax",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "DateInvoiced",
+              "source": "parentField",
+              "field": "invoiceDate",
+              "format": "DD-MM-YYYY"
+            }
+          ]
+        }
       },
       {
         "entity": "paymentPlan",
