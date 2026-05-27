@@ -57,7 +57,10 @@ export default function ImportReturnLinesModal({ targetId, bpId, base, headers, 
           docs = await fetchSourceDocs(base, bpId, headers);
         } else {
           const res = await fetch(sourceDocsUrl(base, bpId), { headers });
-          if (!res.ok) { if (!cancelled) setLoading(false); return; }
+          if (!res.ok) {
+            if (!cancelled) setLoading(false);
+            return;
+          }
           const raw = (await res.json())?.response?.data || [];
           docs = filterDoc ? raw.filter((d) => filterDoc(d, bpId)) : raw;
         }
@@ -188,6 +191,9 @@ export default function ImportReturnLinesModal({ targetId, bpId, base, headers, 
 
   const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-');
   const fmtQty = (v) => Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const importButtonLabel = importing
+    ? ui('importing')
+    : ui('importSelected').replace('{count}', selected.size > 0 ? ` (${selected.size})` : '');
 
   return createPortal(
     <div onClick={onClose} className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
@@ -211,14 +217,15 @@ export default function ImportReturnLinesModal({ targetId, bpId, base, headers, 
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto' }}>
-          {loading ? (
+          {loading && (
             <p style={{ fontSize: 13, color: '#9ca3af', padding: '24px 0', textAlign: 'center' }}>{ui('loading')}</p>
-          ) : filtered.length === 0 ? (
+          )}
+          {!loading && filtered.length === 0 && (
             <p style={{ fontSize: 13, color: '#9ca3af', padding: '24px 0', textAlign: 'center' }}>
               {docs.length === 0 ? ui(noDocsKey) : ui(noDocsMatchSearchKey)}
             </p>
-          ) : (
-            filtered.map((doc) => {
+          )}
+          {!loading && filtered.length > 0 && filtered.map((doc) => {
               const isExpanded = expanded.has(doc.id);
               const isLoadingLines = loadingLines.has(doc.id);
               const lines = docLines[doc.id] || [];
@@ -257,11 +264,13 @@ export default function ImportReturnLinesModal({ targetId, bpId, base, headers, 
 
                   {isExpanded && (
                     <div style={{ background: 'var(--color-background-secondary, #F9FAFB)' }}>
-                      {isLoadingLines ? (
+                      {isLoadingLines && (
                         <div style={{ padding: '8px 12px 8px 48px', fontSize: 12, color: '#9ca3af' }}>{ui('loadingLines')}</div>
-                      ) : lines.length === 0 ? (
+                      )}
+                      {!isLoadingLines && lines.length === 0 && (
                         <div style={{ padding: '8px 12px 8px 48px', fontSize: 12, color: '#9ca3af' }}>{ui('noLinesFound')}</div>
-                      ) : (
+                      )}
+                      {!isLoadingLines && lines.length > 0 && (
                         <>
                           <div style={{ display: 'flex', padding: '4px 12px 4px 48px', fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '0.5px solid #E5E7EB' }}>
                             <span style={{ flex: 1 }}>{ui('product')}</span>
@@ -315,8 +324,7 @@ export default function ImportReturnLinesModal({ targetId, bpId, base, headers, 
                   )}
                 </div>
               );
-            })
-          )}
+          })}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F8F9FA', borderTop: '1px solid #E5E7EB', padding: '10px 16px' }}>
@@ -331,7 +339,7 @@ export default function ImportReturnLinesModal({ targetId, bpId, base, headers, 
               disabled={selected.size === 0 || importing}
               style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 6, border: 'none', background: '#18181b', color: '#fff', cursor: (selected.size === 0 || importing) ? 'not-allowed' : 'pointer', opacity: (selected.size === 0 || importing) ? 0.4 : 1 }}
             >
-              {importing ? ui('importing') : ui('importSelected').replace('{count}', selected.size > 0 ? ` (${selected.size})` : '')}
+              {importButtonLabel}
             </button>
           </div>
         </div>

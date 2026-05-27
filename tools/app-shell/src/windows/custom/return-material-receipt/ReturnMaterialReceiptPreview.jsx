@@ -1,5 +1,4 @@
 import { useRef, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Download, Edit2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { useUI, useMenuLabel, useLocaleSwitch } from '@/i18n';
@@ -57,7 +56,6 @@ export default function ReturnMaterialReceiptPreview({ receipt, token, apiBaseUr
   const ui = useUI();
   const tMenu = useMenuLabel();
   const { locale } = useLocaleSwitch();
-  const navigate = useNavigate();
   const modalRef = useRef(null);
 
   const [showSendModal, setShowSendModal] = useState(false);

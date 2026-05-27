@@ -69,6 +69,7 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
 
   const [pdfLoading, setPdfLoading] = useState(false);
   const pdfLabels = getReturnReceiptPdfLabels(ui);
+  const hasReturnInvoice = Array.isArray(data?.returnInvoices) ? data.returnInvoices.length > 0 : data?.hasReturnInvoice === true;
 
   const handlePrint = useCallback(async () => {
     if (pdfLoading) return;
@@ -94,6 +95,29 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
     const inv = body?.response?.data;
     return { id: inv?.id || null, documentNo: inv?.documentNo || '', grandTotal: inv?.grandTotal ?? null };
   }, [apiBaseUrl, headers, ui]);
+
+  const handleCreateConfirmed = useCallback(async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const inv = await callCreateInvoice(data?.id || recordId);
+      setShowModal(false);
+      setResult({
+        title: ui('rmrInvoiceCreatedTitle'),
+        cards: inv.id ? [{
+          route: `/sales-invoice/${inv.id}`,
+          icon: '🧾',
+          label: ui('rmrReturnInvoiceDoc').replace('{number}', inv.documentNo),
+          amount: inv.grandTotal,
+          color: 'green',
+        }] : [],
+      });
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, data, recordId, callCreateInvoice, ui]);
 
   const handleConfirmAndClose = useCallback(async () => {
     if (busy) return;
@@ -230,30 +254,6 @@ export default function ConfirmWithCreditButton({ data, recordId, token, apiBase
   }
 
   if (status === 'CO') {
-    const hasReturnInvoice = Array.isArray(data?.returnInvoices) ? data.returnInvoices.length > 0 : data?.hasReturnInvoice === true;
-    const handleCreateConfirmed = async () => {
-      if (busy) return;
-      setBusy(true);
-      try {
-        const inv = await callCreateInvoice(data?.id || recordId);
-        setShowModal(false);
-        setResult({
-          title: ui('rmrInvoiceCreatedTitle'),
-          cards: inv.id ? [{
-            route: `/sales-invoice/${inv.id}`,
-            icon: '🧾',
-            label: ui('rmrReturnInvoiceDoc').replace('{number}', inv.documentNo),
-            amount: inv.grandTotal,
-            color: 'green',
-          }] : [],
-        });
-      } catch (err) {
-        toast.error(err.message);
-      } finally {
-        setBusy(false);
-      }
-    };
-
     return (
       <>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
