@@ -182,4 +182,117 @@ test.describe('Financial Account Create (T2) — mocked', () => {
     await expect(page.getByTestId('account-form')).toBeVisible();
     await expect(page.getByTestId('account-form-iban')).toHaveCount(0);
   });
+
+  /**
+   * Full offline Bank creation — golden path.
+   *
+   * Walks every wizard step, submits the form, asserts the POST body carries the
+   * right payload, and verifies that the new account row appears in the list after
+   * the page reloads the accounts from the backend.
+   */
+  test('full offline Bank creation: form → POST → new row appears in list', async ({ page }) => {
+    let postBody = null;
+    let listFetchCount = 0;
+
+    const newAccount = {
+      id: 'acc-new',
+      name: 'Santander Principal',
+      type: 'B',
+      currentBalance: 0,
+      currencyId: '102',
+      currencyIso: 'EUR',
+      iban: 'ES9121000418450200051332',
+      isDefault: false,
+      pendingCount: 0,
+      psd2Connected: false,
+    };
+
+    // defaults → single EUR currency so the form pre-selects it.
+    await page.route('**/sws/neo/financial-account?action=defaults', async (route) => {
+      if (route.request().method() !== 'GET') { await route.fallback(); return; }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ response: { data: DEFAULTS } }),
+      });
+    });
+
+    // create POST → 201; capture the body for assertion.
+    await page.route('**/sws/neo/financial-account', async (route) => {
+      if (route.request().method() !== 'POST') { await route.fallback(); return; }
+      postBody = JSON.parse(route.request().postData() ?? '{}');
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ response: { data: { id: 'acc-new', name: newAccount.name } } }),
+      });
+    });
+
+    // list endpoint → first call returns the original accounts; subsequent calls
+    // include the new account, simulating the backend reload after creation.
+    await page.route('**/sws/neo/financial-accounts-page', async (route) => {
+      listFetchCount++;
+      const accounts = listFetchCount > 1 ? [...ACCOUNTS, newAccount] : ACCOUNTS;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ response: { data: { accounts, summary: SUMMARY } } }),
+      });
+    });
+
+    await page.goto('/finance/accounts');
+    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
+
+    // Initial state: existing account is there, new one is not.
+    await expect(page.getByTestId('account-row-acc-1')).toBeVisible();
+    await expect(page.getByTestId('account-row-acc-new')).toHaveCount(0);
+
+    // ── Step 1: open wizard and pick Bank ──────────────────────────────────
+    await page.getByTestId('cuentas-new-account-button').click();
+    await expect(page.getByTestId('new-account-wizard')).toBeVisible();
+    await page.getByTestId('new-account-type-B').click();
+
+    // ── Step 2: connection options ─────────────────────────────────────────
+    await expect(page.getByTestId('account-connection-options')).toBeVisible();
+    await expect(page.getByTestId('account-connection-online')).toBeDisabled();
+    await page.getByTestId('account-connection-offline').click();
+
+    // ── Step 3: bank picker → search → Santander ───────────────────────────
+    await expect(page.getByTestId('new-account-bank-search')).toBeVisible();
+    await page.getByTestId('new-account-bank-search').fill('santander');
+    await expect(page.getByTestId('new-account-bank-santander')).toBeVisible();
+    await page.getByTestId('new-account-bank-santander').click();
+
+    // ── Step 4: institution ────────────────────────────────────────────────
+    await expect(page.getByTestId('new-account-institution-santander-default')).toBeVisible();
+    await page.getByTestId('new-account-institution-santander-default').click();
+
+    // ── Step 5: fill form ──────────────────────────────────────────────────
+    await expect(page.getByTestId('account-form')).toBeVisible();
+    await page.getByTestId('account-form-name').fill(newAccount.name);
+    await page.getByTestId('account-form-iban').fill(newAccount.iban);
+
+    const submit = page.getByTestId('account-form-submit');
+    await expect(submit).toBeEnabled();
+    await submit.click();
+
+    // ── Assertions ─────────────────────────────────────────────────────────
+
+    // 1. Toast confirms the creation.
+    await expect(page.getByText('Cuenta creada')).toBeVisible();
+
+    // 2. POST body carried the correct name, type, IBAN and currency.
+    expect(postBody).toMatchObject({
+      name: newAccount.name,
+      type: 'B',
+      iban: newAccount.iban,
+      currencyId: '102',
+    });
+
+    // 3. Wizard auto-closes.
+    await expect(page.getByTestId('new-account-wizard')).toHaveCount(0);
+
+    // 4. The list reloaded and the new account row is now visible.
+    await expect(page.getByTestId('account-row-acc-new')).toBeVisible();
+  });
 });
