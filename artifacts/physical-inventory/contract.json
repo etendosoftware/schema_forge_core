@@ -1,8 +1,8 @@
 {
   "version": "0.17.0",
   "generatedAt": "2026-04-29T19:05:48.442Z",
-  "updatedAt": "2026-05-11T16:22:46.243Z",
-  "checksum": "94f86c1d168d824b",
+  "updatedAt": "2026-05-20T11:45:15.260Z",
+  "checksum": "43be58d0a53e1c42",
   "frontendContract": {
     "window": {
       "id": "168",
@@ -1015,7 +1015,16 @@
         "column": "M_Locator_ID",
         "reference": "Locator",
         "inputMode": "search",
-        "url": "/sws/neo/physical-inventory/inventoryLine/selectors/storageBin"
+        "url": "/sws/neo/physical-inventory/inventoryLine/selectors/storageBin",
+        "context": {
+          "required": [
+            {
+              "param": "M_Warehouse_ID",
+              "source": "parentField",
+              "field": "warehouse"
+            }
+          ]
+        }
       },
       {
         "entity": "inventoryLine",

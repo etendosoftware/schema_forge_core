@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -156,6 +156,36 @@ describe('analyzeChangedFiles', () => {
     });
 
     assert.ok(!findings.some((finding) => finding.code === 'COMMONJS_USAGE'));
+  });
+
+  it('does not flag generated contract snapshots as large files', () => {
+    const repoDir = mkdtempSync(join(tmpdir(), 'pr-review-large-contract-'));
+    const previousCwd = process.cwd();
+
+    try {
+      process.chdir(repoDir);
+      mkdirSync(join(repoDir, 'artifacts', 'contacts'), { recursive: true });
+      writeFileSync(join(repoDir, 'artifacts', 'contacts', 'contract.json'), 'x'.repeat(513000));
+      writeFileSync(join(repoDir, 'artifacts', 'contacts', 'contract.prev.json'), 'x'.repeat(513000));
+      writeFileSync(join(repoDir, 'artifacts', 'contacts', 'contract.mcp.json'), 'x'.repeat(513000));
+
+      const findings = analyzeChangedFiles({
+        changedFiles: [
+          'artifacts/contacts/contract.json',
+          'artifacts/contacts/contract.prev.json',
+          'artifacts/contacts/contract.mcp.json',
+        ],
+        newSourceFiles: [],
+        newTestFiles: [],
+        fileContents: {},
+        packageJsonChanges: [],
+      });
+
+      assert.ok(!findings.some((finding) => finding.code === 'LARGE_FILE'));
+    } finally {
+      process.chdir(previousCwd);
+      rmSync(repoDir, { recursive: true, force: true });
+    }
   });
 });
 

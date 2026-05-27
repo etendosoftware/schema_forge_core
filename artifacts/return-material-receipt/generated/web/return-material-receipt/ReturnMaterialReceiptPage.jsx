@@ -125,7 +125,16 @@ export const api = {
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
-      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/selectors/partnerAddress"
+      "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/selectors/partnerAddress",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "returnMaterialReceiptLine",

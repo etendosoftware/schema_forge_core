@@ -63,7 +63,8 @@ This folder is the entry point for documentation that describes how generated an
 |------|-------------|
 | [payment-in.md](payment-in.md) | Generated payment-in flow with related documents and payment actions |
 | [payment-out.md](payment-out.md) | Custom payment-out flow with related documents and multiple child surfaces |
-| [bank-reconciliation.md](bank-reconciliation.md) | Generated bank-reconciliation master/detail flow |
+| [financial-accounts-page.md](financial-accounts-page.md) | Cuentas landing page (ETP-4095) — entry point for the bank reconciliation epic |
+| [bank-reconciliation.md](bank-reconciliation.md) | Legacy placeholder; superseded by `financial-account.md` (kept hidden in menu.json until T8) |
 | [chart-of-accounts.md](chart-of-accounts.md) | Generated chart-of-accounts maintenance window |
 | [assets.md](assets.md) | Generated assets flow with custom setup, sidebar, and amortization surfaces |
 | [recurring-invoice.md](recurring-invoice.md) | Hidden route-only recurring-invoice template window |
@@ -95,6 +96,7 @@ This folder is the entry point for documentation that describes how generated an
 | [unit-of-measure.md](unit-of-measure.md) | Generated unit-of-measure window with conversion metadata notes |
 | [user.md](user.md) | Generated user window with roles child surface and defaults dependencies |
 | [fiscal-config.md](fiscal-config.md) | Custom fiscal configuration window — onboarding wizard (SII/TBAI/Verifactu) and ongoing config maintenance |
+| [fiscal-models.md](fiscal-models.md) | Custom fiscal models window — declaration list and per-model detail pages (303, 349) with auto-compute and file generation |
 | [fiscal-monitor.md](fiscal-monitor.md) | Custom fiscal monitor window — real-time invoice submission status for SII, TBAI, and Verifactu |
 | [sii-monitor.md](sii-monitor.md) | API-only sub-window — SII invoice submission records consumed by FiscalMonitorPage |
 | [monitor-verifactu.md](monitor-verifactu.md) | API-only sub-window — Verifactu invoice submission records consumed by FiscalMonitorPage |

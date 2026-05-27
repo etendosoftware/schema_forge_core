@@ -1,0 +1,120 @@
+import { Copy } from 'lucide-react';
+import { toast } from 'sonner';
+import { useUI } from '@/i18n';
+import { AccountLogoAvatar } from '@/components/financial-accounts/AccountLogoAvatar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { MoneyAmount } from '@/components/ui/money-amount';
+
+/** Formats a raw IBAN string into groups of 4 chars: "ES7012341234..." → "ES70 1234 1234 ..." */
+function formatIban(iban) {
+  if (!iban) return '—';
+  return iban.replace(/\s+/g, '').match(/.{1,4}/g)?.join(' ') ?? iban;
+}
+
+/**
+ * Horizontal strip shown under the movements toolbar.
+ * Displays IBAN with copy button + three KPI figures (balance, inflows, outflows).
+ *
+ * @param {{ account: object|null, totals: { balance: number, inflows: number, outflows: number, currency: string }, loading: boolean }} props
+ */
+export function AccountSummaryStrip({ account, totals, loading }) {
+  const ui = useUI();
+
+  const handleCopyIban = () => {
+    if (account?.iban) {
+      navigator.clipboard.writeText(account.iban).then(() => {
+        toast.success(ui('financeAccountDetailIbanCopied'));
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="px-2 py-1">
+        <div className="flex items-center gap-5 rounded-lg border border-[#E8EAEF] px-3 py-2">
+          <Skeleton className="h-8 w-8 rounded-full" />
+          <Skeleton className="h-5 w-48" />
+          <div className="ml-auto flex gap-5">
+            <Skeleton className="h-6 w-28" />
+            <Skeleton className="h-6 w-28" />
+            <Skeleton className="h-6 w-28" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-2 py-1">
+      <div className="flex items-center gap-5 rounded-lg border border-[#E8EAEF] px-3 py-2">
+
+        {/* Avatar + IBAN — fixed width, never grows or shrinks */}
+        <div className="flex w-[364px] shrink-0 items-center gap-2">
+          <AccountLogoAvatar account={account} className="h-8 w-8 shrink-0" />
+          <div className="flex min-w-0 flex-col">
+            <span className="text-xs leading-4 text-[#3F3F50]">IBAN</span>
+            <div className="flex items-center gap-0.5">
+              <span
+                data-testid="iban-text"
+                className="truncate text-xs leading-4 text-[#6C6C89]"
+              >
+                {formatIban(account?.iban)}
+              </span>
+              {account?.iban ? (
+                <button
+                  type="button"
+                  onClick={handleCopyIban}
+                  data-testid="iban-copy-button"
+                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#828FA3] hover:bg-[#F5F7F9]"
+                  aria-label={ui('financeAccountDetailIbanCopyAria')}
+                >
+                  <Copy className="h-4 w-4" />
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+
+        {/* Saldo total */}
+        <div data-testid="kpi-balance" className="flex flex-1 flex-col gap-0.5">
+          <span className="text-xs leading-4 text-[#3F3F50]">
+            {ui('financeAccountDetailKpiBalance')}
+          </span>
+          <MoneyAmount
+            value={totals.balance}
+            currency={totals.currency}
+            tone="neutral"
+            className="text-base font-medium leading-6"
+          />
+        </div>
+
+        {/* Entradas (30D) */}
+        <div data-testid="kpi-inflows" className="flex flex-1 flex-col gap-0.5">
+          <span className="text-xs leading-4 text-[#3F3F50]">
+            {ui('financeAccountDetailKpiInflows')}
+          </span>
+          <MoneyAmount
+            value={totals.inflows}
+            currency={totals.currency}
+            tone="positive"
+            className="text-base font-medium leading-6"
+          />
+        </div>
+
+        {/* Salidas (30D) */}
+        <div data-testid="kpi-outflows" className="flex flex-1 flex-col gap-0.5">
+          <span className="text-xs leading-4 text-[#3F3F50]">
+            {ui('financeAccountDetailKpiOutflows')}
+          </span>
+          <MoneyAmount
+            value={totals.outflows}
+            currency={totals.currency}
+            tone="negative"
+            className="text-base font-medium leading-6"
+          />
+        </div>
+
+      </div>
+    </div>
+  );
+}

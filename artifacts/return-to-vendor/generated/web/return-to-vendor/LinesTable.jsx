@@ -4,6 +4,7 @@ import { DataTable, InlineLinesPanel } from '@/components/contract-ui';
 // @sf-generated-start columns:lines
 const columns = [
   { key: 'lineGrossAmount', column: 'Line_Gross_Amount', type: 'amount', label: 'Line Gross Amount' },
+  { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', required: true },
 ];
 // @sf-generated-end columns:lines
 

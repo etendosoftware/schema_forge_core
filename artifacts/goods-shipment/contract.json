@@ -1,8 +1,8 @@
 {
   "version": "0.12.0",
   "generatedAt": "2026-04-29T19:04:55.657Z",
-  "updatedAt": "2026-05-20T13:50:25.589Z",
-  "checksum": "6f103a983ea28f61",
+  "updatedAt": "2026-05-20T18:07:49.402Z",
+  "checksum": "fd50c2e36161cc0f",
   "frontendContract": {
     "window": {
       "id": "169",
@@ -1451,7 +1451,16 @@
         "column": "C_BPartner_Location_ID",
         "reference": "BusinessPartnerLocation",
         "inputMode": "dependent",
-        "url": "/sws/neo/goods-shipment/goodsShipment/selectors/partnerAddress"
+        "url": "/sws/neo/goods-shipment/goodsShipment/selectors/partnerAddress",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
       },
       {
         "entity": "goodsShipmentLine",
