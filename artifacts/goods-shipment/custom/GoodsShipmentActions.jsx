@@ -300,7 +300,7 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
         lines={returnLines}
         token={token}
         apiBaseUrl={apiBaseUrl}
-        onSuccess={() => { setWizardOpen(false); window.location.reload(); }}
+        onSuccess={(returnData) => { setWizardOpen(false); navigate(`/return-material-receipt/${returnData?.id}`); }}
         onError={(msg) => console.error('Return creation failed:', msg)}
       />
 
