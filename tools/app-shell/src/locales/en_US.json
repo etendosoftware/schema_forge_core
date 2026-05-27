@@ -18643,7 +18643,7 @@
     "fiscalMonitor.status.sii.CO": "Correct",
     "fiscalMonitor.status.sii.AE": "Accepted with errors",
     "fiscalMonitor.status.sii.IN": "Incorrect",
-    "fiscalMonitor.status.sii.PE": "Pending to send",
+    "fiscalMonitor.status.sii.PE": "Pending",
     "fiscalMonitor.status.sii.EE": "Sending error",
     "fiscalMonitor.status.sii.AN": "Annulled",
     "fiscalMonitor.status.sii.BA": "Unsubscribed",

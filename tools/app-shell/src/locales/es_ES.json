@@ -18893,7 +18893,7 @@
     "fiscalMonitor.status.sii.CO": "Correcto",
     "fiscalMonitor.status.sii.AE": "Aceptado con errores",
     "fiscalMonitor.status.sii.IN": "Incorrecto",
-    "fiscalMonitor.status.sii.PE": "Pendiente de envío",
+    "fiscalMonitor.status.sii.PE": "Pendiente",
     "fiscalMonitor.status.sii.EE": "Error de envío",
     "fiscalMonitor.status.sii.AN": "Anulado",
     "fiscalMonitor.status.sii.BA": "Baja",
