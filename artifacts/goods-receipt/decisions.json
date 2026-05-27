@@ -4,7 +4,7 @@
     "category": "purchases",
     "name": "Goods Receipt",
     "sendDocument": {
-      "allowEmail": false
+      "allowEmail": true
     },
     "relatedDocuments": true,
     "dateFilterKey": "movementDate",
@@ -14,21 +14,29 @@
       "processValue": "CO",
       "label": "Confirmar"
     },
+    "noHeaderBorder": true,
     "linesLayout": "inlineEditable",
     "customComponents": {
-      "bottomSection": "GoodsReceiptBottomPanel"
-    }
+      "topbarRight": "GoodsReceiptActions",
+      "bottomSection": "GoodsReceiptBottomPanel",
+      "topbarExtra": "GoodsReceiptDraftChips"
+    },
+    "hideDeleteWhenComplete": true,
+    "hidePrint": true
   },
   "entities": {
     "header": {
       "name": "goodsReceipt",
+      "javaQualifier": "goodsReceiptHeaderHandler",
       "fields": {
+        "processed": {
+          "visibility": "system"
+        },
         "documentNo": {
           "visibility": "readOnly",
-          "grid": true,
+          "grid": false,
+          "form": false,
           "searchable": true,
-          "section": "principal",
-          "seq": 10,
           "readOnlyLogic": null
         },
         "businessPartner": {
@@ -36,7 +44,7 @@
           "searchable": true,
           "reference": "BusinessPartner",
           "section": "principal",
-          "seq": 20,
+          "seq": 10,
           "readOnlyLogic": "@Processed@='Y'"
         },
         "partnerAddress": {
@@ -46,28 +54,28 @@
             "field": "businessPartner",
             "filterKey": "C_BPartner_ID"
           },
-          "section": "principal",
-          "seq": 30,
-          "readOnlyLogic": "@Processed@='Y'"
-        },
-        "warehouse": {
-          "grid": true,
-          "section": "principal",
-          "seq": 40,
+          "form": false,
           "readOnlyLogic": "@Processed@='Y'"
         },
         "movementDate": {
           "grid": true,
           "searchable": true,
           "section": "principal",
-          "seq": 50,
+          "seq": 30,
+          "defaultValue": "@Today@",
           "readOnlyLogic": "@Processed@='Y'"
         },
         "orderReference": {
           "grid": true,
           "searchable": true,
           "section": "principal",
-          "seq": 60,
+          "seq": 20,
+          "readOnlyLogic": "@Processed@='Y'"
+        },
+        "warehouse": {
+          "grid": true,
+          "section": "principal",
+          "seq": 40,
           "readOnlyLogic": "@Processed@='Y'"
         },
         "description": {
@@ -80,7 +88,9 @@
           "readOnlyLogic": null
         },
         "salesOrder": {
-          "form": false
+          "visibility": "editable",
+          "form": false,
+          "grid": false
         },
         "documentStatus": {
           "grid": true,
@@ -116,6 +126,7 @@
           "displayLogic": null
         },
         "invoiceStatus": {
+          "grid": true,
           "form": false
         },
         "createLinesFrom": {
@@ -134,44 +145,48 @@
     },
     "lines": {
       "name": "goodsReceiptLine",
+      "javaQualifier": "goodsReceiptLineHandler",
       "fields": {
         "product": {
           "grid": true,
+          "required": true,
           "section": "principal",
           "seq": 10,
-          "readOnlyLogic": null
-        },
-        "attributeSetValue": {
-          "section": "principal",
-          "seq": 20,
-          "readOnlyLogic": null,
-          "displayLogic": null
-        },
-        "uOM": {
-          "grid": true,
-          "section": "principal",
-          "seq": 30,
           "readOnlyLogic": null
         },
         "movementQuantity": {
           "grid": true,
           "section": "principal",
-          "seq": 40,
+          "seq": 20,
           "readOnlyLogic": null,
           "defaultValue": "1"
         },
-        "storageBin": {
+        "orderQuantity": {
           "grid": true,
+          "form": true,
+          "visibility": "readOnly",
           "section": "principal",
-          "seq": 50,
+          "seq": 30,
+          "readOnlyLogic": null
+        },
+        "attributeSetValue": {
+          "form": false,
+          "readOnlyLogic": null,
+          "displayLogic": null
+        },
+        "uOM": {
+          "form": false,
+          "readOnlyLogic": null
+        },
+        "storageBin": {
+          "form": false,
           "readOnlyLogic": null
         },
         "description": {
-          "section": "principal",
-          "seq": 60
+          "form": false
         },
         "lineNo": {
-          "grid": true,
+          "grid": false,
           "form": false,
           "readOnlyLogic": null
         },
@@ -187,10 +202,12 @@
           "displayLogic": null
         },
         "salesOrderLine": {
-          "form": false
+          "visibility": "editable",
+          "form": false,
+          "grid": false
         },
         "invoiceQuantity": {
-          "grid": true,
+          "grid": false,
           "form": false,
           "displayLogic": null
         },

@@ -652,5 +652,243 @@
     ],
     "author": "pipeline",
     "date": "2026-04-29"
+  },
+  {
+    "from": "0.4.0",
+    "to": "0.5.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"documentNo\" property \"grid\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"warehouse\" property \"seq\" changed from \"40\" to \"70\" in frontend (additive)",
+      "Field \"businessPartner\" property \"grid\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"movementDate\" property \"seq\" changed from \"50\" to \"40\" in frontend (additive)",
+      "Field \"orderReference\" property \"seq\" changed from \"60\" to \"50\" in frontend (additive)",
+      "Field \"invoiceStatus\" property \"grid\" changed from \"false\" to \"true\" in frontend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-20"
+  },
+  {
+    "from": "0.5.0",
+    "to": "0.6.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"businessPartner\" property \"grid\" changed from \"false\" to \"true\" in frontend (patch)",
+      "Field \"businessPartner\" property \"seq\" changed from \"20\" to \"60\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-20"
+  },
+  {
+    "from": "0.6.0",
+    "to": "0.7.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"documentNo\" property \"seq\" changed from \"10\" to \"60\" in frontend (additive)",
+      "Field \"warehouse\" property \"seq\" changed from \"70\" to \"50\" in frontend (additive)",
+      "Field \"businessPartner\" property \"seq\" changed from \"60\" to \"10\" in frontend (additive)",
+      "Field \"partnerAddress\" property \"seq\" changed from \"30\" to \"20\" in frontend (additive)",
+      "Field \"orderReference\" property \"seq\" changed from \"50\" to \"30\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-20"
+  },
+  {
+    "from": "0.7.0",
+    "to": "0.8.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"documentNo\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"documentNo\" property \"section\" changed from \"principal\" to \"undefined\" in frontend (additive)",
+      "Field \"documentNo\" property \"seq\" changed from \"60\" to \"undefined\" in frontend (additive)",
+      "Field \"warehouse\" property \"seq\" changed from \"50\" to \"40\" in frontend (additive)",
+      "Field \"partnerAddress\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"partnerAddress\" property \"section\" changed from \"principal\" to \"undefined\" in frontend (additive)",
+      "Field \"partnerAddress\" property \"seq\" changed from \"20\" to \"undefined\" in frontend (additive)",
+      "Field \"movementDate\" property \"seq\" changed from \"40\" to \"30\" in frontend (additive)",
+      "Field \"orderReference\" property \"seq\" changed from \"30\" to \"20\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-20"
+  },
+  {
+    "from": "0.8.0",
+    "to": "0.9.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"orderQuantity\" added to entity \"goodsReceiptLine\" in frontend",
+      "Field \"attributeSetValue\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"attributeSetValue\" property \"section\" changed from \"principal\" to \"undefined\" in frontend (additive)",
+      "Field \"attributeSetValue\" property \"seq\" changed from \"20\" to \"undefined\" in frontend (additive)",
+      "Field \"movementQuantity\" property \"seq\" changed from \"40\" to \"20\" in frontend (additive)",
+      "Field \"uOM\" property \"grid\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"uOM\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"uOM\" property \"section\" changed from \"principal\" to \"undefined\" in frontend (additive)",
+      "Field \"uOM\" property \"seq\" changed from \"30\" to \"undefined\" in frontend (additive)",
+      "Field \"storageBin\" property \"grid\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"storageBin\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"storageBin\" property \"section\" changed from \"principal\" to \"undefined\" in frontend (additive)",
+      "Field \"storageBin\" property \"seq\" changed from \"50\" to \"undefined\" in frontend (additive)",
+      "Field \"description\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"description\" property \"section\" changed from \"principal\" to \"undefined\" in frontend (additive)",
+      "Field \"description\" property \"seq\" changed from \"60\" to \"undefined\" in frontend (additive)",
+      "Field \"orderQuantity\" property \"visibility\" changed from \"system\" to \"readOnly\" in backend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-20"
+  },
+  {
+    "from": "0.9.0",
+    "to": "0.9.1",
+    "level": "patch",
+    "reasons": [
+      "Field \"lineNo\" property \"grid\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"invoiceQuantity\" property \"grid\" changed from \"true\" to \"false\" in frontend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-20"
+  },
+  {
+    "from": "0.9.1",
+    "to": "0.10.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"product\" property \"required\" changed from \"false\" to \"true\" in frontend (additive)",
+      "Field \"product\" property \"required\" changed from \"false\" to \"true\" in backend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-20"
+  },
+  {
+    "from": "0.10.0",
+    "to": "0.10.1",
+    "level": "patch",
+    "reasons": [
+      "Field \"processed\" property \"visibility\" changed from \"discarded\" to \"system\" in backend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-21"
+  },
+  {
+    "from": "0.10.1",
+    "to": "0.10.2",
+    "level": "patch",
+    "reasons": [
+      "Field \"orderQuantity\" property \"visibility\" changed from \"readOnly\" to \"editable\" in frontend (patch)",
+      "Field \"orderQuantity\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"orderQuantity\" property \"visibility\" changed from \"readOnly\" to \"editable\" in backend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-21"
+  },
+  {
+    "from": "0.10.2",
+    "to": "0.10.3",
+    "level": "patch",
+    "reasons": [
+      "Field \"salesOrderLine\" property \"visibility\" changed from \"readOnly\" to \"editable\" in frontend (patch)",
+      "Field \"salesOrderLine\" property \"visibility\" changed from \"readOnly\" to \"editable\" in backend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-21"
+  },
+  {
+    "from": "0.10.3",
+    "to": "0.10.4",
+    "level": "patch",
+    "reasons": [
+      "Field \"salesOrder\" property \"visibility\" changed from \"readOnly\" to \"editable\" in frontend (patch)",
+      "Field \"salesOrder\" property \"visibility\" changed from \"readOnly\" to \"editable\" in backend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-21"
+  },
+  {
+    "from": "0.10.4",
+    "to": "0.10.5",
+    "level": "patch",
+    "reasons": [
+      "Field \"orderQuantity\" property \"form\" changed from \"false\" to \"true\" in frontend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-22"
+  },
+  {
+    "from": "0.10.5",
+    "to": "0.11.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"orderQuantity\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-22"
+  },
+  {
+    "from": "0.11.0",
+    "to": "0.12.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"orderQuantity\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-22"
+  },
+  {
+    "from": "0.12.0",
+    "to": "0.13.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"orderQuantity\" property \"visibility\" changed from \"editable\" to \"readOnly\" in frontend (patch)",
+      "Field \"orderQuantity\" property \"readOnlyLogic\" changed from \"[object Object]\" to \"[object Object]\" in frontend (additive)",
+      "Field \"orderQuantity\" property \"visibility\" changed from \"editable\" to \"readOnly\" in backend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-22"
+  },
+  {
+    "from": "0.4.0",
+    "to": "0.5.0",
+    "level": "additive",
+    "reasons": [
+      "Field \"documentNo\" property \"grid\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"documentNo\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"documentNo\" property \"section\" changed from \"principal\" to \"undefined\" in frontend (additive)",
+      "Field \"documentNo\" property \"seq\" changed from \"10\" to \"undefined\" in frontend (additive)",
+      "Field \"businessPartner\" property \"seq\" changed from \"20\" to \"10\" in frontend (additive)",
+      "Field \"partnerAddress\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"partnerAddress\" property \"section\" changed from \"principal\" to \"undefined\" in frontend (additive)",
+      "Field \"partnerAddress\" property \"seq\" changed from \"30\" to \"undefined\" in frontend (additive)",
+      "Field \"movementDate\" property \"seq\" changed from \"50\" to \"30\" in frontend (additive)",
+      "Field \"salesOrder\" property \"visibility\" changed from \"readOnly\" to \"editable\" in frontend (patch)",
+      "Field \"orderReference\" property \"seq\" changed from \"60\" to \"20\" in frontend (additive)",
+      "Field \"invoiceStatus\" property \"grid\" changed from \"false\" to \"true\" in frontend (patch)",
+      "Field \"orderQuantity\" added to entity \"goodsReceiptLine\" in frontend",
+      "Field \"lineNo\" property \"grid\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"product\" property \"required\" changed from \"false\" to \"true\" in frontend (additive)",
+      "Field \"attributeSetValue\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"attributeSetValue\" property \"section\" changed from \"principal\" to \"undefined\" in frontend (additive)",
+      "Field \"attributeSetValue\" property \"seq\" changed from \"20\" to \"undefined\" in frontend (additive)",
+      "Field \"movementQuantity\" property \"seq\" changed from \"40\" to \"20\" in frontend (additive)",
+      "Field \"uOM\" property \"grid\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"uOM\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"uOM\" property \"section\" changed from \"principal\" to \"undefined\" in frontend (additive)",
+      "Field \"uOM\" property \"seq\" changed from \"30\" to \"undefined\" in frontend (additive)",
+      "Field \"storageBin\" property \"grid\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"storageBin\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"storageBin\" property \"section\" changed from \"principal\" to \"undefined\" in frontend (additive)",
+      "Field \"storageBin\" property \"seq\" changed from \"50\" to \"undefined\" in frontend (additive)",
+      "Field \"description\" property \"form\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"description\" property \"section\" changed from \"principal\" to \"undefined\" in frontend (additive)",
+      "Field \"description\" property \"seq\" changed from \"60\" to \"undefined\" in frontend (additive)",
+      "Field \"salesOrderLine\" property \"visibility\" changed from \"readOnly\" to \"editable\" in frontend (patch)",
+      "Field \"invoiceQuantity\" property \"grid\" changed from \"true\" to \"false\" in frontend (patch)",
+      "Field \"salesOrder\" property \"visibility\" changed from \"readOnly\" to \"editable\" in backend (patch)",
+      "Field \"processed\" property \"visibility\" changed from \"discarded\" to \"system\" in backend (patch)",
+      "Field \"product\" property \"required\" changed from \"false\" to \"true\" in backend (additive)",
+      "Field \"salesOrderLine\" property \"visibility\" changed from \"readOnly\" to \"editable\" in backend (patch)",
+      "Field \"orderQuantity\" property \"visibility\" changed from \"system\" to \"readOnly\" in backend (patch)"
+    ],
+    "author": "pipeline",
+    "date": "2026-05-27"
   }
 ]

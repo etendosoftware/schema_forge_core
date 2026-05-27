@@ -1,8 +1,8 @@
 {
   "version": "0.4.0",
   "generatedAt": "2026-04-29T19:05:20.719Z",
-  "updatedAt": "2026-05-26T18:48:56.839Z",
-  "contractChecksum": "f794c5c734f6d171",
+  "updatedAt": "2026-05-27T18:08:53.424Z",
+  "contractChecksum": "c2c8b32368e94888",
   "apiPrediction": {
     "specName": "goods-receipt",
     "baseUrl": "/sws/neo/goods-receipt",
@@ -592,9 +592,7 @@
             "readOnlyLogic": "@Posted@='Y'",
             "defaultValue": "@#Date@"
           },
-          "salesOrder": {
-            "readOnly": true
-          },
+          "salesOrder": {},
           "orderReference": {
             "readOnlyLogic": "@Processed@='Y'"
           },
@@ -634,6 +632,7 @@
             "defaultValue": "@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM M_InOutLine WHERE M_InOut_ID=@M_InOut_ID@"
           },
           "product": {
+            "required": true,
             "readOnlyLogic": "@Processed@='Y'"
           },
           "attributeSetValue": {
@@ -660,8 +659,10 @@
             "defaultValue": "@OnHandLocatorDefault@"
           },
           "description": {},
-          "salesOrderLine": {
-            "readOnly": true
+          "salesOrderLine": {},
+          "orderQuantity": {
+            "readOnly": true,
+            "readOnlyLogic": "@Processed@='Y'"
           },
           "businessPartner": {
             "readOnlyLogic": "@Posted@='Y'"
@@ -707,6 +708,7 @@
       ],
       "lineFields": [
         "lineNo",
+        "product",
         "movementQuantity"
       ],
       "recommendedOrder": [
@@ -819,6 +821,7 @@
         "description": "Add a line after the header exists and parent context is available.",
         "fields": [
           "lineNo",
+          "product",
           "movementQuantity"
         ]
       },
@@ -832,5 +835,5 @@
     "knownLimitations": [],
     "dangerousOperations": []
   },
-  "checksum": "cbf1f05106a44208"
+  "checksum": "0c985ab59132d152"
 }

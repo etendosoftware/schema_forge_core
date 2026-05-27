@@ -129,3 +129,5 @@ See [Shared validation & UX changes — ETP-4005](app-shell-functional-flows.md#
 - The generated `HeaderPage.jsx` includes `AttachmentsTab` in its `customTabs` prop, wired to the `C_Order` AD table.
 - **ETP-3995 — Related Documents tab i18n**: The generated page file now uses `labelKey: 'relatedDocuments'` in the `customTabs` prop instead of a hardcoded `label: 'Related Documents'` string, so the tab title renders via the active UI language (e.g. "Documentos relacionados" in Spanish) regardless of the browser locale.
 - `tools/app-shell/src/windows/custom/shared/OrderPreview.jsx` and `useOrderPdf.js` prove the lateral preview panel with PDF generation, `RelatedDocumentsCard` wiring (specs for shipments, invoices, and chained payment-in fetch), and `!isDraft` caching strategy.
+
+- **ETP-4032 — Shared ConfirmResultModal**: `OrderCreateInvoice.jsx` no longer exports `ConfirmResultModal` directly — it is now imported from `@/components/contract-ui`. The modal's `cards` array prop replaces the former `docs` object; behavior for the end user is identical.

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
-import { X, Upload, Trash2, Loader2 } from 'lucide-react';
+import { X, Upload, Trash2, Loader2, Download } from 'lucide-react';
 import { useUI } from '@/i18n';
 import { usePreviewAttachment, ACCEPTED_TYPES, ACCEPT_ATTR } from './usePreviewAttachment.js';
 import PdfViewer from './PdfViewer.jsx';
@@ -27,6 +27,11 @@ function ManagedLeftPanel({ cfg, leftPanel }) {
     token: cfg.token ?? null,
     apiBaseUrl: cfg.apiBaseUrl ?? null,
   });
+
+  useEffect(() => {
+    cfg.onFileChange?.(attachment.storedFile);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attachment.storedFile]);
 
   const autoStoreAttempted = useRef(false);
   const autoStoreDocKey = `${cfg.documentId}::${cfg.specName}`;
@@ -82,15 +87,26 @@ function ManagedLeftPanel({ cfg, leftPanel }) {
     return (
       <div className="relative flex flex-col h-full min-h-0">
         {!autoFetch && (
-          <button
-            type="button"
-            onClick={() => attachment.deleteFile().catch(() => {})}
-            className="absolute top-2 left-2 z-10 w-8 h-8 flex items-center justify-center bg-white border border-[#D1D4DB] shadow-sm rounded-lg hover:bg-gray-50 transition-colors"
-            title={`${ui('deleteDocument')} — ${fileName}`}
-            aria-label={ui('deleteDocument')}
-          >
-            <Trash2 size={16} className="text-[#828FA3]" />
-          </button>
+          <div className="absolute top-2 left-2 z-10 flex gap-1">
+            <a
+              href={objectUrl}
+              download={fileName}
+              className="w-8 h-8 flex items-center justify-center bg-white border border-[#D1D4DB] shadow-sm rounded-lg hover:bg-gray-50 transition-colors"
+              title={`${ui('downloadPdf')} — ${fileName}`}
+              aria-label={ui('downloadPdf')}
+            >
+              <Download size={16} className="text-[#828FA3]" />
+            </a>
+            <button
+              type="button"
+              onClick={() => attachment.deleteFile().catch(() => {})}
+              className="w-8 h-8 flex items-center justify-center bg-white border border-[#D1D4DB] shadow-sm rounded-lg hover:bg-gray-50 transition-colors"
+              title={`${ui('deleteDocument')} — ${fileName}`}
+              aria-label={ui('deleteDocument')}
+            >
+              <Trash2 size={16} className="text-[#828FA3]" />
+            </button>
+          </div>
         )}
         {mimeType?.startsWith('image/') ? (
           <div className="w-full h-full overflow-auto flex items-center justify-center">
@@ -226,7 +242,9 @@ const GenericPreviewModal = forwardRef(function GenericPreviewModal({
 
   useImperativeHandle(ref, () => ({ triggerEdit }), [triggerEdit]);
 
-  const resolvedActionButtons = actionButtons ?? null;
+  const resolvedActionButtons = typeof actionButtons === 'function'
+    ? actionButtons({ triggerClose, triggerEdit })
+    : (actionButtons ?? null);
 
   const activeContent = tabs.find((t) => t.key === activeTab)?.content ?? null;
 
@@ -320,3 +338,12 @@ const GenericPreviewModal = forwardRef(function GenericPreviewModal({
 });
 
 export default GenericPreviewModal;
+
+export function EmptyPanel({ icon, text }) {
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-400 py-20">
+      <span className="text-3xl">{icon}</span>
+      <p className="text-sm">{text}</p>
+    </div>
+  );
+}
