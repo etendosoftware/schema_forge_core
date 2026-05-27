@@ -31,7 +31,7 @@ export default function ReturnMaterialReceiptWindow({ windowName, recordId, apiB
     hideDeleteWhenComplete: true,
     actions: {
       edit: { show: true },
-      duplicate: { show: true },
+      duplicate: { show: true, visibleWhen: "@documentStatus@='CO'" },
       delete: { show: true },
     },
     onEdit: (row) => navigate(`/${windowName}/${row.id}`),
