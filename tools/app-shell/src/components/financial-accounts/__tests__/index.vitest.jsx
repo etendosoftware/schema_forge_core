@@ -8,8 +8,8 @@ describe('financial-accounts barrel exports', () => {
     expect(featureExports.ReconcilePill).toBeDefined();
     expect(featureExports.AccountTypeFilter).toBeDefined();
     expect(featureExports.AccountRowMenu).toBeDefined();
-    expect(featureExports.CuentasToolbar).toBeDefined();
-    expect(featureExports.CuentasSidebar).toBeDefined();
+    expect(featureExports.AccountsToolbar).toBeDefined();
+    expect(featureExports.AccountsSidebar).toBeDefined();
     expect(featureExports.AccountsTable).toBeDefined();
   });
 

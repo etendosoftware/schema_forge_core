@@ -21,16 +21,16 @@ vi.mock('@/i18n', () => ({
   },
 }));
 
-import { CuentasToolbar } from '../CuentasToolbar.jsx';
+import { AccountsToolbar } from '../AccountsToolbar.jsx';
 
-describe('CuentasToolbar', () => {
+describe('AccountsToolbar', () => {
   beforeEach(() => {
     toast.mockReset();
   });
 
   it('renders the type filter, search input, matching rules and new account buttons', () => {
     render(
-      <CuentasToolbar
+      <AccountsToolbar
         typeFilter={null}
         onTypeFilterChange={vi.fn()}
         search=""
@@ -46,7 +46,7 @@ describe('CuentasToolbar', () => {
   it('reports search input changes back to the parent', () => {
     const onSearchChange = vi.fn();
     render(
-      <CuentasToolbar
+      <AccountsToolbar
         typeFilter={null}
         onTypeFilterChange={vi.fn()}
         search=""
@@ -61,7 +61,7 @@ describe('CuentasToolbar', () => {
 
   it('fires a toast pointing to T5 when "Reglas de matcheo" is clicked', () => {
     render(
-      <CuentasToolbar
+      <AccountsToolbar
         typeFilter={null}
         onTypeFilterChange={vi.fn()}
         search=""
@@ -74,7 +74,7 @@ describe('CuentasToolbar', () => {
 
   it('keeps the "Nueva cuenta" button enabled with no click handler in T1', () => {
     render(
-      <CuentasToolbar
+      <AccountsToolbar
         typeFilter={null}
         onTypeFilterChange={vi.fn()}
         search=""

@@ -107,7 +107,7 @@ function PendingCard({ pending, ui }) {
   );
 }
 
-export function CuentasSidebar({ summary, loading }) {
+export function AccountsSidebar({ summary, loading }) {
   const ui = useUI();
   const primaryIso = summary?.byCurrency?.[0]?.currencyIso ?? 'EUR';
   const totalBalance = summary?.totalBalance ?? 0;
