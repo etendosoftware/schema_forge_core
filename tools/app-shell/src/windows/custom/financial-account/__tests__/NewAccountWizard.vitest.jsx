@@ -69,10 +69,10 @@ describe('NewAccountWizard', () => {
 
     // picking a bank shows the institution list
     await user.click(screen.getByTestId('new-account-bank-santander'));
-    expect(screen.getByTestId('new-account-institution-add')).toBeInTheDocument();
+    expect(screen.getByTestId('new-account-institution-santander-default')).toBeInTheDocument();
 
     // proceeding lands on the form
-    await user.click(screen.getByTestId('new-account-institution-add'));
+    await user.click(screen.getByTestId('new-account-institution-santander-default'));
     expect(screen.getByTestId('account-form')).toBeInTheDocument();
   });
 
