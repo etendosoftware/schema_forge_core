@@ -8,8 +8,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(__dirname, '..', 'SalesInvoiceTopbar.jsx'), 'utf8');
 
 describe('SalesInvoiceTopbar', () => {
-  it('calls onProcess (not window.location.reload) in the invoice-updated handler', () => {
-    assert.match(src, /onProcess\?\.\(\)/, 'expected onProcess?.() call in event handler');
-    assert.doesNotMatch(src, /window\.location\.reload\(\)/, 'expected no window.location.reload() in event handler');
+  it('delegates invoice-updated handling to useInvoiceUpdatedListener (not window.location.reload)', () => {
+    assert.match(src, /useInvoiceUpdatedListener/, 'expected useInvoiceUpdatedListener to be used');
+    assert.doesNotMatch(src, /window\.location\.reload\(\)/, 'expected no window.location.reload() in topbar');
   });
 });
