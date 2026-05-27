@@ -13873,7 +13873,8 @@
       "label": "Dimension"
     },
     "Amortization": {
-      "label": "Amortization"
+      "label": "Amortization",
+      "newLabel": "New amortization"
     },
     "Assets": {
       "label": "Assets",
@@ -19224,7 +19225,22 @@
     "fm.m349.add_operator": "Add operator",
     "fm.m349.operators_count": "{count} operators",
     "fm.m349.operators_sub": "Source of truth for the .349 file — each row will be a reconcilable record in the generated file.",
-    "fm.m349.coming_soon": "{tab} — content available soon."
+    "fm.m349.coming_soon": "{tab} — content available soon.",
+    "amortization": "Amortization",
+    "totalAmortization": "Total Amortization",
+    "currency": "Currency",
+    "amortizationSummary": "Amortization Summary",
+    "amortizationTotalPlanned": "Total planned amount",
+    "amortizationLineCount": "Lines",
+    "amortizationLineCountSubtitle": "Assets being depreciated",
+    "amortizationStatus": "Status",
+    "statusProcessed": "Processed",
+    "noLinkedAssets": "No linked assets",
+    "amortizationRef": "Amortization",
+    "amortizationLineCountLabel": "{count} line(s)",
+    "amortizationConfirmWarning": "Once confirmed you will not be able to edit the amortization",
+    "amortizationConfirmAction": "Confirm amortization",
+    "assetsAnnualDepreciationLabel": "Annual Depreciation %"
   },
   "menus": {
     "Currency": {
@@ -20656,6 +20672,12 @@
     },
     "noProductsFound": {
       "label": "No products found"
+    },
+    "N": {
+      "label": "Draft"
+    },
+    "Y": {
+      "label": "Processed"
     }
   }
 }

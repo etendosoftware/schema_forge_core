@@ -158,10 +158,15 @@ const FIELD_DECISION_COPY_PROPS = [
   'badgeColors',
   'badgeVariants',
   'enumVariants',
+  'enumValues',
+  'filterOnly',
+  'filterable',
   'labels',
   'columnType',
   'display',
   'cellType',
+  'grow',
+  'noTrailing',
 ];
 
 const FIELD_RAW_COPY_PROPS = [
@@ -213,6 +218,7 @@ function copyRawProps(field, rawField, props) {
 function applyFieldDecisionProps(field, fieldDecision) {
   if (fieldDecision.section) field.section = fieldDecision.section;
   if (fieldDecision.seq != null) field.seq = fieldDecision.seq;
+  if (fieldDecision.filterable === false) field.filterable = false;
   if (fieldDecision.badge) field.badge = true;
   if (fieldDecision.summable) field.summable = true;
   if (fieldDecision.gridOrder != null) field.gridOrder = fieldDecision.gridOrder;
@@ -451,6 +457,12 @@ function buildDraftMode(draftModeDecision, enabled) {
   };
   if (Array.isArray(draftModeDecision.completedStatuses)) {
     draftMode.completedStatuses = draftModeDecision.completedStatuses;
+  }
+  if (draftModeDecision.confirmModal) {
+    draftMode.confirmModal = draftModeDecision.confirmModal;
+  }
+  if (draftModeDecision.disableWhenEmpty) {
+    draftMode.disableWhenEmpty = true;
   }
   return draftMode;
 }

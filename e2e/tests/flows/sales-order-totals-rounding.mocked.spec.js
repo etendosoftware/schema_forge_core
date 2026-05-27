@@ -235,9 +235,10 @@ test.describe('Sales Order — totals rounding (ETP-4017)', () => {
     await installSalesOrderMocks(page, { header: fixedHeader, line: BUG_LINE });
     await page.goto(`/sales-order/${ORDER_ID_BUG}`);
 
-    // Wait for the detail page to render so the custom window is mounted and
-    // the `sales-order:open-confirm-modal` listener is attached.
-    await expect(page.getByTestId('totals-row-total-value')).toBeVisible({ timeout: 10_000 });
+    // Wait for OrderCreateInvoice (headerExtra) to mount — the send-email button
+    // is rendered by that component when isDraft=true, so its presence guarantees
+    // the `sales-order:open-confirm-modal` listener is already registered.
+    await expect(page.getByTestId('action-send-email')).toBeVisible({ timeout: 10_000 });
 
     // The ConfirmModal opens via a window event dispatched by the draftMode
     // primary action. Trigger it directly — that's how the sales-order custom
