@@ -509,6 +509,7 @@ function appendVirtualFields(curatedFields, entityDecision) {
       label: vf.label ?? vf.name,
       type: vf.type ?? 'string',
       visibility: vf.visibility ?? 'readOnly',
+      required: vf.required ?? false,
       form: vf.form !== false,
       grid: vf.grid !== false,
       gridOrder: vf.gridOrder,

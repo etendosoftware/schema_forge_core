@@ -1,8 +1,8 @@
 {
-  "version": "0.6.1",
+  "version": "0.7.0",
   "generatedAt": "2026-04-29T18:11:05.114Z",
-  "updatedAt": "2026-05-27T12:13:24.267Z",
-  "checksum": "602c5ee517992eba",
+  "updatedAt": "2026-05-27T16:36:19.448Z",
+  "checksum": "637b6b8ad191d439",
   "frontendContract": {
     "window": {
       "id": "123271B9AD60469BAE8A924841456B63",
@@ -278,6 +278,7 @@
             "type": "string",
             "tsType": "string",
             "visibility": "readOnly",
+            "required": false,
             "grid": true,
             "form": true,
             "section": "principal",
@@ -1081,7 +1082,8 @@
             "apiKey": "sourceShipmentDocNo",
             "column": "sourceShipmentDocNo",
             "type": "string",
-            "visibility": "readOnly"
+            "visibility": "readOnly",
+            "required": false
           }
         ],
         "javaQualifier": "returnMaterialReceiptHeaderHandler"
