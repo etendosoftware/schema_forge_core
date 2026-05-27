@@ -64,6 +64,34 @@ const TbaiTabIcon = () => (
   </svg>
 );
 
+function getTotalCountForProfile(profile, siiTotal, tbaiTotal, vfTotal) {
+  if (profile === 'sii' || profile === 'sii-navarra') return siiTotal;
+  if (profile === 'tbai') return tbaiTotal;
+  if (profile === 'verifactu') return vfTotal;
+  if (profile === 'sii+tbai') return siiTotal + tbaiTotal;
+  return 0;
+}
+
+async function resolveAndPreviewInvoice(apiFetch, invoiceId, specHint, setPreviewSpec, setPreviewInvoice) {
+  if (!invoiceId) return;
+  const specs = specHint === 'sales-invoice'
+    ? ['sales-invoice', 'purchase-invoice']
+    : ['purchase-invoice', 'sales-invoice'];
+  for (const spec of specs) {
+    try {
+      const res = await apiFetch(`/${spec}/header/${invoiceId}`);
+      if (!res.ok) continue;
+      const json = await res.json();
+      const inv = json?.response?.data?.[0] ?? null;
+      if (inv?.id) {
+        setPreviewSpec(spec);
+        setPreviewInvoice(inv);
+        return;
+      }
+    } catch { /* try next */ }
+  }
+}
+
 function useDebugState(orgId, apiBaseUrl) {
   const debugMode = useDebugMode();
   const [debugProfile, setDebugProfile] = useState(null);
@@ -129,11 +157,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
   const _tbaiTotalMeta = kpis?.tbai?.total ?? 0;
   const _vfTotalMeta   = (kpis?.verifactu?.accepted ?? 0) + (kpis?.verifactu?.partiallyAccepted ?? 0)
                        + (kpis?.verifactu?.rejected ?? 0) + (kpis?.verifactu?.invalid ?? 0);
-  const _totalCountMeta = profile === 'sii' || profile === 'sii-navarra' ? _siiTotalMeta
-    : profile === 'tbai'      ? _tbaiTotalMeta
-    : profile === 'verifactu' ? _vfTotalMeta
-    : profile === 'sii+tbai'  ? _siiTotalMeta + _tbaiTotalMeta
-    : 0;
+  const _totalCountMeta = getTotalCountForProfile(profile, _siiTotalMeta, _tbaiTotalMeta, _vfTotalMeta);
 
   useSetPageMeta({
     title: PROFILE_LABELS[profile] ?? '',
@@ -147,23 +171,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
   }
 
   async function handleInvoiceOpen(invoiceId, specHint = 'sales-invoice') {
-    if (!invoiceId) return;
-    const specs = specHint === 'sales-invoice'
-      ? ['sales-invoice', 'purchase-invoice']
-      : ['purchase-invoice', 'sales-invoice'];
-    for (const spec of specs) {
-      try {
-        const res = await apiFetch(`/${spec}/header/${invoiceId}`);
-        if (!res.ok) continue;
-        const json = await res.json();
-        const inv = json?.response?.data?.[0] ?? null;
-        if (inv?.id) {
-          setPreviewSpec(spec);
-          setPreviewInvoice(inv);
-          return;
-        }
-      } catch { /* try next */ }
-    }
+    await resolveAndPreviewInvoice(apiFetch, invoiceId, specHint, setPreviewSpec, setPreviewInvoice);
   }
 
   const DebugPanel = debugMode ? (

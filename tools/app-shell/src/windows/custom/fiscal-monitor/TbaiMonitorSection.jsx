@@ -3,7 +3,7 @@ import { useUI } from '@/i18n';
 import { neoBase } from '@/components/related-documents/helpers.js';
 import { useApiFetch } from '@/auth/useApiFetch.js';
 import { Checkbox } from '@/components/ui/checkbox';
-import { StatusPill, NumFactura, ScrollSentinel, isErrorStatus, isPendingStatus, fmtDate, PAGE_SIZE } from './FmPrimitives.jsx';
+import { StatusPill, NumFactura, ScrollSentinel, isErrorStatus, isPendingStatus, fmtDate, PAGE_SIZE, ExportIcon, useFmSelection } from './FmPrimitives.jsx';
 import { TBAI_SPEC, TBAI_ENTITY } from './useFiscalMonitor.js';
 
 const STATUS_FIELD = 'estado';
@@ -41,13 +41,6 @@ const CheckIcon = () => (
     <polyline points="20 6 9 17 4 12"/>
   </svg>
 );
-const ExportIcon = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-    <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-  </svg>
-);
-
 function mapInitialFilter(initialFilter) {
   if (initialFilter === 'Recibido') return FILTER_SENT;
   if (initialFilter === 'Rechazado' || initialFilter === 'Error') return FILTER_REJECTED;
@@ -68,7 +61,7 @@ export default function TbaiMonitorSection({
   const [totalRows, setTotalRows] = useState(0);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState(null);
-  const [selectedIds, setSelectedIds] = useState(new Set());
+  const { selectedIds, setSelectedIds, allSelected, someSelected, handleToggleAll, handleToggleRow } = useFmSelection(rows);
 
   useEffect(() => { setFilter(mapInitialFilter(initialFilter)); }, [initialFilter]);
 
@@ -101,23 +94,7 @@ export default function TbaiMonitorSection({
   }, [orgId, filter, page, apiFetch, mockRows, refreshKey]);
 
   // Reset to first page, rows and selection when filter changes
-  useEffect(() => { setPage(1); setRows([]); setSelectedIds(new Set()); }, [filter]);
-
-  const allSelected  = rows.length > 0 && rows.every(r => selectedIds.has(r.id));
-  const someSelected = rows.some(r => selectedIds.has(r.id)) && !allSelected;
-
-  function handleToggleAll() {
-    setSelectedIds(prev =>
-      rows.every(r => prev.has(r.id)) ? new Set() : new Set(rows.map(r => r.id))
-    );
-  }
-  function handleToggleRow(id) {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  }
+  useEffect(() => { setPage(1); setRows([]); setSelectedIds(new Set()); }, [filter, setSelectedIds]);
 
   const tbaiKpis      = kpis?.tbai ?? {};
   const countAll      = tbaiKpis.total    ?? 0;

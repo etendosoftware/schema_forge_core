@@ -5,7 +5,7 @@ import { useApiFetch } from '@/auth/useApiFetch.js';
 import { formatAmount } from '@/lib/formatAmount.js';
 import { FileUp, FileDown } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
-import { StatusPill, NumFactura, ScrollSentinel, isErrorStatus, isPendingStatus, fmtDate, PAGE_SIZE } from './FmPrimitives.jsx';
+import { StatusPill, NumFactura, ScrollSentinel, isErrorStatus, isPendingStatus, fmtDate, PAGE_SIZE, ExportIcon, useFmSelection } from './FmPrimitives.jsx';
 import {
   SII_SPEC,
   SII_EMITIDAS_ENTITY,
@@ -43,17 +43,23 @@ const SUBTAB_SII_DATA_ENTITIES = {
 
 const INVOICE_FK_FIELD = 'aeatsiiInvoice';
 
-const ExportIcon = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-    <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-  </svg>
-);
 const ChevDownIcon = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
     <polyline points="6 9 12 15 18 9"/>
   </svg>
 );
+
+function resolveTabState(initialTab) {
+  if (initialTab.includes('previous')) {
+    return { tab: initialTab.startsWith('received') ? 'received' : 'issued', period: 'previous' };
+  }
+  return { tab: initialTab === 'received' ? 'received' : 'issued', period: 'current' };
+}
+
+function resolveEntityKey(tab, period) {
+  if (tab === 'issued') return period === 'current' ? 'issued' : 'issuedPrevious';
+  return period === 'current' ? 'received' : 'receivedPrevious';
+}
 
 async function fetchSubtab(apiFetch, entityKey, parentId, orgId, page) {
   const entity        = SUBTAB_ENTITIES[entityKey];
@@ -201,7 +207,7 @@ export default function SiiMonitorSection({
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState(null);
   const [csvMap, setCsvMap]       = useState({});
-  const [selectedIds, setSelectedIds] = useState(new Set());
+  const { selectedIds, setSelectedIds, handleToggleAll, handleToggleRow } = useFmSelection(rows);
 
   function changeTab(newTab, newPeriod) {
     setTab(newTab);
@@ -212,13 +218,9 @@ export default function SiiMonitorSection({
   }
 
   useEffect(() => {
-    if (initialTab.includes('previous')) {
-      setTab(initialTab.startsWith('received') ? 'received' : 'issued');
-      setPeriod('previous');
-    } else {
-      setTab(initialTab === 'received' ? 'received' : 'issued');
-      setPeriod('current');
-    }
+    const { tab: t, period: p } = resolveTabState(initialTab);
+    setTab(t);
+    setPeriod(p);
   }, [initialTab]);
 
   // Close period dropdown on outside click
@@ -229,9 +231,7 @@ export default function SiiMonitorSection({
     return () => document.removeEventListener('mousedown', handler);
   }, [showPeriodDrop]);
 
-  const entityKey = tab === 'issued'
-    ? (period === 'current' ? 'issued' : 'issuedPrevious')
-    : (period === 'current' ? 'received' : 'receivedPrevious');
+  const entityKey = resolveEntityKey(tab, period);
 
   useEffect(() => {
     if (mockRows) {
@@ -261,20 +261,7 @@ export default function SiiMonitorSection({
   }, [parentId, orgId, entityKey, page, apiFetch, mockRows, refreshKey]);
 
   // Reset to first page, rows and selection when tab/period changes
-  useEffect(() => { setPage(1); setRows([]); setCsvMap({}); setSelectedIds(new Set()); }, [tab, period]);
-
-  function handleToggleAll() {
-    setSelectedIds(prev =>
-      rows.every(r => prev.has(r.id)) ? new Set() : new Set(rows.map(r => r.id))
-    );
-  }
-  function handleToggleRow(id) {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  }
+  useEffect(() => { setPage(1); setRows([]); setCsvMap({}); setSelectedIds(new Set()); }, [tab, period, setSelectedIds]);
 
   const siiKpis        = kpis?.sii ?? {};
   const issuedTotal    = (siiKpis.issued ?? 0) + (siiKpis.issuedPrevious ?? 0);

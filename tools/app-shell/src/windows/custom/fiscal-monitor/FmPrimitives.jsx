@@ -1,5 +1,5 @@
 // Shared UI primitives for the Fiscal Monitor.
-import { useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useUI } from '@/i18n';
 import { TriangleAlert, ArrowUpRight } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -109,6 +109,39 @@ export const RowActionBtn = ({ onClick, title }) => (
 export const PAGE_SIZE = 20;
 
 export { fmtDate } from './fmtDateUtils.js';
+
+export const ExportIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+    <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+  </svg>
+);
+
+/**
+ * Shared selection state for fiscal monitor tables.
+ * Returns selectedIds, stable setter, computed allSelected/someSelected, and toggle handlers.
+ */
+export function useFmSelection(rows) {
+  const [selectedIds, setSelectedIds] = useState(new Set());
+
+  const allSelected  = rows.length > 0 && rows.every(r => selectedIds.has(r.id));
+  const someSelected = rows.some(r => selectedIds.has(r.id)) && !allSelected;
+
+  function handleToggleAll() {
+    setSelectedIds(prev =>
+      rows.every(r => prev.has(r.id)) ? new Set() : new Set(rows.map(r => r.id))
+    );
+  }
+  function handleToggleRow(id) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  return { selectedIds, setSelectedIds, allSelected, someSelected, handleToggleAll, handleToggleRow };
+}
 
 export const WipBadge = ({ inline = false }) => {
   const ui = useUI();
