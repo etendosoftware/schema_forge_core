@@ -117,8 +117,8 @@ test.describe('Financial Account Create (T2) — mocked', () => {
     // Step 1: pick the Bank type.
     await page.getByTestId('new-account-type-B').click();
 
-    // Step 2: connection toggle — "Con conexión" is disabled, pick "Sin conexión".
-    await expect(page.getByTestId('account-connection-toggle')).toBeVisible();
+    // Step 2: connection options — "Con conexión" is disabled, pick "Sin conexión".
+    await expect(page.getByTestId('account-connection-options')).toBeVisible();
     await expect(page.getByTestId('account-connection-online')).toBeDisabled();
     await page.getByTestId('account-connection-offline').click();
 
@@ -128,7 +128,7 @@ test.describe('Financial Account Create (T2) — mocked', () => {
     await page.getByTestId('new-account-bank-santander').click();
 
     // Step 4: institution list — pick the first variant.
-    await expect(page.getByTestId('new-account-institution-add')).toBeVisible();
+    await expect(page.getByTestId('new-account-institution-santander-default')).toBeVisible();
     await page.getByTestId('new-account-institution-santander-default').click();
 
     // Step 5: the form. Currency is pre-selected from defaults (EUR).
