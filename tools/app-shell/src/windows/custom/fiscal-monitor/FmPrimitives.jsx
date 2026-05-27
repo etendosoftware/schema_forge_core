@@ -1,6 +1,7 @@
 // Shared UI primitives for the Fiscal Monitor.
+import { useRef, useEffect } from 'react';
 import { useUI } from '@/i18n';
-import { TriangleAlert } from 'lucide-react';
+import { TriangleAlert, ArrowUpRight } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export const ERROR_STATUSES = new Set([
@@ -60,68 +61,41 @@ export const StatusPill = ({ estado, onClick, title: titleProp }) => {
   return <span className={`fm-pill ${cls}`} data-testid="status-pill" data-status={cls}>{text}</span>;
 };
 
-const ExtLinkIcon = () => (
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-    <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-  </svg>
-);
-
 export const NumFactura = ({ n, onOpen }) => {
   const ui = useUI();
   return (
     <a
       href="#"
+      className="fm-num-factura-link"
       onClick={(e) => { e.preventDefault(); onOpen && onOpen(n); }}
       title={ui('fiscalMonitor.openInvoice')}
     >
-      {n}<ExtLinkIcon />
+      {n}
+      <ArrowUpRight size={14} strokeWidth={2} className="fm-num-factura-arrow" />
     </a>
   );
 };
 
-const ChevLeft  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>;
-const ChevRight = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>;
-
-export const Pager = ({ total, page = 1, pageSize = 20, onPage }) => {
-  const ui = useUI();
-  const start = (page - 1) * pageSize + 1;
-  const end = Math.min(total, page * pageSize);
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const pages = [];
-  for (let i = 1; i <= Math.min(totalPages, 5); i++) pages.push(i);
-
-  return (
-    <div className="fm-pager">
-      <div className="l">
-        {ui('fiscalMonitor.pager.showing')}{' '}
-        <span className="pgstrong">{start}–{end}</span>{' '}
-        {ui('fiscalMonitor.pager.of')} <span className="pgstrong">{total.toLocaleString('de-DE')}</span> {ui('fiscalMonitor.pager.records')}
-      </div>
-      <div className="r">
-        <button className="pgbtn" disabled={page <= 1} onClick={() => onPage?.(page - 1)}>
-          <ChevLeft />
-        </button>
-        {pages.map(p => (
-          <button
-            key={p}
-            className={`pgnum${p === page ? ' active' : ''}`}
-            onClick={() => onPage?.(p)}
-          >
-            {p}
-          </button>
-        ))}
-        {totalPages > 5 && <span className="pgnum" style={{ cursor: 'default' }}>…</span>}
-        {totalPages > 5 && (
-          <button className="pgnum" onClick={() => onPage?.(totalPages)}>{totalPages}</button>
-        )}
-        <button className="pgbtn" disabled={page >= totalPages} onClick={() => onPage?.(page + 1)}>
-          <ChevRight />
-        </button>
-      </div>
-    </div>
-  );
+/**
+ * Invisible sentinel element — when it enters the viewport the parent should
+ * load the next page. Matches the infinite-scroll pattern used by ListView.jsx.
+ */
+export const ScrollSentinel = ({ onVisible, hasMore, loading }) => {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!ref.current || !hasMore || loading) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) onVisible?.(); },
+      { rootMargin: '200px' }
+    );
+    obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, [hasMore, loading, onVisible]);
+  return <div ref={ref} style={{ height: 1 }} />;
 };
+
+/** @deprecated use ScrollSentinel instead */
+export const Pager = () => null;
 
 export const RowActionBtn = ({ onClick, title }) => (
   <button className="fm-icon-btn row-action" onClick={onClick} title={title}>
