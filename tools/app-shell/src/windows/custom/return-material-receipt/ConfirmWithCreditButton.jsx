@@ -48,9 +48,6 @@ function Spinner() {
   );
 }
 
-const fmtNum = (v) =>
-  Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
 function buildInvoiceResult(inv, ui) {
   return {
     title: ui('rmrInvoiceCreatedTitle'),

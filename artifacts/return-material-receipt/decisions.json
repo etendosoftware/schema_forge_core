@@ -257,7 +257,8 @@
           "visibility": "discarded"
         },
         "documentAction": {
-          "visibility": "system"
+          "visibility": "system",
+          "javaQualifier": "documentAction"
         },
         "processNow": {
           "visibility": "discarded"

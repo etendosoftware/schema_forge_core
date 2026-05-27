@@ -13851,7 +13851,7 @@
       "newLabel": "Nuevo tercero"
     },
     "Return Material Receipt": {
-      "label": "Recibo devolución de material",
+      "label": "Albarán de devolución",
       "newLabel": "Nuevo albarán de devolución"
     },
     "General Ledger Configuration": {
@@ -16330,7 +16330,7 @@
       "label": "Devolución de Cliente"
     },
     "Return Material Receipt": {
-      "label": "Recibo de Devolución"
+      "label": "Albarán de devolución"
     },
     "Purchase Order": {
       "label": "Pedido de Compra"
@@ -20231,7 +20231,7 @@
       "label": "Terceros"
     },
     "Return Material Receipt": {
-      "label": "Recibo de Devolución"
+      "label": "Albarán de devolución"
     },
     "General Ledger Configuration": {
       "label": "Esquema contable"
