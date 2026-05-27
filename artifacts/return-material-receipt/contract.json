@@ -1,8 +1,8 @@
 {
   "version": "0.2.0",
   "generatedAt": "2026-04-29T18:11:05.114Z",
-  "updatedAt": "2026-05-11T16:22:45.010Z",
-  "checksum": "963d5b3618f4484b",
+  "updatedAt": "2026-05-20T11:45:15.483Z",
+  "checksum": "708f2076da3211e0",
   "frontendContract": {
     "window": {
       "id": "123271B9AD60469BAE8A924841456B63",
@@ -1459,7 +1459,16 @@
         "column": "C_BPartner_Location_ID",
         "reference": "BusinessPartnerLocation",
         "inputMode": "dependent",
-        "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/selectors/partnerAddress"
+        "url": "/sws/neo/return-material-receipt/returnMaterialReceipt/selectors/partnerAddress",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
       },
       {
         "entity": "returnMaterialReceipt",

@@ -119,7 +119,16 @@ export const api = {
       "column": "M_Locator_ID",
       "reference": "Locator",
       "inputMode": "search",
-      "url": "/sws/neo/physical-inventory/inventoryLine/selectors/storageBin"
+      "url": "/sws/neo/physical-inventory/inventoryLine/selectors/storageBin",
+      "context": {
+        "required": [
+          {
+            "param": "M_Warehouse_ID",
+            "source": "parentField",
+            "field": "warehouse"
+          }
+        ]
+      }
     },
     {
       "entity": "inventoryLine",
