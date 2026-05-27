@@ -48,6 +48,10 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
     Promise.all(fetches).finally(() => setLoading(false));
   }, [recordId, data, token, apiBaseUrl, refreshKey]);
 
+  // returnInvoices is injected by ReturnMaterialReceiptHeaderHandler.afterHandle
+  // as [{id, documentNo}] — already the full data we need for the chip.
+  const returnInvoices = Array.isArray(data?.returnInvoices) ? data.returnInvoices : [];
+
   const chips = [];
 
   sourceShipments.forEach((shipment) => {
@@ -67,6 +71,15 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
       />
     );
   }
+
+  returnInvoices.forEach((inv) => {
+    chips.push(
+      <DocChip
+        key={`return-invoice-${inv.id}`}
+        {...docChipProps({ type: 'sales-invoice', doc: inv, ui, navigate })}
+      />
+    );
+  });
 
   return (
     <RelatedDocumentsShell loading={loading} onRefresh={() => setRefreshKey((k) => k + 1)}>

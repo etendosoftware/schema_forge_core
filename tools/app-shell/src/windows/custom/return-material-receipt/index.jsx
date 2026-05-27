@@ -46,6 +46,7 @@ export default function ReturnMaterialReceiptWindow({ windowName, recordId, apiB
         recordId={recordId}
         apiBaseUrl={apiBaseUrl}
         token={token}
+        hidePrint={true}
         {...rest}
       />
     );

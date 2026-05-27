@@ -276,6 +276,12 @@ export function useReturnReceiptPdf(receiptId, apiBaseUrl, token) {
   return { pdfUrl, pdfBlob, loading, error };
 }
 
+export async function generateReturnReceiptPdf(receiptId, apiBaseUrl, token, labels) {
+  const base = apiBaseUrl.replace(/\/[^/]+$/, '');
+  const data = await buildReceiptData(receiptId, base, token);
+  return renderPdf(TEMPLATE, CSS, HELPERS, { ...data, labels });
+}
+
 export function getReturnReceiptPdfLabels(ui) {
   return {
     title:             ui('returnReceiptPdfTitle'),
