@@ -59,6 +59,32 @@ describe('PurchaseInvoiceHeaderTable — columns', () => {
   });
 });
 
+// ── ETP-4125: fiscal status read directly from row data ──────────────────────
+// Risk: regression to batch GET hook would silently reintroduce the nginx URL
+// length issue (403 on 53+ invoices).
+
+describe('PurchaseInvoiceHeaderTable — fiscal status columns (ETP-4125)', () => {
+  it('does NOT import useInvoiceListFiscalStatus (batch hook eliminated)', () => {
+    assert.doesNotMatch(src, /useInvoiceListFiscalStatus/,
+      'The batch-fetch hook was removed in ETP-4125 to fix nginx URL-length errors');
+  });
+
+  it('reads SII status directly from row.aeatsiiEstado', () => {
+    assert.match(src, /row\.aeatsiiEstado/,
+      'SII status must come from the row field, not a separate fetch');
+  });
+
+  it('reads Verifactu status directly from row.etvfacInvoiceStatus', () => {
+    assert.match(src, /row\.etvfacInvoiceStatus/,
+      'Verifactu status must come from the row field, not a separate fetch');
+  });
+
+  it('does not maintain a statusMap or fiscalLoading variable', () => {
+    assert.doesNotMatch(src, /statusMap/);
+    assert.doesNotMatch(src, /fiscalLoading/);
+  });
+});
+
 describe('PurchaseInvoiceHeaderTable — due date column', () => {
   it('reads eTGODueDate from the row (no payment-plan fetch)', () => {
     assert.match(src, /const d = row\.eTGODueDate/);
