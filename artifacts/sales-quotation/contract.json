@@ -1,8 +1,8 @@
 {
-  "version": "0.8.0",
+  "version": "0.8.1",
   "generatedAt": "2026-04-30T15:42:46.907Z",
-  "updatedAt": "2026-05-22T17:24:15.627Z",
-  "checksum": "f51fc6c762c1758b",
+  "updatedAt": "2026-05-27T16:09:05.884Z",
+  "checksum": "7556951df8ade827",
   "frontendContract": {
     "window": {
       "id": "6CB5B67ED33F47DFA334079D3EA2340E",
@@ -297,7 +297,7 @@
             "label": "Reject Reason",
             "type": "foreignKey",
             "tsType": "string",
-            "visibility": "editable",
+            "visibility": "readOnly",
             "required": false,
             "grid": false,
             "form": true,
@@ -1050,7 +1050,7 @@
             "apiKey": "rejectReason",
             "column": "C_Reject_Reason_ID",
             "type": "foreignKey",
-            "visibility": "editable",
+            "visibility": "readOnly",
             "required": false
           },
           {

@@ -1,8 +1,8 @@
 {
-  "version": "0.8.0",
+  "version": "0.8.1",
   "generatedAt": "2026-04-30T15:42:46.907Z",
-  "updatedAt": "2026-05-26T18:48:57.267Z",
-  "contractChecksum": "f51fc6c762c1758b",
+  "updatedAt": "2026-05-27T16:09:05.884Z",
+  "contractChecksum": "7556951df8ade827",
   "apiPrediction": {
     "specName": "sales-quotation",
     "baseUrl": "/sws/neo/sales-quotation",
@@ -743,6 +743,7 @@
             "readOnlyLogic": "@Processed@='Y'"
           },
           "rejectReason": {
+            "readOnly": true,
             "readOnlyLogic": "@DocStatus@='CJ'|@DocStatus@='CA'"
           },
           "documentStatus": {
@@ -969,5 +970,5 @@
       "confirmcancelandreplace"
     ]
   },
-  "checksum": "248c217be1872016"
+  "checksum": "26cec0f45186ff49"
 }

@@ -156,7 +156,7 @@
           "visibility": "discarded"
         },
         "rejectReason": {
-          "visibility": "editable",
+          "visibility": "readOnly",
           "form": true,
           "grid": false,
           "section": "principal",
