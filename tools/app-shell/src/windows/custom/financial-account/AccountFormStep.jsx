@@ -15,6 +15,9 @@ import { isValidIban, normalizeIban } from '@/lib/validateIban.js';
 
 const EMPTY = { name: '', iban: '', swiftCode: '', currencyId: '' };
 
+const FIELD_LABEL = 'text-sm font-medium leading-6 text-[#121217]';
+const FIELD_INPUT = 'bg-white shadow-[0_1px_2px_rgba(18,18,23,0.05)]';
+
 /**
  * Reusable account form for the offline flow (ETP-4096). Used both by the New
  * Account wizard (bank/cash creation) and the Edit Account modal.
@@ -66,94 +69,109 @@ export function AccountFormStep({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4" data-testid="account-form">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3" data-testid="account-form">
       {isBank && bankName ? (
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E8EAEF] text-[#828FA3]">
             <Landmark className="h-4 w-4" />
           </span>
-          <span className="text-sm font-semibold text-[#121217]">{bankName}</span>
+          <span className="text-sm font-semibold leading-5 text-[#121217]">{bankName}</span>
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="account-form-name-input">
-          {ui('financeAccountsNewFieldName')} <span className="text-[#D50B3E]">*</span>
-        </Label>
-        <Input
-          id="account-form-name-input"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          maxLength={60}
-          autoFocus
-          data-testid="account-form-name"
-        />
-      </div>
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="account-form-name-input" className={FIELD_LABEL}>
+            {ui('financeAccountsNewFieldName')} <span className="text-[#F53D6B]">*</span>
+          </Label>
+          <Input
+            id="account-form-name-input"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={60}
+            autoFocus
+            data-testid="account-form-name"
+            className={FIELD_INPUT}
+          />
+        </div>
 
-      {isBank ? (
-        <>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="account-form-iban-input">{ui('financeAccountsNewFieldIban')}</Label>
-            <Input
-              id="account-form-iban-input"
-              value={iban}
-              onChange={(e) => setIban(e.target.value)}
-              onBlur={() => setIbanTouched(true)}
-              placeholder={ui('financeAccountsNewFieldIbanPlaceholder')}
-              maxLength={42}
-              data-testid="account-form-iban"
-            />
-            {ibanInvalid && ibanTouched ? (
-              <p className="text-xs text-[#D50B3E]" data-testid="account-form-iban-error">
-                {ui('financeAccountsNewIbanInvalid')}
-              </p>
-            ) : null}
-          </div>
-
-          {showBic ? (
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="account-form-bic-input">{ui('financeAccountsNewFieldBic')}</Label>
+        {isBank ? (
+          <>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="account-form-iban-input" className={FIELD_LABEL}>
+                {ui('financeAccountsNewFieldIban')}
+              </Label>
               <Input
-                id="account-form-bic-input"
-                value={swiftCode}
-                onChange={(e) => setSwiftCode(e.target.value)}
-                placeholder={ui('financeAccountsNewFieldBicPlaceholder')}
-                maxLength={20}
-                data-testid="account-form-bic"
+                id="account-form-iban-input"
+                value={iban}
+                onChange={(e) => setIban(e.target.value)}
+                onBlur={() => setIbanTouched(true)}
+                placeholder={ui('financeAccountsNewFieldIbanPlaceholder')}
+                maxLength={42}
+                data-testid="account-form-iban"
+                className={FIELD_INPUT}
               />
+              {ibanInvalid && ibanTouched ? (
+                <p className="text-xs text-[#F53D6B]" data-testid="account-form-iban-error">
+                  {ui('financeAccountsNewIbanInvalid')}
+                </p>
+              ) : null}
             </div>
-          ) : null}
-        </>
-      ) : null}
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="account-form-currency-trigger">{ui('financeAccountsNewFieldCurrency')}</Label>
-        <Select value={currencyId} onValueChange={setCurrencyId}>
-          <SelectTrigger id="account-form-currency-trigger" data-testid="account-form-currency">
-            <SelectValue placeholder={ui('financeAccountsNewFieldCurrencyPlaceholder')} />
-          </SelectTrigger>
-          <SelectContent>
-            {currencies.map((currency) => (
-              <SelectItem key={currency.id} value={currency.id}>
-                {currency.iso}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            {showBic ? (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="account-form-bic-input" className={FIELD_LABEL}>
+                  {ui('financeAccountsNewFieldBic')}
+                </Label>
+                <Input
+                  id="account-form-bic-input"
+                  value={swiftCode}
+                  onChange={(e) => setSwiftCode(e.target.value)}
+                  placeholder={ui('financeAccountsNewFieldBicPlaceholder')}
+                  maxLength={20}
+                  data-testid="account-form-bic"
+                  className={FIELD_INPUT}
+                />
+              </div>
+            ) : null}
+          </>
+        ) : null}
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="account-form-currency-trigger" className={FIELD_LABEL}>
+            {ui('financeAccountsNewFieldCurrency')}
+          </Label>
+          <Select value={currencyId} onValueChange={setCurrencyId}>
+            <SelectTrigger
+              id="account-form-currency-trigger"
+              data-testid="account-form-currency"
+              className="bg-white"
+            >
+              <SelectValue placeholder={ui('financeAccountsNewFieldCurrencyPlaceholder')} />
+            </SelectTrigger>
+            <SelectContent>
+              {currencies.map((currency) => (
+                <SelectItem key={currency.id} value={currency.id}>
+                  {currency.iso}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {error ? (
-        <p className="text-xs text-[#D50B3E]" data-testid="account-form-error">
+        <p className="text-xs text-[#F53D6B]" data-testid="account-form-error">
           {error}
         </p>
       ) : null}
 
-      <div className="flex justify-end pt-2">
+      <div className="flex justify-end py-2">
         <Button
           type="submit"
           disabled={!canSubmit}
           data-testid="account-form-submit"
-          className="h-10 gap-1 rounded-lg bg-[#121217] px-4 text-sm font-medium text-white transition-colors hover:bg-[#FFD500] hover:text-[#121217] disabled:opacity-50"
+          className="h-10 rounded-full bg-[#121217] px-5 text-sm font-medium text-white transition-colors hover:bg-[#FFD500] hover:text-[#121217] disabled:bg-[#D1D4DB] disabled:text-white disabled:opacity-100"
         >
           {submitLabel || ui('financeAccountsNewSubmit')}
         </Button>

@@ -65,7 +65,7 @@ export function EditAccountModal({ open, onClose, onSaved, account }) {
 
   return (
     <Dialog open={open} onOpenChange={(value) => { if (!value) onClose?.(); }}>
-      <DialogContent data-testid="edit-account-modal">
+      <DialogContent className="bg-white" data-testid="edit-account-modal">
         <DialogHeader>
           <DialogTitle>{ui('financeAccountsEditTitle')}</DialogTitle>
         </DialogHeader>

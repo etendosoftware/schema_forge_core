@@ -4,9 +4,8 @@ import {
   Landmark,
   Wallet,
   CreditCard,
-  Search,
   ChevronRight,
-  Plus,
+  ChevronDown,
   Link2,
   PencilLine,
 } from 'lucide-react';
@@ -18,7 +17,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useUI } from '@/i18n';
 import { useAccountMutations } from '@/hooks/useAccountMutations.js';
@@ -88,7 +86,7 @@ export function NewAccountWizard({ open, onClose, onCreated }) {
     if (step === STEP.CONNECTION || step === STEP.CARD) setStep(STEP.TYPE);
     else if (step === STEP.BANK) setStep(STEP.CONNECTION);
     else if (step === STEP.INSTITUTION) setStep(STEP.BANK);
-    else if (step === STEP.FORM) setStep(accountType === 'C' ? STEP.TYPE : STEP.INSTITUTION);
+    else if (step === STEP.FORM) setStep(accountType === 'C' ? STEP.TYPE : selectedBank ? STEP.INSTITUTION : STEP.BANK);
   };
 
   const pickType = (type) => {
@@ -138,7 +136,9 @@ export function NewAccountWizard({ open, onClose, onCreated }) {
     ? 'max-w-[1016px]'
     : step === STEP.CONNECTION
       ? 'max-w-2xl'
-      : 'max-w-lg';
+      : step === STEP.BANK || step === STEP.INSTITUTION
+        ? 'max-w-[560px]'
+        : 'max-w-lg';
 
   return (
     <Dialog open={open} onOpenChange={(value) => { if (!value) onClose?.(); }}>
@@ -201,7 +201,13 @@ export function NewAccountWizard({ open, onClose, onCreated }) {
         ) : null}
 
         {step === STEP.BANK ? (
-          <BankPicker ui={ui} query={bankQuery} onQueryChange={setBankQuery} onPick={pickBank} />
+          <BankPicker
+            ui={ui}
+            query={bankQuery}
+            onQueryChange={setBankQuery}
+            onPick={pickBank}
+            onSkip={() => { setSelectedBank(null); setStep(STEP.FORM); }}
+          />
         ) : null}
 
         {step === STEP.INSTITUTION ? (
@@ -272,37 +278,60 @@ function TypePicker({ ui, onPick }) {
   );
 }
 
-function BankPicker({ ui, query, onQueryChange, onPick }) {
+function BankPicker({ ui, query, onQueryChange, onPick, onSkip }) {
   const banks = searchBanks(query);
   return (
-    <div className="flex flex-col gap-3">
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#828FA3]" />
-        <Input
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-          placeholder={ui('financeAccountsNewBankSearchPlaceholder')}
-          className="pl-9"
-          data-testid="new-account-bank-search"
-        />
+    <div className="flex flex-col gap-5">
+      {/* Banco field: flag area + search input */}
+      <div className="flex flex-col gap-2">
+        <p className="text-sm font-medium leading-6 text-[#121217]">{ui('financeAccountsNewBankLabel')}</p>
+        <div className="flex h-10 w-full overflow-hidden rounded-lg border border-[#D1D4DB] bg-white shadow-[0_1px_2px_rgba(18,18,23,0.05)]">
+          <div className="flex h-full w-[60px] shrink-0 items-center justify-center gap-0.5 border-r border-[#E8EAEF]">
+            <Landmark className="h-4 w-4 text-[#828FA3]" />
+            <ChevronDown className="h-4 w-4 text-[#828FA3]" />
+          </div>
+          <input
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+            placeholder={ui('financeAccountsNewBankSearchPlaceholder')}
+            data-testid="new-account-bank-search"
+            className="flex-1 px-3 text-sm leading-6 text-[#121217] placeholder:text-[#6C6C89] focus:outline-none"
+          />
+        </div>
       </div>
-      <p className="text-sm font-medium text-[#121217]">{ui('financeAccountsNewBankPopular')}</p>
-      <div className="grid grid-cols-3 gap-2">
-        {banks.map((bank) => (
-          <button
-            key={bank.id}
-            type="button"
-            onClick={() => onPick(bank)}
-            data-testid={`new-account-bank-${bank.id}`}
-            className="flex flex-col items-center gap-2 rounded-xl border border-[#E8EAEF] p-3 text-center transition-colors hover:border-[#121217]"
-          >
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F5F7F9] text-[#828FA3]">
-              <Landmark className="h-4 w-4" />
-            </span>
-            <span className="text-xs font-medium text-[#121217]">{bank.name}</span>
-          </button>
-        ))}
+
+      {/* Populares section */}
+      <div className="flex flex-col gap-3">
+        <div>
+          <p className="text-sm font-medium leading-6 text-[#121217]">{ui('financeAccountsNewBankPopular')}</p>
+          <p className="text-xs leading-4 text-[#6C6C89]">{ui('financeAccountsNewBankSubtitle')}</p>
+        </div>
+        <div className="grid grid-cols-3 gap-5">
+          {banks.map((bank) => (
+            <button
+              key={bank.id}
+              type="button"
+              onClick={() => onPick(bank)}
+              data-testid={`new-account-bank-${bank.id}`}
+              className="flex flex-col items-start gap-3 rounded-xl border border-[#E8EAEF] bg-white p-4 shadow-[0_1px_2px_rgba(18,18,23,0.05)] transition-colors hover:bg-[#F5F7F9]"
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#D1D4DB] bg-white shadow-[0_1px_2px_rgba(18,18,23,0.05)]">
+                <Landmark className="h-5 w-5 text-[#828FA3]" />
+              </span>
+              <span className="text-sm font-medium leading-5 text-[#121217]">{bank.name}</span>
+            </button>
+          ))}
+        </div>
       </div>
+
+      <button
+        type="button"
+        onClick={onSkip}
+        data-testid="new-account-bank-skip"
+        className="self-center text-sm text-[#555B6D] hover:text-[#121217] hover:underline"
+      >
+        {ui('financeAccountsNewBankSkip')}
+      </button>
     </div>
   );
 }
@@ -310,39 +339,45 @@ function BankPicker({ ui, query, onQueryChange, onPick }) {
 function InstitutionList({ ui, bank, onPick }) {
   const institutions = institutionsFor(bank);
   return (
-    <div className="flex flex-col gap-1">
-      <p className="text-sm font-medium text-[#121217]">{ui('financeAccountsNewInstitutions')}</p>
-      {institutions.map((inst) => (
-        <button
-          key={inst.id}
-          type="button"
-          onClick={onPick}
-          data-testid={`new-account-institution-${inst.id}`}
-          className="flex items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-[#F5F7F9]"
-        >
-          <span className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E8EAEF] text-[#828FA3]">
-              <Landmark className="h-4 w-4" />
-            </span>
-            <span className="text-sm text-[#121217]">{inst.name}</span>
-          </span>
-          <ChevronRight className="h-4 w-4 text-[#828FA3]" />
-        </button>
-      ))}
-      <button
-        type="button"
-        onClick={onPick}
-        data-testid="new-account-institution-add"
-        className="mt-1 flex items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-[#F5F7F9]"
-      >
-        <span className="flex items-center gap-2 text-sm text-[#121217]">
-          <Plus className="h-4 w-4 text-[#828FA3]" />
-          {`${ui('financeAccountsNewInstitutionAddPrefix')} ${bank?.name ?? ''}`.trim()}
-        </span>
-        <span className="rounded-full bg-[#F5F7F9] px-2 py-0.5 text-xs font-normal text-[#6C6C89]">
-          {ui('financeAccountsNewOfflineBadge')}
-        </span>
-      </button>
+    <div className="flex flex-col gap-5">
+      {/* Bank display field */}
+      <div className="flex flex-col gap-2">
+        <p className="text-sm font-medium leading-6 text-[#121217]">{ui('financeAccountsNewBankLabel')}</p>
+        <div className="flex h-10 w-full items-center overflow-hidden rounded-lg border border-[#D1D4DB] bg-white shadow-[0_1px_2px_rgba(18,18,23,0.05)]">
+          <div className="flex h-full w-[60px] shrink-0 items-center justify-center gap-0.5 border-r border-[#E8EAEF] px-2">
+            <Landmark className="h-4 w-4 text-[#828FA3]" />
+            <ChevronDown className="h-4 w-4 text-[#828FA3]" />
+          </div>
+          <span className="flex-1 px-3 text-sm leading-6 text-[#121217]">{bank?.name ?? ''}</span>
+        </div>
+      </div>
+
+      {/* Institutions section */}
+      <div className="flex flex-col gap-2">
+        <p className="text-sm font-medium leading-6 text-[#121217]">{ui('financeAccountsNewInstitutions')}</p>
+        <div className="flex flex-col gap-4">
+          {institutions.map((inst) => (
+            <button
+              key={inst.id}
+              type="button"
+              onClick={onPick}
+              data-testid={`new-account-institution-${inst.id}`}
+              className="flex h-8 w-full items-center rounded-lg px-2 py-1 text-left hover:bg-[#F5F7F9]"
+            >
+              <span className="flex flex-1 items-center gap-2">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#E8EAEF] text-[#828FA3]">
+                  <Landmark className="h-3.5 w-3.5" />
+                </span>
+                <span className="text-sm leading-6 text-[#121217]">{inst.name}</span>
+              </span>
+              <span className="flex shrink-0 items-center pr-1">
+                <ChevronRight className="h-4 w-4 text-[#828FA3]" />
+              </span>
+            </button>
+          ))}
+
+        </div>
+      </div>
     </div>
   );
 }
