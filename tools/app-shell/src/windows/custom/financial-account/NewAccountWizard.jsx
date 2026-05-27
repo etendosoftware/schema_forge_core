@@ -32,6 +32,19 @@ const STEP = {
   CARD: 'card',
 };
 
+function resolveContentWidth(step) {
+  if (step === STEP.TYPE) return 'max-w-[1016px]';
+  if (step === STEP.CONNECTION) return 'max-w-2xl';
+  if (step === STEP.BANK || step === STEP.INSTITUTION) return 'max-w-[560px]';
+  return 'max-w-lg';
+}
+
+function resolveFormBackStep(accountType, selectedBank) {
+  if (accountType === 'C') return STEP.TYPE;
+  if (selectedBank) return STEP.INSTITUTION;
+  return STEP.BANK;
+}
+
 /**
  * Multi-step modal to create a financial account "offline" (ETP-4096):
  *   type picker → (Bank) connection toggle → bank picker → institution → form
@@ -86,7 +99,7 @@ export function NewAccountWizard({ open, onClose, onCreated }) {
     if (step === STEP.CONNECTION || step === STEP.CARD) setStep(STEP.TYPE);
     else if (step === STEP.BANK) setStep(STEP.CONNECTION);
     else if (step === STEP.INSTITUTION) setStep(STEP.BANK);
-    else if (step === STEP.FORM) setStep(accountType === 'C' ? STEP.TYPE : selectedBank ? STEP.INSTITUTION : STEP.BANK);
+    else if (step === STEP.FORM) setStep(resolveFormBackStep(accountType, selectedBank));
   };
 
   const pickType = (type) => {
@@ -132,13 +145,7 @@ export function NewAccountWizard({ open, onClose, onCreated }) {
   };
 
   const showBadge = step === STEP.FORM && accountType === 'B';
-  const contentWidth = step === STEP.TYPE
-    ? 'max-w-[1016px]'
-    : step === STEP.CONNECTION
-      ? 'max-w-2xl'
-      : step === STEP.BANK || step === STEP.INSTITUTION
-        ? 'max-w-[560px]'
-        : 'max-w-lg';
+  const contentWidth = resolveContentWidth(step);
 
   return (
     <Dialog open={open} onOpenChange={(value) => { if (!value) onClose?.(); }}>
