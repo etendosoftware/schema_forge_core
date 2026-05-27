@@ -46,7 +46,7 @@ export default function UploadDropzone({ onFiles, config = {}, disabled = false 
     const files = Array.from(fileList);
     files.forEach((file) => {
       if (file.size > maxBytes) {
-        toast.error(ui('attachmentsFileTooLarge'));
+        toast.error(ui('attachmentsFileTooLarge', { max: maxSizeMB }));
         return;
       }
       if (!isMimeAllowed(file, allowedMimeTypes)) {
