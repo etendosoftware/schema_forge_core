@@ -14,8 +14,8 @@ import { login } from '../helpers/auth.js';
  *   - In draftMode: draft save btn → data-testid="action-save-draft"
  *                   confirm btn    → data-testid="action-save"
  *   - isDraftModeCompleted fires when processed='Y', which HIDES both save buttons
- *   - statusField = null → isDeleteVisibleForRecord always returns true
- *     (delete is always visible, even on processed records)
+ *   - hideDeleteWhenComplete=true + isProcessed=true → delete button is hidden
+ *     for processed records (action-more kebab is still visible)
  *   - More/kebab menu button has NO data-testid — locate via title or SVG
  *   - menuActions: [{ key:'reactivate', visible: data.processed==='Y' }]
  *   - linesLayout = 'inlineEditable'
@@ -273,10 +273,9 @@ test.describe('Amortization — processed record', () => {
     await expect(page.getByTestId('action-save')).toHaveCount(0);
   });
 
-  test('delete button remains visible (statusField=null bypasses hideDeleteWhenComplete)', async ({ page }) => {
-    // statusField=null → isDeleteVisibleForRecord always returns true → delete
-    // button is always rendered, regardless of processed status.
-    await expect(page.getByTestId('action-delete')).toBeVisible();
+  test('delete button is hidden for processed record (hideDeleteWhenComplete=true)', async ({ page }) => {
+    // hideDeleteWhenComplete=true + isProcessed=true → delete button is hidden.
+    await expect(page.getByTestId('action-delete')).toHaveCount(0);
   });
 });
 
@@ -303,9 +302,7 @@ test.describe('Amortization — Reactivar menu action', () => {
       .and(page.locator('button:not([data-testid])', { hasNot: page.locator('[data-testid]') }))
       .last();
 
-    // More robust: find the div.relative that wraps the kebab via its sibling delete button
-    const toolbar = page.getByTestId('action-delete').locator('xpath=ancestor::div[1]');
-    const kebabBtn = toolbar.locator('button').last();
+    const kebabBtn = page.getByTestId('action-more');
     await expect(kebabBtn).toBeVisible({ timeout: 5_000 });
     await kebabBtn.click();
 
