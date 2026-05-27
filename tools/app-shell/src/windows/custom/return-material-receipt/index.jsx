@@ -80,7 +80,7 @@ export default function ReturnMaterialReceiptWindow({ windowName, recordId, apiB
           headerEntity="returnMaterialReceipt"
           routePrefix="/return-material-receipt/"
           onClose={() => setCloneTargets(null)}
-          onCloned={() => { setCloneTargets(null); setRefreshKey(k => k + 1); }}
+          onCloned={() => setRefreshKey(k => k + 1)}
         />,
         document.body,
       )}
