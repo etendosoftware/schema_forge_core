@@ -51,7 +51,7 @@ const draftMode = null;
 // @sf-generated-end draftMode:returnMaterialReceipt
 
 // @sf-generated-start requiredHeaderFields:returnMaterialReceipt
-const requiredHeaderFields = ['documentNo', 'movementDate', 'businessPartner', 'warehouse'];
+const requiredHeaderFields = ['documentNo', 'movementDate', 'businessPartner', 'warehouse', 'partnerAddress'];
 // @sf-generated-end requiredHeaderFields:returnMaterialReceipt
 
 // @sf-generated-start addLineFields:returnMaterialReceiptLine
@@ -308,6 +308,7 @@ export default function ReturnMaterialReceiptPage({ windowName, recordId, ...pro
         breadcrumb={breadcrumb}
       api={api}
         hideDeleteWhenComplete
+        noHeaderBorder
         notesField="description"
         customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_InOut", config: {} } }]}
         bottomSection={ReturnMaterialReceiptBottomPanel}

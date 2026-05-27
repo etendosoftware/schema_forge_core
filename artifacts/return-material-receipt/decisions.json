@@ -7,6 +7,7 @@
     "notesField": "description",
     "dateFilterKey": "movementDate",
     "linesLayout": "inlineEditable",
+    "noHeaderBorder": true,
     "hideDeleteWhenComplete": true,
     "customComponents": {
       "bottomSection": "ReturnMaterialReceiptBottomPanel",
@@ -44,7 +45,8 @@
           "form": true,
           "grid": true,
           "gridOrder": 6,
-          "section": "principal"
+          "section": "principal",
+          "seq": 6
         }
       ],
       "fields": {
@@ -54,7 +56,8 @@
           "searchable": true,
           "inputMode": "date",
           "readOnlyLogic": null,
-          "section": "principal"
+          "section": "principal",
+          "seq": 3
         },
         "documentNo": {
           "visibility": "readOnly",
@@ -62,7 +65,8 @@
           "gridOrder": 2,
           "searchable": true,
           "inputMode": "text",
-          "section": "principal"
+          "section": "principal",
+          "seq": 2
         },
         "businessPartner": {
           "grid": true,
@@ -71,7 +75,8 @@
           "reference": "BusinessPartner",
           "inputMode": "search",
           "readOnlyLogic": null,
-          "section": "principal"
+          "section": "principal",
+          "seq": 1
         },
         "documentStatus": {
           "visibility": "readOnly",
@@ -85,7 +90,8 @@
           "gridOrder": 5,
           "inputMode": "search",
           "readOnlyLogic": null,
-          "section": "principal"
+          "section": "principal",
+          "seq": 4
         },
         "salesOrder": {
           "visibility": "discarded"
@@ -98,8 +104,8 @@
             "filterKey": "C_BPartner_ID"
           },
           "readOnlyLogic": null,
-          "form": false,
-          "section": "other"
+          "section": "principal",
+          "seq": 5
         },
         "description": {
           "inputMode": "textarea",

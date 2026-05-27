@@ -1,8 +1,8 @@
 {
-  "version": "0.7.1",
+  "version": "0.8.0",
   "generatedAt": "2026-04-29T18:11:05.114Z",
-  "updatedAt": "2026-05-27T16:46:21.366Z",
-  "checksum": "642b4135ceda236c",
+  "updatedAt": "2026-05-27T17:00:43.774Z",
+  "checksum": "1cdb4ce7c3d3e5a8",
   "frontendContract": {
     "window": {
       "id": "123271B9AD60469BAE8A924841456B63",
@@ -34,6 +34,7 @@
         }
       },
       "dateFilterKey": "movementDate",
+      "noHeaderBorder": true,
       "layoutType": "default",
       "linesLayout": "inlineEditable"
     },
@@ -61,6 +62,7 @@
               "source": "documentType.sequence"
             },
             "section": "principal",
+            "seq": 2,
             "gridOrder": 2,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
@@ -86,6 +88,7 @@
             },
             "defaultValue": "@#Date@",
             "section": "principal",
+            "seq": 3,
             "gridOrder": 1,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_AccountingDate"
@@ -111,6 +114,7 @@
             "reference": "BusinessPartner",
             "inputMode": "search",
             "section": "principal",
+            "seq": 1,
             "gridOrder": 3,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_InOut_BPartner"
@@ -150,6 +154,7 @@
             "reference": "Warehouse",
             "inputMode": "search",
             "section": "principal",
+            "seq": 4,
             "gridOrder": 5,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SE_InOut_Warehouse"
@@ -170,7 +175,7 @@
             "visibility": "editable",
             "required": true,
             "grid": false,
-            "form": false,
+            "form": true,
             "sourceRequired": true,
             "reference": "BusinessPartnerLocation",
             "inputMode": "dependent",
@@ -178,7 +183,8 @@
               "field": "businessPartner",
               "filterKey": "C_BPartner_ID"
             },
-            "section": "other",
+            "section": "principal",
+            "seq": 5,
             "validationRule": {
               "code": "C_BPartner_Location.C_BPartner_ID=@C_BPartner_ID@ AND C_BPartner_Location.IsShipTo='Y' AND C_BPartner_Location.IsActive='Y'",
               "contextParams": [],
@@ -525,6 +531,7 @@
         }
       },
       "dateFilterKey": "movementDate",
+      "noHeaderBorder": true,
       "linesLayout": "inlineEditable"
     },
     "entities": {
