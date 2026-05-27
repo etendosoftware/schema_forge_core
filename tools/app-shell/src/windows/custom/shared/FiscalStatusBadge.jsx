@@ -7,6 +7,8 @@ const CONFIG = {
   PE:                { color: '#6b7280', bg: '#f9fafb', key: 'fiscalMonitor.status.sii.PE' },
   EE:                { color: '#b91c1c', bg: '#fef2f2', key: 'fiscalMonitor.status.sii.EE' },
   AN:                { color: '#4b5563', bg: '#f3f4f6', key: 'fiscalMonitor.status.sii.AN' },
+  BA:                { color: '#4b5563', bg: '#f3f4f6', key: 'fiscalMonitor.status.sii.BA' },
+  NR:                { color: '#6b7280', bg: '#f9fafb', key: 'fiscalMonitor.status.sii.NR' },
   Recibido:          { color: '#15803d', bg: '#f0fdf4', key: 'fiscalMonitor.tbai.status.Recibido' },
   Rechazado:         { color: '#b91c1c', bg: '#fef2f2', key: 'fiscalMonitor.tbai.status.Rechazado' },
   Error:             { color: '#b91c1c', bg: '#fef2f2', key: 'fiscalMonitor.tbai.status.Error' },
