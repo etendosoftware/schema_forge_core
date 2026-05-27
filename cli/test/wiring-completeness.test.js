@@ -30,6 +30,8 @@ const SPECIAL_PAGES = new Set([
   'report-viewer-purchases', 'report-viewer-finance', 'report-viewer-inventory', 'oauth2-clients',
   'authorize', 'quick-sales-order', 'quick-purchase-order',
   'first-steps', 'analytics', 'app-store', 'financial-accounts',
+  // Custom hand-written windows backed by real NEO endpoints (no mockData, no contract).
+  'financial-account',
 ]);
 
 const entityWindows = allMenuItems.filter(name => !SPECIAL_PAGES.has(name));

@@ -1,0 +1,9 @@
+{
+  "$schema": "decisions-v2",
+  "window": {
+    "category": "finance",
+    "name": "Financial Account Detail",
+    "layoutType": "custom"
+  },
+  "entities": {}
+}

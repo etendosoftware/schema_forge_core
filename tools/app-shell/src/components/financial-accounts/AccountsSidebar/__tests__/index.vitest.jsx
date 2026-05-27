@@ -19,7 +19,7 @@ vi.mock('@/i18n', () => ({
   },
 }));
 
-import { CuentasSidebar } from '../index.jsx';
+import { AccountsSidebar } from '../index.jsx';
 
 const baseSummary = {
   totalBalance: 1250.5,
@@ -30,21 +30,21 @@ const baseSummary = {
   pending: { accountsWithPending: 3, suggestionsReady: 2, byRule: 1 },
 };
 
-describe('CuentasSidebar', () => {
+describe('AccountsSidebar', () => {
   it('renders the Saldo header and the formatted total balance', () => {
-    render(<CuentasSidebar summary={baseSummary} loading={false} />);
+    render(<AccountsSidebar summary={baseSummary} loading={false} />);
     expect(screen.getByText('Saldo')).toBeInTheDocument();
     expect(screen.getByTestId('balance-card')).toBeInTheDocument();
   });
 
   it('renders one row per currency in the breakdown card', () => {
-    render(<CuentasSidebar summary={baseSummary} loading={false} />);
+    render(<AccountsSidebar summary={baseSummary} loading={false} />);
     expect(screen.getByTestId('balance-by-currency-EUR')).toBeInTheDocument();
     expect(screen.getByTestId('balance-by-currency-USD')).toBeInTheDocument();
   });
 
   it('renders the three pending counters', () => {
-    render(<CuentasSidebar summary={baseSummary} loading={false} />);
+    render(<AccountsSidebar summary={baseSummary} loading={false} />);
     const card = screen.getByTestId('pending-reconcile-card');
     expect(card).toHaveTextContent('3 cuentas');
     expect(card).toHaveTextContent('Sugerencias');
@@ -52,13 +52,13 @@ describe('CuentasSidebar', () => {
   });
 
   it('shows an em-dash placeholder while loading is true', () => {
-    render(<CuentasSidebar summary={null} loading={true} />);
+    render(<AccountsSidebar summary={null} loading={true} />);
     expect(screen.getByTestId('balance-card')).toHaveTextContent('—');
   });
 
   it('falls back to a single empty currency row when there are no accounts', () => {
     render(
-      <CuentasSidebar
+      <AccountsSidebar
         summary={{ totalBalance: 0, byCurrency: [], pending: {} }}
         loading={false}
       />,
