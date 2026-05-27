@@ -22,18 +22,26 @@ export default function GoodsReceiptBottomPanel(props) {
 }
 GoodsReceiptBottomPanel.showLineTotals = false;
 
-function ReceiptLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl, onRefresh }) {
+function ReceiptLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl, onRefresh, onSave }) {
   const ui = useUI();
   const [showImportModal, setShowImportModal] = useState(false);
   const bpId = data?.businessPartner;
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
+  const handleOpenImportModal = async () => {
+    if (onSave) {
+      const ok = await onSave();
+      if (!ok) return;
+    }
+    setShowImportModal(true);
+  };
+
   const importButton = bpId ? (
     <button
       type="button"
       data-testid="action-import-purchase-order-empty-state"
-      onClick={() => setShowImportModal(true)}
+      onClick={handleOpenImportModal}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '0.5px solid #888', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary)', background: 'transparent', cursor: 'pointer' }}
     >
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -76,7 +84,7 @@ function ReceiptLinesEmptyState({ data, onAddLine, recordId, token, apiBaseUrl, 
 // below. `hideTrigger` suppresses the visible inline link (we use the menu
 // item instead) but the modal portal stays mounted.
 const ReceiptLineActions = forwardRef(function ReceiptLineActions(
-  { data, recordId, token, apiBaseUrl, onRefresh, hideTrigger = false },
+  { data, recordId, token, apiBaseUrl, onRefresh, onSave, hideTrigger = false },
   ref,
 ) {
   const ui = useUI();
@@ -86,7 +94,15 @@ const ReceiptLineActions = forwardRef(function ReceiptLineActions(
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }), [token]);
 
-  useImperativeHandle(ref, () => ({ openImportModal: () => setShowImportModal(true) }), []);
+  const handleOpenImportModal = async () => {
+    if (onSave) {
+      const ok = await onSave();
+      if (!ok) return;
+    }
+    setShowImportModal(true);
+  };
+
+  useImperativeHandle(ref, () => ({ openImportModal: handleOpenImportModal }), [onSave]);
 
   if (!isDraft || !bpId) return null;
 
@@ -95,7 +111,7 @@ const ReceiptLineActions = forwardRef(function ReceiptLineActions(
       {!hideTrigger && (
         <button
           type="button"
-          onClick={() => setShowImportModal(true)}
+          onClick={handleOpenImportModal}
           style={{ all: 'unset', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-secondary, #6b7280)', cursor: 'pointer' }}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
