@@ -13,4 +13,9 @@ describe('PurchaseInvoiceTopbar', () => {
     assert.ok(modalBlock, 'expected InvoicePaymentModal to be rendered');
     assert.doesNotMatch(modalBlock[0], /token=\{token\}/);
   });
+
+  it('calls onProcess (not window.location.reload) in the invoice-updated handler', () => {
+    assert.match(src, /onProcess\?\.\(\)/, 'expected onProcess?.() call in event handler');
+    assert.doesNotMatch(src, /window\.location\.reload\(\)/, 'expected no window.location.reload() in event handler');
+  });
 });

@@ -8,7 +8,7 @@ import CloneButton from '../shared/CloneButton.jsx';
 import { useUI } from '@/i18n';
 import { formatCurrency } from '@/lib/formatCurrency';
 
-export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUrl, onRefresh }) {
+export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUrl, onProcess }) {
   const navigate = useNavigate();
   const ui = useUI();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -17,7 +17,7 @@ export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUr
   useEffect(() => {
     const handleInvoiceUpdated = (event) => {
       if (String(event.detail?.invoiceId) !== String(recordId)) return;
-      window.location.reload();
+      onProcess?.();
     };
 
     window.addEventListener('purchase-invoice:invoice-updated', handleInvoiceUpdated);
@@ -45,7 +45,7 @@ export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUr
 
   const handleModalClose = () => {
     setShowPaymentModal(false);
-    onRefresh?.();
+    onProcess?.();
   };
 
   return (
