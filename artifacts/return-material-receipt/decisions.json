@@ -98,15 +98,18 @@
             "filterKey": "C_BPartner_ID"
           },
           "readOnlyLogic": null,
+          "form": false,
           "section": "other"
         },
         "description": {
           "inputMode": "textarea",
+          "form": false,
           "section": "other"
         },
         "trackingNo": {
           "visibility": "editable",
           "inputMode": "text",
+          "form": false,
           "section": "other"
         },
         "accountingDate": {
