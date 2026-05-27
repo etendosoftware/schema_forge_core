@@ -45,7 +45,7 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
   const effectiveTbai     = mockOverride ? mockOverride.tbai     : tbaiRecord;
   const effectiveVerifactu= mockOverride ? mockOverride.verifactu: verifactuRecord;
 
-  const { daysLeft: certDaysLeft } = useCertExpiry(apiBaseUrl, { mockDaysLeft: mockCertDays });
+  const { daysLeft: certDaysLeft } = useCertExpiry(apiBaseUrl, { mockDaysLeft: mockCertDays, orgId });
 
   const siiRef  = useRef(null);
   const tbaiRef = useRef(null);
