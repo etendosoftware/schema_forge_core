@@ -16,8 +16,8 @@ describe('GoodsShipmentBillingBadge', () => {
     assert.match(src, /import\s*\{[^}]*useUI[^}]*\}\s*from\s*['"]@\/i18n['"]/);
   });
 
-  it('imports DocumentStatusPill from @/components/contract-ui/DocumentStatusPill', () => {
-    assert.match(src, /import\s+DocumentStatusPill\s+from\s*['"]@\/components\/contract-ui\/DocumentStatusPill['"]/);
+  it('renders an inline InvoiceStatusPill with percentage', () => {
+    assert.match(src, /function InvoiceStatusPill/);
   });
 
   describe('null guard — only renders for completed shipments', () => {
@@ -56,17 +56,21 @@ describe('GoodsShipmentBillingBadge', () => {
     });
   });
 
-  describe('tone mapping', () => {
-    it('maps pct >= 100 to success tone', () => {
-      assert.match(src, /pct\s*>=\s*100\s*\?\s*['"]success['"]/);
+  describe('percentage display', () => {
+    it('rounds the percentage before displaying', () => {
+      assert.match(src, /Math\.round/);
     });
 
-    it('maps pct > 0 (but < 100) to warning tone', () => {
-      assert.match(src, /pct\s*>\s*0\s*\?\s*['"]warning['"]/);
+    it('renders the pct value with a % suffix', () => {
+      assert.match(src, /\{pct\}%/);
     });
 
-    it('maps pct === 0 to neutral tone', () => {
-      assert.match(src, /['"]neutral['"]/);
+    it('uses green background for fully invoiced (pct >= 100)', () => {
+      assert.match(src, /#d1fae5/);
+    });
+
+    it('uses yellow background for partially invoiced (pct > 0)', () => {
+      assert.match(src, /#fef3c7/);
     });
   });
 
@@ -88,17 +92,13 @@ describe('GoodsShipmentBillingBadge', () => {
     });
   });
 
-  describe('DocumentStatusPill rendering', () => {
-    it('passes tone prop to DocumentStatusPill', () => {
-      assert.match(src, /<DocumentStatusPill[^/]*tone=\{tone\}/s);
+  describe('InvoiceStatusPill rendering', () => {
+    it('passes label prop to InvoiceStatusPill', () => {
+      assert.match(src, /<InvoiceStatusPill[^/]*label=\{label\}/s);
     });
 
-    it('passes label prop to DocumentStatusPill', () => {
-      assert.match(src, /<DocumentStatusPill[^/]*label=\{label\}/s);
-    });
-
-    it('passes a status prop to DocumentStatusPill', () => {
-      assert.match(src, /<DocumentStatusPill[^/]*status=/s);
+    it('passes pct prop to InvoiceStatusPill', () => {
+      assert.match(src, /<InvoiceStatusPill[^/]*pct=\{pct\}/s);
     });
   });
 });
