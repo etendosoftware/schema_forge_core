@@ -1,8 +1,8 @@
 {
   "version": "0.3.0",
   "generatedAt": "2026-04-29T19:46:12.773Z",
-  "updatedAt": "2026-05-11T16:22:44.839Z",
-  "checksum": "7c63ffb4e39aacf3",
+  "updatedAt": "2026-05-20T11:45:15.459Z",
+  "checksum": "25b7a5dad3be9738",
   "frontendContract": {
     "window": {
       "id": "FF808081330213E60133021822E40007",
@@ -2264,7 +2264,16 @@
         "column": "C_BPartner_Location_ID",
         "reference": "BPartner_Location",
         "inputMode": "dependent",
-        "url": "/sws/neo/returns/customerReturn/selectors/partnerAddress"
+        "url": "/sws/neo/returns/customerReturn/selectors/partnerAddress",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
       },
       {
         "entity": "customerReturn",
@@ -2320,7 +2329,21 @@
         "column": "C_Tax_ID",
         "reference": "Tax",
         "inputMode": "selector",
-        "url": "/sws/neo/returns/customerReturnLine/selectors/tax"
+        "url": "/sws/neo/returns/customerReturnLine/selectors/tax",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "DateInvoiced",
+              "source": "parentField",
+              "field": "orderDate",
+              "format": "DD-MM-YYYY"
+            }
+          ]
+        }
       },
       {
         "entity": "customerReturnLine",

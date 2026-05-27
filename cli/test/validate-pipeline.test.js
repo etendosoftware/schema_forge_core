@@ -3,7 +3,11 @@ import { strict as assert } from 'node:assert';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { validatePipeline, classifyArtifact, getChangedArtifactsSince, parseCLIArgs } from '../src/validate-pipeline.js';
+import { generateContract, splitWindowContractArtifacts } from '../src/generate-contract.js';
+import { generateAll } from '../src/generate-frontend.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -533,5 +537,241 @@ describe('--scope flag (validatePipeline API)', () => {
     // Both are set — scope should win at main() level. parseCLIArgs captures both.
     assert.deepEqual(opts.scope, ['sales-order']);
     assert.equal(opts.staged, true);
+  });
+});
+
+// ─── Agentic Corrections Quality Gates (ETP-3959) ────────────────────────────
+
+describe('ETP-3959 quality gates', () => {
+  it('F13: action with fewer than 3 edge cases is blocked on v0.7.0+', async () => {
+    const result = await runOnFixtures(['window-f13-edge-cases']);
+    const f13 = result.violations.find(v => v.rule === 'F13');
+    assert.ok(f13, 'F13 should fire for actions with <3 edge cases');
+    assert.equal(f13.severity, 'BLOCK');
+  });
+
+  it('F13: skips enforcement on contracts below v0.7.0', async () => {
+    const result = await runOnFixtures(['window-f13-old-version']);
+    const f13 = result.violations.find(v => v.rule === 'F13');
+    assert.ok(!f13, 'F13 should not fire on old contracts');
+  });
+
+  it('F14: missing formState is blocked on v0.7.0+', async () => {
+    const result = await runOnFixtures(['window-f14-no-formstate']);
+    const f14 = result.violations.find(v => v.rule === 'F14');
+    assert.ok(f14, 'F14 should fire for missing formState');
+    assert.equal(f14.severity, 'BLOCK');
+  });
+
+  it('F15: missing agentProfile is blocked on v0.7.0+', async () => {
+    const result = await runOnFixtures(['window-f15-no-profile']);
+    const f15 = result.violations.find(v => v.rule === 'F15');
+    assert.ok(f15, 'F15 should fire for missing agentProfile');
+    assert.equal(f15.severity, 'BLOCK');
+  });
+
+  it('F15: profile referencing non-existent field is blocked', async () => {
+    const result = await runOnFixtures(['window-f15-bad-ref']);
+    const f15 = result.violations.find(v => v.rule === 'F15');
+    assert.ok(f15, 'F15 should fire for bad profile references');
+  });
+
+  it('F15: minimumCreate fields are validated against header and line scope', async () => {
+    const tmpRoot = await mkdtemp(join(tmpdir(), 'sf-f15-scope-'));
+    try {
+      const artifactDir = join(tmpRoot, 'window-f15-scope');
+      await mkdir(artifactDir, { recursive: true });
+      await writeFile(join(tmpRoot, 'mock-registry.js'), `
+        export const windowLoaders = {
+          'window-f15-scope': () => Promise.resolve({}),
+        };
+        export const customLoaders = {};
+      `);
+      await writeFile(join(artifactDir, 'contract.json'), JSON.stringify({
+        version: '0.7.0',
+        frontendContract: {
+          window: { primaryEntity: 'header' },
+          entities: {
+            header: { level: 'header' },
+            lines: { level: 'line' },
+          },
+        },
+        formState: {
+          entities: {
+            header: { fields: { businessPartner: {} } },
+            lines: { fields: { product: {} } },
+          },
+        },
+        agentProfile: {
+          minimumCreate: {
+            headerFields: ['product'],
+          },
+        },
+      }));
+
+      const result = await validatePipeline({
+        scope: ['window-f15-scope'],
+        strict: false,
+        skip: [],
+        root: tmpRoot,
+        registryPath: join(tmpRoot, 'mock-registry.js'),
+        _artifactsRoot: tmpRoot,
+      });
+      const f15 = result.violations.find(v => v.rule === 'F15');
+      assert.ok(f15, 'F15 should fire when a line field is listed as a header field');
+      assert.match(f15.message, /headerFields/);
+    } finally {
+      await rm(tmpRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('F15: selector contexts are validated by entity and field', async () => {
+    const tmpRoot = await mkdtemp(join(tmpdir(), 'sf-f15-selector-'));
+    try {
+      const artifactDir = join(tmpRoot, 'window-f15-selector');
+      await mkdir(artifactDir, { recursive: true });
+      await writeFile(join(tmpRoot, 'mock-registry.js'), `
+        export const windowLoaders = {
+          'window-f15-selector': () => Promise.resolve({}),
+        };
+        export const customLoaders = {};
+      `);
+      await writeFile(join(artifactDir, 'contract.json'), JSON.stringify({
+        version: '0.7.0',
+        formState: {
+          entities: {
+            header: { fields: { businessPartner: {} } },
+            lines: { fields: { businessPartner: {} } },
+          },
+        },
+        apiPrediction: {
+          selectors: [{ entity: 'header', field: 'businessPartner' }],
+          actions: [],
+        },
+        agentProfile: {
+          selectorContexts: [{ entity: 'lines', field: 'businessPartner' }],
+        },
+      }));
+
+      const result = await validatePipeline({
+        scope: ['window-f15-selector'],
+        strict: false,
+        skip: [],
+        root: tmpRoot,
+        registryPath: join(tmpRoot, 'mock-registry.js'),
+        _artifactsRoot: tmpRoot,
+      });
+      const f15 = result.violations.find(v => v.rule === 'F15');
+      assert.ok(f15, 'F15 should fire when selector field matches but entity differs');
+      assert.match(f15.message, /lines\.businessPartner/);
+    } finally {
+      await rm(tmpRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('F16: generated files that differ from generator output are blocked', async () => {
+    const tmpRoot = await mkdtemp(join(tmpdir(), 'sf-f16-'));
+    try {
+      const artifactDir = join(tmpRoot, 'window-f16-manual-edit');
+      const webDir = join(artifactDir, 'generated', 'web', 'window-f16-manual-edit');
+      await mkdir(webDir, { recursive: true });
+      await writeFile(join(tmpRoot, 'mock-registry.js'), `
+        export const windowLoaders = {
+          'window-f16-manual-edit': () => Promise.resolve({}),
+        };
+          export const customLoaders = {};
+        `);
+      const contract = generateContract({
+        version: '0.1.0',
+        window: {
+          id: 'W_F16',
+          name: 'Window F16 Manual Edit',
+          primaryEntity: 'header',
+          category: 'configuration',
+        },
+        entities: [{
+          name: 'header',
+          table: 'AD_F16',
+          level: 'header',
+          fields: [
+            { name: 'name', column: 'Name', type: 'string', visibility: 'editable', required: false, searchable: true, grid: true, form: true },
+          ],
+        }],
+      }, []);
+      const expectedFiles = generateAll(contract);
+      await writeFile(join(artifactDir, 'contract.json'), JSON.stringify(contract, null, 2));
+      for (const [filename, content] of Object.entries(expectedFiles)) {
+        await writeFile(join(webDir, filename), content);
+      }
+      await writeFile(join(webDir, 'index.jsx'), `${expectedFiles['index.jsx']}\n// manual edit\n`);
+
+      const result = await validatePipeline({
+        scope: ['window-f16-manual-edit'],
+        strict: false,
+        skip: [],
+        root: tmpRoot,
+        registryPath: join(tmpRoot, 'mock-registry.js'),
+        _artifactsRoot: tmpRoot,
+      });
+      const f16 = result.violations.find(v => v.rule === 'F16');
+      assert.ok(f16, 'F16 should fire for generated files that differ from generator output');
+      assert.equal(f16.severity, 'BLOCK');
+    } finally {
+      await rm(tmpRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('F16: compares generated frontend against compact contract.json, not expanded MCP metadata', async () => {
+    const tmpRoot = await mkdtemp(join(tmpdir(), 'sf-f16-split-'));
+    try {
+      const artifactName = 'window-f16-split';
+      const artifactDir = join(tmpRoot, artifactName);
+      const webDir = join(artifactDir, 'generated', 'web', artifactName);
+      await mkdir(webDir, { recursive: true });
+      await writeFile(join(tmpRoot, 'mock-registry.js'), `
+        export const windowLoaders = {
+          '${artifactName}': () => Promise.resolve({}),
+        };
+        export const customLoaders = {};
+      `);
+      const generatedContract = generateContract({
+        version: '0.1.0',
+        window: {
+          id: 'W_F16_SPLIT',
+          name: 'Window F16 Split',
+          primaryEntity: 'header',
+          category: 'configuration',
+        },
+        entities: [{
+          name: 'header',
+          table: 'AD_F16_SPLIT',
+          level: 'header',
+          fields: [
+            { name: 'name', column: 'Name', type: 'string', visibility: 'editable', required: false, searchable: true, grid: true, form: true },
+            { name: 'processNow', column: 'Process_Now', type: 'button', visibility: 'editable', required: false, grid: false, form: true },
+          ],
+        }],
+      }, []);
+      const { contract, mcpContract } = splitWindowContractArtifacts(generatedContract);
+      const expectedFiles = generateAll(contract);
+      await writeFile(join(artifactDir, 'contract.json'), JSON.stringify(contract, null, 2));
+      await writeFile(join(artifactDir, 'contract.mcp.json'), JSON.stringify(mcpContract, null, 2));
+      for (const [filename, content] of Object.entries(expectedFiles)) {
+        await writeFile(join(webDir, filename), content);
+      }
+
+      const result = await validatePipeline({
+        scope: [artifactName],
+        strict: false,
+        skip: [],
+        root: tmpRoot,
+        registryPath: join(tmpRoot, 'mock-registry.js'),
+        _artifactsRoot: tmpRoot,
+      });
+      const f16 = result.violations.find(v => v.rule === 'F16');
+      assert.equal(f16, undefined, 'F16 should not use expanded MCP actions for frontend comparison');
+    } finally {
+      await rm(tmpRoot, { recursive: true, force: true });
+    }
   });
 });

@@ -5,7 +5,8 @@ import {
   generateBackendContract,
   generateTestManifest,
   generateContract,
-  generateApiPrediction
+  generateApiPrediction,
+  splitWindowContractArtifacts,
 } from '../src/generate-contract.js';
 
 const minimalSchema = {
@@ -712,6 +713,49 @@ describe('generateContract — orchestrator', () => {
     assert.ok(contract.apiPrediction.crud);
     assert.ok(contract.apiPrediction.queryParams);
   });
+
+  it('splits MCP metadata out of the compact contract artifact', () => {
+    const contract = generateContract(buttonSchema);
+    const { contract: compactContract, mcpContract } = splitWindowContractArtifacts(contract);
+
+    assert.ok(compactContract.apiPrediction, 'compact contract keeps frontend API metadata');
+    assert.equal(compactContract.formState, undefined);
+    assert.equal(compactContract.agentProfile, undefined);
+    assert.ok(mcpContract.apiPrediction, 'MCP contract keeps full API metadata');
+    assert.ok(mcpContract.formState, 'MCP contract keeps form state');
+    assert.ok(mcpContract.agentProfile, 'MCP contract keeps agent profile');
+    assert.equal(mcpContract.contractChecksum, compactContract.checksum);
+
+    const compactAction = compactContract.apiPrediction.actions[0];
+    const mcpAction = mcpContract.apiPrediction.actions[0];
+    assert.equal(compactAction.name, undefined);
+    assert.equal(compactAction.field, mcpAction.name);
+    assert.equal(compactAction.requiresRecord, undefined);
+    assert.equal(compactAction.method, undefined);
+    assert.equal(mcpAction.requiresRecord, true);
+    assert.equal(mcpAction.method, 'POST');
+    assert.equal(compactAction.edgeCases, undefined);
+    assert.ok(Array.isArray(mcpAction.edgeCases));
+    assert.equal(compactAction.actionType, undefined);
+    assert.ok(mcpAction.actionType);
+  });
+
+  it('preserves split artifact timestamps when checksums are unchanged', () => {
+    const contract = generateContract(buttonSchema);
+    const firstSplit = splitWindowContractArtifacts(contract);
+    const regenerated = {
+      ...contract,
+      updatedAt: '2099-01-01T00:00:00.000Z',
+    };
+    const secondSplit = splitWindowContractArtifacts(
+      regenerated,
+      firstSplit.contract,
+      firstSplit.mcpContract,
+    );
+
+    assert.equal(secondSplit.contract.updatedAt, firstSplit.contract.updatedAt);
+    assert.equal(secondSplit.mcpContract.updatedAt, firstSplit.mcpContract.updatedAt);
+  });
 });
 
 // ─── Schema with FK fields for apiPrediction tests ────────────────────────────
@@ -864,10 +908,22 @@ describe('generateApiPrediction', () => {
     const bc = generateBackendContract(buttonSchema);
     const prediction = generateApiPrediction(buttonSchema, fc, bc);
     assert.equal(prediction.actions.length, 1);
-    assert.equal(prediction.actions[0].field, 'docAction');
-    assert.equal(prediction.actions[0].column, 'DocAction');
-    assert.equal(prediction.actions[0].url,
+    const action = prediction.actions[0];
+    assert.equal(action.name, 'docAction');
+    assert.equal(action.column, 'DocAction');
+    assert.equal(action.url,
       '/sws/neo/purchase-invoice/invoice/{id}/action/docAction');
+    assert.equal(action.actionType, 'documentAction');
+    assert.equal(action.entity, 'invoice');
+    assert.ok(action.requiresRecord);
+    assert.ok(Array.isArray(action.parameters));
+    assert.ok(Array.isArray(action.preconditions));
+    assert.ok(Array.isArray(action.effects));
+    assert.ok(Array.isArray(action.edgeCases));
+    assert.equal(action.edgeCases.length >= 3, true);
+    assert.equal(action.dryRunSupported, true);
+    assert.equal(action.label, undefined);
+    assert.equal(action.endpoint, undefined);
   });
 
   it('actions is empty array when no button fields exist', () => {
@@ -1153,5 +1209,597 @@ describe('generateFrontendContract — F3 drawer + display passthroughs', () => 
     const fc = generateFrontendContract(emptySchema);
     const product = fc.entities.internalConsumptionLine.fields.find(f => f.name === 'product');
     assert.equal(product.onSelectMappings, undefined);
+  });
+});
+
+// ─── Selector Context Metadata (ETP-3955) ─────────────────────────────────────
+
+const contextualFkSchema = {
+  version: '0.1.0',
+  window: { id: '143', name: 'Sales Order', primaryEntity: 'order', category: 'sales' },
+  entities: [
+    {
+      name: 'order',
+      table: 'C_Order',
+      level: 'header',
+      fields: [
+        { name: 'businessPartner', column: 'C_BPartner_ID', type: 'foreignKey',
+          reference: 'BusinessPartner', inputMode: 'search',
+          visibility: 'editable', required: true, searchable: true, grid: true, form: true },
+        { name: 'orderDate', column: 'DateOrdered', type: 'date',
+          visibility: 'editable', required: true, searchable: false, grid: true, form: true },
+        { name: 'partnerAddress', column: 'C_BPartner_Location_ID', type: 'foreignKey',
+          reference: 'BusinessPartnerLocation', inputMode: 'dependent',
+          dependsOn: { field: 'businessPartner', filterKey: 'C_BPartner_ID' },
+          validationRule: { cascadeParams: ['C_BPartner_ID'] },
+          visibility: 'editable', required: true, searchable: false, grid: false, form: true },
+        { name: 'priceList', column: 'M_PriceList_ID', type: 'foreignKey',
+          reference: 'PriceList', inputMode: 'selector',
+          validationRule: { cascadeParams: ['isSOTrx'] },
+          visibility: 'editable', required: true, searchable: false, grid: false, form: true },
+      ]
+    },
+    {
+      name: 'orderLine',
+      table: 'C_OrderLine',
+      level: 'line',
+      fields: [
+        { name: 'product', column: 'M_Product_ID', type: 'foreignKey',
+          reference: 'Product', inputMode: 'search',
+          visibility: 'editable', required: true, searchable: true, grid: true, form: true },
+        { name: 'tax', column: 'C_Tax_ID', type: 'foreignKey',
+          reference: 'Tax', inputMode: 'selector',
+          validationRule: { cascadeParams: ['DateInvoiced', 'DateOrdered', 'IsSOTrx', 'AD_CLIENT_ID', 'AD_ORG_ID'] },
+          visibility: 'editable', required: true, searchable: false, grid: true, form: true },
+      ]
+    }
+  ]
+};
+
+describe('generateApiPrediction — selector context metadata (ETP-3955)', () => {
+  it('partnerAddress selector includes context with required C_BPartner_ID from dependsOn', () => {
+    const fc = generateFrontendContract(contextualFkSchema);
+    const bc = generateBackendContract(contextualFkSchema);
+    const prediction = generateApiPrediction(contextualFkSchema, fc, bc);
+    const addrSelector = prediction.selectors.find(s => s.field === 'partnerAddress');
+    assert.ok(addrSelector, 'partnerAddress selector should exist');
+    assert.ok(addrSelector.context, 'partnerAddress should have context metadata');
+    assert.ok(addrSelector.context.required, 'context should have required entries');
+    const bpReq = addrSelector.context.required.find(r => r.param === 'C_BPartner_ID');
+    assert.ok(bpReq, 'should require C_BPartner_ID');
+    assert.equal(bpReq.source, 'field');
+    assert.equal(bpReq.field, 'businessPartner');
+  });
+
+  it('priceList selector includes context with required isSOTrx from window category', () => {
+    const fc = generateFrontendContract(contextualFkSchema);
+    const bc = generateBackendContract(contextualFkSchema);
+    const prediction = generateApiPrediction(contextualFkSchema, fc, bc);
+    const plSelector = prediction.selectors.find(s => s.field === 'priceList');
+    assert.ok(plSelector, 'priceList selector should exist');
+    assert.ok(plSelector.context, 'priceList should have context metadata');
+    const isSOTrxReq = plSelector.context.required.find(r => r.param === 'isSOTrx');
+    assert.ok(isSOTrxReq, 'should require isSOTrx context');
+    assert.equal(isSOTrxReq.source, 'windowCategory');
+  });
+
+  it('tax selector includes context derived from cascade params and contract fields', () => {
+    const fc = generateFrontendContract(contextualFkSchema);
+    const bc = generateBackendContract(contextualFkSchema);
+    const prediction = generateApiPrediction(contextualFkSchema, fc, bc);
+    const taxSelector = prediction.selectors.find(s => s.field === 'tax' && s.entity === 'orderLine');
+    assert.ok(taxSelector, 'tax selector should exist');
+    assert.ok(taxSelector.context, 'tax should have context metadata');
+    const isSOTrxReq = taxSelector.context.required.find(r => r.param === 'IsSOTrx');
+    assert.ok(isSOTrxReq, 'should require IsSOTrx');
+    assert.equal(isSOTrxReq.source, 'windowCategory');
+    const dateReq = taxSelector.context.required.find(r => r.param === 'DateInvoiced');
+    assert.ok(dateReq, 'should require the validation rule canonical date param');
+    assert.equal(dateReq.source, 'parentField');
+    assert.equal(dateReq.field, 'orderDate');
+    assert.equal(dateReq.format, 'DD-MM-YYYY');
+  });
+
+  it('purchase-order priceList selector has isSOTrx=N context', () => {
+    const purchaseSchema = {
+      ...contextualFkSchema,
+      window: { ...contextualFkSchema.window, category: 'purchases' },
+    };
+    const fc = generateFrontendContract(purchaseSchema);
+    const bc = generateBackendContract(purchaseSchema);
+    const prediction = generateApiPrediction(purchaseSchema, fc, bc);
+    const plSelector = prediction.selectors.find(s => s.field === 'priceList');
+    assert.ok(plSelector.context, 'priceList should have context');
+    const isSOTrxReq = plSelector.context.required.find(r => r.param === 'isSOTrx');
+    assert.ok(isSOTrxReq);
+  });
+
+  it('selector without validationRule context params has no context metadata', () => {
+    const simpleFkSchema = {
+      version: '0.1.0',
+      window: { id: '700', name: 'Simple FK', primaryEntity: 'item', category: 'test' },
+      entities: [{
+        name: 'item',
+        table: 'M_Item',
+        level: 'header',
+        fields: [
+          { name: 'category', column: 'M_Category_ID', type: 'foreignKey',
+            reference: 'Category', inputMode: 'selector',
+            visibility: 'editable', required: false, searchable: false, grid: false, form: true },
+        ]
+      }]
+    };
+    const fc = generateFrontendContract(simpleFkSchema);
+    const bc = generateBackendContract(simpleFkSchema);
+    const prediction = generateApiPrediction(simpleFkSchema, fc, bc);
+    const catSelector = prediction.selectors.find(s => s.field === 'category');
+    // No dependsOn, no validationRule cascade params, not a priceList -> no context
+    assert.equal(catSelector.context, undefined, 'simple FK without context should have no context metadata');
+  });
+});
+
+// ─── Action Classification Metadata (ETP-3956) ────────────────────────────────
+
+describe('generateApiPrediction — action classification (ETP-3956)', () => {
+  const actionSchema = {
+    version: '0.1.0',
+    window: { id: '800', name: 'Action Test', primaryEntity: 'header', category: 'sales' },
+    entities: [{
+      name: 'header',
+      table: 'C_Test',
+      level: 'header',
+      fields: [
+        { name: 'documentAction', column: 'DocAction', type: 'button',
+          processId: '104', processType: 'classic', label: 'Document Action' },
+        { name: 'completeDocument', column: 'Complete', type: 'button',
+          processId: 'ABC123', processType: 'obuiapp' },
+        { name: 'aPRMAddPayment', column: 'EM_APRM_Add', type: 'button',
+          processId: 'PAY001', processType: 'obuiapp' },
+        { name: 'createLinesFrom', column: 'CreateLines', type: 'button',
+          processId: 'CL001', processType: 'classic' },
+        { name: 'recalculate', column: 'Recalculate', type: 'button' },
+      ],
+    }],
+  };
+
+  it('documentAction is classified as documentAction type', () => {
+    const fc = generateFrontendContract(actionSchema);
+    const bc = generateBackendContract(actionSchema);
+    const prediction = generateApiPrediction(actionSchema, fc, bc);
+    const docAction = prediction.actions.find(a => a.name === 'documentAction');
+    assert.ok(docAction);
+    assert.equal(docAction.actionType, 'documentAction');
+    assert.equal(docAction.dryRunSupported, true);
+  });
+
+  it('complete pattern is classified as documentAction', () => {
+    const fc = generateFrontendContract(actionSchema);
+    const bc = generateBackendContract(actionSchema);
+    const prediction = generateApiPrediction(actionSchema, fc, bc);
+    const complete = prediction.actions.find(a => a.name === 'completeDocument');
+    assert.ok(complete);
+    assert.equal(complete.actionType, 'documentAction');
+  });
+
+  it('APRM pattern is classified as paymentAction', () => {
+    const fc = generateFrontendContract(actionSchema);
+    const bc = generateBackendContract(actionSchema);
+    const prediction = generateApiPrediction(actionSchema, fc, bc);
+    const payment = prediction.actions.find(a => a.name === 'aPRMAddPayment');
+    assert.ok(payment);
+    assert.equal(payment.actionType, 'paymentAction');
+  });
+
+  it('create pattern is classified as createFrom', () => {
+    const fc = generateFrontendContract(actionSchema);
+    const bc = generateBackendContract(actionSchema);
+    const prediction = generateApiPrediction(actionSchema, fc, bc);
+    const create = prediction.actions.find(a => a.name === 'createLinesFrom');
+    assert.ok(create);
+    assert.equal(create.actionType, 'createFrom');
+    assert.equal(create.requiresRecord, true);
+  });
+
+  it('unknown button is classified as utilityAction', () => {
+    const fc = generateFrontendContract(actionSchema);
+    const bc = generateBackendContract(actionSchema);
+    const prediction = generateApiPrediction(actionSchema, fc, bc);
+    const util = prediction.actions.find(a => a.name === 'recalculate');
+    assert.ok(util);
+    assert.equal(util.actionType, 'utilityAction');
+  });
+
+  it('every action has at least 3 edge cases', () => {
+    const fc = generateFrontendContract(actionSchema);
+    const bc = generateBackendContract(actionSchema);
+    const prediction = generateApiPrediction(actionSchema, fc, bc);
+    for (const action of prediction.actions) {
+      assert.ok(Array.isArray(action.edgeCases), `${action.name} should have edgeCases array`);
+      assert.ok(action.edgeCases.length >= 3, `${action.name} should have >= 3 edge cases, got ${action.edgeCases.length}`);
+    }
+  });
+
+  it('documentAction has docAction parameter', () => {
+    const fc = generateFrontendContract(actionSchema);
+    const bc = generateBackendContract(actionSchema);
+    const prediction = generateApiPrediction(actionSchema, fc, bc);
+    const docAction = prediction.actions.find(a => a.name === 'documentAction');
+    assert.ok(docAction.parameters.length > 0);
+    assert.equal(docAction.parameters[0].name, 'docAction');
+    assert.equal(docAction.parameters[0].required, true);
+  });
+
+  it('actions expose explicit POST endpoint metadata', () => {
+    const fc = generateFrontendContract(actionSchema);
+    const bc = generateBackendContract(actionSchema);
+    const prediction = generateApiPrediction(actionSchema, fc, bc);
+    const docAction = prediction.actions.find(a => a.name === 'documentAction');
+    assert.equal(docAction.method, 'POST');
+    assert.equal(docAction.url, '/sws/neo/action-test/header/{id}/action/documentAction');
+    assert.equal(docAction.endpoint, undefined);
+  });
+
+  it('documentAction has preconditions on documentStatus', () => {
+    const fc = generateFrontendContract(actionSchema);
+    const bc = generateBackendContract(actionSchema);
+    const prediction = generateApiPrediction(actionSchema, fc, bc);
+    const docAction = prediction.actions.find(a => a.name === 'documentAction');
+    assert.ok(docAction.preconditions.length > 0);
+    const statusPre = docAction.preconditions.find(p => p.field === 'documentStatus');
+    assert.ok(statusPre);
+    assert.deepEqual(statusPre.values, ['DR', 'IP']);
+  });
+
+  it('curated action overrides are applied from window.actions', () => {
+    const curatedSchema = {
+      ...actionSchema,
+      window: {
+        ...actionSchema.window,
+        actions: {
+          documentAction: {
+            label: 'Complete Document',
+            description: 'Complete the sales order',
+            dryRunSupported: false,
+            effects: ['Locks the document', 'Creates accounting entries'],
+            edgeCases: ['Custom edge 1', 'Custom edge 2', 'Custom edge 3'],
+            allowedValues: ['CO', 'PR'],
+            paramName: 'docAction',
+          },
+        },
+      },
+    };
+    const fc = generateFrontendContract(curatedSchema);
+    const bc = generateBackendContract(curatedSchema);
+    const prediction = generateApiPrediction(curatedSchema, fc, bc);
+    const docAction = prediction.actions.find(a => a.name === 'documentAction');
+    assert.ok(docAction);
+    assert.equal(docAction.label, undefined);
+    assert.equal(docAction.description, 'Complete the sales order');
+    assert.equal(docAction.dryRunSupported, false);
+    assert.deepEqual(docAction.effects, ['Locks the document', 'Creates accounting entries']);
+    assert.deepEqual(docAction.edgeCases, ['Custom edge 1', 'Custom edge 2', 'Custom edge 3']);
+    const param = docAction.parameters.find(p => p.name === 'docAction');
+    assert.ok(param);
+    assert.deepEqual(param.allowedValues, ['CO', 'PR']);
+  });
+
+  it('action testManifest entries use action.name', () => {
+    const fc = generateFrontendContract(actionSchema);
+    const bc = generateBackendContract(actionSchema);
+    const contract = generateContract(actionSchema);
+    const actionTests = contract.testManifest.tests.filter(t => t.category === 'action-endpoint');
+    assert.ok(actionTests.length > 0);
+    for (const t of actionTests) {
+      assert.ok(t.field, 'test should have field property');
+      assert.ok(t.entity, 'test should have entity property');
+    }
+  });
+});
+
+// ─── Form-State Metadata (ETP-3957) ──────────────────────────────────────────
+
+describe('generateContract — formState (ETP-3957)', () => {
+  const formStateSchema = {
+    version: '0.1.0',
+    window: { id: '900', name: 'Form State Test', primaryEntity: 'header', category: 'sales' },
+    entities: [{
+      name: 'header',
+      table: 'C_FormTest',
+      level: 'header',
+      fields: [
+        { name: 'documentNo', column: 'DocumentNo', type: 'string', visibility: 'readOnly', required: false, searchable: true, grid: true, form: true },
+        { name: 'businessPartner', column: 'C_BPartner_ID', type: 'foreignKey', visibility: 'editable', required: true, searchable: true, grid: true, form: true },
+        { name: 'orderDate', column: 'DateOrdered', type: 'date', visibility: 'editable', required: false, searchable: false, grid: true, form: true, defaultValue: 'today' },
+        { name: 'internalNote', column: 'Description', type: 'string', visibility: 'editable', required: false, searchable: false, grid: false, form: true },
+        { name: 'processed', column: 'Processed', type: 'boolean', visibility: 'system', required: false, searchable: false, grid: false, form: false },
+        { name: 'documentAction', column: 'DocAction', type: 'button', visibility: 'system', required: false, searchable: false, grid: false, form: false },
+      ],
+    }],
+  };
+
+  const formStateRules = [
+    { entity: 'header', fieldName: 'businessPartner', type: 'callout', className: 'BPartnerCallout', name: 'bpartnerCallout' },
+    { entity: 'header', fieldName: 'businessPartner', type: 'callout', className: 'PriceListCallout' },
+    { entity: 'header', fieldName: 'documentNo', type: 'readOnlyLogic', expression: "@Processed@='Y'" },
+    { entity: 'header', fieldName: 'internalNote', type: 'displayLogic', expression: "@DocumentStatus@='DR'" },
+  ];
+
+  it('contract includes formState section', () => {
+    const contract = generateContract(formStateSchema, formStateRules);
+    assert.ok(contract.formState, 'contract should have formState');
+    assert.ok(contract.formState.entities, 'formState should have entities');
+  });
+
+  it('formState fields include visibility, readOnly, required', () => {
+    const contract = generateContract(formStateSchema, formStateRules);
+    const bp = contract.formState.entities.header.fields.businessPartner;
+    assert.equal(bp.required, true);
+    assert.equal(bp.visible, undefined);
+    assert.equal(bp.readOnly, undefined);
+  });
+
+  it('readOnly fields are marked correctly', () => {
+    const contract = generateContract(formStateSchema, formStateRules);
+    const docNo = contract.formState.entities.header.fields.documentNo;
+    assert.equal(docNo.readOnly, true);
+    assert.equal(docNo.visible, undefined);
+    assert.equal(docNo.required, undefined);
+  });
+
+  it('system and discarded fields are excluded from formState', () => {
+    const contract = generateContract(formStateSchema, formStateRules);
+    assert.ok(!contract.formState.entities.header.fields.processed, 'system field should be excluded');
+    assert.ok(!contract.formState.entities.header.fields.documentAction, 'system button should be excluded');
+  });
+
+  it('callout triggers are collected from rules', () => {
+    const contract = generateContract(formStateSchema, formStateRules);
+    const bp = contract.formState.entities.header.fields.businessPartner;
+    assert.ok(Array.isArray(bp.calloutTriggers));
+    assert.equal(bp.calloutTriggers.length, 2);
+    assert.ok(bp.calloutTriggers.includes('BPartnerCallout'));
+    assert.ok(bp.calloutTriggers.includes('PriceListCallout'));
+  });
+
+  it('displayLogic is extracted from rules', () => {
+    const contract = generateContract(formStateSchema, formStateRules);
+    const note = contract.formState.entities.header.fields.internalNote;
+    assert.equal(note.displayLogic, "@DocumentStatus@='DR'");
+  });
+
+  it('readOnlyLogic is extracted from rules', () => {
+    const contract = generateContract(formStateSchema, formStateRules);
+    const docNo = contract.formState.entities.header.fields.documentNo;
+    assert.equal(docNo.readOnlyLogic, "@Processed@='Y'");
+  });
+
+  it('defaultValue is included when present', () => {
+    const contract = generateContract(formStateSchema, formStateRules);
+    const date = contract.formState.entities.header.fields.orderDate;
+    assert.equal(date.defaultValue, 'today');
+  });
+
+  it('requiredSessionVariables extracts @#VAR@ patterns', () => {
+    const sessionSchema = {
+      ...formStateSchema,
+      entities: [{
+        ...formStateSchema.entities[0],
+        fields: [
+          ...formStateSchema.entities[0].fields,
+          { name: 'orgField', column: 'AD_Org_ID', type: 'foreignKey', visibility: 'editable', required: false, searchable: false, grid: false, form: true,
+            validationRule: { rawExpression: "@#AD_Org_ID@ IS NOT NULL" } },
+        ],
+      }],
+    };
+    const contract = generateContract(sessionSchema, []);
+    assert.ok(contract.formState.requiredSessionVariables.includes('#AD_Org_ID'));
+  });
+
+  it('requiredSessionVariables extracts session variables from rule expressions', () => {
+    const contract = generateContract(formStateSchema, [
+      { entity: 'header', fieldName: 'internalNote', type: 'displayLogic', expression: "@#AD_Client_ID@ IS NOT NULL" },
+      { entity: 'header', fieldName: 'businessPartner', type: 'readOnlyLogic', rawExpression: "@#AD_Role_ID@ IS NOT NULL" },
+    ]);
+
+    assert.deepStrictEqual(contract.formState.requiredSessionVariables, [
+      '#AD_Client_ID',
+      '#AD_Role_ID',
+    ]);
+  });
+
+  it('evaluationMode is runtime', () => {
+    const contract = generateContract(formStateSchema, formStateRules);
+    assert.equal(contract.formState.evaluationMode, 'runtime');
+  });
+
+  it('empty schema produces empty formState entities', () => {
+    const emptySchema = {
+      version: '0.1.0',
+      window: { id: '999', name: 'Empty', primaryEntity: 'main', category: 'test' },
+      entities: [],
+    };
+    const contract = generateContract(emptySchema, []);
+    assert.ok(contract.formState);
+    assert.deepStrictEqual(contract.formState.entities, {});
+    assert.deepStrictEqual(contract.formState.requiredSessionVariables, []);
+  });
+});
+
+// ─── Agent Profile Metadata (ETP-3958) ───────────────────────────────────────
+
+describe('generateContract — agentProfile (ETP-3958)', () => {
+  const profileSchema = {
+    version: '0.1.0',
+    window: { id: '1000', name: 'Purchase Order', primaryEntity: 'header', category: 'purchases' },
+    entities: [{
+      name: 'header',
+      table: 'C_Order',
+      level: 'header',
+      fields: [
+        { name: 'businessPartner', column: 'C_BPartner_ID', type: 'foreignKey', visibility: 'editable', required: true, searchable: true, grid: true, form: true, reference: 'BusinessPartner', dependsOn: { field: 'organization', filterKey: 'AD_Org_ID' } },
+        { name: 'orderDate', column: 'DateOrdered', type: 'date', visibility: 'editable', required: false, searchable: true, grid: true, form: true },
+        { name: 'documentAction', column: 'DocAction', type: 'button', visibility: 'system', required: false, searchable: false, grid: false, form: false, processId: '104', processType: 'classic' },
+      ],
+    }, {
+      name: 'lines',
+      table: 'C_OrderLine',
+      level: 'line',
+      fields: [
+        { name: 'product', column: 'M_Product_ID', type: 'foreignKey', visibility: 'editable', required: true, searchable: true, grid: true, form: true, reference: 'Product', validationRule: { cascadeParams: ['C_BPartner_ID'] } },
+        { name: 'quantity', column: 'QtyOrdered', type: 'number', visibility: 'editable', required: true, searchable: false, grid: true, form: true },
+      ],
+    }],
+  };
+
+  it('contract includes agentProfile section', () => {
+    const contract = generateContract(profileSchema, []);
+    assert.ok(contract.agentProfile, 'contract should have agentProfile');
+  });
+
+  it('agentProfile has purpose field', () => {
+    const contract = generateContract(profileSchema, []);
+    assert.ok(typeof contract.agentProfile.purpose === 'string');
+    assert.ok(contract.agentProfile.purpose.length > 0);
+  });
+
+  it('agentProfile has whenToUse array', () => {
+    const contract = generateContract(profileSchema, []);
+    assert.ok(Array.isArray(contract.agentProfile.whenToUse));
+    assert.ok(contract.agentProfile.whenToUse.length > 0);
+  });
+
+  it('agentProfile minimumCreate identifies required header fields', () => {
+    const contract = generateContract(profileSchema, []);
+    assert.ok(contract.agentProfile.minimumCreate);
+    assert.ok(contract.agentProfile.minimumCreate.headerFields.includes('businessPartner'));
+  });
+
+  it('agentProfile minimumCreate identifies required line fields', () => {
+    const contract = generateContract(profileSchema, []);
+    assert.ok(contract.agentProfile.minimumCreate.lineFields.includes('product'));
+    assert.ok(contract.agentProfile.minimumCreate.lineFields.includes('quantity'));
+  });
+
+  it('agentProfile includes selectorContexts', () => {
+    const contract = generateContract(profileSchema, []);
+    assert.ok(Array.isArray(contract.agentProfile.selectorContexts));
+    assert.deepStrictEqual(contract.agentProfile.selectorContexts.map(s => s.field), [
+      'businessPartner',
+      'product',
+    ]);
+    assert.equal(contract.agentProfile.selectorContexts[0].context.required[0].param, 'AD_Org_ID');
+    assert.equal(contract.agentProfile.selectorContexts[1].context.required[0].param, 'C_BPartner_ID');
+  });
+
+  it('agentProfile includes document actions', () => {
+    const contract = generateContract(profileSchema, []);
+    assert.ok(Array.isArray(contract.agentProfile.actions));
+    assert.ok(contract.agentProfile.actions.includes('documentAction'));
+  });
+
+  it('agentProfile includes workflow for transactional specs', () => {
+    const contract = generateContract(profileSchema, []);
+    assert.ok(Array.isArray(contract.agentProfile.workflow));
+    assert.ok(contract.agentProfile.workflow.length > 0);
+  });
+
+  it('agentProfile workflow detects lifecycle actions by action type', () => {
+    const schema = {
+      ...profileSchema,
+      entities: [{
+        ...profileSchema.entities[0],
+        fields: profileSchema.entities[0].fields.map(field => (
+          field.name === 'documentAction'
+            ? { ...field, name: 'posted', column: 'Posted' }
+            : field
+        )),
+      }, profileSchema.entities[1]],
+    };
+
+    const contract = generateContract(schema, []);
+
+    assert.ok(contract.apiPrediction.actions.some(action =>
+      action.name === 'posted' && action.actionType === 'documentAction'
+    ));
+    assert.ok(contract.agentProfile.workflow.includes('Validate form state'));
+    assert.ok(contract.agentProfile.workflow.includes('Complete the document'));
+  });
+
+  it('agentProfile includes edgeCases', () => {
+    const contract = generateContract(profileSchema, []);
+    assert.ok(Array.isArray(contract.agentProfile.edgeCases));
+    assert.ok(contract.agentProfile.edgeCases.length >= 3);
+  });
+
+  it('agentProfile includes examples for transactional specs', () => {
+    const contract = generateContract(profileSchema, []);
+    assert.ok(Array.isArray(contract.agentProfile.examples));
+    assert.deepStrictEqual(contract.agentProfile.examples.map(e => e.operation), [
+      'createHeader',
+      'createLine',
+      'completeDocument',
+    ]);
+  });
+
+  it('agentProfile exposes warnings for read-only specs without boilerplate workflow', () => {
+    const readOnlySchema = {
+      version: '0.1.0',
+      window: { id: '1001', name: 'Audit Setup', primaryEntity: 'header', category: 'configuration' },
+      entities: [{
+        name: 'header',
+        table: 'AD_Audit_Setup',
+        level: 'header',
+        fields: [
+          { name: 'name', column: 'Name', type: 'string', visibility: 'readOnly', required: false, searchable: true, grid: true, form: true },
+        ],
+      }],
+    };
+    const contract = generateContract(readOnlySchema, []);
+    assert.deepStrictEqual(contract.agentProfile.workflow, []);
+    assert.deepStrictEqual(contract.agentProfile.edgeCases, []);
+    assert.ok(contract.agentProfile.warnings.includes('This spec appears read-only from generated form metadata'));
+  });
+
+  it('agentProfile includes dangerousOperations for void/reactive actions', () => {
+    const schemaWithDanger = {
+      ...profileSchema,
+      entities: [{
+        ...profileSchema.entities[0],
+        fields: [
+          ...profileSchema.entities[0].fields,
+          { name: 'voidDocument', column: 'Void', type: 'button', visibility: 'editable', required: false, searchable: false, grid: false, form: true },
+          { name: 'reactivateDocument', column: 'Reactivate', type: 'button', visibility: 'editable', required: false, searchable: false, grid: false, form: true },
+        ],
+      }],
+    };
+    const contract = generateContract(schemaWithDanger, []);
+    assert.ok(Array.isArray(contract.agentProfile.dangerousOperations));
+    assert.ok(contract.agentProfile.dangerousOperations.includes('voidDocument'));
+    assert.ok(contract.agentProfile.dangerousOperations.includes('reactivateDocument'));
+  });
+
+  it('agentProfile references only existing fields/selectors/actions', () => {
+    const contract = generateContract(profileSchema, []);
+    const profile = contract.agentProfile;
+
+    // Verify minimumCreate fields exist in formState
+    for (const field of profile.minimumCreate.headerFields ?? []) {
+      assert.ok(contract.formState.entities.header.fields[field], `minimumCreate header field ${field} should exist in formState`);
+    }
+    for (const field of profile.minimumCreate.lineFields ?? []) {
+      assert.ok(contract.formState.entities.lines.fields[field], `minimumCreate line field ${field} should exist in formState`);
+    }
+
+    // Verify selectorContexts exist in apiPrediction
+    const selectorNames = new Set(contract.apiPrediction.selectors.filter(s => s.context).map(s => s.field));
+    for (const sel of profile.selectorContexts) {
+      assert.ok(selectorNames.has(sel.field), `selectorContext ${sel.field} should exist in apiPrediction`);
+    }
+
+    // Verify actions exist in apiPrediction
+    const actionNames = new Set(contract.apiPrediction.actions.map(a => a.name));
+    for (const action of profile.actions) {
+      assert.ok(actionNames.has(action), `action ${action} should exist in apiPrediction`);
+    }
   });
 });
