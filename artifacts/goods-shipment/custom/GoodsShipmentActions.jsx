@@ -30,6 +30,7 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
   const isCompleted = data?.documentStatus === 'CO';
   const ci = data?.completelyInvoiced;
   const isFullyInvoiced = ci === true || ci === 'true' || ci === 'Y';
+  const hasInvoice = Array.isArray(data?.relatedInvoices) && data.relatedInvoices.length > 0;
 
   const base = useMemo(() => (apiBaseUrl || '').replace(/\/[^/]+$/, ''), [apiBaseUrl]);
   const headers = useMemo(() => ({
@@ -150,7 +151,7 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
 
   return (
     <>
-      {isCompleted && !isFullyInvoiced && (
+      {isCompleted && !isFullyInvoiced && !hasInvoice && (
         <button
           type="button"
           onClick={() => setShowInvoicePreview(true)}

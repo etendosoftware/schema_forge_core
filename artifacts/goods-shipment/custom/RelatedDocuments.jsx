@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DocChip, RelatedDocumentsShell, STATUS_KEYS, CHIP_ICONS, CHIP_COLORS, docChipProps, fetchByCriteria, fetchById } from '@/components/related-documents';
+import { DocChip, RelatedDocumentsShell, STATUS_KEYS, CHIP_ICONS, CHIP_COLORS, docChipProps, fetchById } from '@/components/related-documents';
 import { useUI } from '@/i18n';
 
 export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) {
   const [order, setOrder] = useState(null);
-  const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const navigate = useNavigate();
@@ -17,12 +16,8 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
     const orderId = data.salesOrder;
     if (!orderId) { setLoading(false); return; }
 
-    Promise.all([
-      fetchById('sales-order', 'header', orderId, token, apiBaseUrl),
-      fetchByCriteria('sales-invoice', 'header', 'salesOrder', orderId, token, apiBaseUrl),
-    ]).then(([o, inv]) => {
+    fetchById('sales-order', 'header', orderId, token, apiBaseUrl).then(o => {
       setOrder(o);
-      setInvoices(inv);
       setLoading(false);
     });
   }, [recordId, data, token, apiBaseUrl, refreshKey]);
@@ -45,15 +40,14 @@ export default function RelatedDocuments({ recordId, data, token, apiBaseUrl }) 
     );
   }
 
-  for (const inv of invoices) {
+  const relatedInvoices = Array.isArray(data?.relatedInvoices) ? data.relatedInvoices : [];
+  for (const inv of relatedInvoices) {
     chips.push(
       <DocChip
         key={`inv-${inv.id}`}
         icon={CHIP_ICONS.invoice}
         iconColor={CHIP_COLORS.invoice}
         title={ui('invoiceDoc', { number: inv.documentNo })}
-        amount={inv.grandTotalAmount}
-        currency={inv['currency$_identifier']}
         status={inv.documentStatus}
         statusLabel={ui(STATUS_KEYS[inv.documentStatus] || inv.documentStatus)}
         onClick={() => navigate(`/sales-invoice/${inv.id}`)}
