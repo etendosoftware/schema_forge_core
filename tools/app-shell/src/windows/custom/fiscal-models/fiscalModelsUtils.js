@@ -65,6 +65,7 @@ export async function generate303File(decl, { token, apiBaseUrl } = {}) {
   }
 }
 
+// 'pendiente' is kept intentionally: Modelo 349 uses it as its initial draft state.
 export const STATUSES = [
   'omitido', 'pendiente', 'borrador', 'listo',
   'presentado', 'presentadoOtra', 'presentadoAcuse',

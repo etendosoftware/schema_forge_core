@@ -4,13 +4,17 @@ import React from 'react';
 import FmModel303Page from '../FmModel303Page.jsx';
 
 vi.mock('@/i18n', () => ({ useUI: () => (key) => key }));
-vi.mock('../../fiscalModelsUtils.js', () => ({
-  formatAmount:     (n) => String(n),
-  formatPeriod:     (p) => p,
-  computeBoxes303:  vi.fn(),
-  generate303File:  vi.fn(),
-  checkModified303: vi.fn(),
-}));
+vi.mock('../../../fiscalModelsUtils.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    formatAmount:     (n) => String(n),
+    formatPeriod:     (p) => p,
+    computeBoxes303:  vi.fn(),
+    generate303File:  vi.fn(),
+    checkModified303: vi.fn(),
+  };
+});
 vi.mock('@/components/related-documents/helpers.js', () => ({ neoBase: (u) => u }));
 
 const DECL = {
