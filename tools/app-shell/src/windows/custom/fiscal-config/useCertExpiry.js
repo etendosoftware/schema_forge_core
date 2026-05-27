@@ -14,7 +14,10 @@ export function useCertExpiry(apiBaseUrl, { mockDaysLeft = null, orgId = null } 
       setDaysLeft(mockDaysLeft);
       return;
     }
-    if (!apiBaseUrl || !orgId) return;
+    if (!apiBaseUrl || !orgId) {
+      setDaysLeft(null);
+      return;
+    }
     setDaysLeft(null);
     const controller = new AbortController();
     apiFetch(`/certificate?${new URLSearchParams({ orgId })}`, { signal: controller.signal })
@@ -29,7 +32,7 @@ export function useCertExpiry(apiBaseUrl, { mockDaysLeft = null, orgId = null } 
       })
       .catch(() => {});
     return () => controller.abort();
-  }, [apiFetch, mockDaysLeft, apiBaseUrl]);
+  }, [apiFetch, mockDaysLeft, apiBaseUrl, orgId]);
 
   return { daysLeft };
 }

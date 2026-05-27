@@ -28,6 +28,14 @@ describe('useCertExpiry — hook structure', () => {
     assert.match(src, /!\s*orgId/);
   });
 
+  it('clears daysLeft when orgId or apiBaseUrl is absent (no stale state)', () => {
+    assert.match(src, /if \(!apiBaseUrl \|\| !orgId\) \{\s*setDaysLeft\(null\)/);
+  });
+
+  it('includes orgId in the effect dependency array', () => {
+    assert.match(src, /\[apiFetch,\s*mockDaysLeft,\s*apiBaseUrl,\s*orgId\]/);
+  });
+
   it('returns daysLeft from the hook', () => {
     assert.match(src, /return.*daysLeft/);
   });
