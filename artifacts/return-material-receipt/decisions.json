@@ -7,8 +7,10 @@
     "notesField": "description",
     "dateFilterKey": "movementDate",
     "linesLayout": "inlineEditable",
+    "hideDeleteWhenComplete": true,
     "customComponents": {
-      "bottomSection": "ReturnMaterialReceiptBottomPanel"
+      "bottomSection": "ReturnMaterialReceiptBottomPanel",
+      "topbarRight": "ConfirmWithCreditButton"
     },
     "labelOverrides": {
       "es_ES": {
@@ -20,6 +22,11 @@
         "sourceShipmentDocNo": "Source Shipment",
         "movementQuantity": "Return Qty",
         "orderQuantity": "Original Delivered Qty"
+      }
+    },
+    "processOverrides": {
+      "Process Receipt": {
+        "exclude": true
       }
     }
   },
@@ -241,7 +248,7 @@
           "visibility": "discarded"
         },
         "documentAction": {
-          "visibility": "discarded"
+          "visibility": "system"
         },
         "processNow": {
           "visibility": "discarded"

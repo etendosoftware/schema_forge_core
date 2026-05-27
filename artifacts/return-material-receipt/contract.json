@@ -1,8 +1,8 @@
 {
-  "version": "0.6.0",
+  "version": "0.6.1",
   "generatedAt": "2026-04-29T18:11:05.114Z",
-  "updatedAt": "2026-05-26T16:13:04.945Z",
-  "checksum": "0a7202704f7c0282",
+  "updatedAt": "2026-05-27T12:13:24.267Z",
+  "checksum": "602c5ee517992eba",
   "frontendContract": {
     "window": {
       "id": "123271B9AD60469BAE8A924841456B63",
@@ -11,8 +11,15 @@
       "category": "sales",
       "notesField": "description",
       "relatedDocuments": true,
+      "hideDeleteWhenComplete": true,
       "customComponents": {
-        "bottomSection": "ReturnMaterialReceiptBottomPanel"
+        "bottomSection": "ReturnMaterialReceiptBottomPanel",
+        "topbarRight": "ConfirmWithCreditButton"
+      },
+      "processOverrides": {
+        "Process Receipt": {
+          "exclude": true
+        }
       },
       "labelOverrides": {
         "es_ES": {
@@ -494,8 +501,15 @@
       "category": "sales",
       "notesField": "description",
       "relatedDocuments": true,
+      "hideDeleteWhenComplete": true,
       "customComponents": {
-        "bottomSection": "ReturnMaterialReceiptBottomPanel"
+        "bottomSection": "ReturnMaterialReceiptBottomPanel",
+        "topbarRight": "ConfirmWithCreditButton"
+      },
+      "processOverrides": {
+        "Process Receipt": {
+          "exclude": true
+        }
       },
       "labelOverrides": {
         "es_ES": {
@@ -675,7 +689,7 @@
             "apiKey": "documentAction",
             "column": "DocAction",
             "type": "button",
-            "visibility": "discarded",
+            "visibility": "system",
             "required": true
           },
           {

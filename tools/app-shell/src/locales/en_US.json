@@ -19127,7 +19127,20 @@
     "fm.m349.add_operator": "Add operator",
     "fm.m349.operators_count": "{count} operators",
     "fm.m349.operators_sub": "Source of truth for the .349 file — each row will be a reconcilable record in the generated file.",
-    "fm.m349.coming_soon": "{tab} — content available soon."
+    "fm.m349.coming_soon": "{tab} — content available soon.",
+    "confirming": "Confirming...",
+    "processReceipt": "Confirm",
+    "returnInvoiceCreated": "Return invoice {docNo} created as draft.",
+    "manageCreditTitle": "Manage credit?",
+    "manageCreditDescription": "The return receipt is ready to complete. You can generate a return invoice now or do it later.",
+    "createReturnInvoice": "Create Return Invoice",
+    "createReturnInvoiceDescription": "Created as draft, pre-filled with returned products and prices from the source invoice.",
+    "receiptConfirmed": "Return receipt confirmed.",
+    "couldNotConfirmReceipt": "Could not confirm the receipt.",
+    "couldNotCreateReturnInvoice": "Could not create the return invoice.",
+    "rmrInvoiceCreatedTitle": "Return invoice created",
+    "rmrReturnInvoiceDoc": "Return invoice #{number}",
+    "rmrCreateInvoiceConfirmDesc": "A draft credit note will be created for the customer. You can review and confirm it before sending."
   },
   "menus": {
     "Currency": {

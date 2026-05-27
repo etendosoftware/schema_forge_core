@@ -7,6 +7,7 @@ import ReturnMaterialReceiptLineForm from './ReturnMaterialReceiptLineForm';
 import RelatedDocuments from '../../../custom/RelatedDocuments';
 import { AttachmentsTab } from '@/components/attachments';
 import ReturnMaterialReceiptBottomPanel from '../../../custom/ReturnMaterialReceiptBottomPanel';
+import ConfirmWithCreditButton from '@/windows/custom/return-material-receipt/ConfirmWithCreditButton';
 import catalogs from './mockCatalogs';
 
 
@@ -41,7 +42,7 @@ const extraBadges = [];
 
 // @sf-generated-start processes:returnMaterialReceipt
 const processes = [
-  { name: 'Process Receipt', label: 'Process  Receipt', style: 'positive', columnName: 'documentAction' },
+
 ];
 // @sf-generated-end processes:returnMaterialReceipt
 
@@ -297,9 +298,11 @@ export default function ReturnMaterialReceiptPage({ windowName, recordId, ...pro
         recordId={recordId}
         breadcrumb={breadcrumb}
       api={api}
+        hideDeleteWhenComplete
         notesField="description"
         customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "M_InOut", config: {} } }]}
         bottomSection={ReturnMaterialReceiptBottomPanel}
+        topbarRight={ConfirmWithCreditButton}
         requiredHeaderFields={requiredHeaderFields}
         labelOverrides={labelOverrides}
         linesLayout="inlineEditable"

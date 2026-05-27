@@ -19393,7 +19393,20 @@
     "fm.m349.add_operator": "Añadir operador",
     "fm.m349.operators_count": "{count} operadores",
     "fm.m349.operators_sub": "Fuente de verdad del fichero .349 — cada fila será un registro reconciliable en el fichero generado.",
-    "fm.m349.coming_soon": "{tab} — contenido disponible próximamente."
+    "fm.m349.coming_soon": "{tab} — contenido disponible próximamente.",
+    "confirming": "Confirmando...",
+    "processReceipt": "Confirmar",
+    "returnInvoiceCreated": "Factura de devolución {docNo} creada en borrador.",
+    "manageCreditTitle": "¿Gestionar crédito?",
+    "manageCreditDescription": "La recepción de devolución está lista para completar. Puedes generar una factura de devolución ahora o hacerlo más tarde.",
+    "createReturnInvoice": "Crear Factura de Devolución",
+    "createReturnInvoiceDescription": "Se crea en borrador, prellenada con los productos devueltos y los precios de la factura origen.",
+    "receiptConfirmed": "Recepción de devolución confirmada.",
+    "couldNotConfirmReceipt": "No se pudo confirmar la recepción.",
+    "couldNotCreateReturnInvoice": "No se pudo crear la factura de devolución.",
+    "rmrInvoiceCreatedTitle": "Factura de devolución creada",
+    "rmrReturnInvoiceDoc": "Factura de devolución #{number}",
+    "rmrCreateInvoiceConfirmDesc": "Se creará una nota de crédito en borrador para el cliente. Podés revisarla y confirmarla antes de enviarla."
   },
   "menus": {
     "Goods Movement": {
