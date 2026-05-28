@@ -1,3 +1,176 @@
+# Financial Account — Account Management (ETP-4096)
+
+> This section covers the **create / edit / archive** flows introduced in ETP-4096. The detail view (movements, reconciliation, statements) is documented below.
+
+## What ETP-4096 adds
+
+- `+ Nueva cuenta` button in the Cuentas list opens a **multi-step wizard** (`NewAccountWizard.jsx`) for offline account creation.
+- Each row kebab gains **Edit account** (opens `EditAccountModal.jsx`) and **Archive account** (opens `ArchiveAccountDialog.jsx`).
+- A new backend spec `financial-account` (`FinancialAccountHandler`) powers create / update / archive / defaults over a single report-style endpoint.
+
+## New Account Wizard — step flow
+
+```
+TYPE          → 3 cards: Bank / Cash / Card
+  Bank        → CONNECTION (toggle Connected[disabled] / Without connection)
+                  Without connection → BANK      (flag-area search + popular grid + skip link)
+                                        → INSTITUTION (bank display field + institution list)
+                                           → FORM-BANK (Name* / IBAN / BIC-SWIFT / Currency)
+  Cash        → FORM-CASH (Name* / Currency)
+  Card        → CARD-SOON (placeholder — PSD2 required)
+```
+
+- State is kept in a single `{ step, accountType, connection, selectedBank, selectedInstitution, query }` object inside `NewAccountWizard.jsx`. No external store.
+- The back `←` button reverts one step. For the form step the target depends on `selectedBank`: if the user skipped bank selection (`null`), back goes to BANK; if they chose one, it goes to INSTITUTION.
+- The `+` button in `AccountsToolbar.jsx` opens the wizard; on success the Cuentas list reloads via `useFinancialAccounts().reload`.
+
+### Bank picker (BANK step)
+
+- Flag-area input field: left side shows `<Landmark>` + `<ChevronDown>` in a 60 px border-right box; right side is a plain `<input>` that filters `bankCatalog.js`.
+- Popular grid: 3-column, `gap-5` (20 px). Each card is 104 px tall: 40 px icon button + bank name. No bank logo yet — uses `<Landmark>` placeholder.
+- "Continue without selecting a bank" link skips BANK → INSTITUTION and sets `selectedBank = null`.
+
+### Institution step (INSTITUTION step)
+
+- Top section displays the selected bank's name in the same flag-area input used in BANK (read-only `<span>` instead of `<input>`).
+- Institution list: `gap-4` (16 px) rows; each row has a 24 px circular avatar, institution name, and `<ChevronRight>`. Clicking any row advances to the form.
+- There is **no** "Añadir · Sin conexión" row — the user is already in the offline flow.
+
+### Account form (FORM-BANK / FORM-CASH)
+
+- Bank mode fields: Name (required), IBAN (optional, validated with `validateIban`), BIC/SWIFT (optional), Currency (required, populated from `fetchDefaults()`).
+- Cash mode fields: Name (required), Currency (required). No IBAN / BIC.
+- Form layout: `gap-5` (20 px) between fields; `gap-2` (8 px) between label and input; white inputs (`bg-white`) with `shadow-[0_1px_2px_rgba(18,18,23,0.05)]`.
+- Submit button: pill-shaped (`rounded-full`), black background, yellow hover, `#D1D4DB` when disabled.
+- Submit calls `createAccount(payload)` from `useAccountMutations`. On 409 the duplicate-name error shows as an inline validation message (not a toast).
+
+## Edit Account Modal
+
+`EditAccountModal.jsx` — rendered from the row kebab "Edit account" action.
+
+- **Account data** section: editable Name, IBAN, BIC/SWIFT, Currency. Same field styling as the wizard form.
+- **Bank connection** section: labelled "Available in the next iteration" — shown but non-interactive (T3 PSD2 scope).
+- Submit calls `updateAccount(id, payload)`. Only fields present in the payload overwrite the stored value (IBAN / BIC omitted → server keeps existing values).
+
+## Archive Dialog
+
+`ArchiveAccountDialog.jsx` — rendered from the row kebab "Archive account" action.
+
+- Confirmation dialog: title + body copy + Cancel / Archive buttons.
+- Archive calls `archiveAccount(id)`. On 409 (open reconciliations) the backend message surfaces as a toast error — the dialog stays open.
+- On success the dialog closes and the list reloads.
+
+## Backend endpoint — `financial-account` spec
+
+`FinancialAccountHandler` (`@Named("financial-account")`) is a report-style spec (`SPEC_TYPE=R`). It routes internally on HTTP method + `action` query param:
+
+| Operation | HTTP | Query params | Notes |
+|-----------|------|--------------|-------|
+| Create | `POST` | — | body: `{ name, currencyId, type?, iban?, swiftCode? }` |
+| Update | `POST` | `action=update&id=<id>` | same body shape; omitting `iban`/`swiftCode` keys preserves stored values |
+| Archive | `POST` | `action=archive&id=<id>` | soft-delete; 409 if open reconciliations |
+| Defaults | `GET` | `action=defaults` | returns session currency + active currency list |
+
+**Create / Update validations:**
+- `name` required, max 60 chars, unique per org (active accounts).
+- `currencyId` required and must resolve to an active `Currency`.
+- `iban` max 34 chars, `swiftCode` max 20 chars.
+- `type` normalised: `'C'` → Cash, anything else → `'B'` (Bank, default).
+
+**Create auto-assigns matching algorithm:** the handler calls `listMatchingAlgorithms()` (active, sorted by name) and assigns the first result. If no algorithm exists the field is left null. This wires up the reconciliation engine automatically — no frontend field.
+
+**Defaults response shape:**
+```json
+{
+  "response": {
+    "data": {
+      "defaultCurrencyId": "102",
+      "defaultCurrencyIso": "EUR",
+      "currencies": [
+        { "id": "102", "iso": "EUR", "symbol": "€" }
+      ]
+    }
+  }
+}
+```
+
+The spec + entity source-data records live in `src-db/database/sourcedata/ETGO_SF_SPEC.xml` and `ETGO_SF_ENTITY.xml` of `com.etendoerp.go`.
+
+## New components
+
+| File | Role |
+|------|------|
+| `windows/custom/financial-account/NewAccountWizard.jsx` | Wizard shell — step state, back/forward logic, dialog chrome |
+| `windows/custom/financial-account/AccountFormStep.jsx` | Shared form for Bank (Name/IBAN/BIC/Currency) and Cash (Name/Currency) modes |
+| `windows/custom/financial-account/EditAccountModal.jsx` | Edit modal — Account data section + read-only Bank connection section |
+| `windows/custom/financial-account/ArchiveAccountDialog.jsx` | Confirmation dialog for soft-delete |
+| `windows/custom/financial-account/bankCatalog.js` | Static popular-bank list (`{ id, name, country, institutions[] }`); designed for swap to a live endpoint |
+
+## New hooks
+
+| Hook | Operations |
+|------|------------|
+| `hooks/useAccountMutations.js` | `createAccount(payload)`, `updateAccount(id, payload)`, `archiveAccount(id)`, `fetchDefaults()` — plain `fetch` with bearer-token auth (same pattern as `useNeoResource` but for writes). Errors carry `.status` so callers can branch (e.g. 409 → inline message). |
+
+## New utilities
+
+| File | Purpose |
+|------|---------|
+| `validateIban.js` (root `src/`) | `isValidIban(str)` — strips spaces, uppercases, rearranges, runs mod-97. Returns `true` for valid IBANs. Used by `AccountFormStep` to gate the submit button. |
+
+## i18n keys — account management
+
+All keys added to both `en_US.json` and `es_ES.json`.
+
+| Key group | Covers |
+|-----------|--------|
+| `financeAccountsNew*` | Wizard steps, type picker, connection toggle, bank picker, institution list, form fields, validation messages, toasts |
+| `financeAccountsEdit*` | Edit modal sections, save button, success/error toasts |
+| `financeAccountsArchive*` | Confirmation dialog copy, button labels, success/error toasts including the 409 open-reconciliation message |
+| `financeAccountsMenu*` | Row kebab actions (`financeAccountsMenuEdit`, `financeAccountsMenuArchive`) |
+
+Key reference (English):
+
+```
+financeAccountsNewTitle              "New account"
+financeAccountsNewTypeBank           "Bank"
+financeAccountsNewTypeCash           "Cash"
+financeAccountsNewTypeCard           "Card"
+financeAccountsNewConnectionOffline  "Without connection"
+financeAccountsNewConnectionSoon     "Available in the next iteration"   (PSD2 badge)
+financeAccountsNewBankTitle          "Choose which bank the account belongs to"
+financeAccountsNewBankSkip           "Continue without selecting a bank"
+financeAccountsNewBankPopular        "Popular"
+financeAccountsNewInstitutions       "Institutions"
+financeAccountsNewFieldName          "Account name"
+financeAccountsNewFieldIban          "IBAN"
+financeAccountsNewFieldBic           "BIC/SWIFT"
+financeAccountsNewFieldCurrency      "Currency"
+financeAccountsNewIbanInvalid        "The IBAN is not valid"
+financeAccountsNewSubmit             "Add account"
+financeAccountsNewCreateSuccess      "Account created"
+financeAccountsNewNameExists         "An account with this name already exists"
+financeAccountsEditTitle             "Edit account"
+financeAccountsEditConnectionSoon    "Available in the next iteration"
+financeAccountsEditSave              "Save changes"
+financeAccountsEditSuccess           "Changes saved"
+financeAccountsArchiveConfirmTitle   "Archive account"
+financeAccountsArchiveConfirm        "Archive"
+financeAccountsArchiveSuccess        "Account archived"
+financeAccountsArchiveOpenRecon      "Cannot archive an account with open reconciliations"
+financeAccountsMenuEdit              "Edit account"
+financeAccountsMenuArchive           "Archive account"
+```
+
+## Not implemented yet (follow-up tasks)
+
+- **PSD2 / Connected mode** (T3): connection toggle is visible but both the "Connected" option and the Bank connection section in the edit modal are disabled.
+- **Real bank logos**: `bankCatalog.js` uses `<Landmark>` as a placeholder icon for all banks.
+- **Card accounts**: the CARD step shows a "Coming soon" placeholder — actual card creation requires PSD2.
+- **Bank catalog from endpoint**: `bankCatalog.js` is a static list; the component is designed so the data source can be swapped to a live endpoint without changing the layout.
+
+---
+
 # Financial Account Detail
 
 Detail view for a single `FIN_Financial_Account` reached from the Cuentas list page.
