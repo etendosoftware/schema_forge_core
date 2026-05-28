@@ -982,7 +982,7 @@ describe('computeUpcomingDeadlines', () => {
 // ── generate303File ───────────────────────────────────────────────────────────
 
 describe('generate303File', () => {
-  const DECL = { id: '303-2026-T2', model: '303', year: 2026, period: 'T2', result: { kind: 'ingresar' } };
+  const DECL = { id: '303-2026-T2', model: '303', year: 2026, period: 'T2', result: { kind: 'I' } };
   const TOKEN = 'test-token';
   const API_BASE = 'http://host/neo/fiscal-models';
 
@@ -1018,13 +1018,13 @@ describe('generate303File', () => {
     expect(calledUrl).toContain('/fiscal303/generate?');
     expect(calledUrl).toContain('year=2026');
     expect(calledUrl).toContain('period=T2');
-    expect(calledUrl).toContain('tipo=ingresar');
+    expect(calledUrl).toContain('tipo=I');
   });
 
   it('uses the result.kind from decl as tipo', async () => {
     mockFetchOk();
-    await generate303File({ ...DECL, result: { kind: 'compensar' } }, { token: TOKEN, apiBaseUrl: API_BASE });
-    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('tipo=compensar');
+    await generate303File({ ...DECL, result: { kind: 'C' } }, { token: TOKEN, apiBaseUrl: API_BASE });
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('tipo=C');
   });
 
   it('defaults tipo to N when result.kind is absent', async () => {

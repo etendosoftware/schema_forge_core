@@ -315,9 +315,9 @@ export default function FmModel303Page({ decl, onBack, onStatusChange, token, ap
     const result = liveSummary?.result ?? decl.summary?.result ?? 0;
     let kind = decl.result?.kind;
     if (!kind) {
-      if (result > 0) kind = 'ingresar';
-      else if (result < 0) kind = 'compensar';
-      else kind = 'informativa';
+      if (result > 0) kind = 'I';
+      else if (result < 0) kind = 'C';
+      else kind = 'N';
     }
     const declForGenerate = { ...decl, result: { ...decl.result, kind } };
     const ok = await generate303File(declForGenerate, { token, apiBaseUrl });
