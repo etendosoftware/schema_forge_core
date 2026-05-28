@@ -10,7 +10,6 @@ import {
 } from '@/lib/invoiceDueDate';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
 import { getInvoiceFiscalTargets } from '@/windows/custom/shared/fiscalTargets.js';
-import { useInvoiceListFiscalStatus } from '@/windows/custom/shared/useInvoiceListFiscalStatus.js';
 import { FiscalStatusBadge } from '@/windows/custom/shared/FiscalStatusBadge.jsx';
 
 /* eslint-disable react/prop-types */
@@ -18,7 +17,7 @@ import { FiscalStatusBadge } from '@/windows/custom/shared/FiscalStatusBadge.jsx
 const filters = ['documentNo', 'invoiceDate', 'businessPartner', 'orderReference', 'documentStatus'];
 
 export default function PurchaseInvoiceHeaderTable(props) {
-  const { token, apiBaseUrl, data } = props;
+  const { apiBaseUrl } = props;
   const dictionary = useLocale();
   const { locale } = useLocaleSwitch();
   const gl = dictionary?.genericLabels || {};
@@ -30,24 +29,14 @@ export default function PurchaseInvoiceHeaderTable(props) {
 
   const targets = useMemo(() => getInvoiceFiscalTargets('purchase-invoice', profile), [profile]);
 
-  const ids = useMemo(() => (data || []).map(r => r.id).filter(Boolean), [data]);
-  const { statusMap, loading: fiscalLoading } = useInvoiceListFiscalStatus(ids, 'purchase-invoice', profile, apiBaseUrl, orgId);
-
-  const siiColLabel = gl['invoiceList.col.siiStatus']       || 'SII Status';
-  const vfColLabel  = gl['invoiceList.col.verifactuStatus'] || 'Verifactu Status';
+  const siiColLabel = gl['invoiceList.col.siiStatus'] || 'SII Status';
 
   const columns = useMemo(() => {
     const fiscalCols = [];
     if (targets.showSii) {
       fiscalCols.push({
         key: '_siiStatus', type: 'custom', label: siiColLabel,
-        render: (row) => <FiscalStatusBadge status={statusMap?.[row.id]?.sii} loading={fiscalLoading && !statusMap} />,
-      });
-    }
-    if (targets.showVerifactu) {
-      fiscalCols.push({
-        key: '_vfStatus', type: 'custom', label: vfColLabel,
-        render: (row) => <FiscalStatusBadge status={statusMap?.[row.id]?.verifactu} loading={fiscalLoading && !statusMap} />,
+        render: (row) => <FiscalStatusBadge status={row.aeatsiiEstado ?? null} />,
       });
     }
 
@@ -75,7 +64,7 @@ export default function PurchaseInvoiceHeaderTable(props) {
       { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
       { key: 'eTGODeliveryStatus', column: 'em_etgo_delivery_status', type: 'percent' },
     ];
-  }, [gl, locale, targets, fiscalLoading, statusMap, siiColLabel, vfColLabel]);
+  }, [gl, locale, targets, siiColLabel]);
 
   return <DataTable columns={columns} filters={filters} {...props} />;
 }
