@@ -10,7 +10,7 @@ import {
 } from '@/lib/invoiceDueDate';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
 import { getInvoiceFiscalTargets } from '@/windows/custom/shared/fiscalTargets.js';
-import { FiscalStatusBadge, normalizeVerifactuStatus } from '@/windows/custom/shared/FiscalStatusBadge.jsx';
+import { FiscalStatusBadge } from '@/windows/custom/shared/FiscalStatusBadge.jsx';
 
 /* eslint-disable react/prop-types */
 
@@ -29,8 +29,7 @@ export default function PurchaseInvoiceHeaderTable(props) {
 
   const targets = useMemo(() => getInvoiceFiscalTargets('purchase-invoice', profile), [profile]);
 
-  const siiColLabel = gl['invoiceList.col.siiStatus']       || 'SII Status';
-  const vfColLabel  = gl['invoiceList.col.verifactuStatus'] || 'Verifactu Status';
+  const siiColLabel = gl['invoiceList.col.siiStatus'] || 'SII Status';
 
   const columns = useMemo(() => {
     const fiscalCols = [];
@@ -38,12 +37,6 @@ export default function PurchaseInvoiceHeaderTable(props) {
       fiscalCols.push({
         key: '_siiStatus', type: 'custom', label: siiColLabel,
         render: (row) => <FiscalStatusBadge status={row.aeatsiiEstado ?? null} />,
-      });
-    }
-    if (targets.showVerifactu) {
-      fiscalCols.push({
-        key: '_vfStatus', type: 'custom', label: vfColLabel,
-        render: (row) => <FiscalStatusBadge status={normalizeVerifactuStatus(row.etvfacInvoiceStatus ?? null)} />,
       });
     }
 
@@ -71,7 +64,7 @@ export default function PurchaseInvoiceHeaderTable(props) {
       { key: 'outstandingAmount', column: 'OutstandingAmt', type: 'amount' },
       { key: 'eTGODeliveryStatus', column: 'em_etgo_delivery_status', type: 'percent' },
     ];
-  }, [gl, locale, targets, siiColLabel, vfColLabel]);
+  }, [gl, locale, targets, siiColLabel]);
 
   return <DataTable columns={columns} filters={filters} {...props} />;
 }

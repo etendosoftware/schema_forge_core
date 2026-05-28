@@ -12,7 +12,6 @@ const columns = [
   { key: 'eTGODueDate', column: 'em_etgo_due_date', type: 'date', label: 'em_etgo_due_date' },
   { key: 'eTGODeliveryStatus', column: 'em_etgo_delivery_status', type: 'number', label: 'em_etgo_delivery_status' },
   { key: 'aeatsiiEstado', column: 'EM_Aeatsii_Estado', type: 'enum', label: 'SII Registration Status', enumLabels: { 'AE': 'Accepted with errors', 'AN': 'Annulled', 'IN': 'Incorrect', 'NR': 'Not Registrable to SII', 'PE': 'Pending to send to SII', 'CO': 'Right', 'EE': 'Sending error', 'BA': 'Unsubscribed' } },
-  { key: 'etvfacInvoiceStatus', column: 'EM_Etvfac_Invoice_Status', type: 'status', label: 'EM_Etvfac_Invoice_Status', enumLabels: { 'AC': 'Aceptada', 'AE': 'Aceptada con Errores', 'IN': 'Inválida', 'PE': 'Pendiente', 'ER': 'Rechazada' } },
 ];
 // @sf-generated-end columns:header
 

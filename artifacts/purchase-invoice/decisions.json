@@ -404,8 +404,7 @@
         },
         "etvfacInvoiceStatus": {
           "visibility": "readOnly",
-          "form": false,
-          "grid": true
+          "form": false
         },
         "etvfacSentToVerifac": {
           "visibility": "readOnly",

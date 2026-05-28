@@ -4,7 +4,7 @@ import { useLocale } from '@/i18n';
 import { useAuth } from '@/auth/AuthContext.jsx';
 import { useFiscalConfig } from '@/windows/custom/fiscal-config/useFiscalConfig.js';
 import { getInvoiceFiscalTargets } from '@/windows/custom/shared/fiscalTargets.js';
-import { FiscalStatusBadge, normalizeVerifactuStatus } from '@/windows/custom/shared/FiscalStatusBadge.jsx';
+import { FiscalStatusBadge } from '@/windows/custom/shared/FiscalStatusBadge.jsx';
 
 const BASE_COLUMNS = [
   { key: 'invoiceDate',       column: 'DateInvoiced',              type: 'date',   label: 'Invoice Date' },
@@ -23,7 +23,7 @@ const TAIL_COLUMNS = [
 const FILTERS = ['documentNo', 'invoiceDate', 'businessPartner', 'orderReference', 'documentStatus', 'eTGODueDate'];
 
 export default function InvoiceHeaderTable(props) {
-  const { apiBaseUrl, data } = props;
+  const { apiBaseUrl } = props;
   const dictionary = useLocale();
   const gl = dictionary?.genericLabels || {};
 
@@ -33,8 +33,7 @@ export default function InvoiceHeaderTable(props) {
 
   const targets = useMemo(() => getInvoiceFiscalTargets('purchase-invoice', profile), [profile]);
 
-  const siiColLabel = gl['invoiceList.col.siiStatus']       || 'SII Status';
-  const vfColLabel  = gl['invoiceList.col.verifactuStatus'] || 'Verifactu Status';
+  const siiColLabel = gl['invoiceList.col.siiStatus'] || 'SII Status';
 
   const columns = useMemo(() => {
     const fiscalCols = [];
@@ -44,14 +43,8 @@ export default function InvoiceHeaderTable(props) {
         render: (row) => <FiscalStatusBadge status={row.aeatsiiEstado ?? null} />,
       });
     }
-    if (targets.showVerifactu) {
-      fiscalCols.push({
-        key: '_vfStatus', type: 'custom', label: vfColLabel,
-        render: (row) => <FiscalStatusBadge status={normalizeVerifactuStatus(row.etvfacInvoiceStatus ?? null)} />,
-      });
-    }
     return [...BASE_COLUMNS, ...fiscalCols, ...TAIL_COLUMNS];
-  }, [targets, siiColLabel, vfColLabel]);
+  }, [targets, siiColLabel]);
 
   return <DataTable columns={columns} filters={FILTERS} {...props} />;
 }

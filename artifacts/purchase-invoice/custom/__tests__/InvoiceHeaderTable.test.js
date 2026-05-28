@@ -42,9 +42,9 @@ describe('Purchase InvoiceHeaderTable — fiscal status columns (ETP-4125)', () 
       'SII status must come from the row field, not a separate fetch');
   });
 
-  it('reads Verifactu status directly from row.etvfacInvoiceStatus', () => {
-    assert.match(src, /row\.etvfacInvoiceStatus/,
-      'Verifactu status must come from the row field, not a separate fetch');
+  it('does not render a Verifactu column (purchase invoices only have SII)', () => {
+    assert.doesNotMatch(src, /row\.etvfacInvoiceStatus/,
+      'Verifactu is sales-only — purchase invoices must not render an etvfacInvoiceStatus column');
   });
 
   it('does not maintain a statusMap or fiscalLoading variable', () => {
