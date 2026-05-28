@@ -8,6 +8,7 @@ import SifSendingModal from './SifSendingModal.jsx';
 export default function SendToSifButton({ data, recordId, apiBaseUrl, status }) {
   const ui = useUI();
   const [modalOpen, setModalOpen] = useState(false);
+  const [sentSuccessfully, setSentSuccessfully] = useState(false);
   const specName = apiBaseUrl?.split('/').filter(Boolean).pop() || 'sales-invoice';
   const updateEventName = `${specName}:invoice-updated`;
 
@@ -39,11 +40,15 @@ export default function SendToSifButton({ data, recordId, apiBaseUrl, status }) 
           base={base}
           specName={specName}
           recordId={recordId}
-          onClose={() => setModalOpen(false)}
-          onAfterSend={(next) => {
-            if (Object.values(next).some(r => r?.ok)) {
+          onClose={() => {
+            setModalOpen(false);
+            if (sentSuccessfully) {
               window.dispatchEvent(new CustomEvent(updateEventName, { detail: { invoiceId: recordId } }));
+              setSentSuccessfully(false);
             }
+          }}
+          onAfterSend={(next) => {
+            if (Object.values(next).some((r) => r?.ok)) setSentSuccessfully(true);
           }}
         />
       )}

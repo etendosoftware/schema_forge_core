@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
@@ -7,22 +7,15 @@ import InvoicePaymentModal from '../shared/InvoicePaymentModal.jsx';
 import CloneButton from '../shared/CloneButton.jsx';
 import { useUI } from '@/i18n';
 import { formatCurrency } from '@/lib/formatCurrency';
+import { useInvoiceUpdatedListener } from '../shared/useInvoiceUpdatedListener.js';
 
-export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUrl, onRefresh }) {
+export default function PurchaseInvoiceTopbar({ data, recordId, token, apiBaseUrl, onProcess, onRefresh }) {
   const navigate = useNavigate();
   const ui = useUI();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showClone, setShowClone] = useState(false);
 
-  useEffect(() => {
-    const handleInvoiceUpdated = (event) => {
-      if (String(event.detail?.invoiceId) !== String(recordId)) return;
-      window.location.reload();
-    };
-
-    window.addEventListener('purchase-invoice:invoice-updated', handleInvoiceUpdated);
-    return () => window.removeEventListener('purchase-invoice:invoice-updated', handleInvoiceUpdated);
-  }, [recordId]);
+  useInvoiceUpdatedListener('purchase-invoice', recordId, onRefresh);
 
   const headers = useMemo(() => ({
     Authorization: `Bearer ${token}`,
