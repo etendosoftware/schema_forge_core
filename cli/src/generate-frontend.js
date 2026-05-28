@@ -768,6 +768,16 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hideMoreMenu = windowConfig.hideMoreMenu ?? false;
   const hideMoreDetails = windowConfig.hideMoreDetails ?? false;
   const noHeaderBorder = windowConfig.noHeaderBorder ?? false;
+  const toolbarBorderBottom = windowConfig.toolbarBorderBottom ?? false;
+  const compactSidebarPadding = windowConfig.compactSidebarPadding ?? false;
+  const whiteFormBackground = windowConfig.whiteFormBackground ?? false;
+  const sidebarClassName = windowConfig.sidebarClassName ?? null;
+  const tabsBarPaddingX = windowConfig.tabsBarPaddingX ?? null;
+  const primaryTabsVariant = windowConfig.primaryTabsVariant ?? null;
+  const toolbarPaddingX = windowConfig.toolbarPaddingX ?? null;
+  const toolbarButtonSize = windowConfig.toolbarButtonSize ?? null;
+  const listbarPaddingX = windowConfig.listbarPaddingX ?? null;
+  const tablePaddingX = windowConfig.tablePaddingX ?? null;
   const linesLayout = windowConfig.linesLayout ?? 'classic';
   const listViewOptions = windowConfig.listViewOptions ?? null;
   const listBaseFilter = windowConfig.listBaseFilter ?? null;
@@ -1007,6 +1017,24 @@ export function generatePageComponent(headerEntity, detailEntity, contract) {
   const hideMoreDetailsProp = hideMoreDetails ? '\n        hideMoreDetails' : '';
   // noHeaderBorder prop (DetailView)
   const noHeaderBorderProp = noHeaderBorder ? '\n        noHeaderBorder' : '';
+  // toolbarBorderBottom prop (DetailView)
+  const toolbarBorderBottomProp = toolbarBorderBottom ? '\n        toolbarBorderBottom' : '';
+  // compactSidebarPadding prop (DetailView)
+  const compactSidebarPaddingProp = compactSidebarPadding ? '\n        compactSidebarPadding' : '';
+  const whiteFormBackgroundProp = whiteFormBackground ? '\n        whiteFormBackground' : '';
+  // sidebarClassName prop (DetailView)
+  const sidebarClassNameProp = sidebarClassName ? `\n        sidebarClassName="${sidebarClassName}"` : '';
+  // tabsBarPaddingX prop (DetailView)
+  const tabsBarPaddingXProp = tabsBarPaddingX ? `\n        tabsBarPaddingX="${tabsBarPaddingX}"` : '';
+  // primaryTabsVariant prop (DetailView)
+  const primaryTabsVariantProp = primaryTabsVariant ? `\n        primaryTabsVariant="${primaryTabsVariant}"` : '';
+  // toolbarPaddingX prop (DetailView)
+  const toolbarPaddingXProp = toolbarPaddingX ? `\n        toolbarPaddingX="${toolbarPaddingX}"` : '';
+  // toolbarButtonSize prop (DetailView)
+  const toolbarButtonSizeProp = toolbarButtonSize ? `\n        toolbarButtonSize="${toolbarButtonSize}"` : '';
+  // listbarPaddingX / tablePaddingX props (ListView)
+  const listbarPaddingXProp = listbarPaddingX ? `\n      listbarPaddingX="${listbarPaddingX}"` : '';
+  const tablePaddingXProp = tablePaddingX ? `\n      tablePaddingX="${tablePaddingX}"` : '';
   // linesLayout prop (DetailView). Only emit when non-default to keep generated
   // output diff-free for windows that don't opt in.
   const linesLayoutProp = linesLayout && linesLayout !== 'classic'
@@ -1407,7 +1435,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
         detailLabel="${entityDetailLabel}"` : ''}
         windowName={windowName}
         recordId={recordId}
-        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
+        breadcrumb={breadcrumb}${apiProp}${detailTabIndexProp}${secondaryTabsProp}${formFooterProp}${primaryTabsProp}${othersLabelProp}${documentPreviewProp}${hideDeleteProp}${customTabsAfterBottomProp}${hidePrintProp}${hideSaveStatusesProp}${hideMoreMenuProp}${hideMoreDetailsProp}${noHeaderBorderProp}${toolbarBorderBottomProp}${compactSidebarPaddingProp}${whiteFormBackgroundProp}${sidebarClassNameProp}${tabsBarPaddingXProp}${primaryTabsVariantProp}${toolbarPaddingXProp}${toolbarButtonSizeProp}${contentBgProp}${notesFieldProp}${customTabsProp}${customCompPropsBlock}${menuActionsProp}${draftModeProp}${requiredHeaderFieldsProp}${headerContentProp}${detailSortByProp}${titleFieldProp}${salesThemeProp}${disableProcessedLockProp}${statusEnumLabelsProp}${showDetailFooterTotalsProp}${labelOverridesProp}${lineConfigProp}${linesLayoutProp}${sendDocumentDetailProp}
         {...props}${sidebarContentProp}
       />${confirmModalName ? `
       {showConfirmModal && (
@@ -1433,7 +1461,7 @@ export default function ${compName}({ windowName, recordId, ...props }) {${custo
       entityLabel="${windowConfig.name || entityLabel}"
       windowName={windowName}
       breadcrumb={breadcrumb}${apiProp}${isGallery ? `
-      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${initialHiddenColumnsProp}${bulkActionsProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}
+      galleryRenderer={(gProps) => <${headerName}Gallery {...gProps} />}` : ''}${listKpiCardsProp}${listViewOptionsProp}${listBaseFilterProp}${quickFiltersProp}${subsetFiltersProp}${dateFilterKeyProp}${initialHiddenColumnsProp}${bulkActionsProp}${listbarPaddingXProp}${tablePaddingXProp}${hidePrintListProp}${hideMoreMenuListProp}${hideListFiltersProp}${hideLinkProp}${hideEyeCountProp}${labelOverridesListProp}${rowQuickActionsProp}${sendDocumentProp}
       {...props}${customComponents.newRecordComponent ? `
       onNew={() => setShowNewModal(true)}` : ''}${newActionsPropValue}
     />${customComponents.newRecordComponent ? `

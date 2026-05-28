@@ -110,11 +110,11 @@ export default function AssetsSidebar({ data, recordId, token, apiBaseUrl }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-2xl border border-gray-200/70 bg-white shadow-sm">
-        <div className="px-4 pt-4 pb-3">
+      <div>
+        <div className="pb-3">
           <span className="text-sm font-semibold text-gray-800">{ui('assetsDepreciationSummary')}</span>
         </div>
-        <div className="px-4 pb-4 flex flex-col gap-3">
+        <div className="flex flex-col gap-3">
           <MetricCard
             label={ui('assetsCurrentValue')}
             value={hasData ? formatCurrency(orgCurrency, assetValue) : '—'}

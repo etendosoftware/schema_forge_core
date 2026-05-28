@@ -94,6 +94,21 @@ Records are typically created from the **Assets** window via the **Create Amorti
 - `artifacts/amortization/custom/HeaderSidebar.jsx` — sidebar with three metric cards: total (sum of line amounts, calculated client-side), currency, line count + status badge. Refetches lines when `data` changes.
 - `artifacts/amortization/custom/AmortizationConfirmModal.jsx` — confirmation modal. Fetches lines to calculate current total independently. Calls `POST /action/Processed` on confirm. On success calls `onClose(true)` which triggers `window.location.reload()`.
 
+## Visual polish — ETP-4103
+
+Changes landed in `feature/ETP-4103`. All items below affect the Amortization window specifically or in common with Assets.
+
+- `toolbarBorderBottom: true` in `decisions.json` — adds a horizontal divider line below the toolbar buttons row.
+- `sidebarClassName: "w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2"` in `decisions.json` — sidebar is now proportional (30% of detail width) with a left-border divider and 8 px internal padding. Previously fixed at `w-96`.
+- `toolbarButtonSize: "default"` in `decisions.json` — toolbar buttons (including the kebab menu) are now `h-10 w-10`, matching the Contacts window. Previously `sm` (`h-9`).
+- `listbarPaddingX: "px-2"` and `tablePaddingX: "px-2"` in `decisions.json` — list-view toolbar and table horizontal padding reduced from 24 px to 8 px.
+- `artifacts/amortization/custom/HeaderSidebar.jsx` — outer `rounded-2xl border bg-white shadow-sm` card wrapper removed; the sidebar `border-l` divider from `sidebarClassName` makes the wrapper border redundant.
+- `whiteFormBackground: true` in `decisions.json` — forces white background on form inputs and textareas, overriding the `bg-[#F5F7F9]` default on inputs and `bg-background` on textareas. Disabled textareas use `opacity-50` instead of `bg-muted/50` for visual consistency.
+- `noHeaderBorder: true` in `decisions.json` — removes the rounded card border around the header form fields, matching the Contacts window layout.
+- `primaryTabsVariant: "pill"` in `decisions.json` — tab strip uses pill style, matching Contacts.
+- `tabsBarPaddingX: "px-2"` in `decisions.json` — tabs bar horizontal padding set to 8 px.
+- `toolbarPaddingX: "px-2"` in `decisions.json` — toolbar horizontal padding set to 8 px.
+
 ## Iteration backlog (out of current scope)
 
 - Callout linking `amortizationPercentage` ↔ `amortizationAmount` so that editing one updates the other based on the asset's value.

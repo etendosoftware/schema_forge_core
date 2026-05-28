@@ -1,8 +1,8 @@
 {
   "version": "0.17.0",
   "generatedAt": "2026-05-22T16:00:10.872Z",
-  "updatedAt": "2026-05-26T17:09:19.920Z",
-  "checksum": "e6bcaf1e3c564ab7",
+  "updatedAt": "2026-05-28T19:01:33.927Z",
+  "checksum": "9edf7bf89b868424",
   "frontendContract": {
     "window": {
       "id": "800026",
@@ -50,6 +50,12 @@
         }
       },
       "titleField": "name",
+      "noHeaderBorder": true,
+      "whiteFormBackground": true,
+      "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2",
+      "toolbarButtonSize": "default",
+      "listbarPaddingX": "px-2",
+      "tablePaddingX": "px-2",
       "layoutType": "default",
       "linesLayout": "inlineEditable"
     },
@@ -365,6 +371,12 @@
         }
       },
       "titleField": "name",
+      "noHeaderBorder": true,
+      "whiteFormBackground": true,
+      "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2",
+      "toolbarButtonSize": "default",
+      "listbarPaddingX": "px-2",
+      "tablePaddingX": "px-2",
       "linesLayout": "inlineEditable"
     },
     "entities": {

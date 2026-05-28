@@ -1,8 +1,8 @@
 {
   "version": "0.8.0",
   "generatedAt": "2026-04-29T19:06:30.936Z",
-  "updatedAt": "2026-05-27T16:06:00.104Z",
-  "checksum": "f7a9cfcb7cd27d20",
+  "updatedAt": "2026-05-28T19:01:33.986Z",
+  "checksum": "4a68a8a644d72b4d",
   "frontendContract": {
     "window": {
       "id": "800027",
@@ -44,6 +44,16 @@
       ],
       "disableProcessedLock": true,
       "titleField": "name",
+      "toolbarBorderBottom": true,
+      "compactSidebarPadding": true,
+      "whiteFormBackground": true,
+      "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2",
+      "tabsBarPaddingX": "px-2",
+      "primaryTabsVariant": "pill",
+      "toolbarPaddingX": "px-2",
+      "toolbarButtonSize": "default",
+      "listbarPaddingX": "px-2",
+      "tablePaddingX": "px-2",
       "layoutType": "default"
     },
     "entities": {
@@ -839,7 +849,17 @@
         }
       ],
       "disableProcessedLock": true,
-      "titleField": "name"
+      "titleField": "name",
+      "toolbarBorderBottom": true,
+      "compactSidebarPadding": true,
+      "whiteFormBackground": true,
+      "sidebarClassName": "w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2",
+      "tabsBarPaddingX": "px-2",
+      "primaryTabsVariant": "pill",
+      "toolbarPaddingX": "px-2",
+      "toolbarButtonSize": "default",
+      "listbarPaddingX": "px-2",
+      "tablePaddingX": "px-2"
     },
     "entities": {
       "assets": {

@@ -204,6 +204,14 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
         hidePrint
         hideMoreMenu
         hideMoreDetails
+        toolbarBorderBottom
+        compactSidebarPadding
+        whiteFormBackground
+        sidebarClassName="w-[30%] shrink-0 overflow-y-auto border-l border-[#E8EAEF] p-2"
+        tabsBarPaddingX="px-2"
+        primaryTabsVariant="pill"
+        toolbarPaddingX="px-2"
+        toolbarButtonSize="default"
         contentBg="bg-slate-50"
         customTabs={[{ key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "A_Asset", config: {} } }]}
         requiredHeaderFields={requiredHeaderFields}
@@ -231,6 +239,8 @@ export default function AssetsPage({ windowName, recordId, ...props }) {
       windowName={windowName}
       breadcrumb={breadcrumb}
       api={api}
+      listbarPaddingX="px-2"
+      tablePaddingX="px-2"
       hidePrint
       hideMoreMenu
       hideLink

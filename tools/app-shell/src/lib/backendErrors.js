@@ -1,4 +1,10 @@
 const BACKEND_ERROR_MAP = {
+  'The start date field is mandatory': 'backendError.amortizationStartDateRequired',
+  'Depreciation Amount field cannot be empty, zero or negative.': 'backendError.amortizationDepreciationAmountRequired',
+  'Usable Life - Months field cannot be empty, zero or negative.': 'backendError.amortizationUsableLifeMonthsRequired',
+  'Usable Life - Years field cannot be empty, zero or negative.': 'backendError.amortizationUsableLifeYearsRequired',
+  'Currency field cannot be empty': 'backendError.amortizationCurrencyRequired',
+  'Annual Depreciation field cannot be empty, zero or negative.': 'backendError.amortizationAnnualDepreciationRequired',
   'Country needed in an IBAN account.': 'backendError.countryIban',
   'Using IBAN for generating the Displayed Account requires to introduce the IBAN': 'backendError.ibanRequired',
   'Using the Generic Account No. for generating the Displayed Account requires to introduce a Generic Account Number': 'backendError.genericAccountRequired',

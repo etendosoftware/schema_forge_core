@@ -151,9 +151,9 @@ function CollapsibleSection({ title, children }) {
  * Extracted from inline JSX to avoid the nested-ternary anti-pattern Sonar
  * S3358 was flagging inside the className templates.
  */
-function detailContentPadding(linesLayout, hasSidebar, variant) {
+function detailContentPadding(linesLayout, hasSidebar, variant, compact = false) {
   const isInline = linesLayout === 'inlineEditable';
-  if (hasSidebar) return isInline ? 'p-2' : 'pl-6 pr-2';
+  if (hasSidebar) return (isInline || compact) ? 'p-2' : 'pl-6 pr-2';
   if (variant === 'panel') return isInline ? 'pr-6' : 'px-6';
   return isInline ? '' : 'px-6';
 }
@@ -231,6 +231,8 @@ export function DetailView({
   hideMoreDetails = false,
   noHeaderBorder = false,
   toolbarBorderBottom = false,
+  compactSidebarPadding = false,
+  whiteFormBackground = false,
   tabsBarRightDivider = null,
   tabsBarRight = null,
   hideTopBar = false,
@@ -1563,7 +1565,7 @@ export function DetailView({
                 <button
                   data-testid="action-more"
                   onClick={() => setShowMoreMenu(v => !v)}
-                  className="flex items-center justify-center p-[7px] rounded-md bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_0px_#1212170D] text-muted-foreground hover:bg-[#F1F5F9] hover:text-foreground transition-colors"
+                  className={`${sqBtnSize} flex items-center justify-center rounded-md bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_0px_#1212170D] text-muted-foreground hover:bg-[#F1F5F9] hover:text-foreground transition-colors`}
                 >
                   <MoreVertical className="h-[15px] w-[15px]" />
                 </button>
@@ -1844,12 +1846,12 @@ export function DetailView({
         {primaryTabs && activePrimaryTab !== 'general' ? (() => {
           const activeTab = primaryTabs.find(t => t.key === activePrimaryTab);
           return activeTab?.Panel ? (
-            <div className={`flex-1 overflow-auto pb-6 min-w-0 ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'panel')}`}>
+            <div className={`flex-1 overflow-auto pb-6 min-w-0 ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'panel', compactSidebarPadding)}`}>
               <activeTab.Panel entity={entity} data={data} token={token} apiBaseUrl={apiBaseUrl} catalogs={catalogs} api={api} editing={hook.editing} onChange={handleChangeWithCallout} />
             </div>
           ) : null;
         })() : null}
-        <div className={`flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'content')}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
+        <div className={`flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'content', compactSidebarPadding)}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
           {(() => {
             const slotProps = {
@@ -1898,7 +1900,7 @@ export function DetailView({
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} ${linesLayout === 'inlineEditable' ? 'flex flex-col' : 'space-y-2'}`}>
 
             {/* Principal + collapsed fields wrapped in a card */}
-            <div className={`${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${embedded ? ' pointer-events-none' : ''}`}>
+            <div className={`${noHeaderBorder ? '' : 'rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${whiteFormBackground ? ' bg-white [&_input]:bg-white [&_textarea]:bg-white [&_textarea:disabled]:!bg-white [&_textarea:disabled]:opacity-50' : ''}${embedded ? ' pointer-events-none' : ''}`}>
               <div className={linesLayout === 'inlineEditable' ? 'p-2' : 'p-6'}>
                 <Form
                   entity={entity}
