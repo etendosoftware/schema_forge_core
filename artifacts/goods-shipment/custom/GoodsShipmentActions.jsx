@@ -297,8 +297,15 @@ export default function GoodsShipmentActions({ data, recordId, token, apiBaseUrl
         lines={returnLines}
         token={token}
         apiBaseUrl={apiBaseUrl}
-        onSuccess={() => { setWizardOpen(false); window.location.reload(); }}
-        onError={(msg) => console.error('Return creation failed:', msg)}
+        onSuccess={(returnData) => {
+          setWizardOpen(false);
+          if (returnData?.id) {
+            navigate(`/return-material-receipt/${returnData.id}`);
+          } else {
+            window.location.reload();
+          }
+        }}
+        onError={(msg) => toast.error(msg)}
       />
 
       {showSend && createPortal(
