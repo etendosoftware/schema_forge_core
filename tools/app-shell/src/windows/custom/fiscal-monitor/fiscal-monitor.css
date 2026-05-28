@@ -45,11 +45,12 @@
   --fm-border-2: var(--fm-gray-200);
   --fm-shadow-xs: 0 1px 1px rgba(18,18,23,.03);
   --fm-shadow-sm: 0 1px 2px rgba(18,18,23,.04), 0 0 0 1px rgba(18,18,23,.03);
-  --fm-success-bg: var(--fm-green-50);  --fm-success-border: var(--fm-green-200); --fm-success-fg: var(--fm-green-700);
-  --fm-warning-bg: var(--fm-yellow-50); --fm-warning-border: var(--fm-yellow-200);--fm-warning-fg: var(--fm-yellow-700);
-  --fm-danger-bg:  var(--fm-red-50);    --fm-danger-border:  var(--fm-red-200);   --fm-danger-fg:  var(--fm-red-700);
-  --fm-pending-bg: var(--fm-orange-50); --fm-pending-border: var(--fm-orange-200);--fm-pending-fg: var(--fm-orange-700);
+  --fm-success-bg: var(--fm-green-50);  --fm-success-border: var(--fm-green-200); --fm-success-fg: #17663A;
+  --fm-warning-bg: var(--fm-yellow-50); --fm-warning-border: var(--fm-yellow-200);--fm-warning-fg: #8A6100;
+  --fm-danger-bg:  var(--fm-red-50);    --fm-danger-border:  var(--fm-red-200);   --fm-danger-fg:  #D50B3E;
+  --fm-pending-bg: var(--fm-yellow-50); --fm-pending-border: var(--fm-yellow-200);--fm-pending-fg: #8A6100;
   --fm-info-bg:    var(--fm-blue-50);   --fm-info-border:    var(--fm-blue-200);  --fm-info-fg:    var(--fm-blue-700f);
+  --fm-error-detail-fg: #AF0932;
 }
 
 /* ── Page wrap ─────────────────────────────────────────────────────────────── */
@@ -78,6 +79,15 @@
   display: inline-flex; align-items: center; gap: 6px;
   padding: 3px 8px; border-radius: 6px;
   font: 600 10px/14px var(--fm-font-sans); letter-spacing: .08em; text-transform: uppercase;
+}
+
+/* ── Window header count badge ─────────────────────────────────────────────── */
+.fm-header-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 20px; padding: 0 7px; border-radius: 999px;
+  background: var(--fm-gray-100); color: var(--fm-fg-3);
+  font: 600 12px/14px var(--fm-font-sans);
+  border: 1px solid var(--fm-border-2);
 }
 
 /* ── KPI grid ──────────────────────────────────────────────────────────────── */
@@ -143,32 +153,44 @@
 
 /* ── Table card ────────────────────────────────────────────────────────────── */
 .fm-tablecard {
-  background: var(--fm-bg-card); border: 1px solid var(--fm-border-1); border-radius: 12px;
+  background: var(--fm-bg-card);
   overflow: hidden;
 }
 
 /* ── Tab strip ─────────────────────────────────────────────────────────────── */
 .fm-tabs {
   display: flex; align-items: center;
-  padding: 6px 8px; border-bottom: 1px solid var(--fm-border-1);
+  padding: 0 8px; border-bottom: 1px solid var(--fm-border-1);
   background: #fff; gap: 0;
 }
 .fm-tabs .tab {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 12px; border-radius: 8px;
-  font: 500 13px/18px var(--fm-font-sans); color: var(--fm-fg-2);
-  border: 0; background: transparent; cursor: pointer;
+  padding: 10px 12px;
+  font: 400 14px/20px var(--fm-font-sans); color: var(--fm-fg-3);
+  border: 0; border-bottom: 2px solid transparent;
+  background: transparent; cursor: pointer;
+  margin-bottom: -1px;
 }
-.fm-tabs .tab:hover { background: var(--fm-bg-subtle); color: var(--fm-fg-1); }
-.fm-tabs .tab.active { background: var(--fm-bg-subtle); color: var(--fm-fg-1); font-weight: 600; }
+.fm-tabs .tab:hover { color: var(--fm-fg-1); }
+.fm-tabs .tab.active { color: var(--fm-fg-1); font-weight: 600; border-bottom-color: var(--fm-gray-900); }
 .fm-tabs .tab .tab-count {
   display: inline-flex; align-items: center; justify-content: center;
-  min-width: 20px; height: 18px; padding: 0 6px; border-radius: 999px;
-  background: var(--fm-bg-subtle); color: var(--fm-fg-3);
-  font: 600 11px/14px var(--fm-font-sans);
-  border: 1px solid var(--fm-border-1);
+  min-width: 20px; padding: 1px 6px; border-radius: 999px;
+  background: #F1F3F5; color: var(--fm-fg-2);
+  font: 400 11px/15px var(--fm-font-sans);
 }
-.fm-tabs .tab.active .tab-count { background: var(--fm-gray-900); color: #fff; border-color: var(--fm-gray-900); }
+.fm-tabs .tab.active .tab-count { background: #EAECEF; color: var(--fm-fg-1); }
+
+/* Count bubble inside filter pills */
+.fm-filter-pill .pill-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; padding: 1px 6px; border-radius: 999px;
+  background: rgba(18,18,23,0.07); color: inherit;
+  font: 400 11px/16px var(--fm-font-sans);
+}
+.fm-filter-pill.active .pill-count {
+  background: rgba(18,18,23,0.1);
+}
 .fm-tabs .dotcolor { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 .fm-tabs .dotcolor.success { background: var(--fm-green-500); }
 .fm-tabs .dotcolor.warn    { background: #FAAF00; }
@@ -202,58 +224,69 @@
 .fm-subtoolbar .meta { font: 400 12px/16px var(--fm-font-sans); color: var(--fm-fg-3); }
 
 /* ── Table ─────────────────────────────────────────────────────────────────── */
+/* ── Table — exact match to DataTable / TableHead / TableCell ───────────────── */
+/* Header: text-xs (12px) font-semibold text-text-primary (≈#121217)            */
+/* Cell:   text-sm (14px) text-foreground (hsl(222 47% 11%)) px-3 py-2.5        */
 .fm-tablecard .fm-table {
   width: 100%; border-collapse: collapse;
-  font: 400 13px/18px var(--fm-font-sans);
+  font: 400 14px/20px var(--fm-font-sans);
+  color: hsl(var(--foreground));
 }
 .fm-tablecard .fm-table thead tr {
-  border-bottom: 1px solid var(--fm-border-1);
-  background: var(--fm-bg-subtle);
+  border-bottom: 1px solid #E8EAEF;
+  background: transparent;
 }
 .fm-tablecard .fm-table th {
-  padding: 9px 16px; text-align: left;
-  font: 500 11px/14px var(--fm-font-sans); color: var(--fm-fg-3);
-  letter-spacing: .04em; text-transform: uppercase;
-  white-space: nowrap;
+  padding: 0 12px; height: 44px; text-align: left;
+  font: 600 12px/16px var(--fm-font-sans);
+  color: hsl(var(--text-primary));
+  white-space: nowrap; letter-spacing: normal;
 }
 .fm-tablecard .fm-table th.num { text-align: right; }
 .fm-tablecard .fm-table td {
-  padding: 11px 16px; border-bottom: 1px solid var(--fm-border-1);
-  color: var(--fm-fg-2);
+  padding: 10px 12px; border-bottom: 1px solid #E8EAEF;
+  font-size: 14px; line-height: 20px;
 }
 .fm-tablecard .fm-table tr:last-child td { border-bottom: 0; }
-.fm-tablecard .fm-table tr:hover td { background: var(--fm-bg-subtle); }
+.fm-tablecard .fm-table tr:hover td { background: hsl(210 40% 96% / 0.5); }
 .fm-tablecard .fm-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-.fm-tablecard .fm-table td.strong { color: var(--fm-fg-1); font-weight: 500; }
+.fm-tablecard .fm-table td.strong { font-weight: 500; }
 .fm-tablecard .fm-table td.mono {
-  font-family: var(--fm-font-mono); font-size: 11px; color: var(--fm-fg-3);
+  font-family: var(--fm-font-sans); font-size: 14px;
 }
-.fm-tablecard .fm-table td.num-factura {
-  font-family: var(--fm-font-mono); font-size: 12px; color: var(--fm-fg-1); font-weight: 500;
-}
-.fm-tablecard .fm-table td.num-factura a {
-  color: var(--fm-fg-1); border-bottom: 1px dashed var(--fm-border-2);
-  text-decoration: none; cursor: pointer;
+
+/* ── Nº de Factura cell ─────────────────────────────────────────────────────── */
+.fm-tablecard .fm-table td.num-factura { color: var(--fm-fg-1); }
+.fm-num-factura-link {
+  color: hsl(var(--foreground)); text-decoration: underline; cursor: pointer;
   display: inline-flex; align-items: center; gap: 4px;
+  font: 400 14px/20px var(--fm-font-sans);
+  text-underline-offset: 3px;
 }
-.fm-tablecard .fm-table td.num-factura a:hover { color: var(--fm-purple-600); border-bottom-color: var(--fm-purple-600); }
+.fm-num-factura-link:hover { color: var(--fm-purple-600); }
+.fm-num-factura-arrow {
+  color: hsl(215 16% 47%); flex-shrink: 0;
+  transition: color .12s ease;
+}
+.fm-num-factura-link:hover .fm-num-factura-arrow { color: var(--fm-purple-600); }
+
 .fm-tablecard .fm-table .row-action { opacity: 0; transition: opacity .12s ease; }
 .fm-tablecard .fm-table tr:hover .row-action { opacity: 1; }
 .fm-table-loading {
   display: flex; flex-direction: column; gap: 8px; padding: 12px 16px;
 }
 .fm-err-text {
-  font: 400 11px/14px var(--fm-font-sans); color: var(--fm-danger-fg); margin-top: 4px;
+  font: 400 12px/16px var(--fm-font-sans); color: var(--fm-error-detail-fg); margin-top: 4px; max-width: 320px;
 }
 .fm-warn-text {
-  font: 400 11px/14px var(--fm-font-sans); color: var(--fm-warning-fg); margin-top: 4px; max-width: 320px;
+  font: 400 12px/16px var(--fm-font-sans); color: var(--fm-error-detail-fg); margin-top: 4px; max-width: 320px;
 }
 
 /* ── Status pills ──────────────────────────────────────────────────────────── */
 .fm-pill {
   display: inline-flex; align-items: center;
   padding: 2px 8px; border-radius: 999px;
-  font: 500 11px/14px var(--fm-font-sans); white-space: nowrap;
+  font: 500 14px/20px var(--fm-font-sans); white-space: nowrap;
 }
 .fm-pill.success { background: var(--fm-success-bg); color: var(--fm-success-fg); }
 .fm-pill.warn    { background: var(--fm-warning-bg); color: var(--fm-warning-fg); }
@@ -262,30 +295,7 @@
 .fm-pill.info    { background: var(--fm-info-bg);    color: var(--fm-info-fg); }
 .fm-pill.neutral { background: #F0F0F5; color: #6C6C89; }
 
-/* ── Pager ─────────────────────────────────────────────────────────────────── */
-.fm-pager {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 16px; background: #fff; border-top: 1px solid var(--fm-border-1);
-  font: 400 12px/16px var(--fm-font-sans); color: var(--fm-fg-3);
-}
-.fm-pager .l, .fm-pager .r { display: flex; align-items: center; gap: 8px; }
-.fm-pager .pgbtn {
-  width: 28px; height: 28px; border-radius: 6px; display: inline-flex;
-  align-items: center; justify-content: center;
-  background: transparent; border: 1px solid var(--fm-border-1); color: var(--fm-fg-2);
-  cursor: pointer;
-}
-.fm-pager .pgbtn:hover { background: var(--fm-bg-subtle); }
-.fm-pager .pgbtn:disabled { opacity: .4; pointer-events: none; }
-.fm-pager .pgnum {
-  min-width: 28px; height: 28px; padding: 0 8px; border-radius: 6px;
-  display: inline-flex; align-items: center; justify-content: center;
-  font: 500 12px/16px var(--fm-font-sans); color: var(--fm-fg-2);
-  background: transparent; border: 1px solid transparent; cursor: pointer;
-}
-.fm-pager .pgnum.active { background: var(--fm-gray-900); color: #fff; }
-.fm-pager .pgnum:hover:not(.active) { background: var(--fm-bg-subtle); }
-.fm-pager .pgstrong { color: var(--fm-fg-1); font-weight: 600; }
+/* Pager removed — infinite scroll is used instead (matches ListView.jsx pattern) */
 
 /* ── Divider (SII+TBAI) ────────────────────────────────────────────────────── */
 .fm-divider {
@@ -334,11 +344,110 @@
 }
 .fm-icon-btn:hover { background: var(--fm-bg-subtle); color: var(--fm-fg-1); }
 
-/* ── Checkbox ──────────────────────────────────────────────────────────────── */
-.fm-table input[type="checkbox"] {
-  width: 14px; height: 14px; cursor: pointer;
-  accent-color: var(--fm-gray-900);
+/* ── Checkbox column — matches DataTable w-10 px-3 pr-0 convention ─────────── */
+.fm-tablecard .fm-table th:first-child,
+.fm-tablecard .fm-table td:first-child {
+  width: 40px;
+  padding-right: 0;
 }
+
+/* ── Filter bar (period pills + export button) ─────────────────────────────── */
+.fm-filter-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px;
+}
+.fm-filter-pills {
+  background: #F5F7F9; border-radius: 12px; padding: 4px;
+  display: flex; flex-direction: row; align-items: center; gap: 4px;
+}
+.fm-filter-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 14px; border-radius: 8px;
+  font: 400 14px/20px var(--fm-font-sans);
+  border: none;
+  background: transparent; color: #121217;
+  cursor: pointer; white-space: nowrap;
+}
+.fm-filter-pill:hover:not(.active) { background: rgba(18,18,23,0.05); }
+.fm-filter-pill.active {
+  background: #FFFFFF;
+  box-shadow: 0px 1px 3px rgba(18,18,23,0.1), 0px 1px 2px rgba(18,18,23,0.06);
+  border-radius: 8px; color: #121217; font-weight: 500; border: none;
+}
+
+/* ── Invoice-type chips (compact SII mode — individual bordered buttons) ────── */
+.fm-invoice-chips {
+  display: flex; align-items: center; gap: 4px;
+}
+.fm-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 8px;
+  font: 500 13px/18px var(--fm-font-sans); color: var(--fm-fg-2);
+  background: transparent; border: 1px solid var(--fm-border-1);
+  cursor: pointer; white-space: nowrap;
+}
+.fm-chip.active {
+  background: #FFFFFF; color: var(--fm-fg-1); font-weight: 600;
+  border-color: var(--fm-border-1);
+  box-shadow: 0 1px 3px rgba(18,18,23,.1), 0 1px 2px rgba(18,18,23,.06);
+}
+.fm-chip:hover:not(.active) { background: var(--fm-bg-subtle); }
+
+/* ── Export button with icon ────────────────────────────────────────────────── */
+.fm-export-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 8px;
+  font: 500 13px/18px var(--fm-font-sans); color: var(--fm-fg-2);
+  background: var(--fm-bg-card); border: 1px solid var(--fm-border-1);
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+}
+.fm-export-btn:hover { background: var(--fm-bg-subtle); }
+
+/* ── System tabs (SII + TBAI combined view) ─────────────────────────────────── */
+.fm-system-tabs {
+  display: flex; align-items: center;
+  padding: 0 8px; border-bottom: 1px solid var(--fm-border-1);
+  background: #fff; gap: 4px;
+}
+.fm-system-tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 12px 14px;
+  font: 500 13px/18px var(--fm-font-sans); color: var(--fm-fg-2);
+  border: 0; border-bottom: 2px solid transparent;
+  background: transparent; cursor: pointer; margin-bottom: -1px;
+}
+.fm-system-tab:hover { color: var(--fm-fg-1); }
+.fm-system-tab.active { color: var(--fm-fg-1); font-weight: 600; border-bottom-color: #121217; }
+.fm-system-tab .tab-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; padding: 1px 6px; border-radius: 999px;
+  background: #F1F3F5; color: var(--fm-fg-2);
+  font: 400 11px/15px var(--fm-font-sans);
+}
+.fm-system-tab.active .tab-count {
+  background: #EAECEF; color: var(--fm-fg-1);
+}
+
+/* ── Period dropdown (SII compact mode) ─────────────────────────────────────── */
+.fm-period-dropdown { position: relative; }
+.fm-period-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 8px;
+  font: 500 13px/18px var(--fm-font-sans); color: var(--fm-fg-2);
+  border: 1px solid var(--fm-border-1); background: transparent; cursor: pointer;
+}
+.fm-period-btn:hover { background: var(--fm-bg-subtle); }
+.fm-period-menu {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 20;
+  background: #fff; border: 1px solid var(--fm-border-2); border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(18,18,23,.08); min-width: 180px; overflow: hidden;
+}
+.fm-period-menu button {
+  display: block; width: 100%; text-align: left;
+  padding: 8px 14px; font: 500 13px/18px var(--fm-font-sans); color: var(--fm-fg-2);
+  background: transparent; border: 0; cursor: pointer;
+}
+.fm-period-menu button:hover { background: var(--fm-bg-subtle); }
 
 /* ── Loading skeleton ──────────────────────────────────────────────────────── */
 .fm-skeleton {
