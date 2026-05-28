@@ -109,7 +109,7 @@ export function ImportedStatementsTab({ account }) {
         onImportClick={() => setImportOpen(true)}
       />
 
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-y-auto [&>div]:overflow-visible">
         <StatementsTable
           statements={filteredStatements}
           loading={loading}

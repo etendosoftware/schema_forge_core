@@ -148,9 +148,9 @@ function CollapsedGroupPopover({
           {items.map((item) => {
             const itemPath = item.path || item.name;
             const currentFull = currentPath + locationSearch;
-            const isItemActive = item.path?.includes('?')
+            const isItemActive = itemPath.includes('?')
               ? currentFull === itemPath
-              : currentPath === item.name || currentPath.startsWith(item.name + '/');
+              : currentPath === itemPath || currentPath.startsWith(itemPath + '/');
             return (
               <NavLink
                 key={item.name}
@@ -173,11 +173,11 @@ function CollapsedGroupPopover({
 }
 
 function matchesItem(item, currentPath, currentFull) {
-  const itemPath = item.path || item.name;
-  if (item.path && item.path.includes('?')) {
-    return currentFull === itemPath;
+  const target = item.path || item.name;
+  if (target.includes('?')) {
+    return currentFull === target;
   }
-  return currentPath === item.name || currentPath.startsWith(item.name + '/');
+  return currentPath === target || currentPath.startsWith(target + '/');
 }
 
 export function findActiveGroup(menuGroups, pathname, search) {
@@ -344,9 +344,9 @@ export default function SideMenu({
               if (isDirect) {
                 const singleItem = visibleItems[0];
                 const itemPath = singleItem.path || singleItem.name;
-                const isItemActive = singleItem.path?.includes('?')
+                const isItemActive = itemPath.includes('?')
                   ? (currentPath + location.search) === itemPath
-                  : currentPath === singleItem.name || currentPath.startsWith(singleItem.name + '/');
+                  : currentPath === itemPath || currentPath.startsWith(itemPath + '/');
                 return (
                   <div
                     key={g.group}
@@ -395,9 +395,9 @@ export default function SideMenu({
             if (isDirect) {
               const singleItem = visibleItems[0];
               const itemPath = singleItem.path || singleItem.name;
-              const isItemActive = singleItem.path?.includes('?')
+              const isItemActive = itemPath.includes('?')
                 ? (currentPath + location.search) === itemPath
-                : currentPath === singleItem.name || currentPath.startsWith(singleItem.name + '/');
+                : currentPath === itemPath || currentPath.startsWith(itemPath + '/');
               return (
                 <div key={g.group}>
                   {showSectionLabel && (
@@ -471,9 +471,9 @@ export default function SideMenu({
                     ).map((item) => {
                       const itemPath = item.path || item.name;
                       const currentFull = currentPath + location.search;
-                      const isItemActive = g.group !== 'Favorites' && (item.path?.includes('?')
+                      const isItemActive = g.group !== 'Favorites' && (itemPath.includes('?')
                         ? currentFull === itemPath
-                        : currentPath === item.name || currentPath.startsWith(item.name + '/'));
+                        : currentPath === itemPath || currentPath.startsWith(itemPath + '/'));
                       return (
                         <NavLink
                           key={item.name}

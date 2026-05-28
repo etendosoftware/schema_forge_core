@@ -85,7 +85,7 @@ export function StatementsTable({ statements, loading, onOpenStatement }) {
             <TableRow
               key={s.id}
               data-testid={`statement-row-${s.id}`}
-              className="cursor-pointer bg-white transition-shadow hover:z-10 hover:bg-white hover:shadow-lg"
+              className="group relative cursor-pointer bg-white transition-shadow hover:z-10 hover:bg-white hover:shadow-lg"
               onClick={() => onOpenStatement(s.id)}
             >
               <TableCell className="text-sm font-semibold text-[#121217]">
@@ -94,13 +94,13 @@ export function StatementsTable({ statements, loading, onOpenStatement }) {
               <TableCell className="max-w-[240px] truncate text-sm text-[#121217]">
                 {s.name || '—'}
               </TableCell>
-              <TableCell className="whitespace-nowrap text-sm text-[#6c6c89]">
+              <TableCell className="whitespace-nowrap text-sm text-[#121217]">
                 {formatDate(s.importDate, bcpLocale)}
               </TableCell>
-              <TableCell className="whitespace-nowrap text-sm text-[#6c6c89]">
+              <TableCell className="whitespace-nowrap text-sm text-[#121217]">
                 {formatDate(s.transactionDate, bcpLocale)}
               </TableCell>
-              <TableCell className="max-w-[220px] truncate text-sm text-[#6c6c89]">
+              <TableCell className="max-w-[220px] truncate text-sm text-[#121217]">
                 {s.fileName || '—'}
               </TableCell>
               <TableCell className="w-10 pr-4 text-right text-[#6c6c89]">
