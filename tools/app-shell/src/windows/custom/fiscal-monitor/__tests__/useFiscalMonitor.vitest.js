@@ -180,6 +180,61 @@ describe('useFiscalMonitor — error handling', () => {
   });
 });
 
+describe('useFiscalMonitor — sii+tbai profile', () => {
+  beforeEach(() => {
+    detectProfile.mockReturnValue('sii+tbai');
+    mockApiFetch
+      // Config fetches (3 parallel)
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(SII_CFG_RESP) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(TBAI_CFG_RESP) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(VF_CFG_RESP) })
+      // fetchSiiParentId
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(SII_ORG_RESP) })
+      // fetchCount x4 for sii
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(COUNT_10_RESP) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(COUNT_5_RESP) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(COUNT_10_RESP) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(COUNT_5_RESP) })
+      // tbai: total + 4 criteria counts
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ response: { totalRows: 8 } }) })
+      .mockResolvedValue({ ok: true, json: () => Promise.resolve(COUNT_5_RESP) });
+  });
+
+  it('loads both sii and tbai data', async () => {
+    const { result } = renderHook(() => useFiscalMonitor(ORG, API));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.profile).toBe('sii+tbai');
+    expect(result.current.monitorData.sii).toBeDefined();
+    expect(result.current.monitorData.tbai).toBeDefined();
+    expect(result.current.monitorData.verifactu).toBeUndefined();
+  });
+
+  it('populates kpis for both sii and tbai', async () => {
+    const { result } = renderHook(() => useFiscalMonitor(ORG, API));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.kpis.sii).toBeDefined();
+    expect(result.current.kpis.tbai).toBeDefined();
+  });
+});
+
+describe('useFiscalMonitor — sii-navarra profile', () => {
+  it('loads sii data for sii-navarra profile', async () => {
+    detectProfile.mockReturnValue('sii-navarra');
+    mockApiFetch
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(SII_CFG_RESP) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(TBAI_CFG_RESP) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(VF_CFG_RESP) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(SII_ORG_RESP) })
+      .mockResolvedValue({ ok: true, json: () => Promise.resolve(COUNT_10_RESP) });
+    const { result } = renderHook(() => useFiscalMonitor(ORG, API));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.profile).toBe('sii-navarra');
+    expect(result.current.monitorData.sii).toBeDefined();
+    expect(result.current.monitorData.tbai).toBeUndefined();
+    expect(result.current.monitorData.verifactu).toBeUndefined();
+  });
+});
+
 describe('useFiscalMonitor — refetch', () => {
   it('exposes a refetch function that re-loads data', async () => {
     detectProfile.mockReturnValue('unconfigured');
