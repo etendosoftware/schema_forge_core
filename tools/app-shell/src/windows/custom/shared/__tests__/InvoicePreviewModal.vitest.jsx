@@ -180,7 +180,7 @@ describe('InvoicePreviewModal', () => {
 
   it('shows the total section', () => {
     renderPreview();
-    expect(screen.getByText('invoicePreviewTotal')).toBeInTheDocument();
+    expect(screen.getByText('previewCardTotal')).toBeInTheDocument();
   });
 
   it('does NOT render send button for purchase-invoice', () => {
@@ -216,6 +216,24 @@ describe('InvoicePreviewModal', () => {
     fireEvent.click(screen.getByText('sendToSif'));
     expect(screen.getByText('sendToSifTitle')).toBeInTheDocument();
     expect(screen.getByText('sendToSifBodyTbai')).toBeInTheDocument();
+  });
+
+  it('shows a progress indicator while the SIF request is in flight', async () => {
+    global.fetch = vi.fn((url) => {
+      if (url.includes('/action/')) {
+        return new Promise(resolve =>
+          setTimeout(() => resolve({ ok: true, json: () => Promise.resolve({}) }), 80));
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ response: { data: [] } }) });
+    });
+
+    renderPreview({ specName: 'sales-invoice' });
+    fireEvent.click(screen.getByText('sendToSif'));
+    fireEvent.click(screen.getByRole('button', { name: 'sendToSifConfirm' }));
+
+    // SifSendingModal renders a '%' percentage during the sending phase
+    // The old inline dialog never rendered one — this assertion distinguishes them
+    expect(await screen.findByText(/^\d+%$/)).toBeInTheDocument();
   });
 
   it('keeps current invoice data when preview refetch returns a non-record payload', async () => {

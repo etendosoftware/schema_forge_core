@@ -5,11 +5,11 @@ import { useAuth } from '@/auth/AuthContext.jsx';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useUI } from '@/i18n';
+import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFiscalConfig } from './useFiscalConfig.js';
 import { detectProfile } from './fiscalConfig.utils.js';
 import { useCertExpiry } from './useCertExpiry.js';
 import { useDebugMode } from '../fiscal-monitor/useDebugMode.js';
-import { WipBadge } from '../fiscal-monitor/FmPrimitives.jsx';
 import CertExpiryBanner from './CertExpiryBanner.jsx';
 import OnboardingWizard from './OnboardingWizard.jsx';
 import SiiSection from './SiiSection.jsx';
@@ -24,6 +24,8 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
   const { selectedOrg } = useAuth();
   const orgId = selectedOrg?.id ?? null;
   const debugMode = useDebugMode();
+
+  useSetPageMeta({ title: ui('fiscal.title'), breadcrumb: `${ui('settings')} / ${ui('fiscal.monitor.nav')} / ${ui('fiscal.title')}` });
 
   // mockOverride = null | { key, sii, tbai, verifactu }  (set by debug panel)
   const [mockOverride, setMockOverride] = useState(null);
@@ -43,7 +45,7 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
   const effectiveTbai     = mockOverride ? mockOverride.tbai     : tbaiRecord;
   const effectiveVerifactu= mockOverride ? mockOverride.verifactu: verifactuRecord;
 
-  const { daysLeft: certDaysLeft } = useCertExpiry(apiBaseUrl, { mockDaysLeft: mockCertDays });
+  const { daysLeft: certDaysLeft } = useCertExpiry(apiBaseUrl, { mockDaysLeft: mockCertDays, orgId });
 
   const siiRef  = useRef(null);
   const tbaiRef = useRef(null);
@@ -89,10 +91,7 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
       <>
         {DebugPanel}
         <div className="relative h-full overflow-hidden">
-          <WipBadge />
           <OnboardingWizard
-            orgId={orgId}
-            orgName={selectedOrg?.name}
             apiBaseUrl={apiBaseUrl}
             onComplete={refetch}
             onGoHome={() => navigate('/dashboard')}
@@ -107,7 +106,6 @@ export default function FiscalConfigPage({ token, apiBaseUrl }) {
     <>
       {DebugPanel}
     <div className="relative h-full overflow-y-auto">
-      <WipBadge />
       <div className="px-6 py-8">
         {orgId && (
           <div className="mb-6 flex items-start justify-between">

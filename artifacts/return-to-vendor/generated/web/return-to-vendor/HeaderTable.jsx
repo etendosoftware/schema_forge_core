@@ -4,10 +4,11 @@ import { DataTable, InlineLinesPanel } from '@/components/contract-ui';
 // @sf-generated-start columns:header
 const columns = [
   { key: 'orderDate', column: 'DateOrdered', type: 'date', label: 'Order Date', required: true },
+  { key: 'businessPartner', column: 'C_BPartner_ID', type: 'selector', label: 'Business Partner', required: true },
 ];
 // @sf-generated-end columns:header
 
-const filters = [];
+const filters = ['businessPartner'];
 
 // @sf-generated-start component:HeaderTable
 const HeaderTable = forwardRef(function HeaderTable(props, ref) {

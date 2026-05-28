@@ -27,6 +27,7 @@ function flexSpec(col, idx) {
 import ProductSearchDrawer from './ProductSearchDrawer.jsx';
 import InternalConsumptionProductSearchDrawer from './InternalConsumptionProductSearchDrawer.jsx';
 import { SelectorInput } from './SelectorInput.jsx';
+import { InlineSearchCombo } from './InlineSearchCombo.jsx';
 import RowQuickActions from './RowQuickActions.jsx';
 
 // Lookup drawer registry. Each entry is a drawer component keyed by the value
@@ -106,211 +107,6 @@ export function buildDisplayCatalogMaps(visibleColumns, addRow, entity) {
     if (map.size > 0) out.set(col.key, map);
   }
   return out;
-}
-
-/**
- * Compact inline combobox for search-type FK fields in rapid line entry.
- * Text input with filtered dropdown — lightweight alternative to full SearchInput.
- */
-function InlineSearchCombo({ field, value, options, onChange, onKeyDown, placeholder, inputRef, selectorUrl, selectorContext, token, displayLabel }) {
-  const [query, setQuery] = useState('');
-  const [open, setOpen] = useState(false);
-  const [openUp, setOpenUp] = useState(false);
-  const [dropdownStyle, setDropdownStyle] = useState(null);
-  const [serverResults, setServerResults] = useState(null);
-  const rootRef = useRef(null);
-  const dropdownRef = useRef(null);
-  const displayLabelRef = useRef(displayLabel);
-  displayLabelRef.current = displayLabel;
-  const displayValue = options.find(o => o.id === value);
-
-  // Server-side search with debounce
-  const fetchTimer = useRef(null);
-  const fetchServerResults = useCallback((q) => {
-    if (!selectorUrl || !token) { setServerResults(null); return; }
-    clearTimeout(fetchTimer.current);
-    const trimmed = (q || '').trim();
-    const queryParams = trimmed ? { ...selectorContext, q: trimmed } : { ...selectorContext };
-    fetchTimer.current = setTimeout(() => {
-      fetch(buildUrlWithParams(selectorUrl, queryParams), {
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      })
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
-          if (data?.items) setServerResults(data.items.map(it => ({ id: it.id, name: it.label || it.name, ...it })));
-        })
-        .catch(() => {});
-    }, 300);
-  }, [selectorUrl, selectorContext, token]);
-
-  const filtered = useMemo(() => {
-    if (serverResults) return serverResults.slice(0, 20);
-    if (!query) return options.slice(0, 15);
-    const q = query.toLowerCase();
-    return options.filter(o => {
-      const name = o.name || o.label || o._identifier || '';
-      return name.toLowerCase().includes(q);
-    }).slice(0, 15);
-  }, [query, options, serverResults]);
-
-  const handleSelect = (opt) => {
-    setQuery(opt.name || opt.label || opt._identifier || '');
-    onChange(opt.id, opt.name || opt.label || opt._identifier || '', opt);
-    setOpen(false);
-    setServerResults(null);
-  };
-
-  // Sync display when value is set externally.
-  // If the value is found in static options, use that label.
-  // Otherwise fall back to displayLabel (e.g. locator/warehouse name set by auto-fill).
-  useEffect(() => {
-    if (displayValue) {
-      setQuery(displayValue.name || displayValue.label || displayValue._identifier || '');
-    } else if (displayLabelRef.current) {
-      setQuery(displayLabelRef.current);
-    }
-  }, [value]);
-
-  const updateDropdownDirection = useCallback(() => {
-    if (!rootRef.current || typeof window === 'undefined') {
-      return;
-    }
-    const rect = rootRef.current.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const spaceAbove = rect.top;
-    setOpenUp(spaceBelow < 220 && spaceAbove > spaceBelow);
-
-    const shouldOpenUp = spaceBelow < 220 && spaceAbove > spaceBelow;
-    const maxHeight = Math.max(120, (shouldOpenUp ? spaceAbove : spaceBelow) - 12);
-    const style = shouldOpenUp
-      ? {
-          position: 'fixed',
-          left: rect.left,
-          width: rect.width,
-          bottom: window.innerHeight - rect.top + 4,
-          maxHeight,
-          zIndex: 1000,
-        }
-      : {
-          position: 'fixed',
-          left: rect.left,
-          width: rect.width,
-          top: rect.bottom + 4,
-          maxHeight,
-          zIndex: 1000,
-        };
-    setDropdownStyle(style);
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    updateDropdownDirection();
-    const onReflow = () => updateDropdownDirection();
-    window.addEventListener('resize', onReflow);
-    window.addEventListener('scroll', onReflow, true);
-    return () => {
-      window.removeEventListener('resize', onReflow);
-      window.removeEventListener('scroll', onReflow, true);
-    };
-  }, [open, updateDropdownDirection]);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const onPointerDown = (event) => {
-      const target = event.target;
-      if (rootRef.current?.contains(target) || dropdownRef.current?.contains(target)) {
-        return;
-      }
-      setOpen(false);
-    };
-    document.addEventListener('mousedown', onPointerDown);
-    document.addEventListener('touchstart', onPointerDown);
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown);
-      document.removeEventListener('touchstart', onPointerDown);
-    };
-  }, [open]);
-
-  return (
-    <div ref={rootRef} className="relative">
-      <input
-        data-testid={`inline-add-field-${field.key}`}
-        ref={inputRef}
-        type="text"
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setOpen(true);
-          setServerResults(null);
-          fetchServerResults(e.target.value);
-          // Clear ID when typing (user is searching, not committed yet)
-          if (value) onChange('', '');
-        }}
-        onFocus={() => {
-          updateDropdownDirection();
-          setOpen(true);
-          fetchServerResults(query);
-        }}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
-        onKeyDown={(e) => {
-          // Let Enter/Escape propagate to the row handler only if dropdown is closed
-          if (e.key === 'Enter' && open && filtered.length > 0) {
-            e.preventDefault();
-            e.stopPropagation();
-            handleSelect(filtered[0]);
-            return;
-          }
-          onKeyDown?.(e);
-        }}
-        placeholder={placeholder}
-        className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 pr-6 focus:ring-2 focus:ring-primary focus:outline-none"
-      />
-      <button
-        type="button"
-        data-testid={`inline-add-field-${field.key}-toggle`}
-        className="absolute right-1 top-1.5 h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-foreground"
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => {
-          const nextOpen = !open;
-          if (nextOpen) {
-            updateDropdownDirection();
-          }
-          setOpen(nextOpen);
-          if (nextOpen) {
-            fetchServerResults(query);
-          }
-        }}
-        aria-label={`Toggle ${placeholder} options`}
-      >
-        <ChevronDown className="h-4 w-4" />
-      </button>
-      {open && filtered.length > 0 && dropdownStyle && createPortal(
-        <div
-          ref={dropdownRef}
-          data-testid={`inline-add-options-${field.key}`}
-          className="bg-white border rounded-md shadow-lg overflow-auto"
-          style={dropdownStyle}
-          data-open-up={openUp ? 'true' : 'false'}
-          data-inline-add-portal="true"
-        >
-          {filtered.map(opt => (
-            <button
-              key={opt.id}
-              type="button"
-              data-testid={`inline-add-option-${field.key}-${opt.id}`}
-              className="w-full text-left px-2 py-1.5 text-sm hover:bg-blue-50 cursor-pointer whitespace-nowrap"
-              onMouseDown={(e) => { e.preventDefault(); handleSelect(opt); }}
-            >
-              {opt.name || opt.label || opt._identifier || opt.id}
-            </button>
-          ))}
-        </div>,
-        document.body,
-      )}
-    </div>
-  );
 }
 
 
@@ -435,6 +231,19 @@ function EmptyState({ hasFilter, totalCount }) {
 
 const NUMERIC_FIELD_TYPES = new Set(['number', 'integer', 'decimal', 'quantity', 'amount']);
 
+function isMissingRequired(f, valuesRef) {
+  if (!f.required) return false;
+  const v = valuesRef.current[f.key];
+  return v == null || v === '' || (typeof v === 'string' && v.trim() === '');
+}
+
+function isBelowMin(f, valuesRef) {
+  if (f.min === undefined) return false;
+  const v = valuesRef.current[f.key];
+  if (v == null || v === '') return false;
+  return !isNaN(Number(v)) && Number(v) < f.min;
+}
+
 /**
  * Inline editable row rendered at the bottom of the table for rapid line entry.
  * Controlled by the `addRow` prop on DataTable.
@@ -470,6 +279,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
 
   const [values, setValues] = useState(buildEmpty);
   const [isSaving, setIsSaving] = useState(false);
+  const [invalidFields, setInvalidFields] = useState(new Set());
   const firstInputRef = useRef(null);
   const rowRef = useRef(null);
   const touchedFieldsRef = useRef(new Set());
@@ -513,16 +323,21 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
     // Validate required fields BEFORE entering the in-flight state — a missing
     // value should leave the row open for the user to complete. Reads from the
     // valuesRef so an in-flight callout cannot mask a still-empty user field.
-    const missing = fields.filter(f => {
-      if (!f.required) return false;
-      const v = valuesRef.current[f.key];
-      return v == null || v === '' || (typeof v === 'string' && v.trim() === '');
-    });
+    const missing = fields.filter(f => isMissingRequired(f, valuesRef));
     if (missing.length > 0) {
-      const labels = missing.map(f => f.label || f.key).join(', ');
-      toast.error(`${ui('requiredFieldsMissing')}: ${labels}`);
+      setInvalidFields(new Set(missing.map(f => f.key)));
+      toast.error(ui('requiredFieldsMissing'));
       const firstMissing = missing[0];
       const inputEl = document.querySelector(`[data-testid="field-${firstMissing.key}"]`);
+      inputEl?.focus?.({ preventScroll: true });
+      return Promise.resolve(false);
+    }
+    const belowMin = fields.filter(f => isBelowMin(f, valuesRef));
+    if (belowMin.length > 0) {
+      setInvalidFields(new Set(belowMin.map(f => f.key)));
+      toast.error(ui('fieldMinValueError'));
+      const firstInvalid = belowMin[0];
+      const inputEl = document.querySelector(`[data-testid="field-${firstInvalid.key}"]`);
       inputEl?.focus?.({ preventScroll: true });
       return Promise.resolve(false);
     }
@@ -633,6 +448,12 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
   // Wrap handleChange to also notify parent (for callout triggering)
   const handleFieldChange = useCallback((key, val, selectedItem) => {
     touchedFieldsRef.current.add(key);
+    setInvalidFields(prev => {
+      if (!prev.has(key)) return prev;
+      const n = new Set(prev);
+      n.delete(key);
+      return n;
+    });
     // Build a snapshot of current + new values for the callout formState
     const snapshot = { ...values, [key]: val };
     handleChange(key, val);
@@ -760,6 +581,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
                 selectorContext={selectorContext}
                 token={token}
                 inputRef={isFirst ? firstInputRef : undefined}
+                isInvalid={invalidFields.has(field.key)}
                 onSelect={(item) => {
                   touchedFieldsRef.current.add(field.key);
                   handleChange(field.key + '$_identifier', item.label || item.name || item._identifier);
@@ -842,22 +664,22 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
             if (!selectorUrl) return <TableCell key={col.key} className="py-1 px-2" />;
             return (
               <TableCell key={col.key} data-testid={`inline-add-cell-${col.key}`} className="py-1 px-2">
-                <SelectorInput
-                  entityName={entity}
+                <InlineSearchCombo
                   field={field}
                   value={values[field.key] ?? ''}
-                  displayValue={values[field.key + '$_identifier'] || ''}
+                  displayLabel={values[field.key + '$_identifier'] || ''}
+                  options={[]}
                   onChange={(id, label, selectedItem) => {
                     touchedFieldsRef.current.add(field.key);
                     handleChange(field.key + '$_identifier', label || '');
                     handleFieldChange(field.key, id, selectedItem);
                   }}
-                  catalogs={catalogs}
-                  resolvedLabel={fieldLabel}
+                  onKeyDown={handleKeyDown}
+                  inputRef={isFirst ? firstInputRef : undefined}
+                  placeholder={fieldLabel}
                   selectorUrl={selectorUrl}
                   selectorContext={selectorContext}
                   token={token}
-                  compact
                 />
               </TableCell>
             );
@@ -940,7 +762,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
               onKeyDown={handleKeyDown}
               placeholder={fieldLabel}
               required={field.required}
-              className={`w-full h-8 text-sm rounded-md border border-input bg-white px-2 focus:ring-2 focus:ring-primary focus:outline-none${isNumeric ? ' text-right tabular-nums' : ''}`}
+              className={`w-full h-8 text-sm rounded-md border bg-white px-2 focus:ring-2 focus:outline-none${isNumeric ? ' text-right tabular-nums' : ''}${invalidFields.has(field.key) ? ' border-red-500 focus:ring-red-500' : ' border-input focus:ring-primary'}`}
             />
           </TableCell>
         );
@@ -968,7 +790,7 @@ const InlineAddRow = forwardRef(function InlineAddRow({ columns, fields, onAdd, 
 /**
  * Inline field that shows selected value and opens modal on click/focus.
  */
-function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContext, token, onSelect, onKeyDown, inputRef, title, drawerKey = 'default' }) {
+function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContext, token, onSelect, onKeyDown, inputRef, title, drawerKey = 'default', isInvalid }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef(null);
   const Drawer = LOOKUP_DRAWERS[drawerKey] || LOOKUP_DRAWERS.default;
@@ -996,7 +818,7 @@ function LookupField({ value, fieldKey, placeholder, selectorUrl, selectorContex
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(true); }
           else if (onKeyDown) onKeyDown(e);
         }}
-        className="w-full h-8 text-sm rounded-md border border-input bg-white px-2 text-left flex items-center gap-2 hover:border-primary/50 focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
+        className={`w-full h-8 text-sm rounded-md border bg-white px-2 text-left flex items-center gap-2 focus:ring-2 focus:outline-none transition-colors${isInvalid ? ' border-red-500 focus:ring-red-500' : ' border-input hover:border-primary/50 focus:ring-primary'}`}
       >
         <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         {value ? (

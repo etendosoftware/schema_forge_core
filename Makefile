@@ -20,7 +20,7 @@ test-all-coverage: ## Run ALL unit tests (Node + Vitest) with coverage reports
 	@echo "=== Artifact custom tests ==="
 	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/artifacts-lcov.info 'artifacts/**/__tests__/*.test.js'
 	@echo "=== Vitest (React components) ==="
-	cd tools/app-shell && npx vitest run --coverage && cp coverage/vitest/lcov.info ../../coverage/vitest-lcov.info
+	cd tools/app-shell && npx vitest run --coverage && sed 's|^SF:src/|SF:tools/app-shell/src/|' coverage/vitest/lcov.info > ../../coverage/vitest-lcov.info
 	@echo ""
 	@echo "Coverage reports saved in coverage/"
 	@echo "  cli-lcov.info, appshell-lcov.info, appshell-test-lcov.info, artifacts-lcov.info, vitest-lcov.info"
@@ -305,7 +305,7 @@ sonar-coverage: ## Run all tests with coverage then SonarQube analysis
 	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/cli-lcov.info 'cli/test/*.test.js'
 	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-lcov.info 'tools/app-shell/src/**/__tests__/*.test.js'
 	node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/appshell-test-lcov.info 'tools/app-shell/test/*.test.js'
-	cd tools/app-shell && npx vitest run --coverage && cp coverage/vitest/lcov.info ../../coverage/vitest-lcov.info
+	cd tools/app-shell && npx vitest run --coverage && sed 's|^SF:src/|SF:tools/app-shell/src/|' coverage/vitest/lcov.info > ../../coverage/vitest-lcov.info
 	sonar-scanner -Dproject.settings=sonar-project.properties
 
 # --- XML Regeneration Check ---

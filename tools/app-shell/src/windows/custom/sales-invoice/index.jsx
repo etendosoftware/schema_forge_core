@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { ListView } from '@/components/contract-ui';
@@ -13,10 +13,10 @@ import SalesInvoiceTopbar from './SalesInvoiceTopbar.jsx';
 import InvoiceBottomPanel from '@generated/sales-invoice/custom/InvoiceBottomPanel.jsx';
 import CloneOrderModal from '@/components/contract-ui/CloneOrderModal';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal';
-import CreateContactModal from '@/components/contract-ui/CreateContactModal';
 import { CreateContactContext } from '@/components/contract-ui/CreateContactContext.js';
-import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.js';
+import { useCreateContactModal } from '@/components/contract-ui/useCreateContactModal.jsx';
 import { useInvoicePdf } from '../shared/useInvoicePdf.js';
+import { getInvoiceDraftMode, buildInvoiceRowQuickActions, useClearSavedRecord } from '../shared/useInvoiceWindow.js';
 
 /* eslint-disable react/prop-types */
 
@@ -55,6 +55,10 @@ const OVERDUE_INITIAL_COLUMNS = [
   { key: 'eTGODueDate', column: 'em_etgo_due_date', type: 'date' },
 ];
 
+function SalesInvoiceBulkAction(props) {
+  return <BulkDocumentAction {...props} labelKey="confirmBulk" />;
+}
+
 function SalesInvoiceTable(props) {
   return <InvoiceHeaderTable {...props} />;
 }
@@ -84,8 +88,8 @@ export default function SalesInvoiceWindow(props) {
   const [cloneTargets, setCloneTargets] = useState(null);
   const [emailRow, setEmailRow] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const { bpApiBaseUrl, headers, createContactState, setCreateContactState, createContactCtxValue } =
-    useCreateContactModal({ apiBaseUrl, token });
+  const { headers, createContactCtxValue, contactPortal } =
+    useCreateContactModal({ apiBaseUrl, token, documentType: 'sale' });
   const { pdfUrl: emailPdfUrl, loading: emailPdfLoading } = useInvoicePdf(emailRow?.id ?? null, apiBaseUrl, token);
   const breadcrumb = 'Sales / Sales Invoice';
 
@@ -96,38 +100,23 @@ export default function SalesInvoiceWindow(props) {
     onSuccess: () => setRefreshKey(k => k + 1),
   });
 
-  const rowQuickActions = useMemo(() => ({
-    enabled: true,
-    editMode: 'navigate',
-    documentPreview: true,
-    actions: {
-      edit: { show: true },
-      duplicate: { show: true },
-      email: { show: true },
-      delete: { show: true },
-    },
-    onEdit: (row) => navigate(`/${windowName}/${row.id}`),
-    onClone: (row) => setCloneTargets([row]),
-    onEmail: (row) => setEmailRow(row),
-    onDelete: requestDelete,
-  }), [navigate, windowName, requestDelete]);
+  const rowQuickActions = useMemo(
+    () => buildInvoiceRowQuickActions(navigate, windowName, setCloneTargets, setEmailRow, requestDelete),
+    [navigate, windowName, requestDelete],
+  );
 
   // Pick up the saved record from navigation state when arriving at the list view
   const effectiveRecord = savedRecord ?? location.state?.savedRecord ?? null;
 
-  const clearSavedRecord = useCallback(() => {
-    setSavedRecord(null);
-    // Clear navigation state so the modal doesn't reappear on browser back/forward
-    if (location.state?.savedRecord) {
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-  }, [location, navigate]);
+  const clearSavedRecord = useClearSavedRecord(setSavedRecord, location, navigate);
+  const draftModeOverride = getInvoiceDraftMode(ui);
 
   if (recordId) {
     return (
       <CreateContactContext.Provider value={createContactCtxValue}>
         <HeaderPage
           {...props}
+          draftMode={draftModeOverride}
           bottomSection={InvoiceBottomPanel}
           topbarRight={SalesInvoiceTopbar}
           notesField="description"
@@ -135,20 +124,7 @@ export default function SalesInvoiceWindow(props) {
           refetchAfterSave={true}
           breadcrumb={breadcrumb}
         />
-        {createContactState && createPortal(
-          <CreateContactModal
-            bpApiBaseUrl={bpApiBaseUrl}
-            headers={headers}
-            initialQuery={createContactState.query}
-            documentType="sale"
-            onClose={() => setCreateContactState(null)}
-            onCreated={(newBP) => {
-              createContactState.onSelect({ id: newBP.id, name: newBP.name });
-              setCreateContactState(null);
-            }}
-          />,
-          document.body,
-        )}
+        {contactPortal}
       </CreateContactContext.Provider>
     );
   }
@@ -192,7 +168,7 @@ export default function SalesInvoiceWindow(props) {
         dateFilterKey="invoiceDate"
         onCloneRow={(rowOrRows) => setCloneTargets(Array.isArray(rowOrRows) ? rowOrRows : [rowOrRows])}
         rowQuickActions={rowQuickActions}
-        bulkActions={(ctx) => <BulkDocumentAction {...ctx} />}
+        bulkActions={SalesInvoiceBulkAction}
         refreshTrigger={refreshKey}
         renderPreview={({ row, onClose, onEdit }) => (
           <InvoicePreview

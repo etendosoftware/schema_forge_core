@@ -13,7 +13,6 @@ export function createMockFetch(mockData, basePath, catalogData = {}) {
   const catalogStore = JSON.parse(JSON.stringify(catalogData));
 
   return async function mockFetch(url, options = {}) {
-    // Only intercept URLs starting with basePath
     if (!url.startsWith(basePath)) {
       return undefined;
     }
@@ -22,142 +21,179 @@ export function createMockFetch(mockData, basePath, catalogData = {}) {
     const path = url.slice(basePath.length);
     const segments = path.split('/').filter(Boolean);
 
-    // POST /process/{name}
-    if (method === 'POST' && segments[0] === 'process') {
-      const processName = segments[1];
-      let body;
-      try {
-        body = JSON.parse(options.body);
-      } catch {
-        return makeResponse(400, { error: 'Invalid request body' });
-      }
-      // Search all entities in the store to find the record by id
-      for (const collection of Object.values(store)) {
-        const record = collection.find(r => r.id === body.id);
-        if (record) {
-          record.docStatus = processName === 'voidOrder' ? 'VO' : 'CO';
-          break;
-        }
-      }
-      return makeResponse(200, { status: 'success', message: `${processName} executed` });
+    if (isEmailContractSend(method, segments)) {
+      return handleEmailContractSend(options);
     }
 
-    // Catalog endpoints: GET/POST/PUT/DELETE /catalog/{reference}
+    if (method === 'POST' && segments[0] === 'process') {
+      return handleProcessRequest(store, segments, options);
+    }
+
     if (segments[0] === 'catalog') {
-      const refName = segments[1];
-      if (!refName) return makeResponse(404, { error: 'Reference name required' });
-
-      if (method === 'GET') {
-        const data = catalogStore[refName];
-        if (!data) return makeResponse(404, { error: `Catalog '${refName}' not found` });
-        // Support ?parentId= filtering for dependent selects
-        const urlObj = new URL(url, 'http://localhost');
-        const parentId = urlObj.searchParams.get('parentId');
-        const filterKey = urlObj.searchParams.get('filterKey') || 'businessPartnerId';
-        if (parentId) {
-          const filtered = data.filter(item => item[filterKey] === parentId);
-          return makeResponse(200, filtered);
-        }
-        return makeResponse(200, data);
-      }
-
-      if (method === 'POST') {
-        let body;
-        try { body = JSON.parse(options.body); } catch { return makeResponse(400, { error: 'Invalid request body' }); }
-        const newItem = { id: `${refName.toLowerCase()}-${Date.now()}`, ...body };
-        if (!catalogStore[refName]) catalogStore[refName] = [];
-        catalogStore[refName].push(newItem);
-        return makeResponse(201, newItem);
-      }
-
-      if (method === 'PUT' && segments.length === 3) {
-        const itemId = segments[2];
-        const data = catalogStore[refName];
-        if (!data) return makeResponse(404, { error: `Catalog '${refName}' not found` });
-        const index = data.findIndex(r => r.id === itemId);
-        if (index === -1) return makeResponse(404, { error: 'Catalog item not found' });
-        let body;
-        try { body = JSON.parse(options.body); } catch { return makeResponse(400, { error: 'Invalid request body' }); }
-        data[index] = { ...data[index], ...body };
-        return makeResponse(200, data[index]);
-      }
-
-      if (method === 'DELETE' && segments.length === 3) {
-        const itemId = segments[2];
-        const data = catalogStore[refName];
-        if (!data) return makeResponse(404, { error: `Catalog '${refName}' not found` });
-        const index = data.findIndex(r => r.id === itemId);
-        if (index === -1) return makeResponse(404, { error: 'Catalog item not found' });
-        const deleted = data.splice(index, 1)[0];
-        return makeResponse(200, deleted);
-      }
-
-      return makeResponse(404, { error: 'Not found' });
+      return handleCatalogRequest(catalogStore, method, url, segments, options);
     }
 
     const entity = segments[0];
 
     if (method === 'GET') {
-      // GET /{entity}
-      if (segments.length === 1) {
-        const data = store[entity];
-        if (!data) return makeResponse(404, { error: 'Entity not found' });
-        return makeResponse(200, data);
-      }
-
-      // GET /{entity}/{id}
-      if (segments.length === 2) {
-        const id = segments[1];
-        const data = store[entity];
-        if (!data) return makeResponse(404, { error: 'Entity not found' });
-        const record = data.find(r => r.id === id);
-        if (!record) return makeResponse(404, { error: 'Record not found' });
-        return makeResponse(200, record);
-      }
-
-      // GET /{entity}/{id}/{child}
-      if (segments.length === 3) {
-        const parentId = segments[1];
-        const childEntity = segments[2];
-        const childData = store[childEntity];
-        if (!childData) return makeResponse(404, { error: 'Child entity not found' });
-        const parentKey = `${entity}Id`;
-        const filtered = childData.filter(r => r[parentKey] === parentId);
-        return makeResponse(200, filtered);
-      }
+      return handleGetRequest(store, entity, segments);
     }
 
     if (method === 'POST' && segments.length === 1) {
-      let body;
-      try {
-        body = JSON.parse(options.body);
-      } catch {
-        return makeResponse(400, { error: 'Invalid request body' });
-      }
-      const newRecord = { id: `mock-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, ...body };
-      if (!store[entity]) store[entity] = [];
-      store[entity].push(newRecord);
-      return makeResponse(201, newRecord);
+      return handlePostEntityRequest(store, entity, options);
     }
 
     if (method === 'PUT' && segments.length === 2) {
-      const id = segments[1];
-      const data = store[entity];
-      if (!data) return makeResponse(404, { error: 'Entity not found' });
-      const index = data.findIndex(r => r.id === id);
-      if (index === -1) return makeResponse(404, { error: 'Record not found' });
-      let body;
-      try {
-        body = JSON.parse(options.body);
-      } catch {
-        return makeResponse(400, { error: 'Invalid request body' });
-      }
-      data[index] = { ...data[index], ...body };
-      return makeResponse(200, data[index]);
+      return handlePutEntityRequest(store, entity, segments[1], options);
     }
 
     return makeResponse(404, { error: 'Not found' });
   };
+}
+
+function isEmailContractSend(method, segments) {
+  return method === 'POST' && segments[0] === 'email-contracts' && segments[2] === 'send';
+}
+
+function handleEmailContractSend(options) {
+  const body = parseJsonBody(options);
+  if (!body) {
+    return makeEmailContractValidationResponse('Invalid request body');
+  }
+  if (!body.recordId || !body.version || !body.intent) {
+    return makeEmailContractValidationResponse('Invalid contract command');
+  }
+  return makeResponse(200, { status: 'SENT', auditId: `mock-email-${Date.now()}` });
+}
+
+function handleProcessRequest(store, segments, options) {
+  const body = parseJsonBody(options);
+  if (!body) {
+    return makeResponse(400, { error: 'Invalid request body' });
+  }
+  const record = findRecordById(store, body.id);
+  if (record) {
+    record.docStatus = segments[1] === 'voidOrder' ? 'VO' : 'CO';
+  }
+  return makeResponse(200, { status: 'success', message: `${segments[1]} executed` });
+}
+
+function handleCatalogRequest(catalogStore, method, url, segments, options) {
+  const refName = segments[1];
+  if (!refName) return makeResponse(404, { error: 'Reference name required' });
+  if (method === 'GET') return handleCatalogGet(catalogStore, refName, url);
+  if (method === 'POST') return handleCatalogPost(catalogStore, refName, options);
+  if (method === 'PUT' && segments.length === 3) return handleCatalogPut(catalogStore, refName, segments[2], options);
+  if (method === 'DELETE' && segments.length === 3) return handleCatalogDelete(catalogStore, refName, segments[2]);
+  return makeResponse(404, { error: 'Not found' });
+}
+
+function handleCatalogGet(catalogStore, refName, url) {
+  const data = catalogStore[refName];
+  if (!data) return makeResponse(404, { error: `Catalog '${refName}' not found` });
+  const urlObj = new URL(url, 'http://localhost');
+  const parentId = urlObj.searchParams.get('parentId');
+  const filterKey = urlObj.searchParams.get('filterKey') || 'businessPartnerId';
+  return makeResponse(200, parentId ? data.filter(item => item[filterKey] === parentId) : data);
+}
+
+function handleCatalogPost(catalogStore, refName, options) {
+  const body = parseJsonBody(options);
+  if (!body) return makeResponse(400, { error: 'Invalid request body' });
+  const newItem = { id: `${refName.toLowerCase()}-${Date.now()}`, ...body };
+  if (!catalogStore[refName]) catalogStore[refName] = [];
+  catalogStore[refName].push(newItem);
+  return makeResponse(201, newItem);
+}
+
+function handleCatalogPut(catalogStore, refName, itemId, options) {
+  const data = catalogStore[refName];
+  const index = findCatalogIndex(data, refName, itemId);
+  if (index.response) return index.response;
+  const body = parseJsonBody(options);
+  if (!body) return makeResponse(400, { error: 'Invalid request body' });
+  data[index.value] = { ...data[index.value], ...body };
+  return makeResponse(200, data[index.value]);
+}
+
+function handleCatalogDelete(catalogStore, refName, itemId) {
+  const data = catalogStore[refName];
+  const index = findCatalogIndex(data, refName, itemId);
+  if (index.response) return index.response;
+  const deleted = data.splice(index.value, 1)[0];
+  return makeResponse(200, deleted);
+}
+
+function handleGetRequest(store, entity, segments) {
+  if (segments.length === 1) return getEntityList(store, entity);
+  if (segments.length === 2) return getEntityRecord(store, entity, segments[1]);
+  if (segments.length === 3) return getEntityChildren(store, entity, segments[1], segments[2]);
+  return makeResponse(404, { error: 'Not found' });
+}
+
+function handlePostEntityRequest(store, entity, options) {
+  const body = parseJsonBody(options);
+  if (!body) return makeResponse(400, { error: 'Invalid request body' });
+  const newRecord = { id: `mock-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, ...body };
+  if (!store[entity]) store[entity] = [];
+  store[entity].push(newRecord);
+  return makeResponse(201, newRecord);
+}
+
+function handlePutEntityRequest(store, entity, id, options) {
+  const data = store[entity];
+  if (!data) return makeResponse(404, { error: 'Entity not found' });
+  const index = data.findIndex(r => r.id === id);
+  if (index === -1) return makeResponse(404, { error: 'Record not found' });
+  const body = parseJsonBody(options);
+  if (!body) return makeResponse(400, { error: 'Invalid request body' });
+  data[index] = { ...data[index], ...body };
+  return makeResponse(200, data[index]);
+}
+
+function getEntityList(store, entity) {
+  const data = store[entity];
+  return data ? makeResponse(200, data) : makeResponse(404, { error: 'Entity not found' });
+}
+
+function getEntityRecord(store, entity, id) {
+  const data = store[entity];
+  if (!data) return makeResponse(404, { error: 'Entity not found' });
+  const record = data.find(r => r.id === id);
+  return record ? makeResponse(200, record) : makeResponse(404, { error: 'Record not found' });
+}
+
+function getEntityChildren(store, entity, parentId, childEntity) {
+  const childData = store[childEntity];
+  if (!childData) return makeResponse(404, { error: 'Child entity not found' });
+  const parentKey = `${entity}Id`;
+  return makeResponse(200, childData.filter(r => r[parentKey] === parentId));
+}
+
+function parseJsonBody(options) {
+  try {
+    return JSON.parse(options.body);
+  } catch {
+    return null;
+  }
+}
+
+function findRecordById(store, id) {
+  for (const collection of Object.values(store)) {
+    const record = collection.find(r => r.id === id);
+    if (record) return record;
+  }
+  return null;
+}
+
+function findCatalogIndex(data, refName, itemId) {
+  if (!data) return { response: makeResponse(404, { error: `Catalog '${refName}' not found` }) };
+  const value = data.findIndex(r => r.id === itemId);
+  return value === -1 ? { response: makeResponse(404, { error: 'Catalog item not found' }) } : { value };
+}
+
+function makeEmailContractValidationResponse(message) {
+  return makeResponse(400, { status: 'VALIDATION_FAILED', message });
 }
 
 function makeResponse(status, data) {

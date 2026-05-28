@@ -166,7 +166,16 @@ export const api = {
       "column": "Fin_Financial_Account_ID",
       "reference": "FinancialAccount",
       "inputMode": "selector",
-      "url": "/sws/neo/payment-out/header/selectors/account"
+      "url": "/sws/neo/payment-out/header/selectors/account",
+      "context": {
+        "required": [
+          {
+            "param": "Fin_Paymentmethod_ID",
+            "source": "field",
+            "field": "paymentMethod"
+          }
+        ]
+      }
     },
     {
       "entity": "header",

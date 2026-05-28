@@ -1,53 +1,16 @@
 import { useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download, Edit2, Loader2, AlertCircle, Mail } from 'lucide-react';
+import { Download, Edit2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { useUI, useMenuLabel, useLocaleSwitch } from '@/i18n';
 import { formatCalendarDate } from '@/lib/dateOnly';
 import GenericPreviewModal from '../shared/GenericPreviewModal.jsx';
-import PdfViewer from '../shared/PdfViewer.jsx';
+import { PreviewPdfPanel } from '../shared/PreviewActionButtons.jsx';
 import SendDocumentModal from '@/components/contract-ui/SendDocumentModal.jsx';
 import { useShipmentPdf } from './useShipmentPdf.js';
 import RelatedDocuments from '@generated/goods-shipment/custom/RelatedDocuments';
 import { STATUS_BADGE, STATUS_KEYS } from '@/components/related-documents/constants.jsx';
-
-// ── Shared sub-components ─────────────────────────────────────────────────────
-
-function InfoRow({ label, value }) {
-  return (
-    <div className="flex justify-between items-center py-1.5 text-sm">
-      <span className="text-gray-400">{label}</span>
-      <span className="text-gray-900 font-medium text-right max-w-[55%] truncate">{value ?? '—'}</span>
-    </div>
-  );
-}
-
-function InfoLinkRow({ label, value, onClick }) {
-  if (!value) return <InfoRow label={label} value={null} />;
-  return (
-    <div className="flex justify-between items-center py-1.5 text-sm">
-      <span className="text-gray-400">{label}</span>
-      <button
-        type="button"
-        onClick={onClick}
-        className="text-blue-600 font-medium text-right max-w-[55%] truncate hover:underline bg-transparent border-none p-0 cursor-pointer"
-      >
-        {value}
-      </button>
-    </div>
-  );
-}
-
-function SectionCard({ title, children }) {
-  return (
-    <div className="mx-4 mt-4 bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="px-4 py-3 border-b border-gray-100">
-        <span className="font-bold text-gray-900 text-sm">{title}</span>
-      </div>
-      <div className="px-4 py-2">{children}</div>
-    </div>
-  );
-}
+import { InfoRow, CardShell, PercentBar } from '../shared/preview-cards/SummaryCard.jsx';
 
 function EmptyPanel({ icon, text }) {
   return (
@@ -68,43 +31,38 @@ function ShipmentStatsPanel({ shipment, partnerName, movementDate, ui, onOrderCl
   const statusBadgeClass = STATUS_BADGE[docStatus] || 'bg-gray-50 text-gray-600 border-gray-200';
   const salesOrderNo = shipment['salesOrder$_identifier']?.split(' ')[0] || null;
 
-  let barColor = '#d1d5db';
-  if (invoiceStatusPct >= 100) barColor = '#10b981';
-  else if (invoiceStatusPct > 0) barColor = '#f59e0b';
-
   return (
     <div className="pb-4">
-      <SectionCard title={ui('shipmentPreviewStatus')}>
-        <InfoRow label={ui('shipmentPreviewDocNo')} value={shipment.documentNo || '—'} />
-        <InfoRow label={ui('shipmentPreviewContact')} value={partnerName} />
-        <InfoRow label={ui('shipmentPreviewWarehouse')} value={warehouseLabel} />
-        <InfoRow label={ui('shipmentPreviewDate')} value={movementDate} />
-        <div className="flex justify-between items-center py-1.5 text-sm">
-          <span className="text-gray-400">{ui('shipmentPreviewStatus')}</span>
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${statusBadgeClass}`}>
-            {statusLabel}
-          </span>
+      <CardShell>
+        <div className="px-4 py-3 border-b border-gray-100">
+          <span className="font-bold text-gray-900 text-sm">{ui('shipmentPreviewStatus')}</span>
         </div>
-        <InfoLinkRow
-          label={ui('shipmentPreviewSalesOrder')}
-          value={salesOrderNo}
-          onClick={onOrderClick}
-        />
-        <div className="flex justify-between items-center py-1.5 text-sm">
-          <span className="text-gray-400">{ui('shipmentPreviewInvoiceStatus')}</span>
-          <div className="flex items-center gap-2">
-            <div className="w-24 h-1.5 rounded-full bg-gray-200 overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all"
-                style={{ width: `${invoiceStatusPct}%`, backgroundColor: barColor }}
-              />
-            </div>
-            <span className="text-gray-900 font-medium text-xs tabular-nums">
-              {invoiceStatusPct}%
+        <div className="px-4 py-2">
+          <InfoRow label={ui('shipmentPreviewDocNo')} value={shipment.documentNo || '—'} />
+          <InfoRow label={ui('shipmentPreviewContact')} value={partnerName} />
+          <InfoRow label={ui('shipmentPreviewWarehouse')} value={warehouseLabel} />
+          <InfoRow label={ui('shipmentPreviewDate')} value={movementDate} />
+          <InfoRow label={ui('shipmentPreviewStatus')}>
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${statusBadgeClass}`}>
+              {statusLabel}
             </span>
-          </div>
+          </InfoRow>
+          <InfoRow label={ui('shipmentPreviewSalesOrder')}>
+            {salesOrderNo ? (
+              <button
+                type="button"
+                onClick={onOrderClick}
+                className="text-blue-600 font-medium text-right max-w-[55%] truncate hover:underline bg-transparent border-none p-0 cursor-pointer"
+              >
+                {salesOrderNo}
+              </button>
+            ) : null}
+          </InfoRow>
+          <InfoRow label={ui('shipmentPreviewInvoiceStatus')}>
+            <PercentBar value={invoiceStatusPct} />
+          </InfoRow>
         </div>
-      </SectionCard>
+      </CardShell>
     </div>
   );
 }
@@ -137,22 +95,13 @@ export default function GoodsShipmentPreview({ shipment, token, apiBaseUrl, wind
   // ── Left panel ──────────────────────────────────────────────────────────────
 
   const leftPanel = (
-    <div className="flex flex-col h-full min-h-0 w-full overflow-hidden">
-      {pdfLoading && (
-        <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <span className="text-sm">{ui('shipmentPdfGenerating')}</span>
-        </div>
-      )}
-      {pdfError && !pdfLoading && (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-          <AlertCircle className="h-8 w-8 text-amber-400" />
-          <p className="text-sm text-muted-foreground">{ui('shipmentPdfError')}</p>
-          <p className="text-xs text-muted-foreground/60">{pdfError}</p>
-        </div>
-      )}
-      {pdfUrl && !pdfLoading && <PdfViewer url={pdfUrl} />}
-    </div>
+    <PreviewPdfPanel
+      pdfLoading={pdfLoading}
+      pdfError={pdfError}
+      pdfUrl={pdfUrl}
+      generatingText={ui('shipmentPdfGenerating')}
+      errorText={ui('shipmentPdfError')}
+    />
   );
 
   // ── Derived values ──────────────────────────────────────────────────────────

@@ -44,14 +44,17 @@ export function validatePipelineInput(input) {
   if (input.menuId || input.menuName) {
     return { valid: true, mode: 'menu' };
   }
+
   if (input.reportId) {
     if (!input.reportName) return { valid: false, error: 'reportName is required for report mode' };
     return { valid: true, mode: 'report' };
   }
+
   if (input.processId) {
     if (!input.processName) return { valid: false, error: 'processName is required for process mode' };
     return { valid: true, mode: 'process' };
   }
+
   if (!input.windowId) return { valid: false, error: 'windowId is required' };
   if (!input.windowName) return { valid: false, error: 'windowName is required' };
   return { valid: true, mode: 'window' };
@@ -92,32 +95,64 @@ export function parseArgs(argv) {
   const result = {};
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--menu-id' && args[i + 1]) {
+    if (isMenuIdArgument(args, i)) {
       result.menuId = args[++i];
-    } else if (args[i] === '--menu-name' && args[i + 1]) {
+    } else if (isMenuNameArgument(args, i)) {
       result.menuName = args[++i];
-    } else if (args[i] === '--process-id' && args[i + 1]) {
+    } else if (isProcessIdArgument(args, i)) {
       result.processId = args[++i];
-    } else if (args[i] === '--process-name' && args[i + 1]) {
+    } else if (isProcessNameArgument(args, i)) {
       result.processName = args[++i];
-    } else if (args[i] === '--report-id' && args[i + 1]) {
+    } else if (isReportIdArgument(args, i)) {
       result.reportId = args[++i];
-    } else if (args[i] === '--report-name' && args[i + 1]) {
+    } else if (isReportNameArgument(args, i)) {
       result.reportName = args[++i];
     } else if (args[i] === '--dry-run') {
       result.dryRun = true;
-    } else if (args[i] === '--skip-to' && args[i + 1]) {
+    } else if (isSkipToArgument(args, i)) {
       result.skipTo = args[++i];
     } else if (args[i] === '--skip-interactive') {
       result.skipInteractive = true;
     } else if (!args[i].startsWith('--') && !result.windowId) {
       result.windowId = args[i];
-    } else if (!args[i].startsWith('--') && result.windowId && !result.windowName) {
+    } else if (isWindowNameSet(args, i, result)) {
       result.windowName = args[i];
     }
   }
 
   return result;
+}
+
+function isWindowNameSet(args, i, result) {
+  return !args[i].startsWith('--') && result.windowId && !result.windowName;
+}
+
+function isSkipToArgument(args, i) {
+  return args[i] === '--skip-to' && args[i + 1];
+}
+
+function isReportNameArgument(args, i) {
+  return args[i] === '--report-name' && args[i + 1];
+}
+
+function isReportIdArgument(args, i) {
+  return args[i] === '--report-id' && args[i + 1];
+}
+
+function isProcessNameArgument(args, i) {
+  return args[i] === '--process-name' && args[i + 1];
+}
+
+function isProcessIdArgument(args, i) {
+  return args[i] === '--process-id' && args[i + 1];
+}
+
+function isMenuNameArgument(args, i) {
+  return args[i] === '--menu-name' && args[i + 1];
+}
+
+function isMenuIdArgument(args, i) {
+  return args[i] === '--menu-id' && args[i + 1];
 }
 
 /**
@@ -208,7 +243,7 @@ async function runProcessPipeline({ processId, processName, dryRun, isReport, sp
   const steps = buildProcessPipelineSteps();
   let pushToNeoRan = false;
   let frontendGenerated = false;
-  const pipelineLabel = isReport ? 'Report' : 'Process';
+  const pipelineLabel = getPipelineLabel(isReport);
   console.log(`\n=== Schema Forge ${pipelineLabel} Pipeline: ${processName} ===\n`);
 
   for (const step of steps) {
@@ -238,12 +273,8 @@ async function runProcessPipeline({ processId, processName, dryRun, isReport, sp
           const { pushProcessToNeo } = await import('./push-to-neo.js');
           const pushSpecType = specType || (isReport ? 'R' : 'P');
           const result = await pushProcessToNeo(processName, { dryRun, specType: pushSpecType });
-          if (dryRun) {
-            console.log(`  ✓ Dry run: push plan logged`);
-          } else {
-            console.log(`  ✓ NEO Headless configured (spec: ${result.specId})`);
-            pushToNeoRan = true;
-          }
+          logDryRunOutcome(dryRun, result);
+          pushToNeoRan = !dryRun; // Set to true if push was executed, false if dry run
           break;
         }
         case 'generate-process-frontend': {
@@ -253,10 +284,7 @@ async function runProcessPipeline({ processId, processName, dryRun, isReport, sp
           const generateFn = isReport ? generateAllReport : generateAllProcess;
           const files = generateFn(contract);
           const outDir = `artifacts/${processName}/generated/web/${processName}`;
-          await mkdir(outDir, { recursive: true });
-          for (const [filename, code] of Object.entries(files)) {
-            await writeFile(`${outDir}/${filename}`, code, 'utf8');
-          }
+          await createDirectoryAndWriteFiles(mkdir, outDir, files, writeFile);
           console.log(`  ✓ ${Object.keys(files).length} frontend components generated`);
           frontendGenerated = true;
           break;
@@ -267,10 +295,7 @@ async function runProcessPipeline({ processId, processName, dryRun, isReport, sp
           const contract = JSON.parse(await readFile(`artifacts/${processName}/contract.json`, 'utf8'));
           const result = runContractTests(contract);
           console.log(`  ✓ ${result.passed}/${result.total} passed, ${result.skipped} skipped`);
-          if (result.failed > 0) {
-            console.error(`  ✗ ${result.failed} tests failed`);
-            result.results.filter(r => !r.passed).forEach(r => console.error(`    - ${r.description}: ${r.reason}`));
-          }
+          logTestResults(result);
           break;
         }
       }
@@ -282,6 +307,33 @@ async function runProcessPipeline({ processId, processName, dryRun, isReport, sp
 
   console.log(`\n=== ${pipelineLabel} Pipeline complete ===\n`);
   printNextSteps({ pushToNeoRan, frontendGenerated });
+}
+
+function logTestResults(result) {
+  if (result.failed > 0) {
+    console.error(`  ✗ ${result.failed} tests failed`);
+    result.results.filter(r => !r.passed).forEach(r => console.error(`    - ${r.description}: ${r.reason}`));
+  }
+}
+
+function logDryRunOutcome(dryRun, result) {
+  if (dryRun) {
+    //dry run true, so the pushToneo is false
+    console.log(`  ✓ Dry run: push plan logged`);
+  } else {
+    console.log(`  ✓ NEO Headless configured (spec: ${result.specId})`);
+  }
+}
+
+function getPipelineLabel(isReport) {
+  return isReport ? 'Report' : 'Process';
+}
+
+async function createDirectoryAndWriteFiles(mkdir, outDir, files, writeFile) {
+  await mkdir(outDir, { recursive: true });
+  for (const [filename, code] of Object.entries(files)) {
+    await writeFile(`${outDir}/${filename}`, code, 'utf8');
+  }
 }
 
 /**
@@ -450,7 +502,7 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
           break;
         }
         case 'generate-contract': {
-          const { generateContract } = await import('./generate-contract.js');
+          const { generateContract, splitWindowContractArtifacts } = await import('./generate-contract.js');
           const { readFile, writeFile, access, mkdir } = await import('node:fs/promises');
           const processesPath = `artifacts/${windowName}/processes.json`;
           try {
@@ -467,6 +519,8 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
           // and check-version can bump from the correct baseline.
           let prevVersion = null;
           let prevContract = null;
+          let prevContractRaw = null;
+          let prevMcpContract = null;
           try {
             const existingRaw = await readFile(`artifacts/${windowName}/contract.json`, 'utf-8');
             const existingContract = JSON.parse(existingRaw);
@@ -478,13 +532,23 @@ async function runWindowPipeline({ windowId, windowName, skipTo, skipInteractive
             }
             prevVersion = rawVersion;
             prevContract = existingContract;
-            // Snapshot for version diffing
-            await writeFile(`artifacts/${windowName}/contract.prev.json`, existingRaw, 'utf-8');
+            prevContractRaw = existingRaw;
           } catch {
             // No existing contract — first generation, no prev needed
           }
-          const contract = generateContract(schema, Array.isArray(rules) ? rules : rules.rules || [], processes.processes || [], prevVersion, prevContract);
+          try {
+            const existingMcpRaw = await readFile(`artifacts/${windowName}/contract.mcp.json`, 'utf-8');
+            prevMcpContract = JSON.parse(existingMcpRaw);
+          } catch {
+            // No existing MCP contract — first split generation
+          }
+          const generatedContract = generateContract(schema, Array.isArray(rules) ? rules : rules.rules || [], processes.processes || [], prevVersion, prevContract);
+          const { contract, mcpContract } = splitWindowContractArtifacts(generatedContract, prevContract, prevMcpContract);
+          if (prevContractRaw) {
+            await writeFile(`artifacts/${windowName}/contract.prev.json`, prevContractRaw, 'utf-8');
+          }
           await writeFile(`artifacts/${windowName}/contract.json`, JSON.stringify(contract, null, 2) + '\n');
+          await writeFile(`artifacts/${windowName}/contract.mcp.json`, JSON.stringify(mcpContract, null, 2) + '\n');
           console.log(`  ✓ Contract generated (${contract.testManifest.summary.total} tests)`);
           // Version check
           try {

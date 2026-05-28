@@ -1,8 +1,8 @@
 {
-  "version": "0.28.0",
+  "version": "0.29.3",
   "generatedAt": "2026-04-30T15:42:46.722Z",
-  "updatedAt": "2026-05-18T14:46:38.877Z",
-  "checksum": "3b9727265a80f9c7",
+  "updatedAt": "2026-05-28T11:06:45.587Z",
+  "checksum": "23f7c62b397cb0bb",
   "frontendContract": {
     "window": {
       "id": "183",
@@ -11,6 +11,7 @@
       "category": "purchases",
       "notesField": "description",
       "relatedDocuments": true,
+      "hideDeleteWhenComplete": true,
       "customComponents": {
         "headerTable": "InvoiceHeaderTable",
         "bottomSection": "PurchaseInvoiceBottomPanel"
@@ -883,7 +884,7 @@
             "tsType": "string",
             "visibility": "readOnly",
             "required": false,
-            "grid": false,
+            "grid": true,
             "form": false,
             "derivation": {
               "type": "lookup",
@@ -1411,6 +1412,7 @@
             "defaultValue": "1",
             "section": "principal",
             "gridOrder": 3,
+            "min": 0,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Invoice_Amt"
             },
@@ -1435,6 +1437,7 @@
             "columnType": "amount",
             "section": "principal",
             "gridOrder": 4,
+            "min": 0,
             "displayLogic": {
               "raw": "@GROSSPRICE@='N'",
               "evaluable": true
@@ -1463,6 +1466,7 @@
             "defaultValue": "0",
             "section": "principal",
             "gridOrder": 5,
+            "min": 0,
             "readOnlyLogic": {
               "raw": "@Processed@='Y'",
               "evaluable": true,
@@ -3717,6 +3721,7 @@
       "category": "purchases",
       "notesField": "description",
       "relatedDocuments": true,
+      "hideDeleteWhenComplete": true,
       "customComponents": {
         "headerTable": "InvoiceHeaderTable",
         "bottomSection": "PurchaseInvoiceBottomPanel"
@@ -8039,7 +8044,15 @@
         "column": "C_DocTypeTarget_ID",
         "reference": "DocumentType",
         "inputMode": "selector",
-        "url": "/sws/neo/purchase-invoice/header/selectors/transactionDocument"
+        "url": "/sws/neo/purchase-invoice/header/selectors/transactionDocument",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -8055,7 +8068,16 @@
         "column": "C_BPartner_Location_ID",
         "reference": "BusinessPartnerLocation",
         "inputMode": "dependent",
-        "url": "/sws/neo/purchase-invoice/header/selectors/partnerAddress"
+        "url": "/sws/neo/purchase-invoice/header/selectors/partnerAddress",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -8063,7 +8085,15 @@
         "column": "M_PriceList_ID",
         "reference": "PriceList",
         "inputMode": "selector",
-        "url": "/sws/neo/purchase-invoice/header/selectors/priceList"
+        "url": "/sws/neo/purchase-invoice/header/selectors/priceList",
+        "context": {
+          "required": [
+            {
+              "param": "isSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -8079,7 +8109,15 @@
         "column": "FIN_Paymentmethod_ID",
         "reference": "PaymentMethod",
         "inputMode": "selector",
-        "url": "/sws/neo/purchase-invoice/header/selectors/paymentMethod"
+        "url": "/sws/neo/purchase-invoice/header/selectors/paymentMethod",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -8103,7 +8141,16 @@
         "column": "AD_User_ID",
         "reference": "User",
         "inputMode": "search",
-        "url": "/sws/neo/purchase-invoice/header/selectors/userContact"
+        "url": "/sws/neo/purchase-invoice/header/selectors/userContact",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -8127,7 +8174,20 @@
         "column": "C_Project_ID",
         "reference": "Project",
         "inputMode": "search",
-        "url": "/sws/neo/purchase-invoice/header/selectors/project"
+        "url": "/sws/neo/purchase-invoice/header/selectors/project",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -8159,7 +8219,21 @@
         "column": "C_Tax_ID",
         "reference": "Tax",
         "inputMode": "selector",
-        "url": "/sws/neo/purchase-invoice/lines/selectors/tax"
+        "url": "/sws/neo/purchase-invoice/lines/selectors/tax",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "DateInvoiced",
+              "source": "parentField",
+              "field": "invoiceDate",
+              "format": "DD-MM-YYYY"
+            }
+          ]
+        }
       },
       {
         "entity": "lines",

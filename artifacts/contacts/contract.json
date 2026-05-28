@@ -1,8 +1,8 @@
 {
   "version": "0.9.0",
   "generatedAt": "2026-05-06T15:52:09.982Z",
-  "updatedAt": "2026-05-19T12:09:13.865Z",
-  "checksum": "d3f313a41e60c6ec",
+  "updatedAt": "2026-05-22T17:24:15.125Z",
+  "checksum": "53cb295b2130e122",
   "frontendContract": {
     "window": {
       "id": "123",
@@ -64,7 +64,7 @@
         "en_US": {
           "Name": "Legal Name",
           "FIN_Financial_Account_ID": "Account",
-          "PO_Financial_Account_ID": "Account",
+          "PO_Financial_Account_ID": "Expense Account",
           "EM_Etgo_Web": "Website",
           "EM_Etgo_Firstname": "First Name",
           "EM_Etgo_Lastname": "Last Name"
@@ -73,7 +73,7 @@
           "Name": "Razón Social",
           "EM_Etgo_Identifier": "Identificador",
           "FIN_Financial_Account_ID": "Cuenta",
-          "PO_Financial_Account_ID": "Cuenta",
+          "PO_Financial_Account_ID": "Cuenta contable de gastos",
           "EM_Etgo_Web": "Página web",
           "EM_Etgo_Firstname": "Nombre",
           "EM_Etgo_Lastname": "Apellidos"
@@ -3825,7 +3825,7 @@
         "en_US": {
           "Name": "Legal Name",
           "FIN_Financial_Account_ID": "Account",
-          "PO_Financial_Account_ID": "Account",
+          "PO_Financial_Account_ID": "Expense Account",
           "EM_Etgo_Web": "Website",
           "EM_Etgo_Firstname": "First Name",
           "EM_Etgo_Lastname": "Last Name"
@@ -3834,7 +3834,7 @@
           "Name": "Razón Social",
           "EM_Etgo_Identifier": "Identificador",
           "FIN_Financial_Account_ID": "Cuenta",
-          "PO_Financial_Account_ID": "Cuenta",
+          "PO_Financial_Account_ID": "Cuenta contable de gastos",
           "EM_Etgo_Web": "Página web",
           "EM_Etgo_Firstname": "Nombre",
           "EM_Etgo_Lastname": "Apellidos"
@@ -9939,7 +9939,16 @@
         "column": "PO_Financial_Account_ID",
         "reference": "FIN_Financial_Account",
         "inputMode": "selector",
-        "url": "/sws/neo/contacts/businessPartner/selectors/pOFinancialAccount"
+        "url": "/sws/neo/contacts/businessPartner/selectors/pOFinancialAccount",
+        "context": {
+          "required": [
+            {
+              "param": "PO_Paymentmethod_ID",
+              "source": "field",
+              "field": "pOPaymentMethod"
+            }
+          ]
+        }
       },
       {
         "entity": "businessPartner",
@@ -10083,7 +10092,16 @@
         "column": "PO_Financial_Account_ID",
         "reference": "Financial_Account",
         "inputMode": "search",
-        "url": "/sws/neo/contacts/vendorCreditor/selectors/pOFinancialAccount"
+        "url": "/sws/neo/contacts/vendorCreditor/selectors/pOFinancialAccount",
+        "context": {
+          "required": [
+            {
+              "param": "PO_Paymentmethod_ID",
+              "source": "parentField",
+              "field": "pOPaymentMethod"
+            }
+          ]
+        }
       },
       {
         "entity": "vendorCreditor",
@@ -10266,7 +10284,7 @@
       "en_US": {
         "Name": "Legal Name",
         "FIN_Financial_Account_ID": "Account",
-        "PO_Financial_Account_ID": "Account",
+        "PO_Financial_Account_ID": "Expense Account",
         "EM_Etgo_Web": "Website",
         "EM_Etgo_Firstname": "First Name",
         "EM_Etgo_Lastname": "Last Name"
@@ -10275,7 +10293,7 @@
         "Name": "Razón Social",
         "EM_Etgo_Identifier": "Identificador",
         "FIN_Financial_Account_ID": "Cuenta",
-        "PO_Financial_Account_ID": "Cuenta",
+        "PO_Financial_Account_ID": "Cuenta contable de gastos",
         "EM_Etgo_Web": "Página web",
         "EM_Etgo_Firstname": "Nombre",
         "EM_Etgo_Lastname": "Apellidos"

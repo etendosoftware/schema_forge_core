@@ -27,6 +27,28 @@ npm install -g agent-browser && agent-browser install   # Optional: install agen
 
 ---
 
+## Etendo GO Contextual Selector Smoke
+
+`e2e/tests/flows/etendogo-contextual-selectors.integration.spec.js` validates the non-MCP Etendo GO integration risk for contextual FK selectors. It is skipped by default because it requires a live Etendo backend, a loaded F&B dataset, and a JWT-capable test user.
+
+Run it explicitly against local Etendo:
+
+```bash
+cd e2e
+ETENDO_URL=http://localhost:8080/etendo npm run test:etendogo-contextual-selectors
+```
+
+The smoke gets a read JWT through `scripts/neo-token-groupadmin.sh` unless `E2E_ETENDOGO_JWT` is already set. It verifies that generated selector identifiers work at runtime for the highest-risk document contexts:
+
+- sales/purchase partner address from selected business partner;
+- sales/purchase price list from `isSOTrx`;
+- sales/purchase tax from transaction side plus date;
+- goods receipt/shipment partner address from selected business partner.
+
+If this smoke fails because generated field-name selector URLs return `404 Field not found or not included`, track it under [ETP-4058](https://etendoproject.atlassian.net/browse/ETP-4058). That bug is intentionally separate from the integration-test scope: the test detects the runtime/generator contract mismatch, but the fix belongs to the Etendo GO / Schema Forge selector URL compatibility task.
+
+---
+
 ## Deployed MCP OAuth2 Smoke
 
 `e2e/tests/flows/mcp-oauth-pkce.smoke.spec.js` validates the public MCP/OAuth integration after deploy. It models the browser flow started by `opencode mcp auth etendo`: clean session, OAuth authorize URL, login, requested permissions, explicit authorization, local callback, and PKCE token exchange. The UI preserves the original `/authorize?...` URL through onboarding with a local-only `returnTo` parameter, then resumes the authorization screen after environment login. It is skipped by default because it targets a deployed environment, uses real smoke credentials, can create an OAuth client through DCR, and binds a local callback server.
@@ -484,7 +506,9 @@ Shared UI components (`EntityForm`, `DetailView`, `ListView`, `DataTable`) emit 
 | `tab-{key}` | `tab-lines`, `tab-custom:attachments` | DetailView tab strip buttons (main strip and customTabsAfterBottom strip) |
 | `row-{id}` | `row-ABC123` | DataTable rows |
 | `option-{id}` | `option-ABC123` | SearchInput suggestions |
-| `option-{field}-{id}` | `option-warehouse-ABC123` | SelectorInput / DependentSelect items |
+| `option-{field}-{id}` | `option-warehouse-ABC123` | DependentSelect items |
+| `inline-add-field-{field}` | `inline-add-field-tax` | InlineSearchCombo text input (inline add/edit rows) |
+| `inline-add-option-{field}-{id}` | `inline-add-option-tax-tax-1` | InlineSearchCombo portal dropdown items |
 | `attachments-tab-panel` | — | AttachmentsTab root container |
 | `attachments-dropzone` | — | UploadDropzone drag-and-drop area |
 | `attachments-file-input` | — | Hidden `<input type="file">` — use `setInputFiles()` |

@@ -75,9 +75,9 @@ const addLineFields = {
   entry: [
     { key: 'product', column: 'M_Product_ID', type: 'search', lookup: true, label: 'Product', reference: 'Product', inputMode: 'search', forceCalloutFields: ["listPrice","unitPrice","tax","uOM","grossUnitPrice"] },
     { key: 'description', column: 'Description', type: 'textarea', label: 'Description' },
-    { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity', defaultValue: 1 },
-    { key: 'listPrice', column: 'PriceList', type: 'number', required: true, label: 'List Price' },
-    { key: 'etgoDiscount', column: 'EM_Etgo_Discount', type: 'number', label: 'Discount %', defaultValue: 0 },
+    { key: 'invoicedQuantity', column: 'QtyInvoiced', type: 'number', required: true, label: 'Invoiced Quantity', defaultValue: 1, min: 0 },
+    { key: 'listPrice', column: 'PriceList', type: 'number', required: true, label: 'List Price', min: 0 },
+    { key: 'etgoDiscount', column: 'EM_Etgo_Discount', type: 'number', label: 'Discount %', defaultValue: 0, min: 0 },
     { key: 'tax', column: 'C_Tax_ID', type: 'selector', label: 'Tax', reference: 'Tax', inputMode: 'selector', forceCalloutFields: ["lineNetAmount"] },
   ],
   derived: [
@@ -240,7 +240,15 @@ export const api = {
       "column": "C_DocTypeTarget_ID",
       "reference": "DocumentType",
       "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/header/selectors/transactionDocument"
+      "url": "/sws/neo/purchase-invoice/header/selectors/transactionDocument",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -256,7 +264,16 @@ export const api = {
       "column": "C_BPartner_Location_ID",
       "reference": "BusinessPartnerLocation",
       "inputMode": "dependent",
-      "url": "/sws/neo/purchase-invoice/header/selectors/partnerAddress"
+      "url": "/sws/neo/purchase-invoice/header/selectors/partnerAddress",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -264,7 +281,15 @@ export const api = {
       "column": "M_PriceList_ID",
       "reference": "PriceList",
       "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/header/selectors/priceList"
+      "url": "/sws/neo/purchase-invoice/header/selectors/priceList",
+      "context": {
+        "required": [
+          {
+            "param": "isSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -280,7 +305,15 @@ export const api = {
       "column": "FIN_Paymentmethod_ID",
       "reference": "PaymentMethod",
       "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/header/selectors/paymentMethod"
+      "url": "/sws/neo/purchase-invoice/header/selectors/paymentMethod",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -304,7 +337,16 @@ export const api = {
       "column": "AD_User_ID",
       "reference": "User",
       "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/header/selectors/userContact"
+      "url": "/sws/neo/purchase-invoice/header/selectors/userContact",
+      "context": {
+        "required": [
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -328,7 +370,20 @@ export const api = {
       "column": "C_Project_ID",
       "reference": "Project",
       "inputMode": "search",
-      "url": "/sws/neo/purchase-invoice/header/selectors/project"
+      "url": "/sws/neo/purchase-invoice/header/selectors/project",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "C_BPartner_ID",
+            "source": "field",
+            "field": "businessPartner"
+          }
+        ]
+      }
     },
     {
       "entity": "header",
@@ -360,7 +415,21 @@ export const api = {
       "column": "C_Tax_ID",
       "reference": "Tax",
       "inputMode": "selector",
-      "url": "/sws/neo/purchase-invoice/lines/selectors/tax"
+      "url": "/sws/neo/purchase-invoice/lines/selectors/tax",
+      "context": {
+        "required": [
+          {
+            "param": "IsSOTrx",
+            "source": "windowCategory"
+          },
+          {
+            "param": "DateInvoiced",
+            "source": "parentField",
+            "field": "invoiceDate",
+            "format": "DD-MM-YYYY"
+          }
+        ]
+      }
     },
     {
       "entity": "lines",
@@ -875,6 +944,7 @@ export default function HeaderPage({ windowName, recordId, ...props }) {
           { key: 'accounting', label: 'Accounting', Table: AccountingTable, Form: AccountingForm },
           { key: 'reversedInvoices', label: 'Reversed Invoices', Table: ReversedInvoicesTable, Form: ReversedInvoicesForm },
         ]}
+        hideDeleteWhenComplete
         noHeaderBorder
         notesField="description"
         customTabs={[{ key: 'related', labelKey: 'relatedDocuments', Component: RelatedDocuments }, { key: 'attachments', labelKey: 'attachments', Component: AttachmentsTab, placement: 'tab', props: { tableName: "C_Invoice", config: {} } }, { key: 'sif', labelKey: 'sifDataTabs.sectionTitle', Component: SifTab, placement: 'tab' }]}

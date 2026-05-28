@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button.jsx';
 import { Badge } from '@/components/ui/badge.jsx';
@@ -59,6 +59,7 @@ import { useSetPageMeta } from '@/components/layout/PageMetaContext';
 import { useFavorites } from '@/components/layout/FavoritesContext';
 import { SummaryBar } from './SummaryBar.jsx';
 import DocumentTotalsPanel from './DocumentTotalsPanel.jsx';
+import { resolveTotalDiscountPct } from '@/lib/documentTotals';
 import LinesSelectionBar from './LinesSelectionBar.jsx';
 import { resolveIdentifier } from '@/lib/resolveIdentifier.js';
 import {
@@ -68,13 +69,24 @@ import {
 } from '@/lib/lineFieldChange.js';
 import { getCatalogOptions } from '@/lib/selectorCatalog.js';
 import { formatAmount } from '@/lib/formatAmount.js';
+import { useRegisterWindowContext } from '@/components/CurrentWindowContext';
+import { matchOcrDocType } from '@/components/copilot/ocr/ocrDocTypes';
 import { isDeleteVisibleForRecord } from '@/utils/recordActions.js';
+import { buildHeaderSelectorContext, buildLineSelectorContext } from '@/lib/selectorContext.js';
 import DocumentStatusPill from './DocumentStatusPill.jsx';
+
+const LazyOcrInlineUploader = lazy(() => import('@/components/copilot/ocr/OcrInlineUploader.jsx'));
 
 /**
  * Evaluate a simple Etendo display-logic expression (@Field@='Value') against record data.
  * Returns true (visible) if the expression cannot be parsed or if the field is missing from data.
  */
+function sidePanelWrapperCls(hasSidePanel, linesLayout) {
+  if (hasSidePanel) return 'flex items-start gap-0';
+  if (linesLayout === 'inlineEditable') return 'flex flex-col';
+  return '';
+}
+
 function evalDisplayLogicRaw(expr, data) {
   if (!expr) return true;
   const clauses = [...expr.matchAll(/@(\w+)@\s*(!?=)\s*'([^']*)'/g)];
@@ -141,7 +153,7 @@ function CollapsibleSection({ title, children }) {
  */
 function detailContentPadding(linesLayout, hasSidebar, variant) {
   const isInline = linesLayout === 'inlineEditable';
-  if (hasSidebar) return isInline ? 'pr-2' : 'pl-6 pr-2';
+  if (hasSidebar) return isInline ? 'p-2' : 'pl-6 pr-2';
   if (variant === 'panel') return isInline ? 'pr-6' : 'px-6';
   return isInline ? '' : 'px-6';
 }
@@ -204,6 +216,7 @@ export function DetailView({
   formFooter = null,
   draftMode = null,
   headerContent = null,
+  headerExtra = null,
   customTabs = [],
   documentPreview,
   notesField,
@@ -247,7 +260,7 @@ export function DetailView({
   additionalDirtyState = false,
   labelOverrides,
   enableSecondaryRowDelete = false,
-  sidebarClassName = 'w-96 shrink-0 overflow-y-auto pt-0 pl-0 pr-4 pb-5',
+  sidebarClassName = 'w-96 shrink-0 overflow-y-auto pt-2 pl-0 pr-4 pb-5',
   linesLayout = 'classic',
   autoSaveOnBlur = false,
   toolbarPaddingX = 'px-6',
@@ -320,51 +333,36 @@ export function DetailView({
   const secondaryTabKeysStr = secondaryTabs.map(t => t?.key ?? '').join('|');
 
   const selectorContextByEntity = useMemo(() => {
-    // Derive isSOTrx from window category so NEO's validation filter resolves
-    // @isSOTrx@ in M_PriceList.issopricelist = @isSOTrx@, showing only sales or
-    // purchase price lists depending on the document type.
     const category = api?.window?.category;
-    const isSOTrx = category === 'sales' ? 'Y' : category === 'purchases' ? 'N' : null;
-
-    // Derive isCustomer/isVendor from window category so the BusinessPartner selector
-    // shows only customers (sales) or vendors (purchases).
-    const isCustomer = category === 'sales' ? 'Y' : null;
-    const isVendor = category === 'purchases' ? 'Y' : null;
-
     const next = {};
-    // Primary entity (header): inject isSOTrx, isCustomer, isVendor
+
     if (entity) {
-      next[entity] = {
-        ...(isSOTrx ? { isSOTrx } : {}),
-        ...(isCustomer ? { isCustomer } : {}),
-        ...(isVendor ? { isVendor } : {}),
-      };
+      next[entity] = buildHeaderSelectorContext(category);
     }
+
     if (!parentRecordId) return next;
+
     if (detailEntity) {
-      // DateInvoiced is required by the C_Tax validationRule:
-      // VALIDFROM <= COALESCE(@DateInvoiced@, @DateOrdered@)
-      // Without it, COALESCE(null,null)=null → VALIDFROM<=null is always FALSE → no taxes returned.
-      // Etendo Classic's PL/pgSQL to_date() expects DD-MM-YYYY, so the ISO date from the
-      // header (YYYY-MM-DD) must be reformatted before being sent as a context param.
       const headerSnapshot = hook.selected ?? hook.editing;
-      const invoiceDate = headerSnapshot?.invoiceDate ?? headerSnapshot?.orderDate ?? null;
-      const isoMatch = typeof invoiceDate === 'string' ? invoiceDate.match(/^(\d{4})-(\d{2})-(\d{2})/) : null;
-      const dateInvoicedParam = isoMatch ? `${isoMatch[3]}-${isoMatch[2]}-${isoMatch[1]}` : invoiceDate;
       const currency = headerSnapshot?.['currency$_identifier'] ?? sessionCurrencyCode ?? null;
       next[detailEntity] = {
-        parentId: parentRecordId,
-        ...(isSOTrx ? { isSOTrx, IsSOTrx: isSOTrx } : {}),
-        ...(priceListId ? { priceList: priceListId } : {}),
-        ...(dateInvoicedParam ? { DateInvoiced: dateInvoicedParam } : {}),
+        ...buildLineSelectorContext({
+          windowCategory: category,
+          parentId: parentRecordId,
+          headerRecord: {
+            ...headerSnapshot,
+            priceList: priceListId,
+          },
+        }),
         ...(currency ? { currency } : {}),
       };
     }
+
     for (const key of secondaryTabKeysStr.split('|').filter(Boolean)) {
       next[key] = { parentId: parentRecordId };
     }
     return next;
-  }, [entity, detailEntity, parentRecordId, secondaryTabKeysStr, priceListId, api, hook.selected, hook.editing]);
+  }, [entity, detailEntity, parentRecordId, secondaryTabKeysStr, priceListId, api, hook.selected, hook.editing, sessionCurrencyCode]);
   const { catalogs, catalogsLoaded } = useCatalogs(api, token, apiBaseUrl, staticCatalogs);
   const displayLogic = useDisplayLogic(entity, hook.editing, { token, apiBaseUrl });
   const { calloutResult, calloutLoading, executeCallout } = useCallout(entity, { token, apiBaseUrl });
@@ -440,6 +438,23 @@ export function DetailView({
 
   // Document-level read-only: when processed===true, the entire record (including lines) is read-only.
   const _headerData = hook.selected ?? hook.editing;
+
+  // Register this detail view with the current-window context so the Copilot
+  // widget can auto-attach the current record when opened. Memoized so the
+  // hook's JSON.stringify signature work stays stable across renders.
+  const _detailTabTitle = tMenu(entityLabel) || entityLabel || entity;
+  const _isFormEditing = Boolean(hook.editing);
+  const _windowContextInfo = useMemo(() => (
+    _headerData ? {
+      spec: windowName,
+      tabTitle: _detailTabTitle,
+      selectedRecords: [_headerData],
+      formValues: hook.editing || null,
+      isFormEditing: _isFormEditing,
+    } : null
+  ), [_headerData, windowName, _detailTabTitle, hook.editing, _isFormEditing]);
+  useRegisterWindowContext(_windowContextInfo);
+  const isDocumentReadOnly = lockWhenProcessed && (_headerData?.processed === true || _headerData?.processed === 'Y');
   const isProcessed = _headerData?.processed === true || _headerData?.processed === 'Y';
   // When draftMode declares an explicit completedStatuses array, only those documentStatus
   // values hide the Save/Confirm pair. This lets windows like sales-quotation keep the
@@ -452,7 +467,6 @@ export function DetailView({
         : (isProcessed || _headerData?.documentStatus === 'CO')
     )
   );
-  const isDocumentReadOnly = lockWhenProcessed && isProcessed;
   const sqBtnSize = toolbarButtonSize === 'default' ? 'h-10 w-10' : 'h-9 w-9';
   const saveBtnCls = toolbarButtonSize === 'default' ? 'h-10 gap-2' : 'gap-1.5';
   const [showPrint, setShowPrint] = useState(false);
@@ -1500,7 +1514,7 @@ export function DetailView({
             })}
             {topbarExtra && (() => {
               const TopbarExtraComponent = topbarExtra;
-              return <TopbarExtraComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} />;
+              return <TopbarExtraComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} onRefresh={() => hook.fetchById?.(data?.id || recordId)} />;
             })()}
           </div>
 
@@ -1508,7 +1522,7 @@ export function DetailView({
               {/* Topbar right slot (e.g. payment status badge) */}
               {topbarRight && (() => {
                 const TopbarRightComponent = topbarRight;
-                return <TopbarRightComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} />;
+                return <TopbarRightComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} onRefresh={() => hook.fetchById?.(data?.id || recordId)} />;
               })()}
               {/* Send / Print document — uses DocumentPrintDrawer.
                   Icon unified with RowQuickActions (envelope/Mail) so the same
@@ -1533,8 +1547,8 @@ export function DetailView({
                   <Printer className="h-4 w-4" />
                 </button>
               )}
-              {/* Delete record — hidden when hideDeleteWhenComplete and status matches */}
-              {!isNew && recordId && isDeleteVisibleForRecord({ record: data, statusField, hideDeleteWhenComplete }) && (
+              {/* Delete record — hidden when hideDeleteWhenComplete and status matches or record is processed */}
+              {!isNew && recordId && isDeleteVisibleForRecord({ record: data, statusField, hideDeleteWhenComplete }) && !(hideDeleteWhenComplete && isProcessed) && (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   className={`${sqBtnSize} flex items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors`}
@@ -1547,6 +1561,7 @@ export function DetailView({
               {/* More actions */}
               {!(typeof hideMoreMenu === 'function' ? hideMoreMenu({ data }) : hideMoreMenu) && <div className="relative" ref={moreMenuRef}>
                 <button
+                  data-testid="action-more"
                   onClick={() => setShowMoreMenu(v => !v)}
                   className="flex items-center justify-center p-[7px] rounded-md bg-white border border-[#D1D4DB] shadow-[0px_1px_2px_0px_#1212170D] text-muted-foreground hover:bg-[#F1F5F9] hover:text-foreground transition-colors"
                 >
@@ -1688,7 +1703,7 @@ export function DetailView({
                         {hook.isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" color="#64748B" />}
                         {ui('save')}
                       </Button>
-                      <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={hook.isSaving} onClick={async () => {
+                      <Button size="default" className={saveBtnCls} data-testid="action-save" disabled={hook.isSaving || (draftMode.disableWhenEmpty === true && !hook.childrenLoading && hook.children.length === 0)} onClick={async () => {
                         if (!(await flushPendingLines())) return;
                         if (typeof draftMode.onConfirm === 'function') { draftMode.onConfirm(); return; }
                         const saved = await hook.handleSaveAndProcess(draftMode);
@@ -1699,6 +1714,8 @@ export function DetailView({
                           } else if (saved.id && isNew) {
                             hook.primeSaved?.(saved);
                             navigate(`/${windowName}/${saved.id}`, { replace: true, state: { justSaved: saved } });
+                          } else if (saved.id) {
+                            hook.fetchById?.(saved.id);
                           }
                         }
                       }}>
@@ -1834,8 +1851,52 @@ export function DetailView({
         })() : null}
         <div className={`flex-1 min-w-0 ${linesLayout === 'inlineEditable' ? 'flex flex-col overflow-y-auto' : 'overflow-auto pb-6'} ${detailContentPadding(linesLayout, !!(sidePanel || sidebarContent), 'content')}${primaryTabs && activePrimaryTab !== 'general' ? ' hidden' : ''}`}>
           {typeof headerContent === 'function' ? headerContent(data) : headerContent}
-          <div className={`${sidePanel ? 'flex items-start gap-0' : ''} ${linesLayout === 'inlineEditable' ? 'flex flex-col' : ''}`}>
+          {(() => {
+            const slotProps = {
+              data,
+              isNew,
+              entity,
+              recordId: data?.id || recordId,
+              token,
+              apiBaseUrl,
+              api,
+              detailEntity,
+              onFieldChange: handleChangeWithCallout,
+              onSave: async () => {
+                if (!(await flushPendingLines())) return null;
+                const saved = await hook.handleSave(data);
+                if (saved?.id && isNew) {
+                  hook.primeSaved?.(saved);
+                }
+                return saved;
+              },
+              onAddChild: hook.handleAddChild,
+              onRefresh: (parentId = data?.id || recordId) => {
+                if (!parentId) return;
+                hook.fetchChildren?.(parentId);
+                hook.fetchById?.(parentId);
+              },
+              onRefreshChildren: () => hook.fetchChildren?.(data?.id || recordId),
+            };
+            const ocrDocType = matchOcrDocType(location.pathname);
+            return (
+              <>
+                {headerExtra && (
+                  typeof headerExtra === 'function'
+                    ? headerExtra(slotProps)
+                    : headerExtra
+                )}
+                {!headerExtra && !sidePanel && ocrDocType && (
+                  <Suspense fallback={null}>
+                    <LazyOcrInlineUploader {...slotProps} docTypeId={ocrDocType.id} />
+                  </Suspense>
+                )}
+              </>
+            );
+          })()}
+          <div className={sidePanelWrapperCls(!!sidePanel, linesLayout)}>
           <div className={`${sidePanel ? 'flex-1 min-w-0' : 'max-w-full'} ${linesLayout === 'inlineEditable' ? 'flex flex-col' : 'space-y-2'}`}>
+
             {/* Principal + collapsed fields wrapped in a card */}
             <div className={`${noHeaderBorder ? '' : ' rounded-2xl border border-gray-200/70 bg-white shadow-sm'}${embedded ? ' pointer-events-none' : ''}`}>
               <div className={linesLayout === 'inlineEditable' ? 'p-2' : 'p-6'}>
@@ -2142,7 +2203,6 @@ export function DetailView({
                               localUpdate[fieldKey + '$_identifier'] = opts.identifier;
                             }
                             hook.handleUpdateChild?.(row.id, localUpdate);
-                            toast.success(ui('recordSaved'));
                           } else {
                             const msg = await extractErrorMessage(res);
                             toast.error(msg || ui('networkError'));
@@ -2962,7 +3022,7 @@ export function DetailView({
                       formatAmount={formatAmount}
                       currency={currency}
                       readOnly={isDocumentReadOnly}
-                      totalDiscountPct={Number(data?.etgoTotalDiscount ?? 0)}
+                      totalDiscountPct={resolveTotalDiscountPct(data, hook.children)}
                       onTotalDiscountChange={handleTotalDiscountChange}
                     />
                   );
@@ -3061,11 +3121,11 @@ export function DetailView({
           </div>
           {sidePanel && (
             <div
-              className="w-[280px] shrink-0 self-stretch pl-0 pr-3"
+              className="w-[280px] shrink-0 self-stretch border-l border-gray-200 pl-3 pr-3"
               style={sidePanelStyle}
             >
               {typeof sidePanel === 'function'
-                ? React.createElement(sidePanel, { recordId: data?.id || recordId, data, token, apiBaseUrl, api })
+                ? React.createElement(sidePanel, { recordId: data?.id || recordId, data, token, apiBaseUrl, api, isNew })
                 : sidePanel}
             </div>
           )}

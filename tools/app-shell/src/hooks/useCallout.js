@@ -1,6 +1,14 @@
 import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 
+function sanitizeCalloutMessage(raw) {
+  return raw
+    .replace(/<br[^>]{0,10}>/gi, ' ')
+    .replace(/<[^>]{0,200}>/g, '')
+    .replace(/^(Note|Warning|Error):\s*/i, '')
+    .trim();
+}
+
 /**
  * Hook that calls the NEO Headless callout endpoint when FK fields change.
  *
@@ -34,13 +42,8 @@ export function useCallout(entity, { token, apiBaseUrl }) {
       setCalloutLoading(true);
       try {
         // Extract auxiliary values from formState (keys like "businessPartner_LOC")
-        const auxiliaryValues = {};
         const state = formState ?? {};
-        for (const [key, val] of Object.entries(state)) {
-          if (/^[a-zA-Z]+_[A-Z]{2,4}$/.test(key) && val != null && val !== '') {
-            auxiliaryValues[key] = String(val);
-          }
-        }
+        const auxiliaryValues = extractAuxiliaryValues(state);
         const payload = {
           field,
           value,
@@ -69,7 +72,7 @@ export function useCallout(entity, { token, apiBaseUrl }) {
 
         // Show callout messages via toast
         for (const msg of messages) {
-          const text = msg.text || msg.message || '';
+          const text = sanitizeCalloutMessage(msg.text || msg.message || '');
           if (!text) continue;
           const type = (msg.type || '').toUpperCase();
           if (type === 'ERROR') toast.error(text);
@@ -97,3 +100,13 @@ export function useCallout(entity, { token, apiBaseUrl }) {
 
   return { calloutResult, calloutLoading, executeCallout };
 }
+function extractAuxiliaryValues(state) {
+  const auxiliaryValues = {};
+  for (const [key, val] of Object.entries(state)) {
+    if (/^[a-zA-Z]+_[A-Z]{2,4}$/.test(key) && val != null && val !== '') {
+      auxiliaryValues[key] = String(val);
+    }
+  }
+  return auxiliaryValues;
+}
+

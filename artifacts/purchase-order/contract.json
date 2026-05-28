@@ -1,8 +1,8 @@
 {
-  "version": "0.19.0",
+  "version": "0.20.0",
   "generatedAt": "2026-04-30T15:42:46.497Z",
-  "updatedAt": "2026-05-19T12:09:27.651Z",
-  "checksum": "01bf2c95e045ba93",
+  "updatedAt": "2026-05-20T18:17:18.207Z",
+  "checksum": "b422bbb88c006d20",
   "frontendContract": {
     "window": {
       "id": "181",
@@ -1170,6 +1170,7 @@
             "defaultValue": "1",
             "section": "principal",
             "gridOrder": 3,
+            "min": 0,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -1195,6 +1196,7 @@
             "columnType": "amount",
             "section": "principal",
             "gridOrder": 4,
+            "min": 0,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -1222,6 +1224,7 @@
             "defaultValue": "0",
             "section": "principal",
             "gridOrder": 5,
+            "min": 0,
             "callout": {
               "className": "org.openbravo.erpCommon.ad_callouts.SL_Order_Amt"
             },
@@ -4544,14 +4547,31 @@
         "column": "C_BPartner_Location_ID",
         "reference": "BusinessPartnerLocation",
         "inputMode": "dependent",
-        "url": "/sws/neo/purchase-order/header/selectors/partnerAddress"
+        "url": "/sws/neo/purchase-order/header/selectors/partnerAddress",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
         "field": "transactionDocument",
         "column": "C_DocTypeTarget_ID",
         "reference": "DocumentType",
-        "url": "/sws/neo/purchase-order/header/selectors/transactionDocument"
+        "url": "/sws/neo/purchase-order/header/selectors/transactionDocument",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -4567,7 +4587,15 @@
         "column": "FIN_Paymentmethod_ID",
         "reference": "PaymentMethod",
         "inputMode": "selector",
-        "url": "/sws/neo/purchase-order/header/selectors/paymentMethod"
+        "url": "/sws/neo/purchase-order/header/selectors/paymentMethod",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -4583,7 +4611,15 @@
         "column": "M_PriceList_ID",
         "reference": "PriceList",
         "inputMode": "selector",
-        "url": "/sws/neo/purchase-order/header/selectors/priceList"
+        "url": "/sws/neo/purchase-order/header/selectors/priceList",
+        "context": {
+          "required": [
+            {
+              "param": "isSOTrx",
+              "source": "windowCategory"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -4603,7 +4639,16 @@
         "column": "BillTo_ID",
         "reference": "BusinessPartnerLocation",
         "inputMode": "dependent",
-        "url": "/sws/neo/purchase-order/header/selectors/invoiceFrom"
+        "url": "/sws/neo/purchase-order/header/selectors/invoiceFrom",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -4630,7 +4675,20 @@
         "column": "C_Project_ID",
         "reference": "Project",
         "inputMode": "search",
-        "url": "/sws/neo/purchase-order/header/selectors/project"
+        "url": "/sws/neo/purchase-order/header/selectors/project",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "C_BPartner_ID",
+              "source": "field",
+              "field": "businessPartner"
+            }
+          ]
+        }
       },
       {
         "entity": "header",
@@ -4678,7 +4736,21 @@
         "column": "C_Tax_ID",
         "reference": "Tax",
         "inputMode": "selector",
-        "url": "/sws/neo/purchase-order/lines/selectors/tax"
+        "url": "/sws/neo/purchase-order/lines/selectors/tax",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "DateInvoiced",
+              "source": "parentField",
+              "field": "orderDate",
+              "format": "DD-MM-YYYY"
+            }
+          ]
+        }
       },
       {
         "entity": "lines",
@@ -4686,7 +4758,20 @@
         "column": "C_Aum",
         "reference": "UOM",
         "inputMode": "selector",
-        "url": "/sws/neo/purchase-order/lines/selectors/operativeUOM"
+        "url": "/sws/neo/purchase-order/lines/selectors/operativeUOM",
+        "context": {
+          "required": [
+            {
+              "param": "IsSOTrx",
+              "source": "windowCategory"
+            },
+            {
+              "param": "M_Product_ID",
+              "source": "field",
+              "field": "product"
+            }
+          ]
+        }
       },
       {
         "entity": "lines",
@@ -4714,7 +4799,16 @@
         "field": "partnerAddress",
         "column": "C_BPartner_Location_ID",
         "reference": "BusinessPartnerLocation",
-        "url": "/sws/neo/purchase-order/lines/selectors/partnerAddress"
+        "url": "/sws/neo/purchase-order/lines/selectors/partnerAddress",
+        "context": {
+          "required": [
+            {
+              "param": "C_BPartner_ID",
+              "source": "parentField",
+              "field": "businessPartner"
+            }
+          ]
+        }
       },
       {
         "entity": "lines",

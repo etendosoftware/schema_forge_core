@@ -5,6 +5,8 @@
 | File | Description |
 |------|-------------|
 | [architecture-overview.md](architecture-overview.md) | System architecture: Schema Forge (tooling) + Etendo Go (runtime), data flow, component inventory |
+| [transactional-email-framework.md](transactional-email-framework.md) | Transactional email framework: contract-driven execution, security boundary, lifecycle, edge cases, and agent checklist |
+| [email-contracts.md](email-contracts.md) | Email contracts guide: descriptor schema, request/response contract, recipient policies, versioning, and initial contract sketches |
 | [NEO Headless API Reference](../modules/com.etendoerp.go/docs/neo-headless.md) | Full API reference for the runtime module (NeoServlet, selectors, processes, webhooks) |
 | [NEO Headless Extensibility Guide](neo-headless-extensibility.md) | How to extend/customize NEO Headless: NeoHandler hooks, configuration, patterns |
 | [NEO Entity Naming Investigation](neo-entity-naming-investigation.md) | Investigation report on `push-to-neo` naming, duplicate entities/fields, runtime endpoint resolution, and unification rule |
@@ -88,9 +90,11 @@ General findings about how the Etendo Application Dictionary works. Not window-s
 | File | Description |
 |------|-------------|
 | [ops/cloudfront-alb-routing.md](ops/cloudfront-alb-routing.md) | CloudFront + ALB routing for the SPA, same-origin `/etendo/*` forwarding, and deployment runbook |
+| [ops/transactional-email-security.md](ops/transactional-email-security.md) | Transactional email security runbook: secrets, throttle, suppression, kill switches, incident response, and metrics |
 | [ops/copilot-pr-review.md](ops/copilot-pr-review.md) | Copilot-aligned PR review gate: review instructions, deterministic findings, PR comments, and request-changes behavior |
 | [ops/window-doc-freshness.md](ops/window-doc-freshness.md) | Window-specific doc freshness warning: diff-based CI review for `docs/generated-custom-windows/<window>.md` |
 | [ops/epic-rollup-report.md](ops/epic-rollup-report.md) | Develop-targeted epic rollout report: included feature PRs, prior review findings, and aggregated release-risk summary |
+| [ops/app-shell-observability.md](ops/app-shell-observability.md) | App Shell observability: providers, env vars, v1 events, privacy rules, and extension guide |
 
 ## Proposals
 

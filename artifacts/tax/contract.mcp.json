@@ -1,0 +1,133 @@
+{
+  "version": "0.5.0",
+  "generatedAt": "2026-04-27T19:18:32.198Z",
+  "updatedAt": "2026-05-26T18:57:35.890Z",
+  "contractChecksum": "3026a7617b32b170",
+  "apiPrediction": {
+    "specName": "tax-rate",
+    "baseUrl": "/sws/neo/tax-rate",
+    "crud": {
+      "tax": {
+        "get": true,
+        "getById": true,
+        "post": true,
+        "put": true,
+        "patch": true,
+        "delete": true,
+        "listUrl": "/sws/neo/tax-rate/tax",
+        "detailUrl": "/sws/neo/tax-rate/tax/{id}",
+        "supportedFilters": [
+          "name"
+        ]
+      }
+    },
+    "selectors": [],
+    "actions": [],
+    "queryParams": {
+      "pagination": {
+        "startRow": "_startRow",
+        "endRow": "_endRow",
+        "default": "0-100"
+      },
+      "sorting": {
+        "param": "_sortBy",
+        "example": "_sortBy=creationDate desc"
+      },
+      "filtering": "Use field name as query param: ?fieldName=value",
+      "parentFilter": "parentId={id} for child entities"
+    },
+    "window": {
+      "category": "settings"
+    },
+    "labelOverrides": {
+      "es_ES": {
+        "Name": "Nombre",
+        "Rate": "Índice",
+        "SOPOType": "Tipo venta/compra",
+        "ValidFrom": "Válido desde",
+        "IsActive": "Activo",
+        "Description": "Descripción"
+      },
+      "en_US": {
+        "Name": "Name",
+        "Rate": "Rate",
+        "SOPOType": "Sales/Purchase Type",
+        "ValidFrom": "Valid From",
+        "IsActive": "Active",
+        "Description": "Description"
+      }
+    }
+  },
+  "formState": {
+    "entities": {
+      "tax": {
+        "fields": {
+          "name": {
+            "required": true
+          },
+          "rate": {
+            "required": true
+          },
+          "docTaxAmount": {
+            "required": true,
+            "defaultValue": "D"
+          },
+          "baseAmount": {
+            "required": true,
+            "defaultValue": "LNA"
+          },
+          "applicableTo": {
+            "required": true,
+            "defaultValue": "B"
+          },
+          "validFrom": {
+            "required": true
+          }
+        }
+      }
+    },
+    "requiredSessionVariables": [],
+    "evaluationMode": "runtime"
+  },
+  "agentProfile": {
+    "purpose": "Manage tax rate records.",
+    "whenToUse": [
+      "Use for tax rate management."
+    ],
+    "minimumCreate": {
+      "headerFields": [
+        "name",
+        "rate",
+        "docTaxAmount",
+        "baseAmount",
+        "applicableTo",
+        "validFrom"
+      ],
+      "recommendedOrder": [
+        "createHeader"
+      ]
+    },
+    "selectorContexts": [],
+    "actions": [],
+    "workflow": [],
+    "edgeCases": [],
+    "examples": [
+      {
+        "operation": "createHeader",
+        "description": "Create a draft header with the minimum required editable fields.",
+        "fields": [
+          "name",
+          "rate",
+          "docTaxAmount",
+          "baseAmount",
+          "applicableTo",
+          "validFrom"
+        ]
+      }
+    ],
+    "warnings": [],
+    "knownLimitations": [],
+    "dangerousOperations": []
+  },
+  "checksum": "225fb60b612dc792"
+}

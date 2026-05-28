@@ -155,7 +155,7 @@ export default function FiscalMonitorPage({ token, apiBaseUrl }) {
     mockData, setMockData, debugOverrideActive,
   } = useDebugState(orgId, apiBaseUrl);
 
-  const { daysLeft: certDaysLeft } = useCertExpiry(apiBaseUrl, { mockDaysLeft: mockCertDays });
+  const { daysLeft: certDaysLeft } = useCertExpiry(apiBaseUrl, { mockDaysLeft: mockCertDays, orgId });
 
   function handleRefresh() {
     refetch();
