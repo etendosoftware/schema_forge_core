@@ -83,3 +83,36 @@ describe('Sales InvoiceHeaderTable — type/payment filters', () => {
     assert.match(src, /value: 'all',\s*label: t\('allPayments'\)/);
   });
 });
+
+// ── ETP-4125: fiscal status read directly from row data ──────────────────────
+// Risk: regression to batch GET hook would silently reintroduce the nginx URL
+// length issue (403 on 53+ invoices) and add a stale-loading state.
+
+describe('Sales InvoiceHeaderTable — fiscal status columns (ETP-4125)', () => {
+  it('does NOT import useInvoiceListFiscalStatus (batch hook eliminated)', () => {
+    assert.doesNotMatch(src, /useInvoiceListFiscalStatus/,
+      'The batch-fetch hook was removed in ETP-4125 to fix nginx URL-length errors');
+  });
+
+  it('reads SII status directly from row.aeatsiiEstado', () => {
+    assert.match(src, /row\.aeatsiiEstado/,
+      'SII status must come from the row field, not a separate fetch');
+  });
+
+  it('reads TBAI status directly from row.tbaiSyncEstado', () => {
+    assert.match(src, /row\.tbaiSyncEstado/,
+      'TBAI status is injected server-side into the row by TbaiSyncStatusInjector');
+  });
+
+  it('reads Verifactu status directly from row.etvfacInvoiceStatus', () => {
+    assert.match(src, /row\.etvfacInvoiceStatus/,
+      'Verifactu status must come from the row field, not a separate fetch');
+  });
+
+  it('does not maintain a statusMap or fiscalLoading variable', () => {
+    assert.doesNotMatch(src, /statusMap/,
+      'statusMap was part of the removed batch-fetch hook');
+    assert.doesNotMatch(src, /fiscalLoading/,
+      'fiscalLoading was part of the removed batch-fetch hook');
+  });
+});

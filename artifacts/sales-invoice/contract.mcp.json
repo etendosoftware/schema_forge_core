@@ -1,8 +1,8 @@
 {
-  "version": "0.25.0",
+  "version": "0.26.1",
   "generatedAt": "2026-04-30T15:42:46.582Z",
-  "updatedAt": "2026-05-19T17:48:14.215Z",
-  "contractChecksum": "00240d7863ea80c9",
+  "updatedAt": "2026-05-27T18:41:03.150Z",
+  "contractChecksum": "3b45220ae82cac08",
   "apiPrediction": {
     "specName": "sales-invoice",
     "baseUrl": "/sws/neo/sales-invoice",
@@ -911,6 +911,10 @@
             "readOnlyLogic": "@processed@='Y'",
             "defaultValue": "@DateInvoiced@"
           },
+          "etvfacInvoiceStatus": {
+            "readOnly": true,
+            "readOnlyLogic": "@processed@='Y'"
+          },
           "tbaiSequence": {
             "readOnly": true
           },
@@ -1217,5 +1221,5 @@
       "tbaiVoidxmlgenerator"
     ]
   },
-  "checksum": "697a13b1e531b3e0"
+  "checksum": "88b59e08a28af966"
 }

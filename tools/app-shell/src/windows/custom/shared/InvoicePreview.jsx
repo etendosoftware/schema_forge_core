@@ -11,6 +11,7 @@ import { useInvoicePreview } from './useInvoicePreview.js';
 import { useFiscalStatus } from './useFiscalStatus.js';
 import { StatusPill } from '@/windows/custom/fiscal-monitor/FmPrimitives.jsx';
 import { getInvoiceFiscalTargets } from './fiscalTargets.js';
+import SifSendingModal from './SifSendingModal.jsx';
 import SummaryCard, { InfoRow } from './preview-cards/SummaryCard.jsx';
 import PaymentsCard from './preview-cards/PaymentsCard.jsx';
 import EmailsCard from './preview-cards/EmailsCard.jsx';
@@ -318,57 +319,22 @@ export default function InvoicePreview({ invoice, token, apiBaseUrl, windowName,
       )}
 
       {p.showSifModal && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="sif-modal-title"
-          style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        >
-          <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', minWidth: '320px', maxWidth: '480px', width: '100%' }}>
-            <h3 id="sif-modal-title" style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>
-              {ui('sendToSifTitle')}
-            </h3>
-            {p.sifPhase === 'confirm' && (
-              <>
-                <p style={{ fontSize: '14px', color: '#374151', marginBottom: '20px' }}>{ui(p.sifBodyKey)}</p>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                  <button type="button" onClick={p.closeSifModal} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', cursor: 'pointer', background: '#fff' }}>
-                    {ui('cancel')}
-                  </button>
-                  <button type="button" onClick={p.handleSendToSif} style={{ padding: '8px 16px', borderRadius: '8px', background: '#1d4ed8', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                    {ui('sendToSifConfirm')}
-                  </button>
-                </div>
-              </>
-            )}
-            {p.sifPhase === 'sending' && (
-              <p style={{ fontSize: '14px', color: '#6b7280' }}>{ui('sendToSifSending')}</p>
-            )}
-            {p.sifPhase === 'results' && (
-              <>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
-                  {p.sifResults.sii && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-                      <span style={{ color: p.sifResults.sii.ok ? '#10b981' : '#ef4444', fontWeight: 600 }}>{p.sifResults.sii.ok ? '✓' : '✗'}</span>
-                      <span>{p.sifResults.sii.ok ? ui('sendToSifSuccessSii') : (p.sifResults.sii.error || ui('sendToSifErrorSii'))}</span>
-                    </div>
-                  )}
-                  {p.sifResults.tbai && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-                      <span style={{ color: p.sifResults.tbai.ok ? '#10b981' : '#ef4444', fontWeight: 600 }}>{p.sifResults.tbai.ok ? '✓' : '✗'}</span>
-                      <span>{p.sifResults.tbai.ok ? ui('sendToSifSuccessTbai') : (p.sifResults.tbai.error || ui('sendToSifErrorTbai'))}</span>
-                    </div>
-                  )}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <button type="button" onClick={p.closeSifModal} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', cursor: 'pointer', background: '#fff' }}>
-                    {ui('close')}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+        <SifSendingModal
+          pendingTargets={p.pendingTargets}
+          bodyKey={p.sifBodyKey}
+          base={p.sifBase}
+          specName={specName}
+          recordId={p.displayInvoice?.id}
+          onClose={p.closeSifModal}
+          onAfterSend={async (next) => {
+            if (Object.values(next).some((r) => r?.ok)) {
+              await p.refetchInvoice();
+              p.fetchPayments();
+            }
+          }}
+          zIndex={70}
+          titleId="sif-modal-title"
+        />
       )}
 
       {p.showSendModal && (

@@ -1516,7 +1516,7 @@ export function DetailView({
             })}
             {topbarExtra && (() => {
               const TopbarExtraComponent = topbarExtra;
-              return <TopbarExtraComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} />;
+              return <TopbarExtraComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} onRefresh={() => hook.fetchById?.(data?.id || recordId)} />;
             })()}
           </div>
 
@@ -1524,7 +1524,7 @@ export function DetailView({
               {/* Topbar right slot (e.g. payment status badge) */}
               {topbarRight && (() => {
                 const TopbarRightComponent = topbarRight;
-                return <TopbarRightComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} />;
+                return <TopbarRightComponent data={data} recordId={data?.id || recordId} token={token} apiBaseUrl={apiBaseUrl} api={api} onProcess={hook.handleProcess} onRefresh={() => hook.fetchById?.(data?.id || recordId)} />;
               })()}
               {/* Send / Print document — uses DocumentPrintDrawer.
                   Icon unified with RowQuickActions (envelope/Mail) so the same
